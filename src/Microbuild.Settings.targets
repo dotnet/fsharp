@@ -5,7 +5,7 @@
     <MicroBuildCoreVersion>0.2.0</MicroBuildCoreVersion>
   </PropertyGroup>
   
-  <Import Project="..\packages\MicroBuild.Core.$(MicroBuildCoreVersion)\build\MicroBuild.Core.props" />
+  <Import Project="..\packages\MicroBuild.Core\$(MicroBuildCoreVersion)\build\MicroBuild.Core.props" />
   
   <UsingTask TaskName="LocalizeTemplateProjectsTask" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
     <ParameterGroup>
@@ -249,5 +249,5 @@
    </PropertyGroup>
  </Target>
 
-  <Import Project="..\packages\MicroBuild.Core.$(MicroBuildCoreVersion)\build\MicroBuild.Core.targets" />
+  <Import Project="..\packages\MicroBuild.Core\$(MicroBuildCoreVersion)\build\MicroBuild.Core.targets" />
 </Project>

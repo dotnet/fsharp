@@ -69,6 +69,8 @@ echo *** Build Visual F# Tools ***
 
 SET VS150COMNTOOLS=%ProgramFiles(x86)%\\Microsoft Visual Studio\\2017\\Enterprise\\Common7\\Tools\\
 
+SET VCTOOLSINSTALLDIR=%ProgramFiles(x86)%\\Microsoft Visual Studio\\2017\\Enterprise\\VC\\Tools\\MSVC\\14.10.25017\\
+
 .\\build.cmd ${buildFlavor} ${build_args}""")
                     }
                     else {

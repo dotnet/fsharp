@@ -380,6 +380,21 @@ echo INCLUDE_TEST_TAGS=%INCLUDE_TEST_TAGS%
 echo PUBLISH_VSIX=%PUBLISH_VSIX%
 echo MYGET_APIKEY=%MYGET_APIKEY%
 
+REM load Visual Studio 2017 developer command prompt if VS150COMNTOOLS is not set
+
+if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" (
+    call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"
+)
+if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsDevCmd.bat" (
+    call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsDevCmd.bat"
+)
+if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat" (
+    call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
+)
+if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat" (
+    call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat"
+)
+
 echo .
 echo Environment
 echo 
@@ -389,7 +404,7 @@ echo .
 
 echo ---------------- Done with arguments, starting preparation -----------------
 
-set BuildToolsPackage=Microsoft.VSSDK.BuildTools.15.0.26124-RC3
+set BuildToolsPackage=Microsoft.VSSDK.BuildTools\15.0.26124-RC3
 if "%VSSDKInstall%"=="" (
      set VSSDKInstall=%~dp0packages\%BuildToolsPackage%\tools\vssdk
 )
@@ -415,32 +430,11 @@ if not "%VisualStudioVersion%" == "" goto vsversionset
 if exist "%VS150COMNTOOLS%\..\ide\devenv.exe" set VisualStudioVersion=15.0
 if not "%VisualStudioVersion%" == "" goto vsversionset
 
-if not "%VisualStudioVersion%" == "" goto vsversionset
-if exist "%VS150COMNTOOLS%\..\..\ide\devenv.exe" set VisualStudioVersion=15.0
-if not "%VisualStudioVersion%" == "" goto vsversionset
-
-if exist "%VS140COMNTOOLS%\..\ide\devenv.exe" set VisualStudioVersion=14.0
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
-if exist "%ProgramFiles%\Microsoft Visual Studio 14.0\common7\ide\devenv.exe" set VisualStudioVersion=14.0
-if not "%VisualStudioVersion%" == "" goto vsversionset
-
-if exist "%VS120COMNTOOLS%\..\ide\devenv.exe" set VisualStudioVersion=12.0
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
-if exist "%ProgramFiles%\Microsoft Visual Studio 12.0\common7\ide\devenv.exe" set VisualStudioVersion=12.0
-
-:vsversionset
 if "%VisualStudioVersion%" == "" echo Error: Could not find an installation of Visual Studio && goto :failure
+:vsversionset
 
 if exist "%VS150COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe" (
     set _msbuildexe="%VS150COMNTOOLS%\..\..\MSBuild\15.0\Bin\MSBuild.exe"
-    goto :havemsbuild
-)
-if exist "%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" (
-    set _msbuildexe="%ProgramFiles(x86)%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
-    goto :havemsbuild
-)
-if exist "%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" (
-    set _msbuildexe="%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
     goto :havemsbuild
 )
 echo Error: Could not find MSBuild.exe. && goto :failure
@@ -468,22 +462,17 @@ set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
 if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 
 echo ---------------- Done with prepare, starting package restore ----------------
-set _nugetexe="%~dp0.nuget\NuGet.exe"
-set _nugetconfig="%~dp0.nuget\NuGet.Config"
-
 if "%RestorePackages%" == "true" (
-    %_ngenexe% install %_nugetexe%  /nologo 
-
-    %_nugetexe% restore packages.config -PackagesDirectory packages -ConfigFile %_nugetconfig%
+    dotnet restore packages.proj --packages packages
     @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
 
     if "%BUILD_VS%" == "1" (
-        %_nugetexe% restore vsintegration\packages.config -PackagesDirectory packages -ConfigFile %_nugetconfig%
+        dotnet restore vsintegration\packages.proj --packages packages
         @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
     )
 
     if "%BUILD_SETUP%" == "1" (
-        %_nugetexe% restore setup\packages.config -PackagesDirectory packages -ConfigFile %_nugetconfig%
+        dotnet restore setup\packages.proj --packages packages
         @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
     )
 )
@@ -496,12 +485,9 @@ if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
 set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
 set NUGET_PACKAGES=%~dp0Packages
 
-set _fsiexe="packages\FSharp.Compiler.Tools.4.0.1.21\tools\fsi.exe"
+set _fsiexe="packages\FSharp.Compiler.Tools\4.0.1.21\tools\fsi.exe"
 if not exist %_fsiexe% echo Error: Could not find %_fsiexe% && goto :failure
-%_ngenexe% install %_fsiexe% /nologo 
-
-if not exist %_nugetexe% echo Error: Could not find %_nugetexe% && goto :failure
-%_ngenexe% install %_nugetexe% /nologo 
+%_ngenexe% install %_fsiexe% /nologo
 
 echo ---------------- Done with package restore, starting proto ------------------------
 
@@ -536,8 +522,8 @@ if "%BUILD_PROTO%" == "1" (
 
   if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "0" (
 
-    echo %_ngenexe% install packages\FSharp.Compiler.Tools.4.0.1.21\tools\fsc.exe /nologo 
-         %_ngenexe% install packages\FSharp.Compiler.Tools.4.0.1.21\tools\fsc.exe /nologo 
+    echo %_ngenexe% install packages\FSharp.Compiler.Tools\4.0.1.21\tools\fsc.exe /nologo 
+         %_ngenexe% install packages\FSharp.Compiler.Tools\4.0.1.21\tools\fsc.exe /nologo 
 
     echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
          %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
@@ -565,8 +551,8 @@ if "%BUILD_NET40%" == "1" (
     call src\update.cmd %BUILD_CONFIG% -ngen
 )
 
-@echo set NUNITPATH=packages\NUnit.Console.3.0.0\tools\
-set NUNITPATH=packages\NUnit.Console.3.0.0\tools\
+@echo set NUNITPATH=packages\NUnit.Console\3.0.0\tools\
+set NUNITPATH=packages\NUnit.Console\3.0.0\tools\
 if not exist %NUNITPATH% echo Error: Could not find %NUNITPATH% && goto :failure
 
 @echo xcopy "%NUNITPATH%*.*"  "%~dp0tests\fsharpqa\testenv\bin\nunit\*.*" /S /Q /Y
@@ -624,10 +610,10 @@ if NOT "%INCLUDE_TEST_TAGS%" == "" (
 echo WHERE_ARG_NUNIT=!WHERE_ARG_NUNIT!
 
 set NUNITPATH=%~dp0tests\fsharpqa\testenv\bin\nunit\
-set NUNIT3_CONSOLE=%~dp0packages\NUnit.Console.3.0.0\tools\nunit3-console.exe
-set link_exe=%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe
+set NUNIT3_CONSOLE=%~dp0packages\NUnit.Console\3.0.0\tools\nunit3-console.exe
+set link_exe=%VCToolsInstallDir%bin\HostX64\x86\link.exe
 if not exist "%link_exe%" (
-    echo Error: failed to find "%link_exe%" use nuget to restore the VisualCppTools package
+    echo Error: failed to find "%link_exe%"
     goto :failure
 )
 

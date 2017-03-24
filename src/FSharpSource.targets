@@ -372,9 +372,9 @@
       <PropertyGroup >
         <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(ProtoFlavour)\bin</OutputPath>
         <!-- When using coreclr to bootstrap to proto. We acquire the FSharp.Core LKG, targets LKG, the FSharp.Build LKG from the .NET Framework compiler tools LKG package. -->
-        <FSharpCoreLkgPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.0.1.21\tools</FSharpCoreLkgPath>
+        <FSharpCoreLkgPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools\4.0.1.21\tools</FSharpCoreLkgPath>
         <FSharpNetCoreLkgPath>$(FSharpSourcesRoot)\..\Tools\lkg</FSharpNetCoreLkgPath>
-        <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.0.1.21\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
+        <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools\4.0.1.21\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
         <!-- When using coreclr to bootstrap, the compiler binary comes from the coreclr LKG, invoked using corehost.exe -->
         <FscToolPath>$(FSharpSourcesRoot)\..\Tools\dotnetcli</FscToolPath>
         <FscToolExe Condition="'$(OS)' != 'Unix'">dotnet.exe</FscToolExe>
@@ -386,8 +386,8 @@
        <!-- Use .NET Framework to bootstrap to proto -->
       <PropertyGroup >
         <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(ProtoFlavour)\bin</OutputPath>
-        <FSharpCoreLkgPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.0.1.21\tools</FSharpCoreLkgPath>
-        <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.0.1.21\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
+        <FSharpCoreLkgPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools\4.0.1.21\tools</FSharpCoreLkgPath>
+        <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools\4.0.1.21\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
       </PropertyGroup>
     </When>
     <When Condition="'$(BuildWith)' == '' AND ('$(TargetFramework)'=='portable47' OR '$(TargetFramework)'=='portable7' OR '$(TargetFramework)'=='portable78' OR '$(TargetFramework)'=='portable259' OR '$(TargetFramework)'=='coreclr')">

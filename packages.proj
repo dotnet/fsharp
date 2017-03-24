@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net46</TargetFramework>
+  </PropertyGroup>
+  <!-- The packages to build and test the F# Compiler -->
+  <!-- Packages for the Visual F# IDE Tools should go in vsintegration\packages.config -->
+
+  <ItemGroup>
+    <!-- CodeGen-->
+    <PackageReference Include="FsLexYacc" Version="7.0.4" Condition="'$(TargetFramework)' == 'net46'" />
+
+    <!-- Build infrastructure-->
+    <PackageReference Include="MicroBuild.Core" Version="0.2.0" />
+    <PackageReference Include="MicroBuild.Core.Sentinel" Version="1.0.0" />
+
+    <!-- Actual dependencies of FSharp.Compiler.dll and FSharp.Core.dll -->
+    <PackageReference Include="System.Collections.Immutable" Version="1.2.0" />
+    <PackageReference Include="System.Reflection.Metadata" Version="1.4.1-beta-24227-04" />
+    <PackageReference Include="Microsoft.DiaSymReader.PortablePdb" Version="1.1.0"  />
+    <PackageReference Include="Microsoft.DiaSymReader" Version="1.0.8" />
+    <PackageReference Include="System.ValueTuple" Version="4.3.0" />
+    <PackageReference Include="Microsoft.VisualFSharp.Msbuild.15.0" Version="1.0.1" />
+
+    <!-- Testing -->
+    <PackageReference Include="FsCheck" Version="2.6.2" />
+    <PackageReference Include="NUnit" Version="3.5.0" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="NUnit.Console" Version="3.0.0" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="NUnitLite" Version="3.5.0" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.0.8-ctp-8" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.9.8"/>
+    <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.9.8"/>
+    <!--<PackageReference Include="VisualCppTools" Version="14.0.24519-Pre"/>-->
+    <PackageReference Include="Newtonsoft.Json" Version="6.0.8"/>
+    <PackageReference Include="Microsoft.FSharp.TupleSample" Version="1.0.0-alpha-161121"/>
+    <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="15.0.26124-RC3" />
+
+    <!-- Annoyingly the build of FSharp.Compiler.Server.Shared references a Visual Studio-specific attribute -->
+    <!-- That DLL is logically part of the F# Compiler and F# Interactive but is shipped as part of the Visual F# IDE Tools -->
+    <PackageReference Include="Microsoft.VisualStudio.Shell.14.0" Version="14.3.25407" Condition="'$(TargetFramework)' == 'net46'" />
+    <PackageReference Include="Microsoft.VisualStudio.Shell.Immutable.10.0" Version="10.0.30319" Condition="'$(TargetFramework)' == 'net46'" />
+
+    <!-- FSharp.Compiler.Tools is only used to get a working FSI.EXE to execute some scripts during the build -->
+    <!-- The LKG FSI.EXE requires MSBuild 15 to be installed, which is painful -->
+    <PackageReference Include="FSharp.Compiler.Tools" Version="4.0.1.21"/>
+
+    <!-- FSharp.Data is used in some of the scripts ued for the coreclr build -->
+    <PackageReference Include="FSharp.Data" Version="2.2.5" />
+
+    <!-- Perl is used for the fsharpqa test suite -->
+    <PackageReference Include="StrawberryPerl64" Version="5.22.2.1" />
+  </ItemGroup>
+</Project>
