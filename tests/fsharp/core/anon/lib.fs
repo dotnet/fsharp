@@ -23,7 +23,7 @@ let inline getX (x: ^TX) : ^X =
         (^TX : (member get_X : unit -> ^X) (x))
 
 
-let inline getY (x: ^TX) : ^X = 
+let inline Y (x: ^TX) : ^X = 
         (^TX : (member get_Y : unit -> ^X) (x))
 
 
@@ -53,6 +53,14 @@ module KindB1 =
     check "coijoiwcnkwle4"  (sprintf "%A"  {| X = 10; Y = 1 |} |> fun s -> s.Replace("\n","").Replace("\r","")) ("{X = 10; Y = 1;}".Replace("\n","").Replace("\r",""))
     check "clekoiew09" (f2 {| X = {| X = 10 |} |}) 10
     check "cewkew0oijew" (f2 {| X = {| X = 20 |} |})  20
+
+    check "ceoijew90ewcw1"  (FSharp.Reflection.FSharpType.IsRecord(typeof<{| X : int; Y: string |}>)) true
+    check "ceoijew90ewcw2"  (FSharp.Reflection.FSharpType.GetRecordFields(typeof<{| X : int; Y: string |}>).Length) 2
+    check "ceoijew90ewcw3"  (FSharp.Reflection.FSharpValue.GetRecordFields({| X = 1; Y = "a" |}).Length) 2
+    check "ceoijew90ewcw4"  (FSharp.Reflection.FSharpType.IsRecord(typeof<{| X : int |}>)) true
+    check "ceoijew90ewcw5"  (FSharp.Reflection.FSharpType.GetRecordFields(typeof<{| X : int |}>).Length) 1
+    check "ceoijew90ewcw6"  (FSharp.Reflection.FSharpValue.GetRecordFields({| X = 1 |}).Length) 1
+    check "ceoijew90ewcw7"  (FSharp.Reflection.FSharpValue.GetRecordFields({| X = 1 |}).[0]) (box 1)
 
     // TODO: field reordering....
     //let test3b() = {| a = 1+1; b = 2 |} = {| b = 1; a = 2 |} 
@@ -112,6 +120,15 @@ module KindB1 =
 #endif
 
 
+module TestInAttributes = 
+    type FooAttribute(ty: System.Type) =
+        inherit System.Attribute()
+        member x.Type = ty
+
+    [<Foo(typeof<{| Field1: int; Field2 : string |}>)>]
+    type C() = 
+       member x.P = 1
+    check "clkwweclk" ((typeof<C>.GetCustomAttributes(typeof<FooAttribute>,true).[0] :?> FooAttribute).Type) (typeof<{| Field1: int; Field2 : string |}>)
 
 module KindB2 = 
 

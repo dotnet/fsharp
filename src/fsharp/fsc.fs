@@ -1901,12 +1901,11 @@ let main2b(Args (ctok, tcConfig: TcConfig, tcImports, tcGlobals: TcGlobals, erro
     // so that make sure the compiler only emits "serializable" bit into IL metadata when it is available.
     // Note that SerializableAttribute may be relocated in the future but now resides in mscorlib.
     let codegenResults = GenerateIlxCode (IlWriteBackend, false, false, tcConfig, topAttrs, optimizedImpls, generatedCcu.AssemblyName, ilxGenerator)
-    let casApplied = new Dictionary<Stamp, bool>()
-    let securityAttrs, topAssemblyAttrs = topAttrs.assemblyAttrs |> List.partition (fun a -> TypeChecker.IsSecurityAttribute tcGlobals (tcImports.GetImportMap()) casApplied a rangeStartup)
+    let topAssemblyAttrs = codegenResults.topAssemblyAttrs
     // remove any security attributes from the top-level assembly attribute list
     let topAttrs = {topAttrs with assemblyAttrs=topAssemblyAttrs}
-    let permissionSets = ilxGenerator.CreatePermissionSets securityAttrs
-    let secDecls = if securityAttrs.Length > 0 then mkILSecurityDecls permissionSets else emptyILSecurityDecls
+    let permissionSets = codegenResults.permissionSets
+    let secDecls = mkILSecurityDecls permissionSets 
 
     let ilxMainModule = MainModuleBuilder.CreateMainModule (ctok, tcConfig, tcGlobals, tcImports, pdbfile, assemblyName, outfile, topAttrs, idata, optDataResources, codegenResults, assemVerFromAttrib, metadataVersion, secDecls)
 
