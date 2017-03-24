@@ -1081,7 +1081,7 @@ module internal ItemDescriptionsImpl =
             NicePrint.layoutPrettifiedTypeAndConstraints denv [] g.exn_ty
         | Item.RecdField(rfinfo) ->
             NicePrint.layoutPrettifiedTypeAndConstraints denv [] rfinfo.FieldType
-        | Item.AnonRecdField(anonInfo,tys,i) ->
+        | Item.AnonRecdField(_anonInfo,tys,i) ->
             NicePrint.layoutPrettifiedTypeAndConstraints denv [] tys.[i]
         | Item.ILField(finfo) ->
             NicePrint.layoutPrettifiedTypeAndConstraints denv [] (finfo.FieldType(amap,m))
