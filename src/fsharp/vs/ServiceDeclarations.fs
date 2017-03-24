@@ -573,6 +573,7 @@ module internal ItemDescriptionsImpl =
               | Wrap(Item.Property(_, pi1s)), Wrap(Item.Property(_, pi2s)) -> 
                   List.zip pi1s pi2s |> List.forall(fun (pi1, pi2) -> PropInfo.PropInfosUseIdenticalDefinitions pi1 pi2)
               | Wrap(Item.Event(evt1)), Wrap(Item.Event(evt2)) -> EventInfo.EventInfosUseIdenticalDefintions evt1 evt2
+              | Wrap(Item.AnonRecdField(anon1, _, i1)), Wrap(Item.AnonRecdField(anon2, _, i2)) -> Tastops.anonInfoEquiv anon1 anon2 && i1 = i2
               | Wrap(Item.CtorGroup(_, meths1)), Wrap(Item.CtorGroup(_, meths2)) -> 
                   Seq.zip meths1 meths2 
                   |> Seq.forall (fun (minfo1, minfo2) -> MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
@@ -600,6 +601,7 @@ module internal ItemDescriptionsImpl =
               | Wrap(Item.ExnCase(tcref)) -> hash tcref.Stamp
               | Wrap(Item.UnionCase(UnionCaseInfo(_, UCRef(tcref, n)),_)) -> hash(tcref.Stamp, n)
               | Wrap(Item.RecdField(RecdFieldInfo(_, RFRef(tcref, n)))) -> hash(tcref.Stamp, n)
+              | Wrap(Item.AnonRecdField(anon, _, i)) -> hash anon.Names.[i]
               | Wrap(Item.Event evt) -> evt.ComputeHashCode()
               | Wrap(Item.Property(_name, pis)) -> hash (pis |> List.map (fun pi -> pi.ComputeHashCode()))
               | _ -> failwith "unreachable") }
@@ -1018,6 +1020,17 @@ module internal ItemDescriptionsImpl =
             else
                 FSharpStructuredToolTipElement.Single(layout, xml)
 
+        | Item.AnonRecdField(anon, argTys, i) -> 
+            let argTy = argTys.[i]
+            let nm = anon.Names.[i]
+            let _, argTy, _ = PrettyTypes.PrettifyTypes1 g argTy
+            let layout =
+                wordL (tagText (FSComp.SR.typeInfoAnonRecdField())) ^^
+                wordL (tagRecordField nm) ^^
+                RightL.colon ^^
+                NicePrint.layoutTy denv argTy
+            FSharpStructuredToolTipElement.Single(layout, FSharpXmlDoc.None)
+            
         // Named parameters
         | Item.ArgName (id, argTy, _) -> 
             let _, argTy, _ = PrettyTypes.PrettifyTypes1 g argTy
@@ -1068,6 +1081,8 @@ module internal ItemDescriptionsImpl =
             NicePrint.layoutPrettifiedTypeAndConstraints denv [] g.exn_ty
         | Item.RecdField(rfinfo) ->
             NicePrint.layoutPrettifiedTypeAndConstraints denv [] rfinfo.FieldType
+        | Item.AnonRecdField(anonInfo,tys,i) ->
+            NicePrint.layoutPrettifiedTypeAndConstraints denv [] tys.[i]
         | Item.ILField(finfo) ->
             NicePrint.layoutPrettifiedTypeAndConstraints denv [] (finfo.FieldType(amap,m))
         | Item.Event(einfo) ->
@@ -1320,6 +1335,7 @@ module internal ItemDescriptionsImpl =
             | Item.ActivePatternCase _ -> FSharpGlyph.EnumMember   
             | Item.ExnCase _ -> FSharpGlyph.Exception   
             | Item.RecdField _ -> FSharpGlyph.Field
+            | Item.AnonRecdField _ -> FSharpGlyph.Property
             | Item.ILField _ -> FSharpGlyph.Field
             | Item.Event _ -> FSharpGlyph.Event   
             | Item.Property _ -> FSharpGlyph.Property   
