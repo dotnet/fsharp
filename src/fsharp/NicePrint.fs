@@ -1621,6 +1621,7 @@ module private TastDefinitionPrinting =
           elif isInterfaceTy g ty then Some "interface", tagInterface n
           elif isClassTy g ty then (if simplified then None else Some "class" ), tagClass n
           else None, tagUnknownType n
+      let name = mkNav tycon.DefinitionRange name
       let nameL = layoutAccessibility denv tycon.Accessibility (wordL name)
       let denv = denv.AddAccessibility tycon.Accessibility 
       let lhsL =
