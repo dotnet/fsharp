@@ -4844,31 +4844,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             Guid empty = Guid.Empty;
 
             // When Adding an item, pass true to let AddItemWithSpecific know to fire the tracker events.
-            var r = AddItemWithSpecific(itemIdLoc, op, itemName, filesToOpen, files, dlgOwner, 0, ref empty, null, ref empty, result, true, context: addItemContext);
-            if (op == VSADDITEMOPERATION.VSADDITEMOP_RUNWIZARD)
-            {
-                HierarchyNode n = this.NodeFromItemId(itemIdLoc);
-                string relativeFolder = Path.GetDirectoryName(n.Url);
-                string relPath = PackageUtilities.MakeRelativeIfRooted(Path.Combine(relativeFolder, Path.GetFileName(itemName)), this.BaseURI);
-                MoveFileToBottomIfNoOtherPendingMove(relPath);
-            }
-            else if (op == VSADDITEMOPERATION.VSADDITEMOP_OPENFILE)
-            {
-                foreach (string file in files)
-                {
-                    string relPath = PackageUtilities.MakeRelativeIfRooted(file, this.BaseURI);
-                    MoveFileToBottomIfNoOtherPendingMove(relPath);
-                }
-            }
-            else if (op == VSADDITEMOPERATION.VSADDITEMOP_LINKTOFILE)
-            {
-                // This does not seem to be reachable from automation APIs, no movement needed.
-            }
-            else if (op == VSADDITEMOPERATION.VSADDITEMOP_CLONEFILE)
-            {
-                // This seems to only be called as a sub-step of RUNWIZARD, no movement needed.
-            }
-            return r;
+            return AddItemWithSpecific(itemIdLoc, op, itemName, filesToOpen, files, dlgOwner, 0, ref empty, null, ref empty, result, true, context: addItemContext);
         }
 
         /// <summary>
@@ -5158,6 +5134,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         }
                     }
                 }
+            }
+
+            for (int i = 0; i < actualFilesAddedIndex; ++i)
+            {
+                string absolutePath = actualFiles[i];
+                string relPath = PackageUtilities.MakeRelativeIfRooted(absolutePath, this.BaseURI);
+                MoveFileToBottomIfNoOtherPendingMove(relPath);
             }
 
             return VSConstants.S_OK;
