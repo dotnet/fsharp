@@ -885,9 +885,7 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
     | TType_tuple (s1,l1),TType_tuple (s2,l2) -> 
         structnessAEquiv s1 s2 && typesAEquivAux erasureFlag g aenv l1 l2
     | TType_anon (anonInfo1,l1),TType_anon (anonInfo2,l2) -> 
-        (match anonInfo1.Assembly, anonInfo2.Assembly with None, None -> true | Some ccu1, Some ccu2 -> ccuEq ccu1 ccu2 | _ -> false) && 
-        structnessAEquiv anonInfo1.TupInfo anonInfo2.TupInfo && 
-        anonInfo1.Names = anonInfo2.Names && 
+        anonInfoEquiv anonInfo1 anonInfo2 &&
         typesAEquivAux erasureFlag g aenv l1 l2
     | TType_fun (dtys1,rty1),TType_fun (dtys2,rty2) -> 
         typeAEquivAux erasureFlag g aenv dtys1 dtys2 && typeAEquivAux erasureFlag g aenv rty1 rty2
@@ -896,6 +894,12 @@ and typeAEquivAux erasureFlag g aenv ty1 ty2 =
         | EraseNone -> measureAEquiv g aenv m1 m2 
         | _ -> true 
     | _ -> false
+
+
+and anonInfoEquiv (anonInfo1: AnonRecdTypeInfo) (anonInfo2: AnonRecdTypeInfo) =
+    (match anonInfo1.Assembly, anonInfo2.Assembly with None, None -> true | Some ccu1, Some ccu2 -> ccuEq ccu1 ccu2 | _ -> false) && 
+    structnessAEquiv anonInfo1.TupInfo anonInfo2.TupInfo && 
+    anonInfo1.Names = anonInfo2.Names 
 
 and structnessAEquiv un1 un2 =
     match un1, un2 with 

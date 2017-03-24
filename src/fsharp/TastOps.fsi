@@ -562,6 +562,7 @@ val returnTypesAEquivAux      : Erasure -> TcGlobals -> TypeEquivEnv -> TType op
 val returnTypesAEquiv         :            TcGlobals -> TypeEquivEnv -> TType option           -> TType option           -> bool
 val tcrefAEquiv               :            TcGlobals -> TypeEquivEnv -> TyconRef             -> TyconRef             -> bool
 val valLinkageAEquiv          :            TcGlobals -> TypeEquivEnv -> Val   -> Val -> bool
+val anonInfoEquiv             : AnonRecdTypeInfo -> AnonRecdTypeInfo -> bool
 
 //-------------------------------------------------------------------------
 // Erasure of types wrt units-of-measure and type providers

@@ -4053,6 +4053,12 @@ let private ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad stat
             if statics then
                 yield! typ |> GetNestedTypesOfType (ad, ncenv, None, TypeNameResolutionStaticArgsInfo.Indefinite, false, m) |> List.map (ItemOfTy g)
         | _ ->
+            match tryDestAnonRecdTy g typ with 
+            | Some (anonInfo, tys) -> 
+                for (i,_nm) in Array.indexed anonInfo.Names do 
+                    yield Item.AnonRecdField(anonInfo, tys, i)
+            | _ -> ()
+
             let pinfosIncludingUnseen = 
                 AllPropInfosOfTypeInScope ncenv.InfoReader nenv (None,ad) PreferOverrides m typ
                 |> List.filter (fun x -> 
@@ -4220,6 +4226,12 @@ let rec private ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv 
 
           for pinfo in pinfos do
               yield! (fullTypeOfPinfo pinfo) |> ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item
+    
+          match TryFindAnonRecdFieldOfType g typ id with 
+          | Some (Item.AnonRecdField(_anonInfo, tys, i)) -> 
+              let tyinfo = tys.[i]
+              yield! ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item tyinfo
+          | _ -> ()
     
           // e.g. <val-id>.<event-id>.<more> 
           for einfo in ncenv.InfoReader.GetEventInfosOfType(Some id, ad, m, typ) do

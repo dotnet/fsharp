@@ -815,7 +815,7 @@ and FSharpField(cenv, d: FSharpFieldData)  =
             match d, uc.V with 
             | RecdOrClass r1, RecdOrClass r2 -> recdFieldRefOrder.Compare(r1, r2) = 0
             | Union (u1,n1), Union (u2,n2) -> cenv.g.unionCaseRefEq u1 u2 && n1 = n2
-            | AnonField _ , AnonField _ -> x.Name = uc.Name
+            | AnonField (_, anonInfo1, _, _) , AnonField (_, anonInfo2, _, _) -> x.Name = uc.Name && anonInfoEquiv anonInfo1 anonInfo2
             | _ -> false
         |   _ -> false
 
