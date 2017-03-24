@@ -798,13 +798,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     base.ExecCommandOnNode(guidCmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut)
 
             override fshProjNode.QueryStatusOnNode(guidCmdGroup : Guid, cmd : UInt32, pCmdText : IntPtr, result : byref<QueryStatusResult>) =
-                if guidCmdGroup = VsMenus.guidStandardCommandSet97 then
-                    if (cmd |> int32 |> enum) = Microsoft.VisualStudio.VSConstants.VSStd97CmdID.NewFolder then
-                        result <- result ||| QueryStatusResult.SUPPORTED ||| QueryStatusResult.INVISIBLE 
-                        VSConstants.S_OK
-                    else
-                        base.QueryStatusOnNode(guidCmdGroup, cmd, pCmdText, &result)
-                elif guidCmdGroup = VsMenus.guidStandardCommandSet2K then
+                if guidCmdGroup = VsMenus.guidStandardCommandSet2K then
                     match (cmd |> int32 |> enum) : VSConstants.VSStd2KCmdID with 
                     | _ when cmd = MyVSConstants.ExploreFolderInWindows ->
                         result <- result ||| QueryStatusResult.SUPPORTED ||| QueryStatusResult.ENABLED

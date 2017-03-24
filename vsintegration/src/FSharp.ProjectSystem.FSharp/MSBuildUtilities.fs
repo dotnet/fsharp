@@ -386,8 +386,6 @@ type internal MSBuildUtilities() =
                 index := !index + 1]
         if !itemToMoveBeforeIndex = -1 then
             Debug.Assert(false, sprintf "did not find item to move before <%s Include=\"%s\">" (GetItemType itemToMoveBefore) (GetUnescapedUnevaluatedInclude itemToMoveBefore))
-        if itemsToMove.IsEmpty then
-            Debug.Assert(false, sprintf "did not find any item to move (anything in folder %s)" folderToBeMoved)
         for (item,i) in itemsToMove do
             Debug.Assert(i <> 0, "item is already at top")
             Debug.Assert(!itemToMoveBeforeIndex < i, "not moving up")
@@ -415,8 +413,6 @@ type internal MSBuildUtilities() =
                 index := !index + 1]
         if !itemToMoveAfterIndex = -1 then
             Debug.Assert(false, sprintf "did not find item to move after <%s Include=\"%s\">" (GetItemType itemToMoveAfter) (GetUnescapedUnevaluatedInclude itemToMoveAfter))
-        if itemsToMove.IsEmpty then
-            Debug.Assert(false, sprintf "did not find any item to move (anything in folder %s)" folderToBeMoved)
         for (item,i) in List.rev itemsToMove do
             Debug.Assert(i <> !index - 1, "item is already at bottom")
             Debug.Assert(!itemToMoveAfterIndex > i, "not moving down")
