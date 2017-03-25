@@ -173,8 +173,8 @@
       <HintPath>$(FSharpSourcesRoot)\..\packages\VSSDK.VSHelp.7.0.4\lib\net20\Microsoft.VisualStudio.VSHelp.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.VisualStudio.Threading, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Threading.14.1.131\lib\net45\Microsoft.VisualStudio.Threading.dll</HintPath>
+    <Reference Include="Microsoft.VisualStudio.Threading">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Threading.15.0.240\lib\net45\Microsoft.VisualStudio.Threading.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Editor, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Editor.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Editor.dll</HintPath>
@@ -213,7 +213,7 @@
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Language.StandardClassification.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Language.StandardClassification.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.ComponentModelHost, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Roslyn.Microsoft.VisualStudio.ComponentModelHost.0.0.2\lib\net46\Microsoft.VisualStudio.ComponentModelHost.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.ComponentModelHost.15.0.26201-alpha\lib\net46\Microsoft.VisualStudio.ComponentModelHost.dll</HintPath>
     </Reference>
 
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
