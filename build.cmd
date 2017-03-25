@@ -649,12 +649,15 @@ if "%link_exe%" EQU "" if exist "%VCToolsInstallDir%\bin\HostX64\x86\link.exe" (
 echo ccc
 if "%link_exe%" EQU "" (
     echo fff
-    set link_exe=%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe
+    REM set link_exe=%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe
+
     echo ggg
 )
+echo iii
 if not exist "%link_exe%" if "%link_exe%" EQU "%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe" (
     echo _nugetexe=%_nugetexe%
-    %_nugetexe% install -source https://www.myget.org/F/fsharp-daily/api/v3/index.json VisualCppTools -version 14.0.24519-Pre -out packages
+    REM %_nugetexe% install -source https://www.myget.org/F/fsharp-daily/api/v3/index.json VisualCppTools -version 14.0.24519-Pre -out packages
+
 )
 echo hhh
 if not exist "%link_exe%" (
