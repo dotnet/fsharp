@@ -69,6 +69,7 @@
     <Compile Include="Commands\HelpContextService.fs" />
     <Compile Include="Commands\FsiCommandService.fs" />
     <Compile Include="Commands\XmlDocCommandService.fs" />
+    <Compile Include="Commands\FormatCommandHandler.fs" />
     <Compile Include="CodeFix\AddNewKeywordToDisposableConstructorInvocation.fs" />
     <Compile Include="CodeFix\AddOpenCodeFixProvider.fs" />
     <Compile Include="CodeFix\ProposeUppercaseLabel.fs" />
