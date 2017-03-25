@@ -647,6 +647,7 @@ if "%link_exe%" EQU "" if exist "%VCToolsInstallDir%\bin\HostX64\x86\link.exe" (
 if "%link_exe%" EQU "" (
     set link_exe=%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe
     if not exist "%link_exe%" (
+        echo _nugetexe=%_nugetexe%
         %_nugetexe% install -source https://www.myget.org/F/fsharp-daily/api/v3/index.json VisualCppTools -version 14.0.24519-Pre -out packages
     )
 )
@@ -654,6 +655,7 @@ if not exist "%link_exe%" (
     echo Error: failed to find link.exe
     goto :failure
 )
+echo link_exe=%link_exe%
 
 if /I not "%single_threaded%" == "true" (set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%) else set PARALLEL_ARG=-procs:0
 
@@ -663,7 +665,6 @@ if not exist "%RESULTSDIR%" (mkdir "%RESULTSDIR%")
 
 ECHO FSCBINPATH=%FSCBINPATH%
 ECHO RESULTSDIR=%RESULTSDIR%
-ECHO link_exe=%link_exe%
 ECHO NUNIT3_CONSOLE=%NUNIT3_CONSOLE%
 ECHO NUNITPATH=%NUNITPATH%
 
