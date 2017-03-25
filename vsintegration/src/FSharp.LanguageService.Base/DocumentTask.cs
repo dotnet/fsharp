@@ -409,7 +409,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        public IVsTextLineMarker TextLineMarker {
+         public IVsTextLineMarker TextLineMarker {
             get { return this.textLineMarker; }
         }
 
