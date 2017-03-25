@@ -739,13 +739,19 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 else
                     base.GetGuidProperty(propid, &guid)
 
-            member fshProjNode.MoveNewlyAddedFileSomehow<'a>(move : (*relativeFileName*)string -> unit, f : unit -> 'a) : 'a =
+            member fshProjNode.MoveNewlyAddedFileSomehow<'a>(move : FSharpFileNode -> unit, f : unit -> 'a) : 'a =
                 Debug.Assert(addFilesNotification.IsNone, "bad use of addFilesNotification")
-                addFilesNotification <- Some(fun files -> 
+                addFilesNotification <- Some (fun files -> 
                     Debug.Assert(files.Length = 1)
                     let absoluteFileName = files.[0]
-                    let relativeFileName = PackageUtilities.MakeRelativeIfRooted(absoluteFileName, fshProjNode.BaseURI)
-                    move(relativeFileName))
+
+                    match fshProjNode.FindChild absoluteFileName with
+                    | :? FSharpFileNode as fileNode ->
+                        move fileNode
+                    | _ ->
+                        let relativeFileName = PackageUtilities.MakeRelativeIfRooted(absoluteFileName, fshProjNode.BaseURI)
+                        Debug.Assert(false, sprintf "Unable to find newly added file in hierarchy '%s'" relativeFileName)
+                    )
                 try
                     let r = f()
                     fshProjNode.ComputeSourcesAndFlags()
@@ -754,26 +760,30 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     addFilesNotification <- None
 
             member fshProjNode.MoveNewlyAddedFileAbove<'a>(nodeToMoveAbove : HierarchyNode, f : unit -> 'a) : 'a =
-                fshProjNode.MoveNewlyAddedFileSomehow((fun relativeFileName -> MSBuildUtilities.MoveFileAbove(relativeFileName, nodeToMoveAbove, fshProjNode)
-                                                                               FSharpFileNode.MoveLastToAbove(nodeToMoveAbove, fshProjNode) |> ignore)
-                                                      , f)
-
-            member fshProjNode.MoveNewlyAddedFileBelow<'a>(nodeToMoveBelow : HierarchyNode, f : unit -> 'a) : 'a =
-                fshProjNode.MoveNewlyAddedFileSomehow((fun relativeFileName -> MSBuildUtilities.MoveFileBelow(relativeFileName, nodeToMoveBelow, fshProjNode)
-                                                                               FSharpFileNode.MoveLastToBelow(nodeToMoveBelow, fshProjNode) |> ignore)
-                                                      , f)
-
-            member fshProjNode.MoveNewlyAddedFileToBottomOfGroup<'a> (f : unit -> 'a) : 'a =
-                fshProjNode.MoveNewlyAddedFileSomehow((fun relativeFileName ->
-                    MSBuildUtilities.MoveFileToBottomOfGroup(relativeFileName, fshProjNode)
-                    FSharpFileNode.MoveToBottomOfGroup(relativeFileName, fshProjNode)
+                fshProjNode.MoveNewlyAddedFileSomehow((fun fileNode ->
+                    FSharpFileNode.MoveToBottomOfGroup(fileNode)
+                    FSharpFileNode.MoveTo(Above, nodeToMoveAbove, fileNode)
+                    MSBuildUtilities.SyncWithHierarchy(fileNode)
                     ), f)
 
-            override fshProjNode.MoveFileToBottomIfNoOtherPendingMove(relativeFileName) = 
+            member fshProjNode.MoveNewlyAddedFileBelow<'a>(nodeToMoveBelow : HierarchyNode, f : unit -> 'a) : 'a =
+                fshProjNode.MoveNewlyAddedFileSomehow((fun fileNode ->
+                    FSharpFileNode.MoveToBottomOfGroup(fileNode)
+                    FSharpFileNode.MoveTo(Below, nodeToMoveBelow, fileNode)
+                    MSBuildUtilities.SyncWithHierarchy(fileNode)
+                    ), f)
+
+            member fshProjNode.MoveNewlyAddedFileToBottomOfGroup<'a> (f : unit -> 'a) : 'a =
+                fshProjNode.MoveNewlyAddedFileSomehow((fun fileNode ->
+                    FSharpFileNode.MoveToBottomOfGroup(fileNode)
+                    MSBuildUtilities.SyncWithHierarchy(fileNode)
+                    ), f)
+
+            override fshProjNode.MoveFileToBottomIfNoOtherPendingMove(fileNode) = 
                 match addFilesNotification with
                 | None ->
-                    MSBuildUtilities.MoveFileToBottomOfGroup(relativeFileName, fshProjNode)
-                    FSharpFileNode.MoveToBottomOfGroup(relativeFileName, fshProjNode)
+                    FSharpFileNode.MoveToBottomOfGroup(fileNode)
+                    MSBuildUtilities.SyncWithHierarchy(fileNode)
                 | Some _ -> ()
 
             override fshProjNode.ExecCommandOnNode(guidCmdGroup:Guid, cmd:uint32, nCmdexecopt:uint32, pvaIn:IntPtr, pvaOut:IntPtr ) =
@@ -2117,7 +2127,10 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             if (not(fileNameEditable) && (propertyDescriptor.Name = "FileName"))
             then Microsoft.VisualStudio.Editors.PropertyPages.FilteredObjectWrapper.ReadOnlyPropertyDescriptorWrapper(propertyDescriptor) :> PropertyDescriptor
             else base.CreateDesignPropertyDescriptor(propertyDescriptor)
-
+       
+    type InsertionLocation =
+    | Above
+    | Below
 
     /// Represents most (non-reference) nodes in the solution hierarchy of an F# project (e.g. foo.fs, bar.fsi, app.config)
     type internal FSharpFileNode(root:FSharpProjectNode, e:ProjectElement, hierarchyId) = 
@@ -2148,6 +2161,15 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 let sp = new Microsoft.VisualStudio.Shell.ServiceProvider(iOle)
 
                 Some(new SelectionElementValueChangedListener(sp))
+
+            /// Unlink a node from its siblings.
+            static let unlinkFromSiblings (node : HierarchyNode) =
+                match node.PreviousSibling with
+                | null ->
+                    node.Parent.FirstChild <- node.NextSibling
+                | previous ->
+                    previous.NextSibling <- node.NextSibling
+                node.OnItemDeleted()
 
             do selectionChangedListener.Value.Init()
                         
@@ -2293,29 +2315,97 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 root.OnItemAdded(lastNode.Parent, lastNode)
                 lastNode :?> FSharpFileNode
             
-            static member MoveToBottomOfGroup(relFilename : string, root : FSharpProjectNode) : unit =
-                match root.FindChild(Path.Combine(root.BaseURI.AbsoluteUrl, relFilename)) with
+            /// Move a node to below the 'target node' in the hierarchy.
+            /// If it is not valid for the node to be directly below the 'target node',
+            /// a warning dialog will be shown.
+            static member MoveTo(location : InsertionLocation, targetNode : HierarchyNode, nodeToBeMoved : HierarchyNode) : unit =
+                let root = nodeToBeMoved.ProjectMgr
+                Debug.Assert(targetNode.ProjectMgr = nodeToBeMoved.ProjectMgr)
+
+                // if targetNode and nodeToBeMoved are not siblings, try to find
+                // the (grand)parent of nodeToBeMoved that is a sibling
+                let rec tryFindTargetNodeSibling =
+                    function
+                    | (null : HierarchyNode) ->
+                        None
+                    | node when node.Parent = targetNode.Parent ->
+                        Some node
+                    | node ->
+                        tryFindTargetNodeSibling node.Parent
+                   
+                let isFileNode : HierarchyNode -> bool =
+                    function
+                    | :? FSharpFileNode -> true
+                    | _ -> false
+                
+                match tryFindTargetNodeSibling nodeToBeMoved with
+                | Some siblingNode when siblingNode <> nodeToBeMoved ->
+                    let fileChildren = siblingNode.AllChildren |> Seq.filter isFileNode |> List.ofSeq
+                    if fileChildren = [nodeToBeMoved] then
+                        Ok siblingNode
+                    else
+                        Error <| sprintf "The '%s' folder cannot be moved as there are multiple files within its subtree" siblingNode.VirtualNodeName
+                | Some siblingNode ->
+                    Ok siblingNode
+                | None ->
+                    Error "The file is in a different subtree"
+                |> function
+                | Ok node ->
+                    unlinkFromSiblings node
+
+                    match location with
+                    | Above ->
+                        match targetNode.PreviousSibling with
+                        | null ->
+                            targetNode.Parent.FirstChild <- node
+                            node.NextSibling <- targetNode
+                        | prev ->
+                            prev.NextSibling <- node
+                            node.NextSibling <- targetNode
+                    | Below ->
+                        node.NextSibling <- targetNode.NextSibling
+                        targetNode.NextSibling <- node
+                        
+                    root.OnItemAdded(node.Parent, node)
+                | Error message ->
+                    // If it is not called from an automation method show a dialog box
+                    if Utilities.IsInAutomationFunction(root.Site) then
+                        raise <| InvalidOperationException message
+                    else
+                        let title = null
+                        let icon = OLEMSGICON.OLEMSGICON_WARNING
+                        let buttons = OLEMSGBUTTON.OLEMSGBUTTON_OK
+                        let defaultButton = OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST
+                        let relPath = PackageUtilities.MakeRelativeIfRooted(nodeToBeMoved.Url, root.BaseURI)
+                        let relTargetPath = PackageUtilities.MakeRelativeIfRooted(targetNode.Url, root.BaseURI)
+                        let moveWord = match location with Above -> "above" | Below -> "below"
+                        let entireMessage = sprintf "The file '%s' cannot be moved %s '%s' in the Solution Explorer.\n\n%s." relPath moveWord relTargetPath message
+                        VsShellUtilities.ShowMessageBox(root.Site, title, entireMessage, icon, buttons, defaultButton) |> ignore
+            
+            /// Move the node to the bottom of its subfolder within the Solution Explorer.
+            /// If its directory hierarchy does not exist, create it.
+            static member MoveToBottomOfGroup(node : HierarchyNode) : unit =
+                match node with
                 | :? FSharpFileNode as fileNode ->
-                    // TODO: are we guaranteed to always be at the end?
-                    if fileNode.PreviousSibling <> null then
-                        fileNode.PreviousSibling.NextSibling <- null
-                    fileNode.OnItemDeleted()
+                    let root = fileNode.ProjectMgr
+
+                    unlinkFromSiblings fileNode
                     
-                    let relTargetPath = PackageUtilities.MakeRelativeIfRooted(fileNode.Url, root.BaseURI)
-                    
-                    let rec tryFindAdoptiveParent (remainingPath : string list, currentParent : HierarchyNode) =
+                    let rec tryFindAdoptiveParent (currentPath : string list, remainingPath : string list, currentParent : HierarchyNode) =
                         match remainingPath with
                         | [] ->
                             currentParent
                         | folderName::restPath ->
-                            let folderNode = root.VerifySubFolderExists(folderName + "\\", currentParent)
-                            tryFindAdoptiveParent (restPath, folderNode)
+                            let path = currentPath @ [folderName]
+                            let pathStr = String.concat "\\" path
+                            let folderNode = root.VerifySubFolderExists(pathStr + "\\", currentParent)
+                            tryFindAdoptiveParent (path, restPath, folderNode)
                     
-                    let pathParts = Path.GetDirectoryName(relTargetPath).Split([| Path.DirectorySeparatorChar |], StringSplitOptions.RemoveEmptyEntries)
-                    let parent = tryFindAdoptiveParent (List.ofArray pathParts, root)
+                    let pathParts = Path.GetDirectoryName(fileNode.RelativeFilePath).Split([| Path.DirectorySeparatorChar |], StringSplitOptions.RemoveEmptyEntries)
+                    let parent = tryFindAdoptiveParent ([], List.ofArray pathParts, root)
                     parent.AddChild(fileNode)
                 | _ ->
-                    Debug.Assert(false, sprintf "Unable to find FSharpFileNode '%s'" relFilename)
+                    Debug.Assert(false, sprintf "Unable to find FSharpFileNode '%s'" node.Url)
             
             override x.ExecCommandOnNode(guidCmdGroup:Guid, cmd:uint32, nCmdexecopt:uint32, pvaIn:IntPtr, pvaOut:IntPtr ) =
                 Debug.Assert(x.ProjectMgr <> null, "The FSharpFileNode has no project manager")
@@ -2612,15 +2702,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 root.SetProjectFileDirty(true)
                 // Recompute & notify of changes
                 root.ComputeSourcesAndFlags()
-
-            member x.GetRelativePath() = 
-                let mutable relativePath = Path.GetFileName(x.ItemNode.GetMetadata(ProjectFileConstants.Include))
-                let mutable  parent = x.Parent
-                while (parent <> null && not (parent :? ProjectNode)) do
-                    relativePath <- Path.Combine(parent.Caption, relativePath)
-                    parent <- parent.Parent
-                relativePath
-
+                
             member x.ServiceCreator : OleServiceProvider.ServiceCreatorCallback =
                 new OleServiceProvider.ServiceCreatorCallback(x.CreateServices)
 

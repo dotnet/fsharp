@@ -4830,7 +4830,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return VSConstants.S_OK;
         }
 
-        public abstract void MoveFileToBottomIfNoOtherPendingMove(string relativeFilename);
+        public abstract void MoveFileToBottomIfNoOtherPendingMove(FileNode node);
 
         public int AddItem(uint itemIdLoc, VSADDITEMOPERATION op, string itemName, uint filesToOpen, string[] files, IntPtr dlgOwner, VSADDRESULT[] result)
         {
@@ -4840,7 +4840,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         internal int DoAddItem(uint itemIdLoc, VSADDITEMOPERATION op, string itemName, uint filesToOpen, string[] files, IntPtr dlgOwner, VSADDRESULT[] result, AddItemContext addItemContext = AddItemContext.Unknown)
         {
             // Note that when executing UI actions from the F# project system, any pending 'moves' (for add/add above/add below) are already handled at another level (in Project.fs).
-            // Calls to MoveFileToBottomIfNoOtherPendingMove() in this method are for code paths hit directly by automation APIs.
             Guid empty = Guid.Empty;
 
             // When Adding an item, pass true to let AddItemWithSpecific know to fire the tracker events.
@@ -5139,8 +5138,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             for (int i = 0; i < actualFilesAddedIndex; ++i)
             {
                 string absolutePath = actualFiles[i];
-                string relPath = PackageUtilities.MakeRelativeIfRooted(absolutePath, this.BaseURI);
-                MoveFileToBottomIfNoOtherPendingMove(relPath);
+                var fileNode = this.FindChild(absolutePath) as FileNode;
+                Debug.Assert(fileNode != null, $"Unable to find added child node {absolutePath}");
+                MoveFileToBottomIfNoOtherPendingMove(fileNode);
             }
 
             return VSConstants.S_OK;

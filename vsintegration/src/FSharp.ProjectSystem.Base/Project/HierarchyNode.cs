@@ -524,8 +524,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             Object nodeWithSameID = this.projectMgr.ItemIdMap[node.hierarchyId];
             if (!Object.ReferenceEquals(node, nodeWithSameID as HierarchyNode))
             {
-                if (nodeWithSameID == null && node.ID <= this.ProjectMgr.ItemIdMap.Count)
-                { // reuse our hierarchy id if possible.
+                // reuse our hierarchy id if possible.
+                if (nodeWithSameID == null)
+                {
                     this.projectMgr.ItemIdMap.SetAt(node.hierarchyId, this);
                 }
                 else
@@ -3299,5 +3300,21 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         public virtual __VSPROVISIONALVIEWINGSTATUS ProvisionalViewingStatus => __VSPROVISIONALVIEWINGSTATUS.PVS_Disabled;
+
+        public virtual IEnumerable<HierarchyNode> AllChildren
+        {
+            get
+            {
+                for (var child = this.FirstChild; child != null; child = child.NextSibling)
+                {
+                    yield return child;
+
+                    foreach (var grandChild in child.AllChildren)
+                    {
+                        yield return grandChild;
+                    }
+                }
+            }
+        }
     }
 }
