@@ -633,17 +633,20 @@ echo ---------------- Done with update, starting tests -----------------------
 if NOT "%INCLUDE_TEST_SPEC_NUNIT%" == "" (
     set WHERE_ARG_NUNIT=--where "%INCLUDE_TEST_SPEC_NUNIT%"
 )
+echo ddd
 if NOT "%INCLUDE_TEST_TAGS%" == "" (
     set TTAGS_ARG_RUNALL=-ttags:%INCLUDE_TEST_TAGS%
 )
+echo eee
 echo WHERE_ARG_NUNIT=!WHERE_ARG_NUNIT!
-
+echo aaa
 set NUNITPATH=%~dp0tests\fsharpqa\testenv\bin\nunit\
 set NUNIT3_CONSOLE=%~dp0packages\NUnit.Console.3.0.0\tools\nunit3-console.exe
-
+echo bbb
 if "%link_exe%" EQU "" if exist "%VCToolsInstallDir%\bin\HostX64\x86\link.exe" (
     set link_exe="%VCToolsInstallDir%\bin\HostX64\x86\link.exe"
 )
+echo ccc
 if "%link_exe%" EQU "" (
     set link_exe=%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe
     if not exist "%link_exe%" (
