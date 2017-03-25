@@ -626,7 +626,7 @@ echo SNEXE64:           %SNEXE64%
 echo ILDASM:            %ILDASM%
 echo
 
-if "%TEST_NET40_COMPILERUNIT_SUITE%" == "0" and "%TEST_PORTABLE_COREUNIT_SUITE" == "0" and "%TEST_CORECLR_COREUNIT_SUITE%" == "0" and "%TEST_VS_IDEUNIT_SUITE%" == "0" and "%TEST_NET40_FSHARP_SUITE%" == "0" and "%TEST_NET40_FSHARPQA_SUITE%" == "0" goto :success
+if "%TEST_NET40_COMPILERUNIT_SUITE%" == "0" (if "%TEST_PORTABLE_COREUNIT_SUITE%" == "0" (if "%TEST_CORECLR_COREUNIT_SUITE%" == "0" (if "%TEST_VS_IDEUNIT_SUITE%" == "0" (if "%TEST_NET40_FSHARP_SUITE%" == "0" (if "%TEST_NET40_FSHARPQA_SUITE%" == "0" goto :success)))))
 
 echo ---------------- Done with update, starting tests -----------------------
 
