@@ -1,4 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+extern alias Shell15;
 
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -26,7 +27,7 @@ using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
 using IServiceProvider = System.IServiceProvider;
 using ShellConstants = Microsoft.VisualStudio.Shell.Interop.Constants;
 using OleConstants = Microsoft.VisualStudio.OLE.Interop.Constants;
-using VsShell = Microsoft.VisualStudio.Shell.VsShellUtilities;
+using VsShell = Shell15::Microsoft.VisualStudio.Shell.VsShellUtilities;
 using Microsoft.VisualStudio.FSharp.LanguageService.Resources;
 
 
@@ -175,7 +176,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         {
             if (string.IsNullOrEmpty(fileName)) return;
             IVsWindowFrame windowFrame = null;
-            uint itemID = VSConstants.VSITEMID_NIL;
+            uint itemID = Shell15::Microsoft.VisualStudio.VSConstants.VSITEMID_NIL;
             IVsUIHierarchy hierarchy = null;
             if (VsShell.IsDocumentOpen(this.Site, fileName, Guid.Empty, out hierarchy, out itemID, out windowFrame))
             {
@@ -842,9 +843,9 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             }
             else if (site is IOleServiceProvider)
             {
-                this.site = new ServiceProvider((IOleServiceProvider)site);
+                this.site = new Shell15::Microsoft.VisualStudio.Shell.ServiceProvider ((IOleServiceProvider)site);
             }
-            Microsoft.VisualStudio.Shell.Package pkg = (Microsoft.VisualStudio.Shell.Package)this.site.GetService(typeof(Microsoft.VisualStudio.Shell.Package));
+            Shell15::Microsoft.VisualStudio.Shell.Package pkg = (Shell15::Microsoft.VisualStudio.Shell.Package)this.site.GetService(typeof(Shell15::Microsoft.VisualStudio.Shell.Package));
             this.lcid = pkg.GetProviderLocale();
         }
 

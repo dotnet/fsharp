@@ -1,4 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+extern alias Shell15;
 
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -131,7 +132,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             ushort hi = (ushort)(options >> 16);
             switch (lo) {
                 case (ushort)OLECMDEXECOPT.OLECMDEXECOPT_SHOWHELP:
-                    if ((options >> 16) == VsMenus.VSCmdOptQueryParameterList) {
+                    if ((options >> 16) == Shell15::Microsoft.VisualStudio.Shell.VsMenus.VSCmdOptQueryParameterList) {
                         return QueryParameterList(ref guidCmdGroup, id, options, pvaIn, pvaOut);
                     }
                     break;
@@ -163,7 +164,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             return NativeMethods.S_OK;
         }
         public virtual int SetSite(Microsoft.VisualStudio.OLE.Interop.IServiceProvider site) {
-            this.site = new ServiceProvider(site);
+            this.site = new Shell15::Microsoft.VisualStudio.Shell.ServiceProvider (site);
 
             if (this.buffer != null) {
                 // register our independent view with the IVsTextManager so that it knows

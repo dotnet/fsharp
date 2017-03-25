@@ -1,4 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+extern alias Shell15;
 
 using Microsoft.VisualStudio.TextManager.Interop;
 using Microsoft.VisualStudio.Shell;
@@ -16,8 +17,8 @@ using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
 using IServiceProvider = System.IServiceProvider;
 using System.IO;
 using System.Globalization;
-using VsCommands = Microsoft.VisualStudio.VSConstants.VSStd97CmdID;
-using VsCommands2K = Microsoft.VisualStudio.VSConstants.VSStd2KCmdID;
+using VsCommands = Shell15::Microsoft.VisualStudio.VSConstants.VSStd97CmdID;
+using VsCommands2K = Shell15::Microsoft.VisualStudio.VSConstants.VSStd2KCmdID;
 using System.Collections.Generic;
 using Microsoft.VisualStudio.FSharp.LanguageService.Resources;
 
@@ -112,7 +113,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         private LanguageService service;
         private IVsTextLines textLines;
         private Colorizer colorizer;
-        private TaskProvider taskProvider;
+        private Shell15::Microsoft.VisualStudio.Shell.TaskProvider taskProvider;
         private TaskReporter taskReporter;
         private CompletionSet completionSet;
         private TextSpan dirtySpan;
@@ -228,11 +229,11 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
 
         // Overriden in Source.fs, but it calls this base implementation
-        public virtual TaskProvider GetTaskProvider()
+        public virtual Shell15::Microsoft.VisualStudio.Shell.TaskProvider GetTaskProvider()
         {
             if (this.taskProvider == null)
             {
-                this.taskProvider = new ErrorListProvider(service.Site); // task list
+                this.taskProvider = new Shell15::Microsoft.VisualStudio.Shell.ErrorListProvider (service.Site); // task list
                 this.taskProvider.ProviderGuid = service.GetLanguageServiceGuid();
 				string name;
 				((IVsLanguageInfo)service).GetLanguageName(out name);
@@ -878,7 +879,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         public abstract string NewlineifyErrorString(string message);
 
         // helper methods.
-        public DocumentTask CreateErrorTaskItem(TextSpan span, string filename, string subcategory, string message, TaskPriority priority, TaskCategory category, MARKERTYPE markerType, TaskErrorCategory errorCategory)
+        public DocumentTask CreateErrorTaskItem(TextSpan span, string filename, string subcategory, string message, Shell15::Microsoft.VisualStudio.Shell.TaskPriority priority, Shell15::Microsoft.VisualStudio.Shell.TaskCategory category, MARKERTYPE markerType, Shell15::Microsoft.VisualStudio.Shell.TaskErrorCategory errorCategory)
         {
             // create task item
 
@@ -1293,7 +1294,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             }
 
             object objTextViewHost;
-            if (VSConstants.S_OK != userData.GetData(Microsoft.VisualStudio.Editor.DefGuidList.guidIWpfTextViewHost, out objTextViewHost))
+            if ( Shell15::Microsoft.VisualStudio.VSConstants.S_OK != userData.GetData(Microsoft.VisualStudio.Editor.DefGuidList.guidIWpfTextViewHost, out objTextViewHost))
             {
                 throw new InvalidOperationException();
             }
@@ -1741,7 +1742,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
         public void ReportTasks(ArrayList errors)
         {
-            TaskProvider taskProvider = this.GetTaskProvider();
+            Shell15::Microsoft.VisualStudio.Shell.TaskProvider taskProvider = this.GetTaskProvider();
             TaskReporter tr = this.GetTaskReporter();
 
             if (null == taskProvider || null == tr)
@@ -1756,7 +1757,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             tr.ClearBackgroundTasksForFile(fname);
 
             int errorMax = this.service.Preferences.MaxErrorMessages;
-            RunningDocumentTable rdt = new RunningDocumentTable(this.service.Site);
+            Shell15::Microsoft.VisualStudio.Shell.RunningDocumentTable rdt = new Shell15::Microsoft.VisualStudio.Shell.RunningDocumentTable(this.service.Site);
             IVsHierarchy thisHeirarchy = rdt.GetHierarchyItem(fname);
 
             // Here we merge errors lists to reduce flicker.  It is not a very intelligent merge
@@ -1765,7 +1766,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             // in this case.
             errors = GroupBySeverity(errors);
             taskProvider.SuspendRefresh(); // batch updates.
-            TaskErrorCategory mostSevere = TaskErrorCategory.Message;
+            Shell15::Microsoft.VisualStudio.Shell.TaskErrorCategory mostSevere = Shell15::Microsoft.VisualStudio.Shell.TaskErrorCategory.Message;
 
             for (int i = 0, n = errors.Count; i < n; i++)
             {
@@ -1791,26 +1792,26 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                     TextSpanHelper.MakePositive(ref span);
                 }
                 //set options
-                TaskPriority priority = TaskPriority.Normal;
-                TaskCategory category = TaskCategory.BuildCompile;
+                Shell15::Microsoft.VisualStudio.Shell.TaskPriority priority = Shell15::Microsoft.VisualStudio.Shell.TaskPriority.Normal;
+                Shell15::Microsoft.VisualStudio.Shell.TaskCategory category = Shell15::Microsoft.VisualStudio.Shell.TaskCategory.BuildCompile;
                 MARKERTYPE markerType = MARKERTYPE.MARKER_CODESENSE_ERROR;
-                TaskErrorCategory errorCategory = TaskErrorCategory.Warning;
+                Shell15::Microsoft.VisualStudio.Shell.TaskErrorCategory errorCategory = Shell15::Microsoft.VisualStudio.Shell.TaskErrorCategory.Warning;
 
                 if (severity == Severity.Fatal || severity == Severity.Error)
                 {
-                    priority = TaskPriority.High;
-                    errorCategory = TaskErrorCategory.Error;
+                    priority = Shell15::Microsoft.VisualStudio.Shell.TaskPriority.High;
+                    errorCategory = Shell15::Microsoft.VisualStudio.Shell.TaskErrorCategory.Error;
                 }
                 else if (severity == Severity.Hint)
                 {
-                    category = TaskCategory.Comments;
+                    category = Shell15::Microsoft.VisualStudio.Shell.TaskCategory.Comments;
                     markerType = MARKERTYPE.MARKER_INVISIBLE;
-                    errorCategory = TaskErrorCategory.Message;
+                    errorCategory = Shell15::Microsoft.VisualStudio.Shell.TaskErrorCategory.Message;
                 }
                 else if (severity == Severity.Warning)
                 {
                     markerType = MARKERTYPE.MARKER_COMPILE_ERROR;
-                    errorCategory = TaskErrorCategory.Warning;
+                    errorCategory = Shell15::Microsoft.VisualStudio.Shell.TaskErrorCategory.Warning;
                 }
                 if (errorCategory < mostSevere)
                 {
@@ -1860,7 +1861,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         {
             for (int i = 0, n = this.taskProvider.Tasks.Count; i < n; i++)
             {
-                Task current = this.taskProvider.Tasks[i];
+                Shell15::Microsoft.VisualStudio.Shell.Task current = this.taskProvider.Tasks[i];
                 if (current == task)
                 {
                     this.taskProvider.Tasks.RemoveAt(i); return;
@@ -2312,7 +2313,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
         int GetTokenExtent(int line, int idx, out int startIdx, out int endIdx)
         {
-            int hr = VSConstants.S_OK;
+            int hr = Shell15::Microsoft.VisualStudio.VSConstants.S_OK;
             bool rc = this.source.GetWordExtent(line, idx, FSharpSourceBase.WholeToken, out startIdx, out endIdx);
             // make sure the span is positive.
             endIdx = Math.Max(startIdx, endIdx);
@@ -2325,7 +2326,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                     // Must stop core text editor from looking at startIdx and endIdx since they are likely
                     // invalid.  So we must return a real failure here, not just S_FALSE.
                     startIdx = endIdx = idx;
-                    hr = VSConstants.E_NOTIMPL;
+                    hr = Shell15::Microsoft.VisualStudio.VSConstants.E_NOTIMPL;
                 }
                 else
                 {
@@ -2484,10 +2485,10 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         internal MethodData(IServiceProvider site)
         {
             this.provider = site;
-            Microsoft.VisualStudio.Shell.Package pkg = (Microsoft.VisualStudio.Shell.Package)site.GetService(typeof(Microsoft.VisualStudio.Shell.Package));
+            Shell15::Microsoft.VisualStudio.Shell.Package pkg = (Shell15::Microsoft.VisualStudio.Shell.Package)site.GetService(typeof(Shell15::Microsoft.VisualStudio.Shell.Package));
             if (pkg == null)
             {
-                throw new NullReferenceException(typeof(Microsoft.VisualStudio.Shell.Package).FullName);
+                throw new NullReferenceException(typeof( Shell15::Microsoft.VisualStudio.Shell.Package).FullName);
             }
             Guid riid = typeof(IVsMethodTipWindow).GUID;
             Guid clsid = typeof(VsMethodTipWindowClass).GUID;

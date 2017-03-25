@@ -1,4 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+extern alias Shell15;
 
 using System;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -14,8 +15,8 @@ using IServiceProvider = System.IServiceProvider;
 using System.Diagnostics;
 using System.Xml;
 using System.Text;
-using VsCommands = Microsoft.VisualStudio.VSConstants.VSStd97CmdID;
-using VsCommands2K = Microsoft.VisualStudio.VSConstants.VSStd2KCmdID;
+using VsCommands = Shell15::Microsoft.VisualStudio.VSConstants.VSStd97CmdID;
+using VsCommands2K = Shell15::Microsoft.VisualStudio.VSConstants.VSStd2KCmdID;
 using Microsoft.VisualStudio.FSharp.LanguageService.Resources;
 
 namespace Microsoft.VisualStudio.FSharp.LanguageService {
@@ -270,7 +271,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
 
             IVsTextViewEx viewex = view as IVsTextViewEx;
             if (viewex  != null) {
-                return viewex.IsCompletorWindowActive() == VSConstants.S_OK;
+                return viewex.IsCompletorWindowActive() == Shell15::Microsoft.VisualStudio.VSConstants.S_OK;
             }
 
             return false;

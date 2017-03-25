@@ -1,4 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+extern alias Shell15;
 
 using System;
 using System.Runtime.InteropServices;
@@ -17,7 +18,7 @@ using Microsoft.VisualStudio.TextManager.Interop;
 using Microsoft.VisualStudio.Shell;
 using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
 using IServiceProvider = System.IServiceProvider;
-using VsShell = Microsoft.VisualStudio.Shell.VsShellUtilities;
+using VsShell = Shell15::Microsoft.VisualStudio.Shell.VsShellUtilities;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Microsoft.VisualStudio.FSharp.LanguageService {
@@ -168,7 +169,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         internal static T DoOnUIThread<T>(Func<T> callback)
         {
-            return Microsoft.VisualStudio.Shell.ThreadHelper.Generic.Invoke<T>(callback);
+            return Shell15::Microsoft.VisualStudio.Shell.ThreadHelper.Generic.Invoke<T>(callback);
         }
 
         /// <summary>
@@ -178,7 +179,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         internal static void DoOnUIThread(Action callback)
         {
-            Microsoft.VisualStudio.Shell.ThreadHelper.Generic.Invoke(callback);
+            Shell15::Microsoft.VisualStudio.Shell.ThreadHelper.Generic.Invoke(callback);
         }
     }
 
@@ -189,7 +190,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
 #if DEBUG
     [System.Diagnostics.DebuggerDisplay("DocumentTask: {Text}")]
 #endif
-    public class DocumentTask : ErrorTask, IVsTextMarkerClient, IDisposable, IComparable<DocumentTask>, IVsProvideUserContext {
+    public class DocumentTask : Shell15::Microsoft.VisualStudio.Shell.ErrorTask, IVsTextMarkerClient, IDisposable, IComparable<DocumentTask>, IVsProvideUserContext {
         // Since all taskitems support this field we define it generically. Can use put_Text to set it.
         IServiceProvider site;
         string fileName;
@@ -468,10 +469,10 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         void Clear();
 
         // Get the task at the specified index
-        Task GetTask(int i);
+        Shell15::Microsoft.VisualStudio.Shell.Task GetTask(int i);
 
         // Add a task to the end of the task list
-        void Add(Task t);
+        void Add(Shell15::Microsoft.VisualStudio.Shell.Task t);
 
         // Suspend task list refresh
         void SuspendRefresh();
@@ -484,9 +485,9 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
     };
 
     internal class TaskListProvider : ITaskListProvider {
-        private TaskProvider taskProvider;
+        private Shell15::Microsoft.VisualStudio.Shell.TaskProvider taskProvider;
 
-        public TaskListProvider(TaskProvider taskProvider) {
+        public TaskListProvider(Shell15::Microsoft.VisualStudio.Shell.TaskProvider taskProvider) {
             this.taskProvider = taskProvider;
         }
 
@@ -498,11 +499,11 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             this.taskProvider.Tasks.Clear();
         }
 
-        public Task GetTask(int i) {
+        public Shell15::Microsoft.VisualStudio.Shell.Task GetTask(int i) {
             return this.taskProvider.Tasks[i];
         }
 
-        public void Add(Task t) {
+        public void Add(Shell15::Microsoft.VisualStudio.Shell.Task t) {
             this.taskProvider.Tasks.Add(t);
         }
 
