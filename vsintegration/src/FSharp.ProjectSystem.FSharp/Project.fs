@@ -2344,11 +2344,11 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     if fileChildren = [nodeToBeMoved] then
                         Ok siblingNode
                     else
-                        Error <| sprintf "The '%s' folder cannot be moved as there are multiple files within its subtree" siblingNode.VirtualNodeName
+                        Error <| String.Format(FSharpSR.GetString(FSharpSR.FileCannotBePlacedMultipleFiles), siblingNode.VirtualNodeName)
                 | Some siblingNode ->
                     Ok siblingNode
                 | None ->
-                    Error "The file is in a different subtree"
+                    Error <| FSharpSR.GetString(FSharpSR.FileCannotBePlacedDifferentSubtree)
                 |> function
                 | Ok node ->
                     unlinkFromSiblings node
@@ -2376,10 +2376,17 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         let icon = OLEMSGICON.OLEMSGICON_WARNING
                         let buttons = OLEMSGBUTTON.OLEMSGBUTTON_OK
                         let defaultButton = OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST
+
                         let relPath = PackageUtilities.MakeRelativeIfRooted(nodeToBeMoved.Url, root.BaseURI)
                         let relTargetPath = PackageUtilities.MakeRelativeIfRooted(targetNode.Url, root.BaseURI)
-                        let moveWord = match location with Above -> "above" | Below -> "below"
-                        let entireMessage = sprintf "The file '%s' cannot be moved %s '%s' in the Solution Explorer.\n\n%s." relPath moveWord relTargetPath message
+
+                        let bodyString =
+                            match location with
+                            | Above -> FSharpSR.FileCannotBePlacedBodyAbove
+                            | Below -> FSharpSR.FileCannotBePlacedBodyBelow
+                            |> FSharpSR.GetStringWithCR
+
+                        let entireMessage = String.Format(bodyString, relPath, relTargetPath, message)
                         VsShellUtilities.ShowMessageBox(root.Site, title, entireMessage, icon, buttons, defaultButton) |> ignore
             
             /// Move the node to the bottom of its subfolder within the Solution Explorer.
