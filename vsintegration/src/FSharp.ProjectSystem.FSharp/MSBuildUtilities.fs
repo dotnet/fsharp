@@ -278,33 +278,42 @@ type internal MSBuildUtilities() =
     /// If this item has an ancestral folder that already exists, move it to the bottom of the folder.
     /// If neither of these conditions are met, move it to the very bottom.
     static member MoveFileToBottomOfGroup(relativeFileName : string, projectNode : ProjectNode) =  
-        let dir = Path.GetDirectoryName(relativeFileName) + Path.DirectorySeparatorChar.ToString()
-        let msbuildProject = projectNode.BuildProject
-        let buildItemName = projectNode.DefaultBuildAction(relativeFileName)
-        let big = EnsureValid msbuildProject projectNode false
+    
+        let getDirParts (fileName : string) =
+            Path.GetDirectoryName(fileName).Split([| Path.DirectorySeparatorChar |], StringSplitOptions.RemoveEmptyEntries)
 
+        let commonDirParts (left : string seq) (right : string seq) =
+            Seq.zip left right
+            |> Seq.filter (fun (l, r) -> l.Equals(r, StringComparison.OrdinalIgnoreCase))
+            |> Seq.length
+
+        let dirParts = getDirParts relativeFileName
+        let msbuildProject = projectNode.BuildProject
+        let buildItemName = projectNode.DefaultBuildAction relativeFileName
+        let big = EnsureValid msbuildProject projectNode false
+        
         let itemToMove, lastItemInDir =
             EnumerateItems big
             |> Seq.fold (fun (itemToMove, lastItemInDir) bi ->
                 let includePath = GetUnescapedUnevaluatedInclude bi
-                let includeDir = Path.GetDirectoryName(includePath) + Path.DirectorySeparatorChar.ToString()
 
                 if CheckItemType(bi, buildItemName) && 0 = FilenameComparer.Compare(includePath, relativeFileName) then
                     Some bi, lastItemInDir
                 
                 // under else, as we don't want to try to move under _ourself_, only under _another_ existing item in same dir
-                elif dir.StartsWith(includeDir, System.StringComparison.OrdinalIgnoreCase) then
+                else
+                    let includeDirParts = getDirParts includePath
+
                     match lastItemInDir with
                     | None ->
                         itemToMove, Some bi
-                    | Some lastItemInDir when
-                        includeDir.Length > Path.GetDirectoryName(GetUnescapedUnevaluatedInclude lastItemInDir).Length ->
-                        itemToMove, Some bi
-                    | Some _ ->
-                        itemToMove, lastItemInDir
+                    | Some lastItemInDir ->
+                        let lastItemInDirParts = GetUnescapedUnevaluatedInclude lastItemInDir |> getDirParts
 
-                else
-                    itemToMove, lastItemInDir
+                        if commonDirParts dirParts includeDirParts >= commonDirParts dirParts lastItemInDirParts then
+                            itemToMove, Some bi
+                        else
+                            itemToMove, Some lastItemInDir
                 )
                 (None, None)
         

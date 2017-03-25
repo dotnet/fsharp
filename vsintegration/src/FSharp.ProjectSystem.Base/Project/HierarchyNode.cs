@@ -1403,14 +1403,19 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             else if (cmdGroup == VsMenus.guidStandardCommandSet97)
             {
+                int result = -1;
                 HierarchyNode nodeToAddTo = this.GetDragTargetHandlerNode();
                 switch ((VsCommands)cmd)
                 {
                     case VsCommands.AddNewItem:
-                        return nodeToAddTo.AddItemToHierarchy(HierarchyAddType.AddNewItem);
+                        result = nodeToAddTo.AddItemToHierarchy(HierarchyAddType.AddNewItem);
+                        this.projectMgr.EnsureMSBuildAndSolutionExplorerAreInSync();
+                        return result;
 
                     case VsCommands.AddExistingItem:
-                        return nodeToAddTo.AddItemToHierarchy(HierarchyAddType.AddExistingItem);
+                        result = nodeToAddTo.AddItemToHierarchy(HierarchyAddType.AddExistingItem);
+                        this.projectMgr.EnsureMSBuildAndSolutionExplorerAreInSync();
+                        return result;
 
                     case VsCommands.NewFolder:
                         return nodeToAddTo.AddNewFolder();

@@ -6376,6 +6376,15 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 CloseAllNodes(n);
             }
         }
+
+        /// <summary>
+        /// Debug method to assert that the project file and the solution explorer are in sync.
+        /// </summary>
+        [Conditional("DEBUG")]
+        public virtual void EnsureMSBuildAndSolutionExplorerAreInSync()
+        {
+        }
+
         /// <summary>
         /// Get the project extensions
         /// </summary>
