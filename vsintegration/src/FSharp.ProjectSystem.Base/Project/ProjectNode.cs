@@ -1,4 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+extern alias Shell15;
 
 using FSLib = Microsoft.FSharp.Compiler.AbstractIL.Internal.Library;
 using System;
@@ -491,11 +492,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         private ConfigProvider configProvider;
 
-        private TaskProvider taskProvider;
+        private Shell15::Microsoft.VisualStudio.Shell.TaskProvider taskProvider;
 
         private TaskReporter taskReporter;
 
-        private ErrorListProvider projectErrorListProvider;
+        private Shell15::Microsoft.VisualStudio.Shell.ErrorListProvider projectErrorListProvider;
 
         private ExtensibilityEventsHelper myExtensibilityEventsHelper;
 
@@ -614,7 +615,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         public abstract string TargetFSharpCoreVersion { get; set; }
 
-        internal ErrorListProvider ProjectErrorsTaskListProvider 
+        internal Shell15::Microsoft.VisualStudio.Shell.ErrorListProvider ProjectErrorsTaskListProvider 
         {
             get { return projectErrorListProvider; }
         }
@@ -1080,7 +1081,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Gets the taskprovider.
         /// </summary>
-        public TaskProvider TaskProvider
+        public Shell15::Microsoft.VisualStudio.Shell.TaskProvider TaskProvider
         {
             get
             {
@@ -1392,15 +1393,15 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 taskProvider.Dispose();
             }
-            taskProvider = new TaskProvider(this.site);
-            taskReporter = new TaskReporter("Project System (ProjectNode.cs)");
+            taskProvider = new Shell15::Microsoft.VisualStudio.Shell.TaskProvider ( this.site);
+            taskReporter = new TaskReporter ("Project System (ProjectNode.cs)");
             taskReporter.TaskListProvider = new TaskListProvider(taskProvider);
             if (projectErrorListProvider != null)
             {
                 projectErrorListProvider.Dispose();
             }
 
-            projectErrorListProvider = new ErrorListProvider(this.site);
+            projectErrorListProvider = new Shell15::Microsoft.VisualStudio.Shell.ErrorListProvider (this.site);
 
             return VSConstants.S_OK;
         }

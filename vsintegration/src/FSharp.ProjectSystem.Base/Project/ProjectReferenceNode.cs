@@ -1,4 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+extern alias Shell15;
 
 using FSLib = Microsoft.FSharp.Compiler.AbstractIL.Internal.Library;
 using System;
@@ -27,7 +28,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Containes either null if project reference is OK or instance of Task with error message if project reference is invalid
         /// i.e. project A references project B when target framework version for B is higher that for A
         /// </summary>
-        private Task projectRefError;
+        private Shell15::Microsoft.VisualStudio.Shell.Task projectRefError;
 
         /// <summary>
         /// The name of the assembly this refernce represents
@@ -304,9 +305,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     // delete existing error if exists
                     CleanProjectReferenceErrorState();
 
-                    projectRefError = new ErrorTask
+                    projectRefError = new Shell15::Microsoft.VisualStudio.Shell.ErrorTask
                     {
-                        ErrorCategory = TaskErrorCategory.Warning,
+                        ErrorCategory = Shell15::Microsoft.VisualStudio.Shell.TaskErrorCategory.Warning,
                         HierarchyItem = ProjectMgr.InteropSafeIVsHierarchy,
                         Text = text
                     };
