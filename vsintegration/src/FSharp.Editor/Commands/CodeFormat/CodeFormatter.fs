@@ -2,8 +2,6 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open Microsoft.FSharp.Compiler.Range
-
 [<Sealed>]
 type internal CodeFormatter =
     static member FormatDocumentAsync(fileName, source, config, projectOptions, checker) =

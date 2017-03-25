@@ -30,6 +30,7 @@ open Microsoft.CodeAnalysis.Text
 open System.Threading.Tasks
 open System.Collections.Generic
 open Microsoft.CodeAnalysis.Host.Mef
+open FormatConfig
 
 [<ExportCommandHandler(PredefinedCommandHandlerNames.FormatDocument, FSharpCommonConstants.FSharpLanguageName)>]
 [<Order(After = PredefinedCommandHandlerNames.Rename, Before = PredefinedCommandHandlerNames.Completion)>]
@@ -45,7 +46,12 @@ type internal FSharpFormatCommandHandler
 
 [<Shared>]
 [<ExportLanguageService(typeof<IEditorFormattingService>, FSharpCommonConstants.FSharpLanguageName)>]
-type internal FSharpEditorFormattingService() =
+type internal FSharpEditorFormattingService
+    [<ImportingConstructor>]
+    (
+        checkerProvider: FSharpCheckerProvider,
+        projectInfoManager: ProjectInfoManager
+    ) =
     interface IEditorFormattingService with
         member __.SupportsFormatDocument = true
         member __.SupportsFormatSelection = false
@@ -56,7 +62,17 @@ type internal FSharpEditorFormattingService() =
         member __.GetFormattingChangesAsync(_document, _typedChar, _position, _cancellationToken) = Task.FromResult ([||] :> IList<_>)
         member __.GetFormattingChangesOnReturnAsync(_document, _position, _cancellationToken) = Task.FromResult ([||] :> IList<_>)
  
-        member __.GetFormattingChangesAsync(_document, _textSpan, _cancellationToken) = Task.FromResult ([||] :> IList<_>)
+        member __.GetFormattingChangesAsync(document, textSpan, cancellationToken) =
+            asyncMaybe {
+                let! sourceText = document.GetTextAsync(cancellationToken)
+                let span = if textSpan.HasValue then textSpan.Value else TextSpan(0, sourceText.Length)
+                let textToFormat = sourceText.ToString(span)
+                let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                let! newText = CodeFormatter.FormatDocumentAsync(document.FilePath, textToFormat, FormatConfig.Default, options, checkerProvider.Checker) |> liftAsync
+                return TextChange(span, newText)
+            } 
+            |> Async.map (fun x -> (match x with Some x -> [|x|] | None -> [||]) :> IList<_>)
+            |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
 
 
 //[<ExportCommandHandler(PredefinedCommandHandlerNames.FormatDocument, ContentTypeNames.RoslynContentType)>]
