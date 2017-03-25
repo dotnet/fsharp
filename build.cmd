@@ -382,18 +382,18 @@ echo MYGET_APIKEY=%MYGET_APIKEY%
 
 REM load Visual Studio 2017 developer command prompt if VS150COMNTOOLS is not set
 
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" (
+if "%VS150COMNTOOLS%" EQU "" (if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" (
     call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"
-)
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsDevCmd.bat" (
+))
+if "%VS150COMNTOOLS%" EQU "" (if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsDevCmd.bat" (
     call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsDevCmd.bat"
-)
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat" (
+))
+if "%VS150COMNTOOLS%" EQU "" (if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat" (
     call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
-)
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat" (
+))
+if "%VS150COMNTOOLS%" EQU "" (if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat" (
     call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat"
-)
+))
 
 echo .
 echo Environment
@@ -644,11 +644,11 @@ set NUNITPATH=%~dp0tests\fsharpqa\testenv\bin\nunit\
 set NUNIT3_CONSOLE=%~dp0packages\NUnit.Console.3.0.0\tools\nunit3-console.exe
 echo bbb
 echo bbb3
-if "%link_exe%" EQU "" if exist "%VCToolsInstallDir%\bin\HostX64\x86\link.exe" (
+if "%link_exe%" EQU "" (if exist "%VCToolsInstallDir%\bin\HostX64\x86\link.exe" (
     REM set link_exe="%VCToolsInstallDir%\bin\HostX64\x86\link.exe"
 
     echo bbb2
-)
+))
 echo ccc
 echo ccc2
 if "%link_exe%" EQU "" (
@@ -658,11 +658,11 @@ if "%link_exe%" EQU "" (
     echo ggg
 )
 echo iii
-if not exist "%link_exe%" if "%link_exe%" EQU "%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe" (
+if not exist "%link_exe%" (if "%link_exe%" EQU "%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe" (
     echo _nugetexe=%_nugetexe%
     REM %_nugetexe% install -source https://www.myget.org/F/fsharp-daily/api/v3/index.json VisualCppTools -version 14.0.24519-Pre -out packages
 
-)
+))
 echo hhh
 if not exist "%link_exe%" (
     echo Error: failed to find link.exe
