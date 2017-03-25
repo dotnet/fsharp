@@ -1,5 +1,4 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-extern alias Shell15;
 
 using System;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -450,7 +449,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                 object oname;
                 Guid GUID_VsBufferMoniker = typeof(IVsUserData).GUID;
                 hr = ud.GetData(ref GUID_VsBufferMoniker, out oname);
-                if ( Shell15::Microsoft.VisualStudio.ErrorHandler.Succeeded(hr) && oname != null)
+                if ( Microsoft.VisualStudio.ErrorHandler.Succeeded(hr) && oname != null)
                     fname = oname.ToString();
             }
             if (string.IsNullOrEmpty(fname))
@@ -464,12 +463,12 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             }
             if (!string.IsNullOrEmpty(fname))
             {
-                Shell15::Microsoft.VisualStudio.Shell.Url url = new Shell15::Microsoft.VisualStudio.Shell.Url(fname);
+                Microsoft.VisualStudio.Shell.Url url = new Microsoft.VisualStudio.Shell.Url(fname);
                 if (!url.Uri.IsAbsoluteUri)
                 {
                     // make the file name absolute using app startup path...
-                    Shell15::Microsoft.VisualStudio.Shell.Url baseUrl = new Shell15::Microsoft.VisualStudio.Shell.Url(Application.StartupPath + Path.DirectorySeparatorChar);
-                    url = new Shell15::Microsoft.VisualStudio.Shell.Url (baseUrl, fname);
+                    Microsoft.VisualStudio.Shell.Url baseUrl = new Microsoft.VisualStudio.Shell.Url(Application.StartupPath + Path.DirectorySeparatorChar);
+                    url = new Microsoft.VisualStudio.Shell.Url (baseUrl, fname);
                     fname = url.AbsoluteUrl;
                 }
             }

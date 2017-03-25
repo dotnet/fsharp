@@ -1,5 +1,4 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-extern alias Shell15;
 
 using Microsoft.VisualStudio.TextManager.Interop;
 using Microsoft.VisualStudio.Shell;
@@ -17,8 +16,8 @@ using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
 using IServiceProvider = System.IServiceProvider;
 using System.IO;
 using System.Globalization;
-using VsCommands = Shell15::Microsoft.VisualStudio.VSConstants.VSStd97CmdID;
-using VsCommands2K = Shell15::Microsoft.VisualStudio.VSConstants.VSStd2KCmdID;
+using VsCommands = Microsoft.VisualStudio.VSConstants.VSStd97CmdID;
+using VsCommands2K = Microsoft.VisualStudio.VSConstants.VSStd2KCmdID;
 using System.Collections.Generic;
 
 namespace Microsoft.VisualStudio.FSharp.LanguageService
@@ -63,7 +62,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         bool NeedsVisualRefresh { get; }
         bool OutliningEnabled { get; set; }
         void DisableOutlining();
-        void OnCommand(IVsTextView textView, Shell15::Microsoft.VisualStudio.VSConstants.VSStd2KCmdID command, char ch);
+        void OnCommand(IVsTextView textView, Microsoft.VisualStudio.VSConstants.VSStd2KCmdID command, char ch);
         TokenInfo GetTokenInfo(int line, int col);
         void MethodTip(IVsTextView textView, int line, int index, TokenInfo info, MethodTipMiscellany methodTipMiscellany, RequireFreshResults requireFreshResults);
         void GetPairExtents(IVsTextView textView, int line, int col, out TextSpan span);

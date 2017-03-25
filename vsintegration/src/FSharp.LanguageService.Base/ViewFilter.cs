@@ -1,6 +1,4 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-extern alias Shell14;
-extern alias Shell15;
 
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.TextManager.Interop;
@@ -15,9 +13,9 @@ using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
 using IServiceProvider = System.IServiceProvider;
 using ShellConstants = Microsoft.VisualStudio.Shell.Interop.Constants;
 using OleConstants = Microsoft.VisualStudio.OLE.Interop.Constants;
-using VsCommands = Shell15::Microsoft.VisualStudio.VSConstants.VSStd97CmdID;
-using VsCommands2K = Shell15::Microsoft.VisualStudio.VSConstants.VSStd2KCmdID;
-using VsShell = Shell15::Microsoft.VisualStudio.Shell.VsShellUtilities;
+using VsCommands = Microsoft.VisualStudio.VSConstants.VSStd97CmdID;
+using VsCommands2K = Microsoft.VisualStudio.VSConstants.VSStd2KCmdID;
+using VsShell = Microsoft.VisualStudio.Shell.VsShellUtilities;
 using Microsoft.VisualStudio.FSharp.LanguageService.Resources;
 using Microsoft.VisualStudio.FSharp.LanguageService; 
 
@@ -76,9 +74,9 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
 
         private NativeMethods.ConnectionPointCookie expansionEvents;
 
-        private Shell15::Microsoft.VisualStudio.Shell.Package projectSystemPackage = null;
+        private Microsoft.VisualStudio.Shell.Package projectSystemPackage = null;
 
-        private Shell15::Microsoft.VisualStudio.Shell.Package GetProjectSystemPackage()
+        private Microsoft.VisualStudio.Shell.Package GetProjectSystemPackage()
         {
             // Ideally the FsiToolWindow would be a part of the language service, but right now its code lives in the
             // project system, and it would require setup authoring changes to update it.  So for now, we just force-load the
@@ -89,7 +87,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 Guid PackageToBeLoadedGuid = new Guid("{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}");  // FSharp ProjectSystem guid
                 Microsoft.VisualStudio.Shell.Interop.IVsPackage pkg;
                 shell.LoadPackage(ref PackageToBeLoadedGuid, out pkg);
-                this.projectSystemPackage = (Shell15::Microsoft.VisualStudio.Shell.Package)pkg; // we know our object is an instance of this type
+                this.projectSystemPackage = (Microsoft.VisualStudio.Shell.Package)pkg; // we know our object is an instance of this type
             }
             return this.projectSystemPackage;
         }
@@ -162,11 +160,11 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
 
         public virtual int OnAfterSnippetsKeyBindingChange(uint dwCmdGuid, uint dwCmdId, int fBound) {
             this.snippetBound = fBound == 0 ? false : true;
-            return Shell15::Microsoft.VisualStudio.VSConstants.S_OK;
+            return Microsoft.VisualStudio.VSConstants.S_OK;
         }
 
         public virtual int OnAfterSnippetsUpdate() {
-            return Shell15::Microsoft.VisualStudio.VSConstants.S_OK;
+            return Microsoft.VisualStudio.VSConstants.S_OK;
         }
 
         /// <summary>Returnt the CodeWindowManager that created this view filter.</summary>
@@ -198,7 +196,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         public virtual bool IsExpansionUIActive {
             get {
                 IVsTextViewEx tve = this.textView as IVsTextViewEx;
-                if (tve != null && tve.IsExpansionUIActive() == Shell15::Microsoft.VisualStudio.VSConstants.S_OK) {
+                if (tve != null && tve.IsExpansionUIActive() == Microsoft.VisualStudio.VSConstants.S_OK) {
                     return true;
                 }
                 return false;
@@ -403,13 +401,13 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                     return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
                 }
             }
-            else if (guidCmdGroup == Shell15::Microsoft.VisualStudio.VSConstants.VsStd11)
+            else if (guidCmdGroup == Microsoft.VisualStudio.VSConstants.VsStd11)
             {
-                if (nCmdId == (uint)Shell15::Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive)
+                if (nCmdId == (uint)Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive)
                 {
                     return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED;
                 }
-                else if (nCmdId == (uint)Shell15::Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteLineInInteractive)
+                else if (nCmdId == (uint)Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteLineInInteractive)
                 {
                     return (int)OLECMDF.OLECMDF_SUPPORTED | (int)OLECMDF.OLECMDF_ENABLED | (int)OLECMDF.OLECMDF_DEFHIDEONCTXTMENU;
                 }
@@ -451,7 +449,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 {
                     case VsCommands.Goto:
                         Marshal.GetNativeVariantForObject("~", pvaOut);  // No clue what this is, just copying from  env\Editor\Pkg\Impl\VsTextViewAdapter_Commands.cs
-                        return Shell15::Microsoft.VisualStudio.VSConstants.S_OK;
+                        return Microsoft.VisualStudio.VSConstants.S_OK;
                 }
             }
             return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
@@ -522,7 +520,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                         return true;
 
                     case VsCommands2K.SHOWCONTEXTMENU:
-                        this.ShowContextMenu(Shell15::Microsoft.VisualStudio.Shell.VsMenus.IDM_VS_CTXT_CODEWIN, Shell15::Microsoft.VisualStudio.Shell.VsMenus.guidSHLMainMenu, null);
+                        this.ShowContextMenu(Microsoft.VisualStudio.Shell.VsMenus.IDM_VS_CTXT_CODEWIN, Microsoft.VisualStudio.Shell.VsMenus.guidSHLMainMenu, null);
                         return true;
 
                     //                    case VsCommands2K.HANDLEIMEMESSAGE:
@@ -541,14 +539,14 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
 
                 }
             }
-            else if (guidCmdGroup == Shell15::Microsoft.VisualStudio.VSConstants.VsStd11)
+            else if (guidCmdGroup == Microsoft.VisualStudio.VSConstants.VsStd11)
             {
-                if (nCmdId == (uint) Shell15::Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive)
+                if (nCmdId == (uint) Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive)
                 {
                     Interactive.Hooks.OnMLSend(GetProjectSystemPackage(), Interactive.FsiEditorSendAction.ExecuteSelection, null, null);
                     return true;
                 }
-                else if (nCmdId == (uint) Shell15::Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteLineInInteractive)
+                else if (nCmdId == (uint) Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteLineInInteractive)
                 {
                     Interactive.Hooks.OnMLSend(GetProjectSystemPackage(), Interactive.FsiEditorSendAction.ExecuteLine, null, null);
                     return true;
@@ -570,7 +568,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         public virtual void HandlePostExec(ref Guid guidCmdGroup, uint nCmdId, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut, bool bufferWasChanged) {
 
             if (guidCmdGroup == typeof(VsCommands2K).GUID) {
-                Shell15::Microsoft.VisualStudio.VSConstants.VSStd2KCmdID cmd = (VsCommands2K)nCmdId;
+                Microsoft.VisualStudio.VSConstants.VSStd2KCmdID cmd = (VsCommands2K)nCmdId;
                 char ch = '\0';
                 if (cmd == VsCommands2K.TYPECHAR && pvaIn != IntPtr.Zero) {
                     Variant v = Variant.ToVariant(pvaIn);
@@ -582,7 +580,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 }
 
                 switch (cmd) {
-                    case Shell15::Microsoft.VisualStudio.VSConstants.VSStd2KCmdID.RETURN:
+                    case Microsoft.VisualStudio.VSConstants.VSStd2KCmdID.RETURN:
                         gotEnterKey = true;
                         // Handle smart-indentation after core text editor has
                         // actually performed the newline operation.
@@ -668,7 +666,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 // Pass it along the chain.
                 int count = this.source.ChangeCount;
                 rc = this.InnerExec(ref guidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut);
-                if (!Shell15::Microsoft.VisualStudio.ErrorHandler.Succeeded(rc))
+                if (!Microsoft.VisualStudio.ErrorHandler.Succeeded(rc))
                     return rc;
 
                 bool bufferWasChanged = count != source.ChangeCount;
@@ -786,7 +784,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             ushort hi = (ushort)(nCmdexecopt >> 16);
             switch (lo) {
                 case (ushort)OLECMDEXECOPT.OLECMDEXECOPT_SHOWHELP:
-                    if ((nCmdexecopt >> 16) == Shell15::Microsoft.VisualStudio.Shell.VsMenus.VSCmdOptQueryParameterList) {
+                    if ((nCmdexecopt >> 16) == Microsoft.VisualStudio.Shell.VsMenus.VSCmdOptQueryParameterList) {
                         return QueryParameterList(ref guidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut);
                     }
                     break;
@@ -957,7 +955,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             string url = null;
             TextSpan span;
             IntellisenseInfo scope = req.ResultIntellisenseInfo;
-            if (scope != null && gotoCmd == Shell15::Microsoft.VisualStudio.VSConstants.VSStd97CmdID.GotoDefn)
+            if (scope != null && gotoCmd == Microsoft.VisualStudio.VSConstants.VSStd97CmdID.GotoDefn)
             {
                 var gotoResult = scope.Goto(textView, line, col);
                 if (!gotoResult.Success)
@@ -1128,9 +1126,9 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             Guid riid = t.GUID;
 
             Guid clsid = typeof(VsTextTipWindowClass).GUID;
-            Shell15::Microsoft.VisualStudio.Shell.Package pkg = (Shell15::Microsoft.VisualStudio.Shell.Package)site.GetService(typeof(Shell15::Microsoft.VisualStudio.Shell.Package));
+            Microsoft.VisualStudio.Shell.Package pkg = (Microsoft.VisualStudio.Shell.Package)site.GetService(typeof(Microsoft.VisualStudio.Shell.Package));
             if (pkg == null) {
-                throw new NullReferenceException(typeof( Shell15::Microsoft.VisualStudio.Shell.Package).FullName);
+                throw new NullReferenceException(typeof(Microsoft.VisualStudio.Shell.Package).FullName);
             }
             this.textTipWindow = (IVsTextTipWindow)pkg.CreateInstance(ref clsid, ref riid, t);
             if (this.textTipWindow == null)
