@@ -396,9 +396,9 @@ if "" == "%VS150COMNTOOLS%" (if exist "%ProgramFiles(x86)%\Microsoft Visual Stud
 ))
 
 echo VCToolsInstallDir=%VCToolsInstallDir%
-dir "%VCToolsInstallDir%"
-dir "%VCToolsInstallDir%\bin"
-dir "%VCToolsInstallDir%\bin\HostX64"
+REM dir "%VCToolsInstallDir%"
+REM dir "%VCToolsInstallDir%\bin"
+REM dir "%VCToolsInstallDir%\bin\HostX64"
 dir "%VCToolsInstallDir%\bin\HostX64\x86"
 
 if "" == "%link_exe%" (if exist "%VCToolsInstallDir%bin\HostX64\x86\link.exe" (
@@ -407,6 +407,9 @@ if "" == "%link_exe%" (if exist "%VCToolsInstallDir%bin\HostX64\x86\link.exe" (
 if "" == "%link_exe%" (if exist "%VCToolsInstallDir%bin\HostX64\x86\link.exe" (
     set link_exe="%VCToolsInstallDir%bin\HostX64\x86\link.exe"
 ))
+if "" == "%link_exe%" (
+    set link_exe="%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe"
+)
 echo link_exe=%link_exe%
 
 goto :failure
