@@ -2197,6 +2197,9 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     node.Parent.FirstChild <- node.NextSibling
                 | previous ->
                     previous.NextSibling <- node.NextSibling
+                if node.Parent.LastChild = node then
+                    node.Parent.LastChild <- node.PreviousSibling
+                node.NextSibling <- null
                 node.OnItemDeleted()
 
             do selectionChangedListener.Value.Init()
@@ -2384,14 +2387,15 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     match location with
                     | Above ->
                         match targetNode.PreviousSibling with
-                        | null ->
-                            targetNode.Parent.FirstChild <- node
-                            node.NextSibling <- targetNode
-                        | prev ->
-                            prev.NextSibling <- node
-                            node.NextSibling <- targetNode
+                        | null -> targetNode.Parent.FirstChild <- node
+                        | prev -> prev.NextSibling <- node
+
+                        node.NextSibling <- targetNode
                     | Below ->
-                        node.NextSibling <- targetNode.NextSibling
+                        match targetNode.NextSibling with
+                        | null -> targetNode.Parent.LastChild <- node
+                        | next -> node.NextSibling <- next
+                        
                         targetNode.NextSibling <- node
                         
                     root.OnItemAdded(node.Parent, node)
