@@ -523,8 +523,7 @@ namespace Microsoft.FSharp.Collections
                 interface IEnumerable<'T> with
                     member this.GetEnumerator () : IEnumerator<'T> = IEnumerator.Empty<'T>()
 
-                override this.Append source =
-                    Upcast.seq (Enumerable.EnumerableThin<'T> source)
+                override this.Append source = source
 
                 interface ISeq<'T> with
                     member this.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
