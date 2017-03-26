@@ -748,9 +748,9 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     match fshProjNode.FindChild absoluteFileName with
                     | :? FSharpFileNode as fileNode ->
                         move fileNode
-                    | _ ->
+                    | node ->
                         let relativeFileName = PackageUtilities.MakeRelativeIfRooted(absoluteFileName, fshProjNode.BaseURI)
-                        Debug.Assert(false, sprintf "Unable to find newly added file in hierarchy '%s'" relativeFileName)
+                        Debug.Assert(false, sprintf "Expected to find newly added FSharpFileNode in hierarchy '%s', but found '%O'" relativeFileName node)
                     )
                 try
                     let r = f()
@@ -969,6 +969,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
                 let includ = item.GetMetadata(ProjectFileConstants.Include)
                 let newNode = new FSharpFileNode(this, item, hierarchyId)
+                newNode.SetIsLinkedFile (not <| x.IsContainedWithinProjectDirectory includ)
                 newNode.OleServiceProvider.AddService(typeof<EnvDTE.Project>, new OleServiceProvider.ServiceCreatorCallback(this.CreateServices), false)
                 newNode.OleServiceProvider.AddService(typeof<EnvDTE.ProjectItem>, newNode.ServiceCreator, false)
                 newNode.OleServiceProvider.AddService(typeof<VSLangProj.VSProject>, new OleServiceProvider.ServiceCreatorCallback(this.CreateServices), false)
@@ -2435,9 +2436,13 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                             let folderNode = root.VerifySubFolderExists(pathStr + "\\", currentParent)
                             tryFindAdoptiveParent (path, restPath, folderNode)
                     
-                    let pathParts = Path.GetDirectoryName(fileNode.RelativeFilePath).Split([| Path.DirectorySeparatorChar |], StringSplitOptions.RemoveEmptyEntries)
-                    let parent = tryFindAdoptiveParent ([], List.ofArray pathParts, root)
-                    parent.AddChild(fileNode)
+                    // linked files must be placed in the root of the hierarchy
+                    if fileNode.IsLinkFile then
+                        root.AddChild(fileNode)
+                    else
+                        let pathParts = Path.GetDirectoryName(fileNode.RelativeFilePath).Split([| Path.DirectorySeparatorChar |], StringSplitOptions.RemoveEmptyEntries)
+                        let parent = tryFindAdoptiveParent ([], List.ofArray pathParts, root)
+                        parent.AddChild(fileNode)
                 | _ ->
                     Debug.Assert(false, sprintf "Unable to find FSharpFileNode '%s'" node.Url)
             

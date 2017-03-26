@@ -3642,7 +3642,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             ProjectElement newItem;
 
-            string itemPath = PackageUtilities.MakeRelativeIfRooted(file, this.BaseURI);
+            string itemPath = PackageUtilities.MakeRelative(this.BaseURI.AbsoluteUrl, file);
             Debug.Assert(!Path.IsPathRooted(itemPath), "Cannot add item with full path.");
 
             string defaultBuildAction = this.DefaultBuildAction(itemPath);
