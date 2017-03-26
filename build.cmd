@@ -642,10 +642,10 @@ set NUNITPATH=%~dp0tests\fsharpqa\testenv\bin\nunit\
 set NUNIT3_CONSOLE=%~dp0packages\NUnit.Console.3.0.0\tools\nunit3-console.exe
 
 if "" == "%link_exe%" (if exist "%VCToolsInstallDir%bin\HostX64\x86\link.exe" (
-    set link_exe=%VCToolsInstallDir%bin\HostX64\x86\link.exe
+    set link_exe="%VCToolsInstallDir%bin\HostX64\x86\link.exe"
 ))
 if "" == "%link_exe%" (
-    set link_exe=%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe
+    set link_exe="%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe"
     if not exist "%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe" (
         %_nugetexe% install -source https://www.myget.org/F/fsharp-daily/api/v3/index.json VisualCppTools -version 14.0.24519-Pre -out packages
     )
