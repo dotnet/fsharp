@@ -401,12 +401,15 @@ REM dir "%VCToolsInstallDir%\bin"
 REM dir "%VCToolsInstallDir%\bin\HostX64"
 dir "%VCToolsInstallDir%\bin\HostX64\x86"
 
+echo link_exe=%link_exe%
 if "" == "%link_exe%" (if exist "%VCToolsInstallDir%bin\HostX64\x86\link.exe" (
     echo found link.exe
 ))
+echo link_exe=%link_exe%
 if "" == "%link_exe%" (if exist "%VCToolsInstallDir%bin\HostX64\x86\link.exe" (
     set link_exe="%VCToolsInstallDir%bin\HostX64\x86\link.exe"
 ))
+echo link_exe=%link_exe%
 if "" == "%link_exe%" (
     set link_exe="%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe"
 )
