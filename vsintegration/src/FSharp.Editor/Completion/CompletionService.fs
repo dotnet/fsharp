@@ -28,9 +28,8 @@ type internal FSharpCompletionService
             HashDirectiveCompletionProvider(workspace, projectInfoManager,
                 [ Completion.Create("""\s*#load\s+(@?"*(?<literal>"[^"]*"?))""", [".fs"; ".fsx"], useIncludeDirectives = true)
                   Completion.Create("""\s*#r\s+(@?"*(?<literal>"[^"]*"?))""", [".dll"; ".exe"], useIncludeDirectives = true)
-                  Completion.Create("""\s*#I\s+(@?"*(?<literal>"[^"]*"?))""", ["\x00"], useIncludeDirectives = false) ])
-            // we've turned off keyword completion because it does not filter suggestion depending on context.
-            // FSharpKeywordCompletionProvider(workspace, projectInfoManager)
+                  Completion.Create("""\s*#I\s+(@?"*(?<literal>"[^"]*"?))""", ["\x00"], useIncludeDirectives = false) ]),
+            FSharpKeywordCompletionProvider(workspace, checkerProvider, projectInfoManager)
             )
 
     let completionRules = 

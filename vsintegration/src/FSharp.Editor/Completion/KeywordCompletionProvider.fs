@@ -13,10 +13,13 @@ open Microsoft.CodeAnalysis.Options
 open Microsoft.CodeAnalysis.Text
 
 open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.SourceCodeServices
 
 type internal FSharpKeywordCompletionProvider
     (
         workspace: Workspace,
+        checkerProvider: FSharpCheckerProvider,
         projectInfoManager: ProjectInfoManager
     ) =
     
@@ -75,9 +78,30 @@ type internal FSharpKeywordCompletionProvider
 
         FSharpKeywordCompletionProvider.ShouldTriggerCompletionAux(sourceText, caretPosition, trigger.Kind, getInfo)
     
-    override this.ProvideCompletionsAsync(context: Microsoft.CodeAnalysis.Completion.CompletionContext) =
-        context.AddItems(completionItems)
-        Task.CompletedTask
+    override this.ProvideCompletionsAsync(context: Completion.CompletionContext) =
+        asyncMaybe {
+            let document = context.Document
+            let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
+            let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
+            do! Option.guard (CompletionUtils.shouldProvideCompletion(document.Id, document.FilePath, defines, sourceText, context.Position))
+            let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+            let! parseResults = checkerProvider.Checker.ParseFileInProject(document.FilePath, sourceText.ToString(), options) |> liftAsync
+            let textLines = sourceText.Lines
+            let caretLinePos = textLines.GetLinePosition(context.Position)
+            let lineStr = textLines.[caretLinePos.Line].ToString()
+
+            match UntypedParseImpl.TryGetCompletionContext(Pos.fromZ caretLinePos.Line caretLinePos.Character, Some parseResults, lineStr) with
+            | Some (  CompletionContext.Invalid 
+                    | CompletionContext.Inherit _ 
+                    | CompletionContext.RecordField _ 
+                    | CompletionContext.RangeOperator _ 
+                    | CompletionContext.ParameterList _ 
+                    | CompletionContext.AttributeApplication) -> ()
+            | _ -> context.AddItems(completionItems)
+            
+        } |> Async.Ignore |> CommonRoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
+
+        //context.AddItems(completionItems)
 
     override this.GetDescriptionAsync(_: Document, completionItem: Completion.CompletionItem, _: CancellationToken): Task<CompletionDescription> =
         Task.FromResult(CompletionDescription.FromText(completionItem.Properties.["description"]))

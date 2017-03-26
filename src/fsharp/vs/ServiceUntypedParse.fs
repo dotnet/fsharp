@@ -919,6 +919,7 @@ module UntypedParseImpl =
         | None -> None
         | Some pt ->
 
+        
         match GetEntityKind(pos, pt) with
         | Some EntityKind.Attribute -> Some CompletionContext.AttributeApplication
         | _ ->
