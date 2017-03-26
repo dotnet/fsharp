@@ -395,6 +395,13 @@ if "" == "%VS150COMNTOOLS%" (if exist "%ProgramFiles(x86)%\Microsoft Visual Stud
     call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat"
 ))
 
+echo VCToolsInstallDir=%VCToolsInstallDir%
+dir "%VCToolsInstallDir%"
+dir "%VCToolsInstallDir%\bin"
+dir "%VCToolsInstallDir%\bin\HostX64"
+dir "%VCToolsInstallDir%\bin\HostX64\x86"
+goto :failure
+
 echo .
 echo Environment
 echo 
