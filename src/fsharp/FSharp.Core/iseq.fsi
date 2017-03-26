@@ -42,7 +42,9 @@ namespace Microsoft.FSharp.Collections
         /// source of the chain.
         type PipeIdx = int
 
+        /// Used within the pipline to provide out of band communications
         type IOutOfBand =
+            /// Stop the processing of any further items down the pipeline
             abstract StopFurtherProcessing : PipeIdx -> unit
 
         /// Activity is the root class for chains of activities. It is in a non-generic
@@ -66,6 +68,9 @@ namespace Microsoft.FSharp.Collections
             new : unit -> Activity<'T,'U>
             abstract member ProcessNext : input:'T -> bool
 
+        /// An activity that transforms the input from 'T to 'U, using 'State. It's intended usage
+        /// is as a base class for an object expression that will be created 
+        /// in the TransformFactory's Compose function.
         [<AbstractClass>]
         type Transform<'T,'U,'State> =
             inherit Activity<'T,'U>
@@ -73,6 +78,11 @@ namespace Microsoft.FSharp.Collections
             val mutable State : 'State
             val private Next : Activity
 
+        /// An activity that transforms the input from 'T to 'U, using 'State
+        /// and performs some post processing on the pipeline, either in the case of the stream
+        /// ending sucessfully or when disposed. It's intended usage
+        /// is as a base class for an object expression that will be created 
+        /// in the TransformFactory's Compose function.
         [<AbstractClass>]
         type TransformWithPostProcessing<'T,'U,'State> =
             inherit Transform<'T,'U,'State>
@@ -93,6 +103,11 @@ namespace Microsoft.FSharp.Collections
             val mutable HaltedIdx : int
             member StopFurtherProcessing : PipeIdx -> unit
 
+        /// Folder is a base class to assist with fold-like operations
+        /// and performs some post processing on the pipeline, either in the case of the stream
+        /// ending sucessfully or when disposed. It's intended usage
+        /// is as a base class for an object expression that will be used from within
+        /// the Fold function.
         [<AbstractClass>]
         type FolderWithPostProcessing<'T,'Result,'State> =
             inherit Folder<'T,'Result,'State>
@@ -100,11 +115,16 @@ namespace Microsoft.FSharp.Collections
             abstract OnDispose : unit -> unit
             abstract OnComplete : PipeIdx -> unit
 
+        /// TransformFactory provides composition of Activities. Its intended to have a specialization
+        /// for each type of ISeq Activity. ISeq's PushTransform method is used to build a stack
+        /// of Actvities that will be composed.
         [<AbstractClass>]
         type TransformFactory<'T,'U> =
             new : unit -> TransformFactory<'T,'U>
             abstract member Compose : IOutOfBand -> PipeIdx -> Activity<'U,'V> -> Activity<'T,'V>
 
+        /// ISeq<'T> is an extension to seq<'T> that provides the avilty to compose Activities
+        /// as well as Fold the current Activity pipeline.
         type ISeq<'T> =
             inherit System.Collections.Generic.IEnumerable<'T>
             abstract member PushTransform : TransformFactory<'T,'U> -> ISeq<'U>
@@ -112,6 +132,10 @@ namespace Microsoft.FSharp.Collections
 
     open Core
 
+    /// ofResizeArrayUnchecked creates an ISeq over a ResizeArray that accesses the underlying
+    /// structure via Index rather than via the GetEnumerator function. This provides faster access
+    /// but doesn't check the version of the underlying object which means care has to be taken
+    /// to ensure that it is not modified which the result ISeq exists.
     [<CompiledName "OfResizeArrayUnchecked">]
     val ofResizeArrayUnchecked : ResizeArray<'T> -> ISeq<'T>
 
