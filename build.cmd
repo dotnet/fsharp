@@ -640,9 +640,13 @@ echo WHERE_ARG_NUNIT=!WHERE_ARG_NUNIT!
 set NUNITPATH=%~dp0tests\fsharpqa\testenv\bin\nunit\
 set NUNIT3_CONSOLE=%~dp0packages\NUnit.Console.3.0.0\tools\nunit3-console.exe
 
+echo aaa
 if "%link_exe%" == "" (if exist "%VCToolsInstallDir%bin\HostX64\x86\link.exe" (
+    echo bbb
     set link_exe=%VCToolsInstallDir%bin\HostX64\x86\link.exe
+    echo ccc
 ))
+echo link_exe=%link_exe%
 if "%link_exe%" == "" (
     set link_exe=%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe
     if not exist "%link_exe%" (
@@ -653,6 +657,7 @@ if not exist "%link_exe%" (
     echo Error: failed to find link.exe
     goto :failure
 )
+echo link_exe=%link_exe%
 
 if /I not "%single_threaded%" == "true" (set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%) else set PARALLEL_ARG=-procs:0
 
@@ -662,7 +667,6 @@ if not exist "%RESULTSDIR%" (mkdir "%RESULTSDIR%")
 
 ECHO FSCBINPATH=%FSCBINPATH%
 ECHO RESULTSDIR=%RESULTSDIR%
-echo link_exe=%link_exe%
 ECHO NUNIT3_CONSOLE=%NUNIT3_CONSOLE%
 ECHO NUNITPATH=%NUNITPATH%
 
