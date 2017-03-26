@@ -1444,12 +1444,14 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: strin
 
 /// A table of declarations for Intellisense completion 
 [<Sealed>]
-type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) = 
+type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForType: bool) = 
     member self.Items = declarations
+    member self.IsForType = isForType
 
     // Make a 'Declarations' object for a set of selected items
     static member Create(infoReader:InfoReader, m, denv, getAccessibility, items: CompletionItem list, reactor, currentNamespaceOrModule: string[] option, checkAlive) = 
         let g = infoReader.g
+        let isForType = items |> List.exists (fun x -> x.Type.IsSome)
         let items = items |> ItemDescriptionsImpl.RemoveExplicitlySuppressedCompletionItems g
         
         let tyconRefOptEq tref1 tref2 =
@@ -1568,11 +1570,11 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                         name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), ItemDescriptionsImpl.IsAttribute infoReader item.Item, 
                         getAccessibility item.Item, item.Kind, item.IsOwnMember, item.MinorPriority, namespaceToOpen))
 
-        new FSharpDeclarationListInfo(Array.ofList decls)
+        new FSharpDeclarationListInfo(Array.ofList decls, isForType)
     
     static member Error msg = 
         new FSharpDeclarationListInfo(
                 [| FSharpDeclarationListItem("<Note>", "<Note>", "<Note>", FSharpGlyph.Error, Choice2Of2 (FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError msg]), 
-                                             false, None, CompletionItemKind.Other, false, 0, None) |])
+                                             false, None, CompletionItemKind.Other, false, 0, None) |], false)
     
-    static member Empty = FSharpDeclarationListInfo([| |])
+    static member Empty = FSharpDeclarationListInfo([| |], false)

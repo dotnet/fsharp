@@ -139,6 +139,7 @@ type internal CompletionItem =
 // Note: this type holds a weak reference to compiler resources. 
 type internal FSharpDeclarationListInfo =
     member Items : FSharpDeclarationListItem[]
+    member IsForType : bool
 
     // Implementation details used by other code in the compiler    
     static member internal Create : infoReader:InfoReader * m:range * denv:DisplayEnv * getAccessibility:(Item -> FSharpAccessibility option) * items:CompletionItem list * reactor:IReactorOperations * currentNamespace:string[] option * checkAlive:(unit -> bool) -> FSharpDeclarationListInfo

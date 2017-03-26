@@ -11,7 +11,6 @@ open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Completion
-open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Options
 open Microsoft.CodeAnalysis.Text
 
@@ -19,9 +18,9 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 
+open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open System.Globalization
 
 type internal FSharpCompletionProvider
     (
@@ -38,7 +37,17 @@ type internal FSharpCompletionProvider
     static let [<Literal>] NameInCodePropName = "NameInCode"
     static let [<Literal>] FullNamePropName = "FullName"
     static let [<Literal>] IsExtensionMemberPropName = "IsExtensionMember"
-    static let [<Literal>] NamespaceToOpen = "NamespaceToOpen"
+    static let [<Literal>] NamespaceToOpenPropName = "NamespaceToOpen"
+    static let [<Literal>] IsKeywordPropName = "IsKeyword"
+
+    static let keywordCompletionItems =
+        Lexhelp.Keywords.keywordsWithDescription
+        |> List.filter (fun (keyword, _) -> not (PrettyNaming.IsOperatorName keyword))
+        |> List.sortBy (fun (keyword, _) -> keyword)
+        |> List.mapi (fun n (keyword, description) ->
+             CommonCompletionItem.Create(keyword, Nullable Glyph.Keyword, sortText = sprintf "%06d" (1000000 + n))
+                .AddProperty("description", description)
+                .AddProperty(IsKeywordPropName, ""))
     
     let xmlMemberIndexService = serviceProvider.GetService(typeof<IVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
@@ -50,73 +59,6 @@ type internal FSharpCompletionProvider
     static let getRules() = if IntelliSenseSettings.ShowAfterCharIsTyped then noCommitOnSpaceRules else CompletionItemRules.Default
 
     static let mruItems = Dictionary<(* Item.FullName *) string, (* hints *) int>()
-
-    static let isLetterChar (cat: UnicodeCategory) =
-        // letter-character:
-        //   A Unicode character of classes Lu, Ll, Lt, Lm, Lo, or Nl 
-        //   A Unicode-escape-sequence representing a character of classes Lu, Ll, Lt, Lm, Lo, or Nl
-
-        match cat with
-        | UnicodeCategory.UppercaseLetter
-        | UnicodeCategory.LowercaseLetter
-        | UnicodeCategory.TitlecaseLetter
-        | UnicodeCategory.ModifierLetter
-        | UnicodeCategory.OtherLetter
-        | UnicodeCategory.LetterNumber -> true
-        | _ -> false
-
-    /// Defines a set of helper methods to classify Unicode characters.
-    static let isIdentifierStartCharacter(ch: char) =
-        // identifier-start-character:
-        //   letter-character
-        //   _ (the underscore character U+005F)
-
-        if ch < 'a' then // '\u0061'
-            if ch < 'A' then // '\u0041'
-                false
-            else ch <= 'Z'   // '\u005A'
-                || ch = '_' // '\u005F'
-
-        elif ch <= 'z' then // '\u007A'
-            true
-        elif ch <= '\u007F' then // max ASCII
-            false
-        
-        else isLetterChar(CharUnicodeInfo.GetUnicodeCategory(ch))
- 
-        /// Returns true if the Unicode character can be a part of an identifier.
-    static let isIdentifierPartCharacter(ch: char) =
-        // identifier-part-character:
-        //   letter-character
-        //   decimal-digit-character
-        //   connecting-character
-        //   combining-character
-        //   formatting-character
-
-        if ch < 'a' then // '\u0061'
-            if ch < 'A' then // '\u0041'
-                ch >= '0'  // '\u0030'
-                && ch <= '9' // '\u0039'
-            else
-                ch <= 'Z'  // '\u005A'
-                || ch = '_' // '\u005F'
-        elif ch <= 'z' then // '\u007A'
-            true
-        elif ch <= '\u007F' then // max ASCII
-            false
-
-        else
-            let cat = CharUnicodeInfo.GetUnicodeCategory(ch)
-            isLetterChar(cat)
-            ||
-            match cat with
-            | UnicodeCategory.DecimalDigitNumber
-            | UnicodeCategory.ConnectorPunctuation
-            | UnicodeCategory.NonSpacingMark
-            | UnicodeCategory.SpacingCombiningMark -> true
-            | _ when int ch > 127 ->
-                CharUnicodeInfo.GetUnicodeCategory(ch) = UnicodeCategory.Format
-            | _ -> false
     
     static member ShouldTriggerCompletionAux(sourceText: SourceText, caretPosition: int, trigger: CompletionTriggerKind, getInfo: (unit -> DocumentId * string * string list)) =
         // Skip if we are at the start of a document
@@ -139,10 +81,7 @@ type internal FSharpCompletionProvider
             else
                 let documentId, filePath, defines = getInfo()
                 CompletionUtils.shouldProvideCompletion(documentId, filePath, defines, sourceText, triggerPosition) &&
-                CommonCompletionUtilities.IsStartingNewWord(sourceText, triggerPosition, (fun ch -> isIdentifierStartCharacter ch), (fun ch -> isIdentifierPartCharacter ch))
-                shouldProvideCompletion(documentId, filePath, defines, sourceText, triggerPosition) &&
-                (IntelliSenseSettings.ShowAfterCharIsTyped && 
-                 CommonCompletionUtilities.IsStartingNewWord(sourceText, triggerPosition, (fun ch -> isIdentifierStartCharacter ch), (fun ch -> isIdentifierPartCharacter ch)))
+                (IntelliSenseSettings.ShowAfterCharIsTyped && CompletionUtils.isStartingNewWord(sourceText, triggerPosition))
 
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, 
                                              textVersionHash: int, getAllSymbols: unit -> AssemblySymbol list) = 
@@ -233,7 +172,7 @@ type internal FSharpCompletionProvider
 
                 let completionItem =
                     match declItem.NamespaceToOpen with
-                    | Some ns -> completionItem.AddProperty(NamespaceToOpen, ns)
+                    | Some ns -> completionItem.AddProperty(NamespaceToOpenPropName, ns)
                     | None -> completionItem
 
                 let priority = 
@@ -252,6 +191,12 @@ type internal FSharpCompletionProvider
                 declarationItemsCache.Remove(completionItem.DisplayText) |> ignore // clear out stale entries if they exist
                 declarationItemsCache.Add(completionItem.DisplayText, declItem)
                 results.Add(completionItem))
+
+            if results.Count > 0 && not declarations.IsForType then
+                let lineStr = textLines.[caretLinePos.Line].ToString()
+                match UntypedParseImpl.TryGetCompletionContext(Pos.fromZ caretLinePos.Line caretLinePos.Character, Some parseResults, lineStr) with
+                | None -> results.AddRange(keywordCompletionItems)
+                | _ -> ()
             
             return results
         }
@@ -302,8 +247,9 @@ type internal FSharpCompletionProvider
                 | true, x -> Some x
                 | _ -> None
 
-            // do not add extension members and not yet resolved symbols to the MRU list
-            if not (item.Properties.ContainsKey NamespaceToOpen) && not (item.Properties.ContainsKey IsExtensionMemberPropName) then
+            // do not add extension members, keywords and not yet resolved symbols to the MRU list
+            if not (item.Properties.ContainsKey NamespaceToOpenPropName) && not (item.Properties.ContainsKey IsExtensionMemberPropName) &&
+               not (item.Properties.ContainsKey IsKeywordPropName) then
                 match fullName with
                 | Some fullName ->
                     match mruItems.TryGetValue fullName with
@@ -319,7 +265,7 @@ type internal FSharpCompletionProvider
             return!
                 asyncMaybe {
                     let! ns = 
-                        match item.Properties.TryGetValue NamespaceToOpen with
+                        match item.Properties.TryGetValue NamespaceToOpenPropName with
                         | true, ns -> Some ns
                         | _ -> None
                     let! sourceText = document.GetTextAsync(cancellationToken)
