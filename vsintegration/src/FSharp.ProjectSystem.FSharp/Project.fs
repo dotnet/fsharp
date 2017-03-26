@@ -2156,7 +2156,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             then Microsoft.VisualStudio.Editors.PropertyPages.FilteredObjectWrapper.ReadOnlyPropertyDescriptorWrapper(propertyDescriptor) :> PropertyDescriptor
             else base.CreateDesignPropertyDescriptor(propertyDescriptor)
        
-    type InsertionLocation =
+    type internal InsertionLocation =
     | Above
     | Below
 
