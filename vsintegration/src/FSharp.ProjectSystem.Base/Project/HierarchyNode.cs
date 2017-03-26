@@ -3305,7 +3305,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         public virtual __VSPROVISIONALVIEWINGSTATUS ProvisionalViewingStatus => __VSPROVISIONALVIEWINGSTATUS.PVS_Disabled;
-
+        
+        /// <summary>
+        /// All nodes that are direct children of this node.
+        /// </summary>
         public virtual IEnumerable<HierarchyNode> AllChildren
         {
             get
@@ -3313,10 +3316,24 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 for (var child = this.FirstChild; child != null; child = child.NextSibling)
                 {
                     yield return child;
+                }
+            }
+        }
 
-                    foreach (var grandChild in child.AllChildren)
+        /// <summary>
+        /// All nodes that are my children, plus their children, ad infinitum.
+        /// </summary>
+        public virtual IEnumerable<HierarchyNode> AllDescendants
+        {
+            get
+            {
+                foreach (var child in this.AllChildren)
+                {
+                    yield return child;
+
+                    foreach (var descendant in child.AllDescendants)
                     {
-                        yield return grandChild;
+                        yield return descendant;
                     }
                 }
             }

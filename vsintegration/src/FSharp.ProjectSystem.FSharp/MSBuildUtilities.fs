@@ -221,7 +221,7 @@ type internal MSBuildUtilities() =
         big.RemoveChild itemToMove
             
         let precedingFile =
-            projectNode.AllChildren
+            projectNode.AllDescendants
             |> Seq.choose (function :? FileNode as fileNode -> Some fileNode | _ -> None)
             |> Seq.takeWhile ((<>) fileNode)
             |> Seq.tryLast

@@ -2368,7 +2368,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 
                 match tryFindTargetNodeSibling nodeToBeMoved with
                 | Some siblingNode when siblingNode <> nodeToBeMoved ->
-                    let fileChildren = siblingNode.AllChildren |> Seq.filter isFileNode |> List.ofSeq
+                    let fileChildren = siblingNode.AllDescendants |> Seq.filter isFileNode |> List.ofSeq
                     if fileChildren = [nodeToBeMoved] then
                         Ok siblingNode
                     else
