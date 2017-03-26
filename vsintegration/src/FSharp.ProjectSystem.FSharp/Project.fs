@@ -2021,6 +2021,22 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         result <- result ||| QueryStatusResult.ENABLED
                     VSConstants.S_OK
 
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.NewFolderAbove.ID) then
+
+                    result <- result ||| QueryStatusResult.SUPPORTED
+                    if noBuildInProgress && root.GetSelectedNodes().Count < 2 then
+                        result <- result ||| QueryStatusResult.ENABLED
+                    VSConstants.S_OK
+
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.NewFolderBelow.ID) then
+
+                    result <- result ||| QueryStatusResult.SUPPORTED
+                    if noBuildInProgress && root.GetSelectedNodes().Count < 2 then
+                        result <- result ||| QueryStatusResult.ENABLED
+                    VSConstants.S_OK
+
                 else
                     base.QueryStatusOnNode(guidCmdGroup, cmd, pCmdText, &result)
 
@@ -2062,6 +2078,17 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         x.Parent.AddItemToHierarchy(HierarchyAddType.AddExistingItem))
                     root.EnsureMSBuildAndSolutionExplorerAreInSync()
                     result
+                    
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.NewFolderAbove.ID) then 
+
+                    x.Parent.AddNewFolder(fun newNode -> FSharpFileNode.MoveTo(Above, x, newNode))
+
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.NewFolderBelow.ID) then 
+                    
+                    x.Parent.AddNewFolder(fun newNode -> FSharpFileNode.MoveTo(Below, x, newNode))
+
                 else
                     base.ExecCommandOnNode(guidCmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut)
             
@@ -2491,6 +2518,17 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                             x.AddItemToHierarchy(HierarchyAddType.AddExistingItem))
                         root.EnsureMSBuildAndSolutionExplorerAreInSync()
                         result
+
+                    
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.NewFolderAbove.ID) then 
+                    
+                    x.Parent.AddNewFolder(fun newNode -> FSharpFileNode.MoveTo(Above, x, newNode))
+
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.NewFolderBelow.ID) then 
+
+                    x.Parent.AddNewFolder(fun newNode -> FSharpFileNode.MoveTo(Below, x, newNode))
                         
                 else
                     base.ExecCommandOnNode(guidCmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut)
@@ -2580,6 +2618,24 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                             result <- result ||| QueryStatusResult.ENABLED
                         VSConstants.S_OK
                         
+                | _ when 
+                    (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.NewFolderAbove.ID) ->
+
+                    result <- result ||| QueryStatusResult.SUPPORTED
+                    if noBuildInProgress && root.GetSelectedNodes().Count < 2 then
+                        result <- result ||| QueryStatusResult.ENABLED
+                    VSConstants.S_OK
+
+                | _ when 
+                    (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.NewFolderBelow.ID) ->
+
+                    result <- result ||| QueryStatusResult.SUPPORTED
+                    if noBuildInProgress && root.GetSelectedNodes().Count < 2 then
+                        result <- result ||| QueryStatusResult.ENABLED
+                    VSConstants.S_OK
+
                 | _ -> base.QueryStatusOnNode(guidCmdGroup, cmd, pCmdText, &result)
 
             static member CanMoveDown(node : HierarchyNode) =

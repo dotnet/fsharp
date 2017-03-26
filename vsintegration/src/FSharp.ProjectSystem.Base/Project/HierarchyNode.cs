@@ -1115,7 +1115,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Add a new Folder to the project hierarchy.
         /// </summary>
         /// <returns>S_OK if succeeded, otherwise an error</returns>
-        public virtual int AddNewFolder()
+        public virtual int AddNewFolder(Action<HierarchyNode> moveNode=null)
         {
             // Check out the project file.
             if (!this.ProjectMgr.QueryEditProjectFile(false))
@@ -1130,20 +1130,25 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 ErrorHandler.ThrowOnFailure(this.projectMgr.GenerateUniqueItemName(this.hierarchyId, String.Empty, String.Empty, out newFolderName));
 
                 // create the project part of it, the project file
-                HierarchyNode child = this.ProjectMgr.CreateFolderNodes(Path.Combine(this.virtualNodeName, newFolderName));
+                HierarchyNode node = this.ProjectMgr.CreateFolderNodes(Path.Combine(this.virtualNodeName, newFolderName));
 
-                if (child is FolderNode)
+                if (node is FolderNode)
                 {
-                    ((FolderNode)child).CreateDirectory();
+                    ((FolderNode)node).CreateDirectory();
                 }
 
+                if (moveNode != null)
+                {
+                    moveNode(node);
+                }
+                
                 // If we are in automation mode then skip the ui part which is about renaming the folder
                 if (!Utilities.IsInAutomationFunction(this.projectMgr.Site))
                 {
                     IVsUIHierarchyWindow uiWindow = UIHierarchyUtilities.GetUIHierarchyWindow(this.projectMgr.Site, SolutionExplorer);
                     // we need to get into label edit mode now...
                     // so first select the new guy...
-                    ErrorHandler.ThrowOnFailure(uiWindow.ExpandItem(this.projectMgr.InteropSafeIVsUIHierarchy, child.hierarchyId, EXPANDFLAGS.EXPF_SelectItem));
+                    ErrorHandler.ThrowOnFailure(uiWindow.ExpandItem(this.projectMgr.InteropSafeIVsUIHierarchy, node.hierarchyId, EXPANDFLAGS.EXPF_SelectItem));
                     // them post the rename command to the shell. Folder verification and creation will
                     // happen in the setlabel code...
                     IVsUIShell shell = this.projectMgr.Site.GetService(typeof(SVsUIShell)) as IVsUIShell;
