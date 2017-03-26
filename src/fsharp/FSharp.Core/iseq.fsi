@@ -14,23 +14,23 @@ namespace Microsoft.FSharp.Collections
         [<Struct; NoComparison; NoEquality>]
         type NoValue = struct end
 
-        /// <summary>Values is a mutable struct. It can be embedded within the folder type
-        /// if two values are required for the calculation.</summary>
+        /// Values is a mutable struct. It can be embedded within the folder type
+        /// if two values are required for the calculation.
         [<Struct; NoComparison; NoEquality>]
         type Value<'a> =
             new : a:'a -> Value<'a>
             val mutable _1: 'a
 
-        /// <summary>Values is a mutable struct. It can be embedded within the folder type
-        /// if two values are required for the calculation.</summary>
+        /// Values is a mutable struct. It can be embedded within the folder type
+        /// if two values are required for the calculation.
         [<Struct; NoComparison; NoEquality>]
         type Values<'a,'b> =
             new : a:'a * b:'b -> Values<'a,'b>
             val mutable _1: 'a
             val mutable _2: 'b
 
-        /// <summary>Values is a mutable struct. It can be embedded within the folder type
-        /// if three values are required for the calculation.</summary>
+        /// Values is a mutable struct. It can be embedded within the folder type
+        /// if three values are required for the calculation.
         [<Struct; NoComparison; NoEquality>]
         type Values<'a,'b,'c> =
             new : a:'a * b:'b * c:'c -> Values<'a,'b,'c>
@@ -38,28 +38,28 @@ namespace Microsoft.FSharp.Collections
             val mutable _2: 'b
             val mutable _3: 'c
 
-        /// <summary>PipeIdx denotes the index of the element within the pipeline. 0 denotes the
-        /// source of the chain.</summary>
+        /// PipeIdx denotes the index of the element within the pipeline. 0 denotes the
+        /// source of the chain.
         type PipeIdx = int
 
         type IOutOfBand =
             abstract StopFurtherProcessing : PipeIdx -> unit
 
-        /// <summary>Activity is the root class for chains of activities. It is in a non-generic
-        /// form so that it can be used by subsequent activities</summary>
+        /// Activity is the root class for chains of activities. It is in a non-generic
+        /// form so that it can be used by subsequent activities
         [<AbstractClass>]
         type Activity =
-            /// <summary>OnComplete is used to determine if the object has been processed correctly,
+            /// OnComplete is used to determine if the object has been processed correctly,
             /// and possibly throw exceptions to denote incorrect application (i.e. such as a Take
             /// operation which didn't have a source at least as large as was required). It is
             /// not called in the case of an exception being thrown whilst the stream is still
-            /// being processed.</summary>
+            /// being processed.
             abstract ChainComplete : stopTailCall:byref<unit>*PipeIdx -> unit
-            /// <summary>OnDispose is used to cleanup the stream. It is always called at the last operation
-            /// after the enumeration has completed.</summary>
+            /// OnDispose is used to cleanup the stream. It is always called at the last operation
+            /// after the enumeration has completed.
             abstract ChainDispose : stopTailCall:byref<unit> -> unit
 
-        /// <summary>Activity is the base class of all elements within the pipeline</summary>
+        /// Activity is the base class of all elements within the pipeline
         [<AbstractClass>]
         type Activity<'T,'U> =
             inherit Activity
@@ -80,9 +80,9 @@ namespace Microsoft.FSharp.Collections
             abstract OnComplete : PipeIdx -> unit
             abstract OnDispose  : unit -> unit
 
-        /// <summary>Folder is a base class to assist with fold-like operations. It's intended usage
+        /// Folder is a base class to assist with fold-like operations. It's intended usage
         /// is as a base class for an object expression that will be used from within
-        /// the Fold function.</summary>
+        /// the Fold function.
         [<AbstractClass>]
         type Folder<'T,'Result,'State> =
             inherit Activity<'T,'T>
