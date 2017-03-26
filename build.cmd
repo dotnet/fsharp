@@ -380,6 +380,21 @@ echo INCLUDE_TEST_TAGS=%INCLUDE_TEST_TAGS%
 echo PUBLISH_VSIX=%PUBLISH_VSIX%
 echo MYGET_APIKEY=%MYGET_APIKEY%
 
+REM load Visual Studio 2017 developer command prompt if VS150COMNTOOLS is not set
+
+if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" (
+    call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"
+)
+if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsDevCmd.bat" (
+    call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsDevCmd.bat"
+)
+if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat" (
+    call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
+)
+if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat" (
+    call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat"
+)
+
 echo .
 echo Environment
 echo 
@@ -611,7 +626,7 @@ echo SNEXE64:           %SNEXE64%
 echo ILDASM:            %ILDASM%
 echo
 
-if "%TEST_NET40_COMPILERUNIT_SUITE%" == "0" and "%TEST_PORTABLE_COREUNIT_SUITE" == "0" and "%TEST_CORECLR_COREUNIT_SUITE%" == "0" and "%TEST_VS_IDEUNIT_SUITE%" == "0" and "%TEST_NET40_FSHARP_SUITE%" == "0" and "%TEST_NET40_FSHARPQA_SUITE%" == "0" goto :success
+if "%TEST_NET40_COMPILERUNIT_SUITE%" == "0" and "%TEST_PORTABLE_COREUNIT_SUITE%" == "0" and "%TEST_CORECLR_COREUNIT_SUITE%" == "0" and "%TEST_VS_IDEUNIT_SUITE%" == "0" and "%TEST_NET40_FSHARP_SUITE%" == "0" and "%TEST_NET40_FSHARPQA_SUITE%" == "0" goto :success
 
 echo ---------------- Done with update, starting tests -----------------------
 
