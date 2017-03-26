@@ -118,6 +118,7 @@ type internal FSharpDeclarationListItem =
     member IsOwnMember : bool
     member MinorPriority : int
     member FullName : string
+    member IsResolved : bool
     member NamespaceToOpen : string option
 
 type UnresolvedSymbol =

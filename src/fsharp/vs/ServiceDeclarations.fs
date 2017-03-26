@@ -1379,7 +1379,7 @@ type FSharpAccessibility(a:Accessibility, ?isProtected) =
 /// An intellisense declaration
 [<Sealed>]
 type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: string, glyph: FSharpGlyph, info, isAttribute: bool, accessibility: FSharpAccessibility option,
-                               kind: CompletionItemKind, isOwnMember: bool, priority: int, namespaceToOpen: string option) =
+                               kind: CompletionItemKind, isOwnMember: bool, priority: int, isResolved: bool, namespaceToOpen: string option) =
 
     let mutable descriptionTextHolder:FSharpToolTipText<_> option = None
     let mutable task = null
@@ -1440,6 +1440,7 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: strin
     member decl.IsOwnMember = isOwnMember
     member decl.MinorPriority = priority
     member decl.FullName = fullName
+    member decl.IsResolved = isResolved
     member decl.NamespaceToOpen = namespaceToOpen
 
 /// A table of declarations for Intellisense completion 
@@ -1568,13 +1569,13 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
 
                     FSharpDeclarationListItem(
                         name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), ItemDescriptionsImpl.IsAttribute infoReader item.Item, 
-                        getAccessibility item.Item, item.Kind, item.IsOwnMember, item.MinorPriority, namespaceToOpen))
+                        getAccessibility item.Item, item.Kind, item.IsOwnMember, item.MinorPriority, item.Unresolved.IsNone, namespaceToOpen))
 
         new FSharpDeclarationListInfo(Array.ofList decls, isForType)
     
     static member Error msg = 
         new FSharpDeclarationListInfo(
                 [| FSharpDeclarationListItem("<Note>", "<Note>", "<Note>", FSharpGlyph.Error, Choice2Of2 (FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError msg]), 
-                                             false, None, CompletionItemKind.Other, false, 0, None) |], false)
+                                             false, None, CompletionItemKind.Other, false, 0, false, None) |], false)
     
     static member Empty = FSharpDeclarationListInfo([| |], false)

@@ -125,7 +125,7 @@ type internal FSharpCompletionProvider
             let sortedDeclItems =
                 declarations.Items
                 |> Array.sortWith (fun x y ->
-                    let mutable n = x.NamespaceToOpen.IsSome.CompareTo(y.NamespaceToOpen.IsSome)
+                    let mutable n = (not x.IsResolved).CompareTo(not y.IsResolved)
                     if n <> 0 then n else
                         n <- (getKindPriority x.Kind).CompareTo(getKindPriority y.Kind) 
                         if n <> 0 then n else
