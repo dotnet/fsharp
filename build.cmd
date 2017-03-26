@@ -400,6 +400,15 @@ dir "%VCToolsInstallDir%"
 dir "%VCToolsInstallDir%\bin"
 dir "%VCToolsInstallDir%\bin\HostX64"
 dir "%VCToolsInstallDir%\bin\HostX64\x86"
+
+if "" == "%link_exe%" (if exist "%VCToolsInstallDir%bin\HostX64\x86\link.exe" (
+    echo found link.exe
+))
+if "" == "%link_exe%" (if exist "%VCToolsInstallDir%bin\HostX64\x86\link.exe" (
+    set link_exe="%VCToolsInstallDir%bin\HostX64\x86\link.exe"
+))
+echo link_exe=%link_exe%
+
 goto :failure
 
 echo .
