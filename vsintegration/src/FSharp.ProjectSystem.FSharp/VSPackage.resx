@@ -540,6 +540,6 @@
     <value>The file is in a different subtree</value>
   </data>
   <data name="FileCannotBePlacedMultipleFiles" xml:space="preserve">
-    <value>The '{0}' folder cannot be moved as there are multiple files within its subtree</value>
+    <value>The '{0}' folder cannot be moved as it already exists in the Solution Explorer in a different location</value>
   </data>
 </root>
