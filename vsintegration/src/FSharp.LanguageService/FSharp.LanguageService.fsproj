@@ -129,7 +129,7 @@
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Immutable.10.0.10.0.30319\lib\net40\Microsoft.VisualStudio.Shell.Immutable.10.0.dll</HintPath>
     </Reference>
-        <Reference Include="Microsoft.VisualStudio.Shell.Immutable.11.0">
+    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.11.0">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Immutable.11.0.11.0.50727\lib\net45\Microsoft.VisualStudio.Shell.Immutable.11.0.dll</HintPath>
       <Private>True</Private>
     </Reference>
