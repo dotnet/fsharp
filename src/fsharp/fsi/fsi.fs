@@ -156,24 +156,24 @@ module internal Utilities =
 
                 member r.AddText z s =
                     let color =
-                        match s with
-                        | TaggedText.Keyword _ -> ConsoleColor.White
-                        | TaggedText.TypeParameter _
-                        | TaggedText.Alias _
-                        | TaggedText.Class _ 
-                        | TaggedText.Module _
-                        | TaggedText.Interface _
-                        | TaggedText.Record _
-                        | TaggedText.Struct _
-                        | TaggedText.Union _
-                        | TaggedText.UnknownType _ -> ConsoleColor.Cyan
-                        | TaggedText.UnionCase _
-                        | TaggedText.ActivePatternCase _ -> ConsoleColor.Magenta
-                        | TaggedText.StringLiteral _ -> ConsoleColor.Yellow
-                        | TaggedText.NumericLiteral _ -> ConsoleColor.Green
+                        match s.Tag with
+                        | LayoutTag.Keyword -> ConsoleColor.White
+                        | LayoutTag.TypeParameter
+                        | LayoutTag.Alias
+                        | LayoutTag.Class 
+                        | LayoutTag.Module
+                        | LayoutTag.Interface
+                        | LayoutTag.Record
+                        | LayoutTag.Struct
+                        | LayoutTag.Union
+                        | LayoutTag.UnknownType -> ConsoleColor.Cyan
+                        | LayoutTag.UnionCase
+                        | LayoutTag.ActivePatternCase -> ConsoleColor.Magenta
+                        | LayoutTag.StringLiteral -> ConsoleColor.Yellow
+                        | LayoutTag.NumericLiteral -> ConsoleColor.Green
                         | _ -> Console.ForegroundColor
 
-                    DoWithColor color (fun () -> outWriter.Write s.Value)
+                    DoWithColor color (fun () -> outWriter.Write s.Text)
 
                     z
 

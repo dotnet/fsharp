@@ -19,7 +19,7 @@ Make sure each method works on:
 *)
 
 
-[<TestFixture>]
+[<TestFixture>][<Category "Collections.Array">][<Category "FSharp.Core.Collections">]
 type Array4Module() =
 
     let VerifyDimensions arr x y z u =

@@ -17,7 +17,7 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 
-[<TestFixture>]
+[<TestFixture>][<Category "Roslyn Services">]
 type LanguageDebugInfoServiceTests()  =
     let fileName = "C:\\test.fs"
     let defines = []

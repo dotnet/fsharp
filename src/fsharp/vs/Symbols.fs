@@ -106,7 +106,7 @@ module Impl =
             // This is an approximation - for generative type providers some type definitions can be private.
             taccessPublic
 
-        | ILTypeMetadata (_,td) -> 
+        | ILTypeMetadata (TILObjectReprData(_,_,td)) -> 
             match td.Access with 
             | ILTypeDefAccess.Public 
             | ILTypeDefAccess.Nested ILMemberAccess.Public -> taccessPublic 
@@ -320,7 +320,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
         isResolved() &&
         match metadataOfTycon entity.Deref with 
         | ProvidedTypeMetadata info -> info.IsClass
-        | ILTypeMetadata (_,td) -> (td.tdKind = ILTypeDefKind.Class)
+        | ILTypeMetadata (TILObjectReprData(_,_,td)) -> (td.tdKind = ILTypeDefKind.Class)
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> entity.Deref.IsFSharpClassTycon
 
     member __.IsByRef = 
@@ -339,7 +339,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
         isResolved() &&
         match metadataOfTycon entity.Deref with 
         | ProvidedTypeMetadata info -> info.IsDelegate ()
-        | ILTypeMetadata (_,td) -> (td.tdKind = ILTypeDefKind.Delegate)
+        | ILTypeMetadata (TILObjectReprData(_,_,td)) -> (td.tdKind = ILTypeDefKind.Delegate)
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> entity.IsFSharpDelegateTycon
 
     member __.IsEnum = 
@@ -798,35 +798,6 @@ and FSharpField(cenv, d: FSharpFieldData)  =
 
     override x.GetHashCode() = hash x.Name
     override x.ToString() = "field " + x.Name
-
-and FSharpAccessibility(a:Accessibility, ?isProtected) = 
-    let isProtected = defaultArg isProtected  false
-
-    let isInternalCompPath x = 
-        match x with 
-        | CompPath(ILScopeRef.Local,[]) -> true 
-        | _ -> false
-
-    let (|Public|Internal|Private|) (TAccess p) = 
-        match p with 
-        | [] -> Public 
-        | _ when List.forall isInternalCompPath p  -> Internal 
-        | _ -> Private
-
-    member __.IsPublic = not isProtected && match a with Public -> true | _ -> false
-
-    member __.IsPrivate = not isProtected && match a with Private -> true | _ -> false
-
-    member __.IsInternal = not isProtected && match a with Internal -> true | _ -> false
-
-    member __.IsProtected = isProtected
-
-    member __.Contents = a
-
-    override x.ToString() = 
-        let (TAccess paths) = a
-        let mangledTextOfCompPath (CompPath(scoref,path)) = getNameOfScopeRef scoref + "/" + textOfPath (List.map fst path)  
-        String.concat ";" (List.map mangledTextOfCompPath paths)
 
 and [<Class>] FSharpAccessibilityRights(thisCcu: CcuThunk, ad:AccessorDomain) =
     member internal __.ThisCcu = thisCcu
@@ -2147,4 +2118,10 @@ type FSharpSymbol with
         | Item.Types _
         | Item.DelegateCtor _  -> dflt()
 
-
+    static member GetAccessibility (symbol: FSharpSymbol) =
+        match symbol with
+        | :? FSharpEntity as x -> Some x.Accessibility
+        | :? FSharpField as x -> Some x.Accessibility
+        | :? FSharpUnionCase as x -> Some x.Accessibility
+        | :? FSharpMemberFunctionOrValue as x -> Some x.Accessibility
+        | _ -> None

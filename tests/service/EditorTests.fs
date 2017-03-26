@@ -69,13 +69,14 @@ let ``Intro test`` () =
     let tip = typeCheckResults.GetToolTipTextAlternate(4, 7, inputLines.[1], ["foo"], identToken) |> Async.RunSynchronously
     // Get declarations (autocomplete) for a location
     let decls =  typeCheckResults.GetDeclarationListInfo(Some parseResult, 7, 23, inputLines.[6], [], "msg", fun _ -> false)|> Async.RunSynchronously
-    [ for item in decls.Items -> item.Name ] |> shouldEqual
+    CollectionAssert.AreEquivalent(
           ["Chars"; "Clone"; "CompareTo"; "Contains"; "CopyTo"; "EndsWith"; "Equals";
            "GetEnumerator"; "GetHashCode"; "GetType"; "GetTypeCode"; "IndexOf";
            "IndexOfAny"; "Insert"; "IsNormalized"; "LastIndexOf"; "LastIndexOfAny";
            "Length"; "Normalize"; "PadLeft"; "PadRight"; "Remove"; "Replace"; "Split";
            "StartsWith"; "Substring"; "ToCharArray"; "ToLower"; "ToLowerInvariant";
-           "ToString"; "ToUpper"; "ToUpperInvariant"; "Trim"; "TrimEnd"; "TrimStart"]
+           "ToString"; "ToUpper"; "ToUpperInvariant"; "Trim"; "TrimEnd"; "TrimStart"],
+          [ for item in decls.Items -> item.Name ])
     // Get overloads of the String.Concat method
     let methods = typeCheckResults.GetMethodsAlternate(5, 27, inputLines.[4], Some ["String"; "Concat"]) |> Async.RunSynchronously
 
@@ -588,7 +589,7 @@ let _ = RegexTypedStatic.IsMatch<"ABC" >(  (*$*) ) // TEST: no assert on Ctrl-sp
     File.WriteAllText(fileName1, fileSource1)
     let fileLines1 = File.ReadAllLines(fileName1)
     let fileNames = [fileName1]
-    let args = Array.append (mkProjectCommandLineArgs (dllName, fileNames)) [| "-r:" + PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll") |]
+    let args = Array.append (mkProjectCommandLineArgs (dllName, fileNames)) [| "-r:" + PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll") |]
     let internal options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
