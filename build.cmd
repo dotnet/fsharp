@@ -382,18 +382,41 @@ echo MYGET_APIKEY=%MYGET_APIKEY%
 
 REM load Visual Studio 2017 developer command prompt if VS150COMNTOOLS is not set
 
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" (
+if [""] == ["%VS150COMNTOOLS%"] (if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" (
     call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"
-)
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsDevCmd.bat" (
+))
+if [""] == ["%VS150COMNTOOLS%"] (if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsDevCmd.bat" (
     call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsDevCmd.bat"
-)
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat" (
+))
+if [""] == ["%VS150COMNTOOLS%"] (if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat" (
     call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
-)
-if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat" (
+))
+if [""] == ["%VS150COMNTOOLS%"] (if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat" (
     call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat"
+))
+
+
+echo aaa !link_exe!
+if [""] == ["!link_exe!"] (if exist "%VCToolsInstallDir%bin\HostX64\x86\link.exe" (
+    set link_exe="%VCToolsInstallDir%bin\HostX64\x86\link.exe"
+))
+echo bbb !link_exe!
+if [""] == ["!link_exe!"] (
+    echo did not find %VCToolsInstallDir%bin\HostX64\x86\link.exe
+    dir "%VCToolsInstallDir%bin\HostX64\x86"
+    set link_exe="%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe"
+    if not exist "%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe" (
+        %_nugetexe% install -source https://www.myget.org/F/fsharp-daily/api/v3/index.json VisualCppTools -version 14.0.24519-Pre -out packages
+    )
 )
+echo ccc !link_exe!
+if not exist "!link_exe!" (
+    echo Error: failed to find link.exe
+    goto :failure
+)
+echo ddd !link_exe!
+goto :failure
+
 
 echo .
 echo Environment
@@ -626,7 +649,7 @@ echo SNEXE64:           %SNEXE64%
 echo ILDASM:            %ILDASM%
 echo
 
-if "%TEST_NET40_COMPILERUNIT_SUITE%" == "0" and "%TEST_PORTABLE_COREUNIT_SUITE%" == "0" and "%TEST_CORECLR_COREUNIT_SUITE%" == "0" and "%TEST_VS_IDEUNIT_SUITE%" == "0" and "%TEST_NET40_FSHARP_SUITE%" == "0" and "%TEST_NET40_FSHARPQA_SUITE%" == "0" goto :success
+if "%TEST_NET40_COMPILERUNIT_SUITE%" == "0" (if "%TEST_PORTABLE_COREUNIT_SUITE%" == "0" (if "%TEST_CORECLR_COREUNIT_SUITE%" == "0" (if "%TEST_VS_IDEUNIT_SUITE%" == "0" (if "%TEST_NET40_FSHARP_SUITE%" == "0" (if "%TEST_NET40_FSHARPQA_SUITE%" == "0" goto :success)))))
 
 echo ---------------- Done with update, starting tests -----------------------
 
@@ -640,9 +663,23 @@ echo WHERE_ARG_NUNIT=!WHERE_ARG_NUNIT!
 
 set NUNITPATH=%~dp0tests\fsharpqa\testenv\bin\nunit\
 set NUNIT3_CONSOLE=%~dp0packages\NUnit.Console.3.0.0\tools\nunit3-console.exe
-set link_exe=%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe
-if not exist "%link_exe%" (
-    echo Error: failed to find "%link_exe%" use nuget to restore the VisualCppTools package
+
+echo aaa !link_exe!
+if [""] == ["!link_exe!"] (if exist "%VCToolsInstallDir%bin\HostX64\x86\link.exe" (
+    set link_exe="%VCToolsInstallDir%bin\HostX64\x86\link.exe"
+))
+echo bbb !link_exe!
+if [""] == ["!link_exe!"] (
+    echo did not find %VCToolsInstallDir%bin\HostX64\x86\link.exe
+    dir "%VCToolsInstallDir%bin\HostX64\x86"
+    set link_exe="%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe"
+    if not exist "%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe" (
+        %_nugetexe% install -source https://www.myget.org/F/fsharp-daily/api/v3/index.json VisualCppTools -version 14.0.24519-Pre -out packages
+    )
+)
+echo ccc !link_exe!
+if not exist "!link_exe!" (
+    echo Error: failed to find link.exe
     goto :failure
 )
 
@@ -654,7 +691,7 @@ if not exist "%RESULTSDIR%" (mkdir "%RESULTSDIR%")
 
 ECHO FSCBINPATH=%FSCBINPATH%
 ECHO RESULTSDIR=%RESULTSDIR%
-ECHO link_exe=%link_exe%
+ECHO link_exe=!link_exe!
 ECHO NUNIT3_CONSOLE=%NUNIT3_CONSOLE%
 ECHO NUNITPATH=%NUNITPATH%
 
