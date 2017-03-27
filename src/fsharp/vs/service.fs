@@ -1214,6 +1214,11 @@ type TypeCheckInfo
                      | Item.ModuleOrNamespaces _ -> true
                      | _ -> false), denv, m)
 
+        | Some(CompletionContext.OpenDeclaration) ->
+            GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, line, loc, filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, false, getAllSymbols)
+            |> Option.map (fun (items, denv, m) ->
+                items |> List.filter (fun x -> match x.Item with Item.ModuleOrNamespaces _ -> true | _ -> false), denv, m)
+
         // Other completions
         | cc ->
             let isInRangeOperator = (match cc with Some (CompletionContext.RangeOperator) -> true | _ -> false)
@@ -1224,42 +1229,6 @@ type TypeCheckInfo
         match item with
         | Item.Types _ | Item.ModuleOrNamespaces _ -> true
         | _ -> false
-
-    /// Check if we are at an "open" declaration
-    let IsAtOpenDeclaration (parseResults, pos: pos) = 
-        // visitor to see if we are in an "open" declaration in the parse tree
-        let visitor = { new AstTraversal.AstVisitorBase<bool>() with
-                            override this.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) = None  // don't need to keep going, 'open' declarations never appear inside Exprs
-                            override this.VisitModuleDecl(defaultTraverse, decl) =
-                                match decl with
-                                | SynModuleDecl.Open(_longIdent, m) -> 
-                                    // in theory, this means we're "in an open"
-                                    // in practice, because the parse tree/walkers do not handle attributes well yet, need extra check below to ensure not e.g. $here$
-                                    //     open System
-                                    //     [<Attr$
-                                    //     let f() = ()
-                                    // inside an attribute on the next item
-                                    let pos = mkPos pos.Line (pos.Column - 1) // -1 because for e.g. "open System." the dot does not show up in the parse tree
-                                    if rangeContainsPos m pos then  
-                                        Some true
-                                    else
-                                        None
-                                | _ -> defaultTraverse decl }
-        match AstTraversal.Traverse(pos, parseResults, visitor) with
-        | None -> false
-        | Some res -> res
-
-    /// If an AST is available, then determine if we are at a "special" position in the AST such as an "open".  If so restrict 
-    /// or augment the autocompletes available at that point.
-    let FilterAutoCompletesBasedOnParseContext (parseResultsOpt: FSharpParseFileResults option) (pos: pos) (items: CompletionItem list) = 
-        match parseResultsOpt |> Option.bind (fun parseResults -> parseResults.ParseTree) with
-        | None -> items
-        | Some parseTree -> 
-            if IsAtOpenDeclaration (parseTree, pos) then 
-                items |> List.filter (fun item -> match item.Item with Item.ModuleOrNamespaces _ -> true | _ -> false)
-            else 
-                items
-
 
     member x.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) : bool =
     /// Determines if a long ident is resolvable at a specific point.
@@ -1282,7 +1251,6 @@ type TypeCheckInfo
                 match GetDeclItemsForNamesAtPosition(ctok, parseResultsOpt, Some qualifyingNames, Some partialName, line, lineStr, colAtEndOfNamesAndResidue, ResolveTypeNamesToCtors, ResolveOverloads.Yes, getAllSymbols, hasTextChangedSinceLastTypecheck) with
                 | None -> FSharpDeclarationListInfo.Empty  
                 | Some (items, denv, m) -> 
-                    let items = items |> FilterAutoCompletesBasedOnParseContext parseResultsOpt (mkPos line colAtEndOfNamesAndResidue)
                     let items = if isInterfaceFile then items |> List.filter (fun x -> IsValidSignatureFileItem x.Item) else items
                     let getAccessibility item = FSharpSymbol.GetAccessibility (FSharpSymbol.Create(g, thisCcu, tcImports, item))
                     let currentNamespaceOrModule =
@@ -1300,7 +1268,6 @@ type TypeCheckInfo
                 match GetDeclItemsForNamesAtPosition(ctok, parseResultsOpt, Some qualifyingNames, Some partialName, line, lineStr, colAtEndOfNamesAndResidue, ResolveTypeNamesToCtors, ResolveOverloads.Yes, (fun () -> []), hasTextChangedSinceLastTypecheck) with
                 | None -> List.Empty  
                 | Some (items, _denv, _m) -> 
-                    let items = items |> FilterAutoCompletesBasedOnParseContext parseResultsOpt (mkPos line colAtEndOfNamesAndResidue)
                     let items = if isInterfaceFile then items |> List.filter (fun x -> IsValidSignatureFileItem x.Item) else items
 
                     //do filtering like Declarationset
