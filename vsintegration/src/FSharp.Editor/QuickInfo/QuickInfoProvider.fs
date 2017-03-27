@@ -7,6 +7,8 @@ open System.Threading
 open System.Threading.Tasks
 open System.Windows
 open System.Windows.Controls
+open System.Windows.Data
+open System.Windows.Media
 open System.ComponentModel.Composition
 
 open Microsoft.CodeAnalysis
@@ -26,10 +28,8 @@ open Microsoft.VisualStudio.Language.Intellisense
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.CompileOps
 
 open CommonRoslynHelpers
-open  Microsoft.VisualStudio.FSharp.Editor.Logging
 
 module private SessionHandling =
     
@@ -45,7 +45,30 @@ module private SessionHandling =
                   { new IQuickInfoSource with
                     member __.AugmentQuickInfoSession(session,_,_) = currentSession <- Some session
                     member __.Dispose() = () }
-    
+
+type internal SourceLink(run) as this = 
+    inherit Documents.Hyperlink(run)
+    let lessOpacity =
+      { new IValueConverter with
+        member this.Convert(value, targetType, _, _) =
+            match value with 
+            | :? Color as c when targetType = typeof<Color> ->
+                // return same color but slightly transparent
+                Color.FromArgb(90uy, c.R, c.G, c.B) :> _
+            | _ -> DependencyProperty.UnsetValue
+        member this.ConvertBack(_,_,_,_) = DependencyProperty.UnsetValue }
+    let underlineBrush = Media.SolidColorBrush()
+    do BindingOperations.SetBinding(underlineBrush, SolidColorBrush.ColorProperty,
+                                    Binding("Foreground.Color", Source = this, Converter = lessOpacity)) |> ignore
+    let slightUnderline = TextDecoration(Location = TextDecorationLocation.Underline, PenOffset = 1.0, Pen = Pen(Brush = underlineBrush))
+    do this.TextDecorations <- TextDecorationCollection [slightUnderline]
+
+    override this.OnMouseEnter(e) = 
+        base.OnMouseEnter(e)
+        this.TextDecorations <- TextDecorations.Underline
+    override this.OnMouseLeave(e) = 
+        base.OnMouseLeave(e)
+        this.TextDecorations <- TextDecorationCollection [slightUnderline]
 
 [<ExportQuickInfoProvider(PredefinedQuickInfoProviderNames.Semantic, FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpQuickInfoProvider 
@@ -106,14 +129,14 @@ type internal FSharpQuickInfoProvider
 
         let inlines = seq { 
             for taggedText in content do
-                let run = Documents.Run(taggedText.Text, ToolTip = taggedText.Tag ) :> Documents.Inline
+                let run = Documents.Run taggedText.Text
                 let inl =
                     match taggedText with
                     | :? Layout.NavigableTaggedText as nav when canGoTo nav.Range ->                        
-                        let h = Documents.Hyperlink run
+                        let h = SourceLink(run, ToolTip = nav.Range.FileName)
                         h.Click.Add <| fun _ -> navigateTo nav.Range
                         h :> Documents.Inline
-                    | _ -> run
+                    | _ -> run :> _
                 DependencyObjectExtensions.SetTextProperties(inl, layoutTagToFormatting taggedText.Tag)
                 yield inl
         }
@@ -133,19 +156,8 @@ type internal FSharpQuickInfoProvider
           { new IDeferredQuickInfoContent with 
             member x.Create() = TextBlock(Visibility = Visibility.Collapsed) :> FrameworkElement }
 
-        let roslynQuickInfo = QuickInfoDisplayDeferredContent(symbolGlyph, null, mainDescription, documentation, empty, empty, empty, empty)
+        QuickInfoDisplayDeferredContent(symbolGlyph, null, mainDescription, documentation, empty, empty, empty, empty)
 
-        let create() =
-            let qi = roslynQuickInfo.Create()
-            let style = Style(typeof<Documents.Hyperlink>)
-            style.Setters.Add(Setter(Documents.Inline.TextDecorationsProperty, null))
-            let trigger = DataTrigger(Binding = Data.Binding("IsMouseOver", Source = qi), Value = true)
-            trigger.Setters.Add(Setter(Documents.Inline.TextDecorationsProperty, TextDecorations.Underline))
-            style.Triggers.Add(trigger)
-            qi.Resources.Add(typeof<Documents.Hyperlink>, style)
-            qi
-
-        { new IDeferredQuickInfoContent with member x.Create() = create() }
 
     let xmlMemberIndexService = serviceProvider.GetService(typeof<SVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
