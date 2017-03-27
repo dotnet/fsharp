@@ -948,6 +948,9 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 elif (String.Compare(Path.GetExtension(strFileName), ".map", StringComparison.OrdinalIgnoreCase) = 0) then
                     ProjectFileConstants.Content
                 
+                elif (String.Compare(Path.GetExtension(strFileName), ".xaml", StringComparison.OrdinalIgnoreCase) = 0) then
+                    ProjectFileConstants.Resource
+                
                 // None (including .fsx/.fsscript)
                 else
                     ProjectFileConstants.None
