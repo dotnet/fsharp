@@ -502,6 +502,7 @@ namespace Microsoft.FSharp.Collections
                 override __.Length () =
                     match enumerable with
                     | :? ICollection<'T> as a -> a.Count
+                    | :? IReadOnlyCollection<'T> as a -> a.Count
                     | _ ->
                         use e = enumerable.GetEnumerator ()
                         let mutable count = 0
