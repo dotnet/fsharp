@@ -152,14 +152,20 @@ type internal UnusedOpensDiagnosticAnalyzer() =
     override __.SupportedDiagnostics = ImmutableArray.Create Descriptor
     override this.AnalyzeSyntaxAsync(_, _) = Task.FromResult ImmutableArray<Diagnostic>.Empty
 
+    static member GetUnusedOpenRanges(document: Document, options, checker: FSharpChecker) =
+        asyncMaybe {
+            let! sourceText = document.GetTextAsync()
+            let! _, parsedInput, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true)
+            let! symbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
+            return UnusedOpens.getUnusedOpens sourceText parsedInput symbolUses
+        } 
+
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) =
         asyncMaybe {
             let! options = getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document)
             let! sourceText = document.GetTextAsync()
             let checker = getChecker document
-            let! _, parsedInput, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true)
-            let! symbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
-            let unusedOpens = UnusedOpens.getUnusedOpens sourceText parsedInput symbolUses
+            let! unusedOpens = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges(document, options, checker)
             
             return 
                 unusedOpens
