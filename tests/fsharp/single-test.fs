@@ -19,17 +19,26 @@ type Permutation =
     | AS_DLL
 #endif
 
-let singleTestBuildAndRunCore  cfg (copyFiles:string) p = 
+// Because we build programs ad dlls the compiler will copy an fsharp.core.dll into the build directory
+// peverify will fail if fsharp.core.dll is not found or is the wrong one.
+// This ensures that we delete any fsharp.core.dlls when we start the build and also when the singleTestBuild and run is finished.
+let cleanUpFSharpCore cfg =
+    let removeFSharpCore () =
+        if fileExists cfg "FSharp.Core.dll" then rm cfg "FSharp.Core.dll"
+    removeFSharpCore ()
+    { new System.IDisposable with member x.Dispose() = removeFSharpCore () }
 
-    //remove FSharp.Core.dll from the target directory to ensure that compiler uses the correct FSharp.Core.dll
-    do if fileExists cfg "FSharp.Core.dll" then rm cfg "FSharp.Core.dll"
+let singleTestBuildAndRunCore  cfg (copyFiles:string) p = 
 
     let sources =
         ["testlib.fsi";"testlib.fs";"test.mli";"test.ml";"test.fsi";"test.fs";"test2.fsi";"test2.fs";"test.fsx";"test2.fsx"]
         |> List.filter (fileExists cfg)
 
     match p with 
-    | FSC_CORECLR -> 
+    | FSC_CORECLR ->
+        use cleanup = (cleanUpFSharpCore cfg)
+        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
+
         let testName = getBasename cfg.Directory
         let extraSource = (__SOURCE_DIRECTORY__  ++ "coreclr_utilities.fs")
         let outDir =  (__SOURCE_DIRECTORY__ ++ sprintf @"../testbin/%s/coreclr/fsharp/core/%s" cfg.BUILD_CONFIG testName)
@@ -44,18 +53,20 @@ let singleTestBuildAndRunCore  cfg (copyFiles:string) p =
 
         let fsccArgs = sprintf """--OutputDir:%s --CopyDlls:%s %s""" outDir copyFiles fscArgs
 
-        fsi cfg "--exec %s %s %s"
+        fsi_script cfg "--exec %s %s %s"
                cfg.fsi_flags
                (__SOURCE_DIRECTORY__ ++ @"../scripts/fscc.fsx")
                fsccArgs
                []
 
-        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
         exec cfg  cfg.DotNetExe outFile
 
         testOkFile.CheckExists()
 
     | FSI_CORECLR -> 
+        use cleanup = (cleanUpFSharpCore cfg)
+        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
+
         let testName = getBasename cfg.Directory
         let extraSource = (__SOURCE_DIRECTORY__  ++ "coreclr_utilities.fs")
         let outDir =  (__SOURCE_DIRECTORY__ ++ sprintf @"../testbin/%s/coreclr/fsharp/core/%s" cfg.BUILD_CONFIG testName)
@@ -66,9 +77,7 @@ let singleTestBuildAndRunCore  cfg (copyFiles:string) p =
 
         let fsciArgs = sprintf """--verbose:repro --OutputDir:%s --CopyDlls:%s %s""" outDir copyFiles fsiArgs
 
-        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
-
-        fsi cfg "--exec %s %s %s"
+        fsi_script cfg "--exec %s %s %s"
                cfg.fsi_flags
                (__SOURCE_DIRECTORY__ ++ @"../scripts/fsci.fsx")
                fsciArgs
@@ -78,6 +87,7 @@ let singleTestBuildAndRunCore  cfg (copyFiles:string) p =
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     | FSI_FILE -> 
+        use cleanup = (cleanUpFSharpCore cfg)
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 
         fsi cfg "%s" cfg.fsi_flags sources
@@ -85,6 +95,7 @@ let singleTestBuildAndRunCore  cfg (copyFiles:string) p =
         testOkFile.CheckExists()
 
     | FSI_STDIN -> 
+        use cleanup = (cleanUpFSharpCore cfg)
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 
         fsiStdin cfg (sources |> List.rev |> List.head) "" [] //use last file, because `cmd < a.txt b.txt` redirect b.txt only
@@ -92,6 +103,7 @@ let singleTestBuildAndRunCore  cfg (copyFiles:string) p =
         testOkFile.CheckExists()
 
     | GENERATED_SIGNATURE -> 
+        use cleanup = (cleanUpFSharpCore cfg)
 
         let source1 = 
             ["test.ml"; "test.fs"; "test.fsx"] 
@@ -102,29 +114,31 @@ let singleTestBuildAndRunCore  cfg (copyFiles:string) p =
 
         log "Generated signature file..."
         fsc cfg "%s --sig:tmptest.fsi --define:TESTS_AS_APP" cfg.fsc_flags ["tmptest.fs"]
+        (if File.Exists("FSharp.Core.dll") then log "found fsharp.core.dll after build" else log "found fsharp.core.dll after build") |> ignore
 
         log "Compiling against generated signature file..."
         fsc cfg "%s -o:tmptest1.exe  --define:TESTS_AS_APP" cfg.fsc_flags ["tmptest.fsi";"tmptest.fs"]
+        (if File.Exists("FSharp.Core.dll") then log "found fsharp.core.dll after build" else log "found fsharp.core.dll after build") |> ignore
 
+        log "Verifying built .exe..."
         peverify cfg "tmptest1.exe"
 
     | FSC_OPT_MINUS_DEBUG -> 
-        fsc cfg "%s --optimize- --debug -o:test--optminus--debug.exe -g" cfg.fsc_flags sources
-
-        peverify cfg "test--optminus--debug.exe"
+        use cleanup = (cleanUpFSharpCore cfg)
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 
+        fsc cfg "%s --optimize- --debug -o:test--optminus--debug.exe -g" cfg.fsc_flags sources
+        peverify cfg "test--optminus--debug.exe"
         exec cfg ("." ++ "test--optminus--debug.exe") ""
 
         testOkFile.CheckExists()
 
     | FSC_OPT_PLUS_DEBUG -> 
-        fsc cfg "%s --optimize+ --debug -o:test--optplus--debug.exe -g" cfg.fsc_flags sources
-
-        peverify cfg "test--optplus--debug.exe"
-
+        use cleanup = (cleanUpFSharpCore cfg)
         use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 
+        fsc cfg "%s --optimize+ --debug -o:test--optplus--debug.exe -g" cfg.fsc_flags sources
+        peverify cfg "test--optplus--debug.exe"
         exec cfg ("." ++ "test--optplus--debug.exe") ""
 
         testOkFile.CheckExists()
@@ -133,22 +147,20 @@ let singleTestBuildAndRunCore  cfg (copyFiles:string) p =
         // Compile as a DLL to exercise pickling of interface data, then recompile the original source file referencing this DLL
         // THe second compilation will not utilize the information from the first in any meaningful way, but the
         // compiler will unpickle the interface and optimization data, so we test unpickling as well.
+        use cleanup = (cleanUpFSharpCore cfg)
+        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 
         fsc cfg "%s --optimize -a -o:test--optimize-lib.dll -g" cfg.fsc_flags sources
-
         fsc cfg "%s --optimize -r:test--optimize-lib.dll -o:test--optimize-client-of-lib.exe -g" cfg.fsc_flags sources
 
         peverify cfg "test--optimize-lib.dll"
-
         peverify cfg "test--optimize-client-of-lib.exe"
-
-        use testOkFile = new FileGuard (getfullpath cfg "test.ok")
 
         exec cfg ("." ++ "test--optimize-client-of-lib.exe") ""
 
         testOkFile.CheckExists()
 #endif
-
+    
 let singleTestBuildAndRunAux cfg p = 
     singleTestBuildAndRunCore cfg "" p 
 

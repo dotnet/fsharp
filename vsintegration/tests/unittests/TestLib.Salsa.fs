@@ -29,7 +29,7 @@ let AssertContainsInOrder(s:string,cs:string list) =
         | expect :: expects ->
             let index = s.IndexOf((expect:string),(fromIndex:int))           
             if index = -1 then
-              Assert.Fail(sprintf "Expected:\n%s\n\nto contain:\n%s\n\nafter index: %d." s expect fromIndex)
+               Assert.Fail(sprintf "Expected:\n%s\n\nto contain:\n%s\n\nafter index: %d." s expect fromIndex)
             else
                printfn "At index %d seen '%s'." index expect
             containsInOrderFrom index expects

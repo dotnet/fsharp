@@ -1,4 +1,7 @@
 // #Conformance #ComputationExpressions #Async 
+#if TESTS_AS_APP
+module Core_controlWebExt
+#endif
 #light
 
 let failuresFile =
@@ -90,7 +93,6 @@ module WebResponseTests =
         
         check "WebRequest cancellation test final result" !active 0
 
-    repeatedFetchAndCancelTest()
 
 
 module WebClientTests = 
@@ -218,8 +220,16 @@ module WebClientTests =
     repeatedFetchDataAndCancelTest()
     repeatedFetchFileAndCancelTest()
 
+let RunAll() = 
+    WebClientTests.repeatedFetchAndCancelTest()
+    WebResponseTests.repeatedFetchAndCancelTest()
 
-let _ = 
+#if TESTS_AS_APP
+let RUN() = RunAll(); failures
+#else
+RunAll()
+
+let aa = 
   if not failures.IsEmpty then (stdout.WriteLine("Test Failed, failures = {0}", failures); exit 1) 
   else (stdout.WriteLine "Test Passed"; 
         log "ALL OK, HAPPY HOLIDAYS, MERRY CHRISTMAS!"
@@ -231,3 +241,4 @@ let _ =
             stdout.WriteLine ("test.ok not found")
         exit 0)
 
+#endif

@@ -94,7 +94,6 @@ let checkEndOfFileError t =
   | LexCont.StringInComment (_,_,m)               -> reportParseErrorAt m (FSComp.SR.parsEofInStringInComment())
   | LexCont.VerbatimStringInComment (_,_,m)       -> reportParseErrorAt m (FSComp.SR.parsEofInVerbatimStringInComment())
   | LexCont.TripleQuoteStringInComment (_,_,m)    -> reportParseErrorAt m (FSComp.SR.parsEofInTripleQuoteStringInComment())
-  | LexCont.MLOnly (_,m)                          -> reportParseErrorAt m (FSComp.SR.parsEofInIfOcaml())
   | LexCont.EndLine(LexerEndlineContinuation.Skip(_,_,m)) -> reportParseErrorAt m (FSComp.SR.parsEofInDirective())
   | LexCont.EndLine(LexerEndlineContinuation.Token(stack))
   | LexCont.Token(stack) -> 
@@ -3903,8 +3902,11 @@ forLoopBinder:
        ($1, arbExpr("forLoopBinder2",(rhs parseState 1).EndRange), false) }
 
 forLoopRange: 
-  | parenPattern EQUALS declExpr  forLoopDirection  declExpr 
+  | parenPattern EQUALS declExpr forLoopDirection declExpr 
       { idOfPat (rhs parseState 1) $1,$3,$4,$5 }
+
+  | parenPattern EQUALS rangeSequenceExpr
+     { raiseParseErrorAt (rhs parseState 2) (FSComp.SR.parsUnexpectedSymbolEqualsInsteadOfIn()) }
 
 inlineAssemblyExpr:
   |  HASH stringOrKeywordString opt_inlineAssemblyTypeArg opt_curriedArgExprs  opt_inlineAssemblyReturnTypes HASH 

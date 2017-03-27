@@ -1,19 +1,11 @@
 // #Stress 
 #indent "off"
 
-(*IF-OCAML*)
-  type node = int
-module NodeSet = Set.Make(struct type t = int let compare = compare end )
-module NodeMap = Map.Make(struct type t = int let compare = compare end)
-  type node_set = NodeSet.t
-  type 'a node_map = 'a NodeMap.t 
-(*ENDIF-OCAML*)
-
-  (*F# module NodeSet = Set
+  module NodeSet = Set
   module NodeMap = Map
   type node = int
   type node_set = node Set
-  type 'a node_map = (node,'a) Map F#*)
+  type 'a node_map = (node,'a) Map
 
   type info = {
       succ : node_set;

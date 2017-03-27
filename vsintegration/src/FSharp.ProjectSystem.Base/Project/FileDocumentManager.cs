@@ -77,7 +77,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             Guid logicalView = Guid.Empty;
             IVsWindowFrame windowFrame = null;
-            return this.Open(newFile, openWith, logicalView, logicalView, out windowFrame, windowFrameAction);
+            return this.Open(newFile, openWith, logicalView, out windowFrame, windowFrameAction);
         }
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="frame">A reference to the window frame that is mapped to the file</param>
         /// <param name="windowFrameAction">Determine the UI action on the document window</param>
         /// <returns>If the method succeeds, it returns S_OK. If it fails, it returns an error code.</returns>
-        public int Open(bool newFile, bool openWith, Guid logicalView, Guid fallbackLogicalView, out IVsWindowFrame frame, WindowFrameShowAction windowFrameAction)
+        public int Open(bool newFile, bool openWith, Guid logicalView, out IVsWindowFrame frame, WindowFrameShowAction windowFrameAction)
         {
             frame = null;
             IVsRunningDocumentTable rdt = this.Node.ProjectMgr.Site.GetService(typeof(SVsRunningDocumentTable)) as IVsRunningDocumentTable;
@@ -112,11 +112,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             try
             {
                 ErrorHandler.ThrowOnFailure(rdt.FindAndLockDocument((uint)flags, path, out ivsHierarchy, out itemid, out docData, out docCookie));
-                var hr = this.Open(newFile, openWith, ref logicalView, docData, out frame, windowFrameAction);
-                if (hr != VSConstants.S_OK && fallbackLogicalView != logicalView)
-                {
-                    ErrorHandler.ThrowOnFailure(this.Open(newFile, openWith, ref fallbackLogicalView, docData, out frame, windowFrameAction));
-                }
+                ErrorHandler.ThrowOnFailure(this.Open(newFile, openWith, ref logicalView, docData, out frame, windowFrameAction));
             }
             catch (COMException e)
             {
@@ -166,15 +162,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             int returnValue = VSConstants.S_OK;
             string caption = this.GetOwnerCaption();
             string fullPath = this.GetFullPathForDocument();
-
+     
             // Make sure that the file is on disk before we open the editor and display message if not found
             if (!((FileNode)this.Node).IsFileOnDisk(true))
             {
-                // Inform clients that we have an invalid item (wrong icon)
-                this.Node.OnInvalidateItems(this.Node.Parent);
-
                 // Bail since we are not able to open the item
-                // Do not return an error code otherwise an public error message is shown. The scenario for this operation
+                // Do not return an error code otherwise an internal error message is shown. The scenario for this operation
                 // normally is already a reaction to a dialog box telling that the item has been removed.
                 return VSConstants.S_FALSE;
             }
@@ -186,7 +179,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 this.Node.ProjectMgr.OnOpenItem(fullPath);
                 int result = VSConstants.E_FAIL;
-                
+
                 if (openWith)
                 {
                     result = uiShellOpenDocument.OpenStandardEditor((uint)__VSOSEFLAGS.OSE_UseOpenWithDialog, fullPath, ref logicalView, caption, Node.ProjectMgr.InteropSafeIVsUIHierarchy, this.Node.ID, docDataExisting, serviceProvider, out windowFrame);
@@ -197,8 +190,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     if (newFile)
                     {
                         openFlags |= __VSOSEFLAGS.OSE_OpenAsNewFile;
-                    }                    
-                    
+                    }
+
                     //NOTE: we MUST pass the IVsProject in pVsUIHierarchy and the itemid
                     // of the node being opened, otherwise the debugger doesn't work.
                     if (editorType != Guid.Empty)

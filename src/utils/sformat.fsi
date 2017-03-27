@@ -37,7 +37,10 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     /// Data representing structured layouts of terms.  
 #if RUNTIME  // FSharp.Core.dll makes things internal and hides representations
     type internal Layout
-    type internal TaggedText
+    type internal LayoutTag
+    type internal TaggedText =
+        abstract Tag: LayoutTag
+        abstract Text: string
 #else  // FSharp.Compiler.dll, FSharp.Compiler-proto.dll, FSharp.PowerPack.dll
     // FSharp.PowerPack.dll: reveals representations
     // FSharp.Compiler-proto.dll, FSharp.Compiler.dll: the F# compiler likes to see these representations
@@ -54,49 +57,54 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         | Breakable of int
         | Broken of int
     
-    [<NoEquality; NoComparison>]
+    [<StructuralEquality; NoComparison>]
+#if COMPILER
+    type internal LayoutTag =
+#else
+    type LayoutTag =
+#endif
+        | ActivePatternCase
+        | ActivePatternResult
+        | Alias
+        | Class
+        | Union
+        | UnionCase
+        | Delegate
+        | Enum
+        | Event
+        | Field
+        | Interface
+        | Keyword
+        | LineBreak
+        | Local
+        | Record
+        | RecordField
+        | Method
+        | Member
+        | ModuleBinding
+        | Module
+        | Namespace
+        | NumericLiteral
+        | Operator
+        | Parameter
+        | Property
+        | Space
+        | StringLiteral
+        | Struct
+        | TypeParameter
+        | Text
+        | Punctuation
+        | UnknownType
+        | UnknownEntity
+
 #if COMPILER
     type internal TaggedText =
 #else
     type TaggedText =
 #endif
-        | ActivePatternCase of string
-        | ActivePatternResult of string
-        | Alias of string
-        | Class of string
-        | Union of string
-        | UnionCase of string
-        | Delegate of string
-        | Enum of string
-        | Event of string
-        | Field of string
-        | Interface of string
-        | Keyword of string
-        | LineBreak of string
-        | Local of string
-        | Record of string
-        | RecordField of string
-        | Method of string
-        | Member of string
-        | ModuleBinding of string
-        | Module of string
-        | Namespace of string
-        | NumericLiteral of string
-        | Operator of string
-        | Parameter of string
-        | Property of string
-        | Space of string
-        | StringLiteral of string
-        | Struct of string
-        | TypeParameter of string
-        | Text of string
-        | Punctuation of string
-        | UnknownType of string
-        | UnknownEntity of string
-        with 
-        member Value: string
-        member Length: int
-        static member GetText: t: TaggedText -> string
+        abstract Tag : LayoutTag
+        abstract Text : string
+
     
 #if COMPILER
     type internal TaggedTextWriter =
@@ -126,7 +134,8 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #else
 #endif
             TaggedTextOps =
-        val keywordTypes : Set<string>
+        val tag : LayoutTag -> string -> TaggedText
+        val keywordFunctions : Set<string>
         val tagAlias : string -> TaggedText
         val tagClass : string -> TaggedText
         val tagUnionCase : string -> TaggedText

@@ -11,7 +11,7 @@ open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 
-[<TestFixture>]
+[<TestFixture>][<Category "Roslyn Services">]
 type IndentationServiceTests()  =
 
     static let tabSize = 4

@@ -2,101 +2,10 @@
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
-[<RequireQualifiedAccess>]
-[<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-module Array =
-    /// pass an array byref to reverse it in place
-    let revInPlace (array: 'T []) =
-        if Array.isEmpty array then () else
-        let arrlen, revlen = array.Length-1, array.Length/2 - 1
-        for idx in 0 .. revlen do
-            let t1 = array.[idx] 
-            let t2 = array.[arrlen-idx]
-            array.[idx] <- t2
-            array.[arrlen-idx] <- t1
-
-    /// Async implementation of Array.map.
-    let mapAsync (mapping : 'T -> Async<'U>) (array : 'T[]) : Async<'U[]> =
-        let len = Array.length array
-        let result = Array.zeroCreate len
-
-        async { // Apply the mapping function to each array element.
-            for i in 0 .. len - 1 do
-                let! mappedValue = mapping array.[i]
-                result.[i] <- mappedValue
-
-            // Return the completed results.
-            return result
-        }
-
-[<RequireQualifiedAccess>]
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module String =
-    open System
-    open System.IO
-
-    let inline toCharArray (str: string) = str.ToCharArray()
-
-    let lowerCaseFirstChar (str: string) =
-        if String.IsNullOrEmpty str 
-         || Char.IsLower(str, 0) then str else 
-        let strArr = toCharArray str
-        match Array.tryHead strArr with
-        | None -> str
-        | Some c  -> 
-            strArr.[0] <- Char.ToLower c
-            String (strArr)
-
-    let extractTrailingIndex (str: string) =
-        match str with
-        | null -> null, None
-        | _ ->
-            let charr = str.ToCharArray() 
-            Array.revInPlace charr
-            let digits = Array.takeWhile Char.IsDigit charr
-            Array.revInPlace digits
-            String digits
-            |> function
-               | "" -> str, None
-               | index -> str.Substring (0, str.Length - index.Length), Some (int index)
-
-    /// Remove all trailing and leading whitespace from the string
-    /// return null if the string is null
-    let trim (value: string) = if isNull value then null else value.Trim()
-    
-    /// Splits a string into substrings based on the strings in the array separators
-    let split options (separator: string []) (value: string) = 
-        if isNull value  then null else value.Split(separator, options)
-
-    let (|StartsWith|_|) pattern value =
-        if String.IsNullOrWhiteSpace value then
-            None
-        elif value.StartsWith pattern then
-            Some()
-        else None
-
-    let (|Contains|_|) pattern value =
-        if String.IsNullOrWhiteSpace value then
-            None
-        elif value.Contains pattern then
-            Some()
-        else None
-
-    let getLines (str: string) =
-        use reader = new StringReader(str)
-        [|
-        let line = ref (reader.ReadLine())
-        while not (isNull !line) do
-            yield !line
-            line := reader.ReadLine()
-        if str.EndsWith("\n") then
-            // last trailing space not returned
-            // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
-            yield String.Empty
-        |]
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 
 /// Represent an Xml documentation block in source code
-type XmlDocable =
+type internal XmlDocable =
     | XmlDocable of line:int * indent:int * paramNames:string list
 
 module internal XmlDocParsing =
@@ -238,19 +147,17 @@ module internal XmlDocParsing =
 
         and getXmlDocablesInput input =
             match input with
-            | ParsedInput.ImplFile(ParsedImplFileInput(_, _, _, _, _, symModules, _))-> 
+            | ParsedInput.ImplFile(ParsedImplFileInput(modules = symModules))-> 
                 symModules |> List.collect getXmlDocablesSynModuleOrNamespace
             | ParsedInput.SigFile _ -> []
 
-        async {
-            // Get compiler options for the 'project' implied by a single script file
-            match input with
-            | Some input -> 
-                return getXmlDocablesInput input
-            | None ->
-                // Should not fail here, just in case 
-                return []
-        }
+        // Get compiler options for the 'project' implied by a single script file
+        match input with
+        | Some input -> 
+            getXmlDocablesInput input
+        | None ->
+            // Should not fail here, just in case 
+            []
 
 module internal XmlDocComment =
     let private ws (s: string, pos) = 

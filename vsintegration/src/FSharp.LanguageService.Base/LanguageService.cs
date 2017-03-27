@@ -1395,6 +1395,8 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
         internal abstract String GetName(string filterText, int index);
 
+        internal abstract string GetNameInCode(string filterText, int index);
+
         internal abstract String GetDescription(string filterText, int index);
 
         internal abstract int GetGlyph(string filterText, int index);

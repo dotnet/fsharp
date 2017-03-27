@@ -11,13 +11,10 @@ open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.Utilities
-open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.LanguageService
 open System.Runtime.InteropServices
-open EnvDTE
 
 type internal XmlDocCommandFilter 
      (
@@ -69,7 +66,7 @@ type internal XmlDocCommandFilter
                                 let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                                 let sourceText = wpfTextView.TextBuffer.CurrentSnapshot.GetText()
                                 let! parsedInput = checker.ParseDocument(document, options, sourceText)
-                                let! xmlDocables = XmlDocParser.getXmlDocables (sourceText, Some parsedInput) |> liftAsync
+                                let xmlDocables = XmlDocParser.getXmlDocables (sourceText, Some parsedInput) 
                                 let xmlDocablesBelowThisLine = 
                                     // +1 because looking below current line for e.g. a 'member'
                                     xmlDocables |> List.filter (fun (XmlDocable(line,_indent,_paramNames)) -> line = curLineNum+1) 

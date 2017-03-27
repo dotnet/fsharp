@@ -6,7 +6,7 @@ module Core_array
 let mutable failures = []
 let report_failure (s) = 
   stderr.WriteLine " NO"; failures <- s :: failures
-let test s b = if not b then (stderr.Write(s:string);   report_failure() )
+let test s b = if not b then (stderr.Write(s:string);   report_failure(s) )
 let check s b1 b2 = test s (b1 = b2)
 
 
@@ -779,8 +779,11 @@ module StringSlicingTest =
     test "slice1940" (s1.[0..1] = "ab")
     test "slice1941" (s1.[1..1] = "b")
     test "slice1942" (s1.[2..1] = "")
+#if MONO
     test "slice1943" (s1.[3..1] = "")
     test "slice1944" (s1.[4..1] = "")
+#endif
+
     test "slice1950" (s1.[-3..-4] = "")
     test "slice1951" (try s1.[-4..-3] |> ignore; false with _ -> true)
     
@@ -1496,9 +1499,17 @@ module bug6447 =
     do check "bug6447_hash_a2" (hash a2) 10727    
 #endif    
     
+#if TESTS_AS_APP
+let RUN() = failures
+#else
 let aa =
-  if not failures.IsEmpty then (stdout.WriteLine "Test Failed"; exit 1) 
-  else (stdout.WriteLine "Test Passed"; 
-        System.IO.File.WriteAllText("test.ok","ok"); 
-        exit 0)
+  match failures with 
+  | [] -> 
+      stdout.WriteLine "Test Passed"
+      System.IO.File.WriteAllText("test.ok","ok")
+      exit 0
+  | _ -> 
+      stdout.WriteLine "Test Failed"
+      exit 1
+#endif
 

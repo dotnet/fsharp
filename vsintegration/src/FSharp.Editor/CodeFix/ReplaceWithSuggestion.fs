@@ -16,7 +16,7 @@ open Microsoft.CodeAnalysis.CodeActions
 [<ExportCodeFixProvider(FSharpCommonConstants.FSharpLanguageName, Name = "ReplaceWithSuggestion"); Shared>]
 type internal FSharpReplaceWithSuggestionCodeFixProvider() =
     inherit CodeFixProvider()
-    let fixableDiagnosticIds = ["FS0039"; "FS1129"; "FS0495"] |> Set.ofList
+    let fixableDiagnosticIds = set ["FS0039"; "FS1129"; "FS0495"]
     let maybeString = FSComp.SR.undefinedNameSuggestionsIntro()
         
     let createCodeFix (title: string, context: CodeFixContext, textChange: TextChange) =
@@ -29,7 +29,7 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider() =
                 } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
             title)
 
-    override __.FixableDiagnosticIds = fixableDiagnosticIds.ToImmutableArray()
+    override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override __.RegisterCodeFixesAsync context : Task =
         async { 
@@ -43,7 +43,7 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider() =
                         parts.[1].Split([| '\r'; '\n' |], StringSplitOptions.RemoveEmptyEntries) 
                         |> Array.map (fun s -> s.Trim())
                     
-                    let diagnostics = [| diagnostic |].ToImmutableArray()
+                    let diagnostics = ImmutableArray.Create diagnostic
 
                     for suggestion in suggestions do
                         let replacement = if suggestion.Contains " " then "``" + suggestion + "``" else suggestion

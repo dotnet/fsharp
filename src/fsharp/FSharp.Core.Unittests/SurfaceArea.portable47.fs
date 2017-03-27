@@ -3498,4 +3498,4 @@ System.IObserver`1[T]: Void OnCompleted()
 System.IObserver`1[T]: Void OnError(System.Exception)
 System.IObserver`1[T]: Void OnNext(T)
 "
-        SurfaceArea.verify expected "portable47" (sprintf "%s\\%s" __SOURCE_DIRECTORY__ __SOURCE_FILE__)
+        SurfaceArea.verify expected "portable47" (sprintf "%s/%s" __SOURCE_DIRECTORY__ __SOURCE_FILE__)

@@ -40,7 +40,7 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 
-[<TestFixture>]
+[<TestFixture>][<Category "Roslyn Services">]
 module GoToDefinitionServiceTests =
 
     [<Test>]

@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Core
+open System.Reflection
 
 //Replacement for: System.Security.SecurityElement.Escape(line) All platforms
 module internal XmlAdapters =
@@ -23,7 +24,6 @@ module internal XmlAdapters =
 #if FX_RESHAPED_REFLECTION
 module internal ReflectionAdapters = 
     open System
-    open System.Reflection
 #if FX_RESHAPED_REFLECTION_CORECLR
     open System.Runtime.Loader
 #endif
@@ -31,6 +31,7 @@ module internal ReflectionAdapters =
     open Microsoft.FSharp.Collections
     open PrimReflectionAdapters
 
+#if FX_NO_SYSTEM_BINDINGFLAGS
     [<System.FlagsAttribute>]
     type BindingFlags =
     | DeclaredOnly = 2
@@ -39,6 +40,7 @@ module internal ReflectionAdapters =
     | Public = 16
     | NonPublic = 32
     | InvokeMethod = 0x100
+#endif
 
     let inline hasFlag (flag : BindingFlags) f  = (f &&& flag) = flag
     let isDeclaredFlag  f    = hasFlag BindingFlags.DeclaredOnly f

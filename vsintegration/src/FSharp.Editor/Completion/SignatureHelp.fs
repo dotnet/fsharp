@@ -3,30 +3,21 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Text.RegularExpressions
 open System.Composition
 open System.Collections.Generic
-open System.Threading
-open System.Threading.Tasks
-open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Classification
-open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.SignatureHelp
 open Microsoft.CodeAnalysis.Text
 
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.Text.Tagging
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 
 open Microsoft.FSharp.Compiler.Layout
-open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 
 [<Shared>]
 [<ExportSignatureHelpProvider("FSharpSignatureHelpProvider", FSharpCommonConstants.FSharpLanguageName)>]

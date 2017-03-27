@@ -15,7 +15,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.LanguageService
 open UnitTests.TestLib.Utils
 
-[<TestFixture>]
+[<TestFixture>][<Category "Roslyn Services">]
 type HelpContextServiceTests() =
 
     let fileName = "C:\\test.fs"
@@ -231,7 +231,7 @@ type HelpContextServiceTests() =
                 Some "N1"
             ]
         this.TestF1Keywords(keywords, file, 
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -249,7 +249,7 @@ type HelpContextServiceTests() =
                 Some "N1.T"
             ]
         this.TestF1Keywords(keywords, file, 
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``EndOfLine``() =

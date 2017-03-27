@@ -15,6 +15,11 @@
 "Culture"="neutral"
 "codeBase"="$PackageFolder$\FSharp.Core.dll"
 
+[$RootKey$\Editors\{8a5aa6cf-46e3-4520-a70a-7393d15233e9}\LogicalViews]
+"{7651a700-06e5-11d1-8ebd-00a0c90f26ea}"=""
+"{7651a701-06e5-11d1-8ebd-00a0c90f26ea}"=""
+"{7651a703-06e5-11d1-8ebd-00a0c90f26ea}"=""
+
 [$RootKey$\Projects\{A1591282-1198-4647-A2B1-27E5FF5F6F3B}\LanguageTemplates]
 "{F2A71F9B-5D33-465A-A702-920D77279786}"="{76B279E8-36ED-494E-B145-5344F8DEFCB6}"
 

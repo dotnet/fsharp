@@ -44,12 +44,10 @@ type internal FSharpLanguageServiceBackgroundRequests
                  getDocumentationBuilder: unit -> IDocumentationBuilder) =    
 
     let mutable parseFileResults : FSharpParseFileResults option = None
-    let mutable navBarAndRegionInfo : FSharpNavigationAndRegionInfo option = None
     let mutable lastParseFileRequest : BackgroundRequest = null
 
     let outOfDateProjectFileNames = new System.Collections.Generic.HashSet<string>()
 
-    member this.NavigationBarAndRegionInfo with get() = navBarAndRegionInfo and set v = navBarAndRegionInfo <- v
     member this.ParseFileResults with get() = parseFileResults and set v = parseFileResults <- v
     member this.AddOutOfDateProjectFileName nm =
         outOfDateProjectFileNames.Add(nm) |> ignore
@@ -65,14 +63,14 @@ type internal FSharpLanguageServiceBackgroundRequests
                 // ExecuteBackgroundRequest will not be called.                    
                 None 
             |   _ ->       
-                // For scripts, GetCheckOptionsFromScriptRoot involves parsing and sync op, so is run on the language service thread later
+                // For scripts, GetProjectOptionsFromScript involves parsing and sync op, so is run on the language service thread later
                 // For projects, we need to access RDT on UI thread, so do it on the GUI thread now
                 if SourceFile.MustBeSingleFileProject(fileName) then
                     let data = 
                         lazy // This portion is executed on the language service thread
                             let timestamp = if source=null then System.DateTime(2000,1,1) else source.OpenedTime // source is null in unit tests
                             let checker = getInteractiveChecker()
-                            let checkOptions = checker.GetProjectOptionsFromScript(fileName, sourceText, timestamp, [| |]) |> Async.RunSynchronously
+                            let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(fileName, sourceText, timestamp, [| |]) |> Async.RunSynchronously
                             let projectSite = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, checkOptions)
                             { ProjectSite = projectSite
                               CheckOptions = checkOptions 
@@ -131,7 +129,6 @@ type internal FSharpLanguageServiceBackgroundRequests
                 let parseResults = interactiveChecker.ParseFileInProject(req.FileName, req.Text, checkOptions) |> Async.RunSynchronously
 
                 parseFileResults <- Some parseResults
-                navBarAndRegionInfo <- Some(FSharpNavigationAndRegionInfo.WithNewParseInfo(parseResults, navBarAndRegionInfo))                  
 
             | _ -> 
                 let syncParseInfoOpt = 
@@ -195,7 +192,6 @@ type internal FSharpLanguageServiceBackgroundRequests
 
                 else
                     parseFileResults <- Some parseResults
-                    navBarAndRegionInfo <- Some(FSharpNavigationAndRegionInfo.WithNewParseInfo(parseResults, navBarAndRegionInfo))                  
                     
                     match typedResults with 
                     | None -> 
@@ -267,10 +263,6 @@ type internal FSharpLanguageServiceBackgroundRequests
             lastParseFileRequest.Result.TryWaitForBackgroundRequestCompletion(millisecondsTimeout) 
 
     member __.OnActiveViewChanged(_textView: IVsTextView) =
-        match navBarAndRegionInfo with
-        | Some scope -> scope.ClearDisplayedRegions()
-        | None -> ()
-        navBarAndRegionInfo <- None
         parseFileResults <- None
         lastParseFileRequest <- null // abandon any request for untyped parse information, without cancellation
 
@@ -302,18 +294,10 @@ type internal FSharpLanguageServiceBackgroundRequests
 
 
     // This is called on the UI thread after fresh full typecheck results are available
-    member this.OnParseFileOrCheckFileComplete(req:BackgroundRequest, enableRegions, lastActiveTextView) =
+    member this.OnParseFileOrCheckFileComplete(req:BackgroundRequest) =
         match req.Source, req.ResultIntellisenseInfo, req.View with 
         | (:? IFSharpSource as source), (:? FSharpIntellisenseInfo as scope), textView when textView <> null && not req.Source.IsClosed -> 
 
              scope.OnParseFileOrCheckFileComplete(source)
              
         | _ -> ()
-
-        // Process regions only if they are enabled
-        if enableRegions then
-            // REVIEW: Do we need to update regions during every parse request?
-            match navBarAndRegionInfo with
-            | Some scope -> scope.UpdateHiddenRegions(req.Source, lastActiveTextView)  // This should probably use req.View instead of LastActiveTextView
-            | None -> ()
-

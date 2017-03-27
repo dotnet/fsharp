@@ -75,8 +75,7 @@ type [<Class>] internal FSharpSymbol =
     ///
     /// This is the relation used by GetUsesOfSymbol and GetUsesOfSymbolInFile.
     member IsEffectivelySameAs : other: FSharpSymbol -> bool
-
-
+    static member GetAccessibility : FSharpSymbol -> FSharpAccessibility option
 
 /// Represents an assembly as seen by the F# language
 and [<Class>] internal FSharpAssembly = 
@@ -271,11 +270,14 @@ and [<Class>] internal FSharpEntity =
     /// Indicates if the type is a delegate with the given Invoke signature 
     member FSharpDelegateSignature : FSharpDelegateSignature
 
-      /// Get the declared accessibility of the type
+    /// Get the declared accessibility of the type
     member Accessibility: FSharpAccessibility 
 
-      /// Get the declared accessibility of the representation, not taking signatures into account 
+    /// Get the declared accessibility of the representation, not taking signatures into account 
     member RepresentationAccessibility: FSharpAccessibility
+
+    /// Get all compilation paths, taking `Module` suffixes into account.
+    member AllCompilationPaths : string list
 
 /// Represents a delegate signature in an F# symbol
 and [<Class>] internal FSharpDelegateSignature =
@@ -426,17 +428,6 @@ and [<Class>] internal FSharpField =
 and [<Class>] internal FSharpAccessibilityRights =
     internal new : CcuThunk * AccessorDomain -> FSharpAccessibilityRights
     member internal Contents : AccessorDomain
-
-/// Indicates the accessibility of a symbol, as seen by the F# language
-and [<Class>] internal FSharpAccessibility = 
-    /// Indicates the symbol has public accessibility
-    member IsPublic : bool
-
-    /// Indicates the symbol has private accessibility
-    member IsPrivate : bool
-
-    /// Indicates the symbol has internal accessibility
-    member IsInternal : bool
 
 /// A subtype of FSharpSymbol that represents a generic parameter for an FSharpSymbol
 and [<Class>] internal FSharpGenericParameter = 

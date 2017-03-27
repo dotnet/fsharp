@@ -1,13 +1,26 @@
 // #Regression #Conformance #SignatureFiles #Classes #ObjectConstructors #ObjectOrientedTypes #Fields #MemberDefinitions #MethodsAndProperties #Unions #InterfacesAndImplementations #Events #Overloading #Recursion #Regression 
 
 #light
-#if COMPILED
+
+#if TESTS_AS_APP
+module Core_members_basics
+#else
 module Tests
 #endif
-let mutable failures = []
-let report_failure s = 
-  stderr.WriteLine " NO"; failures <- s :: failures
-let test s b = stderr.Write(s:string);  if b then stderr.WriteLine " OK" else report_failure s
+
+
+let failures = ref []
+
+let report_failure (s : string) = 
+    stderr.Write" NO: "
+    stderr.WriteLine s
+    failures := !failures @ [s]
+
+let test (s : string) b = 
+    stderr.Write(s)
+    if b then stderr.WriteLine " OK"
+    else report_failure (s)
+
 let check s v1 v2 = test s (v1 = v2)
 
 //--------------------------------------------------------------
@@ -45,13 +58,17 @@ test "fweoew093" ((f(1)).b = 2)
 
 open System
 open System.Collections
+#if !FX_PORTABLE_OR_NETSTANDARD
 open System.Windows.Forms
+#endif
 
 //-----------------------------------------
 // Some simple object-expression tests
 
 let x0 = { new System.Object() with member __.GetHashCode() = 3 }
+#if !FX_PORTABLE_OR_NETSTANDARD
 let x1 = { new System.Windows.Forms.Form() with member __.GetHashCode() = 3 }
+#endif
 
 //-----------------------------------------
 // Test defining an F# class
@@ -964,6 +981,7 @@ let [<DontPressThisButton("Please don't press this again")>] button () = 1
 // Test we can use base calls
 
 
+#if !FX_PORTABLE_OR_NETSTANDARD
 open System.Windows.Forms
 
 type MyCanvas2 = 
@@ -975,6 +993,7 @@ type MyCanvas2 =
   end
 
 let form2 = new MyCanvas2()
+#endif
 
 
 //---------------------------------------------------------------------
@@ -1762,12 +1781,16 @@ module DefaultConstructorConstraints = begin
   let x1 = (f1() : obj)
   let x2 = (f1() : int)
   let x3 = (f1() : DateTime)
+#if !FX_PORTABLE_OR_NETSTANDARD
   let x4 = (f1() : System.Windows.Forms.Form)
+#endif
   let f2 () = f1()
   let y1 = (f2() : obj)
   let y2 = (f2() : int)
   let y3 = (f2() : DateTime)
+#if !FX_PORTABLE_OR_NETSTANDARD
   let y4 = (f2() : System.Windows.Forms.Form)
+#endif
   
 end
 
@@ -2008,6 +2031,7 @@ module T1 =
 
     Vector2D(1.0,1.0) = Vector2D(1.0,1.0)
 
+#if !FX_PORTABLE_OR_NETSTANDARD
 module Ex5 = 
     open System.Drawing
     type Label(?text,?font) =
@@ -2019,6 +2043,7 @@ module Ex5 =
     Label(text="Hello World")
     Label(font=new Font(FontFamily.GenericMonospace,36.0f),
           text="Hello World")
+#endif
 
 module Ex6 = 
     type IShape =
@@ -2320,11 +2345,16 @@ module MemoizeSample =
                   lookasideTable.Clear() }
                   
 
+    do printfn "MemoizeSample - #0"
     let rec fibFast = memoize (fun n -> if n <= 2 then 1 else fibFast.[n-1] + fibFast.[n-2])
 
+    do printfn "Memoize #1"
     fibFast.[3]
+    do printfn "Memoize #2"
     fibFast.[30]
+    do printfn "Memoize #3"
     fibFast.Clear()
+    do printfn "Memoize #4"
     
 (*
 module NameLookupServiceExample = 
@@ -2374,6 +2404,7 @@ module NameLookupServiceExample =
 
 module ConstraintsInMembers = begin
 
+    do printfn "ConstraintsInMembers"
     type IDuplex = 
       interface 
       end
@@ -2401,6 +2432,7 @@ end
 
 module InterfaceCastingTests = begin
 
+    do printfn "InterfaceCastingTests"
     type IBar = 
         interface
         end
@@ -3129,7 +3161,8 @@ module UnitArgs =
 // Finish up
 
 
-
+#if MONO // bug repro1
+#else
 
 module SingleArgumentFunctions =
     type C() = 
@@ -3151,6 +3184,7 @@ module SingleArgumentFunctions =
     let c = C()
     printfn "c.Result = %d" c.Result
     test "vrewiorvw09j" (c.Result = 18)
+#endif
 
 module MultiArgumentFunctions =
     type C() = 
@@ -3202,6 +3236,8 @@ module GenericFunctions =
     printfn "c.Result = %d" c.Result
     test "vrewiorvw09d" (c.Result = 14)
 
+#if MONO // bug repro1 (uncomfirmed)
+#else
 module GenericFunctionInGenericClass =
     type C<'a>() = 
         let f1 x1 = x1 
@@ -3226,6 +3262,7 @@ module GenericFunctionInGenericClass =
     printfn "c2.Result = %d" c2.Result
     test "vrewiorvw09s" (c.Result = 42)
     test "vrewiorvw09a" (c2.Result = 50)
+#endif
 
 module TailCallLoop =
     type C<'a>() = 
@@ -3523,16 +3560,16 @@ module SlicingTests =
     type Foo() =
         member this.GetSlice(lb1:int option, ub1:int option) = [1]
         member this.SetSlice(lb1:int option, ub1:int option, v2D: int list) = ()
-
+ 
     let f = new Foo()
-
+ 
     let vs = f.[1 .. 3]
     f.[1..3] <- [3]
     f.[..3] <- [3]
     f.[1..] <- [3]
     f.[*] <- [3]
-
-module Bug_FSharp_1_0_3246 =
+ 
+ module Bug_FSharp_1_0_3246 =
     type r1 =  
         { x : int }
         static member Empty = { x = 3 } 
@@ -5454,8 +5491,8 @@ module CheckGeneralizationOfMembersInRecursiveGroupsWhichIncludeImplicitConstruc
             static let fact = new FooFunc2<'a>()
             static member factory() = fact
                         
-        type BerFunc<'a,'b>() =
-          static let fact() = new BerFunc<'a,'b>()
+        type BarFunc<'a,'b>() =
+          static let fact() = new BarFunc<'a,'b>()
           static member factory() = fact()
           
         // Equi-recursive type defs
@@ -5582,9 +5619,18 @@ module Devdiv2_5385_repro2 =
     printfn "test passed ok without NullReferenceException"
 
 
-let _ = 
-  if not failures.IsEmpty then (eprintfn "Test Failed, failures = %A" failures; exit 1) 
-  else (stdout.WriteLine "Test Passed"; 
-        System.IO.File.WriteAllText("test.ok","ok"); 
-        exit 0)
+
+#if TESTS_AS_APP
+let RUN() = !failures
+#else
+let aa =
+  match !failures with 
+  | [] -> 
+      stdout.WriteLine "Test Passed"
+      System.IO.File.WriteAllText("test.ok","ok")
+      exit 0
+  | _ -> 
+      stdout.WriteLine "Test Failed"
+      exit 1
+#endif
 

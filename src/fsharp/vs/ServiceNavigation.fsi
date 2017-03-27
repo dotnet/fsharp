@@ -26,8 +26,7 @@ type internal FSharpNavigationDeclarationItemKind =
 type internal FSharpNavigationDeclarationItem = 
     member Name : string
     member UniqueName : string
-    member Glyph : int
-    member GlyphMajor : ItemDescriptionIcons.GlyphMajor
+    member Glyph : FSharpGlyph
     member Kind : FSharpNavigationDeclarationItemKind
     member Range : Range.range
     member BodyRange : Range.range

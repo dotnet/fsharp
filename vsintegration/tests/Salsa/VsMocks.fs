@@ -1632,12 +1632,15 @@ module internal VsActual =
         // use the environment variable to find the VS installdir
 #if VS_VERSION_DEV12
         let vsvar = System.Environment.GetEnvironmentVariable("VS120COMNTOOLS")
+        if String.IsNullOrEmpty vsvar then failwith "VS120COMNTOOLS environment variable was not found."
 #endif
 #if VS_VERSION_DEV14
         let vsvar = System.Environment.GetEnvironmentVariable("VS140COMNTOOLS")
+        if String.IsNullOrEmpty vsvar then failwith "VS140COMNTOOLS environment variable was not found."
 #endif
 #if VS_VERSION_DEV15
         let vsvar = System.Environment.GetEnvironmentVariable("VS150COMNTOOLS")
+        if String.IsNullOrEmpty vsvar then failwith "VS150COMNTOOLS environment variable was not found."
 #endif
         Path.Combine(vsvar, "..")
 

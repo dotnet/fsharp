@@ -1,17 +1,9 @@
 ﻿namespace Microsoft.VisualStudio.FSharp.Editor.Logging
 
 open System
-open System.Collections.Generic
-open System.Windows.Media
 open System.ComponentModel.Composition
-open Microsoft.VisualStudio.FSharp
-open Microsoft.VisualStudio
-open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.Text.Classification
-open Microsoft.VisualStudio.Utilities
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.VisualStudio.ComponentModelHost
 open Microsoft.VisualStudio.FSharp.Editor
 
 [<RequireQualifiedAccess>]
@@ -36,28 +28,35 @@ open Config
 
 type [<Export>] Logger [<ImportingConstructor>]
     ([<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider) =
-    let outputWindow = serviceProvider.GetService<SVsOutputWindow,IVsOutputWindow>()
+    let outputWindow = serviceProvider.GetService<SVsOutputWindow,IVsOutputWindow>() |> Option.ofObj
 
     let createPane () =
-        outputWindow.CreatePane
-            (ref fsharpOutputGuid,"F# Language Service", Convert.ToInt32 true, Convert.ToInt32 false) |> ignore
+        outputWindow |> Option.iter (fun x -> 
+            x.CreatePane(ref fsharpOutputGuid,"F# Language Service", Convert.ToInt32 true, Convert.ToInt32 false) |> ignore)
+    
     do createPane ()
 
     let getPane () =
-        match outputWindow.GetPane (ref fsharpOutputGuid) with
-        | 0, pane -> pane.Activate()|>ignore; Some pane
-        | _, _    -> None
+        match outputWindow |> Option.map (fun x -> x.GetPane (ref fsharpOutputGuid)) with
+        | Some (0, pane) -> 
+            pane.Activate() |> ignore
+            Some pane
+        | _ -> None
 
     static let mutable globalServiceProvider: IServiceProvider option = None
 
     static member GlobalServiceProvider
-        with get () = globalServiceProvider |>  Option.defaultValue (ServiceProvider.GlobalProvider :> IServiceProvider)
-        and  set v  = globalServiceProvider <- Some v
+        with get () = globalServiceProvider |> Option.defaultValue (ServiceProvider.GlobalProvider :> IServiceProvider)
+        and  set v = globalServiceProvider <- Some v
 
     member __.FSharpLoggingPane
-        with get () = getPane () |> function
-            | Some pane -> Some pane
-            | None      -> createPane(); getPane()
+        with get () = 
+            getPane () 
+            |> function
+               | Some pane -> Some pane
+               | None -> 
+                   createPane()
+                   getPane()
 
     member self.Log (msgType:LogType,msg:string) =
         let time = DateTime.Now.ToString("hh:mm:ss tt")

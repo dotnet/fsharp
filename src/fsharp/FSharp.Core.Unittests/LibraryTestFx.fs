@@ -56,11 +56,8 @@ let CheckThrowsInvalidOperationExn   f = CheckThrowsExn<InvalidOperationExceptio
 let CheckThrowsFormatException       f = CheckThrowsExn<FormatException>           f
 
 // Verifies two sequences are equal (same length, equiv elements)
-let VerifySeqsEqual seq1 seq2 =
-    Assert.AreEqual(Seq.length seq1, Seq.length seq2, "Sequences are different lengths.")
-
-    Seq.zip seq1 seq2
-    |> Seq.iteri (fun i (a, b) -> if a <> b then Assert.Fail("Sequences are different in position {0}\n  Expected: {1}\n  But was: {2}", i, a, b))
+let VerifySeqsEqual (seq1 : seq<'T>) (seq2 : seq<'T>) =
+    CollectionAssert.AreEqual (seq1, seq2)
 
 let sleep(n : int32) =        
 #if FX_NO_THREAD
@@ -117,21 +114,65 @@ module SurfaceArea =
             #endif
             
         let actual =
-            types 
-            |> Array.collect getTypeMemberStrings
-            |> Array.sort
-            |> String.concat "\r\n"
+            types |> Array.collect getTypeMemberStrings
 
         asm,actual
     
     // verify public surface area matches expected
-    let verify expected platform fileName =  
-        let workDir = TestContext.CurrentContext.WorkDirectory
-        let logFile = sprintf "%s\\CoreUnit_%s_Xml.xml" workDir platform
+    let verify expected platform (fileName : string) =
         let normalize (s:string) =
-            Regex.Replace(s, "(\\r\\n|\\n)+", "\r\n").Trim([|'\r';'\n'|])
+            Regex.Replace(s, "(\\r\\n|\\n|\\r)+", "\r\n").Trim()
+
         let asm, actualNotNormalized = getActual ()
-        let actual = actualNotNormalized |> normalize
-        let expected = expected |> normalize
+        let actual = actualNotNormalized |> Seq.map normalize |> Seq.filter (String.IsNullOrWhiteSpace >> not) |> set
         
-        Assert.AreEqual(expected, actual, sprintf "\r\nAssembly: %A\r\n--------------------- ACTUAL -------------------\r\n%s\r\n--------------------EXPECTED--------------------\r\n%s\r\n-----------------\r\n Expected and actual surface area don't match. To see the delta, run\r\nwindiff %s %s" asm actual expected fileName logFile)
+        let expected =
+            // Split the "expected" string into individual lines, then normalize it.
+            (normalize expected).Split([|"\r\n"; "\n"; "\r"|], StringSplitOptions.RemoveEmptyEntries)
+            |> set
+
+        //
+        // Find types/members which exist in exactly one of the expected or actual surface areas.
+        //
+
+        /// Surface area types/members which were expected to be found but missing from the actual surface area.
+        let unexpectedlyMissing = Set.difference expected actual
+
+        /// Surface area types/members present in the actual surface area but weren't expected to be.
+        let unexpectedlyPresent = Set.difference actual expected
+
+        // If both sets are empty, the surface areas match so allow the test to pass.
+        if Set.isEmpty unexpectedlyMissing
+          && Set.isEmpty unexpectedlyPresent then
+            Assert.Pass ()
+
+        let logFile =
+            let workDir = TestContext.CurrentContext.WorkDirectory
+            sprintf "%s\\CoreUnit_%s_Xml.xml" workDir platform
+
+        // The surface areas don't match; prepare an easily-readable output message.
+        let msg =
+            let inline newLine (sb : System.Text.StringBuilder) = sb.AppendLine () |> ignore
+            let sb = System.Text.StringBuilder ()
+            Printf.bprintf sb "Assembly: %A" asm
+            newLine sb
+            sb.AppendLine "Expected and actual surface area don't match. To see the delta, run:" |> ignore
+            Printf.bprintf sb "    windiff %s %s" fileName logFile
+            newLine sb
+            newLine sb
+            sb.Append "Unexpectedly missing (expected, not actual):" |> ignore
+            for s in unexpectedlyMissing do
+                newLine sb
+                sb.Append "    " |> ignore
+                sb.Append s |> ignore
+            newLine sb
+            newLine sb
+            sb.Append "Unexpectedly present (actual, not expected):" |> ignore
+            for s in unexpectedlyPresent do
+                newLine sb
+                sb.Append "    " |> ignore
+                sb.Append s |> ignore
+            newLine sb
+            sb.ToString ()
+
+        Assert.Fail msg

@@ -7,7 +7,7 @@
     <Description xml:space="preserve">Deploy Visual F# Tools templates to Visual Studio</Description>
     <PackageId>Microsoft.FSharp.VSIX.Full.Core</PackageId>
   </Metadata>
-  <Installation>
+  <Installation Experimental="true">
     <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[15.0]" />
   </Installation>
   <Installer>
