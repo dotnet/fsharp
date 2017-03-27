@@ -395,6 +395,29 @@ if [""] == ["%VS150COMNTOOLS%"] (if exist "%ProgramFiles(x86)%\Microsoft Visual 
     call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat"
 ))
 
+
+echo aaa %link_exe%
+if [""] == ["%link_exe%"] (if exist "%VCToolsInstallDir%bin\HostX64\x86\link.exe" (
+    set link_exe="%VCToolsInstallDir%bin\HostX64\x86\link.exe"
+))
+echo bbb %link_exe%
+if [""] == ["%link_exe%"] (
+    echo did not find %VCToolsInstallDir%bin\HostX64\x86\link.exe
+    dir "%VCToolsInstallDir%bin\HostX64\x86"
+    set link_exe="%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe"
+    if not exist "%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe" (
+        %_nugetexe% install -source https://www.myget.org/F/fsharp-daily/api/v3/index.json VisualCppTools -version 14.0.24519-Pre -out packages
+    )
+)
+echo ccc %link_exe%
+if not exist "%link_exe%" (
+    echo Error: failed to find link.exe
+    goto :failure
+)
+echo ddd %link_exe%
+goto :failure
+
+
 echo .
 echo Environment
 echo 
@@ -641,9 +664,11 @@ echo WHERE_ARG_NUNIT=!WHERE_ARG_NUNIT!
 set NUNITPATH=%~dp0tests\fsharpqa\testenv\bin\nunit\
 set NUNIT3_CONSOLE=%~dp0packages\NUnit.Console.3.0.0\tools\nunit3-console.exe
 
+echo aaa %link_exe%
 if [""] == ["%link_exe%"] (if exist "%VCToolsInstallDir%bin\HostX64\x86\link.exe" (
     set link_exe="%VCToolsInstallDir%bin\HostX64\x86\link.exe"
 ))
+echo bbb %link_exe%
 if [""] == ["%link_exe%"] (
     echo did not find %VCToolsInstallDir%bin\HostX64\x86\link.exe
     dir "%VCToolsInstallDir%bin\HostX64\x86"
@@ -652,6 +677,7 @@ if [""] == ["%link_exe%"] (
         %_nugetexe% install -source https://www.myget.org/F/fsharp-daily/api/v3/index.json VisualCppTools -version 14.0.24519-Pre -out packages
     )
 )
+echo ccc %link_exe%
 if not exist "%link_exe%" (
     echo Error: failed to find link.exe
     goto :failure
