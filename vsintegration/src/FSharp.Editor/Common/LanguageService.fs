@@ -36,6 +36,7 @@ open Microsoft.VisualStudio.ComponentModelHost
 [<Guid(FSharpCommonConstants.svsSettingsPersistenceManagerGuidString)>]
 type internal SVsSettingsPersistenceManager = class end
 
+
 // Exposes FSharpChecker as MEF export
 [<Export(typeof<FSharpCheckerProvider>); Composition.Shared>]
 type internal FSharpCheckerProvider 
@@ -159,6 +160,8 @@ type internal ProjectInfoManager
         | true, (_loadTime, originalOptions) -> Some originalOptions
         | _ -> this.TryGetOptionsForProject(projectId) 
 
+
+
 // Used to expose FSharpChecker/ProjectInfo manager to diagnostic providers
 // Diagnostic providers can be executed in environment that does not use MEF so they can rely only
 // on services exposed by the workspace
@@ -166,6 +169,8 @@ type internal FSharpCheckerWorkspaceService =
     inherit Microsoft.CodeAnalysis.Host.IWorkspaceService
     abstract Checker: FSharpChecker
     abstract ProjectInfoManager: ProjectInfoManager
+
+
 
 type internal RoamingProfileStorageLocation(keyName: string) =
     inherit OptionStorageLocation()
@@ -178,6 +183,8 @@ type internal RoamingProfileStorageLocation(keyName: string) =
         | _ ->
             let substituteLanguageName = if languageName = FSharpCommonConstants.FSharpLanguageName then "FSharp" else languageName
             unsubstitutedKeyName.Replace("%LANGUAGE%", substituteLanguageName)
+ 
+
  
 [<Composition.Shared>]
 [<Microsoft.CodeAnalysis.Host.Mef.ExportWorkspaceServiceFactory(typeof<FSharpCheckerWorkspaceService>, Microsoft.CodeAnalysis.Host.Mef.ServiceLayer.Default)>]
@@ -193,52 +200,54 @@ type internal FSharpCheckerWorkspaceServiceFactory
                 member this.Checker = checkerProvider.Checker
                 member this.ProjectInfoManager = projectInfoManager }
 
-type
-    [<Guid(FSharpCommonConstants.packageGuidString)>]
-    [<ProvideLanguageService(languageService = typeof<FSharpLanguageService>,
-                             strLanguageName = FSharpCommonConstants.FSharpLanguageName,
-                             languageResourceID = 100,
-                             MatchBraces = true,
-                             MatchBracesAtCaret = true,
-                             ShowCompletion = true,
-                             ShowMatchingBrace = true,
-                             ShowSmartIndent = true,
-                             EnableAsyncCompletion = true,
-                             QuickInfo = true,
-                             DefaultToInsertSpaces = true,
-                             CodeSense = true,
-                             DefaultToNonHotURLs = true,
-                             EnableCommenting = true,
-                             CodeSenseDelay = 100,
-                             ShowDropDownOptions = true)>]
-    internal FSharpPackage() =
+
+[<Guid(FSharpCommonConstants.packageGuidString)>]
+[<ProvideLanguageService 
+    (   languageService = typeof<FSharpLanguageService>
+    ,   strLanguageName = FSharpCommonConstants.FSharpLanguageName
+    ,   languageResourceID = 100
+    ,   MatchBraces = true
+    ,   MatchBracesAtCaret = true
+    ,   ShowCompletion = true
+    ,   ShowMatchingBrace = true
+    ,   ShowSmartIndent = true
+    ,   EnableAsyncCompletion = true
+    ,   QuickInfo = true
+    ,   DefaultToInsertSpaces = true
+    ,   CodeSense = true
+    ,   DefaultToNonHotURLs = true
+    ,   EnableCommenting = true
+    ,   CodeSenseDelay = 100
+    ,   ShowDropDownOptions = true )>]
+type internal FSharpPackage() =
     inherit AbstractPackage<FSharpPackage, FSharpLanguageService>()
     
     override this.RoslynLanguageName = FSharpCommonConstants.FSharpLanguageName
 
     override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
 
-    override this.CreateLanguageService() = 
-        FSharpLanguageService(this)        
+    override this.CreateLanguageService() = FSharpLanguageService (this)        
 
     override this.CreateEditorFactories() = Seq.empty<IVsEditorFactory>
 
     override this.RegisterMiscellaneousFilesWorkspaceInformation(_) = ()
     
-and 
-    [<Guid(FSharpCommonConstants.languageServiceGuidString)>]
-    [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fs")>]
-    [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsi")>]
-    [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsx")>]
-    [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsscript")>]
-    [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".ml")>]
-    [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".mli")>]
-    [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fs", 97)>]
-    [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fsi", 97)>]
-    [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fsx", 97)>]
-    [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".fsscript", 97)>]
-    [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".ml", 97)>]
-    [<ProvideEditorExtension(FSharpCommonConstants.editorFactoryGuidString, ".mli", 97)>]
+
+
+and [<Guid(FSharpCommonConstants.languageServiceGuidString)>]
+    [<ProvideService (typeof<FSharpLanguageService>,ServiceName="F# Language Service")>]
+    [<ProvideLanguageExtension (typeof<FSharpLanguageService>, ".fs")>]
+    [<ProvideLanguageExtension (typeof<FSharpLanguageService>, ".fsi")>]
+    [<ProvideLanguageExtension (typeof<FSharpLanguageService>, ".fsx")>]
+    [<ProvideLanguageExtension (typeof<FSharpLanguageService>, ".fsscript")>]
+    [<ProvideLanguageExtension (typeof<FSharpLanguageService>, ".ml")>]
+    [<ProvideLanguageExtension (typeof<FSharpLanguageService>, ".mli")>]
+    [<ProvideEditorExtension (FSharpCommonConstants.editorFactoryGuidString, ".fs", 97)>]
+    [<ProvideEditorExtension (FSharpCommonConstants.editorFactoryGuidString, ".fsi", 97)>]
+    [<ProvideEditorExtension (FSharpCommonConstants.editorFactoryGuidString, ".fsx", 97)>]
+    [<ProvideEditorExtension (FSharpCommonConstants.editorFactoryGuidString, ".fsscript", 97)>]
+    [<ProvideEditorExtension (FSharpCommonConstants.editorFactoryGuidString, ".ml", 97)>]
+    [<ProvideEditorExtension (FSharpCommonConstants.editorFactoryGuidString, ".mli", 97)>]
     internal FSharpLanguageService(package : FSharpPackage) =
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
 
@@ -258,8 +267,7 @@ and
         | _ -> ()
 
     override this.Initialize() =
-        base.Initialize()
-
+        base.Initialize()        
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Completion.CompletionOptions.BlockForCompletionItems, FSharpCommonConstants.FSharpLanguageName, false)
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpCommonConstants.FSharpLanguageName, Nullable false)
 
@@ -382,7 +390,6 @@ and
         base.SetupNewTextView(textView)
 
         let textViewAdapter = package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
-               
         match textView.GetBuffer() with
         | (VSConstants.S_OK, textLines) ->
             let filename = VsTextLines.GetFilename textLines

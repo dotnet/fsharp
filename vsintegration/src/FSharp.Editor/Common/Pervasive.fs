@@ -2,28 +2,43 @@
 module Microsoft.VisualStudio.FSharp.Editor.Pervasive
 
 open System
+open System.IO
 open System.Diagnostics
+open Microsoft.VisualStudio
+open Microsoft.VisualStudio.Text
 
-[<RequireQualifiedAccess>]
-module String =   
-    open System.IO
 
-    let getLines (str: string) =
-        use reader = new StringReader(str)
-        [|  let mutable line = reader.ReadLine()
-            while not (isNull line) do
-                yield line
-                line <- reader.ReadLine()
-            if str.EndsWith("\n") then
-            // last trailing space not returned
-            // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
-                yield String.Empty
-        |]
+let inline ensureSucceeded hr = ErrorHandler.ThrowOnFailure hr |> ignore
 
+let (</>) path1 path2 = Path.Combine(path1,path2)
+
+type Path with
+    static member GetFullPathSafe path =
+        try Path.GetFullPath path
+        with _ -> path
+
+    static member GetFileNameSafe path =
+        try Path.GetFileName path
+        with _ -> path
+
+
+/// Load times used to reset type checking properly on script/project load/unload. It just has to be unique for each project load/reload.
+/// Not yet sure if this works for scripts.
+let fakeDateTimeRepresentingTimeLoaded x = DateTime(abs (int64 (match x with null -> 0 | _ -> x.GetHashCode())) % 103231L)
+    
 
 type System.IServiceProvider with
     member x.GetService<'T>() = x.GetService(typeof<'T>) :?> 'T
     member x.GetService<'S, 'T>() = x.GetService(typeof<'S>) :?> 'T
+
+
+type SnapshotSpan with
+    member inline x.StartLine = x.Snapshot.GetLineFromPosition (x.Start.Position)
+    member inline x.StartLineNum = x.Snapshot.GetLineNumberFromPosition x.Start.Position
+    member inline x.StartColumn = x.Start.Position - x.StartLine.Start.Position 
+    member inline x.EndLine = x.Snapshot.GetLineFromPosition (x.End.Position)
+    member inline x.EndLineNum  = x.Snapshot.GetLineNumberFromPosition x.End.Position
+    member inline x.EndColumn = x.End.Position - x.EndLine.Start.Position
 
 [<Sealed>]
 type MaybeBuilder () =
@@ -178,6 +193,13 @@ let inline liftAsync (computation : Async<'T>) : Async<'T option> =
         return Some a 
     }
 
+
+type Microsoft.FSharp.Control.Async with
+    static member Raise (e : #exn) = 
+        Async.FromContinuations(fun (_,econt,_) -> econt e)
+
+    static member RunTaskSynchronously task  = task |> Async.AwaitTask |> Async.RunSynchronously 
+
 module Async =
     let map (f: 'T -> 'U) (a: Async<'T>) : Async<'U> =
         async {
@@ -209,9 +231,84 @@ type AsyncBuilder with
     member __.ReturnFrom(computation: System.Threading.Tasks.Task<'a>): Async<'a> = Async.AwaitTask computation
 
 
+
+[<RequireQualifiedAccess>]
+module String =   
+    open System.IO
+
+    let getLines (str: string) =
+        use reader = new StringReader(str)
+        [|  let mutable line = reader.ReadLine()
+            while not (isNull line) do
+                yield line
+                line <- reader.ReadLine()
+            if str.EndsWith("\n") then
+            // last trailing space not returned
+            // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
+                yield String.Empty
+        |]
+
+    let getNonEmptyLines (str: string) =
+        use reader = new StringReader(str)
+        [|
+        let line = ref (reader.ReadLine())
+        while not (isNull (!line)) do
+            if (!line).Length > 0 then
+                yield !line
+            line := reader.ReadLine()
+        |]
+
+    let lowerCaseFirstChar (str: string) =
+        if String.IsNullOrEmpty str 
+         || Char.IsLower(str, 0) then str else 
+        let strArr = str.ToCharArray()
+        match Array.tryHead strArr with
+        | None -> str
+        | Some c  -> 
+            strArr.[0] <- Char.ToLower c
+            String (strArr)
+
+
+    let extractTrailingIndex (str: string) =
+        match str with
+        | null -> null, None
+        | _ ->
+            let charr = str.ToCharArray() 
+            Array.Reverse charr
+            let digits = Array.takeWhile Char.IsDigit charr
+            Array.Reverse  digits
+            String digits
+            |> function
+               | "" -> str, None
+               | index -> str.Substring (0, str.Length - index.Length), Some (int index)
+
+
+
+
+[<RequireQualifiedAccess>]
 module Option =
+
     let guard (x: bool) : Option<unit> =
         if x then Some() else None
+
+    let attempt (f: unit -> 'T) = try Some <| f() with _ -> None
+
+    let inline ofNull value =
+        if obj.ReferenceEquals(value, null) then None else Some value
+
+    /// Gets the option if Some x, otherwise try to get another value
+    let inline orTry f =
+        function
+        | Some x -> Some x
+        | None -> f()
+
+    /// Gets the value if Some x, otherwise try to get another value by calling a function
+    let inline getOrTry f =
+        function
+        | Some x -> x
+        | None -> f()
+
+
 
 module List =
     let foldi (folder : 'State -> int -> 'T -> 'State) (state : 'State) (xs : 'T list) =
@@ -226,3 +323,72 @@ module Seq =
     open System.Collections.Immutable
 
     let toImmutableArray (xs: seq<'a>) : ImmutableArray<'a> = xs.ToImmutableArray()
+
+
+[<RequireQualifiedAccess>]
+[<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
+module Array =
+
+    /// Optimized arrays equality. ~100x faster than `array1 = array2` on strings.
+    /// ~2x faster for floats
+    /// ~0.8x slower for ints
+    let inline areEqual (xs: 'T []) (ys: 'T []) =
+        match xs, ys with
+        | null, null -> true
+        | [||], [||] -> true
+        | null, _ | _, null -> false
+        | _ when xs.Length <> ys.Length -> false
+        | _ ->
+            let mutable break' = false
+            let mutable i = 0
+            let mutable result = true
+            while i < xs.Length && not break' do
+                if xs.[i] <> ys.[i] then 
+                    break' <- true
+                    result <- false
+                i <- i + 1
+            result
+
+    /// check if subArray is found in the wholeArray starting 
+    /// at the provided index
+    let inline isSubArray (subArray: 'T []) (wholeArray:'T []) index = 
+        if isNull subArray || isNull wholeArray then false
+        elif subArray.Length = 0 then true
+        elif subArray.Length > wholeArray.Length then false
+        elif subArray.Length = wholeArray.Length then areEqual subArray wholeArray else
+        let rec loop subidx idx =
+            if subidx = subArray.Length then true 
+            elif subArray.[subidx] = wholeArray.[idx] then loop (subidx+1) (idx+1) 
+            else false
+        loop 0 index
+
+    /// Returns true if one array has another as its subset from index 0.
+    let startsWith (prefix: _ []) (whole: _ []) =
+        isSubArray prefix whole 0
+
+    /// Returns true if one array has trailing elements equal to another's.
+    let endsWith (suffix: _ []) (whole: _ []) =
+        isSubArray suffix whole (whole.Length-suffix.Length)
+
+ 
+[<RequireQualifiedAccess>]
+module Dict = 
+    open System.Collections.Generic
+
+    let add key value (dict: #IDictionary<_,_>) =
+        dict.[key] <- value
+        dict
+
+    let remove (key: 'k) (dict: #IDictionary<'k,_>) =
+        dict.Remove key |> ignore
+        dict
+
+    let tryFind key (dict: #IDictionary<'k, 'v>) = 
+        let mutable value = Unchecked.defaultof<_>
+        if dict.TryGetValue (key, &value) then Some value
+        else None
+
+    let ofSeq (xs: ('k * 'v) seq) = 
+        let dict = Dictionary()
+        for k, v in xs do dict.[k] <- v
+        dict
