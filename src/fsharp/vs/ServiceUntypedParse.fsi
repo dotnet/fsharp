@@ -76,6 +76,7 @@ type internal CompletionContext =
     // end of name ast node * list of properties\parameters that were already set
     | ParameterList of pos * HashSet<string>
     | AttributeApplication
+    | OpenDeclaration
 
 type internal ModuleKind = { IsAutoOpen: bool; HasModuleSuffix: bool }
 
@@ -92,6 +93,7 @@ module internal UntypedParseImpl =
     val TryFindExpressionIslandInPosition : pos * ParsedInput option -> string option
     val TryGetCompletionContext : pos * FSharpParseFileResults option * lineStr: string -> CompletionContext option
     val GetEntityKind: pos * ParsedInput -> EntityKind option
+    val GetFullNameOfSmallestModuleOrNamespaceAtPoint : ParsedInput * pos -> string[]
 
 // implementation details used by other code in the compiler    
 module internal SourceFileImpl =

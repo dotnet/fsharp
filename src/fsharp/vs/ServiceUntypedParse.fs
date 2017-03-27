@@ -73,6 +73,7 @@ type CompletionContext =
     // end of name ast node * list of properties\parameters that were already set
     | ParameterList of pos * HashSet<string>
     | AttributeApplication
+    | OpenDeclaration
 
 //----------------------------------------------------------------------------
 // FSharpParseFileResults
@@ -919,6 +920,7 @@ module UntypedParseImpl =
         | None -> None
         | Some pt ->
 
+        
         match GetEntityKind(pos, pt) with
         | Some EntityKind.Attribute -> Some CompletionContext.AttributeApplication
         | _ ->
@@ -1230,6 +1232,38 @@ module UntypedParseImpl =
                             | SynSimplePat.Typed(SynSimplePat.Id(range = range),_,_) when rangeContainsPos range pos -> 
                                 Some CompletionContext.Invalid
                             | _ -> None)
+
+                    member this.VisitModuleDecl(defaultTraverse, decl) =
+                        match decl with
+                        | SynModuleDecl.Open(_, m) -> 
+                            // in theory, this means we're "in an open"
+                            // in practice, because the parse tree/walkers do not handle attributes well yet, need extra check below to ensure not e.g. $here$
+                            //     open System
+                            //     [<Attr$
+                            //     let f() = ()
+                            // inside an attribute on the next item
+                            let pos = mkPos pos.Line (pos.Column - 1) // -1 because for e.g. "open System." the dot does not show up in the parse tree
+                            if rangeContainsPos m pos then  
+                                Some CompletionContext.OpenDeclaration
+                            else
+                                None
+                        | _ -> defaultTraverse decl
             }
 
         AstTraversal.Traverse(pos, pt, walker)
+
+    /// Check if we are at an "open" declaration
+    let GetFullNameOfSmallestModuleOrNamespaceAtPoint (parsedInput: ParsedInput, pos: pos) = 
+        let mutable path = []
+        let visitor = 
+            { new AstTraversal.AstVisitorBase<bool>() with
+                override this.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) = 
+                    // don't need to keep going, namespaces and modules never appear inside Exprs
+                    None 
+                override this.VisitModuleOrNamespace(SynModuleOrNamespace(longId = longId; range = range)) =
+                    if rangeContainsPos range pos then 
+                        path <- path @ longId
+                    None // we should traverse the rest of the AST to find the smallest module 
+            }
+        AstTraversal.Traverse(pos, parsedInput, visitor) |> ignore
+        path |> List.map (fun x -> x.idText) |> List.toArray

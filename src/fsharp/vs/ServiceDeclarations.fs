@@ -112,12 +112,17 @@ type CompletionItemKind =
     | Argument
     | Other
 
+type UnresolvedSymbol =
+    { DisplayName: string
+      Namespace: string[] }
+
 type CompletionItem =
     { Item: Item
       Kind: CompletionItemKind
       IsOwnMember: bool
       MinorPriority: int
-      Type: TyconRef option }
+      Type: TyconRef option
+      Unresolved: UnresolvedSymbol option }
 
 [<AutoOpen>]
 module internal ItemDescriptionsImpl = 
@@ -494,7 +499,7 @@ module internal ItemDescriptionsImpl =
     // Like Seq.distinctBy but only filters out duplicates for some of the elements
     let partialDistinctBy (per:IPartialEqualityComparer<_>) seq =
         // Wrap a Wrap _ around all keys in case the key type is itself a type using null as a representation
-        let dict = new Dictionary<WrapType<'T>,obj>(per)
+        let dict = Dictionary<WrapType<'T>,obj>(per)
         seq |> List.filter (fun v -> 
             let v = Wrap(v)
             if (per.InEqualityRelation(v)) then 
@@ -533,6 +538,7 @@ module internal ItemDescriptionsImpl =
               | Wrap(Item.Event _) -> true
               | Wrap(Item.Property _) -> true
               | Wrap(Item.CtorGroup _) -> true
+              | Wrap(Item.UnqualifiedType _) -> true
               | _ -> false
               
           member x.Equals(item1, item2) = 
@@ -573,8 +579,13 @@ module internal ItemDescriptionsImpl =
                   List.zip pi1s pi2s |> List.forall(fun (pi1, pi2) -> PropInfo.PropInfosUseIdenticalDefinitions pi1 pi2)
               | Wrap(Item.Event(evt1)), Wrap(Item.Event(evt2)) -> EventInfo.EventInfosUseIdenticalDefintions evt1 evt2
               | Wrap(Item.CtorGroup(_, meths1)), Wrap(Item.CtorGroup(_, meths2)) -> 
-                  Seq.zip meths1 meths2 
-                  |> Seq.forall (fun (minfo1, minfo2) -> MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
+                  List.zip meths1 meths2 
+                  |> List.forall (fun (minfo1, minfo2) -> MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
+              | Wrap(Item.UnqualifiedType(tcRefs1)), Wrap(Item.UnqualifiedType(tcRefs2)) ->
+                  List.zip tcRefs1 tcRefs2
+                  |> List.forall (fun (tcRef1, tcRef2) -> tyconRefEq g tcRef1 tcRef2)
+              | Wrap(Item.Types(_,[TType.TType_app(tcRef1,_)])), Wrap(Item.UnqualifiedType([tcRef2])) -> tyconRefEq g tcRef1 tcRef2
+              | Wrap(Item.UnqualifiedType([tcRef1])), Wrap(Item.Types(_,[TType.TType_app(tcRef2,_)])) -> tyconRefEq g tcRef1 tcRef2
               | _ -> false)
               
           member x.GetHashCode item =
@@ -601,6 +612,7 @@ module internal ItemDescriptionsImpl =
               | Wrap(Item.RecdField(RecdFieldInfo(_, RFRef(tcref, n)))) -> hash(tcref.Stamp, n)
               | Wrap(Item.Event evt) -> evt.ComputeHashCode()
               | Wrap(Item.Property(_name, pis)) -> hash (pis |> List.map (fun pi -> pi.ComputeHashCode()))
+              | Wrap(Item.UnqualifiedType(tcRef :: _)) -> hash tcRef.Stamp
               | _ -> failwith "unreachable") }
 
     let CompletionItemDisplayPartialEquality g = 
@@ -629,7 +641,7 @@ module internal ItemDescriptionsImpl =
 
     /// Remove all duplicate items
     let RemoveDuplicateItems g items = 
-        items |> partialDistinctBy (ItemDisplayPartialEquality g) 
+        items |> partialDistinctBy (ItemDisplayPartialEquality g)
 
     /// Remove all duplicate items
     let RemoveDuplicateItemsWithType g (items: (Item * TType option) list) = 
@@ -1327,7 +1339,8 @@ module internal ItemDescriptionsImpl =
             | Item.MethodGroup (_, minfos, _) when minfos |> List.forall (fun minfo -> minfo.IsExtensionMember) -> FSharpGlyph.ExtensionMethod
             | Item.MethodGroup _ -> FSharpGlyph.Method
             | Item.TypeVar _ 
-            | Item.Types _ -> FSharpGlyph.Class   
+            | Item.Types _ 
+            | Item.UnqualifiedType _ -> FSharpGlyph.Class   
             | Item.ModuleOrNamespaces(modref::_) -> 
                   if modref.IsNamespace then FSharpGlyph.NameSpace else FSharpGlyph.Module
             | Item.ArgName _ -> FSharpGlyph.Variable
@@ -1365,18 +1378,8 @@ type FSharpAccessibility(a:Accessibility, ?isProtected) =
 
 /// An intellisense declaration
 [<Sealed>]
-type FSharpDeclarationListItem
-    ( name          : string,
-      nameInCode    : string,
-      fullName      : string,
-      glyph         : FSharpGlyph,
-      info,
-      isAttribute   : bool,
-      accessibility : FSharpAccessibility option,
-      kind          : CompletionItemKind,
-      isOwnMember   : bool,
-      priority      : int
-    ) =
+type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: string, glyph: FSharpGlyph, info, isAttribute: bool, accessibility: FSharpAccessibility option,
+                               kind: CompletionItemKind, isOwnMember: bool, priority: int, isResolved: bool, namespaceToOpen: string option) =
 
     let mutable descriptionTextHolder:FSharpToolTipText<_> option = None
     let mutable task = null
@@ -1437,15 +1440,19 @@ type FSharpDeclarationListItem
     member decl.IsOwnMember = isOwnMember
     member decl.MinorPriority = priority
     member decl.FullName = fullName
+    member decl.IsResolved = isResolved
+    member decl.NamespaceToOpen = namespaceToOpen
 
 /// A table of declarations for Intellisense completion 
 [<Sealed>]
-type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) = 
+type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForType: bool) = 
     member self.Items = declarations
+    member self.IsForType = isForType
 
     // Make a 'Declarations' object for a set of selected items
-    static member Create(infoReader:InfoReader, m, denv, getAccessibility, items: CompletionItem list, reactor, checkAlive) = 
+    static member Create(infoReader:InfoReader, m, denv, getAccessibility, items: CompletionItem list, reactor, currentNamespaceOrModule: string[] option, checkAlive) = 
         let g = infoReader.g
+        let isForType = items |> List.exists (fun x -> x.Type.IsSome)
         let items = items |> ItemDescriptionsImpl.RemoveExplicitlySuppressedCompletionItems g
         
         let tyconRefOptEq tref1 tref2 =
@@ -1479,13 +1486,29 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                     x.MinorPriority, normalizedPrior, { x with MinorPriority = normalizedPrior } :: acc
                 ) (0, 0, [])
 
-        // Remove all duplicates. We've put the types first, so this removes the DelegateCtor and DefaultStructCtor's.
-        let items = items |> List.rev |> RemoveDuplicateCompletionItems g
-
         if verbose then dprintf "service.ml: mkDecls: %d found groups after filtering\n" (List.length items); 
 
-        // Group by display name
-        let items = items |> List.groupBy (fun x -> x.Item.DisplayName) 
+        // Group by full name for unresolved items and by display name for resolved ones.
+        let items = 
+            items
+            |> List.rev
+            // Prefer items from file check results to ones from referenced assemblies via GetAssemblyContent ("all entities")
+            |> List.sortBy (fun x -> x.Unresolved.IsSome) 
+            // Remove all duplicates. We've put the types first, so this removes the DelegateCtor and DefaultStructCtor's.
+            |> RemoveDuplicateCompletionItems g
+            |> List.groupBy (fun x ->
+                match x.Unresolved with
+                | Some u -> 
+                    match u.Namespace with
+                    | [||] -> u.DisplayName
+                    | ns -> (ns |> String.concat ".") + "." + u.DisplayName
+                | None -> x.Item.DisplayName)
+            |> List.map (fun (_, items) -> 
+                let item = items.Head
+                match item.Unresolved with
+                | Some u -> u.DisplayName
+                | None -> item.Item.DisplayName
+                , items)
 
         // Filter out operators (and list)
         let items = 
@@ -1496,47 +1519,63 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[]) =
                 | [Item.MethodGroup _ ] -> IsOperatorName name
                 | [Item.UnionCase _] -> IsOperatorName name
                 | _ -> false              
-
             let isFSharpList name = (name = "[]") // list shows up as a Type and a UnionCase, only such entity with a symbolic name, but want to filter out of intellisense
-
-            items |> List.filter (fun (name, items) -> not (isOperatorItem(name, items)) && not (isFSharpList name)) 
-            
+            items |> List.filter (fun (displayName, items) -> not (isOperatorItem(displayName, items)) && not (isFSharpList displayName)) 
+                    
         let decls = 
-            // Filter out duplicate names
-            items |> List.map (fun (name,itemsWithSameName) -> 
-                match itemsWithSameName with
+            items 
+            |> List.map (fun (displayName, itemsWithSameFullName) -> 
+                match itemsWithSameFullName with
                 | [] -> failwith "Unexpected empty bag"
-                | item :: _ as items -> 
+                | _ ->
+                    let items =
+                        match itemsWithSameFullName |> List.partition (fun x -> x.Unresolved.IsNone) with
+                        | [], unresolved -> unresolved
+                        // if there are resolvable items, throw out unresolved to prevent duplicates like `Set` and `FSharp.Collections.Set`.
+                        | resolved, _ -> resolved 
+                    
+                    let item = items.Head
+
                     let glyph = ItemDescriptionsImpl.GlyphOfItem(denv, item.Item)
                     let name, nameInCode =
-                        if name.StartsWith "( " && name.EndsWith " )" then
-                            let cleanName = name.[2..name.Length - 3]
+                        if displayName.StartsWith "( " && displayName.EndsWith " )" then
+                            let cleanName = displayName.[2..displayName.Length - 3]
                             cleanName, 
-                            if IsOperatorName name then cleanName else "``" + cleanName + "``"
-                        else
-                            name, Lexhelp.Keywords.QuoteIdentifierIfNeeded name
-
+                            if IsOperatorName displayName then cleanName else "``" + cleanName + "``"
+                        else 
+                            displayName,
+                            match item.Unresolved with
+                            | Some _ -> displayName
+                            | None ->  Lexhelp.Keywords.QuoteIdentifierIfNeeded displayName
+                    
                     let fullName = ItemDescriptionsImpl.FullNameOfItem g item.Item
+                    
+                    let namespaceToOpen = 
+                        item.Unresolved 
+                        |> Option.map (fun x -> x.Namespace)
+                        |> Option.bind (fun ns ->
+                            if ns |> Array.startsWith [|"Microsoft"; "FSharp"|] then None
+                            else Some ns)
+                        |> Option.map (fun ns ->
+                            match currentNamespaceOrModule with
+                            | Some currentNs ->
+                               if ns |> Array.startsWith currentNs then
+                                 ns.[currentNs.Length..]
+                               else ns
+                            | None -> ns)
+                        |> Option.bind (function
+                            | [||] -> None
+                            | ns -> Some (ns |> String.concat "."))
 
                     FSharpDeclarationListItem(
-                        name,
-                        nameInCode,
-                        fullName,
-                        glyph,
-                        Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive),
-                        ItemDescriptionsImpl.IsAttribute infoReader item.Item,
-                        getAccessibility item.Item,
-                        item.Kind,
-                        item.IsOwnMember,
-                        item.MinorPriority
-                        )
-            )
+                        name, nameInCode, fullName, glyph, Choice1Of2 (items, infoReader, m, denv, reactor, checkAlive), ItemDescriptionsImpl.IsAttribute infoReader item.Item, 
+                        getAccessibility item.Item, item.Kind, item.IsOwnMember, item.MinorPriority, item.Unresolved.IsNone, namespaceToOpen))
 
-        new FSharpDeclarationListInfo(Array.ofList decls)
+        new FSharpDeclarationListInfo(Array.ofList decls, isForType)
     
     static member Error msg = 
         new FSharpDeclarationListInfo(
                 [| FSharpDeclarationListItem("<Note>", "<Note>", "<Note>", FSharpGlyph.Error, Choice2Of2 (FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError msg]), 
-                                             false, None, CompletionItemKind.Other, false, 0) |])
+                                             false, None, CompletionItemKind.Other, false, 0, false, None) |], false)
     
-    static member Empty = FSharpDeclarationListInfo([| |])
+    static member Empty = FSharpDeclarationListInfo([| |], false)

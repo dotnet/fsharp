@@ -316,6 +316,39 @@ module internal CommonRoslynHelpers =
         let textSpan = sourceText.Lines.GetTextSpan linePositionSpan
         Location.Create(filePath, textSpan, linePositionSpan)
 
+module internal OpenDeclarationHelper =
+    /// <summary>
+    /// Inserts open declaration into `SourceText`. 
+    /// </summary>
+    /// <param name="sourceText">SourceText.</param>
+    /// <param name="ctx">Insertion context. Typically returned from tryGetInsertionContext</param>
+    /// <param name="ns">Namespace to open.</param>
+    let insertOpenDeclaration (sourceText: SourceText) (ctx: InsertContext) (ns: string) : SourceText * int =
+        let mutable minPos = None
+
+        let insert line lineStr (sourceText: SourceText) : SourceText =
+            let pos = sourceText.Lines.[line].Start
+            minPos <- match minPos with None -> Some pos | Some oldPos -> Some (min oldPos pos)
+            sourceText.WithChanges(TextChange(TextSpan(pos, 0), lineStr + Environment.NewLine))
+
+        let getLineStr line = sourceText.Lines.[line].ToString().Trim()
+        let pos = ParsedInput.adjustInsertionPoint getLineStr ctx
+        let docLine = pos.Line - 1
+        let lineStr = (String.replicate pos.Column " ") + "open " + ns
+        let sourceText = sourceText |> insert docLine lineStr
+        // if there's no a blank line between open declaration block and the rest of the code, we add one
+        let sourceText = 
+            if sourceText.Lines.[docLine + 1].ToString().Trim() <> "" then 
+                sourceText |> insert (docLine + 1) ""
+            else sourceText
+        let sourceText =
+            // for top level module we add a blank line between the module declaration and first open statement
+            if (pos.Column = 0 || ctx.ScopeKind = ScopeKind.Namespace) && docLine > 0
+                && not (sourceText.Lines.[docLine - 1].ToString().Trim().StartsWith "open") then
+                    sourceText |> insert docLine ""
+            else sourceText
+        sourceText, minPos |> Option.defaultValue 0
+
 [<AutoOpen>]
 module internal RoslynExtensions =
     type Project with
