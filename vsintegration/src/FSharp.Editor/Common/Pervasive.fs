@@ -226,3 +226,45 @@ module Seq =
     open System.Collections.Immutable
 
     let toImmutableArray (xs: seq<'a>) : ImmutableArray<'a> = xs.ToImmutableArray()
+
+module Array =
+    /// Optimized arrays equality. ~100x faster than `array1 = array2` on strings.
+    /// ~2x faster for floats
+    /// ~0.8x slower for ints
+    let areEqual (xs: 'T []) (ys: 'T []) =
+        match xs, ys with
+        | null, null -> true
+        | [||], [||] -> true
+        | null, _ | _, null -> false
+        | _ when xs.Length <> ys.Length -> false
+        | _ ->
+            let mutable break' = false
+            let mutable i = 0
+            let mutable result = true
+            while i < xs.Length && not break' do
+                if xs.[i] <> ys.[i] then 
+                    break' <- true
+                    result <- false
+                i <- i + 1
+            result
+    
+    /// check if subArray is found in the wholeArray starting 
+    /// at the provided index
+    let isSubArray (subArray: 'T []) (wholeArray:'T []) index = 
+        if isNull subArray || isNull wholeArray then false
+        elif subArray.Length = 0 then true
+        elif subArray.Length > wholeArray.Length then false
+        elif subArray.Length = wholeArray.Length then areEqual subArray wholeArray else
+        let rec loop subidx idx =
+            if subidx = subArray.Length then true 
+            elif subArray.[subidx] = wholeArray.[idx] then loop (subidx+1) (idx+1) 
+            else false
+        loop 0 index
+        
+    /// Returns true if one array has another as its subset from index 0.
+    let startsWith (prefix: _ []) (whole: _ []) =
+        isSubArray prefix whole 0
+        
+    /// Returns true if one array has trailing elements equal to another's.
+    let endsWith (suffix: _ []) (whole: _ []) =
+        isSubArray suffix whole (whole.Length-suffix.Length)

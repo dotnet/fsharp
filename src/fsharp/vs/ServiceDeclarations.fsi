@@ -118,13 +118,20 @@ type internal FSharpDeclarationListItem =
     member IsOwnMember : bool
     member MinorPriority : int
     member FullName : string
+    member IsResolved : bool
+    member NamespaceToOpen : string option
+
+type UnresolvedSymbol =
+    { DisplayName: string
+      Namespace: string[] }
 
 type internal CompletionItem =
     { Item: Item
       Kind: CompletionItemKind
       IsOwnMember: bool
       MinorPriority: int
-      Type: TyconRef option }
+      Type: TyconRef option 
+      Unresolved: UnresolvedSymbol option }
 
 [<Sealed>]
 /// Represents a set of declarations in F# source code, with information attached ready for display by an editor.
@@ -133,9 +140,10 @@ type internal CompletionItem =
 // Note: this type holds a weak reference to compiler resources. 
 type internal FSharpDeclarationListInfo =
     member Items : FSharpDeclarationListItem[]
+    member IsForType : bool
 
     // Implementation details used by other code in the compiler    
-    static member internal Create : infoReader:InfoReader * m:range * denv:DisplayEnv * getAccessibility:(Item -> FSharpAccessibility option) * items:CompletionItem list * reactor:IReactorOperations * checkAlive:(unit -> bool) -> FSharpDeclarationListInfo
+    static member internal Create : infoReader:InfoReader * m:range * denv:DisplayEnv * getAccessibility:(Item -> FSharpAccessibility option) * items:CompletionItem list * reactor:IReactorOperations * currentNamespace:string[] option * checkAlive:(unit -> bool) -> FSharpDeclarationListInfo
     static member internal Error : message:string -> FSharpDeclarationListInfo
     static member Empty : FSharpDeclarationListInfo
 
@@ -173,6 +181,7 @@ module internal ItemDescriptionsImpl =
     val FormatStructuredDescriptionOfItem : isDecl:bool -> InfoReader -> range -> DisplayEnv -> Item -> FSharpStructuredToolTipElement
     val GlyphOfItem : DisplayEnv * Item -> FSharpGlyph
     val IsAttribute : InfoReader -> Item -> bool
+    val IsExplicitlySuppressed : TcGlobals -> Item -> bool
 
 module EnvMisc2 =
     val maxMembers : int
