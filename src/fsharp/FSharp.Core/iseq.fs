@@ -144,6 +144,7 @@ namespace Microsoft.FSharp.Collections
             // is fixed with the compiler then these functions can be removed.
             let inline seq<'T,'seq when 'seq :> ISeq<'T> and 'seq : not struct> (t:'seq) : ISeq<'T> = (# "" t : ISeq<'T> #)
             let inline enumerable<'T,'enumerable when 'enumerable :> IEnumerable<'T> and 'enumerable : not struct> (t:'enumerable) : IEnumerable<'T> = (# "" t : IEnumerable<'T> #)
+            let inline enumerableNonGeneric<'enumerable when 'enumerable :> IEnumerable and 'enumerable : not struct> (t:'enumerable) : IEnumerable = (# "" t : IEnumerable #)
             let inline enumerator<'T,'enumerator when 'enumerator :> IEnumerator<'T> and 'enumerator : not struct> (t:'enumerator) : IEnumerator<'T> = (# "" t : IEnumerator<'T> #)
             let inline enumeratorNonGeneric<'enumerator when 'enumerator :> IEnumerator and 'enumerator : not struct> (t:'enumerator) : IEnumerator = (# "" t : IEnumerator #)
             let inline outOfBand<'outOfBand when 'outOfBand :> IOutOfBand and 'outOfBand : not struct> (t:'outOfBand) : IOutOfBand = (# "" t : IOutOfBand #)
@@ -1831,20 +1832,21 @@ namespace Microsoft.FSharp.Collections
                         enumeratorR <- None   // drop it and record finished.
                     | _ -> ()
 
-            let cached =
-                unfold (fun i ->
-                    // i being the next position to be returned
-                    // A lock is needed over the reads to prefix.Count since the list may be being resized
-                    // NOTE: we could change to a reader/writer lock here
-                    lock sync (fun () ->
+            let unfolding i =
+                // i being the next position to be returned
+                // A lock is needed over the reads to prefix.Count since the list may be being resized
+                // NOTE: we could change to a reader/writer lock here
+                lock sync (fun () ->
+                    if i < prefix.Count then
+                        Some (prefix.[i], i+1)
+                    else
+                        oneStepTo i
                         if i < prefix.Count then
                             Some (prefix.[i], i+1)
                         else
-                            oneStepTo i
-                            if i < prefix.Count then
-                                Some (prefix.[i], i+1)
-                            else
-                                None)) 0
+                            None)
+
+            let cached = Upcast.seq (new Wrap.UnfoldEnumerable<'T,'T,int>(unfolding, 0, IdentityFactory.Instance, 1))
 
             interface System.IDisposable with
                 member __.Dispose() =
@@ -1861,14 +1863,11 @@ namespace Microsoft.FSharp.Collections
                 member __.GetEnumerator() = cached.GetEnumerator()
 
             interface System.Collections.IEnumerable with
-                member __.GetEnumerator() = (cached :> System.Collections.IEnumerable).GetEnumerator()
+                member __.GetEnumerator() = (Upcast.enumerableNonGeneric cached).GetEnumerator()
 
             interface ISeq<'T> with
-                member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
-                    Upcast.seq (new Wrap.VanillaEnumerable<'T,'U>(cached, next, 1))
-
-                member __.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
-                    Fold.executeThin f (Fold.IterateEnumerable cached)
+                member __.PushTransform next = cached.PushTransform next
+                member __.Fold f = cached.Fold f
 
             member this.Clear() = (this :> IDisposable).Dispose ()
 
