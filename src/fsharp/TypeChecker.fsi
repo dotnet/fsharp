@@ -54,7 +54,7 @@ val TypeCheckOneSigFile :
       TcGlobals * NiceNameGenerator * ImportMap * CcuThunk  * (unit -> bool) * ConditionalDefines * NameResolution.TcResultsSink 
       -> TcEnv                             
       -> ParsedSigFileInput
-      -> Eventually<TcEnv * ModuleOrNamespaceType >
+      -> Eventually<TcEnv * TcEnv * ModuleOrNamespaceType >
 
 //-------------------------------------------------------------------------
 // Some of the exceptions arising from type checking. These should be moved to 
