@@ -27,7 +27,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Containes either null if project reference is OK or instance of Task with error message if project reference is invalid
         /// i.e. project A references project B when target framework version for B is higher that for A
         /// </summary>
-        private Task projectRefError;
+        private Shell.Task projectRefError;
 
         /// <summary>
         /// The name of the assembly this refernce represents
@@ -304,9 +304,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     // delete existing error if exists
                     CleanProjectReferenceErrorState();
 
-                    projectRefError = new ErrorTask
+                    projectRefError = new Shell.ErrorTask
                     {
-                        ErrorCategory = TaskErrorCategory.Warning,
+                        ErrorCategory = Shell.TaskErrorCategory.Warning,
                         HierarchyItem = ProjectMgr.InteropSafeIVsHierarchy,
                         Text = text
                     };

@@ -160,11 +160,11 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
 
         public virtual int OnAfterSnippetsKeyBindingChange(uint dwCmdGuid, uint dwCmdId, int fBound) {
             this.snippetBound = fBound == 0 ? false : true;
-            return VSConstants.S_OK;
+            return Microsoft.VisualStudio.VSConstants.S_OK;
         }
 
         public virtual int OnAfterSnippetsUpdate() {
-            return VSConstants.S_OK;
+            return Microsoft.VisualStudio.VSConstants.S_OK;
         }
 
         /// <summary>Returnt the CodeWindowManager that created this view filter.</summary>
@@ -196,7 +196,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         public virtual bool IsExpansionUIActive {
             get {
                 IVsTextViewEx tve = this.textView as IVsTextViewEx;
-                if (tve != null && tve.IsExpansionUIActive() == VSConstants.S_OK) {
+                if (tve != null && tve.IsExpansionUIActive() == Microsoft.VisualStudio.VSConstants.S_OK) {
                     return true;
                 }
                 return false;
@@ -449,7 +449,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 {
                     case VsCommands.Goto:
                         Marshal.GetNativeVariantForObject("~", pvaOut);  // No clue what this is, just copying from  env\Editor\Pkg\Impl\VsTextViewAdapter_Commands.cs
-                        return VSConstants.S_OK;
+                        return Microsoft.VisualStudio.VSConstants.S_OK;
                 }
             }
             return (int)OleConstants.OLECMDERR_E_NOTSUPPORTED;
@@ -520,7 +520,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                         return true;
 
                     case VsCommands2K.SHOWCONTEXTMENU:
-                        this.ShowContextMenu(VsMenus.IDM_VS_CTXT_CODEWIN, VsMenus.guidSHLMainMenu, null);
+                        this.ShowContextMenu(Microsoft.VisualStudio.Shell.VsMenus.IDM_VS_CTXT_CODEWIN, Microsoft.VisualStudio.Shell.VsMenus.guidSHLMainMenu, null);
                         return true;
 
                     //                    case VsCommands2K.HANDLEIMEMESSAGE:
@@ -541,12 +541,12 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
             else if (guidCmdGroup == Microsoft.VisualStudio.VSConstants.VsStd11)
             {
-                if (nCmdId == (uint)Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive)
+                if (nCmdId == (uint) Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive)
                 {
                     Interactive.Hooks.OnMLSend(GetProjectSystemPackage(), Interactive.FsiEditorSendAction.ExecuteSelection, null, null);
                     return true;
                 }
-                else if (nCmdId == (uint)Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteLineInInteractive)
+                else if (nCmdId == (uint) Microsoft.VisualStudio.VSConstants.VSStd11CmdID.ExecuteLineInInteractive)
                 {
                     Interactive.Hooks.OnMLSend(GetProjectSystemPackage(), Interactive.FsiEditorSendAction.ExecuteLine, null, null);
                     return true;
@@ -568,7 +568,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         public virtual void HandlePostExec(ref Guid guidCmdGroup, uint nCmdId, uint nCmdexecopt, IntPtr pvaIn, IntPtr pvaOut, bool bufferWasChanged) {
 
             if (guidCmdGroup == typeof(VsCommands2K).GUID) {
-                VsCommands2K cmd = (VsCommands2K)nCmdId;
+                Microsoft.VisualStudio.VSConstants.VSStd2KCmdID cmd = (VsCommands2K)nCmdId;
                 char ch = '\0';
                 if (cmd == VsCommands2K.TYPECHAR && pvaIn != IntPtr.Zero) {
                     Variant v = Variant.ToVariant(pvaIn);
@@ -580,7 +580,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 }
 
                 switch (cmd) {
-                    case VsCommands2K.RETURN:
+                    case Microsoft.VisualStudio.VSConstants.VSStd2KCmdID.RETURN:
                         gotEnterKey = true;
                         // Handle smart-indentation after core text editor has
                         // actually performed the newline operation.
@@ -597,7 +597,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                     case VsCommands2K.DELETE:
                         // check general trigger characters for intellisense
                         if (bufferWasChanged) {
-                            this.source.OnCommand(this.textView, cmd, ch);
+                        this.source.OnCommand(this.textView, cmd, ch);
                         }
                         break;
                     // these commands are important for parameter info and parentheses matching
@@ -666,7 +666,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 // Pass it along the chain.
                 int count = this.source.ChangeCount;
                 rc = this.InnerExec(ref guidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut);
-                if (!ErrorHandler.Succeeded(rc))
+                if (!Microsoft.VisualStudio.ErrorHandler.Succeeded(rc))
                     return rc;
 
                 bool bufferWasChanged = count != source.ChangeCount;
@@ -784,7 +784,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             ushort hi = (ushort)(nCmdexecopt >> 16);
             switch (lo) {
                 case (ushort)OLECMDEXECOPT.OLECMDEXECOPT_SHOWHELP:
-                    if ((nCmdexecopt >> 16) == VsMenus.VSCmdOptQueryParameterList) {
+                    if ((nCmdexecopt >> 16) == Microsoft.VisualStudio.Shell.VsMenus.VSCmdOptQueryParameterList) {
                         return QueryParameterList(ref guidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut);
                     }
                     break;
@@ -955,7 +955,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             string url = null;
             TextSpan span;
             IntellisenseInfo scope = req.ResultIntellisenseInfo;
-            if (scope != null && gotoCmd == VSConstants.VSStd97CmdID.GotoDefn)
+            if (scope != null && gotoCmd == Microsoft.VisualStudio.VSConstants.VSStd97CmdID.GotoDefn)
             {
                 var gotoResult = scope.Goto(textView, line, col);
                 if (!gotoResult.Success)

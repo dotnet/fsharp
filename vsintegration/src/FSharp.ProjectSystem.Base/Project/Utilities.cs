@@ -1,4 +1,5 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+extern alias Shell14;
 
 using System;
 using System.Collections.Generic;
@@ -20,6 +21,7 @@ using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Designer.Interfaces;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.Win32;
 using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
 using IServiceProvider = System.IServiceProvider;
@@ -33,6 +35,45 @@ using System.Runtime.Versioning;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
+    /// <summary>
+    ///  helper class to check the status of the solution pane
+    ///  this is a workaround needed because F# cannot reference and use two versions of an
+    ///  assembly (Microsoft.VisualStudio.Shell.14 & 15 in this case)
+    /// </summary>
+    static class SolutionPaneUtil
+    {   /// uses the serviceProvider and guid to identify a node in the solution pane and check if it
+        /// is currently in rename mode or not. If it is return the pivotTreeView 
+        public static HierarchyNode TryRenameAndReturnNode ( ProjectNode root, Guid solutionHierarchyNode, UInt32 id,Func<string> getEditLabel )
+        {
+            var window = UIHierarchyUtilities.GetUIHierarchyWindow ( root.Site, solutionHierarchyNode );
+            if ( window is SolutionNavigatorPane )
+            {
+                var snp = (SolutionNavigatorPane) window;
+                var tree = snp?.Navigator?.TreeView;
+                if ( tree != null && tree.IsInRenameMode )
+                {
+                    var oldName = getEditLabel();
+                    // if tree is in rename mode now - commit renaming
+                    // since rename is implemented via remove\add set of operations - after renaming we need to fetch node that corresponds to the current one
+
+                    // rename may fail (i.e if new name contains invalid characters), in this case user will see error message and after that failure will be swallowed
+                    // if this happens - we need to cancel current transaction,
+                    // otherwise it will hold current hierarchy node. After move operation is completed - current node will become invalid => may lead to ObjectDisposedExceptions.
+                    // Since error is not appear directly in the code - we check if old and new labels match and if yes - treat it as reason that error happens
+                    tree.CommitRename ( Shell14::Microsoft.Internal.VisualStudio.PlatformUI.RenameItemCompletionFocusBehavior.Refocus );
+                    var node = root.ItemIdMap[id];
+                    if (node != null && node.GetEditLabel() == oldName )
+                    {
+                        tree.CancelRename ( Shell14::Microsoft.Internal.VisualStudio.PlatformUI.RenameItemCompletionFocusBehavior.Refocus );
+                    }
+                    return node;
+                }
+            }
+            return null;
+        }
+    }
+
+
     internal class FSharpCoreVersion
     {
         public string Version { get; private set; }

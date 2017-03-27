@@ -28,4 +28,4 @@ using Microsoft.VisualStudio.Shell;
 
 [assembly: CLSCompliant(true)]
 
-[assembly: ProvideCodeBase(CodeBase = @"$PackageFolder$\FSharp.LanguageService.Base.dll")]
+[assembly: Microsoft.VisualStudio.Shell.ProvideCodeBase (CodeBase = @"$PackageFolder$\FSharp.LanguageService.Base.dll")]
