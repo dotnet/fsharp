@@ -70,7 +70,7 @@ let GetSuperTypeOfType g amap m typ =
         | None -> None
         | Some super -> Some(Import.ImportProvidedType amap m super)
 #endif
-    | ILTypeMetadata (scoref,tdef) -> 
+    | ILTypeMetadata (TILObjectReprData(scoref,_,tdef)) -> 
         let _,tinst = destAppTy g typ
         match tdef.Extends with 
         | None -> None
@@ -125,7 +125,7 @@ let rec GetImmediateInterfacesOfType skipUnref g amap m typ =
                     [ for ity in info.ProvidedType.PApplyArray((fun st -> st.GetInterfaces()), "GetInterfaces", m) do
                           yield Import.ImportProvidedType amap m ity ]
 #endif
-                | ILTypeMetadata (scoref,tdef) -> 
+                | ILTypeMetadata (TILObjectReprData(scoref,_,tdef)) -> 
 
                     // ImportILType may fail for an interface if the assembly load set is incomplete and the interface
                     // comes from another assembly. In this case we simply skip the interface:
@@ -134,9 +134,10 @@ let rec GetImmediateInterfacesOfType skipUnref g amap m typ =
                     // succeeded with more reported. There are pathological corner cases where this 
                     // doesn't apply: e.g. for mscorlib interfaces like IComparable, but we can always 
                     // assume those are present. 
-                    [ for ity in tdef.Implements do
+                    tdef.Implements |> List.choose (fun ity -> 
                          if skipUnref = SkipUnrefInterfaces.No || CanImportILType scoref amap m ity then 
-                             yield ImportILType scoref amap m tinst ity ]
+                             Some (ImportILType scoref amap m tinst ity)
+                         else None)
 
                 | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
                     tcref.ImmediateInterfaceTypesOfFSharpTycon |> List.map (instType (mkInstForAppTy g typ)) 
@@ -183,43 +184,44 @@ let private FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref
                    (loop (ndeep+1)) 
                    (GetImmediateInterfacesOfType skipUnref g amap m typ) 
                       (loop ndeep g.obj_ty state)
-            elif isTyparTy g typ then 
-                let tp = destTyparTy g typ
-                let state = loop (ndeep+1) g.obj_ty state 
-                List.foldBack 
-                    (fun x vacc -> 
-                      match x with 
-                      | TyparConstraint.MayResolveMember _
-                      | TyparConstraint.DefaultsTo _
-                      | TyparConstraint.SupportsComparison _
-                      | TyparConstraint.SupportsEquality _
-                      | TyparConstraint.IsEnum _
-                      | TyparConstraint.IsDelegate _
-                      | TyparConstraint.SupportsNull _
-                      | TyparConstraint.IsNonNullableStruct _ 
-                      | TyparConstraint.IsUnmanaged _ 
-                      | TyparConstraint.IsReferenceType _ 
-                      | TyparConstraint.SimpleChoice _ 
-                      | TyparConstraint.RequiresDefaultConstructor _ -> vacc
-                      | TyparConstraint.CoercesTo(cty,_) -> 
-                              loop (ndeep + 1)  cty vacc) 
-                    tp.Constraints 
-                    state
-            else 
-                let state = 
-                    if followInterfaces then 
-                        List.foldBack 
-                          (loop (ndeep+1)) 
-                          (GetImmediateInterfacesOfType skipUnref g amap m typ) 
-                          state 
-                    else 
+            else
+                match tryDestTyparTy g typ with
+                | Some tp ->
+                    let state = loop (ndeep+1) g.obj_ty state 
+                    List.foldBack 
+                        (fun x vacc -> 
+                          match x with 
+                          | TyparConstraint.MayResolveMember _
+                          | TyparConstraint.DefaultsTo _
+                          | TyparConstraint.SupportsComparison _
+                          | TyparConstraint.SupportsEquality _
+                          | TyparConstraint.IsEnum _
+                          | TyparConstraint.IsDelegate _
+                          | TyparConstraint.SupportsNull _
+                          | TyparConstraint.IsNonNullableStruct _ 
+                          | TyparConstraint.IsUnmanaged _ 
+                          | TyparConstraint.IsReferenceType _ 
+                          | TyparConstraint.SimpleChoice _ 
+                          | TyparConstraint.RequiresDefaultConstructor _ -> vacc
+                          | TyparConstraint.CoercesTo(cty,_) -> 
+                                  loop (ndeep + 1)  cty vacc) 
+                        tp.Constraints 
                         state
-                let state = 
-                    Option.foldBack 
-                      (loop (ndeep+1)) 
-                      (GetSuperTypeOfType g amap m typ) 
-                      state
-                state
+                | None -> 
+                    let state = 
+                        if followInterfaces then 
+                            List.foldBack 
+                              (loop (ndeep+1)) 
+                              (GetImmediateInterfacesOfType skipUnref g amap m typ) 
+                              state 
+                        else 
+                            state
+                    let state = 
+                        Option.foldBack 
+                          (loop (ndeep+1)) 
+                          (GetSuperTypeOfType g amap m typ) 
+                          state
+                    state
         let acc = visitor typ acc
         (visitedTycon,visited,acc)
     loop 0 typ (Set.empty,TyconRefMultiMap<_>.Empty,acc)  |> p33
@@ -667,7 +669,7 @@ type ILTypeInfo =
     static member FromType g ty = 
         if isILAppTy g ty then 
             let tcref,tinst = destAppTy g ty
-            let scoref,enc,tdef = tcref.ILTyconInfo
+            let (TILObjectReprData(scoref,enc,tdef)) = tcref.ILTyconInfo
             let tref = mkRefForNestedILTypeDef scoref (enc,tdef)
             ILTypeInfo(tcref,tref,tinst,tdef)
         else 
@@ -1054,7 +1056,7 @@ type MethInfo =
         | ILMeth(_,ilmeth,_) -> ilmeth.IsClassConstructor
         | FSMeth(_,_,vref,_) -> 
              match vref.TryDeref with
-             | Some x -> x.IsClassConstructor
+             | VSome x -> x.IsClassConstructor
              | _ -> false
         | DefaultStructCtor _ -> false
 #if EXTENSIONTYPING

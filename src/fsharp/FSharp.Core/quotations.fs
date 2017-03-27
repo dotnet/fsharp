@@ -2,8 +2,7 @@
 
 namespace Microsoft.FSharp.Quotations
 
-#if FX_MINIMAL_REFLECTION
-#else
+#if !FX_MINIMAL_REFLECTION
 open System
 open System.IO
 open System.Reflection
@@ -25,7 +24,6 @@ open Microsoft.FSharp.Text.StructuredPrintfImpl.TaggedTextOps
 #if FX_RESHAPED_REFLECTION
 open PrimReflectionAdapters
 open ReflectionAdapters
-type internal BindingFlags = ReflectionAdapters.BindingFlags
 #endif
 
 //--------------------------------------------------------------------------
@@ -2173,7 +2171,7 @@ module ExprShape =
             | NewTupleOp(ty),_    -> mkNewTupleWithType(ty, args)
             | TupleGetOp(ty,i),[arg] -> mkTupleGet(ty,i,arg)
             | InstancePropGetOp(pinfo),(obj::args)    -> mkInstancePropGet(obj,pinfo,args)
-            | StaticPropGetOp(pinfo),[] -> mkStaticPropGet(pinfo,args)
+            | StaticPropGetOp(pinfo),_ -> mkStaticPropGet(pinfo,args)
             | InstancePropSetOp(pinfo),obj::(FrontAndBack(args,v)) -> mkInstancePropSet(obj,pinfo,args,v)
             | StaticPropSetOp(pinfo),(FrontAndBack(args,v)) -> mkStaticPropSet(pinfo,args,v)
             | InstanceFieldGetOp(finfo),[obj]   -> mkInstanceFieldGet(obj,finfo)

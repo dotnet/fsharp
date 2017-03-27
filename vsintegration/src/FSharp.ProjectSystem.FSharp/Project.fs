@@ -167,6 +167,10 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         "F# Tools", "F# Interactive",   // category/sub-category on Tools>Options...
                         6000s,      6001s,              // resource id for localisation of the above
                         true)>]                         // true = supports automation
+    [<ProvideOptionPage(typeof<IntelliSensePropertyPage>,
+                        "F# Tools", "IntelliSense",     // category/sub-category on Tools>Options...
+                        6000s,      6008s,              // resource id for localisation of the above
+                        true)>]                         // true = supports automation
     [<ProvideKeyBindingTable("{dee22b65-9761-4a26-8fb2-759b971d6dfc}", 6001s)>] // <-- resource ID for localised name
     [<ProvideToolWindow(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow>, 
                         // The following should place the ToolWindow with the OutputWindow by default.
@@ -241,7 +245,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                             member this.ListAvailableFSharpCoreVersions(_) = Array.empty }
 
                     let service = 
-                        match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler with
+                        match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None) with
                         | None -> nullService
                         | Some path ->
                             try
@@ -315,7 +319,8 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
                 // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
                 let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
-
+                // private method GetDialogPage forces intellisense options to be loaded
+                let _intelliSensePropertyPage = this.GetDialogPage(typeof<IntelliSensePropertyPage>)
                 this.RegisterForIdleTime()
                 ()
 
@@ -2151,16 +2156,19 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     base.Dispose(disposing)                
 
             override x.ImageIndex =
-                    if (x.IsFormSubType) then 
-                        int32 ProjectNode.ImageName.WindowsForm
-                    elif (FSharpProjectNode.IsFSharpCodeFileIconwise(x.FileName)) then 
-                        FSharpProjectNode.ImageOffset + int32 FSharpImageName.FsFile
-                    elif (FSharpProjectNode.IsFSharpSignatureFileIconwise(x.FileName)) then 
-                        FSharpProjectNode.ImageOffset + int32 FSharpImageName.FsiFile
-                    elif (FSharpProjectNode.IsFSharpScriptFileIconwise(x.FileName)) then 
-                        FSharpProjectNode.ImageOffset + int32 FSharpImageName.FsxFile
-                    else
-                        base.ImageIndex
+                // Check if the file is there.
+                if not (x.CanShowDefaultIcon()) then
+                    int ProjectNode.ImageName.MissingFile
+                elif x.IsFormSubType then 
+                    int ProjectNode.ImageName.WindowsForm
+                elif (FSharpProjectNode.IsFSharpCodeFileIconwise(x.FileName)) then 
+                    FSharpProjectNode.ImageOffset + int FSharpImageName.FsFile
+                elif (FSharpProjectNode.IsFSharpSignatureFileIconwise(x.FileName)) then 
+                    FSharpProjectNode.ImageOffset + int FSharpImageName.FsiFile
+                elif (FSharpProjectNode.IsFSharpScriptFileIconwise(x.FileName)) then 
+                    FSharpProjectNode.ImageOffset + int FSharpImageName.FsxFile
+                else
+                    base.ImageIndex
 
             /// Open a file depending on the SubType property associated with the file item in the project file
             override x.DoDefaultAction() =
@@ -2168,9 +2176,8 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 Debug.Assert(manager <> null, "Could not get the FileDocumentManager")
 
                 let viewGuid = (if x.IsFormSubType then VSConstants.LOGVIEWID_Designer else VSConstants.LOGVIEWID_Primary)
-                let fallbackViewGuid = (if x.IsFormSubType then VSConstants.LOGVIEWID_Primary else VSConstants.LOGVIEWID_Designer)
                 let mutable frame : IVsWindowFrame = null
-                manager.Open(false, false, viewGuid, fallbackViewGuid, &frame, WindowFrameShowAction.Show) |> ignore
+                manager.Open(false, false, viewGuid, &frame, WindowFrameShowAction.Show) |> ignore
 
             /// In solution explorer, move the last of my siblings to just above me, return the moved FSharpFileNode
             static member MoveLastToAbove(target : HierarchyNode, root : FSharpProjectNode) : FSharpFileNode =

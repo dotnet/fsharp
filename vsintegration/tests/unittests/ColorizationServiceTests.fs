@@ -11,7 +11,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 
-[<TestFixture>]
+[<TestFixture>][<Category "Roslyn Services">]
 type ColorizationServiceTests()  =
 
     member private this.ExtractMarkerData(fileContents: string, marker: string, defines: string list, isScriptFile: Option<bool>) =

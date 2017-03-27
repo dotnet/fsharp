@@ -3,10 +3,8 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Threading.Tasks
 open System.Collections.Generic
 open System.Composition
-open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.VisualStudio.FSharp.LanguageService
@@ -26,7 +24,7 @@ type internal FSharpHelpContextService
 
     static member GetHelpTerm(checker: FSharpChecker, sourceText : SourceText, fileName, options, span: TextSpan, tokens: List<ClassifiedSpan>, textVersion) : Async<string option> = 
         asyncMaybe {
-            let! _, check = checker.ParseAndCheckDocument(fileName, textVersion, sourceText.ToString(), options)
+            let! _, _, check = checker.ParseAndCheckDocument(fileName, textVersion, sourceText.ToString(), options, allowStaleResults = true)
             let textLines = sourceText.Lines
             let lineInfo = textLines.GetLineFromPosition(span.Start)
             let line = lineInfo.LineNumber
@@ -40,7 +38,7 @@ type internal FSharpHelpContextService
                 match token.ClassificationType with
                 | ClassificationTypeNames.Text
                 | ClassificationTypeNames.WhiteSpace -> true
-                | ClassificationTypeNames.Operator when content = "." -> true
+                | (ClassificationTypeNames.Operator|ClassificationTypeNames.Punctuation)when content = "." -> true
                 | _ -> false
           
             let tokenInformation, col =
