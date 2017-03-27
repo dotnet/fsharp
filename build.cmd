@@ -645,6 +645,8 @@ if [""] == ["%link_exe%"] (if exist "%VCToolsInstallDir%bin\HostX64\x86\link.exe
     set link_exe="%VCToolsInstallDir%bin\HostX64\x86\link.exe"
 ))
 if [""] == ["%link_exe%"] (
+    echo did not find %VCToolsInstallDir%bin\HostX64\x86\link.exe
+    dir "%VCToolsInstallDir%bin\HostX64\x86"
     set link_exe="%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe"
     if not exist "%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe" (
         %_nugetexe% install -source https://www.myget.org/F/fsharp-daily/api/v3/index.json VisualCppTools -version 14.0.24519-Pre -out packages
