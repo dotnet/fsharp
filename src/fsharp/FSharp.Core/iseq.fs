@@ -428,14 +428,23 @@ namespace Microsoft.FSharp.Collections
                         main.Dispose ()
                         active.Dispose ()
 
+            let length (source:ISeq<_>) =
+                source.Fold (fun _ ->
+                    upcast { new Folder<'T,int,NoValue>(0,Unchecked.defaultof<_>) with
+                        override this.ProcessNext v =
+                            this.Result <- this.Result + 1
+                            Unchecked.defaultof<_> (* return value unused in Fold context *) })
+
             [<AbstractClass>]
             type EnumerableBase<'T> () =
                 let derivedClassShouldImplement () =
                     failwith "library implementation error: derived class should implement (should be abstract)"
 
-                abstract member Append : (ISeq<'T>) -> ISeq<'T>
+                abstract member Append : ISeq<'T> -> ISeq<'T>
+                abstract member Length : unit -> int
 
                 default this.Append source = Upcast.seq (AppendEnumerable [source; this])
+                default this.Length () = length this
 
                 interface IEnumerable with
                     member this.GetEnumerator () : IEnumerator =
@@ -485,8 +494,19 @@ namespace Microsoft.FSharp.Collections
                 override this.Append source =
                     Upcast.seq (AppendEnumerable (source::sources))
 
+            /// ThinEnumerable is used when the IEnumerable provided to ofSeq is neither an array or a list
             type ThinEnumerable<'T>(enumerable:IEnumerable<'T>) =
                 inherit EnumerableBase<'T>()
+
+                override __.Length () =
+                    match enumerable with
+                    | :? ICollection<'T> as a -> a.Count
+                    | _ ->
+                        use e = enumerable.GetEnumerator ()
+                        let mutable count = 0
+                        while e.MoveNext () do
+                            count <- count + 1
+                        count
 
                 interface IEnumerable<'T> with
                     member this.GetEnumerator () = enumerable.GetEnumerator ()
@@ -500,6 +520,11 @@ namespace Microsoft.FSharp.Collections
 
             type DelayedEnumerable<'T>(delayed:unit->ISeq<'T>, pipeIdx:PipeIdx) =
                 inherit EnumerableBase<'T>()
+
+                override __.Length () =
+                    match delayed() with
+                    | :? EnumerableBase<'T> as s -> s.Length ()
+                    | s -> length s
 
                 interface IEnumerable<'T> with
                     member this.GetEnumerator () : IEnumerator<'T> = (delayed()).GetEnumerator ()
@@ -516,6 +541,8 @@ namespace Microsoft.FSharp.Collections
 
                 static let singleton = EmptyEnumerable<'T>() :> ISeq<'T>
                 static member Instance = singleton
+
+                override __.Length () = 0
 
                 interface IEnumerable<'T> with
                     member this.GetEnumerator () : IEnumerator<'T> = IEnumerator.Empty<'T>()
@@ -555,6 +582,12 @@ namespace Microsoft.FSharp.Collections
             type ArrayEnumerable<'T,'U>(array:array<'T>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
                 inherit EnumerableBase<'U>()
 
+                override this.Length () =
+                    if obj.ReferenceEquals (transformFactory, IdentityFactory<'U>.Instance) then
+                        array.Length
+                    else
+                        length this
+
                 interface IEnumerable<'U> with
                     member this.GetEnumerator () : IEnumerator<'U> =
                         let result = Result<'U> ()
@@ -592,6 +625,12 @@ namespace Microsoft.FSharp.Collections
 
             type ResizeArrayEnumerable<'T,'U>(resizeArray:ResizeArray<'T>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
                 inherit EnumerableBase<'U>()
+
+                override this.Length () =
+                    if obj.ReferenceEquals (transformFactory, IdentityFactory<'U>.Instance) then
+                        resizeArray.Count
+                    else
+                        length this
 
                 interface IEnumerable<'U> with
                     member this.GetEnumerator () : IEnumerator<'U> =
@@ -631,6 +670,12 @@ namespace Microsoft.FSharp.Collections
 
             type ListEnumerable<'T,'U>(alist:list<'T>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
                 inherit EnumerableBase<'U>()
+
+                override this.Length () =
+                    if obj.ReferenceEquals (transformFactory, IdentityFactory<'U>.Instance) then
+                        alist.Length
+                    else
+                        length this
 
                 interface IEnumerable<'U> with
                     member this.GetEnumerator () : IEnumerator<'U> =
@@ -810,6 +855,12 @@ namespace Microsoft.FSharp.Collections
                                 member this.Reset() = noReset()
                             interface System.IDisposable with
                                 member x.Dispose () = () }
+
+                override this.Length () =
+                    if count.HasValue then
+                        count.Value
+                    else
+                        raise (System.InvalidOperationException (SR.GetString(SR.enumerationPastIntMaxValue)))
 
                 interface IEnumerable<'T> with
                     member this.GetEnumerator () : IEnumerator<'T> =
@@ -1657,11 +1708,9 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Length")>]
         let length (source:ISeq<'T>)  =
-            source.Fold (fun _ ->
-                upcast { new Folder<'T,int,NoValue>(0,Unchecked.defaultof<_>) with
-                    override this.ProcessNext v =
-                        this.Result <- this.Result + 1
-                        Unchecked.defaultof<_> (* return value unused in Fold context *) })
+            match source with
+            | :? Wrap.EnumerableBase<'T> as s -> s.Length ()
+            | _ -> Wrap.length source
 
         [<CompiledName("ToArray")>]
         let toArray (source:ISeq<'T>)  =
