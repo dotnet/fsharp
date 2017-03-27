@@ -4961,11 +4961,22 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     case VSADDITEMOPERATION.VSADDITEMOP_OPENFILE:
                         {
                             string fileName = Path.GetFileName(file);
-                            newFileName =
+                            
+                            if (context == AddItemContext.Paste && FindChild(file) != null)
+                            {
                                 // if we are doing 'Paste' and source file belongs to current project - generate fresh unique name
-                                context == AddItemContext.Paste && FindChild(file) != null
-                                    ? GenerateCopyOfFileName(baseDir, fileName)
-                                    : file;
+                                newFileName = GenerateCopyOfFileName(baseDir, fileName);
+                            }
+                            else if (!IsContainedWithinProjectDirectory(file))
+                            {
+                                // if the file isn't contained within the project directory,
+                                // copy it to be a child of the node we're adding to.
+                                newFileName = Path.Combine(baseDir, fileName);
+                            }
+                            else
+                            {
+                                newFileName = file;
+                            }
                         }
                         break;
                 }
@@ -5154,25 +5165,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // files[index] will be the absolute location to the linked file
             for (int index = 0; index < files.Length; index++)
             {
-                string relativeUri = PackageUtilities.GetPathDistance(this.ProjectMgr.BaseURI.Uri, new Uri(files[index]));
-                if (string.IsNullOrEmpty(relativeUri))
-                {
-                    return VSConstants.E_FAIL;
-                }
-
-                string fileName = Path.GetFileName(files[index]);
-                if (string.IsNullOrEmpty(fileName))
-                {
-                    return VSConstants.E_FAIL;
-                }
-
-                LinkedFileNode linkedNode = this.AddNewFileNodeToHierarchy(node, fileName) as LinkedFileNode;
+                LinkedFileNode linkedNode = this.AddNewFileNodeToHierarchyCore(node, files[index]) as LinkedFileNode;
                 if (linkedNode == null)
                 {
                     return VSConstants.E_FAIL;
                 }
-
-                linkedNode.ItemNode.Rename(relativeUri);
+                
                 if (node == this)
                 {
                     // parent we are adding to is project root
@@ -5186,6 +5184,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
                 linkedNode.SetIsLinkedFile(true);
                 linkedNode.OnInvalidateItems(node);
+
+                // fire the node added event now that we've set the item metadata
+                FireAddNodeEvent(files[index]);
+
+                MoveFileToBottomIfNoOtherPendingMove(linkedNode);
+
                 result[0] = VSADDRESULT.ADDRESULT_Success;
             }
             return VSConstants.S_OK;

@@ -210,7 +210,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             } 
         } 
 
-        public string RelativeFilePath
+        public virtual string RelativeFilePath
         {
             get
             {

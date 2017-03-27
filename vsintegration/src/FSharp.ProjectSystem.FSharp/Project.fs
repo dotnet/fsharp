@@ -969,7 +969,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
                 let includ = item.GetMetadata(ProjectFileConstants.Include)
                 let newNode = new FSharpFileNode(this, item, hierarchyId)
-                newNode.SetIsLinkedFile (not <| x.IsContainedWithinProjectDirectory includ)
                 newNode.OleServiceProvider.AddService(typeof<EnvDTE.Project>, new OleServiceProvider.ServiceCreatorCallback(this.CreateServices), false)
                 newNode.OleServiceProvider.AddService(typeof<EnvDTE.ProjectItem>, newNode.ServiceCreator, false)
                 newNode.OleServiceProvider.AddService(typeof<VSLangProj.VSProject>, new OleServiceProvider.ServiceCreatorCallback(this.CreateServices), false)
@@ -2441,12 +2440,9 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                             tryFindAdoptiveParent (path, restPath, folderNode)
                     
                     // linked files must be placed in the root of the hierarchy
-                    if fileNode.IsLinkFile then
-                        root.AddChild(fileNode)
-                    else
-                        let pathParts = Path.GetDirectoryName(fileNode.RelativeFilePath).Split([| Path.DirectorySeparatorChar |], StringSplitOptions.RemoveEmptyEntries)
-                        let parent = tryFindAdoptiveParent ([], List.ofArray pathParts, root)
-                        parent.AddChild(fileNode)
+                    let pathParts = Path.GetDirectoryName(fileNode.RelativeFilePath).Split([| Path.DirectorySeparatorChar |], StringSplitOptions.RemoveEmptyEntries)
+                    let parent = tryFindAdoptiveParent ([], List.ofArray pathParts, root)
+                    parent.AddChild(fileNode)
                 | _ ->
                     Debug.Assert(false, sprintf "Unable to find FSharpFileNode '%s'" node.Url)
             
