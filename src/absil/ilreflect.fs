@@ -616,16 +616,18 @@ let convFieldInit x =
 // it isn't we resort to this technique...
 let TypeBuilderInstantiationT = 
     let ty = 
+        Type.GetType("System.Reflection.Emit.TypeBuilderInstantiation")
 #if ENABLE_MONO_SUPPORT
-        if runningOnMono then 
+    let ty =
+        if runningOnMono && (isNull ty) then
             Type.GetType("System.Reflection.MonoGenericClass")
         else
+            ty
 #endif
-            Type.GetType("System.Reflection.Emit.TypeBuilderInstantiation")
     assert (not (isNull ty))
     ty
 
-let typeIsNotQueryable (typ : Type) =
+let typeIsNotQueryable (typ : Type) = 
 #if FX_RESHAPED_REFLECTION
     let typ = typ.GetTypeInfo()
 #endif
