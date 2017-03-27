@@ -148,14 +148,13 @@ and accLambdas cenv env topValInfo e ety =
         accExpr cenv env e
 
 and accExprs            cenv env exprs = exprs |> List.iter (accExpr cenv env) 
-and accFlatExprs        cenv env exprs = exprs |> List.iter (accExpr cenv env) 
 and accTargets cenv env m ty targets = Array.iter (accTarget cenv env m ty) targets
 
 and accTarget cenv env _m _ty (TTarget(_vs,e,_)) = accExpr cenv env e
 
 and accDTree cenv env x =
     match x with 
-    | TDSuccess (es,_n) -> accFlatExprs cenv env es
+    | TDSuccess (es,_n) -> accExprs cenv env es
     | TDBind(bind,rest) -> accBind cenv env bind; accDTree cenv env rest 
     | TDSwitch (e,cases,dflt,m) -> accSwitch cenv env (e,cases,dflt,m)
 
@@ -166,12 +165,12 @@ and accSwitch cenv env (e,cases,dflt,_m) =
 
 and accDiscrim cenv env d =
     match d with 
-    | Test.UnionCase(_ucref,tinst) -> accTypeInst cenv env tinst 
-    | Test.ArrayLength(_,ty) -> accTy cenv env ty
-    | Test.Const _
-    | Test.IsNull -> ()
-    | Test.IsInst (srcty,tgty) -> accTy cenv env srcty; accTy cenv env tgty
-    | Test.ActivePatternCase (exp, tys, _, _, _) -> 
+    | DecisionTreeTest.UnionCase(_ucref,tinst) -> accTypeInst cenv env tinst 
+    | DecisionTreeTest.ArrayLength(_,ty) -> accTy cenv env ty
+    | DecisionTreeTest.Const _
+    | DecisionTreeTest.IsNull -> ()
+    | DecisionTreeTest.IsInst (srcty,tgty) -> accTy cenv env srcty; accTy cenv env tgty
+    | DecisionTreeTest.ActivePatternCase (exp, tys, _, _, _) -> 
         accExpr cenv env exp
         accTypeInst cenv env tys
 

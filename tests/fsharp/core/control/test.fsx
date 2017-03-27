@@ -80,6 +80,7 @@ type Microsoft.FSharp.Control.Async with
                     return resArray }
 
 module BasicTests = 
+  let Run() =
     check "cew23242g" (Async.RunSynchronously (async { do () })) ()
     check "32o8f43k1" (Async.RunSynchronously (async { return () })) ()
     check "32o8f43k2" (Async.RunSynchronously (async { return 1 })) 1
@@ -97,16 +98,16 @@ module BasicTests =
                                                             return x+1 }) with _ -> 2) 2
 
     //check "32o8f43kt" (Async.RunSynchronously (Async.Catch (async {  do failwith "error" }))) (Choice2Of2 (Failure "error"))
-    check "32o8f43kt" (Async.RunSynchronously (Async.Catch (async {  return 1 }))) (Choice1Of2 1)
+    check "32o8f43kta" (Async.RunSynchronously (Async.Catch (async {  return 1 }))) (Choice1Of2 1)
 
-    check "32o8f43kt" (Async.RunSynchronously (async {  try 
+    check "32o8f43ktb" (Async.RunSynchronously (async { try 
                                                             do failwith "error" 
                                                             return 3
                                                         with _ -> 
                                                             return 2 
                                                       })) 2
 
-    check "32o8f43kt" 
+    check "32o8f43ktc" 
         (Async.RunSynchronously
              (async {  try 
                           do failwith "error" 
@@ -116,7 +117,7 @@ module BasicTests =
                     })) 
         2
 
-    check "32o8f43kt" 
+    check "32o8f43ktd" 
         (Async.RunSynchronously
             (async {  try 
                          try 
@@ -315,7 +316,8 @@ module StartChildTrampoliningCheck =
 
 
 module StartChildOutsideOfAsync =
-    open System.Threading
+  open System.Threading
+  let Run() =
 
     check "dshfukeryhu8we"
         (let b = async {return 27} |> Async.StartChild
@@ -344,19 +346,21 @@ module StartChildOutsideOfAsync =
         true
    
 
-check "32o8f43kaI: Spawn" 
-    (let mutable result = 0
-     Async.Start(async { do printfn "hello 1"
-                         do! Async.Sleep(30) 
-                         do result <- 1 });
-     while result = 0 do 
-         printf "."
+module SpawnTests = 
+   let Run() = 
+    check "32o8f43kaI: Spawn" 
+        (let mutable result = 0
+         Async.Start(async { do printfn "hello 1"
+                             do! Async.Sleep(30) 
+                             do result <- 1 });
+         while result = 0 do 
+             printf "."
 #if FX_PORTABLE_OR_NETSTANDARD
-         Task.Delay(10).Wait()
+             Task.Delay(10).Wait()
 #else
-         System.Threading.Thread.Sleep(10)
+             System.Threading.Thread.Sleep(10)
 #endif
-     result) 1
+         result) 1
 
 
 #if !FX_PORTABLE_OR_NETSTANDARD
@@ -448,7 +452,7 @@ module Bug6078 =
         let throwingAsync = async { raise <| new InvalidOperationException("foo") }
         
         for i in 1..100 do
-            check "5678w6r78w" 
+            check ("5678w6r78w"+string i) 
                 begin
                     try
                         [   for j in 1..i do yield sleepingAsync; 
@@ -461,7 +465,7 @@ module Bug6078 =
                 "foo"
     Test()
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !MONO && !FX_PORTABLE_OR_NETSTANDARD
 module AwaitEventTests = 
     let AwaitEventTest() = 
         // AwaitEvent
@@ -511,7 +515,8 @@ module AwaitEventTests =
                      expectedResult
 
 
-    AwaitEventTest()
+    //AwaitEventTest()
+
 #endif
 
 module AsBeginEndTests = 
@@ -707,7 +712,7 @@ module AsBeginEndTests =
             (try req.EndAsync(iar) with :? System.OperationCanceledException as e -> 100 ))
            100
 
-    AsBeginEndTest()
+    //AsBeginEndTest()
 
 (*
 
@@ -758,6 +763,7 @@ check "32o8f43ka2: Cancel a For loop"
 *)
 
 module OnCancelTests = 
+  let Run() = 
     check "32o8f43ka1: No cancellation" 
         (let mutable count = 0
          let mutable res = 0
@@ -776,7 +782,7 @@ module OnCancelTests =
          res) 0
 
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !TESTS_AS_APP && !FX_PORTABLE_OR_NETSTANDARD
 module SyncContextReturnTests = 
 
     let p() = printfn "running on %A" System.Threading.SynchronizationContext.Current
@@ -990,6 +996,7 @@ module SyncContextReturnTests =
 #endif
 
 module GenerateTests = 
+  let Run() = 
     for n = 0 to 20 do
         check (sprintf "32o8f43ka2: Async.Generate, n = %d" n)
             (Async.RunSynchronously (Async.Generate(n, (fun i -> async { return i })))) [| 0..n-1 |]
@@ -1014,6 +1021,7 @@ module GenerateTests =
             [| 0xdeadbeef |]
 
 module ParallelTests = 
+  let Run() = 
     for n = 1 to 20 do
         check 
             (sprintf "32o8f43ka6: Async.Parallel w/- last failure, n = %d" n)
@@ -1128,6 +1136,7 @@ module ParallelTests =
 
 #if !FX_PORTABLE_OR_NETSTANDARD
 module AsyncWaitOneTest1 = 
+  let Run() = 
         
     check 
         "c32398u1: AsyncWaitOne"
@@ -1252,6 +1261,7 @@ Async.RunSynchronously (async { let! n = s.AsyncRead(buffer,0,9) in return n }) 
 
 #if !FX_PORTABLE_OR_NETSTANDARD
 module AsyncGenerateTests = 
+  let Run() = 
     for length in 1 .. 10 do
         for chunks in 1 .. 10 do 
             check (sprintf "c3239438u: Run/Generate, length=%d, chunks=%d" length chunks)
@@ -1770,7 +1780,7 @@ module ParallelTest =
     Test()    
 
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !TESTS_AS_APP && !FX_PORTABLE_OR_NETSTANDARD
 // See bug 5570, check we do not switch threads
 module CheckNoPumpingOrThreadSwitchingBecauseWeTrampolineSynchronousCode =
     let checkOnThread  msg expectedThreadId = 
@@ -2067,18 +2077,34 @@ module Bug391710 =
         check "Bug391710" true false
         printfn "%s" (e.ToString())
 
-#if TESTS_AS_APP
-let aa = if not failures.IsEmpty then exit 1 else stdout.WriteLine "Test Passed"; exit 0
-#else
-let _ = 
-  if not failures.IsEmpty then (stdout.WriteLine("Test Failed, failures = {0}", failures); exit 1) 
-  else (stdout.WriteLine "Test Passed"; 
-        System.IO.File.WriteAllText("test.ok","ok"); 
-// debug: why is the fsi test failing?  is it because test.ok does not exist?
-        if System.IO.File.Exists("test.ok") then
-            stdout.WriteLine ("test.ok found at {0}", System.IO.FileInfo("test.ok").FullName)
-        else
-            stdout.WriteLine ("test.ok not found")
-        exit 0)
-
+// Some tests should not be run in the static constructor
+let RunAll() = 
+    BasicTests.Run()
+    StartChildOutsideOfAsync.Run()
+    SpawnTests.Run()
+    AsBeginEndTests.AsBeginEndTest()
+#if !MONO && !FX_PORTABLE_OR_NETSTANDARD
+    AwaitEventTests.AwaitEventTest()
 #endif
+    OnCancelTests.Run()
+    GenerateTests.Run()
+    ParallelTests.Run()
+#if !FX_PORTABLE_OR_NETSTANDARD
+    AsyncWaitOneTest1.Run()
+    AsyncGenerateTests.Run()
+#endif
+
+#if TESTS_AS_APP
+let RUN() = RunAll(); failures
+#else
+RunAll()
+let aa =
+  if not failures.IsEmpty then 
+      stdout.WriteLine "Test Failed"
+      exit 1
+  else   
+      stdout.WriteLine "Test Passed"
+      System.IO.File.WriteAllText("test.ok","ok")
+      exit 0
+#endif
+

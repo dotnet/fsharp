@@ -6,9 +6,13 @@ module Core_seq
 #nowarn "62"
 #nowarn "44"
 
-let mutable failures = []
-let reportFailure s = 
-  stdout.WriteLine "\n................TEST FAILED...............\n"; failures <- failures @ [s]
+let failures = ref []
+
+let reportFailure (s : string) = 
+    stderr.Write" NO: "
+    stderr.WriteLine s
+    failures := !failures @ [s]
+
 
 (* TEST SUITE FOR STANDARD LIBRARY *)
 
@@ -503,9 +507,18 @@ module Repro2 =
 !* wrap up
  *--------------------------------------------------------------------------- *)
 
-let aa =
-  if not failures.IsEmpty then (printfn "Test Failed, failures = %A" failures; exit 1) 
 
-do (stdout.WriteLine "Test Passed"; 
-    System.IO.File.WriteAllText("test.ok","ok"); 
-    exit 0)
+#if TESTS_AS_APP
+let RUN() = !failures
+#else
+let aa =
+  match !failures with 
+  | [] -> 
+      stdout.WriteLine "Test Passed"
+      System.IO.File.WriteAllText("test.ok","ok")
+      exit 0
+  | _ -> 
+      stdout.WriteLine "Test Failed"
+      exit 1
+#endif
+

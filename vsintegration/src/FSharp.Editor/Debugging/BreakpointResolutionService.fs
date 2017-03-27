@@ -2,17 +2,13 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Composition
-open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Threading
 open System.Threading.Tasks
 open System.Linq
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Classification
-open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Editor.Implementation.Debugging
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text

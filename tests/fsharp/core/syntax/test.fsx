@@ -54,6 +54,10 @@ module CheckDynamicOperatorsOnTypes =
     let hw  : string = foo ? world
     let hw2  : unit = foo ? world <- "3"
         
+
+// Copyright (c) Microsoft Corporation 2005-2006.  .
+
+
 open System
 
 //--------------------------------------------------------
@@ -782,7 +786,7 @@ let testTryFinallySyntaxOnOneLine () =
     try () finally ()
 
 
-#if !FX_PORTABLE_OR_NETSTANDARD
+#if !TESTS_AS_APP && !FX_PORTABLE_OR_NETSTANDARD
 type SampleForm = 
   class
     inherit System.Windows.Forms.Form
@@ -980,7 +984,9 @@ do test "vliwe94"   (f -2L = - 2L)
 do test "vliwe95"   (f -2n = - 2n)
 do test "vliwe96"   (f -2.0 = - 2.0)
 do test "vliwe97"   (f -2.0f = - 2.0f)
+#if !FX_PORTABLE_OR_NETSTANDARD
 do test "vliwe99"   (f -2I = - 2I)
+#endif
 
 do test "vliwe9q"   ((function -2y -> true | _ -> false) (- 2y))
 do test "vliwe9w"   ((function -2s -> true | _ -> false) (- 2s))
@@ -1777,9 +1783,17 @@ module AdHocTests =
               let (b, _, _) = (1,2,3)
               [b]      
     
-let _ = stdout.WriteLine "Test FInishing"
+#if TESTS_AS_APP
+let RUN() = !failures
+#else
 let aa =
-  if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
-  else (stdout.WriteLine "Test Passed"; 
-        System.IO.File.WriteAllText("test.ok","ok"); 
-        exit 0)
+  match !failures with 
+  | false -> 
+      stdout.WriteLine "Test Passed"
+      System.IO.File.WriteAllText("test.ok","ok")
+      exit 0
+  | _ -> 
+      stdout.WriteLine "Test Failed"
+      exit 1
+#endif
+

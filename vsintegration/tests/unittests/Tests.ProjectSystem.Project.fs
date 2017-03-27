@@ -22,7 +22,7 @@ open UnitTests.TestLib.Utils.FilesystemHelpers
 open UnitTests.TestLib.ProjectSystem
 
 
-[<TestFixture>]
+[<TestFixture>][<Category "ProjectSystem">]
 type Project() = 
     inherit TheTests()
 

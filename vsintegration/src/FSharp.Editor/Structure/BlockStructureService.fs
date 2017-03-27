@@ -2,32 +2,18 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Composition
 open System.Collections.Immutable
-open System.Threading
 open System.Threading.Tasks
-open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Editor
-open Microsoft.CodeAnalysis.Host
 open Microsoft.CodeAnalysis.Host.Mef
-open Microsoft.CodeAnalysis.Options
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Structure
 
-open Microsoft.VisualStudio.FSharp
-open Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.Text.Tagging
-open Microsoft.VisualStudio.Shell
-
 open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open System.Windows.Documents
 open Microsoft.VisualStudio.FSharp.Editor.Structure
 
 module internal BlockStructure =
@@ -114,8 +100,7 @@ type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoMan
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
             let! sourceText = document.GetTextAsync(cancellationToken)
             let! parsedInput = checker.ParseDocument(document, options, sourceText)
-            let blockSpans = createBlockSpans sourceText parsedInput
-            return blockSpans.ToImmutableArray()
+            return createBlockSpans sourceText parsedInput |> Seq.toImmutableArray
         } 
         |> Async.map (Option.defaultValue ImmutableArray<_>.Empty)
         |> Async.map BlockStructure

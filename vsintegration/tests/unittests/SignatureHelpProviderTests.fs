@@ -18,6 +18,7 @@
 // Technique 3: 
 // 
 //    Use F# Interactive.  This only works for FSharp.Compiler.Service.dll which has a public API
+[<NUnit.Framework.Category "Roslyn Services">]
 module Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn.SignatureHelpProvider
 
 open System
@@ -53,7 +54,7 @@ let internal options = {
     ProjectFileName = "C:\\test.fsproj"
     ProjectFileNames =  [| filePath |]
     ReferencedProjects = [| |]
-    OtherOptions = [| "-r:" + PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll") |]
+    OtherOptions = [| "-r:" + PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll") |]
     IsIncompleteTypeCheckEnvironment = true
     UseScriptResolutionRules = false
     LoadTime = DateTime.MaxValue

@@ -762,9 +762,6 @@ type FSharpTypeTests() =
         ()
 
     [<Test>]
-#if coreclr
-    [<Ignore("Failing in coreclr")>]
-#endif
     member this.IsModule() =   
     
         let getasm (t : Type) = t.Assembly

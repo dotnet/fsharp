@@ -188,15 +188,15 @@ module internal FSharpEnvironment =
     //     - default location of fsi.exe in FSharp.VS.FSI.dll
     //     - default location of fsc.exe in FSharp.Compiler.CodeDom.dll
     //     - default F# binaries directory in (project system) Project.fs
+    let BinFolderOfDefaultFSharpCompiler(probePoint:string option) = 
 #if FX_NO_WIN_REGISTRY
-    let BinFolderOfDefaultFSharpCompiler = 
+        ignore probePoint
 #if FX_NO_APP_DOMAINS
         Some System.AppContext.BaseDirectory
 #else
-    Some System.AppDomain.CurrentDomain.BaseDirectory
+        Some System.AppDomain.CurrentDomain.BaseDirectory
 #endif
 #else
-    let BinFolderOfDefaultFSharpCompiler = 
         // Check for an app.config setting to redirect the default compiler location
         // Like fsharp-compiler-location
         try 
@@ -205,7 +205,13 @@ module internal FSharpEnvironment =
             match result with 
             | Some _ ->  result 
             | None -> 
-
+            
+                let safeExists f = (try File.Exists(f) with _ -> false)
+                // Look in the probePoint if given, e.g. look for a compiler alongside of FSharp.Build.dll
+                match probePoint with 
+                | Some p when safeExists (Path.Combine(p,"fsc.exe")) || safeExists (Path.Combine(p,"Fsc.exe")) -> Some p 
+                | _ -> 
+                
                 // On windows the location of the compiler is via a registry key
 
                 // Note: If the keys below change, be sure to update code in:
@@ -253,11 +259,13 @@ module internal FSharpEnvironment =
 
     // Check if the framework version 4.5 or above is installed at the given key entry 
     let IsNetFx45OrAboveInstalledAt subkey =
+      try
         useKey subkey (fun regkey ->
             match regkey with
             | null -> false
             | _ -> regkey.GetValue("Release", 0) :?> int |> (fun s -> s >= 0x50000)) // 0x50000 implies 4.5.0
-
+      with _ -> false
+ 
     // Check if the framework version 4.5 or above is installed
     let IsNetFx45OrAboveInstalled =
         IsNetFx45OrAboveInstalledAt @"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Client" ||

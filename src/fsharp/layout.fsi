@@ -9,7 +9,15 @@ open Internal.Utilities.StructuredFormat
 open Internal.Utilities.StructuredFormat.TaggedTextOps
 
 type layout = Internal.Utilities.StructuredFormat.Layout
+type LayoutTag = Internal.Utilities.StructuredFormat.LayoutTag
 type TaggedText = Internal.Utilities.StructuredFormat.TaggedText
+
+type NavigableTaggedText =
+    new : LayoutTag * string * Range.range -> NavigableTaggedText
+    member Range: Range.range
+    static member Create: TaggedText * Range.range -> NavigableTaggedText
+    interface TaggedText
+
 module TaggedTextOps = Internal.Utilities.StructuredFormat.TaggedTextOps
 
 val emptyL                : Layout

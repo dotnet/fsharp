@@ -5,11 +5,9 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.Composition
 open System.Threading
-open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Editor
-open Microsoft.CodeAnalysis.Editor.Implementation.BraceMatching
 open Microsoft.CodeAnalysis.Formatting
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text

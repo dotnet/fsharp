@@ -13,11 +13,11 @@ type internal ValueStrength<'T when 'T : not struct> =
    | Weak of WeakReference<'T>
 #endif
 
-type internal AgedLookup<'TKey,'TValue when 'TValue : not struct>(keepStrongly:int, areSame, ?requiredToKeep, ?onStrongDiscard, ?keepMax: int) =
+type internal AgedLookup<'Token, 'Key, 'Value when 'Value : not struct>(keepStrongly:int, areSame, ?requiredToKeep, ?onStrongDiscard, ?keepMax: int) =
     /// The list of items stored. Youngest is at the end of the list.
     /// The choice of order is somewhat arbitrary. If the other way then adding
     /// items would be O(1) and removing O(N).
-    let mutable refs:('TKey*ValueStrength<'TValue>) list = [] 
+    let mutable refs:('Key*ValueStrength<'Value>) list = [] 
     let mutable keepStrongly = keepStrongly
 
     // Only set a strong discard function if keepMax is explicitly set to keepStrongly, i.e. there are no weak entries in this lookup.
@@ -68,7 +68,8 @@ type internal AgedLookup<'TKey,'TValue when 'TValue : not struct>(keepStrongly:i
         | None -> None,data          
        
     /// Remove weak entries from the list that have been collected.
-    let FilterAndHold() =
+    let FilterAndHold(tok: 'Token) =
+        ignore tok // reading 'refs' requires a token
         [ for (key,value) in refs do
             match value with
             | Strong(value) -> yield (key,value)
@@ -76,14 +77,14 @@ type internal AgedLookup<'TKey,'TValue when 'TValue : not struct>(keepStrongly:i
 #if FX_NO_GENERIC_WEAKREFERENCE
                 match weakReference.Target with 
                 | null -> assert onStrongDiscard.IsNone; ()
-                | value -> yield key,(value:?>'TValue) ]
+                | value -> yield key,(value:?>'Value) ]
 #else
                 match weakReference.TryGetTarget () with
                 | false, _ -> assert onStrongDiscard.IsNone; ()
                 | true, value -> yield key, value ]
 #endif
         
-    let AssignWithStrength(newdata,discard1) = 
+    let AssignWithStrength(tok,newdata,discard1) = 
         let actualLength = List.length newdata
         let tossThreshold = max 0 (actualLength - keepMax) // Delete everything less than this threshold
         let weakThreshhold = max 0 (actualLength - keepStrongly) // Weaken everything less than this threshold
@@ -104,53 +105,56 @@ type internal AgedLookup<'TKey,'TValue when 'TValue : not struct>(keepStrongly:i
                     else 
                         Strong(v)
                 k,handle )
+        ignore tok // Updating refs requires tok
         refs <- newdata
         discard1 |> List.iter (snd >> strongDiscard)
         discard2 |> List.iter (snd >> snd >> strongDiscard)
         
-    member al.TryPeekKeyValue(key) = 
+    member al.TryPeekKeyValue(tok, key) = 
         // Returns the original key value as well since it may be different depending on equality test.
-        let data = FilterAndHold()
+        let data = FilterAndHold(tok)
         TryPeekKeyValueImpl(data,key)
         
-    member al.TryGetKeyValue(key) = 
-        let data = FilterAndHold()
+    member al.TryGetKeyValue(tok, key) = 
+        let data = FilterAndHold(tok)
         let result,newdata = TryGetKeyValueImpl(data,key)
-        AssignWithStrength(newdata,[])
+        AssignWithStrength(tok,newdata,[])
         result
-    member al.TryGet(key) = 
-        let data = FilterAndHold()
+
+    member al.TryGet(tok, key) = 
+        let data = FilterAndHold(tok)
         let result,newdata = TryGetKeyValueImpl(data,key)
-        AssignWithStrength(newdata,[])
+        AssignWithStrength(tok,newdata,[])
         match result with
         | Some(_,value) -> Some(value)
         | None -> None
-    member al.Put(key,value) = 
-        let data = FilterAndHold()
+
+    member al.Put(tok, key,value) = 
+        let data = FilterAndHold(tok)
         let data,discard = if Exists(data,key) then RemoveImpl (data,key) else data,[]
         let data = Add(data,key,value)
-        AssignWithStrength(data,discard) // This will remove extras 
+        AssignWithStrength(tok,data,discard) // This will remove extras 
 
-    member al.Remove(key) = 
-        let data = FilterAndHold()
+    member al.Remove(tok, key) = 
+        let data = FilterAndHold(tok)
         let newdata,discard = RemoveImpl (data,key)
-        AssignWithStrength(newdata,discard)
+        AssignWithStrength(tok,newdata,discard)
 
-    member al.Clear() =
-       let discards = FilterAndHold()
-       AssignWithStrength([], discards)
+    member al.Clear(tok) =
+       let discards = FilterAndHold(tok)
+       AssignWithStrength(tok,[], discards)
 
-    member al.Resize(newKeepStrongly, ?newKeepMax) =
+    member al.Resize(tok, newKeepStrongly, ?newKeepMax) =
        let newKeepMax = defaultArg newKeepMax 75 
        keepStrongly <- newKeepStrongly
        keepMax <- max newKeepStrongly newKeepMax
        do assert (onStrongDiscard.IsNone || keepStrongly = keepMax)
-       let keep = FilterAndHold()
-       AssignWithStrength(keep, [])
+       let keep = FilterAndHold(tok)
+       AssignWithStrength(tok,keep, [])
 
         
 
-type internal MruCache<'TKey,'TValue when 'TValue : not struct>(keepStrongly, areSame, ?isStillValid : 'TKey*'TValue->bool, ?areSameForSubsumption, ?requiredToKeep, ?onStrongDiscard, ?keepMax) =
+type internal MruCache<'Token, 'Key,'Value when 'Value : not struct>(keepStrongly, areSame, ?isStillValid : 'Key*'Value->bool, ?areSameForSubsumption, ?requiredToKeep, ?onStrongDiscard, ?keepMax) =
         
     /// Default behavior of <c>areSameForSubsumption</c> function is areSame.
     let areSameForSubsumption = defaultArg areSameForSubsumption areSame
@@ -158,46 +162,46 @@ type internal MruCache<'TKey,'TValue when 'TValue : not struct>(keepStrongly, ar
     /// The list of items in the cache. Youngest is at the end of the list.
     /// The choice of order is somewhat arbitrary. If the other way then adding
     /// items would be O(1) and removing O(N).
-    let cache = AgedLookup<'TKey,'TValue>(keepStrongly=keepStrongly,areSame=areSameForSubsumption,?onStrongDiscard=onStrongDiscard,?keepMax=keepMax,?requiredToKeep=requiredToKeep)
+    let cache = AgedLookup<'Token, 'Key,'Value>(keepStrongly=keepStrongly,areSame=areSameForSubsumption,?onStrongDiscard=onStrongDiscard,?keepMax=keepMax,?requiredToKeep=requiredToKeep)
         
     /// Whether or not this result value is still valid.
     let isStillValid = defaultArg isStillValid (fun _ -> true)
         
-    member bc.TryGetAny(key) = 
-        match cache.TryPeekKeyValue(key) with
+    member bc.TryGetAny(tok, key) = 
+        match cache.TryPeekKeyValue(tok, key) with
         | Some(key', value)->
             if areSame(key',key) then Some(value)
             else None
         | None -> None
        
-    member bc.TryGet(key) = 
-        match cache.TryGetKeyValue(key) with
+    member bc.TryGet(tok, key) = 
+        match cache.TryGetKeyValue(tok, key) with
         | Some(key', value) -> 
             if areSame(key', key) && isStillValid(key,value) then Some value
             else None
         | None -> None
            
-    member bc.Set(key:'TKey,value:'TValue) = 
-        cache.Put(key,value)
+    member bc.Set(tok, key:'Key,value:'Value) = 
+        cache.Put(tok, key,value)
        
-    member bc.Remove(key) = 
-        cache.Remove(key)
+    member bc.Remove(tok, key) = 
+        cache.Remove(tok, key)
        
-    member bc.Clear() =
-        cache.Clear()
+    member bc.Clear(tok) =
+        cache.Clear(tok)
         
-    member bc.Resize(newKeepStrongly, ?newKeepMax) =
-        cache.Resize(newKeepStrongly, ?newKeepMax=newKeepMax)
+    member bc.Resize(tok, newKeepStrongly, ?newKeepMax) =
+        cache.Resize(tok, newKeepStrongly, ?newKeepMax=newKeepMax)
         
 /// List helpers
 [<Sealed>]
 type internal List = 
-    /// Return a new list with one element for each unique 'TKey. Multiple 'TValues are flattened. 
-    /// The original order of the first instance of 'TKey is preserved.
-    static member groupByFirst( l : ('TKey * 'TValue) list) : ('TKey * 'TValue list) list =
+    /// Return a new list with one element for each unique 'Key. Multiple 'TValues are flattened. 
+    /// The original order of the first instance of 'Key is preserved.
+    static member groupByFirst( l : ('Key * 'Value) list) : ('Key * 'Value list) list =
         let nextIndex = ref 0
-        let result = System.Collections.Generic.List<'TKey * System.Collections.Generic.List<'TValue>>()
-        let keyToIndex = Dictionary<'TKey,int>(HashIdentity.Structural)
+        let result = System.Collections.Generic.List<'Key * System.Collections.Generic.List<'Value>>()
+        let keyToIndex = Dictionary<'Key,int>(HashIdentity.Structural)
         let indexOfKey(key) =
             match keyToIndex.TryGetValue(key) with
             | true, v -> v
@@ -209,7 +213,7 @@ type internal List =
         for kv in l do 
             let index = indexOfKey(fst kv)
             if index>= result.Count then 
-                let k,vs = fst kv,System.Collections.Generic.List<'TValue>()
+                let k,vs = fst kv,System.Collections.Generic.List<'Value>()
                 vs.Add(snd kv)
                 result.Add(k,vs)
             else

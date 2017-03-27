@@ -1,4 +1,7 @@
 // #Conformance #Interop #Events #MemberDefinitions 
+#if TESTS_AS_APP
+module Core_members_console
+#endif
 
 type ControlEvent = CTRL_C | CTRL_BREAK | CTRL_CLOSE |CTRL_LOGOFF | CTRL_SHUTDOWN 
   with 
@@ -16,7 +19,7 @@ type ControlEvent = CTRL_C | CTRL_BREAK | CTRL_CLOSE |CTRL_LOGOFF | CTRL_SHUTDOW
        | 2 -> CTRL_CLOSE 
        | 3 -> CTRL_LOGOFF 
        | 4 -> CTRL_SHUTDOWN 
-       |  _ -> invalid_arg "ControlEvent.ToInt"
+       |  _ -> invalidArg "ControlEvent.ToInt"
   end
 
 

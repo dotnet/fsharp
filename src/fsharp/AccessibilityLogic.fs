@@ -123,7 +123,7 @@ let private IsTyconAccessibleViaVisibleTo ad (tcrefOfViewedItem:TyconRef) =
 /// Indicates if given IL based TyconRef is accessible. If TyconRef is nested then we'll 
 /// walk though the list of enclosing types and test if all of them are accessible 
 let private IsILTypeInfoAccessible amap m ad (tcrefOfViewedItem : TyconRef) = 
-    let scoref, enc, tdef = tcrefOfViewedItem.ILTyconInfo
+    let (TILObjectReprData(scoref, enc, tdef)) = tcrefOfViewedItem.ILTyconInfo
     let rec check parentTycon path =
         let ilTypeDefAccessible =
             match parentTycon with

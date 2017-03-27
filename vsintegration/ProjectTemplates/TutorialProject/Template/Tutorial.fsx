@@ -211,7 +211,8 @@ module Tuples =
     let sampleStructTuple = struct (1, 2)
     //let thisWillNotCompile: (int*int) = struct (1, 2)
 
-    // Although you can
+    // Although you cannot implicitly convert between struct tuples and reference tuples,
+    // you can explicitly convert via pattern matching, as demonstrated below.
     let convertFromStructTuple (struct(a, b)) = (a, b)
     let convertToStructTuple (a, b) = struct(a, b)
 

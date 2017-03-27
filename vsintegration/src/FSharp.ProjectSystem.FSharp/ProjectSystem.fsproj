@@ -29,6 +29,39 @@
     <GeneratePkgDefFile>true</GeneratePkgDefFile>
     <IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
   </PropertyGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  <Import Project="$(FSharpSourcesRoot)\..\vsintegration\vsintegration.targets" />
+  <Import Project="$(VsSDKInstall)\Microsoft.VsSDK.targets" />
+  <PropertyGroup>
+    <BuildingProject>true</BuildingProject>
+    <BuildDependsOn>VSCTCompile;CopyCtoFile;$(BuildDependsOn)</BuildDependsOn>
+  </PropertyGroup>
+  <Target Name="CopyCtoFile">
+    <Copy SourceFiles="@(VSCTCompile->'$(IntermediateOutputPath)%(FileName).cto')" DestinationFiles="@(VSCTCompile->'ctofiles\%(FileName).cto')" />
+  </Target>
+  <PropertyGroup>
+    <Win32Resource>$(IntermediateOutputPath)\ProjectResources.rc.res</Win32Resource>
+  </PropertyGroup>
+  <Target Name="BeforeBuild">
+    <Exec Command="&quot;$(ProgramFiles)\Windows Kits\8.1\bin\x86\rc.exe&quot; /fo $(IntermediateOutputPath)$(RCResourceFile).res $(RCResourceFile)" Condition="Exists('$(ProgramFiles)\Windows Kits\8.1\bin\x86\rc.exe')" />
+    <Exec Command="&quot;$(ProgramFiles)\Windows Kits\10\bin\x86\rc.exe&quot; /fo $(IntermediateOutputPath)$(RCResourceFile).res $(RCResourceFile)" Condition="Exists('$(ProgramFiles)\Windows Kits\10\bin\x86\rc.exe')" />
+  </Target>
+  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
+    <ItemGroup>
+      <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
+      <BinariesToBeSigned Include="$(OutDir)localize\**\$(AssemblyName).resources.dll" />
+      <FilesToSign Include="@(BinariesToBeSigned)">
+        <Authenticode>Microsoft</Authenticode>
+        <StrongName>StrongName</StrongName>
+      </FilesToSign>
+    </ItemGroup>
+  </Target>
+  <Target Name="CopyLocalizationResources" BeforeTargets="Localize">
+    <ItemGroup>
+      <LocalizationResources Include="MenusAndCommands.vsct" />
+    </ItemGroup>
+    <Copy SourceFiles="@(LocalizationResources)" DestinationFiles="@(LocalizationResources->'$(OutDir)%(Filename)%(Extension)')" />
+  </Target>
   <ItemGroup>
     <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
       <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
@@ -44,8 +77,6 @@
       <Link>FSharp.ProjectSystem.FSharp.dll</Link>
       <Parser>210</Parser>
     </FilesToLocalize>
-  </ItemGroup>
-  <ItemGroup>
     <VSCTCompile Include="MenusAndCommands.vsct" />
     <EmbeddedResource Include="VSPackage.resx">
       <MergeWithCTO>true</MergeWithCTO>
@@ -161,37 +192,4 @@
       <Name>FSharp.Core</Name>
     </ProjectReference>
   </ItemGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  <Import Project="$(FSharpSourcesRoot)\..\vsintegration\vsintegration.targets" />
-  <Import Project="$(VsSDKInstall)\Microsoft.VsSDK.targets" />
-  <PropertyGroup>
-    <BuildingProject>true</BuildingProject>
-    <BuildDependsOn>VSCTCompile;CopyCtoFile;$(BuildDependsOn)</BuildDependsOn>
-  </PropertyGroup>
-  <Target Name="CopyCtoFile">
-    <Copy SourceFiles="@(VSCTCompile->'$(IntermediateOutputPath)%(FileName).cto')" DestinationFiles="@(VSCTCompile->'ctofiles\%(FileName).cto')" />
-  </Target>
-  <PropertyGroup>
-    <Win32Resource>$(IntermediateOutputPath)\ProjectResources.rc.res</Win32Resource>
-  </PropertyGroup>
-  <Target Name="BeforeBuild">
-    <Exec Command="&quot;$(ProgramFiles)\Windows Kits\8.1\bin\x86\rc.exe&quot; /fo $(IntermediateOutputPath)$(RCResourceFile).res $(RCResourceFile)" Condition="Exists('$(ProgramFiles)\Windows Kits\8.1\bin\x86\rc.exe')" />
-    <Exec Command="&quot;$(ProgramFiles)\Windows Kits\10\bin\x86\rc.exe&quot; /fo $(IntermediateOutputPath)$(RCResourceFile).res $(RCResourceFile)" Condition="Exists('$(ProgramFiles)\Windows Kits\10\bin\x86\rc.exe')" />
-  </Target>
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
-    <ItemGroup>
-      <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
-      <BinariesToBeSigned Include="$(OutDir)localize\**\$(AssemblyName).resources.dll" />
-      <FilesToSign Include="@(BinariesToBeSigned)">
-         <Authenticode>Microsoft</Authenticode>
-         <StrongName>StrongName</StrongName>
-      </FilesToSign>
-    </ItemGroup>
-  </Target>
-  <Target Name="CopyLocalizationResources" BeforeTargets="Localize">
-    <ItemGroup>
-      <LocalizationResources Include="MenusAndCommands.vsct" />
-    </ItemGroup>
-    <Copy SourceFiles="@(LocalizationResources)" DestinationFiles="@(LocalizationResources->'$(OutDir)%(Filename)%(Extension)')" />
-  </Target>
 </Project>

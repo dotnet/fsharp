@@ -426,7 +426,7 @@ let ``Test ProjectFileNames order for GetProjectOptionsFromScript`` () = // See 
     let test scriptName expected =
         let scriptPath = __SOURCE_DIRECTORY__ + @"/data/ScriptProject/" + scriptName + ".fsx"
         let scriptSource = File.ReadAllText scriptPath
-        let projOpts =
+        let projOpts, _diagnostics =
             checker.GetProjectOptionsFromScript(scriptPath, scriptSource)
             |> Async.RunSynchronously
         projOpts.ProjectFileNames

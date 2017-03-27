@@ -60,7 +60,6 @@
     <Compile Include="FSharpSource.fs" />
     <Compile Include="ProjectSitesAndFiles.fs" />
     <Compile Include="XmlDocumentation.fs" />
-    <Compile Include="NavigationBar.fs" />
     <Compile Include="Intellisense.fs" />
     <Compile Include="BackgroundRequests.fs" />
   </ItemGroup>

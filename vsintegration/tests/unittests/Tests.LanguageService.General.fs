@@ -18,7 +18,7 @@ open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 
-[<TestFixture>] 
+[<TestFixture>][<Category "LanguageService">] 
 module IFSharpSource = 
 
     [<Test>]
@@ -55,7 +55,7 @@ module IFSharpSource =
 
 
 
-[<TestFixture>] 
+[<TestFixture>][<Category "LanguageService">]  
 type UsingMSBuild() =
     inherit LanguageServiceBaseTests()
 
@@ -398,16 +398,16 @@ type UsingMSBuild() =
     member public this.``TokenInfo.TriggerClasses``() =      
       let important = 
         [ // Member select for dot completions
-          Parser.DOT, (FSharpTokenColorKind.Operator,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.MemberSelect)
+          Parser.DOT, (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter,FSharpTokenTriggerClass.MemberSelect)
           // for parameter info
-          Parser.LPAREN, (FSharpTokenColorKind.Text,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamStart ||| FSharpTokenTriggerClass.MatchBraces)
-          Parser.COMMA,  (FSharpTokenColorKind.Text,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamNext)
-          Parser.RPAREN, (FSharpTokenColorKind.Text,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamEnd ||| FSharpTokenTriggerClass.MatchBraces) ]
+          Parser.LPAREN, (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamStart ||| FSharpTokenTriggerClass.MatchBraces)
+          Parser.COMMA,  (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamNext)
+          Parser.RPAREN, (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.ParamEnd ||| FSharpTokenTriggerClass.MatchBraces) ]
       let matching =           
         [ // Other cases where we expect MatchBraces
           Parser.LQUOTE("", false); Parser.LBRACK; Parser.LBRACE; Parser.LBRACK_BAR;
           Parser.RQUOTE("", false); Parser.RBRACK; Parser.RBRACE; Parser.BAR_RBRACK ]
-        |> List.map (fun n -> n, (FSharpTokenColorKind.Text,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.MatchBraces))
+        |> List.map (fun n -> n, (FSharpTokenColorKind.Punctuation,FSharpTokenCharKind.Delimiter, FSharpTokenTriggerClass.MatchBraces))
       for tok, expected in List.concat [ important; matching ] do
         let info = TestExpose.TokenInfo tok
         AssertEqual(expected, info)
