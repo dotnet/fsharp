@@ -26,7 +26,7 @@ type ArrayWindowedTestInput<'t> =
         Exception : Type option
     }
 
-[<TestFixture>]
+[<TestFixture>][<Category "Collections.Array">][<Category "FSharp.Core.Collections">]
 type ArrayModule2() =
 
     [<Test>]

@@ -106,7 +106,7 @@ module Impl =
             // This is an approximation - for generative type providers some type definitions can be private.
             taccessPublic
 
-        | ILTypeMetadata (_,td) -> 
+        | ILTypeMetadata (TILObjectReprData(_,_,td)) -> 
             match td.Access with 
             | ILTypeDefAccess.Public 
             | ILTypeDefAccess.Nested ILMemberAccess.Public -> taccessPublic 
@@ -320,7 +320,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
         isResolved() &&
         match metadataOfTycon entity.Deref with 
         | ProvidedTypeMetadata info -> info.IsClass
-        | ILTypeMetadata (_,td) -> (td.tdKind = ILTypeDefKind.Class)
+        | ILTypeMetadata (TILObjectReprData(_,_,td)) -> (td.tdKind = ILTypeDefKind.Class)
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> entity.Deref.IsFSharpClassTycon
 
     member __.IsByRef = 
@@ -339,7 +339,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
         isResolved() &&
         match metadataOfTycon entity.Deref with 
         | ProvidedTypeMetadata info -> info.IsDelegate ()
-        | ILTypeMetadata (_,td) -> (td.tdKind = ILTypeDefKind.Delegate)
+        | ILTypeMetadata (TILObjectReprData(_,_,td)) -> (td.tdKind = ILTypeDefKind.Delegate)
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> entity.IsFSharpDelegateTycon
 
     member __.IsEnum = 
@@ -403,6 +403,11 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
         let ty = generalizedTyconRef entity
         Infos.ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap range0 ty cenv.g.tcref_System_Attribute
         
+    member x.IsDisposableType =
+        if isUnresolved() then false else
+        let ty = generalizedTyconRef entity
+        Infos.ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap range0 ty cenv.g.tcref_System_IDisposable
+
     member x.BaseType = 
         checkIsResolved()        
         GetSuperTypeOfType cenv.g cenv.amap range0 (generalizedTyconRef entity) 
@@ -513,6 +518,19 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
         GetAttribInfosOfEntity cenv.g cenv.amap range0 entity
         |> List.map (fun a -> FSharpAttribute(cenv,  a))
         |> makeReadOnlyCollection
+
+    member __.AllCompilationPaths =
+        checkIsResolved()
+        let (CompilationPath.CompPath(_, parts)) = entity.CompilationPath
+        ([], parts) ||> List.fold (fun res (part, kind) ->
+            let parts =
+                match kind with
+                | ModuleOrNamespaceKind.FSharpModuleWithSuffix ->
+                    [part; part.[..part.Length - 7]]
+                | _ -> [part]
+
+            parts |> List.collect (fun part -> 
+                res |> List.map (fun path -> path + "." + part)))
 
     override x.Equals(other : obj) =
         box x === other ||
@@ -781,32 +799,6 @@ and FSharpField(cenv, d: FSharpFieldData)  =
     override x.GetHashCode() = hash x.Name
     override x.ToString() = "field " + x.Name
 
-and FSharpAccessibility(a:Accessibility, ?isProtected) = 
-    let isProtected = defaultArg isProtected  false
-
-    let isInternalCompPath x = 
-        match x with 
-        | CompPath(ILScopeRef.Local,[]) -> true 
-        | _ -> false
-
-    let (|Public|Internal|Private|) (TAccess p) = 
-        match p with 
-        | [] -> Public 
-        | _ when List.forall isInternalCompPath p  -> Internal 
-        | _ -> Private
-
-    member __.IsPublic = not isProtected && match a with Public -> true | _ -> false
-
-    member __.IsPrivate = not isProtected && match a with Private -> true | _ -> false
-
-    member __.IsInternal = not isProtected && match a with Internal -> true | _ -> false
-
-    member __.IsProtected = isProtected
-
-    member __.Contents = a
-
-    override x.ToString() = stringOfAccess a
-
 and [<Class>] FSharpAccessibilityRights(thisCcu: CcuThunk, ad:AccessorDomain) =
     member internal __.ThisCcu = thisCcu
     member internal __.Contents = ad
@@ -862,7 +854,7 @@ and FSharpGenericParameter(cenv, v:Typar) =
     member __.IsCompilerGenerated = v.IsCompilerGenerated
        
     member __.IsMeasure = (v.Kind = TyparKind.Measure)
-    member __.XmlDoc = v.Data.typar_xmldoc |> makeXmlDoc
+    member __.XmlDoc = v.typar_xmldoc |> makeXmlDoc
     member __.IsSolveAtCompileTime = (v.StaticReq = TyparStaticReq.HeadTypeStaticReq)
     member __.Attributes = 
          // INCOMPLETENESS: If the type parameter comes from .NET then the .NET metadata for the type parameter
@@ -2126,4 +2118,10 @@ type FSharpSymbol with
         | Item.Types _
         | Item.DelegateCtor _  -> dflt()
 
-
+    static member GetAccessibility (symbol: FSharpSymbol) =
+        match symbol with
+        | :? FSharpEntity as x -> Some x.Accessibility
+        | :? FSharpField as x -> Some x.Accessibility
+        | :? FSharpUnionCase as x -> Some x.Accessibility
+        | :? FSharpMemberFunctionOrValue as x -> Some x.Accessibility
+        | _ -> None

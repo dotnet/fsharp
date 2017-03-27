@@ -2,31 +2,18 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Composition
 open System.Collections.Generic
-open System.Collections.Immutable
-open System.Linq
-open System.Threading
 open System.Threading.Tasks
-open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Editor
-open Microsoft.CodeAnalysis.Editor.Host
 open Microsoft.CodeAnalysis.Navigation
-open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Notification
 
-open Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.VisualStudio.Text
-
-open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.Ast
 
 type internal NavigationBarSymbolItem(text, glyph, spans, childItems) =
     inherit NavigationBarItem(text, glyph, spans, childItems)
@@ -48,9 +35,7 @@ type internal FSharpNavigationBarItemService
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! parsedInput = checkerProvider.Checker.ParseDocument(document, options, sourceText)
                 let navItems = NavigationImpl.getNavigation parsedInput
-                let rangeToTextSpan range = 
-                    try Some(CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
-                    with _ -> None
+                let rangeToTextSpan range = CommonRoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range)
                 return 
                     navItems.Declarations
                     |> Array.choose (fun topLevelDecl ->

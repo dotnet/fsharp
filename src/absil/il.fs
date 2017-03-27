@@ -15,6 +15,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open System.Collections
 open System.Collections.Generic
 open System.Collections.Concurrent
+open System.Runtime.CompilerServices
  
 let logging = false 
 
@@ -80,10 +81,10 @@ let rec splitNamespaceAux (nm:string) =
         s1::splitNamespaceAux s2 
 
 /// Global State. All namespace splits ever seen
-// ++GLOBAL MUTABLE STATE
+// ++GLOBAL MUTABLE STATE (concurrency-safe)
 let memoizeNamespaceTable = new ConcurrentDictionary<string,string list>()
 
-//  ++GLOBAL MUTABLE STATE
+//  ++GLOBAL MUTABLE STATE (concurrency-safe)
 let memoizeNamespaceRightTable = new ConcurrentDictionary<string,string option * string>()
 
 
@@ -92,7 +93,7 @@ let splitNamespace nm =
 
 let splitNamespaceMemoized nm = splitNamespace nm
 
-// ++GLOBAL MUTABLE STATE
+// ++GLOBAL MUTABLE STATE (concurrency-safe)
 let memoizeNamespaceArrayTable = 
     Concurrent.ConcurrentDictionary<string,string[]>()
 
@@ -1865,15 +1866,9 @@ let andTailness x y =
 
 let formatCodeLabel (x:int) = "L"+string x
 
-let new_generator () = 
-    let i = ref 0
-    fun _n -> 
-      incr i; !i
-
-//  ++GLOBAL MUTABLE STATE
-let codeLabelGenerator = (new_generator () : unit -> ILCodeLabel) 
-let generateCodeLabel x  = codeLabelGenerator x
-
+//  ++GLOBAL MUTABLE STATE (concurrency safe)
+let codeLabelCount = ref 0
+let generateCodeLabel() = System.Threading.Interlocked.Increment(codeLabelCount)
 
 let instrIsRet i = 
     match i with 
@@ -2138,60 +2133,61 @@ let isILDoubleTy       ty = isILValuePrimaryAssemblyTy ty tname_Double
 // Rescoping
 // -------------------------------------------------------------------- 
 
-let qrescope_scoref scoref scoref_old = 
-    match scoref,scoref_old with 
-    | _,ILScopeRef.Local -> Some scoref
-    | ILScopeRef.Local,_ -> None
-    | _,ILScopeRef.Module _ -> Some scoref
-    | ILScopeRef.Module _,_ -> None
-    | _ -> None
-let qrescope_tref scoref (x:ILTypeRef) = 
-    match qrescope_scoref scoref x.Scope with 
-    | None -> None
-    | Some s -> Some (ILTypeRef.Create(s,x.Enclosing,x.Name))
+let rescopeILScopeRef scoref scoref1 = 
+    match scoref,scoref1 with 
+    | _,ILScopeRef.Local -> scoref 
+    | ILScopeRef.Local,_ -> scoref1
+    | _,ILScopeRef.Module _ -> scoref
+    | ILScopeRef.Module _,_ -> scoref1
+    | _ -> scoref1
 
-let rescopeILScopeRef x y = match qrescope_scoref x y with Some x -> x | None -> y
-let rescopeILTypeRef x y = match qrescope_tref x y with Some x -> x | None -> y
+let rescopeILTypeRef scoref (tref1:ILTypeRef) = 
+    let scoref1 = tref1.Scope 
+    let scoref2 = rescopeILScopeRef scoref scoref1
+    if scoref1 === scoref2 then tref1
+    else ILTypeRef.Create(scoref2,tref1.Enclosing,tref1.Name)
 
 // ORIGINAL IMPLEMENTATION (too many allocations
 //         { tspecTypeRef=rescopeILTypeRef scoref tref;
 //           tspecInst=rescopeILTypes scoref tinst } 
-let rec rescopeILTypeSpecQuick scoref (tspec:ILTypeSpec) = 
-    let tref = tspec.TypeRef
-    let tinst = tspec.GenericArgs
-    let qtref = qrescope_tref scoref tref
-    if isNil tinst && Option.isNone qtref then 
-        None (* avoid reallocation in the common case *)
-    else
-        match qtref with 
-        | None ->  Some (ILTypeSpec.Create (tref, rescopeILTypes scoref tinst))
-        | Some tref ->  Some (ILTypeSpec.Create (tref, rescopeILTypes scoref tinst))
+let rec rescopeILTypeSpec scoref (tspec1:ILTypeSpec) = 
+    let tref1 = tspec1.TypeRef
+    let tinst1 = tspec1.GenericArgs
+    let tref2 = rescopeILTypeRef scoref tref1
 
-and rescopeILTypeSpec x y = 
-    match rescopeILTypeSpecQuick x y with 
-    | Some x -> x 
-    | None -> y
+    // avoid reallocation in the common case 
+    if tref1 === tref2 then 
+        if isNil tinst1 then tspec1 else
+        let tinst2 = rescopeILTypes scoref tinst1
+        if tinst1 === tinst2 then tspec1 else 
+        ILTypeSpec.Create (tref2, tinst2)
+    else
+        let tinst2 = rescopeILTypes scoref tinst1
+        ILTypeSpec.Create (tref2, tinst2)
 
 and rescopeILType scoref typ = 
     match typ with 
     | ILType.Ptr t -> ILType.Ptr (rescopeILType scoref t)
     | ILType.FunctionPointer t -> ILType.FunctionPointer (rescopeILCallSig scoref t)
     | ILType.Byref t -> ILType.Byref (rescopeILType scoref t)
-    | ILType.Boxed cr -> 
-        match rescopeILTypeSpecQuick scoref cr with 
-        | Some res -> mkILBoxedType res
-        | None -> typ  // avoid reallocation in the common case 
-    | ILType.Array (s,ty) -> ILType.Array (s,rescopeILType scoref ty)
-    | ILType.Value cr -> 
-        match rescopeILTypeSpecQuick scoref cr with 
-        | Some res -> ILType.Value res
-        | None -> typ  // avoid reallocation in the common case 
+    | ILType.Boxed cr1 -> 
+        let cr2 = rescopeILTypeSpec scoref cr1
+        if cr1 === cr2 then typ else 
+        mkILBoxedType cr2
+    | ILType.Array (s,ety1) -> 
+        let ety2 = rescopeILType scoref ety1
+        if ety1 === ety2 then typ else 
+        ILType.Array (s,ety2)
+    | ILType.Value cr1 -> 
+        let cr2 = rescopeILTypeSpec scoref cr1 
+        if cr1 === cr2 then typ else 
+        ILType.Value cr2
     | ILType.Modified(b,tref,ty) -> ILType.Modified(b,rescopeILTypeRef scoref tref, rescopeILType scoref ty)
     | x -> x
 
 and rescopeILTypes scoref i = 
     if isNil i then i
-    else List.map (rescopeILType scoref) i
+    else List.mapq (rescopeILType scoref) i
 
 and rescopeILCallSig scoref  csig = 
     mkILCallSig (csig.CallingConv,rescopeILTypes scoref csig.ArgTypes,rescopeILType scoref csig.ReturnType)
@@ -2494,11 +2490,19 @@ let prependInstrsToCode (instrs: ILInstr list) (c2: ILCode) =
     let n = instrs.Length
     match c2.Instrs.[0] with 
     // If there is a sequence point as the first instruction then keep it at the front
-    | I_seqpoint _ as i0 -> 
-        { c2 with Labels = Dictionary.ofList [ for kvp in c2.Labels -> (kvp.Key, if kvp.Value = 0 then 0 else kvp.Value + n) ]
-                  Instrs = Array.append [| i0 |] (Array.append instrs c2.Instrs.[1..]) }
-    | _ -> 
-        { c2 with Labels = Dictionary.ofList [ for kvp in c2.Labels -> (kvp.Key, kvp.Value + n) ]
+    | I_seqpoint _ as i0 ->
+        let labels = 
+            let dict = Dictionary.newWithSize c2.Labels.Count
+            for kvp in c2.Labels do dict.Add(kvp.Key, if kvp.Value = 0 then 0 else kvp.Value + n)
+            dict
+        { c2 with Labels = labels
+                  Instrs = Array.concat [| [|i0|] ; instrs ; c2.Instrs.[1..] |] }
+    | _ ->
+        let labels =
+            let dict = Dictionary.newWithSize c2.Labels.Count
+            for kvp in c2.Labels do dict.Add(kvp.Key, kvp.Value + n)
+            dict
+        { c2 with Labels = labels
                   Instrs = Array.append instrs c2.Instrs }
 
 let prependInstrsToMethod new_code md  = 
@@ -2706,7 +2710,7 @@ let mkILTypeDefForGlobalFunctions ilg (methods,fields) = mkILSimpleClass ilg (ty
 let destTypeDefsWithGlobalFunctionsFirst ilg (tdefs: ILTypeDefs) = 
   let l = tdefs.AsList
   let top,nontop = l |> List.partition (fun td -> td.Name = typeNameForGlobalFunctions)
-  let top2 = if top.Length = 0 then [ mkILTypeDefForGlobalFunctions ilg (emptyILMethods, emptyILFields) ] else top
+  let top2 = if isNil top then [ mkILTypeDefForGlobalFunctions ilg (emptyILMethods, emptyILFields) ] else top
   top2@nontop
 
 let mkILSimpleModule assname modname dll subsystemVersion useHighEntropyVA tdefs hashalg locale flags exportedTypes metadataVersion = 

@@ -251,6 +251,7 @@ Misc01			Globalization
 Misc01,NoMT		Import
 Misc01,NoMT		..\..\..\testsprivate\fsharpqa\Source\InteractiveSession\AssemblyLoading
 Misc01,NoMT		InteractiveSession\Misc
+Misc01,NoMT		InteractiveSession\Misc\GenericConstraintWoes\issue2411
 Misc01			Libraries\Control
 Misc01			Libraries\Core\collections
 Misc01			Libraries\Core\ExtraTopLevelOperators
@@ -262,6 +263,7 @@ Misc01			Libraries\Core\Unchecked
 Misc01			Warnings
 Misc01			ErrorMessages\NameResolution
 Misc01			ErrorMessages\UnitGenericAbstractType
+Misc01			ErrorMessages\ConfusingTypeName
 
 Misc02			Libraries\Portable
 Misc02			Misc

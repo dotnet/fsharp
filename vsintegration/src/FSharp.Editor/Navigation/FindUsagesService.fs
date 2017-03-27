@@ -2,7 +2,6 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Threading
 open System.Collections.Immutable
 open System.Composition
@@ -10,14 +9,8 @@ open System.Composition
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Host.Mef
-open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Editor.FindUsages
-open Microsoft.CodeAnalysis.Editor.Host
-open Microsoft.CodeAnalysis.Navigation
-open Microsoft.CodeAnalysis.FindSymbols
 open Microsoft.CodeAnalysis.FindUsages
-
-open Microsoft.VisualStudio.FSharp.LanguageService
 
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
@@ -56,15 +49,15 @@ type internal FSharpFindUsagesService
             let! sourceText = document.GetTextAsync(context.CancellationToken)
             let checker = checkerProvider.Checker
             let! options = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
-            let! _, checkFileResults = checker.ParseAndCheckDocument(document, options, sourceText)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true)
             let textLine = sourceText.Lines.GetLineFromPosition(position).ToString()
             let lineNumber = sourceText.Lines.GetLinePosition(position).Line + 1
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.FilePath, options.OtherOptions |> Seq.toList)
             
-            let! symbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Fuzzy)
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.RightColumn, textLine, [symbol.Text])
-            let! declaration = checkFileResults.GetDeclarationLocationAlternate (lineNumber, symbol.RightColumn, textLine, [symbol.Text], false) |> liftAsync
-            let tags = GlyphTags.GetTags(CommonRoslynHelpers.GetGlyphForSymbol symbolUse.Symbol)
+            let! symbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland)
+            let! declaration = checkFileResults.GetDeclarationLocationAlternate (lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland, false) |> liftAsync
+            let tags = GlyphTags.GetTags(CommonRoslynHelpers.GetGlyphForSymbol (symbolUse.Symbol, symbol.Kind))
             
             let declarationRange = 
                 match declaration with
@@ -83,12 +76,12 @@ type internal FSharpFindUsagesService
                         | [] -> 
                             [ DefinitionItem.CreateNonNavigableItem(
                                 tags,
-                                ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Text)),
+                                ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Ident.idText)),
                                 ImmutableArray.Create(TaggedText(TextTags.Assembly, symbolUse.Symbol.Assembly.SimpleName))) ]
                         | _ ->
                             declarationSpans
                             |> List.map (fun span ->
-                                DefinitionItem.Create(tags, ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Text)), span))
+                                DefinitionItem.Create(tags, ImmutableArray.Create(TaggedText(TextTags.Text, symbol.Ident.idText)), span))
                 } |> liftAsync
             
             for definitionItem in definitionItems do
@@ -123,7 +116,9 @@ type internal FSharpFindUsagesService
                             |> Async.Parallel
                             |> liftAsync
 
-                        return symbolUses |> Array.concat
+                        // FCS may return several `FSharpSymbolUse`s for same range, which have different `ItemOccurrence`s (Use, UseInAttribute, UseInType, etc.)
+                        // We don't care about the occurrence type here, so we distinct by range.
+                        return symbolUses |> Array.concat |> Array.distinctBy (fun x -> x.RangeAlternate)
                     }
 
             for symbolUse in symbolUses do
