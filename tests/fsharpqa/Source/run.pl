@@ -420,10 +420,17 @@ sub RunCompilerCommand {
         # remainder of response is output of compiler
         @CommandOutput = <$remote>;
 
+        print "--------------------------------------------------------\n";
+        print "Error from hosted compiler\n";
+        print "Exit code: $ExitCode\n";
+        print "Error:     $Type\n";
+        print @CommandOutput;
+        print "--------------------------------------------------------\n";
+
         # still some issues with reliability of hosted compiler.
         # if compilation unexpectedly fails, try again with standard compiler
         if ($ExitCode && ($Type < TEST_SEEK_ERROR)) {
-          return RunCommand($msg, $cmd);
+                return RunCommand($msg, $cmd); 
         }
 
         return $ExitCode;

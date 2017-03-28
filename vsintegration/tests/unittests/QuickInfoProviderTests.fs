@@ -19,6 +19,7 @@
 //    Use F# Interactive.  This only works for FSharp.Compiler.Service.dll which has a public API
 
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+[<NUnit.Framework.Category "Roslyn Services">]
 module Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn.QuickInfoProviderTests
 
 open System
@@ -101,5 +102,5 @@ Full name: System.Console"
             FSharpQuickInfoProvider.ProvideQuickInfo(FSharpChecker.Instance, documentId, SourceText.From(fileContents), filePath, caretPosition, options, 0)
             |> Async.RunSynchronously
         
-        let actual = quickInfo |> Option.map (fun (text, _, _) -> getQuickInfoText text)
+        let actual = quickInfo |> Option.map (fun (text, _, _, _) -> getQuickInfoText text)
         Assert.AreEqual(expected, actual)

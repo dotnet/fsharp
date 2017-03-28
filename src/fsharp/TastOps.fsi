@@ -227,7 +227,7 @@ val mkArrayElemAddress : TcGlobals -> ILReadonly * bool * ILArrayShape * TType *
 val maxTuple : int
 val goodTupleFields : int
 val isCompiledTupleTyconRef : TcGlobals -> TyconRef -> bool
-val mkCompiledTupleTyconRef : TcGlobals -> bool -> 'a list -> TyconRef
+val mkCompiledTupleTyconRef : TcGlobals -> bool -> int -> TyconRef
 val mkCompiledTupleTy : TcGlobals -> bool -> TTypes -> TType
 val mkCompiledTuple : TcGlobals -> bool -> TTypes * Exprs * range -> TyconRef * TTypes * Exprs * range
 val mkGetTupleItemN : TcGlobals -> range -> int -> ILType -> bool -> Expr -> TType -> Expr
@@ -982,7 +982,7 @@ val mkPrintfFormatTy : TcGlobals -> TType -> TType -> TType -> TType -> TType ->
 //------------------------------------------------------------------------- 
 
 type TypeDefMetadata = 
-     | ILTypeMetadata of ILScopeRef * ILTypeDef
+     | ILTypeMetadata of TILObjectReprData
      | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata 
 #if EXTENSIONTYPING
      | ProvidedTypeMetadata of  TProvidedTypeInfo
@@ -1014,17 +1014,18 @@ val rankOfArrayTy : TcGlobals -> TType -> int
 
 val isInterfaceTyconRef                 : TyconRef -> bool
 
-val isDelegateTy           : TcGlobals -> TType -> bool
-val isInterfaceTy          : TcGlobals -> TType -> bool
-val isRefTy                : TcGlobals -> TType -> bool
-val isSealedTy             : TcGlobals -> TType -> bool
-val isComInteropTy         : TcGlobals -> TType -> bool
-val underlyingTypeOfEnumTy : TcGlobals -> TType -> TType
-val normalizeEnumTy        : TcGlobals -> TType -> TType
-val isStructTy             : TcGlobals -> TType -> bool
-val isUnmanagedTy          : TcGlobals -> TType -> bool
-val isClassTy              : TcGlobals -> TType -> bool
-val isEnumTy               : TcGlobals -> TType -> bool
+val isDelegateTy                 : TcGlobals -> TType -> bool
+val isInterfaceTy                : TcGlobals -> TType -> bool
+val isRefTy                      : TcGlobals -> TType -> bool
+val isSealedTy                   : TcGlobals -> TType -> bool
+val isComInteropTy               : TcGlobals -> TType -> bool
+val underlyingTypeOfEnumTy       : TcGlobals -> TType -> TType
+val normalizeEnumTy              : TcGlobals -> TType -> TType
+val isStructTy                   : TcGlobals -> TType -> bool
+val isUnmanagedTy                : TcGlobals -> TType -> bool
+val isClassTy                    : TcGlobals -> TType -> bool
+val isEnumTy                     : TcGlobals -> TType -> bool
+val isStructRecordOrUnionTyconTy : TcGlobals -> TType -> bool
 
 /// For "type Class as self", 'self' is fixed up after initialization. To support this,
 /// it is converted behind the scenes to a ref. This function strips off the ref and

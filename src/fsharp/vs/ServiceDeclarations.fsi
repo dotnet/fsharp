@@ -66,6 +66,31 @@ module internal Tooltips =
     val ToFSharpToolTipText: FSharpStructuredToolTipText -> FSharpToolTipText
     val Map: f: ('T1 -> 'T2) -> a: Async<'T1> -> Async<'T2>
 
+[<RequireQualifiedAccess>]
+type internal CompletionItemKind =
+    | Field
+    | Property
+    | Method of isExtension : bool
+    | Event
+    | Argument
+    | Other
+
+/// Indicates the accessibility of a symbol, as seen by the F# language
+and [<Class>] internal FSharpAccessibility = 
+    new: Accessibility * ?isProtected: bool -> FSharpAccessibility
+
+    /// Indicates the symbol has public accessibility
+    member IsPublic : bool
+
+    /// Indicates the symbol has private accessibility
+    member IsPrivate : bool
+
+    /// Indicates the symbol has internal accessibility
+    member IsInternal : bool
+
+    /// The underlying Accessibility
+    member Contents : Accessibility
+
 [<Sealed>]
 /// Represents a declaration in F# source code, with information attached ready for display by an editor.
 /// Returned by GetDeclarations.
@@ -86,11 +111,27 @@ type internal FSharpDeclarationListItem =
     /// Get the description text, asynchronously.  Never returns "Loading...".
     member StructuredDescriptionTextAsync : Async<FSharpStructuredToolTipText>
     member DescriptionTextAsync : Async<FSharpToolTipText>
-    /// Get the glyph integer for the declaration as used by Visual Studio.
-    member Glyph : int
-    member GlyphMajor : ItemDescriptionIcons.GlyphMajor
-    member GlyphMinor : ItemDescriptionIcons.GlyphMinor
+    member Glyph : FSharpGlyph
     member IsAttribute : bool
+    member Accessibility : FSharpAccessibility option
+    member Kind : CompletionItemKind
+    member IsOwnMember : bool
+    member MinorPriority : int
+    member FullName : string
+    member IsResolved : bool
+    member NamespaceToOpen : string option
+
+type UnresolvedSymbol =
+    { DisplayName: string
+      Namespace: string[] }
+
+type internal CompletionItem =
+    { Item: Item
+      Kind: CompletionItemKind
+      IsOwnMember: bool
+      MinorPriority: int
+      Type: TyconRef option 
+      Unresolved: UnresolvedSymbol option }
 
 [<Sealed>]
 /// Represents a set of declarations in F# source code, with information attached ready for display by an editor.
@@ -99,12 +140,12 @@ type internal FSharpDeclarationListItem =
 // Note: this type holds a weak reference to compiler resources. 
 type internal FSharpDeclarationListInfo =
     member Items : FSharpDeclarationListItem[]
+    member IsForType : bool
 
     // Implementation details used by other code in the compiler    
-    static member internal Create : infoReader:InfoReader * m:range * denv:DisplayEnv * items:Item list * reactor:IReactorOperations * checkAlive:(unit -> bool) -> FSharpDeclarationListInfo
+    static member internal Create : infoReader:InfoReader * m:range * denv:DisplayEnv * getAccessibility:(Item -> FSharpAccessibility option) * items:CompletionItem list * reactor:IReactorOperations * currentNamespace:string[] option * checkAlive:(unit -> bool) -> FSharpDeclarationListInfo
     static member internal Error : message:string -> FSharpDeclarationListInfo
     static member Empty : FSharpDeclarationListInfo
-
 
 // implementation details used by other code in the compiler    
 module internal ItemDescriptionsImpl = 
@@ -126,11 +167,24 @@ module internal ItemDescriptionsImpl =
     val FormatStructuredReturnTypeOfItem  : InfoReader -> range -> DisplayEnv -> Item -> Layout
     val FormatReturnTypeOfItem  : InfoReader -> range -> DisplayEnv -> Item -> string
     val RemoveDuplicateItems : TcGlobals -> Item list -> Item list
+    val RemoveDuplicateItemsWithType : TcGlobals -> (Item * TType option) list -> (Item * TType option) list
     val RemoveExplicitlySuppressed : TcGlobals -> Item list -> Item list
+    val RemoveDuplicateCompletionItems : TcGlobals -> CompletionItem list -> CompletionItem list
+    val RemoveExplicitlySuppressedCompletionItems : TcGlobals -> CompletionItem list -> CompletionItem list
+    val RemoveExplicitlySuppressedItemsWithType : TcGlobals -> (Item * TType option) list -> (Item * TType option) list
     val GetF1Keyword : Item -> string option
     val rangeOfItem : TcGlobals -> bool option -> Item -> range option
     val fileNameOfItem : TcGlobals -> string option -> range -> Item -> string
     val FullNameOfItem : TcGlobals -> Item -> string
     val ccuOfItem : TcGlobals -> Item -> CcuThunk option
     val mutable ToolTipFault : string option
+    val FormatStructuredDescriptionOfItem : isDecl:bool -> InfoReader -> range -> DisplayEnv -> Item -> FSharpStructuredToolTipElement
+    val GlyphOfItem : DisplayEnv * Item -> FSharpGlyph
+    val IsAttribute : InfoReader -> Item -> bool
+    val IsExplicitlySuppressed : TcGlobals -> Item -> bool
 
+module EnvMisc2 =
+    val maxMembers : int
+    /// dataTipSpinWaitTime limits how long we block the UI thread while a tooltip pops up next to a selected item in an IntelliSense completion list.
+    /// This time appears to be somewhat amortized by the time it takes the VS completion UI to actually bring up the tooltip after selecting an item in the first place.
+    val dataTipSpinWaitTime : int

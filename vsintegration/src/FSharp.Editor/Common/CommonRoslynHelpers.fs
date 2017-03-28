@@ -12,7 +12,6 @@ open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.VisualStudio.FSharp.LanguageService
 
@@ -45,44 +44,50 @@ module internal CommonRoslynHelpers =
             Assert.Exception(task.Exception.GetBaseException())
             raise(task.Exception.GetBaseException())
 
-    /// Converts `TaggedText` from the F# Compiler to `Microsoft.CodeAnalysis.TaggedText` format for use in tooltips
-    let TaggedTextToRoslyn t =
-        match t with
-        | TaggedText.ActivePatternCase t
-        | TaggedText.ActivePatternResult t -> TaggedText(TextTags.Enum, t)
-        | TaggedText.Alias t -> TaggedText(TextTags.Class, t)
-        | TaggedText.Class t -> TaggedText(TextTags.Class, t)
-        | TaggedText.Delegate t -> TaggedText(TextTags.Delegate, t)
-        | TaggedText.Enum t -> TaggedText(TextTags.Enum, t)
-        | TaggedText.Event t -> TaggedText(TextTags.Event, t)
-        | TaggedText.Field t -> TaggedText(TextTags.Field, t)
-        | TaggedText.Interface t -> TaggedText(TextTags.Interface, t)
-        | TaggedText.Keyword t -> TaggedText(TextTags.Keyword, t)
-        | TaggedText.LineBreak t -> TaggedText(TextTags.LineBreak, t)
-        | TaggedText.Local t -> TaggedText(TextTags.Local, t)
-        | TaggedText.Member t -> TaggedText(TextTags.Property, t)
-        | TaggedText.Method t -> TaggedText(TextTags.Method, t)
-        | TaggedText.Module t -> TaggedText(TextTags.Module, t)
-        | TaggedText.ModuleBinding t -> TaggedText(TextTags.Property, t)
-        | TaggedText.Namespace t -> TaggedText(TextTags.Namespace, t)
-        | TaggedText.NumericLiteral t -> TaggedText(TextTags.NumericLiteral, t)
-        | TaggedText.Operator t -> TaggedText(TextTags.Operator, t)
-        | TaggedText.Parameter t -> TaggedText(TextTags.Parameter, t)
-        | TaggedText.Property t -> TaggedText(TextTags.Property, t)
-        | TaggedText.Punctuation t -> TaggedText(TextTags.Punctuation, t)
-        | TaggedText.Record t -> TaggedText(TextTags.Class, t)
-        | TaggedText.RecordField t -> TaggedText(TextTags.Property, t)
-        | TaggedText.Space t -> TaggedText(TextTags.Space, t)
-        | TaggedText.StringLiteral t -> TaggedText(TextTags.StringLiteral, t)
-        | TaggedText.Struct t -> TaggedText(TextTags.Struct, t)
-        | TaggedText.Text t -> TaggedText(TextTags.Text, t)
-        | TaggedText.TypeParameter t -> TaggedText(TextTags.TypeParameter, t)
-        | TaggedText.Union t -> TaggedText(TextTags.Class, t)
-        | TaggedText.UnionCase t -> TaggedText(TextTags.Enum, t)
-        | TaggedText.UnknownEntity t -> TaggedText(TextTags.Property, t)
-        | TaggedText.UnknownType t -> TaggedText(TextTags.Class, t)
+    /// maps from `LayoutTag` of the F# Compiler to Roslyn `TextTags` for use in tooltips
+    let roslynTag = function
+    | LayoutTag.ActivePatternCase
+    | LayoutTag.ActivePatternResult
+    | LayoutTag.UnionCase
+    | LayoutTag.Enum -> TextTags.Enum
+    | LayoutTag.Alias
+    | LayoutTag.Class
+    | LayoutTag.Union
+    | LayoutTag.Record
+    | LayoutTag.UnknownType -> TextTags.Class
+    | LayoutTag.Delegate -> TextTags.Delegate
+    | LayoutTag.Event -> TextTags.Event
+    | LayoutTag.Field -> TextTags.Field
+    | LayoutTag.Interface -> TextTags.Interface
+    | LayoutTag.Struct -> TextTags.Struct
+    | LayoutTag.Keyword -> TextTags.Keyword
+    | LayoutTag.Local -> TextTags.Local
+    | LayoutTag.Member
+    | LayoutTag.ModuleBinding
+    | LayoutTag.RecordField
+    | LayoutTag.Property -> TextTags.Property
+    | LayoutTag.Method -> TextTags.Method
+    | LayoutTag.Namespace -> TextTags.Namespace
+    | LayoutTag.Module -> TextTags.Module
+    | LayoutTag.LineBreak -> TextTags.LineBreak
+    | LayoutTag.Space -> TextTags.Space
+    | LayoutTag.NumericLiteral -> TextTags.NumericLiteral
+    | LayoutTag.Operator -> TextTags.Operator
+    | LayoutTag.Parameter -> TextTags.Parameter
+    | LayoutTag.TypeParameter -> TextTags.TypeParameter
+    | LayoutTag.Punctuation -> TextTags.Punctuation
+    | LayoutTag.StringLiteral -> TextTags.StringLiteral
+    | LayoutTag.Text
+    | LayoutTag.UnknownEntity -> TextTags.Text
 
-    let CollectTaggedText (list: List<_>) t = list.Add(TaggedTextToRoslyn t)
+    let CollectTaggedText (list: List<_>) (t:TaggedText) = list.Add(TaggedText(roslynTag t.Tag, t.Text))
+
+    let CollectNavigableText (list: List<_>) (t: TaggedText) =
+        let rangeOpt = 
+            match t with
+            | :? NavigableTaggedText as n -> Some n.Range
+            | _ -> None
+        list.Add(roslynTag t.Tag, t.Text, rangeOpt)
 
     let StartAsyncAsTask cancellationToken computation =
         let computation =
@@ -115,110 +120,234 @@ module internal CommonRoslynHelpers =
         let descriptor = new DiagnosticDescriptor(id, emptyString, description, error.Subcategory, severity, true, emptyString, String.Empty, customTags)
         Diagnostic.Create(descriptor, location)
 
-    let FSharpGlyphToRoslynGlyph = function
-        // FSROSLYNTODO: This doesn't yet reflect public/private/internal into the glyph
-        // FSROSLYNTODO: We should really use FSharpSymbol information here. But GetDeclarationListInfo doesn't provide it, and switch to GetDeclarationListSymbols is a bit large at the moment
-        | GlyphMajor.Class -> Glyph.ClassPublic
-        | GlyphMajor.Constant -> Glyph.ConstantPublic
-        | GlyphMajor.Delegate -> Glyph.DelegatePublic
-        | GlyphMajor.Enum -> Glyph.EnumPublic
-        | GlyphMajor.EnumMember -> Glyph.EnumMember
-        | GlyphMajor.Event -> Glyph.EventPublic
-        | GlyphMajor.Exception -> Glyph.ClassPublic
-        | GlyphMajor.FieldBlue -> Glyph.FieldPublic
-        | GlyphMajor.Interface -> Glyph.InterfacePublic
-        | GlyphMajor.Method -> Glyph.MethodPublic
-        | GlyphMajor.Method2 -> Glyph.ExtensionMethodPublic
-        | GlyphMajor.Module -> Glyph.ModulePublic
-        | GlyphMajor.NameSpace -> Glyph.Namespace
-        | GlyphMajor.Property -> Glyph.PropertyPublic
-        | GlyphMajor.Struct -> Glyph.StructurePublic
-        | GlyphMajor.Typedef -> Glyph.ClassPublic
-        | GlyphMajor.Type -> Glyph.ClassPublic
-        | GlyphMajor.Union -> Glyph.EnumPublic
-        | GlyphMajor.Variable -> Glyph.Local
-        | GlyphMajor.ValueType -> Glyph.StructurePublic
-        | GlyphMajor.Error -> Glyph.Error
-        | _ -> Glyph.ClassPublic
+    let inline (|Public|Internal|Protected|Private|) (a: FSharpAccessibility option) =
+        match a with
+        | None -> Public
+        | Some a ->
+            if a.IsPublic then Public
+            elif a.IsInternal then Internal
+            elif a.IsPrivate then Private
+            else Protected
 
-    let inline (|Public|Internal|Protected|Private|) (a: FSharpAccessibility) =
-        if a.IsPublic then Public
-        elif a.IsInternal then Internal
-        elif a.IsPrivate then Private
-        else Protected
-
-    let GetGlyphForSymbol (symbol: FSharpSymbol) =
-        match symbol with
-        | :? FSharpUnionCase as x ->
-            match x.Accessibility with
+    let FSharpGlyphToRoslynGlyph (glyph: FSharpGlyph, accessibility: FSharpAccessibility option) =
+        match glyph with
+        | FSharpGlyph.Class
+        | FSharpGlyph.Exception
+        | FSharpGlyph.Typedef
+        | FSharpGlyph.Type ->
+            match accessibility with
+            | Public -> Glyph.ClassPublic
+            | Internal -> Glyph.ClassInternal
+            | Protected -> Glyph.ClassProtected
+            | Private -> Glyph.ClassPrivate
+        | FSharpGlyph.Constant -> 
+            match accessibility with
+            | Public -> Glyph.ConstantPublic
+            | Internal -> Glyph.ConstantInternal
+            | Protected -> Glyph.ConstantProtected
+            | Private -> Glyph.ConstantPrivate
+        | FSharpGlyph.Delegate ->
+            match accessibility with
+            | Public -> Glyph.DelegatePublic
+            | Internal -> Glyph.DelegateInternal
+            | Protected -> Glyph.DelegateProtected
+            | Private -> Glyph.DelegatePrivate
+        | FSharpGlyph.Enum 
+        | FSharpGlyph.Union ->
+            match accessibility with
             | Public -> Glyph.EnumPublic
             | Internal -> Glyph.EnumInternal
             | Protected -> Glyph.EnumProtected
             | Private -> Glyph.EnumPrivate
-        | :? FSharpActivePatternCase -> Glyph.EnumPublic
-        | :? FSharpField as x ->
-            match x.Accessibility with
+        | FSharpGlyph.EnumMember -> Glyph.EnumMember
+        | FSharpGlyph.Event ->
+            match accessibility with
+            | Public -> Glyph.EventPublic
+            | Internal -> Glyph.EventInternal
+            | Protected -> Glyph.EventProtected
+            | Private -> Glyph.EventPrivate
+        | FSharpGlyph.Field ->
+            match accessibility with
             | Public -> Glyph.FieldPublic
             | Internal -> Glyph.FieldInternal
             | Protected -> Glyph.FieldProtected
             | Private -> Glyph.FieldPrivate
-        | :? FSharpParameter -> Glyph.Parameter
-        | :? FSharpMemberOrFunctionOrValue as x ->
-            if x.IsExtensionMember then
-                match x.Accessibility with
-                | Public -> Glyph.ExtensionMethodPublic
-                | Internal -> Glyph.ExtensionMethodInternal
-                | Protected -> Glyph.ExtensionMethodProtected
-                | Private -> Glyph.ExtensionMethodPrivate
-            elif x.IsProperty || x.IsPropertyGetterMethod || x.IsPropertySetterMethod then
-                match x.Accessibility with
-                | Public -> Glyph.PropertyPublic
-                | Internal -> Glyph.PropertyInternal
-                | Protected -> Glyph.PropertyProtected
-                | Private -> Glyph.PropertyPrivate
-            elif x.IsEvent then
-                match x.Accessibility with
-                | Public -> Glyph.EventPublic
-                | Internal -> Glyph.EventInternal
-                | Protected -> Glyph.EventProtected
-                | Private -> Glyph.EventPrivate
-            else
-                match x.Accessibility with
-                | Public -> Glyph.MethodPublic
-                | Internal -> Glyph.MethodInternal
-                | Protected -> Glyph.MethodProtected
-                | Private -> Glyph.MethodPrivate
-        | :? FSharpEntity as x ->
-            if x.IsFSharpModule then
-                match x.Accessibility with
-                | Public -> Glyph.ModulePublic
-                | Internal -> Glyph.ModuleInternal
-                | Protected -> Glyph.ModuleProtected
-                | Private -> Glyph.ModulePrivate
-            elif x.IsEnum || x.IsFSharpUnion then
-                match x.Accessibility with
+        | FSharpGlyph.Interface ->
+            match accessibility with
+            | Public -> Glyph.InterfacePublic
+            | Internal -> Glyph.InterfaceInternal
+            | Protected -> Glyph.InterfaceProtected
+            | Private -> Glyph.InterfacePrivate
+        | FSharpGlyph.Method
+        | FSharpGlyph.OverridenMethod ->
+            match accessibility with
+            | Public -> Glyph.MethodPublic
+            | Internal -> Glyph.MethodInternal
+            | Protected -> Glyph.MethodProtected
+            | Private -> Glyph.MethodPrivate
+        | FSharpGlyph.ExtensionMethod ->
+            match accessibility with
+            | Public -> Glyph.ExtensionMethodPublic
+            | Internal -> Glyph.ExtensionMethodInternal
+            | Protected -> Glyph.ExtensionMethodProtected
+            | Private -> Glyph.ExtensionMethodPrivate
+        | FSharpGlyph.Module ->
+            match accessibility with
+            | Public -> Glyph.ModulePublic
+            | Internal -> Glyph.ModuleInternal
+            | Protected -> Glyph.ModuleProtected
+            | Private -> Glyph.ModulePrivate
+        | FSharpGlyph.NameSpace -> Glyph.Namespace
+        | FSharpGlyph.Property -> 
+            match accessibility with
+            | Public -> Glyph.PropertyPublic
+            | Internal -> Glyph.PropertyInternal
+            | Protected -> Glyph.PropertyProtected
+            | Private -> Glyph.PropertyPrivate
+        | FSharpGlyph.Struct ->
+            match accessibility with
+            | Public -> Glyph.StructurePublic
+            | Internal -> Glyph.StructureInternal
+            | Protected -> Glyph.StructureProtected
+            | Private -> Glyph.StructurePrivate
+        | FSharpGlyph.Variable -> Glyph.Local
+        | FSharpGlyph.Error -> Glyph.Error
+
+    let GetGlyphForSymbol (symbol: FSharpSymbol, kind: LexerSymbolKind) =
+        match kind with
+        | LexerSymbolKind.Operator -> Glyph.Operator
+        | _ ->
+            match symbol with
+            | :? FSharpUnionCase as x ->
+                match Some x.Accessibility with
                 | Public -> Glyph.EnumPublic
                 | Internal -> Glyph.EnumInternal
                 | Protected -> Glyph.EnumProtected
                 | Private -> Glyph.EnumPrivate
-            elif x.IsInterface then
-                match x.Accessibility with
-                | Public -> Glyph.InterfacePublic
-                | Internal -> Glyph.InterfaceInternal
-                | Protected -> Glyph.InterfaceProtected
-                | Private -> Glyph.InterfacePrivate
+            | :? FSharpActivePatternCase -> Glyph.EnumPublic
+            | :? FSharpField as x ->
+            if x.IsLiteral then
+                match Some x.Accessibility with
+                | Public -> Glyph.ConstantPublic
+                | Internal -> Glyph.ConstantInternal
+                | Protected -> Glyph.ConstantProtected
+                | Private -> Glyph.ConstantPrivate
             else
-                match x.Accessibility with
-                | Public -> Glyph.ClassPublic
-                | Internal -> Glyph.ClassInternal
-                | Protected -> Glyph.ClassProtected
-                | Private -> Glyph.ClassPrivate
-        | _ -> Glyph.None
+                match Some x.Accessibility with
+                | Public -> Glyph.FieldPublic
+                | Internal -> Glyph.FieldInternal
+                | Protected -> Glyph.FieldProtected
+                | Private -> Glyph.FieldPrivate
+            | :? FSharpParameter -> Glyph.Parameter
+            | :? FSharpMemberOrFunctionOrValue as x ->
+                if x.LiteralValue.IsSome then
+                    match Some x.Accessibility with
+                    | Public -> Glyph.ConstantPublic
+                    | Internal -> Glyph.ConstantInternal
+                    | Protected -> Glyph.ConstantProtected
+                    | Private -> Glyph.ConstantPrivate
+                elif x.IsExtensionMember then
+                    match Some x.Accessibility with
+                    | Public -> Glyph.ExtensionMethodPublic
+                    | Internal -> Glyph.ExtensionMethodInternal
+                    | Protected -> Glyph.ExtensionMethodProtected
+                    | Private -> Glyph.ExtensionMethodPrivate
+                elif x.IsProperty || x.IsPropertyGetterMethod || x.IsPropertySetterMethod then
+                    match Some x.Accessibility with
+                    | Public -> Glyph.PropertyPublic
+                    | Internal -> Glyph.PropertyInternal
+                    | Protected -> Glyph.PropertyProtected
+                    | Private -> Glyph.PropertyPrivate
+                elif x.IsEvent then
+                    match Some x.Accessibility with
+                    | Public -> Glyph.EventPublic
+                    | Internal -> Glyph.EventInternal
+                    | Protected -> Glyph.EventProtected
+                    | Private -> Glyph.EventPrivate
+                else
+                    match Some x.Accessibility with
+                    | Public -> Glyph.MethodPublic
+                    | Internal -> Glyph.MethodInternal
+                    | Protected -> Glyph.MethodProtected
+                    | Private -> Glyph.MethodPrivate
+            | :? FSharpEntity as x ->
+                if x.IsValueType then
+                    match Some x.Accessibility with
+                    | Public -> Glyph.StructurePublic
+                    | Internal -> Glyph.StructureInternal
+                    | Protected -> Glyph.StructureProtected
+                    | Private -> Glyph.StructurePrivate
+                elif x.IsFSharpModule then
+                    match Some x.Accessibility with
+                    | Public -> Glyph.ModulePublic
+                    | Internal -> Glyph.ModuleInternal
+                    | Protected -> Glyph.ModuleProtected
+                    | Private -> Glyph.ModulePrivate
+                elif x.IsEnum || x.IsFSharpUnion then
+                    match Some x.Accessibility with
+                    | Public -> Glyph.EnumPublic
+                    | Internal -> Glyph.EnumInternal
+                    | Protected -> Glyph.EnumProtected
+                    | Private -> Glyph.EnumPrivate
+                elif x.IsInterface then
+                    match Some x.Accessibility with
+                    | Public -> Glyph.InterfacePublic
+                    | Internal -> Glyph.InterfaceInternal
+                    | Protected -> Glyph.InterfaceProtected
+                    | Private -> Glyph.InterfacePrivate
+                elif x.IsDelegate then
+                    match Some x.Accessibility with
+                    | Public -> Glyph.DelegatePublic
+                    | Internal -> Glyph.DelegateInternal
+                    | Protected -> Glyph.DelegateProtected
+                    | Private -> Glyph.DelegatePrivate
+                elif x.IsNamespace then
+                    Glyph.Namespace
+                else
+                    match Some x.Accessibility with
+                    | Public -> Glyph.ClassPublic
+                    | Internal -> Glyph.ClassInternal
+                    | Protected -> Glyph.ClassProtected
+                    | Private -> Glyph.ClassPrivate
+            | _ -> Glyph.None
 
     let RangeToLocation (r: range, sourceText: SourceText, filePath: string) : Location =
         let linePositionSpan = LinePositionSpan(LinePosition(Line.toZ r.StartLine, r.StartColumn), LinePosition(Line.toZ r.EndLine, r.EndColumn))
         let textSpan = sourceText.Lines.GetTextSpan linePositionSpan
         Location.Create(filePath, textSpan, linePositionSpan)
+
+module internal OpenDeclarationHelper =
+    /// <summary>
+    /// Inserts open declaration into `SourceText`. 
+    /// </summary>
+    /// <param name="sourceText">SourceText.</param>
+    /// <param name="ctx">Insertion context. Typically returned from tryGetInsertionContext</param>
+    /// <param name="ns">Namespace to open.</param>
+    let insertOpenDeclaration (sourceText: SourceText) (ctx: InsertContext) (ns: string) : SourceText * int =
+        let mutable minPos = None
+
+        let insert line lineStr (sourceText: SourceText) : SourceText =
+            let pos = sourceText.Lines.[line].Start
+            minPos <- match minPos with None -> Some pos | Some oldPos -> Some (min oldPos pos)
+            sourceText.WithChanges(TextChange(TextSpan(pos, 0), lineStr + Environment.NewLine))
+
+        let getLineStr line = sourceText.Lines.[line].ToString().Trim()
+        let pos = ParsedInput.adjustInsertionPoint getLineStr ctx
+        let docLine = pos.Line - 1
+        let lineStr = (String.replicate pos.Column " ") + "open " + ns
+        let sourceText = sourceText |> insert docLine lineStr
+        // if there's no a blank line between open declaration block and the rest of the code, we add one
+        let sourceText = 
+            if sourceText.Lines.[docLine + 1].ToString().Trim() <> "" then 
+                sourceText |> insert (docLine + 1) ""
+            else sourceText
+        let sourceText =
+            // for top level module we add a blank line between the module declaration and first open statement
+            if (pos.Column = 0 || ctx.ScopeKind = ScopeKind.Namespace) && docLine > 0
+                && not (sourceText.Lines.[docLine - 1].ToString().Trim().StartsWith "open") then
+                    sourceText |> insert docLine ""
+            else sourceText
+        sourceText, minPos |> Option.defaultValue 0
 
 [<AutoOpen>]
 module internal RoslynExtensions =

@@ -26,7 +26,7 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
     let mutable count = 0
     let mutable startXmlDoc = false
 
-    let addTaggedTextEntry text =
+    let addTaggedTextEntry (text:TaggedText) =
         match lineLimit with
         | Some lineLimit when lineLimit = count ->
             // add ... when line limit is reached
@@ -34,7 +34,7 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
             count <- count + 1
         | _ ->
             isEmpty <- false
-            endsWithLineBreak <- match text with TaggedText.LineBreak _ -> true | _ -> false
+            endsWithLineBreak <- text.Tag = LayoutTag.LineBreak
             if endsWithLineBreak then count <- count + 1
             collector text
     
@@ -63,11 +63,11 @@ type internal TextSanitizingCollector(collector, ?lineLimit: int) =
                 addTaggedTextEntry Literals.lineBreak)
 
     interface ITaggedTextCollector with
-        member this.Add text = 
+        member this.Add taggedText = 
             // TODO: bail out early if line limit is already hit
-            match text with
-            | TaggedText.Text t -> reportTextLines t
-            | t -> addTaggedTextEntry t
+            match taggedText.Tag with
+            | LayoutTag.Text -> reportTextLines taggedText.Text
+            | _ -> addTaggedTextEntry taggedText
 
         member this.IsEmpty = isEmpty
         member this.EndsWithLineBreak = isEmpty || endsWithLineBreak
@@ -153,14 +153,17 @@ module internal XmlDocumentation =
             collector.Add(Literals.dot)
         collector.Add(tagClass parts.[parts.Length - 1])
 
-    type XmlDocReader(s: string) = 
-        let doc = XElement.Parse(ProcessXml(s))
+    type XmlDocReader private (doc: XElement) = 
+
         let tryFindParameter name = 
             doc.Descendants (XName.op_Implicit "param")
             |> Seq.tryFind (fun el -> 
                 match el.Attribute(XName.op_Implicit "name") with
                 | null -> false
                 | attr -> attr.Value = name)
+
+        static member TryCreate (xml: string) =
+            try Some (XmlDocReader(XElement.Parse(ProcessXml xml))) with _ -> None
 
         member __.CollectSummary(collector: ITaggedTextCollector) = 
             match Seq.tryHead (doc.Descendants(XName.op_Implicit "summary")) with
@@ -279,12 +282,13 @@ module internal XmlDocumentation =
 
         interface IDocumentationBuilder with 
             /// Append the given processed XML formatted into the string builder
-            override this.AppendDocumentationFromProcessedXML(appendTo, processedXml, showExceptions, showParameters, paramName) = 
-                let xmlDocReader = XmlDocReader(processedXml)
-                if paramName.IsSome then
-                    xmlDocReader.CollectParameter(appendTo, paramName.Value)
-                else
-                    AppendMemberData(appendTo, xmlDocReader, showExceptions,showParameters)
+            override this.AppendDocumentationFromProcessedXML(appendTo, processedXml, showExceptions, showParameters, paramName) =
+                match XmlDocReader.TryCreate processedXml with
+                | Some xmlDocReader ->
+                    match paramName with
+                    | Some paramName -> xmlDocReader.CollectParameter(appendTo, paramName)
+                    | None -> AppendMemberData(appendTo, xmlDocReader, showExceptions,showParameters)
+                | None -> ()
 
             /// Append Xml documentation contents into the StringBuilder
             override this.AppendDocumentation

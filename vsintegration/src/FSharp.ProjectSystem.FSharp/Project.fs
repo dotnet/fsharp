@@ -38,6 +38,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     open Microsoft.VisualStudio.FSharp.Editor
     open Microsoft.VisualStudio.Editors
     open Microsoft.VisualStudio.Editors.PropertyPages
+    open Microsoft.VisualStudio.PlatformUI
     
     open EnvDTE
 
@@ -166,6 +167,10 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     [<ProvideOptionPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>,
                         "F# Tools", "F# Interactive",   // category/sub-category on Tools>Options...
                         6000s,      6001s,              // resource id for localisation of the above
+                        true)>]                         // true = supports automation
+    [<ProvideOptionPage(typeof<IntelliSensePropertyPage>,
+                        "F# Tools", "IntelliSense",     // category/sub-category on Tools>Options...
+                        6000s,      6008s,              // resource id for localisation of the above
                         true)>]                         // true = supports automation
     [<ProvideKeyBindingTable("{dee22b65-9761-4a26-8fb2-759b971d6dfc}", 6001s)>] // <-- resource ID for localised name
     [<ProvideToolWindow(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow>, 
@@ -315,7 +320,8 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
                 // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
                 let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
-
+                // private method GetDialogPage forces intellisense options to be loaded
+                let _intelliSensePropertyPage = this.GetDialogPage(typeof<IntelliSensePropertyPage>)
                 this.RegisterForIdleTime()
                 ()
 
@@ -941,6 +947,9 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     ProjectFileConstants.Content
                 elif (String.Compare(Path.GetExtension(strFileName), ".map", StringComparison.OrdinalIgnoreCase) = 0) then
                     ProjectFileConstants.Content
+                
+                elif (String.Compare(Path.GetExtension(strFileName), ".xaml", StringComparison.OrdinalIgnoreCase) = 0) then
+                    ProjectFileConstants.Resource
                 
                 // None (including .fsx/.fsscript)
                 else
@@ -2170,7 +2179,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 let manager = (x.GetDocumentManager() :?> FileDocumentManager)
                 Debug.Assert(manager <> null, "Could not get the FileDocumentManager")
 
-                let viewGuid = (if x.IsFormSubType then VSConstants.LOGVIEWID_Designer else VSConstants.LOGVIEWID_TextView)
+                let viewGuid = (if x.IsFormSubType then VSConstants.LOGVIEWID_Designer else VSConstants.LOGVIEWID_Primary)
                 let mutable frame : IVsWindowFrame = null
                 manager.Open(false, false, viewGuid, &frame, WindowFrameShowAction.Show) |> ignore
 
@@ -2224,35 +2233,11 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 Debug.Assert(x.ProjectMgr <> null, "The FSharpFileNode has no project manager")
 
                 let completeRenameIfNecessary() = 
-                    let tree = 
-                        match UIHierarchyUtilities.GetUIHierarchyWindow(root.Site, HierarchyNode.SolutionExplorer) with
-                        | :? Microsoft.VisualStudio.PlatformUI.SolutionNavigatorPane as snp ->
-                            match snp.Navigator with 
-                            | null -> null 
-                            | n -> 
-                                match n.TreeView with 
-                                | null -> null
-                                | t -> t
-                        | _ -> null
-                    if tree <> null && tree.IsInRenameMode then
-                        let id = x.ID
-                        let oldName = x.GetEditLabel()
-                        // if tree is in rename mode now - commit renaming
-                        // since rename is implemented via remove\add set of operations - after renaming we need to fetch node that corresponds to the current one
-
-                        // rename may fail (i.e if new name contains invalid characters), in this case user will see error message and after that failure will be swallowed
-                        // if this happens - we need to cancel current transaction,
-                        // otherwise it will hold current hierarchy node. After move operation is completed - current node will become invalid => may lead to ObjectDisposedExceptions.
-                        // Since error is not appear directly in the code - we check if old and new labels match and if yes - treat it as reason that error happens
-                        tree.CommitRename(Microsoft.Internal.VisualStudio.PlatformUI.RenameItemCompletionFocusBehavior.Refocus)
-                        
-                        let node = root.ItemIdMap.[id] :?> FSharpFileNode
-                        if node.GetEditLabel() = oldName then
-                            tree.CancelRename(Microsoft.Internal.VisualStudio.PlatformUI.RenameItemCompletionFocusBehavior.Refocus)
-                        node
-                    else
-                        x
-                
+                    match SolutionPaneUtil.TryRenameAndReturnNode 
+                            (root, HierarchyNode.SolutionExplorer, x.ID, fun()-> x.GetEditLabel()) with
+                    | null -> x
+                    | node -> node :?> FSharpFileNode
+             
                 if (x.ProjectMgr= null) then 
                     raise <| InvalidOperationException()
 

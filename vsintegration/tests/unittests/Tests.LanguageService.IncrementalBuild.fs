@@ -30,9 +30,10 @@ module internal Vector =
 module internal Values = 
     let ctok = AssumeCompilationThreadWithoutEvidence()    
 
-[<TestFixture>] 
+[<TestFixture>]
+[<Category "LanguageService">] 
 [<Category("LanguageService.MSBuild")>]
-[<Category("LanguageService.ProjectSystem")>]
+[<Category "ProjectSystem">]
 type IncrementalBuild() = 
     
     let save _ctok _ = ()
