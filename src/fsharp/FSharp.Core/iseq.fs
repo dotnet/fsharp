@@ -209,10 +209,9 @@ namespace Microsoft.FSharp.Collections
                     member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
                         use enumerator = enumerable.GetEnumerator ()
                         let rec iterate () =
-                            if enumerator.MoveNext () then  
+                            if outOfBand.HaltedIdx = 0 && enumerator.MoveNext () then  
                                 consumer.ProcessNext enumerator.Current |> ignore
-                                if outOfBand.HaltedIdx = 0 then
-                                    iterate ()
+                                iterate ()
                         iterate ()
 
             [<Struct;NoComparison;NoEquality>]
@@ -221,10 +220,9 @@ namespace Microsoft.FSharp.Collections
                     member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
                         let array = array
                         let rec iterate idx =
-                            if idx < array.Length then  
+                            if outOfBand.HaltedIdx = 0 && idx < array.Length then  
                                 consumer.ProcessNext array.[idx] |> ignore
-                                if outOfBand.HaltedIdx = 0 then
-                                    iterate (idx+1)
+                                iterate (idx+1)
                         iterate 0
 
             [<Struct;NoComparison;NoEquality>]
@@ -233,10 +231,9 @@ namespace Microsoft.FSharp.Collections
                     member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
                         let array = array
                         let rec iterate idx =
-                            if idx < array.Count then  
+                            if outOfBand.HaltedIdx = 0 && idx < array.Count then  
                                 consumer.ProcessNext array.[idx] |> ignore
-                                if outOfBand.HaltedIdx = 0 then
-                                    iterate (idx+1)
+                                iterate (idx+1)
                         iterate 0
 
             [<Struct;NoComparison;NoEquality>]
@@ -245,10 +242,9 @@ namespace Microsoft.FSharp.Collections
                     member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
                         let rec iterate lst =
                             match lst with
-                            | hd :: tl ->
+                            | hd :: tl when outOfBand.HaltedIdx = 0 ->
                                 consumer.ProcessNext hd |> ignore
-                                if outOfBand.HaltedIdx = 0 then
-                                    iterate tl
+                                iterate tl
                             | _ -> ()
                         iterate alist
 
@@ -258,12 +254,13 @@ namespace Microsoft.FSharp.Collections
                     member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
                         let generator = generator
                         let rec iterate current =
-                            match generator current with
-                            | Some (item, next) ->
-                                consumer.ProcessNext item |> ignore
-                                if outOfBand.HaltedIdx = 0 then
+                            if outOfBand.HaltedIdx <> 0 then ()
+                            else
+                                match generator current with
+                                | Some (item, next) ->
+                                    consumer.ProcessNext item |> ignore
                                     iterate next
-                            | _ -> ()
+                                | _ -> ()
                         iterate state
 
             [<Struct;NoComparison;NoEquality>]
@@ -697,14 +694,17 @@ namespace Microsoft.FSharp.Collections
                 let mutable current = state
 
                 let rec moveNext () =
-                    match result.HaltedIdx, generator current with
-                    | 0, Some (item, nextState) ->
-                        current <- nextState
-                        if activity.ProcessNext item then
-                            true
-                        else
-                            moveNext ()
-                    | _ -> false
+                    if result.HaltedIdx <> 0 then
+                        false
+                    else
+                        match generator current with
+                        | Some (item, nextState) ->
+                            current <- nextState
+                            if activity.ProcessNext item then
+                                true
+                            else
+                                moveNext ()
+                        | _ -> false
 
                 interface IEnumerator with
                     member __.MoveNext () =
@@ -1439,6 +1439,9 @@ namespace Microsoft.FSharp.Collections
         let take (takeCount:int) (source:ISeq<'T>) : ISeq<'T> =
             source.PushTransform { new TransformFactory<'T,'T>() with
                 member __.Compose outOfBand pipelineIdx next =
+                    if takeCount = 0 then
+                        outOfBand.StopFurtherProcessing pipelineIdx
+
                     upcast { new TransformWithPostProcessing<'T,'U,int>(next,(*count*)0) with
                         // member this.count = this.State
                         override this.ProcessNext (input:'T) : bool =
