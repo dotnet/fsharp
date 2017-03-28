@@ -3,6 +3,8 @@ module Microsoft.VisualStudio.FSharp.Editor.Pervasive
 
 open System
 open System.IO
+open System.Threading
+open System.Threading.Tasks
 open System.Diagnostics
 
 
@@ -17,6 +19,16 @@ let isScriptFile (filePath:string) =
 
 /// Path combination operator
 let (</>) path1 path2 = Path.Combine (path1, path2) 
+
+
+type Path with
+    static member GetFullPathSafe path =
+        try Path.GetFullPath path
+        with _ -> path
+
+    static member GetFileNameSafe path =
+        try Path.GetFileName path
+        with _ -> path
 
 
 [<RequireQualifiedAccess>]
@@ -217,7 +229,34 @@ module Async =
 
 
 type Async with 
-    
+
+    /// Better implementation of Async.AwaitTask that correctly passes the exception of a failed task to the async mechanism
+    static member AwaitTaskCorrect (task:Task) : Async<unit> =
+        Async.FromContinuations (fun (successCont,exceptionCont,_cancelCont) ->
+            task.ContinueWith (fun (task:Task) ->
+                if task.IsFaulted then
+                    let e = task.Exception
+                    if e.InnerExceptions.Count = 1 then 
+                        exceptionCont e.InnerExceptions.[0]
+                    else exceptionCont e
+                elif task.IsCanceled then
+                    exceptionCont(TaskCanceledException ())
+                else successCont ())
+            |> ignore)
+
+    /// Better implementation of Async.AwaitTask that correctly passes the exception of a failed task to the async mechanism
+    static member AwaitTaskCorrect (task:'T Task) : Async<'T> =
+        Async.FromContinuations( fun (successCont,exceptionCont,_cancelCont) ->
+            task.ContinueWith (fun (task:'T Task) ->
+                if task.IsFaulted then
+                    let e = task.Exception
+                    if e.InnerExceptions.Count = 1 then 
+                        exceptionCont e.InnerExceptions.[0]
+                    else exceptionCont e
+                elif task.IsCanceled then
+                    exceptionCont (TaskCanceledException ())
+                else successCont task.Result)
+            |> ignore)    
     static member RunTaskSynchronously task  = 
         task |> Async.AwaitTask |> Async.RunSynchronously 
 
