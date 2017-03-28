@@ -10,14 +10,14 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{956BBE41-ABD1-4DBA-9F3B-BA1C9821C98C}</ProjectGuid>
+    <ProjectGuid>{D4C88934-5893-467E-A55C-A11ECD6479FE}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <AssemblyName>XmlDocAttributeWithNullComment</AssemblyName>
+    <AssemblyName>DefinitionLocationAttributeWithSpaceInTheType</AssemblyName>
     <WarningLevel>4</WarningLevel>
     <NoWarn>0169;0067</NoWarn>
     <DefineConstants>DEBUG;TRACE;$(DefineConstants)</DefineConstants>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin\UnitTestsResources\MockTypeProviders</OutputPath>
+    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin\UnitTests\MockTypeProviders</OutputPath>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -39,3 +39,4 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
+

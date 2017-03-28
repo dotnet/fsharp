@@ -4,20 +4,20 @@
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\..\..\..\src</FSharpSourcesRoot>
     <ProjectLanguage>CSharp</ProjectLanguage>
-  </PropertyGroup>  
+  </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{8C2439BD-0E49-4929-A8B1-29CEE228191E}</ProjectGuid>
+    <ProjectGuid>{B4595EB6-053A-400E-AA1B-7727F1BC900F}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <AssemblyName>DefinitionLocationAttributeFileDoesnotExist</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <DefineConstants>DEBUG;TRACE;$(DefineConstants)</DefineConstants>
+    <AssemblyName>XmlDocAttributeWithEmptyComment</AssemblyName>
     <WarningLevel>4</WarningLevel>
     <NoWarn>0169;0067</NoWarn>
-    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin\UnitTestsResources\MockTypeProviders</OutputPath>
+    <DefineConstants>DEBUG;TRACE;$(DefineConstants)</DefineConstants>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin\UnitTests\MockTypeProviders</OutputPath>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />

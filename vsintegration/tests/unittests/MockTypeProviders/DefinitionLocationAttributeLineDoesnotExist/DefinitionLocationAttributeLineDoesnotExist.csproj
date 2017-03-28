@@ -10,14 +10,14 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{AC85EE6D-033C-45F9-B8BA-884BC22EC6D9}</ProjectGuid>
+    <ProjectGuid>{F47196DC-186D-4055-BAF2-658282A12F33}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <AssemblyName>XmlDocAttributeWithLongComment</AssemblyName>
+    <AssemblyName>DefinitionLocationAttributeLineDoesnotExist</AssemblyName>
     <WarningLevel>4</WarningLevel>
     <NoWarn>0169;0067</NoWarn>
     <DefineConstants>DEBUG;TRACE;$(DefineConstants)</DefineConstants>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin\UnitTestsResources\MockTypeProviders</OutputPath>
+    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin\UnitTests\MockTypeProviders</OutputPath>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />

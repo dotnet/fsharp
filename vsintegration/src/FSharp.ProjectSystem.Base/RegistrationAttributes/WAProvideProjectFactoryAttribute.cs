@@ -1,11 +1,13 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
+extern alias ImmutableShell;
 
 using System;
 using System.IO;
 using System.ComponentModel;
 using System.Globalization;
 using Microsoft.Win32;
+
+
 
 namespace Microsoft.VisualStudio.Shell
 {
@@ -14,7 +16,7 @@ namespace Microsoft.VisualStudio.Shell
     /// the WAP flavor/sub-type.
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = true)]
-    internal class WAProvideProjectFactoryAttribute : RegistrationAttribute
+    internal class WAProvideProjectFactoryAttribute : ImmutableShell::Microsoft.VisualStudio.Shell.RegistrationAttribute
     {
         private Type _factoryType;
         private string _displayProjectFileExtensions = null;
