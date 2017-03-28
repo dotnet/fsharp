@@ -3,24 +3,14 @@
 namespace rec Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Composition
 open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
-open System.Runtime.CompilerServices
-
-open System
 open System.Collections.Generic
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Diagnostics
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
-
-open Microsoft.VisualStudio.FSharp.LanguageService
-
-open Microsoft.FSharp.Compiler
 
 [<DiagnosticAnalyzer(FSharpCommonConstants.FSharpLanguageName)>]
 type internal UnusedDeclarationsAnalyzer() =
@@ -36,7 +26,7 @@ type internal UnusedDeclarationsAnalyzer() =
             title = SR.TheValueIsUnused.Value,
             messageFormat = SR.TheValueIsUnused.Value,
             category = DiagnosticCategory.Style,
-            defaultSeverity = DiagnosticSeverity.Warning,
+            defaultSeverity = DiagnosticSeverity.Hidden,
             isEnabledByDefault = true,
             customTags = DiagnosticCustomTags.Unnecessary)
     
@@ -64,16 +54,19 @@ type internal UnusedDeclarationsAnalyzer() =
             countSymbolsUses symbolsUses
             |> Seq.choose (fun (KeyValue(symbolUse, count)) ->
                 match symbolUse.Symbol with
-                | :? FSharpUnionCase when symbolUse.Symbol.IsInternalToProject -> Some symbolUse.Symbol
+                | :? FSharpUnionCase when symbolUse.IsPrivateToFile -> Some symbolUse.Symbol
                 // Determining that a record, DU or module is used anywhere requires
                 // inspecting all their enclosed entities (fields, cases and func / vals)
                 // for usefulness, which is too expensive to do. Hence we never gray them out.
                 | :? FSharpEntity as e when e.IsFSharpRecord || e.IsFSharpUnion || e.IsInterface || e.IsFSharpModule || e.IsClass -> None
                 // FCS returns inconsistent results for override members; we're skipping these symbols.
-                | :? FSharpMemberOrFunctionOrValue as f when f.IsOverrideOrExplicitInterfaceImplementation -> None
+                | :? FSharpMemberOrFunctionOrValue as f when 
+                        f.IsOverrideOrExplicitInterfaceImplementation ||
+                        f.IsConstructorThisValue ||
+                        f.IsConstructor -> None
                 // Usage of DU case parameters does not give any meaningful feedback; we never gray them out.
                 | :? FSharpParameter -> None
-                | _ when count = 1 && symbolUse.IsFromDefinition && symbolUse.Symbol.IsInternalToProject -> Some symbolUse.Symbol
+                | _ when count = 1 && symbolUse.IsFromDefinition && symbolUse.IsPrivateToFile -> Some symbolUse.Symbol
                 | _ -> None)
         HashSet(declarations, symbolComparer)
 
