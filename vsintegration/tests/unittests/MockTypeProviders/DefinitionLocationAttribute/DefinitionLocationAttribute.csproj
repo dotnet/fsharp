@@ -4,20 +4,20 @@
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\..\..\..\src</FSharpSourcesRoot>
     <ProjectLanguage>CSharp</ProjectLanguage>
-  </PropertyGroup>
+  </PropertyGroup>  
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{F47196DC-186D-4055-BAF2-658282A12F33}</ProjectGuid>
+    <ProjectGuid>{DA39AD38-4A58-47BF-9215-E49768295169}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <AssemblyName>DefinitionLocationAttributeLineDoesnotExist</AssemblyName>
+    <AssemblyName>DefinitionLocationAttribute</AssemblyName>
+    <DefineConstants>DEBUG;TRACE;$(DefineConstants)</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <NoWarn>0169;0067</NoWarn>
-    <DefineConstants>DEBUG;TRACE;$(DefineConstants)</DefineConstants>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin\UnitTestsResources\MockTypeProviders</OutputPath>
+    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin\UnitTests\MockTypeProviders</OutputPath>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -37,5 +37,7 @@
     <Compile Include="TypeProviderInCSharp.cs" />
     <Compile Include="..\Helpers.cs" />
   </ItemGroup>
+
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+
 </Project>

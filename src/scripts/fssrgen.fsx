@@ -1,5 +1,4 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 let PrintErr(filename, line, msg) =
     printfn "%s(%d): error : %s" filename line msg
         
@@ -9,7 +8,7 @@ let Err(filename, line, msg) =
     printfn "# comment"
     printfn "ident,\"string\""
     printfn "errNum,ident,\"string\""
-    failwithf "there were errors in the file '%s'" filename
+    failwith (sprintf "there were errors in the file '%s'" filename)
 
 let xmlBoilerPlateString = @"<?xml version=""1.0"" encoding=""utf-8""?>
 <root>

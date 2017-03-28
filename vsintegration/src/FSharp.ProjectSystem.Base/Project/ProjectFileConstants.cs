@@ -54,6 +54,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public const string Content = "Content";
         public const string None = "None";
         public const string EmbeddedResource = "EmbeddedResource";
+        public const string Resource = "Resource";
         public const string RootNamespace = "RootNamespace";
         public const string OutputType = "OutputType";
         [SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "SubType")]

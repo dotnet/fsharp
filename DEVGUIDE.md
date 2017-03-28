@@ -133,13 +133,13 @@ components installed in that VS installation.  You can revert this step by disab
 
 For **Debug**, uninstall then reinstall:
 
-    VSIXInstaller.exe /a /u:"VisualFSharp"
-    VSIXInstaller.exe /a debug\net40\bin\VisualFSharpOpenSource.vsix
+    VSIXInstaller.exe /u:"VisualFSharp"
+    VSIXInstaller.exe debug\net40\bin\VisualFSharpOpenSource.vsix
 
 For **Release**, uninstall then reinstall:
 
-    VSIXInstaller.exe /a /u:"VisualFSharp"
-    VSIXInstaller.exe /a release\net40\bin\VisualFSharpOpenSource.vsix
+    VSIXInstaller.exe /u:"VisualFSharp"
+    VSIXInstaller.exe release\net40\bin\VisualFSharpOpenSource.vsix
 
 Restart Visual Studio, it should now be running your freshly-built Visual F# IDE Tools with updated F# Interactive.
 
@@ -159,17 +159,15 @@ This gives a much tighter inner development loop than uninstalling/reinstalling 
 
 ### [Optional] Clobber the F# SDK on the machine
 
-**Note:** Step #3 below will clobber the machine-wide installed F# SDK on your machine. This replaces the ``fsi.exe``/``fsiAnyCpu.exe`` used by Visual F# Interactive and the ``fsc.exe`` used by ``Microsoft.FSharp.targets``.  Repairing Visual Studio 15 is currently the only way to revert this step.  
+**Note:** The step below will try to clobber the machine-wide installed F# SDK on your machine. This replaces the ``fsc.exe`` used by the standard innstall location or ``Microsoft.FSharp.targets``.  **Repairing Visual Studio 15 is currently the only way to revert this step.**
 
 For **Debug**:
 
-1. Run ``vsintegration\update-vsintegration.cmd debug`` (clobbers the installed F# SDK)
+    vsintegration\update-vsintegration.cmd debug
 
 For **Release**:
 
-1. Run ``vsintegration\update-vsintegration.cmd release`` (clobbers the installed F# SDK)
-
-
+    vsintegration\update-vsintegration.cmd release
 
 
 ## Resources

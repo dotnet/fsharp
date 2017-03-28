@@ -64,8 +64,10 @@ def static getBuildJobName(def configuration, def os) {
             def newJob = job(newJobName) {
                 steps {
                     if (os == 'Windows_NT') {
-                        // Batch
-                        batchFile(buildCommand)
+                        batchFile("""
+echo *** Build Visual F# Tools ***
+
+.\\build.cmd ${buildFlavor} ${build_args}""")
                     }
                     else {
                         // Shell
@@ -77,7 +79,7 @@ def static getBuildJobName(def configuration, def os) {
             // TODO: set to false after tests are fully enabled
             def skipIfNoTestFiles = true
 
-            def affinity = configuration == 'Release_net40_no_vs' ? 'latest-or-auto' : (os == 'Windows_NT' ? 'latest-dev15' : 'latest-or-auto')
+            def affinity = configuration == 'Release_net40_no_vs' ? 'latest-or-auto' : (os == 'Windows_NT' ? 'latest-or-auto-dev15-0' : 'latest-or-auto')
             Utilities.setMachineAffinity(newJob, os, affinity)
             Utilities.standardJobSetup(newJob, project, isPullRequest, "*/${branch}")
             Utilities.addArchival(newJob, "tests/TestResults/*.*", "", skipIfNoTestFiles, false)

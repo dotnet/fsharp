@@ -53,7 +53,6 @@ For Visual F# IDE Tools 4.1 development (Windows)
 #### Additional frameworks
 
 - [Git for windows](http://msysgit.github.io/)
-- [Perl](http://www.perl.org/get.html#win32) (ActiveState 5.16.3 is known to be supported)
 - [.NET 3.5](http://www.microsoft.com/en-us/download/details.aspx?id=21)
 - [.NET 4.5](http://www.microsoft.com/en-us/download/details.aspx?id=30653)
 - [.NET 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40779)

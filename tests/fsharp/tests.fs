@@ -2248,7 +2248,7 @@ module GeneratedSignatureTests =
     [<Test>]
     let ``members-basics-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/members/basics" GENERATED_SIGNATURE
 
-    [<Test>]
+    [<Test; Ignore("Flaky w.r.t. PEVerify.  https://github.com/Microsoft/visualfsharp/issues/2616")>]
     let ``access-GENERATED_SIGNATURE``() = singleTestBuildAndRun "core/access" GENERATED_SIGNATURE
 
     [<Test>]
