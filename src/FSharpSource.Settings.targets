@@ -52,6 +52,7 @@
     <AddVsSdkAttributesToSomeCoreComponents>true</AddVsSdkAttributesToSomeCoreComponents>
     <VsSDKInstall Condition=" '$(VsSDKInstall)' == '' ">$(MSBuildThisFileDirectory)..\packages\$(VSSDK_BUILDTOOLS_VERSION)\tools\vssdk</VsSDKInstall>
     <VsSDKToolPath Condition=" '$(VsSDKToolPath)' == '' ">$(MSBuildThisFileDirectory)..\packages\$(VSSDK_BUILDTOOLS_VERSION)\tools\vssdk\bin</VsSDKToolPath>
+    <VsSDKTargets Condition=" '$(VsSDKTargets)' == '' ">$(MSBuildThisFileDirectory)..\packages\$(VSSDK_BUILDTOOLS_VERSION)\tools\vssdk\Microsoft.VsSDK.targets</VsSDKTargets>
     <VsSDKIncludes Condition=" '$(VsSDKIncludes)' == '' ">$(MSBuildThisFileDirectory)..\packages\$(VSSDK_BUILDTOOLS_VERSION)\tools\vssdk\inc</VsSDKIncludes>
     <VsixSchemaPath Condition=" '$(VsixSchemaPath)' == '' ">$(MSBuildThisFileDirectory)..\packages\$(VSSDK_BUILDTOOLS_VERSION)\tools\vssdk\schemas\VSIXManifestSchema.xsd</VsixSchemaPath>
   </PropertyGroup>
