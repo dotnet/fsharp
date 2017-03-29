@@ -86,6 +86,7 @@ module private UnusedOpens =
         let getPossibleNamespaces (symbolUse: FSharpSymbolUse) : string list =
             let isQualified = symbolIsFullyQualified sourceText symbolUse
             maybe {
+                
                 let! fullNames, declaringEntity =
                     match symbolUse with
                     | SymbolUse.Entity (ent, cleanFullNames) when not (cleanFullNames |> List.exists isQualified) ->
@@ -102,7 +103,7 @@ module private UnusedOpens =
                         Some ([apc.FullName], apc.Group.EnclosingEntity)
                     | SymbolUse.UnionCase uc when not (isQualified uc.FullName) ->
                         Some ([uc.FullName], Some uc.ReturnType.TypeDefinition)
-                    | SymbolUse.Parameter p when not (isQualified p.FullName) ->
+                    | SymbolUse.Parameter p when not (isQualified p.FullName) && p.Type.HasTypeDefinition ->
                         Some ([p.FullName], Some p.Type.TypeDefinition)
                     | _ -> None
 
