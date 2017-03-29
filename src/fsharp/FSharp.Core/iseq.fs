@@ -1898,7 +1898,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Replicate")>]
         let replicate count x =
-            System.Linq.Enumerable.Repeat(x,count) |> ofSeq
+            Upcast.seq (new Wrap.InitEnumerable<'T,'T>(Nullable count, (fun _ -> x), IdentityFactory.Instance, 1))
 
         [<CompiledName("IsEmpty")>]
         let isEmpty (source : ISeq<'T>)  =
