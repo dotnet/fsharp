@@ -15,7 +15,6 @@ open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX
 
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Lib
@@ -23,7 +22,6 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.PrettyNaming 
 open Microsoft.FSharp.Compiler.Tast 
 open Microsoft.FSharp.Compiler.TastPickle
 open Microsoft.FSharp.Compiler.Tastops
@@ -129,16 +127,22 @@ type ValInfos(entries) =
               for (vref:ValRef,x) in entries do 
                    t.Add (vref.Deref,(vref,x))
               t)
+
     // The compiler ValRef's into fslib stored in env.fs break certain invariants that hold elsewhere, 
     // because they dereference to point to Val's from signatures rather than Val's from implementations.
     // Thus a backup alternative resolution technique is needed for these.
     let valInfosForFslib = 
-        lazy (Map.ofList [ for (vref,_x) as p in entries do yield (vref.Deref.LinkagePartialKey,p) ])
+        lazy (
+            let dict = Dictionary<_,_>()
+            for (vref,_x) as p in entries do 
+                dict.Add(vref.Deref.LinkagePartialKey,p) |> ignore
+            dict)
+
     member x.Entries = valInfoTable.Force().Values 
     member x.Map f = new ValInfos(Seq.map f x.Entries)
     member x.Filter f = new ValInfos(Seq.filter f x.Entries)
     member x.TryFind (v:ValRef) = valInfoTable.Force().TryFind v.Deref
-    member x.TryFindForFslib (v:ValRef) = valInfosForFslib.Force().TryFind(v.Deref.LinkagePartialKey)
+    member x.TryFindForFslib (v:ValRef) = valInfosForFslib.Force().TryGetValue(v.Deref.LinkagePartialKey)
 
 type ModuleInfo = 
     { ValInfos: ValInfos
@@ -554,9 +558,8 @@ let GetInfoForNonLocalVal cenv env (vref:ValRef) =
                   //System.Diagnostics.Debug.Assert(false,sprintf "Break for module %s, value %s" (full_name_of_nlpath smv) n)
                   if cenv.g.compilingFslib then 
                       match structInfo.ValInfos.TryFindForFslib(vref) with 
-                      | Some ninfo -> snd ninfo
-                      | None ->  
-                          UnknownValInfo
+                      | true, ninfo -> snd ninfo
+                      | _ -> UnknownValInfo
                   else
                       UnknownValInfo
         | None -> 
