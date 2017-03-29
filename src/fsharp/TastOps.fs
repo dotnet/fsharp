@@ -33,9 +33,19 @@ open Microsoft.FSharp.Compiler.ExtensionTyping
 [<NoEquality; NoComparison>]
 type TyparMap<'T> = 
     | TPMap of StampMap<'T>
-    member tm.Item with get (v: Typar) = let (TPMap m) = tm in m.[v.Stamp]
-    member tm.ContainsKey (v: Typar) = let (TPMap m) = tm in m.ContainsKey(v.Stamp)
-    member tm.Add (v: Typar, x) = let (TPMap m) = tm in TPMap (m.Add(v.Stamp,x))
+    member tm.Item 
+        with get (v: Typar) = 
+            let (TPMap m) = tm
+            m.[v.Stamp]
+
+    member tm.ContainsKey (v: Typar) = 
+        let (TPMap m) = tm
+        m.ContainsKey(v.Stamp)
+
+    member tm.Add (v: Typar, x) = 
+        let (TPMap m) = tm
+        TPMap (m.Add(v.Stamp,x))
+
     static member Empty : TyparMap<'T> = TPMap Map.empty
 
 [<NoEquality; NoComparison; Sealed>]
