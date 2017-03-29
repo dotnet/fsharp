@@ -249,6 +249,13 @@ namespace Microsoft.FSharp.Collections
                         iterate alist
 
             [<Struct;NoComparison;NoEquality>]
+            type IterateSingleton<'T> (item:'T) =
+                interface IIterate<'T> with
+                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
+                        if outOfBand.HaltedIdx = 0 then
+                            consumer.ProcessNext item |> ignore
+
+            [<Struct;NoComparison;NoEquality>]
             type IterateUnfold<'S,'T> (generator:'S->option<'T*'S>, state:'S) =
                 interface IIterate<'T> with
                     member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
@@ -600,6 +607,21 @@ namespace Microsoft.FSharp.Collections
 
                     member this.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
                         Fold.execute f transformFactory pipeIdx (Fold.IterateArray array)
+
+            type SingletonEnumerable<'T>(item:'T) =
+                inherit EnumerableBase<'T>()
+
+                override __.Length () = 1
+
+                interface IEnumerable<'T> with
+                    member this.GetEnumerator () = Upcast.enumerator (new Singleton<'T>(item))
+
+                interface ISeq<'T> with
+                    member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
+                        Upcast.seq (new ArrayEnumerable<'T,'U>([|item|], next, 1))
+
+                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                        Fold.executeThin f (Fold.IterateSingleton item)
 
             type ResizeArrayEnumerator<'T,'U>(array:ResizeArray<'T>, activity:Activity<'T,'U>, result:Result<'U>) =
                 inherit EnumeratorBase<'U>(result, activity)
@@ -2007,7 +2029,7 @@ namespace Microsoft.FSharp.Collections
             nth i e
 
         [<CompiledName("Singleton")>]
-        let singleton x = mkSeq (fun () -> IEnumerator.Singleton x) |> ofSeq
+        let singleton x = Upcast.seq (new Wrap.SingletonEnumerable<_>(x))
 
         [<CompiledName("SortDescending")>]
         let inline sortDescending source =
