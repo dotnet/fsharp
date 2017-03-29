@@ -1613,8 +1613,10 @@ type TypeCheckInfo
                 else Some (m, SemanticClassificationType.ReferenceType)
             | CNR(_, Item.ModuleOrNamespaces refs, LegitTypeOccurence, _, _, _, m) when refs |> List.exists (fun x -> x.IsModule) ->
                 Some (m, SemanticClassificationType.Module)
-            | CNR(_, (Item.ActivePatternCase _ | Item.UnionCase _ | Item.ActivePatternResult _), _, _, _, _, m) ->
+            | CNR(_, Item.UnionCase _, _, _, _, _, m) ->
                 Some (m, SemanticClassificationType.UnionCase)
+            | CNR(_, (Item.ActivePatternCase _ | Item.ActivePatternResult _), _, _, _, _, m) ->
+                Some (m, SemanticClassificationType.Function)
             | _ -> None)
         |> Seq.toArray
         |> Array.append (sSymbolUses.GetFormatSpecifierLocations() |> Array.map (fun m -> m, SemanticClassificationType.Printf))
