@@ -31,6 +31,7 @@ open Microsoft.FSharp.Compiler
 open Internal.Utilities.StructuredFormat
 
 open CommonRoslynHelpers
+open System.Text
 
 module private SessionHandling =
     
@@ -357,17 +358,23 @@ type internal FSharpQuickInfoProvider
                     let seperator = TaggedTextOps.tag LayoutTag.Text (String.replicate width "-")  
                     let lineBreak = TaggedTextOps.tag LayoutTag.LineBreak  "\n"
                     let bridge = [|  lineBreak; seperator; lineBreak |]
-                    
-                    let (|HasDocs|NoDocs|) (tts:seq<Layout.TaggedText>) =
-                        if tts |> Seq.forall (fun layout -> String.IsNullOrWhiteSpace layout.Text) then NoDocs else HasDocs
+
+                    // get whitespace nomalized documentation text
+                    let getText (tts:seq<Layout.TaggedText>) = 
+                        ((StringBuilder(), tts) ||> Seq.fold (fun sb tt -> 
+                            if String.IsNullOrWhiteSpace tt.Text then sb else sb.Append tt.Text)).ToString() 
                     
                     let documentation = 
-                        match sigDocumentation, targetDocumentation with 
-                        | NoDocs , NoDocs  -> targetDocumentation 
-                        | HasDocs, NoDocs  -> sigDocumentation
-                        | NoDocs , HasDocs -> targetDocumentation
-                        | HasDocs, HasDocs -> 
-                            ResizeArray (Array.concat[sigDocumentation.ToArray();bridge;targetDocumentation.ToArray()])
+                        let implText, sigText = getText targetDocumentation, getText  sigDocumentation
+                        let implDocsEmpty, sigDocsEmpty = String.IsNullOrWhiteSpace implText, String.IsNullOrWhiteSpace sigText
+
+                        match implDocsEmpty, sigDocsEmpty with 
+                        | true, true -> ResizeArray()
+                        | true, false -> sigDocumentation
+                        | false, true -> targetDocumentation
+                        | false, false 
+                            when implText.Equals (sigText, StringComparison.OrdinalIgnoreCase) -> sigDocumentation
+                        | false, false  -> ResizeArray (Array.concat[sigDocumentation.ToArray();bridge;targetDocumentation.ToArray()])
 
                     let content = 
                         FSharpQuickInfo.tooltip
