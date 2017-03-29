@@ -1271,10 +1271,13 @@ type ValHash<'T> =
 
 [<Struct; NoEquality; NoComparison>]
 type ValMultiMap<'T>(contents: StampMap<'T list>) =
-    member m.Find (v: Val) = let stamp = v.Stamp in if contents.ContainsKey stamp then contents.[stamp] else []
+    member m.Find (v: Val) = 
+        let stamp = v.Stamp
+        if contents.ContainsKey stamp then contents.[stamp] else []
+
     member m.Add (v:Val, x) = ValMultiMap<'T>(contents.Add (v.Stamp, x :: m.Find v))
     member m.Remove (v: Val) = ValMultiMap<'T>(contents.Remove v.Stamp)
-    member m.Contents  = contents
+    member m.Contents = contents
     static member Empty = ValMultiMap<'T>(Map.empty)
 
 [<Struct; NoEquality; NoComparison>]
