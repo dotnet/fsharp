@@ -81,20 +81,7 @@ module internal FSharpQuickInfo =
           { new IDeferredQuickInfoContent with 
             member x.Create() = TextBlock(Visibility = Visibility.Collapsed) :> FrameworkElement }
 
-        let roslynQuickInfo = QuickInfoDisplayDeferredContent(symbolGlyph, null, mainDescription, documentation, empty, empty, empty, empty)
-
-        let create () =
-            let qi = roslynQuickInfo.Create()
-            let style = Style(typeof<Documents.Hyperlink>)
-            style.Setters.Add(Setter(Documents.Inline.TextDecorationsProperty, null))
-            let trigger = DataTrigger(Binding = Data.Binding("IsMouseOver", Source = qi), Value = true)
-            trigger.Setters.Add(Setter(Documents.Inline.TextDecorationsProperty, TextDecorations.Underline))
-            style.Triggers.Add(trigger)
-            qi.Resources.Add(typeof<Documents.Hyperlink>, style)
-            qi
-
-        { new IDeferredQuickInfoContent with member x.Create() = create() }
-
+        QuickInfoDisplayDeferredContent(symbolGlyph, null, mainDescription, documentation, empty, empty, empty, empty)
 
 
     /// Get tooltip combined from doccom of Signature and definition
@@ -238,7 +225,7 @@ type internal FSharpQuickInfoProvider
         let workspace = initialDoc.Project.Solution.Workspace
         let solution = workspace.CurrentSolution
 
-        let canGoTo range =
+        let isTargetValid range =
             range <> rangeStartup && solution.TryGetDocumentIdFromFSharpRange (range,initialDoc.Project.Id) |> Option.isSome
 
         let navigateTo (range:range) = 
@@ -283,41 +270,41 @@ type internal FSharpQuickInfoProvider
                 let run = Documents.Run taggedText.Text
                 let inl =
                     match taggedText with
-                    | :? Layout.NavigableTaggedText as nav when canGoTo nav.Range ->                        
-                        let h = SourceLink(run, ToolTip = nav.Range.FileName)
+                    | :? Layout.NavigableTaggedText as nav when isTargetValid nav.Range ->                        
+                        let h = SourceLink (run, ToolTip = nav.Range.FileName)
                         h.Click.Add <| fun _ -> navigateTo nav.Range
                         h :> Documents.Inline
                     | _ -> run :> _
-                DependencyObjectExtensions.SetTextProperties(inl, layoutTagToFormatting taggedText.Tag)
+                DependencyObjectExtensions.SetTextProperties (inl, layoutTagToFormatting taggedText.Tag)
                 yield inl
         }
 
         let createTextLinks () =
             let tb = TextBlock(TextWrapping = TextWrapping.Wrap, TextTrimming = TextTrimming.None)
             DependencyObjectExtensions.SetDefaultTextProperties(tb, formatMap)
-            tb.Inlines.AddRange(inlines)
+            tb.Inlines.AddRange inlines
             if tb.Inlines.Count = 0 then tb.Visibility <- Visibility.Collapsed
             tb :> FrameworkElement
             
-        { new IDeferredQuickInfoContent with member x.Create() = createTextLinks() }
+        { new IDeferredQuickInfoContent with member x.Create () = createTextLinks () }
 
     let xmlMemberIndexService = serviceProvider.GetService(typeof<SVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
     
     static member ProvideQuickInfo(checker: FSharpChecker, documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, options: FSharpProjectOptions, textVersionHash: int) =
         asyncMaybe {
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)
-            let textLine = sourceText.Lines.GetLineFromPosition(position)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument (filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)
+            let textLine = sourceText.Lines.GetLineFromPosition position
             let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(filePath, options.OtherOptions |> Seq.toList)
-            let! symbol = CommonHelpers.getSymbolAtPosition(documentId, sourceText, position, filePath, defines, SymbolLookupKind.Precise)
-            let! res = checkFileResults.GetStructuredToolTipTextAlternate(textLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, FSharpTokenTag.IDENT) |> liftAsync
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing (filePath, options.OtherOptions |> Seq.toList)
+            let! symbol = CommonHelpers.getSymbolAtPosition (documentId, sourceText, position, filePath, defines, SymbolLookupKind.Precise)
+            let! res = checkFileResults.GetStructuredToolTipTextAlternate (textLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, FSharpTokenTag.IDENT) |> liftAsync
             match res with
             | FSharpToolTipText [] 
             | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
             | _ -> 
-                let! symbolUse = checkFileResults.GetSymbolUseAtLocation(textLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland)
-                return! Some(res, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbol.Range), symbolUse.Symbol, symbol.Kind)
+                let! symbolUse = checkFileResults.GetSymbolUseAtLocation (textLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland)
+                return! Some (res, CommonRoslynHelpers.FSharpRangeToTextSpan (sourceText, symbol.Range), symbolUse.Symbol, symbol.Kind)
         }
     
     interface IQuickInfoProvider with
@@ -331,8 +318,8 @@ type internal FSharpQuickInfoProvider
                 | None, None -> return null
                 | Some (toolTipElement, textSpan, symbol, symbolKind), None  
                 | None, Some (toolTipElement, textSpan, symbol, symbolKind) -> 
-                    let mainDescription = Collections.Generic.List()
-                    let documentation = Collections.Generic.List()
+                    let mainDescription = Collections.Generic.List ()
+                    let documentation = Collections.Generic.List ()
                     XmlDocumentation.BuildDataTipText
                         (   documentationBuilder
                         ,   mainDescription.Add
@@ -342,8 +329,8 @@ type internal FSharpQuickInfoProvider
                     let content = 
                         FSharpQuickInfo.tooltip
                             (   SymbolGlyphDeferredContent(CommonRoslynHelpers.GetGlyphForSymbol(symbol, symbolKind), glyphService)
-                            ,   fragment(mainDescription, typeMap, document)
-                            ,   fragment(documentation, typeMap, document)
+                            ,   fragment (mainDescription, typeMap, document)
+                            ,   fragment (documentation, typeMap, document)
                             )
                     return QuickInfoItem (textSpan, content)
 
@@ -371,22 +358,22 @@ type internal FSharpQuickInfoProvider
                     let lineBreak = TaggedTextOps.tag LayoutTag.LineBreak  "\n"
                     let bridge = [|  lineBreak; seperator; lineBreak |]
                     
-                    let taggedTextIsEmpty (tts:seq<Layout.TaggedText>) =
-                        tts |> Seq.forall (fun layout -> String.IsNullOrWhiteSpace layout.Text)
+                    let (|HasDocs|NoDocs|) (tts:seq<Layout.TaggedText>) =
+                        if tts |> Seq.forall (fun layout -> String.IsNullOrWhiteSpace layout.Text) then NoDocs else HasDocs
                     
                     let documentation = 
-                        match taggedTextIsEmpty sigDocumentation, taggedTextIsEmpty targetDocumentation with 
-                        | true, true -> targetDocumentation 
-                        | false, true -> sigDocumentation
-                        | true, false -> targetDocumentation
-                        | false, false -> 
+                        match sigDocumentation, targetDocumentation with 
+                        | NoDocs , NoDocs  -> targetDocumentation 
+                        | HasDocs, NoDocs  -> sigDocumentation
+                        | NoDocs , HasDocs -> targetDocumentation
+                        | HasDocs, HasDocs -> 
                             ResizeArray (Array.concat[sigDocumentation.ToArray();bridge;targetDocumentation.ToArray()])
 
                     let content = 
                         FSharpQuickInfo.tooltip
-                            (   SymbolGlyphDeferredContent(CommonRoslynHelpers.GetGlyphForSymbol(targetSymbol, targetSymbolKind), glyphService)
-                            ,   fragment(description, typeMap, document)
-                            ,   fragment(documentation, typeMap, document)
+                            (   SymbolGlyphDeferredContent (CommonRoslynHelpers.GetGlyphForSymbol (targetSymbol, targetSymbolKind), glyphService)
+                            ,   fragment (description, typeMap, document)
+                            ,   fragment (documentation, typeMap, document)
                             )
 
                     return QuickInfoItem (targetTextSpan, content)
