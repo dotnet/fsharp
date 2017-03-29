@@ -1543,6 +1543,11 @@ type TypeCheckInfo
                // || valRefEq g g.nameof_vref vref
             then Some()
             else None
+        
+        let (|EnumCaseFieldInfo|_|) (rfinfo : RecdFieldInfo) =
+            match rfinfo.TyconRef.FSharpObjectModelTypeInfo.fsobjmodel_kind with
+            | TTyconEnum -> Some ()
+            | _ -> None
 
         let resolutions =
             match range with
@@ -1571,9 +1576,14 @@ type TypeCheckInfo
                     Some (m, SemanticClassificationType.Property)
                 elif IsOperatorName vref.DisplayName then
                     Some (m, SemanticClassificationType.Operator)
-                else Some (m, SemanticClassificationType.Function)
+                else
+                    Some (m, SemanticClassificationType.Function)
             | CNR(_, Item.RecdField rfinfo, _, _, _, _, m) when rfinfo.RecdField.IsMutable && rfinfo.LiteralValue.IsNone -> 
                 Some (m, SemanticClassificationType.MutableVar)
+            | CNR(_, Item.RecdField rfinfo, _, _, _, _, m) when isFunction g rfinfo.FieldType ->
+               Some (m, SemanticClassificationType.Function)
+            | CNR(_, Item.RecdField EnumCaseFieldInfo, _, _, _, _, m) ->
+                Some (m, SemanticClassificationType.Enumeration)
             | CNR(_, Item.MethodGroup(_, _, _), _, _, _, _, m) ->
                 Some (m, SemanticClassificationType.Function)
             // custom builders, custom operations get colored as keywords
