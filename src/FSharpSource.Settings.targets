@@ -31,7 +31,13 @@
     <BuildToolsTargets45>true</BuildToolsTargets45>
     <WarningsAsErrors />
     <FX_NO_LOADER Condition=" '$(FX_NO_LOADER)'==''">false</FX_NO_LOADER>
-    <VSSDK_BUILDTOOLS_VERSION>Microsoft.VSSDK.BuildTools.15.0.26124-RC3</VSSDK_BUILDTOOLS_VERSION>
+    
+    <RoslynVersion>2.0.0</RoslynVersion>
+    <RoslynVSBinariesVersion>15.0</RoslynVSBinariesVersion>
+    <RoslynVSPackagesVersion>15.0.26201</RoslynVSPackagesVersion>
+    <!--<VSSDK_BUILDTOOLS_VERSION>Microsoft.VSSDK.BuildTools.15.0.26124-RC3</VSSDK_BUILDTOOLS_VERSION>-->
+    <!--<VSSDK_BUILDTOOLS_VERSION>Microsoft.VSSDK.BuildTools.$(RoslynVSPackagesVersion)</VSSDK_BUILDTOOLS_VERSION> -->
+    <VSSDK_BUILDTOOLS_VERSION>Microsoft.VSSDK.BuildTools.15.0.26201</VSSDK_BUILDTOOLS_VERSION> 
 
     <!-- Always qualify the IntermediateOutputPath by the TargetFramework if any exists -->
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
@@ -45,6 +51,7 @@
     <AddVsSdkAttributesToSomeCoreComponents>true</AddVsSdkAttributesToSomeCoreComponents>
     <VsSDKInstall Condition=" '$(VsSDKInstall)' == '' ">$(MSBuildThisFileDirectory)..\packages\$(VSSDK_BUILDTOOLS_VERSION)\tools\vssdk</VsSDKInstall>
     <VsSDKToolPath Condition=" '$(VsSDKToolPath)' == '' ">$(MSBuildThisFileDirectory)..\packages\$(VSSDK_BUILDTOOLS_VERSION)\tools\vssdk\bin</VsSDKToolPath>
+    <VsSDKTargets Condition=" '$(VsSDKTargets)' == '' ">$(MSBuildThisFileDirectory)..\packages\$(VSSDK_BUILDTOOLS_VERSION)\tools\vssdk\Microsoft.VsSDK.targets</VsSDKTargets>
     <VsSDKIncludes Condition=" '$(VsSDKIncludes)' == '' ">$(MSBuildThisFileDirectory)..\packages\$(VSSDK_BUILDTOOLS_VERSION)\tools\vssdk\inc</VsSDKIncludes>
     <VsixSchemaPath Condition=" '$(VsixSchemaPath)' == '' ">$(MSBuildThisFileDirectory)..\packages\$(VSSDK_BUILDTOOLS_VERSION)\tools\vssdk\schemas\VSIXManifestSchema.xsd</VsixSchemaPath>
   </PropertyGroup>
@@ -124,10 +131,8 @@
     <FsiToolExe>fsi.exe</FsiToolExe>
     <FsLexToolExe>fslex.exe</FsLexToolExe>
     <FsYaccToolExe>fsyacc.exe</FsYaccToolExe>
-    <RoslynVersion>2.0.0-rc3-61324-01</RoslynVersion>
-    <RoslynVSBinariesVersion>14.0</RoslynVSBinariesVersion>
-    <RoslynVSPackagesVersion>14.3.25407</RoslynVSPackagesVersion>
-      
+
+
     <!-- The version of MSBuild assumed byt the F# compiler in the Mono packaging of F# -->
     <MonoPackagingMSBuildVersionSuffix>v12.0</MonoPackagingMSBuildVersionSuffix>
     <MonoPackagingMSBuildVersionFull>12.0.0.0</MonoPackagingMSBuildVersionFull>	  
