@@ -1259,8 +1259,9 @@ type ValHash<'T> =
 
     member ht.TryFind (v:Val) = 
         let (ValHash t) = ht
-        let i = v.Stamp
-        if t.ContainsKey(i) then Some(t.[i]) else None
+        match t.TryGetValue v.Stamp with
+        | true,v -> Some v
+        | _ -> None
 
     member ht.Add (v:Val, x) = 
         let (ValHash t) = ht
