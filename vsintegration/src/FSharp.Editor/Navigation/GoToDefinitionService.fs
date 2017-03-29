@@ -149,26 +149,6 @@ module internal FSharpGoToDefinition =
         }
 
 
-    let statusBarMessage (statusBar:IVsStatusbar) (msg:string) =
-        let (_,frozen) = statusBar.IsFrozen()
-        // unfreeze the status bar
-        if frozen <> 0 then statusBar.FreezeOutput 0 |> ignore
-        statusBar.SetText msg |> ignore
-        // freeze the status bar
-        statusBar.FreezeOutput 1 |> ignore
-
-    let clearStatusBar (statusBar:IVsStatusbar) =
-        // unfreeze the statusbar
-        statusBar.FreezeOutput 0 |> ignore  
-        statusBar.Clear () |> ignore
-
-
-    let clearStatusBarAfter (statusBar:IVsStatusbar) (timeoutMs:int) =
-        Async.Sleep timeoutMs
-        |> Async.map (fun _ -> clearStatusBar statusBar)
-        |> Async.Start
-
-
 open FSharpGoToDefinition
 
 [<Shared>]
@@ -181,13 +161,35 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
 
     let serviceProvider =  ServiceProvider.GlobalProvider  
     let statusBar = serviceProvider.GetService<SVsStatusbar,IVsStatusbar>()
+    
+    let statusBarMessage (msg:string) =
+        let (_,frozen) = statusBar.IsFrozen()
+        // unfreeze the status bar
+        if frozen <> 0 then statusBar.FreezeOutput 0 |> ignore
+        statusBar.SetText msg |> ignore
+        // freeze the status bar
+        statusBar.FreezeOutput 1 |> ignore
+    
+    let clearStatusBar () =
+        // unfreeze the statusbar
+        statusBar.FreezeOutput 0 |> ignore  
+        statusBar.Clear () |> ignore
 
+    let clearStatusBarAfter (timeoutMs:int) =
+        Async.Sleep timeoutMs
+        |> Async.map (fun _ -> clearStatusBar ())
+        |> Async.Start
+    
+    /// Animated Magnifying glass that displays on the status bar while a symbol search is in progress
+    let mutable searchIcon = int16 Microsoft.VisualStudio.Shell.Interop.Constants.SBAI_Find :> obj
+
+    let startSearchAnimation () = statusBar.Animation (1, &searchIcon) |> ignore
+
+    let stopSearchAnimation () = statusBar.Animation (0,&searchIcon) |> ignore
 
     let tryNavigateToItem (navigableItem:#INavigableItem option) =
-        
-        let mutable icon = int16 Microsoft.VisualStudio.Shell.Interop.Constants.SBAI_Find :> obj
-        statusBarMessage statusBar "Trying to locate symbol..." 
-        statusBar.Animation (1, &icon) |> ignore
+        startSearchAnimation ()
+        statusBarMessage "Trying to locate symbol..." 
 
         match navigableItem with
         | Some navigableItem ->
@@ -196,20 +198,19 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
             // prefer open documents in the preview tab
             let options = workspace.Options.WithChangedOption (NavigationOptions.PreferProvisionalTab, true)
             let result = navigationService.TryNavigateToSpan (workspace, navigableItem.Document.Id, navigableItem.SourceSpan, options)
-            // stop the animation
-            statusBar.Animation (0,&icon) |> ignore
+            stopSearchAnimation ()    
             if result then 
-                clearStatusBar statusBar 
+                clearStatusBar ()
                 result
             else 
-                statusBarMessage statusBar "Could Not Navigate to Definition of Symbol Under Caret"
-                clearStatusBarAfter statusBar 4000
+                statusBarMessage "Could Not Navigate to Definition of Symbol Under Caret"
+                clearStatusBarAfter 4000
                 result
         | None ->
             // stop the animation
-            statusBar.Animation (0,&icon) |> ignore
-            statusBarMessage statusBar "Could Not Navigate to Definition of Symbol Under Caret"
-            clearStatusBarAfter statusBar 4000
+            stopSearchAnimation ()
+            statusBarMessage "Could Not Navigate to Definition of Symbol Under Caret"
+            clearStatusBarAfter 4000
             true
 
 
@@ -222,8 +223,8 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
         let options = workspace.Options.WithChangedOption (NavigationOptions.PreferProvisionalTab, true)
         let result = navigationService.TryNavigateToSpan (workspace, navigableItem.Document.Id, navigableItem.SourceSpan, options)
         if result then true else
-        statusBarMessage statusBar "Could Not Navigate to Definition of Symbol Under Caret"
-        clearStatusBarAfter statusBar 4000
+        statusBarMessage "Could Not Navigate to Definition of Symbol Under Caret"
+        clearStatusBarAfter 4000
         false
 
 
@@ -374,12 +375,9 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
         member this.TryGoToDefinition(document: Document, position: int, cancellationToken: CancellationToken) =
             let definitionTask = this.FindDefinitionsTask (document, position, cancellationToken)
             
-            let mutable icon = int16 Microsoft.VisualStudio.Shell.Interop.Constants.SBAI_Find :> obj
-            statusBarMessage statusBar "Trying to locate symbol..." 
-            // start the animation
-            statusBar.Animation (1, &icon) |> ignore
-
-            definitionTask.Wait()
+            statusBarMessage "Trying to locate symbol..." 
+            startSearchAnimation ()
+            definitionTask.Wait ()
 
             // REVIEW: document this use of a blocking wait on the cancellation token, explaining why it is ok
             if definitionTask.Status = TaskStatus.RanToCompletion && definitionTask.Result.Any() then
@@ -392,13 +390,13 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
                 let result = navigationService.TryNavigateToSpan (workspace, navigableItem.Document.Id, navigableItem.SourceSpan, options)
                 
                 // stop the animation
-                statusBar.Animation (0,&icon) |> ignore
+                stopSearchAnimation ()
                 if result then 
-                    clearStatusBar statusBar 
+                    clearStatusBar ()
                     true // we always return true to prevent the dialog box from appearing 
                 else 
-                    statusBarMessage statusBar "Could Not Navigate to Definition of Symbol Under Caret"
-                    clearStatusBarAfter statusBar 4000
+                    statusBarMessage "Could Not Navigate to Definition of Symbol Under Caret"
+                    clearStatusBarAfter 4000
                     true // we always return true to prevent the dialog box from appearing 
 
                 // FSROSLYNTODO: potentially display multiple results here
@@ -412,8 +410,7 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
                 //true
 
             else 
-                // stop the animation
-                statusBar.Animation (0,&icon) |> ignore
-                statusBarMessage statusBar "Could Not Navigate to Definition of Symbol Under Caret" |> ignore
-                clearStatusBarAfter statusBar 4000
+                stopSearchAnimation ()
+                statusBarMessage "Could Not Navigate to Definition of Symbol Under Caret"
+                clearStatusBarAfter 4000
                 true // we always return true to prevent the dialog box from appearing 
