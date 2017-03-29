@@ -1045,7 +1045,7 @@ type MatchBuilder(spBind,inpRange: Range.range) =
     let targets = new ResizeArray<_>(10) 
     member x.AddTarget(tg) = 
         let n = targets.Count 
-        targets.Add(tg);
+        targets.Add tg
         n
 
     member x.AddResultTarget(e,spTarget) = TDSuccess([], x.AddTarget(TTarget([],e,spTarget)))
@@ -1264,7 +1264,7 @@ type ValHash<'T> =
 
     member ht.Values = 
         let (ValHash t) = ht
-        t.Values :> 'T seq
+        t.Values :> seq<'T>
 
     member ht.TryFind (v:Val) = 
         let (ValHash t) = ht
