@@ -70,11 +70,9 @@
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-
+    <!-- Flags used for Release mode.		-->
     <DebugType Condition=" '$(DebugType)' == '' and '$(TargetFramework)' != 'coreclr' and '$(UseSourceLink)' != 'true' ">pdbonly</DebugType>
     <DebugType Condition=" '$(DebugType)' == '' ">portable</DebugType>
-
-    <!-- Flags used for Release mode.		-->
     <Optimize Condition=" '$(Optimize)' == '' ">true</Optimize>
     <EmbedAllSource>false</EmbedAllSource>
 
@@ -86,6 +84,7 @@
 
   <PropertyGroup Condition="'$(Configuration)'=='Proto'">
     <!-- Flags used when running the Proto compiler.		-->
+    <DebugType Condition=" '$(DebugType)' == '' ">embedded</DebugType>
     <Optimize>true</Optimize>
     <DefineConstants>DEBUG;NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
