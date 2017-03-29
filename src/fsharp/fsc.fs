@@ -1761,6 +1761,39 @@ let main0(ctok, argv, referenceResolver, bannerAlreadyPrinted, exiter:Exiter, er
         with e -> 
             errorRecoveryNoRange e
             exiter.Exit 1
+    
+    let inputs =
+        // Deduplicate module names
+        let seen = Dictionary<_,Set<_>>()
+        inputs
+        |> List.map (fun (input,x) -> 
+            match input with
+            | ParsedInput.ImplFile (ParsedImplFileInput.ParsedImplFileInput(fileName,isScript,qualifiedNameOfFile,scopedPragmas,hashDirectives,modules,(isLastCompiland,isExe))) ->
+                let path = Path.GetDirectoryName fileName
+                match seen.TryGetValue qualifiedNameOfFile.Text with
+                | true, paths ->
+                    let count = if paths.Contains path then paths.Count else paths.Count + 1
+                    seen.[qualifiedNameOfFile.Text] <- Set.add path paths
+                    let id = qualifiedNameOfFile.Id
+                    let qualifiedNameOfFile = if count = 1 then qualifiedNameOfFile else QualifiedNameOfFile(Ident(id.idText + "___" + count.ToString(),id.idRange))
+                    let input = ParsedInput.ImplFile(ParsedImplFileInput.ParsedImplFileInput(fileName,isScript,qualifiedNameOfFile,scopedPragmas,hashDirectives,modules,(isLastCompiland,isExe)))
+                    input,x
+                | _ ->
+                    seen.Add(qualifiedNameOfFile.Text,Set.singleton path)
+                    input,x
+            | ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName,qualifiedNameOfFile,scopedPragmas,hashDirectives,modules)) ->
+                let path = Path.GetDirectoryName fileName
+                match seen.TryGetValue qualifiedNameOfFile.Text with
+                | true, paths ->
+                    let count = if paths.Contains path then paths.Count else paths.Count + 1
+                    seen.[qualifiedNameOfFile.Text] <- Set.add path paths
+                    let id = qualifiedNameOfFile.Id
+                    let qualifiedNameOfFile = if count = 1 then qualifiedNameOfFile else QualifiedNameOfFile(Ident(id.idText + "___" + count.ToString(),id.idRange))
+                    let input = ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName,qualifiedNameOfFile,scopedPragmas,hashDirectives,modules))
+                    input,x
+                | _ ->
+                    seen.Add(qualifiedNameOfFile.Text,Set.singleton path)
+                    input,x)
 
     if tcConfig.parseOnly then exiter.Exit 0 
     if not tcConfig.continueAfterParseFailure then 
