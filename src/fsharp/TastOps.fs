@@ -1271,9 +1271,10 @@ type ValHash<'T> =
 
 [<Struct; NoEquality; NoComparison>]
 type ValMultiMap<'T>(contents: StampMap<'T list>) =
-    member m.Find (v: Val) = 
-        let stamp = v.Stamp
-        if contents.ContainsKey stamp then contents.[stamp] else []
+    member m.Find (v: Val) =
+        match contents |> Map.tryFind v.Stamp with
+        | Some vals -> vals
+        | _ -> []
 
     member m.Add (v:Val, x) = ValMultiMap<'T>(contents.Add (v.Stamp, x :: m.Find v))
     member m.Remove (v: Val) = ValMultiMap<'T>(contents.Remove v.Stamp)
@@ -1282,7 +1283,11 @@ type ValMultiMap<'T>(contents: StampMap<'T list>) =
 
 [<Struct; NoEquality; NoComparison>]
 type TyconRefMultiMap<'T>(contents: TyconRefMap<'T list>) =
-    member m.Find v = if contents.ContainsKey v then contents.[v] else []
+    member m.Find v = 
+        match contents.TryFind v with
+        | Some vals -> vals
+        | _ -> []
+
     member m.Add (v, x) = TyconRefMultiMap<'T>(contents.Add v (x :: m.Find v))
     static member Empty = TyconRefMultiMap<'T>(TyconRefMap<_>.Empty)
     static member OfList vs = (vs, TyconRefMultiMap<'T>.Empty) ||> List.foldBack (fun (x,y) acc -> acc.Add (x, y)) 
