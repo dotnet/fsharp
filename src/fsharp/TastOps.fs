@@ -88,15 +88,15 @@ let emptyTyparInst = ([] : TyparInst)
 
 [<NoEquality; NoComparison>]
 type Remap =
-    { tpinst : TyparInst;
-      valRemap: ValRemap;
-      tyconRefRemap : TyconRefRemap;
+    { tpinst : TyparInst
+      valRemap: ValRemap
+      tyconRefRemap : TyconRefRemap
       removeTraitSolutions: bool }
 
 let emptyRemap = 
-    { tpinst        = emptyTyparInst; 
-      tyconRefRemap = emptyTyconRefRemap;
-      valRemap      = ValMap.Empty;
+    { tpinst        = emptyTyparInst;
+      tyconRefRemap = emptyTyconRefRemap
+      valRemap      = ValMap.Empty
       removeTraitSolutions = false }
 
 type Remap with 
@@ -107,7 +107,7 @@ type Remap with
 //--------------------------------------------------------------------------
 
 let addTyconRefRemap tcref1 tcref2 tmenv = 
-    {tmenv with tyconRefRemap=tmenv.tyconRefRemap.Add tcref1 tcref2 }
+    { tmenv with tyconRefRemap = tmenv.tyconRefRemap.Add tcref1 tcref2 }
 
 let isRemapEmpty remap = 
     isNil remap.tpinst && 
@@ -131,7 +131,7 @@ let instMeasureTyparRef tpinst unt (tp:Typar)  =
                 if typarEq tp tp' then 
                     match ty' with 
                     | TType_measure unt -> unt
-                    | _ -> failwith "instMeasureTyparRef incorrect kind";
+                    | _ -> failwith "instMeasureTyparRef incorrect kind"
                 else
                     loop t
         loop tpinst
@@ -272,7 +272,6 @@ and remapTraitAux tyenv (TTrait(typs,nm,mf,argtys,rty,slnCell)) =
     // in the same way as types
     TTrait(remapTypesAux tyenv typs,nm,mf,remapTypesAux tyenv argtys, Option.map (remapTypeAux tyenv) rty,ref slnCell)
 
-
 and bindTypars tps tyargs tpinst =   
     match tps with 
     | [] -> tpinst 
@@ -287,8 +286,8 @@ and copyAndRemapAndBindTyparsFull remapAttrib tyenv tps =
       let tps' = copyTypars tps
       let tyenv = { tyenv with tpinst = bindTypars tps (generalizeTypars tps') tyenv.tpinst } 
       (tps,tps') ||> List.iter2 (fun tporig tp -> 
-         tp.FixupConstraints (remapTyparConstraintsAux tyenv  tporig.Constraints);
-         tp.typar_attribs  <- tporig.typar_attribs |> remapAttrib) ;
+         tp.FixupConstraints (remapTyparConstraintsAux tyenv  tporig.Constraints)
+         tp.typar_attribs  <- tporig.typar_attribs |> remapAttrib)
       tps',tyenv
 
 // copies bound typars, extends tpinst 
@@ -442,7 +441,7 @@ let rec MeasureVarExponent tp unt =
 let ListMeasureVarOccs unt =
     let rec gather acc unt =  
         match stripUnitEqnsFromMeasure unt with
-          Measure.Var tp -> if List.exists (typarEq tp) acc then acc else tp::acc
+        | Measure.Var tp -> if List.exists (typarEq tp) acc then acc else tp::acc
         | Measure.Prod(unt1,unt2) -> gather (gather acc unt1) unt2
         | Measure.RationalPower(unt',_) -> gather acc unt'
         | Measure.Inv unt' -> gather acc unt'
@@ -776,19 +775,19 @@ let rangeOfFunTy  g ty = snd(destFunTy g ty)
 
 [<NoEquality; NoComparison>]
 type TypeEquivEnv = 
-    { EquivTypars: TyparMap<TType>;
+    { EquivTypars: TyparMap<TType>
       EquivTycons: TyconRefRemap}
 
 // allocate a singleton
 let typeEquivEnvEmpty = 
-    { EquivTypars = TyparMap.Empty; 
+    { EquivTypars = TyparMap.Empty
       EquivTycons = emptyTyconRefRemap }
 
 type TypeEquivEnv with 
     static member Empty = typeEquivEnvEmpty
 
     member aenv.BindTyparsToTypes tps1 tys2 =
-        {aenv with EquivTypars= (tps1,tys2,aenv.EquivTypars) |||> List.foldBack2 (fun tp ty tpmap -> tpmap.Add(tp,ty)) }
+        { aenv with EquivTypars = (tps1,tys2,aenv.EquivTypars) |||> List.foldBack2 (fun tp ty tpmap -> tpmap.Add(tp,ty)) }
 
     member aenv.BindEquivTypars tps1 tps2 =
         aenv.BindTyparsToTypes tps1 (List.map mkTyparTy tps2) 
