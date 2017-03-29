@@ -138,9 +138,9 @@ type ValInfos(entries) =
                 dict.Add(vref.Deref.LinkagePartialKey,p) |> ignore
             dict)
 
-    member x.Entries = valInfoTable.Force().Values 
-    member x.Map f = new ValInfos(Seq.map f x.Entries)
-    member x.Filter f = new ValInfos(Seq.filter f x.Entries)
+    member x.Entries = valInfoTable.Force().Values
+    member x.Map f = ValInfos(Seq.map f x.Entries)
+    member x.Filter f = ValInfos(Seq.filter f x.Entries)
     member x.TryFind (v:ValRef) = valInfoTable.Force().TryFind v.Deref
     member x.TryFindForFslib (v:ValRef) = valInfosForFslib.Force().TryGetValue(v.Deref.LinkagePartialKey)
 

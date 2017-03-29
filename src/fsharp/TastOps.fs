@@ -1252,10 +1252,21 @@ let mkValAddr m v = Expr.Op (TOp.LValueOp (LGetAddr, v), [], [], m)
 [<NoEquality; NoComparison>]
 type ValHash<'T> = 
     | ValHash of Dictionary<Stamp,'T>
-    member ht.Values = let (ValHash t) = ht in seq { for KeyValue(_,v) in t do yield v }
-    member ht.TryFind (v:Val) = let (ValHash t) = ht in let i = v.Stamp in if t.ContainsKey(i) then Some(t.[i]) else None
-    member ht.Add (v:Val, x) = let (ValHash t) = ht in t.[v.Stamp] <- x
-    static member Create() =  ValHash (new Dictionary<_,'T>(11))
+
+    member ht.Values = 
+        let (ValHash t) = ht
+        t.Values :> 'T seq
+
+    member ht.TryFind (v:Val) = 
+        let (ValHash t) = ht
+        let i = v.Stamp
+        if t.ContainsKey(i) then Some(t.[i]) else None
+
+    member ht.Add (v:Val, x) = 
+        let (ValHash t) = ht
+        t.[v.Stamp] <- x
+
+    static member Create() = ValHash (new Dictionary<_,'T>(11))
 
 [<Struct; NoEquality; NoComparison>]
 type ValMultiMap<'T>(contents: StampMap<'T list>) =
