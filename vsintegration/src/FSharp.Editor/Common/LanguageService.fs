@@ -195,6 +195,7 @@ type internal FSharpCheckerWorkspaceServiceFactory
 
 type
     [<Guid(FSharpCommonConstants.packageGuidString)>]
+    [<ProvideLanguageEditorOptionPage(typeof<Options.IntelliSenseOptionPage>, "F#", null, "IntelliSense", "6008")>]
     [<ProvideLanguageService(languageService = typeof<FSharpLanguageService>,
                              strLanguageName = FSharpCommonConstants.FSharpLanguageName,
                              languageResourceID = 100,
