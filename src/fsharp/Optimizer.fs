@@ -201,6 +201,7 @@ let rec SizeOfValueInfos (arr:_[]) =
     let n = arr.Length
     let rec go i acc = if i >= n then acc else max acc (SizeOfValueInfo arr.[i])
     go 0 0
+
 and SizeOfValueInfo x =
     match x with
     | SizeValue (vdepth,_v)    -> vdepth (* terminate recursion at CACHED size nodes *)
@@ -213,11 +214,12 @@ and SizeOfValueInfo x =
     | CurriedLambdaValue(_lambdaId,_arities,_bsize,_expr',_ety) -> 1
     | ConstExprValue (_size,_) -> 1
 
+let [<Literal>] minDepthForASizeNode = 5 (* for small vinfos do not record size info, save space *)
+
 let rec MakeValueInfoWithCachedSize vdepth v =
     match v with
-      | SizeValue(_,v) -> MakeValueInfoWithCachedSize vdepth v
-      | _ -> let minDepthForASizeNode = 5 in (* for small vinfos do not record size info, save space *)
-             if vdepth > minDepthForASizeNode then SizeValue(vdepth,v) else v (* add nodes to stop recursion *)
+    | SizeValue(_,v) -> MakeValueInfoWithCachedSize vdepth v
+    | _ -> if vdepth > minDepthForASizeNode then SizeValue(vdepth,v) else v (* add nodes to stop recursion *)
     
 let MakeSizedValueInfo v =
     let vdepth = SizeOfValueInfo v
@@ -225,17 +227,19 @@ let MakeSizedValueInfo v =
 
 let BoundValueInfoBySize vinfo =
     let rec bound depth x =
-        if depth<0 then UnknownValue else
-        match x with
-        | SizeValue (vdepth,vinfo) -> if vdepth < depth then x else MakeSizedValueInfo (bound depth vinfo)
-        | ValValue (vr,vinfo)      -> ValValue (vr,bound (depth-1) vinfo)
-        | TupleValue vinfos -> TupleValue (Array.map (bound (depth-1)) vinfos)
-        | RecdValue (tcref,vinfos) -> RecdValue  (tcref,Array.map (bound (depth-1)) vinfos)
-        | UnionCaseValue (ucr,vinfos) -> UnionCaseValue (ucr,Array.map (bound (depth-1)) vinfos)
-        | ConstValue _             -> x
-        | UnknownValue             -> x
-        | CurriedLambdaValue(_lambdaId,_arities,_bsize,_expr',_ety) -> x
-        | ConstExprValue (_size,_) -> x
+        if depth < 0 then 
+            UnknownValue
+        else
+            match x with
+            | SizeValue (vdepth,vinfo) -> if vdepth < depth then x else MakeSizedValueInfo (bound depth vinfo)
+            | ValValue (vr,vinfo)      -> ValValue (vr,bound (depth-1) vinfo)
+            | TupleValue vinfos -> TupleValue (Array.map (bound (depth-1)) vinfos)
+            | RecdValue (tcref,vinfos) -> RecdValue  (tcref,Array.map (bound (depth-1)) vinfos)
+            | UnionCaseValue (ucr,vinfos) -> UnionCaseValue (ucr,Array.map (bound (depth-1)) vinfos)
+            | ConstValue _             -> x
+            | UnknownValue             -> x
+            | CurriedLambdaValue(_lambdaId,_arities,_bsize,_expr',_ety) -> x
+            | ConstExprValue (_size,_) -> x
     let maxDepth  = 6   (* beware huge constants! *)
     let trimDepth = 3
     let vdepth = SizeOfValueInfo vinfo
@@ -287,8 +291,8 @@ type OptimizationSettings =
           reportTotalSizes = false
         }
 
-    member x.jitOpt() = (match x.jitOptUser with Some f -> f | None -> jitOptDefault)
-    member x.localOpt () = (match x.localOptUser with Some f -> f | None -> localOptDefault)
+    member x.jitOpt() = match x.jitOptUser with Some f -> f | None -> jitOptDefault
+    member x.localOpt () = match x.localOptUser with Some f -> f | None -> localOptDefault
     member x.crossModuleOpt () = x.localOpt () && (match x.crossModuleOptUser with Some f -> f | None -> crossModuleOptDefault)
 
     member x.KeepOptimizationValues() = x.crossModuleOpt ()
