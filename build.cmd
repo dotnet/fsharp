@@ -382,6 +382,9 @@ echo MYGET_APIKEY=%MYGET_APIKEY%
 
 REM load Visual Studio 2017 developer command prompt if VS150COMNTOOLS is not set
 
+REM If this is not set, VsDevCmd.bat will change %cd% to [USERPROFILE]\source, causing the build to fail.
+SET VSCMD_START_DIR=%cd%
+
 if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" (
     call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"
 )
