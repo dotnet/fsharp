@@ -107,7 +107,9 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.VisualStudio.LanguageServices.Implementation, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" />
+    <Reference Include="Microsoft.VisualStudio.LanguageServices.Implementation">
+      <HintPath>..\..\..\..\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\IDE\CommonExtensions\Microsoft\ManagedLanguages\VBCSharp\LanguageServices\Microsoft.VisualStudio.LanguageServices.Implementation.dll</HintPath>
+    </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="PresentationFramework" />
     <Reference Include="System.Windows.Forms" />
