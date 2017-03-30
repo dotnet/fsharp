@@ -539,7 +539,7 @@
       <Output TaskParameter="ConsoleOutput" PropertyName="LatestCommit" />
     </Exec>
 
-    <Exec Command="git merge-base --fork-point refs/remotes/visualfsharptools/master HEAD" ConsoleToMsBuild="true" Condition = " '$(TF_BUILD)' == ''True' ">
+    <Exec Command="git merge-base --fork-point refs/remotes/visualfsharptools/master HEAD" ConsoleToMsBuild="true" Condition = " '$(TF_BUILD)' == 'True' ">
       <Output TaskParameter="ConsoleOutput" PropertyName="LatestCommit" />
     </Exec>
 
