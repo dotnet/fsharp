@@ -652,8 +652,8 @@ module NavigateTo =
             | SynModuleDecl.Open _ -> ()
     
         and walkSynTypeDefn(TypeDefn(componentInfo, representation, members, _)) container = 
-            walkSynTypeDefnRepr representation container
             let container = addComponentInfo NavigableItemKind.Type componentInfo false container
+            walkSynTypeDefnRepr representation container
             for m in members do
                 walkSynMemberDefn m container
     
