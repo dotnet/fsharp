@@ -1545,8 +1545,11 @@ type TypeCheckInfo
             else None
         
         let (|EnumCaseFieldInfo|_|) (rfinfo : RecdFieldInfo) =
-            match rfinfo.TyconRef.FSharpObjectModelTypeInfo.fsobjmodel_kind with
-            | TTyconEnum -> Some ()
+            match rfinfo.TyconRef.TypeReprInfo with
+            | TFSharpObjectRepr x ->
+                match x.fsobjmodel_kind with
+                | TTyconEnum -> Some ()
+                | _ -> None
             | _ -> None
 
         let resolutions =
