@@ -109,15 +109,19 @@
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Designer.Interfaces.1.1.4322\lib\microsoft.visualstudio.designer.interfaces.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Text.Internal, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\RoslynDependencies.Microsoft.VisualStudio.Text.Internal.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Text.Internal.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Text.Internal.15.0.26201-alpha\lib\net46\Microsoft.VisualStudio.Text.Internal.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Platform.VSEditor, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\RoslynDependencies.Microsoft.VisualStudio.Platform.VSEditor.$(RoslynVSPackagesVersion)\lib\net46\Microsoft.VisualStudio.Platform.VSEditor.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Platform.VSEditor.$(RoslynVSPackagesVersion)-alpha\lib\net46\Microsoft.VisualStudio.Platform.VSEditor.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Platform.VSEditor.Interop, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\RoslynDependencies.Microsoft.VisualStudio.Platform.VSEditor.$(RoslynVSPackagesVersion)\lib\net46\Microsoft.VisualStudio.Platform.VSEditor.Interop.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Platform.VSEditor.Interop.$(RoslynVSPackagesVersion)-alpha\lib\net46\Microsoft.VisualStudio.Platform.VSEditor.Interop.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Telemetry, Version=15.0.777-rtm6FAA2C78, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Telemetry.15.0.777-rtm6FAA2C78\lib\net45\Microsoft.VisualStudio.Telemetry.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.VSHelp, Version=7.0.4, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
