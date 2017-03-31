@@ -791,11 +791,11 @@ type TypeEquivEnv with
         TypeEquivEnv.Empty.BindEquivTypars tps1 tps2 
 
 let rec traitsAEquivAux erasureFlag g aenv (TTrait(typs1,nm,mf1,argtys,rty,_)) (TTrait(typs2,nm2,mf2,argtys2,rty2,_)) =
+   mf1 = mf2 &&
+   nm = nm2 &&
    ListSet.equals (typeAEquivAux erasureFlag g aenv) typs1 typs2 &&
-   mf1 = mf2 && 
-   returnTypesAEquivAux erasureFlag g aenv rty rty2 && 
-   List.lengthsEqAndForall2 (typeAEquivAux erasureFlag g aenv) argtys argtys2 &&
-   nm = nm2
+   returnTypesAEquivAux erasureFlag g aenv rty rty2 &&
+   List.lengthsEqAndForall2 (typeAEquivAux erasureFlag g aenv) argtys argtys2
 
 and returnTypesAEquivAux erasureFlag g aenv rty rty2 =
     match rty,rty2 with  
