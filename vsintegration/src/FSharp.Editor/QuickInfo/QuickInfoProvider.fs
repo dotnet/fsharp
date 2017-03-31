@@ -34,7 +34,6 @@ open CommonRoslynHelpers
 open System.Text
 
 module private SessionHandling =
-    
     let mutable currentSession = None
     
     [<Export (typeof<IQuickInfoSourceProvider>)>]
@@ -42,48 +41,48 @@ module private SessionHandling =
     [<Order (After = PredefinedQuickInfoProviderNames.Semantic)>]
     [<ContentType (FSharpCommonConstants.FSharpContentTypeName)>]
     type SourceProviderForCapturingSession () =
-            interface IQuickInfoSourceProvider with 
-                member x.TryCreateQuickInfoSource _ =
-                  { new IQuickInfoSource with
-                    member __.AugmentQuickInfoSession(session,_,_) = currentSession <- Some session
-                    member __.Dispose() = () }
+        interface IQuickInfoSourceProvider with 
+            member x.TryCreateQuickInfoSource _ =
+              { new IQuickInfoSource with
+                  member __.AugmentQuickInfoSession(session,_,_) = currentSession <- Some session
+                  member __.Dispose() = () }
 
 type internal SourceLink(run) as this = 
     inherit Documents.Hyperlink(run)
+    
     let lessOpacity =
       { new IValueConverter with
-        member this.Convert(value, targetType, _, _) =
-            match value with 
-            | :? Color as c when targetType = typeof<Color> ->
-                // return same color but slightly transparent
-                Color.FromArgb(90uy, c.R, c.G, c.B) :> _
-            | _ -> DependencyProperty.UnsetValue
-        member this.ConvertBack(_,_,_,_) = DependencyProperty.UnsetValue }
+            member this.Convert(value, targetType, _, _) =
+                match value with 
+                | :? Color as c when targetType = typeof<Color> ->
+                    // return same color but slightly transparent
+                    Color.FromArgb(70uy, c.R, c.G, c.B) :> _
+                | _ -> DependencyProperty.UnsetValue
+            member this.ConvertBack(_,_,_,_) = DependencyProperty.UnsetValue }
+    
     let underlineBrush = Media.SolidColorBrush()
-    do BindingOperations.SetBinding(underlineBrush, SolidColorBrush.ColorProperty,
-                                    Binding("Foreground.Color", Source = this, Converter = lessOpacity)) |> ignore
-    let slightUnderline = TextDecoration(Location = TextDecorationLocation.Underline, PenOffset = 1.0, Pen = Pen(Brush = underlineBrush))
-    do this.TextDecorations <- TextDecorationCollection [slightUnderline]
+    
+    do BindingOperations.SetBinding(underlineBrush, SolidColorBrush.ColorProperty, Binding("Foreground.Color", Source = this, Converter = lessOpacity)) |> ignore
+    
+    let normalUnderline = TextDecorationCollection [TextDecoration(Location = TextDecorationLocation.Underline, PenOffset = 1.0)]
+    let slightUnderline = TextDecorationCollection [TextDecoration(Location = TextDecorationLocation.Underline, PenOffset = 1.0, Pen = Pen(Brush = underlineBrush))]
+    do this.TextDecorations <- slightUnderline
 
     override this.OnMouseEnter(e) = 
         base.OnMouseEnter(e)
-        this.TextDecorations <- TextDecorations.Underline
+        this.TextDecorations <- normalUnderline
     override this.OnMouseLeave(e) = 
         base.OnMouseLeave(e)
-        this.TextDecorations <- TextDecorationCollection [slightUnderline]
+        this.TextDecorations <- slightUnderline
 
-
-
-module internal FSharpQuickInfo =
-
+module private FSharpQuickInfo =
 
     let tooltip (symbolGlyph, mainDescription, documentation) =
         let empty = 
           { new IDeferredQuickInfoContent with 
-            member x.Create() = TextBlock(Visibility = Visibility.Collapsed) :> FrameworkElement }
+                member x.Create() = TextBlock(Visibility = Visibility.Collapsed) :> FrameworkElement }
 
         QuickInfoDisplayDeferredContent(symbolGlyph, null, mainDescription, documentation, empty, empty, empty, empty)
-
 
     /// Get tooltip combined from doccom of Signature and definition
     let getCompoundTooltipInfo 
@@ -206,9 +205,6 @@ module internal FSharpQuickInfo =
         return! tooltipInfoPair
     }
 
-
-
-
 [<ExportQuickInfoProvider(PredefinedQuickInfoProviderNames.Semantic, FSharpCommonConstants.FSharpLanguageName)>]
 type internal FSharpQuickInfoProvider 
     [<System.ComponentModel.Composition.ImportingConstructor>] 
@@ -260,11 +256,12 @@ type internal FSharpQuickInfoProvider
 
         let formatMap = typemap.ClassificationFormatMapService.GetClassificationFormatMap "tooltip"
 
-        let layoutTagToFormatting =
-            roslynTag
-            >> ClassificationTags.GetClassificationTypeName
-            >> typemap.GetClassificationType
-            >> formatMap.GetTextProperties
+        let layoutTagToFormatting (layoutTag: LayoutTag) =
+            layoutTag
+            |> roslynTag
+            |> ClassificationTags.GetClassificationTypeName
+            |> typemap.GetClassificationType
+            |> formatMap.GetTextProperties
 
         let inlines = seq { 
             for taggedText in content do
@@ -312,8 +309,7 @@ type internal FSharpQuickInfoProvider
         override this.GetItemAsync(document: Document, position: int, cancellationToken: CancellationToken): Task<QuickInfoItem> =
             asyncMaybe {
                 let! (sigTooltipInfo,targetTooltipInfo) = 
-                    FSharpQuickInfo.getCompoundTooltipInfo
-                        ( checkerProvider.Checker, position, document, projectInfoManager, cancellationToken  )
+                    FSharpQuickInfo.getCompoundTooltipInfo(checkerProvider.Checker, position, document, projectInfoManager, cancellationToken)
 
                 match sigTooltipInfo, targetTooltipInfo with 
                 | None, None -> return null
@@ -321,67 +317,55 @@ type internal FSharpQuickInfoProvider
                 | None, Some (toolTipElement, textSpan, symbol, symbolKind) -> 
                     let mainDescription = Collections.Generic.List ()
                     let documentation = Collections.Generic.List ()
-                    XmlDocumentation.BuildDataTipText
-                        (   documentationBuilder
-                        ,   mainDescription.Add
-                        ,   documentation.Add
-                        ,   toolTipElement
-                        )
+                    XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, documentation.Add, toolTipElement)
                     let content = 
                         FSharpQuickInfo.tooltip
-                            (   SymbolGlyphDeferredContent(CommonRoslynHelpers.GetGlyphForSymbol(symbol, symbolKind), glyphService)
-                            ,   fragment (mainDescription, typeMap, document)
-                            ,   fragment (documentation, typeMap, document)
-                            )
+                            (SymbolGlyphDeferredContent(CommonRoslynHelpers.GetGlyphForSymbol(symbol, symbolKind), glyphService),
+                             fragment (mainDescription, typeMap, document),
+                             fragment (documentation, typeMap, document))
                     return QuickInfoItem (textSpan, content)
 
-                |( Some (sigToolTipElement, _sigTextSpan, _sigSymbol, _sigSymbolKind)
-                 , Some (targetToolTipElement, targetTextSpan, targetSymbol, targetSymbolKind) ) ->                   
+                | (Some (sigToolTipElement, _, _, _), Some (targetToolTipElement, targetTextSpan, targetSymbol, targetSymbolKind)) ->
                     let description, targetDocumentation, sigDocumentation = ResizeArray(), ResizeArray(), ResizeArray()
-                    XmlDocumentation.BuildDataTipText
-                        (   documentationBuilder
-                        ,   (ResizeArray()).Add
-                        ,   sigDocumentation.Add
-                        ,   sigToolTipElement
-                        )
-                    XmlDocumentation.BuildDataTipText
-                        (   documentationBuilder
-                        ,   description.Add
-                        ,   targetDocumentation.Add
-                        ,   targetToolTipElement
-                        )
+                    XmlDocumentation.BuildDataTipText(documentationBuilder, ignore, sigDocumentation.Add, sigToolTipElement)
+                    XmlDocumentation.BuildDataTipText(documentationBuilder, description.Add, targetDocumentation.Add, targetToolTipElement)
 
                     let width = 
-                        (0, Seq.concat [description; targetDocumentation; sigDocumentation]) 
-                        ||> Seq.fold (fun acc layout -> max acc layout.Text.Length)
+                        description
+                        |> Seq.append targetDocumentation
+                        |> Seq.append sigDocumentation
+                        |> Seq.map (fun x -> x.Text.Length)
+                        |> Seq.max
 
                     let seperator = TaggedTextOps.tag LayoutTag.Text (String.replicate width "-")  
                     let lineBreak = TaggedTextOps.tag LayoutTag.LineBreak  "\n"
-                    let bridge = [|  lineBreak; seperator; lineBreak |]
 
                     // get whitespace nomalized documentation text
-                    let getText (tts:seq<Layout.TaggedText>) = 
+                    let getText (tts: seq<Layout.TaggedText>) = 
                         ((StringBuilder(), tts) ||> Seq.fold (fun sb tt -> 
                             if String.IsNullOrWhiteSpace tt.Text then sb else sb.Append tt.Text)).ToString() 
                     
                     let documentation = 
                         let implText, sigText = getText targetDocumentation, getText  sigDocumentation
                         let implDocsEmpty, sigDocsEmpty = String.IsNullOrWhiteSpace implText, String.IsNullOrWhiteSpace sigText
-
-                        match implDocsEmpty, sigDocsEmpty with 
-                        | true, true -> ResizeArray()
-                        | true, false -> sigDocumentation
-                        | false, true -> targetDocumentation
-                        | false, false 
-                            when implText.Equals (sigText, StringComparison.OrdinalIgnoreCase) -> sigDocumentation
-                        | false, false  -> ResizeArray (Array.concat[sigDocumentation.ToArray();bridge;targetDocumentation.ToArray()])
+                        
+                        [ match implDocsEmpty, sigDocsEmpty with
+                          | true, true -> ()
+                          | true, false -> yield! sigDocumentation
+                          | false, true -> yield! targetDocumentation
+                          | false, false when implText.Equals (sigText, StringComparison.OrdinalIgnoreCase) -> yield! sigDocumentation
+                          | false, false -> 
+                              yield! sigDocumentation
+                              yield lineBreak
+                              yield seperator
+                              yield lineBreak
+                              yield! targetDocumentation ]
 
                     let content = 
                         FSharpQuickInfo.tooltip
-                            (   SymbolGlyphDeferredContent (CommonRoslynHelpers.GetGlyphForSymbol (targetSymbol, targetSymbolKind), glyphService)
-                            ,   fragment (description, typeMap, document)
-                            ,   fragment (documentation, typeMap, document)
-                            )
+                            (SymbolGlyphDeferredContent (CommonRoslynHelpers.GetGlyphForSymbol (targetSymbol, targetSymbolKind), glyphService),
+                             fragment (description, typeMap, document),
+                             fragment (documentation, typeMap, document))
 
                     return QuickInfoItem (targetTextSpan, content)
             }   |> Async.map Option.toObj
