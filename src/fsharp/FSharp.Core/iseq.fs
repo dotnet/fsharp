@@ -590,12 +590,6 @@ namespace Microsoft.FSharp.Collections
             type ArrayEnumerable<'T,'U>(array:array<'T>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
                 inherit EnumerableBase<'U>()
 
-                override this.Length () =
-                    if obj.ReferenceEquals (transformFactory, IdentityFactory<'U>.Instance) then
-                        array.Length
-                    else
-                        length this
-
                 interface IEnumerable<'U> with
                     member this.GetEnumerator () : IEnumerator<'U> =
                         let result = Result<'U> ()
@@ -603,10 +597,25 @@ namespace Microsoft.FSharp.Collections
 
                 interface ISeq<'U> with
                     member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
-                        Upcast.seq (new ArrayEnumerable<'T,'V>(array, ComposedFactory.Combine transformFactory next, 1))
+                        Upcast.seq (new ArrayEnumerable<'T,'V>(array, ComposedFactory.Combine transformFactory next, pipeIdx+1))
 
                     member this.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
                         Fold.execute f transformFactory pipeIdx (Fold.IterateArray array)
+
+            type ThinArrayEnumerable<'T>(array:array<'T>) =
+                inherit EnumerableBase<'T>()
+
+                override __.Length () = array.Length
+
+                interface IEnumerable<'T> with
+                    member this.GetEnumerator () = array.GetEnumerator ()
+
+                interface ISeq<'T> with
+                    member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
+                        Upcast.seq (new ArrayEnumerable<'T,'U>(array, next, 1))
+
+                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                        Fold.executeThin f (Fold.IterateArray array)
 
             type SingletonEnumerable<'T>(item:'T) =
                 inherit EnumerableBase<'T>()
@@ -649,12 +658,6 @@ namespace Microsoft.FSharp.Collections
             type ResizeArrayEnumerable<'T,'U>(resizeArray:ResizeArray<'T>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
                 inherit EnumerableBase<'U>()
 
-                override this.Length () =
-                    if obj.ReferenceEquals (transformFactory, IdentityFactory<'U>.Instance) then
-                        resizeArray.Count
-                    else
-                        length this
-
                 interface IEnumerable<'U> with
                     member this.GetEnumerator () : IEnumerator<'U> =
                         let result = Result<'U> ()
@@ -662,10 +665,25 @@ namespace Microsoft.FSharp.Collections
 
                 interface ISeq<'U> with
                     member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
-                        Upcast.seq (new ResizeArrayEnumerable<'T,'V>(resizeArray, ComposedFactory.Combine transformFactory next, 1))
+                        Upcast.seq (new ResizeArrayEnumerable<'T,'V>(resizeArray, ComposedFactory.Combine transformFactory next, pipeIdx+1))
 
                     member this.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
                         Fold.execute f transformFactory pipeIdx (Fold.IterateResizeArray resizeArray)
+
+            type ThinResizeArrayEnumerable<'T>(resizeArray:ResizeArray<'T>) =
+                inherit EnumerableBase<'T>()
+
+                override __.Length () = resizeArray.Count
+
+                interface IEnumerable<'T> with
+                    member this.GetEnumerator () = (Upcast.enumerable resizeArray).GetEnumerator ()
+
+                interface ISeq<'T> with
+                    member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
+                        Upcast.seq (new ResizeArrayEnumerable<'T,'U>(resizeArray, next, 1))
+
+                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                        Fold.executeThin f (Fold.IterateResizeArray resizeArray)
 
             type ListEnumerator<'T,'U>(alist:list<'T>, activity:Activity<'T,'U>, result:Result<'U>) =
                 inherit EnumeratorBase<'U>(result, activity)
@@ -694,12 +712,6 @@ namespace Microsoft.FSharp.Collections
             type ListEnumerable<'T,'U>(alist:list<'T>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
                 inherit EnumerableBase<'U>()
 
-                override this.Length () =
-                    if obj.ReferenceEquals (transformFactory, IdentityFactory<'U>.Instance) then
-                        alist.Length
-                    else
-                        length this
-
                 interface IEnumerable<'U> with
                     member this.GetEnumerator () : IEnumerator<'U> =
                         let result = Result<'U> ()
@@ -711,6 +723,21 @@ namespace Microsoft.FSharp.Collections
 
                     member this.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
                         Fold.execute f transformFactory pipeIdx (Fold.IterateList alist)
+
+            type ThinListEnumerable<'T>(alist:list<'T>) =
+                inherit EnumerableBase<'T>()
+
+                override __.Length () = alist.Length
+
+                interface IEnumerable<'T> with
+                    member this.GetEnumerator () = (Upcast.enumerable alist).GetEnumerator ()
+
+                interface ISeq<'T> with
+                    member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
+                        Upcast.seq (new ListEnumerable<'T,'U>(alist, next, 1))
+
+                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                        Fold.executeThin f (Fold.IterateList alist)
 
             type UnfoldEnumerator<'T,'U,'State>(generator:'State->option<'T*'State>, state:'State, activity:Activity<'T,'U>, result:Result<'U>) =
                 inherit EnumeratorBase<'U>(result, activity)
@@ -909,16 +936,16 @@ namespace Microsoft.FSharp.Collections
         /// performed in this case. If you want this funcitonality, then use the ofSeq function instead.
         [<CompiledName "OfResizeArrayUnchecked">]
         let ofResizeArrayUnchecked (source:ResizeArray<'T>) : ISeq<'T> =
-            Upcast.seq (Wrap.ResizeArrayEnumerable (source, IdentityFactory.Instance, 1))
+            Upcast.seq (Wrap.ThinResizeArrayEnumerable<'T> source)
 
         [<CompiledName "OfArray">]
         let ofArray (source:array<'T>) : ISeq<'T> =
             checkNonNull "source" source
-            Upcast.seq (Wrap.ArrayEnumerable (source, IdentityFactory.Instance, 1))
+            Upcast.seq (Wrap.ThinArrayEnumerable<'T> source)
 
         [<CompiledName "OfList">]
         let ofList (source:list<'T>) : ISeq<'T> =
-            Upcast.seq (Wrap.ListEnumerable (source, IdentityFactory.Instance, 1))
+            Upcast.seq (Wrap.ThinListEnumerable<'T> source)
 
         [<CompiledName "OfSeq">]
         let ofSeq (source:seq<'T>) : ISeq<'T> =
