@@ -192,7 +192,7 @@ type internal FSharpCompletionProvider
                 declarationItemsCache.Add(completionItem.DisplayText, declItem)
                 results.Add(completionItem))
 
-            if results.Count > 0 && not declarations.IsForType then
+            if results.Count > 0 && not declarations.IsForType && not declarations.IsError then
                 let lineStr = textLines.[caretLinePos.Line].ToString()
                 match UntypedParseImpl.TryGetCompletionContext(Pos.fromZ caretLinePos.Line caretLinePos.Character, Some parseResults, lineStr) with
                 | None -> results.AddRange(keywordCompletionItems)
