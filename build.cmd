@@ -478,9 +478,9 @@ if defined APPVEYOR (
 )
 
 if defined TF_BUILD (
-    rem we are baing run under a TFS build step --- indicates internal ms build
+    echo Adding remote 'visualfsharptools' for internal build.
     git remote add visualfsharptools https://github.com/Microsoft/visualfsharp.git
-    git fetch
+    git fetch --all
 )
 
 REM set msbuildflags=/maxcpucount %_nrswitch% /nologo
