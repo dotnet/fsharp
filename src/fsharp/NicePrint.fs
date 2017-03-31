@@ -83,7 +83,7 @@ module internal PrintUtilities =
             if isAttribute then 
                 defaultArg (String.tryDropSuffix name "Attribute") name 
             else name
-        let tyconTextL = wordL (tagEntityRefName tcref demangled)
+        let tyconTextL = NavigableTaggedText.Create(tagEntityRefName tcref demangled, tcref.DefinitionRange) |> wordL
         if denv.shortTypeNames then 
             tyconTextL
         else
@@ -436,7 +436,17 @@ module private PrintIL =
                     if isShowBase baseName
                         then [ WordL.keywordInherit ^^ baseName ]
                         else []
-                | None   -> []
+                | None   -> 
+                    // for interface show inherited interfaces 
+                    match typeDef.tdKind with 
+                    | ILTypeDefKind.Interface ->
+                        typeDef.Implements |> List.choose (fun b -> 
+                            let baseName = layoutILType denv ilTyparSubst b
+                            if isShowBase baseName
+                                then Some (WordL.keywordInherit ^^ baseName)
+                            else None
+                        )
+                    | _ -> []
 
             let memberBlockLs (fieldDefs:ILFieldDefs, methodDefs:ILMethodDefs, propertyDefs:ILPropertyDefs, eventDefs:ILEventDefs) =
                 let ctors  =
@@ -1072,7 +1082,6 @@ module private PrintTypes =
             nameL
         nameL ^^ wordL (tagPunctuation ":") ^^ tauL
 
-
     let layoutPrettyType denv typ = 
         let _,typ,cxs = PrettyTypes.PrettifyTypes1 denv.g typ
         let env = SimplifyTypes.CollectInfo true [typ] cxs
@@ -1082,6 +1091,9 @@ module private PrintTypes =
     let layoutPrettyTypeNoCx denv typ = 
         let _,typ,_cxs = PrettyTypes.PrettifyTypes1 denv.g typ
         layoutTypeWithInfoAndPrec denv SimplifyTypes.typeSimplificationInfo0 5 typ  
+
+    let layoutAssemblyName _denv (typ: TType) =
+        typ.GetAssemblyName()
 
 /// Printing TAST objects
 module private PrintTastMemberOrVals = 
@@ -1731,7 +1743,8 @@ module private TastDefinitionPrinting =
                       Some (wordL (tagText "(# \"<Common IL Type Omitted>\" #)"))
                   | TMeasureableRepr ty                 ->
                       Some (layoutType denv ty)
-                  | TILObjectRepr (_,_,td) -> 
+                  | TILObjectRepr _ -> 
+                      let td = tycon.ILTyconRawMetadata
                       Some (PrintIL.layoutILTypeDef denv td)
                   | _  -> None
 
@@ -1988,14 +2001,26 @@ let minimalStringsOfTwoTypes denv t1 t2=
     match attempt3 with 
     | Some res -> res 
     | None -> 
-    let lastAttempt = 
+    let attempt4 = 
         // try denv + show full paths + static parameters
         let denv = denv.SetOpenPaths []
         let denv = { denv with includeStaticParametersInTypeNames=true }
         let min1 = stringOfTy denv t1
         let min2 = stringOfTy denv t2
-        (min1,min2,stringOfTyparConstraints denv tpcs)  
-    lastAttempt    
+        if min1 <> min2 then Some (min1,min2,stringOfTyparConstraints denv tpcs) else None
+    match attempt4 with
+    | Some res -> res
+    | None ->
+        // https://github.com/Microsoft/visualfsharp/issues/2561
+        // still identical, we better (try to) show assembly qualified name to disambiguate
+        let denv = denv.SetOpenPaths []
+        let denv = { denv with includeStaticParametersInTypeNames=true }
+        let makeName t =
+            let assemblyName = PrintTypes.layoutAssemblyName denv t |> function | null | "" -> "" | name -> sprintf " (%s)" name
+            sprintf "%s%s" (stringOfTy denv t1) assemblyName
+
+        (makeName t1,makeName t2,stringOfTyparConstraints denv tpcs)
+    
 
 // Note: Always show imperative annotations when comparing value signatures 
 let minimalStringsOfTwoValues denv v1 v2= 

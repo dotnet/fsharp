@@ -9,94 +9,111 @@ open System.Collections.Generic
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.Range
 
-/// API CLEANUP: this type needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
-type internal AssemblyContentType = Public | Full
+/// Assembly content type.
+type internal AssemblyContentType = 
+    /// Public assembly content only.
+    | Public 
+    /// All assembly content.
+    | Full
 
-/// API CLEANUP: this type needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+/// Short identifier, i.e. an identifier that contains no dots.
 type internal ShortIdent = string
 
-/// API CLEANUP: this type needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+/// An array of `ShortIdent`.
 type internal Idents = ShortIdent[]
 
-/// API CLEANUP: this type needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+/// `ShortIdent` with a flag indicating if it's resolved in some scope.
 type internal MaybeUnresolvedIdent = { Ident: ShortIdent; Resolved: bool }
 
-/// API CLEANUP: this type needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+/// Array of `MaybeUnresolvedIdent`.
 type internal MaybeUnresolvedIdents = MaybeUnresolvedIdent[]
 
-/// API CLEANUP: this type needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
-type internal IsAutoOpen = bool
-
-/// API CLEANUP: this type needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+/// Entity lookup type.
 [<RequireQualifiedAccess>]
 type internal LookupType =
     | Fuzzy
     | Precise
 
-/// API CLEANUP: this type needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+/// Assembly path.
 type internal AssemblyPath = string
 
-/// API CLEANUP: this type needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+/// Represents type, module, member, function or value in a compiled assembly.
 [<NoComparison; NoEquality>]
-type internal RawEntity = 
+type internal AssemblySymbol = 
     { /// Full entity name as it's seen in compiled code (raw FSharpEntity.FullName, FSharpValueOrFunction.FullName). 
       FullName: string
       /// Entity name parts with removed module suffixes (Ns.M1Module.M2Module.M3.entity -> Ns.M1.M2.M3.entity)
       /// and replaced compiled names with display names (FSharpEntity.DisplayName, FSharpValueOrFucntion.DisplayName).
       /// Note: *all* parts are cleaned, not the last one. 
       CleanedIdents: Idents
+      /// `FSharpEntity.Namespace`.
       Namespace: Idents option
-      IsPublic: bool
+      /// The most narrative parent module that has `RequireQualifiedAccess` attribute.
+      NearestRequireQualifiedAccessParent: Idents option
+      /// Parent module that has the largest scope and has `RequireQualifiedAccess` attribute.
       TopRequireQualifiedAccessParent: Idents option
+      /// Parent module that has `AutoOpen` attribute.
       AutoOpenParent: Idents option
+      Symbol: FSharpSymbol
+      /// Function that returns `EntityKind` based of given `LookupKind`.
       Kind: LookupType -> EntityKind }
 
-/// API CLEANUP: this type needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+/// `RawEntity` list retrived from an assembly.
 type internal AssemblyContentCacheEntry =
-    { FileWriteTime: DateTime 
+    { /// Assembly file last write time.
+      FileWriteTime: DateTime 
+      /// Content type used to get assembly content.
       ContentType: AssemblyContentType 
-      Entities: RawEntity list }
+      /// Assembly content.
+      Symbols: AssemblySymbol list }
 
-/// API CLEANUP: this type needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+/// Assembly content cache.
 [<NoComparison; NoEquality>]
 type internal IAssemblyContentCache =
+    /// Try get an assembly cached content.
     abstract TryGet: AssemblyPath -> AssemblyContentCacheEntry option
+    /// Store an assembly content.
     abstract Set: AssemblyPath -> AssemblyContentCacheEntry -> unit
 
-
-/// API CLEANUP: this type needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+/// Thread safe wrapper over `IAssemblyContentCache`.
 type internal EntityCache =
     interface IAssemblyContentCache 
     new : unit -> EntityCache
+    /// Clears the cache.
     member Clear : unit -> unit
+    /// Performs an operation on the cache in thread safe manner.
     member Locking : (IAssemblyContentCache -> 'T) -> 'T
 
-/// API CLEANUP: this type needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+/// Lond identifier (i.e. it may contain dots).
 type internal LongIdent = string
 
-/// API CLEANUP: this type needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+/// Helper data structure representing a symbol, sutable for implementing unresolved identifiers resolution code fixes.
 type internal Entity =
-    { FullRelativeName: LongIdent
+    { /// Full name, relative to the current scope.
+      FullRelativeName: LongIdent
+      /// Ident parts needed to append to the current ident to make it resolvable in current scope.
       Qualifier: LongIdent
+      /// Namespace that is needed to open to make the entity resolvable in the current scope.
       Namespace: LongIdent option
+      /// Full display name (i.e. last ident plus modules with `RequireQualifiedAccess` attribute prefixed).
       Name: LongIdent
+      /// Last part of the entity's full name.
       LastIdent: string }
 
-/// API CLEANUP: this module needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+/// Provides assembly content.
 module internal AssemblyContentProvider =
-    val getAssemblySignatureContent : 
-          contentType: AssemblyContentType 
-          -> signature: FSharpAssemblySignature
-          -> RawEntity list
+    /// Given a `FSharpAssemblySignature`, returns assembly content.
+    val getAssemblySignatureContent : AssemblyContentType -> FSharpAssemblySignature -> AssemblySymbol list
 
+    /// Returns (possibly cached) assembly content.
     val getAssemblyContent : 
-          withCache: ((IAssemblyContentCache -> RawEntity list) -> RawEntity list)  
+             withCache: ((IAssemblyContentCache -> AssemblySymbol list) -> AssemblySymbol list)  
           -> contentType: AssemblyContentType 
           -> fileName: string option 
           -> assemblies: FSharpAssembly list 
-          -> RawEntity list
+          -> AssemblySymbol list
 
-/// API CLEANUP: this type needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+/// Kind of lexical scope.
 type internal ScopeKind =
     | Namespace
     | TopModule
@@ -104,58 +121,61 @@ type internal ScopeKind =
     | OpenDeclaration
     | HashDirective
 
-/// API CLEANUP: this type needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
-[<Measure>] type internal FCS
-
-/// API CLEANUP: this type needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
-type internal Point<[<Measure>]'t> = { Line : int; Column : int }
-
-/// API CLEANUP: this type needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+/// Insert open namespace context.
 type internal InsertContext =
-    { ScopeKind: ScopeKind
-      Pos: Point<FCS> }
+    { /// Current scope kind.
+      ScopeKind: ScopeKind
+      /// Current position (F# compiler line number).
+      Pos: pos }
 
-/// API CLEANUP: this module needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+/// Parse AST helpers.
 module internal ParsedInput =
-    /// API CLEANUP: this function needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+    /// Returns `InsertContext` based on current position and symbol idents.
     val tryFindInsertionContext : currentLine: int -> ast: Ast.ParsedInput -> MaybeUnresolvedIdents -> (( (* requiresQualifiedAccessParent: *) Idents option * (* autoOpenParent: *) Idents option * (*  entityNamespace *) Idents option * (* entity: *) Idents) -> (Entity * InsertContext)[])
+    
+    /// Returns `InsertContext` based on current position and symbol idents.
+    val tryFindNearestPointToInsertOpenDeclaration : currentLine: int -> ast: Ast.ParsedInput -> entity: Idents -> InsertContext option
 
-    /// API CLEANUP: this function needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+    /// Returns lond identifier at position.
     val getLongIdentAt : ast: Ast.ParsedInput -> pos: Range.pos -> Ast.LongIdent option
+
+    /// Corrects insertion line number based on kind of scope and text surrounding the insertion point.
+    val adjustInsertionPoint : getLineStr: (int -> string) -> ctx: InsertContext -> pos
 
 [<AutoOpen>]
 module internal Extensions =
     type FSharpEntity with
-        /// API CLEANUP: this method needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+        /// Safe version of `FullName`.
         member TryGetFullName : unit -> string option
 
-        /// API CLEANUP: this method needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+        /// Safe version of `DisplayName`.
         member TryGetFullDisplayName : unit -> string option
 
-        /// API CLEANUP: this method needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+        /// Safe version of `CompiledName`.
         member TryGetFullCompiledName : unit -> string option
 
-        /// API CLEANUP: this property needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+        /// Public nested entities (methods, functions, values, nested modules).
         member PublicNestedEntities : seq<FSharpEntity>
 
-        /// API CLEANUP: this method needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+        /// Safe version of `GetMembersFunctionsAndValues`.
         member TryGetMembersFunctionsAndValues : IList<FSharpMemberOrFunctionOrValue>
 
     type FSharpMemberOrFunctionOrValue with
-        /// API CLEANUP: this property needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+        /// Safe version of `FullType`.
         member FullTypeSafe : FSharpType option
 
-        /// API CLEANUP: this method needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+        /// Full name with last part replaced with display name.
         member TryGetFullDisplayName : unit -> string option
 
-        /// API CLEANUP: this method needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+        /// Full operator compiled name.
         member TryGetFullCompiledOperatorNameIdents : unit -> Idents option 
 
     type FSharpAssemblySignature with
-        /// API CLEANUP: this method needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+        /// Safe version of `Entities`.
         member TryGetEntities : unit -> seq<FSharpEntity>
 
-/// API CLEANUP: this module needs to be cleaned up and documented to be a proper part of the FSharp.Compiler.Service API
+/// Operations over `FSharpAttribute`.
 [<AutoOpen>]
 module internal Utils =
+    /// Returns `true` if a collection of attributes contains one of given type.
     val hasAttribute<'T> : attributes: seq<FSharpAttribute> -> bool

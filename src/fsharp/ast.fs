@@ -2132,7 +2132,7 @@ type LexerWhitespaceContinuation =
         | LexCont.TripleQuoteString (ifdef=ifd)
         | LexCont.StringInComment (ifdef=ifd)
         | LexCont.VerbatimStringInComment (ifdef=ifd)
-        | LexCont.TripleQuoteStringInComment (ifdef=ifd)
+        | LexCont.TripleQuoteStringInComment (ifdef=ifd) -> ifd
         | LexCont.EndLine endl -> endl.LexerIfdefStack
 
 and LexCont = LexerWhitespaceContinuation

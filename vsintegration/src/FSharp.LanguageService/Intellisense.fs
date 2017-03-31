@@ -15,7 +15,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 
 
 module internal TaggedText =
-    let appendTo (sb: System.Text.StringBuilder) (t: Layout.TaggedText) = sb.Append t.Value |> ignore 
+    let appendTo (sb: System.Text.StringBuilder) (t: Layout.TaggedText) = sb.Append t.Text |> ignore 
  
 /// Represents all the information necessary to display and navigate 
 /// within a method tip (e.g. param info, overloads, ability to move thru overloads and params)
@@ -87,6 +87,25 @@ type internal FSharpMethodListForAMethodTip(documentationBuilder: IDocumentation
     override x.OpenBracket = if isThisAStaticArgumentsTip then "<" else "("
     override x.CloseBracket = if isThisAStaticArgumentsTip then ">" else ")"
 
+type internal ObsoleteGlyph =
+    | Class = 0
+    | Constant = 6
+    | FunctionType = 12
+    | Enum = 18
+    | EnumMember = 24
+    | Event =30
+    | Exception = 36
+    | Interface = 48
+    | Method = 72
+    | FunctionValue = 74
+    | Module = 84
+    | Namespace = 90
+    | Property = 102
+    | ValueType = 108
+    | RareType = 120
+    | Record = 126
+    | DiscriminatedUnion = 132
+
 /// A collections of declarations as would be returned by a dot-completion request.
 //
 // Note, the Declarations type inherited by this code is defined in the F# Project System C# code. This is the only implementation
@@ -139,10 +158,20 @@ type internal FSharpDeclarations(documentationBuilder, declarations: FSharpDecla
         let decls = trimmedDeclarations filterText
         if (index >= 0 && index < decls.Length) then
             let item = decls.[index]
-            if (item.Glyph = 205) then
+            if (item.Glyph = FSharpGlyph.Error) then
                 ""
             else 
                 item.Name
+        else String.Empty
+    
+    override decl.GetNameInCode(filterText, index) =
+        let decls = trimmedDeclarations filterText
+        if (index >= 0 && index < decls.Length) then
+            let item = decls.[index]
+            if (item.Glyph = FSharpGlyph.Error) then
+                ""
+            else 
+                item.NameInCode
         else String.Empty
 
     override decl.GetDescription(filterText, index) =
@@ -156,9 +185,32 @@ type internal FSharpDeclarations(documentationBuilder, declarations: FSharpDecla
     override decl.GetGlyph(filterText, index) =
         let decls = trimmedDeclarations filterText
         //The following constants are the index of the various glyphs in the ressources of Microsoft.VisualStudio.Package.LanguageService.dll
-        if (index >= 0 && index < decls.Length) then
-            let item = decls.[index]
-            item.Glyph
+        if index >= 0 && index < decls.Length then
+            // Get old VS glyph indexes, just for tests.
+            match decls.[index].Glyph with
+            | FSharpGlyph.Class
+            | FSharpGlyph.Typedef -> Some ObsoleteGlyph.Class
+            | FSharpGlyph.Constant -> Some ObsoleteGlyph.Constant
+            | FSharpGlyph.Enum -> Some ObsoleteGlyph.Enum
+            | FSharpGlyph.EnumMember -> Some ObsoleteGlyph.EnumMember
+            | FSharpGlyph.Event -> Some ObsoleteGlyph.Event
+            | FSharpGlyph.Exception -> Some ObsoleteGlyph.Exception
+            | FSharpGlyph.Interface -> Some ObsoleteGlyph.Interface
+            | FSharpGlyph.ExtensionMethod
+            | FSharpGlyph.Method
+            | FSharpGlyph.OverridenMethod -> Some ObsoleteGlyph.Method
+            | FSharpGlyph.Module -> Some ObsoleteGlyph.Module
+            | FSharpGlyph.NameSpace -> Some ObsoleteGlyph.Namespace
+            | FSharpGlyph.Property -> Some ObsoleteGlyph.Property
+            | FSharpGlyph.Struct -> Some ObsoleteGlyph.ValueType
+            | FSharpGlyph.Type -> Some ObsoleteGlyph.Class
+            | FSharpGlyph.Union -> Some ObsoleteGlyph.DiscriminatedUnion
+            | FSharpGlyph.Field
+            | FSharpGlyph.Delegate
+            | FSharpGlyph.Variable
+            | FSharpGlyph.Error -> None
+            |> Option.defaultValue ObsoleteGlyph.Class
+            |> int
         else 0
 
     // This method is called to get the string to commit to the source buffer.
@@ -475,7 +527,7 @@ type internal FSharpIntellisenseInfo
                                 let oldTextSnapshot = oldTextSnapshotInfo :?> ITextSnapshot
                                 hasTextChangedSinceLastTypecheck (textSnapshot, oldTextSnapshot, Range.Range.toZ range)
 
-                            let! decls = typedResults.GetDeclarationListInfo(untypedParseInfoOpt, Range.Line.fromZ line, col, lineText, fst plid, snd plid, detectTextChange) 
+                            let! decls = typedResults.GetDeclarationListInfo(untypedParseInfoOpt, Range.Line.fromZ line, col, lineText, fst plid, snd plid, (fun() -> []), detectTextChange) 
                             return (new FSharpDeclarations(documentationBuilder, decls.Items, reason) :> Declarations) 
                     else
                         // no TypeCheckInfo in ParseResult.

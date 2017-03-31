@@ -291,10 +291,12 @@ and
                 do! setupProjectsAfterSolutionOpen() 
             }
         setupProjectsAfterSolutionOpen() |> Async.StartImmediate
+
+        let theme = package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
+        theme.SetColors()
         
     /// Sync the information for the project 
     member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, forceUpdate) =
-      async {
         let hashSetIgnoreCase x = new HashSet<string>(x, StringComparer.OrdinalIgnoreCase)
         let updatedFiles = site.SourceFilesOnDisk() |> hashSetIgnoreCase
         let workspaceFiles = project.GetCurrentDocuments() |> Seq.map(fun file -> file.FilePath) |> hashSetIgnoreCase
@@ -314,7 +316,6 @@ and
         // update the cached options
         if updated then
             projectInfoManager.UpdateProjectInfo(project.Id, site, project.Workspace)
-      } |> Async.Start
 
     member this.SetupProjectFile(siteProvider: IProvideProjectSite, workspace: VisualStudioWorkspaceImpl) =
         let  rec setup (site: IProjectSite) =

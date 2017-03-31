@@ -36,15 +36,14 @@ type internal FsiCommandFilter(serviceProvider: System.IServiceProvider) =
 
     interface IOleCommandTarget with
         member x.Exec (pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut) =
-            if pguidCmdGroup = VSConstants.VsStd11 then
-                if nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive then
-                    Hooks.OnMLSend projectSystemPackage.Value FsiEditorSendAction.ExecuteSelection null null
-                elif nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteLineInInteractive then
-                    Hooks.OnMLSend projectSystemPackage.Value FsiEditorSendAction.ExecuteLine null null
+            if pguidCmdGroup = VSConstants.VsStd11 && nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteSelectionInInteractive then
+                Hooks.OnMLSend projectSystemPackage.Value FsiEditorSendAction.ExecuteSelection null null
                 VSConstants.S_OK
-            elif pguidCmdGroup = Guids.guidInteractive then
-                if nCmdId = uint32 Guids.cmdIDDebugSelection then
-                    Hooks.OnMLSend projectSystemPackage.Value FsiEditorSendAction.DebugSelection null null
+            elif pguidCmdGroup = VSConstants.VsStd11 && nCmdId = uint32 VSConstants.VSStd11CmdID.ExecuteLineInInteractive then
+                Hooks.OnMLSend projectSystemPackage.Value FsiEditorSendAction.ExecuteLine null null
+                VSConstants.S_OK
+            elif pguidCmdGroup = Guids.guidInteractive && nCmdId = uint32 Guids.cmdIDDebugSelection then
+                Hooks.OnMLSend projectSystemPackage.Value FsiEditorSendAction.DebugSelection null null
                 VSConstants.S_OK
             elif not (isNull nextTarget) then
                 nextTarget.Exec(&pguidCmdGroup, nCmdId, nCmdexecopt, pvaIn, pvaOut)
