@@ -367,10 +367,6 @@ let rec IsPartialExprVal x = (* IsPartialExprVal can not rebuild to an expr *)
     | ValValue (_,a) 
     | SizeValue(_,a) -> IsPartialExprVal a
 
-let rec IsPartialModuleOrNamespaceVal (ss:ModuleInfo) =
-    (ss.ValInfos.Entries |> Seq.exists (fun (_,x) -> IsPartialExprVal x.ValExprInfo)) ||
-    (ss.ModuleOrNamespaceInfos |> Map.exists (fun _ x -> IsPartialModuleOrNamespaceVal (x.Force())))
-
 let CheckInlineValueIsComplete (v:Val) res =
     if v.MustInline && IsPartialExprVal res then
         errorR(Error(FSComp.SR.optValueMarkedInlineButIncomplete(v.DisplayName), v.Range))
