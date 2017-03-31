@@ -458,9 +458,11 @@ namespace Microsoft.FSharp.Collections
                         Upcast.enumeratorNonGeneric genericEnumerator
 
                 interface IEnumerable<'T> with
+                    // fsharp doesn't allow abstract interface methods
                     member this.GetEnumerator () : IEnumerator<'T> = derivedClassShouldImplement ()
 
                 interface ISeq<'T> with
+                    // fsharp doesn't allow abstract interface methods
                     member __.PushTransform _ = derivedClassShouldImplement ()
                     member __.Fold _ = derivedClassShouldImplement ()
 
@@ -517,13 +519,13 @@ namespace Microsoft.FSharp.Collections
                         count
 
                 interface IEnumerable<'T> with
-                    member this.GetEnumerator () = enumerable.GetEnumerator ()
+                    member __.GetEnumerator () = enumerable.GetEnumerator ()
 
                 interface ISeq<'T> with
                     member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
                         Upcast.seq (new VanillaEnumerable<'T,'U>(enumerable, next, 1))
 
-                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                    member __.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
                         Fold.executeThin f (Fold.IterateEnumerable enumerable)
 
             type DelayedEnumerable<'T>(delayed:unit->ISeq<'T>, pipeIdx:PipeIdx) =
@@ -541,7 +543,7 @@ namespace Microsoft.FSharp.Collections
                     member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
                         Upcast.seq (new DelayedEnumerable<'U>((fun () -> (delayed()).PushTransform next), pipeIdx+1))
 
-                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                    member __.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
                         (delayed()).Fold f
 
             type EmptyEnumerable<'T> () =
@@ -591,7 +593,7 @@ namespace Microsoft.FSharp.Collections
                 inherit EnumerableBase<'U>()
 
                 interface IEnumerable<'U> with
-                    member this.GetEnumerator () : IEnumerator<'U> =
+                    member __.GetEnumerator () : IEnumerator<'U> =
                         let result = Result<'U> ()
                         Upcast.enumerator (new ArrayEnumerator<'T,'U>(array, createFold transformFactory result pipeIdx, result))
 
@@ -599,7 +601,7 @@ namespace Microsoft.FSharp.Collections
                     member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
                         Upcast.seq (new ArrayEnumerable<'T,'V>(array, ComposedFactory.Combine transformFactory next, pipeIdx+1))
 
-                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
+                    member __.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
                         Fold.execute f transformFactory pipeIdx (Fold.IterateArray array)
 
             type ThinArrayEnumerable<'T>(array:array<'T>) =
@@ -608,13 +610,13 @@ namespace Microsoft.FSharp.Collections
                 override __.Length () = array.Length
 
                 interface IEnumerable<'T> with
-                    member this.GetEnumerator () = array.GetEnumerator ()
+                    member __.GetEnumerator () = (Upcast.enumerable array).GetEnumerator ()
 
                 interface ISeq<'T> with
                     member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
                         Upcast.seq (new ArrayEnumerable<'T,'U>(array, next, 1))
 
-                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                    member __.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
                         Fold.executeThin f (Fold.IterateArray array)
 
             type SingletonEnumerable<'T>(item:'T) =
@@ -667,7 +669,7 @@ namespace Microsoft.FSharp.Collections
                     member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
                         Upcast.seq (new ResizeArrayEnumerable<'T,'V>(resizeArray, ComposedFactory.Combine transformFactory next, pipeIdx+1))
 
-                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
+                    member __.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
                         Fold.execute f transformFactory pipeIdx (Fold.IterateResizeArray resizeArray)
 
             type ThinResizeArrayEnumerable<'T>(resizeArray:ResizeArray<'T>) =
@@ -676,13 +678,13 @@ namespace Microsoft.FSharp.Collections
                 override __.Length () = resizeArray.Count
 
                 interface IEnumerable<'T> with
-                    member this.GetEnumerator () = (Upcast.enumerable resizeArray).GetEnumerator ()
+                    member __.GetEnumerator () = (Upcast.enumerable resizeArray).GetEnumerator ()
 
                 interface ISeq<'T> with
                     member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
                         Upcast.seq (new ResizeArrayEnumerable<'T,'U>(resizeArray, next, 1))
 
-                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                    member __.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
                         Fold.executeThin f (Fold.IterateResizeArray resizeArray)
 
             type ListEnumerator<'T,'U>(alist:list<'T>, activity:Activity<'T,'U>, result:Result<'U>) =
@@ -730,13 +732,13 @@ namespace Microsoft.FSharp.Collections
                 override __.Length () = alist.Length
 
                 interface IEnumerable<'T> with
-                    member this.GetEnumerator () = (Upcast.enumerable alist).GetEnumerator ()
+                    member __.GetEnumerator () = (Upcast.enumerable alist).GetEnumerator ()
 
                 interface ISeq<'T> with
                     member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
                         Upcast.seq (new ListEnumerable<'T,'U>(alist, next, 1))
 
-                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                    member __.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
                         Fold.executeThin f (Fold.IterateList alist)
 
             type UnfoldEnumerator<'T,'U,'State>(generator:'State->option<'T*'State>, state:'State, activity:Activity<'T,'U>, result:Result<'U>) =
