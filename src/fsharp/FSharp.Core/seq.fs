@@ -13,6 +13,11 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
 
+    module Upcast =
+        // The f# compiler outputs unnecessary unbox.any calls in upcasts. If this functionality
+        // is fixed with the compiler then these functions can be removed.
+        let inline enumerable (t:#IEnumerable<'T>) : IEnumerable<'T> = (# "" t : IEnumerable<'T> #)
+
     module Internal =
      module IEnumerator =
       open Microsoft.FSharp.Collections.IEnumerator
