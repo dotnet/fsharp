@@ -1764,7 +1764,12 @@ let main0(ctok, argv, referenceResolver, bannerAlreadyPrinted, exiter:Exiter, er
     
     let inputs =
         // Deduplicate module names
-        let seen = Dictionary<_,Set<_>>()
+        let seen = Dictionary<string,Set<string>>()
+        let deduplicate (paths: Set<string>) path (qualifiedNameOfFile: QualifiedNameOfFile) =
+            let count = if paths.Contains path then paths.Count else paths.Count + 1
+            seen.[qualifiedNameOfFile.Text] <- Set.add path paths
+            let id = qualifiedNameOfFile.Id
+            if count = 1 then qualifiedNameOfFile else QualifiedNameOfFile(Ident(id.idText + "___" + count.ToString(),id.idRange))
         inputs
         |> List.map (fun (input,x) -> 
             match input with
@@ -1772,10 +1777,7 @@ let main0(ctok, argv, referenceResolver, bannerAlreadyPrinted, exiter:Exiter, er
                 let path = Path.GetDirectoryName fileName
                 match seen.TryGetValue qualifiedNameOfFile.Text with
                 | true, paths ->
-                    let count = if paths.Contains path then paths.Count else paths.Count + 1
-                    seen.[qualifiedNameOfFile.Text] <- Set.add path paths
-                    let id = qualifiedNameOfFile.Id
-                    let qualifiedNameOfFile = if count = 1 then qualifiedNameOfFile else QualifiedNameOfFile(Ident(id.idText + "___" + count.ToString(),id.idRange))
+                    let qualifiedNameOfFile = deduplicate paths path qualifiedNameOfFile
                     let input = ParsedInput.ImplFile(ParsedImplFileInput.ParsedImplFileInput(fileName,isScript,qualifiedNameOfFile,scopedPragmas,hashDirectives,modules,(isLastCompiland,isExe)))
                     input,x
                 | _ ->
@@ -1785,10 +1787,7 @@ let main0(ctok, argv, referenceResolver, bannerAlreadyPrinted, exiter:Exiter, er
                 let path = Path.GetDirectoryName fileName
                 match seen.TryGetValue qualifiedNameOfFile.Text with
                 | true, paths ->
-                    let count = if paths.Contains path then paths.Count else paths.Count + 1
-                    seen.[qualifiedNameOfFile.Text] <- Set.add path paths
-                    let id = qualifiedNameOfFile.Id
-                    let qualifiedNameOfFile = if count = 1 then qualifiedNameOfFile else QualifiedNameOfFile(Ident(id.idText + "___" + count.ToString(),id.idRange))
+                    let qualifiedNameOfFile = deduplicate paths path qualifiedNameOfFile
                     let input = ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName,qualifiedNameOfFile,scopedPragmas,hashDirectives,modules))
                     input,x
                 | _ ->
