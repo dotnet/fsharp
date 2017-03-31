@@ -235,22 +235,29 @@ type internal FSharpNavigateToSearchService
                     |> Seq.map (fun document -> getCachedIndexedNavigableItems(document, options, cancellationToken))
                     |> Async.Parallel
                     |> liftAsync
-                return 
-                    [| yield! items |> Array.map (fun items -> items.Find(searchPattern)) |> Array.concat
-                       use patternMatcher = new PatternMatcher(searchPattern, allowFuzzyMatching = true)
-                       yield! items
-                              |> Array.collect (fun item -> item.AllItems)
-                              |> Array.Parallel.collect (fun x -> 
-                                  patternMatcher.GetMatches(x.Name)
-                                  |> Seq.map (fun pm ->
-                                      NavigateToSearchResult(x, patternMatchKindToNavigateToMatchKind pm.Kind) :> INavigateToSearchResult)
-                                  |> Seq.toArray) |]
-                    |> Array.distinctBy (fun x -> x.NavigableItem.Document.Id, x.NavigableItem.SourceSpan)
+                
+                let items =
+                    if searchPattern.Length = 1 then
+                        items 
+                        |> Array.map (fun items -> items.Find(searchPattern)) 
+                        |> Array.concat
+                        |> Array.filter (fun x -> x.Name.Length = 1 && String.Equals(x.Name, searchPattern, StringComparison.InvariantCultureIgnoreCase))
+                    else
+                        [| yield! items |> Array.map (fun items -> items.Find(searchPattern)) |> Array.concat
+                           use patternMatcher = new PatternMatcher(searchPattern, allowFuzzyMatching = true)
+                           yield! items
+                                  |> Array.collect (fun item -> item.AllItems)
+                                  |> Array.Parallel.collect (fun x -> 
+                                      patternMatcher.GetMatches(x.Name)
+                                      |> Seq.map (fun pm ->
+                                          NavigateToSearchResult(x, patternMatchKindToNavigateToMatchKind pm.Kind) :> INavigateToSearchResult)
+                                      |> Seq.toArray) |]
+
+                return items |> Array.distinctBy (fun x -> x.NavigableItem.Document.Id, x.NavigableItem.SourceSpan)
             } 
             |> Async.map (Option.defaultValue [||])
             |> Async.map Seq.toImmutableArray
             |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
-
 
         member __.SearchDocumentAsync(document, searchPattern, cancellationToken) : Task<ImmutableArray<INavigateToSearchResult>> =
             asyncMaybe {

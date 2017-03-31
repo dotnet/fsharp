@@ -382,6 +382,9 @@ echo MYGET_APIKEY=%MYGET_APIKEY%
 
 REM load Visual Studio 2017 developer command prompt if VS150COMNTOOLS is not set
 
+REM If this is not set, VsDevCmd.bat will change %cd% to [USERPROFILE]\source, causing the build to fail.
+SET VSCMD_START_DIR=%cd%
+
 if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" (
     call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"
 )
@@ -404,7 +407,7 @@ echo .
 
 echo ---------------- Done with arguments, starting preparation -----------------
 
-set BuildToolsPackage=Microsoft.VSSDK.BuildTools.15.0.26124-RC3
+set BuildToolsPackage=Microsoft.VSSDK.BuildTools.15.0.26201
 if "%VSSDKInstall%"=="" (
      set VSSDKInstall=%~dp0packages\%BuildToolsPackage%\tools\vssdk
 )
@@ -475,6 +478,12 @@ if defined APPVEYOR (
     rem HACK HACK HACK
    set _msbuildexe=%_msbuildexe% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
    )
+)
+
+if defined TF_BUILD (
+    rem we are baing run under a TFS build step --- indicates internal ms build
+    git remote add visualfsharptools https://github.com/Microsoft/visualfsharp.git
+    git fetch
 )
 
 REM set msbuildflags=/maxcpucount %_nrswitch% /nologo
