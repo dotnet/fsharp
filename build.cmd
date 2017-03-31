@@ -480,6 +480,12 @@ if defined APPVEYOR (
    )
 )
 
+if defined TF_BUILD (
+    rem we are baing run under a TFS build step --- indicates internal ms build
+    git remote add visualfsharptools https://github.com/Microsoft/visualfsharp.git
+    git fetch
+)
+
 REM set msbuildflags=/maxcpucount %_nrswitch% /nologo
 set msbuildflags=%_nrswitch% /nologo
 set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
