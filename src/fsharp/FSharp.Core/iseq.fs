@@ -330,11 +330,10 @@ namespace Microsoft.FSharp.Collections
                 finally
                     result.ChainDispose (&stopTailCall)
 
-            let executeConcat<'T,'U,'Result,'State,'Collection when 'Collection :> ISeq<'T>>(createFolder:PipeIdx->Folder<'U,'Result,'State>) (transformFactory:TransformFactory<'T,'U>) pipeIdx (sources:ISeq<'Collection>) =
+            let executeConcat<'T,'U,'Result,'State,'Collection when 'Collection :> ISeq<'T>> (createFolder:PipeIdx->Folder<'U,'Result,'State>) (transformFactory:TransformFactory<'T,'U>) pipeIdx (sources:ISeq<'Collection>) =
                 let mutable stopTailCall = ()
                 let result = createFolder (pipeIdx+1)
                 let consumer = createFold transformFactory result pipeIdx
-
                 try
                     let common =
                         { new Folder<'T,NoValue,NoValue>(Unchecked.defaultof<_>,Unchecked.defaultof<_>) with
@@ -349,7 +348,26 @@ namespace Microsoft.FSharp.Collections
 
                     consumer.ChainComplete (&stopTailCall, result.HaltedIdx)
                     result.Result
+                finally
+                    result.ChainDispose (&stopTailCall)
 
+            let executeConcatThin<'T,'Result,'State,'Collection when 'Collection :> ISeq<'T>> (createFolder:PipeIdx->Folder<'T,'Result,'State>) (sources:ISeq<'Collection>) =
+                let mutable stopTailCall = ()
+                let result = createFolder 1
+                try
+                    let common =
+                        { new Folder<'T,NoValue,NoValue>(Unchecked.defaultof<_>,Unchecked.defaultof<_>) with
+                            override me.ProcessNext value = result.ProcessNext value }
+
+                    sources.Fold (fun _ ->
+                        { new Folder<'Collection,NoValue,NoValue>(Unchecked.defaultof<_>,Unchecked.defaultof<_>) with
+                            override me.ProcessNext value =
+                                value.Fold (fun _ -> common) |> ignore
+                                me.HaltedIdx <- common.HaltedIdx
+                                Unchecked.defaultof<_> (* return value unused in Fold context *) }) |> ignore
+
+                    result.ChainComplete (&stopTailCall, result.HaltedIdx)
+                    result.Result
                 finally
                     result.ChainDispose (&stopTailCall)
 
@@ -557,7 +575,7 @@ namespace Microsoft.FSharp.Collections
                         Upcast.seq (ConcatEnumerable<'T,'V,'Collection>(preEnumerate sources, next, 1))
 
                     member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
-                        Fold.executeConcat f IdentityFactory.Instance 1 (preEnumerate sources)
+                        Fold.executeConcatThin f (preEnumerate sources)
 
             and AppendEnumerable<'T> (sources:list<ISeq<'T>>) =
                 inherit ThinConcatEnumerable<'T, list<ISeq<'T>>, ISeq<'T>>(sources, fun sources -> Upcast.seq (ThinListEnumerable<ISeq<'T>>(List.rev sources)))
