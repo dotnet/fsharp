@@ -1412,9 +1412,12 @@ namespace Microsoft.FSharp.Collections
         let concat (sources:ISeq<#ISeq<'T>>) : ISeq<'T> =
             Upcast.seq (Wrap.ConcatEnumerable (sources, id))
 
+        [<CompiledName("Singleton")>]
+        let singleton x = Upcast.seq (new Wrap.SingletonEnumerable<_>(x))
+
         [<CompiledName "Scan">]
         let inline scan (folder:'State->'T->'State) (initialState:'State) (source:ISeq<'T>) :ISeq<'State> =
-            let head = ofSeq [| initialState |]
+            let head = singleton initialState
             let tail = 
                 source.PushTransform { new TransformFactory<'T,'State>() with
                     override __.Compose _ _ next =
@@ -2057,9 +2060,6 @@ namespace Microsoft.FSharp.Collections
             if i < 0 then invalidArgInputMustBeNonNegative "index" i
             use e = source.GetEnumerator()
             nth i e
-
-        [<CompiledName("Singleton")>]
-        let singleton x = Upcast.seq (new Wrap.SingletonEnumerable<_>(x))
 
         [<CompiledName("SortDescending")>]
         let inline sortDescending source =
