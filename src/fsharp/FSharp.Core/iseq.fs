@@ -534,7 +534,6 @@ namespace Microsoft.FSharp.Collections
 
                 interface IEnumerable<'U> with
                     member __.GetEnumerator () : IEnumerator<'U> =
-                        System.Console.WriteLine "ThinConcatEnumerable.GetEnumerator"
                         let result = Result<'U> ()
                         Upcast.enumerator (new ConcatEnumerator<'T,'U,'Collection>(sources, createFold current result pipeIdx, result))
 
@@ -550,7 +549,6 @@ namespace Microsoft.FSharp.Collections
 
                 interface IEnumerable<'T> with
                     member this.GetEnumerator () : IEnumerator<'T> =
-                        System.Console.WriteLine "ThinConcatEnumerable.GetEnumerator"
                         let result = Result<'T> ()
                         Upcast.enumerator (new ConcatEnumerator<'T,'T,'Collection> (preEnumerate sources, createFold IdentityFactory.Instance result 1, result))
 
