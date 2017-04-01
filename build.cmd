@@ -246,6 +246,7 @@ if /i "%ARG%" == "ci_part4" (
 )
 
 if /i "%ARG%" == "proto" (
+    set _autoselect=0
     set BUILD_PROTO=1
 )
 
