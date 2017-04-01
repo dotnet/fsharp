@@ -42,7 +42,7 @@
 open System
 
 
-/// A module is a grouping of F# code, such as values, types, and function values, in an F# program. 
+/// A module is a grouping of F# code, such as values, types, and function values. 
 /// Grouping code in modules helps keep related code together and helps avoid name conflicts in your program.
 ///
 /// To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/modules
