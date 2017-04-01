@@ -330,6 +330,29 @@ namespace Microsoft.FSharp.Collections
                 finally
                     result.ChainDispose (&stopTailCall)
 
+            let executeConcat<'T,'U,'Result,'State,'Collection when 'Collection :> ISeq<'T>>(createFolder:PipeIdx->Folder<'U,'Result,'State>) (transformFactory:TransformFactory<'T,'U>) pipeIdx (sources:ISeq<'Collection>) =
+                let mutable stopTailCall = ()
+                let result = createFolder (pipeIdx+1)
+                let consumer = createFold transformFactory result pipeIdx
+
+                try
+                    let common =
+                        { new Folder<'T,NoValue,NoValue>(Unchecked.defaultof<_>,Unchecked.defaultof<_>) with
+                            override me.ProcessNext value = consumer.ProcessNext value }
+
+                    sources.Fold (fun _ ->
+                        { new Folder<'Collection,NoValue,NoValue>(Unchecked.defaultof<_>,Unchecked.defaultof<_>) with
+                            override me.ProcessNext value =
+                                value.Fold (fun _ -> common) |> ignore
+                                me.HaltedIdx <- common.HaltedIdx
+                                Unchecked.defaultof<_> (* return value unused in Fold context *) }) |> ignore
+
+                    consumer.ChainComplete (&stopTailCall, result.HaltedIdx)
+                    result.Result
+
+                finally
+                    result.ChainDispose (&stopTailCall)
+
         module Wrap =
             type EmptyEnumerator<'T>() =
                 let current () = failwith "library implementation error: Current should never be called"
@@ -395,43 +418,68 @@ namespace Microsoft.FSharp.Collections
                             let mutable stopTailCall = ()
                             activity.ChainDispose (&stopTailCall)
 
-            type ConcatEnumerator<'T, 'Collection when 'Collection :> seq<'T>> (sources:seq<'Collection>) =
-                let mutable state = SeqProcessNextStates.NotStarted
+            type ConcatEnumerator<'T,'U,'Collection when 'Collection :> seq<'T>> (sources:seq<'Collection>, activity:Activity<'T,'U>, result:Result<'U>) =
+                inherit EnumeratorBase<'U>(result, activity)
+
                 let main = sources.GetEnumerator ()
 
                 let mutable active = EmptyEnumerators.Element
 
                 let rec moveNext () =
-                    if active.MoveNext () then
-                        true
-                    elif main.MoveNext () then
-                        active.Dispose ()
-                        active <- main.Current.GetEnumerator ()
-                        moveNext ()
+                    if result.HaltedIdx <> 0 then false
                     else
-                        state <- SeqProcessNextStates.Finished
-                        false
-
-                interface IEnumerator<'T> with
-                    member __.Current =
-                        if state = SeqProcessNextStates.InProcess then active.Current
+                        if active.MoveNext () then
+                            if activity.ProcessNext active.Current then
+                                true
+                            else
+                                moveNext ()
+                        elif main.MoveNext () then
+                            active.Dispose ()
+                            active <- main.Current.GetEnumerator ()
+                            moveNext ()
                         else
-                            match state with
-                            | SeqProcessNextStates.NotStarted -> notStarted()
-                            | SeqProcessNextStates.Finished -> alreadyFinished()
-                            | _ -> failwith "library implementation error: all states should have been handled"
+                            result.SeqState <- SeqProcessNextStates.Finished
+                            let mutable stopTailCall = ()
+                            activity.ChainComplete (&stopTailCall, result.HaltedIdx)
+                            false
 
                 interface IEnumerator with
-                    member this.Current = box ((Upcast.enumerator this)).Current
                     member __.MoveNext () =
-                        state <- SeqProcessNextStates.InProcess
+                        result.SeqState <- SeqProcessNextStates.InProcess
                         moveNext ()
-                    member __.Reset () = noReset ()
 
                 interface IDisposable with
                     member __.Dispose () =
-                        main.Dispose ()
-                        active.Dispose ()
+                        try
+                            main.Dispose ()
+                            active.Dispose ()
+                        finally
+                            let mutable stopTailCall = ()
+                            activity.ChainDispose (&stopTailCall)
+
+            type ListEnumerator<'T,'U>(alist:list<'T>, activity:Activity<'T,'U>, result:Result<'U>) =
+                inherit EnumeratorBase<'U>(result, activity)
+
+                let mutable list = alist
+
+                let rec moveNext current =
+                    match result.HaltedIdx, current with
+                    | 0, head::tail ->
+                        if activity.ProcessNext head then
+                            list <- tail
+                            true
+                        else
+                            moveNext tail
+                    | _ ->
+                        result.SeqState <- SeqProcessNextStates.Finished
+                        let mutable stopTailCall = ()
+                        activity.ChainComplete (&stopTailCall, result.HaltedIdx)
+                        false
+
+                interface IEnumerator with
+                    member __.MoveNext () =
+                        result.SeqState <- SeqProcessNextStates.InProcess
+                        moveNext list
 
             let length (source:ISeq<_>) =
                 source.Fold (fun _ ->
@@ -481,25 +529,73 @@ namespace Microsoft.FSharp.Collections
                     member this.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
                         Fold.execute f current pipeIdx (Fold.IterateEnumerable enumerable)
 
-            and ConcatEnumerable<'T, 'Collection, 'Collections when 'Collection :> seq<'T> and 'Collections :> seq<'Collection>> (sources:'Collections, preEnumerate:'Collections->'Collections) =
+            and ConcatEnumerable<'T,'U,'Collection when 'Collection :> ISeq<'T>> (sources:ISeq<'Collection>, current:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
+                inherit EnumerableBase<'U>()
+
+                interface IEnumerable<'U> with
+                    member __.GetEnumerator () : IEnumerator<'U> =
+                        System.Console.WriteLine "ThinConcatEnumerable.GetEnumerator"
+                        let result = Result<'U> ()
+                        Upcast.enumerator (new ConcatEnumerator<'T,'U,'Collection>(sources, createFold current result pipeIdx, result))
+
+                interface ISeq<'U> with
+                    member this.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
+                        Upcast.seq (new ConcatEnumerable<'T,'V,'Collection>(sources, ComposedFactory.Combine current next, pipeIdx+1))
+
+                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
+                        Fold.executeConcat f current pipeIdx sources
+
+            and ThinConcatEnumerable<'T, 'Sources, 'Collection when 'Collection :> ISeq<'T>> (sources:'Sources, preEnumerate:'Sources->ISeq<'Collection>) =
                 inherit EnumerableBase<'T>()
 
                 interface IEnumerable<'T> with
                     member this.GetEnumerator () : IEnumerator<'T> =
-                        Upcast.enumerator (new ConcatEnumerator<_,_> (preEnumerate sources))
+                        System.Console.WriteLine "ThinConcatEnumerable.GetEnumerator"
+                        let result = Result<'T> ()
+                        Upcast.enumerator (new ConcatEnumerator<'T,'T,'Collection> (preEnumerate sources, createFold IdentityFactory.Instance result 1, result))
 
                 interface ISeq<'T> with
                     member this.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
-                        Upcast.seq (VanillaEnumerable<'T,'V>(this, next, 1))
+                        Upcast.seq (ConcatEnumerable<'T,'V,'Collection>(preEnumerate sources, next, 1))
 
                     member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
-                        Fold.executeThin f (Fold.IterateEnumerable this)
+                        Fold.executeConcat f IdentityFactory.Instance 1 (preEnumerate sources)
 
             and AppendEnumerable<'T> (sources:list<ISeq<'T>>) =
-                inherit ConcatEnumerable<'T, ISeq<'T>, list<ISeq<'T>>>(sources, List.rev)
+                inherit ThinConcatEnumerable<'T, list<ISeq<'T>>, ISeq<'T>>(sources, fun sources -> Upcast.seq (ThinListEnumerable<ISeq<'T>>(List.rev sources)))
 
                 override this.Append source =
                     Upcast.seq (AppendEnumerable (source::sources))
+
+            and ThinListEnumerable<'T>(alist:list<'T>) =
+                inherit EnumerableBase<'T>()
+
+                override __.Length () = alist.Length
+
+                interface IEnumerable<'T> with
+                    member __.GetEnumerator () = (Upcast.enumerable alist).GetEnumerator ()
+
+                interface ISeq<'T> with
+                    member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
+                        Upcast.seq (new ListEnumerable<'T,'U>(alist, next, 1))
+
+                    member __.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                        Fold.executeThin f (Fold.IterateList alist)
+
+            and ListEnumerable<'T,'U>(alist:list<'T>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
+                inherit EnumerableBase<'U>()
+
+                interface IEnumerable<'U> with
+                    member this.GetEnumerator () : IEnumerator<'U> =
+                        let result = Result<'U> ()
+                        Upcast.enumerator (new ListEnumerator<'T,'U>(alist, createFold transformFactory result pipeIdx, result))
+
+                interface ISeq<'U> with
+                    member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
+                        Upcast.seq (new ListEnumerable<'T,'V>(alist, ComposedFactory.Combine transformFactory next, pipeIdx+1))
+
+                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
+                        Fold.execute f transformFactory pipeIdx (Fold.IterateList alist)
 
             /// ThinEnumerable is used when the IEnumerable provided to ofSeq is neither an array or a list
             type ThinEnumerable<'T>(enumerable:IEnumerable<'T>) =
@@ -686,60 +782,6 @@ namespace Microsoft.FSharp.Collections
 
                     member __.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
                         Fold.executeThin f (Fold.IterateResizeArray resizeArray)
-
-            type ListEnumerator<'T,'U>(alist:list<'T>, activity:Activity<'T,'U>, result:Result<'U>) =
-                inherit EnumeratorBase<'U>(result, activity)
-
-                let mutable list = alist
-
-                let rec moveNext current =
-                    match result.HaltedIdx, current with
-                    | 0, head::tail ->
-                        if activity.ProcessNext head then
-                            list <- tail
-                            true
-                        else
-                            moveNext tail
-                    | _ ->
-                        result.SeqState <- SeqProcessNextStates.Finished
-                        let mutable stopTailCall = ()
-                        activity.ChainComplete (&stopTailCall, result.HaltedIdx)
-                        false
-
-                interface IEnumerator with
-                    member __.MoveNext () =
-                        result.SeqState <- SeqProcessNextStates.InProcess
-                        moveNext list
-
-            type ListEnumerable<'T,'U>(alist:list<'T>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
-                inherit EnumerableBase<'U>()
-
-                interface IEnumerable<'U> with
-                    member this.GetEnumerator () : IEnumerator<'U> =
-                        let result = Result<'U> ()
-                        Upcast.enumerator (new ListEnumerator<'T,'U>(alist, createFold transformFactory result pipeIdx, result))
-
-                interface ISeq<'U> with
-                    member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
-                        Upcast.seq (new ListEnumerable<'T,'V>(alist, ComposedFactory.Combine transformFactory next, pipeIdx+1))
-
-                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
-                        Fold.execute f transformFactory pipeIdx (Fold.IterateList alist)
-
-            type ThinListEnumerable<'T>(alist:list<'T>) =
-                inherit EnumerableBase<'T>()
-
-                override __.Length () = alist.Length
-
-                interface IEnumerable<'T> with
-                    member __.GetEnumerator () = (Upcast.enumerable alist).GetEnumerator ()
-
-                interface ISeq<'T> with
-                    member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
-                        Upcast.seq (new ListEnumerable<'T,'U>(alist, next, 1))
-
-                    member __.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
-                        Fold.executeThin f (Fold.IterateList alist)
 
             type UnfoldEnumerator<'T,'U,'State>(generator:'State->option<'T*'State>, state:'State, activity:Activity<'T,'U>, result:Result<'U>) =
                 inherit EnumeratorBase<'U>(result, activity)
@@ -1410,7 +1452,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Concat")>]
         let concat (sources:ISeq<#ISeq<'T>>) : ISeq<'T> =
-            Upcast.seq (Wrap.ConcatEnumerable (sources, id))
+            Upcast.seq (Wrap.ThinConcatEnumerable (sources, id))
 
         [<CompiledName("Singleton")>]
         let singleton x = Upcast.seq (new Wrap.SingletonEnumerable<_>(x))
