@@ -2,6 +2,9 @@
 module Microsoft.VisualStudio.FSharp.Editor.Pervasive
 
 open System
+open System.IO
+open System.Threading
+open System.Threading.Tasks
 open System.Diagnostics
 
 [<RequireQualifiedAccess>]
@@ -19,6 +22,22 @@ module String =
             // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
                 yield String.Empty
         |]
+
+let (</>) path1 path2 = Path.Combine(path1,path2)
+
+type Path with
+    static member GetFullPathSafe path =
+        try Path.GetFullPath path
+        with _ -> path
+
+    static member GetFileNameSafe path =
+        try Path.GetFileName path
+        with _ -> path
+
+
+/// Checks if the filePath ends with ".fsi"
+let isSignatureFile (filePath:string) = 
+    Path.GetExtension filePath = ".fsi"
 
 
 type System.IServiceProvider with
@@ -198,6 +217,41 @@ module Async =
                     replyCh.Reply res 
             }
         async { return! agent.PostAndAsyncReply id }
+
+
+type Async with
+    /// Better implementation of Async.AwaitTask that correctly passes the exception of a failed task to the async mechanism
+    static member AwaitTaskCorrect (task:Task) : Async<unit> =
+        Async.FromContinuations (fun (successCont,exceptionCont,_cancelCont) ->
+            task.ContinueWith (fun (task:Task) ->
+                if task.IsFaulted then
+                    let e = task.Exception
+                    if e.InnerExceptions.Count = 1 then 
+                        exceptionCont e.InnerExceptions.[0]
+                    else exceptionCont e
+                elif task.IsCanceled then
+                    exceptionCont(TaskCanceledException ())
+                else successCont ())
+            |> ignore)
+
+    /// Better implementation of Async.AwaitTask that correctly passes the exception of a failed task to the async mechanism
+    static member AwaitTaskCorrect (task:'T Task) : Async<'T> =
+        Async.FromContinuations( fun (successCont,exceptionCont,_cancelCont) ->
+            task.ContinueWith (fun (task:'T Task) ->
+                if task.IsFaulted then
+                    let e = task.Exception
+                    if e.InnerExceptions.Count = 1 then 
+                        exceptionCont e.InnerExceptions.[0]
+                    else exceptionCont e
+                elif task.IsCanceled then
+                    exceptionCont (TaskCanceledException ())
+                else successCont task.Result)
+            |> ignore)
+    
+    /// Run a task synchronously using Async.AwaitTaskCorrect internally
+    static member RunTaskSynchronously (task:Task<_>) = Async.AwaitTaskCorrect task |> Async.RunSynchronously
+
+
 
 type AsyncBuilder with
     member __.Bind(computation: System.Threading.Tasks.Task<'a>, binder: 'a -> Async<'b>): Async<'b> =

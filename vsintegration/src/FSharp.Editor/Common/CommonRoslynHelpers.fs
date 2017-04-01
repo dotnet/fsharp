@@ -349,10 +349,3 @@ module internal OpenDeclarationHelper =
             else sourceText
         sourceText, minPos |> Option.defaultValue 0
 
-[<AutoOpen>]
-module internal RoslynExtensions =
-    type Project with
-        /// The list of all other projects within the same solution that reference this project.
-        member this.GetDependentProjects() =
-            this.Solution.GetProjectDependencyGraph().GetProjectsThatDirectlyDependOnThisProject(this.Id)
-            |> Seq.map this.Solution.GetProject
