@@ -68,7 +68,7 @@ module IntegersAndNumbers =
     printfn "The table of squares from 0 to 99 is:\n%A" sampleTableOfSquares
 
     // This is a sample integer with a type annotation
-    let sampleInteger3: int = 1;
+    let sampleInteger3: int = 1
 
 
 /// Values in F# are immutable by default.  They cannot be changed
