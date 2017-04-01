@@ -208,7 +208,7 @@ module Tuples =
     
     /// A simple tuple of integers with a type annotation.
     /// Type annotations for tuples use the * symbol to separate elements
-    let tuple3: (int*int) = (5, 9)
+    let tuple3: int * int = (5, 9)
 
     /// Tuples are normally objects, but they can also be represented as structs.
     ///
