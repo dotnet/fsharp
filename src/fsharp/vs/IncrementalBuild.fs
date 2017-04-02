@@ -1328,6 +1328,14 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
     let StampFileNameTask (cache: TimeStampCache) _ctok (_m:range, filename:string, _isLastCompiland) =
         assertNotDisposed()
         cache.GetFileTimeStamp filename
+
+    // Deduplicate module names
+    let seen = Dictionary<string,Set<string>>()
+    let deduplicate (paths: Set<string>) path (qualifiedNameOfFile: QualifiedNameOfFile) =
+        let count = if paths.Contains path then paths.Count else paths.Count + 1
+        seen.[qualifiedNameOfFile.Text] <- Set.add path paths
+        let id = qualifiedNameOfFile.Id
+        if count = 1 then qualifiedNameOfFile else QualifiedNameOfFile(Ident(id.idText + "___" + count.ToString(),id.idRange))
                             
     /// This is a build task function that gets placed into the build rules as the computation for a VectorMap
     ///
@@ -1344,8 +1352,31 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
 
         try  
             IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBEParsed filename)
-            let result = ParseOneInputFile(tcConfig,lexResourceManager, [], filename ,isLastCompiland,errorLogger,(*retryLocked*)true)
+            let input = ParseOneInputFile(tcConfig,lexResourceManager, [], filename ,isLastCompiland,errorLogger,(*retryLocked*)true)
             fileParsed.Trigger (filename)
+            let result =
+                match input with
+                | Some(ParsedInput.ImplFile (ParsedImplFileInput.ParsedImplFileInput(fileName,isScript,qualifiedNameOfFile,scopedPragmas,hashDirectives,modules,(isLastCompiland,isExe)))) ->
+                    let path = Path.GetDirectoryName fileName
+                    match seen.TryGetValue qualifiedNameOfFile.Text with
+                    | true, paths ->
+                        let qualifiedNameOfFile = deduplicate paths path qualifiedNameOfFile
+                        let input = ParsedInput.ImplFile(ParsedImplFileInput.ParsedImplFileInput(fileName,isScript,qualifiedNameOfFile,scopedPragmas,hashDirectives,modules,(isLastCompiland,isExe)))
+                        Some input
+                    | _ ->
+                        seen.Add(qualifiedNameOfFile.Text,Set.singleton path)
+                        input
+                | Some(ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName,qualifiedNameOfFile,scopedPragmas,hashDirectives,modules))) ->
+                    let path = Path.GetDirectoryName fileName
+                    match seen.TryGetValue qualifiedNameOfFile.Text with
+                    | true, paths ->
+                        let qualifiedNameOfFile = deduplicate paths path qualifiedNameOfFile
+                        let input = ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName,qualifiedNameOfFile,scopedPragmas,hashDirectives,modules))
+                        Some input
+                    | _ ->
+                        seen.Add(qualifiedNameOfFile.Text,Set.singleton path)
+                        input
+                | input -> input
             result,sourceRange,filename,errorLogger.GetErrors ()
         with exn -> 
             System.Diagnostics.Debug.Assert(false, sprintf "unexpected failure in IncrementalFSharpBuild.Parse\nerror = %s" (exn.ToString()))
