@@ -22,6 +22,7 @@
     <!-- Settings used all the time -->
     <Tailcalls>true</Tailcalls>
     <TargetFramework Condition="'$(TargetFramework)'==''">net40</TargetFramework>
+
     <!-- Currently always use .NET Framwork proto compiler -->
     <ProtoFlavour Condition="'$(ProtoFlavour)' == ''">net40</ProtoFlavour>
     <ProjectLanguage Condition="'$(ProjectLanguage)' == ''">FSharp</ProjectLanguage>
@@ -29,7 +30,6 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <BuildToolsTargets45>true</BuildToolsTargets45>
     <WarningsAsErrors />
-
     <FX_NO_LOADER Condition=" '$(FX_NO_LOADER)'==''">false</FX_NO_LOADER>
     
     <RoslynVersion>2.0.0</RoslynVersion>
@@ -42,12 +42,11 @@
     <!-- Always qualify the IntermediateOutputPath by the TargetFramework if any exists -->
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
     <IntermediateOutputPath Condition="'$(PortableProfileBeingReferenced)' != ''">obj\$(Configuration)\$(TargetFramework)\$(PortableProfileBeingReferenced)\</IntermediateOutputPath>
-  
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(MonoPackaging)' != 'true' AND '$(OS)' != 'Unix'">
-    <UseMicroBuild>true</UseMicroBuild>
-    <UseSourceLink>true</UseSourceLink>
+    <UseMicroBuild>true</UseMicroBuild> 
+    <UseSourceLink Condition = " '$(UseSourceLink)' == '' ">true</UseSourceLink>
     <UseGatherBinaries>true</UseGatherBinaries>
     <AddVsSdkAttributesToSomeCoreComponents>true</AddVsSdkAttributesToSomeCoreComponents>
     <VsSDKInstall Condition=" '$(VsSDKInstall)' == '' ">$(MSBuildThisFileDirectory)..\packages\$(VSSDK_BUILDTOOLS_VERSION)\tools\vssdk</VsSDKInstall>
@@ -64,14 +63,14 @@
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-    <!-- Settings for Debug mode.		-->
-    <DebugType Condition=" '$(DebugType)' == '' and  '$(TargetFramework)' != 'coreclr' ">full</DebugType>
-    <DebugType Condition=" '$(DebugType)' == '' and  '$(TargetFramework)' == 'coreclr' ">portable</DebugType>
+    <!-- Settings for Debug mode        -->
+    <DebugType Condition=" '$(DebugType)' == '' and '$(TargetFramework)' != 'coreclr' and '$(UseSourceLink)' != 'true' ">full</DebugType>
+    <DebugType Condition=" '$(DebugType)' == '' ">portable</DebugType>
+
     <Optimize Condition=" '$(Optimize)' == '' ">false</Optimize>
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
     <OtherFlags>$(OtherFlags) --no-jit-optimize</OtherFlags>
     <EmbedAllSource Condition=" '$(DebugType)' == 'portable' or '$(DebugType)' == 'embedded' ">true</EmbedAllSource>
-    <SourceLink     Condition=" '$(UseSourceLink)' == 'true' AND ('$(DebugType)' == 'portable' or '$(DebugType)' == 'embedded') ">$(IntermediateOutputPath)source_link.json</SourceLink>
     <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">DEBUG;TRACE;CODE_ANALYSIS;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">DEBUG=True,TRACE=True,CODE_ANALYSIS=True,$(DefineConstants)</DefineConstants>
     <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">false</SIGN_WITH_MSFT_KEY>
@@ -79,9 +78,11 @@
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <!-- Flags used for Release mode.		-->
-    <DebugType Condition=" '$(DebugType)' == '' ">pdbonly</DebugType>
+    <DebugType Condition=" '$(DebugType)' == '' and '$(TargetFramework)' != 'coreclr' and '$(UseSourceLink)' != 'true' ">pdbonly</DebugType>
+    <DebugType Condition=" '$(DebugType)' == '' ">portable</DebugType>
     <Optimize Condition=" '$(Optimize)' == '' ">true</Optimize>
     <EmbedAllSource>false</EmbedAllSource>
+
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
     <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">TRACE;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">TRACE=True,$(DefineConstants)</DefineConstants>
@@ -90,6 +91,7 @@
 
   <PropertyGroup Condition="'$(Configuration)'=='Proto'">
     <!-- Flags used when running the Proto compiler.		-->
+    <DebugType Condition=" '$(DebugType)' == '' ">embedded</DebugType>
     <Optimize>true</Optimize>
     <DefineConstants>DEBUG;NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
