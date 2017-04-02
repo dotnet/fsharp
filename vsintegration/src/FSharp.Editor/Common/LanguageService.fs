@@ -31,11 +31,6 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.ComponentModelHost
 
-// Workaround to access non-public settings persistence type.
-// GetService( ) with this will work as long as the GUID matches the real type.
-[<Guid(FSharpCommonConstants.svsSettingsPersistenceManagerGuidString)>]
-type internal SVsSettingsPersistenceManager = class end
-
 // Exposes FSharpChecker as MEF export
 [<Export(typeof<FSharpCheckerProvider>); Composition.Shared>]
 type internal FSharpCheckerProvider 
@@ -195,7 +190,7 @@ type internal FSharpCheckerWorkspaceServiceFactory
 
 type
     [<Guid(FSharpCommonConstants.packageGuidString)>]
-    [<ProvideLanguageEditorOptionPage(typeof<Options.IntelliSenseOptionPage>, "F#", null, "IntelliSense", "6008")>]
+    [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.IntelliSenseOptionPage>, "F#", null, "IntelliSense", "6008")>]
     [<ProvideLanguageService(languageService = typeof<FSharpLanguageService>,
                              strLanguageName = FSharpCommonConstants.FSharpLanguageName,
                              languageResourceID = 100,
@@ -219,8 +214,7 @@ type
 
     override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
 
-    override this.CreateLanguageService() = 
-        FSharpLanguageService(this)        
+    override this.CreateLanguageService() = FSharpLanguageService(this)        
 
     override this.CreateEditorFactories() = Seq.empty<IVsEditorFactory>
 
