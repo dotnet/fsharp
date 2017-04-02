@@ -18,6 +18,10 @@ $vs = Get-VSSetupInstance
 # Microsoft.VisualStudio.Component.VC.Tools.x86.x64: VC++ 2017 v141 toolset (x86,x64)
 # Microsoft.VisualStudio.Component.Windows10SDK.14393: Windows 10 SDK (10.0.14393.0)
 # Microsoft.VisualStudio.Component.Windows81SDK: Windows 8.1 SDK
+# Microsoft.VisualStudio.Component.PortableLibrary: .NET Framework PortableLibrary targeting pack
+# Microsoft.Net.Component.4.TargetingPack: .NET Framework 4 targeting pack
+# Microsoft.Net.Component.4.5.TargetingPack: .NET Framework 4.5 targeting pack
+# Microsoft.Net.Component.4.5.1.TargetingPack: .NET Framework 4.5.1 targeting pack
 # Microsoft.Net.Component.4.6.TargetingPack: .NET Framework 4.6 targeting pack
 # Microsoft.Net.Component.4.5.1.TargetingPack: .NET Framework 4.5.1 targeting pack
 # Microsoft.Net.Component.4.6.2.TargetingPack: .NET Framework 4.6.2 targeting pack
@@ -35,6 +39,10 @@ $vs = Get-VSSetupInstance
     --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
     --add Microsoft.VisualStudio.Component.Windows10SDK.14393 `
     --add Microsoft.VisualStudio.Component.Windows81SDK `
-    --add Microsoft.Net.Component.4.6.TargetingPack `
+	  --add Microsoft.VisualStudio.Component.PortableLibrary `
+    --add Microsoft.Net.Component.4.TargetingPack `
+    --add Microsoft.Net.Component.4.5.TargetingPack `
     --add Microsoft.Net.Component.4.5.1.TargetingPack `
-    --add Microsoft.Net.Component.4.6.2.TargetingPack
+    --add Microsoft.Net.Component.4.6.TargetingPack `
+    --add Microsoft.Net.Component.4.6.1.TargetingPack `
+    --add Microsoft.Net.Component.4.6.2.TargetingPack `
