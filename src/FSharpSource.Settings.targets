@@ -77,7 +77,8 @@
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <!-- Flags used for Release mode.		-->
-    <DebugType>portable</DebugType>
+    <DebugType Condition=" '$(DebugType)' == '' and '$(TargetFramework)' != 'coreclr' and '$(UseSourceLink)' != 'true' ">pdbonly</DebugType>
+    <DebugType Condition=" '$(DebugType)' == '' ">portable</DebugType>
     <Optimize Condition=" '$(Optimize)' == '' ">true</Optimize>
     <EmbedAllSource>false</EmbedAllSource>
 
