@@ -123,4 +123,4 @@ Infrastructure isn't the sexiest stuff in the world, but it's absolutely necessa
 * [Zp Babbi](https://github.com/zpbappi)
 * [Gauthier Segay](https://github.com/smoothdeveloper)
 * [Jared Hester](github.com/cloudroutine)
-* [Cameron Taggert]()
+* [Cameron Taggert](https://github.com/ctaggart)
