@@ -189,7 +189,7 @@ type internal FSharpCheckerWorkspaceServiceFactory
                 member this.ProjectInfoManager = projectInfoManager }
 
 type
-    [<Guid(FSharpCommonConstants.packageGuidString)>]
+    [<Guid(FSharpConstants.packageGuidString)>]
     [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.IntelliSenseOptionPage>, "F#", null, "IntelliSense", "6008")>]
     [<ProvideLanguageService(languageService = typeof<FSharpLanguageService>,
                              strLanguageName = FSharpConstants.FSharpLanguageName,
@@ -215,7 +215,7 @@ type
         //make sure incoming settings changes are handled
         this.ComponentModel.GetService<SettingsPersistence.SettingsStore>() |> ignore
 
-    override this.RoslynLanguageName = FSharpCommonConstants.FSharpLanguageName
+    override this.RoslynLanguageName = FSharpConstants.FSharpLanguageName
 
     override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
 
