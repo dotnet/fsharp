@@ -298,7 +298,7 @@ type internal FSharpQuickInfoProvider
 
     let xmlMemberIndexService = serviceProvider.GetService(typeof<SVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
-    
+
     static member ProvideQuickInfo(checker: FSharpChecker, documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, options: FSharpProjectOptions, textVersionHash: int) =
         asyncMaybe {
             let! _, _, checkFileResults = checker.ParseAndCheckDocument (filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)
@@ -325,8 +325,8 @@ type internal FSharpQuickInfoProvider
                 | None, None -> return null
                 | Some tooltip, None  
                 | None, Some tooltip -> 
-                    let mainDescription = Collections.Generic.List ()
-                    let documentation = Collections.Generic.List ()
+                    let mainDescription = ResizeArray()
+                    let documentation = ResizeArray()
                     XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, documentation.Add, tooltip.StructuredText)
                     let content = 
                         FSharpQuickInfo.createDeferredContent
@@ -352,19 +352,21 @@ type internal FSharpQuickInfoProvider
 
                     // get whitespace nomalized documentation text
                     let getText (tts: seq<Layout.TaggedText>) = 
-                        ((StringBuilder(), tts) ||> Seq.fold (fun sb tt -> 
-                            if String.IsNullOrWhiteSpace tt.Text then sb else sb.Append tt.Text)).ToString() 
+                        let text = 
+                            (StringBuilder(), tts) 
+                            ||> Seq.fold (fun sb tt -> 
+                                if String.IsNullOrWhiteSpace tt.Text then sb else sb.Append tt.Text)
+                            |> string
+                        if String.IsNullOrWhiteSpace text then None else Some text
                     
                     let documentation = 
-                        let implText, sigText = getText targetDocumentation, getText  sigDocumentation
-                        let implDocsEmpty, sigDocsEmpty = String.IsNullOrWhiteSpace implText, String.IsNullOrWhiteSpace sigText
-                        
-                        [ match implDocsEmpty, sigDocsEmpty with
-                          | true, true -> ()
-                          | true, false -> yield! sigDocumentation
-                          | false, true -> yield! targetDocumentation
-                          | false, false when implText.Equals (sigText, StringComparison.OrdinalIgnoreCase) -> yield! sigDocumentation
-                          | false, false -> 
+                        [ match getText targetDocumentation, getText sigDocumentation with
+                          | None, None -> ()
+                          | None, Some _ -> yield! sigDocumentation
+                          | Some _, None -> yield! targetDocumentation
+                          | Some implText, Some sigText when implText.Equals (sigText, StringComparison.OrdinalIgnoreCase) -> 
+                              yield! sigDocumentation
+                          | Some _, Some _ -> 
                               yield! sigDocumentation
                               yield lineBreak
                               yield seperator
@@ -374,8 +376,8 @@ type internal FSharpQuickInfoProvider
                     let content = 
                         FSharpQuickInfo.createDeferredContent
                             (SymbolGlyphDeferredContent (CommonRoslynHelpers.GetGlyphForSymbol (targetTooltip.Symbol, targetTooltip.SymbolKind), glyphService),
-                             fragment (description, typeMap, document, symbolUse.RangeAlternate),
-                             fragment (documentation, typeMap, document, symbolUse.RangeAlternate))
+                            fragment (description, typeMap, document, symbolUse.RangeAlternate),
+                            fragment (documentation, typeMap, document, symbolUse.RangeAlternate))
 
                     return QuickInfoItem (targetTooltip.Span, content)
             }   |> Async.map Option.toObj
