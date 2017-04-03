@@ -434,7 +434,7 @@ type FSharpFindDeclResult =
     /// declaration not found + reason
     | DeclNotFound of FSharpFindDeclFailureReason
     /// found declaration
-    | DeclFound of range
+    | DeclFound of range * assemblyName : string
 
 
 /// This type is used to describe what was found during the name resolution.
@@ -1495,7 +1495,8 @@ type TypeCheckInfo
                   let projectDir = Filename.directoryName (if projectFileName = "" then mainInputFileName else projectFileName)
                   let filename = fileNameOfItem g (Some projectDir) itemRange item
                   if FileSystem.SafeExists filename then 
-                      FSharpFindDeclResult.DeclFound (mkRange filename itemRange.Start itemRange.End)
+                      let ccu = ItemDescriptionsImpl.ccuOfItem g item |> Option.defaultValue thisCcu
+                      FSharpFindDeclResult.DeclFound (mkRange filename itemRange.Start itemRange.End, ccu.AssemblyName)
                   else 
                       fail FSharpFindDeclFailureReason.NoSourceCode // provided items may have TypeProviderDefinitionLocationAttribute that binds them to some location
 

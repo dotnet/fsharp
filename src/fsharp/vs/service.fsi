@@ -108,7 +108,7 @@ type internal FSharpFindDeclResult =
     /// Indicates a declaration location was not found, with an additional reason
     | DeclNotFound of FSharpFindDeclFailureReason
     /// Indicates a declaration location was found
-    | DeclFound      of range
+    | DeclFound of range * assemblyName : string
      
 /// Represents the checking context implied by the ProjectOptions 
 [<Sealed>]
