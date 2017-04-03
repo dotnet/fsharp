@@ -139,7 +139,7 @@ namespace System.Threading
             let mutable linkedCtr2 = Unchecked.defaultof<CancellationTokenRegistration>
             do 
                 let handler  = Action<obj>(fun _ -> 
-                        // Avoinding a race for Dispose versus Cancel for linked token sources:
+                        // Avoiding a race for Dispose versus Cancel for linked token sources:
                         //  - CTS.Dispose deregisters its CTRs and sets state to DISPOSED_*
                         //  - However if the cancellation is in progress in the source it is linked to, deregistration is a no-op and CTS may still receive cancellation notification
                         //  - That cancellation notification arrives in disposed state
@@ -255,7 +255,7 @@ namespace System.Threading
                         else
                             let index = 
                                 // Search backwards; we assume Register/Deregister are scoped 
-                                // so registered last will be deregistred first
+                                // so registered last will be deregistered first
                                 let rec loop i = 
                                     if i < 0 then (-1)
                                     else
@@ -798,7 +798,7 @@ namespace Microsoft.FSharp.Control
                 |   AsyncImplResult.Canceled oce -> args.aux.ccont oce)
 
         //----------------------------------
-        // BUILDER OPREATIONS
+        // BUILDER OPERATIONS
 
         // Generate async computation which calls its continuation with the given result
         let resultA x = 
@@ -1238,7 +1238,7 @@ namespace Microsoft.FSharp.Control
             let res = resultCell.TryWaitForResultSynchronously(?timeout = timeout) in
             match res with
             | None -> // timed out
-                // issue cancelaltion signal
+                // issue cancellation signal
                 if innerCTS.IsSome then innerCTS.Value.Cancel() 
                 // wait for computation to quiesce; drop result on the floor
                 resultCell.TryWaitForResultSynchronously() |> ignore 
@@ -1436,7 +1436,7 @@ namespace Microsoft.FSharp.Control
                     let count = ref tasks.Length
                     let firstExn = ref None
                     let results = Array.zeroCreate tasks.Length
-                    // Attept to cancel the individual operations if an exception happens on any of the other threads
+                    // Attempt to cancel the individual operations if an exception happens on any of the other threads
                     let innerCTS = new LinkedSubSource(aux.token)
                     let trampolineHolder = aux.trampolineHolder
                     
@@ -1822,7 +1822,7 @@ namespace Microsoft.FSharp.Control
                              else // timed out
                                 // issue cancellation signal
                                 innerCTS.Cancel()
-                                // wait for computation to queisce
+                                // wait for computation to quiesce
                                 let! _ = Async.AwaitWaitHandle (resultCell.GetWaitHandle())                                
                                 return commitWithPossibleTimeout None 
                          finally 

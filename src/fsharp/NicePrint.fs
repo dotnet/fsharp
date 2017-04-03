@@ -619,7 +619,7 @@ module private PrintTypes =
         // let stat = if memFlags.IsFinal then stat ++ wordL "final" else stat in  
         stat
 
-    /// Layout a single attibute arg, following the cases of 'gen_attr_arg' in ilxgen.fs
+    /// Layout a single attribute arg, following the cases of 'gen_attr_arg' in ilxgen.fs
     /// This is the subset of expressions we display in the NicePrint pretty printer 
     /// See also dataExprL - there is overlap between these that should be removed 
     let rec private layoutAttribArg denv arg = 
@@ -763,7 +763,7 @@ module private PrintTypes =
     /// There are several printing-cases for a typar:
     ///
     ///  'a              - is multiple  occurrence.
-    ///  _               - singleton occurrence, an underscore preferred over 'b. (OCAML accepts but does not print)
+    ///  _               - singleton occurrence, an underscore preferred over 'b. (OCaml accepts but does not print)
     ///  #Type           - inplace coercion constraint and singleton.
     ///  ('a :> Type)    - inplace coercion constraint not singleton.
     ///  ('a.opM : S->T) - inplace operator constraint.
@@ -1857,7 +1857,7 @@ module private InferredSigPrinting =
                         wordL (tagKeyword "namespace") ^^ sepListL SepL.dot (List.map (fst >> tagNamespace >> wordL) innerPath)
                     headerL @@-- basic
                 else
-                    // This is a namespace that only contains namespaces. Skipt the header
+                    // This is a namespace that only contains namespaces. Skip the header
                     basic
             else
                 // This is a module 

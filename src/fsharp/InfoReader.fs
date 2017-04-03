@@ -538,7 +538,7 @@ let private FilterOverrides findFlag (isVirt:'a->bool,isNewSlot,isDefiniteOverri
     | IgnoreOverrides ->  
         let equivNewSlots x y = isNewSlot x && isNewSlot y && equivSigs x y
         items
-          // Remove any F#-declared overrides. THese may occur in the same type as the abstract member (unlike with .NET metadata)
+          // Remove any F#-declared overrides. These may occur in the same type as the abstract member (unlike with .NET metadata)
           // Include any 'newslot' declared methods.
           |> List.map (List.filter (fun x -> not (isDefiniteOverride x))) 
 

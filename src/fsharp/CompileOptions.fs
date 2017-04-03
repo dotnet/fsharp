@@ -117,7 +117,7 @@ let PrintCompilerOption (CompilerOption(_s,_tag,_spec,_,help) as compilerOption)
     printf "%-40s" (compilerOptionUsage compilerOption)
     let printWord column (word:string) =
         // Have printed upto column.
-        // Now print the next word including any preceeding whitespace.
+        // Now print the next word including any preceding whitespace.
         // Returns the column printed to (suited to folding).
         if column + 1 (*space*) + word.Length >= lineWidth then // NOTE: "equality" ensures final character of the line is never printed
           printfn "" (* newline *)
@@ -823,7 +823,7 @@ let testFlag tcConfigB =
                                             | str                -> warning(Error(FSComp.SR.optsUnknownArgumentToTheTestSwitch(str),rangeCmdArgs))), None,
                            None)
 
-// not shown in fsc.exe help, no warning on use, motiviation is for use from VS
+// not shown in fsc.exe help, no warning on use, motivation is for use from VS
 let vsSpecificFlags (tcConfigB: TcConfigBuilder) = 
   [ CompilerOption("vserrors", tagNone, OptionUnit (fun () -> tcConfigB.errorStyle <- ErrorStyle.VSErrors), None, None)
     CompilerOption("validate-type-providers", tagNone, OptionUnit (id), None, None)  // preserved for compatibility's sake, no longer has any effect

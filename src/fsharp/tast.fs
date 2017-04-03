@@ -2635,7 +2635,7 @@ and
 and 
     [<StructuredFormatDisplay("{Display}"); RequireQualifiedAccess>]
     NonLocalValOrMemberRef = 
-    { /// A reference to the entity containing the value or member. THis will always be a non-local reference
+    { /// A reference to the entity containing the value or member. This will always be a non-local reference
       EnclosingEntity : EntityRef 
 
       /// The name of the value, or the full signature of the member
@@ -3939,7 +3939,7 @@ and ValReprInfo  =
     /// Get the number of type parameters of the value
     member x.NumTypars      = (let (ValReprInfo(n,_,_)) = x in n.Length)
 
-    /// Indicates if the value has no arguemnts - neither type parameters nor value arguments
+    /// Indicates if the value has no arguments - neither type parameters nor value arguments
     member x.HasNoArgs      = (let (ValReprInfo(n,args,_)) = x in n.IsEmpty && args.IsEmpty)
 
     /// Get the number of tupled arguments in each curried argument position
@@ -4053,7 +4053,7 @@ and
     ///
     /// Indicates the expression is a quoted expression tree. 
     ///
-    // MUTABLITY: this use of mutability is awkward and perhaps should be removed
+    // MUTABILITY: this use of mutability is awkward and perhaps should be removed
     | Quote of Expr * (ILTypeRef list * TTypes * Exprs * ExprData) option ref * bool * range * TType  
     
     /// Typechecking residue: Indicates a free choice of typars that arises due to 
@@ -4905,7 +4905,7 @@ let NewExn cpath (id:Ident) access repr attribs doc =
         entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
         entity_il_repr_cache= newCache()   } 
 
-/// Create a new TAST RecdFied node for an F# class, struct or record field
+/// Create a new TAST RecdField node for an F# class, struct or record field
 let NewRecdField  stat konst id ty isMutable isVolatile pattribs fattribs docOption access secret =
     { rfield_mutable=isMutable
       rfield_pattribs=pattribs

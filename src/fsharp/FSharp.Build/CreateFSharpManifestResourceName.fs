@@ -27,7 +27,7 @@ type CreateFSharpManifestResourceName public () =
         //
         // However for non-resx resources, for some reason Visual FSharp does _not_ add the directory name to the resource name.
         // It is very unclear where the directory name gets dropped in the Visual FSharp implementation 
-        // - is it in Microsoft.Common.targets, Microfost.FSharp.targets or how the base type CreateCSharpManifestResourceName 
+        // - is it in Microsoft.Common.targets, Microsoft.FSharp.targets or how the base type CreateCSharpManifestResourceName 
         // is created and used - who knows, the code is not easy to understand despite it doing something very simple. That's
         // the nature of MSBuild/XBuild....
         //

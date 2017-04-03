@@ -58,7 +58,7 @@ type internal AssemblySymbol =
       /// Function that returns `EntityKind` based of given `LookupKind`.
       Kind: LookupType -> EntityKind }
 
-/// `RawEntity` list retrived from an assembly.
+/// `RawEntity` list retrieved from an assembly.
 type internal AssemblyContentCacheEntry =
     { /// Assembly file last write time.
       FileWriteTime: DateTime 
@@ -84,10 +84,10 @@ type internal EntityCache =
     /// Performs an operation on the cache in thread safe manner.
     member Locking : (IAssemblyContentCache -> 'T) -> 'T
 
-/// Lond identifier (i.e. it may contain dots).
+/// Long identifier (i.e. it may contain dots).
 type internal LongIdent = string
 
-/// Helper data structure representing a symbol, sutable for implementing unresolved identifiers resolution code fixes.
+/// Helper data structure representing a symbol, suitable for implementing unresolved identifiers resolution code fixes.
 type internal Entity =
     { /// Full name, relative to the current scope.
       FullRelativeName: LongIdent

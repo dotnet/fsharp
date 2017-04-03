@@ -113,7 +113,7 @@ let testHookMemberBody (membInfo: ValMemberInfo) (expr:Expr) =
 //      For correctness, this claim needs to be justified.
 //      
 //      Q:  Do any post check rewrite passes factor expressions out to other functions?      
-//      A1. The optimiser may introduce auxillary functions, e.g. by splitting out match-branches.
+//      A1. The optimiser may introduce auxiliary functions, e.g. by splitting out match-branches.
 //          This should not be done if the refactored body contains an unbound reraise.
 //      A2. TLR? Are any expression factored out into functions?
 //      

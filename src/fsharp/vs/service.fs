@@ -563,7 +563,7 @@ type TypeCheckInfo
         // Should really go all the way down the r.h.s. of the subtree to the left of where we are 
         // This is all needed when the index is floating free in the area just after the environment we really want to capture 
         // We guarantee to only refine to a more nested environment.  It may not be strictly  
-        // the right environment, but will alwauys be at least as rich 
+        // the right environment, but will always be at least as rich 
 
         let bestAlmostIncludedSoFar = ref None 
 
@@ -897,7 +897,7 @@ type TypeCheckInfo
     let (|FilterRelevantItems|_|) getItem exactMatchResidueOpt orig =
         FilterRelevantItemsBy getItem exactMatchResidueOpt (fun _ -> true) orig
     
-    /// Find the first non-whitespace postion in a line prior to the given character
+    /// Find the first non-whitespace position in a line prior to the given character
     let FindFirstNonWhitespacePosition (lineStr: string) i = 
         if i >= lineStr.Length then None
         else
@@ -959,7 +959,7 @@ type TypeCheckInfo
                 | None -> GetPreciseItemsFromNameResolution(line, colAtEndOfNamesAndResidue, None, filterCtors,resolveOverloads, hasTextChangedSinceLastTypecheck)
                 | Some residue ->
                     // deals with cases when we have spaces between dot and\or identifier, like A  . $
-                    // if this is our case - then wen need to locate end position of the name skipping whitespaces
+                    // if this is our case - then we need to locate end position of the name skipping whitespaces
                     // this allows us to handle cases like: let x . $ = 1 
 
                     // colAtEndOfNamesAndResidue is 1-based so at first we need to convert it to 0-based 
@@ -1388,7 +1388,7 @@ type TypeCheckInfo
     member x.GetF1Keyword (ctok, line, lineStr, colAtEndOfNames, names) : string option =
        ErrorScope.Protect Range.range0
             (fun () ->
-                match GetDeclItemsForNamesAtPosition(ctok, None, Some names, None, line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors, ResolveOverloads.No,(fun() -> []), fun _ -> false) with // F1 Keywords do not distiguish between overloads
+                match GetDeclItemsForNamesAtPosition(ctok, None, Some names, None, line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors, ResolveOverloads.No,(fun() -> []), fun _ -> false) with // F1 Keywords do not distinguish between overloads
                 | None -> None
                 | Some (items: CompletionItem list, _, _) ->
                     match items with
@@ -1819,7 +1819,7 @@ module internal Parser =
            tcImports: TcImports,
            tcState: TcState,
            loadClosure: LoadClosure option,
-           // These are the errors and warnings seen by the background compiler for the entire antecedant 
+           // These are the errors and warnings seen by the background compiler for the entire antecedent 
            backgroundDiagnostics: (PhasedDiagnostic * FSharpErrorSeverity) list,    
            reactorOps: IReactorOperations,
            // Used by 'FSharpDeclarationListInfo' to check the IncrementalBuilder is still alive.
@@ -2456,7 +2456,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
              areSame=AreSameForChecking3,
              areSameForSubsumption=AreSubsumable3)
 
-    /// Holds keys for files being currently checked. It's used to prevent checking same file in parallel (interliveing chunck queued to Reactor).
+    /// Holds keys for files being currently checked. It's used to prevent checking same file in parallel (interleaving chunck queued to Reactor).
     let beingCheckedFileTable = 
         ConcurrentDictionary<FilePath * FSharpProjectOptions * FileVersion, unit>
             (HashIdentity.FromFunctions
@@ -2590,7 +2590,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
     /// 
     /// 2. If it've got cached results, returns them.
     ///
-    /// 3. If it've not got the lock for 1 munute, returns `FSharpCheckFileAnswer.Aborted`.
+    /// 3. If it've not got the lock for 1 minute, returns `FSharpCheckFileAnswer.Aborted`.
     ///
     /// 4. Type checks the file.
     ///
@@ -3133,7 +3133,7 @@ type FsiInteractiveChecker(reactorOps: IReactorOperations, tcConfig, tcGlobals, 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module CompilerEnvironment =
     /// These are the names of assemblies that should be referenced for .fs, .ml, .fsi, .mli files that
-    /// are not asscociated with a project
+    /// are not associated with a project
     let DefaultReferencesForOrphanSources(assumeDotNetFramework) = DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework)
     
     /// Publish compiler-flags parsing logic. Must be fast because its used by the colorizer.

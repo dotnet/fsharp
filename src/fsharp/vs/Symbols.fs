@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corpration, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
@@ -860,7 +860,7 @@ and FSharpGenericParameter(cenv, v:Typar) =
     member __.IsSolveAtCompileTime = (v.StaticReq = TyparStaticReq.HeadTypeStaticReq)
     member __.Attributes = 
          // INCOMPLETENESS: If the type parameter comes from .NET then the .NET metadata for the type parameter
-         // has been lost (it is not accesible via Typar).  So we can't easily report the attributes in this 
+         // has been lost (it is not accessible via Typar).  So we can't easily report the attributes in this 
          // case.
          v.Attribs |> List.map (fun a -> FSharpAttribute(cenv,  AttribInfo.FSAttribInfo(cenv.g, a))) |> makeReadOnlyCollection
     member __.Constraints = v.Constraints |> List.map (fun a -> FSharpGenericParameterConstraint(cenv, a)) |> makeReadOnlyCollection

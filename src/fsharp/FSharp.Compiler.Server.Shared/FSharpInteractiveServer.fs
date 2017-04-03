@@ -6,7 +6,7 @@ namespace Microsoft.FSharp.Compiler.Server.Shared
 // For FSI VS plugin, require FSI to provide services:
 // e.g.
 //   - interrupt
-//   - intelisense completion
+//   - intellisense completion
 // 
 // This is done via remoting.
 // Here we define the service class.

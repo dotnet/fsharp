@@ -147,7 +147,7 @@ type internal FSharpSymbolUse =
     /// Indicates if the reference is via the member being implemented in a class or object expression
     member IsFromDispatchSlotImplementation : bool
 
-    /// Indicates if the reference is either a builder or a custom operation in a compuation expression
+    /// Indicates if the reference is either a builder or a custom operation in a computation expression
     member IsFromComputationExpression : bool
 
     /// The file name the reference occurs in 
@@ -186,7 +186,7 @@ type internal FSharpCheckFileResults =
     /// Get the resolution of the ProjectOptions 
     member ProjectContext : FSharpProjectContext
 
-    /// Indicates whether type checking successfully occured with some results returned. If false, indicates that 
+    /// Indicates whether type checking successfully occurred with some results returned. If false, indicates that 
     /// an unrecoverable error in earlier checking/parsing/resolution steps.
     member HasFullTypeCheckInfo: bool
 
@@ -667,6 +667,6 @@ module internal PrettyNaming =
     /// A utility to help determine if an identifier needs to be quoted 
     val QuoteIdentifierIfNeeded : string -> string
 
-    /// All the keywords in the F# langauge 
+    /// All the keywords in the F# language 
     val KeywordNames : string list
 

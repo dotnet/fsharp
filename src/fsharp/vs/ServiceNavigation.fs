@@ -11,7 +11,7 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 
-/// Represents the differnt kinds of items that can appear in the navigation bar
+/// Represents the different kinds of items that can appear in the navigation bar
 type FSharpNavigationDeclarationItemKind =
     | NamespaceDecl
     | ModuleFileDecl

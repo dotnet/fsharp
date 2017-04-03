@@ -147,7 +147,7 @@ val mkLetRecBinds : range -> Bindings -> Expr -> Expr
 // Generalization/inference helpers
 //------------------------------------------------------------------------- 
  
-/// TypeSchme (generalizedTypars, tauTy)
+/// TypeScheme (generalizedTypars, tauTy)
 ///
 ///    generalizedTypars -- the truly generalized type parameters 
 ///    tauTy  --  the body of the generalized type. A 'tau' type is one with its type parameters stripped off.

@@ -84,7 +84,7 @@ module internal FSharpTokenTag =
     val Identifier: int
     /// Indicates the token is a string
     val String : int
-    /// Indicates the token is an identifier (synonym for FSharpTokenTag.Identifer)
+    /// Indicates the token is an identifier (synonym for FSharpTokenTag.Identifier)
     val IDENT : int
     /// Indicates the token is an string (synonym for FSharpTokenTag.String)
     val STRING : int

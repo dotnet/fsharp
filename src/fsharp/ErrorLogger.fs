@@ -15,7 +15,7 @@ open System
 // General error recovery mechanism
 //-----------------------------------------------------------------------
 
-/// Represents the style being used to format errros
+/// Represents the style being used to format errors
 [<RequireQualifiedAccess>]
 type ErrorStyle = 
 | DefaultErrors 

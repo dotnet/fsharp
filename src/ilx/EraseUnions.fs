@@ -44,7 +44,7 @@ type DiscriminationTechnique =
 //
 //     type Tree = Tip | Node of int * Tree * Tree
 //
-// it also flattens so the fields for "Node" are stored in the base class, meanign that no type casts
+// it also flattens so the fields for "Node" are stored in the base class, meaning that no type casts
 // are needed to access the data.  
 //
 // However, it can't be enabled because it suppresses the generation 

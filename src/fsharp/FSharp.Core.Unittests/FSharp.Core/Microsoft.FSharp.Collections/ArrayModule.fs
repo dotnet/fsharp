@@ -719,13 +719,13 @@ type ArrayModule() =
         
     [<Test>]
     member this.Filter2 () =
-        // The Array.filter algorith uses a bitmask as a temporary storage mechanism
+        // The Array.filter algorithm uses a bitmask as a temporary storage mechanism
         // for which elements to filter. This introduces some possible error conditions
         // around how the filter is filled and subsequently used, so filter test
         // does a pretty exhaustive test suite.
         // It works by first generating arrays which consist of sequences of unique
         // positive and negative numbers, as per arguments, it then filters for the
-        // positive values, and then compares the results agains the original array.
+        // positive values, and then compares the results against the original array.
 
         let makeTestArray size posLength negLength startWithPos startFromEnd =
             let array = Array.zeroCreate size
