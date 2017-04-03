@@ -88,7 +88,9 @@ type internal FSharpCompletionProvider
         asyncMaybe {
             let! parseResults, parsedInput, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)
 
+            //#if DEBUG
             //Logging.Logging.logInfof "AST:\n%+A" parsedInput
+            //#endif
 
             let textLines = sourceText.Lines
             let caretLinePos = textLines.GetLinePosition(caretPosition)
@@ -192,7 +194,7 @@ type internal FSharpCompletionProvider
                 declarationItemsCache.Add(completionItem.DisplayText, declItem)
                 results.Add(completionItem))
 
-            if results.Count > 0 && not declarations.IsForType && not declarations.IsError then
+            if results.Count > 0 && not declarations.IsForType && not declarations.IsError && List.isEmpty qualifyingNames then
                 let lineStr = textLines.[caretLinePos.Line].ToString()
                 match UntypedParseImpl.TryGetCompletionContext(Pos.fromZ caretLinePos.Line caretLinePos.Character, Some parseResults, lineStr) with
                 | None -> results.AddRange(keywordCompletionItems)
