@@ -39,9 +39,10 @@
     <Compile Include="Common\CommonRoslynHelpers.fs" />
     <Compile Include="Common\CodeAnalysisExtensions.fs" />
     <Compile Include="Common\ContentType.fs" />
-    <Compile Include="Common\LanguageService.fs" />
-    <Compile Include="Common\SymbolHelpers.fs" />
-    <Compile Include="Common\AssemblyContentProvider.fs" />
+    <Compile Include="LanguageService\FSharpCheckerExtensions.fs" />
+    <Compile Include="LanguageService\LanguageService.fs" />
+    <Compile Include="LanguageService\AssemblyContentProvider.fs" />
+    <Compile Include="LanguageService\SymbolHelpers.fs" />
     <Compile Include="Properties\IntelliSensePropertyPage.fs" />
     <Compile Include="Classification\ClassificationDefinitions.fs" />
     <Compile Include="Classification\ColorizationService.fs" />
