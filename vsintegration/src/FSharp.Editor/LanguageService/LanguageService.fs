@@ -31,11 +31,6 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.ComponentModelHost
 
-// Workaround to access non-public settings persistence type.
-// GetService( ) with this will work as long as the GUID matches the real type.
-[<Guid(FSharpConstants.svsSettingsPersistenceManagerGuidString)>]
-type internal SVsSettingsPersistenceManager = class end
-
 // Exposes FSharpChecker as MEF export
 [<Export(typeof<FSharpCheckerProvider>); Composition.Shared>]
 type internal FSharpCheckerProvider 
@@ -194,7 +189,8 @@ type internal FSharpCheckerWorkspaceServiceFactory
                 member this.ProjectInfoManager = projectInfoManager }
 
 type
-    [<Guid(FSharpConstants.packageGuidString)>]
+    [<Guid(FSharpCommonConstants.packageGuidString)>]
+    [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.IntelliSenseOptionPage>, "F#", null, "IntelliSense", "6008")>]
     [<ProvideLanguageService(languageService = typeof<FSharpLanguageService>,
                              strLanguageName = FSharpConstants.FSharpLanguageName,
                              languageResourceID = 100,
@@ -213,8 +209,13 @@ type
                              ShowDropDownOptions = true)>]
     internal FSharpPackage() =
     inherit AbstractPackage<FSharpPackage, FSharpLanguageService>()
-    
-    override this.RoslynLanguageName = FSharpConstants.FSharpLanguageName
+
+    override this.Initialize() =
+        base.Initialize()
+        //make sure incoming settings changes are handled
+        this.ComponentModel.GetService<SettingsPersistence.SettingsStore>() |> ignore
+
+    override this.RoslynLanguageName = FSharpCommonConstants.FSharpLanguageName
 
     override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
 
