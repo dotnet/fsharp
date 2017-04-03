@@ -979,7 +979,7 @@ module internal ParsedInput =
 
     let tryFindInsertionContext (currentLine: int) (ast: ParsedInput) (partiallyQualifiedName: MaybeUnresolvedIdents) = 
         let res, modules = tryFindNearestPointAndModules currentLine ast
-        // CLEANUP: does this realy need to be a partial application with pre-computation?  Can this be made more expicit?
+        // CLEANUP: does this really need to be a partial application with pre-computation?  Can this be made more explicit?
         fun (requiresQualifiedAccessParent: Idents option, autoOpenParent: Idents option, entityNamespace: Idents option, entity: Idents) ->
 
             // We ignore all diagnostics during this operation

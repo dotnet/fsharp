@@ -309,7 +309,7 @@ type OptimizationSettings =
     member x.EliminateRecdFieldGet () = x.localOpt () 
     member x.EliminateTupleFieldGet () = x.localOpt () 
     member x.EliminatUnionCaseFieldGet () = x.localOpt () 
-    /// eliminate non-copiler generated immediate bindings 
+    /// eliminate non-compiler generated immediate bindings 
     member x.EliminateImmediatelyConsumedLocals() = x.localOpt () 
     /// expand "let x = (exp1,exp2,...)" bind fields as prior tmps 
     member x.ExpandStructrualValues() = x.localOpt () 
@@ -1174,7 +1174,7 @@ let AbstractAndRemapModulInfo msg g m (repackage,hidden) info =
     info
 
 //-------------------------------------------------------------------------
-// Misc helerps
+// Misc helpers
 //------------------------------------------------------------------------- 
 
 // Mark some variables (the ones we introduce via abstractBigTargets) as don't-eliminate 
@@ -1628,7 +1628,7 @@ let TryDetectQueryQuoteAndRun cenv (expr:Expr) =
                         Some (mkCallSeq cenv.g newSource.Range resultElemTy (mkCallSeqDelay cenv.g newSource.Range resultElemTy (mkUnitDelayLambda cenv.g newSource.Range newSource) ), 
                               Some(resultElemTy, qTy) )
                     | None -> 
-                        //printfn "Not compiling to state machines, but still optimizaing the use of quotations away"
+                        //printfn "Not compiling to state machines, but still optimizing the use of quotations away"
                         Some (e, None)
 
                 | AnyQueryBuilderOpTrans g (seqSource,replace) -> 
@@ -1981,7 +1981,7 @@ and OptimizeFastIntegerForLoop cenv env (spStart,v,e1,dir,e2,e3,m) =
     let env = BindInternalValToUnknown cenv v env 
     let e3', e3info = OptimizeExpr cenv env e3 
     // Try to replace F#-style loops with C# style loops that recompute their bounds but which are compiled more efficiently by the JITs, e.g.
-    //  F#  "for x = 0 to arre.Length - 1 do ..." --> C# "for (int x = 0; x < arre.Length; x++) { ... }"
+    //  F#  "for x = 0 to arr.Length - 1 do ..." --> C# "for (int x = 0; x < arr.Length; x++) { ... }"
     //  F#  "for x = 0 to 10 do ..." --> C# "for (int x = 0; x < 11; x++) { ... }"
     let e2', dir = 
         match dir, e2' with 
