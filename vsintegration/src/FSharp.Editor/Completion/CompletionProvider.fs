@@ -21,6 +21,8 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Tokenizer
+
 
 type internal FSharpCompletionProvider
     (
@@ -137,7 +139,7 @@ type internal FSharpCompletionProvider
             let maxHints = if mruItems.Values.Count = 0 then 0 else Seq.max mruItems.Values
 
             sortedDeclItems |> Array.iteri (fun number declItem ->
-                let glyph = CommonRoslynHelpers.FSharpGlyphToRoslynGlyph (declItem.Glyph, declItem.Accessibility)
+                let glyph = FSharpGlyphToRoslynGlyph (declItem.Glyph, declItem.Accessibility)
                 let name =
                     match declItem.NamespaceToOpen with
                     | Some namespaceToOpen -> sprintf "%s (open %s)" declItem.Name namespaceToOpen
@@ -220,7 +222,7 @@ type internal FSharpCompletionProvider
                 FSharpCompletionProvider.ProvideCompletionsAsyncAux(checkerProvider.Checker, sourceText, context.Position, options, 
                                                                     document.FilePath, textVersion.GetHashCode(), getAllSymbols)
             context.AddItems(results)
-        } |> Async.Ignore |> CommonRoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
+        } |> Async.Ignore |> RoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
         
     override this.GetDescriptionAsync(_: Document, completionItem: Completion.CompletionItem, cancellationToken: CancellationToken): Task<CompletionDescription> =
         async {
@@ -228,13 +230,13 @@ type internal FSharpCompletionProvider
             if exists then
                 let! description = declarationItem.StructuredDescriptionTextAsync
                 let documentation = List()
-                let collector = CommonRoslynHelpers.CollectTaggedText documentation
+                let collector = RoslynHelpers.CollectTaggedText documentation
                 // mix main description and xmldoc by using one collector
                 XmlDocumentation.BuildDataTipText(documentationBuilder, collector, collector, description) 
                 return CompletionDescription.Create(documentation.ToImmutableArray())
             else
                 return CompletionDescription.Empty
-        } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+        } |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
     override this.GetChangeAsync(document, item, _, cancellationToken) : Task<CompletionChange> =
         async {
@@ -279,4 +281,4 @@ type internal FSharpCompletionProvider
                 }
                 |> Async.map (Option.defaultValue (CompletionChange.Create(TextChange(item.Span, nameInCode))))
 
-        } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+        } |> RoslynHelpers.StartAsyncAsTask cancellationToken
