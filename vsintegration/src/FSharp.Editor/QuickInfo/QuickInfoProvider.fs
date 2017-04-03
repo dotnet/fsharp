@@ -77,7 +77,7 @@ type internal SourceLink(run) as this =
 type private TooltipInfo =
     { StructuredText: FSharpStructuredToolTipText 
       Span: TextSpan
-      SymbolUse: FSharpSymbolUse
+      Symbol: FSharpSymbol
       SymbolKind: LexerSymbolKind }
 
 module private FSharpQuickInfo =
@@ -130,7 +130,7 @@ module private FSharpQuickInfo =
                 
                 return { StructuredText = extTooltipText
                          Span = CommonRoslynHelpers.FSharpRangeToTextSpan (extSourceText, extLexerSymbol.Range)
-                         SymbolUse = extSymbolUse
+                         Symbol = extSymbolUse.Symbol
                          SymbolKind = extLexerSymbol.Kind }
         }
 
@@ -143,7 +143,7 @@ module private FSharpQuickInfo =
             position: int, 
             cancellationToken: CancellationToken
         ) 
-        : Async<(TooltipInfo option * TooltipInfo option) option> = 
+        : Async<(FSharpSymbolUse * TooltipInfo option * TooltipInfo option) option> = 
 
         asyncMaybe {
             let! sourceText = document.GetTextAsync cancellationToken
@@ -155,6 +155,7 @@ module private FSharpQuickInfo =
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()        
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland)
             
             /// Gets the tooltip information for the orignal target
             let getTargetSymbolTooltip () = 
@@ -167,18 +168,17 @@ module private FSharpQuickInfo =
                     | FSharpToolTipText [] 
                     | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
                     | _ -> 
-                        let! symbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland)
                         let targetTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan (sourceText, lexerSymbol.Range)
                         return { StructuredText = targetTooltip
                                  Span = targetTextSpan
-                                 SymbolUse = symbolUse
+                                 Symbol = symbolUse.Symbol
                                  SymbolKind = lexerSymbol.Kind }
                 } 
 
             // if the target is in a signature file, adjusting the tooltip info is unnecessary
             if isSignatureFile document.FilePath then
                 let! targetTooltipInfo = getTargetSymbolTooltip()
-                return None, Some targetTooltipInfo
+                return symbolUse, None, Some targetTooltipInfo
             else
                 // find the declaration location of the target symbol, with a preference for signature files
                 let! findSigDeclarationResult = 
@@ -190,7 +190,7 @@ module private FSharpQuickInfo =
                 let! targetTooltipInfo = getTargetSymbolTooltip()
                 
                 match findSigDeclarationResult with 
-                | FSharpFindDeclResult.DeclNotFound _ -> return None, Some targetTooltipInfo
+                | FSharpFindDeclResult.DeclNotFound _ -> return symbolUse, None, Some targetTooltipInfo
                 | FSharpFindDeclResult.DeclFound declRange -> 
                     if isSignatureFile declRange.FileName then 
                         let! sigTooltipInfo = getTooltipFromRange(checker, projectInfoManager, document, declRange, cancellationToken)
@@ -204,12 +204,12 @@ module private FSharpQuickInfo =
                                 (idRange.StartLine, idRange.EndColumn, lineText, lexerSymbol.FullIsland, preferFlag=false) |> liftAsync   
                 
                         match findImplDefinitionResult  with 
-                        | FSharpFindDeclResult.DeclNotFound _ -> return (Some sigTooltipInfo, None)
+                        | FSharpFindDeclResult.DeclNotFound _ -> return symbolUse, Some sigTooltipInfo, None
                         | FSharpFindDeclResult.DeclFound declRange -> 
                             let! implTooltipInfo = getTooltipFromRange(checker, projectInfoManager, document, declRange, cancellationToken)
-                            return Some sigTooltipInfo, Some { implTooltipInfo with Span = targetTooltipInfo.Span }
+                            return symbolUse, Some sigTooltipInfo, Some { implTooltipInfo with Span = targetTooltipInfo.Span }
                     else 
-                        return None, Some targetTooltipInfo
+                        return symbolUse, None, Some targetTooltipInfo
         }
 
 [<ExportQuickInfoProvider(PredefinedQuickInfoProviderNames.Semantic, FSharpCommonConstants.FSharpLanguageName)>]
@@ -318,7 +318,8 @@ type internal FSharpQuickInfoProvider
     interface IQuickInfoProvider with
         override this.GetItemAsync(document: Document, position: int, cancellationToken: CancellationToken): Task<QuickInfoItem> =
             asyncMaybe {
-                let! sigTooltipInfo, targetTooltipInfo = FSharpQuickInfo.getTooltipInfo(checkerProvider.Checker, projectInfoManager, document, position, cancellationToken)
+                let! symbolUse, sigTooltipInfo, targetTooltipInfo = 
+                    FSharpQuickInfo.getTooltipInfo(checkerProvider.Checker, projectInfoManager, document, position, cancellationToken)
 
                 match sigTooltipInfo, targetTooltipInfo with 
                 | None, None -> return null
@@ -329,9 +330,9 @@ type internal FSharpQuickInfoProvider
                     XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, documentation.Add, tooltip.StructuredText)
                     let content = 
                         FSharpQuickInfo.createDeferredContent
-                            (SymbolGlyphDeferredContent(CommonRoslynHelpers.GetGlyphForSymbol(tooltip.SymbolUse.Symbol, tooltip.SymbolKind), glyphService),
-                             fragment (mainDescription, typeMap, document, tooltip.SymbolUse.RangeAlternate),
-                             fragment (documentation, typeMap, document, tooltip.SymbolUse.RangeAlternate))
+                            (SymbolGlyphDeferredContent(CommonRoslynHelpers.GetGlyphForSymbol(tooltip.Symbol, tooltip.SymbolKind), glyphService),
+                             fragment (mainDescription, typeMap, document, symbolUse.RangeAlternate),
+                             fragment (documentation, typeMap, document, symbolUse.RangeAlternate))
                     return QuickInfoItem (tooltip.Span, content)
 
                 | Some sigTooltip, Some targetTooltip ->
@@ -372,9 +373,9 @@ type internal FSharpQuickInfoProvider
 
                     let content = 
                         FSharpQuickInfo.createDeferredContent
-                            (SymbolGlyphDeferredContent (CommonRoslynHelpers.GetGlyphForSymbol (targetTooltip.SymbolUse.Symbol, targetTooltip.SymbolKind), glyphService),
-                             fragment (description, typeMap, document, targetTooltip.SymbolUse.RangeAlternate),
-                             fragment (documentation, typeMap, document, targetTooltip.SymbolUse.RangeAlternate))
+                            (SymbolGlyphDeferredContent (CommonRoslynHelpers.GetGlyphForSymbol (targetTooltip.Symbol, targetTooltip.SymbolKind), glyphService),
+                             fragment (description, typeMap, document, symbolUse.RangeAlternate),
+                             fragment (documentation, typeMap, document, symbolUse.RangeAlternate))
 
                     return QuickInfoItem (targetTooltip.Span, content)
             }   |> Async.map Option.toObj
