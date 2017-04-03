@@ -57,3 +57,5 @@ and internal IProjectSite =
     abstract LoadTime : System.DateTime 
 
     abstract ProjectProvider : IProvideProjectSite option
+
+    abstract AssemblyReferences : unit -> string []

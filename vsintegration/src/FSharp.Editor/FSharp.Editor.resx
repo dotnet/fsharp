@@ -171,4 +171,10 @@
   <data name="IntelliSensePropertyPageShowAfterCharIsTypedDescr" xml:space="preserve">
     <value>Show completion list after a character is typed</value>
   </data>
+  <data name="AddAssemblyReference" xml:space="preserve">
+    <value>Add an assembly reference to '{0}'</value>
+  </data>
+  <data name="AddProjectReference" xml:space="preserve">
+    <value>Add a project reference to '{0}'</value>
+  </data>
 </root>

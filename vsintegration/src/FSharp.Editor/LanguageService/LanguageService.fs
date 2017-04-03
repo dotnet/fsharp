@@ -301,10 +301,9 @@ and
         let hashSetIgnoreCase x = new HashSet<string>(x, StringComparer.OrdinalIgnoreCase)
         let updatedFiles = site.SourceFilesOnDisk() |> hashSetIgnoreCase
         let workspaceFiles = project.GetCurrentDocuments() |> Seq.map(fun file -> file.FilePath) |> hashSetIgnoreCase
-
-        // If syncing project upon some reference changes, we don't have a mechanism to recognize which references have been added/removed.
-        // Hence, the current solution is to force update current project options.
+        
         let mutable updated = forceUpdate
+
         for file in updatedFiles do
             if not(workspaceFiles.Contains(file)) then
                 projectContext.AddSourceFile(file)
@@ -313,6 +312,16 @@ and
             if not(updatedFiles.Contains(file)) then
                 projectContext.RemoveSourceFile(file)
                 updated <- true
+        
+        let updatedRefs = site.AssemblyReferences() |> hashSetIgnoreCase
+        let workspaceRefs = project.GetCurrentMetadataReferences() |> Seq.map(fun ref -> ref.FilePath) |> hashSetIgnoreCase
+
+        for ref in updatedRefs do
+            if not(workspaceRefs.Contains(ref)) then
+                projectContext.AddMetadataReference(ref, MetadataReferenceProperties.Assembly)
+        for ref in workspaceRefs do
+            if not(workspaceRefs.Contains(ref)) then
+                projectContext.RemoveMetadataReference(ref)
 
         // update the cached options
         if updated then
