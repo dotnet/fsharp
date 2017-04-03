@@ -10,6 +10,7 @@ open System.Collections.Generic
 open System.ComponentModel.Composition
 open System.Runtime.InteropServices
 open System.IO
+open System.Diagnostics
 
 open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.SourceCodeServices
@@ -329,9 +330,19 @@ and
                 let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
                 let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
                 
+                let hierarchy =
+                    site.ProjectProvider
+                    |> Option.map (fun p -> p :?> IVsHierarchy)
+                    |> Option.toObj
+                
+                // Roslyn is expecting site to be an IVsHierarchy.
+                // It just so happens that the object that implements IProvideProjectSite is also
+                // an IVsHierarchy. This assertion is to ensure that the assumption holds true.
+                Debug.Assert(hierarchy <> null, "About to CreateProjectContext with a non-hierarchy site")
+
                 let projectContext = 
                     projectContextFactory.CreateProjectContext(
-                        FSharpCommonConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectGuid, siteProvider, null, errorReporter)
+                        FSharpCommonConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectGuid, hierarchy, null, errorReporter)
 
                 let project = projectContext :?> AbstractProject
 
