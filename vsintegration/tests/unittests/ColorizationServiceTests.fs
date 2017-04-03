@@ -10,7 +10,6 @@ open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
-open RoslynHelpers
 
 [<TestFixture>][<Category "Roslyn Services">]
 type ColorizationServiceTests()  =
@@ -35,7 +34,6 @@ type ColorizationServiceTests()  =
         match tokens |> Seq.tryFind(fun token -> token.TextSpan.Contains(markerPosition + marker.Length - 1)) with
         | None -> Assert.Fail("Cannot find colorization data for end of marker")
         | Some(classifiedSpan) -> Assert.AreEqual(classificationType, classifiedSpan.ClassificationType, "Classification data doesn't match for end of marker")
-
 
     [<Test>]
     member this.Comment_SingleLine() = 
