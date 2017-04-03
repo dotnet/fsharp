@@ -182,8 +182,9 @@ type UsingMSBuild() as this  =
           shouldContain // should contain
           shouldNotContain
 
-    member public this.AutoCompleteBug70080Helper(programText:string) =
-        this.AutoCompleteBug70080HelperHelper(programText, ["AttributeUsageAttribute"], [])
+    member public this.AutoCompleteBug70080Helper(programText:string, ?withSuffix: bool) =
+        let expected = if defaultArg withSuffix false then "AttributeUsageAttribute" else "AttributeUsage"
+        this.AutoCompleteBug70080HelperHelper(programText, [expected], [])
 
     member private this.testAutoCompleteAdjacentToDot op =
         let text = sprintf "System.Console%s" op
@@ -3516,17 +3517,17 @@ let x = query { for bbbb in abbbbc(*D0*) do
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToType.Bug70080``() =        
-        this.AutoCompleteBug70080Helper @"
+        this.AutoCompleteBug70080Helper(@"
                     open System
                     [<Attr     // expect AttributeUsageAttribute from System namespace
-                    type MyAttr() = inherit Attribute()"
+                    type MyAttr() = inherit Attribute()", true)
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToNothing.Bug70080``() =        
-        this.AutoCompleteBug70080Helper @"
+        this.AutoCompleteBug70080Helper(@"
                     open System
                     [<Attr     // expect AttributeUsageAttribute from System namespace
-                    // nothing here"
+                    // nothing here", true)
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToLetInNamespace.Bug70080``() =        
@@ -3538,36 +3539,36 @@ let x = query { for bbbb in abbbbc(*D0*) do
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToTypeInNamespace.Bug70080``() =        
-        this.AutoCompleteBug70080Helper @"
+        this.AutoCompleteBug70080Helper(@"
                     namespace Foo
                     open System
                     [<Attr     // expect AttributeUsageAttribute from System namespace
-                    type MyAttr() = inherit Attribute()"
+                    type MyAttr() = inherit Attribute()", true)
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToNothingInNamespace.Bug70080``() =        
-        this.AutoCompleteBug70080Helper @"
+        this.AutoCompleteBug70080Helper(@"
                     namespace Foo
                     open System
                     [<Attr     // expect AttributeUsageAttribute from System namespace
-                    // nothing here"
+                    // nothing here", true)
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToModuleInNamespace.Bug70080``() =        
-        this.AutoCompleteBug70080Helper @"
+        this.AutoCompleteBug70080Helper(@"
                     namespace Foo
                     open System
                     [<Attr     // expect AttributeUsageAttribute from System namespace
                     module Foo = 
-                        let x = 42"
+                        let x = 42", true)
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToModule.Bug70080``() =        
-        this.AutoCompleteBug70080Helper @"
+        this.AutoCompleteBug70080Helper(@"
                     open System
                     [<Attr     // expect AttributeUsageAttribute from System namespace
                     module Foo = 
-                        let x = 42"
+                        let x = 42", true)
 
     [<Test>]
     member public this.``Identifer.InMatchStatemente.Bug72595``() =        
