@@ -3362,8 +3362,7 @@ let DeduplicateParsedInputModuleName (moduleNamesDict:Dictionary<string,Set<stri
         match moduleNamesDict.TryGetValue qualifiedNameOfFile.Text with
         | true, paths ->
             let qualifiedNameOfFile = DeduplicateModuleName moduleNamesDict paths path qualifiedNameOfFile
-            let input = ParsedInput.ImplFile(ParsedImplFileInput.ParsedImplFileInput(fileName,isScript,qualifiedNameOfFile,scopedPragmas,hashDirectives,modules,(isLastCompiland,isExe)))
-            Some input
+            ParsedInput.ImplFile(ParsedImplFileInput.ParsedImplFileInput(fileName,isScript,qualifiedNameOfFile,scopedPragmas,hashDirectives,modules,(isLastCompiland,isExe)))
         | _ ->
             moduleNamesDict.Add(qualifiedNameOfFile.Text,Set.singleton path)
             input
@@ -3372,8 +3371,7 @@ let DeduplicateParsedInputModuleName (moduleNamesDict:Dictionary<string,Set<stri
         match moduleNamesDict.TryGetValue qualifiedNameOfFile.Text with
         | true, paths ->
             let qualifiedNameOfFile = DeduplicateModuleName moduleNamesDict paths path qualifiedNameOfFile
-            let input = ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName,qualifiedNameOfFile,scopedPragmas,hashDirectives,modules))
-            Some input
+            ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName,qualifiedNameOfFile,scopedPragmas,hashDirectives,modules))
         | _ ->
             moduleNamesDict.Add(qualifiedNameOfFile.Text,Set.singleton path)
             input
