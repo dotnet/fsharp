@@ -8,7 +8,7 @@ open System.Diagnostics
 open Microsoft.CodeAnalysis.Classification
 
 [<RequireQualifiedAccess>]
-module internal FSharpCommonConstants =
+module internal FSharpConstants =
     
     [<Literal>]
     /// "871D2A70-12A2-4e42-9440-425DD92A4116"

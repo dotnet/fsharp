@@ -5,7 +5,7 @@ open Microsoft.CodeAnalysis.Host.Mef
 open System.Composition
 
 [<Shared>]
-[<ExportLanguageService(typeof<ICommentUncommentService>, FSharpCommonConstants.FSharpLanguageName)>]
+[<ExportLanguageService(typeof<ICommentUncommentService>, FSharpConstants.FSharpLanguageName)>]
 type CommentUncommentService() =
     interface ICommentUncommentService with
         member this.SingleLineCommentString = "//"

@@ -13,7 +13,7 @@ open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 
 [<Shared>]
-[<ExportLanguageService(typeof<ISynchronousIndentationService>, FSharpCommonConstants.FSharpLanguageName)>]
+[<ExportLanguageService(typeof<ISynchronousIndentationService>, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpIndentationService() =
 
     static member GetDesiredIndentation(sourceText: SourceText, lineNumber: int, tabSize: int): Option<int> =        
@@ -47,7 +47,7 @@ type internal FSharpIndentationService() =
             async {
                  let! sourceText = document.GetTextAsync(cancellationToken)
                  let! options = document.GetOptionsAsync(cancellationToken)
-                 let tabSize = options.GetOption(FormattingOptions.TabSize, FSharpCommonConstants.FSharpLanguageName)
+                 let tabSize = options.GetOption(FormattingOptions.TabSize, FSharpConstants.FSharpLanguageName)
                  
                  return 
                     match FSharpIndentationService.GetDesiredIndentation(sourceText, lineNumber, tabSize) with

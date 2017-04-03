@@ -10,6 +10,7 @@ open System.Windows.Controls
 open System.Windows.Data
 open System.Windows.Media
 open System.ComponentModel.Composition
+open System.Text
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
@@ -18,6 +19,7 @@ open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.CodeAnalysis.Editor.Shared.Extensions
 open Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.QuickInfo
 open Microsoft.CodeAnalysis.Text
+
 
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.Shell
@@ -28,10 +30,8 @@ open Microsoft.VisualStudio.Language.Intellisense
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler
-open Internal.Utilities.StructuredFormat
 
-open CommonRoslynHelpers
-open System.Text
+open Internal.Utilities.StructuredFormat
 
 module private SessionHandling =
     let mutable currentSession = None
@@ -39,7 +39,7 @@ module private SessionHandling =
     [<Export (typeof<IQuickInfoSourceProvider>)>]
     [<Name (FSharpProviderConstants.SessionCapturingProvider)>]
     [<Order (After = PredefinedQuickInfoProviderNames.Semantic)>]
-    [<ContentType (FSharpCommonConstants.FSharpContentTypeName)>]
+    [<ContentType (FSharpConstants.FSharpContentTypeName)>]
     type SourceProviderForCapturingSession () =
         interface IQuickInfoSourceProvider with 
             member x.TryCreateQuickInfoSource _ =
@@ -108,13 +108,13 @@ module private FSharpQuickInfo =
             let! extDocId = solution.GetDocumentIdsWithFilePath declRange.FileName |> Seq.tryHead
             let extDocument = solution.GetProject(extDocId.ProjectId).GetDocument extDocId
             let! extSourceText = extDocument.GetTextAsync cancellationToken
-            let extSpan = CommonRoslynHelpers.FSharpRangeToTextSpan (extSourceText, declRange)
+            let extSpan = RoslynHelpers.FSharpRangeToTextSpan (extSourceText, declRange)
             let extLineText = (extSourceText.Lines.GetLineFromPosition extSpan.Start).ToString()
             
             // project options need to be retrieved because the signature file could be in another project 
             let! extProjectOptions = projectInfoManager.TryGetOptionsForProject extDocId.ProjectId
             let extDefines = CompilerEnvironment.GetCompilationDefinesForEditing (extDocument.FilePath, List.ofSeq extProjectOptions.OtherOptions)
-            let! extLexerSymbol = CommonHelpers.getSymbolAtPosition(extDocId, extSourceText, extSpan.Start, declRange.FileName, extDefines, SymbolLookupKind.Greedy)
+            let! extLexerSymbol = Tokenizer.getSymbolAtPosition(extDocId, extSourceText, extSpan.Start, declRange.FileName, extDefines, SymbolLookupKind.Greedy)
             let! _, _, extCheckFileResults = checker.ParseAndCheckDocument(extDocument,extProjectOptions,allowStaleResults=true,sourceText=extSourceText)
             
             let! extTooltipText = 
@@ -129,7 +129,7 @@ module private FSharpQuickInfo =
                     extCheckFileResults.GetSymbolUseAtLocation(declRange.StartLine, extLexerSymbol.Ident.idRange.EndColumn, extLineText, extLexerSymbol.FullIsland)
                 
                 return { StructuredText = extTooltipText
-                         Span = CommonRoslynHelpers.FSharpRangeToTextSpan (extSourceText, extLexerSymbol.Range)
+                         Span = RoslynHelpers.FSharpRangeToTextSpan (extSourceText, extLexerSymbol.Range)
                          Symbol = extSymbolUse.Symbol
                          SymbolKind = extLexerSymbol.Kind }
         }
@@ -149,7 +149,7 @@ module private FSharpQuickInfo =
             let! sourceText = document.GetTextAsync cancellationToken
             let! projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.FilePath, projectOptions.OtherOptions |> Seq.toList)
-            let! lexerSymbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy)
+            let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy)
             let idRange = lexerSymbol.Ident.idRange  
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, allowStaleResults = true, sourceText=sourceText)
             let textLinePos = sourceText.Lines.GetLinePosition position
@@ -168,7 +168,7 @@ module private FSharpQuickInfo =
                     | FSharpToolTipText [] 
                     | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
                     | _ -> 
-                        let targetTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan (sourceText, lexerSymbol.Range)
+                        let targetTextSpan = RoslynHelpers.FSharpRangeToTextSpan (sourceText, lexerSymbol.Range)
                         return { StructuredText = targetTooltip
                                  Span = targetTextSpan
                                  Symbol = symbolUse.Symbol
@@ -212,7 +212,7 @@ module private FSharpQuickInfo =
                         return symbolUse, None, Some targetTooltipInfo
         }
 
-[<ExportQuickInfoProvider(PredefinedQuickInfoProviderNames.Semantic, FSharpCommonConstants.FSharpLanguageName)>]
+[<ExportQuickInfoProvider(PredefinedQuickInfoProviderNames.Semantic, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpQuickInfoProvider 
     [<System.ComponentModel.Composition.ImportingConstructor>] 
     (
@@ -237,7 +237,7 @@ type internal FSharpQuickInfoProvider
                 let targetPath = range.FileName 
                 let! targetDoc = solution.TryGetDocumentFromFSharpRange (range,initialDoc.Project.Id)
                 let! targetSource = targetDoc.GetTextAsync() 
-                let! targetTextSpan = CommonRoslynHelpers.TryFSharpRangeToTextSpan (targetSource, range)
+                let! targetTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (targetSource, range)
                 // to ensure proper navigation decsions we need to check the type of document the navigation call
                 // is originating from and the target we're provided by default
                 //  - signature files (.fsi) should navigate to other signature files 
@@ -267,7 +267,7 @@ type internal FSharpQuickInfoProvider
 
         let layoutTagToFormatting (layoutTag: LayoutTag) =
             layoutTag
-            |> roslynTag
+            |> RoslynHelpers.roslynTag
             |> ClassificationTags.GetClassificationTypeName
             |> typemap.GetClassificationType
             |> formatMap.GetTextProperties
@@ -305,14 +305,14 @@ type internal FSharpQuickInfoProvider
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing (filePath, options.OtherOptions |> Seq.toList)
-            let! symbol = CommonHelpers.getSymbolAtPosition (documentId, sourceText, position, filePath, defines, SymbolLookupKind.Precise)
+            let! symbol = Tokenizer.getSymbolAtPosition (documentId, sourceText, position, filePath, defines, SymbolLookupKind.Precise)
             let! res = checkFileResults.GetStructuredToolTipTextAlternate (textLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, FSharpTokenTag.IDENT) |> liftAsync
             match res with
             | FSharpToolTipText [] 
             | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
             | _ -> 
                 let! symbolUse = checkFileResults.GetSymbolUseAtLocation (textLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland)
-                return res, CommonRoslynHelpers.FSharpRangeToTextSpan (sourceText, symbol.Range), symbolUse.Symbol, symbol.Kind
+                return res, RoslynHelpers.FSharpRangeToTextSpan (sourceText, symbol.Range), symbolUse.Symbol, symbol.Kind
         }
     
     interface IQuickInfoProvider with
@@ -330,7 +330,7 @@ type internal FSharpQuickInfoProvider
                     XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, documentation.Add, tooltip.StructuredText)
                     let content = 
                         FSharpQuickInfo.createDeferredContent
-                            (SymbolGlyphDeferredContent(CommonRoslynHelpers.GetGlyphForSymbol(tooltip.Symbol, tooltip.SymbolKind), glyphService),
+                            (SymbolGlyphDeferredContent(Tokenizer.GetGlyphForSymbol(tooltip.Symbol, tooltip.SymbolKind), glyphService),
                              fragment (mainDescription, typeMap, document, symbolUse.RangeAlternate),
                              fragment (documentation, typeMap, document, symbolUse.RangeAlternate))
                     return QuickInfoItem (tooltip.Span, content)
@@ -375,10 +375,10 @@ type internal FSharpQuickInfoProvider
 
                     let content = 
                         FSharpQuickInfo.createDeferredContent
-                            (SymbolGlyphDeferredContent (CommonRoslynHelpers.GetGlyphForSymbol (targetTooltip.Symbol, targetTooltip.SymbolKind), glyphService),
+                            (SymbolGlyphDeferredContent (Tokenizer.GetGlyphForSymbol (targetTooltip.Symbol, targetTooltip.SymbolKind), glyphService),
                             fragment (description, typeMap, document, symbolUse.RangeAlternate),
                             fragment (documentation, typeMap, document, symbolUse.RangeAlternate))
 
                     return QuickInfoItem (targetTooltip.Span, content)
             }   |> Async.map Option.toObj
-                |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken 
+                |> RoslynHelpers.StartAsyncAsTask cancellationToken 
