@@ -30,7 +30,7 @@ type internal FSharpColorizationService
             async {
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
                 let! sourceText = document.GetTextAsync(cancellationToken)
-                result.AddRange(CommonHelpers.getColorizationData(document.Id, sourceText, textSpan, Some(document.FilePath), defines, cancellationToken))
+                result.AddRange(Tokenizer.getColorizationData(document.Id, sourceText, textSpan, Some(document.FilePath), defines, cancellationToken))
             } |> RoslynHelpers.StartAsyncUnitAsTask cancellationToken
 
         member this.AddSemanticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
@@ -43,7 +43,7 @@ type internal FSharpColorizationService
                 let colorizationData = checkResults.GetSemanticClassification (Some targetRange) |> Array.distinctBy fst
                 
                 for (range, classificationType) in colorizationData do
-                    let span = CommonHelpers.fixupSpan(sourceText, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
+                    let span = Tokenizer.fixupSpan(sourceText, RoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
                     result.Add(ClassifiedSpan(span, FSharpClassificationTypes.getClassificationTypeName(classificationType)))
             } 
             |> Async.Ignore |> RoslynHelpers.StartAsyncUnitAsTask cancellationToken

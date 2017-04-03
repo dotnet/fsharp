@@ -8,14 +8,17 @@ open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Symbols
+
 
 module private UnusedOpens =
-    open Microsoft.CodeAnalysis.Text
+    
 
     let rec visitSynModuleOrNamespaceDecls (parent: Ast.LongIdent) decls : (Set<string> * range) list =
         [ for decl in decls do

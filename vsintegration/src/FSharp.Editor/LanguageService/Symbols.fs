@@ -1,4 +1,4 @@
-﻿
+﻿[<AutoOpen>]
 module internal Microsoft.VisualStudio.FSharp.Editor.Symbols
 
 open System
@@ -140,7 +140,7 @@ type FSharpEntity with
 
 
 /// Active patterns over `FSharpSymbolUse`.
-module Patterns =
+module SymbolUse =
 
     let (|ActivePatternCase|_|) (symbol : FSharpSymbolUse) =
         match symbol.Symbol with

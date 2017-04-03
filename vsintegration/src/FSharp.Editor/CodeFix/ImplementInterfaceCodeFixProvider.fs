@@ -146,7 +146,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(context.Document.FilePath, options.OtherOptions |> Seq.toList)
             // Notice that context.Span doesn't return reliable ranges to find tokens at exact positions.
             // That's why we tokenize the line and try to find the last successive identifier token
-            let tokens = CommonHelpers.tokenizeLine(context.Document.Id, sourceText, context.Span.Start, context.Document.FilePath, defines)
+            let tokens = Tokenizer.tokenizeLine(context.Document.Id, sourceText, context.Span.Start, context.Document.FilePath, defines)
             let startLeftColumn = context.Span.Start - textLine.Start
             let rec tryFindIdentifierToken acc tokens =
                match tokens with
@@ -169,7 +169,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
                 | _ -> 
                     Some context.Span.End
             let! interfaceState = queryInterfaceState appendBracketAt interfacePos tokens parsedInput                        
-            let! symbol = CommonHelpers.getSymbolAtPosition(context.Document.Id, sourceText, fixupPosition, context.Document.FilePath, defines, SymbolLookupKind.Greedy)
+            let! symbol = Tokenizer.getSymbolAtPosition(context.Document.Id, sourceText, fixupPosition, context.Document.FilePath, defines, Tokenizer.SymbolLookupKind.Greedy)
             let fcsTextLineNumber = textLine.LineNumber + 1
             let lineContents = textLine.ToString()                            
             let! options = context.Document.GetOptionsAsync(cancellationToken)

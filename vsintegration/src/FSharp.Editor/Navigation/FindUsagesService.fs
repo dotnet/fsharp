@@ -36,7 +36,7 @@ type internal FSharpFindUsagesService
                             let! sourceText = doc.GetTextAsync(cancellationToken)
                             match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
                             | Some span ->
-                                let span = CommonHelpers.fixupSpan(sourceText, span)
+                                let span = Tokenizer.fixupSpan(sourceText, span)
                                 return Some (DocumentSpan(doc, span))
                             | None -> return None
                         })
@@ -54,10 +54,10 @@ type internal FSharpFindUsagesService
             let lineNumber = sourceText.Lines.GetLinePosition(position).Line + 1
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.FilePath, options.OtherOptions |> Seq.toList)
             
-            let! symbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy)
+            let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, Tokenizer.SymbolLookupKind.Greedy)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland)
             let! declaration = checkFileResults.GetDeclarationLocationAlternate (lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland, false) |> liftAsync
-            let tags = GlyphTags.GetTags(CommonRoslynHelpers.GetGlyphForSymbol (symbolUse.Symbol, symbol.Kind))
+            let tags = GlyphTags.GetTags(Tokenizer.GetGlyphForSymbol (symbolUse.Symbol, symbol.Kind))
             
             let declarationRange = 
                 match declaration with
