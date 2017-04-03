@@ -107,10 +107,13 @@ Where you should set proper proxy address, user name and password.
 
 To build and test Visual F# IDE Tools, you must use the latest version of [Visual Studio 2017](https://www.visualstudio.com/downloads/).  See the section titled "Development tools" in the [readme](README.md).
 
-    build.cmd vs              -- build the Visual F# IDE Tools (see below)
+    build.cmd vs              -- build the Visual F# IDE Tools in Release configuration (see below)
+    build.cmd vs debug        -- build the Visual F# IDE Tools in Debug configuration (see below)
     build.cmd vs test         -- build Visual F# IDE Tools, run all tests (see below)
 
 Use ``VisualFSharp.sln`` if you're building the Visual F# IDE Tools.
+
+Note on Debug vs Release: ``Release`` Configuration has a degraded debugging experience, so if you want to test a change locally, it is recommended to do it in the ``Debug`` configuration. For more information see https://github.com/Microsoft/visualfsharp/issues/2771 and https://github.com/Microsoft/visualfsharp/pull/2773.
 
 Note: if you face this error [#2351](https://github.com/Microsoft/visualfsharp/issues/2351):
 

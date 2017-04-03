@@ -767,7 +767,7 @@ namespace Microsoft.FSharp.Control
 
         // Call the cancellation continuation
         let cancelT (args:AsyncParams<_>) =
-            args.aux.ccont (new OperationCanceledException())
+            args.aux.ccont (new OperationCanceledException(args.aux.token))
                    
         // Build a primitive without any exception of resync protection
         //
@@ -1541,8 +1541,8 @@ namespace Microsoft.FSharp.Control
             let continuation (completedTask : Task<_>) : unit =
                 args.aux.trampolineHolder.Protect((fun () ->
                     if completedTask.IsCanceled then
-                        if useCcontForTaskCancellation then args.aux.ccont(new OperationCanceledException())
-                        else args.aux.econt (ExceptionDispatchInfo.Capture(new TaskCanceledException()))
+                        if useCcontForTaskCancellation then args.aux.ccont(new OperationCanceledException(args.aux.token))
+                        else args.aux.econt (ExceptionDispatchInfo.Capture(new TaskCanceledException(completedTask)))
                     elif completedTask.IsFaulted then
                         args.aux.econt (MayLoseStackTrace(completedTask.Exception))
                     else
@@ -1555,8 +1555,8 @@ namespace Microsoft.FSharp.Control
             let continuation (completedTask : Task) : unit =
                 args.aux.trampolineHolder.Protect((fun () ->
                     if completedTask.IsCanceled then
-                        if useCcontForTaskCancellation then args.aux.ccont (new OperationCanceledException())
-                        else args.aux.econt (ExceptionDispatchInfo.Capture(new TaskCanceledException()))
+                        if useCcontForTaskCancellation then args.aux.ccont (new OperationCanceledException(args.aux.token))
+                        else args.aux.econt (ExceptionDispatchInfo.Capture(new TaskCanceledException(completedTask)))
                     elif completedTask.IsFaulted then
                         args.aux.econt (MayLoseStackTrace(completedTask.Exception))
                     else
@@ -1630,7 +1630,7 @@ namespace Microsoft.FSharp.Control
                                 match !timer with
                                 | None -> ()
                                 | Some t -> t.Dispose()
-                                aux.trampolineHolder.Protect(fun () -> savedCCont(new OperationCanceledException())) |> unfake
+                                aux.trampolineHolder.Protect(fun () -> savedCCont(new OperationCanceledException(aux.token))) |> unfake
                             ),
                         null)
                 let mutable edi = null
@@ -1695,7 +1695,7 @@ namespace Microsoft.FSharp.Control
                             Async.Start (async { do (ccont e |> unfake) })
 
                     // register cancellation handler
-                    let registration = aux.token.Register(fun () -> cancel (OperationCanceledException()))
+                    let registration = aux.token.Register(fun () -> cancel (OperationCanceledException(aux.token)))
 
                     // run actual await routine
                     // callback will be executed on the thread pool so we need to use TrampolineHolder.Protect to install trampoline
@@ -1746,7 +1746,7 @@ namespace Microsoft.FSharp.Control
                                     match !rwh with
                                     | None -> ()
                                     | Some rwh -> rwh.Unregister(null) |> ignore)
-                                Async.Start (async { do (aux.ccont (OperationCanceledException()) |> unfake) }))
+                                Async.Start (async { do (aux.ccont (OperationCanceledException(aux.token)) |> unfake) }))
 
                     and registration : CancellationTokenRegistration = aux.token.Register(cancelHandler, null)
                     
@@ -1842,7 +1842,7 @@ namespace Microsoft.FSharp.Control
                                 // Register the result. This may race with a successful result, but
                                 // ResultCell allows a race and throws away whichever comes last.
                                 once.Do(fun () ->
-                                            let canceledResult = Canceled (OperationCanceledException())
+                                            let canceledResult = Canceled (OperationCanceledException(cancellationToken))
                                             resultCell.RegisterResult(canceledResult,reuseThread=true) |> unfake
                                 )
                             | Some cancel -> 
@@ -2007,7 +2007,7 @@ namespace Microsoft.FSharp.Control
                                 event.RemoveHandler(del)
                                 // Register the result. This may race with a successful result, but
                                 // ResultCell allows a race and throws away whichever comes last.
-                                once.Do(fun () -> resultCell.RegisterResult(Canceled (OperationCanceledException()),reuseThread=true) |> unfake) 
+                                once.Do(fun () -> resultCell.RegisterResult(Canceled (OperationCanceledException(token)),reuseThread=true) |> unfake) 
                             | Some cancel -> 
                                 // If we get an exception from a cooperative cancellation function
                                 // we assume the operation has already completed.
