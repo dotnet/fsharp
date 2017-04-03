@@ -123,7 +123,7 @@ type CallerNamedArg<'T> =
 // 3. Two ways to pass a value where a byref is expected. The first (default) 
 // is to use a reference cell, and the interior address is taken automatically 
 // The second is an explicit use of the "address-of" operator "&e". Here we detect the second case, 
-// and record the presence of the sytnax "&e" in the pre-inferred actual type for the method argument. 
+// and record the presence of the syntax "&e" in the pre-inferred actual type for the method argument. 
 // The function AdjustCalledArgType detects this and refuses to apply the default byref-to-ref transformation. 
 //
 // The function AdjustCalledArgType also adjusts for optional arguments. 
@@ -168,7 +168,7 @@ let AdjustCalledArgType (infoReader:InfoReader) isConstraint (calledArg: CalledA
             else calledArgTy
 
         // Adjust the called argument type to take into account whether the caller's argument is M(?arg=Some(3)) or M(arg=1) 
-        // If the called method argument is optional with type Option<T>, then the caller may provide a T, unless their argument is propogating-optional (i.e. isOptCallerArg) 
+        // If the called method argument is optional with type Option<T>, then the caller may provide a T, unless their argument is propagating-optional (i.e. isOptCallerArg) 
         let calledArgTy = 
             match calledArg.OptArgInfo with 
             | NotOptional                    -> calledArgTy
