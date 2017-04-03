@@ -67,7 +67,7 @@ type internal MissingReferenceCodeFixProvider() =
                     | Some refProject ->
                         let codefix = 
                             createCodeFix(
-                                sprintf "Add a project reference to '%s'" refProject.Name, // TODO: localise
+                                String.Format(SR.AddProjectReference.Value, refProject.Name),
                                 context,
                                 AddProjectRef (ProjectReference refProject.Id)
                                 )
@@ -85,7 +85,7 @@ type internal MissingReferenceCodeFixProvider() =
                         | Some metadataRef ->
                             let codefix = 
                                 createCodeFix(
-                                    sprintf "Add an assembly reference to '%s'" metadataRef.Display, // TODO: localise
+                                    String.Format(SR.AddAssemblyReference.Value, assemblyName),
                                     context,
                                     AddMetadataRef metadataRef
                                     )

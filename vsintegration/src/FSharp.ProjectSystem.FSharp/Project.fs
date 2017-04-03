@@ -101,6 +101,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             member ips.IsIncompleteTypeCheckEnvironment = false
             member ips.LoadTime = inner.LoadTime 
             member ips.ProjectProvider = inner.ProjectProvider
+            member ips.AssemblyReferences() = inner.AssemblyReferences()
 
     type internal ProjectSiteOptionLifetimeState =
         | Opening=1  // The project has been opened, but has not yet called Compile() to compute sources/flags
@@ -1494,6 +1495,14 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member this.ProjectGuid = x.GetProjectGuid()
                     member this.LoadTime = creationTime
                     member this.ProjectProvider = Some (x :> IProvideProjectSite)
+                    member this.AssemblyReferences() =
+                        x.GetReferenceContainer().EnumReferences()
+                        |> Seq.choose (
+                            function
+                            | :? AssemblyReferenceNode as arn -> Some arn.Url
+                            | _ -> None
+                            )
+                        |> Array.ofSeq
                 }
 
             // Snapshot-capture relevent values from "this", and returns an IProjectSite 
@@ -1510,6 +1519,14 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 let taskReporter = Some(x.TaskReporter)
                 let targetFrameworkMoniker = x.GetTargetFrameworkMoniker()
                 let creationTime = System.DateTime.Now 
+                let assemblyReferences =
+                    x.GetReferenceContainer().EnumReferences()
+                    |> Seq.choose (
+                        function
+                        | :? AssemblyReferenceNode as arn -> Some arn.Url
+                        | _ -> None
+                        )
+                    |> Array.ofSeq
                 // This object is thread-safe
                 { new Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite with
                     member ips.SourceFilesOnDisk() = compileItems
@@ -1526,6 +1543,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member this.ProjectGuid = x.GetProjectGuid()
                     member this.LoadTime = creationTime
                     member this.ProjectProvider = Some (x :> IProvideProjectSite)
+                    member this.AssemblyReferences() = assemblyReferences
                 }
 
             // let the language service ask us questions
