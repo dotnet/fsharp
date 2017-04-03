@@ -4,29 +4,34 @@ open System.ComponentModel.Composition
 open System.Runtime.InteropServices
 open System.Windows
 open System.Windows.Controls
+
 open OptionsUIHelpers
-
 open SettingsPersistence
-open Microsoft.VisualStudio.ComponentModelHost
 
-type IntelliSenseOptions() =
-    member val ShowAfterCharIsTyped = true with get, set
-    member val ShowAfterCharIsDeleted = false with get, set
+//for convenient UI data binding we can use CLIMutable records
+[<CLIMutable>]
+type IntelliSenseOptions = 
+    { ShowAfterCharIsTyped: bool
+      ShowAfterCharIsDeleted: bool }
 
 [<RequireQualifiedAccess>]
 type QuickInfoUnderlineStyle = Dotted | Dashed | Solid | None
-type QuickInfoOptions() =
+
+//autoproperties can be used to easily define defaults and faciliate data binding,
+//but the properties shouldn't be mutated outside of the Options dialog UI
+type QuickInfoOptions() = 
     member val UnderlineStyle = QuickInfoUnderlineStyle.Solid with get, set
 
-[<Export(typeof<ISettings>)>]
-type internal Settings() =
+type internal Settings =
     static member IntelliSense : IntelliSenseOptions = getCachedSettings()
     static member QuickInfo : QuickInfoOptions = getCachedSettings()
 
-    interface ISettings with
+[<Export(typeof<ISettingsRegistration>)>]
+type private SettingsRegistration() =
+    interface ISettingsRegistration with
         member __.RegisterAll() =
-            registerSetting <| IntelliSenseOptions()
-            registerSetting <| QuickInfoOptions()
+            registerSettings <| { ShowAfterCharIsTyped = true; ShowAfterCharIsDeleted = false }
+            registerSettings <| QuickInfoOptions()
 
 
 module internal OptionsUI = 

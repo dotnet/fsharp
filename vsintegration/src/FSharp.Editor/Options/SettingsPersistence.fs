@@ -1,17 +1,20 @@
 ﻿namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.ComponentModel.Composition
-open System.Runtime.InteropServices
-open System.Reflection
+open System.Collections.Concurrent
 open System.ComponentModel
+open System.ComponentModel.Composition
+open System.Reflection
+open System.Runtime.InteropServices
 
 open Microsoft.VisualStudio.Settings
 open Microsoft.VisualStudio.Shell
-open System.Collections.Concurrent
 
 module internal SettingsPersistence =
 
+    // Each group of settings is a value of some named type, for example 'IntelliSenseOptions', 'QuickInfoOptions'
+    // We cache exactly one instance of each, treating them as immutable.
+    // This cache is updated by the SettingsStore when the user changes an option.
     let private cache = ConcurrentDictionary<Type, obj>()
 
     let getCachedSettings() =
@@ -19,12 +22,13 @@ module internal SettingsPersistence =
         | true, value -> value :?> 't
         | _ -> failwith "Setting is not registered."
 
-    let registerSetting (defaultValue : 't) = cache.[typeof<'t>] <- defaultValue
+    let registerSettings (defaultValue : 't) = cache.[typeof<'t>] <- defaultValue
+
 
     [<Guid("9B164E40-C3A2-4363-9BC5-EB4039DEF653")>]
     type SVsSettingsPersistenceManager = class end
 
-    type ISettings = abstract member RegisterAll : unit -> unit
+    type ISettingsRegistration = abstract member RegisterAll : unit -> unit
 
     [<Export>]
     type SettingsStore
@@ -32,12 +36,12 @@ module internal SettingsPersistence =
         (
             [<Import(typeof<SVsServiceProvider>)>] 
             serviceProvider: IServiceProvider,
-            settings: ISettings
+            settings: ISettingsRegistration
         ) =
 
         let settingsManager = serviceProvider.GetService(typeof<SVsSettingsPersistenceManager>) :?> ISettingsManager
 
-        let subset = settingsManager.GetSubset("Microsoft.VisualStudio.FSharp.Editor.*")
+        let subset = settingsManager.GetSubset(typeof<SettingsStore>.Namespace + ".*")
 
         let refresh typ = cache.[typ] <- settingsManager.GetValueOrDefault(typ.FullName, cache.[typ])
 

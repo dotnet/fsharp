@@ -19,11 +19,12 @@ module internal OptionsUIHelpers =
             let sc = this.GetService(typeof<SComponentModel>) :?> IComponentModel
             sc.DefaultExportProvider.GetExport<SettingsStore>().Value
         override this.Child = upcast view
-        override this.SaveSettingsToStorage() = this.Store.SaveSettings this.Result
-        override this.LoadSettingsFromStorage() =
-            let settings: 't = this.Store.LoadSettings()
-            view.DataContext <- settings
-        member this.Result : 't = downcast view.DataContext
+        override this.SaveSettingsToStorage() = this.GetResult() |> this.Store.SaveSettings 
+        override this.LoadSettingsFromStorage() = this.Store.LoadSettings() |> this.SetViewModel
+        ///Override when settings type is immutable
+        member this.SetViewModel(settings: 't) = view.DataContext <- settings
+        ///Override when settings type is immutable
+        member this.GetResult() : 't = downcast view.DataContext
 
     let ( *** ) (control : #IAddChild) (children: UIElement list) =
         children |> List.iter control.AddChild
