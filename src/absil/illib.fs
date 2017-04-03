@@ -762,7 +762,7 @@ module Cancellable =
     let token () = Cancellable (fun ct -> ValueOrCancelled.Value ct)
 
     /// Represents a canceled computation
-    let canceled() = Cancellable (fun _ -> ValueOrCancelled.Cancelled (new OperationCanceledException()))
+    let canceled() = Cancellable (fun ct -> ValueOrCancelled.Cancelled (new OperationCanceledException(ct)))
 
     /// Catch exceptions in a computation
     let private catch (Cancellable e) = 
