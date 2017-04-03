@@ -731,7 +731,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
             override x.GetGuidProperty(propid:int, guid:byref<Guid> ) =
                 if (enum propid = __VSHPROPID.VSHPROPID_PreferredLanguageSID) then 
-                    guid <- new Guid(FSharpCommonConstants.languageServiceGuidString)
+                    guid <- new Guid(FSharpConstants.languageServiceGuidString)
                     VSConstants.S_OK
                 // below is how VS decide 'which templates' to associate with an 'add new item' call in this project
                 elif (enum propid = __VSHPROPID2.VSHPROPID_AddItemTemplatesGuid) then 
@@ -1611,7 +1611,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     // in the registry hive so that more editors can be added without changing this part of the
                     // code. FSharp only makes usage of one Editor Factory and therefore we will return 
                     // that guid
-                    guidEditorType <- new Guid(FSharpCommonConstants.editorFactoryGuidString)
+                    guidEditorType <- new Guid(FSharpConstants.editorFactoryGuidString)
                     VSConstants.S_OK
 
             interface IVsProjectSpecificEditorMap2 with 
@@ -1625,7 +1625,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     // in the registry hive so that more editors can be added without changing this part of the
                     // code. FSharp only makes usage of one Editor Factory and therefore we will return 
                     // that guid
-                    guidEditorType <- new Guid(FSharpCommonConstants.editorFactoryGuidString)
+                    guidEditorType <- new Guid(FSharpConstants.editorFactoryGuidString)
                     VSConstants.S_OK
 
                 member x.GetSpecificLanguageService(_mkDocument:string, guidLanguageService:byref<Guid> ) =
