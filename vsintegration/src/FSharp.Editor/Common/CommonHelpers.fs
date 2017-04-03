@@ -410,8 +410,12 @@ module internal Extensions =
     open Microsoft.VisualStudio.FSharp.Editor.Logging
 
     type System.IServiceProvider with
+
+        /// Retrieve a MEF Visual Studio Service of type 'T
         member x.GetService<'T>() = x.GetService(typeof<'T>) :?> 'T
-        member x.GetService<'T, 'S>() = x.GetService(typeof<'S>) :?> 'T
+        
+        /// Retrieve a SVs MEF Service of type 'S and cast it to type 'T
+        member x.GetService<'S,'T>() = x.GetService(typeof<'S>) :?> 'T
 
     type Path with
         static member GetFullPathSafe path =
@@ -526,7 +530,7 @@ module internal Extensions =
                 match declarationLocation with
                 | Some loc ->
                     let filePath = Path.GetFullPathSafe loc.FileName
-                    let isScript = String.Equals(Path.GetExtension(filePath), ".fsx", StringComparison.OrdinalIgnoreCase)
+                    let isScript = isScriptFile filePath 
                     if isScript && filePath = currentDocument.FilePath then 
                         Some SymbolDeclarationLocation.CurrentDocument
                     elif isScript then

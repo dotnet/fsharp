@@ -71,7 +71,10 @@ module private UnusedOpens =
 
     let symbolIsFullyQualified (sourceText: SourceText) (sym: FSharpSymbolUse) (fullName: string) =
         match CommonRoslynHelpers.TryFSharpRangeToTextSpan(sourceText, sym.RangeAlternate) with
-        | Some span -> sourceText.ToString(span) = fullName
+        | Some span // check that the symbol hasn't provided an invalid span
+            when sourceText.Length < span.Start 
+              || sourceText.Length < span.End -> false
+        | Some span -> sourceText.ToString span = fullName
         | None -> false
 
     let getUnusedOpens (sourceText: SourceText) (parsedInput: ParsedInput) (symbolUses: FSharpSymbolUse[]) =
@@ -102,7 +105,7 @@ module private UnusedOpens =
                         Some ([apc.FullName], apc.Group.EnclosingEntity)
                     | SymbolUse.UnionCase uc when not (isQualified uc.FullName) ->
                         Some ([uc.FullName], Some uc.ReturnType.TypeDefinition)
-                    | SymbolUse.Parameter p when not (isQualified p.FullName) ->
+                    | SymbolUse.Parameter p when not (isQualified p.FullName) && p.Type.HasTypeDefinition ->
                         Some ([p.FullName], Some p.Type.TypeDefinition)
                     | _ -> None
 
