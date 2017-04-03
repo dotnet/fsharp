@@ -45,7 +45,7 @@ module internal FSharpGoToDefinition =
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! lexerSymbol = Tokenizer.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, Tokenizer.SymbolLookupKind.Greedy)
+            let! lexerSymbol = Tokenizer.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Greedy)
             let! _, _, checkFileResults = 
                 checker.ParseAndCheckDocument 
                     (filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = preferSignature) 
@@ -82,22 +82,17 @@ module internal FSharpGoToDefinition =
         asyncMaybe {
             let! projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject originDocument
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing (originDocument.FilePath, projectOptions.OtherOptions |> Seq.toList)
-
             let originTextSpan = RoslynHelpers.FSharpRangeToTextSpan (sourceText, originRange)
             let position = originTextSpan.Start
-
-            let! lexerSymbol = 
-                Tokenizer.getSymbolAtPosition 
-                    (originDocument.Id, sourceText, position, originDocument.FilePath, defines, Tokenizer.SymbolLookupKind.Greedy)
-            
+            let! lexerSymbol = Tokenizer.getSymbolAtPosition(originDocument.Id, sourceText, position, originDocument.FilePath, defines, SymbolLookupKind.Greedy)
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()  
             
             let! _, _, checkFileResults = 
                 checker.ParseAndCheckDocument (originDocument,projectOptions,allowStaleResults=true,sourceText=sourceText)
+            
             let idRange = lexerSymbol.Ident.idRange
-
             let! fsSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland)
             let symbol = fsSymbolUse.Symbol
             // if the tooltip was spawned in an implementation file and we have a range targeting
@@ -109,10 +104,7 @@ module internal FSharpGoToDefinition =
                 let! implDoc = originDocument.Project.Solution.TryGetDocumentFromPath fsfilePath
                 let! implSourceText = implDoc.GetTextAsync ()
                 let! projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject implDoc
-                let! _, _, checkFileResults = 
-                    checker.ParseAndCheckDocument (implDoc, projectOptions, allowStaleResults=true, sourceText=implSourceText)
-                
-
+                let! _, _, checkFileResults = checker.ParseAndCheckDocument (implDoc, projectOptions, allowStaleResults=true, sourceText=implSourceText)
                 let! symbolUses = checkFileResults.GetUsesOfSymbolInFile symbol |> liftAsync
                 let! implSymbol  = symbolUses |> Array.tryHead 
                 let implTextSpan = RoslynHelpers.FSharpRangeToTextSpan (implSourceText, implSymbol.RangeAlternate)
@@ -127,12 +119,10 @@ module internal FSharpGoToDefinition =
         (targetDocument:Document, symbolRange:range, targetSource:SourceText, checker: FSharpChecker, projectInfoManager: ProjectInfoManager) =
         findSymbolHelper (targetDocument, symbolRange, targetSource,true, checker, projectInfoManager) 
 
-
     /// find the definition location (implementation file/.fs) of the target symbol
     let findDefinitionOfSymbolAtRange
         (targetDocument:Document, symbolRange:range, targetSourceText:SourceText, checker: FSharpChecker, projectInfoManager: ProjectInfoManager) =
         findSymbolHelper (targetDocument, symbolRange, targetSourceText,false, checker, projectInfoManager)
-
     
     /// use the targetSymbol to find the first instance of its presence in the provided source file
     let findSymbolDeclarationInFile
@@ -147,7 +137,6 @@ module internal FSharpGoToDefinition =
                 let! implSymbol  = symbolUses |> Array.tryHead 
                 return implSymbol.RangeAlternate
         }
-
 
 open FSharpGoToDefinition
 
@@ -213,7 +202,6 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
             clearStatusBarAfter 4000
             true
 
-
     /// Navigate to the positon of the textSpan in the provided document
     // used by quickinfo link navigation when the tooltip contains the correct destination range
     member this.TryNavigateToTextSpan (document:Document, textSpan:TextSpan) =
@@ -227,7 +215,6 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
         clearStatusBarAfter 4000
         false
 
-
     /// find the declaration location (signature file/.fsi) of the target symbol if possible, fall back to definition 
     member this.NavigateToSymbolDeclarationAsync (targetDocument:Document, targetSourceText:SourceText, symbolRange:range) = async {
         
@@ -236,7 +223,6 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
                 (targetDocument, symbolRange, targetSourceText, checkerProvider.Checker, projectInfoManager)
         return tryNavigateToItem navresult
     }
-    
 
      /// find the definition location (implementation file/.fs) of the target symbol
     member this.NavigateToSymbolDefinitionAsync (targetDocument:Document, targetSourceText:SourceText, symbolRange:range)= async{
@@ -246,14 +232,13 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
         return tryNavigateToItem navresult
     }
 
-
     static member FindDefinition
         (checker: FSharpChecker, documentKey: DocumentId, sourceText: SourceText, filePath: string, position: int,
          defines: string list, options: FSharpProjectOptions, textVersionHash: int) : Option<range> = maybe {
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! lexerSymbol = Tokenizer.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, Tokenizer.SymbolLookupKind.Greedy)
+            let! lexerSymbol = Tokenizer.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Greedy)
             let! _, _, checkFileResults = 
                 checker.ParseAndCheckDocument 
                     (filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)  |> Async.RunSynchronously
@@ -266,7 +251,6 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
             | FSharpFindDeclResult.DeclFound range -> return range
             | _ -> return! None
     }
-
 
     /// Construct a task that will return a navigation target for the implementation definition of the symbol 
     /// at the provided position in the document
@@ -288,7 +272,7 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
                 
             let! lexerSymbol = 
                 Tokenizer.getSymbolAtPosition
-                    (originDocument.Id, sourceText, position,originDocument.FilePath, defines, Tokenizer.SymbolLookupKind.Greedy)
+                    (originDocument.Id, sourceText, position,originDocument.FilePath, defines, SymbolLookupKind.Greedy)
             let idRange = lexerSymbol.Ident.idRange
 
             let! declarations = 
@@ -362,13 +346,10 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
         }   |> Async.map (Option.defaultValue Seq.empty)
             |> RoslynHelpers.StartAsyncAsTask cancellationToken        
 
-   
     interface IGoToDefinitionService with
-        
         // used for 'definition peek'
         member this.FindDefinitionsAsync (document: Document, position: int, cancellationToken: CancellationToken) =
             this.FindDefinitionsTask (document, position, cancellationToken)
-        
 
         // used for 'goto definition' proper
         /// Try to navigate to the definiton of the symbol at the symbolRange in the originDocument
@@ -413,4 +394,4 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
                 stopSearchAnimation ()
                 statusBarMessage "Could Not Navigate to Definition of Symbol Under Caret"
                 clearStatusBarAfter 4000
-                true // we always return true to prevent the dialog box from appearing 
+                true // we always return true to prevent the dialog box from appearing

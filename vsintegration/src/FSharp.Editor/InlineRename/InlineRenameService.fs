@@ -17,9 +17,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open Tokenizer
 open Symbols
-
 
 type internal FailureInlineRenameInfo private () =
     interface IInlineRenameInfo with
