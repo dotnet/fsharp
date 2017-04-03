@@ -1,5 +1,5 @@
 namespace tempet
 
-module SayA =
+module SayB =
     let hello name =
         printfn "Hello %s" name
