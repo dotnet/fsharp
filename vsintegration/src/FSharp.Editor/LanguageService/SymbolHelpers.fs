@@ -11,6 +11,8 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Symbols 
+
 
 module internal SymbolHelpers =
     let getSymbolUsesInSolution (symbol: FSharpSymbol, declLoc: SymbolDeclarationLocation, checkFileResults: FSharpCheckFileResults,
@@ -63,7 +65,7 @@ module internal SymbolHelpers =
             do! Option.guard (originalText.Length > 0)
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
-            let! symbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, symbolSpan.Start, document.FilePath, defines, SymbolLookupKind.Greedy)
+            let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, symbolSpan.Start, document.FilePath, defines, SymbolLookupKind.Greedy)
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true)
             let textLine = sourceText.Lines.GetLineFromPosition(symbolSpan.Start)
             let textLinePos = sourceText.Lines.GetLinePosition(symbolSpan.Start)
@@ -85,10 +87,10 @@ module internal SymbolHelpers =
                             let! sourceText = document.GetTextAsync(cancellationToken)
                             let mutable sourceText = sourceText
                             for symbolUse in symbolUses do
-                                let textSpan = CommonHelpers.fixupSpan(sourceText, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate))
+                                let textSpan = Tokenizer.fixupSpan(sourceText, RoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate))
                                 sourceText <- sourceText.Replace(textSpan, newText)
                                 solution <- solution.WithDocumentText(documentId, sourceText)
                         return solution
-                    } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken),
+                    } |> RoslynHelpers.StartAsyncAsTask cancellationToken),
                originalText
         }

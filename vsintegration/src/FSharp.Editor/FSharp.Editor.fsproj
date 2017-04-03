@@ -33,14 +33,19 @@
     <Compile Include="srFSharp.Editor.fs" />
     <Compile Include="Common\AssemblyInfo.fs" />
     <Compile Include="Common\Pervasive.fs" />
-    <Compile Include="Common\CommonConstants.fs" />
+    <Compile Include="Common\Extensions.fs" />
+    <Compile Include="Common\Constants.fs" />
     <Compile Include="Common\Logging.fs" />
-    <Compile Include="Common\CommonHelpers.fs" />
-    <Compile Include="Common\CommonRoslynHelpers.fs" />
+    <Compile Include="Common\RoslynHelpers.fs" />
+    <Compile Include="Common\CodeAnalysisExtensions.fs" />
     <Compile Include="Common\ContentType.fs" />
-    <Compile Include="Common\LanguageService.fs" />
-    <Compile Include="Common\SymbolHelpers.fs" />
-    <Compile Include="Common\AssemblyContentProvider.fs" />
+    <Compile Include="LanguageService\Tokenizer.fs" />
+    <Compile Include="LanguageService\Symbols.fs" />
+    <Compile Include="LanguageService\TypedAstUtils.fs" />
+    <Compile Include="LanguageService\FSharpCheckerExtensions.fs" />
+    <Compile Include="LanguageService\LanguageService.fs" />
+    <Compile Include="LanguageService\AssemblyContentProvider.fs" />
+    <Compile Include="LanguageService\SymbolHelpers.fs" />
     <Compile Include="Properties\IntelliSensePropertyPage.fs" />
     <Compile Include="Classification\ClassificationDefinitions.fs" />
     <Compile Include="Classification\ColorizationService.fs" />
@@ -57,13 +62,13 @@
     <Compile Include="Completion\FileSystemCompletion.fs" />
     <Compile Include="Completion\CompletionService.fs" />
     <Compile Include="Completion\SignatureHelp.fs" />
-    <Compile Include="QuickInfo\QuickInfoProvider.fs" />
     <Compile Include="InlineRename\InlineRenameService.fs" />
     <Compile Include="DocumentHighlights\DocumentHighlightsService.fs" />
     <Compile Include="Navigation\GoToDefinitionService.fs" />
     <Compile Include="Navigation\NavigationBarItemService.fs" />
     <Compile Include="Navigation\NavigateToSearchService.fs" />
     <Compile Include="Navigation\FindUsagesService.fs" />
+    <Compile Include="QuickInfo\QuickInfoProvider.fs" />
     <Compile Include="BlockComment\CommentUncommentService.fs" />
     <Compile Include="Structure\Structure.fs" />
     <Compile Include="Structure\BlockStructureService.fs" />
@@ -105,7 +110,6 @@
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
-  
   <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="PresentationFramework" />
@@ -113,12 +117,12 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml" />
+    <Reference Include="UIAutomationTypes" />
     <Reference Include="WindowsBase" />
     <Reference Include="System" />
     <Reference Include="PresentationCore" />
     <Reference Include="System.ComponentModel.Composition" />
   </ItemGroup>
-
   <ItemGroup>
     <Reference Include="EnvDTE">
       <HintPath>$(FSharpSourcesRoot)\..\packages\EnvDTE.8.0.1\lib\net10\EnvDTE.dll</HintPath>
@@ -162,7 +166,7 @@
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion).$(RoslynVSPackagesVersion)\lib\Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion).dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Shell.Framework, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Framework.$(RoslynVSPackagesVersion)\lib\Microsoft.VisualStudio.Shell.Framework.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Framework.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Shell.Framework.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Package.LanguageService.$(RoslynVSBinariesVersion), Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Package.LanguageService.$(RoslynVSBinariesVersion).$(RoslynVSPackagesVersion)\lib\Microsoft.VisualStudio.Package.LanguageService.$(RoslynVSBinariesVersion).dll</HintPath>
@@ -245,12 +249,12 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System.Collections.Immutable">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.1.3.1\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.1.2.0\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
       <Private>True</Private>
     </Reference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  <Import Project="$(VsSDKInstall)\Microsoft.VsSDK.targets" />
+  <Import Project="$(VsSDKTargets)" />
   <Import Project="$(FSharpSourcesRoot)\..\vsintegration\vsintegration.targets" />
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
     <ItemGroup>

@@ -1761,6 +1761,12 @@ let main0(ctok, argv, referenceResolver, bannerAlreadyPrinted, exiter:Exiter, er
         with e -> 
             errorRecoveryNoRange e
             exiter.Exit 1
+    
+    let inputs =
+        // Deduplicate module names
+        let moduleNamesDict = Dictionary<string,Set<string>>()
+        inputs
+        |> List.map (fun (input,x) -> DeduplicateParsedInputModuleName moduleNamesDict input,x)
 
     if tcConfig.parseOnly then exiter.Exit 0 
     if not tcConfig.continueAfterParseFailure then 

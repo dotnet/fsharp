@@ -33,9 +33,19 @@ open Microsoft.FSharp.Compiler.ExtensionTyping
 [<NoEquality; NoComparison>]
 type TyparMap<'T> = 
     | TPMap of StampMap<'T>
-    member tm.Item with get (v: Typar) = let (TPMap m) = tm in m.[v.Stamp]
-    member tm.ContainsKey (v: Typar) = let (TPMap m) = tm in m.ContainsKey(v.Stamp)
-    member tm.Add (v: Typar, x) = let (TPMap m) = tm in TPMap (m.Add(v.Stamp,x))
+    member tm.Item 
+        with get (v: Typar) = 
+            let (TPMap m) = tm
+            m.[v.Stamp]
+
+    member tm.ContainsKey (v: Typar) = 
+        let (TPMap m) = tm
+        m.ContainsKey(v.Stamp)
+
+    member tm.Add (v: Typar, x) = 
+        let (TPMap m) = tm
+        TPMap (m.Add(v.Stamp,x))
+
     static member Empty : TyparMap<'T> = TPMap Map.empty
 
 [<NoEquality; NoComparison; Sealed>]
@@ -78,15 +88,15 @@ let emptyTyparInst = ([] : TyparInst)
 
 [<NoEquality; NoComparison>]
 type Remap =
-    { tpinst : TyparInst;
-      valRemap: ValRemap;
-      tyconRefRemap : TyconRefRemap;
+    { tpinst : TyparInst
+      valRemap: ValRemap
+      tyconRefRemap : TyconRefRemap
       removeTraitSolutions: bool }
 
 let emptyRemap = 
-    { tpinst        = emptyTyparInst; 
-      tyconRefRemap = emptyTyconRefRemap;
-      valRemap      = ValMap.Empty;
+    { tpinst        = emptyTyparInst;
+      tyconRefRemap = emptyTyconRefRemap
+      valRemap      = ValMap.Empty
       removeTraitSolutions = false }
 
 type Remap with 
@@ -97,7 +107,7 @@ type Remap with
 //--------------------------------------------------------------------------
 
 let addTyconRefRemap tcref1 tcref2 tmenv = 
-    {tmenv with tyconRefRemap=tmenv.tyconRefRemap.Add tcref1 tcref2 }
+    { tmenv with tyconRefRemap = tmenv.tyconRefRemap.Add tcref1 tcref2 }
 
 let isRemapEmpty remap = 
     isNil remap.tpinst && 
@@ -121,7 +131,7 @@ let instMeasureTyparRef tpinst unt (tp:Typar)  =
                 if typarEq tp tp' then 
                     match ty' with 
                     | TType_measure unt -> unt
-                    | _ -> failwith "instMeasureTyparRef incorrect kind";
+                    | _ -> failwith "instMeasureTyparRef incorrect kind"
                 else
                     loop t
         loop tpinst
@@ -262,7 +272,6 @@ and remapTraitAux tyenv (TTrait(typs,nm,mf,argtys,rty,slnCell)) =
     // in the same way as types
     TTrait(remapTypesAux tyenv typs,nm,mf,remapTypesAux tyenv argtys, Option.map (remapTypeAux tyenv) rty,ref slnCell)
 
-
 and bindTypars tps tyargs tpinst =   
     match tps with 
     | [] -> tpinst 
@@ -277,8 +286,8 @@ and copyAndRemapAndBindTyparsFull remapAttrib tyenv tps =
       let tps' = copyTypars tps
       let tyenv = { tyenv with tpinst = bindTypars tps (generalizeTypars tps') tyenv.tpinst } 
       (tps,tps') ||> List.iter2 (fun tporig tp -> 
-         tp.FixupConstraints (remapTyparConstraintsAux tyenv  tporig.Constraints);
-         tp.typar_attribs  <- tporig.typar_attribs |> remapAttrib) ;
+         tp.FixupConstraints (remapTyparConstraintsAux tyenv  tporig.Constraints)
+         tp.typar_attribs  <- tporig.typar_attribs |> remapAttrib)
       tps',tyenv
 
 // copies bound typars, extends tpinst 
@@ -432,7 +441,7 @@ let rec MeasureVarExponent tp unt =
 let ListMeasureVarOccs unt =
     let rec gather acc unt =  
         match stripUnitEqnsFromMeasure unt with
-          Measure.Var tp -> if List.exists (typarEq tp) acc then acc else tp::acc
+        | Measure.Var tp -> if List.exists (typarEq tp) acc then acc else tp::acc
         | Measure.Prod(unt1,unt2) -> gather (gather acc unt1) unt2
         | Measure.RationalPower(unt',_) -> gather acc unt'
         | Measure.Inv unt' -> gather acc unt'
@@ -766,19 +775,19 @@ let rangeOfFunTy  g ty = snd(destFunTy g ty)
 
 [<NoEquality; NoComparison>]
 type TypeEquivEnv = 
-    { EquivTypars: TyparMap<TType>;
+    { EquivTypars: TyparMap<TType>
       EquivTycons: TyconRefRemap}
 
 // allocate a singleton
 let typeEquivEnvEmpty = 
-    { EquivTypars = TyparMap.Empty; 
+    { EquivTypars = TyparMap.Empty
       EquivTycons = emptyTyconRefRemap }
 
 type TypeEquivEnv with 
     static member Empty = typeEquivEnvEmpty
 
     member aenv.BindTyparsToTypes tps1 tys2 =
-        {aenv with EquivTypars= (tps1,tys2,aenv.EquivTypars) |||> List.foldBack2 (fun tp ty tpmap -> tpmap.Add(tp,ty)) }
+        { aenv with EquivTypars = (tps1,tys2,aenv.EquivTypars) |||> List.foldBack2 (fun tp ty tpmap -> tpmap.Add(tp,ty)) }
 
     member aenv.BindEquivTypars tps1 tps2 =
         aenv.BindTyparsToTypes tps1 (List.map mkTyparTy tps2) 
@@ -791,11 +800,11 @@ type TypeEquivEnv with
         TypeEquivEnv.Empty.BindEquivTypars tps1 tps2 
 
 let rec traitsAEquivAux erasureFlag g aenv (TTrait(typs1,nm,mf1,argtys,rty,_)) (TTrait(typs2,nm2,mf2,argtys2,rty2,_)) =
+   mf1 = mf2 &&
+   nm = nm2 &&
    ListSet.equals (typeAEquivAux erasureFlag g aenv) typs1 typs2 &&
-   mf1 = mf2 && 
-   returnTypesAEquivAux erasureFlag g aenv rty rty2 && 
-   List.lengthsEqAndForall2 (typeAEquivAux erasureFlag g aenv) argtys argtys2 &&
-   nm = nm2
+   returnTypesAEquivAux erasureFlag g aenv rty rty2 &&
+   List.lengthsEqAndForall2 (typeAEquivAux erasureFlag g aenv) argtys argtys2
 
 and returnTypesAEquivAux erasureFlag g aenv rty rty2 =
     match rty,rty2 with  
@@ -1036,7 +1045,7 @@ type MatchBuilder(spBind,inpRange: Range.range) =
     let targets = new ResizeArray<_>(10) 
     member x.AddTarget(tg) = 
         let n = targets.Count 
-        targets.Add(tg);
+        targets.Add tg
         n
 
     member x.AddResultTarget(e,spTarget) = TDSuccess([], x.AddTarget(TTarget([],e,spTarget)))
@@ -1252,22 +1261,42 @@ let mkValAddr m v = Expr.Op (TOp.LValueOp (LGetAddr, v), [], [], m)
 [<NoEquality; NoComparison>]
 type ValHash<'T> = 
     | ValHash of Dictionary<Stamp,'T>
-    member ht.Values = let (ValHash t) = ht in seq { for KeyValue(_,v) in t do yield v }
-    member ht.TryFind (v:Val) = let (ValHash t) = ht in let i = v.Stamp in if t.ContainsKey(i) then Some(t.[i]) else None
-    member ht.Add (v:Val, x) = let (ValHash t) = ht in t.[v.Stamp] <- x
-    static member Create() =  ValHash (new Dictionary<_,'T>(11))
+
+    member ht.Values = 
+        let (ValHash t) = ht
+        t.Values :> seq<'T>
+
+    member ht.TryFind (v:Val) = 
+        let (ValHash t) = ht
+        match t.TryGetValue v.Stamp with
+        | true,v -> Some v
+        | _ -> None
+
+    member ht.Add (v:Val, x) = 
+        let (ValHash t) = ht
+        t.[v.Stamp] <- x
+
+    static member Create() = ValHash (new Dictionary<_,'T>(11))
 
 [<Struct; NoEquality; NoComparison>]
 type ValMultiMap<'T>(contents: StampMap<'T list>) =
-    member m.Find (v: Val) = let stamp = v.Stamp in if contents.ContainsKey stamp then contents.[stamp] else []
+    member m.Find (v: Val) =
+        match contents |> Map.tryFind v.Stamp with
+        | Some vals -> vals
+        | _ -> []
+
     member m.Add (v:Val, x) = ValMultiMap<'T>(contents.Add (v.Stamp, x :: m.Find v))
     member m.Remove (v: Val) = ValMultiMap<'T>(contents.Remove v.Stamp)
-    member m.Contents  = contents
+    member m.Contents = contents
     static member Empty = ValMultiMap<'T>(Map.empty)
 
 [<Struct; NoEquality; NoComparison>]
 type TyconRefMultiMap<'T>(contents: TyconRefMap<'T list>) =
-    member m.Find v = if contents.ContainsKey v then contents.[v] else []
+    member m.Find v = 
+        match contents.TryFind v with
+        | Some vals -> vals
+        | _ -> []
+
     member m.Add (v, x) = TyconRefMultiMap<'T>(contents.Add v (x :: m.Find v))
     static member Empty = TyconRefMultiMap<'T>(TyconRefMap<_>.Empty)
     static member OfList vs = (vs, TyconRefMultiMap<'T>.Empty) ||> List.foldBack (fun (x,y) acc -> acc.Add (x, y)) 
@@ -2506,11 +2535,16 @@ let tagEntityRefName (xref: EntityRef) name =
     elif xref.IsRecordTycon then tagRecord name
     else tagClass name
 
+let fullDisplayTextOfTyconRef  r = fullNameOfEntityRef (fun (tc:TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
+
 let fullNameOfEntityRefAsLayout nmF (xref: EntityRef) =
-    let n = NavigableTaggedText.Create(tagEntityRefName xref (nmF xref), xref.DefinitionRange) |> wordL
+    let navigableText = 
+        tagEntityRefName xref (nmF xref)
+        |> mkNav xref.DefinitionRange
+        |> wordL
     match fullNameOfParentOfEntityRefAsLayout xref  with 
-    | None -> n
-    | Some pathText -> pathText ^^ SepL.dot ^^ n
+    | None -> navigableText
+    | Some pathText -> pathText ^^ SepL.dot ^^ navigableText
 
 let fullNameOfParentOfValRef vref = 
     match vref with 
@@ -2534,7 +2568,6 @@ let fullNameOfParentOfValRefAsLayout vref =
 let fullDisplayTextOfParentOfModRef r = fullNameOfParentOfEntityRef r 
 
 let fullDisplayTextOfModRef r = fullNameOfEntityRef (fun (x:EntityRef) -> x.DemangledModuleOrNamespaceName)  r
-let fullDisplayTextOfTyconRef  r = fullNameOfEntityRef (fun (tc:TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
 let fullDisplayTextOfTyconRefAsLayout  r = fullNameOfEntityRefAsLayout (fun (tc:TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
 let fullDisplayTextOfExnRef  r = fullNameOfEntityRef (fun (tc:TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
 let fullDisplayTextOfExnRefAsLayout  r = fullNameOfEntityRefAsLayout (fun (tc:TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r

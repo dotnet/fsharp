@@ -79,7 +79,6 @@ set INCLUDE_TEST_TAGS=
 set PUBLISH_VSIX=0
 set MYGET_APIKEY=
 
-
 REM ------------------ Parse all arguments -----------------------
 
 set _autoselect=1
@@ -247,6 +246,7 @@ if /i "%ARG%" == "ci_part4" (
 )
 
 if /i "%ARG%" == "proto" (
+    set _autoselect=0
     set BUILD_PROTO=1
 )
 
@@ -348,7 +348,6 @@ goto :EOF
 :: Note: "goto :EOF" returns from an in-batchfile "call" command
 :: in preference to returning from the entire batch file.
 
-
 REM ------------------ Report config -----------------------
 
 :MAIN
@@ -382,6 +381,9 @@ echo MYGET_APIKEY=%MYGET_APIKEY%
 
 REM load Visual Studio 2017 developer command prompt if VS150COMNTOOLS is not set
 
+REM If this is not set, VsDevCmd.bat will change %cd% to [USERPROFILE]\source, causing the build to fail.
+SET VSCMD_START_DIR=%cd%
+
 if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" (
     call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"
 )
@@ -397,7 +399,6 @@ if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Stud
 
 echo .
 echo Environment
-echo 
 set
 echo .
 echo .
@@ -475,6 +476,12 @@ if defined APPVEYOR (
     rem HACK HACK HACK
    set _msbuildexe=%_msbuildexe% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
    )
+)
+
+if defined TF_BUILD (
+    echo Adding remote 'visualfsharptools' for internal build.
+    git remote add visualfsharptools https://github.com/Microsoft/visualfsharp.git
+    git fetch --all
 )
 
 REM set msbuildflags=/maxcpucount %_nrswitch% /nologo
@@ -598,7 +605,8 @@ if "%OSARCH%"=="AMD64" set SYSWOW64=SysWoW64
 
 if not "%OSARCH%"=="x86" set REGEXE32BIT=%WINDIR%\syswow64\reg.exe
 
-echo  SDK environment vars from Registry
+echo SDK environment vars from Registry
+echo ==================================
                             FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\WOW6432Node\Microsoft\Microsoft SDKs\NETFXSDK\4.6.2\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
 if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\WOW6432Node\Microsoft\Microsoft SDKs\NETFXSDK\4.6.1\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
 if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
@@ -618,15 +626,15 @@ IF NOT DEFINED SNEXE64  IF EXIST "%WINSDKNETFXTOOLS%x64\sn.exe"             set 
 IF NOT DEFINED ildasm   IF EXIST "%WINSDKNETFXTOOLS%\ildasm.exe"            set ildasm=%WINSDKNETFXTOOLS%ildasm.exe
 
 echo .
-echo  SDK environment vars
-echo  =======================
+echo SDK environment vars
+echo =======================
 echo WINSDKNETFXTOOLS:  %WINSDKNETFXTOOLS%
 echo SNEXE32:           %SNEXE32%
 echo SNEXE64:           %SNEXE64%
 echo ILDASM:            %ILDASM%
 echo
 
-if "%TEST_NET40_COMPILERUNIT_SUITE%" == "0" and "%TEST_PORTABLE_COREUNIT_SUITE%" == "0" and "%TEST_CORECLR_COREUNIT_SUITE%" == "0" and "%TEST_VS_IDEUNIT_SUITE%" == "0" and "%TEST_NET40_FSHARP_SUITE%" == "0" and "%TEST_NET40_FSHARPQA_SUITE%" == "0" goto :success
+if "%TEST_NET40_COMPILERUNIT_SUITE%" == "0" if "%TEST_PORTABLE_COREUNIT_SUITE%" == "0" if "%TEST_CORECLR_COREUNIT_SUITE%" == "0" if "%TEST_VS_IDEUNIT_SUITE%" == "0" if "%TEST_NET40_FSHARP_SUITE%" == "0" if "%TEST_NET40_FSHARPQA_SUITE%" == "0" goto :success
 
 echo ---------------- Done with update, starting tests -----------------------
 
@@ -899,8 +907,7 @@ if "%PUBLISH_VSIX%" == "1" (
     if not "%MYGET_APIKEY%" == "" (
         powershell -noprofile -executionPolicy ByPass -file "%~dp0setup\publish-assets.ps1" -binariesPath "%~dp0%BUILD_CONFIG%" -branchName "%BUILD_SOURCEBRANCH%" -apiKey "%MYGET_APIKEY%"
         if errorlevel 1 goto :failure
-    )
-    else (
+    ) else (
         echo No MyGet API key specified, skipping package publish.
     )
 )
