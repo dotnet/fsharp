@@ -785,7 +785,7 @@ module Cancellable =
         catch e |> bind (fun res ->  
             match res with Choice1Of2 r -> ret r | Choice2Of2 err -> handler err)
     
-    // /// Run the cancellable computation within an Async computation.  This isn't actually used in the codebase, but left
+    // Run the cancellable computation within an Async computation.  This isn't actually used in the codebase, but left
     // here in case we need it in the future 
     //
     // let toAsync e =    
