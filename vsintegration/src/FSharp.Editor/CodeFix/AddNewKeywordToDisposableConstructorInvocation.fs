@@ -11,7 +11,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 
-[<ExportCodeFixProvider(FSharpCommonConstants.FSharpLanguageName, Name = "AddNewKeyword"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "AddNewKeyword"); Shared>]
 type internal FSharpAddNewKeywordCodeFixProvider() =
     inherit CodeFixProvider()
 
@@ -27,7 +27,7 @@ type internal FSharpAddNewKeywordCodeFixProvider() =
                         async {
                             let! sourceText = context.Document.GetTextAsync()
                             return context.Document.WithText(sourceText.WithChanges(TextChange(TextSpan(context.Span.Start, 0), "new ")))
-                        } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
+                        } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
                     title), context.Diagnostics |> Seq.filter (fun x -> this.FixableDiagnosticIds.Contains x.Id) |> Seq.toImmutableArray)
-        } |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+        } |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
  

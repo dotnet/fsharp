@@ -13,7 +13,7 @@ open Microsoft.CodeAnalysis.CodeActions
 
 open Microsoft.FSharp.Compiler
 
-[<ExportCodeFixProvider(FSharpCommonConstants.FSharpLanguageName, Name = "PrefixUnusedValueWithUnderscore"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "PrefixUnusedValueWithUnderscore"); Shared>]
 type internal FSharpPrefixUnusedValueWithUnderscoreCodeFixProvider() =
     inherit CodeFixProvider()
     let fixableDiagnosticIds = ["FS1182"]
@@ -25,7 +25,7 @@ type internal FSharpPrefixUnusedValueWithUnderscoreCodeFixProvider() =
                 async {
                     let! sourceText = context.Document.GetTextAsync()
                     return context.Document.WithText(sourceText.WithChanges(textChange))
-                } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
+                } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
             title)
 
     override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
@@ -41,4 +41,4 @@ type internal FSharpPrefixUnusedValueWithUnderscoreCodeFixProvider() =
                 let diagnostics = context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id) |> Seq.toImmutableArray
                 context.RegisterCodeFix(createCodeFix(SR.PrefixValueNameWithUnderscore.Value, context, TextChange(TextSpan(context.Span.Start, 0), "_")), diagnostics)
                 context.RegisterCodeFix(createCodeFix(SR.RenameValueToUnderscore.Value, context, TextChange(context.Span, "_")), diagnostics)
-        } |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+        } |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

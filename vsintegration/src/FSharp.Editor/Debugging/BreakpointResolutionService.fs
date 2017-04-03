@@ -17,7 +17,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 
 [<Shared>]
-[<ExportLanguageService(typeof<IBreakpointResolutionService>, FSharpCommonConstants.FSharpLanguageName)>]
+[<ExportLanguageService(typeof<IBreakpointResolutionService>, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpBreakpointResolutionService 
     [<ImportingConstructor>]
     (
@@ -45,10 +45,10 @@ type internal FSharpBreakpointResolutionService
                 let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! range = FSharpBreakpointResolutionService.GetBreakpointLocation(checkerProvider.Checker, sourceText, document.Name, textSpan, options)
-                return BreakpointResolutionResult.CreateSpanResult(document, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
+                return BreakpointResolutionResult.CreateSpanResult(document, RoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
             } 
             |> Async.map Option.toObj 
-            |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+            |> RoslynHelpers.StartAsyncAsTask cancellationToken
             
         // FSROSLYNTODO: enable placing breakpoints by when user suplies fully-qualified function names
         member this.ResolveBreakpointsAsync(_, _, _): Task<IEnumerable<BreakpointResolutionResult>> =

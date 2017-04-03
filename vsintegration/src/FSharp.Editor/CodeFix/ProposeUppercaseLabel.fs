@@ -7,7 +7,7 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 
-[<ExportCodeFixProvider(FSharpCommonConstants.FSharpLanguageName, Name = "ProposeUpperCaseLabel"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ProposeUpperCaseLabel"); Shared>]
 type internal FSharpProposeUpperCaseLabelCodeFixProvider
     [<ImportingConstructor>]
     (
@@ -27,4 +27,4 @@ type internal FSharpProposeUpperCaseLabelCodeFixProvider
             context.RegisterCodeFix(
                 CodeAction.Create(title, solutionChanger, title),
                 context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id) |> Seq.toImmutableArray)
-        } |> Async.Ignore |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+        } |> Async.Ignore |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

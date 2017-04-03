@@ -8,14 +8,17 @@ open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Symbols
+
 
 module private UnusedOpens =
-    open Microsoft.CodeAnalysis.Text
+    
 
     let rec visitSynModuleOrNamespaceDecls (parent: Ast.LongIdent) decls : (Set<string> * range) list =
         [ for decl in decls do
@@ -70,7 +73,7 @@ module private UnusedOpens =
         | None -> []
 
     let symbolIsFullyQualified (sourceText: SourceText) (sym: FSharpSymbolUse) (fullName: string) =
-        match CommonRoslynHelpers.TryFSharpRangeToTextSpan(sourceText, sym.RangeAlternate) with
+        match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, sym.RangeAlternate) with
         | Some span // check that the symbol hasn't provided an invalid span
             when sourceText.Length < span.Start 
               || sourceText.Length < span.End -> false
@@ -135,7 +138,7 @@ module private UnusedOpens =
         let openStatements = getOpenStatements parsedInput
         openStatements |> filter |> List.map snd
 
-[<DiagnosticAnalyzer(FSharpCommonConstants.FSharpLanguageName)>]
+[<DiagnosticAnalyzer(FSharpConstants.FSharpLanguageName)>]
 type internal UnusedOpensDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
     
@@ -175,11 +178,11 @@ type internal UnusedOpensDiagnosticAnalyzer() =
                 |> List.map (fun m ->
                       Diagnostic.Create(
                          Descriptor,
-                         CommonRoslynHelpers.RangeToLocation(m, sourceText, document.FilePath)))
+                         RoslynHelpers.RangeToLocation(m, sourceText, document.FilePath)))
                 |> Seq.toImmutableArray
         } 
         |> Async.map (Option.defaultValue ImmutableArray.Empty)
-        |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+        |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
     interface IBuiltInAnalyzer with
         member __.OpenFileOnly _ = true

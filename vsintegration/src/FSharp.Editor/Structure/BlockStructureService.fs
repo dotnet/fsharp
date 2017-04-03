@@ -73,9 +73,9 @@ module internal BlockStructure =
         |> Seq.distinctBy (fun x -> x.Range.StartLine)
         |> Seq.choose (fun scopeRange -> 
             // the range of text to collapse
-            let textSpan = CommonRoslynHelpers.TryFSharpRangeToTextSpan(sourceText, scopeRange.CollapseRange)
+            let textSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, scopeRange.CollapseRange)
             // the range of the entire expression
-            let hintSpan = CommonRoslynHelpers.TryFSharpRangeToTextSpan(sourceText, scopeRange.Range)
+            let hintSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, scopeRange.Range)
             match textSpan,hintSpan with
             | Some textSpan, Some hintSpan ->
                 let line = sourceText.Lines.GetLineFromPosition  textSpan.Start
@@ -93,7 +93,7 @@ open BlockStructure
 type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoManager: ProjectInfoManager) =
     inherit BlockStructureService()
         
-    override __.Language = FSharpCommonConstants.FSharpLanguageName
+    override __.Language = FSharpConstants.FSharpLanguageName
  
     override __.GetBlockStructureAsync(document, cancellationToken) : Task<BlockStructure> =
         asyncMaybe {
@@ -104,9 +104,9 @@ type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoMan
         } 
         |> Async.map (Option.defaultValue ImmutableArray<_>.Empty)
         |> Async.map BlockStructure
-        |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
+        |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
 
-[<ExportLanguageServiceFactory(typeof<BlockStructureService>, FSharpCommonConstants.FSharpLanguageName); Shared>]
+[<ExportLanguageServiceFactory(typeof<BlockStructureService>, FSharpConstants.FSharpLanguageName); Shared>]
 type internal FSharpBlockStructureServiceFactory [<ImportingConstructor>](checkerProvider: FSharpCheckerProvider, projectInfoManager: ProjectInfoManager) =
     interface ILanguageServiceFactory with
         member __.CreateLanguageService(_languageServices) =

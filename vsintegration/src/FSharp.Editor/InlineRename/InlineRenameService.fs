@@ -17,6 +17,9 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Tokenizer
+open Symbols
+
 
 type internal FailureInlineRenameInfo private () =
     interface IInlineRenameInfo with
@@ -63,11 +66,11 @@ type internal InlineRenameLocationSet(locationsByDocument: DocumentLocations [],
                 return 
                     { new IInlineRenameReplacementInfo with
                         member __.NewSolution = newSolution
-                        member __.ReplacementTextValid = CommonHelpers.isValidNameForSymbol(symbolKind, symbol, replacementText)
+                        member __.ReplacementTextValid = Tokenizer.isValidNameForSymbol(symbolKind, symbol, replacementText)
                         member __.DocumentIds = locationsByDocument |> Seq.map (fun doc -> doc.Document.Id)
                         member __.GetReplacements(documentId) = Seq.empty }
             }
-            |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
+            |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
 
 type internal InlineRenameInfo
     (
@@ -87,8 +90,8 @@ type internal InlineRenameInfo
         | _ -> document.GetTextAsync(cancellationToken).Result
 
     let triggerSpan =
-        let span = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
-        CommonHelpers.fixupSpan(sourceText, span)
+        let span = RoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
+        Tokenizer.fixupSpan(sourceText, span)
 
     let symbolUses = 
         SymbolHelpers.getSymbolUsesInSolution(symbolUse.Symbol, declLoc, checkFileResults, projectInfoManager, checker, document.Project.Solution)
@@ -107,7 +110,7 @@ type internal InlineRenameInfo
 
         member __.GetReferenceEditSpan(location, cancellationToken) =
             let text = getDocumentText location.Document cancellationToken
-            CommonHelpers.fixupSpan(text, location.TextSpan)
+            Tokenizer.fixupSpan(text, location.TextSpan)
         
         member __.GetConflictEditSpan(location, _replacementText, _cancellationToken) = Nullable(location.TextSpan)
         
@@ -123,18 +126,18 @@ type internal InlineRenameInfo
                             let locations =
                                 symbolUses
                                 |> Array.map (fun symbolUse ->
-                                    let textSpan = CommonHelpers.fixupSpan(sourceText, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate))
+                                    let textSpan = Tokenizer.fixupSpan(sourceText, RoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate))
                                     InlineRenameLocation(document, textSpan))
                             return { Document = document; Locations = locations }
                         })
                     |> Async.Parallel
                 return InlineRenameLocationSet(locationsByDocument, document.Project.Solution, lexerSymbol.Kind, symbolUse.Symbol) :> IInlineRenameLocationSet
-            } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
+            } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
         
         member __.TryOnBeforeGlobalSymbolRenamed(_workspace, _changedDocumentIDs, _replacementText) = true
         member __.TryOnAfterGlobalSymbolRenamed(_workspace, _changedDocumentIDs, _replacementText) = true
 
-[<ExportLanguageService(typeof<IEditorInlineRenameService>, FSharpCommonConstants.FSharpLanguageName); Shared>]
+[<ExportLanguageService(typeof<IEditorInlineRenameService>, FSharpConstants.FSharpLanguageName); Shared>]
 type internal InlineRenameService 
     [<ImportingConstructor>]
     (
@@ -149,7 +152,7 @@ type internal InlineRenameService
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! symbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy)
+            let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy)
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.Text.ToString(), symbol.FullIsland)
             let! declLoc = symbolUse.GetDeclarationLocation(document)
@@ -165,4 +168,4 @@ type internal InlineRenameService
                 return! InlineRenameService.GetInlineRenameInfo(checkerProvider.Checker, projectInfoManager, document, sourceText, position, defines, options)
             }
             |> Async.map (Option.defaultValue FailureInlineRenameInfo.Instance)
-            |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
+            |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
