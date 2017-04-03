@@ -907,8 +907,7 @@ if "%PUBLISH_VSIX%" == "1" (
     if not "%MYGET_APIKEY%" == "" (
         powershell -noprofile -executionPolicy ByPass -file "%~dp0setup\publish-assets.ps1" -binariesPath "%~dp0%BUILD_CONFIG%" -branchName "%BUILD_SOURCEBRANCH%" -apiKey "%MYGET_APIKEY%"
         if errorlevel 1 goto :failure
-    )
-    else (
+    ) else (
         echo No MyGet API key specified, skipping package publish.
     )
 )
