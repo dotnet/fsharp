@@ -21,7 +21,7 @@ type internal FSharpHighlightSpan =
     override this.ToString() = sprintf "%+A" this
 
 [<Shared>]
-[<ExportLanguageService(typeof<IDocumentHighlightsService>, FSharpCommonConstants.FSharpLanguageName)>]
+[<ExportLanguageService(typeof<IDocumentHighlightsService>, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerProvider: FSharpCheckerProvider, projectInfoManager: ProjectInfoManager) =
 
     /// Fix invalid spans if they appear to have redundant suffix and prefix.
@@ -63,7 +63,7 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
             return 
                 [| for symbolUse in symbolUses do
                      yield { IsDefinition = symbolUse.IsFromDefinition
-                             TextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate) } |]
+                             TextSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate) } |]
                 |> fixInvalidSymbolSpans sourceText symbol.Ident.idText
         }
 
@@ -86,4 +86,4 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
                 return ImmutableArray.Create(DocumentHighlights(document, highlightSpans))
             }   
             |> Async.map (Option.defaultValue ImmutableArray<DocumentHighlights>.Empty)
-            |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
+            |> RoslynHelpers.StartAsyncAsTask(cancellationToken)

@@ -71,7 +71,7 @@ module internal FSharpGoToDefinition =
             let refDocumentId = refDocumentIds.First()
             let refDocument = document.Project.Solution.GetDocument refDocumentId
             let! refSourceText = refDocument.GetTextAsync()
-            let refTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan (refSourceText, range)
+            let refTextSpan = RoslynHelpers.FSharpRangeToTextSpan (refSourceText, range)
             return Some (FSharpNavigableItem (refDocument, refTextSpan))
         else return None
     }
@@ -83,7 +83,7 @@ module internal FSharpGoToDefinition =
             let! projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject originDocument
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing (originDocument.FilePath, projectOptions.OtherOptions |> Seq.toList)
 
-            let originTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan (sourceText, originRange)
+            let originTextSpan = RoslynHelpers.FSharpRangeToTextSpan (sourceText, originRange)
             let position = originTextSpan.Start
 
             let! lexerSymbol = 
@@ -115,7 +115,7 @@ module internal FSharpGoToDefinition =
 
                 let! symbolUses = checkFileResults.GetUsesOfSymbolInFile symbol |> liftAsync
                 let! implSymbol  = symbolUses |> Array.tryHead 
-                let implTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan (implSourceText, implSymbol.RangeAlternate)
+                let implTextSpan = RoslynHelpers.FSharpRangeToTextSpan (implSourceText, implSymbol.RangeAlternate)
                 return FSharpNavigableItem (implDoc, implTextSpan)
             else
                 let! targetDocument = originDocument.Project.Solution.TryGetDocumentFromFSharpRange fsSymbolUse.RangeAlternate
@@ -152,7 +152,7 @@ module internal FSharpGoToDefinition =
 open FSharpGoToDefinition
 
 [<Shared>]
-[<ExportLanguageService (typeof<IGoToDefinitionService>, FSharpCommonConstants.FSharpLanguageName)>]
+[<ExportLanguageService (typeof<IGoToDefinitionService>, FSharpConstants.FSharpLanguageName)>]
 [<Export (typeof<FSharpGoToDefinitionService>)>]
 type internal FSharpGoToDefinitionService [<ImportingConstructor>]
     (checkerProvider: FSharpCheckerProvider,
@@ -314,7 +314,7 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
                             findSymbolDeclarationInFile 
                                 (targetSymbolUse, implFilePath, implSourceText.ToString(), checkerProvider.Checker, projectOptions, implVersion.GetHashCode())
 
-                        let implTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan (implSourceText, targetRange)
+                        let implTextSpan = RoslynHelpers.FSharpRangeToTextSpan (implSourceText, targetRange)
                         let navItem = FSharpNavigableItem (implDocument, implTextSpan)
                         results.Add navItem
                         return results.AsEnumerable()
@@ -327,7 +327,7 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
                         | FSharpFindDeclResult.DeclFound targetRange -> 
                             let! sigDocument = originDocument.Project.Solution.TryGetDocumentFromPath targetRange.FileName
                             let! sigSourceText = sigDocument.GetTextAsync () |> liftTaskAsync
-                            let sigTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan (sigSourceText, targetRange)
+                            let sigTextSpan = RoslynHelpers.FSharpRangeToTextSpan (sigSourceText, targetRange)
                             let navItem = FSharpNavigableItem (sigDocument, sigTextSpan)
                             results.Add navItem
                             return results.AsEnumerable()
@@ -338,7 +338,7 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
                 else
                     let! sigDocument = originDocument.Project.Solution.TryGetDocumentFromPath targetRange.FileName
                     let! sigSourceText = sigDocument.GetTextAsync () |> liftTaskAsync
-                    let sigTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan (sigSourceText, targetRange)
+                    let sigTextSpan = RoslynHelpers.FSharpRangeToTextSpan (sigSourceText, targetRange)
                     // if the gotodef call originated from a signature and the returned target is a signature, navigate there
                     if isSignatureFile targetRange.FileName && preferSignature then 
                         let navItem = FSharpNavigableItem (sigDocument, sigTextSpan)
@@ -354,13 +354,13 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
                         let! targetRange = 
                             findSymbolDeclarationInFile 
                                 (targetSymbolUse, implFilePath, implSourceText.ToString(), checkerProvider.Checker, projectOptions, implVersion.GetHashCode())                               
-                        let implTextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan (implSourceText, targetRange)
+                        let implTextSpan = RoslynHelpers.FSharpRangeToTextSpan (implSourceText, targetRange)
                         let navItem = FSharpNavigableItem (implDocument, implTextSpan)
                         results.Add navItem
                         return results.AsEnumerable()
                 | _ -> return! None
         }   |> Async.map (Option.defaultValue Seq.empty)
-            |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken        
+            |> RoslynHelpers.StartAsyncAsTask cancellationToken        
 
    
     interface IGoToDefinitionService with

@@ -17,7 +17,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.LanguageService
 
 [<Shared>]
-[<ExportLanguageService(typeof<ILanguageDebugInfoService>, FSharpCommonConstants.FSharpLanguageName)>]
+[<ExportLanguageService(typeof<ILanguageDebugInfoService>, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpLanguageDebugInfoService [<ImportingConstructor>](projectInfoManager: ProjectInfoManager) =
 
     static member GetDataTipInformation(sourceText: SourceText, position: int, tokens: List<ClassifiedSpan>): TextSpan option =
@@ -62,6 +62,6 @@ type internal FSharpLanguageDebugInfoService [<ImportingConstructor>](projectInf
                      | Some textSpan -> DebugDataTipInfo(textSpan, sourceText.GetSubText(textSpan).ToString())
                 return result
             }
-            |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
+            |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
             
             

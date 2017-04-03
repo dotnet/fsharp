@@ -33,12 +33,15 @@
     <Compile Include="srFSharp.Editor.fs" />
     <Compile Include="Common\AssemblyInfo.fs" />
     <Compile Include="Common\Pervasive.fs" />
-    <Compile Include="Common\CommonConstants.fs" />
+    <Compile Include="Common\Extensions.fs" />
+    <Compile Include="Common\Constants.fs" />
     <Compile Include="Common\Logging.fs" />
-    <Compile Include="Common\CommonHelpers.fs" />
-    <Compile Include="Common\CommonRoslynHelpers.fs" />
+    <Compile Include="Common\RoslynHelpers.fs" />
     <Compile Include="Common\CodeAnalysisExtensions.fs" />
     <Compile Include="Common\ContentType.fs" />
+    <Compile Include="LanguageService\Tokenizer.fs" />
+    <Compile Include="LanguageService\Symbols.fs" />
+    <Compile Include="LanguageService\TypedAstUtils.fs" />
     <Compile Include="LanguageService\FSharpCheckerExtensions.fs" />
     <Compile Include="LanguageService\LanguageService.fs" />
     <Compile Include="LanguageService\AssemblyContentProvider.fs" />
@@ -107,7 +110,6 @@
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
-  
   <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="PresentationFramework" />
@@ -121,7 +123,6 @@
     <Reference Include="PresentationCore" />
     <Reference Include="System.ComponentModel.Composition" />
   </ItemGroup>
-
   <ItemGroup>
     <Reference Include="EnvDTE">
       <HintPath>$(FSharpSourcesRoot)\..\packages\EnvDTE.8.0.1\lib\net10\EnvDTE.dll</HintPath>

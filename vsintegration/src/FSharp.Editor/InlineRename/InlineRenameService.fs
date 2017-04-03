@@ -67,7 +67,7 @@ type internal InlineRenameLocationSet(locationsByDocument: DocumentLocations [],
                         member __.DocumentIds = locationsByDocument |> Seq.map (fun doc -> doc.Document.Id)
                         member __.GetReplacements(documentId) = Seq.empty }
             }
-            |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
+            |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
 
 type internal InlineRenameInfo
     (
@@ -87,7 +87,7 @@ type internal InlineRenameInfo
         | _ -> document.GetTextAsync(cancellationToken).Result
 
     let triggerSpan =
-        let span = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
+        let span = RoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
         CommonHelpers.fixupSpan(sourceText, span)
 
     let symbolUses = 
@@ -129,12 +129,12 @@ type internal InlineRenameInfo
                         })
                     |> Async.Parallel
                 return InlineRenameLocationSet(locationsByDocument, document.Project.Solution, lexerSymbol.Kind, symbolUse.Symbol) :> IInlineRenameLocationSet
-            } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
+            } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
         
         member __.TryOnBeforeGlobalSymbolRenamed(_workspace, _changedDocumentIDs, _replacementText) = true
         member __.TryOnAfterGlobalSymbolRenamed(_workspace, _changedDocumentIDs, _replacementText) = true
 
-[<ExportLanguageService(typeof<IEditorInlineRenameService>, FSharpCommonConstants.FSharpLanguageName); Shared>]
+[<ExportLanguageService(typeof<IEditorInlineRenameService>, FSharpConstants.FSharpLanguageName); Shared>]
 type internal InlineRenameService 
     [<ImportingConstructor>]
     (
@@ -165,4 +165,4 @@ type internal InlineRenameService
                 return! InlineRenameService.GetInlineRenameInfo(checkerProvider.Checker, projectInfoManager, document, sourceText, position, defines, options)
             }
             |> Async.map (Option.defaultValue FailureInlineRenameInfo.Instance)
-            |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
+            |> RoslynHelpers.StartAsyncAsTask(cancellationToken)

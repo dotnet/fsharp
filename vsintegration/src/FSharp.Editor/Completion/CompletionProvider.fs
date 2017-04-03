@@ -226,7 +226,7 @@ type internal FSharpCompletionProvider
                 FSharpCompletionProvider.ProvideCompletionsAsyncAux(checkerProvider.Checker, sourceText, context.Position, options, 
                                                                     document.FilePath, textVersion.GetHashCode(), getAllSymbols)
             context.AddItems(results)
-        } |> Async.Ignore |> CommonRoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
+        } |> Async.Ignore |> RoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
         
     override this.GetDescriptionAsync(_: Document, completionItem: Completion.CompletionItem, cancellationToken: CancellationToken): Task<CompletionDescription> =
         async {
@@ -234,13 +234,13 @@ type internal FSharpCompletionProvider
             if exists then
                 let! description = declarationItem.StructuredDescriptionTextAsync
                 let documentation = List()
-                let collector = CommonRoslynHelpers.CollectTaggedText documentation
+                let collector = RoslynHelpers.CollectTaggedText documentation
                 // mix main description and xmldoc by using one collector
                 XmlDocumentation.BuildDataTipText(documentationBuilder, collector, collector, description) 
                 return CompletionDescription.Create(documentation.ToImmutableArray())
             else
                 return CompletionDescription.Empty
-        } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+        } |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
     override this.GetChangeAsync(document, item, _, cancellationToken) : Task<CompletionChange> =
         async {
@@ -285,4 +285,4 @@ type internal FSharpCompletionProvider
                 }
                 |> Async.map (Option.defaultValue (CompletionChange.Create(TextChange(item.Span, nameInCode))))
 
-        } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+        } |> RoslynHelpers.StartAsyncAsTask cancellationToken

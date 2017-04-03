@@ -143,7 +143,7 @@ type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoM
             context.AddItems(helper.GetItems(pathThroughLastSlash, documentPath))
         } 
         |> Async.Ignore
-        |> CommonRoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
+        |> RoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
  
     override __.IsInsertionTrigger(text, position, _) = 
         // Bring up completion when the user types a quote (i.e.: #r "), or if they type a slash

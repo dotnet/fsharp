@@ -15,7 +15,7 @@ open Microsoft.CodeAnalysis.FindUsages
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
-[<ExportLanguageService(typeof<IFindUsagesService>, FSharpCommonConstants.FSharpLanguageName); Shared>]
+[<ExportLanguageService(typeof<IFindUsagesService>, FSharpConstants.FSharpLanguageName); Shared>]
 type internal FSharpFindUsagesService
     [<ImportingConstructor>]
     (
@@ -34,7 +34,7 @@ type internal FSharpFindUsagesService
                         async {
                             let doc = solution.GetDocument(documentId)
                             let! sourceText = doc.GetTextAsync(cancellationToken)
-                            match CommonRoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
+                            match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
                             | Some span ->
                                 let span = CommonHelpers.fixupSpan(sourceText, span)
                                 return Some (DocumentSpan(doc, span))
@@ -142,8 +142,8 @@ type internal FSharpFindUsagesService
     interface IFindUsagesService with
         member __.FindReferencesAsync(document, position, context) =
             findReferencedSymbolsAsync(document, position, context, true)
-            |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+            |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
         member __.FindImplementationsAsync(document, position, context) =
             findReferencedSymbolsAsync(document, position, context, false)
-            |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+            |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
  
