@@ -147,9 +147,9 @@ type internal FSharpLanguageServiceTestable() as this =
             match hier with 
             | :? IProvideProjectSite as siteProvider ->
                 let site = siteProvider.GetProjectSite()
-                site.AdviseProjectSiteChanges(FSharpCommonConstants.FSharpLanguageServiceCallbackName, 
+                site.AdviseProjectSiteChanges(FSharpConstants.FSharpLanguageServiceCallbackName, 
                                               new AdviseProjectSiteChanges(fun () -> this.OnProjectSettingsChanged(site))) 
-                site.AdviseProjectSiteCleaned(FSharpCommonConstants.FSharpLanguageServiceCallbackName, 
+                site.AdviseProjectSiteCleaned(FSharpConstants.FSharpLanguageServiceCallbackName, 
                                               new AdviseProjectSiteChanges(fun () -> this.OnProjectCleaned(site))) 
             | _ -> 
                 // This can happen when the file is in a solution folder or in, say, a C# project.
