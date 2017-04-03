@@ -13,23 +13,23 @@ open SettingsPersistence
 
 module internal OptionsUIHelpers =
 
-    type AbstractOptionPage<'t when 't: (new: unit -> 't)>(view: FrameworkElement) =
-            inherit UIElementDialogPage()
-            let mutable model = new 't()
-            member this.Store =
-                let sc = this.GetService(typeof<SComponentModel>) :?> IComponentModel
-                sc.DefaultExportProvider.GetExport<SettingsStore>().Value
-            override this.Child = upcast view
-            override this.SaveSettingsToStorage() = this.Store.SaveSettings model
-            override this.LoadSettingsFromStorage() =
-                model <- this.Store.LoadOrSetDefault(new 't())
-                view.DataContext <- model
+    type AbstractOptionPage<'t>(view: FrameworkElement) =
+        inherit UIElementDialogPage()
+        member this.Store =
+            let sc = this.GetService(typeof<SComponentModel>) :?> IComponentModel
+            sc.DefaultExportProvider.GetExport<SettingsStore>().Value
+        override this.Child = upcast view
+        override this.SaveSettingsToStorage() = this.Store.SaveSettings this.Result
+        override this.LoadSettingsFromStorage() =
+            let settings: 't = this.Store.LoadSettings()
+            view.DataContext <- settings
+        member this.Result : 't = downcast view.DataContext
 
-    let ( *** ) (control : 'T when 'T :> IAddChild) (children: UIElement list) =
+    let ( *** ) (control : #IAddChild) (children: UIElement list) =
         children |> List.iter control.AddChild
         control
 
-    let ( +++ ) (control : 'T when 'T :> IAddChild) content = 
+    let ( +++ ) (control : #IAddChild) content = 
         control.AddChild content
         control
 
@@ -55,7 +55,4 @@ module internal OptionsUIHelpers =
         radioButtonStyle.Setters.Add(new Setter(RadioButton.ForegroundProperty, new DynamicResourceExtension(SystemColors.WindowTextBrushKey)))
         element.Resources.Add(typeof<RadioButton>, radioButtonStyle)
         element
-
-        
-
 

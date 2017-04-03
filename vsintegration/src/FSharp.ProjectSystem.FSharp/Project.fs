@@ -168,10 +168,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         "F# Tools", "F# Interactive",   // category/sub-category on Tools>Options...
                         6000s,      6001s,              // resource id for localisation of the above
                         true)>]                         // true = supports automation
-    [<ProvideOptionPage(typeof<IntelliSensePropertyPage>,
-                        "F# Tools", "IntelliSense",     // category/sub-category on Tools>Options...
-                        6000s,      6008s,              // resource id for localisation of the above
-                        true)>]                         // true = supports automation
     [<ProvideKeyBindingTable("{dee22b65-9761-4a26-8fb2-759b971d6dfc}", 6001s)>] // <-- resource ID for localised name
     [<ProvideToolWindow(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow>, 
                         // The following should place the ToolWindow with the OutputWindow by default.
@@ -320,8 +316,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
                 // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
                 let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
-                // private method GetDialogPage forces intellisense options to be loaded
-                let _intelliSensePropertyPage = this.GetDialogPage(typeof<IntelliSensePropertyPage>)
                 this.RegisterForIdleTime()
                 ()
 

@@ -209,7 +209,12 @@ type
                              ShowDropDownOptions = true)>]
     internal FSharpPackage() =
     inherit AbstractPackage<FSharpPackage, FSharpLanguageService>()
-    
+
+    override this.Initialize() =
+        base.Initialize()
+        //make sure incoming settings changes are handled
+        this.ComponentModel.GetService<SettingsPersistence.SettingsStore>() |> ignore
+
     override this.RoslynLanguageName = FSharpCommonConstants.FSharpLanguageName
 
     override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
