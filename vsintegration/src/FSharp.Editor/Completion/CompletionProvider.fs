@@ -51,7 +51,6 @@ type internal FSharpCompletionProvider
     
     let xmlMemberIndexService = serviceProvider.GetService(typeof<IVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
-    static let attributeSuffixLength = "Attribute".Length
     
     static let noCommitOnSpaceRules = 
         CompletionItemRules.Default.WithCommitCharacterRule(CharacterSetModificationRule.Create(CharacterSetModificationKind.Remove, ' ', '.', '<', '>', '(', ')', '!'))
@@ -86,7 +85,7 @@ type internal FSharpCompletionProvider
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, 
                                              textVersionHash: int, getAllSymbols: unit -> AssemblySymbol list) = 
         asyncMaybe {
-            let! parseResults, parsedInput, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)
+            let! parseResults, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)
 
             //#if DEBUG
             //Logging.Logging.logInfof "AST:\n%+A" parsedInput
@@ -94,8 +93,6 @@ type internal FSharpCompletionProvider
 
             let textLines = sourceText.Lines
             let caretLinePos = textLines.GetLinePosition(caretPosition)
-            let entityKind = UntypedParseImpl.GetEntityKind(Pos.fromZ caretLinePos.Line caretLinePos.Character, parsedInput)
-            
             let caretLine = textLines.GetLineFromPosition(caretPosition)
             let fcsCaretLineNumber = Line.fromZ caretLinePos.Line  // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
             let caretLineColumn = caretLinePos.Character
@@ -142,11 +139,8 @@ type internal FSharpCompletionProvider
             sortedDeclItems |> Array.iteri (fun number declItem ->
                 let glyph = Tokenizer.FSharpGlyphToRoslynGlyph (declItem.Glyph, declItem.Accessibility)
                 let name =
-                    match entityKind, declItem.NamespaceToOpen with
-                    | Some EntityKind.Attribute, _ when declItem.IsAttribute && declItem.Name.EndsWith "Attribute"  ->
-                        declItem.Name.[0..declItem.Name.Length - attributeSuffixLength - 1]
-                    | _, Some namespaceToOpen ->
-                        sprintf "%s (open %s)" declItem.Name namespaceToOpen
+                    match declItem.NamespaceToOpen with
+                    | Some namespaceToOpen -> sprintf "%s (open %s)" declItem.Name namespaceToOpen
                     | _ -> declItem.Name
                 
                 let filterText =
