@@ -17,7 +17,7 @@ type private ReferenceType =
 | AddProjectRef of ProjectReference
 | AddMetadataRef of MetadataReference
 
-[<ExportCodeFixProvider(FSharpCommonConstants.FSharpLanguageName, Name = "MissingReference"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "MissingReference"); Shared>]
 type internal MissingReferenceCodeFixProvider() =
     inherit CodeFixProvider()
 
@@ -42,7 +42,7 @@ type internal MissingReferenceCodeFixProvider() =
                         let newReferences = references |> Seq.append [metadataRef]
                         return solution.WithProjectMetadataReferences(project.Id, newReferences)
                 }
-                |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
+                |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
                 ),
             title)
 
