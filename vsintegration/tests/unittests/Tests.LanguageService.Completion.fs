@@ -6031,7 +6031,7 @@ let rec f l =
                     let f (x:MyNamespace1.MyModule(*Maftervariable4*)) = 10
                     let y = int System.IO(*Maftervariable5*)""",
             marker = "(*Maftervariable2*)",
-            list = ["DuType";"Pet";"Dog"])
+            list = [])
 
     [<Test>]
     member this.``VariableIdentifier.MethodsInheritFomeBase``() = 
@@ -6108,7 +6108,7 @@ let rec f l =
                 type TestAttribute() = 
                     member x.print() = "print" """,
             marker = "(*Mattribute*)",
-            list = ["Int32";"ObsoleteAttribute"])
+            list = ["Obsolete"])
 
     [<Test>]
     member this.``ImportStatment.System.ImportDirectly``() = 
@@ -6208,7 +6208,7 @@ let rec f l =
                     let result5 = CopyFile_Arrays(tempFile1.ToCharArray(), tempFile2.ToCharArray(), false)
                     printfn "WithAttribute %A" result5""",
             marker = "(*Mpinvokeattribute*)",
-            list = ["SomeAttrib";"myclass"]) 
+            list = ["SomeAttrib"]) 
 
     [<Test>]
     member this.``LongIdent.PInvoke.AsParameterType``() = 
@@ -6297,7 +6297,7 @@ let rec f l =
                     let f (x:int) = MyNamespace1.MyModule.DuType(*Mtypeparameter2*)    
                     let typeFunc<[<MyNamespace1.MyModule(*Mtypeparameter3*)>] 'a> = 10""",
             marker = "(*Mtypeparameter3*)",
-            list = ["Dog";"DuType"])
+            list = [])
 
     [<Test>]
     member this.``RedefinedIdentifier.DiffScope.InScope.Positive``() =
