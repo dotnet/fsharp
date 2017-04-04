@@ -169,7 +169,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
                 | _ -> 
                     Some context.Span.End
             let! interfaceState = queryInterfaceState appendBracketAt interfacePos tokens parsedInput                        
-            let! symbol = Tokenizer.getSymbolAtPosition(context.Document.Id, sourceText, fixupPosition, context.Document.FilePath, defines, Tokenizer.SymbolLookupKind.Greedy)
+            let! symbol = Tokenizer.getSymbolAtPosition(context.Document.Id, sourceText, fixupPosition, context.Document.FilePath, defines, SymbolLookupKind.Greedy)
             let fcsTextLineNumber = textLine.LineNumber + 1
             let lineContents = textLine.ToString()                            
             let! options = context.Document.GetOptionsAsync(cancellationToken)

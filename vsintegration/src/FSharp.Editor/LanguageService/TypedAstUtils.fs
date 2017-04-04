@@ -1,10 +1,8 @@
 ﻿module internal Microsoft.VisualStudio.FSharp.Editor.TypedAstUtils 
 
 open System
-open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.Editor
-
 
 open System.Text.RegularExpressions
 
@@ -42,7 +40,6 @@ let isOperator (name: string) =
 let private UnnamedUnionFieldRegex = Regex("^Item(\d+)?$", RegexOptions.Compiled)
     
 let isUnnamedUnionCaseField (field: FSharpField) = UnnamedUnionFieldRegex.IsMatch(field.Name)
-
 
 module TypedAstPatterns =
 

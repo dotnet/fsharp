@@ -38,7 +38,7 @@ type internal FSharpParseFileResults =
     /// Get the errors and warnings for the parse
     member Errors : FSharpErrorInfo[]
 
-    /// Indicates if any errors occured during the parse
+    /// Indicates if any errors occurred during the parse
     member ParseHadErrors : bool
 
     internal new : errors : FSharpErrorInfo[] * input : Ast.ParsedInput option * parseHadErrors : bool * dependencyFiles : string list -> FSharpParseFileResults
