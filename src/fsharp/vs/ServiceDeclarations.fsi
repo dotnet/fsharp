@@ -101,7 +101,7 @@ type internal FSharpDeclarationListItem =
     member Name : string
     /// Get the name for the declaration as it's presented in source code.
     member NameInCode : string
-    /// Get the description text for the declaration. Commputing this property may require using compiler
+    /// Get the description text for the declaration. Computing this property may require using compiler
     /// resources and may trigger execution of a type provider method to retrieve documentation.
     ///
     /// May return "Loading..." if timeout occurs

@@ -510,7 +510,7 @@ module internal PrintfImpl =
     /// - withPaddingFormatted - adapts second category
     module Padding = 
         /// pad here is function that converts T to string with respect of justification
-        /// basic - function that converts T to string without appying justification rules
+        /// basic - function that converts T to string without applying justification rules
         /// adaptPaddedFormatted returns boxed function that has various number of arguments depending on if width\precision flags has '*' value 
         let inline adaptPaddedFormatted (spec : FormatSpecifier) getFormat (basic : string -> 'T -> string) (pad : string -> int -> 'T -> string) = 
             if spec.IsStarWidth then
@@ -555,7 +555,7 @@ module internal PrintfImpl =
                         )
 
         /// pad here is function that converts T to string with respect of justification
-        /// basic - function that converts T to string without appying justification rules
+        /// basic - function that converts T to string without applying justification rules
         /// adaptPadded returns boxed function that has various number of arguments depending on if width flags has '*' value 
         let inline adaptPadded (spec : FormatSpecifier) (basic : 'T -> string) (pad : int -> 'T -> string) = 
             if spec.IsStarWidth then

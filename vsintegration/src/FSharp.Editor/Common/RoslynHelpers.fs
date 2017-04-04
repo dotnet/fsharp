@@ -13,10 +13,9 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.LanguageService
 
+[<RequireQualifiedAccess>]
 module internal RoslynHelpers =
 
     let FSharpRangeToTextSpan(sourceText: SourceText, range: range) =

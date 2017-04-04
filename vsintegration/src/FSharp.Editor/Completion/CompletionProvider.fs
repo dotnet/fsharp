@@ -21,8 +21,6 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open Tokenizer
-
 
 type internal FSharpCompletionProvider
     (
@@ -139,7 +137,7 @@ type internal FSharpCompletionProvider
             let maxHints = if mruItems.Values.Count = 0 then 0 else Seq.max mruItems.Values
 
             sortedDeclItems |> Array.iteri (fun number declItem ->
-                let glyph = FSharpGlyphToRoslynGlyph (declItem.Glyph, declItem.Accessibility)
+                let glyph = Tokenizer.FSharpGlyphToRoslynGlyph (declItem.Glyph, declItem.Accessibility)
                 let name =
                     match declItem.NamespaceToOpen with
                     | Some namespaceToOpen -> sprintf "%s (open %s)" declItem.Name namespaceToOpen

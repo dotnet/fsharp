@@ -8,15 +8,11 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open Tokenizer
-open Symbols
 open TypedAstUtils
-
 
 type CheckResults =
     | Ready of (FSharpParseFileResults * FSharpCheckFileResults) option
     | StillRunning of Async<(FSharpParseFileResults * FSharpCheckFileResults) option>
-
     
 type FSharpChecker with
     member this.ParseDocument(document: Document, options: FSharpProjectOptions, sourceText: string) =
