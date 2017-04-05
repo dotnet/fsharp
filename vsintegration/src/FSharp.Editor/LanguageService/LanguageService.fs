@@ -269,28 +269,17 @@ and
         Events.SolutionEvents.OnAfterCloseSolution.Add <| fun _ ->
             singleFileProjects.Keys |> Seq.iter tryRemoveSingleFileProject
 
-        let ctx = System.Threading.SynchronizationContext.Current
         
-        let rec setupProjectsAfterSolutionOpen() =
-            async {
-                use openedProjects = MailboxProcessor.Start <| fun inbox ->
-                    async { 
-                        // waits for AfterOpenSolution and then starts projects setup
-                        do! Async.AwaitEvent Events.SolutionEvents.OnAfterOpenSolution |> Async.Ignore
-                        while true do
-                            let! siteProvider = inbox.Receive()
-                            do! Async.SwitchToContext ctx
-                            this.SetupProjectFile(siteProvider, this.Workspace) }
+        let setupProject (hierarchy:IVsHierarchy) = async {
+            match hierarchy with
+            | :? IProvideProjectSite as siteProvider -> 
+                this.SetupProjectFile(siteProvider, this.Workspace) 
+            | _ -> ()
+        }
 
-                use _ = Events.SolutionEvents.OnAfterOpenProject |> Observable.subscribe ( fun args ->
-                    match args.Hierarchy with
-                    | :? IProvideProjectSite as siteProvider -> openedProjects.Post(siteProvider)
-                    | _ -> () )
-
-                do! Async.AwaitEvent Events.SolutionEvents.OnAfterCloseSolution |> Async.Ignore
-                do! setupProjectsAfterSolutionOpen() 
-            }
-        setupProjectsAfterSolutionOpen() |> Async.StartImmediate
+        Events.SolutionEvents.OnAfterOpenProject |> Observable.add ( fun args ->
+            setupProject args.Hierarchy |> Async.Start
+        )
 
         let theme = package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
         theme.SetColors()
