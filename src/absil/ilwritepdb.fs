@@ -144,8 +144,8 @@ let pdbGetCvDebugInfo (mvid:byte[]) (timestamp:int32) (filepath:string) (cvChunk
         Buffer.BlockCopy(path, 0, buffer, offset, size)
         buffer
     { iddCharacteristics = 0;                                                   // Reserved
-      iddMajorVersion = 0;                                                      // VersionMajor should be 0
-      iddMinorVersion = 0;                                                      // VersionMinor should be 0
+      iddMajorVersion = 0x0100;                                                 // VersionMajor should be 0x0100
+      iddMinorVersion = 0x504d;                                                 // VersionMinor should be 0x504d
       iddType = 2;                                                              // IMAGE_DEBUG_TYPE_CODEVIEW
       iddTimestamp = timestamp;
       iddData = iddCvBuffer;                                                    // Path name to the pdb file when built
