@@ -31,11 +31,6 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.ComponentModelHost
 
-// Workaround to access non-public settings persistence type.
-// GetService( ) with this will work as long as the GUID matches the real type.
-[<Guid(FSharpConstants.svsSettingsPersistenceManagerGuidString)>]
-type internal SVsSettingsPersistenceManager = class end
-
 // Exposes FSharpChecker as MEF export
 [<Export(typeof<FSharpCheckerProvider>); Composition.Shared>]
 type internal FSharpCheckerProvider 
@@ -195,6 +190,8 @@ type internal FSharpCheckerWorkspaceServiceFactory
 
 type
     [<Guid(FSharpConstants.packageGuidString)>]
+    [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.IntelliSenseOptionPage>, "F#", null, "IntelliSense", "6008")>]
+    [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.QuickInfoOptionPage>, "F#", null, "QuickInfo", "6009")>]   
     [<ProvideLanguageService(languageService = typeof<FSharpLanguageService>,
                              strLanguageName = FSharpConstants.FSharpLanguageName,
                              languageResourceID = 100,
@@ -213,13 +210,17 @@ type
                              ShowDropDownOptions = true)>]
     internal FSharpPackage() =
     inherit AbstractPackage<FSharpPackage, FSharpLanguageService>()
-    
+
+    override this.Initialize() =
+        base.Initialize()
+        //make sure incoming settings changes are handled
+        this.ComponentModel.GetService<SettingsPersistence.SettingsStore>() |> ignore
+
     override this.RoslynLanguageName = FSharpConstants.FSharpLanguageName
 
     override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
 
-    override this.CreateLanguageService() = 
-        FSharpLanguageService(this)        
+    override this.CreateLanguageService() = FSharpLanguageService(this)        
 
     override this.CreateEditorFactories() = Seq.empty<IVsEditorFactory>
 
@@ -259,7 +260,6 @@ and
 
     override this.Initialize() =
         base.Initialize()
-
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Completion.CompletionOptions.BlockForCompletionItems, FSharpConstants.FSharpLanguageName, false)
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpConstants.FSharpLanguageName, Nullable false)
 
