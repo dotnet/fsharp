@@ -19,7 +19,7 @@ Make sure each method works on:
 * Null ISeq    (null)
 *)
 
-type iseq<'a> = ISeq.Core.ISeq<'a>
+type iseq<'a> = FSharp.Collections.SeqComposition.ISeq<'a>
 
 [<TestFixture>]
 type ISeqModule() =
