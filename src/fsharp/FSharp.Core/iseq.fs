@@ -14,6 +14,7 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Primitives.Basics
+    open Microsoft.FSharp.Collections.SeqComposition
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module ISeq =
@@ -40,21 +41,6 @@ namespace Microsoft.FSharp.Collections
                 val mutable _2 : 'b
                 val mutable _3 : 'c
                 new (a:'a, b:'b, c:'c) = { _1 = a; _2 = b; _3 = c }
-
-            type PipeIdx = int
-
-            type IOutOfBand =
-                abstract StopFurtherProcessing : PipeIdx -> unit
-
-            [<AbstractClass>]
-            type Activity() =
-                abstract ChainComplete : PipeIdx -> unit
-                abstract ChainDispose  : unit -> unit
-
-            [<AbstractClass>]
-            type Activity<'T,'U> () =
-                inherit Activity()
-                abstract ProcessNext : input:'T -> bool
 
             [<AbstractClass>]
             type Transform<'T,'U,'State> =
@@ -89,26 +75,6 @@ namespace Microsoft.FSharp.Collections
                     finally this.Next.ChainDispose ()
 
             [<AbstractClass>]
-            type Folder<'T,'Result> =
-                inherit Activity<'T,'T>
-
-                val mutable Result : 'Result
-
-                val mutable HaltedIdx : int
-                member this.StopFurtherProcessing pipeIdx = this.HaltedIdx <- pipeIdx
-                interface IOutOfBand with
-                    member this.StopFurtherProcessing pipeIdx = this.StopFurtherProcessing pipeIdx
-
-                new (initalResult) = {
-                    inherit Activity<'T,'T>()
-                    HaltedIdx = 0
-                    Result = initalResult
-                }
-
-                override this.ChainComplete _ = ()
-                override this.ChainDispose () = ()
-
-            [<AbstractClass>]
             type FolderWithState<'T,'Result,'State> =
                 inherit Folder<'T,'Result>
 
@@ -131,14 +97,6 @@ namespace Microsoft.FSharp.Collections
                 override this.ChainDispose () =
                     this.OnDispose ()
 
-            [<AbstractClass>]
-            type TransformFactory<'T,'U> () =
-                abstract Compose<'V> : IOutOfBand -> PipeIdx -> Activity<'U,'V> -> Activity<'T,'V>
-
-            type ISeq<'T> =
-                inherit IEnumerable<'T>
-                abstract member PushTransform<'U> : TransformFactory<'T,'U> -> ISeq<'U>
-                abstract member Fold<'Result> : f:(PipeIdx->Folder<'T,'Result>) -> 'Result
 
         open Core
 
