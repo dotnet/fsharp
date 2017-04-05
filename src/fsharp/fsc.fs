@@ -1962,7 +1962,6 @@ let main4 (Args (ctok, tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainMod
                     embedSourceList = tcConfig.embedSourceList
                     sourceLink = tcConfig.sourceLink
                     signer = GetStrongNameSigner signingInfo
-                    fixupOverlappingSequencePoints = false
                     dumpDebugInfo = tcConfig.dumpDebugInfo }, 
                   ilxMainModule)
             with Failure msg -> 
