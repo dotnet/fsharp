@@ -94,14 +94,22 @@ namespace Microsoft.FSharp.Collections
         /// is as a base class for an object expression that will be used from within
         /// the Fold function.
         [<AbstractClass>]
-        type Folder<'T,'Result,'State> =
+        type Folder<'T,'Result> =
             inherit Activity<'T,'T>
-            new : 'Result*'State -> Folder<'T,'Result,'State>
+            new : 'Result -> Folder<'T,'Result>
             interface IOutOfBand
-            val mutable State : 'State
             val mutable Result : 'Result
             val mutable HaltedIdx : int
             member StopFurtherProcessing : PipeIdx -> unit
+
+        /// Folder is a base class to assist with fold-like operations. It's intended usage
+        /// is as a base class for an object expression that will be used from within
+        /// the Fold function.
+        [<AbstractClass>]
+        type FolderWithState<'T,'Result,'State> =
+            inherit Folder<'T,'Result>
+            new : 'Result*'State -> FolderWithState<'T,'Result,'State>
+            val mutable State : 'State
 
         /// Folder is a base class to assist with fold-like operations
         /// and performs some post processing on the pipeline, either in the case of the stream
@@ -110,7 +118,7 @@ namespace Microsoft.FSharp.Collections
         /// the Fold function.
         [<AbstractClass>]
         type FolderWithPostProcessing<'T,'Result,'State> =
-            inherit Folder<'T,'Result,'State>
+            inherit FolderWithState<'T,'Result,'State>
             new : 'Result*'State -> FolderWithPostProcessing<'T,'Result,'State>
             abstract OnDispose : unit -> unit
             abstract OnComplete : PipeIdx -> unit
@@ -128,7 +136,7 @@ namespace Microsoft.FSharp.Collections
         type ISeq<'T> =
             inherit System.Collections.Generic.IEnumerable<'T>
             abstract member PushTransform : TransformFactory<'T,'U> -> ISeq<'U>
-            abstract member Fold<'Result,'State> : f:(PipeIdx->Folder<'T,'Result,'State>) -> 'Result
+            abstract member Fold<'Result> : f:(PipeIdx->Folder<'T,'Result>) -> 'Result
 
     open Core
 
