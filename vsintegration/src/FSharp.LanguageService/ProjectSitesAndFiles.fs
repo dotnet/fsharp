@@ -11,6 +11,7 @@ open Microsoft.VisualStudio
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open System.Collections.Generic
 
 /// An additional interface that an IProjectSite object can implement to indicate it has an FSharpProjectOptions 
 /// already available, so we don't have to recreate it
@@ -106,10 +107,10 @@ type internal ProjectSitesAndFiles() =
             | _ -> Seq.empty
         | Some _ -> Seq.empty
 
-    static let rec referencedProvideProjectSites (projectSite:IProjectSite, serviceProvider:System.IServiceProvider) =
-        let solutionService = 
-            try Some (serviceProvider.GetService(typeof<SVsSolution>) :?> IVsSolution) with _ -> None
-        match solutionService with
+    static let solutionService (serviceProvider: System.IServiceProvider) = lazy (try Some (serviceProvider.GetService(typeof<SVsSolution>) :?> IVsSolution) with _ -> None)
+
+    static let referencedProvideProjectSites (projectSite:IProjectSite, serviceProvider:System.IServiceProvider) =
+        match solutionService(serviceProvider).Value with
         | Some solutionService ->
             referencedProjects projectSite
             |> Seq.choose (fun p ->
@@ -119,6 +120,12 @@ type internal ProjectSitesAndFiles() =
                 | _ -> None)
         | None -> Seq.empty
                     
+    static let projectOptionsCache = Dictionary<string, FSharpProjectOptions>()
+    
+    static let log fmt = 
+        Printf.kprintf (fun s -> 
+            lock projectOptionsCache (fun _ -> File.AppendAllText(@"d:\temp\____pr.txt", sprintf "%O - %s\n" DateTime.Now s))) fmt
+
     static let rec referencedProjectsOf (projectSite:IProjectSite, fileName, extraProjectInfo, serviceProvider:System.IServiceProvider) =
         referencedProvideProjectSites (projectSite, serviceProvider)
         |> Seq.choose (fun (p, ps) ->            
@@ -128,17 +135,27 @@ type internal ProjectSitesAndFiles() =
             )
         |> Seq.toArray
 
-    and getProjectOptionsForProjectSite(projectSite:IProjectSite, fileName, extraProjectInfo, serviceProvider) =            
-           {ProjectFileName = projectSite.ProjectFileName()
-            ProjectFileNames = projectSite.SourceFilesOnDisk()
-            OtherOptions = projectSite.CompilerFlags()
-            ReferencedProjects = referencedProjectsOf(projectSite, fileName, extraProjectInfo, serviceProvider)
-            IsIncompleteTypeCheckEnvironment = projectSite.IsIncompleteTypeCheckEnvironment
-            UseScriptResolutionRules = SourceFile.MustBeSingleFileProject fileName
-            LoadTime = projectSite.LoadTime
-            UnresolvedReferences = None
-            OriginalLoadReferences = []
-            ExtraProjectInfo=extraProjectInfo }   
+    and getProjectOptionsForProjectSite (projectSite:IProjectSite, fileName, extraProjectInfo, serviceProvider) =
+        let projectFileName = projectSite.ProjectFileName()
+        match projectOptionsCache.TryGetValue projectFileName with
+        | true, options ->
+            log "%s - cached" (Path.GetFileName fileName)
+            { options with ExtraProjectInfo = extraProjectInfo }
+        | _ ->
+            let options =
+                { ProjectFileName = projectFileName
+                  ProjectFileNames = projectSite.SourceFilesOnDisk()
+                  OtherOptions = projectSite.CompilerFlags()
+                  ReferencedProjects = referencedProjectsOf(projectSite, fileName, extraProjectInfo, serviceProvider)
+                  IsIncompleteTypeCheckEnvironment = projectSite.IsIncompleteTypeCheckEnvironment
+                  UseScriptResolutionRules = SourceFile.MustBeSingleFileProject fileName
+                  LoadTime = projectSite.LoadTime
+                  UnresolvedReferences = None
+                  OriginalLoadReferences = []
+                  ExtraProjectInfo=extraProjectInfo }
+            projectOptionsCache.[projectFileName] <- options
+            log "%s - created!!!" (Path.GetFileName fileName)
+            options
 
     /// Construct a project site for a single file. May be a single file project (for scripts) or an orphan project site (for everything else).
     static member ProjectSiteOfSingleFile(filename:string) : IProjectSite = 
