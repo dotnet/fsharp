@@ -11,7 +11,7 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 
-/// Represents the differnt kinds of items that can appear in the navigation bar
+/// Represents the different kinds of items that can appear in the navigation bar
 type FSharpNavigationDeclarationItemKind =
     | NamespaceDecl
     | ModuleFileDecl
@@ -501,11 +501,11 @@ module NavigateTo =
             addIdent NavigableItemKind.Exception id isSig container
             { Type = ContainerType.Exception; Name = id.idText }
     
-        let addComponentInfo kind (ComponentInfo(_, _, _, lid, _, _, _, _)) isSig container = 
+        let addComponentInfo containerType kind (ComponentInfo(_, _, _, lid, _, _, _, _)) isSig container = 
             match lastInLid lid with
             | Some id -> addIdent kind id isSig container
             | _ -> ()
-            { Type = ContainerType.Type; Name = formatLongIdent lid }
+            { Type = containerType; Name = formatLongIdent lid }
     
         let addValSig kind (ValSpfn(_, id, _, _, _, _, _, _, _, _, _)) isSig container = 
             addIdent kind id isSig container
@@ -578,7 +578,7 @@ module NavigateTo =
             | SynModuleSigDecl.NamespaceFragment fragment ->
                 walkSynModuleOrNamespaceSig fragment container
             | SynModuleSigDecl.NestedModule(componentInfo, _, nestedDecls, _) ->
-                let container = addComponentInfo NavigableItemKind.Module componentInfo true container
+                let container = addComponentInfo ContainerType.Module NavigableItemKind.Module componentInfo true container
                 for decl in nestedDecls do
                     walkSynModuleSigDecl decl container
             | SynModuleSigDecl.Types(types, _) ->
@@ -590,7 +590,7 @@ module NavigateTo =
             | SynModuleSigDecl.Open _ -> ()
     
         and walkSynTypeDefnSig (TypeDefnSig(componentInfo, repr, members, _)) container = 
-            let container = addComponentInfo NavigableItemKind.Type componentInfo true container
+            let container = addComponentInfo ContainerType.Type NavigableItemKind.Type componentInfo true container
             for m in members do
                 walkSynMemberSig m container
             match repr with
@@ -640,7 +640,7 @@ module NavigateTo =
             | SynModuleDecl.NamespaceFragment(fragment) ->
                 walkSynModuleOrNamespace fragment container
             | SynModuleDecl.NestedModule(componentInfo, _, modules, _, _) ->
-                let container = addComponentInfo NavigableItemKind.Module componentInfo false container
+                let container = addComponentInfo ContainerType.Module NavigableItemKind.Module componentInfo false container
                 for m in modules do
                     walkSynModuleDecl m container
             | SynModuleDecl.Types(typeDefs, _range) ->
@@ -652,8 +652,8 @@ module NavigateTo =
             | SynModuleDecl.Open _ -> ()
     
         and walkSynTypeDefn(TypeDefn(componentInfo, representation, members, _)) container = 
+            let container = addComponentInfo ContainerType.Type NavigableItemKind.Type componentInfo false container
             walkSynTypeDefnRepr representation container
-            let container = addComponentInfo NavigableItemKind.Type componentInfo false container
             for m in members do
                 walkSynMemberDefn m container
     

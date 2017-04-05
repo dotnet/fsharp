@@ -630,7 +630,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
     let tagFile        = "<file>"
     let tagNone        = ""
   
-    /// These options preceed the FsiCoreCompilerOptions in the help blocks
+    /// These options precede the FsiCoreCompilerOptions in the help blocks
     let fsiUsagePrefix tcConfigB =
       [PublicOptions(FSIstrings.SR.fsiInputFiles(),
         [CompilerOption("use",tagFile, OptionString (fun s -> inputFilesAcc <- inputFilesAcc @ [(s,true)]), None,
@@ -810,14 +810,14 @@ let internal SetServerCodePages(fsiOptions: FsiCommandLineOptions) =
                                 | Some(n:int) ->
                                       let encoding = System.Text.Encoding.GetEncoding(n) 
                                       // Note this modifies the real honest-to-goodness settings for the current shell.
-                                      // and the modifiations hang around even after the process has exited.
+                                      // and the modifications hang around even after the process has exited.
                                       Console.InputEncoding <- encoding
                              do match outputCodePageOpt with 
                                 | None -> () 
                                 | Some(n:int) -> 
                                       let encoding = System.Text.Encoding.GetEncoding n
                                       // Note this modifies the real honest-to-goodness settings for the current shell.
-                                      // and the modifiations hang around even after the process has exited.
+                                      // and the modifications hang around even after the process has exited.
                                       Console.OutputEncoding <- encoding
                              do successful := true  });
         for pause in [10;50;100;1000;2000;10000] do 
@@ -1488,7 +1488,7 @@ type internal FsiInterruptController(fsiOptions : FsiCommandLineOptions,
                                 killThreadRequest <- NoRequest
                                 threadToKill.Abort()
                             | ExitRequest -> 
-                                // Mono has some wierd behaviour where it blocks on exit
+                                // Mono has some weird behaviour where it blocks on exit
                                 // once CtrlC has ever been pressed.  Who knows why?  Perhaps something
                                 // to do with having a signal handler installed, but it only happens _after_
                                 // at least one CtrLC has been pressed.  Maybe raising a ThreadAbort causes
@@ -1515,7 +1515,7 @@ type internal FsiInterruptController(fsiOptions : FsiCommandLineOptions,
 
     member x.PosixInvoke(n:int) = 
          // we run this code once with n = -1 to make sure it is JITted before execution begins
-         // since we are not allowed to JIT a signal handler.  THis also ensures the "PosixInvoke"
+         // since we are not allowed to JIT a signal handler.  This also ensures the "PosixInvoke"
          // method is not eliminated by dead-code elimination
          if n >= 0 then 
              posixReinstate()
@@ -2706,7 +2706,7 @@ type internal FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:st
                         // Instead it will be interpreted as unhandled exception and crash the whole process.
 
                         // FIX: detect if current process in 64 bit running on Windows 7 or Windows 8 and if yes - swallow the StopProcessing and ScheduleRestart instead.
-                        // Visible behavior should not be different, previosuly exception unwinds the stack and aborts currently running Application.
+                        // Visible behavior should not be different, previously exception unwinds the stack and aborts currently running Application.
                         // After that it will be intercepted and suppressed in DriveFsiEventLoop.
                         // Now we explicitly shut down Application so after execution of callback will be completed the control flow 
                         // will also go out of WinFormsEventLoop.Run and again get to DriveFsiEventLoop => restart the loop. I'd like the fix to be  as conservative as possible

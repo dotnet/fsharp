@@ -1,10 +1,8 @@
-﻿// Copyright (c) Microsoft Corpration, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
-open System.IO
 open System.Collections.Generic
-open System.Reflection
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.AbstractIL.IL
@@ -20,7 +18,6 @@ open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.TastPickle
 open Microsoft.FSharp.Compiler.PrettyNaming
 open Internal.Utilities
 
@@ -168,6 +165,8 @@ type FSharpSymbol(cenv:cenv, item: (unit -> Item), access: (FSharpSymbol -> CcuT
 
     member x.IsAccessible(rights: FSharpAccessibilityRights) = access x rights.ThisCcu rights.Contents
 
+    member x.IsExplicitlySuppressed = ItemDescriptionsImpl.IsExplicitlySuppressed cenv.g x.Item
+
     member x.FullName = ItemDescriptionsImpl.FullNameOfItem cenv.g x.Item 
 
     member x.DeclarationLocation = ItemDescriptionsImpl.rangeOfItem cenv.g None x.Item
@@ -279,7 +278,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
 
     member x.GenericParameters = 
         checkIsResolved()
-        entity.TyparsNoRange |> List.map (fun tp -> FSharpGenericParameter(cenv,  tp)) |> List.toArray |> makeReadOnlyCollection
+        entity.TyparsNoRange |> List.map (fun tp -> FSharpGenericParameter(cenv,  tp)) |> makeReadOnlyCollection
 
     member __.IsMeasure = 
         isResolvedAndFSharp() && (entity.TypeOrMeasureKind = TyparKind.Measure)
@@ -575,7 +574,7 @@ and FSharpUnionCase(cenv, v: UnionCaseRef) =
 
     member __.UnionCaseFields = 
         if isUnresolved() then makeReadOnlyCollection [] else
-        v.UnionCase.RecdFields |> List.mapi (fun i _ ->  FSharpField(cenv,  FSharpFieldData.Union (v, i))) |> List.toArray |> makeReadOnlyCollection
+        v.UnionCase.RecdFields |> List.mapi (fun i _ ->  FSharpField(cenv,  FSharpFieldData.Union (v, i))) |> makeReadOnlyCollection
 
     member __.ReturnType = 
         checkIsResolved()
@@ -881,7 +880,7 @@ and FSharpGenericParameter(cenv, v:Typar) =
     member __.IsSolveAtCompileTime = (v.StaticReq = TyparStaticReq.HeadTypeStaticReq)
     member __.Attributes = 
          // INCOMPLETENESS: If the type parameter comes from .NET then the .NET metadata for the type parameter
-         // has been lost (it is not accesible via Typar).  So we can't easily report the attributes in this 
+         // has been lost (it is not accessible via Typar).  So we can't easily report the attributes in this 
          // case.
          v.Attribs |> List.map (fun a -> FSharpAttribute(cenv,  AttribInfo.FSAttribInfo(cenv.g, a))) |> makeReadOnlyCollection
     member __.Constraints = v.Constraints |> List.map (fun a -> FSharpGenericParameterConstraint(cenv, a)) |> makeReadOnlyCollection
@@ -1097,6 +1096,7 @@ and FSharpMemberOrValData =
     | E of EventInfo
     | P of PropInfo
     | M of MethInfo
+    | C of MethInfo
     | V of ValRef
 
 and FSharpMemberOrVal = FSharpMemberOrFunctionOrValue
@@ -1124,7 +1124,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
 
     let fsharpInfo() = 
         match d with 
-        | M m -> m.ArbitraryValRef 
+        | M m | C m -> m.ArbitraryValRef 
         | P p -> p.ArbitraryValRef 
         | E e -> e.ArbitraryValRef 
         | V v -> Some v
@@ -1184,7 +1184,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match d with 
         | E m -> FSharpEntity(cenv,  tcrefOfAppTy cenv.g m.EnclosingType)
         | P m -> FSharpEntity(cenv,  tcrefOfAppTy cenv.g m.EnclosingType)
-        | M m -> FSharpEntity(cenv,  tcrefOfAppTy cenv.g m.EnclosingType)
+        | M m | C m -> FSharpEntity(cenv,  tcrefOfAppTy cenv.g m.EnclosingType)
         | V v -> 
         match v.ApparentParent with 
         | ParentNone -> invalidOp "the value or member doesn't have a logical parent" 
@@ -1196,9 +1196,9 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             match d with 
             | E _ -> []
             | P _ -> []
-            | M m -> m.FormalMethodTypars
+            | M m | C m -> m.FormalMethodTypars
             | V v -> v.Typars 
-        tps |> List.map (fun tp -> FSharpGenericParameter(cenv,  tp)) |> List.toArray |> makeReadOnlyCollection
+        tps |> List.map (fun tp -> FSharpGenericParameter(cenv,  tp)) |> makeReadOnlyCollection
 
     member x.FullType = 
         checkIsResolved()
@@ -1206,7 +1206,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             match d with 
             | E e -> e.GetDelegateType(cenv.amap,range0)
             | P p -> p.GetPropertyType(cenv.amap,range0)
-            | M m -> 
+            | M m | C m -> 
                 let rty = m.GetFSharpReturnTy(cenv.amap,range0,m.FormalMethodInst)
                 let argtysl = m.GetParamTypes(cenv.amap,range0,m.FormalMethodInst) 
                 mkIteratedFunTy (List.map (mkRefTupledTy cenv.g) argtysl) rty
@@ -1220,31 +1220,32 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             | P m -> m.HasGetter
             | E _
             | M _
+            | C _
             | V _ -> false
 
     member __.GetterMethod =
         checkIsResolved()
         match d with 
         | P m -> mkMethSym m.GetterMethod
-        | E _ | M _ | V _ -> invalidOp "the value or member doesn't have an associated getter method" 
+        | E _ | M _ | C _ | V _ -> invalidOp "the value or member doesn't have an associated getter method" 
 
     member __.EventAddMethod =
         checkIsResolved()
         match d with 
         | E e -> mkMethSym (e.GetAddMethod())
-        | P _ | M _  | V _ -> invalidOp "the value or member doesn't have an associated add method" 
+        | P _ | M _ | C _ | V _ -> invalidOp "the value or member doesn't have an associated add method" 
 
     member __.EventRemoveMethod =
         checkIsResolved()
         match d with 
         | E e -> mkMethSym (e.GetRemoveMethod())
-        | P _ | M _  | V _ -> invalidOp "the value or member doesn't have an associated remove method" 
+        | P _ | M _ | C _ | V _ -> invalidOp "the value or member doesn't have an associated remove method" 
 
     member __.EventDelegateType =
         checkIsResolved()
         match d with 
         | E e -> FSharpType(cenv, e.GetDelegateType(cenv.amap,range0))
-        | P _ | M _  | V _ -> invalidOp "the value or member doesn't have an associated event delegate type" 
+        | P _ | M _ | C _ | V _ -> invalidOp "the value or member doesn't have an associated event delegate type" 
 
     member __.EventIsStandard =
         checkIsResolved()
@@ -1252,7 +1253,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | E e -> 
             let dty = e.GetDelegateType(cenv.amap,range0)
             TryDestStandardDelegateTyp cenv.infoReader range0 AccessibleFromSomewhere dty |> Option.isSome
-        | P _ | M _  | V _ -> invalidOp "the value or member is not an event" 
+        | P _ | M _ | C _ | V _ -> invalidOp "the value or member is not an event" 
 
     member __.HasSetterMethod =
         if isUnresolved() then false
@@ -1261,20 +1262,21 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             | P m -> m.HasSetter
             | E _
             | M _
+            | C _
             | V _ -> false
 
     member __.SetterMethod =
         checkIsResolved()
         match d with 
         | P m -> mkMethSym m.SetterMethod
-        | E _ | M _ | V _ -> invalidOp "the value or member doesn't have an associated setter method" 
+        | E _ | M _ | C _ | V _ -> invalidOp "the value or member doesn't have an associated setter method" 
 
     member __.EnclosingEntity = 
         checkIsResolved()
         match d with 
         | E m -> FSharpEntity(cenv,  tcrefOfAppTy cenv.g m.EnclosingType)
         | P m -> FSharpEntity(cenv,  tcrefOfAppTy cenv.g m.EnclosingType)
-        | M m -> FSharpEntity(cenv,  m.DeclaringEntityRef)
+        | M m | C m -> FSharpEntity(cenv,  m.DeclaringEntityRef)
         | V v -> 
         match v.ActualParent with 
         | ParentNone -> invalidOp "the value or member doesn't have an enclosing entity" 
@@ -1301,19 +1303,19 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member __.IsMutable = 
         if isUnresolved() then false else 
         match d with 
-        | M _ | P _ |  E _ -> false
+        | M _ | C _ | P _ |  E _ -> false
         | V v -> v.IsMutable
 
     member __.IsModuleValueOrMember = 
         if isUnresolved() then false else 
         match d with 
-        | M _ | P _ | E _ -> true
+        | M _ | C _ | P _ | E _ -> true
         | V v -> v.IsMember || v.IsModuleBinding
 
     member __.IsMember = 
         if isUnresolved() then false else 
         match d with 
-        | M _ | P _ | E _ -> true
+        | M _ | C _ | P _ | E _ -> true
         | V v -> v.IsMember 
     
     member __.IsDispatchSlot = 
@@ -1321,7 +1323,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match d with 
         | E e -> e.GetAddMethod().IsDispatchSlot
         | P p -> p.IsDispatchSlot
-        | M m -> m.IsDispatchSlot
+        | M m | C m -> m.IsDispatchSlot
         | V v -> v.IsDispatchSlot
 
     member x.IsProperty = 
@@ -1410,7 +1412,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match d with 
         | E e -> not e.IsStatic
         | P p -> not p.IsStatic
-        | M m -> m.IsInstance
+        | M m | C m -> m.IsInstance
         | V v -> v.IsInstanceMember
 
     member v.IsInstanceMemberInCompiledCode = 
@@ -1419,7 +1421,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match d with 
         | E e -> match e.ArbitraryValRef with Some vref -> ValRefIsCompiledAsInstanceMember cenv.g vref | None -> true
         | P p -> match p.ArbitraryValRef with Some vref -> ValRefIsCompiledAsInstanceMember cenv.g vref | None -> true
-        | M m -> match m.ArbitraryValRef with Some vref -> ValRefIsCompiledAsInstanceMember cenv.g vref | None -> true
+        | M m | C m -> match m.ArbitraryValRef with Some vref -> ValRefIsCompiledAsInstanceMember cenv.g vref | None -> true
         | V vref -> ValRefIsCompiledAsInstanceMember cenv.g vref 
 
     member __.IsExtensionMember = 
@@ -1429,6 +1431,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | P p -> p.IsExtensionMember
         | M m -> m.IsExtensionMember
         | V v -> v.IsExtensionMember
+        | C _ -> false
 
     member this.IsOverrideOrExplicitMember = this.IsOverrideOrExplicitInterfaceImplementation
     member __.IsOverrideOrExplicitInterfaceImplementation =
@@ -1439,6 +1442,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | M m -> m.IsDefiniteFSharpOverride
         | V v -> 
             v.MemberInfo.IsSome && v.IsDefiniteFSharpOverrideMember
+        | C _ -> false
 
     member __.IsExplicitInterfaceImplementation =
         if isUnresolved() then false else 
@@ -1447,6 +1451,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | P p -> p.IsFSharpExplicitInterfaceImplementation
         | M m -> m.IsFSharpExplicitInterfaceImplementation
         | V v -> v.IsFSharpExplicitInterfaceImplementation cenv.g
+        | C _ -> false
 
     member __.ImplementedAbstractSignatures =
         checkIsResolved()
@@ -1454,7 +1459,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             match d with
             | E e -> e.GetAddMethod().ImplementedSlotSignatures
             | P p -> p.ImplementedSlotSignatures
-            | M m -> m.ImplementedSlotSignatures
+            | M m | C m -> m.ImplementedSlotSignatures
             | V v -> v.ImplementedSlotSignatures
         sigs |> List.map (fun s -> FSharpAbstractSignature (cenv, s))
         |> makeReadOnlyCollection
@@ -1488,7 +1493,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match d with 
         | E e -> e.EventName
         | P p -> p.PropertyName
-        | M m -> m.LogicalName
+        | M m | C m -> m.LogicalName
         | V v -> v.LogicalName
 
     member __.DisplayName = 
@@ -1496,7 +1501,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match d with 
         | E e -> e.EventName
         | P p -> p.PropertyName
-        | M m -> m.DisplayName
+        | M m | C m -> m.DisplayName
         | V v -> v.DisplayName
 
     member __.XmlDocSig = 
@@ -1513,7 +1518,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             match ItemDescriptionsImpl.GetXmlDocSigOfProp cenv.infoReader range p with
             | Some (_, docsig) -> docsig
             | _ -> ""
-        | M m -> 
+        | M m | C m -> 
             let range = defaultArg __.DeclarationLocationOpt range0
             match ItemDescriptionsImpl.GetXmlDocSigOfMethInfo cenv.infoReader range m with
             | Some (_, docsig) -> docsig
@@ -1531,7 +1536,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match d with 
         | E e -> e.XmlDoc |> makeXmlDoc
         | P p -> p.XmlDoc |> makeXmlDoc
-        | M m -> m.XmlDoc |> makeXmlDoc
+        | M m | C m -> m.XmlDoc |> makeXmlDoc
         | V v -> v.XmlDoc |> makeXmlDoc
 
     member x.CurriedParameterGroups = 
@@ -1548,7 +1553,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
            |> makeReadOnlyCollection
 
         | E _ ->  []  |> makeReadOnlyCollection
-        | M m -> 
+        | M m | C m -> 
             [ for argtys in m.GetParamDatas(cenv.amap,range0,m.FormalMethodInst) do 
                  yield
                    [ for (ParamData(isParamArrayArg,isOutArg,optArgInfo,_callerInfoInfo,nmOpt,_reflArgInfo,pty)) in argtys do 
@@ -1609,7 +1614,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             let retInfo : ArgReprInfo = { Name=None; Attribs= [] }
             let rty = p.GetPropertyType(cenv.amap,range0)
             FSharpParameter(cenv,  rty, retInfo, x.DeclarationLocationOpt, isParamArrayArg=false, isOutArg=false, isOptionalArg=false) 
-        | M m -> 
+        | M m | C m -> 
                 // INCOMPLETENESS: Attribs is empty here, so we can't look at return attributes for .NET or F# methods
             let retInfo : ArgReprInfo = { Name=None; Attribs= [] }
             let rty = m.GetFSharpReturnTy(cenv.amap,range0,m.FormalMethodInst)
@@ -1635,7 +1640,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             GetAttribInfosOfEvent cenv.amap m einfo |> List.map (fun a -> FSharpAttribute(cenv,  a))
         | P pinfo -> 
             GetAttribInfosOfProp cenv.amap m pinfo |> List.map (fun a -> FSharpAttribute(cenv,  a))
-        | M minfo -> 
+        | M minfo | C minfo -> 
             GetAttribInfosOfMethod cenv.amap m minfo |> List.map (fun a -> FSharpAttribute(cenv,  a))
         | V v -> 
             v.Attribs |> List.map (fun a -> FSharpAttribute(cenv,  AttribInfo.FSAttribInfo(cenv.g, a))) 
@@ -1645,28 +1650,28 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member __.IsBaseValue =
         if isUnresolved() then false else
         match d with
-        | M _ | P _ | E _ -> false
+        | M _ | C _ | P _ | E _ -> false
         | V v -> v.BaseOrThisInfo = BaseVal
 
     /// Is this the "x" in "type C() as x = ..."
     member __.IsConstructorThisValue =
         if isUnresolved() then false else
         match d with
-        | M _ | P _ | E _ -> false
+        | M _ | C _| P _ | E _ -> false
         | V v -> v.BaseOrThisInfo = CtorThisVal
 
     /// Is this the "x" in "member x.M = ..."
     member __.IsMemberThisValue =
         if isUnresolved() then false else
         match d with
-        | M _ | P _ | E _ -> false
+        | M _ | C _ | P _ | E _ -> false
         | V v -> v.BaseOrThisInfo = MemberThisVal
 
     /// Is this a [<Literal>] value, and if so what value? (may be null)
     member __.LiteralValue =
         if isUnresolved() then None else
         match d with
-        | M _ | P _ | E _ -> None
+        | M _ | C _ | P _ | E _ -> None
         | V v -> getLiteralValue v.LiteralValue
 
       /// How visible is this? 
@@ -1700,7 +1705,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
 
             FSharpAccessibility(access)
 
-        | M m ->  
+        | M m | C m ->  
 
             // For IL  methods, we get an approximate accessiblity that at least reports "internal" as "internal" and "private" as "private"
             let access = 
@@ -1711,6 +1716,11 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             FSharpAccessibility(access,isProtected=m.IsProtectedAccessiblity)
 
         | V v -> FSharpAccessibility(v.Accessibility)
+
+    member x.IsConstructor =
+        match d with
+        | C _ -> true
+        | _ -> false
 
     member x.Data = d
 
@@ -2095,7 +2105,7 @@ type FSharpSymbol with
             FSharpMemberOrFunctionOrValue(cenv,  M minfo, item) :> _
 
         | Item.CtorGroup(_,cinfo :: _) -> 
-            FSharpMemberOrFunctionOrValue(cenv,  M cinfo, item) :> _
+            FSharpMemberOrFunctionOrValue(cenv,  C cinfo, item) :> _
 
         | Item.DelegateCtor (AbbrevOrAppTy tcref) -> 
             FSharpEntity(cenv,  tcref) :>_ 

@@ -84,7 +84,10 @@ module internal PrintUtilities =
             if isAttribute then 
                 defaultArg (String.tryDropSuffix name "Attribute") name 
             else name
-        let tyconTextL = NavigableTaggedText.Create(tagEntityRefName tcref demangled, tcref.DefinitionRange) |> wordL
+        let tyconTextL =
+            tagEntityRefName tcref demangled
+            |> mkNav tcref.DefinitionRange
+            |> wordL
         if denv.shortTypeNames then 
             tyconTextL
         else
@@ -617,7 +620,7 @@ module private PrintTypes =
         // let stat = if memFlags.IsFinal then stat ++ wordL "final" else stat in  
         stat
 
-    /// Layout a single attibute arg, following the cases of 'gen_attr_arg' in ilxgen.fs
+    /// Layout a single attribute arg, following the cases of 'gen_attr_arg' in ilxgen.fs
     /// This is the subset of expressions we display in the NicePrint pretty printer 
     /// See also dataExprL - there is overlap between these that should be removed 
     let rec private layoutAttribArg denv arg = 
@@ -761,7 +764,7 @@ module private PrintTypes =
     /// There are several printing-cases for a typar:
     ///
     ///  'a              - is multiple  occurrence.
-    ///  _               - singleton occurrence, an underscore preferred over 'b. (OCAML accepts but does not print)
+    ///  _               - singleton occurrence, an underscore preferred over 'b. (OCaml accepts but does not print)
     ///  #Type           - inplace coercion constraint and singleton.
     ///  ('a :> Type)    - inplace coercion constraint not singleton.
     ///  ('a.opM : S->T) - inplace operator constraint.
@@ -1113,8 +1116,9 @@ module private PrintTastMemberOrVals =
         let stat = PrintTypes.layoutMemberFlags membInfo.MemberFlags
         let _tps,argInfos,rty,_ = GetTypeOfMemberInFSharpForm denv.g v
         
-        let mkNameL niceMethodTypars tagFunction name =       
-            let nameL  = DemangleOperatorNameAsLayout tagFunction name
+        let mkNameL niceMethodTypars tagFunction name =
+            let nameL =
+                DemangleOperatorNameAsLayout (tagFunction >> mkNav v.DefinitionRange) name
             let nameL = 
                 if denv.showMemberContainers then 
                     layoutTyconRef denv v.MemberApparentParent ^^ SepL.dot ^^ nameL
@@ -1166,7 +1170,10 @@ module private PrintTastMemberOrVals =
         let env = SimplifyTypes.CollectInfo true [tau] cxs
         let cxs = env.postfixConstraints
         let argInfos,rty = GetTopTauTypeInFSharpForm denv.g (arityOfVal v).ArgInfos tau v.Range
-        let nameL = wordL ((if v.IsModuleBinding then tagModuleBinding else tagUnknownEntity) v.DisplayName)
+        let nameL =
+            (if v.IsModuleBinding then tagModuleBinding else tagUnknownEntity) v.DisplayName
+            |> mkNav v.DefinitionRange
+            |> wordL 
         let nameL = layoutAccessibility denv v.Accessibility nameL
         let nameL = 
             if v.IsMutable && not denv.suppressMutableKeyword then 
@@ -1398,7 +1405,7 @@ module private TastDefinitionPrinting =
 
     let layoutExtensionMember denv (v:Val) =
         let tycon = v.MemberApparentParent.Deref
-        let nameL = wordL (tagMethod tycon.DisplayName)
+        let nameL = tagMethod tycon.DisplayName |> mkNav v.DefinitionRange |> wordL
         let nameL = layoutAccessibility denv tycon.Accessibility nameL // "type-accessibility"
         let tps =
             match PartitionValTyparsForApparentEnclosingType denv.g v with
@@ -1411,7 +1418,10 @@ module private TastDefinitionPrinting =
         aboveListL (List.map (layoutExtensionMember denv) vs)    
 
     let layoutRecdField addAccess denv  (fld:RecdField) =
-        let lhs = wordL (tagRecordField fld.Name)
+        let lhs =
+            tagRecordField fld.Name
+            |> mkNav fld.DefinitionRange
+            |> wordL 
         let lhs = (if addAccess then layoutAccessibility denv fld.Accessibility lhs else lhs)
         let lhs = if fld.IsMutable then wordL (tagKeyword "mutable") --- lhs else lhs
         (lhs ^^ RightL.colon) --- layoutType denv fld.FormalType
@@ -1435,7 +1445,7 @@ module private TastDefinitionPrinting =
             sepListL (wordL (tagPunctuation "*")) (List.mapi (layoutUnionOrExceptionField denv isGenerated) fields)
 
     let layoutUnionCase denv  prefixL (ucase:UnionCase) =
-        let nmL = DemangleOperatorNameAsLayout tagUnionCase ucase.Id.idText
+        let nmL = DemangleOperatorNameAsLayout (tagUnionCase >> mkNav ucase.DefinitionRange) ucase.Id.idText
         //let nmL = layoutAccessibility denv ucase.Accessibility nmL
         match ucase.RecdFields with
         | []     -> (prefixL ^^ nmL)
@@ -1620,6 +1630,7 @@ module private TastDefinitionPrinting =
           elif isInterfaceTy g ty then Some "interface", tagInterface n
           elif isClassTy g ty then (if simplified then None else Some "class" ), tagClass n
           else None, tagUnknownType n
+      let name = mkNav tycon.DefinitionRange name
       let nameL = layoutAccessibility denv tycon.Accessibility (wordL name)
       let denv = denv.AddAccessibility tycon.Accessibility 
       let lhsL =
@@ -1855,7 +1866,7 @@ module private InferredSigPrinting =
                         wordL (tagKeyword "namespace") ^^ sepListL SepL.dot (List.map (fst >> tagNamespace >> wordL) innerPath)
                     headerL @@-- basic
                 else
-                    // This is a namespace that only contains namespaces. Skipt the header
+                    // This is a namespace that only contains namespaces. Skip the header
                     basic
             else
                 // This is a module 

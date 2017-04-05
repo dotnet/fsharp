@@ -491,7 +491,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
     // We get the whole "   #if IDENT // .. .. " thing as a single token from the lexer,
     // so we need to split it into tokens that are used by VS for colorization
     
-    // Stack for tokens that are split during postpocessing    
+    // Stack for tokens that are split during postprocessing    
     let mutable tokenStack = new Stack<_>()
     let delayToken tok = tokenStack.Push(tok)
 

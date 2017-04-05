@@ -649,7 +649,7 @@ and IlxGenEnv =
       sigToImplRemapInfo: (Remap * SignatureHidingInfo) list 
       /// All values in scope 
       valsInScope: ValMap<Lazy<ValStorage>> 
-      /// For optimizing direct tail recusion to a loop - mark says where to branch to.  Length is 0 or 1. 
+      /// For optimizing direct tail recursion to a loop - mark says where to branch to.  Length is 0 or 1. 
       /// REVIEW: generalize to arbitrary nested local loops?? 
       innerVals: (ValRef * (BranchCallItem * Mark)) list 
       /// Full list of enclosing bound values.  First non-compiler-generated element is used to help give nice names for closures and other expressions.  
@@ -1027,7 +1027,7 @@ let MergeOptions m o1 o2 =
 #if DEBUG
        // This warning fires on some code that also triggers this warning:
        //          warning(Error("The implementation of a specified generic interface required a method implementation not fully supported by F# Interactive. In the unlikely event that the resulting class fails to load then compile the interface type into a statically-compiled DLL and reference it using '#r'",m))
-       // THe code is OK so we don't print this.
+       // The code is OK so we don't print this.
        errorR(InternalError("MergeOptions: two values given",m)) 
 #else
        ignore m
@@ -1297,7 +1297,7 @@ type AssemblyBuilder(cenv:cenv) as mgbuf =
     /// This initializes the script in #load and fsc command-line order causing their
     /// sideeffects to be executed.
     member mgbuf.AddInitializeScriptsInOrderToEntryPoint() = 
-        // Get the entry point and intialized any scripts in order.
+        // Get the entry point and initialized any scripts in order.
         match explicitEntryPointInfo with
         | Some tref ->
             let IntializeCompiledScript(fspec,m) =
@@ -1811,7 +1811,7 @@ let ComputeSequencePointInfoForBinding g (TBind(vspec,e,spBind)) =
         | SequencePointAtBinding m,_ -> false, Some m, SPSuppress
 
  
-/// Determines if a sequence wil be emitted when we generate the code for a binding
+/// Determines if a sequence will be emitted when we generate the code for a binding
 let BindingEmitsSequencePoint g bind = 
     match ComputeSequencePointInfoForBinding g bind with
     | _, None, SPSuppress -> false
@@ -1826,7 +1826,7 @@ let bindIsInvisible = function (TBind(_,_,NoSequencePointAtInvisibleBinding _)) 
     
 // This determines if we're about to emit a sequence point as the first emitted code for an expression.
 // It determines if expression code generation certainly starts with a sequence point. An approximation used
-// to prevent the generation of duplicat sequence points for conditionals and pattern matching
+// to prevent the generation of duplicate sequence points for conditionals and pattern matching
 let rec FirstEmittedCodeWillBeSequencePoint g sp expr = 
     match sp with 
     | SPAlways -> 
@@ -3451,7 +3451,7 @@ and GenILCall cenv cgbuf eenv (virt,valu,newobj,valUseFlags,isDllImport,ilMethRe
     CG.EmitInstrs cgbuf (pop (argExprs.Length + (if isSuperInit then 1 else 0))) (if isSuperInit then Push0 else Push ilReturnTys) il
 
     // Load the 'this' pointer as the pretend 'result' of the isSuperInit operation.  
-    // It will be immediately popped in most cases, but may also be used as the target of ome "property set" operations. 
+    // It will be immediately popped in most cases, but may also be used as the target of some "property set" operations. 
     if isSuperInit then CG.EmitInstrs cgbuf (pop 0) (Push [ilMethSpec.EnclosingType]) [ mkLdarg0 ] 
     CommitCallSequel cenv eenv m eenv.cloc cgbuf mustGenerateUnitAfterCall sequel
 
@@ -4214,7 +4214,7 @@ and IsNamedLocalTypeFuncVal g (v:Val) expr =
     IsGenericValWithGenericContraints g v && 
     (match stripExpr expr with Expr.TyLambda _ -> true | _ -> false)
  
-/// Generate the information relecant to the contract portion of a named local type function
+/// Generate the information relevant to the contract portion of a named local type function
 and GenNamedLocalTypeFuncContractInfo cenv mgbuf eenv m cloinfo = 
     let ilCloTypeRef = cloinfo.cloSpec.TypeRef
     let ilContractTypeRef = ILTypeRef.Create(scope=ilCloTypeRef.Scope,enclosing=ilCloTypeRef.Enclosing,name=ilCloTypeRef.Name + "$contract")
@@ -4229,7 +4229,7 @@ and GenNamedLocalTypeFuncContractInfo cenv mgbuf eenv m cloinfo =
     let ilContractFormalRetTy = GenType cenv mgbuf m eenvForContract.tyenv contractRetTy
     ilContractGenericParams,ilContractMethTyargs,mkILTySpec(ilContractTypeRef,cloinfo.localTypeFuncILGenericArgs),ilContractFormalRetTy
 
-/// Generate a new delegate construction including a clousre class if necessary. This is a lot like generating function closures
+/// Generate a new delegate construction including a closure class if necessary. This is a lot like generating function closures
 /// and object expression closures, and most of the code is shared.
 and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_,delegateTy, _,_,_, _) as slotsig),_attribs,methTyparsOfOverridingMethod,tmvs,body,_),m) sequel =
     // Get the instantiation of the delegate type 
@@ -4806,7 +4806,7 @@ and GenBind cenv cgbuf eenv bind =
     
 and ComputeMemberAccessRestrictedBySig eenv vspec =
     let isHidden =  
-        IsHiddenVal eenv.sigToImplRemapInfo vspec ||  // anything hiden by a signature gets assembly visibility 
+        IsHiddenVal eenv.sigToImplRemapInfo vspec ||  // anything hidden by a signature gets assembly visibility 
         not vspec.IsMemberOrModuleBinding ||          // anything that's not a module or member binding gets assembly visibility
         vspec.IsIncrClassGeneratedMember              // compiler generated members for class function 'let' bindings get assembly visibility
     ComputeMemberAccess isHidden
@@ -4977,7 +4977,7 @@ and GenBindAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) =
 and GenMarshal cenv attribs = 
     let otherAttribs = 
         // For IlReflect backend, we rely on Reflection.Emit API to emit the pseudo-custom attributes
-        // corectly, so we do not filter them out. 
+        // correctly, so we do not filter them out. 
         // For IlWriteBackend, we filter MarshalAs attributes
         match cenv.opts.ilxBackend with
         | IlReflectBackend -> attribs
@@ -6442,7 +6442,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
 
             isEmptyStruct && cenv.opts.workAroundReflectionEmitBugs && not tycon.TyparsNoRange.IsEmpty
         
-        // Compute a bunch of useful thnigs for each field 
+        // Compute a bunch of useful things for each field 
         let isCLIMutable = (TryFindFSharpBoolAttribute  cenv.g cenv.g.attrib_CLIMutableAttribute tycon.Attribs = Some true) 
         let fieldSummaries = 
 
@@ -6656,8 +6656,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                  match r.fsobjmodel_kind with 
                  | TTyconDelegate ss ->
                      let p,r = 
-                         // When "type delagateTy = delegate of unit -> returnTy",
-                         // suppress the unit arg from delagate .Invoke vslot. 
+                         // When "type delegateTy = delegate of unit -> returnTy",
+                         // suppress the unit arg from delegate .Invoke vslot. 
                          let (TSlotSig(nm,typ,ctps,mtps,paraml,returnTy)) = ss
                          let paraml = 
                              match paraml with
@@ -7138,8 +7138,8 @@ let defaultOf =
 /// Top-level val bindings are stored (for example) in static fields.
 /// In the FSI case, these fields are be created and initialised, so we can recover the object.
 /// IlxGen knows how v was stored, and then ilreflect knows how this storage was generated.
-/// IlxGen converts (v:Tast.Val) to AbsIL datatstructures.
-/// Ilreflect converts from AbsIL datatstructures to emitted Type, FieldInfo, MethodInfo etc.
+/// IlxGen converts (v:Tast.Val) to AbsIL datastructures.
+/// Ilreflect converts from AbsIL datastructures to emitted Type, FieldInfo, MethodInfo etc.
 let LookupGeneratedValue (amap:ImportMap) (ctxt: ExecutionContext) eenv (v:Val) =
   try
     // Convert the v.Type into a System.Type according to ilxgen and ilreflect.

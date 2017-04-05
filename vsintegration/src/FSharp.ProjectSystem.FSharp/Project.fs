@@ -38,6 +38,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     open Microsoft.VisualStudio.FSharp.Editor
     open Microsoft.VisualStudio.Editors
     open Microsoft.VisualStudio.Editors.PropertyPages
+    open Microsoft.VisualStudio.PlatformUI
     
     open EnvDTE
 
@@ -730,7 +731,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
             override x.GetGuidProperty(propid:int, guid:byref<Guid> ) =
                 if (enum propid = __VSHPROPID.VSHPROPID_PreferredLanguageSID) then 
-                    guid <- new Guid(FSharpCommonConstants.languageServiceGuidString)
+                    guid <- new Guid(FSharpConstants.languageServiceGuidString)
                     VSConstants.S_OK
                 // below is how VS decide 'which templates' to associate with an 'add new item' call in this project
                 elif (enum propid = __VSHPROPID2.VSHPROPID_AddItemTemplatesGuid) then 
@@ -946,6 +947,9 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     ProjectFileConstants.Content
                 elif (String.Compare(Path.GetExtension(strFileName), ".map", StringComparison.OrdinalIgnoreCase) = 0) then
                     ProjectFileConstants.Content
+                
+                elif (String.Compare(Path.GetExtension(strFileName), ".xaml", StringComparison.OrdinalIgnoreCase) = 0) then
+                    ProjectFileConstants.Resource
                 
                 // None (including .fsx/.fsscript)
                 else
@@ -1607,7 +1611,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     // in the registry hive so that more editors can be added without changing this part of the
                     // code. FSharp only makes usage of one Editor Factory and therefore we will return 
                     // that guid
-                    guidEditorType <- new Guid(FSharpCommonConstants.editorFactoryGuidString)
+                    guidEditorType <- new Guid(FSharpConstants.editorFactoryGuidString)
                     VSConstants.S_OK
 
             interface IVsProjectSpecificEditorMap2 with 
@@ -1621,7 +1625,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     // in the registry hive so that more editors can be added without changing this part of the
                     // code. FSharp only makes usage of one Editor Factory and therefore we will return 
                     // that guid
-                    guidEditorType <- new Guid(FSharpCommonConstants.editorFactoryGuidString)
+                    guidEditorType <- new Guid(FSharpConstants.editorFactoryGuidString)
                     VSConstants.S_OK
 
                 member x.GetSpecificLanguageService(_mkDocument:string, guidLanguageService:byref<Guid> ) =
@@ -2229,35 +2233,11 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 Debug.Assert(x.ProjectMgr <> null, "The FSharpFileNode has no project manager")
 
                 let completeRenameIfNecessary() = 
-                    let tree = 
-                        match UIHierarchyUtilities.GetUIHierarchyWindow(root.Site, HierarchyNode.SolutionExplorer) with
-                        | :? Microsoft.VisualStudio.PlatformUI.SolutionNavigatorPane as snp ->
-                            match snp.Navigator with 
-                            | null -> null 
-                            | n -> 
-                                match n.TreeView with 
-                                | null -> null
-                                | t -> t
-                        | _ -> null
-                    if tree <> null && tree.IsInRenameMode then
-                        let id = x.ID
-                        let oldName = x.GetEditLabel()
-                        // if tree is in rename mode now - commit renaming
-                        // since rename is implemented via remove\add set of operations - after renaming we need to fetch node that corresponds to the current one
-
-                        // rename may fail (i.e if new name contains invalid characters), in this case user will see error message and after that failure will be swallowed
-                        // if this happens - we need to cancel current transaction,
-                        // otherwise it will hold current hierarchy node. After move operation is completed - current node will become invalid => may lead to ObjectDisposedExceptions.
-                        // Since error is not appear directly in the code - we check if old and new labels match and if yes - treat it as reason that error happens
-                        tree.CommitRename(Microsoft.Internal.VisualStudio.PlatformUI.RenameItemCompletionFocusBehavior.Refocus)
-                        
-                        let node = root.ItemIdMap.[id] :?> FSharpFileNode
-                        if node.GetEditLabel() = oldName then
-                            tree.CancelRename(Microsoft.Internal.VisualStudio.PlatformUI.RenameItemCompletionFocusBehavior.Refocus)
-                        node
-                    else
-                        x
-                
+                    match SolutionPaneUtil.TryRenameAndReturnNode 
+                            (root, HierarchyNode.SolutionExplorer, x.ID, fun()-> x.GetEditLabel()) with
+                    | null -> x
+                    | node -> node :?> FSharpFileNode
+             
                 if (x.ProjectMgr= null) then 
                     raise <| InvalidOperationException()
 
