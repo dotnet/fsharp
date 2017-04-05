@@ -89,20 +89,18 @@ namespace Microsoft.FSharp.Collections
                     finally this.Next.ChainDispose ()
 
             [<AbstractClass>]
-            type Folder<'T,'Result,'State> =
+            type Folder<'T,'Result> =
                 inherit Activity<'T,'T>
 
                 val mutable Result : 'Result
-                val mutable State : 'State
 
                 val mutable HaltedIdx : int
                 member this.StopFurtherProcessing pipeIdx = this.HaltedIdx <- pipeIdx
                 interface IOutOfBand with
                     member this.StopFurtherProcessing pipeIdx = this.StopFurtherProcessing pipeIdx
 
-                new (initalResult,initState) = {
+                new (initalResult) = {
                     inherit Activity<'T,'T>()
-                    State = initState
                     HaltedIdx = 0
                     Result = initalResult
                 }
@@ -111,8 +109,19 @@ namespace Microsoft.FSharp.Collections
                 override this.ChainDispose () = ()
 
             [<AbstractClass>]
+            type FolderWithState<'T,'Result,'State> =
+                inherit Folder<'T,'Result>
+
+                val mutable State : 'State
+
+                new (initalResult,initState) = {
+                    inherit Folder<'T,'Result>(initalResult)
+                    State = initState
+                }
+
+            [<AbstractClass>]
             type FolderWithPostProcessing<'T,'Result,'State>(initResult,initState) =
-                inherit Folder<'T,'Result,'State>(initResult,initState)
+                inherit FolderWithState<'T,'Result,'State>(initResult,initState)
 
                 abstract OnComplete : PipeIdx -> unit
                 abstract OnDispose : unit -> unit
@@ -129,7 +138,7 @@ namespace Microsoft.FSharp.Collections
             type ISeq<'T> =
                 inherit IEnumerable<'T>
                 abstract member PushTransform<'U> : TransformFactory<'T,'U> -> ISeq<'U>
-                abstract member Fold<'Result,'State> : f:(PipeIdx->Folder<'T,'Result,'State>) -> 'Result
+                abstract member Fold<'Result> : f:(PipeIdx->Folder<'T,'Result>) -> 'Result
 
         open Core
 
@@ -149,7 +158,7 @@ namespace Microsoft.FSharp.Collections
             let inline enumeratorNonGeneric<'enumerator when 'enumerator :> IEnumerator and 'enumerator : not struct> (t:'enumerator) : IEnumerator = (# "" t : IEnumerator #)
             let inline outOfBand<'outOfBand when 'outOfBand :> IOutOfBand and 'outOfBand : not struct> (t:'outOfBand) : IOutOfBand = (# "" t : IOutOfBand #)
 
-        let createFold (factory:TransformFactory<_,_>) (folder:Folder<_,_,_>) pipeIdx  =
+        let createFold (factory:TransformFactory<_,_>) (folder:Folder<_,_>) pipeIdx  =
             factory.Compose (Upcast.outOfBand folder) pipeIdx folder
 
         let inline valueComparer<'T when 'T : equality> ()=
@@ -184,7 +193,7 @@ namespace Microsoft.FSharp.Collections
         | Finished   = 2
 
         type Result<'T>() =
-            inherit Folder<'T,'T,NoValue>(Unchecked.defaultof<'T>,Unchecked.defaultof<NoValue>)
+            inherit Folder<'T,'T>(Unchecked.defaultof<'T>)
 
             member val SeqState = SeqProcessNextStates.NotStarted with get, set
 
@@ -201,12 +210,12 @@ namespace Microsoft.FSharp.Collections
             // each time one of these were called. This has been an optimization to minimize the impact
             // on very small collections.
             type IIterate<'T> =
-                abstract Iterate<'U,'Result,'State> : outOfBand:Folder<'U,'Result,'State> -> consumer:Activity<'T,'U> -> unit
+                abstract Iterate<'U,'Result,'State> : outOfBand:Folder<'U,'Result> -> consumer:Activity<'T,'U> -> unit
 
             [<Struct;NoComparison;NoEquality>]
             type IterateEnumerable<'T> (enumerable:IEnumerable<'T>) =
                 interface IIterate<'T> with
-                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
+                    member __.Iterate (outOfBand:Folder<'U,'Result>) (consumer:Activity<'T,'U>) =
                         use enumerator = enumerable.GetEnumerator ()
                         let rec iterate () =
                             if outOfBand.HaltedIdx = 0 && enumerator.MoveNext () then  
@@ -217,7 +226,7 @@ namespace Microsoft.FSharp.Collections
             [<Struct;NoComparison;NoEquality>]
             type IterateArray<'T> (array:array<'T>) =
                 interface IIterate<'T> with
-                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
+                    member __.Iterate (outOfBand:Folder<'U,'Result>) (consumer:Activity<'T,'U>) =
                         let array = array
                         let rec iterate idx =
                             if outOfBand.HaltedIdx = 0 && idx < array.Length then  
@@ -228,7 +237,7 @@ namespace Microsoft.FSharp.Collections
             [<Struct;NoComparison;NoEquality>]
             type IterateResizeArray<'T> (array:ResizeArray<'T>) =
                 interface IIterate<'T> with
-                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
+                    member __.Iterate (outOfBand:Folder<'U,'Result>) (consumer:Activity<'T,'U>) =
                         let array = array
                         let rec iterate idx =
                             if outOfBand.HaltedIdx = 0 && idx < array.Count then  
@@ -239,7 +248,7 @@ namespace Microsoft.FSharp.Collections
             [<Struct;NoComparison;NoEquality>]
             type IterateList<'T> (alist:list<'T>) =
                 interface IIterate<'T> with
-                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
+                    member __.Iterate (outOfBand:Folder<'U,'Result>) (consumer:Activity<'T,'U>) =
                         let rec iterate lst =
                             match lst with
                             | hd :: tl when outOfBand.HaltedIdx = 0 ->
@@ -251,14 +260,14 @@ namespace Microsoft.FSharp.Collections
             [<Struct;NoComparison;NoEquality>]
             type IterateSingleton<'T> (item:'T) =
                 interface IIterate<'T> with
-                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
+                    member __.Iterate (outOfBand:Folder<'U,'Result>) (consumer:Activity<'T,'U>) =
                         if outOfBand.HaltedIdx = 0 then
                             consumer.ProcessNext item |> ignore
 
             [<Struct;NoComparison;NoEquality>]
             type IterateUnfold<'S,'T> (generator:'S->option<'T*'S>, state:'S) =
                 interface IIterate<'T> with
-                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
+                    member __.Iterate (outOfBand:Folder<'U,'Result>) (consumer:Activity<'T,'U>) =
                         let generator = generator
                         let rec iterate current =
                             if outOfBand.HaltedIdx <> 0 then ()
@@ -273,7 +282,7 @@ namespace Microsoft.FSharp.Collections
             [<Struct;NoComparison;NoEquality>]
             type IterateInit<'T> (f:int->'T, terminatingIdx:int) =
                 interface IIterate<'T> with
-                    member __.Iterate (outOfBand:Folder<'U,'Result,'State>) (consumer:Activity<'T,'U>) =
+                    member __.Iterate (outOfBand:Folder<'U,'Result>) (consumer:Activity<'T,'U>) =
                         let terminatingIdx = terminatingIdx
                         let f = f
 
@@ -306,7 +315,7 @@ namespace Microsoft.FSharp.Collections
 
             // execute, and it's companion, executeThin, are hosting functions that ensure the correct sequence
             // of creation, iteration and disposal for the pipeline
-            let execute (createFolder:PipeIdx->Folder<'U,'Result,'State>) (transformFactory:TransformFactory<'T,'U>) pipeIdx (executeOn:#IIterate<'T>) =
+            let execute (createFolder:PipeIdx->Folder<'U,'Result>) (transformFactory:TransformFactory<'T,'U>) pipeIdx (executeOn:#IIterate<'T>) =
                 let result = createFolder (pipeIdx+1)
                 let consumer = createFold transformFactory result pipeIdx
                 try
@@ -319,7 +328,7 @@ namespace Microsoft.FSharp.Collections
             // executeThin is a specialization of execute, provided as a performance optimization, that can
             // be used when a sequence has been wrapped in an ISeq, but hasn't had an items added to its pipeline
             // i.e. a container that has ISeq.ofSeq applied. 
-            let executeThin (createFolder:PipeIdx->Folder<'T,'Result,'State>) (executeOn:#IIterate<'T>) =
+            let executeThin (createFolder:PipeIdx->Folder<'T,'Result>) (executeOn:#IIterate<'T>) =
                 let result = createFolder 1
                 try
                     executeOn.Iterate result result
@@ -328,16 +337,16 @@ namespace Microsoft.FSharp.Collections
                 finally
                     result.ChainDispose ()
 
-            let executeConcat<'T,'U,'Result,'State,'Collection when 'Collection :> ISeq<'T>> (createFolder:PipeIdx->Folder<'U,'Result,'State>) (transformFactory:TransformFactory<'T,'U>) pipeIdx (sources:ISeq<'Collection>) =
+            let executeConcat<'T,'U,'Result,'State,'Collection when 'Collection :> ISeq<'T>> (createFolder:PipeIdx->Folder<'U,'Result>) (transformFactory:TransformFactory<'T,'U>) pipeIdx (sources:ISeq<'Collection>) =
                 let result = createFolder (pipeIdx+1)
                 let consumer = createFold transformFactory result pipeIdx
                 try
-                    let common =
-                        { new Folder<'T,NoValue,NoValue>(Unchecked.defaultof<_>,Unchecked.defaultof<_>) with
-                            override me.ProcessNext value = consumer.ProcessNext value }
+                    let common  =
+                        { new Folder<'T,NoValue>(Unchecked.defaultof<_>) with
+                                    override me.ProcessNext value = consumer.ProcessNext value }
 
                     sources.Fold (fun _ ->
-                        { new Folder<'Collection,NoValue,NoValue>(Unchecked.defaultof<_>,Unchecked.defaultof<_>) with
+                        { new Folder<'Collection,NoValue>(Unchecked.defaultof<_>) with
                             override me.ProcessNext value =
                                 value.Fold (fun _ -> common) |> ignore
                                 me.HaltedIdx <- common.HaltedIdx
@@ -348,15 +357,15 @@ namespace Microsoft.FSharp.Collections
                 finally
                     result.ChainDispose ()
 
-            let executeConcatThin<'T,'Result,'State,'Collection when 'Collection :> ISeq<'T>> (createFolder:PipeIdx->Folder<'T,'Result,'State>) (sources:ISeq<'Collection>) =
+            let executeConcatThin<'T,'Result,'State,'Collection when 'Collection :> ISeq<'T>> (createFolder:PipeIdx->Folder<'T,'Result>) (sources:ISeq<'Collection>) =
                 let result = createFolder 1
                 try
                     let common =
-                        { new Folder<'T,NoValue,NoValue>(Unchecked.defaultof<_>,Unchecked.defaultof<_>) with
+                        { new Folder<'T,NoValue>(Unchecked.defaultof<_>) with
                             override me.ProcessNext value = result.ProcessNext value }
 
                     sources.Fold (fun _ ->
-                        { new Folder<'Collection,NoValue,NoValue>(Unchecked.defaultof<_>,Unchecked.defaultof<_>) with
+                        { new Folder<'Collection,NoValue>(Unchecked.defaultof<_>) with
                             override me.ProcessNext value =
                                 value.Fold (fun _ -> common) |> ignore
                                 me.HaltedIdx <- common.HaltedIdx
@@ -491,7 +500,7 @@ namespace Microsoft.FSharp.Collections
 
             let length (source:ISeq<_>) =
                 source.Fold (fun _ ->
-                    upcast { new Folder<'T,int,NoValue>(0,Unchecked.defaultof<_>) with
+                    { new Folder<'T,int>(0) with
                         override this.ProcessNext v =
                             this.Result <- this.Result + 1
                             Unchecked.defaultof<_> (* return value unused in Fold context *) })
@@ -534,7 +543,7 @@ namespace Microsoft.FSharp.Collections
                     member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
                         Upcast.seq (new VanillaEnumerable<'T,'V>(enumerable, ComposedFactory.Combine current next, pipeIdx+1))
 
-                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
+                    member this.Fold<'Result> (f:PipeIdx->Folder<'U,'Result>) =
                         Fold.execute f current pipeIdx (Fold.IterateEnumerable enumerable)
 
             and ConcatEnumerable<'T,'U,'Collection when 'Collection :> ISeq<'T>> (sources:ISeq<'Collection>, current:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
@@ -549,7 +558,7 @@ namespace Microsoft.FSharp.Collections
                     member this.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
                         Upcast.seq (new ConcatEnumerable<'T,'V,'Collection>(sources, ComposedFactory.Combine current next, pipeIdx+1))
 
-                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
+                    member this.Fold<'Result> (f:PipeIdx->Folder<'U,'Result>) =
                         Fold.executeConcat f current pipeIdx sources
 
             and ThinConcatEnumerable<'T, 'Sources, 'Collection when 'Collection :> ISeq<'T>> (sources:'Sources, preEnumerate:'Sources->ISeq<'Collection>) =
@@ -564,7 +573,7 @@ namespace Microsoft.FSharp.Collections
                     member this.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
                         Upcast.seq (ConcatEnumerable<'T,'V,'Collection>(preEnumerate sources, next, 1))
 
-                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                    member this.Fold<'Result> (f:PipeIdx->Folder<'T,'Result>) =
                         Fold.executeConcatThin f (preEnumerate sources)
 
             and AppendEnumerable<'T> (sources:list<ISeq<'T>>) =
@@ -585,7 +594,7 @@ namespace Microsoft.FSharp.Collections
                     member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
                         Upcast.seq (new ListEnumerable<'T,'U>(alist, next, 1))
 
-                    member __.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                    member __.Fold<'Result> (f:PipeIdx->Folder<'T,'Result>) =
                         Fold.executeThin f (Fold.IterateList alist)
 
             and ListEnumerable<'T,'U>(alist:list<'T>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
@@ -600,7 +609,7 @@ namespace Microsoft.FSharp.Collections
                     member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
                         Upcast.seq (new ListEnumerable<'T,'V>(alist, ComposedFactory.Combine transformFactory next, pipeIdx+1))
 
-                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
+                    member this.Fold<'Result> (f:PipeIdx->Folder<'U,'Result>) =
                         Fold.execute f transformFactory pipeIdx (Fold.IterateList alist)
 
             /// ThinEnumerable is used when the IEnumerable provided to ofSeq is neither an array or a list
@@ -627,7 +636,7 @@ namespace Microsoft.FSharp.Collections
                     member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
                         Upcast.seq (new VanillaEnumerable<'T,'U>(enumerable, next, 1))
 
-                    member __.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                    member __.Fold<'Result> (f:PipeIdx->Folder<'T,'Result>) =
                         Fold.executeThin f (Fold.IterateEnumerable enumerable)
 
             type DelayedEnumerable<'T>(delayed:unit->ISeq<'T>, pipeIdx:PipeIdx) =
@@ -645,7 +654,7 @@ namespace Microsoft.FSharp.Collections
                     member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
                         Upcast.seq (new DelayedEnumerable<'U>((fun () -> (delayed()).PushTransform next), pipeIdx+1))
 
-                    member __.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                    member __.Fold<'Result> (f:PipeIdx->Folder<'T,'Result>) =
                         (delayed()).Fold f
 
             type EmptyEnumerable<'T> () =
@@ -665,7 +674,7 @@ namespace Microsoft.FSharp.Collections
                     member this.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
                         Upcast.seq (VanillaEnumerable<'T,'V>(this, next, 1))
 
-                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                    member this.Fold<'Result> (f:PipeIdx->Folder<'T,'Result>) =
                         Fold.executeThin f (Fold.IterateEnumerable this)
 
             type ArrayEnumerator<'T,'U>(array:array<'T>, activity:Activity<'T,'U>, result:Result<'U>) =
@@ -702,7 +711,7 @@ namespace Microsoft.FSharp.Collections
                     member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
                         Upcast.seq (new ArrayEnumerable<'T,'V>(array, ComposedFactory.Combine transformFactory next, pipeIdx+1))
 
-                    member __.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
+                    member __.Fold<'Result> (f:PipeIdx->Folder<'U,'Result>) =
                         Fold.execute f transformFactory pipeIdx (Fold.IterateArray array)
 
             type ThinArrayEnumerable<'T>(array:array<'T>) =
@@ -717,7 +726,7 @@ namespace Microsoft.FSharp.Collections
                     member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
                         Upcast.seq (new ArrayEnumerable<'T,'U>(array, next, 1))
 
-                    member __.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                    member __.Fold<'Result> (f:PipeIdx->Folder<'T,'Result>) =
                         Fold.executeThin f (Fold.IterateArray array)
 
             type SingletonEnumerable<'T>(item:'T) =
@@ -732,7 +741,7 @@ namespace Microsoft.FSharp.Collections
                     member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
                         Upcast.seq (new ArrayEnumerable<'T,'U>([|item|], next, 1))
 
-                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                    member this.Fold<'Result> (f:PipeIdx->Folder<'T,'Result>) =
                         Fold.executeThin f (Fold.IterateSingleton item)
 
             type ResizeArrayEnumerator<'T,'U>(array:ResizeArray<'T>, activity:Activity<'T,'U>, result:Result<'U>) =
@@ -769,7 +778,7 @@ namespace Microsoft.FSharp.Collections
                     member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
                         Upcast.seq (new ResizeArrayEnumerable<'T,'V>(resizeArray, ComposedFactory.Combine transformFactory next, pipeIdx+1))
 
-                    member __.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
+                    member __.Fold<'Result> (f:PipeIdx->Folder<'U,'Result>) =
                         Fold.execute f transformFactory pipeIdx (Fold.IterateResizeArray resizeArray)
 
             type ThinResizeArrayEnumerable<'T>(resizeArray:ResizeArray<'T>) =
@@ -784,7 +793,7 @@ namespace Microsoft.FSharp.Collections
                     member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
                         Upcast.seq (new ResizeArrayEnumerable<'T,'U>(resizeArray, next, 1))
 
-                    member __.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                    member __.Fold<'Result> (f:PipeIdx->Folder<'T,'Result>) =
                         Fold.executeThin f (Fold.IterateResizeArray resizeArray)
 
             type UnfoldEnumerator<'T,'U,'State>(generator:'State->option<'T*'State>, state:'State, activity:Activity<'T,'U>, result:Result<'U>) =
@@ -822,7 +831,7 @@ namespace Microsoft.FSharp.Collections
                     member this.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
                         Upcast.seq (new UnfoldEnumerable<'T,'V,'GeneratorState>(generator, state, ComposedFactory.Combine transformFactory next, pipeIdx+1))
 
-                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'U,'Result,'State>) =
+                    member this.Fold<'Result> (f:PipeIdx->Folder<'U,'Result>) =
                         Fold.execute f transformFactory pipeIdx (Fold.IterateUnfold (generator, state))
 
             let getInitTerminatingIdx (count:Nullable<int>) =
@@ -886,7 +895,7 @@ namespace Microsoft.FSharp.Collections
                     member this.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
                         Upcast.seq (new InitEnumerable<'T,'V>(count, f, ComposedFactory.Combine transformFactory next, pipeIdx+1))
 
-                    member this.Fold<'Result,'State> (createResult:PipeIdx->Folder<'U,'Result,'State>) =
+                    member this.Fold<'Result> (createResult:PipeIdx->Folder<'U,'Result>) =
                         let terminatingIdx = getInitTerminatingIdx count
                         Fold.execute createResult transformFactory pipeIdx (Fold.IterateInit (f, terminatingIdx))
 
@@ -973,7 +982,7 @@ namespace Microsoft.FSharp.Collections
                     member this.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
                         Upcast.seq (InitEnumerable<'T,'V>(count, f, next, pipeIdx+1))
 
-                    member this.Fold<'Result,'State> (f:PipeIdx->Folder<'T,'Result,'State>) =
+                    member this.Fold<'Result> (f:PipeIdx->Folder<'T,'Result>) =
                         Fold.executeThin f (Fold.IterateEnumerable (Upcast.enumerable this))
 
         /// wraps a ResizeArray in the ISeq framework. Care must be taken that the underlying ResizeArray
@@ -1059,7 +1068,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Fold">]
         let inline fold<'T,'State> (f:'State->'T->'State) (seed:'State) (source:ISeq<'T>) : 'State =
             source.Fold (fun _ ->
-                upcast { new Folder<'T,'State,NoValue>(seed,Unchecked.defaultof<NoValue>) with
+                { new Folder<'T,'State>(seed) with
                     override this.ProcessNext value =
                         this.Result <- f this.Result value
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
@@ -1095,7 +1104,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Iterate">]
         let inline iter f (source:ISeq<'T>) =
             source.Fold (fun _ ->
-                upcast { new Folder<'T,unit,NoValue> ((),Unchecked.defaultof<NoValue>) with
+                { new Folder<'T,unit> (()) with
                     override this.ProcessNext value =
                         f value
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
@@ -1132,7 +1141,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "TryHead">]
         let tryHead (source:ISeq<'T>) =
             source.Fold (fun pipeIdx ->
-                upcast { new Folder<'T, Option<'T>,NoValue> (None,Unchecked.defaultof<NoValue>) with
+                { new Folder<'T, Option<'T>> (None) with
                     override this.ProcessNext value =
                         this.Result <- Some value
                         this.StopFurtherProcessing pipeIdx
@@ -1147,7 +1156,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "IterateIndexed">]
         let inline iteri f (source:ISeq<'T>) =
             source.Fold (fun _ ->
-                { new Folder<'T,unit,int> ((),0) with
+                upcast { new FolderWithState<'T,unit,int> ((),0) with
                     override this.ProcessNext value =
                         f this.State value
                         this.State <- this.State + 1
@@ -1164,7 +1173,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Exists">]
         let inline exists f (source:ISeq<'T>) =
             source.Fold (fun pipeIdx ->
-                upcast { new Folder<'T, bool,NoValue> (false,Unchecked.defaultof<NoValue>) with
+                { new Folder<'T, bool> (false) with
                     override this.ProcessNext value =
                         if f value then
                             this.Result <- true
@@ -1190,7 +1199,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Contains">]
         let inline contains element (source:ISeq<'T>) =
             source.Fold (fun pipeIdx ->
-                upcast { new Folder<'T, bool,NoValue> (false,Unchecked.defaultof<NoValue>) with
+                { new Folder<'T, bool> (false) with
                     override this.ProcessNext value =
                         if element = value then
                             this.Result <- true
@@ -1200,7 +1209,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "ForAll">]
         let inline forall predicate (source:ISeq<'T>) =
             source.Fold (fun pipeIdx ->
-                upcast { new Folder<'T, bool,NoValue> (true,Unchecked.defaultof<NoValue>) with
+                { new Folder<'T, bool> (true) with
                     override this.ProcessNext value =
                         if not (predicate value) then
                             this.Result <- false
@@ -1523,7 +1532,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Sum">]
         let inline sum (source:ISeq<'T>) =
             source.Fold (fun _ ->
-                upcast { new Folder<'T,'T,NoValue> (LanguagePrimitives.GenericZero,Unchecked.defaultof<NoValue>) with
+                { new Folder<'T,'T> (LanguagePrimitives.GenericZero) with
                     override this.ProcessNext value =
                         this.Result <- Checked.(+) this.Result value
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
@@ -1531,7 +1540,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "SumBy">]
         let inline sumBy (f:'T->'U) (source:ISeq<'T>) =
             source.Fold (fun _ ->
-                upcast { new Folder<'T,'U,NoValue> (LanguagePrimitives.GenericZero<'U>,Unchecked.defaultof<NoValue>) with
+                { new Folder<'T,'U> (LanguagePrimitives.GenericZero<'U>) with
                     override this.ProcessNext value =
                         this.Result <- Checked.(+) this.Result (f value)
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
@@ -1641,7 +1650,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "TryPick">]
         let inline tryPick f (source:ISeq<'T>)  =
             source.Fold (fun pipeIdx ->
-                upcast { new Folder<'T, Option<'U>,NoValue> (None,Unchecked.defaultof<NoValue>) with
+                { new Folder<'T, Option<'U>> (None) with
                     override this.ProcessNext value =
                         match f value with
                         | (Some _) as some ->
@@ -1653,7 +1662,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "TryFind">]
         let inline tryFind f (source:ISeq<'T>)  =
             source.Fold (fun pipeIdx ->
-                upcast { new Folder<'T, Option<'T>,NoValue> (None,Unchecked.defaultof<NoValue>) with
+                { new Folder<'T, Option<'T>> (None) with
                     override this.ProcessNext value =
                         if f value then
                             this.Result <- Some value
@@ -1663,7 +1672,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "TryFindIndex">]
         let inline tryFindIndex (predicate:'T->bool) (source:ISeq<'T>) : int option =
             source.Fold (fun pipeIdx ->
-                { new Folder<'T, Option<int>, int>(None, 0) with
+                upcast { new FolderWithState<'T, Option<int>, int>(None, 0) with
                     // member this.index = this.State
                     override this.ProcessNext value =
                         if predicate value then
