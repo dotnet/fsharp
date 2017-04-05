@@ -48,8 +48,8 @@ namespace Microsoft.FSharp.Collections
 
             [<AbstractClass>]
             type Activity() =
-                abstract ChainComplete : stopTailCall:byref<unit> * PipeIdx -> unit
-                abstract ChainDispose  : stopTailCall:byref<unit> -> unit
+                abstract ChainComplete : PipeIdx -> unit
+                abstract ChainDispose  : unit -> unit
 
             [<AbstractClass>]
             type Activity<'T,'U> () =
@@ -69,10 +69,10 @@ namespace Microsoft.FSharp.Collections
                 val mutable State : 'State
                 val Next : Activity
                 
-                override this.ChainComplete (stopTailCall, terminatingIdx) =
-                    this.Next.ChainComplete (&stopTailCall, terminatingIdx)
-                override this.ChainDispose stopTailCall =
-                    this.Next.ChainDispose (&stopTailCall)
+                override this.ChainComplete terminatingIdx =
+                    this.Next.ChainComplete terminatingIdx
+                override this.ChainDispose () =
+                    this.Next.ChainDispose ()
 
             [<AbstractClass>]
             type TransformWithPostProcessing<'T,'U,'State>(next:Activity, initState:'State) =
@@ -81,12 +81,12 @@ namespace Microsoft.FSharp.Collections
                 abstract OnComplete : PipeIdx -> unit
                 abstract OnDispose  : unit -> unit
 
-                override this.ChainComplete (stopTailCall, terminatingIdx) =
+                override this.ChainComplete terminatingIdx =
                     this.OnComplete terminatingIdx
-                    this.Next.ChainComplete (&stopTailCall, terminatingIdx)
-                override this.ChainDispose stopTailCall  =
+                    this.Next.ChainComplete terminatingIdx
+                override this.ChainDispose ()  =
                     try     this.OnDispose ()
-                    finally this.Next.ChainDispose (&stopTailCall)
+                    finally this.Next.ChainDispose ()
 
             [<AbstractClass>]
             type Folder<'T,'Result,'State> =
@@ -107,8 +107,8 @@ namespace Microsoft.FSharp.Collections
                     Result = initalResult
                 }
 
-                override this.ChainComplete (_,_) = ()
-                override this.ChainDispose _ = ()
+                override this.ChainComplete _ = ()
+                override this.ChainDispose () = ()
 
             [<AbstractClass>]
             type FolderWithPostProcessing<'T,'Result,'State>(initResult,initState) =
@@ -117,9 +117,9 @@ namespace Microsoft.FSharp.Collections
                 abstract OnComplete : PipeIdx -> unit
                 abstract OnDispose : unit -> unit
 
-                override this.ChainComplete (stopTailCall, terminatingIdx) =
+                override this.ChainComplete terminatingIdx =
                     this.OnComplete terminatingIdx
-                override this.ChainDispose _ =
+                override this.ChainDispose () =
                     this.OnDispose ()
 
             [<AbstractClass>]
@@ -307,31 +307,28 @@ namespace Microsoft.FSharp.Collections
             // execute, and it's companion, executeThin, are hosting functions that ensure the correct sequence
             // of creation, iteration and disposal for the pipeline
             let execute (createFolder:PipeIdx->Folder<'U,'Result,'State>) (transformFactory:TransformFactory<'T,'U>) pipeIdx (executeOn:#IIterate<'T>) =
-                let mutable stopTailCall = ()
                 let result = createFolder (pipeIdx+1)
                 let consumer = createFold transformFactory result pipeIdx
                 try
                     executeOn.Iterate result consumer
-                    consumer.ChainComplete (&stopTailCall, result.HaltedIdx)
+                    consumer.ChainComplete result.HaltedIdx
                     result.Result
                 finally
-                    consumer.ChainDispose (&stopTailCall)
+                    consumer.ChainDispose ()
 
             // executeThin is a specialization of execute, provided as a performance optimization, that can
             // be used when a sequence has been wrapped in an ISeq, but hasn't had an items added to its pipeline
             // i.e. a container that has ISeq.ofSeq applied. 
             let executeThin (createFolder:PipeIdx->Folder<'T,'Result,'State>) (executeOn:#IIterate<'T>) =
-                let mutable stopTailCall = ()
                 let result = createFolder 1
                 try
                     executeOn.Iterate result result
-                    result.ChainComplete (&stopTailCall, result.HaltedIdx)
+                    result.ChainComplete result.HaltedIdx
                     result.Result
                 finally
-                    result.ChainDispose (&stopTailCall)
+                    result.ChainDispose ()
 
             let executeConcat<'T,'U,'Result,'State,'Collection when 'Collection :> ISeq<'T>> (createFolder:PipeIdx->Folder<'U,'Result,'State>) (transformFactory:TransformFactory<'T,'U>) pipeIdx (sources:ISeq<'Collection>) =
-                let mutable stopTailCall = ()
                 let result = createFolder (pipeIdx+1)
                 let consumer = createFold transformFactory result pipeIdx
                 try
@@ -346,13 +343,12 @@ namespace Microsoft.FSharp.Collections
                                 me.HaltedIdx <- common.HaltedIdx
                                 Unchecked.defaultof<_> (* return value unused in Fold context *) }) |> ignore
 
-                    consumer.ChainComplete (&stopTailCall, result.HaltedIdx)
+                    consumer.ChainComplete result.HaltedIdx
                     result.Result
                 finally
-                    result.ChainDispose (&stopTailCall)
+                    result.ChainDispose ()
 
             let executeConcatThin<'T,'Result,'State,'Collection when 'Collection :> ISeq<'T>> (createFolder:PipeIdx->Folder<'T,'Result,'State>) (sources:ISeq<'Collection>) =
-                let mutable stopTailCall = ()
                 let result = createFolder 1
                 try
                     let common =
@@ -366,10 +362,10 @@ namespace Microsoft.FSharp.Collections
                                 me.HaltedIdx <- common.HaltedIdx
                                 Unchecked.defaultof<_> (* return value unused in Fold context *) }) |> ignore
 
-                    result.ChainComplete (&stopTailCall, result.HaltedIdx)
+                    result.ChainComplete result.HaltedIdx
                     result.Result
                 finally
-                    result.ChainDispose (&stopTailCall)
+                    result.ChainDispose ()
 
         module Wrap =
             type EmptyEnumerator<'T>() =
@@ -391,8 +387,7 @@ namespace Microsoft.FSharp.Collections
             type EnumeratorBase<'T>(result:Result<'T>, activity:Activity) =
                 interface IDisposable with
                     member __.Dispose () : unit =
-                        let mutable stopTailCall = ()
-                        activity.ChainDispose (&stopTailCall)
+                        activity.ChainDispose ()
 
                 interface IEnumerator with
                     member this.Current : obj = box ((Upcast.enumerator this)).Current
@@ -419,8 +414,7 @@ namespace Microsoft.FSharp.Collections
                             moveNext ()
                     else
                         result.SeqState <- SeqProcessNextStates.Finished
-                        let mutable stopTailCall = ()
-                        activity.ChainComplete (&stopTailCall, result.HaltedIdx)
+                        activity.ChainComplete result.HaltedIdx
                         false
 
                 interface IEnumerator with
@@ -433,8 +427,7 @@ namespace Microsoft.FSharp.Collections
                         try
                             source.Dispose ()
                         finally
-                            let mutable stopTailCall = ()
-                            activity.ChainDispose (&stopTailCall)
+                            activity.ChainDispose ()
 
             type ConcatEnumerator<'T,'U,'Collection when 'Collection :> seq<'T>> (sources:seq<'Collection>, activity:Activity<'T,'U>, result:Result<'U>) =
                 inherit EnumeratorBase<'U>(result, activity)
@@ -457,8 +450,7 @@ namespace Microsoft.FSharp.Collections
                             moveNext ()
                         else
                             result.SeqState <- SeqProcessNextStates.Finished
-                            let mutable stopTailCall = ()
-                            activity.ChainComplete (&stopTailCall, result.HaltedIdx)
+                            activity.ChainComplete result.HaltedIdx
                             false
 
                 interface IEnumerator with
@@ -472,8 +464,7 @@ namespace Microsoft.FSharp.Collections
                             main.Dispose ()
                             active.Dispose ()
                         finally
-                            let mutable stopTailCall = ()
-                            activity.ChainDispose (&stopTailCall)
+                            activity.ChainDispose ()
 
             type ListEnumerator<'T,'U>(alist:list<'T>, activity:Activity<'T,'U>, result:Result<'U>) =
                 inherit EnumeratorBase<'U>(result, activity)
@@ -490,8 +481,7 @@ namespace Microsoft.FSharp.Collections
                             moveNext tail
                     | _ ->
                         result.SeqState <- SeqProcessNextStates.Finished
-                        let mutable stopTailCall = ()
-                        activity.ChainComplete (&stopTailCall, result.HaltedIdx)
+                        activity.ChainComplete result.HaltedIdx
                         false
 
                 interface IEnumerator with
@@ -692,8 +682,7 @@ namespace Microsoft.FSharp.Collections
                             moveNext ()
                     else
                         result.SeqState <- SeqProcessNextStates.Finished
-                        let mutable stopTailCall = ()
-                        activity.ChainComplete (&stopTailCall, result.HaltedIdx)
+                        activity.ChainComplete result.HaltedIdx
                         false
 
                 interface IEnumerator with
@@ -760,8 +749,7 @@ namespace Microsoft.FSharp.Collections
                             moveNext ()
                     else
                         result.SeqState <- SeqProcessNextStates.Finished
-                        let mutable stopTailCall = ()
-                        activity.ChainComplete (&stopTailCall, result.HaltedIdx)
+                        activity.ChainComplete result.HaltedIdx
                         false
 
                 interface IEnumerator with
@@ -878,8 +866,7 @@ namespace Microsoft.FSharp.Collections
                         raise <| System.InvalidOperationException (SR.GetString(SR.enumerationPastIntMaxValue))
                     else
                         result.SeqState <- SeqProcessNextStates.Finished
-                        let mutable stopTailCall = ()
-                        activity.ChainComplete (&stopTailCall, result.HaltedIdx)
+                        activity.ChainComplete result.HaltedIdx
                         false
 
                 interface IEnumerator with

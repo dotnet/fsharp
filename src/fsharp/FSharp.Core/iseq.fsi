@@ -56,10 +56,10 @@ namespace Microsoft.FSharp.Collections
             /// operation which didn't have a source at least as large as was required). It is
             /// not called in the case of an exception being thrown whilst the stream is still
             /// being processed.
-            abstract ChainComplete : stopTailCall:byref<unit>*PipeIdx -> unit
+            abstract ChainComplete : PipeIdx -> unit
             /// OnDispose is used to cleanup the stream. It is always called at the last operation
             /// after the enumeration has completed.
-            abstract ChainDispose : stopTailCall:byref<unit> -> unit
+            abstract ChainDispose : unit -> unit
 
         /// Activity is the base class of all elements within the pipeline
         [<AbstractClass>]
