@@ -2,9 +2,7 @@
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
-open System.IO
 open System.Collections.Generic
-open System.Reflection
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.AbstractIL.IL
@@ -20,7 +18,6 @@ open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.TastPickle
 open Microsoft.FSharp.Compiler.PrettyNaming
 open Internal.Utilities
 
@@ -281,7 +278,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
 
     member x.GenericParameters = 
         checkIsResolved()
-        entity.TyparsNoRange |> List.map (fun tp -> FSharpGenericParameter(cenv,  tp)) |> List.toArray |> makeReadOnlyCollection
+        entity.TyparsNoRange |> List.map (fun tp -> FSharpGenericParameter(cenv,  tp)) |> makeReadOnlyCollection
 
     member __.IsMeasure = 
         isResolvedAndFSharp() && (entity.TypeOrMeasureKind = TyparKind.Measure)
@@ -577,7 +574,7 @@ and FSharpUnionCase(cenv, v: UnionCaseRef) =
 
     member __.UnionCaseFields = 
         if isUnresolved() then makeReadOnlyCollection [] else
-        v.UnionCase.RecdFields |> List.mapi (fun i _ ->  FSharpField(cenv,  FSharpFieldData.Union (v, i))) |> List.toArray |> makeReadOnlyCollection
+        v.UnionCase.RecdFields |> List.mapi (fun i _ ->  FSharpField(cenv,  FSharpFieldData.Union (v, i))) |> makeReadOnlyCollection
 
     member __.ReturnType = 
         checkIsResolved()
@@ -1178,7 +1175,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
             | P _ -> []
             | M m | C m -> m.FormalMethodTypars
             | V v -> v.Typars 
-        tps |> List.map (fun tp -> FSharpGenericParameter(cenv,  tp)) |> List.toArray |> makeReadOnlyCollection
+        tps |> List.map (fun tp -> FSharpGenericParameter(cenv,  tp)) |> makeReadOnlyCollection
 
     member x.FullType = 
         checkIsResolved()
