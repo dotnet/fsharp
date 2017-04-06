@@ -121,6 +121,101 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         abstract member PushTransform : TransformFactory<'T,'U> -> ISeq<'U>
         abstract member Fold<'Result> : f:(PipeIdx->Folder<'T,'Result>) -> 'Result
 
+namespace Microsoft.FSharp.Collections.SeqComposition
+  open System
+  open System.Collections
+  open System.Collections.Generic
+  open Microsoft.FSharp.Core
+  open Microsoft.FSharp.Collections
+  open Microsoft.FSharp.Collections.SeqComposition
+
+  module Core = 
+    [<Struct; NoComparison; NoEquality>]
+    type NoValue = struct end
+
+  module internal Internal =
+    [<Class>]
+    type IdentityFactory<'T> =
+        inherit TransformFactory<'T,'T> 
+        static member Instance : TransformFactory<'T,'T> 
+
+    type ISkipable =
+        // Seq.init(Infinite)? lazily uses Current. The only ISeq component that can do that is Skip
+        // and it can only do it at the start of a sequence
+        abstract CanSkip : unit -> bool
+
+    val length : ISeq<'T> -> int
+
+    [<AbstractClass>]
+    type EnumerableBase<'T> =
+        new : unit -> EnumerableBase<'T>
+        abstract member Append : ISeq<'T> -> ISeq<'T>
+        abstract member Length : unit -> int
+        interface IEnumerable
+        interface IEnumerable<'T>
+        interface ISeq<'T>
+
+    type ThinConcatEnumerable<'T, 'Sources, 'Collection when 'Collection :> ISeq<'T>> =
+        inherit EnumerableBase<'T>
+        new : 'Sources * ('Sources->ISeq<'Collection>) -> ThinConcatEnumerable<'T, 'Sources, 'Collection>
+        interface ISeq<'T>
+
+    type AppendEnumerable<'T> =
+        inherit ThinConcatEnumerable<'T, list<ISeq<'T>>, ISeq<'T>>
+        new : list<ISeq<'T>> -> AppendEnumerable<'T>
+        override Append : ISeq<'T> -> ISeq<'T>
+
+    type ThinListEnumerable<'T> =
+        inherit EnumerableBase<'T>
+        new : list<'T> -> ThinListEnumerable<'T>
+        interface ISeq<'T>
+
+    type ThinResizeArrayEnumerable<'T> =
+        inherit EnumerableBase<'T>
+        new : ResizeArray<'T> -> ThinResizeArrayEnumerable<'T>
+        interface ISeq<'T>
+
+    type ThinArrayEnumerable<'T> =
+        inherit EnumerableBase<'T>
+        new : array<'T> -> ThinArrayEnumerable<'T>
+        interface ISeq<'T>
+
+    type ThinEnumerable<'T> =
+        inherit EnumerableBase<'T>
+        new : IEnumerable<'T> -> ThinEnumerable<'T>
+        interface ISeq<'T>
+
+    type UnfoldEnumerable<'T,'U,'GeneratorState> =
+        inherit EnumerableBase<'U>
+        new : ('GeneratorState->option<'T*'GeneratorState>)*'GeneratorState*TransformFactory<'T,'U>*PipeIdx -> UnfoldEnumerable<'T,'U,'GeneratorState>
+        interface ISeq<'U>
+
+    type InitEnumerableDecider<'T> =
+        inherit EnumerableBase<'T>
+        new : Nullable<int>* (int->'T) * PipeIdx -> InitEnumerableDecider<'T>
+        interface ISeq<'T>
+        
+    type SingletonEnumerable<'T> =
+        inherit EnumerableBase<'T>
+        new : 'T -> SingletonEnumerable<'T>
+        interface ISeq<'T>
+
+    type InitEnumerable<'T,'U> =
+        inherit EnumerableBase<'U>
+        new : Nullable<int> * (int->'T) * TransformFactory<'T,'U> * PipeIdx -> InitEnumerable<'T,'U>
+        interface ISeq<'U>
+
+    type DelayedEnumerable<'T> =
+        inherit EnumerableBase<'T>
+        new : (unit->ISeq<'T>) * PipeIdx -> DelayedEnumerable<'T>
+        interface ISeq<'T>
+
+    type EmptyEnumerable<'T> =
+        inherit EnumerableBase<'T>
+        private new : unit -> EmptyEnumerable<'T>
+        static member Instance : ISeq<'T>
+        interface ISeq<'T>
+
 namespace Microsoft.FSharp.Core.CompilerServices
 
     open System
@@ -214,3 +309,4 @@ namespace Microsoft.FSharp.Core.CompilerServices
         interface IEnumerable
         interface IEnumerator<'T> 
         interface IEnumerator 
+        interface SeqComposition.ISeq<'T>
