@@ -45,7 +45,7 @@ module internal FSharpGoToDefinition =
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! lexerSymbol = Tokenizer.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Greedy)
+            let! lexerSymbol = Tokenizer.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Greedy, false)
             let! _, _, checkFileResults = 
                 checker.ParseAndCheckDocument 
                     (filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = preferSignature) 
@@ -84,7 +84,7 @@ module internal FSharpGoToDefinition =
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing (originDocument.FilePath, projectOptions.OtherOptions |> Seq.toList)
             let originTextSpan = RoslynHelpers.FSharpRangeToTextSpan (sourceText, originRange)
             let position = originTextSpan.Start
-            let! lexerSymbol = Tokenizer.getSymbolAtPosition (originDocument.Id, sourceText, position, originDocument.FilePath, defines, SymbolLookupKind.Greedy)
+            let! lexerSymbol = Tokenizer.getSymbolAtPosition (originDocument.Id, sourceText, position, originDocument.FilePath, defines, SymbolLookupKind.Greedy, false)
             
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
@@ -245,7 +245,7 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! lexerSymbol = Tokenizer.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Greedy)
+            let! lexerSymbol = Tokenizer.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Greedy, false)
             let! _, _, checkFileResults = 
                 checker.ParseAndCheckDocument 
                     (filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)  |> Async.RunSynchronously
@@ -278,7 +278,7 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
             let! _, _, checkFileResults = 
                 checkerProvider.Checker.ParseAndCheckDocument (originDocument, projectOptions, allowStaleResults=true, sourceText=sourceText)
                 
-            let! lexerSymbol = Tokenizer.getSymbolAtPosition (originDocument.Id, sourceText, position,originDocument.FilePath, defines, SymbolLookupKind.Greedy)
+            let! lexerSymbol = Tokenizer.getSymbolAtPosition (originDocument.Id, sourceText, position,originDocument.FilePath, defines, SymbolLookupKind.Greedy, false)
             let idRange = lexerSymbol.Ident.idRange
 
             let! declarations = 

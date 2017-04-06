@@ -389,7 +389,17 @@ module internal Tokenizer =
             { Kind = kind; Token = token; RightColumn = token.LeftColumn + token.FullMatchedLength - 1 }
     
     /// Returns symbol at a given position.
-    let private getSymbolFromTokens (fileName: string, tokens: FSharpTokenInfo list, linePos: LinePosition, lineStr: string, lookupKind: SymbolLookupKind) : LexerSymbol option =
+    let private getSymbolFromTokens 
+        (
+            fileName: string, 
+            tokens: FSharpTokenInfo list, 
+            linePos: LinePosition, 
+            lineStr: string, 
+            lookupKind: SymbolLookupKind,
+            wholeActivePatterns: bool
+        ) 
+        : LexerSymbol option =
+        
         let isIdentifier t = t.CharClass = FSharpTokenCharKind.Identifier
         let isOperator t = t.ColorClass = FSharpTokenColorKind.Operator
         let isPunctuation t = t.ColorClass = FSharpTokenColorKind.Punctuation
@@ -424,8 +434,9 @@ module internal Tokenizer =
             |> List.foldi (fun (acc, lastToken) index (token: FSharpTokenInfo) ->
                 match lastToken with
                 | Some t when token.LeftColumn <= t.RightColumn -> acc, lastToken
-                | Some ({ Kind = LexerSymbolKind.ActivePattern } as lastToken) when 
-                    token.Tag = FSharpTokenTag.BAR || token.Tag = FSharpTokenTag.IDENT || token.Tag = FSharpTokenTag.UNDERSCORE ->
+                | Some ({ Kind = LexerSymbolKind.ActivePattern } as lastToken) when
+                    wholeActivePatterns &&
+                    (token.Tag = FSharpTokenTag.BAR || token.Tag = FSharpTokenTag.IDENT || token.Tag = FSharpTokenTag.UNDERSCORE) ->
                     
                     let mergedToken =
                         {lastToken.Token with Tag = FSharpTokenTag.IDENT
@@ -438,7 +449,7 @@ module internal Tokenizer =
                     match token with
                     | GenericTypeParameterPrefix when not isLastToken -> acc, Some (DraftToken.Create LexerSymbolKind.GenericTypeParameter token)
                     | StaticallyResolvedTypeParameterPrefix when not isLastToken -> acc, Some (DraftToken.Create LexerSymbolKind.StaticallyResolvedTypeParameter token)
-                    | ActivePattern -> acc, Some (DraftToken.Create LexerSymbolKind.ActivePattern token)
+                    | ActivePattern when wholeActivePatterns -> acc, Some (DraftToken.Create LexerSymbolKind.ActivePattern token)
                     | _ ->
                         let draftToken =
                             match lastToken with
@@ -449,7 +460,7 @@ module internal Tokenizer =
                             | Some { Kind = LexerSymbolKind.StaticallyResolvedTypeParameter } ->
                                 DraftToken.Create LexerSymbolKind.Operator { token with LeftColumn = token.LeftColumn - 1
                                                                                         FullMatchedLength = 1 }
-                            | Some ( { Kind = LexerSymbolKind.ActivePattern } as ap) when token.Tag = FSharpTokenTag.RPAREN ->
+                            | Some ( { Kind = LexerSymbolKind.ActivePattern } as ap) when wholeActivePatterns && token.Tag = FSharpTokenTag.RPAREN ->
                                 DraftToken.Create LexerSymbolKind.Ident ap.Token
                             | _ -> 
                                 let kind = 
@@ -537,10 +548,21 @@ module internal Tokenizer =
             Assert.Exception(ex)
             []
 
-    let getSymbolAtPosition(documentKey: DocumentId, sourceText: SourceText, position: int, fileName: string, defines: string list, lookupKind: SymbolLookupKind) : LexerSymbol option =
+    let getSymbolAtPosition
+        (
+            documentKey: DocumentId, 
+            sourceText: SourceText, 
+            position: int, 
+            fileName: string, 
+            defines: string list, 
+            lookupKind: SymbolLookupKind,
+            wholeActivePatterns: bool
+        ) 
+        : LexerSymbol option =
+        
         try
             let lineData, textLinePos, lineContents = getCachedSourceLineData(documentKey, sourceText, position, fileName, defines)
-            getSymbolFromTokens(fileName, lineData.Tokens, textLinePos, lineContents, lookupKind)
+            getSymbolFromTokens(fileName, lineData.Tokens, textLinePos, lineContents, lookupKind, wholeActivePatterns)
         with 
         | :? System.OperationCanceledException -> reraise()
         |  ex -> 
