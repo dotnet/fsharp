@@ -43,6 +43,7 @@
     <Compile Include="LanguageService\Symbols.fs" />
     <Compile Include="LanguageService\TypedAstUtils.fs" />
     <Compile Include="LanguageService\FSharpCheckerExtensions.fs" />
+    <Compile Include="LanguageService\ProjectOptionsCache.fs" />
     <Compile Include="LanguageService\LanguageService.fs" />
     <Compile Include="LanguageService\AssemblyContentProvider.fs" />
     <Compile Include="LanguageService\SymbolHelpers.fs" />
