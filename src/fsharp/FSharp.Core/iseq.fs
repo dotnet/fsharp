@@ -14,7 +14,7 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Primitives.Basics
     open Microsoft.FSharp.Collections.SeqComposition
-    open Microsoft.FSharp.Collections.SeqComposition.Internal
+    open Microsoft.FSharp.Collections.SeqComposition.Core
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module ISeq =
@@ -172,7 +172,7 @@ namespace Microsoft.FSharp.Collections
                     override this.OnDispose () = () })
 
         [<CompiledName "Empty">]
-        let empty<'T> = Microsoft.FSharp.Collections.SeqComposition.Internal.EmptyEnumerable<'T>.Instance
+        let empty<'T> = Microsoft.FSharp.Collections.SeqComposition.Core.EmptyEnumerable<'T>.Instance
 
         [<CompiledName "ExactlyOne">]
         let exactlyOne (source:ISeq<'T>) : 'T =
