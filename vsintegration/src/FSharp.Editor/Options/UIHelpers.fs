@@ -42,6 +42,8 @@ module internal OptionsUIHelpers =
 
         //Override this method when using immutable settings type
         member this.SetViewModel(settings: 't) =
+            // this is needed in case when settings are a CLIMutable record
+            this.View.DataContext <- null
             this.View.DataContext <- settings
 
         //Override this method when using immutable settings type
