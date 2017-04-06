@@ -6626,9 +6626,14 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                     cudDebugDisplayAttributes= ilDebugDisplayAttributes
                     cudAlternatives= alternatives
                     cudWhere = None}
+               let layout = 
+                   if isStructTy cenv.g thisTy then 
+                       ILTypeDefLayout.Sequential { Size=None; Pack=None } 
+                   else 
+                       ILTypeDefLayout.Auto
                let tdef = 
                    { Name = ilTypeName
-                     Layout = ILTypeDefLayout.Auto
+                     Layout =  layout
                      Access = access
                      GenericParams = ilGenParams
                      CustomAttrs = 

@@ -1317,6 +1317,40 @@ module StructUnionsWithConflictingConstructors =
       /// <summary>Choice 7 of 7 choices</summary>
       | Choice7Of7 of Item7: byte
 
+module StructUnionMarshalingBug = 
+    [<Struct>]
+    type Msg0 = 
+      | Zero of key :int
+
+    [<Struct>]
+    type Msg1 = 
+      | One of name :string
+      | Two of key :int
+
+    [<Struct>]
+    type Msg2 = 
+      { name :string
+        key :int
+        tag :int }
+
+    open System.Runtime.InteropServices
+
+    let msg0 = Zero 42
+    let size0 = Marshal.SizeOf(msg0)  
+    check "clcejefdw" size0 (sizeof<int>)
+
+    let msg1 = Two 42
+    let size1 = Marshal.SizeOf(msg1)  
+    check "clcejefdw2" size1 (sizeof<string> + 2*sizeof<int>) // this size may be bigger than expected
+
+    let msg2 = { name = null; key = 42; tag=1 }
+    let size2 = Marshal.SizeOf(msg2)  
+    check "clceje" size2 (sizeof<string> + 2*sizeof<int>)
+
+    // ... alternately ...
+    let buffer = Marshal.AllocHGlobal(64) // HACK: just assumed a much larger size
+    Marshal.StructureToPtr<Msg1>(msg1, buffer, false) 
+
 (* check for failure else sign off "ok" *)
 
 
