@@ -20,7 +20,11 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.ComponentModelHost
+open Microsoft.VisualStudio.LanguageServices.ProjectSystem
+open Microsoft.VisualStudio.LanguageServices.Implementation.TaskList
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open System.Collections.Generic
+open Microsoft.VisualStudio.Editor
 
 
 // Workaround to access non-public settings persistence type.
@@ -212,19 +216,66 @@ and
     let projectDisplayNameOf projectFileName = 
         if String.IsNullOrWhiteSpace projectFileName then projectFileName
         else Path.GetFileNameWithoutExtension projectFileName
+    
+    let getReferenceGuids (references:EnvDTE.Project seq) =
+        let solution = package.GetService<SVsSolution,IVsSolution>()
+        references |> Seq.choose (fun proj ->
+            match solution.GetProjectOfUniqueName proj.UniqueName with
+            | VSConstants.S_OK, hierarchy -> Some hierarchy | _ -> None
+        )|> Seq.choose (fun hier -> hier.TryGetProjectGuid())
 
 
-    override this.Initialize () =
+    member self.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, hierarchy:IVsHierarchy, forceUpdate) =
+        let hashSetIgnoreCase x = new HashSet<string>(x, StringComparer.OrdinalIgnoreCase)
+        let updatedFiles = hierarchy.GetFilesOnDisk () |> hashSetIgnoreCase
+        let workspaceFiles = project.GetCurrentDocuments() |> Seq.map(fun file -> file.FilePath) |> hashSetIgnoreCase
+
+        // If syncing project upon some reference changes, we don't have a mechanism to recognize which references have been added/removed.
+        // Hence, the current solution is to force update current project options.
+        let mutable updated = forceUpdate
+        for file in updatedFiles do
+            if not (workspaceFiles.Contains file) then
+                projectContext.AddSourceFile file
+                updated <- true
+        for file in workspaceFiles do
+            if not (updatedFiles.Contains file) then
+                projectContext.RemoveSourceFile file
+                updated <- true
+
+
+    member self.SetupProjectFile (hierarchy:IVsHierarchy) = 
+        maybe {
+            let! projectGuid = hierarchy.TryGetProjectGuid ()
+            let! projectFileName = hierarchy.TryGetFilePath ()
+            let projectDisplayName = projectDisplayNameOf projectFileName
+            let projectId = self.Workspace.ProjectTracker.GetOrCreateProjectIdForPath (projectFileName, projectDisplayName)
+            let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>()
+            let errorReporter = ProjectExternalErrorReporter (projectId, "FS", self.SystemServiceProvider)
+            let projectContext = 
+                projectContextFactory.CreateProjectContext(
+                    FSharpConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectGuid, hierarchy, null, errorReporter
+                )
+            let project = projectContext :?> AbstractProject
+            self.SyncProject(project, projectContext, hierarchy, forceUpdate=false)
+            hierarchy.GetReferencedProjects () |> getReferenceGuids 
+            |> Seq.map (ProjectId.CreateFromSerialized>>ProjectReference) 
+            |> Seq.iter project.AddProjectReference
+        } |> ignore
+        
+
+    override self.Initialize () =
         base.Initialize ()
 
-        this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Completion.CompletionOptions.BlockForCompletionItems, FSharpConstants.FSharpLanguageName, false)
-        this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpConstants.FSharpLanguageName, Nullable false)
+        self.Workspace.Options <- self.Workspace.Options.WithChangedOption (Completion.CompletionOptions.BlockForCompletionItems, FSharpConstants.FSharpLanguageName, false)
+        self.Workspace.Options <- self.Workspace.Options.WithChangedOption (Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpConstants.FSharpLanguageName, Nullable false)
         
-        this.Workspace.DocumentClosed.Add (fun args ->
+        projectTracker <- self.Workspace.GetProjectTrackerAndInitializeIfNecessary self.SystemServiceProvider
+
+        self.Workspace.DocumentClosed.Add (fun args ->
             projectInfoManager.RemoveSingleFileProject args.Document.Project.Id 
         )
         
-        this.Workspace.WorkspaceChanged |> Observable.add (fun args ->
+        self.Workspace.WorkspaceChanged |> Observable.add (fun args ->
             match args.Kind with
             | WorkspaceChangeKind.SolutionAdded ->
                 args.NewSolution.Projects |> Seq.iter !? projectInfoManager.AddProject
@@ -243,19 +294,17 @@ and
                 args.ProjectId ?> projectInfoManager.UpdateProjectInfo 
             | _ -> ()
         )
-        
-        Events.SolutionEvents.OnAfterBackgroundSolutionLoadComplete.Add (fun _ ->
-            this.Workspace.CurrentSolution.Projects |> Seq.iter !? projectInfoManager.AddProject
-        )
 
-        Events.SolutionEvents.OnAfterOpenSolution.Add (fun _ ->
-            this.Workspace.CurrentSolution.Projects |> Seq.iter !? projectInfoManager.AddProject
-            projectTracker <- this.Workspace.GetProjectTrackerAndInitializeIfNecessary this.SystemServiceProvider
-        )
-
-        Events.SolutionEvents.OnAfterCloseSolution.Add (fun _ ->
-            projectInfoManager.Clear ()
-        )
+        let rec setupProjectsAfterSolutionOpen () = async {
+            // waits for AfterOpenSolution and then starts projects setup
+            do! Async.AwaitEvent Events.SolutionEvents.OnAfterOpenSolution |> Async.Ignore
+            use _ = Events.SolutionEvents.OnAfterOpenProject |> Observable.subscribe ( fun args ->
+                self.SetupProjectFile args.Hierarchy 
+            )
+            do! Async.AwaitEvent Events.SolutionEvents.OnAfterCloseSolution |> Async.Ignore
+            do! setupProjectsAfterSolutionOpen () 
+        }
+        setupProjectsAfterSolutionOpen () |> Async.StartImmediate
 
         let theme = package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
         theme.SetColors ()
@@ -269,6 +318,7 @@ and
         let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
         projectInfoManager.AddSingleFileProject (projectId, (loadTime, options))
 
+
     member __.ProjectTracker = projectTracker
     override __.ContentTypeName = FSharpConstants.FSharpContentTypeName
     override __.LanguageName = FSharpConstants.FSharpLanguageName
@@ -280,10 +330,13 @@ and
 
     override self.SetupNewTextView textView =
         base.SetupNewTextView textView
-        match textView.GetBuffer() with
+        match textView.GetBuffer () with
         | (VSConstants.S_OK, textLines) ->
             let filename = VsTextLines.GetFilename textLines
-            self.SetupStandAloneFile (filename, self.Workspace)            
+            match VsRunningDocumentTable.FindDocumentWithoutLocking (package.RunningDocumentTable, filename) with
+            | Some (hier, _) -> self.SetupProjectFile hier
+            | _ -> ()
+            self.SetupStandAloneFile (filename, self.Workspace)
         | _ -> ()
 
       
