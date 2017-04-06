@@ -25,6 +25,8 @@ open Microsoft.VisualStudio.LanguageServices.Implementation.TaskList
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open System.Collections.Generic
 open Microsoft.VisualStudio.Editor
+open System.Collections.Concurrent
+
 
 
 // Workaround to access non-public settings persistence type.
@@ -70,6 +72,98 @@ type internal ProjectInfoManager [<ImportingConstructor>]
     ) =
     let projectCache = ProjectOptionsCache(checkerProvider.Checker, workspace)
 
+    //let getProjectHierarchyPairs (references:EnvDTE.Project seq) =
+
+
+    //let rec referencedProjectsOf (fileName, loadTime, hierarchy:IVsHierarchy, extraProjectInfo) =
+    //    getProjectHierarchyPairs (hierarchy.GetReferencedProjects())
+    //    |> Seq.choose (fun (_proj, hier) -> maybe {
+    //        let! path = hier.TryGetOutputAssemblyPath ()
+    //        let! options = getProjectOptionsForProjectSite (fileName, loadTime,hierarchy, extraProjectInfo)
+    //        return  (path, options)
+    //    })|> Seq.toArray
+
+    //and getProjectOptionsForProjectSite ( fileName,loadTime,hierarchy,  extraProjectInfo) = maybe {
+    let getProjectOptionsForProjectSite ( fileName,loadTime,options:FSharpProjectOptions,  extraProjectInfo) = maybe {
+        //let! name = hierarchy.TryGetName ()
+        //let files = hierarchy.GetFilesOnDisk ()        
+        return
+            {   ProjectFileName = options.ProjectFileName
+                //ProjectFileNames = files |> List.toArray
+                ProjectFileNames = options.ProjectFileNames
+                OtherOptions = [||]
+                //ReferencedProjects = referencedProjectsOf (fileName, loadTime,hierarchy,  extraProjectInfo)
+                ReferencedProjects = options.ReferencedProjects
+                IsIncompleteTypeCheckEnvironment = false
+                UseScriptResolutionRules = SourceFile.MustBeSingleFileProject fileName
+                LoadTime = loadTime
+                UnresolvedReferences = None
+                OriginalLoadReferences = []
+                ExtraProjectInfo=extraProjectInfo 
+            }  
+
+    }
+
+    member __.Checker = checkerProvider.Checker
+
+
+    member __.GetProjectOptionsForProjectSite ( fileName, loadTime,options, extraProjectInfo) =
+        getProjectOptionsForProjectSite ( fileName,loadTime,options,  extraProjectInfo)
+
+
+    /// Get the exact options for a single-file script
+    member self.ComputeSingleFileOptions (fileName, loadTime, fileContents, workspace: Workspace) = async {
+        let solution = workspace.CurrentSolution
+        let docId = solution.GetDocumentIdsWithFilePath fileName |> Seq.head
+        let project = solution.GetProject docId.ProjectId
+
+        let options = ProjectOptionsCache.toFSharpProjectOptions workspace projectCache.ProjectTable project
+        
+        let extraProjectInfo = Some (box workspace)
+        if SourceFile.MustBeSingleFileProject fileName then 
+        //if isScriptFile fileName then 
+            let! _options, _diagnostics = self.Checker.GetProjectOptionsFromScript (fileName, fileContents, loadTime, [| |], ?extraProjectInfo=extraProjectInfo) 
+            //ProjectOptionsCache.fsxProjectOptions fileName (Some workspace)
+            return getProjectOptionsForProjectSite ( fileName, loadTime,options,extraProjectInfo)
+        else
+            //ProjectOptionsCache.singleFileProjectOptions fileName
+            return getProjectOptionsForProjectSite ( fileName, loadTime,options, extraProjectInfo)
+    }
+
+    /// Get the exact options for a document or project
+    member self.TryGetOptionsForDocumentOrProject(document: Document) = asyncMaybe { 
+        let projectId = document.Project.Id
+        // The options for a single-file script project are re-requested each time the file is analyzed.  This is because the
+        // single-file project may contain #load and #r references which are changing as the user edits, and we may need to re-analyze
+        // to determine the latest settings.  FCS keeps a cache to help ensure these are up-to-date.
+        match tryGet projectId projectCache.SingleFileProjectTable with
+        | Some (loadTime,_) ->
+            let fileName = document.FilePath
+            let! cancellationToken = Async.CancellationToken |> liftAsync
+            let! sourceText = document.GetTextAsync(cancellationToken)
+            //let options = ProjectOptionsCache.toFSharpProjectOptions document.Project.Solution.Workspace projectCache.ProjectTable document.Project
+            let! options = self.ComputeSingleFileOptions( fileName, loadTime,sourceText.ToString(), document.Project.Solution.Workspace)
+            projectCache.SingleFileProjectTable.[projectId] <- (loadTime, options)
+            return options
+        | None ->
+            match self.TryGetOptionsForProject projectId with
+            | Some options ->
+                return options
+            | None ->
+                return! None
+    }
+
+    member this.GetProjectReferenceInfo (hierarchy:IVsHierarchy) =
+        let solution = ServiceProvider.GlobalProvider.GetService<SVsSolution,IVsSolution>()
+        (hierarchy.GetReferencedProjects ()) |> Seq.choose (fun proj ->
+            match solution.GetProjectOfUniqueName proj.UniqueName with
+            | VSConstants.S_OK, hierarchy -> Some (proj, hierarchy, hierarchy.TryGetProjectGuid()) | _ -> None
+        )
+        
+    
+    //member this.GetProjectHierarchyPairs (hierarchy:IVsHierarchy) =
+    //    getProjectHierarchyPairs (hierarchy.GetReferencedProjects ()) 
+
     member this.AddSingleFileProject(projectId, timeStampAndOptions) =
         projectCache.AddSingleFileProject(projectId,timeStampAndOptions) |> Async.Start
 
@@ -77,6 +171,8 @@ type internal ProjectInfoManager [<ImportingConstructor>]
     member this.AddProject (project:Project) =
         projectCache.AddProject project |> Async.Start
 
+
+    member this.SingleFileProjectTable = projectCache.SingleFileProjectTable
 
     member this.AddProject (projectId:ProjectId) =
         projectCache.AddProject projectId |> Async.Start
@@ -91,10 +187,9 @@ type internal ProjectInfoManager [<ImportingConstructor>]
         projectCache.RemoveProject projectId |> Async.Start
 
         
-    /// Get the exact options for a single-file script
-    member this.ComputeSingleFileOptions (fileName) = 
-        projectCache.ComputeSingleFileOptions fileName
-    
+    ///// Get the exact options for a single-file script
+    //member this.ComputeSingleFileOptions (fileName, loadTime, fileContents,solution,hierarchy, workspace: Workspace) =
+    //    projectCache.ComputeSingleFileOptions (fileName, loadTime, fileContents, solution,hierarchy,workspace)
 
     /// Update the info for a project in the project table
     member this.UpdateProjectInfo (projectId: ProjectId) =
@@ -113,12 +208,12 @@ type internal ProjectInfoManager [<ImportingConstructor>]
         CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, otherOptions)
 
     /// Get the options for a project
-    member this.TryGetOptionsForProject(projectId: ProjectId) = 
+    member this.TryGetOptionsForProject(projectId: ProjectId) : FSharpProjectOptions option = 
         projectCache.TryGetOptions projectId
 
-    /// Get the exact options for a document or project
-    member this.TryGetOptionsForDocumentOrProject(document: Document) =
-        projectCache.TryGetOptionsForDocumentOrProject document
+    ///// Get the exact options for a document or project
+    //member this.TryGetOptionsForDocumentOrProject(document: Document) =
+    //    projectCache.TryGetOptionsForDocumentOrProject document
         
 
     /// Get the options for a document or project relevant for syntax processing.
@@ -207,9 +302,10 @@ and
     [<ProvideEditorExtension (FSharpConstants.editorFactoryGuidString, ".fsscript", 97)>]
     [<ProvideEditorExtension (FSharpConstants.editorFactoryGuidString, ".ml", 97)>]
     [<ProvideEditorExtension (FSharpConstants.editorFactoryGuidString, ".mli", 97)>]
-    internal FSharpLanguageService (package:FSharpPackage) =
+    internal FSharpLanguageService (package:FSharpPackage) as self =
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
 
+    let workspace = package.Workspace
     let projectInfoManager = package.ComponentModel.DefaultExportProvider.GetExport<ProjectInfoManager>().Value
     let mutable projectTracker = Unchecked.defaultof<_>
 
@@ -217,15 +313,17 @@ and
         if String.IsNullOrWhiteSpace projectFileName then projectFileName
         else Path.GetFileNameWithoutExtension projectFileName
     
-    let getReferenceGuids (references:EnvDTE.Project seq) =
-        let solution = package.GetService<SVsSolution,IVsSolution>()
-        references |> Seq.choose (fun proj ->
-            match solution.GetProjectOfUniqueName proj.UniqueName with
-            | VSConstants.S_OK, hierarchy -> Some hierarchy | _ -> None
-        )|> Seq.choose (fun hier -> hier.TryGetProjectGuid())
+    let singleFileProjects = ConcurrentDictionary<_, AbstractProject>()
+
+    let tryRemoveSingleFileProject projectId =
+        match singleFileProjects.TryRemove(projectId) with
+        | true, project ->
+            projectInfoManager.RemoveSingleFileProject(projectId)
+            project.Disconnect()
+        | _ -> ()
 
 
-    member self.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, hierarchy:IVsHierarchy, forceUpdate) = async {
+    let syncProject (project: AbstractProject, projectContext: IWorkspaceProjectContext, hierarchy:IVsHierarchy, forceUpdate) = async {
         let hashSetIgnoreCase x = new HashSet<string>(x, StringComparer.OrdinalIgnoreCase)
         let updatedFiles = hierarchy.GetFilesOnDisk () |> hashSetIgnoreCase
         let workspaceFiles = project.GetCurrentDocuments() |> Seq.map(fun file -> file.FilePath) |> hashSetIgnoreCase
@@ -243,24 +341,55 @@ and
                 updated <- true
     }
 
+    let rec setup (projectDisplayName, projectFileName, projectId:ProjectId,hierarchy) = async {
+        if isNull (workspace.ProjectTracker.GetProject projectId) then
+            projectInfoManager.UpdateProjectInfo projectId
+            let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>()
+            let errorReporter = ProjectExternalErrorReporter (projectId, "FS", self.SystemServiceProvider)
+            
+            let projectContext = 
+                projectContextFactory.CreateProjectContext(
+                    FSharpConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectId.Id, hierarchy, null, errorReporter
+                )
+            let project = projectContext :?> AbstractProject
+            do! syncProject (project, projectContext, hierarchy, false) 
+
+            projectInfoManager.GetProjectReferenceInfo hierarchy 
+            |> Seq.iter (fun (proj,hier,guid) ->
+                let projRef = 
+                    match guid with
+                    | Some guid -> ProjectId.CreateFromSerialized guid |> ProjectReference
+                    | None -> ProjectId.CreateNewId () |> ProjectReference
+                project.AddProjectReference projRef
+                let projFileName = defaultArg (hierarchy.TryGetFilePath ()) proj.FullName
+                let projDisplayName = projectDisplayNameOf projectFileName
+                setup (projDisplayName,projFileName, projRef.ProjectId,hier )|> Async.Start
+            )
+        projectInfoManager.AddProject projectId
+    }
+    
+
+    /// Get the exact options for a single-file script
+    member __.ComputeSingleFileOptions (fileName, loadTime, fileContents, hierarchy, workspace: Workspace) = async {
+        let extraProjectInfo = Some (box workspace)
+        if SourceFile.MustBeSingleFileProject fileName then 
+        //if isScriptFile fileName then 
+            let! _options, _diagnostics = projectInfoManager.Checker.GetProjectOptionsFromScript (fileName, fileContents, loadTime, [| |], ?extraProjectInfo=extraProjectInfo) 
+            //ProjectOptionsCache.fsxProjectOptions fileName (Some workspace)
+            return projectInfoManager.GetProjectOptionsForProjectSite ( fileName, loadTime,hierarchy,extraProjectInfo)
+        else
+            //ProjectOptionsCache.singleFileProjectOptions fileName
+            return projectInfoManager.GetProjectOptionsForProjectSite ( fileName, loadTime,hierarchy, extraProjectInfo)
+    }
+
 
     member self.SetupProjectFile (hierarchy:IVsHierarchy) = 
         asyncMaybe {
-            let! projectGuid = hierarchy.TryGetProjectGuid ()
             let! projectFileName = hierarchy.TryGetFilePath ()
             let projectDisplayName = projectDisplayNameOf projectFileName
             let projectId = self.Workspace.ProjectTracker.GetOrCreateProjectIdForPath (projectFileName, projectDisplayName)
-            let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>()
-            let errorReporter = ProjectExternalErrorReporter (projectId, "FS", self.SystemServiceProvider)
-            let projectContext = 
-                projectContextFactory.CreateProjectContext(
-                    FSharpConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectGuid, hierarchy, null, errorReporter
-                )
-            let project = projectContext :?> AbstractProject
-            do! self.SyncProject(project, projectContext, hierarchy, forceUpdate=false) |> liftAsync
-            hierarchy.GetReferencedProjects () |> getReferenceGuids 
-            |> Seq.map (ProjectId.CreateFromSerialized>>ProjectReference) 
-            |> Seq.iter project.AddProjectReference
+
+            setup (projectDisplayName,projectFileName, projectId, hierarchy )|> Async.Start
         } |> Async.Ignore
         
 
@@ -273,7 +402,7 @@ and
         projectTracker <- self.Workspace.GetProjectTrackerAndInitializeIfNecessary self.SystemServiceProvider
 
         self.Workspace.DocumentClosed.Add (fun args ->
-            projectInfoManager.RemoveSingleFileProject args.Document.Project.Id 
+            tryRemoveSingleFileProject args.Document.Project.Id 
         )
         
         self.Workspace.WorkspaceChanged |> Observable.add (fun args ->
@@ -309,15 +438,21 @@ and
 
         let theme = package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
         theme.SetColors ()
+
+        let _projects = workspace.CurrentSolution.Projects |> Array.ofSeq
+        ()
      
 
-    member __.SetupStandAloneFile (fileName: string, workspace: VisualStudioWorkspaceImpl) =
+    member self.SetupStandAloneFile (fileName: string, fileContents: string, workspace: VisualStudioWorkspaceImpl) =
         let loadTime = DateTime.Now
-        let options = projectInfoManager.ComputeSingleFileOptions fileName
         let projectFileName = fileName
+        let options = ProjectOptionsCache.singleFileProjectOptions fileName
         let projectDisplayName = projectDisplayNameOf projectFileName
         let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
-        projectInfoManager.AddSingleFileProject (projectId, (loadTime, options))
+        self.ComputeSingleFileOptions (fileName, loadTime, fileContents,options, workspace)
+        |> Async.map (fun opts -> opts |> Option.iter (fun options ->
+            projectInfoManager.AddSingleFileProject (projectId, (loadTime, options)))
+        ) |> Async.Start
 
 
     member __.ProjectTracker = projectTracker
@@ -331,13 +466,21 @@ and
 
     override self.SetupNewTextView textView =
         base.SetupNewTextView textView
+        let textViewAdapter = package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
         match textView.GetBuffer () with
         | (VSConstants.S_OK, textLines) ->
             let filename = VsTextLines.GetFilename textLines
-            match VsRunningDocumentTable.FindDocumentWithoutLocking (package.RunningDocumentTable, filename) with
-            | Some (hier, _) -> self.SetupProjectFile hier |> Async.RunSynchronously
-            | _ -> ()
-            self.SetupStandAloneFile (filename, self.Workspace)
+            VsRunningDocumentTable.FindDocumentWithoutLocking (package.RunningDocumentTable, filename) 
+            |> Option.iter (fun (hier, _) -> 
+                hier.TryGetProject()
+                |> Option.iter (fun _project ->
+                    if not (isScriptFile filename) then 
+                        self.SetupProjectFile hier |> Async.Start //RunSynchronously
+                    else
+                        let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
+                        self.SetupStandAloneFile (filename,fileContents, self.Workspace)
+                )
+            )
         | _ -> ()
 
       

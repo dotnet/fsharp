@@ -7,6 +7,8 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 
 
 module internal ProjectOptionsCache =
+    open Microsoft.VisualStudio.Shell.Interop
+    open Microsoft.VisualStudio
 
     let toFSharpProjectOptions (workspace: Workspace) (projectTable:ConcurrentDictionary<ProjectId, FSharpProjectOptions>) (project:Project): FSharpProjectOptions =
         let loadTime = System.DateTime.Now
@@ -89,6 +91,7 @@ module internal ProjectOptionsCache =
 
 
 
+open ProjectOptionsCache
 
 type internal ProjectOptionsCache (checker:FSharpChecker, workspace: Workspace) =
    
@@ -102,8 +105,9 @@ type internal ProjectOptionsCache (checker:FSharpChecker, workspace: Workspace) 
     let toFSharpProjectOptions = ProjectOptionsCache.toFSharpProjectOptions workspace projectTable
 
 
-    member __.TryGetOptions (projectId:ProjectId) = tryGet projectId projectTable
+    member __.TryGetOptions (projectId:ProjectId) = tryGet projectId projectTable : FSharpProjectOptions option
 
+    member __.ProjectTable = projectTable 
 
     member this.AddSingleFileProject (projectId, timeStampAndOptions) = async {
         singleFileProjectTable.TryAdd (projectId, timeStampAndOptions) |> ignore
@@ -128,14 +132,19 @@ type internal ProjectOptionsCache (checker:FSharpChecker, workspace: Workspace) 
         singleFileProjectTable.TryRemove projectId |> ignore
     }
 
-
-    /// Get the exact options for a single-file script
-    member __.ComputeSingleFileOptions (fileName) = 
-        if isScriptFile fileName then 
-            ProjectOptionsCache.fsxProjectOptions fileName (Some workspace)
-        else
-            ProjectOptionsCache.singleFileProjectOptions fileName
-    
+    member __.SingleFileProjectTable = singleFileProjectTable
+    ///// Get the exact options for a single-file script
+    //member __.ComputeSingleFileOptions (fileName, loadTime, fileContents, workspace: Workspace) = async {
+    //    let extraProjectInfo = Some (box workspace)
+    //    if SourceFile.MustBeSingleFileProject fileName then 
+    //    //if isScriptFile fileName then 
+    //        let! _options, _diagnostics = checker.GetProjectOptionsFromScript (fileName, fileContents, loadTime, [| |], ?extraProjectInfo=extraProjectInfo) 
+    //        //ProjectOptionsCache.fsxProjectOptions fileName (Some workspace)
+    //        return getProjectOptionsForProjectSite ( fileName, loadTime,extraProjectInfo)
+    //    else
+    //        //ProjectOptionsCache.singleFileProjectOptions fileName
+    //        return getProjectOptionsForProjectSite ( fileName, loadTime, extraProjectInfo)
+    //}
 
     member self.UpdateProject (project:Project) = async {
         self.TryGetOptions project.Id |> Option.iter checker.InvalidateConfiguration
@@ -148,7 +157,7 @@ type internal ProjectOptionsCache (checker:FSharpChecker, workspace: Workspace) 
 
     member self.UpdateProject (projectId:ProjectId) = async {
         match workspace.CurrentSolution.TryGetProject projectId with
-        | None -> return () 
+        | None -> do! self.AddProject projectId
         | Some project -> do! self.UpdateProject project
     }
 
@@ -180,21 +189,27 @@ type internal ProjectOptionsCache (checker:FSharpChecker, workspace: Workspace) 
         CompilerEnvironment.GetCompilationDefinesForEditing (document.Name, otherOptions)
 
 
-    /// Get the exact options for a document or project
-    member self.TryGetOptionsForDocumentOrProject(document: Document) = async { 
-        let projectId = document.Project.Id
-        // The options for a single-file script project are re-requested each time the file is analyzed.  This is because the
-        // single-file project may contain #load and #r references which are changing as the user edits, and we may need to re-analyze
-        // to determine the latest settings.  FCS keeps a cache to help ensure these are up-to-date.
-        match tryGet projectId singleFileProjectTable with
-        | Some (loadTime,_) ->
-            let fileName = document.FilePath
-            let options = self.ComputeSingleFileOptions fileName
-            singleFileProjectTable.[projectId] <- (loadTime, options)
-            return Some options
-        | None ->
-            return self.TryGetOptions projectId
-    }
+    ///// Get the exact options for a document or project
+    //member self.TryGetOptionsForDocumentOrProject(document: Document) = asyncMaybe { 
+    //    let projectId = document.Project.Id
+    //    // The options for a single-file script project are re-requested each time the file is analyzed.  This is because the
+    //    // single-file project may contain #load and #r references which are changing as the user edits, and we may need to re-analyze
+    //    // to determine the latest settings.  FCS keeps a cache to help ensure these are up-to-date.
+    //    match tryGet projectId singleFileProjectTable with
+    //    | Some (loadTime,_) ->
+    //        let fileName = document.FilePath
+    //        let! cancellationToken = Async.CancellationToken |> liftAsync
+    //        let! sourceText = document.GetTextAsync(cancellationToken)
+    //        let! options = self.ComputeSingleFileOptions( fileName, loadTime,sourceText.ToString(), document.Project.Solution.Workspace)
+    //        singleFileProjectTable.[projectId] <- (loadTime, options)
+    //        return options
+    //    | None ->
+    //        match self.TryGetOptions projectId with
+    //        | Some options ->
+    //            return options
+    //        | None ->
+    //            return! None
+    //}
 
 
     /// Get the options for a document or project relevant for syntax processing.
