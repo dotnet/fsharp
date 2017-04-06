@@ -19,6 +19,23 @@ let isScriptFile (filePath:string) =
 /// Path combination operator
 let (</>) path1 path2 = Path.Combine (path1, path2) 
 
+/// Null checking pipe operator
+let (?>) value fn = if isNull value then () else fn value
+
+/// Null input checking function modifier, if the arg is null return unit
+/// otherwise pass the arg to the function being wrapped
+/// Best used with partially applied functions
+let (!?) fn = fun value -> if isNull value then () else fn value
+
+
+
+/// Get an option result from any type that has a TryGetValue method
+let inline tryGet key collection =
+    let mutable value = Unchecked.defaultof<'v>
+    let success = (^a : (member TryGetValue : 'k * ('v byref) -> bool) collection, key, &value)
+    if success then Some value else None
+
+
 type internal ISetThemeColors = abstract member SetColors: unit -> unit
 
 
@@ -228,9 +245,12 @@ type Async with
                     exceptionCont (TaskCanceledException ())
                 else successCont task.Result)
             |> ignore)    
-    static member RunTaskSynchronously task  = 
-        task |> Async.AwaitTask |> Async.RunSynchronously 
 
+    static member RunTaskSynchronously (task:Task<_>)  = 
+        task |> Async.AwaitTaskCorrect |> Async.RunSynchronously 
+    
+    static member RunTaskSynchronously (task:Task)  = 
+        task |> Async.AwaitTaskCorrect |> Async.RunSynchronously 
 
 type AsyncBuilder with
     member __.Bind(computation: System.Threading.Tasks.Task<'a>, binder: 'a -> Async<'b>): Async<'b> =

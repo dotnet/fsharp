@@ -5,6 +5,7 @@ module internal Microsoft.VisualStudio.FSharp.Editor.Extensions
 
 open System
 open System.IO
+open System.Runtime.CompilerServices
 open Microsoft.CodeAnalysis
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.SourceCodeServices
@@ -19,11 +20,16 @@ type Path with
         try Path.GetFileName path
         with _ -> path
 
-
 type System.IServiceProvider with
     member x.GetService<'T>() = x.GetService(typeof<'T>) :?> 'T
     member x.GetService<'S, 'T>() = x.GetService(typeof<'S>) :?> 'T
 
+
+
+type [<Extension>] SRTPExtension () =
+    /// SRTP Extension method that is added to any type that implements a TryGetValue method
+    /// returns an option instead
+    [<Extension>] static member inline TryGet (collection, key) = tryGet key collection
 
 type FSharpNavigationDeclarationItem with
     member x.RoslynGlyph : Glyph =
