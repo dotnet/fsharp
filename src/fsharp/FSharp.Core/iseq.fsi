@@ -12,9 +12,6 @@ namespace Microsoft.FSharp.Collections
   [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
   module ISeq =
     module Core =
-        [<Struct; NoComparison; NoEquality>]
-        type NoValue = struct end
-
         /// Values is a mutable struct. It can be embedded within the folder type
         /// if two values are required for the calculation.
         [<Struct; NoComparison; NoEquality>]
