@@ -133,84 +133,81 @@ namespace Microsoft.FSharp.Collections.SeqComposition
     [<Struct; NoComparison; NoEquality>]
     type NoValue = struct end
 
-  module internal Internal =
-    [<Class>]
-    type IdentityFactory<'T> =
-        inherit TransformFactory<'T,'T> 
-        static member Instance : TransformFactory<'T,'T> 
-
-    type ISkipable =
-        // Seq.init(Infinite)? lazily uses Current. The only ISeq component that can do that is Skip
-        // and it can only do it at the start of a sequence
-        abstract CanSkip : unit -> bool
-
-    val length : ISeq<'T> -> int
-
     [<AbstractClass>]
     type EnumerableBase<'T> =
         new : unit -> EnumerableBase<'T>
         abstract member Append : ISeq<'T> -> ISeq<'T>
         abstract member Length : unit -> int
-        interface IEnumerable
-        interface IEnumerable<'T>
         interface ISeq<'T>
 
-    type ThinConcatEnumerable<'T, 'Sources, 'Collection when 'Collection :> ISeq<'T>> =
+    [<Class>]
+    type internal IdentityFactory<'T> =
+        inherit TransformFactory<'T,'T> 
+        static member Instance : TransformFactory<'T,'T> 
+
+    type internal ISkipable =
+        // Seq.init(Infinite)? lazily uses Current. The only ISeq component that can do that is Skip
+        // and it can only do it at the start of a sequence
+        abstract CanSkip : unit -> bool
+
+    val internal length : ISeq<'T> -> int
+
+    type internal ThinConcatEnumerable<'T, 'Sources, 'Collection when 'Collection :> ISeq<'T>> =
         inherit EnumerableBase<'T>
         new : 'Sources * ('Sources->ISeq<'Collection>) -> ThinConcatEnumerable<'T, 'Sources, 'Collection>
         interface ISeq<'T>
 
-    type AppendEnumerable<'T> =
+    type internal AppendEnumerable<'T> =
         inherit ThinConcatEnumerable<'T, list<ISeq<'T>>, ISeq<'T>>
         new : list<ISeq<'T>> -> AppendEnumerable<'T>
         override Append : ISeq<'T> -> ISeq<'T>
 
-    type ThinListEnumerable<'T> =
+    type internal ThinListEnumerable<'T> =
         inherit EnumerableBase<'T>
         new : list<'T> -> ThinListEnumerable<'T>
         interface ISeq<'T>
 
-    type ThinResizeArrayEnumerable<'T> =
+    type internal ThinResizeArrayEnumerable<'T> =
         inherit EnumerableBase<'T>
         new : ResizeArray<'T> -> ThinResizeArrayEnumerable<'T>
         interface ISeq<'T>
 
-    type ThinArrayEnumerable<'T> =
+    type internal ThinArrayEnumerable<'T> =
         inherit EnumerableBase<'T>
         new : array<'T> -> ThinArrayEnumerable<'T>
         interface ISeq<'T>
 
-    type ThinEnumerable<'T> =
+    type internal ThinEnumerable<'T> =
         inherit EnumerableBase<'T>
         new : IEnumerable<'T> -> ThinEnumerable<'T>
         interface ISeq<'T>
 
-    type UnfoldEnumerable<'T,'U,'GeneratorState> =
+    type internal UnfoldEnumerable<'T,'U,'GeneratorState> =
         inherit EnumerableBase<'U>
         new : ('GeneratorState->option<'T*'GeneratorState>)*'GeneratorState*TransformFactory<'T,'U>*PipeIdx -> UnfoldEnumerable<'T,'U,'GeneratorState>
         interface ISeq<'U>
 
-    type InitEnumerableDecider<'T> =
+    type internal InitEnumerableDecider<'T> =
         inherit EnumerableBase<'T>
         new : Nullable<int>* (int->'T) * PipeIdx -> InitEnumerableDecider<'T>
         interface ISeq<'T>
         
-    type SingletonEnumerable<'T> =
+    type internal SingletonEnumerable<'T> =
         inherit EnumerableBase<'T>
         new : 'T -> SingletonEnumerable<'T>
         interface ISeq<'T>
 
-    type InitEnumerable<'T,'U> =
+    type internal InitEnumerable<'T,'U> =
         inherit EnumerableBase<'U>
         new : Nullable<int> * (int->'T) * TransformFactory<'T,'U> * PipeIdx -> InitEnumerable<'T,'U>
         interface ISeq<'U>
 
-    type DelayedEnumerable<'T> =
+    type internal DelayedEnumerable<'T> =
         inherit EnumerableBase<'T>
         new : (unit->ISeq<'T>) * PipeIdx -> DelayedEnumerable<'T>
         interface ISeq<'T>
 
-    type EmptyEnumerable<'T> =
+    type internal EmptyEnumerable<'T> =
         inherit EnumerableBase<'T>
         private new : unit -> EmptyEnumerable<'T>
         static member Instance : ISeq<'T>
@@ -285,6 +282,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
     [<AbstractClass>]
     /// <summary>The F# compiler emits implementations of this type for compiled sequence expressions.</summary>
     type GeneratedSequenceBase<'T> =
+        inherit SeqComposition.Core.EnumerableBase<'T>
         /// <summary>The F# compiler emits implementations of this type for compiled sequence expressions.</summary>
         ///
         /// <returns>A new sequence generator for the expression.</returns>

@@ -202,9 +202,6 @@ namespace Microsoft.FSharp.Collections.SeqComposition
     [<Struct; NoComparison; NoEquality>]
     type NoValue = struct end
 
-  module internal Internal =
-    open Core
-
     module internal Upcast =
         // The f# compiler outputs unnecessary unbox.any calls in upcasts. If this functionality
         // is fixed with the compiler then these functions can be removed.
@@ -1052,7 +1049,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
     open System.Collections
     open System.Collections.Generic
     open Microsoft.FSharp.Collections.SeqComposition
-    open Microsoft.FSharp.Collections.SeqComposition.Internal
+    open Microsoft.FSharp.Collections.SeqComposition.Core
 
     module RuntimeHelpers =
 
@@ -1259,6 +1256,8 @@ namespace Microsoft.FSharp.Core.CompilerServices
 
     [<AbstractClass>]
     type GeneratedSequenceBase<'T>() =
+        inherit EnumerableBase<'T>()
+
         let mutable redirectTo : GeneratedSequenceBase<'T> = Unchecked.defaultof<_>
         let mutable redirect : bool = false
 
@@ -1320,20 +1319,29 @@ namespace Microsoft.FSharp.Core.CompilerServices
                 try
                     use maybeGeneratedSequenceBase = this.GetFreshEnumerator ()
                     match maybeGeneratedSequenceBase with
-                    | :? GeneratedSequenceBase<'T> as optimized ->
-                        // avoids two virtual function calls
-                        // FUTURE OPTIMIZATION: Store Current element in this class so it can be accessed non-virtual
-                        while result.HaltedIdx = 0 && optimized.MoveNextImpl () do
-                            result.ProcessNext (optimized.GetCurrent ()) |> ignore
-                    | standard ->
-                        // this path shouldn't occur, as GetFreshEnumerator should return a GeneratedSequenceBase<'T> derived class
-                        while result.HaltedIdx = 0 && standard.MoveNext () do
-                            result.ProcessNext standard.Current |> ignore
+                    | :? GeneratedSequenceBase<'T> as e -> // avoids two virtual function calls
+                        while result.HaltedIdx = 0 && e.MoveNextImpl () do
+                            result.ProcessNext (e.GetCurrent ()) |> ignore 
+                    | e ->
+                        while result.HaltedIdx = 0 && e.MoveNext () do
+                            result.ProcessNext e.Current |> ignore
 
                     result.ChainComplete result.HaltedIdx
                     result.Result
                 finally
                     result.ChainDispose ()
+
+        override this.Length () =
+            use maybeGeneratedSequenceBase = this.GetFreshEnumerator ()
+            let mutable count = 0
+            match maybeGeneratedSequenceBase with
+            | :? GeneratedSequenceBase<'T> as e ->
+                while e.MoveNextImpl () do
+                    count <- count + 1
+            | e ->
+                while e.MoveNext () do
+                    count <- count + 1
+            count
 
     and GeneratedSequenceBaseEnumerable<'T,'U>(generatedSequence:GeneratedSequenceBase<'T>, current:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
         inherit EnumerableBase<'U>()
@@ -1353,15 +1361,12 @@ namespace Microsoft.FSharp.Core.CompilerServices
                 try
                     use maybeGeneratedSequenceBase = generatedSequence.GetFreshEnumerator ()
                     match maybeGeneratedSequenceBase with
-                    | :? GeneratedSequenceBase<'T> as optimized ->
-                        // avoids two virtual function calls
-                        // FUTURE OPTIMIZATION: Store Current element in this class so it can be accessed non-virtual
-                        while result.HaltedIdx = 0 && optimized.MoveNextImpl () do
-                            consumer.ProcessNext (optimized.GetCurrent ()) |> ignore
-                    | standard ->
-                        // this path shouldn't occur, as GetFreshEnumerator should return a GeneratedSequenceBase<'T> derived class
-                        while result.HaltedIdx = 0 && standard.MoveNext () do
-                            consumer.ProcessNext standard.Current |> ignore
+                    | :? GeneratedSequenceBase<'T> as e ->
+                        while result.HaltedIdx = 0 && e.MoveNextImpl () do
+                            consumer.ProcessNext (e.GetCurrent ()) |> ignore
+                    | e ->
+                        while result.HaltedIdx = 0 && e.MoveNext () do
+                            consumer.ProcessNext e.Current |> ignore
 
                     consumer.ChainComplete result.HaltedIdx
                     result.Result
