@@ -2,7 +2,6 @@
 
 open System
 open System.Collections.Concurrent
-open System.ComponentModel
 open System.ComponentModel.Composition
 open System.Reflection
 open System.Runtime.InteropServices
@@ -17,56 +16,51 @@ module internal SettingsPersistence =
     // This cache is updated by the SettingsStore when the user changes an option.
     let private cache = ConcurrentDictionary<Type, obj>()
 
-    let getCachedSettings() =
+    let getSettings() =
         match cache.TryGetValue(typeof<'t>) with
         | true, value -> value :?> 't
-        | _ -> failwithf "Setting %s is not registered." typeof<'t>.Name
+        | _ -> failwithf "Settings %s are not registered." typeof<'t>.Name
 
+    let setSettings( settings: 't) =
+        cache.[typeof<'t>] <- settings
 
     [<Guid(Guids.svsSettingsPersistenceManagerIdString)>]
     type SVsSettingsPersistenceManager = class end
 
-    type IRegisterSettings = abstract member RegisterSetting : 't -> unit
-    type ISettingsToRegister = abstract member RegisterAll: IRegisterSettings -> unit
+    // marker interface for default settings export
+    type ISettings = interface end
 
     [<Export>]
     type SettingsStore
         [<ImportingConstructor>]
         (
             [<Import(typeof<SVsServiceProvider>)>] 
-            serviceProvider: IServiceProvider,
-            settingsToRegister: ISettingsToRegister
-        ) as this =
-
-        let settingsManager = serviceProvider.GetService(typeof<SVsSettingsPersistenceManager>) :?> ISettingsManager   
+            serviceProvider: IServiceProvider
+        ) =
+        let settingsManager = serviceProvider.GetService(typeof<SVsSettingsPersistenceManager>) :?> ISettingsManager
 
         // settings quallified type names are used as keys, this should be enough to avoid collisions
         let storageKey (typ: Type) = typ.Namespace + "." + typ.Name
 
-        let register(defaultValue: 't) =
-            let key = storageKey typeof<'t>
-            let refresh () = cache.[typeof<'t>] <- settingsManager.GetValueOrDefault(key, defaultValue)
-            let subset = settingsManager.GetSubset(key)
-            subset.add_SettingChangedAsync 
-            <| PropertyChangedAsyncEventHandler (fun _ _ ->
-                    refresh()
+        let ensureTrackingChanges (settings: 't) =
+            if not (cache.ContainsKey typeof<'t>) then
+                let key = storageKey typeof<'t>
+                settingsManager.GetValueOrDefault(key, settings) |> setSettings
+                let subset = settingsManager.GetSubset(key)
+                subset.add_SettingChangedAsync 
+                <| PropertyChangedAsyncEventHandler (fun _ _ ->
+                    settingsManager.GetValueOrDefault(key, getSettings()) |> setSettings
                     System.Threading.Tasks.Task.CompletedTask )
-            refresh()
-
-        do  settingsToRegister.RegisterAll(this)
 
         member this.LoadSettings() : 't =
-            let result, (value: 't) = settingsManager.TryGetValue(storageKey typeof<'t>)
-            if result = GetValueResult.Success then cache.[typeof<'t>] <- value
-            getCachedSettings()
+            let result, (settings: 't) = settingsManager.TryGetValue(storageKey typeof<'t>)
+            if result = GetValueResult.Success then
+                setSettings settings
+            getSettings()
 
-        member this.SaveSettings( settings: 't) =
-            cache.[typeof<'t>] <- settings
+        member this.SaveSettings(settings: 't) =
             settingsManager.SetValueAsync(storageKey typeof<'t>, settings, false)
             |> Async.AwaitTask |> Async.StartImmediate
 
-        interface IRegisterSettings with
-            member __.RegisterSetting(defaultValue: 't) = register defaultValue
-            
-
-
+        member __.RegisterDefault(defaultValue: 't) =
+            ensureTrackingChanges defaultValue

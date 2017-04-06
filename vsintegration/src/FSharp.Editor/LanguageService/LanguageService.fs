@@ -213,8 +213,8 @@ type
 
     override this.Initialize() =
         base.Initialize()
-        //make sure incoming settings changes are handled
-        this.ComponentModel.GetService<SettingsPersistence.SettingsStore>() |> ignore
+        //initialize settings
+        this.ComponentModel.GetService<SettingsPersistence.ISettings>() |> ignore
 
     override this.RoslynLanguageName = FSharpConstants.FSharpLanguageName
 

@@ -16,25 +16,27 @@ type IntelliSenseOptions =
 [<RequireQualifiedAccess>]
 type QuickInfoUnderlineStyle = Dot | Dash | Solid
 
-//autoproperties can be used to both define defaults and faciliate data binding in WPF controls,
-//but the type should otherwise be treated as immutable.
+// autoproperties can be used to both define defaults and faciliate data binding in WPF controls,
+// but the type should otherwise be treated as immutable.
 type QuickInfoOptions() =
     member val DisplayLinks = true with get, set
     member val UnderlineStyle = QuickInfoUnderlineStyle.Solid with get, set
 
-type internal Settings =
-    static member IntelliSense : IntelliSenseOptions = getCachedSettings()
-    static member QuickInfo : QuickInfoOptions = getCachedSettings()
+[<Export(typeof<ISettings>)>]
+type internal Settings [<ImportingConstructor>](store: SettingsStore) =
+    do  // Initialize default settings
+        
+        { ShowAfterCharIsTyped = true
+          ShowAfterCharIsDeleted = false }
+        |> store.RegisterDefault
 
-[<Export(typeof<ISettingsToRegister>)>]
-type private Registration() =
-    interface ISettingsToRegister with 
-        /// Provides default settings values 
-        /// and registers settings to be tracked for updates
-        member __.RegisterAll (store: IRegisterSettings) =
-            { ShowAfterCharIsTyped = true
-              ShowAfterCharIsDeleted = false } |> store.RegisterSetting
-            QuickInfoOptions() |> store.RegisterSetting
+        QuickInfoOptions() 
+        |> store.RegisterDefault
+
+    interface ISettings
+
+    static member IntelliSense : IntelliSenseOptions = getSettings()
+    static member QuickInfo : QuickInfoOptions = getSettings()
 
 module internal OptionsUI =
 
@@ -57,5 +59,3 @@ module internal OptionsUI =
             bindRadioButton view.dash path QuickInfoUnderlineStyle.Dash
             bindCheckBox view.displayLinks "DisplayLinks"
             upcast view
-
-

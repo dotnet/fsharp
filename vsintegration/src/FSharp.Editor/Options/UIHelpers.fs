@@ -1,7 +1,6 @@
 ﻿namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.ComponentModel
 open System.Windows
 open System.Windows.Data
 open System.Windows.Markup
@@ -22,8 +21,9 @@ module internal OptionsUIHelpers =
         
         let store =
             lazy
-                //this apparently requires UI thread
                 let scm = this.Site.GetService(typeof<SComponentModel>) :?> IComponentModel
+                // make sure settings are initialized to default values
+                scm.GetService<ISettings>() |> ignore
                 scm.GetService<SettingsStore>()
 
         abstract CreateView : unit -> FrameworkElement
