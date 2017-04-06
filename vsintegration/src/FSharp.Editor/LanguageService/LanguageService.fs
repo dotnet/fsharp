@@ -225,7 +225,7 @@ and
         )|> Seq.choose (fun hier -> hier.TryGetProjectGuid())
 
 
-    member self.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, hierarchy:IVsHierarchy, forceUpdate) =
+    member self.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, hierarchy:IVsHierarchy, forceUpdate) = async {
         let hashSetIgnoreCase x = new HashSet<string>(x, StringComparer.OrdinalIgnoreCase)
         let updatedFiles = hierarchy.GetFilesOnDisk () |> hashSetIgnoreCase
         let workspaceFiles = project.GetCurrentDocuments() |> Seq.map(fun file -> file.FilePath) |> hashSetIgnoreCase
@@ -241,10 +241,11 @@ and
             if not (updatedFiles.Contains file) then
                 projectContext.RemoveSourceFile file
                 updated <- true
+    }
 
 
     member self.SetupProjectFile (hierarchy:IVsHierarchy) = 
-        maybe {
+        asyncMaybe {
             let! projectGuid = hierarchy.TryGetProjectGuid ()
             let! projectFileName = hierarchy.TryGetFilePath ()
             let projectDisplayName = projectDisplayNameOf projectFileName
@@ -256,11 +257,11 @@ and
                     FSharpConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectGuid, hierarchy, null, errorReporter
                 )
             let project = projectContext :?> AbstractProject
-            self.SyncProject(project, projectContext, hierarchy, forceUpdate=false)
+            do! self.SyncProject(project, projectContext, hierarchy, forceUpdate=false) |> liftAsync
             hierarchy.GetReferencedProjects () |> getReferenceGuids 
             |> Seq.map (ProjectId.CreateFromSerialized>>ProjectReference) 
             |> Seq.iter project.AddProjectReference
-        } |> ignore
+        } |> Async.Ignore
         
 
     override self.Initialize () =
@@ -295,14 +296,14 @@ and
             | _ -> ()
         )
 
-        let rec setupProjectsAfterSolutionOpen () = async {
+        let setupProjectsAfterSolutionOpen () = async {
             // waits for AfterOpenSolution and then starts projects setup
             do! Async.AwaitEvent Events.SolutionEvents.OnAfterOpenSolution |> Async.Ignore
             use _ = Events.SolutionEvents.OnAfterOpenProject |> Observable.subscribe ( fun args ->
-                self.SetupProjectFile args.Hierarchy 
+                self.SetupProjectFile args.Hierarchy |> Async.Start
             )
             do! Async.AwaitEvent Events.SolutionEvents.OnAfterCloseSolution |> Async.Ignore
-            do! setupProjectsAfterSolutionOpen () 
+            //do! setupProjectsAfterSolutionOpen () 
         }
         setupProjectsAfterSolutionOpen () |> Async.StartImmediate
 
@@ -334,7 +335,7 @@ and
         | (VSConstants.S_OK, textLines) ->
             let filename = VsTextLines.GetFilename textLines
             match VsRunningDocumentTable.FindDocumentWithoutLocking (package.RunningDocumentTable, filename) with
-            | Some (hier, _) -> self.SetupProjectFile hier
+            | Some (hier, _) -> self.SetupProjectFile hier |> Async.RunSynchronously
             | _ -> ()
             self.SetupStandAloneFile (filename, self.Workspace)
         | _ -> ()
