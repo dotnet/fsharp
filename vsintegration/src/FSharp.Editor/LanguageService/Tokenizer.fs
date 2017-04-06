@@ -23,6 +23,7 @@ type internal LexerSymbolKind =
     | Punctuation
     | GenericTypeParameter
     | StaticallyResolvedTypeParameter
+    | ActivePattern
     | Other
 
 type internal LexerSymbol =
@@ -393,7 +394,7 @@ module internal Tokenizer =
         let isOperator t = t.ColorClass = FSharpTokenColorKind.Operator
         let isPunctuation t = t.ColorClass = FSharpTokenColorKind.Punctuation
     
-        let inline (|GenericTypeParameterPrefix|StaticallyResolvedTypeParameterPrefix|Other|) (token: FSharpTokenInfo) =
+        let inline (|GenericTypeParameterPrefix|StaticallyResolvedTypeParameterPrefix|ActivePattern|Other|) (token: FSharpTokenInfo) =
             if token.Tag = FSharpTokenTag.QUOTE then GenericTypeParameterPrefix
             elif token.Tag = FSharpTokenTag.INFIX_AT_HAT_OP then
                     // The lexer return INFIX_AT_HAT_OP token for both "^" and "@" symbols.
@@ -401,6 +402,10 @@ module internal Tokenizer =
                     if token.FullMatchedLength = 1 && lineStr.[token.LeftColumn] = '^' then 
                         StaticallyResolvedTypeParameterPrefix
                     else Other
+            elif token.Tag = FSharpTokenTag.LPAREN then
+                if token.FullMatchedLength = 1 && lineStr.[token.LeftColumn+1] = '|' then
+                    ActivePattern
+                else Other
             else Other
        
         // Operators: Filter out overlapped operators (>>= operator is tokenized as three distinct tokens: GREATER, GREATER, EQUALS. 
@@ -419,11 +424,21 @@ module internal Tokenizer =
             |> List.foldi (fun (acc, lastToken) index (token: FSharpTokenInfo) ->
                 match lastToken with
                 | Some t when token.LeftColumn <= t.RightColumn -> acc, lastToken
+                | Some ({ Kind = LexerSymbolKind.ActivePattern } as lastToken) when 
+                    token.Tag = FSharpTokenTag.BAR || token.Tag = FSharpTokenTag.IDENT || token.Tag = FSharpTokenTag.UNDERSCORE ->
+                    
+                    let mergedToken =
+                        {lastToken.Token with Tag = FSharpTokenTag.IDENT
+                                                    RightColumn = token.RightColumn
+                                                    FullMatchedLength = lastToken.Token.FullMatchedLength + token.FullMatchedLength }
+
+                    acc, Some { lastToken with Token = mergedToken; RightColumn = lastToken.RightColumn + token.FullMatchedLength }
                 | _ ->
                     let isLastToken = index = tokensCount - 1
                     match token with
                     | GenericTypeParameterPrefix when not isLastToken -> acc, Some (DraftToken.Create LexerSymbolKind.GenericTypeParameter token)
                     | StaticallyResolvedTypeParameterPrefix when not isLastToken -> acc, Some (DraftToken.Create LexerSymbolKind.StaticallyResolvedTypeParameter token)
+                    | ActivePattern -> acc, Some (DraftToken.Create LexerSymbolKind.ActivePattern token)
                     | _ ->
                         let draftToken =
                             match lastToken with
@@ -434,6 +449,8 @@ module internal Tokenizer =
                             | Some { Kind = LexerSymbolKind.StaticallyResolvedTypeParameter } ->
                                 DraftToken.Create LexerSymbolKind.Operator { token with LeftColumn = token.LeftColumn - 1
                                                                                         FullMatchedLength = 1 }
+                            | Some ( { Kind = LexerSymbolKind.ActivePattern } as ap) when token.Tag = FSharpTokenTag.RPAREN ->
+                                DraftToken.Create LexerSymbolKind.Ident ap.Token
                             | _ -> 
                                 let kind = 
                                     if isOperator token then LexerSymbolKind.Operator 
@@ -459,7 +476,8 @@ module internal Tokenizer =
         tokensUnderCursor
         |> List.tryFind (fun { DraftToken.Kind = k } -> 
             match k with 
-            | LexerSymbolKind.Ident 
+            | LexerSymbolKind.Ident
+            | LexerSymbolKind.ActivePattern
             | LexerSymbolKind.GenericTypeParameter 
             | LexerSymbolKind.StaticallyResolvedTypeParameter -> true 
             | _ -> false) 
@@ -582,7 +600,7 @@ module internal Tokenizer =
         | LexerSymbolKind.Punctuation, _ -> PrettyNaming.IsPunctuation name
         | LexerSymbolKind.GenericTypeParameter, _ -> isGenericTypeParameter name
         | LexerSymbolKind.StaticallyResolvedTypeParameter, _ -> isStaticallyResolvedTypeParameter name
-        | (LexerSymbolKind.Ident | LexerSymbolKind.Other), _ ->
+        | (LexerSymbolKind.Ident | LexerSymbolKind.ActivePattern | LexerSymbolKind.Other), _ ->
             match symbol with
             | :? FSharpEntity as e when e.IsClass || e.IsFSharpRecord || e.IsFSharpUnion || e.IsValueType || e.IsFSharpModule || e.IsInterface -> isTypeNameIdent name
             | _ -> isFixableIdentifier name
