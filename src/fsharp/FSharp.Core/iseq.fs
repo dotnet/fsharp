@@ -14,6 +14,7 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Primitives.Basics
     open Microsoft.FSharp.Collections.SeqComposition
+    open Microsoft.FSharp.Collections.SeqComposition.Factories
     open Microsoft.FSharp.Collections.SeqComposition.Core
 
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
