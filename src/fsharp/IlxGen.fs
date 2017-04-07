@@ -3646,7 +3646,7 @@ and GenSequenceExpr cenv (cgbuf:CodeGenBuffer) eenvouter (nextEnumeratorValRef:V
         |> AddNonUserCompilerGeneratedAttribs cenv.g
 
     let ilCtorBody = 
-        mkILSimpleStorageCtor(None, Some ilCloBaseTy.TypeSpec, ilCloTyInner, [], ILMemberAccess.Assembly).MethodBody
+        mkILSimpleStorageCtor(None, Some ilCloBaseTy.TypeSpec, ilCloTyInner, [], [], ILMemberAccess.Assembly).MethodBody
 
     let attrs = GenAttrs cenv eenvinner cloAttribs
     let cloTypeDefs = GenClosureTypeDefs cenv (ilCloTypeRef,ilCloGenericParams,attrs,ilCloFreeVars,ilCloLambdas,ilCtorBody,[generateNextMethod;closeMethod;checkCloseMethod;lastGeneratedMethod;getFreshMethod],[],ilCloBaseTy,[])
@@ -4095,7 +4095,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_,delega
              ilDelegeeParams, 
              ilDelegeeRet,
              MethodBody.IL ilMethodBody)
-    let delegeeCtorMeth = mkILSimpleStorageCtor(None, Some cenv.g.ilg.typ_Object.TypeSpec, ilDelegeeTyInner, [], ILMemberAccess.Assembly)
+    let delegeeCtorMeth = mkILSimpleStorageCtor(None, Some cenv.g.ilg.typ_Object.TypeSpec, ilDelegeeTyInner, [], [], ILMemberAccess.Assembly)
     let ilCtorBody = delegeeCtorMeth.MethodBody
 
     let ilCloLambdas = Lambdas_return ilCtxtDelTy
@@ -6453,14 +6453,14 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
 
                  // No type spec if the record is a value type
                  let spec = if isStructRecord then None else Some(cenv.g.ilg.typ_Object.TypeSpec)
-                 let ilMethodDef = mkILSimpleStorageCtorWithParamNames(None, spec, ilThisTy, ChooseParamNames fieldNamesAndTypes, reprAccess)
+                 let ilMethodDef = mkILSimpleStorageCtorWithParamNames(None, spec, ilThisTy, [], ChooseParamNames fieldNamesAndTypes, reprAccess)
 
                  yield ilMethodDef 
                  // FSharp 1.0 bug 1988: Explicitly setting the ComVisible(true)  attribute on an F# type causes an F# record to be emitted in a way that enables mutation for COM interop scenarios
                  // FSharp 3.0 feature: adding CLIMutable to a record type causes emit of default constructor, and all fields get property setters
                  // Records that are value types do not create a default constructor with CLIMutable or ComVisible
                  if not isStructRecord && (isCLIMutable || (TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_ComVisibleAttribute tycon.Attribs = Some true)) then
-                     yield mkILSimpleStorageCtor(None, Some cenv.g.ilg.typ_Object.TypeSpec, ilThisTy, [], reprAccess) 
+                     yield mkILSimpleStorageCtor(None, Some cenv.g.ilg.typ_Object.TypeSpec, ilThisTy, [], [], reprAccess) 
                  
                  if not (tycon.HasMember cenv.g "ToString" []) then
                     yield! genToString ilThisTy
@@ -6626,9 +6626,14 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                     cudDebugDisplayAttributes= ilDebugDisplayAttributes
                     cudAlternatives= alternatives
                     cudWhere = None}
+               let layout = 
+                   if isStructTy cenv.g thisTy then 
+                       ILTypeDefLayout.Sequential { Size=None; Pack=None } 
+                   else 
+                       ILTypeDefLayout.Auto
                let tdef = 
                    { Name = ilTypeName
-                     Layout = ILTypeDefLayout.Auto
+                     Layout =  layout
                      Access = access
                      GenericParams = ilGenParams
                      CustomAttrs = 
@@ -6725,13 +6730,13 @@ and GenExnDef cenv mgbuf eenv m (exnc:Tycon) =
              |> List.unzip4
 
         let ilCtorDef = 
-            mkILSimpleStorageCtorWithParamNames(None, Some cenv.g.iltyp_Exception.TypeSpec, ilThisTy, ChooseParamNames fieldNamesAndTypes, reprAccess) 
+            mkILSimpleStorageCtorWithParamNames(None, Some cenv.g.iltyp_Exception.TypeSpec, ilThisTy, [], ChooseParamNames fieldNamesAndTypes, reprAccess) 
 
         // In compiled code, all exception types get a parameterless constructor for use with XML serialization
         // This does default-initialization of all fields
         let ilCtorDefNoArgs = 
             if not (isNil fieldNamesAndTypes) then 
-                [ mkILSimpleStorageCtor(None, Some cenv.g.iltyp_Exception.TypeSpec, ilThisTy, [], reprAccess) ]
+                [ mkILSimpleStorageCtor(None, Some cenv.g.iltyp_Exception.TypeSpec, ilThisTy, [], [], reprAccess) ]
             else
                 []
 

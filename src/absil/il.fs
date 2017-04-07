@@ -2616,9 +2616,9 @@ let emptyILMethodImpls =  mkILMethodImpls []
 // them in fields.  preblock is how to call the superclass constructor....
 // -------------------------------------------------------------------- 
 
-let mkILStorageCtorWithParamNames(tag,preblock,typ,flds,access) = 
+let mkILStorageCtorWithParamNames(tag,preblock,typ,extraParams,flds,access) = 
     mkILCtor(access,
-            flds |> List.map (fun (pnm,_,ty) -> mkILParamNamed (pnm,ty)),
+            (flds |> List.map (fun (pnm,_,ty) -> mkILParamNamed (pnm,ty))) @ extraParams,
             mkMethodBody
               (false,[],2,
                nonBranchingInstrsToCode
@@ -2632,22 +2632,22 @@ let mkILStorageCtorWithParamNames(tag,preblock,typ,flds,access) =
                      ])  flds)
                  end,tag))
     
-let mkILSimpleStorageCtorWithParamNames(tag,base_tspec,typ,flds,access) = 
+let mkILSimpleStorageCtorWithParamNames(tag,base_tspec,typ,extraParams,flds,access) = 
     let preblock = 
       match base_tspec with 
         None -> []
       | Some tspec -> 
           ([ mkLdarg0; 
              mkNormalCall (mkILCtorMethSpecForTy (mkILBoxedType tspec,[])) ])
-    mkILStorageCtorWithParamNames(tag,preblock,typ,flds,access)
+    mkILStorageCtorWithParamNames(tag,preblock,typ,extraParams,flds,access)
 
 let addParamNames flds = 
     flds |> List.map (fun (nm,ty) -> (nm,nm,ty))
 
-let mkILSimpleStorageCtor(tag,base_tspec,typ,flds,access) = 
-    mkILSimpleStorageCtorWithParamNames(tag,base_tspec,typ, addParamNames flds, access)
+let mkILSimpleStorageCtor(tag,base_tspec,typ,extraParams,flds,access) = 
+    mkILSimpleStorageCtorWithParamNames(tag,base_tspec,typ, extraParams, addParamNames flds, access)
 
-let mkILStorageCtor(tag,preblock,typ,flds,access) = mkILStorageCtorWithParamNames(tag,preblock,typ, addParamNames flds, access)
+let mkILStorageCtor(tag,preblock,typ,flds,access) = mkILStorageCtorWithParamNames(tag, preblock, typ, [], addParamNames flds, access)
 
 
 let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nestedTypes, props, events, attrs, init) =
