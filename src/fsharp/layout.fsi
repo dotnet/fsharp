@@ -16,7 +16,7 @@ type NavigableTaggedText =
     new : TaggedText * Range.range -> NavigableTaggedText
     member Range: Range.range
     interface TaggedText
-val mkNav : Range.range -> TaggedText -> NavigableTaggedText
+val mkNav : Range.range -> TaggedText -> TaggedText
 
 module TaggedTextOps = Internal.Utilities.StructuredFormat.TaggedTextOps
 
