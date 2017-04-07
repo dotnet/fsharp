@@ -78,6 +78,7 @@ module internal BlockStructure =
         | Scope.Comment
         | Scope.Open
         | Scope.XmlDocComment -> true
+
         | Scope.Namespace
         | Scope.Module
         | Scope.Record
