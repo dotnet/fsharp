@@ -1,4 +1,4 @@
-﻿namespace Microsoft.VisualStudio.FSharp.Editor.Logging
+﻿namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Diagnostics

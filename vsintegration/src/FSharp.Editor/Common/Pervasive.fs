@@ -27,7 +27,7 @@ let (?>) value fn = if isNull value then () else fn value
 /// Best used with partially applied functions
 let (!?) fn = fun value -> if isNull value then () else fn value
 
-
+let inline isNotNull x = not (isNull x)
 
 /// Get an option result from any type that has a TryGetValue method
 let inline tryGet key collection =
@@ -35,6 +35,12 @@ let inline tryGet key collection =
     let success = (^a : (member TryGetValue : 'k * ('v byref) -> bool) collection, key, &value)
     if success then Some value else None
 
+let tryCast<'T> (item:obj) : 'T option = 
+    match item with
+    | null -> None
+    | :? 'T as value -> Some value
+    | _ -> None
+        
 
 type internal ISetThemeColors = abstract member SetColors: unit -> unit
 
