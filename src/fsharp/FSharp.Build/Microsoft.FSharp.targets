@@ -157,8 +157,8 @@ this file.
     </ItemGroup>
 
     <PropertyGroup>
-		<CoreCompileDependsOn>_ComputeNonExistentFileProperty</CoreCompileDependsOn>
-	</PropertyGroup>
+        <CoreCompileDependsOn>_ComputeNonExistentFileProperty</CoreCompileDependsOn>
+    </PropertyGroup>
 
     <Target
         Name="CoreCompile"
