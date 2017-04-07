@@ -33,7 +33,6 @@ type internal FSharpBreakpointResolutionService
             // cross-project checking in multi-project solutions). FCS will not respond to other 
             // requests unless this task is cancelled. We need to check that this task is cancelled in a timely way by the
             // Roslyn UI machinery.
-            let! parseResults = checker.ParseFileInProject(fileName, sourceText.ToString(), options)
             let textLinePos = sourceText.Lines.GetLinePosition(textSpan.Start)
             let textInLine = sourceText.GetSubText(sourceText.Lines.[textLinePos.Line].Span).ToString()
 
@@ -42,6 +41,7 @@ type internal FSharpBreakpointResolutionService
             else
                 let textLineColumn = textLinePos.Character
                 let fcsTextLineNumber = Line.fromZ textLinePos.Line // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
+                let! parseResults = checker.ParseFileInProject(fileName, sourceText.ToString(), options)
                 return parseResults.ValidateBreakpointLocation(mkPos fcsTextLineNumber textLineColumn)
         }
 
