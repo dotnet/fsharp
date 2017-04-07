@@ -7,10 +7,8 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 
 
 module internal ProjectOptionsCache =
-    open Microsoft.VisualStudio.Shell.Interop
-    open Microsoft.VisualStudio
-
-    let toFSharpProjectOptions (workspace: Workspace) (projectTable:ConcurrentDictionary<ProjectId, FSharpProjectOptions>) (project:Project): FSharpProjectOptions =
+ 
+    let toFSharpProjectOptions (projectTable:ConcurrentDictionary<ProjectId, FSharpProjectOptions>)  (workspace: Workspace) (project:Project): FSharpProjectOptions =
         let loadTime = System.DateTime.Now
         let rec generate (project:Project) : FSharpProjectOptions =
             let getProjectRefs (project:Project): (string * FSharpProjectOptions)[] =
@@ -31,7 +29,7 @@ module internal ProjectOptionsCache =
                 // TODO - This does not include all necessary compiler flags
                 // if possible all of the the requisite compiler flags should be acquired from
                 // the CodeAnalysis Project and converted into the FSC desired form
-                OtherOptions = project.ParseOptions. PreprocessorSymbolNames |> Array.ofSeq
+                OtherOptions = [||] // project.ParseOptions. PreprocessorSymbolNames |> Array.ofSeq
                 ReferencedProjects =  getProjectRefs project
                 IsIncompleteTypeCheckEnvironment = false
                 UseScriptResolutionRules = false
@@ -90,10 +88,7 @@ module internal ProjectOptionsCache =
         }
 
 
-
-open ProjectOptionsCache
-
-type internal ProjectOptionsCache (checker:FSharpChecker, workspace: Workspace) =
+type internal ProjectOptionsCache (checker:FSharpChecker) =
    
     // A table of information about projects, excluding single-file projects.  
     let projectTable = ConcurrentDictionary<ProjectId, FSharpProjectOptions>()
@@ -102,82 +97,44 @@ type internal ProjectOptionsCache (checker:FSharpChecker, workspace: Workspace) 
     // the original options for editing
     let singleFileProjectTable = ConcurrentDictionary<ProjectId, DateTime * FSharpProjectOptions>()
 
-    let toFSharpProjectOptions = ProjectOptionsCache.toFSharpProjectOptions workspace projectTable
-
+    let toFSharpProjectOptions = ProjectOptionsCache.toFSharpProjectOptions projectTable
 
     member __.TryGetOptions (projectId:ProjectId) = tryGet projectId projectTable : FSharpProjectOptions option
 
     member __.ProjectTable = projectTable 
 
-    member this.AddSingleFileProject (projectId, timeStampAndOptions) = async {
-        singleFileProjectTable.TryAdd (projectId, timeStampAndOptions) |> ignore
-    }
+    member this.AddSingleFileProject (projectId, timeStampAndOptions) = 
+        singleFileProjectTable.TryAdd (projectId, timeStampAndOptions) |> ignore    
 
 
-    member __.AddProject (project:Project) = async {
-        if projectTable.ContainsKey project.Id then return () else 
-            let options = toFSharpProjectOptions  project
-            projectTable.TryAdd (project.Id, options) |> ignore
-        }
+    member __.AddProject (project:Project) = 
+        if projectTable.ContainsKey project.Id then () else 
+        let options = toFSharpProjectOptions  project.Solution.Workspace project
+        projectTable.TryAdd (project.Id, options) |> ignore
+
+
+    member this.RemoveSingleFileProject projectId = 
+        singleFileProjectTable.TryRemove projectId |> ignore
     
 
-    member self.AddProject (projectId:ProjectId) = async {
-        match workspace.CurrentSolution.TryGetProject projectId with
-        | None -> return () 
-        | Some project -> do! self.AddProject project
-    }
-
-
-    member this.RemoveSingleFileProject projectId = async {
-        singleFileProjectTable.TryRemove projectId |> ignore
-    }
-
     member __.SingleFileProjectTable = singleFileProjectTable
-    ///// Get the exact options for a single-file script
-    //member __.ComputeSingleFileOptions (fileName, loadTime, fileContents, workspace: Workspace) = async {
-    //    let extraProjectInfo = Some (box workspace)
-    //    if SourceFile.MustBeSingleFileProject fileName then 
-    //    //if isScriptFile fileName then 
-    //        let! _options, _diagnostics = checker.GetProjectOptionsFromScript (fileName, fileContents, loadTime, [| |], ?extraProjectInfo=extraProjectInfo) 
-    //        //ProjectOptionsCache.fsxProjectOptions fileName (Some workspace)
-    //        return getProjectOptionsForProjectSite ( fileName, loadTime,extraProjectInfo)
-    //    else
-    //        //ProjectOptionsCache.singleFileProjectOptions fileName
-    //        return getProjectOptionsForProjectSite ( fileName, loadTime, extraProjectInfo)
-    //}
 
-    member self.UpdateProject (project:Project) = async {
+    member self.UpdateProject (project:Project) = 
         self.TryGetOptions project.Id |> Option.iter checker.InvalidateConfiguration
-        let options = toFSharpProjectOptions project
+        let options = toFSharpProjectOptions project.Solution.Workspace project
         if projectTable.ContainsKey project.Id then
             projectTable.[project.Id] <- options
         else projectTable.TryAdd (project.Id,options) |> ignore
-    }
 
 
-    member self.UpdateProject (projectId:ProjectId) = async {
-        match workspace.CurrentSolution.TryGetProject projectId with
-        | None -> do! self.AddProject projectId
-        | Some project -> do! self.UpdateProject project
-    }
-
-
-    member self.RemoveProject (project:Project) = async {
+    member self.RemoveProject (project:Project) = 
         match tryGet project.Id projectTable with
-        | None -> return ()
+        | None -> ()
         | Some projectOptions -> 
             checker.InvalidateConfiguration projectOptions
             projectTable.TryRemove project.Id |> ignore
             for project in project.GetDependentProjects() do
-                do! self.UpdateProject project
-    }
-
-
-    member self.RemoveProject (projectId:ProjectId) = async {
-        match workspace.CurrentSolution.TryGetProject projectId with
-        | None -> return () 
-        | Some project -> do! self.RemoveProject project
-    }
+                self.UpdateProject project
 
 
     /// Get compilation defines relevant for syntax processing.  
@@ -187,29 +144,6 @@ type internal ProjectOptionsCache (checker:FSharpChecker, workspace: Workspace) 
         let projectOptionsOpt = this.TryGetOptions document.Project.Id
         let otherOptions = defaultArg (projectOptionsOpt |> Option.map (fun options -> options.OtherOptions |> Array.toList)) [] 
         CompilerEnvironment.GetCompilationDefinesForEditing (document.Name, otherOptions)
-
-
-    ///// Get the exact options for a document or project
-    //member self.TryGetOptionsForDocumentOrProject(document: Document) = asyncMaybe { 
-    //    let projectId = document.Project.Id
-    //    // The options for a single-file script project are re-requested each time the file is analyzed.  This is because the
-    //    // single-file project may contain #load and #r references which are changing as the user edits, and we may need to re-analyze
-    //    // to determine the latest settings.  FCS keeps a cache to help ensure these are up-to-date.
-    //    match tryGet projectId singleFileProjectTable with
-    //    | Some (loadTime,_) ->
-    //        let fileName = document.FilePath
-    //        let! cancellationToken = Async.CancellationToken |> liftAsync
-    //        let! sourceText = document.GetTextAsync(cancellationToken)
-    //        let! options = self.ComputeSingleFileOptions( fileName, loadTime,sourceText.ToString(), document.Project.Solution.Workspace)
-    //        singleFileProjectTable.[projectId] <- (loadTime, options)
-    //        return options
-    //    | None ->
-    //        match self.TryGetOptions projectId with
-    //        | Some options ->
-    //            return options
-    //        | None ->
-    //            return! None
-    //}
 
 
     /// Get the options for a document or project relevant for syntax processing.
