@@ -18,7 +18,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources
     /// <summary>
     /// Interaction logic for UserControl1.xaml
     /// </summary>
-    public partial class QuickInfoOptionControl : UserControl
+    internal partial class QuickInfoOptionControl : UserControl
     {
         public QuickInfoOptionControl()
         {

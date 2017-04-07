@@ -18,7 +18,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources
     /// <summary>
     /// Interaction logic for IntelliSenseOptionControl.xaml
     /// </summary>
-    public partial class IntelliSenseOptionControl : UserControl
+    internal partial class IntelliSenseOptionControl : UserControl
     {
         public IntelliSenseOptionControl()
         {
