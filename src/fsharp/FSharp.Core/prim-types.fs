@@ -3701,11 +3701,61 @@ namespace Microsoft.FSharp.Collections
 
     type seq<'T> = IEnumerable<'T>
 
+
+namespace Microsoft.FSharp.Collections.SeqComposition
+    open System
+    open System.Collections
+    open System.Collections.Generic
+    open Microsoft.FSharp.Core
+    open Microsoft.FSharp.Collections
+
+    type PipeIdx = int
+
+    type IOutOfBand =
+        abstract StopFurtherProcessing : PipeIdx -> unit
+
+    [<AbstractClass>]
+    type Activity() =
+        abstract ChainComplete : PipeIdx -> unit
+        abstract ChainDispose  : unit -> unit
+
+    [<AbstractClass>]
+    type Activity<'T,'U> () =
+        inherit Activity()
+        abstract ProcessNext : input:'T -> bool
+
+    [<AbstractClass>]
+    type Folder<'T,'Result> =
+        inherit Activity<'T,'T>
+
+        val mutable Result : 'Result
+
+        val mutable HaltedIdx : int
+        member this.StopFurtherProcessing pipeIdx = this.HaltedIdx <- pipeIdx
+        interface IOutOfBand with
+            member this.StopFurtherProcessing pipeIdx = this.StopFurtherProcessing pipeIdx
+
+        new (initalResult) = {
+            inherit Activity<'T,'T>()
+            HaltedIdx = 0
+            Result = initalResult
+        }
+
+        override this.ChainComplete _ = ()
+        override this.ChainDispose () = ()
+
+    [<AbstractClass>]
+    type TransformFactory<'T,'U> () =
+        abstract Compose<'V> : IOutOfBand -> PipeIdx -> Activity<'U,'V> -> Activity<'T,'V>
+
+    type ISeq<'T> =
+        inherit IEnumerable<'T>
+        abstract member PushTransform<'U> : TransformFactory<'T,'U> -> ISeq<'U>
+        abstract member Fold<'Result> : f:(PipeIdx->Folder<'T,'Result>) -> 'Result
         
 //-------------------------------------------------------------------------
 // Operators
 //-------------------------------------------------------------------------
-
 
 namespace Microsoft.FSharp.Core
 

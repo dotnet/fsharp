@@ -1846,6 +1846,71 @@ namespace Microsoft.FSharp.Collections
     /// <summary>An abbreviation for the CLI type <c>System.Collections.Generic.IEnumerable&lt;_&gt;</c></summary>
     type seq<'T> = IEnumerable<'T>
 
+namespace Microsoft.FSharp.Collections.SeqComposition
+    open System
+    open System.Collections
+    open System.Collections.Generic
+    open Microsoft.FSharp.Core
+    open Microsoft.FSharp.Collections
+
+    /// PipeIdx denotes the index of the element within the pipeline. 0 denotes the
+    /// source of the chain.
+    type PipeIdx = int
+
+    /// Used within the pipline to provide out of band communications
+    type IOutOfBand =
+        /// Stop the processing of any further items down the pipeline
+        abstract StopFurtherProcessing : PipeIdx -> unit
+
+    /// Activity is the root class for chains of activities. It is in a non-generic
+    /// form so that it can be used by subsequent activities
+    [<AbstractClass>]
+    type Activity =
+        /// OnComplete is used to determine if the object has been processed correctly,
+        /// and possibly throw exceptions to denote incorrect application (i.e. such as a Take
+        /// operation which didn't have a source at least as large as was required). It is
+        /// not called in the case of an exception being thrown whilst the stream is still
+        /// being processed.
+        abstract ChainComplete : PipeIdx -> unit
+        /// OnDispose is used to cleanup the stream. It is always called at the last operation
+        /// after the enumeration has completed.
+        abstract ChainDispose : unit -> unit
+
+    /// Activity is the base class of all elements within the pipeline
+    [<AbstractClass>]
+    type Activity<'T,'U> =
+        inherit Activity
+        new : unit -> Activity<'T,'U>
+        abstract member ProcessNext : input:'T -> bool
+
+    /// Folder is a base class to assist with fold-like operations. It's intended usage
+    /// is as a base class for an object expression that will be used from within
+    /// the Fold function.
+    [<AbstractClass>]
+    type Folder<'T,'Result> =
+        inherit Activity<'T,'T>
+        new : 'Result -> Folder<'T,'Result>
+        interface IOutOfBand
+        val mutable Result : 'Result
+        val mutable HaltedIdx : int
+        member StopFurtherProcessing : PipeIdx -> unit
+        override ChainComplete : PipeIdx -> unit
+        override ChainDispose : unit -> unit
+
+    /// TransformFactory provides composition of Activities. Its intended to have a specialization
+    /// for each type of ISeq Activity. ISeq's PushTransform method is used to build a stack
+    /// of Actvities that will be composed.
+    [<AbstractClass>]
+    type TransformFactory<'T,'U> =
+        new : unit -> TransformFactory<'T,'U>
+        abstract member Compose : IOutOfBand -> PipeIdx -> Activity<'U,'V> -> Activity<'T,'V>
+
+    /// ISeq<'T> is an extension to seq<'T> that provides the avilty to compose Activities
+    /// as well as Fold the current Activity pipeline.
+    type ISeq<'T> =
+        inherit System.Collections.Generic.IEnumerable<'T>
+        abstract member PushTransform : TransformFactory<'T,'U> -> ISeq<'U>
+        abstract member Fold<'Result> : f:(PipeIdx->Folder<'T,'Result>) -> 'Result
 
 
 namespace Microsoft.FSharp.Core
