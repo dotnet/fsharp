@@ -8236,7 +8236,7 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
 // unambiguously implies a function type 
 //------------------------------------------------------------------------- 
 
-and PropagateThenTcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag:ExprAtomicFlag) delayed = 
+and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed = 
     
     let rec propagate delayedList mExpr exprty = 
         match delayedList with 
@@ -8266,6 +8266,9 @@ and PropagateThenTcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFla
                     error (NotAFunction(denv,overallTy,mExpr,mArg)) 
 
     propagate delayed expr.Range exprty
+
+and PropagateThenTcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag:ExprAtomicFlag) delayed = 
+    Propagate cenv overallTy env tpenv expr exprty delayed
     TcDelayed cenv overallTy env tpenv mExpr expr exprty atomicFlag delayed
 
 
@@ -8677,10 +8680,18 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
 
         let expr = Expr.Op(TOp.TraitCall(traitInfo), [], ves, mItem)
         let expr = mkLambdas mItem [] vs (expr,retTy)
-        let resultExpr = PropagateThenTcDelayed cenv overallTy env tpenv mItem (MakeApplicableExprNoFlex cenv expr) (tyOfExpr cenv.g expr) ExprAtomicFlag.NonAtomic delayed
-        // Add the constraint after the arguments have been checked to allow annotations to kick in on rigid type parameters
+
+        Propagate cenv overallTy env tpenv (MakeApplicableExprNoFlex cenv expr) (tyOfExpr cenv.g expr) delayed
+
+        let delayed1, delayed2 = List.takeWhile (function (DelayedApp _) -> true | _ -> false) delayed, List.skipWhile (function (DelayedApp _) -> true | _ -> false) delayed
+        let intermediateTy = if isNil delayed2 then overallTy else NewInferenceType ()
+        let resultExpr, tpenv = TcDelayed cenv intermediateTy env tpenv mItem (MakeApplicableExprNoFlex cenv expr) (tyOfExpr cenv.g expr) ExprAtomicFlag.NonAtomic delayed1
+
+        // Add the constraint after the application arguments have been checked to allow annotations to kick in on rigid type parameters
         AddCxMethodConstraint env.DisplayEnv cenv.css mItem NoTrace traitInfo
-        resultExpr
+
+        let resultExpr2, tpenv2 = TcDelayed cenv overallTy env tpenv mItem (MakeApplicableExprNoFlex cenv resultExpr) intermediateTy ExprAtomicFlag.NonAtomic delayed2
+        resultExpr2, tpenv2
       
         
     | Item.DelegateCtor typ ->
