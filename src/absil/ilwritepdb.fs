@@ -198,7 +198,7 @@ let checkSum (url:string) =
 //------------------------------------------------------------------------------
 
 // This function takes output file name and returns debug file name.
-let getDebugFileName outfile portablePDB =
+let getDebugFileName outfile (portablePDB: bool) =
 #if ENABLE_MONO_SUPPORT
   if IL.runningOnMono && not portablePDB then
       outfile + ".mdb"
