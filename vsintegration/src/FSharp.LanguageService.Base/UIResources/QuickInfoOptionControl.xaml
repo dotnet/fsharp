@@ -17,15 +17,15 @@
     <Grid>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <GroupBox Header="Navigation links">
+                <GroupBox Header="{x:Static local:Strings.Navigation_links}">
                     <StackPanel>
                         <StackPanel>
-                            <CheckBox x:Name="displayLinks">S_how navigation links as</CheckBox>
+                            <CheckBox x:Name="displayLinks" Content="{x:Static local:Strings.Show_navigation_links_as}"/>
                         </StackPanel>
                         <StackPanel x:Name="underlineStyle" Margin="15 0 0 0">
-                            <RadioButton x:Name="solid" Content="_Solid underline" IsEnabled="{Binding IsChecked, ElementName=displayLinks}"/>
-                            <RadioButton x:Name="dot" Content="D_ot underline" IsEnabled="{Binding IsChecked, ElementName=displayLinks}"/>
-                            <RadioButton x:Name="dash" Content="D_ash underline" IsEnabled="{Binding IsChecked, ElementName=displayLinks}"/>
+                            <RadioButton x:Name="solid" Content="{x:Static local:Strings.Solid_underline}" IsEnabled="{Binding IsChecked, ElementName=displayLinks}"/>
+                            <RadioButton x:Name="dot" Content="{x:Static local:Strings.Dot_underline}" IsEnabled="{Binding IsChecked, ElementName=displayLinks}"/>
+                            <RadioButton x:Name="dash" Content="{x:Static local:Strings.Dash_underline}" IsEnabled="{Binding IsChecked, ElementName=displayLinks}"/>
                         </StackPanel>
                     </StackPanel>
                 </GroupBox>

@@ -17,15 +17,13 @@
     <Grid>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <GroupBox Header="Completion Lists">
+                <GroupBox Header="{x:Static local:Strings.Completion_Lists}">
                     <StackPanel>
-                        <CheckBox x:Name="charTyped" IsChecked="{Binding ShowAfterCharIsTyped}">
-                            _Show completion list after a character is typed
-                        </CheckBox>
+                        <CheckBox x:Name="charTyped" IsChecked="{Binding ShowAfterCharIsTyped}"
+                                  Content="{x:Static local:Strings.Show_completion_list_after_a_character_is_typed}"/>
                         <StackPanel Margin="15 0 0 0">
-                            <CheckBox x:Name="charDeleted" IsEnabled="{Binding IsChecked, ElementName=charTyped}" IsChecked="{Binding ShowAfterCharIsDeleted}">
-                                Show completion list after a character is _deleted
-                            </CheckBox>
+                            <CheckBox x:Name="charDeleted" IsEnabled="{Binding IsChecked, ElementName=charTyped}" IsChecked="{Binding ShowAfterCharIsDeleted}"
+                                      Content="{x:Static local:Strings.Show_completion_list_after_a_character_is_deleted}"/>
                         </StackPanel>
                     </StackPanel>
                 </GroupBox>

@@ -250,6 +250,11 @@
     <Compile Include="UIResources\QuickInfoOptionControl.xaml.cs">
       <DependentUpon>QuickInfoOptionControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UIResources\Strings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Strings.resx</DependentUpon>
+    </Compile>
     <Compile Include="UnsafeNativeMethods.cs" />
     <Compile Include="Utilities.cs" />
     <Compile Include="ViewFilter.cs" />
@@ -263,6 +268,11 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\completionset.bmp">
       <LogicalName>Resources.completionset.bmp</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UIResources\Strings.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+      <CustomToolNamespace>Microsoft.VisualStudio.FSharp.UIResources</CustomToolNamespace>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
