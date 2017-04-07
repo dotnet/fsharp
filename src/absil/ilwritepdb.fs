@@ -203,6 +203,8 @@ let getDebugFileName outfile (portablePDB: bool) =
   if IL.runningOnMono && not portablePDB then
       outfile + ".mdb"
   else 
+#else
+      ignore portablePDB
 #endif
       (Filename.chopExtension outfile) + ".pdb" 
 
