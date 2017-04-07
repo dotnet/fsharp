@@ -616,14 +616,16 @@ let convFieldInit x =
 // it isn't we resort to this technique...
 let TypeBuilderInstantiationT = 
     let ty = 
-        Type.GetType("System.Reflection.Emit.TypeBuilderInstantiation")
 #if ENABLE_MONO_SUPPORT
-    let ty =
-        if runningOnMono && (isNull ty) then
-            Type.GetType("System.Reflection.MonoGenericClass")
+        if runningOnMono then
+            let ty = Type.GetType("System.Reflection.MonoGenericClass")
+            match ty with
+            | null -> Type.GetType("System.Reflection.Emit.TypeBuilderInstantiation")
+            | _ -> ty
         else
-            ty
 #endif
+            Type.GetType("System.Reflection.Emit.TypeBuilderInstantiation")
+
     assert (not (isNull ty))
     ty
 
