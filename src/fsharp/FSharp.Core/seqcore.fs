@@ -143,6 +143,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
   open Microsoft.FSharp.Collections
   open Microsoft.FSharp.Collections.IEnumerator
   open Microsoft.FSharp.Collections.SeqComposition
+  open Microsoft.FSharp.Collections.SeqComposition.Factories
   open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
   open Microsoft.FSharp.Primitives.Basics
   open Microsoft.FSharp.Control
@@ -160,21 +161,6 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         let inline enumerator<'T,'enumerator when 'enumerator :> IEnumerator<'T> and 'enumerator : not struct> (t:'enumerator) : IEnumerator<'T> = (# "" t : IEnumerator<'T> #)
         let inline enumeratorNonGeneric<'enumerator when 'enumerator :> IEnumerator and 'enumerator : not struct> (t:'enumerator) : IEnumerator = (# "" t : IEnumerator #)
         let inline outOfBand<'outOfBand when 'outOfBand :> IOutOfBand and 'outOfBand : not struct> (t:'outOfBand) : IOutOfBand = (# "" t : IOutOfBand #)
-
-    type ComposedFactory<'T,'U,'V> private (first:TransformFactory<'T,'U>, second:TransformFactory<'U,'V>) =
-        inherit TransformFactory<'T,'V>()
-
-        override this.Compose<'W> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Activity<'V,'W>) : Activity<'T,'W> =
-            first.Compose outOfBand (pipeIdx-1) (second.Compose outOfBand pipeIdx next)
-
-        static member Combine (first:TransformFactory<'T,'U>) (second:TransformFactory<'U,'V>) : TransformFactory<'T,'V> =
-            upcast ComposedFactory(first, second)
-
-    type IdentityFactory<'T> private () =
-        inherit TransformFactory<'T,'T> ()
-        static let singleton : TransformFactory<'T,'T> = upcast (IdentityFactory<'T>())
-        override __.Compose<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Activity<'T,'V>) : Activity<'T,'V> = next
-        static member Instance = singleton
 
     type ISkipable =
         // Seq.init(Infinite)? lazily uses Current. The only ISeq component that can do that is Skip
@@ -998,6 +984,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
     open System.Collections
     open System.Collections.Generic
     open Microsoft.FSharp.Collections.SeqComposition
+    open Microsoft.FSharp.Collections.SeqComposition.Factories
     open Microsoft.FSharp.Collections.SeqComposition.Core
 
     module RuntimeHelpers =
