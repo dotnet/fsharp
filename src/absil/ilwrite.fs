@@ -4189,7 +4189,7 @@ let writeBinaryAndReportMappings (outfile,
     begin match pdbfile with
     | None -> ()
 #if ENABLE_MONO_SUPPORT
-    | Some fmdb when runningOnMono -> 
+    | Some fmdb when runningOnMono && not portablePDB ->
         writeMdbInfo fmdb outfile pdbData
 #endif
     | Some fpdb -> 

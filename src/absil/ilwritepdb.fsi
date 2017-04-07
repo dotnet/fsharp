@@ -59,7 +59,7 @@ type PdbData =
 
 
 /// Takes the output file name and returns debug file name.
-val getDebugFileName: string -> string
+val getDebugFileName: string -> bool -> string
 
 /// 28 is the size of the IMAGE_DEBUG_DIRECTORY in ntimage.h 
 val sizeof_IMAGE_DEBUG_DIRECTORY : System.Int32

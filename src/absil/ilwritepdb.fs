@@ -144,8 +144,8 @@ let pdbGetCvDebugInfo (mvid:byte[]) (timestamp:int32) (filepath:string) (cvChunk
         Buffer.BlockCopy(path, 0, buffer, offset, size)
         buffer
     { iddCharacteristics = 0;                                                   // Reserved
-      iddMajorVersion = 0;                                                      // VersionMajor should be 0
-      iddMinorVersion = 0;                                                      // VersionMinor should be 0
+      iddMajorVersion = 0x0100;                                                 // VersionMajor should be 0x0100
+      iddMinorVersion = 0x504d;                                                 // VersionMinor should be 0x504d
       iddType = 2;                                                              // IMAGE_DEBUG_TYPE_CODEVIEW
       iddTimestamp = timestamp;
       iddData = iddCvBuffer;                                                    // Path name to the pdb file when built
@@ -198,11 +198,13 @@ let checkSum (url:string) =
 //------------------------------------------------------------------------------
 
 // This function takes output file name and returns debug file name.
-let getDebugFileName outfile = 
+let getDebugFileName outfile (portablePDB: bool) =
 #if ENABLE_MONO_SUPPORT
-  if IL.runningOnMono then 
+  if IL.runningOnMono && not portablePDB then
       outfile + ".mdb"
   else 
+#else
+      ignore portablePDB
 #endif
       (Filename.chopExtension outfile) + ".pdb" 
 
