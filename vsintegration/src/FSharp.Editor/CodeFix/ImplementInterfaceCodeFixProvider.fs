@@ -24,7 +24,7 @@ type internal InterfaceState =
       AppendBracketAt: int option
       Tokens: FSharpTokenInfo list }
 
-[<ExportCodeFixProvider(FSharpCommonConstants.FSharpLanguageName, Name = "ImplementInterface"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ImplementInterface"); Shared>]
 type internal FSharpImplementInterfaceCodeFixProvider
     [<ImportingConstructor>]
     (
@@ -125,7 +125,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
                                         InterfaceStubGenerator.getImplementedMemberSignatures getMemberByLocation displayContext state.InterfaceData    
                                     let newSourceText = applyImplementInterface sourceText state displayContext implementedMemberSignatures entity indentSize verboseMode
                                     return context.Document.WithText(newSourceText)
-                                } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
+                                } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
                             title)                
                     context.RegisterCodeFix(codeAction, diagnostics)
 
@@ -146,7 +146,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(context.Document.FilePath, options.OtherOptions |> Seq.toList)
             // Notice that context.Span doesn't return reliable ranges to find tokens at exact positions.
             // That's why we tokenize the line and try to find the last successive identifier token
-            let tokens = CommonHelpers.tokenizeLine(context.Document.Id, sourceText, context.Span.Start, context.Document.FilePath, defines)
+            let tokens = Tokenizer.tokenizeLine(context.Document.Id, sourceText, context.Span.Start, context.Document.FilePath, defines)
             let startLeftColumn = context.Span.Start - textLine.Start
             let rec tryFindIdentifierToken acc tokens =
                match tokens with
@@ -169,11 +169,11 @@ type internal FSharpImplementInterfaceCodeFixProvider
                 | _ -> 
                     Some context.Span.End
             let! interfaceState = queryInterfaceState appendBracketAt interfacePos tokens parsedInput                        
-            let! symbol = CommonHelpers.getSymbolAtPosition(context.Document.Id, sourceText, fixupPosition, context.Document.FilePath, defines, SymbolLookupKind.Greedy)
+            let! symbol = Tokenizer.getSymbolAtPosition(context.Document.Id, sourceText, fixupPosition, context.Document.FilePath, defines, SymbolLookupKind.Greedy)
             let fcsTextLineNumber = textLine.LineNumber + 1
             let lineContents = textLine.ToString()                            
             let! options = context.Document.GetOptionsAsync(cancellationToken)
-            let tabSize = options.GetOption(FormattingOptions.TabSize, FSharpCommonConstants.FSharpLanguageName)
+            let tabSize = options.GetOption(FormattingOptions.TabSize, FSharpConstants.FSharpLanguageName)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, lineContents, symbol.FullIsland)
             let! entity, displayContext = 
                 match symbolUse.Symbol with
@@ -185,4 +185,4 @@ type internal FSharpImplementInterfaceCodeFixProvider
             registerSuggestions (context, checkFileResults, interfaceState, displayContext, entity, tabSize)
         } 
         |> Async.Ignore
-        |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

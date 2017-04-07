@@ -26,7 +26,7 @@ type internal DiagnosticsType =
     | Syntax
     | Semantic
 
-[<DiagnosticAnalyzer(FSharpCommonConstants.FSharpLanguageName)>]
+[<DiagnosticAnalyzer(FSharpConstants.FSharpLanguageName)>]
 type internal FSharpDocumentDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
 
@@ -103,12 +103,12 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
                                 TextSpan.FromBounds(start, sourceText.Length)
                         
                         let location = Location.Create(filePath, correctedTextSpan , linePositionSpan)
-                        Some(CommonRoslynHelpers.ConvertError(error, location)))
+                        Some(RoslynHelpers.ConvertError(error, location)))
                |> Seq.toImmutableArray
             return results
         }
 
-    override this.SupportedDiagnostics = CommonRoslynHelpers.SupportedDiagnostics()
+    override this.SupportedDiagnostics = RoslynHelpers.SupportedDiagnostics()
 
     override this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
         let projectInfoManager = getProjectInfoManager document
@@ -121,7 +121,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
                 |> liftAsync
         } 
         |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
-        |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+        |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
         let projectInfoManager = getProjectInfoManager document
@@ -134,7 +134,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
                 |> liftAsync
         }
         |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
-        |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+        |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
     interface IBuiltInAnalyzer with
         member __.GetAnalyzerCategory() : DiagnosticAnalyzerCategory = DiagnosticAnalyzerCategory.SemanticDocumentAnalysis

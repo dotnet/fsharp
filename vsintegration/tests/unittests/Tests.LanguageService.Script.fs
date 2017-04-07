@@ -12,7 +12,8 @@ open UnitTests.TestLib.Utils
 open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 
-[<TestFixture>] 
+[<TestFixture>]
+[<Category "LanguageService">]
 type UsingMSBuild() as this = 
     inherit LanguageServiceBaseTests() 
 
@@ -327,7 +328,7 @@ type UsingMSBuild() as this =
 
         MoveCursorToEndOfMarker(fsx, "InDifferentFS.")
         let completion = AutoCompleteAtCursor fsx
-        let completion = completion |> Array.map (fun (name, _, _, _) -> name) |> set
+        let completion = completion |> Array.map (fun (CompletionItem(name, _, _, _, _)) -> name) |> set
         Assert.AreEqual(Set.count completion, 2, "Expected 2 elements in the completion list")
         Assert.IsTrue(completion.Contains "x", "Completion list should contain x because INTERACTIVE is defined")
         Assert.IsTrue(completion.Contains "B", "Completion list should contain B because DEBUG is not defined")
@@ -1582,7 +1583,7 @@ type UsingMSBuild() as this =
                                      ]
         let refs = 
             [
-                PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")
+                PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")
             ]
         let (_, project, file) = this.CreateSingleFileProject(code, references = refs)
         TakeCoffeeBreak(this.VS)
@@ -1590,7 +1591,7 @@ type UsingMSBuild() as this =
 
     member public this.TypeProviderDisposalSmokeTest(clearing) =
         use _guard = this.UsingNewVS()
-        let providerAssemblyName = PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")
+        let providerAssemblyName = PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")
         let providerAssembly = System.Reflection.Assembly.LoadFrom providerAssemblyName
         Assert.IsNotNull(providerAssembly, "provider assembly should not be null")
         let providerCounters = providerAssembly.GetType("DummyProviderForLanguageServiceTesting.GlobalCounters")
@@ -1630,7 +1631,7 @@ type UsingMSBuild() as this =
         for i in 1 .. 50 do 
             let solution = this.CreateSolution()
             let project = CreateProject(solution,"testproject" + string (i % 20))    
-            this.AddAssemblyReference(project, PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll"))
+            this.AddAssemblyReference(project, PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll"))
             let fileName = sprintf "File%d.fs" i
             let file1 = AddFileFromText(project,fileName, ["let x" + string i + " = N1.T1()" ])    
             let file = OpenFile(project,fileName)

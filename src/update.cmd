@@ -66,6 +66,7 @@ rem Disable strong-name validation for F# binaries built from open source that a
 %SN32% -q -Vr VisualFSharp.Unittests,b03f5f7f11d50a3a
 %SN32% -q -Vr VisualFSharp.Salsa,b03f5f7f11d50a3a
 %SN32% -q -Vr FSharp.Compiler.Unittests,b03f5f7f11d50a3a
+%SN32% -q -Vr Microsoft.VisualStudio.Shell.UI.Internal,b03f5f7f11d50a3a
 
 if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
     %SN64% -q -Vr FSharp.Core,b03f5f7f11d50a3a
@@ -90,10 +91,11 @@ if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
     %SN64% -q -Vr VisualFSharp.Unittests,b03f5f7f11d50a3a
     %SN64% -q -Vr VisualFSharp.Salsa,b03f5f7f11d50a3a
     %SN64% -q -Vr FSharp.Compiler.Unittests,b03f5f7f11d50a3a
+		%SN32% -q -Vr Microsoft.VisualStudio.Shell.UI.Internal,b03f5f7f11d50a3a
 )
 
-if /i '%1' == 'signonly' goto :eof
-if /i '%1' == 'debug' set NGEN_FLAGS=/Debug
+if /i "%1" == "signonly" goto :eof
+if /i "%1" == "debug" set NGEN_FLAGS=/Debug
 
 rem NGen fsc, fsi, fsiAnyCpu, and FSharp.Build.dll
 if /i not "%2"=="-ngen" goto :donengen

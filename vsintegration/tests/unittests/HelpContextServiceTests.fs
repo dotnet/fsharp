@@ -15,7 +15,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.LanguageService
 open UnitTests.TestLib.Utils
 
-[<TestFixture>]
+[<TestFixture>][<Category "Roslyn Services">]
 type HelpContextServiceTests() =
 
     let fileName = "C:\\test.fs"
@@ -58,7 +58,7 @@ type HelpContextServiceTests() =
             let span = TextSpan(marker, 0)
             let textLine = sourceText.Lines.GetLineFromPosition(marker)
             let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-            let tokens = CommonHelpers.getColorizationData(documentId, sourceText, textLine.Span, Some "test.fs", [], CancellationToken.None)
+            let tokens = Tokenizer.getColorizationData(documentId, sourceText, textLine.Span, Some "test.fs", [], CancellationToken.None)
 
             yield FSharpHelpContextService.GetHelpTerm(FSharpChecker.Instance, sourceText, fileName,  newOptions, span, tokens, version)
                   |> Async.RunSynchronously
@@ -231,7 +231,7 @@ type HelpContextServiceTests() =
                 Some "N1"
             ]
         this.TestF1Keywords(keywords, file, 
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -249,7 +249,7 @@ type HelpContextServiceTests() =
                 Some "N1.T"
             ]
         this.TestF1Keywords(keywords, file, 
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
     member public this.``EndOfLine``() =

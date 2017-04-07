@@ -77,15 +77,15 @@ type internal CompilationErrorLogger =
     /// Get the captured errors
     member GetErrors : unit -> (PhasedDiagnostic * FSharpErrorSeverity) list
 
-/// Represents the state in the incremental graph assocaited with checking a file
+/// Represents the state in the incremental graph associated with checking a file
 type internal PartialCheckResults = 
-    { /// This field is None if a major unrecoverd error occured when preparing the initial state
+    { /// This field is None if a major unrecovered error occurred when preparing the initial state
       TcState : TcState
       TcImports: TcImports 
       TcGlobals: TcGlobals 
       TcConfig: TcConfig 
 
-      /// This field is None if a major unrecoverd error occured when preparing the initial state
+      /// This field is None if a major unrecovered error occurred when preparing the initial state
       TcEnvAtEnd : TypeChecker.TcEnv
 
       /// Represents the collected errors from type checking
@@ -97,7 +97,7 @@ type internal PartialCheckResults =
       /// Represents the collected uses of symbols from type checking
       TcSymbolUses: TcSymbolUses list 
 
-      /// Represents the collected attributes to apply to the module of assuembly generates
+      /// Represents the collected attributes to apply to the module of assembly generates
       TopAttribs: TypeChecker.TopAttribs option
 
       TimeStamp: DateTime }
@@ -106,7 +106,7 @@ type internal PartialCheckResults =
 [<Class>]
 type internal IncrementalBuilder = 
 
-      /// Increment the usage count on the IncrementalBuilder by 1. Ths initial usage count is 0. The returns an IDisposable which will 
+      /// Increment the usage count on the IncrementalBuilder by 1. This initial usage count is 0. The returns an IDisposable which will 
       /// decrement the usage count on the entire build by 1 and dispose if it is no longer used by anyone.
       member IncrementUsageCount : unit -> IDisposable
      
@@ -120,7 +120,7 @@ type internal IncrementalBuilder =
       member ProjectFileNames : string list
 
       /// Raised just before a file is type-checked, to invalidate the state of the file in VS and force VS to request a new direct typecheck of the file.
-      /// The incremental builder also typechecks the file (error and intellisense results from the backgroud builder are not
+      /// The incremental builder also typechecks the file (error and intellisense results from the background builder are not
       /// used by VS). 
       member BeforeFileChecked : IEvent<string>
 
@@ -283,7 +283,7 @@ module internal IncrementalBuild =
         member DeclareScalarOutput : output:Scalar<'T> -> unit
         /// Declare a named vector output.
         member DeclareVectorOutput : output:Vector<'T> -> unit
-        /// Set the conrete inputs for this build. 
+        /// Set the concrete inputs for this build. 
         member GetInitialPartialBuild : vectorinputs: BuildInput list -> PartialBuild
 
 /// This represents the global state established as each task function runs as part of the build.

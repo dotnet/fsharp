@@ -73,6 +73,7 @@ type CompletionContext =
     // end of name ast node * list of properties\parameters that were already set
     | ParameterList of pos * HashSet<string>
     | AttributeApplication
+    | OpenDeclaration
 
 //----------------------------------------------------------------------------
 // FSharpParseFileResults
@@ -918,6 +919,8 @@ module UntypedParseImpl =
         match parsedInputOpt with
         | None -> None
         | Some pt ->
+
+        
         match GetEntityKind(pos, pt) with
         | Some EntityKind.Attribute -> Some CompletionContext.AttributeApplication
         | _ ->
@@ -1170,11 +1173,38 @@ module UntypedParseImpl =
                             | None -> Some (CompletionContext.Invalid) // A $ .B -> no completion list
                         | _ -> None 
                         
-                    member this.VisitBinding(defaultTraverse, synBinding) = defaultTraverse synBinding 
+                    member this.VisitBinding(defaultTraverse, (Binding(headPat = headPat) as synBinding)) = 
+                    
+                        let visitParam = function
+                            | SynPat.Named (range = range) when rangeContainsPos range pos -> 
+                                // parameter without type hint, no completion
+                                Some CompletionContext.Invalid 
+                            | SynPat.Typed(SynPat.Named(SynPat.Wild(range), _, _, _, _), _, _) when rangeContainsPos range pos ->
+                                // parameter with type hint, but we are on its name, no completion
+                                Some CompletionContext.Invalid
+                            | _ -> defaultTraverse synBinding
+
+                        match headPat with
+                        | SynPat.LongIdent(_,_,_,ctorArgs,_,_) ->
+                            match ctorArgs with
+                            | SynConstructorArgs.Pats(pats) ->
+                                pats |> List.tryPick (fun pat ->
+                                    match pat with
+                                    | SynPat.Paren(pat, _) -> 
+                                        match pat with
+                                        | SynPat.Tuple(pats, _) ->
+                                            pats |> List.tryPick visitParam
+                                        | _ -> visitParam pat
+                                    | SynPat.Wild(range) when rangeContainsPos range pos -> 
+                                        // let foo (x|
+                                        Some CompletionContext.Invalid
+                                    | _ -> visitParam pat
+                                )
+                            | _ -> defaultTraverse synBinding
+                        | _ -> defaultTraverse synBinding 
                     
                     member this.VisitHashDirective(range) = 
                         if rangeContainsPos range pos then Some CompletionContext.Invalid 
-                        
                         else None 
                         
                     member this.VisitModuleOrNamespace(SynModuleOrNamespace(longId = idents)) =
@@ -1184,6 +1214,56 @@ module UntypedParseImpl =
                             if stringBetweenModuleNameAndPos |> Seq.forall (fun x -> x = ' ' || x = '.') then
                                 Some CompletionContext.Invalid
                             else None
-                        | _ -> None }
+                        | _ -> None 
+
+                    member this.VisitComponentInfo(ComponentInfo(range = range)) = 
+                        if rangeContainsPos range pos then Some CompletionContext.Invalid
+                        else None
+
+                    member this.VisitLetOrUse(bindings, range) =
+                        match bindings with
+                        | [] when range.StartLine = pos.Line -> Some CompletionContext.Invalid
+                        | _ -> None
+
+                    member this.VisitSimplePats(pats) =
+                        pats |> List.tryPick (fun pat ->
+                            match pat with
+                            | SynSimplePat.Id(range = range)
+                            | SynSimplePat.Typed(SynSimplePat.Id(range = range),_,_) when rangeContainsPos range pos -> 
+                                Some CompletionContext.Invalid
+                            | _ -> None)
+
+                    member this.VisitModuleDecl(defaultTraverse, decl) =
+                        match decl with
+                        | SynModuleDecl.Open(_, m) -> 
+                            // in theory, this means we're "in an open"
+                            // in practice, because the parse tree/walkers do not handle attributes well yet, need extra check below to ensure not e.g. $here$
+                            //     open System
+                            //     [<Attr$
+                            //     let f() = ()
+                            // inside an attribute on the next item
+                            let pos = mkPos pos.Line (pos.Column - 1) // -1 because for e.g. "open System." the dot does not show up in the parse tree
+                            if rangeContainsPos m pos then  
+                                Some CompletionContext.OpenDeclaration
+                            else
+                                None
+                        | _ -> defaultTraverse decl
+            }
 
         AstTraversal.Traverse(pos, pt, walker)
+
+    /// Check if we are at an "open" declaration
+    let GetFullNameOfSmallestModuleOrNamespaceAtPoint (parsedInput: ParsedInput, pos: pos) = 
+        let mutable path = []
+        let visitor = 
+            { new AstTraversal.AstVisitorBase<bool>() with
+                override this.VisitExpr(_path, _traverseSynExpr, defaultTraverse, expr) = 
+                    // don't need to keep going, namespaces and modules never appear inside Exprs
+                    None 
+                override this.VisitModuleOrNamespace(SynModuleOrNamespace(longId = longId; range = range)) =
+                    if rangeContainsPos range pos then 
+                        path <- path @ longId
+                    None // we should traverse the rest of the AST to find the smallest module 
+            }
+        AstTraversal.Traverse(pos, parsedInput, visitor) |> ignore
+        path |> List.map (fun x -> x.idText) |> List.toArray

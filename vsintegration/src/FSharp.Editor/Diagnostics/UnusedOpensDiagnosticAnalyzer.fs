@@ -8,14 +8,17 @@ open System.Threading
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Symbols
+
 
 module private UnusedOpens =
-    open Microsoft.CodeAnalysis.Text
+    
 
     let rec visitSynModuleOrNamespaceDecls (parent: Ast.LongIdent) decls : (Set<string> * range) list =
         [ for decl in decls do
@@ -70,7 +73,12 @@ module private UnusedOpens =
         | None -> []
 
     let symbolIsFullyQualified (sourceText: SourceText) (sym: FSharpSymbolUse) (fullName: string) =
-            sourceText.ToString(CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, sym.RangeAlternate)) = fullName
+        match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, sym.RangeAlternate) with
+        | Some span // check that the symbol hasn't provided an invalid span
+            when sourceText.Length < span.Start 
+              || sourceText.Length < span.End -> false
+        | Some span -> sourceText.ToString span = fullName
+        | None -> false
 
     let getUnusedOpens (sourceText: SourceText) (parsedInput: ParsedInput) (symbolUses: FSharpSymbolUse[]) =
 
@@ -78,7 +86,8 @@ module private UnusedOpens =
             // given a symbol range such as `Text.ISegment` and a full name of `MonoDevelop.Core.Text.ISegment`, return `MonoDevelop.Core`
             let length = symbolUse.RangeAlternate.EndColumn - symbolUse.RangeAlternate.StartColumn
             let lengthDiff = fullName.Length - length - 2
-            Some fullName.[0..lengthDiff]
+            if lengthDiff <= 0 || lengthDiff > fullName.Length - 1 then None
+            else Some fullName.[0..lengthDiff]
 
         let getPossibleNamespaces (symbolUse: FSharpSymbolUse) : string list =
             let isQualified = symbolIsFullyQualified sourceText symbolUse
@@ -99,7 +108,7 @@ module private UnusedOpens =
                         Some ([apc.FullName], apc.Group.EnclosingEntity)
                     | SymbolUse.UnionCase uc when not (isQualified uc.FullName) ->
                         Some ([uc.FullName], Some uc.ReturnType.TypeDefinition)
-                    | SymbolUse.Parameter p when not (isQualified p.FullName) ->
+                    | SymbolUse.Parameter p when not (isQualified p.FullName) && p.Type.HasTypeDefinition ->
                         Some ([p.FullName], Some p.Type.TypeDefinition)
                     | _ -> None
 
@@ -129,7 +138,7 @@ module private UnusedOpens =
         let openStatements = getOpenStatements parsedInput
         openStatements |> filter |> List.map snd
 
-[<DiagnosticAnalyzer(FSharpCommonConstants.FSharpLanguageName)>]
+[<DiagnosticAnalyzer(FSharpConstants.FSharpLanguageName)>]
 type internal UnusedOpensDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
     
@@ -149,25 +158,31 @@ type internal UnusedOpensDiagnosticAnalyzer() =
     override __.SupportedDiagnostics = ImmutableArray.Create Descriptor
     override this.AnalyzeSyntaxAsync(_, _) = Task.FromResult ImmutableArray<Diagnostic>.Empty
 
+    static member GetUnusedOpenRanges(document: Document, options, checker: FSharpChecker) =
+        asyncMaybe {
+            let! sourceText = document.GetTextAsync()
+            let! _, parsedInput, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true)
+            let! symbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
+            return UnusedOpens.getUnusedOpens sourceText parsedInput symbolUses
+        } 
+
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) =
         asyncMaybe {
             let! options = getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document)
             let! sourceText = document.GetTextAsync()
             let checker = getChecker document
-            let! _, parsedInput, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true)
-            let! symbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
-            let unusedOpens = UnusedOpens.getUnusedOpens sourceText parsedInput symbolUses
+            let! unusedOpens = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges(document, options, checker)
             
             return 
                 unusedOpens
                 |> List.map (fun m ->
                       Diagnostic.Create(
                          Descriptor,
-                         CommonRoslynHelpers.RangeToLocation(m, sourceText, document.FilePath)))
+                         RoslynHelpers.RangeToLocation(m, sourceText, document.FilePath)))
                 |> Seq.toImmutableArray
         } 
         |> Async.map (Option.defaultValue ImmutableArray.Empty)
-        |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+        |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
     interface IBuiltInAnalyzer with
         member __.OpenFileOnly _ = true

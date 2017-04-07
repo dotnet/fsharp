@@ -50,7 +50,7 @@ let internal options = {
 let VerifyCompletionList(fileContents: string, marker: string, expected: string list, unexpected: string list) =
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let results = 
-        FSharpCompletionProvider.ProvideCompletionsAsyncAux(FSharpChecker.Instance, SourceText.From(fileContents), caretPosition, options, filePath, 0) 
+        FSharpCompletionProvider.ProvideCompletionsAsyncAux(FSharpChecker.Instance, SourceText.From(fileContents), caretPosition, options, filePath, 0, fun _ -> []) 
         |> Async.RunSynchronously 
         |> Option.defaultValue (ResizeArray())
         |> Seq.map(fun result -> result.DisplayText)
@@ -65,7 +65,7 @@ let VerifyCompletionListExactly(fileContents: string, marker: string, expected: 
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     
     let actual = 
-        FSharpCompletionProvider.ProvideCompletionsAsyncAux(FSharpChecker.Instance, SourceText.From(fileContents), caretPosition, options, filePath, 0) 
+        FSharpCompletionProvider.ProvideCompletionsAsyncAux(FSharpChecker.Instance, SourceText.From(fileContents), caretPosition, options, filePath, 0, fun _ -> []) 
         |> Async.RunSynchronously 
         |> Option.defaultValue (ResizeArray())
         |> Seq.toList
@@ -79,12 +79,15 @@ let VerifyCompletionListExactly(fileContents: string, marker: string, expected: 
                             (String.Join("; ", expected |> List.map (sprintf "\"%s\""))) 
                             (String.Join("; ", actualNames |> List.map (sprintf "\"%s\"")))
                             (String.Join("\n", actual |> List.map (fun x -> sprintf "%s => %s" x.DisplayText x.SortText))))
+
+let VerifyNoCompletionList(fileContents: string, marker: string) =
+    VerifyCompletionListExactly(fileContents, marker, [])
     
 [<Test>]
 let ShouldTriggerCompletionAtCorrectMarkers() =
     let testCases = 
-       [("x", false)
-        ("y", false)
+       [("x", true)
+        ("y", true)
         ("1", false)
         ("2", false)
         ("x +", false)
@@ -267,7 +270,124 @@ List().
                     "ExtensionMeth"]
     VerifyCompletionListExactly(fileContents, "List().", expected)
 
-#if EXE
+[<Test>]
+let ``No completion on type name at declaration site``() =
+    let fileContents = """
+type T
 
+"""
+    VerifyNoCompletionList(fileContents, "type T")
+
+[<Test>]
+let ``No completion on function name at declaration site``() =
+    let fileContents = """
+let f
+
+"""
+    VerifyNoCompletionList(fileContents, "let f")
+
+[<Test>]
+let ``No completion on member name at declaration site``() =
+    let fileContents = """
+type T() =
+    member this.M
+"""
+    VerifyNoCompletionList(fileContents, "member this.M")
+
+[<Test>]
+let ``No completion on function first argument name``() =
+    let fileContents = """
+let func (p
+"""
+    VerifyNoCompletionList(fileContents, "let func (p")
+
+[<Test>]
+let ``No completion on function subsequent argument name``() =
+    let fileContents = """
+let func (p, h
+"""
+    VerifyNoCompletionList(fileContents, "let func (p, h")
+
+[<Test>]
+let ``No completion on curried function subsequent argument name``() =
+    let fileContents = """
+let func (p) (h
+"""
+    VerifyNoCompletionList(fileContents, "let func (p) (h")
+
+[<Test>]
+let ``No completion on method first argument name``() =
+    let fileContents = """
+type T() =
+    member this.M(p) = ()
+"""
+    VerifyNoCompletionList(fileContents, "member this.M(p")
+
+[<Test>]
+let ``No completion on method subsequent argument name``() =
+    let fileContents = """
+type T() =
+    member this.M(p:int, h ) = ()
+"""
+    VerifyNoCompletionList(fileContents, "member this.M(p:int, h")
+
+[<Test>]
+let ``Provide completion on first function argument type hint``() =
+    let fileContents = """
+let func (p:i
+"""
+    VerifyCompletionList(fileContents, "let func (p:i", ["int"], [])
+
+[<Test>]
+let ``Provide completion on subsequent function argument type hint``() =
+    let fileContents = """
+let func (p:int, h:f
+"""
+    VerifyCompletionList(fileContents, "let func (p:int, h:f", ["float"], [])
+
+[<Test>]
+let ``Provide completion on local function argument type hint``() =
+    let fileContents = """
+let top () =
+    let func (p:i
+"""
+    VerifyCompletionList(fileContents, "let func (p:i", ["int"], [])
+
+[<Test>]
+let ``No completion on implicit constructor first argument name``() =
+    let fileContents = """
+type T(p) =
+"""
+    VerifyNoCompletionList(fileContents, "type T(p")
+
+[<Test>]
+let ``No completion on implicit constructor subsequent argument name``() =
+    let fileContents = """
+type T(p:int, h) =
+"""
+    VerifyNoCompletionList(fileContents, "type T(p:int, h")
+
+[<Test>]
+let ``Provide completion on implicit constructor argument type hint``() =
+    let fileContents = """
+type T(p:i) =
+"""
+    VerifyCompletionList(fileContents, "type T(p:i", ["int"], [])
+
+[<Test>]
+let ``No completion on lambda argument name``() =
+    let fileContents = """
+let _ = fun (p) -> ()
+"""
+    VerifyNoCompletionList(fileContents, "let _ = fun (p")
+
+[<Test>]
+let ``Provide completion on lambda argument type hint``() =
+    let fileContents = """
+let _ = fun (p:i) -> ()
+"""
+    VerifyCompletionList(fileContents, "let _ = fun (p:i", ["int"], [])
+
+#if EXE
 ShouldDisplaySystemNamespace()
 #endif

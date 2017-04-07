@@ -10,27 +10,39 @@
     <UsedCommand guid="guidVSStd2K" id="ECMD_ADDREFERENCE" />
     <UsedCommand guid="guidVSStd2K" id="ECMD_ADDREFERENCECTX" />
   </UsedCommands>
+
+  <CommandPlacements>
+    <CommandPlacement guid ="FSharpProjectCmdSet"  id ="MyFSharpGroup" priority ="0x100">
+      <Parent guid ="guidSHLMainMenu" id ="IDM_VS_CTXT_ITEMNODE" />
+    </CommandPlacement>
+    <CommandPlacement guid ="FSharpProjectCmdSet"  id ="MyFSharpGroup" priority ="0x100">
+      <Parent guid ="guidSHLMainMenu" id ="IDM_VS_CTXT_FOLDERNODE" />
+    </CommandPlacement>
+    <CommandPlacement guid ="FSharpProjectCmdSet"  id ="FSharpGroupAddBelow" priority ="0x105">
+      <Parent guid ="FSharpProjectCmdSet" id ="FSharpAddBelowMenu" />
+    </CommandPlacement>
+    <CommandPlacement guid ="FSharpProjectCmdSet"  id ="FSharpGroupAddAbove" priority ="0x100">
+      <Parent guid ="FSharpProjectCmdSet" id ="FSharpAddAboveMenu" />
+    </CommandPlacement>
+    <CommandPlacement guid="FSharpProjectCmdSet" id="FSharpSendThisReferenceToInteractiveGroup" priority="0x105">
+      <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_REFERENCE"/>
+    </CommandPlacement>
+    <CommandPlacement guid="FSharpProjectCmdSet" id="FSharpSendReferencesToInteractiveGroup" priority="0x105">
+      <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_REFERENCEROOT"/>
+    </CommandPlacement>
+    <CommandPlacement guid="FSharpProjectCmdSet" id="FSharpSendProjectOutputToInteractiveGroup" priority="0x105">
+      <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_PROJNODE"/>
+    </CommandPlacement>
+  </CommandPlacements>
   
   <Commands package ="FSharpProjectPackage">
     <Groups>
-      <Group guid ="FSharpProjectCmdSet"  id ="MyFSharpGroup" priority ="0x100">
-        <Parent guid ="guidSHLMainMenu" id ="IDM_VS_CTXT_ITEMNODE" />
-      </Group>
-      <Group guid ="FSharpProjectCmdSet"  id ="FSharpGroupAddBelow" priority ="0x105">
-        <Parent guid ="FSharpProjectCmdSet" id ="FSharpAddBelowMenu" />
-      </Group>
-      <Group guid ="FSharpProjectCmdSet"  id ="FSharpGroupAddAbove" priority ="0x100">
-        <Parent guid ="FSharpProjectCmdSet" id ="FSharpAddAboveMenu" />
-      </Group>
-      <Group guid="FSharpProjectCmdSet" id="FSharpSendThisReferenceToInteractiveGroup" priority="0x105">
-        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_REFERENCE"/>        
-      </Group>
-      <Group guid="FSharpProjectCmdSet" id="FSharpSendReferencesToInteractiveGroup" priority="0x105">
-        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_REFERENCEROOT"/>        
-      </Group>
-      <Group guid="FSharpProjectCmdSet" id="FSharpSendProjectOutputToInteractiveGroup" priority="0x105">
-        <Parent guid="guidSHLMainMenu" id="IDM_VS_CTXT_PROJNODE"/>        
-      </Group>    
+      <Group guid ="FSharpProjectCmdSet"  id ="MyFSharpGroup" priority ="0x100" />
+      <Group guid ="FSharpProjectCmdSet"  id ="FSharpGroupAddBelow" priority ="0x105" />
+      <Group guid ="FSharpProjectCmdSet"  id ="FSharpGroupAddAbove" priority ="0x100" />
+      <Group guid="FSharpProjectCmdSet" id="FSharpSendThisReferenceToInteractiveGroup" priority="0x105" />
+      <Group guid="FSharpProjectCmdSet" id="FSharpSendReferencesToInteractiveGroup" priority="0x105" />
+      <Group guid="FSharpProjectCmdSet" id="FSharpSendProjectOutputToInteractiveGroup" priority="0x105" />
     </Groups>
     <Menus >
       <Menu guid ="FSharpProjectCmdSet"  id ="FSharpAddBelowMenu" priority ="0x305" type ="Menu">

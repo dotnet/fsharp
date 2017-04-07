@@ -1106,7 +1106,7 @@ and
     | Member
     | PropertyGet
     | PropertySet
-    /// An artifical member kind used prior to the point where a get/set property is split into two distinct members.
+    /// An artificial member kind used prior to the point where a get/set property is split into two distinct members.
     | PropertyGetSet
 
 and
@@ -1245,7 +1245,7 @@ and
     /// The untyped, unchecked syntax tree associated with the name of a type definition or module
     /// in signature or implementation.
     ///
-    /// THis includes the name, attributes, type parameters, constraints, documentation and accessibility
+    /// This includes the name, attributes, type parameters, constraints, documentation and accessibility
     /// for a type definition or module. For modules, entries such as the type parameters are
     /// always empty.
     SynComponentInfo =
@@ -2143,7 +2143,7 @@ and LexCont = LexerWhitespaceContinuation
 
 /// The error raised by the parse_error_rich function, which is called by the parser engine
 /// when a syntax error occurs. The first object is the ParseErrorContext which contains a dump of
-/// information about the grammar at the point where the error occured, e.g. what tokens
+/// information about the grammar at the point where the error occurred, e.g. what tokens
 /// are valid to shift next at that point in the grammar. This information is processed in CompileOps.fs.
 [<NoEquality; NoComparison>]
 exception SyntaxError of obj (* ParseErrorContext<_> *) * range:range
@@ -2220,7 +2220,7 @@ module LexbufLocalXmlDocStore =
 /// This type may be accessed concurrently, though in practice it is only used from the compilation thread.
 /// It is made concurrency-safe since a global instance of the type is allocated in tast.fs, and it is good
 /// policy to make all globally-allocated objects concurrency safe in case future versions of the compiler
-/// are used to host mutiple concurrent instances of compilation.
+/// are used to host multiple concurrent instances of compilation.
 type NiceNameGenerator() =
 
     let lockObj = obj()

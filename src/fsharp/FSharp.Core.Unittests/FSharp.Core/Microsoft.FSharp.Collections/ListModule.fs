@@ -17,7 +17,7 @@ Make sure each method works on:
 * Empty List (0 elements)
 *)
 
-[<TestFixture>]
+[<TestFixture>][<Category "Collections.List">][<Category "FSharp.Core.Collections">]
 type ListModule() =
     [<Test>]
     member this.Empty() =

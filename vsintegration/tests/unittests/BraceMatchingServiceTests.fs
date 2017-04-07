@@ -13,7 +13,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.LanguageService
 
-[<TestFixture>]
+[<TestFixture>][<Category "Roslyn Services">]
 type BraceMatchingServiceTests()  =
     let fileName = "C:\\test.fs"
     let options: FSharpProjectOptions = { 
@@ -50,7 +50,7 @@ type BraceMatchingServiceTests()  =
         | None -> Assert.Fail("Didn't find a match for start brace at position '{0}", startMarkerPosition)
         | Some(left, right) ->
             let endPositionInRange(range) = 
-                let span = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range)
+                let span = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range)
                 span.Start <= endMarkerPosition && endMarkerPosition <= span.End
             Assert.IsTrue(endPositionInRange(left) || endPositionInRange(right), "Found end match at incorrect position")
         

@@ -1547,8 +1547,8 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
         | _ -> CompleteD
 
     // See when one constraint implies implies another. 
-    // 'a :> ty1  implies 'a :> 'ty2 if the head type name of ty2 (say T2) occursCheck anywhere in the heirarchy of ty1 
-    // If it does occcur, e.g. at instantiation T2<inst2>, then the check above will have enforced that 
+    // 'a :> ty1  implies 'a :> 'ty2 if the head type name of ty2 (say T2) occursCheck anywhere in the hierarchy of ty1 
+    // If it does occur, e.g. at instantiation T2<inst2>, then the check above will have enforced that 
     // T2<inst2> = ty2 
     let implies tpc1 tpc2 = 
         match tpc1,tpc2 with           

@@ -774,7 +774,41 @@ module CoreTests =
         peverify cfg "test2.exe"
 
         exec cfg ("." ++ "test2.exe") ""
- 
+
+    // Repro for https://github.com/Microsoft/visualfsharp/issues/2679
+    [<Test>]
+    let ``add files with same name from different folders`` () = 
+        let cfg = testConfig "core/samename"
+
+        log "== Compiling F# Code with files with same name in different folders"
+        fsc cfg "%s -o:test.exe" cfg.fsc_flags ["folder1/a.fs"; "folder1/b.fs"; "folder2/a.fs"; "folder2/b.fs"]
+
+        peverify cfg "test.exe"
+
+        exec cfg ("." ++ "test.exe") ""
+
+    [<Test>]
+    let ``add files with same name from different folders including signature files`` () =
+        let cfg = testConfig "core/samename"
+
+        log "== Compiling F# Code with files with same name in different folders including signature files"
+        fsc cfg "%s -o:test.exe" cfg.fsc_flags ["folder1/a.fsi"; "folder1/a.fs"; "folder1/b.fsi"; "folder1/b.fs"; "folder2/a.fsi"; "folder2/a.fs"; "folder2/b.fsi"; "folder2/b.fs"]
+
+        peverify cfg "test.exe"
+
+        exec cfg ("." ++ "test.exe") ""
+
+    [<Test>]
+    let ``add files with same name from different folders including signature files that are not synced`` () =
+        let cfg = testConfig "core/samename"
+
+        log "== Compiling F# Code with files with same name in different folders including signature files"
+        fsc cfg "%s -o:test.exe" cfg.fsc_flags ["folder1/a.fsi"; "folder1/a.fs"; "folder1/b.fs"; "folder2/a.fsi"; "folder2/a.fs"; "folder2/b.fsi"; "folder2/b.fs"]
+
+        peverify cfg "test.exe"
+
+        exec cfg ("." ++ "test.exe") ""
+
     [<Test>]
     let ``libtest-FSI_STDIN`` () = singleTestBuildAndRun "core/libtest" FSI_STDIN
 
@@ -1552,6 +1586,8 @@ module OptimizationTests =
 
         fsc cfg "%s -g --optimize- --target:library -o:lib.dll" cfg.fsc_flags ["lib.fs"; "lib2.fs"]
 
+        peverify cfg "lib.dll " 
+
         fsc cfg "%s -g --optimize- --target:library -o:lib3.dll -r:lib.dll " cfg.fsc_flags ["lib3.fs"]
 
         fsc cfg "%s -g --optimize- -o:test.exe -r:lib.dll -r:lib3.dll" cfg.fsc_flags ["test.fs "]
@@ -2248,7 +2284,7 @@ module GeneratedSignatureTests =
     [<Test>]
     let ``members-basics-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/members/basics" GENERATED_SIGNATURE
 
-    [<Test>]
+    [<Test; Ignore("Flaky w.r.t. PEVerify.  https://github.com/Microsoft/visualfsharp/issues/2616")>]
     let ``access-GENERATED_SIGNATURE``() = singleTestBuildAndRun "core/access" GENERATED_SIGNATURE
 
     [<Test>]
