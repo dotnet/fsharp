@@ -75,6 +75,11 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         abstract member Length : unit -> int
         interface ISeq<'T>
 
+    [<Class>]
+    type internal IdentityFactory<'T> =
+        inherit TransformFactory<'T,'T> 
+        static member Instance : TransformFactory<'T,'T> 
+
     type internal ISkipable =
         // Seq.init(Infinite)? lazily uses Current. The only ISeq component that can do that is Skip
         // and it can only do it at the start of a sequence
