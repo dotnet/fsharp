@@ -380,6 +380,10 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                 finally
                     consumer.ChainDispose ()
 
+    and ConcatCommon<'T>(consumer:Activity<'T>) =
+        inherit Folder<'T,NoValue>(Unchecked.defaultof<_>)
+        override me.ProcessNext value = consumer.ProcessNext value
+
     and ConcatEnumerable<'T,'U,'Collection when 'Collection :> ISeq<'T>> (sources:ISeq<'Collection>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
         inherit EnumerableBase<'U>()
 
@@ -396,9 +400,17 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                 let result = createFolder (pipeIdx+1)
                 let consumer = createFold transformFactory result pipeIdx
                 try
-                    let common  =
-                        { new Folder<'T,NoValue>(Unchecked.defaultof<_>) with
-                                    override me.ProcessNext value = consumer.ProcessNext value }
+                    let common : Folder<'T,NoValue> =
+                        let concatCommon = 
+                            if not (obj.ReferenceEquals (result, consumer)) then ConcatCommon consumer
+                            else
+                                // (result = consumer) thus our transform is just the identity function, so check to see if
+                                // we're nested, and can just use the deeper nested ConcatCommon object to avoid extra 
+                                // call in the chain
+                                match box result with
+                                | :? ConcatCommon<'T> as common -> common
+                                | _ -> ConcatCommon consumer
+                        upcast concatCommon
 
                     sources.Fold (fun _ ->
                         { new Folder<'Collection,NoValue>(Unchecked.defaultof<_>) with
