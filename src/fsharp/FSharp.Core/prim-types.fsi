@@ -1878,10 +1878,16 @@ namespace Microsoft.FSharp.Collections.SeqComposition
 
     /// Activity is the base class of all elements within the pipeline
     [<AbstractClass>]
-    type Activity<'T,'U> =
+    type Activity<'T> =
         inherit Activity
-        new : unit -> Activity<'T,'U>
+        new : unit -> Activity<'T>
         abstract member ProcessNext : input:'T -> bool
+
+    /// Activity is the base class of all elements within the pipeline, carrying result type
+    [<AbstractClass>]
+    type Activity<'T,'U> =
+        inherit Activity<'T>
+        new : unit -> Activity<'T,'U>
 
     /// Folder is a base class to assist with fold-like operations. It's intended usage
     /// is as a base class for an object expression that will be used from within

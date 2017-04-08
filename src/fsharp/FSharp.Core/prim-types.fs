@@ -3720,9 +3720,13 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         abstract ChainDispose  : unit -> unit
 
     [<AbstractClass>]
-    type Activity<'T,'U> () =
+    type Activity<'T> () =
         inherit Activity()
         abstract ProcessNext : input:'T -> bool
+
+    [<AbstractClass>]
+    type Activity<'T,'U> () =
+        inherit Activity<'T>()
 
     [<AbstractClass>]
     type Folder<'T,'Result> =
