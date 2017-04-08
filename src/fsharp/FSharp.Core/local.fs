@@ -86,6 +86,7 @@ open Microsoft.FSharp.Core.ICloneableExtensions
 
 
 module internal List = 
+    open Microsoft.FSharp.Collections.SeqComposition
 
     let arrayZeroCreate (n:int) = (# "newarr !0" type ('T) n : 'T array #)
 
@@ -546,10 +547,35 @@ module internal List =
             res <- arr.[i] :: res
         res
 
+    type FoldToList<'T> () =
+        inherit Folder<'T, list<'T>>([])
+
+        let mutable first = true
+        let mutable cons = Unchecked.defaultof<_>
+
+        override this.ProcessNext input =
+            if first then
+                first <- false
+                this.Result <- freshConsNoTail input
+                cons <- this.Result
+            else
+                let cons2 = freshConsNoTail input
+                setFreshConsTail cons cons2
+                cons <- cons2
+            true (* result unused in fold *)
+
+        override this.ChainComplete _ =
+            if not first then
+                setFreshConsTail cons []
+
+    let ofISeq (s : ISeq<'T>) =
+        s.Fold (fun _ -> upcast FoldToList())
+
     let inline ofSeq (e : IEnumerable<'T>) =
         match e with
         | :? list<'T> as l -> l
         | :? ('T[]) as arr -> ofArray arr
+        | :? ISeq<'T> as s -> ofISeq s
         | _ ->
             use ie = e.GetEnumerator()
             if not (ie.MoveNext()) then []

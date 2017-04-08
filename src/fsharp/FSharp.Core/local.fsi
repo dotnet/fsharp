@@ -22,6 +22,7 @@ namespace Microsoft.FSharp.Primitives.Basics
 
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
+open Microsoft.FSharp.Collections.SeqComposition
 
 module internal List =
     val allPairs : 'T1 list -> 'T2 list -> ('T1 * 'T2) list
@@ -61,6 +62,7 @@ module internal List =
     val take : int -> 'T list -> 'T list
     val takeWhile : ('T -> bool) -> 'T list -> 'T list
     val toArray : 'T list -> 'T[]
+    val ofISeq : ISeq<'T> -> 'T List
     val inline ofSeq : seq<'T> -> 'T List
     val splitAt : int -> 'T list -> ('T list * 'T list)
     val truncate : int -> 'T list -> 'T list
