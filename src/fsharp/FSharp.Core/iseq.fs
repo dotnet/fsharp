@@ -1131,7 +1131,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("ToList")>]
         let toList (source : ISeq<'T>) =
             checkNonNull "source" source
-            Microsoft.FSharp.Primitives.Basics.List.ofSeq source
+            Microsoft.FSharp.Primitives.Basics.List.ofISeq source
 
         [<CompiledName("Replicate")>]
         let replicate count x =
