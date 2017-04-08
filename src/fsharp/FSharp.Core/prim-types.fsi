@@ -1912,17 +1912,6 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         abstract member PushTransform : TransformFactory<'T,'U> -> ISeq<'U>
         abstract member Fold<'Result> : f:(PipeIdx->Folder<'T,'Result>) -> 'Result
 
-    module Factories =
-        [<Class>]
-        type ComposedFactory<'T,'U,'V> =
-            inherit TransformFactory<'T,'V>
-            static member Combine : TransformFactory<'T,'U> -> TransformFactory<'U,'V> -> TransformFactory<'T,'V>
-
-        [<Class>]
-        type IdentityFactory<'T> =
-            inherit TransformFactory<'T,'T>
-            static member Instance : TransformFactory<'T,'T>
-
 namespace Microsoft.FSharp.Core
 
     open System

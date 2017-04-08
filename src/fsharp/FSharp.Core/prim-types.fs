@@ -3753,22 +3753,6 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         abstract member PushTransform<'U> : TransformFactory<'T,'U> -> ISeq<'U>
         abstract member Fold<'Result> : f:(PipeIdx->Folder<'T,'Result>) -> 'Result
         
-    module Factories =
-        type ComposedFactory<'T,'U,'V> private (first:TransformFactory<'T,'U>, second:TransformFactory<'U,'V>) =
-            inherit TransformFactory<'T,'V>()
-
-            override this.Compose<'W> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Activity<'V,'W>) : Activity<'T,'W> =
-                first.Compose outOfBand (pipeIdx-1) (second.Compose outOfBand pipeIdx next)
-
-            static member Combine (first:TransformFactory<'T,'U>) (second:TransformFactory<'U,'V>) : TransformFactory<'T,'V> =
-                upcast ComposedFactory(first, second)
-
-        type IdentityFactory<'T> private () =
-            inherit TransformFactory<'T,'T> ()
-            static let singleton : TransformFactory<'T,'T> = upcast (IdentityFactory<'T>())
-            override __.Compose<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Activity<'T,'V>) : Activity<'T,'V> = next
-            static member Instance = singleton
-
 //-------------------------------------------------------------------------
 // Operators
 //-------------------------------------------------------------------------
@@ -5197,6 +5181,21 @@ namespace Microsoft.FSharp.Core
                 | Running = 1
                 | Finished = 2
 
+            type ComposedFactory<'T,'U,'V> private (first:TransformFactory<'T,'U>, second:TransformFactory<'U,'V>) =
+                inherit TransformFactory<'T,'V>()
+
+                override this.Compose<'W> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Activity<'V,'W>) : Activity<'T,'W> =
+                    first.Compose outOfBand (pipeIdx-1) (second.Compose outOfBand pipeIdx next)
+
+                static member Combine (first:TransformFactory<'T,'U>) (second:TransformFactory<'U,'V>) : TransformFactory<'T,'V> =
+                    upcast ComposedFactory(first, second)
+
+            type IdentityFactory<'T> private () =
+                inherit TransformFactory<'T,'T> ()
+                static let singleton : TransformFactory<'T,'T> = upcast (IdentityFactory<'T>())
+                override __.Compose<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Activity<'T,'V>) : Activity<'T,'V> = next
+                static member Instance = singleton
+
             type SetResultToInput<'T>() =
                 inherit Folder<'T,'T>(Unchecked.defaultof<'T>)
                 override this.ProcessNext (input:'T) : bool =
@@ -5257,7 +5256,7 @@ namespace Microsoft.FSharp.Core
 
                 interface ISeq<'U> with
                     member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
-                        Upcast.seq (new SeqSourceEnumerable<'T,'V>(source, Factories.ComposedFactory.Combine current next, pipeIdx+1))
+                        Upcast.seq (new SeqSourceEnumerable<'T,'V>(source, ComposedFactory.Combine current next, pipeIdx+1))
 
                     member this.Fold<'Result> (f:PipeIdx->Folder<'U,'Result>) =
                         source.Fold f current pipeIdx
@@ -5274,7 +5273,7 @@ namespace Microsoft.FSharp.Core
                         Upcast.seq (new SeqSourceEnumerable<'U,'V>(source, next, 1))
 
                     member this.Fold<'Result> (f:PipeIdx->Folder<'U,'Result>) =
-                        source.Fold f Factories.IdentityFactory.Instance 1
+                        source.Fold f IdentityFactory.Instance 1
 
             [<AbstractClass>]
             type BaseRangeEnumerator<'T>() =
