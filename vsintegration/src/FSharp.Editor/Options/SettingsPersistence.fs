@@ -49,7 +49,7 @@ module internal SettingsPersistence =
                 let subset = settingsManager.GetSubset(key)
                 subset.add_SettingChangedAsync 
                 <| PropertyChangedAsyncEventHandler (fun _ _ ->
-                    settingsManager.GetValueOrDefault(key, getSettings()) |> setSettings
+                    settingsManager.GetValueOrDefault<'t>(key, getSettings()) |> setSettings
                     System.Threading.Tasks.Task.CompletedTask )
 
         member this.LoadSettings() : 't =
