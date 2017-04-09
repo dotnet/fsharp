@@ -1232,6 +1232,11 @@ module internal ExtensionTyping =
                           | "System.Char" -> box (char arg)
                           | "System.Boolean" -> box (arg = "True")
                           | "System.String" -> box (string arg)
+                          | "System.Type" -> 
+                            let ty = Type.GetType arg
+                            if ty = null
+                            then failwithf "Failed to resolve type %A" arg
+                            else (box ty)
                           | s -> error(Error(FSComp.SR.etUnknownStaticArgumentKind(s, typeLogicalName), range0)))
 
             match TryApplyProvidedType(typeBeforeArguments, None, staticArgs, range0) with 

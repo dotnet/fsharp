@@ -4775,10 +4775,31 @@ and TcStaticConstantParameter cenv (env:TcEnv) tpenv kind (v:SynType) idOpt cont
                 | Const.Bool b     -> record(cenv.g.bool_ty); box (b:bool)
                 | _ ->  fail()
             | _ -> error(Error(FSComp.SR.tcInvalidConstantExpression(), v.Range))
-        v, tpenv'
+        v, tpenv'   
     | SynType.LongIdent(lidwd) ->
         let m = lidwd.Range
-        TcStaticConstantParameter cenv env tpenv kind (SynType.StaticConstantExpr(SynExpr.LongIdent(false, lidwd, None, m), m)) idOpt container
+        if typeEquiv cenv.g cenv.g.system_Type_typ kind then
+           // let tyid = mkSynId tyid.idRange n
+            let (LongIdentWithDots(tycon, _)) = lidwd
+            let ad = env.eAccessRights
+            let tcref = 
+                match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInAttribute OpenQualified env.eNameResEnv ad tycon TypeNameResolutionStaticArgsInfo.DefiniteEmpty  PermitDirectReferenceToGeneratedType.No with
+                | Exception err -> raise(err)
+                | Result tcref -> tcref 
+
+            let assm = AssemblyReaderReflection.ContextAssembly(cenv.g, cenv.topCcu, "")
+            let st = AssemblyReaderReflection.ContextTypeDefinition(cenv.g, assm, None, tcref) 
+            //assm.GetType(tcref.CompiledRepresentationForNamedType.QualifiedName)
+            //TODO:: 
+                //Assemebly Reflection Starterpack. 
+                //Back type information with tycon ref.
+                //Types should be amortised, created only once. 
+                //Minimal implementation at first. 
+                
+            record(cenv.g.system_Type_typ); 
+            box st, tpenv
+        else 
+            TcStaticConstantParameter cenv env tpenv kind (SynType.StaticConstantExpr(SynExpr.LongIdent(false,lidwd,None,m),m)) idOpt container
     | _ ->  
         fail()
 
