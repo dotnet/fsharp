@@ -288,21 +288,48 @@ module internal Tokenizer =
         let colorMap = Array.create textLine.Span.Length ClassificationTypeNames.Text
         let lineTokenizer = sourceTokenizer.CreateLineTokenizer(lineContents)
         let tokens = ResizeArray()
-            
-        let scanAndColorNextToken(lineTokenizer: FSharpLineTokenizer, lexState: Ref<FSharpTokenizerLexState>) : Option<FSharpTokenInfo> =
-            let tokenInfoOption, nextLexState = lineTokenizer.ScanToken(lexState.Value)
-            lexState.Value <- nextLexState
-            if tokenInfoOption.IsSome then
-                let classificationType = compilerTokenToRoslynToken(tokenInfoOption.Value.ColorClass)
-                for i = tokenInfoOption.Value.LeftColumn to tokenInfoOption.Value.RightColumn do
-                    Array.set colorMap i classificationType
-                tokens.Add tokenInfoOption.Value
-            tokenInfoOption
-
+        let mutable tokenInfoOption = None
         let previousLexState = ref lexState
-        let mutable tokenInfoOption = scanAndColorNextToken(lineTokenizer, previousLexState)
-        while tokenInfoOption.IsSome do
-            tokenInfoOption <- scanAndColorNextToken(lineTokenizer, previousLexState)
+            
+        let processToken() =
+            let classificationType = compilerTokenToRoslynToken(tokenInfoOption.Value.ColorClass)
+            for i = tokenInfoOption.Value.LeftColumn to tokenInfoOption.Value.RightColumn do
+                Array.set colorMap i classificationType
+            tokens.Add tokenInfoOption.Value
+
+        let scanAndColorNextToken() =
+            let info, nextLexState = lineTokenizer.ScanToken(!previousLexState)
+            tokenInfoOption <- info
+            previousLexState := nextLexState
+            match info with
+            | Some info when info.Tag = FSharpTokenTag.INT32_DOT_DOT ->
+                    tokenInfoOption <- 
+                        Some { LeftColumn = info.LeftColumn
+                               RightColumn = info.RightColumn - 2
+                               ColorClass = FSharpTokenColorKind.Number
+                               CharClass = FSharpTokenCharKind.Literal
+                               FSharpTokenTriggerClass = info.FSharpTokenTriggerClass
+                               Tag = info.Tag
+                               TokenName = "INT32"
+                               FullMatchedLength = info.FullMatchedLength - 2 }
+                    processToken()
+
+                    tokenInfoOption <- 
+                        Some { LeftColumn = info.RightColumn - 1
+                               RightColumn = info.RightColumn
+                               ColorClass = FSharpTokenColorKind.Operator
+                               CharClass = FSharpTokenCharKind.Operator
+                               FSharpTokenTriggerClass = info.FSharpTokenTriggerClass
+                               Tag = FSharpTokenTag.DOT_DOT
+                               TokenName = "DOT_DOT"
+                               FullMatchedLength = 2 }
+                    processToken()
+                    
+            | Some _ -> processToken()
+            | _ -> ()
+
+        scanAndColorNextToken()
+        while tokenInfoOption.IsSome do scanAndColorNextToken()
 
         let mutable startPosition = 0
         let mutable endPosition = startPosition
