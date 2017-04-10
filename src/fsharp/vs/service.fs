@@ -1579,7 +1579,8 @@ type TypeCheckInfo
             | CNR(_, Item.Value KeywordIntrinsicValue, ItemOccurence.Use, _, _, _, m) ->
                 Some (m, SemanticClassificationType.IntrinsicFunction)
             | CNR(_, (Item.Value vref), _, _, _, _, m) when isFunction g vref.Type ->
-                if vref.DisplayName = "( .. )" then None // the range operator
+                if valRefEq g g.range_op_vref vref || valRefEq g g.range_step_op_vref vref then 
+                    None
                 elif vref.IsPropertyGetterMethod || vref.IsPropertySetterMethod then
                     Some (m, SemanticClassificationType.Property)
                 elif IsOperatorName vref.DisplayName then
