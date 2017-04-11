@@ -2321,6 +2321,12 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     /// Indicates if this is a member
     member x.IsMember                   = x.MemberInfo.IsSome
 
+    /// Indicates whether this value represents a property getter.
+    member x.IsPropertyGetterMethod = 
+        match x.MemberInfo with
+        | None -> false
+        | Some (memInfo:ValMemberInfo) -> memInfo.MemberFlags.MemberKind = MemberKind.PropertyGet || memInfo.MemberFlags.MemberKind = MemberKind.PropertyGetSet
+
     /// Indicates if this is a member, excluding extension members
     member x.IsIntrinsicMember          = x.IsMember && not x.IsExtensionMember
 
