@@ -35,7 +35,7 @@ module internal OptionsUIHelpers =
         override this.Child = upcast this.View
 
         override this.SaveSettingsToStorage() = 
-            this.GetResult() |> this.Store.SaveSettings
+            this.GetResult() |> this.Store.SaveSettings |> Async.StartImmediate
 
         override this.LoadSettingsFromStorage() = 
             this.Store.LoadSettings() |> this.SetViewModel
