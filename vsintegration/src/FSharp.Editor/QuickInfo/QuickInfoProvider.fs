@@ -189,27 +189,30 @@ module private FSharpQuickInfo =
                 // the textSpan designating where we want the tooltip to appear.
                 let! targetTooltipInfo = getTargetSymbolTooltip()
                 
-                match findSigDeclarationResult with 
-                | FSharpFindDeclResult.DeclNotFound _ -> return symbolUse, None, Some targetTooltipInfo
-                | FSharpFindDeclResult.DeclFound declRange -> 
-                    if isSignatureFile declRange.FileName then 
-                        let! sigTooltipInfo = getTooltipFromRange(checker, projectInfoManager, document, declRange, cancellationToken)
-                        // if the target was declared in a signature file, and the current file
-                        // is not the corresponding module implementation file for that signature,
-                        // the doccoms from the signature will overwrite any doccoms that might be 
-                        // present on the definition/implementation
+                let! result =
+                    match findSigDeclarationResult with 
+                    | FSharpFindDeclResult.DeclFound declRange when isSignatureFile declRange.FileName ->
+                        asyncMaybe {
+                            let! sigTooltipInfo = getTooltipFromRange(checker, projectInfoManager, document, declRange, cancellationToken)
+                            
+                            // if the target was declared in a signature file, and the current file
+                            // is not the corresponding module implementation file for that signature,
+                            // the doccoms from the signature will overwrite any doccoms that might be 
+                            // present on the definition/implementation
+                            let! findImplDefinitionResult = 
+                                checkFileResults.GetDeclarationLocationAlternate
+                                    (idRange.StartLine, idRange.EndColumn, lineText, lexerSymbol.FullIsland, preferFlag=false) |> liftAsync   
+                            
+                            match findImplDefinitionResult  with 
+                            | FSharpFindDeclResult.DeclNotFound _ -> return symbolUse, Some sigTooltipInfo, None
+                            | FSharpFindDeclResult.DeclFound declRange -> 
+                                let! implTooltipInfo = getTooltipFromRange(checker, projectInfoManager, document, declRange, cancellationToken)
+                                return symbolUse, Some sigTooltipInfo, Some { implTooltipInfo with Span = targetTooltipInfo.Span }
+                        }
+                    | _ -> async.Return None
+                    |> liftAsync
                 
-                        let! findImplDefinitionResult = 
-                            checkFileResults.GetDeclarationLocationAlternate
-                                (idRange.StartLine, idRange.EndColumn, lineText, lexerSymbol.FullIsland, preferFlag=false) |> liftAsync   
-                
-                        match findImplDefinitionResult  with 
-                        | FSharpFindDeclResult.DeclNotFound _ -> return symbolUse, Some sigTooltipInfo, None
-                        | FSharpFindDeclResult.DeclFound declRange -> 
-                            let! implTooltipInfo = getTooltipFromRange(checker, projectInfoManager, document, declRange, cancellationToken)
-                            return symbolUse, Some sigTooltipInfo, Some { implTooltipInfo with Span = targetTooltipInfo.Span }
-                    else 
-                        return symbolUse, None, Some targetTooltipInfo
+                return result |> Option.defaultValue (symbolUse, None, Some targetTooltipInfo)
         }
 
 [<ExportQuickInfoProvider(PredefinedQuickInfoProviderNames.Semantic, FSharpConstants.FSharpLanguageName)>]
