@@ -782,7 +782,7 @@ let OutputPhasedErrorR errorStyle (os:StringBuilder) (err:PhasedDiagnostic) =
           os.Append(k (DecompileOpName id.idText)) |> ignore
           let filtered = ErrorResolutionHints.FilterPredictions id.idText suggestionsF
           if List.isEmpty filtered |> not then
-              os.Append(ErrorResolutionHints.FormatPredictions errorStyle DecompileOpName filtered) |> ignore
+              os.Append(ErrorResolutionHints.FormatPredictions DecompileOpName filtered) |> ignore
           
       | InternalUndefinedItemRef(f,smr,ccuName,s) ->  
           let _, errs = f(smr, ccuName, s)  
@@ -1273,7 +1273,7 @@ let OutputPhasedErrorR errorStyle (os:StringBuilder) (err:PhasedDiagnostic) =
           os.Append(DecompileOpName s) |> ignore
           let filtered = ErrorResolutionHints.FilterPredictions idText suggestionF
           if List.isEmpty filtered |> not then
-              os.Append(ErrorResolutionHints.FormatPredictions errorStyle DecompileOpName filtered) |> ignore
+              os.Append(ErrorResolutionHints.FormatPredictions DecompileOpName filtered) |> ignore
       | NumberedError ((_,s),_) -> os.Append(s) |> ignore
       | InternalError (s,_) 
       | InvalidArgument s 
