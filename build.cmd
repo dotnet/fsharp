@@ -648,7 +648,7 @@ echo WHERE_ARG_NUNIT=!WHERE_ARG_NUNIT!
 
 set NUNITPATH=%~dp0tests\fsharpqa\testenv\bin\nunit\
 set NUNIT3_CONSOLE=%~dp0packages\NUnit.Console.3.0.0\tools\nunit3-console.exe
-set link_exe=%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe
+set link_exe=%~dp0tests\fsharpqa\testenv\bin\link\link.exe
 if not exist "%link_exe%" (
     echo Error: failed to find "%link_exe%" use nuget to restore the VisualCppTools package
     goto :failure
