@@ -347,7 +347,7 @@ let AdjustCtorShapeCounter      f env = {env with eCtorInfo = Option.map (fun ct
 let ExitCtorShapeRegion           env = AdjustCtorShapeCounter (fun _ -> 0) env
 
 //-------------------------------------------------------------------------
-// Add stuff to environments and register things as ungeneralizeable.
+// Add stuff to environments and register things as ungeneralizable.
 //------------------------------------------------------------------------- 
 
 let isEmptyFreeTyvars ftyvs = 
@@ -1061,7 +1061,7 @@ let MakeMemberDataAndMangledNameForMemberVal(g,tcref,isExtrinsic,attrs,optImplSl
           MemberFlags=memberFlags 
           IsImplemented=false
           // NOTE: This value is initially only set for interface implementations and those overrides 
-          // where we manage to pre-infer which abstract is overriden by the method. It is filled in  
+          // where we manage to pre-infer which abstract is overridden by the method. It is filled in  
           // properly when we check the allImplemented implementation checks at the end of the inference scope. 
           ImplementedSlotSigs=optImplSlotTys |> List.map (fun ity -> TSlotSig(logicalName,ity,[],[],[],None)) }
     let isInstance = MemberIsCompiledAsInstance g tcref isExtrinsic memberInfo attrs
@@ -1203,7 +1203,7 @@ type DeclKind =
         | ExpressionBinding -> ErrorOnOverrides 
 
 //-------------------------------------------------------------------------
-// Data structures that track the gradual accumualtion of information
+// Data structures that track the gradual accumulation of information
 // about values and members during inference.
 //------------------------------------------------------------------------- 
 
@@ -1949,7 +1949,7 @@ let FreshenAbstractSlot g amap m synTyparDecls absMethInfo =
 
     // Work out if an explicit instantiation has been given. If so then the explicit type 
     // parameters will be made rigid and checked for generalization. If not then auto-generalize 
-    // by making the copy of the type parameters on the virtual being overriden rigid. 
+    // by making the copy of the type parameters on the virtual being overridden rigid. 
 
     let typarsFromAbsSlotAreRigid = 
         
@@ -1962,7 +1962,7 @@ let FreshenAbstractSlot g amap m synTyparDecls absMethInfo =
             
     let (CompiledSig (argtys,retTy,fmtps,_)) = CompiledSigOfMeth g amap m absMethInfo
     
-    // If the virual method is a generic method then copy its type parameters 
+    // If the virtual method is a generic method then copy its type parameters 
     let typarsFromAbsSlot,typarInstFromAbsSlot,_ = 
         let ttps = absMethInfo.GetFormalTyparsOfDeclaringType m 
         let ttinst = argsOfAppTy g absMethInfo.EnclosingType
@@ -2382,7 +2382,7 @@ module GeneralizationHelpers =
             | _ -> true) &&
         (match parentRef with 
          | Parent tcref -> not tcref.IsFSharpDelegateTycon 
-         | _ -> true) // no generic paramters inferred for 'Invoke' method
+         | _ -> true) // no generic parameters inferred for 'Invoke' method
 
         
 
@@ -2480,7 +2480,7 @@ type IsObjExprBinding =
 
 module BindingNormalization =
     /// Push a bunch of pats at once. They may contain patterns, e.g. let f (A x) (B y) = ... 
-    /// In this case the sematnics is let f a b = let A x = a in let B y = b 
+    /// In this case the semantics is let f a b = let A x = a in let B y = b 
     let private PushMultiplePatternsToRhs (cenv:cenv) isMember ps (NormalizedBindingRhs(spatsL,rtyOpt,rhsExpr)) = 
         let spatsL2,rhsExpr = PushCurriedPatternsToExpr cenv.synArgNameGenerator rhsExpr.Range isMember ps rhsExpr
         NormalizedBindingRhs(spatsL2@spatsL, rtyOpt, rhsExpr)
@@ -2617,7 +2617,7 @@ module EventDeclarationNormalization =
        // reconstitute valSynInfo
        SynValInfo(argInfos,retInfo)
 
-    // THe property x.P becomes methods x.add_P and x.remove_P
+    // The property x.P becomes methods x.add_P and x.remove_P
     let ConvertMemberFlags memberFlags = { memberFlags with MemberKind = MemberKind.Member } 
 
     let private ConvertMemberFlagsOpt m memberFlagsOpt =
@@ -4188,7 +4188,7 @@ let GetInstanceMemberThisVariable (v:Val,x) =
 //-------------------------------------------------------------------------
 // Checking types and type constraints
 //------------------------------------------------------------------------- 
-/// Check specifications of contraints on type parameters 
+/// Check specifications of constraints on type parameters 
 let rec TcTyparConstraint ridx cenv newOk checkCxs occ (env: TcEnv) tpenv c = 
     let checkSimpleConstraint tp m constraintAdder =
         let tp',tpenv = TcTypar cenv env newOk tpenv tp
@@ -4905,7 +4905,7 @@ and TcProvidedTypeApp cenv env tpenv tcref args m =
 /// Typecheck an application of a generic type to type arguments.
 ///
 /// Note that the generic type may be a nested generic type List<T>.ListEnumerator<U>.
-/// In this case, 'args' is only the instantation of the suffix type arguments, and pathTypeArgs gives
+/// In this case, 'args' is only the instantiation of the suffix type arguments, and pathTypeArgs gives
 /// the prefix of type arguments. 
 and TcTypeApp cenv newOk checkCxs occ env tpenv m tcref pathTypeArgs (args: SynType list) =
     CheckTyconAccessible cenv.amap m env.eAccessRights tcref |> ignore
@@ -5081,7 +5081,7 @@ and TcPatBindingName cenv env id ty isMemberThis vis1 topValData (inlineFlag,dec
                 value
             | None -> error(Error(FSComp.SR.tcNameNotBoundInPattern(id.idText),id.idRange))
 
-        // isLeftMost indcates we are processing the left-most path through a disjunctive or pattern.
+        // isLeftMost indicates we are processing the left-most path through a disjunctive or pattern.
         // For those binding locations, CallNameResolutionSink is called in MakeAndPublishValue, like all other bindings
         // For non-left-most paths, we register the name resolutions here
         if not isLeftMost && not vspec.IsCompilerGenerated && not (String.hasPrefix vspec.LogicalName "_") then 
@@ -5260,13 +5260,13 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
             // If there are any expression args then we've lost identity. 
             let activePatIdentity = if isNil activePatArgsAsSynExprs then Some (vref, tinst) else None
             (fun values -> 
-                // Report information about the 'active recognizer' occurence to IDE
+                // Report information about the 'active recognizer' occurrence to IDE
                 CallNameResolutionSink cenv.tcSink (rangeOfLid longId,env.NameEnv,item,item,ItemOccurence.Pattern,env.DisplayEnv,env.eAccessRights)
                 TPat_query((activePatExpr, activePatResTys, activePatIdentity, idx, apinfo), arg' values, m)), 
             (tpenv,names,takenNames)
 
         | (Item.UnionCase _ | Item.ExnCase _) as item ->
-            // DATA MATCH CONSTRUTORS 
+            // DATA MATCH CONSTRUCTORS 
             let mkf,argtys, argNames = ApplyUnionCaseOrExnTypesForPat m cenv env ty item
             let nargtys = argtys.Length
 
@@ -5325,7 +5325,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
 
             let args',acc = TcPatterns warnOnUpper cenv env vFlags (tpenv,names,takenNames) argtys args
             (fun values -> 
-                // Report information about the case occurence to IDE
+                // Report information about the case occurrence to IDE
                 CallNameResolutionSink cenv.tcSink (rangeOfLid longId,env.NameEnv,item,item,ItemOccurence.Pattern,env.DisplayEnv,env.eAccessRights)
                 mkf m (List.map (fun f -> f values) args')), acc
                 
@@ -6062,7 +6062,7 @@ and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e =
         let byrefs = vspecMap |> Map.map (fun _ v -> isByrefTy cenv.g v.Type, v)
         let envinner = if isMember then envinner else ExitFamilyRegion envinner
         let bodyExpr,tpenv = TcIteratedLambdas cenv false envinner resultTy takenNames tpenv bodyExpr
-        // See bug 5758: Non-monontonicity in inference: need to ensure that parameters are never inferred to have byref type, instead it is always declared
+        // See bug 5758: Non-monotonicity in inference: need to ensure that parameters are never inferred to have byref type, instead it is always declared
         byrefs  |> Map.iter (fun _ (orig,v) -> 
             if not orig && isByrefTy cenv.g v.Type then errorR(Error(FSComp.SR.tcParameterInferredByref v.DisplayName,v.Range)))
         mkMultiLambda m (List.map (fun nm -> NameMap.find nm vspecMap) vs) (bodyExpr,resultTy),tpenv 
@@ -6073,7 +6073,7 @@ and TcIteratedLambdas cenv isFirst (env: TcEnv) overallTy takenNames tpenv e =
         
 
 // Check expr.[idx] 
-// This is a little over complicated for my liking. Basically we want to intepret e1.[idx] as e1.Item(idx). 
+// This is a little over complicated for my liking. Basically we want to interpret e1.[idx] as e1.Item(idx). 
 // However it's not so simple as all that. First "Item" can have a different name according to an attribute in 
 // .NET metadata.  This means we manually typecheck 'e1' and look to see if it has a nominal type. We then 
 // do the right thing in each case. 
@@ -7434,7 +7434,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         | SynExpr.Sequential(_sp, true,  dataComp1, dataComp2,_) -> (dataComp1, Some dataComp2)
         | _ -> (e, None)
 
-    // Check for 'where x > y', 'select x,y' and other mis-applications of infix operators, give a good error message, and retun a flag
+    // Check for 'where x > y', 'select x,y' and other mis-applications of infix operators, give a good error message, and return a flag
     let checkForBinaryApp comp = 
         match comp with 
         | StripApps(SingleIdent nm, [StripApps(SingleIdent nm2, args); arg2]) when 
@@ -7693,7 +7693,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             let rebind = 
                 SynExpr.ForEach (NoSequencePointAtForLoop, SeqExprOnly false, false, varSpacePat, dataCompPrior, comp, comp.Range)
                     
-            // Retry with the 'for' loop pacakging. Set firstTry=false just in case 'join' processing fails
+            // Retry with the 'for' loop packaging. Set firstTry=false just in case 'join' processing fails
             tryTrans false q varSpace rebind id
 
 
@@ -8236,7 +8236,7 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
 // unambiguously implies a function type 
 //------------------------------------------------------------------------- 
 
-and PropagateThenTcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag:ExprAtomicFlag) delayed = 
+and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed = 
     
     let rec propagate delayedList mExpr exprty = 
         match delayedList with 
@@ -8266,6 +8266,9 @@ and PropagateThenTcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFla
                     error (NotAFunction(denv,overallTy,mExpr,mArg)) 
 
     propagate delayed expr.Range exprty
+
+and PropagateThenTcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag:ExprAtomicFlag) delayed = 
+    Propagate cenv overallTy env tpenv expr exprty delayed
     TcDelayed cenv overallTy env tpenv mExpr expr exprty atomicFlag delayed
 
 
@@ -8476,7 +8479,7 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
 
                             if isSpecialCaseForBackwardCompatibility then
                                 assert (isNull(box fittedArgs.[currentIndex]))
-                                fittedArgs.[currentIndex] <- List.item currentIndex args // grab original argument, not item from the list of named parametere
+                                fittedArgs.[currentIndex] <- List.item currentIndex args // grab original argument, not item from the list of named parameters
                                 currentIndex <- currentIndex + 1
                             else
                                 let caseName = 
@@ -8677,10 +8680,18 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
 
         let expr = Expr.Op(TOp.TraitCall(traitInfo), [], ves, mItem)
         let expr = mkLambdas mItem [] vs (expr,retTy)
-        let resultExpr = PropagateThenTcDelayed cenv overallTy env tpenv mItem (MakeApplicableExprNoFlex cenv expr) (tyOfExpr cenv.g expr) ExprAtomicFlag.NonAtomic delayed
-        // Add the constraint after the arguments have been checked to allow annotations to kick in on rigid type parameters
+
+        Propagate cenv overallTy env tpenv (MakeApplicableExprNoFlex cenv expr) (tyOfExpr cenv.g expr) delayed
+
+        let delayed1, delayed2 = List.takeWhile (function (DelayedApp _) -> true | _ -> false) delayed, List.skipWhile (function (DelayedApp _) -> true | _ -> false) delayed
+        let intermediateTy = if isNil delayed2 then overallTy else NewInferenceType ()
+        let resultExpr, tpenv = TcDelayed cenv intermediateTy env tpenv mItem (MakeApplicableExprNoFlex cenv expr) (tyOfExpr cenv.g expr) ExprAtomicFlag.NonAtomic delayed1
+
+        // Add the constraint after the application arguments have been checked to allow annotations to kick in on rigid type parameters
         AddCxMethodConstraint env.DisplayEnv cenv.css mItem NoTrace traitInfo
-        resultExpr
+
+        let resultExpr2, tpenv2 = TcDelayed cenv overallTy env tpenv mItem (MakeApplicableExprNoFlex cenv resultExpr) intermediateTy ExprAtomicFlag.NonAtomic delayed2
+        resultExpr2, tpenv2
       
         
     | Item.DelegateCtor typ ->
@@ -9055,7 +9066,7 @@ and TcEventValueThen cenv overallTy env tpenv mItem mExprAndItem objDetails (ein
 and TcMethodApplicationThen 
        cenv 
        env
-       overallTy           // The type of the overall expression including "delayed". THe method "application" may actually be a use of a member as 
+       overallTy           // The type of the overall expression including "delayed". The method "application" may actually be a use of a member as 
                     // a first-class function value, when this would be a function type. 
        objTyOpt   // methodType
        tpenv 
@@ -9270,7 +9281,7 @@ and TcMethodApplication
 
             match curriedCallerArgsOpt,candidates with 
             // "single named item" rule. This is where we have a single accessible method 
-            //      memeber x.M(arg1,...,argN) 
+            //      member x.M(arg1,...,argN) 
             // being used in a first-class way, i.e. 
             //      x.M  
             // Because there is only one accessible method info available based on the name of the item 
@@ -9371,7 +9382,7 @@ and TcMethodApplication
             unnamedCurriedCallerArgs, namedCurriedCallerArgs, Some lambdaVars, returnTy, tpenv
 
         | Some (unnamedCurriedCallerArgs,namedCurriedCallerArgs) ->
-            // This is the case where some explicit aguments have been given.
+            // This is the case where some explicit arguments have been given.
 
             let unnamedCurriedCallerArgs = unnamedCurriedCallerArgs |> List.mapSquared (fun (argExpr,argTy,mArg) -> CallerArg(argTy,mArg,false,argExpr)) 
             let namedCurriedCallerArgs = namedCurriedCallerArgs |> List.mapSquared (fun (id,isOpt,argExpr,argTy,mArg) -> CallerNamedArg(id,CallerArg(argTy,mArg,isOpt,argExpr))) 
@@ -9962,7 +9973,7 @@ and CheckRecursiveBindingIds binds =
                 error(Duplicate("value",nm,m))
             else hashOfBinds.[nm] <- b
 
-/// Process a sequence of seqeuntials mixed with iterated lets "let ... in let ... in ..." in a tail recursive way 
+/// Process a sequence of sequentials mixed with iterated lets "let ... in let ... in ..." in a tail recursive way 
 /// This avoids stack overflow on really large "let" and "letrec" lists
 and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont = 
     match expr with 
@@ -11188,7 +11199,7 @@ and TcLetrecBinding
     (try UnifyTypes cenv envRec vspec.Range (allDeclaredTypars +-> tau) vspec.Type 
      with e -> error (Recursion(envRec.DisplayEnv,vspec.Id,tau,vspec.Type,vspec.Range)))
 
-    // Inside the incremental class sytntax we assert the type of the 'this' variable to be precisely the same type as the 
+    // Inside the incremental class syntax we assert the type of the 'this' variable to be precisely the same type as the 
     // this variable for the implicit class constructor. For static members, we assert the type variables associated
     // for the class to be identical to those used for the implicit class constructor and the static class constructor.
     match reqdThisValTyOpt with 
@@ -12050,7 +12061,7 @@ module IncrClassChecking =
             let ctorVal = MakeAndPublishVal cenv env (Parent(tcref),false,ModuleOrMemberBinding,ValInRecScope(isComplete),ctorValScheme,attribs,XmlDoc.Empty,None,false) 
             ctorValScheme,ctorVal
 
-        // We only generate the cctor on demand, because wew don't need it if there are no cctor actions. 
+        // We only generate the cctor on demand, because we don't need it if there are no cctor actions. 
         // The code below has a side-effect (MakeAndPublishVal), so we only want to run it once if at all. 
         // The .cctor is never referenced by any other code.
         let cctorValInfo = 
@@ -12568,7 +12579,7 @@ module IncrClassChecking =
                       let reps     = (reps,binds) ||> List.fold (fun rep bind -> rep.ChooseAndAddRepresentation(cenv,env,isStatic,isCtorArg,ctorInfo,staticForcedFieldVars,instanceForcedFieldVars,bind)) // extend
                       if isRec then
                           // Note: the recursive calls are made via members on the object
-                          // or via access to fiels. THis means the recursive loop is "broken", 
+                          // or via access to fields. This means the recursive loop is "broken", 
                           // and we can collapse to sequential bindings 
                           let reps     = (reps,binds) ||> List.fold (fun rep bind -> rep.ValNowWithRepresentation bind.Var) // inscope before
                           let actions,methodBinds = binds |> List.map (TransBind reps) |> List.unzip // since can occur in RHS of own defns 
@@ -12663,7 +12674,7 @@ module IncrClassChecking =
         let methodBinds = methodBinds1 @ List.concat methodBinds2
 
         let ctorBody =
-            // Build the elements of the implicit constructor body, starting from the bottome
+            // Build the elements of the implicit constructor body, starting from the bottom
             //     <optional-this-ref-cell-init>
             //     <super init>
             //     <let/do bindings>
@@ -12702,7 +12713,7 @@ module IncrClassChecking =
                     | Some v -> 
                         // Rewrite the expression to convert it to a load of a field if needed.
                         // We are allowed to load fields from our own object even though we haven't called
-                        // the super class cosntructor yet.
+                        // the super class constructor yet.
                         let ldexpr = reps.FixupIncrClassExprPhase2C (Some(thisVal)) safeStaticInitInfo thisTyInst (exprForVal m v) 
                         mkInvisibleLet m v ldexpr inheritsExpr
 
@@ -12780,7 +12791,7 @@ module MutRecBindingChecking =
     type TyconBindingPhase2B =
       | Phase2BIncrClassCtor     of IncrClassCtorLhs * Tast.Binding option 
       | Phase2BInherit           of Expr * Val option
-      /// A set of value of function definitions in a class definition with an implicit consructor.
+      /// A set of value of function definitions in a class definition with an implicit constructor.
       | Phase2BIncrClassBindings of IncrClassBindingGroup list
       | Phase2BMember       of int
       /// An intermediate definition that represent the point in an implicit class definition where
@@ -13172,7 +13183,7 @@ module MutRecBindingChecking =
                             // Note they may be solved to be equi-recursive.
                             let extraGeneralizableTypars =  copyOfTyconTypars
 
-                            // Inside the incremental class sytntax we assert the type of the 'this' variable to be precisely the same type as the 
+                            // Inside the incremental class syntax we assert the type of the 'this' variable to be precisely the same type as the 
                             // this variable for the implicit class constructor. For static members, we assert the type variables associated
                             // for the class to be identical to those used for the implicit class constructor and the static class constructor.
                             //
@@ -13791,7 +13802,7 @@ module AddAugmentationDeclarations =
         AddGenericCompareBindings cenv tycon @ AddGenericCompareWithComparerBindings cenv tycon @ AddGenericEqualityWithComparerBindings cenv tycon
 
 
-    // We can only add the Equals override after we've done the augmentation becuase we have to wait until 
+    // We can only add the Equals override after we've done the augmentation because we have to wait until 
     // tycon.HasOverride can give correct results 
     let AddGenericEqualityBindings cenv (env: TcEnv) tycon =
         if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals cenv.g tycon then 
@@ -13839,7 +13850,7 @@ module TyconConstraintInference =
                        if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare cenv.g tycon then 
                            yield tycon.Stamp ]
 
-        // Initially, don't assume that the equality relation is dependent on any type varaibles
+        // Initially, don't assume that the equality relation is dependent on any type variables
         let initialAsssumedTypars = Set.empty
 
         // Repeatedly eliminate structural type definitions whose structural component types no longer support 
@@ -13966,7 +13977,7 @@ module TyconConstraintInference =
                        if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals cenv.g tycon then 
                            yield tycon.Stamp ]
                            
-        // Initially, don't assume that the equality relation is dependent on any type varaibles
+        // Initially, don't assume that the equality relation is dependent on any type variables
         let initialAssumedTypars = Set.empty
 
         // Repeatedly eliminate structural type definitions whose structural component types no longer support 
@@ -14576,7 +14587,7 @@ module EstablishTypeDefinitionCores =
                     
             let ctxt = ProvidedTypeContext.Create(lookupILTypeRef, lookupTyconRef)
 
-            // Create a new provided type which captures the reverse-reampping tables.
+            // Create a new provided type which captures the reverse-remapping tables.
             let theRootTypeWithRemapping = theRootType.PApply ((fun x -> ProvidedType.ApplyContext(x,ctxt)), m)
 
             let isRootGenerated,rootProvAssemStaticLinkInfoOpt = 
@@ -15280,7 +15291,7 @@ module EstablishTypeDefinitionCores =
     /// Check that a set of type definitions is free of inheritance cycles
     let TcTyconDefnCore_CheckForCyclicStructsAndInheritance cenv tycons =
         // Overview:
-        // Given several tycons now being defined (the "intial" tycons).
+        // Given several tycons now being defined (the "initial" tycons).
         // Look for cycles in inheritance and struct-field-containment.
         //
         // The graph is on the (initial) type constructors (not types (e.g. tycon instantiations)).
@@ -15510,7 +15521,7 @@ module EstablishTypeDefinitionCores =
         // hash/compare. Because this adds interfaces, this may let constraints 
         // be satisfied, so we have to do this prior to checking any constraints.
         //
-        // First find all the field types in all the structrual types
+        // First find all the field types in all the structural types
         let tyconsWithStructuralTypes = 
             (envMutRecPrelim,withEnvs) 
             ||> MutRecShapes.mapTyconsWithEnv (fun envForDecls (origInfo, tyconOpt) -> 
@@ -16414,7 +16425,7 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent typeNames scopem 
 
       | SynModuleDecl.NestedModule(compInfo, isRec, mdefs, isContinuingModule, m) ->
 
-          // Treat 'module rec M = ...' as a single mutully recursive definition group 'module M = ...'
+          // Treat 'module rec M = ...' as a single mutually recursive definition group 'module M = ...'
           if isRec then 
               assert (not isContinuingModule)
               let modDecl = SynModuleDecl.NestedModule(compInfo, false, mdefs, isContinuingModule, m)
@@ -16911,7 +16922,7 @@ let TypeCheckOneImplFile
                 errorRecovery e m)
 
     // We ALWAYS run the PostTypeCheckSemanticChecks phase, though we if we have already encountered some
-    // errors we turn off error reporting. THis is because it performs various fixups over the TAST, e.g. 
+    // errors we turn off error reporting. This is because it performs various fixups over the TAST, e.g. 
     // assigning nice names for inference variables.
     let hasExplicitEntryPoint = 
         conditionallySuppressErrorReporting (checkForErrors()) (fun () ->

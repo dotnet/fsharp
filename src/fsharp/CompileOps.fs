@@ -803,17 +803,17 @@ let OutputPhasedErrorR errorStyle (os:StringBuilder) (err:PhasedDiagnostic) =
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
           os.Append(IndeterminateRuntimeCoercionE().Format t1 t2) |> ignore
       | IndeterminateStaticCoercion(denv,ty1,ty2,_) -> 
-          // REVIEW: consider if we need to show _cxs (the type parameter constrants)
+          // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
           os.Append(IndeterminateStaticCoercionE().Format t1 t2) |> ignore
       | StaticCoercionShouldUseBox(denv,ty1,ty2,_) ->
-          // REVIEW: consider if we need to show _cxs (the type parameter constrants)
+          // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv ty1 ty2
           os.Append(StaticCoercionShouldUseBoxE().Format t1 t2) |> ignore
       | TypeIsImplicitlyAbstract(_) -> 
           os.Append(TypeIsImplicitlyAbstractE().Format) |> ignore
       | NonRigidTypar(denv,tpnmOpt,typarRange,ty1,ty,_) -> 
-          // REVIEW: consider if we need to show _cxs (the type parameter constrants)
+          // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let _, (ty1,ty), _cxs = PrettyTypes.PrettifyTypes2 denv.g (ty1,ty)
           match tpnmOpt with 
           | None -> 
@@ -1153,13 +1153,13 @@ let OutputPhasedErrorR errorStyle (os:StringBuilder) (err:PhasedDiagnostic) =
                   (List.mapSquared Parser.prodIdxToNonTerminal ctxt.ReducibleProductions)
         *)
       | RuntimeCoercionSourceSealed(denv,ty,_) -> 
-          // REVIEW: consider if we need to show _cxs (the type parameter constrants)
+          // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let _, ty, _cxs = PrettyTypes.PrettifyTypes1 denv.g ty
           if isTyparTy denv.g ty 
           then os.Append(RuntimeCoercionSourceSealed1E().Format (NicePrint.stringOfTy denv ty)) |> ignore
           else os.Append(RuntimeCoercionSourceSealed2E().Format (NicePrint.stringOfTy denv ty)) |> ignore
       | CoercionTargetSealed(denv,ty,_) -> 
-          // REVIEW: consider if we need to show _cxs (the type parameter constrants)
+          // REVIEW: consider if we need to show _cxs (the type parameter constraints)
           let _, ty, _cxs= PrettyTypes.PrettifyTypes1 denv.g ty
           os.Append(CoercionTargetSealedE().Format (NicePrint.stringOfTy denv ty)) |> ignore
       | UpcastUnnecessary(_) -> 
@@ -1513,7 +1513,7 @@ let CollectDiagnostic (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle
 
                   // Here, we want the complete range information so Project Systems can generate proper squiggles
                   | ErrorStyle.VSErrors      -> 
-                        // Show prefix only for real files. Otherise, we just want a truncated error like:
+                        // Show prefix only for real files. Otherwise, we just want a truncated error like:
                         //      parse error FS0031 : blah blah
                         if m<>range0 && m<>rangeStartup && m<>rangeCmdArgs then 
                             let file = file.Replace("/","\\")
@@ -2168,7 +2168,7 @@ type TcConfigBuilder =
         System.Diagnostics.Debug.Assert(FileSystem.IsPathRootedShim(implicitIncludeDir), sprintf "implicitIncludeDir should be absolute: '%s'" implicitIncludeDir)
         if (String.IsNullOrEmpty(defaultFSharpBinariesDir)) then 
             failwith "Expected a valid defaultFSharpBinariesDir"
-        { primaryAssembly = PrimaryAssembly.Mscorlib // defaut value, can be overridden using the command line switch
+        { primaryAssembly = PrimaryAssembly.Mscorlib // default value, can be overridden using the command line switch
           light = None
           noFeedback=false
           stackReserveSize=None
@@ -2332,12 +2332,12 @@ type TcConfigBuilder =
         let pdbfile = 
             if tcConfigB.debuginfo then
               Some (match tcConfigB.debugSymbolFile with 
-                    | None -> Microsoft.FSharp.Compiler.AbstractIL.ILPdbWriter.getDebugFileName outfile
+                    | None -> Microsoft.FSharp.Compiler.AbstractIL.ILPdbWriter.getDebugFileName outfile tcConfigB.portablePDB
 #if ENABLE_MONO_SUPPORT
                     | Some _ when runningOnMono ->
                         // On Mono, the name of the debug file has to be "<assemblyname>.mdb" so specifying it explicitly is an error
                         warning(Error(FSComp.SR.ilwriteMDBFileNameCannotBeChangedWarning(),rangeCmdArgs))
-                        Microsoft.FSharp.Compiler.AbstractIL.ILPdbWriter.getDebugFileName outfile
+                        Microsoft.FSharp.Compiler.AbstractIL.ILPdbWriter.getDebugFileName outfile tcConfigB.portablePDB
 #endif
                     | Some f -> f)   
             elif (tcConfigB.debugSymbolFile <> None) && (not (tcConfigB.debuginfo)) then
@@ -2817,7 +2817,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                 [ let runtimeRoot = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
                   let runtimeRootWithoutSlash = runtimeRoot.TrimEnd('/', '\\')
                   let api = runtimeRootWithoutSlash + "-api"
-                  yield runtimeRoot // The defaut FSharp.Core is found in lib/mono/4.5
+                  yield runtimeRoot // The default FSharp.Core is found in lib/mono/4.5
                   if Directory.Exists(api) then
                      yield api
                      let facades = Path.Combine(api, "Facades")
@@ -2899,7 +2899,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
         let m,nm = r.Range, r.Text
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
         // Only want to resolve certain extensions (otherwise, 'System.Xml' is ambiguous).
-        // MSBuild resolution is limitted to .exe and .dll so do the same here.
+        // MSBuild resolution is limited to .exe and .dll so do the same here.
         let ext = System.IO.Path.GetExtension(nm)
         let isNetModule = String.Compare(ext,".netmodule",StringComparison.OrdinalIgnoreCase)=0 
         
@@ -3161,7 +3161,7 @@ let GetScopedPragmasForInput input =
 /// Build an ErrorLogger that delegates to another ErrorLogger but filters warnings turned off by the given pragma declarations
 //
 // NOTE: we allow a flag to turn of strict file checking. This is because file names sometimes don't match due to use of 
-// #line directives, e.g. for pars.fs/pars.fsy. In this case we just test by line number - in most cases this is sufficent
+// #line directives, e.g. for pars.fs/pars.fsy. In this case we just test by line number - in most cases this is sufficient
 // because we install a filtering error handler on a file-by-file basis for parsing and type-checking.
 // However this is indicative of a more systematic problem where source-line 
 // sensitive operations (lexfilter and warning filtering) do not always
@@ -3347,6 +3347,35 @@ let PostParseModuleSpecs (defaultNamespace,filename,isLastCompiland,ParsedSigFil
 
     ParsedInput.SigFile(ParsedSigFileInput(filename,qualName,scopedPragmas,hashDirectives,specs))
 
+/// Checks if a module name is already given and deduplicates the name if needed.
+let DeduplicateModuleName (moduleNamesDict:Dictionary<string,Set<string>>) (paths: Set<string>) path (qualifiedNameOfFile: QualifiedNameOfFile) =
+    let count = if paths.Contains path then paths.Count else paths.Count + 1
+    moduleNamesDict.[qualifiedNameOfFile.Text] <- Set.add path paths
+    let id = qualifiedNameOfFile.Id
+    if count = 1 then qualifiedNameOfFile else QualifiedNameOfFile(Ident(id.idText + "___" + count.ToString(),id.idRange))
+
+/// Checks if a ParsedInput is using a module name that was already given and deduplicates the name if needed.
+let DeduplicateParsedInputModuleName (moduleNamesDict:Dictionary<string,Set<string>>) input =
+    match input with
+    | ParsedInput.ImplFile (ParsedImplFileInput.ParsedImplFileInput(fileName,isScript,qualifiedNameOfFile,scopedPragmas,hashDirectives,modules,(isLastCompiland,isExe))) ->
+        let path = Path.GetDirectoryName fileName
+        match moduleNamesDict.TryGetValue qualifiedNameOfFile.Text with
+        | true, paths ->
+            let qualifiedNameOfFile = DeduplicateModuleName moduleNamesDict paths path qualifiedNameOfFile
+            ParsedInput.ImplFile(ParsedImplFileInput.ParsedImplFileInput(fileName,isScript,qualifiedNameOfFile,scopedPragmas,hashDirectives,modules,(isLastCompiland,isExe)))
+        | _ ->
+            moduleNamesDict.Add(qualifiedNameOfFile.Text,Set.singleton path)
+            input
+    | ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName,qualifiedNameOfFile,scopedPragmas,hashDirectives,modules)) ->
+        let path = Path.GetDirectoryName fileName
+        match moduleNamesDict.TryGetValue qualifiedNameOfFile.Text with
+        | true, paths ->
+            let qualifiedNameOfFile = DeduplicateModuleName moduleNamesDict paths path qualifiedNameOfFile
+            ParsedInput.SigFile (ParsedSigFileInput.ParsedSigFileInput(fileName,qualifiedNameOfFile,scopedPragmas,hashDirectives,modules))
+        | _ ->
+            moduleNamesDict.Add(qualifiedNameOfFile.Text,Set.singleton path)
+            input
+
 let ParseInput (lexer,errorLogger:ErrorLogger,lexbuf:UnicodeLexing.Lexbuf,defaultNamespace,filename,isLastCompiland) = 
     // The assert below is almost ok, but it fires in two cases:
     //  - fsi.exe sometimes passes "stdin" as a dummy filename
@@ -3488,7 +3517,7 @@ type TcAssemblyResolutions(results : AssemblyResolution list, unresolved : Unres
                 let failures = resolutions |> List.choose (function Choice2Of2 x -> Some (UnresolvedAssemblyReference(x.Text,[x])) | _ -> None)
                 successes, failures
             else
-                RequireCompilationThread ctok // we don't want to do assemby resolution concurrently, we assume MSBuild doesn't handle this
+                RequireCompilationThread ctok // we don't want to do assembly resolution concurrently, we assume MSBuild doesn't handle this
                 TcConfig.TryResolveLibsUsingMSBuildRules (tcConfig, assemblyList, rangeStartup, ReportErrors)
         TcAssemblyResolutions(resolved,unresolved @ knownUnresolved)                    
 
@@ -3689,7 +3718,7 @@ type TcConfigProvider =
 //--------------------------------------------------------------------------
 
           
-/// Repreesnts a table of imported assemblies with their resolutions.
+/// Represents a table of imported assemblies with their resolutions.
 [<Sealed>] 
 type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResolutions, importsBase:TcImports option, ilGlobalsOpt) = 
 
@@ -4385,7 +4414,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
       }
       
     /// Note that implicit loading is not used for compilations from MSBuild, which passes ``--noframework``
-    /// Implicit loading is done in non-cancellation mode.  Implicit loading is never used in the langauge service, so 
+    /// Implicit loading is done in non-cancellation mode.  Implicit loading is never used in the language service, so 
     /// no cancellation is needed.
     member tcImports.ImplicitLoadIfAllowed (ctok, m, assemblyName, lookupOnly) = 
         CheckDisposed()
@@ -4471,7 +4500,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
     // we dispose TcImports is because we need to dispose type providers, and type providers are never included in the framework DLL set.
     //
     // If this ever changes then callers may need to begin disposing the TcImports (though remember, not before all derived 
-    // non-frameworkk TcImports built related to this framework TcImports are disposed).
+    // non-framework TcImports built related to this framework TcImports are disposed).
     static member BuildFrameworkTcImports (ctok, tcConfigP:TcConfigProvider, frameworkDLLs, nonFrameworkDLLs) =
       cancellable {
 
@@ -4520,7 +4549,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                         match tcResolutions.TryFindByOriginalReference coreLibraryReference with
                         | Some resolution -> Some resolution
                         | _ -> 
-                            // Are we using a "non-cannonical" FSharp.Core?
+                            // Are we using a "non-canonical" FSharp.Core?
                             match tcAltResolutions.TryFindByOriginalReference coreLibraryReference with
                             | Some resolution -> Some resolution
                             | _ -> tcResolutions.TryFindByOriginalReferenceText (GetFSharpCoreLibraryName())  // was the ".dll" elided?

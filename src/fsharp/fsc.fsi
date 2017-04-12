@@ -23,7 +23,7 @@ val EncodeInterfaceData: tcConfig:TcConfig * tcGlobals:TcGlobals * exportRemappi
 val ValidateKeySigningAttributes : tcConfig:TcConfig * tcGlobals:TcGlobals * TypeChecker.TopAttribs -> StrongNameSigningInfo
 val GetStrongNameSigner : StrongNameSigningInfo -> ILBinaryWriter.ILStrongNameSigner option
 
-/// Proccess the given set of command line arguments
+/// Process the given set of command line arguments
 val internal ProcessCommandLineFlags : TcConfigBuilder * setProcessThreadLocals:(TcConfigBuilder -> unit) * lcidFromCodePage : int option * argv:string[] -> string list
 
 //---------------------------------------------------------------------------
