@@ -384,6 +384,47 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         inherit Folder<'T,NoValue>(Unchecked.defaultof<_>)
         override me.ProcessNext value = consumer.ProcessNext value
 
+    and ConcatOutOfBand () =
+        let outOfBands = ResizeArray<IOutOfBand> ()
+
+        interface IOutOfBand with
+            member this.StopFurtherProcessing pipeIdx =
+                for i = 0 to outOfBands.Count-1 do
+                    outOfBands.[i].StopFurtherProcessing pipeIdx
+
+        member this.Push outOfBand =
+            outOfBands.Add outOfBand
+
+        member this.Pop n =
+            for i = 1 to n do
+                outOfBands.RemoveAt (outOfBands.Count-1)
+
+    and IConcatGetOutOfBand =
+        abstract GetOutOfBand : unit -> ConcatOutOfBand
+
+    and ConcatFold<'T,'U,'Collection,'Result when 'Collection :> ISeq<'T>>(outOfBand:ConcatOutOfBand, result:Folder<'U,'Result>, consumer:Activity<'T,'U>, common:Folder<'T,NoValue>) as this =
+        inherit Folder<'Collection, 'Result>(Unchecked.defaultof<_>)
+
+        do
+            outOfBand.Push this
+            outOfBand.Push result
+            outOfBand.Push common
+
+        override __.ProcessNext value =
+            value.Fold (fun _ -> common) |> ignore
+            Unchecked.defaultof<_> (* return value unused in Fold context *)
+
+        override this.ChainComplete _ =
+            outOfBand.Pop 3
+            consumer.ChainComplete result.HaltedIdx
+            this.Result <- result.Result
+
+        override this.ChainDispose () =
+            consumer.ChainDispose ()
+
+        interface IConcatGetOutOfBand with
+            member __.GetOutOfBand () = outOfBand
+
     and ConcatEnumerable<'T,'U,'Collection when 'Collection :> ISeq<'T>> (sources:ISeq<'Collection>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
         inherit EnumerableBase<'U>()
 
@@ -397,32 +438,25 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                 Upcast.seq (new ConcatEnumerable<'T,'V,'Collection>(sources, ComposedFactory.Combine transformFactory next, pipeIdx+1))
 
             member this.Fold<'Result> (createFolder:PipeIdx->Folder<'U,'Result>) =
-                let result = createFolder (pipeIdx+1)
-                let consumer = createFold transformFactory result pipeIdx
-                try
-                    let common : Folder<'T,NoValue> =
-                        let concatCommon = 
-                            if not (obj.ReferenceEquals (result, consumer)) then ConcatCommon consumer
-                            else
-                                // (result = consumer) thus our transform is just the identity function, so check to see if
-                                // we're nested, and can just use the deeper nested ConcatCommon object to avoid extra 
-                                // call in the chain
-                                match box result with
-                                | :? ConcatCommon<'T> as common -> common
-                                | _ -> ConcatCommon consumer
-                        upcast concatCommon
+                sources.Fold (fun lowerPipeIdx ->
+                    let thisPipeIdx = lowerPipeIdx + pipeIdx
 
-                    sources.Fold (fun _ ->
-                        { new Folder<'Collection,NoValue>(Unchecked.defaultof<_>) with
-                            override me.ProcessNext value =
-                                value.Fold (fun _ -> common) |> ignore
-                                me.HaltedIdx <- common.HaltedIdx
-                                Unchecked.defaultof<_> (* return value unused in Fold context *) }) |> ignore
+                    let result = createFolder (thisPipeIdx+1)
 
-                    consumer.ChainComplete result.HaltedIdx
-                    result.Result
-                finally
-                    result.ChainDispose ()
+                    let outOfBand = 
+                        match box result with
+                        | :? IConcatGetOutOfBand as get -> get.GetOutOfBand ()
+                        | _ -> ConcatOutOfBand ()
+
+                    let consumer =
+                        transformFactory.Compose (Upcast.outOfBand outOfBand) thisPipeIdx result 
+                         
+                    let common =
+                        match box consumer with
+                        | :? ConcatCommon<'T> as common -> common
+                        | _ -> upcast ConcatCommon consumer
+
+                    upcast ConcatFold (outOfBand, result, consumer, common))
 
     and ThinConcatEnumerable<'T, 'Sources, 'Collection when 'Collection :> ISeq<'T>> (sources:'Sources, preEnumerate:'Sources->ISeq<'Collection>) =
         inherit EnumerableBase<'T>()
