@@ -990,7 +990,7 @@ type FSharpErrorInfo(fileName, s:pos, e:pos, severity: FSharpErrorSeverity, mess
     static member (*internal*) CreateFromException(exn, isError, trim:bool, fallbackRange:range) = 
         let m = match GetRangeOfDiagnostic exn with Some m -> m | None -> fallbackRange 
         let e = if trim then m.Start else m.End
-        let msg = bufs (fun buf -> OutputPhasedDiagnostic ErrorLogger.ErrorStyle.DefaultErrors buf exn false)
+        let msg = bufs (fun buf -> OutputPhasedDiagnostic buf exn false)
         let errorNum = GetDiagnosticNumber exn
         FSharpErrorInfo(m.FileName, m.Start, e, (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning), msg, exn.Subcategory(), errorNum)
         
