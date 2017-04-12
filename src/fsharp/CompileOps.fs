@@ -609,7 +609,7 @@ let getErrorString key = SR.GetString key
 
 let (|InvalidArgument|_|) (exn:exn) = match exn with :? ArgumentException as e -> Some e.Message | _ -> None
 
-let OutputPhasedErrorR errorStyle (os:StringBuilder) (err:PhasedDiagnostic) =
+let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
     let rec OutputExceptionR (os:StringBuilder) error = 
       match error with
       | ConstraintSolverTupleDiffLengths(_,tl1,tl2,m,m2) -> 
@@ -1425,10 +1425,10 @@ let OutputPhasedErrorR errorStyle (os:StringBuilder) (err:PhasedDiagnostic) =
 
 
 // remove any newlines and tabs 
-let OutputPhasedDiagnostic errorStyle (os:System.Text.StringBuilder) (err:PhasedDiagnostic) (flattenErrors:bool) = 
+let OutputPhasedDiagnostic (os:System.Text.StringBuilder) (err:PhasedDiagnostic) (flattenErrors:bool) = 
     let buf = new System.Text.StringBuilder()
 
-    OutputPhasedErrorR errorStyle buf err
+    OutputPhasedErrorR buf err
     let s = if flattenErrors then ErrorLogger.NormalizeErrorString (buf.ToString()) else buf.ToString()
     
     os.Append(s) |> ignore
