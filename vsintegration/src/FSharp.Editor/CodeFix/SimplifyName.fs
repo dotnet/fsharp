@@ -13,7 +13,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 
-[<ExportCodeFixProvider(FSharpCommonConstants.FSharpLanguageName, Name = PredefinedCodeFixProviderNames.SimplifyNames); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = PredefinedCodeFixProviderNames.SimplifyNames); Shared>]
 type internal FSharpSimplifyNameCodeFixProvider() =
     inherit CodeFixProvider()
     let fixableDiagnosticId = IDEDiagnosticIds.SimplifyNamesDiagnosticId
@@ -25,7 +25,7 @@ type internal FSharpSimplifyNameCodeFixProvider() =
                 async {
                     let! sourceText = context.Document.GetTextAsync()
                     return context.Document.WithText(sourceText.WithChanges(textChange))
-                } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
+                } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
             title)
 
     override __.FixableDiagnosticIds = ImmutableArray.Create(fixableDiagnosticId)
@@ -42,4 +42,4 @@ type internal FSharpSimplifyNameCodeFixProvider() =
                    createCodeFix(title, context, TextChange(context.Span, "")), 
                    ImmutableArray.Create(diagnostic))
        } 
-       |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+       |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

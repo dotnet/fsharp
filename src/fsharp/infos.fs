@@ -457,7 +457,7 @@ let private CombineMethInsts ttps mtps tinst minst = (mkTyparInst ttps tinst @ m
 /// Work out the instantiation relevant to interpret the backing metadata for a member.
 ///
 /// The 'minst' is the instantiation of any generic method type parameters (this instantiation is
-/// not included in the MethInfo objects, but carreid separately).
+/// not included in the MethInfo objects, but carried separately).
 let private GetInstantiationForMemberVal g isCSharpExt (typ,vref,minst) = 
     let memberParentTypars,memberMethodTypars,_retTy,parentTyArgs = AnalyzeTypeOfMemberVal isCSharpExt g (typ,vref)
     CombineMethInsts memberParentTypars memberMethodTypars parentTyArgs minst
@@ -1833,7 +1833,7 @@ type PropInfo =
         | ProvidedProp(_,pi,m) -> pi.PUntaint((fun pi -> pi.CanWrite),m)
 #endif
 
-    /// Get the enclosing type of the proeprty. 
+    /// Get the enclosing type of the property. 
     ///
     /// If this is an extension member, then this is the apparent parent, i.e. the type the property appears to extend.
     member x.EnclosingType = 

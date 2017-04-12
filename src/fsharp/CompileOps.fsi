@@ -69,6 +69,12 @@ val ComputeQualifiedNameOfFileFromUniquePath : range * string list -> Ast.Qualif
 
 val PrependPathToInput : Ast.Ident list -> Ast.ParsedInput -> Ast.ParsedInput
 
+/// Checks if a module name is already given and deduplicates the name if needed.
+val DeduplicateModuleName : Dictionary<string,Set<string>> -> Set<string> -> string -> Ast.QualifiedNameOfFile -> Ast.QualifiedNameOfFile
+
+/// Checks if a ParsedInput is using a module name that was already given and deduplicates the name if needed.
+val DeduplicateParsedInputModuleName : Dictionary<string,Set<string>> -> Ast.ParsedInput -> Ast.ParsedInput
+
 val ParseInput : (UnicodeLexing.Lexbuf -> Parser.token) * ErrorLogger * UnicodeLexing.Lexbuf * string option * string * isLastCompiland:(bool * bool) -> Ast.ParsedInput
 
 //----------------------------------------------------------------------------
@@ -197,7 +203,7 @@ type AssemblyResolution =
        originalReference : AssemblyReference
        /// Path to the resolvedFile
        resolvedPath : string    
-       /// Create the tooltip texxt for the assembly reference
+       /// Create the tooltip text for the assembly reference
        prepareToolTip : unit -> string
        /// Whether or not this is an installed system assembly (for example, System.dll)
        sysdir : bool
@@ -592,7 +598,7 @@ type TcAssemblyResolutions =
     
 
 
-/// Repreesnts a table of imported assemblies with their resolutions.
+/// Represents a table of imported assemblies with their resolutions.
 [<Sealed>] 
 type TcImports =
     interface System.IDisposable
@@ -633,13 +639,13 @@ type TcImports =
 // Special resources in DLLs
 //--------------------------------------------------------------------------
 
-/// Determine if an IL resource attached to an F# assemnly is an F# signature data resource
+/// Determine if an IL resource attached to an F# assembly is an F# signature data resource
 val IsSignatureDataResource : ILResource -> bool
 
-/// Determine if an IL resource attached to an F# assemnly is an F# optimization data resource
+/// Determine if an IL resource attached to an F# assembly is an F# optimization data resource
 val IsOptimizationDataResource : ILResource -> bool
 
-/// Determine if an IL resource attached to an F# assemnly is an F# quotation data resource for reflected definitions
+/// Determine if an IL resource attached to an F# assembly is an F# quotation data resource for reflected definitions
 val IsReflectedDefinitionsResource : ILResource -> bool
 val GetSignatureDataResourceName : ILResource -> string
 
@@ -709,7 +715,7 @@ type TcState =
     /// Get the typing environment implied by the set of signature files and/or inferred signatures of implementation files checked so far
     member TcEnvFromSignatures : TcEnv
 
-    /// Get the typing environment implied by the set of implemetation files checked so far
+    /// Get the typing environment implied by the set of implementation files checked so far
     member TcEnvFromImpls : TcEnv
     /// The inferred contents of the assembly, containing the signatures of all implemented files.
     member PartialAssemblySignature : ModuleOrNamespaceType

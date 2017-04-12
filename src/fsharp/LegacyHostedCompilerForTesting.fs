@@ -84,7 +84,7 @@ type internal FscCompiler() =
             EndLine = 0
         }
 
-    /// converts short and long issue types to the same CompilationIssue reprsentation
+    /// converts short and long issue types to the same CompilationIssue representation
     let convert issue : CompilationIssue = 
         match issue with
         | Diagnostic.Short(isError, text) -> 

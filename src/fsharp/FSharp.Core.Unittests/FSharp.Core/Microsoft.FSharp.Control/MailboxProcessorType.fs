@@ -46,7 +46,7 @@ type MailboxProcessorType() =
         let mailbox = getSimpleMailbox()
         mailbox.Start()
 
-        // Verify default is inifinite
+        // Verify default is infinite
         Assert.AreEqual(mailbox.DefaultTimeout, -1)
 
         mailbox.Post(Reset)

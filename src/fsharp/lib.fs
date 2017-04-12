@@ -391,7 +391,7 @@ let inline cacheOptRef cache f =
 // It is related to recursive class loading in multi-assembly NGEN scenarios. The bug has been fixed but
 // not yet deployed.
 // The bug manifests itself as an ExecutionEngine failure or fast-fail process exit which comes
-// and goes depending on whether components are NGEN'd or not, e.g. 'ngen install FSharp.COmpiler.dll'
+// and goes depending on whether components are NGEN'd or not, e.g. 'ngen install FSharp.Compiler.dll'
 // One workaround for the bug is to break NGEN loading and fixups into smaller fragments. Roughly speaking, the NGEN
 // loading process works by doing delayed fixups of references in NGEN code. This happens on a per-method basis.
 // e.g. one manifestation is that a 'print' before calling a method like LexFilter.create gets

@@ -268,7 +268,7 @@ and remapTraitAux tyenv (TTrait(typs,nm,mf,argtys,rty,slnCell)) =
     // we have formal binders for type variables.
     //
     // The danger here is that a solution for one syntactic occurrence of a trait constraint won't
-    // be propagated to other, "linked" solutions. However trait constraints don't appear in any algebrra
+    // be propagated to other, "linked" solutions. However trait constraints don't appear in any algebra
     // in the same way as types
     TTrait(remapTypesAux tyenv typs,nm,mf,remapTypesAux tyenv argtys, Option.map (remapTypeAux tyenv) rty,ref slnCell)
 
@@ -335,7 +335,7 @@ let remapTypes tyenv x =
     remapTypesAux tyenv x
 
 /// Use this one for any type that may be a forall type where the type variables may contain attributes 
-/// Logically speaking this is mtuually recursive with remapAttrib defined much later in this file, 
+/// Logically speaking this is mutually recursive with remapAttrib defined much later in this file, 
 /// because types may contain forall types that contain attributes, which need to be remapped. 
 /// We currently break the recursion by passing in remapAttrib as a function parameter. 
 /// Use this one for any type that may be a forall type where the type variables may contain attributes 
@@ -661,7 +661,7 @@ let evalTupInfoIsStruct aexpr =
     match aexpr with 
     | TupInfo.Const b -> b
 
-/// This erases outermost occurences of inference equations, type abbreviations, non-generated provided types
+/// This erases outermost occurrences of inference equations, type abbreviations, non-generated provided types
 /// and measureable types (float<_>).
 /// It also optionally erases all "compilation representations", i.e. function and
 /// tuple types, and also "nativeptr<'T> --> System.IntPtr"
@@ -2386,7 +2386,7 @@ module SimplifyTypes =
         let singletons = Zset.addList singletons (Zset.empty typarOrder)
         // Here, singletons are typars that occur once in the type.
         // However, they may also occur in a type constraint.
-        // If they do, they are really multiple occurance - so we should remove them.
+        // If they do, they are really multiple occurrence - so we should remove them.
         let constraintTypars = (freeInTyparConstraints CollectTyparsNoCaching (List.map snd cxs)).FreeTypars
         let usedInTypeConstraint typar = Zset.contains typar constraintTypars
         let singletons = singletons |> Zset.filter (usedInTypeConstraint >> not) 
@@ -2535,11 +2535,16 @@ let tagEntityRefName (xref: EntityRef) name =
     elif xref.IsRecordTycon then tagRecord name
     else tagClass name
 
+let fullDisplayTextOfTyconRef  r = fullNameOfEntityRef (fun (tc:TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
+
 let fullNameOfEntityRefAsLayout nmF (xref: EntityRef) =
-    let n = NavigableTaggedText.Create(tagEntityRefName xref (nmF xref), xref.DefinitionRange) |> wordL
+    let navigableText = 
+        tagEntityRefName xref (nmF xref)
+        |> mkNav xref.DefinitionRange
+        |> wordL
     match fullNameOfParentOfEntityRefAsLayout xref  with 
-    | None -> n
-    | Some pathText -> pathText ^^ SepL.dot ^^ n
+    | None -> navigableText
+    | Some pathText -> pathText ^^ SepL.dot ^^ navigableText
 
 let fullNameOfParentOfValRef vref = 
     match vref with 
@@ -2563,7 +2568,6 @@ let fullNameOfParentOfValRefAsLayout vref =
 let fullDisplayTextOfParentOfModRef r = fullNameOfParentOfEntityRef r 
 
 let fullDisplayTextOfModRef r = fullNameOfEntityRef (fun (x:EntityRef) -> x.DemangledModuleOrNamespaceName)  r
-let fullDisplayTextOfTyconRef  r = fullNameOfEntityRef (fun (tc:TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
 let fullDisplayTextOfTyconRefAsLayout  r = fullNameOfEntityRefAsLayout (fun (tc:TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
 let fullDisplayTextOfExnRef  r = fullNameOfEntityRef (fun (tc:TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
 let fullDisplayTextOfExnRefAsLayout  r = fullNameOfEntityRefAsLayout (fun (tc:TyconRef) -> tc.DisplayNameWithStaticParametersAndUnderscoreTypars) r
@@ -3036,7 +3040,7 @@ module DebugPrint = begin
           let wrap x = bracketIfL isAtomic x in // wrap iff require atomic expr 
           // There are several cases for pprinting of typar.
           // 
-          //   'a              - is multiple  occurance.
+          //   'a              - is multiple  occurrence.
           //   #Type           - inplace coercion constraint and singleton
           //   ('a :> Type)    - inplace coercion constraint not singleton
           //   ('a.opM : S->T) - inplace operator constraint
@@ -3265,7 +3269,7 @@ module DebugPrint = begin
                 | TFSharpObjectRepr r when (match r.fsobjmodel_kind with TTyconInterface -> true | _ -> false) -> []
                 | _ -> tycon.ImmediateInterfacesOfFSharpTycon
             let iimpls = iimpls |> List.filter (fun (_,compgen,_) -> not compgen)
-            // if TTyconInterface, the iimpls should be printed as inheritted interfaces 
+            // if TTyconInterface, the iimpls should be printed as inherited interfaces 
             if isNil adhoc && isNil iimpls
             then emptyL 
             else 
@@ -5277,7 +5281,7 @@ let rec tyOfExpr g e =
         | TOp.Goto _ | TOp.Label _ | TOp.Return -> 
             //assert false; 
             //errorR(InternalError("unexpected goto/label/return in tyOfExpr",m)); 
-            // It doesn't matter what type we return here. THis is only used in free variable analysis in the code generator
+            // It doesn't matter what type we return here. This is only used in free variable analysis in the code generator
             g.unit_ty
 
 //--------------------------------------------------------------------------
@@ -5518,7 +5522,7 @@ let isRecdOrStructTyImmutable g ty =
 //
 // Note: isRecdOrStructTyImmutable implies PossiblyMutates or NeverMutates
 //
-// We only do this for true local or closure fields because we can't take adddresses of immutable static 
+// We only do this for true local or closure fields because we can't take addresses of immutable static 
 // fields across assemblies.
 let CanTakeAddressOfImmutableVal g (v:ValRef) mut =
     // We can take the address of values of struct type if the operation doesn't mutate 
@@ -5544,13 +5548,13 @@ let MustTakeAddressOfRecdFieldRef (rfref: RecdFieldRef) =  MustTakeAddressOfRecd
 
 let CanTakeAddressOfRecdFieldRef (g:TcGlobals) (rfref: RecdFieldRef) mut tinst =
     mut <> DefinitelyMutates && 
-    // We only do this if the field is defined in this assembly because we can't take adddresses across assemblies for immutable fields
+    // We only do this if the field is defined in this assembly because we can't take addresses across assemblies for immutable fields
     entityRefInThisAssembly g.compilingFslib rfref.TyconRef &&
     isRecdOrStructTyImmutable g (actualTyOfRecdFieldRef rfref tinst)
 
 let CanTakeAddressOfUnionFieldRef (g:TcGlobals) (uref: UnionCaseRef) mut tinst cidx =
     mut <> DefinitelyMutates && 
-    // We only do this if the field is defined in this assembly because we can't take adddresses across assemblies for immutable fields
+    // We only do this if the field is defined in this assembly because we can't take addresses across assemblies for immutable fields
     entityRefInThisAssembly g.compilingFslib uref.TyconRef &&
     isRecdOrStructTyImmutable g (actualTyOfUnionFieldRef uref cidx tinst)
 
@@ -6142,7 +6146,7 @@ let mkCallSeqCollect g m alphaTy betaTy arg1 arg2 =
     mkApps g (typedExprForIntrinsic g m g.seq_collect_info, [[alphaTy;enumty2;betaTy]], [ arg1; arg2 ],  m) 
                   
 let mkCallSeqUsing g m resourceTy elemTy arg1 arg2 = 
-    // We're intantiating val using : 'a -> ('a -> 'sb) -> seq<'b> when 'sb :> seq<'b> and 'a :> IDisposable 
+    // We're instantiating val using : 'a -> ('a -> 'sb) -> seq<'b> when 'sb :> seq<'b> and 'a :> IDisposable 
     // We set 'sb -> range(typeof(arg2)) 
     let enumty = try rangeOfFunTy g (tyOfExpr g arg2) with _ -> (* defensive programming *) (mkSeqTy g elemTy)
     mkApps g (typedExprForIntrinsic g m g.seq_using_info, [[resourceTy;enumty;elemTy]], [ arg1; arg2 ],  m) 
@@ -6440,6 +6444,20 @@ let MultiLambdaToTupledLambda g vs body =
         tupledv, untupler body 
       
 
+let (|RefTuple|_|) expr = 
+    match expr with
+    | Expr.Op (TOp.Tuple (TupInfo.Const false),_,args,_) -> Some args
+    | _ -> None
+
+let MultiLambdaToTupledLambdaIfNeeded g (vs,arg) body = 
+    match vs,arg with 
+    | [],_ -> failwith "MultiLambdaToTupledLambda: expected some argments"
+    | [v],_ -> [(v,arg)],body 
+    | vs,RefTuple args when args.Length = vs.Length -> List.zip vs args,body
+    | vs,_  -> 
+        let tupledv, untupler =  untupledToRefTupled g vs
+        [(tupledv, arg)], untupler body 
+
 //--------------------------------------------------------------------------
 // Beta reduction via let-bindings. Reduce immediate apps. of lambdas to let bindings. 
 // Includes binding the immediate application of generic
@@ -6491,8 +6509,9 @@ let rec MakeApplicationAndBetaReduceAux g (f, fty, tyargsl : TType list list, ar
           match tryStripLambdaN argsl.Length f with 
           | Some (argvsl, body) -> 
                assert (argvsl.Length = argsl.Length)
-               let argvs,body = List.mapFoldBack (MultiLambdaToTupledLambda g) argvsl body
-               mkLetsBind m (mkCompGenBinds argvs argsl) body
+               let pairs,body = List.mapFoldBack (MultiLambdaToTupledLambdaIfNeeded g) (List.zip argvsl argsl) body
+               let argvs2, args2 = List.unzip (List.concat pairs)
+               mkLetsBind m (mkCompGenBinds argvs2 args2) body
           | _ -> 
               mkExprApplAux g f fty argsl m 
 
@@ -7036,7 +7055,7 @@ let XmlDocSigOfVal g path (v:Val) =
   let parentTypars,methTypars,argInfos,prefix,path,name = 
 
     // CLEANUP: this is one of several code paths that treat module values and members 
-    // seperately when really it would be cleaner to make sure GetTopValTypeInFSharpForm, GetMemberTypeInFSharpForm etc.
+    // separately when really it would be cleaner to make sure GetTopValTypeInFSharpForm, GetMemberTypeInFSharpForm etc.
     // were lined up so code paths like this could be uniform
     
     match v.MemberInfo with 
@@ -7688,7 +7707,7 @@ type Entity with
         tycon.TypeContents.tcaug_interfaces |> List.exists (fun (x,_,_) -> typeEquiv g ty x)  
 
     // Does a type have an override matching the given name and argument types? 
-    // Used to detet the presence of 'Equals' and 'GetHashCode' in type checking 
+    // Used to detect the presence of 'Equals' and 'GetHashCode' in type checking 
     member tycon.HasOverride g nm argtys = 
         tycon.TypeContents.tcaug_adhoc 
         |> NameMultiMap.find nm
@@ -7893,7 +7912,7 @@ let EvalLiteralExprOrAttribArg g x =
         EvalAttribArgExpr g x
 
 // Take into account the fact that some "instance" members are compiled as static
-// members when usinging CompilationRepresentation.Static, or any non-virtual instance members
+// members when using CompilationRepresentation.Static, or any non-virtual instance members
 // in a type that supports "null" as a true value. This is all members
 // where ValRefIsCompiledAsInstanceMember is false but membInfo.MemberFlags.IsInstance 
 // is true.
@@ -8120,7 +8139,7 @@ let DetectAndOptimizeForExpression g option expr =
 let (|InnerExprPat|) expr = stripExpr expr
 
 //-------------------------------------------------------------------------
-// One of the tranformations performed by the compiler
+// One of the transformations performed by the compiler
 // is to eliminate variables of static type "unit".  These are
 // utility functions related to this.
 //------------------------------------------------------------------------- 

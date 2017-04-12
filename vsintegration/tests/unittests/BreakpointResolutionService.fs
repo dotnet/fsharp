@@ -76,7 +76,7 @@ let main argv =
         match actualResolutionOption with
         | None -> Assert.IsTrue(expectedResolution.IsNone, "BreakpointResolutionService failed to resolve breakpoint position")
         | Some(actualResolutionRange) ->
-            let actualResolution = sourceText.GetSubText(CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, actualResolutionRange)).ToString()
+            let actualResolution = sourceText.GetSubText(RoslynHelpers.FSharpRangeToTextSpan(sourceText, actualResolutionRange)).ToString()
             Assert.IsTrue(expectedResolution.IsSome, "BreakpointResolutionService resolved a breakpoint while it shouldn't at: {0}", actualResolution)
             Assert.AreEqual(expectedResolution.Value, actualResolution, "Expected and actual resolutions should match")
     

@@ -610,7 +610,7 @@ module Lazy =
     let force (x: Lazy<'T>) = x.Force()
 
 //----------------------------------------------------------------------------
-// Singe threaded execution and mutual exclusion
+// Single threaded execution and mutual exclusion
 
 /// Represents a permission active at this point in execution
 type ExecutionToken = interface end
@@ -621,18 +621,18 @@ type ExecutionToken = interface end
 ///   - we can access various caches in the SourceCodeServices
 ///
 /// Like other execution tokens this should be passed via argument passing and not captured/stored beyond
-/// the lifetime of stack-based calls. This is not checked, it is a discipline withinn the compiler code. 
+/// the lifetime of stack-based calls. This is not checked, it is a discipline within the compiler code. 
 type CompilationThreadToken() = interface ExecutionToken
 
-/// Represnts a place where we are stating that execution on the compilation thread is required.  The
+/// Represents a place where we are stating that execution on the compilation thread is required.  The
 /// reason why will be documented in a comment in the code at the callsite.
 let RequireCompilationThread (_ctok: CompilationThreadToken) = ()
 
-/// Represnts a place in the compiler codebase where we are passed a CompilationThreadToken unnecessarily.
+/// Represents a place in the compiler codebase where we are passed a CompilationThreadToken unnecessarily.
 /// This reprents code that may potentially not need to be executed on the compilation thread.
 let DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  (_ctok: CompilationThreadToken) = ()
 
-/// Represnts a place in the compiler codebase where we assume we are executing on a compilation thread
+/// Represents a place in the compiler codebase where we assume we are executing on a compilation thread
 let AssumeCompilationThreadWithoutEvidence () = Unchecked.defaultof<CompilationThreadToken>
 
 /// Represents a token that indicates execution on a any of several potential user threads calling the F# compiler services.
@@ -693,7 +693,7 @@ type ValueOrCancelled<'TResult> =
 /// Represents a cancellable computation with explicit representation of a cancelled result.
 ///
 /// A cancellable computation is passed may be cancelled via a CancellationToken, which is propagated implicitly.  
-/// If cancellation occurs, it is propagated as data rather than by raising an OperationCancelledException.  
+/// If cancellation occurs, it is propagated as data rather than by raising an OperationCanceledException.  
 type Cancellable<'TResult> = Cancellable of (System.Threading.CancellationToken -> ValueOrCancelled<'TResult>)
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -762,7 +762,7 @@ module Cancellable =
     let token () = Cancellable (fun ct -> ValueOrCancelled.Value ct)
 
     /// Represents a canceled computation
-    let canceled() = Cancellable (fun _ -> ValueOrCancelled.Cancelled (new OperationCanceledException()))
+    let canceled() = Cancellable (fun ct -> ValueOrCancelled.Cancelled (new OperationCanceledException(ct)))
 
     /// Catch exceptions in a computation
     let private catch (Cancellable e) = 
@@ -785,7 +785,7 @@ module Cancellable =
         catch e |> bind (fun res ->  
             match res with Choice1Of2 r -> ret r | Choice2Of2 err -> handler err)
     
-    // /// Run the cancellable computation within an Async computation.  This isn't actaully used in the codebase, but left
+    // Run the cancellable computation within an Async computation.  This isn't actually used in the codebase, but left
     // here in case we need it in the future 
     //
     // let toAsync e =    
@@ -916,7 +916,7 @@ module Eventually =
         catch e 
         |> bind (function Result v -> Done v | Exception e -> handler e)
     
-    // All eventually computations carry a CompiationThreadToken
+    // All eventually computations carry a CompilationThreadToken
     let token =    
         NotYetDone (fun ctok -> Done ctok)
     

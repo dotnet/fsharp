@@ -152,7 +152,7 @@ type Reactor() =
                         with e -> e |> AsyncUtil.AsyncException
 
                     resultCell.RegisterResult(result)),
-                    ccont=(fun () -> resultCell.RegisterResult (AsyncUtil.AsyncCanceled(OperationCanceledException())) )
+                    ccont=(fun () -> resultCell.RegisterResult (AsyncUtil.AsyncCanceled(OperationCanceledException(ct))) )
 
             )
             return! resultCell.AsyncResult 

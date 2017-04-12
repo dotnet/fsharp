@@ -108,7 +108,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                                 result.Add(
                                     Diagnostic.Create(
                                        Descriptor,
-                                       CommonRoslynHelpers.RangeToLocation(unnecessaryRange, sourceText, document.FilePath),
+                                       RoslynHelpers.RangeToLocation(unnecessaryRange, sourceText, document.FilePath),
                                        properties = (dict [SimplifyNameDiagnosticAnalyzer.LongIdentPropertyKey, relativeName]).ToImmutableDictionary()))
                     
                     let diagnostics = result.ToImmutableArray()
@@ -118,7 +118,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
             finally guard.Release() |> ignore
         } 
         |> Async.map (Option.defaultValue ImmutableArray.Empty)
-        |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+        |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
     interface IBuiltInAnalyzer with
         member __.OpenFileOnly _ = true

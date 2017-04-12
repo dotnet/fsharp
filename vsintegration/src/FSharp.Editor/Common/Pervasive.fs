@@ -2,28 +2,25 @@
 module Microsoft.VisualStudio.FSharp.Editor.Pervasive
 
 open System
+open System.IO
+open System.Threading.Tasks
 open System.Diagnostics
 
-[<RequireQualifiedAccess>]
-module String =   
-    open System.IO
 
-    let getLines (str: string) =
-        use reader = new StringReader(str)
-        [|  let mutable line = reader.ReadLine()
-            while not (isNull line) do
-                yield line
-                line <- reader.ReadLine()
-            if str.EndsWith("\n") then
-            // last trailing space not returned
-            // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
-                yield String.Empty
-        |]
+/// Checks if the filePath ends with ".fsi"
+let isSignatureFile (filePath:string) = 
+    Path.GetExtension filePath = ".fsi"
 
+/// Checks if the file paht ends with '.fsx' or '.fsscript'
+let isScriptFile (filePath:string) = 
+    let ext = Path.GetExtension filePath 
+    String.Equals (ext,".fsi",StringComparison.OrdinalIgnoreCase) || String.Equals (ext,".fsscript",StringComparison.OrdinalIgnoreCase)
 
-type System.IServiceProvider with
-    member x.GetService<'T>() = x.GetService(typeof<'T>) :?> 'T
-    member x.GetService<'S, 'T>() = x.GetService(typeof<'S>) :?> 'T
+/// Path combination operator
+let (</>) path1 path2 = Path.Combine (path1, path2) 
+
+type internal ISetThemeColors = abstract member SetColors: unit -> unit
+
 
 [<Sealed>]
 type MaybeBuilder () =
@@ -178,6 +175,8 @@ let inline liftAsync (computation : Async<'T>) : Async<'T option> =
         return Some a 
     }
 
+let liftTaskAsync task = task |> Async.AwaitTask |> liftAsync
+
 module Async =
     let map (f: 'T -> 'U) (a: Async<'T>) : Async<'U> =
         async {
@@ -199,6 +198,40 @@ module Async =
             }
         async { return! agent.PostAndAsyncReply id }
 
+
+type Async with 
+
+    /// Better implementation of Async.AwaitTask that correctly passes the exception of a failed task to the async mechanism
+    static member AwaitTaskCorrect (task:Task) : Async<unit> =
+        Async.FromContinuations (fun (successCont,exceptionCont,_cancelCont) ->
+            task.ContinueWith (fun (task:Task) ->
+                if task.IsFaulted then
+                    let e = task.Exception
+                    if e.InnerExceptions.Count = 1 then 
+                        exceptionCont e.InnerExceptions.[0]
+                    else exceptionCont e
+                elif task.IsCanceled then
+                    exceptionCont(TaskCanceledException ())
+                else successCont ())
+            |> ignore)
+
+    /// Better implementation of Async.AwaitTask that correctly passes the exception of a failed task to the async mechanism
+    static member AwaitTaskCorrect (task:'T Task) : Async<'T> =
+        Async.FromContinuations( fun (successCont,exceptionCont,_cancelCont) ->
+            task.ContinueWith (fun (task:'T Task) ->
+                if task.IsFaulted then
+                    let e = task.Exception
+                    if e.InnerExceptions.Count = 1 then 
+                        exceptionCont e.InnerExceptions.[0]
+                    else exceptionCont e
+                elif task.IsCanceled then
+                    exceptionCont (TaskCanceledException ())
+                else successCont task.Result)
+            |> ignore)    
+    static member RunTaskSynchronously task  = 
+        task |> Async.AwaitTask |> Async.RunSynchronously 
+
+
 type AsyncBuilder with
     member __.Bind(computation: System.Threading.Tasks.Task<'a>, binder: 'a -> Async<'b>): Async<'b> =
         async {
@@ -209,62 +242,3 @@ type AsyncBuilder with
     member __.ReturnFrom(computation: System.Threading.Tasks.Task<'a>): Async<'a> = Async.AwaitTask computation
 
 
-module Option =
-    let guard (x: bool) : Option<unit> =
-        if x then Some() else None
-
-module List =
-    let foldi (folder : 'State -> int -> 'T -> 'State) (state : 'State) (xs : 'T list) =
-        let mutable state = state
-        let mutable i = 0
-        for x in xs do
-            state <- folder state i x
-            i <- i + 1
-        state
-
-module Seq =
-    open System.Collections.Immutable
-
-    let toImmutableArray (xs: seq<'a>) : ImmutableArray<'a> = xs.ToImmutableArray()
-
-module Array =
-    /// Optimized arrays equality. ~100x faster than `array1 = array2` on strings.
-    /// ~2x faster for floats
-    /// ~0.8x slower for ints
-    let areEqual (xs: 'T []) (ys: 'T []) =
-        match xs, ys with
-        | null, null -> true
-        | [||], [||] -> true
-        | null, _ | _, null -> false
-        | _ when xs.Length <> ys.Length -> false
-        | _ ->
-            let mutable break' = false
-            let mutable i = 0
-            let mutable result = true
-            while i < xs.Length && not break' do
-                if xs.[i] <> ys.[i] then 
-                    break' <- true
-                    result <- false
-                i <- i + 1
-            result
-    
-    /// check if subArray is found in the wholeArray starting 
-    /// at the provided index
-    let isSubArray (subArray: 'T []) (wholeArray:'T []) index = 
-        if isNull subArray || isNull wholeArray then false
-        elif subArray.Length = 0 then true
-        elif subArray.Length > wholeArray.Length then false
-        elif subArray.Length = wholeArray.Length then areEqual subArray wholeArray else
-        let rec loop subidx idx =
-            if subidx = subArray.Length then true 
-            elif subArray.[subidx] = wholeArray.[idx] then loop (subidx+1) (idx+1) 
-            else false
-        loop 0 index
-        
-    /// Returns true if one array has another as its subset from index 0.
-    let startsWith (prefix: _ []) (whole: _ []) =
-        isSubArray prefix whole 0
-        
-    /// Returns true if one array has trailing elements equal to another's.
-    let endsWith (suffix: _ []) (whole: _ []) =
-        isSubArray suffix whole (whole.Length-suffix.Length)

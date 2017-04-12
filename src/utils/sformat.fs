@@ -344,7 +344,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
           let rec consume n z =
             if stopShort z then [wordL (tagPunctuation "...")] else
             match project z with
-              | None       -> []  // exhaused input 
+              | None       -> []  // exhausted input 
               | Some (x,z) -> if n<=0 then [wordL (tagPunctuation "...")]               // hit print_length limit 
                                       else itemL x :: consume (n-1) z  // cons recursive... 
           consume maxLength z  

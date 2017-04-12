@@ -111,7 +111,7 @@ let splitILTypeName (nm:string) =
 
 let emptyStringArray = ([| |] : string[])
 
-// Duplciate of comment in import.fs:
+// Duplicate of comment in import.fs:
 //   The type names that flow to the point include the "mangled" type names used for static parameters for provided types.
 //   For example, 
 //       Foo.Bar,"1.0"
@@ -1680,7 +1680,7 @@ type ILAssemblyManifest =
       IgnoreSymbolStoreSequencePoints: bool;
       Retargetable: bool;
 
-      /// Records the types impemented by other modules. 
+      /// Records the types implemented by other modules. 
       ExportedTypes: ILExportedTypesAndForwarders;
       /// Records whether the entrypoint resides in another module. 
       EntrypointElsewhere: ILModuleRef option; 
@@ -1769,7 +1769,7 @@ let mkSimpleModRef n =
 // --------------------------------------------------------------------
 // The toplevel class of a module is called "<Module>"
 //
-// REVIEW: the  following comments from the ECMA Spec (Parition II, Section 9.8)
+// REVIEW: the  following comments from the ECMA Spec (Partition II, Section 9.8)
 //
 // "For an ordinary type, if the metadata merges two definitions 
 // of the same type, it simply discards one definition on the 
@@ -2616,9 +2616,9 @@ let emptyILMethodImpls =  mkILMethodImpls []
 // them in fields.  preblock is how to call the superclass constructor....
 // -------------------------------------------------------------------- 
 
-let mkILStorageCtorWithParamNames(tag,preblock,typ,flds,access) = 
+let mkILStorageCtorWithParamNames(tag,preblock,typ,extraParams,flds,access) = 
     mkILCtor(access,
-            flds |> List.map (fun (pnm,_,ty) -> mkILParamNamed (pnm,ty)),
+            (flds |> List.map (fun (pnm,_,ty) -> mkILParamNamed (pnm,ty))) @ extraParams,
             mkMethodBody
               (false,[],2,
                nonBranchingInstrsToCode
@@ -2632,22 +2632,22 @@ let mkILStorageCtorWithParamNames(tag,preblock,typ,flds,access) =
                      ])  flds)
                  end,tag))
     
-let mkILSimpleStorageCtorWithParamNames(tag,base_tspec,typ,flds,access) = 
+let mkILSimpleStorageCtorWithParamNames(tag,base_tspec,typ,extraParams,flds,access) = 
     let preblock = 
       match base_tspec with 
         None -> []
       | Some tspec -> 
           ([ mkLdarg0; 
              mkNormalCall (mkILCtorMethSpecForTy (mkILBoxedType tspec,[])) ])
-    mkILStorageCtorWithParamNames(tag,preblock,typ,flds,access)
+    mkILStorageCtorWithParamNames(tag,preblock,typ,extraParams,flds,access)
 
 let addParamNames flds = 
     flds |> List.map (fun (nm,ty) -> (nm,nm,ty))
 
-let mkILSimpleStorageCtor(tag,base_tspec,typ,flds,access) = 
-    mkILSimpleStorageCtorWithParamNames(tag,base_tspec,typ, addParamNames flds, access)
+let mkILSimpleStorageCtor(tag,base_tspec,typ,extraParams,flds,access) = 
+    mkILSimpleStorageCtorWithParamNames(tag,base_tspec,typ, extraParams, addParamNames flds, access)
 
-let mkILStorageCtor(tag,preblock,typ,flds,access) = mkILStorageCtorWithParamNames(tag,preblock,typ, addParamNames flds, access)
+let mkILStorageCtor(tag,preblock,typ,flds,access) = mkILStorageCtorWithParamNames(tag, preblock, typ, [], addParamNames flds, access)
 
 
 let mkILGenericClass (nm, access, genparams, extends, impl, methods, fields, nestedTypes, props, events, attrs, init) =
@@ -3418,7 +3418,7 @@ let decodeILAttribData (ilg: ILGlobals) (ca: ILAttribute) =
 
 // -------------------------------------------------------------------- 
 // Functions to collect up all the references in a full module or
-// asssembly manifest.  The process also allocates
+// assembly manifest.  The process also allocates
 // a unique name to each unique internal assembly reference.
 // -------------------------------------------------------------------- 
 

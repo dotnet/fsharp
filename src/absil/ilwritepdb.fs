@@ -144,8 +144,8 @@ let pdbGetCvDebugInfo (mvid:byte[]) (timestamp:int32) (filepath:string) (cvChunk
         Buffer.BlockCopy(path, 0, buffer, offset, size)
         buffer
     { iddCharacteristics = 0;                                                   // Reserved
-      iddMajorVersion = 0;                                                      // VersionMajor should be 0
-      iddMinorVersion = 0;                                                      // VersionMinor should be 0
+      iddMajorVersion = 0x0100;                                                 // VersionMajor should be 0x0100
+      iddMinorVersion = 0x504d;                                                 // VersionMinor should be 0x504d
       iddType = 2;                                                              // IMAGE_DEBUG_TYPE_CODEVIEW
       iddTimestamp = timestamp;
       iddData = iddCvBuffer;                                                    // Path name to the pdb file when built
@@ -198,11 +198,13 @@ let checkSum (url:string) =
 //------------------------------------------------------------------------------
 
 // This function takes output file name and returns debug file name.
-let getDebugFileName outfile = 
+let getDebugFileName outfile (portablePDB: bool) =
 #if ENABLE_MONO_SUPPORT
-  if IL.runningOnMono then 
+  if IL.runningOnMono && not portablePDB then
       outfile + ".mdb"
   else 
+#else
+      ignore portablePDB
 #endif
       (Filename.chopExtension outfile) + ".pdb" 
 
@@ -217,43 +219,8 @@ let getRowCounts tableRowCounts =
     tableRowCounts |> Seq.iter(fun x -> builder.Add(x))
     builder.MoveToImmutable()
 
-let fixupOverlappingSequencePoints fixupSPs showTimes methods =
-    // This next bit is a workaround.  The sequence points we get 
-    // from F# (which has nothing to do with this module) are actually expression 
-    // marks, i.e. the source ranges they denote are typically 
-    // nested, and each point indicates where the  
-    // code for an expression with a particular range begins.  
-    // This is in many ways a much more convenient form to emit. 
-    // However, it is not the form that debug tools accept nicely. 
-    // However, sequence points are really a non-overlapping, non-nested 
-    // partition of the source code of a method.  So here we shorten the 
-    // length of all sequence point marks so they do not go further than 
-    // the next sequence point in the source. 
-    let spCounts =  methods |> Array.map (fun x -> x.SequencePoints.Length)
-    let allSps = methods |> Array.collect (fun x -> x.SequencePoints)
-                         |> Array.mapi (fun i sp -> i, sp)
-    if fixupSPs then 
-        // sort the sequence points into source order 
-        Array.sortInPlaceWith (fun (_,sp1) (_,sp2) -> SequencePoint.orderBySource sp1 sp2) allSps
-        // shorten the ranges of any that overlap with following sequence points 
-        // sort the sequence points back into offset order 
-        for i = 0 to Array.length allSps - 2 do
-            let n,sp1 = allSps.[i]
-            let _,sp2 = allSps.[i+1]
-            if (sp1.Document = sp2.Document) && 
-               (sp1.EndLine > sp2.Line || 
-                (sp1.EndLine = sp2.Line &&
-                 sp1.EndColumn >= sp2.Column)) then
-              let adjustToPrevLine = (sp1.Line < sp2.Line)
-              allSps.[i] <-  n,{sp1 with EndLine = (if adjustToPrevLine then sp2.Line-1 else sp2.Line)
-                                         EndColumn = (if adjustToPrevLine then 80 else sp2.Column) }
-        reportTime showTimes (sprintf "PDB: fixupOverlappingSequencePoints %d" (allSps |> Array.length) )
-        Array.sortInPlaceBy fst allSps
-    spCounts, allSps
-
-let generatePortablePdb fixupSPs (embedAllSource:bool) (embedSourceList:string list) (sourceLink:string) showTimes (info:PdbData) = 
+let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sourceLink:string) showTimes (info:PdbData) = 
     sortMethods showTimes info
-    let _spCounts, _allSps = fixupOverlappingSequencePoints fixupSPs showTimes info.Methods
     let externalRowCounts = getRowCounts info.TableRowCounts
     let docs = 
         match info.Documents with
@@ -512,7 +479,7 @@ let embedPortablePdbInfo (uncompressedLength:int64)  (contentId:BlobContentId) (
 // PDB Writer.  The function [WritePdbInfo] abstracts the 
 // imperative calls to the Symbol Writer API.
 //---------------------------------------------------------------------
-let writePdbInfo fixupOverlappingSequencePoints showTimes f fpdb info cvChunk =
+let writePdbInfo showTimes f fpdb info cvChunk =
 
     try FileSystem.FileDelete fpdb with _ -> ()
 
@@ -534,35 +501,8 @@ let writePdbInfo fixupOverlappingSequencePoints showTimes f fpdb info cvChunk =
     Array.sortInPlaceBy (fun x -> x.MethToken) info.Methods
     reportTime showTimes (sprintf "PDB: Sorted %d methods" info.Methods.Length)
 
-    // This next bit is a workaround.  The sequence points we get 
-    // from F# (which has nothing to do with this module) are actually expression 
-    // marks, i.e. the source ranges they denote are typically 
-    // nested, and each point indicates where the  
-    // code for an expression with a particular range begins.  
-    // This is in many ways a much more convenient form to emit. 
-    // However, it is not the form that debug tools accept nicely. 
-    // However, sequence points are really a non-overlapping, non-nested 
-    // partition of the source code of a method.  So here we shorten the 
-    // length of all sequence point marks so they do not go further than 
-    // the next sequence point in the source. 
     let spCounts = info.Methods |> Array.map (fun x -> x.SequencePoints.Length)
     let allSps = Array.collect (fun x -> x.SequencePoints) info.Methods |> Array.indexed
-    if fixupOverlappingSequencePoints then
-        // sort the sequence points into source order 
-        Array.sortInPlaceWith (fun (_,sp1) (_,sp2) -> SequencePoint.orderBySource sp1 sp2) allSps
-        // shorten the ranges of any that overlap with following sequence points 
-        // sort the sequence points back into offset order 
-        for i = 0 to Array.length allSps - 2 do
-            let n,sp1 = allSps.[i]
-            let _,sp2 = allSps.[i+1]
-            if (sp1.Document = sp2.Document) && 
-               (sp1.EndLine > sp2.Line || 
-                (sp1.EndLine = sp2.Line &&
-                 sp1.EndColumn >= sp2.Column)) then
-              let adjustToPrevLine = (sp1.Line < sp2.Line)
-              allSps.[i] <-  n,{sp1 with EndLine = (if adjustToPrevLine then sp2.Line-1 else sp2.Line)
-                                         EndColumn = (if adjustToPrevLine then 80 else sp2.Column) }
-        Array.sortInPlaceBy fst allSps
 
     let spOffset = ref 0
     info.Methods |> Array.iteri (fun i minfo ->

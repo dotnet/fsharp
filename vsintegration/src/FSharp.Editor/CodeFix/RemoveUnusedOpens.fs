@@ -14,7 +14,7 @@ open Microsoft.CodeAnalysis.CodeActions
 
 open Microsoft.FSharp.Compiler.Range
 
-[<ExportCodeFixProvider(FSharpCommonConstants.FSharpLanguageName, Name = "RemoveUnusedOpens"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "RemoveUnusedOpens"); Shared>]
 type internal FSharpRemoveUnusedOpensCodeFixProvider
     [<ImportingConstructor>]
     (
@@ -44,7 +44,7 @@ type internal FSharpRemoveUnusedOpensCodeFixProvider
                     return document.WithText(sourceText.WithChanges(changes))
                 }
                 |> Async.map (Option.defaultValue context.Document)
-                |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
+                |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
             title)
 
     override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
@@ -53,7 +53,7 @@ type internal FSharpRemoveUnusedOpensCodeFixProvider
         async {
             let diagnostics = context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id) |> Seq.toImmutableArray
             context.RegisterCodeFix(createCodeFix(SR.RemoveUnusedOpens.Value, context), diagnostics)
-        } |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+        } |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
 
     override __.GetFixAllProvider() = WellKnownFixAllProviders.BatchFixer
  

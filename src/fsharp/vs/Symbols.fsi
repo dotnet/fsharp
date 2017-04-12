@@ -28,7 +28,7 @@ module internal Impl =
 /// Represents the information needed to format types and other information in a style
 /// suitable for use in F# source text at a particular source location.
 ///
-/// Acquired via GetDisplayEnvAtLocationAlternate and simialr methods. May be passed 
+/// Acquired via GetDisplayEnvAtLocationAlternate and similar methods. May be passed 
 /// to the Format method on FSharpType and other methods.
 type [<Class>] internal FSharpDisplayContext = 
     internal new : denv: (TcGlobals -> Tastops.DisplayEnv) -> FSharpDisplayContext
@@ -43,7 +43,7 @@ type [<Class>] internal FSharpSymbol =
     /// Internal use only. 
     static member internal Create : g:TcGlobals * thisCcu: CcuThunk * tcImports: TcImports * item:NameResolution.Item -> FSharpSymbol
 
-    /// Computes if the symbol is accessible for the given accessibilty rights
+    /// Computes if the symbol is accessible for the given accessibility rights
     member IsAccessible: FSharpAccessibilityRights -> bool
         
     member internal Item: NameResolution.Item
@@ -207,7 +207,7 @@ and [<Class>] internal FSharpEntity =
     /// Indicates if is the 'byref<_>' type definition used for byref types in F#-compiled assemblies
     member IsByRef : bool
 
-    /// Indicates if the entity is a type definitio for a reference type where the implementation details are hidden by a signature
+    /// Indicates if the entity is a type definition for a reference type where the implementation details are hidden by a signature
     member IsOpaque : bool
 
     /// Indicates if the entity is an enum type definition
@@ -526,7 +526,7 @@ and [<Class; NoEquality; NoComparison>] internal FSharpGenericParameterConstrain
     /// Gets further information about a coerces-to constraint
     member CoercesToTarget : FSharpType 
 
-    /// Indicates a default value for an inference type variable should it be netiher generalized nor solved 
+    /// Indicates a default value for an inference type variable should it be neither generalized nor solved 
     member IsDefaultsToConstraint : bool
 
     /// Gets further information about a defaults-to constraint
@@ -730,7 +730,7 @@ and [<Class>] internal FSharpMemberOrFunctionOrValue =
     member ReturnParameter : FSharpParameter
 
     /// Custom attributes attached to the value. These contain references to other values (i.e. constructors in types). Mutable to fixup  
-    /// these value references after copying a colelction of values. 
+    /// these value references after copying a collection of values. 
     member Attributes: IList<FSharpAttribute>
 
     /// Get the in-memory XML documentation for the value, used when code is checked in-memory

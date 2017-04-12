@@ -44,7 +44,7 @@ type DiscriminationTechnique =
 //
 //     type Tree = Tip | Node of int * Tree * Tree
 //
-// it also flattens so the fields for "Node" are stored in the base class, meanign that no type casts
+// it also flattens so the fields for "Node" are stored in the base class, meaning that no type casts
 // are needed to access the data.  
 //
 // However, it can't be enabled because it suppresses the generation 
@@ -107,12 +107,14 @@ type UnionReprDecisions<'Union,'Alt,'Type>
         // Check this is the one and only non-nullary constructor 
         Array.existsOne (isNullary >> not) alts
 
+    member repr.RepresentAlternativeAsStructValue (cu) = 
+        isStruct cu 
+
     member repr.RepresentAlternativeAsFreshInstancesOfRootClass (cu,alt) = 
-        // Flattening
-        isStruct cu ||
-        // Check all nullary constructors are being represented without using sub-classes 
+       not (isStruct cu) && 
+       (// Check all nullary constructors are being represented without using sub-classes 
         (isList cu  && nameOfAlt alt = ALT_NAME_CONS) ||
-        repr.RepresentSingleNonNullaryAlternativeAsInstancesOfRootClassAndAnyOtherAlternativesAsNull (cu, alt) 
+        repr.RepresentSingleNonNullaryAlternativeAsInstancesOfRootClassAndAnyOtherAlternativesAsNull (cu, alt) )
 
     member repr.RepresentAlternativeAsConstantFieldInTaggedRootClass (cu,alt) = 
         not (isStruct cu) &&
@@ -130,6 +132,7 @@ type UnionReprDecisions<'Union,'Alt,'Type>
         repr.Flatten cu ||
         repr.RepresentAllAlternativesAsConstantFieldsInRootClass cu ||
         repr.RepresentAlternativeAsConstantFieldInTaggedRootClass (cu,alt) ||
+        repr.RepresentAlternativeAsStructValue(cu) ||
         repr.RepresentAlternativeAsFreshInstancesOfRootClass(cu,alt)
       
     member repr.MaintainPossiblyUniqueConstantFieldForAlternative(cu,alt) = 
@@ -300,6 +303,21 @@ let mkTagDiscriminate ilg cuspec _baseTy cidx =
 let mkTagDiscriminateThen ilg cuspec cidx after = 
     mkGetTag ilg cuspec @ [ mkLdcInt32 cidx ] @ mkCeqThen after
 
+/// The compilation for struct unions relies on generating a set of constructors.
+/// If necessary some fake types are added to the constructor parameters to distinguish the signature.
+let rec extraTysAndInstrsForStructCtor (ilg: ILGlobals) cidx = 
+    match cidx with
+    | 0 -> [ ilg.typ_Bool ], [ mkLdcInt32 0 ]
+    | 1 -> [ ilg.typ_Byte ], [ mkLdcInt32 0 ]
+    | 2 -> [ ilg.typ_SByte ], [ mkLdcInt32 0 ]
+    | 3 -> [ ilg.typ_Char ], [ mkLdcInt32 0 ]
+    | 4 -> [ ilg.typ_Int16 ], [ mkLdcInt32 0 ]
+    | 5 -> [ ilg.typ_Int32 ], [ mkLdcInt32 0 ]
+    | 6 -> [ ilg.typ_UInt16 ], [ mkLdcInt32 0 ]
+    | _ -> 
+        let tys, instrs = extraTysAndInstrsForStructCtor ilg (cidx - 7)
+        (ilg.typ_UInt32 :: tys, mkLdcInt32 0 :: instrs)
+
 let convNewDataInstrInternal ilg cuspec cidx = 
     let alt = altOfUnionSpec cuspec cidx
     let altTy = tyForAlt cuspec alt
@@ -318,6 +336,19 @@ let convNewDataInstrInternal ilg cuspec cidx =
             | _ -> [], []
         let ctorFieldTys = alt.FieldTypes |> Array.toList
         instrs @ [ mkNormalNewobj(mkILCtorMethSpecForTy (baseTy,(ctorFieldTys @ tagfields))) ]
+    elif cuspecRepr.RepresentAlternativeAsStructValue cuspec then 
+        let baseTy = baseTyOfUnionSpec cuspec
+        let instrs, tagfields = 
+            match cuspecRepr.DiscriminationTechnique cuspec with
+            | IntegerTag -> [ mkLdcInt32 cidx ], [mkTagFieldType ilg cuspec]
+            | _ -> [], []
+        let ctorFieldTys = alt.FieldTypes |> Array.toList
+        let extraTys, extraInstrs = 
+            if cuspec.AlternativesArray.Length > 1 && cuspec.AlternativesArray |> Array.exists (fun d -> d.FieldDefs.Length > 0) then
+                extraTysAndInstrsForStructCtor ilg cidx
+            else 
+                [], []
+        instrs @ extraInstrs @ [ mkNormalNewobj (mkILCtorMethSpecForTy (baseTy, (ctorFieldTys @ tagfields @ extraTys))) ]
     else 
         [ mkNormalNewobj(mkILCtorMethSpecForTy (altTy,Array.toList alt.FieldTypes)) ]
 
@@ -731,6 +762,7 @@ let convAlternativeDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addP
     let typeDefs, altDebugTypeDefs, altNullaryFields = 
         if repr.RepresentAlternativeAsNull (info,alt) then [], [], [] 
         elif repr.RepresentAlternativeAsFreshInstancesOfRootClass (info,alt) then [], [], [] 
+        elif repr.RepresentAlternativeAsStructValue info then [], [], [] 
         else
           let altNullaryFields = 
               if repr.MaintainPossiblyUniqueConstantFieldForAlternative(info,alt) then 
@@ -905,8 +937,9 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
 
     let selfFields, selfMeths, selfProps = 
 
-        [ for alt in cud.cudAlternatives do 
-           if repr.RepresentAlternativeAsFreshInstancesOfRootClass (info,alt) then
+        [ for (cidx, alt) in Array.indexed cud.cudAlternatives do 
+           if repr.RepresentAlternativeAsFreshInstancesOfRootClass (info,alt) || 
+              repr.RepresentAlternativeAsStructValue info then
         // TODO
             let fields = alt.FieldDefs |> Array.map mkUnionCaseFieldId |> Array.toList
             let baseInit = 
@@ -915,11 +948,19 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
                 | None -> Some ilg.typ_Object.TypeSpec
                 | Some typ -> Some typ.TypeSpec
 
+            let extraParamsForCtor = 
+                if isStruct && cud.cudAlternatives.Length > 1 && cud.cudAlternatives |> Array.exists (fun d -> d.FieldDefs.Length > 0)  then 
+                    let extraTys, _extraInstrs = extraTysAndInstrsForStructCtor ilg cidx 
+                    List.map mkILParamAnon extraTys 
+                else 
+                    []
+
             let ctor = 
                 mkILSimpleStorageCtor 
                    (cud.cudWhere,
                     baseInit,
                     baseTy,
+                    extraParamsForCtor,
                     (fields @ tagFieldsInObject),
                     (if cuspec.HasHelpers = AllHelpers then ILMemberAccess.Assembly else cud.cudReprAccess))
                 |> addMethodGeneratedAttrs 
@@ -936,6 +977,7 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
 
     let ctorMeths =
         if (List.isEmpty selfFields && List.isEmpty tagFieldsInObject && not (List.isEmpty selfMeths))
+            || isStruct
             ||  cud.cudAlternatives |> Array.forall (fun alt -> repr.RepresentAlternativeAsFreshInstancesOfRootClass (info,alt))  then 
 
             [] (* no need for a second ctor in these cases *)
@@ -945,6 +987,7 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
                  (cud.cudWhere,
                   Some (match td.Extends with None -> ilg.typ_Object | Some typ -> typ).TypeSpec,
                   baseTy,
+                  [],
                   tagFieldsInObject,
                   ILMemberAccess.Assembly) // cud.cudReprAccess)
               |> addMethodGeneratedAttrs ]

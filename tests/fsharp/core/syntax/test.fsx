@@ -54,6 +54,15 @@ module CheckDynamicOperatorsOnTypes =
     let hw  : string = foo ? world
     let hw2  : unit = foo ? world <- "3"
         
+module CheckDynamicOperatorsOnTypesUnconstrained = 
+    type OpDynamic() =
+      static member ( ? ) (x, n) = x
+      member x.Prop = 1
+
+    let f()  = 
+      let op  = OpDynamic ()
+      op?Hello.Prop
+
 
 // Copyright (c) Microsoft Corporation 2005-2006.  .
 

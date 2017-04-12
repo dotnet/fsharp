@@ -56,6 +56,15 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
                 sp.QueryService(typeof(SVsWindowFrame).GUID, typeof(IVsWindowFrame).GUID, out unkFrame);
 
+                //When calling Peek Definition, the editor creates an IVsTextView within another view.
+                //Therefore this new view won't exist as the direct child of an IVsWindowFrame and we will return.
+                //We don't need to worry about inheriting key bindings in this situation, because the
+                //parent IVsTextView will have already set this value during its creation.
+                if(unkFrame == IntPtr.Zero)
+                {
+                    return;
+                }
+
                 var frame = Marshal.GetObjectForIUnknown(unkFrame) as IVsWindowFrame;
                 frame.SetGuidProperty((int)__VSFPROPID.VSFPROPID_InheritKeyBindings, VSConstants.GUID_TextEditorFactory);
             }

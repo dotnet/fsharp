@@ -190,6 +190,10 @@ if /i "%ARG%" == "microbuild" (
     set TEST_VS_IDEUNIT_SUITE=1
     set CI=1
     set PUBLISH_VSIX=1
+
+    REM redirecting TEMP directories
+    set TEMP=%~dp0%BUILD_CONFIG%\TEMP
+    set TMP=%~dp0%BUILD_CONFIG%\TEMP
 )
 
 REM These divide "ci" into two chunks which can be done in parallel
@@ -246,6 +250,7 @@ if /i "%ARG%" == "ci_part4" (
 )
 
 if /i "%ARG%" == "proto" (
+    set _autoselect=0
     set BUILD_PROTO=1
 )
 
@@ -377,6 +382,7 @@ echo INCLUDE_TEST_SPEC_NUNIT=%INCLUDE_TEST_SPEC_NUNIT%
 echo INCLUDE_TEST_TAGS=%INCLUDE_TEST_TAGS%
 echo PUBLISH_VSIX=%PUBLISH_VSIX%
 echo MYGET_APIKEY=%MYGET_APIKEY%
+echo TEMP=%TEMP%
 
 REM load Visual Studio 2017 developer command prompt if VS150COMNTOOLS is not set
 
@@ -517,7 +523,7 @@ if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
 set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
 set NUGET_PACKAGES=%~dp0Packages
 
-set _fsiexe="packages\FSharp.Compiler.Tools.4.0.1.21\tools\fsi.exe"
+set _fsiexe="packages\FSharp.Compiler.Tools.4.1.4\tools\fsi.exe"
 if not exist %_fsiexe% echo Error: Could not find %_fsiexe% && goto :failure
 %_ngenexe% install %_fsiexe% /nologo 
 
@@ -557,8 +563,8 @@ if "%BUILD_PROTO%" == "1" (
 
   if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "0" (
 
-    echo %_ngenexe% install packages\FSharp.Compiler.Tools.4.0.1.21\tools\fsc.exe /nologo 
-         %_ngenexe% install packages\FSharp.Compiler.Tools.4.0.1.21\tools\fsc.exe /nologo 
+    echo %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.4\tools\fsc.exe /nologo 
+         %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.4\tools\fsc.exe /nologo 
 
     echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
          %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
@@ -647,7 +653,7 @@ echo WHERE_ARG_NUNIT=!WHERE_ARG_NUNIT!
 
 set NUNITPATH=%~dp0tests\fsharpqa\testenv\bin\nunit\
 set NUNIT3_CONSOLE=%~dp0packages\NUnit.Console.3.0.0\tools\nunit3-console.exe
-set link_exe=%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe
+set link_exe=%~dp0tests\fsharpqa\testenv\bin\link\link.exe
 if not exist "%link_exe%" (
     echo Error: failed to find "%link_exe%" use nuget to restore the VisualCppTools package
     goto :failure
@@ -906,8 +912,7 @@ if "%PUBLISH_VSIX%" == "1" (
     if not "%MYGET_APIKEY%" == "" (
         powershell -noprofile -executionPolicy ByPass -file "%~dp0setup\publish-assets.ps1" -binariesPath "%~dp0%BUILD_CONFIG%" -branchName "%BUILD_SOURCEBRANCH%" -apiKey "%MYGET_APIKEY%"
         if errorlevel 1 goto :failure
-    )
-    else (
+    ) else (
         echo No MyGet API key specified, skipping package publish.
     )
 )
