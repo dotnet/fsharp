@@ -190,6 +190,10 @@ if /i "%ARG%" == "microbuild" (
     set TEST_VS_IDEUNIT_SUITE=1
     set CI=1
     set PUBLISH_VSIX=1
+
+    REM redirecting TEMP directories
+    set TEMP=%~dp0%BUILD_CONFIG%\TEMP
+    set TMP=%~dp0%BUILD_CONFIG%\TEMP
 )
 
 REM These divide "ci" into two chunks which can be done in parallel
@@ -378,6 +382,7 @@ echo INCLUDE_TEST_SPEC_NUNIT=%INCLUDE_TEST_SPEC_NUNIT%
 echo INCLUDE_TEST_TAGS=%INCLUDE_TEST_TAGS%
 echo PUBLISH_VSIX=%PUBLISH_VSIX%
 echo MYGET_APIKEY=%MYGET_APIKEY%
+echo TEMP=%TEMP%
 
 REM load Visual Studio 2017 developer command prompt if VS150COMNTOOLS is not set
 
