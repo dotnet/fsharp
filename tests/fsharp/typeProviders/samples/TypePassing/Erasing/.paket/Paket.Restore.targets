@@ -1,0 +1,42 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <!-- Mark that this target file has been loaded.  -->
+    <IsPaketRestoreTargetsFileLoaded>true</IsPaketRestoreTargetsFileLoaded>
+    <PaketToolsPath>$(MSBuildThisFileDirectory)</PaketToolsPath>
+    <MonoPath Condition="'$(MonoPath)' == '' And Exists('/Library/Frameworks/Mono.framework/Commands/mono')">/Library/Frameworks/Mono.framework/Commands/mono</MonoPath>
+    <MonoPath Condition="'$(MonoPath)' == ''">mono</MonoPath> 
+    <!-- Paket command -->
+    <PaketExePath Condition=" '$(PaketExePath)' == '' AND Exists('$(PaketRootPath)paket.exe')">$(PaketRootPath)paket.exe</PaketExePath>
+    <PaketExePath Condition=" '$(PaketExePath)' == '' ">$(PaketToolsPath)paket.exe</PaketExePath>
+    <PaketCommand Condition=" '$(OS)' == 'Windows_NT'">"$(PaketExePath)"</PaketCommand>
+    <PaketCommand Condition=" '$(OS)' != 'Windows_NT' ">$(MonoPath) --runtime=v4.0.30319 "$(PaketExePath)"</PaketCommand>
+  </PropertyGroup>    
+
+  <Target Name="PaketRestore" BeforeTargets="_GenerateRestoreGraphWalkPerFramework;CollectPackageReferences" >
+  
+      <Exec Command='$(PaketCommand) restore --project "$(MSBuildProjectFullPath)" ' />
+
+      <PropertyGroup>
+        <PaketReferencesFilePath>$(MSBuildProjectDirectory)/obj/$(MSBuildProjectFile).references</PaketReferencesFilePath>
+      </PropertyGroup>
+
+      <ReadLinesFromFile File="$(PaketReferencesFilePath)" >
+        <Output TaskParameter="Lines" ItemName="PaketReferencesFileLines"/>
+      </ReadLinesFromFile>
+
+      <ItemGroup Condition=" '@(PaketReferencesFileLines)' != '' " >
+        <PaketReferencesFileLinesInfo Include="@(PaketReferencesFileLines)" >
+          <PackageName>$([System.String]::Copy('%(PaketReferencesFileLines.Identity)').Split(',')[0])</PackageName>
+          <PackageVersion>$([System.String]::Copy('%(PaketReferencesFileLines.Identity)').Split(',')[1])</PackageVersion>
+        </PaketReferencesFileLinesInfo>
+        <PackageReference Include="%(PaketReferencesFileLinesInfo.PackageName)">
+          <Version>%(PaketReferencesFileLinesInfo.PackageVersion)</Version>
+        </PackageReference>
+      </ItemGroup>
+
+      <PropertyGroup>
+        <RestoreConfigFile>$(MSBuildProjectDirectory)/obj/$(MSBuildProjectFile).NuGet.Config</RestoreConfigFile>
+      </PropertyGroup>
+
+   </Target>
+</Project>
