@@ -671,13 +671,30 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
             typeLogicalName + "," + nonDefaultArgsText
 
 
-    /// Mangle the static parameters for a provided type or method
-    let computeMangledNameWithoutDefaultArgValues(nm, staticArgs, defaultArgValues) =
+    /// Compute the mangled value stored for a System.Type argument. Only the simple name of the assembly is stored.
+    let computeStringOfStaticTypeArg (st: System.Type) =
+        st.FullName + ", " + st.Assembly.GetName().Name 
+
+    type StaticArg = StaticArg of obj
+    
+    /// Compute the mangled value stored for a System.Type argument. Only the simple name of the assembly is stored.
+    let computeStringOfStaticArg (StaticArg staticArg) =
+        match staticArg with 
+        | :? System.Type as st -> 
+            let qname = computeStringOfStaticTypeArg st
+            printfn "name used in argument = '%s'" qname
+            qname
+        | _ -> 
+            //  Convert all other argument types to basic strings
+            string staticArg 
+        
+
+    let computeMangledNameWithoutDefaultArgValues(nm,staticArgs:StaticArg[],defaultArgValues) =
         let nonDefaultArgs = 
             (staticArgs,defaultArgValues) 
             ||> Array.zip 
             |> Array.choose (fun (staticArg, (defaultArgName, defaultArgValue)) -> 
-                let actualArgValue = string staticArg 
+                let actualArgValue = computeStringOfStaticArg staticArg
                 match defaultArgValue with 
                 | Some v when v = actualArgValue -> None
                 | _ -> Some (defaultArgName, actualArgValue))

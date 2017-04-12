@@ -1,4 +1,5 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+ 
 
 /// The typechecker.  Left-to-right constrained type checking 
 /// with generalization at appropriate points.
@@ -4745,7 +4746,7 @@ and TcStaticConstantParameter cenv (env:TcEnv) tpenv kind (v:SynType) idOpt cont
             | SynConst.String (s, _) when s <> null && typeEquiv cenv.g cenv.g.string_ty kind  -> record(cenv.g.string_ty); box (s:string)
             | SynConst.Bool b       when typeEquiv cenv.g cenv.g.bool_ty kind    -> record(cenv.g.bool_ty); box (b:bool)
             | _ -> fail()
-        v, tpenv
+        PrettyNaming.StaticArg v, tpenv
     | SynType.StaticConstantExpr(e, _ ) ->
 
         // If an error occurs, don't try to recover, since the constant expression will be nothing like what we need
@@ -4775,7 +4776,7 @@ and TcStaticConstantParameter cenv (env:TcEnv) tpenv kind (v:SynType) idOpt cont
                 | Const.Bool b     -> record(cenv.g.bool_ty); box (b:bool)
                 | _ ->  fail()
             | _ -> error(Error(FSComp.SR.tcInvalidConstantExpression(), v.Range))
-        v, tpenv'   
+        PrettyNaming.StaticArg v, tpenv'   
     | SynType.LongIdent(lidwd) ->
         let m = lidwd.Range
         if typeEquiv cenv.g cenv.g.system_Type_typ kind then
@@ -4787,17 +4788,10 @@ and TcStaticConstantParameter cenv (env:TcEnv) tpenv kind (v:SynType) idOpt cont
                 | Exception err -> raise(err)
                 | Result tcref -> tcref 
 
-            let assm = AssemblyReaderReflection.ContextAssembly(cenv.g, cenv.topCcu, "")
-            let st = AssemblyReaderReflection.ContextTypeDefinition(cenv.g, assm, None, tcref) 
-            //assm.GetType(tcref.CompiledRepresentationForNamedType.QualifiedName)
-            //TODO:: 
-                //Assemebly Reflection Starterpack. 
-                //Back type information with tycon ref.
-                //Types should be amortised, created only once. 
-                //Minimal implementation at first. 
-                
-            record(cenv.g.system_Type_typ); 
-            box st, tpenv
+            let assm = cenv.topCcu.ReflectAssembly :?> TastReflect.ReflectAssembly
+            let st = assm.TxTType (snd (generalizeTyconRef tcref))
+            record(cenv.g.system_Type_typ);
+            PrettyNaming.StaticArg (box st), tpenv
         else 
             TcStaticConstantParameter cenv env tpenv kind (SynType.StaticConstantExpr(SynExpr.LongIdent(false,lidwd,None,m),m)) idOpt container
     | _ ->  
@@ -4847,7 +4841,7 @@ and CrackStaticConstantArgs cenv env tpenv (staticParameters: Tainted<ProvidedPa
                     if sp.PUntaint((fun sp -> sp.IsOptional), m) then
                          match sp.PUntaint((fun sp -> sp.RawDefaultValue), m) with
                          | null -> error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, containerName, containerName, spName) , m))
-                         | v -> v
+                         | v -> PrettyNaming.StaticArg v
                     else
                       error (Error(FSComp.SR.etStaticParameterRequiresAValue (spName, containerName, containerName, spName), m))
                  | ps -> 
@@ -4915,7 +4909,7 @@ and TcProvidedTypeApp cenv env tpenv tcref args m =
     else
         let typ = Import.ImportProvidedType cenv.amap m providedTypeAfterStaticArguments
         typ, tpenv 
-#endif
+//#endif
 
 /// Typecheck an application of a generic type to type arguments.
 ///

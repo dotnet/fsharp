@@ -19,7 +19,7 @@ open Microsoft.FSharp.Compiler.ExtensionTyping
 type AssemblyLoader = 
 
     /// Resolve an Abstract IL assembly reference to a Ccu
-    abstract FindCcuFromAssemblyRef : CompilationThreadToken * range * ILAssemblyRef -> CcuResolutionResult
+    abstract FindCcuFromScopeRef : CompilationThreadToken * range * ILScopeRef -> CcuResolutionResult
 
 #if !NO_EXTENSIONTYPING
     /// Get a flag indicating if an assembly is a provided assembly, plus the

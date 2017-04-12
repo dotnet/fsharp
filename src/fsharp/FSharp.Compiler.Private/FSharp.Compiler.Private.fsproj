@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
-﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
@@ -39,53 +37,6 @@
   <Import Project="$(FSharpSourcesRoot)\.nuget\NuGet.targets" Condition="Exists('$(FSharpSourcesRoot)\.nuget\NuGet.targets')" />
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <Import Project="$(FsLexToolPath)\FsLexYacc.targets" />
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
-    <ItemGroup>
-      <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
-      <BinariesToBeSigned Include="$(OutDir)localize\**\$(AssemblyName).resources.dll" />
-      <FilesToSign Include="@(BinariesToBeSigned)">
-        <Authenticode>Microsoft</Authenticode>
-        <StrongName>StrongName</StrongName>
-      </FilesToSign>
-    </ItemGroup>
-  </Target>
-  <Choose>
-    <When Condition="$(MonoPackaging) != 'true'">
-      <ItemGroup Condition="'$(TargetFramework)' != 'coreclr'">
-        <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>
-        </Reference>
-        <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.dll</HintPath>
-        </Reference>
-        <Reference Include="Microsoft.Build.Utilities.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Utilities.Core.dll</HintPath>
-        </Reference>
-        <Reference Include="Microsoft.Build.Tasks.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Tasks.Core.dll</HintPath>
-        </Reference>
-      </ItemGroup>
-    </When>
-    <Otherwise>
-      <ItemGroup>
-        <Reference Include="Microsoft.Build.Framework, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <Private>True</Private>
-        </Reference>
-        <Reference Include="Microsoft.Build.Engine, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <Private>True</Private>
-        </Reference>
-        <Reference Include="Microsoft.Build, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <Private>True</Private>
-        </Reference>
-        <Reference Include="Microsoft.Build.Utilities.$(MonoPackagingMSBuildVersionSuffix), Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <Private>True</Private>
-        </Reference>
-        <Reference Include="Microsoft.Build.Tasks.$(MonoPackagingMSBuildVersionSuffix), Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <Private>True</Private>
-        </Reference>
-      </ItemGroup>
-    </Otherwise>
-  </Choose>
   <ItemGroup>
     <InternalsVisibleTo Include="fsc" />
     <InternalsVisibleTo Include="FSharp.Build" />
@@ -419,6 +370,9 @@
     <Compile Include="..\TastPickle.fs">
       <Link>TypedAST\TastPickle.fs</Link>
     </Compile>
+    <Compile Include="..\TastReflect.fs">
+      <Link>Logic\TastReflect.fs</Link>
+    </Compile>
     <Compile Include="..\import.fsi">
       <Link>Logic\import.fsi</Link>
     </Compile>
@@ -496,9 +450,6 @@
     </Compile>
     <Compile Include="..\PostInferenceChecks.fs">
       <Link>Logic\PostInferenceChecks.fs</Link>
-    </Compile>
-    <Compile Include="..\AssemblyReaderReflection.fs">
-      <Link>Logic\AssemblyReaderReflection.fs</Link>
     </Compile>
     <Compile Include="..\TypeChecker.fsi">
       <Link>Logic\TypeChecker.fsi</Link>
@@ -688,7 +639,7 @@
     <Compile Include="..\service\ServiceAnalysis.fs">
       <Link>Service/ServiceAnalysis.fs</Link>
     </Compile>
-    
+
     <!-- the core of the F# Interactive fsi.exe implementation -->
     <EmbeddedText Include="..\fsi\FSIstrings.txt">
       <Link>FSIstrings.txt</Link>
@@ -715,7 +666,6 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetDotnetProfile)' != 'coreclr'">
-  <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Core" />

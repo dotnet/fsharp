@@ -26,20 +26,6 @@
     <Win32Resource>fsi.res</Win32Resource>
     <TargetFrameworkVersion Condition="'$(TargetDotnetProfile)' != 'coreclr'">v4.6</TargetFrameworkVersion>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <StartArguments>--load:"C:\Appdev\type_passing_tp\script.fsx"</StartArguments>
-  </PropertyGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
-    <ItemGroup>
-      <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).exe" />
-      <BinariesToBeSigned Include="$(OutDir)localize\**\$(AssemblyName).resources.dll" />
-      <FilesToSign Include="@(BinariesToBeSigned)">
-        <Authenticode>Microsoft</Authenticode>
-        <StrongName>StrongName</StrongName>
-      </FilesToSign>
-    </ItemGroup>
-  </Target>
   <ItemGroup>
     <Compile Include="console.fs">
       <Link>console.fs</Link>
@@ -49,7 +35,6 @@
     </Compile>
     <None Include="app.config">
     </None>
-    <None Include="project.json" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">
       <None Include="project.json" />
@@ -58,7 +43,6 @@
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   
   <ItemGroup  Condition="'$(TargetDotnetProfile)' != 'coreclr'">
-  <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
@@ -69,11 +53,10 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj">
-    <ProjectReference Include="..\FSharp.Compiler\FSharp.Compiler.fsproj">
       <Project>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</Project>
       <Name>FSharp.Compiler.Private</Name>
     </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" >
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
     </ProjectReference>

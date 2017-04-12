@@ -174,8 +174,7 @@ type DisposablesTracker() =
 let TypeCheck (ctok, tcConfig, tcImports, tcGlobals, errorLogger:ErrorLogger, assemblyName, niceNameGen, tcEnv0, inputs, exiter: Exiter) =
     try 
         if isNil inputs then error(Error(FSComp.SR.fscNoImplementationFiles(), Range.rangeStartup))
-        let ccuName = assemblyName
-        let tcInitialState = GetInitialTcState (rangeStartup, ccuName, tcConfig, tcGlobals, tcImports, niceNameGen, tcEnv0)
+        let tcInitialState = GetInitialTcState (rangeStartup, assemblyName, tcConfig, tcGlobals, tcImports, niceNameGen, tcEnv0)
         TypeCheckClosedInputSet (ctok, (fun () -> errorLogger.ErrorCount > 0), tcConfig, tcImports, tcGlobals, None, tcInitialState, inputs)
     with e -> 
         errorRecovery e rangeStartup
@@ -1248,7 +1247,7 @@ module StaticLinker =
                             match tcImports.TryFindDllInfo(ctok, Range.rangeStartup, ilAssemRef.Name, lookupOnly=false) with 
                             | Some dllInfo ->
                                 let ccu = 
-                                    match tcImports.FindCcuFromAssemblyRef (ctok, Range.rangeStartup, ilAssemRef) with 
+                                    match tcImports.FindCcuFromScopeRef (ctok, Range.rangeStartup, ILScopeRef.Assembly ilAssemRef) with 
                                     | ResolvedCcu ccu -> Some ccu
                                     | UnresolvedCcu(_ccuName) -> None
 
@@ -1317,7 +1316,7 @@ module StaticLinker =
               match tcImports.TryFindDllInfo(ctok, Range.rangeStartup, ilAssemRef.Name, lookupOnly=false) with 
               | Some dllInfo ->
                   let ccu = 
-                      match tcImports.FindCcuFromAssemblyRef (ctok, Range.rangeStartup, ilAssemRef) with 
+                      match tcImports.FindCcuFromScopeRef (ctok, Range.rangeStartup, ILScopeRef.Assembly ilAssemRef) with 
                       | ResolvedCcu ccu -> Some ccu
                       | UnresolvedCcu(_ccuName) -> None
 

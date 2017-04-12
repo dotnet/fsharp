@@ -331,16 +331,16 @@ module internal ExtensionTyping =
     /// Try to apply a provided type to the given static arguments. If successful also return a function 
     /// to check the type name is as expected (this function is called by the caller of TryApplyProvidedType
     /// after other checks are made).
-    val TryApplyProvidedType : typeBeforeArguments:Tainted<ProvidedType> * optGeneratedTypePath: string list option * staticArgs:obj[]  * range -> (Tainted<ProvidedType> * (unit -> unit)) option
+    val TryApplyProvidedType : typeBeforeArguments:Tainted<ProvidedType> * optGeneratedTypePath: string list option * staticArgs:PrettyNaming.StaticArg[]  * range -> (Tainted<ProvidedType> * (unit -> unit)) option
 
     /// Try to apply a provided method to the given static arguments. 
-    val TryApplyProvidedMethod : methBeforeArguments:Tainted<ProvidedMethodBase> * staticArgs:obj[]  * range -> Tainted<ProvidedMethodBase> option
+    val TryApplyProvidedMethod : methBeforeArguments:Tainted<ProvidedMethodBase> * staticArgs:PrettyNaming.StaticArg[]  * range -> Tainted<ProvidedMethodBase> option
 
     /// Try to resolve a type in the given extension type resolver
     val TryResolveProvidedType : Tainted<ITypeProvider> * range * string[] * typeName: string -> Tainted<ProvidedType> option
 
     /// Try to resolve a type in the given extension type resolver
-    val TryLinkProvidedType : Tainted<ITypeProvider> * string[] * typeLogicalName: string * range: range -> Tainted<ProvidedType> option
+    val TryLinkProvidedType : resolver:Tainted<ITypeProvider> * importQualifiedTypeNameAsTypeValue: (string -> Type) * string[] * typeLogicalName: string * range: range -> Tainted<ProvidedType> option
 
     /// Get the parts of a .NET namespace. Special rules: null means global, empty is not allowed.
     val GetProvidedNamespaceAsPath : range * Tainted<ITypeProvider> * string -> string list
