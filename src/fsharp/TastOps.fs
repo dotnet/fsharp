@@ -546,10 +546,10 @@ let tryNormalizeMeasureInType g ty =
       match box soln with
       | null -> ty
       | _ -> 
-         match soln with 
+        match soln with 
         | TType_measure ms ->
-            v.typar_solution <- nullableSlotFull (TType_measure (normalizeMeasure g ms))
-            ty
+           v.typar_solution <- nullableSlotFull (TType_measure (normalizeMeasure g ms))
+           ty
         | _ -> ty
     | _ -> ty
 
