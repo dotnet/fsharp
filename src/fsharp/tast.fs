@@ -2006,7 +2006,7 @@ and
 
     /// Indicates if a type variable has been solved.
     member x.IsSolved = 
-        match box x.Data.typar_solution with 
+        match box x.typar_solution with 
         | null -> false
         | _ -> true
 
@@ -4577,7 +4577,7 @@ let copyTypars tps = List.map copyTypar tps
     
 let tryShortcutSolvedUnitPar canShortcut (r:Typar) = 
     if r.Kind = TyparKind.Type then failwith "tryShortcutSolvedUnitPar: kind=type"
-    match r.Data.typar_solution with
+    match r.typar_solution with
     | TType_measure unt -> 
         if canShortcut then 
             match unt with 
@@ -4599,7 +4599,7 @@ let rec stripUnitEqnsAux canShortcut unt =
 let rec stripTyparEqnsAux canShortcut ty = 
     match ty with 
     | TType_var r -> 
-        let soln = r.Data.typar_solution
+        let soln = r.typar_solution
         match box soln with
         | null -> ty
         | _ -> 
