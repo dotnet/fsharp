@@ -24,7 +24,7 @@ module StandardSettings =
     let AC x y = AutoCompleteExpected(x,y)
     let DC x y = DotCompleteExpected(x,y)
 
-[<TestFixture>] 
+[<TestFixture>][<Category "LanguageService">]  
 type UsingMSBuild() as this  = 
     inherit LanguageServiceBaseTests()
 
@@ -182,8 +182,9 @@ type UsingMSBuild() as this  =
           shouldContain // should contain
           shouldNotContain
 
-    member public this.AutoCompleteBug70080Helper(programText:string) =
-        this.AutoCompleteBug70080HelperHelper(programText, ["AttributeUsageAttribute"], [])
+    member public this.AutoCompleteBug70080Helper(programText:string, ?withSuffix: bool) =
+        let expected = if defaultArg withSuffix false then "AttributeUsageAttribute" else "AttributeUsage"
+        this.AutoCompleteBug70080HelperHelper(programText, [expected], [])
 
     member private this.testAutoCompleteAdjacentToDot op =
         let text = sprintf "System.Console%s" op
@@ -196,14 +197,25 @@ type UsingMSBuild() as this  =
 
     //**Help Function for checking Ctrl-Space Completion Contains the expected value *************
     member private this.AssertCtrlSpaceCompletionContains(fileContents : list<string>, marker, expected, ?addtlRefAssy: list<string>)  = 
+        this.AssertCtrlSpaceCompletion(
+            fileContents,
+            marker,
+            (fun completions -> 
+                Assert.AreNotEqual(0,completions.Length)
+                let found = completions |> Array.exists(fun (CompletionItem(s,_,_,_,_)) -> s = expected)
+                if not(found) then 
+                    printfn "Expected: %A to contain %s" completions expected  
+                    Assert.Fail()                
+            ),
+            ?addtlRefAssy = addtlRefAssy
+        )
+
+   //**Help Function for checking Ctrl-Space Completion Contains the expected value *************
+    member private this.AssertCtrlSpaceCompletion(fileContents : list<string>, marker, checkCompletion: (CompletionItem array -> unit), ?addtlRefAssy: list<string>)  = 
         let (_, _, file) = this.CreateSingleFileProject(fileContents, ?references = addtlRefAssy)
         MoveCursorToEndOfMarker(file,marker)
         let completions = CtrlSpaceCompleteAtCursor file
-        Assert.AreNotEqual(0,completions.Length)
-        let found = completions |> Array.exists(fun (s,_,_,_) -> s = expected)
-        if not(found) then 
-            printfn "Expected: %A to contain %s" completions expected  
-            Assert.Fail() 
+        checkCompletion completions
 
     member private this.AutoCompletionListNotEmpty (fileContents : list<string>) marker  = 
         let (_, _, file) = this.CreateSingleFileProject(fileContents)
@@ -293,7 +305,31 @@ type UsingMSBuild() as this  =
         test "DU_3." "DU_3." ["ExtensionPropObj"; "ExtensionMethodObj"; "Equals"] ["GetHashCode"] // no gethashcode, has equals defined in DU3 type
         test "DU_4." "DU_4." ["ExtensionPropObj"; "ExtensionMethodObj"; "GetHashCode"] ["Equals"] // no equals, has gethashcode defined in DU4 type
 
-    
+    [<Test>]
+    member this.``AutoCompletion.escaped with backticks`` () =
+        let code = """
+type MyRec = {
+  ``field.field``  : string
+}
+
+let a = {``field.field`` = ""}
+a.
+        """
+        this.AssertCtrlSpaceCompletion(
+          [code]
+          , "a."
+          , (fun completions ->
+              completions 
+              |> Seq.tryFind (fun (CompletionItem(_,name,nameInCode,_,_)) ->
+                name = "field.field" 
+                && nameInCode = "``field.field``"
+              )
+              |> function
+                  | Some _ -> ()
+                  | None -> Assert.Fail "expected ``field.field`` to be present"
+
+          ))
+        
     [<Test>]
     member this.``AutoCompletion.BeforeThis``() = 
         let code = 
@@ -330,7 +366,7 @@ type UsingMSBuild() as this  =
     [<Test>]
     [<Category("TypeProvider")>]
     member this.``TypeProvider.VisibilityChecksForGeneratedTypes``() = 
-        let extraRefs = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
+        let extraRefs = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
         let check = DoWithAutoCompleteUsingExtraRefs extraRefs true SourceFileKind.FS Microsoft.VisualStudio.FSharp.LanguageService.BackgroundRequestReason.MemberSelect
 
         let code = 
@@ -1759,7 +1795,7 @@ let x = new MyClass2(0)
         let completions = AutoCompleteAtCursor file
         
         // Get description for Expr.Var
-        let (_, _, descrFunc, _) = completions |> Array.find (fun (name, _, _, _) -> name = "WhileLoop")
+        let (CompletionItem(_, _, _, descrFunc, _)) = completions |> Array.find (fun (CompletionItem(name, _, _, _, _)) -> name = "WhileLoop")
         let descr = descrFunc()
         // Check whether the description contains the name only once        
         let occurrences = ("  " + descr + "  ").Split([| "WhileLoop" |], System.StringSplitOptions.None).Length - 1
@@ -2109,11 +2145,11 @@ let x = new MyClass2(0)
         MoveCursorToEndOfMarker(file,"String.")
         let completions = time1 AutoCompleteAtCursor file "Time of first autocomplete."
         // printf "Completions=%A\n" completions
-        Assert.IsTrue(completions.Length>0)
+        Assert.IsTrue(completions.Length > 0)
         for completion in completions do
             match completion with 
-              | _,_,_,DeclarationType.FunctionValue -> ()
-              | name,_,_,x -> failwith (sprintf "Unexpected item %s seen with declaration type %A" name x)
+              | CompletionItem(_,_,_,_,DeclarationType.Method) -> ()
+              | CompletionItem(name,_,_,_,x) -> failwith (sprintf "Unexpected item %s seen with declaration type %A" name x)
                          
     // FEATURE: Pressing ctrl+space or ctrl+j will give a list of valid completions.
     
@@ -2136,7 +2172,7 @@ let x = new MyClass2(0)
                                 t.I"""],
             marker = "t.I",
             expected = "IM1",    
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -2149,7 +2185,7 @@ let x = new MyClass2(0)
                                 t.Eve"""],
             marker = "t.Eve", 
             expected = "Event1",          
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\EditorHideMethodsAttribute.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\EditorHideMethodsAttribute.dll")])
      
     [<Test>]
     [<Category("TypeProvider")>]
@@ -2161,7 +2197,7 @@ let x = new MyClass2(0)
                                 type boo = N1.T<in"""],
             marker = "T<in",  
             expected = "int",  
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
         
     // In this bug, pressing dot after this was producing an invalid member list.       
@@ -3481,17 +3517,17 @@ let x = query { for bbbb in abbbbc(*D0*) do
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToType.Bug70080``() =        
-        this.AutoCompleteBug70080Helper @"
+        this.AutoCompleteBug70080Helper(@"
                     open System
                     [<Attr     // expect AttributeUsageAttribute from System namespace
-                    type MyAttr() = inherit Attribute()"
+                    type MyAttr() = inherit Attribute()", true)
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToNothing.Bug70080``() =        
-        this.AutoCompleteBug70080Helper @"
+        this.AutoCompleteBug70080Helper(@"
                     open System
                     [<Attr     // expect AttributeUsageAttribute from System namespace
-                    // nothing here"
+                    // nothing here", true)
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToLetInNamespace.Bug70080``() =        
@@ -3503,36 +3539,36 @@ let x = query { for bbbb in abbbbc(*D0*) do
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToTypeInNamespace.Bug70080``() =        
-        this.AutoCompleteBug70080Helper @"
+        this.AutoCompleteBug70080Helper(@"
                     namespace Foo
                     open System
                     [<Attr     // expect AttributeUsageAttribute from System namespace
-                    type MyAttr() = inherit Attribute()"
+                    type MyAttr() = inherit Attribute()", true)
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToNothingInNamespace.Bug70080``() =        
-        this.AutoCompleteBug70080Helper @"
+        this.AutoCompleteBug70080Helper(@"
                     namespace Foo
                     open System
                     [<Attr     // expect AttributeUsageAttribute from System namespace
-                    // nothing here"
+                    // nothing here", true)
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToModuleInNamespace.Bug70080``() =        
-        this.AutoCompleteBug70080Helper @"
+        this.AutoCompleteBug70080Helper(@"
                     namespace Foo
                     open System
                     [<Attr     // expect AttributeUsageAttribute from System namespace
                     module Foo = 
-                        let x = 42"
+                        let x = 42", true)
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToModule.Bug70080``() =        
-        this.AutoCompleteBug70080Helper @"
+        this.AutoCompleteBug70080Helper(@"
                     open System
                     [<Attr     // expect AttributeUsageAttribute from System namespace
                     module Foo = 
-                        let x = 42"
+                        let x = 42", true)
 
     [<Test>]
     member public this.``Identifer.InMatchStatemente.Bug72595``() =        
@@ -3997,9 +4033,9 @@ let x = query { for bbbb in abbbbc(*D0*) do
         let completions = time1 AutoCompleteAtCursor file "Time of first autocomplete."
         for completion in completions do
             match completion with 
-              | ("Obsolete" as s,_,_,_) 
+              | CompletionItem("Obsolete" as s,_,_,_,_) 
               //| ("Private" as s,_,_,_)  this isn't supported yet
-              | ("CompilerMessageTest" as s,_,_,_)-> failwith (sprintf "Unexpected item %s at top level."  s)
+              | CompletionItem("CompilerMessageTest" as s,_,_,_,_)-> failwith (sprintf "Unexpected item %s at top level."  s)
               | _ -> ()              
     
     // Test various configurations of nested obsolete modules & types
@@ -4113,7 +4149,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         let (_, _, file) = this.CreateSingleFileProject(code)
         MoveCursorToEndOfMarker(file, marker)
         let completions = AutoCompleteAtCursor file
-        let (_, _, descrFunc, _) = completions |> Array.find (fun (name, _, _, _) -> name = shortName)
+        let (CompletionItem(_, _, _, descrFunc, _)) = completions |> Array.find (fun (CompletionItem(name, _, _, _, _)) -> name = shortName)
         let descr = descrFunc()
         // Check whether the description contains the name only once        
         let occurrences = ("  " + descr + "  ").Split([| fullName |], System.StringSplitOptions.None).Length - 1
@@ -4150,7 +4186,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         let completions = AutoCompleteAtCursor file
         
         // Get description for Expr.Var
-        let (_, _, descrFunc, _) = completions |> Array.find (fun (name, _, _, _) -> name = "Open")
+        let (CompletionItem(_, _, _, descrFunc, _)) = completions |> Array.find (fun (CompletionItem(name, _, _, _, _)) -> name = "Open")
         let occurrences = this.CountMethodOccurrences(descrFunc(), "File.Open")
         AssertEqualWithMessage(3, occurrences, "Found wrong number of overloads for 'File.Open'.")
 
@@ -4165,7 +4201,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         let completions = AutoCompleteAtCursor file
           
         // Get description for Expr.Var
-        let (_, _, descrFunc, _) = completions |> Array.find (fun (name, _, _, _) -> name = "Start")
+        let (CompletionItem(_, _, _, descrFunc, _)) = completions |> Array.find (fun (CompletionItem(name, _, _, _, _)) -> name = "Start")
         let occurrences = this.CountMethodOccurrences(descrFunc(), "Start")        
         AssertEqualWithMessage(1, occurrences, "Found wrong number of overloads for 'MailboxProcessor.Start'.")
        
@@ -4185,7 +4221,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         let completions = AutoCompleteAtCursor file
         // Should contain something
         Assert.AreNotEqual(0,completions.Length)      
-        Assert.IsTrue(completions |> Array.exists (fun (name,_,_,_) -> name.Contains("AddMilliseconds")))  
+        Assert.IsTrue(completions |> Array.exists (fun (CompletionItem(name,_,_,_,_)) -> name.Contains("AddMilliseconds")))  
         
     // FEATURE: Saving file N does not cause files 1 to N-1 to re-typecheck (but does cause files N to <end> to 
     [<Test>]
@@ -4218,7 +4254,11 @@ let x = query { for bbbb in abbbbc(*D0*) do
         SaveFileToDisk file2      
         TakeCoffeeBreak(this.VS)
         
+#if FCS_RETAIN_BACKGROUND_PARSE_RESULTS
         gpatcc.AssertExactly(notAA[file2], notAA[file2;file3])
+#else
+        gpatcc.AssertExactly(notAA[file2; file3], notAA[file2;file3])
+#endif
 
     /// FEATURE: References added to the project bring corresponding new .NET and F# items into scope.
     [<Test;Category("ReproX")>]
@@ -4362,9 +4402,9 @@ let x = query { for bbbb in abbbbc(*D0*) do
         let (_, _, file) = this.CreateSingleFileProject(code)
         MoveCursorToEndOfMarker(file,"= Set")
         let completions = CtrlSpaceCompleteAtCursor(file)
-        let found = completions |> Array.tryFind (fun (n, _, _, _) -> n = "Set")
+        let found = completions |> Array.tryFind (fun (CompletionItem(n, _, _, _, _)) -> n = "Set")
         match found with 
-        | Some(_, _, f, _) ->
+        | Some(CompletionItem(_, _, _, f, _)) ->
             let tip = f()
             AssertContains(tip, "module Set")        
             AssertContains(tip, "type Set")        
@@ -4426,29 +4466,29 @@ let x = query { for bbbb in abbbbc(*D0*) do
         Assert.IsTrue(completions.Length>0)
         for completion in completions do
             match completion with 
-              | "A",_,_,DeclarationType.EnumMember -> ()
-              | "B",_,_,DeclarationType.EnumMember -> ()
-              | "C",_,_,DeclarationType.EnumMember -> ()
-              | "Function",_,_,_ -> ()
-              | "Enum",_,_,DeclarationType.Enum -> ()
-              | "Constant",_,_,_ -> ()
-              | "FunctionValue",_,_,DeclarationType.FunctionValue -> ()
-              | "OutOfRange",_,_,DeclarationType.Exception -> ()
-              | "OutOfRangeException",_,_,DeclarationType.Class -> ()
-              | "Interface",_,_,DeclarationType.Interface -> ()
-              | "Struct",_,_,DeclarationType.ValueType -> ()
-              | "Tuple",_,_,_ -> ()
-              | "Submodule",_,_,DeclarationType.Module -> ()
-              | "Record",_,_,DeclarationType.Record -> ()
-              | "DiscriminatedUnion",_,_,DeclarationType.DiscriminatedUnion -> ()
-              | "AsmType",_,_,DeclarationType.RareType -> ()
-              | "FunctionType",_,_,DeclarationType.FunctionType -> ()
-              | "TupleType",_,_,DeclarationType.Class -> ()
-              | "ValueType",_,_,DeclarationType.ValueType -> ()
-              | "Class",_,_,DeclarationType.Class -> ()
-              | "Int32",_,_,DeclarationType.Method -> ()
-              | "TupleTypeAbbreviation",_,_,_ -> ()
-              | name,_,_,x -> failwith (sprintf "Unexpected module member %s seen with declaration type %A" name x)
+              | CompletionItem("A",_,_,_,DeclarationType.EnumMember)                          -> ()
+              | CompletionItem("B",_,_,_,DeclarationType.EnumMember)                          -> ()
+              | CompletionItem("C",_,_,_,DeclarationType.EnumMember)                          -> ()
+              | CompletionItem("Function",_,_,_,_)                                            -> ()
+              | CompletionItem("Enum",_,_,_,DeclarationType.Enum)                             -> ()
+              | CompletionItem("Constant",_,_,_,_)                                            -> ()
+              | CompletionItem("FunctionValue",_,_,_,DeclarationType.Method)                  -> ()
+              | CompletionItem("OutOfRange",_,_,_,DeclarationType.Exception)                  -> ()
+              | CompletionItem("OutOfRangeException",_,_,_,DeclarationType.Class)             -> ()
+              | CompletionItem("Interface",_,_,_,DeclarationType.Interface)                   -> ()
+              | CompletionItem("Struct",_,_,_,DeclarationType.ValueType)                      -> ()
+              | CompletionItem("Tuple",_,_,_,_)                                               -> ()
+              | CompletionItem("Submodule",_,_,_,DeclarationType.Module)                      -> ()
+              | CompletionItem("Record",_,_,_,DeclarationType.Class)                          -> ()
+              | CompletionItem("DiscriminatedUnion",_,_,_,DeclarationType.DiscriminatedUnion) -> ()
+              | CompletionItem("AsmType",_,_,_,DeclarationType.Class)                         -> ()
+              | CompletionItem("FunctionType",_,_,_,DeclarationType.Class)                    -> ()
+              | CompletionItem("TupleType",_,_,_,DeclarationType.Class)                       -> ()
+              | CompletionItem("ValueType",_,_,_,DeclarationType.ValueType)                   -> ()
+              | CompletionItem("Class",_,_,_,DeclarationType.Class)                           -> ()
+              | CompletionItem("Int32",_,_,_,DeclarationType.Method)                          -> ()
+              | CompletionItem("TupleTypeAbbreviation",_,_,_,_)                               -> ()
+              | CompletionItem(name,_,_,_,x) -> failwith (sprintf "Unexpected module member %s seen with declaration type %A" name x)
 
         MoveCursorToEndOfMarker(file,"AbbreviationModule.")
         let completions = time1 AutoCompleteAtCursor file "Time of second autocomplete."
@@ -4456,23 +4496,27 @@ let x = query { for bbbb in abbbbc(*D0*) do
         Assert.IsTrue(completions.Length>0)
         for completion in completions do
             match completion with 
-              | "Int32",_,_,_ | "Function",_,_,_
-              | "Enum",_,_,_ | "Constant",_,_,_
-              | "Function",_,_,_ | "Interface",_,_,_ 
-              | "Struct",_,_,_ | "Tuple",_,_,_ 
-              | "Record",_,_,_ -> ()
-              | "EnumAbbreviation",_,_,DeclarationType.Enum -> ()
-              | "InterfaceAbbreviation",_,_,DeclarationType.Interface -> ()
-              | "StructAbbreviation",_,_,DeclarationType.ValueType -> ()
-              | "DiscriminatedUnion",_,_,_ -> ()
-              | "RecordAbbreviation",_,_,DeclarationType.Record -> ()
-              | "DiscriminatedUnionAbbreviation",_,_,DeclarationType.DiscriminatedUnion -> ()
-              | "AsmTypeAbbreviation",_,_,DeclarationType.RareType -> ()
-              | "TupleTypeAbbreviation",_,_,_ -> ()
-              | name,_,_,x -> failwith (sprintf "Unexpected union member %s seen with declaration type %A" name x)
+              | CompletionItem("Int32",_,_,_,_) 
+              | CompletionItem("Function",_,_,_,_)
+              | CompletionItem("Enum",_,_,_,_)
+              | CompletionItem("Constant",_,_,_,_)
+              | CompletionItem("Function",_,_,_,_)
+              | CompletionItem("Interface",_,_,_,_)
+              | CompletionItem("Struct",_,_,_,_)
+              | CompletionItem("Tuple",_,_,_,_)
+              | CompletionItem("Record",_,_,_,_) -> ()
+              | CompletionItem("EnumAbbreviation",_,_,_,DeclarationType.Enum) -> ()
+              | CompletionItem("InterfaceAbbreviation",_,_,_,DeclarationType.Interface) -> ()
+              | CompletionItem("StructAbbreviation",_,_,_,DeclarationType.ValueType) -> ()
+              | CompletionItem("DiscriminatedUnion",_,_,_,_) -> ()
+              | CompletionItem("RecordAbbreviation",_,_,_,DeclarationType.Class) -> ()
+              | CompletionItem("DiscriminatedUnionAbbreviation",_,_,_,DeclarationType.DiscriminatedUnion) -> ()
+              | CompletionItem("AsmTypeAbbreviation",_,_,_,DeclarationType.Class) -> ()
+              | CompletionItem("TupleTypeAbbreviation",_,_,_,_) -> ()
+              | CompletionItem(name,_,_,_,x) -> failwith (sprintf "Unexpected union member %s seen with declaration type %A" name x)
         
     [<Test>]
-    member public this.``ListFunctions``() = 
+    member public this.ListFunctions() = 
         let code = 
                                     [ 
                                      "let y = List."
@@ -4485,12 +4529,12 @@ let x = query { for bbbb in abbbbc(*D0*) do
         Assert.IsTrue(completions.Length>0)
         for completion in completions do
             match completion with 
-              | "Cons",_,_,DeclarationType.Method -> ()
-              | "Equals",_,_,DeclarationType.Method -> ()
-              | "Empty",_,_,DeclarationType.Property -> () 
-              | "empty",_,_,_ -> () 
-              | _,_,_,DeclarationType.FunctionValue -> ()
-              | name,_,_,x -> failwith (sprintf "Unexpected item %s seen with declaration type %A" name x)
+              | CompletionItem("Cons",_,_,_,DeclarationType.Method) -> ()
+              | CompletionItem("Equals",_,_,_,DeclarationType.Method) -> ()
+              | CompletionItem("Empty",_,_,_,DeclarationType.Property) -> () 
+              | CompletionItem("empty",_,_,_,_) -> () 
+              | CompletionItem(_,_,_,_,DeclarationType.Method) -> ()
+              | CompletionItem(name,_,_,_,x) -> failwith (sprintf "Unexpected item %s seen with declaration type %A" name x)
 
     [<Test>]
     member public this.``SystemNamespace``() =
@@ -4509,8 +4553,8 @@ let x = query { for bbbb in abbbbc(*D0*) do
         
         for completion in completions do
             match completion with 
-              | "Action" as name,_,_,decl -> AssertIsDecl(name,decl,DeclarationType.FunctionType)
-              | "CodeDom" as name,_,_,decl -> AssertIsDecl(name,decl,DeclarationType.Namespace)
+              | CompletionItem("Action" as name,_,_,_,decl) -> AssertIsDecl(name,decl,DeclarationType.Class)
+              | CompletionItem("CodeDom" as name,_,_,_,decl) -> AssertIsDecl(name,decl,DeclarationType.Namespace)
               | _ -> ()
       
     // If there is a compile error that prevents a data tip from resolving then show that data tip.
@@ -4530,7 +4574,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         let completions = time1 CtrlSpaceCompleteAtCursor file "Time of first autocomplete."
         Assert.IsTrue(completions.Length>0)      
         for completion in completions do 
-            let _,_,descfunc,_ = completion
+            let (CompletionItem(_,_,_,descfunc,_)) = completion
             let desc = descfunc()
             printfn "MemberInfoCompileErrorsShowInDataTip: desc = <<<%s>>>" desc
             AssertContains(desc,"Simulated compiler error")
@@ -4545,8 +4589,8 @@ let x = query { for bbbb in abbbbc(*D0*) do
         let completions = time1 CtrlSpaceCompleteAtCursor file "Time of first autocomplete."
         for completion in completions do
             match completion with 
-              | ("IChapteredRowset" as s,_,_,_) 
-              | ("ICorRuntimeHost" as s,_,_,_)-> failwith (sprintf "Unexpected item %s at top level."  s)
+              | CompletionItem("IChapteredRowset" as s,_,_,_,_) 
+              | CompletionItem("ICorRuntimeHost" as s,_,_,_,_) -> failwith (sprintf "Unexpected item %s at top level."  s)
               | _ -> ()
               
     [<Test>]
@@ -4656,13 +4700,13 @@ let x = query { for bbbb in abbbbc(*D0*) do
                     
         for completion in completions do
             match completion with 
-              | "Head" as name,_,_,decl -> 
+              | CompletionItem("Head" as name,_,_,_,decl) -> 
                 count<-count + 1
                 AssertIsDecl(name,decl,DeclarationType.Property) 
-              | "Tail" as name,_,_,decl -> 
+              | CompletionItem("Tail" as name,_,_,_,decl) -> 
                 count<-count + 1
                 AssertIsDecl(name,decl,DeclarationType.Property) 
-              | name,_,_,x -> ()        
+              | CompletionItem(name,_,_,_,x) -> ()        
         
         Assert.AreEqual(2,count)
         
@@ -4684,9 +4728,9 @@ let x = query { for bbbb in abbbbc(*D0*) do
                     
         for completion in completions do
             match completion with 
-              | "BackgroundColor" as name,_,_,decl -> AssertIsDecl(name,decl,DeclarationType.Property) 
-              | "CancelKeyEvent" as name,_,_,decl -> AssertIsDecl(name,decl,DeclarationType.Event) 
-              | name,_,_,x -> ()
+              | CompletionItem("BackgroundColor" as name,_,_,_,decl) -> AssertIsDecl(name,decl,DeclarationType.Property) 
+              | CompletionItem("CancelKeyEvent" as name,_,_,_,decl) -> AssertIsDecl(name,decl,DeclarationType.Event) 
+              | CompletionItem(name,_,_,_,x) -> ()
 
     // Test completions in an incomplete computation expression (case 1: for "let")
     [<Test>]
@@ -4774,7 +4818,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
         MoveCursorToEndOfMarker(file, "File1.")
         let completionItems = 
             AutoCompleteAtCursor(file)
-            |> Array.map (fun (name, _, _, _) -> name)
+            |> Array.map (fun (CompletionItem(name, _, _, _, _)) -> name)
         Assert.AreEqual(1, completionItems.Length, "Expected 1 item in the list")
         Assert.AreEqual("x", completionItems.[0], "Expected 'x' in the list")
  
@@ -5386,7 +5430,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                                 t(*Marker*)""",
             marker = "(*Marker*)",
             list = ["Equals";"GetHashCode"],            
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\EditorHideMethodsAttribute.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\EditorHideMethodsAttribute.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -5399,7 +5443,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                                 t(*Marker*)""",
             marker = "(*Marker*)",
             list = ["Event1"],            
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\EditorHideMethodsAttribute.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\EditorHideMethodsAttribute.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -5412,7 +5456,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                                 t(*Marker*)""",
             marker = "(*Marker*)",
             list = ["IM1"],            
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -5424,7 +5468,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                                 type XXX = N1.T1(*Marker*)""",
             marker = "(*Marker*)",
             list = ["SomeNestedType"],            
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
         // should _not_ have it here
         this.VerifyDotCompListDoesNotContainAnyAtStartOfMarker(
             fileContents = """ 
@@ -5432,7 +5476,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                                 t(*Marker*)""",
             marker = "(*Marker*)",
             list = ["SomeNestedType"],            
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -5445,7 +5489,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                                 t.Event1(*Marker*)""",
             marker = "(*Marker*)",
             list = ["AddHandler";"RemoveHandler"],            
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\EditorHideMethodsAttribute.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\EditorHideMethodsAttribute.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -5457,7 +5501,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
             fileContents = """ 
                                 let t = N.T.M(*Marker*)()""",
             marker = "(*Marker*)",
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\EditorHideMethodsAttribute.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\EditorHideMethodsAttribute.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -5471,7 +5515,7 @@ let x = query { for bbbb in abbbbc(*D0*) do
                                 let t = N.T.StaticProp(*Marker*)""",
             marker = "(*Marker*)",
             list = ["GetType"; "Equals"],   // just a couple of System.Object methods: we expect them to be there!
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\EditorHideMethodsAttribute.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\EditorHideMethodsAttribute.dll")])
                                           
     [<Test>]
     member this.CompListInDiffFileTypes() =
@@ -5983,11 +6027,11 @@ let rec f l =
                     let dog = new Dog()
                 namespace MyNamespace2
                 module MyModule2 = 
-                    let typeFunc<MyNamespace1.MyModule(*Maftervariable2*)> = [1; 2; 3]
+                    let typeFunc<[<MyNamespace1.MyModule(*Maftervariable2*)>] 'a> = [1; 2; 3]
                     let f (x:MyNamespace1.MyModule(*Maftervariable4*)) = 10
                     let y = int System.IO(*Maftervariable5*)""",
             marker = "(*Maftervariable2*)",
-            list = ["DuType";"Tag"])
+            list = [])
 
     [<Test>]
     member this.``VariableIdentifier.MethodsInheritFomeBase``() = 
@@ -6064,7 +6108,7 @@ let rec f l =
                 type TestAttribute() = 
                     member x.print() = "print" """,
             marker = "(*Mattribute*)",
-            list = ["Int32";"ObsoleteAttribute"])
+            list = ["Obsolete"])
 
     [<Test>]
     member this.``ImportStatment.System.ImportDirectly``() = 
@@ -6164,7 +6208,7 @@ let rec f l =
                     let result5 = CopyFile_Arrays(tempFile1.ToCharArray(), tempFile2.ToCharArray(), false)
                     printfn "WithAttribute %A" result5""",
             marker = "(*Mpinvokeattribute*)",
-            list = ["SomeAttrib";"myclass"]) 
+            list = ["SomeAttrib"]) 
 
     [<Test>]
     member this.``LongIdent.PInvoke.AsParameterType``() = 
@@ -6209,7 +6253,7 @@ let rec f l =
                 module MyModule2 =     
                     let foo = MyNamespace1.MyModule(*Mtypeparameter1*)
                     let f (x:int) = MyNamespace1.MyModule.DuType(*Mtypeparameter2*)    
-                    let typeFunc<MyNamespace1.MyModule(*Mtypeparameter3*)> = 10""",
+                    let typeFunc<[<MyNamespace1.MyModule(*Mtypeparameter3*)>] 'a> = 10""",
             marker = "(*Mtypeparameter1*)",
             list = ["Dog";"DuType"])
 
@@ -6230,7 +6274,7 @@ let rec f l =
                 module MyModule2 =     
                     let foo = MyNamespace1.MyModule(*Mtypeparameter1*)
                     let f (x:int) = MyNamespace1.MyModule.DuType(*Mtypeparameter2*)    
-                    let typeFunc<MyNamespace1.MyModule(*Mtypeparameter3*)> = 10""",
+                    let typeFunc<[<MyNamespace1.MyModule(*Mtypeparameter3*)>] 'a> = 10""",
             marker = "(*Mtypeparameter2*)",
             list = ["Tag"])
 
@@ -6251,9 +6295,9 @@ let rec f l =
                 module MyModule2 =     
                     let foo = MyNamespace1.MyModule(*Mtypeparameter1*)
                     let f (x:int) = MyNamespace1.MyModule.DuType(*Mtypeparameter2*)    
-                    let typeFunc<MyNamespace1.MyModule(*Mtypeparameter3*)> = 10""",
+                    let typeFunc<[<MyNamespace1.MyModule(*Mtypeparameter3*)>] 'a> = 10""",
             marker = "(*Mtypeparameter3*)",
-            list = ["Dog";"DuType"])
+            list = [])
 
     [<Test>]
     member this.``RedefinedIdentifier.DiffScope.InScope.Positive``() =
@@ -7710,6 +7754,35 @@ let rec f l =
         this.VerifyDotCompListContainAllAtStartOfMarker(fileContents, "(*Marker*)", 
             ["Chars";"Length"], queryAssemblyRefs )
 
+    [<Test>]
+    member this.``Verify no completion on dot after module definition``() = 
+        this.VerifyDotCompListIsEmptyAtStartOfMarker(
+            fileContents = """
+                module BasicTest(*Marker*)
+
+                let foo x = x
+                let bar = 1""",
+            marker = "(*Marker*)")
+
+    [<Test>]
+    member this.``Verify no completion after module definition``() = 
+        this.VerifyCtrlSpaceCompListIsEmptyAtEndOfMarker(
+            fileContents = """
+                module BasicTest 
+
+                let foo x = x
+                let bar = 1""",
+            marker = "module BasicTest ")
+
+    [<Test>]
+    member this.``Verify no completion in hash derictives``() =
+        this.VerifyCtrlSpaceCompListIsEmptyAtEndOfMarker(
+            fileContents = """
+                #r (*Marker*)
+
+                let foo x = x
+                let bar = 1""",
+            marker = "(*Marker*)")
 
 // Context project system
 [<TestFixture>] 

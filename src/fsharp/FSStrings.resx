@@ -1057,7 +1057,7 @@
     <value>#I directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-I' compiler option for this reference or delimit the directive with delimit it with '#if INTERACTIVE'/'#endif'.</value>
   </data>
   <data name="HashReferenceNotAllowedInNonScript" xml:space="preserve">
-    <value>#r directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file, add a '-r' compiler option for this reference or delimit the directive with '#if INTERACTIVE'/'#endif'.</value>
+    <value>#r directives may only occur in F# script files (extensions .fsx or .fsscript). Either move this code to a script file or replace this reference with the '-r' compiler option. If this directive is being executed as user input, you may delimit it with '#if INTERACTIVE'/'#endif'.</value>
   </data>
   <data name="HashDirectiveNotAllowedInNonScript" xml:space="preserve">
     <value>This directive may only be used in F# script files (extensions .fsx or .fsscript). Either remove the directive, move this code to a script file or delimit the directive with '#if INTERACTIVE'/'#endif'.</value>

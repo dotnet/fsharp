@@ -1,4 +1,7 @@
 // #Regression #Conformance #Regression 
+#if TESTS_AS_APP
+module Core_math_numbersVS2008
+#endif
 
 #light
 #nowarn "49";;
@@ -13,18 +16,28 @@
 // *** DO NOT ADD TESTS THAT WORK ON BOTH DEV10 and VS2008 TO THIS FILE ***
 //
 
-let failures = ref false
-let report_failure () = 
-  stderr.WriteLine " NO"; failures := true
-let test s b = stderr.Write(s:string);  if b then stderr.WriteLine " OK" else report_failure()
+let failures = ref []
+
+let report_failure (s : string) = 
+    stderr.Write" NO: "
+    stderr.WriteLine s
+    failures := !failures @ [s]
+
+let test (s : string) b = 
+    stderr.Write(s)
+    if b then stderr.WriteLine " OK"
+    else report_failure (s)
+
+let checkEq (s:string) b1 b2 = 
+    stderr.Write(s)
+    if b1 = b2 then stderr.WriteLine " OK"
+    else report_failure (s + sprintf ", expected %A, got %A" b2 b1)
 
 (* START *)
 
 // Misc construction.
 open Microsoft.FSharp.Math
 open System.Numerics
-let fail() = report_failure()//failwith "Failed"
-let checkEq desc a b = if a<>b then printf "Failed %s. %A <> %A\n" desc a b; fail()
 
 // Regression 3481: Tables
   
@@ -235,7 +248,7 @@ let negative64s =
          (-4611686018427387905L , -4611686018427387904L , -4611686018427387903L);
          (999L                  , -9223372036854775808L , -9223372036854775807L); (* MinValue is -2^63 *)
          (999L                  , 999L                  , 999L)]
-
+#if !FX_PORTABLE_OR_NETSTANDARD
 // Regression 3481: ToInt32
 let triple k n project =
   let x = k * BigInteger.Pow(2I,n) in project (x - 1I),project x,project (x + 1I)
@@ -246,15 +259,28 @@ let triple64 k n = triple k n (fun x -> try int64 x with :? System.OverflowExcep
 printf "Checking BigInt ToInt32 and ToInt64\n"
 checkEq "BigInt.ToInt32 positives" positive32s (List.map (triple32  1I) [0 .. 32])
 checkEq "BigInt.ToInt32 negatives" negative32s (List.map (triple32 -1I) [0 .. 32])
-checkEq "BigInt.ToInt64 positives" positive64s (List.map (triple64  1I) [0 .. 64])
-checkEq "BigInt.ToInt64 positives" negative64s (List.map (triple64 -1I) [0 .. 64])
+for (a,b) in List.zip positive64s (List.map (triple64  1I) [0 .. 64]) do 
+  checkEq "BigInt.ToInt64 positives" a b 
+for (a,b) in List.zip negative64s (List.map (triple64 -1I) [0 .. 64]) do 
+  checkEq "BigInt.ToInt64 negatives" a b 
 ;;
 
 
 (* END *)  
+#endif
 
-let _ = 
-  if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
-  else (stdout.WriteLine "Test Passed"; 
-        System.IO.File.WriteAllText("test.ok","ok"); 
-        exit 0)
+#if TESTS_AS_APP
+let RUN() = !failures
+#else
+let aa =
+  match !failures with 
+  | [] -> 
+      stdout.WriteLine "Test Passed"
+      System.IO.File.WriteAllText("test.ok","ok")
+      exit 0
+  | _ -> 
+      stdout.WriteLine "Test Failed"
+      exit 1
+#endif
+
+

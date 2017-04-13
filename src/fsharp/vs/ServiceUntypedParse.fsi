@@ -38,7 +38,7 @@ type internal FSharpParseFileResults =
     /// Get the errors and warnings for the parse
     member Errors : FSharpErrorInfo[]
 
-    /// Indicates if any errors occured during the parse
+    /// Indicates if any errors occurred during the parse
     member ParseHadErrors : bool
 
     internal new : errors : FSharpErrorInfo[] * input : Ast.ParsedInput option * parseHadErrors : bool * dependencyFiles : string list -> FSharpParseFileResults
@@ -76,6 +76,7 @@ type internal CompletionContext =
     // end of name ast node * list of properties\parameters that were already set
     | ParameterList of pos * HashSet<string>
     | AttributeApplication
+    | OpenDeclaration
 
 type internal ModuleKind = { IsAutoOpen: bool; HasModuleSuffix: bool }
 
@@ -90,8 +91,9 @@ module internal UntypedParseImpl =
     val TryFindExpressionASTLeftOfDotLeftOfCursor : pos * ParsedInput option -> (pos * bool) option
     val GetRangeOfExprLeftOfDot : pos  * ParsedInput option -> range option
     val TryFindExpressionIslandInPosition : pos * ParsedInput option -> string option
-    val TryGetCompletionContext : pos * FSharpParseFileResults option -> CompletionContext option
+    val TryGetCompletionContext : pos * FSharpParseFileResults option * lineStr: string -> CompletionContext option
     val GetEntityKind: pos * ParsedInput -> EntityKind option
+    val GetFullNameOfSmallestModuleOrNamespaceAtPoint : ParsedInput * pos -> string[]
 
 // implementation details used by other code in the compiler    
 module internal SourceFileImpl =

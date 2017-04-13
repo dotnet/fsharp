@@ -15,7 +15,6 @@ open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX
 
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Lib
@@ -23,7 +22,6 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.PrettyNaming 
 open Microsoft.FSharp.Compiler.Tast 
 open Microsoft.FSharp.Compiler.TastPickle
 open Microsoft.FSharp.Compiler.Tastops
@@ -129,16 +127,22 @@ type ValInfos(entries) =
               for (vref:ValRef,x) in entries do 
                    t.Add (vref.Deref,(vref,x))
               t)
+
     // The compiler ValRef's into fslib stored in env.fs break certain invariants that hold elsewhere, 
     // because they dereference to point to Val's from signatures rather than Val's from implementations.
     // Thus a backup alternative resolution technique is needed for these.
     let valInfosForFslib = 
-        lazy (Map.ofList [ for (vref,_x) as p in entries do yield (vref.Deref.LinkagePartialKey,p) ])
-    member x.Entries = valInfoTable.Force().Values 
-    member x.Map f = new ValInfos(Seq.map f x.Entries)
-    member x.Filter f = new ValInfos(Seq.filter f x.Entries)
+        lazy (
+            let dict = Dictionary<_,_>()
+            for (vref,_x) as p in entries do 
+                dict.Add(vref.Deref.LinkagePartialKey,p) |> ignore
+            dict)
+
+    member x.Entries = valInfoTable.Force().Values
+    member x.Map f = ValInfos(Seq.map f x.Entries)
+    member x.Filter f = ValInfos(Seq.filter f x.Entries)
     member x.TryFind (v:ValRef) = valInfoTable.Force().TryFind v.Deref
-    member x.TryFindForFslib (v:ValRef) = valInfosForFslib.Force().TryFind(v.Deref.LinkagePartialKey)
+    member x.TryFindForFslib (v:ValRef) = valInfosForFslib.Force().TryGetValue(v.Deref.LinkagePartialKey)
 
 type ModuleInfo = 
     { ValInfos: ValInfos
@@ -197,6 +201,7 @@ let rec SizeOfValueInfos (arr:_[]) =
     let n = arr.Length
     let rec go i acc = if i >= n then acc else max acc (SizeOfValueInfo arr.[i])
     go 0 0
+
 and SizeOfValueInfo x =
     match x with
     | SizeValue (vdepth,_v)    -> vdepth (* terminate recursion at CACHED size nodes *)
@@ -209,11 +214,12 @@ and SizeOfValueInfo x =
     | CurriedLambdaValue(_lambdaId,_arities,_bsize,_expr',_ety) -> 1
     | ConstExprValue (_size,_) -> 1
 
+let [<Literal>] minDepthForASizeNode = 5 (* for small vinfos do not record size info, save space *)
+
 let rec MakeValueInfoWithCachedSize vdepth v =
     match v with
-      | SizeValue(_,v) -> MakeValueInfoWithCachedSize vdepth v
-      | _ -> let minDepthForASizeNode = 5 in (* for small vinfos do not record size info, save space *)
-             if vdepth > minDepthForASizeNode then SizeValue(vdepth,v) else v (* add nodes to stop recursion *)
+    | SizeValue(_,v) -> MakeValueInfoWithCachedSize vdepth v
+    | _ -> if vdepth > minDepthForASizeNode then SizeValue(vdepth,v) else v (* add nodes to stop recursion *)
     
 let MakeSizedValueInfo v =
     let vdepth = SizeOfValueInfo v
@@ -221,17 +227,19 @@ let MakeSizedValueInfo v =
 
 let BoundValueInfoBySize vinfo =
     let rec bound depth x =
-        if depth<0 then UnknownValue else
-        match x with
-        | SizeValue (vdepth,vinfo) -> if vdepth < depth then x else MakeSizedValueInfo (bound depth vinfo)
-        | ValValue (vr,vinfo)      -> ValValue (vr,bound (depth-1) vinfo)
-        | TupleValue vinfos -> TupleValue (Array.map (bound (depth-1)) vinfos)
-        | RecdValue (tcref,vinfos) -> RecdValue  (tcref,Array.map (bound (depth-1)) vinfos)
-        | UnionCaseValue (ucr,vinfos) -> UnionCaseValue (ucr,Array.map (bound (depth-1)) vinfos)
-        | ConstValue _             -> x
-        | UnknownValue             -> x
-        | CurriedLambdaValue(_lambdaId,_arities,_bsize,_expr',_ety) -> x
-        | ConstExprValue (_size,_) -> x
+        if depth < 0 then 
+            UnknownValue
+        else
+            match x with
+            | SizeValue (vdepth,vinfo) -> if vdepth < depth then x else MakeSizedValueInfo (bound depth vinfo)
+            | ValValue (vr,vinfo)      -> ValValue (vr,bound (depth-1) vinfo)
+            | TupleValue vinfos -> TupleValue (Array.map (bound (depth-1)) vinfos)
+            | RecdValue (tcref,vinfos) -> RecdValue  (tcref,Array.map (bound (depth-1)) vinfos)
+            | UnionCaseValue (ucr,vinfos) -> UnionCaseValue (ucr,Array.map (bound (depth-1)) vinfos)
+            | ConstValue _             -> x
+            | UnknownValue             -> x
+            | CurriedLambdaValue(_lambdaId,_arities,_bsize,_expr',_ety) -> x
+            | ConstExprValue (_size,_) -> x
     let maxDepth  = 6   (* beware huge constants! *)
     let trimDepth = 3
     let vdepth = SizeOfValueInfo vinfo
@@ -283,8 +291,8 @@ type OptimizationSettings =
           reportTotalSizes = false
         }
 
-    member x.jitOpt() = (match x.jitOptUser with Some f -> f | None -> jitOptDefault)
-    member x.localOpt () = (match x.localOptUser with Some f -> f | None -> localOptDefault)
+    member x.jitOpt() = match x.jitOptUser with Some f -> f | None -> jitOptDefault
+    member x.localOpt () = match x.localOptUser with Some f -> f | None -> localOptDefault
     member x.crossModuleOpt () = x.localOpt () && (match x.crossModuleOptUser with Some f -> f | None -> crossModuleOptDefault)
 
     member x.KeepOptimizationValues() = x.crossModuleOpt ()
@@ -301,7 +309,7 @@ type OptimizationSettings =
     member x.EliminateRecdFieldGet () = x.localOpt () 
     member x.EliminateTupleFieldGet () = x.localOpt () 
     member x.EliminatUnionCaseFieldGet () = x.localOpt () 
-    /// eliminate non-copiler generated immediate bindings 
+    /// eliminate non-compiler generated immediate bindings 
     member x.EliminateImmediatelyConsumedLocals() = x.localOpt () 
     /// expand "let x = (exp1,exp2,...)" bind fields as prior tmps 
     member x.ExpandStructrualValues() = x.localOpt () 
@@ -358,10 +366,6 @@ let rec IsPartialExprVal x = (* IsPartialExprVal can not rebuild to an expr *)
     | ConstValue _ | CurriedLambdaValue _ | ConstExprValue _ -> false
     | ValValue (_,a) 
     | SizeValue(_,a) -> IsPartialExprVal a
-
-let rec IsPartialModuleOrNamespaceVal (ss:ModuleInfo) =
-    (ss.ModuleOrNamespaceInfos  |> Map.exists (fun _ x -> IsPartialModuleOrNamespaceVal (x.Force()))) ||
-    (ss.ValInfos.Entries |> Seq.exists (fun (_,x) -> IsPartialExprVal x.ValExprInfo)) 
 
 let CheckInlineValueIsComplete (v:Val) res =
     if v.MustInline && IsPartialExprVal res then
@@ -492,7 +496,7 @@ let BindTypeVarsToUnknown (tps:Typar list) env =
     let nms = PrettyTypes.PrettyTyparNames (fun _ -> true) (env.typarInfos |> List.map (fun (tp,_) -> tp.Name) ) tps
     (tps,nms) ||> List.iter2 (fun tp nm -> 
             if PrettyTypes.NeedsPrettyTyparName tp  then 
-                tp.Data.typar_id <- ident (nm,tp.Range))      
+                tp.typar_id <- ident (nm,tp.Range))      
     List.fold (fun sofar arg -> BindTypeVar arg UnknownTypeValue sofar) env tps 
 
 let BindCcu (ccu:Tast.CcuThunk) mval env (_g:TcGlobals) = 
@@ -554,9 +558,8 @@ let GetInfoForNonLocalVal cenv env (vref:ValRef) =
                   //System.Diagnostics.Debug.Assert(false,sprintf "Break for module %s, value %s" (full_name_of_nlpath smv) n)
                   if cenv.g.compilingFslib then 
                       match structInfo.ValInfos.TryFindForFslib(vref) with 
-                      | Some ninfo -> snd ninfo
-                      | None ->  
-                          UnknownValInfo
+                      | true, ninfo -> snd ninfo
+                      | _ -> UnknownValInfo
                   else
                       UnknownValInfo
         | None -> 
@@ -938,22 +941,16 @@ let [<Literal>] localVarSize = 1
 let inline AddTotalSizes l = l |> List.sumBy (fun x -> x.TotalSize) 
 let inline AddFunctionSizes l = l |> List.sumBy (fun x -> x.FunctionSize) 
 
-let inline AddTotalSizesFlat l = l |> List.sumBy (fun x -> x.TotalSize) 
-let inline AddFunctionSizesFlat l = l |> List.sumBy (fun x -> x.FunctionSize) 
-
 //-------------------------------------------------------------------------
 // opt list/array combinators - zipping (_,_) return type
 //------------------------------------------------------------------------- 
 let inline OrEffects l = List.exists (fun x -> x.HasEffect) l
-let inline OrEffectsFlat l = List.exists (fun x -> x.HasEffect) l
 
 let inline OrTailcalls l = List.exists (fun x -> x.MightMakeCriticalTailcall) l
-let inline OrTailcallsFlat l = List.exists (fun x -> x.MightMakeCriticalTailcall) l
         
 let OptimizeList f l = l |> List.map f |> List.unzip 
 
 let NoExprs : (Expr list * list<Summary<ExprValueInfo>>) = [],[]
-let NoFlatExprs : (FlatExprs * list<Summary<ExprValueInfo>>) = [], []
 
 //-------------------------------------------------------------------------
 // Common ways of building new value infos
@@ -966,15 +963,7 @@ let CombineValueInfos einfos res =
         MightMakeCriticalTailcall = OrTailcalls einfos 
         Info = res }
 
-let CombineFlatValueInfos einfos res = 
-      { TotalSize  = AddTotalSizesFlat einfos
-        FunctionSize  = AddFunctionSizesFlat einfos
-        HasEffect = OrEffectsFlat einfos 
-        MightMakeCriticalTailcall = OrTailcallsFlat einfos 
-        Info = res }
-
 let CombineValueInfosUnknown einfos = CombineValueInfos einfos UnknownValue
-let CombineFlatValueInfosUnknown einfos = CombineFlatValueInfos einfos UnknownValue
 
 //-------------------------------------------------------------------------
 // Hide information because of a signature
@@ -1185,7 +1174,7 @@ let AbstractAndRemapModulInfo msg g m (repackage,hidden) info =
     info
 
 //-------------------------------------------------------------------------
-// Misc helerps
+// Misc helpers
 //------------------------------------------------------------------------- 
 
 // Mark some variables (the ones we introduce via abstractBigTargets) as don't-eliminate 
@@ -1639,7 +1628,7 @@ let TryDetectQueryQuoteAndRun cenv (expr:Expr) =
                         Some (mkCallSeq cenv.g newSource.Range resultElemTy (mkCallSeqDelay cenv.g newSource.Range resultElemTy (mkUnitDelayLambda cenv.g newSource.Range newSource) ), 
                               Some(resultElemTy, qTy) )
                     | None -> 
-                        //printfn "Not compiling to state machines, but still optimizaing the use of quotations away"
+                        //printfn "Not compiling to state machines, but still optimizing the use of quotations away"
                         Some (e, None)
 
                 | AnyQueryBuilderOpTrans g (seqSource,replace) -> 
@@ -1992,7 +1981,7 @@ and OptimizeFastIntegerForLoop cenv env (spStart,v,e1,dir,e2,e3,m) =
     let env = BindInternalValToUnknown cenv v env 
     let e3', e3info = OptimizeExpr cenv env e3 
     // Try to replace F#-style loops with C# style loops that recompute their bounds but which are compiled more efficiently by the JITs, e.g.
-    //  F#  "for x = 0 to arre.Length - 1 do ..." --> C# "for (int x = 0; x < arre.Length; x++) { ... }"
+    //  F#  "for x = 0 to arr.Length - 1 do ..." --> C# "for (int x = 0; x < arr.Length; x++) { ... }"
     //  F#  "for x = 0 to 10 do ..." --> C# "for (int x = 0; x < 11; x++) { ... }"
     let e2', dir = 
         match dir, e2' with 
@@ -2269,9 +2258,8 @@ and StripToNominalTyconRef cenv ty =
     if isAppTy cenv.g ty then destAppTy cenv.g ty 
     elif isRefTupleTy cenv.g ty then 
         let tyargs = destRefTupleTy cenv.g ty
-        mkCompiledTupleTyconRef cenv.g false tyargs, tyargs 
+        mkCompiledTupleTyconRef cenv.g false (List.length tyargs), tyargs 
     else failwith "StripToNominalTyconRef: unreachable" 
-      
 
 and CanDevirtualizeApplication cenv v vref ty args  = 
      valRefEq cenv.g v vref
@@ -2749,10 +2737,6 @@ and OptimizeExprsThenConsiderSplits cenv env exprs =
     | [] -> NoExprs 
     | _ -> OptimizeList (OptimizeExprThenConsiderSplit cenv env) exprs
 
-and OptimizeFlatExprsThenConsiderSplits cenv env exprs = 
-    match exprs with 
-    | [] -> NoFlatExprs
-    | _ -> OptimizeList (OptimizeExprThenConsiderSplit cenv env) exprs
 
 and OptimizeExprThenReshapeAndConsiderSplit cenv env (shape,e) = 
     OptimizeExprThenConsiderSplit cenv env (ReshapeExpr cenv (shape,e))
@@ -2869,8 +2853,8 @@ and OptimizeDecisionTreeTarget cenv env _m (TTarget(vs,e,spTarget)) =
 and OptimizeDecisionTree cenv env m x =
     match x with 
     | TDSuccess (es,n) -> 
-        let es', einfos = OptimizeFlatExprsThenConsiderSplits cenv env es 
-        TDSuccess(es',n),CombineFlatValueInfosUnknown einfos
+        let es', einfos = OptimizeExprsThenConsiderSplits cenv env es 
+        TDSuccess(es',n),CombineValueInfosUnknown einfos
     | TDBind(bind,rest) -> 
         let (bind,binfo),envinner = OptimizeBinding cenv false env bind 
         let rest,rinfo = OptimizeDecisionTree cenv envinner m rest 
@@ -2901,13 +2885,13 @@ and OptimizeDecisionTree cenv env m x =
 
 and TryOptimizeDecisionTreeTest cenv test vinfo = 
     match test,vinfo with 
-    | Test.UnionCase (c1,_), StripUnionCaseValue(c2,_) ->  Some(cenv.g.unionCaseRefEq c1 c2)
-    | Test.ArrayLength (_,_),  _ -> None
-    | Test.Const c1,StripConstValue(c2) -> if c1 = Const.Zero || c2 = Const.Zero then None else Some(c1=c2)
-    | Test.IsNull,StripConstValue(c2) -> Some(c2=Const.Zero)
-    | Test.IsInst (_srcty1,_tgty1), _ -> None
+    | DecisionTreeTest.UnionCase (c1,_), StripUnionCaseValue(c2,_) ->  Some(cenv.g.unionCaseRefEq c1 c2)
+    | DecisionTreeTest.ArrayLength (_,_),  _ -> None
+    | DecisionTreeTest.Const c1,StripConstValue(c2) -> if c1 = Const.Zero || c2 = Const.Zero then None else Some(c1=c2)
+    | DecisionTreeTest.IsNull,StripConstValue(c2) -> Some(c2=Const.Zero)
+    | DecisionTreeTest.IsInst (_srcty1,_tgty1), _ -> None
     // These should not occur in optimization
-    | Test.ActivePatternCase (_,_,_vrefOpt1,_,_),_ -> None
+    | DecisionTreeTest.ActivePatternCase (_,_,_vrefOpt1,_,_),_ -> None
     | _ -> None
 
 /// Optimize/analyze a switch construct from pattern matching 
@@ -3087,7 +3071,7 @@ and OptimizeModuleExpr cenv env x =
                 mty
             and elimModSpec (mspec:ModuleOrNamespace) = 
                 let mtyp = elimModTy mspec.ModuleOrNamespaceType 
-                mspec.Data.entity_modul_contents <- notlazy mtyp
+                mspec.entity_modul_contents <- MaybeLazy.Strict mtyp
 
             let rec elimModDef x =                  
                 match x with 

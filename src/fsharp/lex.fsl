@@ -54,22 +54,14 @@ let getSign32 (s:string) (p:byref<int>) l =
     else 1 
 
 let isOXB c = 
-#if FX_NO_TO_LOWER_INVARIANT
-    let c = Char.ToLower c
-#else
     let c = Char.ToLowerInvariant c
-#endif
     c = 'x' || c = 'o' || c = 'b'
 
 let is0OXB (s:string) p l = 
     l >= p + 2 && s.[p] = '0' && isOXB s.[p+1]
 let get0OXB (s:string) (p:byref<int>)  l = 
     if is0OXB s p l
-#if FX_NO_TO_LOWER_INVARIANT
-    then let r = Char.ToLower s.[p+1] in p <- p + 2; r
-#else
     then let r = Char.ToLowerInvariant s.[p+1] in p <- p + 2; r
-#endif
     else 'd' 
 
 let formatError() = raise (new System.FormatException(SR.GetString("bad format string")))
@@ -254,35 +246,35 @@ rule token args skip = parse
  | ident ('#')  
      { fail args lexbuf (FSComp.SR.lexIdentEndInMarkReserved("#")) (Keywords.KeywordOrIdentifierToken args lexbuf (lexeme lexbuf)) }
  | int8 
-     { let n = lexemeTrimRightToInt32 args lexbuf 1 
+     { let n = lexemeTrimRightToInt32 args lexbuf 1
        if n > 0x80 || n < -0x80 then fail args lexbuf (FSComp.SR.lexOutsideEightBitSigned()) (INT8(0y,false))
        // Allow <max_int+1> to parse as min_int.  Allowed only because we parse '-' as an operator. 
        else if n = 0x80 then INT8(sbyte(-0x80), true (* 'true' = 'bad'*) )
        else INT8(sbyte n,false) }
  | xint8 
-     { let n = lexemeTrimRightToInt32 args lexbuf 1 
+     { let n = lexemeTrimRightToInt32 args lexbuf 1
        if n > 0xFF || n < 0 then fail args lexbuf (FSComp.SR.lexOutsideEightBitSignedHex()) (INT8(0y,false))
        else INT8(sbyte(byte(n)),false) }
  | uint8
-     { let n = lexemeTrimRightToInt32 args lexbuf 2 
+     { let n = lexemeTrimRightToInt32 args lexbuf 2
        if n > 0xFF || n < 0 then fail args lexbuf (FSComp.SR.lexOutsideEightBitUnsigned()) (UINT8(0uy))
        else UINT8(byte n) }
  | int16 
-     { let n = lexemeTrimRightToInt32 args lexbuf 1 
+     { let n = lexemeTrimRightToInt32 args lexbuf 1
        if n > 0x8000 || n < -0x8000 then fail args lexbuf (FSComp.SR.lexOutsideSixteenBitSigned()) (INT16(0s,false))
        // Allow <max_int+1> to parse as min_int.  Allowed only because we parse '-' as an operator. 
        else if n = 0x8000 then INT16(-0x8000s,true)
        else INT16(int16 n,false) }
  | xint16 
-     { let n = lexemeTrimRightToInt32 args lexbuf 1 
+     { let n = lexemeTrimRightToInt32 args lexbuf 1
        if n > 0xFFFF || n < 0 then fail args lexbuf (FSComp.SR.lexOutsideSixteenBitSigned()) (INT16(0s,false))
        else INT16(int16(uint16(n)),false) }
  | uint16 
-     { let n = lexemeTrimRightToInt32 args lexbuf 2 
+     { let n = lexemeTrimRightToInt32 args lexbuf 2
        if n > 0xFFFF || n < 0 then fail args lexbuf (FSComp.SR.lexOutsideSixteenBitUnsigned()) (UINT16(0us))
        else UINT16(uint16 n) }
  | int '.' '.' 
-     { let s = lexemeTrimRight lexbuf 2 
+     { let s = removeUnderscores (lexemeTrimRight lexbuf 2)
        // Allow <max_int+1> to parse as min_int.  Allowed only because we parse '-' as an operator. 
        if s = "2147483648" then INT32_DOT_DOT(-2147483648,true) else
        let n = try int32 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitSigned()) 0
@@ -290,7 +282,7 @@ rule token args skip = parse
      } 
  | xint 
  | int 
-     { let s = lexeme lexbuf 
+     { let s = removeUnderscores (lexeme lexbuf)
        // Allow <max_int+1> to parse as min_int.  Allowed only because we parse '-' as an operator. 
        if s = "2147483648" then INT32(-2147483648,true) else
        let n =
@@ -299,7 +291,7 @@ rule token args skip = parse
      } 
  | xint32 
  | int32 
-     { let s = lexemeTrimRight lexbuf 1 
+     { let s = removeUnderscores (lexemeTrimRight lexbuf 1)
        // Allow <max_int+1> to parse as min_int.  Allowed only because we parse '-' as an operator. 
        if s = "2147483648" then INT32(-2147483648,true) else
        let n = 
@@ -309,7 +301,7 @@ rule token args skip = parse
 
  | uint32
      { 
-       let s = lexemeTrimRight lexbuf 1 
+       let s = removeUnderscores (lexemeTrimRight lexbuf 1)
        let n = 
            try int64 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitUnsigned()) 0L
        if n > 0xFFFFFFFFL || n < 0L then fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitUnsigned()) (UINT32(0u)) else
@@ -317,14 +309,14 @@ rule token args skip = parse
 
  | uint32l
      { 
-       let s = lexemeTrimRight lexbuf 2 
+       let s = removeUnderscores (lexemeTrimRight lexbuf 2)
        let n = 
            try int64 s with _ ->  fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitUnsigned()) 0L
        if n > 0xFFFFFFFFL || n < 0L then fail args lexbuf (FSComp.SR.lexOutsideThirtyTwoBitUnsigned()) (UINT32(0u)) else
        UINT32(uint32 (uint64 n)) } 
 
  | int64 
-     { let s = lexemeTrimRight lexbuf 1 
+     { let s = removeUnderscores (lexemeTrimRight lexbuf 1)
        // Allow <max_int+1> to parse as min_int.  Stupid but allowed because we parse '-' as an operator. 
        if s = "9223372036854775808" then INT64(-9223372036854775808L,true) else
        let n = 
@@ -333,29 +325,29 @@ rule token args skip = parse
      }
 
  | uint64     
-     { let s = lexemeTrimRight lexbuf 2 
+     { let s = removeUnderscores (lexemeTrimRight lexbuf 2)
        let n = 
          try uint64 s with _ -> fail args lexbuf (FSComp.SR.lexOutsideSixtyFourBitUnsigned()) 0UL
        UINT64(n) } 
 
  | nativeint  
      { try 
-           NATIVEINT(int64 (lexemeTrimRight lexbuf 1)) 
+           NATIVEINT(int64 (removeUnderscores (lexemeTrimRight lexbuf 1)))
        with _ ->  fail args lexbuf (FSComp.SR.lexOutsideNativeSigned()) (NATIVEINT(0L)) } 
 
  | unativeint 
      { try 
-           UNATIVEINT(uint64 (lexemeTrimRight lexbuf 2)) 
+           UNATIVEINT(uint64 (removeUnderscores (lexemeTrimRight lexbuf 2)))
        with _ ->  fail args lexbuf (FSComp.SR.lexOutsideNativeUnsigned())  (UNATIVEINT(0UL)) }
 
  | ieee32     
-     { IEEE32 (try float32(lexemeTrimRight lexbuf 1) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0.0f) }
+     { IEEE32 (try float32(removeUnderscores (lexemeTrimRight lexbuf 1)) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0.0f) }
  | ieee64     
      { IEEE64 (try float(lexeme lexbuf) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0.0) }
 
  | decimal    
      { try 
-          let s = lexemeTrimRight lexbuf 1
+          let s = removeUnderscores (lexemeTrimRight lexbuf 1)
           // This implements a range check for decimal literals 
           let d = System.Decimal.Parse(s,System.Globalization.NumberStyles.AllowExponent ||| System.Globalization.NumberStyles.Number,System.Globalization.CultureInfo.InvariantCulture)
           DECIMAL d 
@@ -364,7 +356,7 @@ rule token args skip = parse
      }
  | xieee32     
      { 
-       let s = lexemeTrimRight lexbuf 2
+       let s = removeUnderscores (lexemeTrimRight lexbuf 2)
        // Even though the intermediate step is an int64, display the "invalid float" message, since it will be less confusing to the user 
        let n64 = (try (int64 s) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0L) 
        if n64 > 0xFFFFFFFFL || n64 < 0L then fail args lexbuf (FSComp.SR.lexOusideThirtyTwoBitFloat()) (IEEE32 0.0f) else
@@ -372,12 +364,12 @@ rule token args skip = parse
 
  | xieee64     
      { 
-       let n64 = (try int64 (lexemeTrimRight lexbuf 2) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0L) 
+       let n64 = (try int64 (removeUnderscores (lexemeTrimRight lexbuf 2)) with _ -> fail args lexbuf (FSComp.SR.lexInvalidFloat()) 0L) 
        IEEE64 (System.BitConverter.Int64BitsToDouble(n64)) }
        
  | bignum     
        { let s = lexeme lexbuf 
-         BIGNUM (lexemeTrimRight lexbuf 1, s.[s.Length-1..s.Length-1]) }
+         BIGNUM (removeUnderscores (lexemeTrimRight lexbuf 1), s.[s.Length-1..s.Length-1]) }
 
  | (int | xint | float) ident_char+
        { fail args lexbuf (FSComp.SR.lexInvalidNumericLiteral()) (INT32(0,false)) }
@@ -424,14 +416,6 @@ rule token args skip = parse
      { match unicodeGraphLong (lexemeTrimBoth lexbuf 3 1) with
        | SingleChar(c) -> CHAR (char c)
        | _ -> fail args lexbuf  (FSComp.SR.lexThisUnicodeOnlyInStringLiterals()) (CHAR (char 0)) }
- | "(*IF-FSHARP"    
-     { if not skip then (COMMENT (LexCont.Token !args.ifdefStack)) else token args skip lexbuf }
- | "(*F#"            
-     { if not skip then (COMMENT (LexCont.Token !args.ifdefStack)) else token args skip lexbuf }
- | "ENDIF-FSHARP*)" 
-     { if not skip then (COMMENT (LexCont.Token !args.ifdefStack)) else token args skip lexbuf  }
- | "F#*)"           
-     { if not skip then (COMMENT (LexCont.Token !args.ifdefStack)) else token args skip lexbuf }
 
  | "(*)"            
      { LPAREN_STAR_RPAREN }
@@ -439,10 +423,6 @@ rule token args skip = parse
  | "(*"
      { let m = lexbuf.LexemeRange 
        if not skip then (COMMENT (LexCont.Comment(!args.ifdefStack,1,m))) else comment (1,m,args) skip lexbuf }
-
- | "(*IF-CAML*)" |  "(*IF-OCAML*)" 
-     { let m = lexbuf.LexemeRange 
-       if not skip then (COMMENT (LexCont.MLOnly(!args.ifdefStack,m))) else mlOnly m args skip lexbuf }
 
  | '"' 
      { let buf,fin,m = startString args lexbuf 
@@ -1058,24 +1038,3 @@ and tripleQuoteStringInComment n m args skip = parse
  | surrogateChar surrogateChar
  | _  
      { if not skip then (COMMENT (LexCont.TripleQuoteStringInComment(!args.ifdefStack,n,m))) else tripleQuoteStringInComment n m args skip lexbuf }
-     
-
-and mlOnly m args skip = parse
- | "\""
-     { let buf = ByteBuffer.Create 100 
-       let m2 = lexbuf.LexemeRange 
-       let _ = string (buf,defaultStringFinisher,m2,args) skip lexbuf 
-       if not skip then (COMMENT (LexCont.MLOnly(!args.ifdefStack,m))) else mlOnly m args skip lexbuf }
- | newline 
-     { newline lexbuf;  if not skip then (COMMENT (LexCont.MLOnly(!args.ifdefStack,m))) else mlOnly m args skip lexbuf }
- | "(*ENDIF-CAML*)"  
-     {  if not skip then (COMMENT (LexCont.Token !args.ifdefStack)) else token args skip lexbuf }
- | "(*ENDIF-OCAML*)" 
-     {  if not skip then (COMMENT (LexCont.Token !args.ifdefStack)) else token args skip lexbuf }
- | [^ '(' '"' '\n' '\r' ]+  
-     { if not skip then (COMMENT (LexCont.MLOnly(!args.ifdefStack,m))) else mlOnly m args skip lexbuf }
- | eof 
-     { EOF (LexCont.MLOnly(!args.ifdefStack,m)) }
- | surrogateChar surrogateChar 
- | _ 
-     {  if not skip then (COMMENT (LexCont.MLOnly(!args.ifdefStack,m))) else mlOnly m args skip lexbuf }

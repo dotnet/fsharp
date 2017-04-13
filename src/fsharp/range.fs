@@ -129,7 +129,7 @@ type FileIndexTable() =
 
 let maxFileIndex = pown32 fileIndexBitCount
 
-// ++GLOBAL MUTBALE STATE
+// ++GLOBAL MUTABLE STATE
 // WARNING: Global Mutable State, holding a mapping between integers and filenames
 let fileIndexTable = new FileIndexTable()
 

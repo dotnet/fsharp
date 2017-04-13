@@ -3,33 +3,24 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Text.RegularExpressions
 open System.Composition
 open System.Collections.Generic
-open System.Threading
-open System.Threading.Tasks
-open System.Runtime.CompilerServices
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Classification
-open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.SignatureHelp
 open Microsoft.CodeAnalysis.Text
 
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.Text.Tagging
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 
 open Microsoft.FSharp.Compiler.Layout
-open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionIcons
 
 [<Shared>]
-[<ExportSignatureHelpProvider("FSharpSignatureHelpProvider", FSharpCommonConstants.FSharpLanguageName)>]
+[<ExportSignatureHelpProvider("FSharpSignatureHelpProvider", FSharpConstants.FSharpLanguageName)>]
 type internal FSharpSignatureHelpProvider 
     [<ImportingConstructor>]
     (
@@ -168,16 +159,16 @@ type internal FSharpSignatureHelpProvider
             // Create the documentation. Note, do this on the background thread, since doing it in the documentationBuild fails to build the XML index
             let mainDescription = List()
             let documentation = List()
-            XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, CommonRoslynHelpers.CollectTaggedText mainDescription, CommonRoslynHelpers.CollectTaggedText documentation, method.StructuredDescription, false)
+            XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, RoslynHelpers.CollectTaggedText mainDescription, RoslynHelpers.CollectTaggedText documentation, method.StructuredDescription, false)
 
             let parameters = 
                 let parameters = if isStaticArgTip then method.StaticParameters else method.Parameters
                 [| for p in parameters do 
                       let doc = List()
                       // FSROSLYNTODO: compute the proper help text for parameters, c.f. AppendParameter in XmlDocumentation.fs
-                      XmlDocumentation.BuildMethodParamText(documentationBuilder, CommonRoslynHelpers.CollectTaggedText doc, method.XmlDoc, p.ParameterName) 
+                      XmlDocumentation.BuildMethodParamText(documentationBuilder, RoslynHelpers.CollectTaggedText doc, method.XmlDoc, p.ParameterName) 
                       let parts = List()
-                      renderL (taggedTextListR (CommonRoslynHelpers.CollectTaggedText parts)) p.StructuredDisplay |> ignore
+                      renderL (taggedTextListR (RoslynHelpers.CollectTaggedText parts)) p.StructuredDisplay |> ignore
                       yield (p.ParameterName, p.IsOptional, doc, parts) 
                 |]
 
@@ -230,7 +221,7 @@ type internal FSharpSignatureHelpProvider
                 return! None
             } 
             |> Async.map Option.toObj
-            |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+            |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
 open System.ComponentModel.Composition
 open Microsoft.VisualStudio.Utilities
@@ -241,7 +232,7 @@ open Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.SignatureHelp.Pre
 // Enable colorized signature help for F# buffers
 
 [<Export(typeof<IClassifierProvider>)>]
-[<ContentType(FSharpCommonConstants.FSharpSignatureHelpContentTypeName)>]
+[<ContentType(FSharpConstants.FSharpSignatureHelpContentTypeName)>]
 type internal FSharpSignatureHelpClassifierProvider [<ImportingConstructor>] (typeMap) =
     interface IClassifierProvider with
         override __.GetClassifier (buffer: ITextBuffer) =

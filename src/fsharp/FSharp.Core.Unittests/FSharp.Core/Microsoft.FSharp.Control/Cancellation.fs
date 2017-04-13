@@ -52,7 +52,7 @@ type CancellationType() =
         Assert.IsFalse(!is2Called)
         r2.Dispose()
         
-        // Cancelling cts1: r2 is diposed and r3 is for cts2, only r1 should be called
+        // Cancelling cts1: r2 is disposed and r3 is for cts2, only r1 should be called
         cts1.Cancel()
         assertAndOff true   is1Called
         assertAndOff false  is2Called

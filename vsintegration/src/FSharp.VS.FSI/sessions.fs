@@ -179,7 +179,7 @@ let determineFsiPath () =
     if  File.Exists fsiRelativePath2 then fsiRelativePath2 else
 
     // Try the registry key
-    let fsbin = match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler with Some(s) -> s | None -> ""
+    let fsbin = match Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None) with Some(s) -> s | None -> ""
     let fsiRegistryPath = Path.Combine(fsbin, fsiExeName() )
     if File.Exists(fsiRegistryPath) then fsiRegistryPath else
 

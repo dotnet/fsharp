@@ -491,11 +491,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         private ConfigProvider configProvider;
 
-        private TaskProvider taskProvider;
+        private Shell.TaskProvider taskProvider;
 
         private TaskReporter taskReporter;
 
-        private ErrorListProvider projectErrorListProvider;
+        private Shell.ErrorListProvider projectErrorListProvider;
 
         private ExtensibilityEventsHelper myExtensibilityEventsHelper;
 
@@ -614,7 +614,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         public abstract string TargetFSharpCoreVersion { get; set; }
 
-        internal ErrorListProvider ProjectErrorsTaskListProvider 
+        internal Shell.ErrorListProvider ProjectErrorsTaskListProvider 
         {
             get { return projectErrorListProvider; }
         }
@@ -1080,7 +1080,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Gets the taskprovider.
         /// </summary>
-        public TaskProvider TaskProvider
+        public Shell.TaskProvider TaskProvider
         {
             get
             {
@@ -1392,15 +1392,15 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 taskProvider.Dispose();
             }
-            taskProvider = new TaskProvider(this.site);
-            taskReporter = new TaskReporter("Project System (ProjectNode.cs)");
+            taskProvider = new Shell.TaskProvider ( this.site);
+            taskReporter = new TaskReporter ("Project System (ProjectNode.cs)");
             taskReporter.TaskListProvider = new TaskListProvider(taskProvider);
             if (projectErrorListProvider != null)
             {
                 projectErrorListProvider.Dispose();
             }
 
-            projectErrorListProvider = new ErrorListProvider(this.site);
+            projectErrorListProvider = new Shell.ErrorListProvider (this.site);
 
             return VSConstants.S_OK;
         }
@@ -5448,8 +5448,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 return VSConstants.E_FAIL;
             }
-            //Fail if the document names passed are null.
+            
+            // Fail if the document names passed are null.
             if (oldMkDoc == null || newMkDoc == null)
+                return VSConstants.E_INVALIDARG;
+
+            // Fail if the document names passed are equal.
+            if (oldMkDoc == newMkDoc)
                 return VSConstants.E_INVALIDARG;
 
             int hr = VSConstants.S_OK;
@@ -6124,16 +6129,31 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return VSConstants.S_OK;
         }
 
+        public bool IsUsingMicrosoftNetSdk()
+        {
+            // Nasty hack to see if we are using dotnet sdk, the SDK team will add a property in the future.
+            var c = GetProjectProperty("MSBuildAllProjects");
+            if (!string.IsNullOrWhiteSpace(c))
+            {
+                return c.Contains("Microsoft.NET.Sdk.props");
+            }
+            return false;
+        }
+
         public int UpgradeProject(uint grfUpgradeFlags)
         {
-            var hasTargetFramework = IsTargetFrameworkInstalled();
-            if (!hasTargetFramework)
+            if (!IsUsingMicrosoftNetSdk())
             {
-                hasTargetFramework = ShowRetargetingDialog();
+                var hasTargetFramework = IsTargetFrameworkInstalled();
+                if (!hasTargetFramework)
+                {
+                    hasTargetFramework = ShowRetargetingDialog();
+                }
+                // VSConstants.OLE_E_PROMPTSAVECANCELLED causes the shell to leave project unloaded
+                return hasTargetFramework ? VSConstants.S_OK : VSConstants.OLE_E_PROMPTSAVECANCELLED;
             }
-            // VSConstants.OLE_E_PROMPTSAVECANCELLED causes the shell to leave project unloaded
-            return hasTargetFramework ? VSConstants.S_OK : VSConstants.OLE_E_PROMPTSAVECANCELLED;
-        }
+            return VSConstants.S_OK;
+}
 
         /// <summary>
         /// Initialize projectNode
