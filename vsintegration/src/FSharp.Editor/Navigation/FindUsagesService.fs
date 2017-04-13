@@ -2,7 +2,6 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System
 open System.Threading
 open System.Collections.Immutable
 open System.Composition
@@ -10,19 +9,13 @@ open System.Composition
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Host.Mef
-open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Editor.FindUsages
-open Microsoft.CodeAnalysis.Editor.Host
-open Microsoft.CodeAnalysis.Navigation
-open Microsoft.CodeAnalysis.FindSymbols
 open Microsoft.CodeAnalysis.FindUsages
-
-open Microsoft.VisualStudio.FSharp.LanguageService
 
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
-[<ExportLanguageService(typeof<IFindUsagesService>, FSharpCommonConstants.FSharpLanguageName); Shared>]
+[<ExportLanguageService(typeof<IFindUsagesService>, FSharpConstants.FSharpLanguageName); Shared>]
 type internal FSharpFindUsagesService
     [<ImportingConstructor>]
     (
@@ -41,9 +34,9 @@ type internal FSharpFindUsagesService
                         async {
                             let doc = solution.GetDocument(documentId)
                             let! sourceText = doc.GetTextAsync(cancellationToken)
-                            match CommonRoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
+                            match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
                             | Some span ->
-                                let span = CommonHelpers.fixupSpan(sourceText, span)
+                                let span = Tokenizer.fixupSpan(sourceText, span)
                                 return Some (DocumentSpan(doc, span))
                             | None -> return None
                         })
@@ -61,10 +54,10 @@ type internal FSharpFindUsagesService
             let lineNumber = sourceText.Lines.GetLinePosition(position).Line + 1
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.FilePath, options.OtherOptions |> Seq.toList)
             
-            let! symbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy)
+            let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland)
             let! declaration = checkFileResults.GetDeclarationLocationAlternate (lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland, false) |> liftAsync
-            let tags = GlyphTags.GetTags(CommonRoslynHelpers.GetGlyphForSymbol symbolUse.Symbol)
+            let tags = GlyphTags.GetTags(Tokenizer.GetGlyphForSymbol (symbolUse.Symbol, symbol.Kind))
             
             let declarationRange = 
                 match declaration with
@@ -123,7 +116,9 @@ type internal FSharpFindUsagesService
                             |> Async.Parallel
                             |> liftAsync
 
-                        return symbolUses |> Array.concat
+                        // FCS may return several `FSharpSymbolUse`s for same range, which have different `ItemOccurrence`s (Use, UseInAttribute, UseInType, etc.)
+                        // We don't care about the occurrence type here, so we distinct by range.
+                        return symbolUses |> Array.concat |> Array.distinctBy (fun x -> x.RangeAlternate)
                     }
 
             for symbolUse in symbolUses do
@@ -147,8 +142,8 @@ type internal FSharpFindUsagesService
     interface IFindUsagesService with
         member __.FindReferencesAsync(document, position, context) =
             findReferencedSymbolsAsync(document, position, context, true)
-            |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+            |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
         member __.FindImplementationsAsync(document, position, context) =
             findReferencedSymbolsAsync(document, position, context, false)
-            |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+            |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
  

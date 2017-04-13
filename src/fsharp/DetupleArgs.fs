@@ -196,7 +196,7 @@ module GlobalUsageAnalysis =
          /// bound in a decision tree? 
          DecisionTreeBindings    : Zset<Val>                                    
          ///  v -> v list * recursive? -- the others in the mutual binding 
-         RecursiveBindings  : Zmap<Val,bool * FlatVals>
+         RecursiveBindings  : Zmap<Val,bool * Vals>
          TopLevelBindings : Zset<Val>
          IterationIsAtTopLevel      : bool }
 
@@ -438,7 +438,7 @@ let sitesCPs sites = List.map siteCP sites
 type TransformedFormal =
   // Indicates that
   //    - the actual arg in this position is unchanged
-  //    - also menas that we keep the original formal arg
+  //    - also means that we keep the original formal arg
   | SameArg                          
 
   // Indicates 

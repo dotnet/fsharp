@@ -29,7 +29,6 @@ type internal FSharpTokenizerColorState =
     | Comment = 5
     | StringInComment = 6
     | VerbatimStringInComment = 7
-    | CamlOnly = 8
     | VerbatimString = 9
     | SingleLineComment = 10
     | EndLineThenSkip = 11
@@ -52,6 +51,7 @@ type internal FSharpTokenColorKind =
     | PreprocessorKeyword = 8
     | Number = 9
     | Operator = 10
+    | Punctuation = 11
     
 /// Gives an indication of what should happen when the token is typed in an IDE
 type internal FSharpTokenTriggerClass =
@@ -84,7 +84,7 @@ module internal FSharpTokenTag =
     val Identifier: int
     /// Indicates the token is a string
     val String : int
-    /// Indicates the token is an identifier (synonym for FSharpTokenTag.Identifer)
+    /// Indicates the token is an identifier (synonym for FSharpTokenTag.Identifier)
     val IDENT : int
     /// Indicates the token is an string (synonym for FSharpTokenTag.String)
     val STRING : int
@@ -166,6 +166,8 @@ module internal FSharpTokenTag =
     val BAR_BAR : int
     /// Indicates the token is a `->`
     val RARROW : int
+    /// Indicates the token is a `<-`
+    val LARROW : int
     /// Indicates the token is a `"`
     val QUOTE : int
     

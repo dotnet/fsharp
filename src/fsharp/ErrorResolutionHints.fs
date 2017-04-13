@@ -11,7 +11,7 @@ let highConfidenceThreshold = 0.85
 let minStringLengthForThreshold = 3
 
 /// We report a candidate if its edit distance is <= the threshold.
-/// The threshhold is set to about a quarter of the number of characters.
+/// The threshold is set to about a quarter of the number of characters.
 let IsInEditDistanceProximity idText suggestion =
     let editDistance = EditDistance.CalcEditDistance(idText,suggestion)
     let threshold =

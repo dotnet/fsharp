@@ -66,13 +66,15 @@ let GetImmediateIntrinsicMethInfosOfType (optFilter,ad) g amap m typ =
                 | None -> st.PApplyArray ((fun st -> st.GetMethods()), "GetMethods", m)
             [   for mi in meths -> ProvidedMeth(amap,mi.Coerce(m),None,m) ]
 #endif
-        | ILTypeMetadata (_,tdef) -> 
+        | ILTypeMetadata (TILObjectReprData(_,_,tdef)) -> 
             let mdefs = tdef.Methods
             let mdefs = (match optFilter with None -> mdefs.AsList | Some nm -> mdefs.FindByName nm)
             mdefs |> List.map (fun mdef -> MethInfo.CreateILMeth(amap, m, typ, mdef)) 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-            if not (isAppTy g typ) then []
-            else SelectImmediateMemberVals g optFilter (TrySelectMemberVal g optFilter typ None) (tcrefOfAppTy g typ)
+            match tryDestAppTy g typ with
+            | None -> []
+            | Some tcref ->
+                SelectImmediateMemberVals g optFilter (TrySelectMemberVal g optFilter typ None) tcref
     let minfos = minfos |> List.filter (IsMethInfoAccessible amap m ad)
     minfos
 
@@ -139,19 +141,19 @@ let GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m typ =
             |> Seq.map(fun pi -> ProvidedProp(amap,pi,m)) 
             |> List.ofSeq
 #endif
-        | ILTypeMetadata (_,tdef) -> 
+        | ILTypeMetadata (TILObjectReprData(_,_,tdef)) -> 
             let tinfo = ILTypeInfo.FromType g typ
             let pdefs = tdef.Properties
             let pdefs = match optFilter with None -> pdefs.AsList | Some nm -> pdefs.LookupByName nm
             pdefs |> List.map (fun pd -> ILProp(g,ILPropInfo(tinfo,pd))) 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
-
-            if not (isAppTy g typ) then []
-            else
+            match tryDestAppTy g typ with
+            | None -> []
+            | Some tcref ->
                 let propCollector = new PropertyCollector(g,amap,m,typ,optFilter,ad)
                 SelectImmediateMemberVals g None
                            (fun membInfo vref -> propCollector.Collect(membInfo,vref); None)
-                           (tcrefOfAppTy g typ) |> ignore
+                           tcref |> ignore
                 propCollector.Close()
 
     let pinfos = pinfos |> List.filter (IsPropInfoAccessible g amap m ad)
@@ -187,7 +189,7 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
                         |   Tainted.Null -> []
                         |   fi -> [  ProvidedField(amap,fi,m) ]
 #endif
-            | ILTypeMetadata (_,tdef) -> 
+            | ILTypeMetadata (TILObjectReprData(_,_,tdef)) -> 
                 let tinfo = ILTypeInfo.FromType g typ
                 let fdefs = tdef.Fields
                 let fdefs = match optFilter with None -> fdefs.AsList | Some nm -> fdefs.LookupByName nm
@@ -212,7 +214,7 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
                         |   Tainted.Null -> []
                         |   ei -> [  ProvidedEvent(amap,ei,m) ]
 #endif
-            | ILTypeMetadata (_,tdef) -> 
+            | ILTypeMetadata (TILObjectReprData(_,_,tdef)) -> 
                 let tinfo = ILTypeInfo.FromType g typ
                 let edefs = tdef.Events
                 let edefs = match optFilter with None -> edefs.AsList | Some nm -> edefs.LookupByName nm
@@ -536,7 +538,7 @@ let private FilterOverrides findFlag (isVirt:'a->bool,isNewSlot,isDefiniteOverri
     | IgnoreOverrides ->  
         let equivNewSlots x y = isNewSlot x && isNewSlot y && equivSigs x y
         items
-          // Remove any F#-declared overrides. THese may occur in the same type as the abstract member (unlike with .NET metadata)
+          // Remove any F#-declared overrides. These may occur in the same type as the abstract member (unlike with .NET metadata)
           // Include any 'newslot' declared methods.
           |> List.map (List.filter (fun x -> not (isDefiniteOverride x))) 
 

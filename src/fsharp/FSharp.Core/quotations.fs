@@ -2,8 +2,7 @@
 
 namespace Microsoft.FSharp.Quotations
 
-#if FX_MINIMAL_REFLECTION
-#else
+#if !FX_MINIMAL_REFLECTION
 open System
 open System.IO
 open System.Reflection
@@ -25,7 +24,6 @@ open Microsoft.FSharp.Text.StructuredPrintfImpl.TaggedTextOps
 #if FX_RESHAPED_REFLECTION
 open PrimReflectionAdapters
 open ReflectionAdapters
-type internal BindingFlags = ReflectionAdapters.BindingFlags
 #endif
 
 //--------------------------------------------------------------------------
@@ -1611,7 +1609,7 @@ module Patterns =
     type ReflectedDefinitionTableKey = 
         // Key is declaring type * type parameters count * name * parameter types * return type
         // Registered reflected definitions can contain generic methods or constructors in generic types,
-        // however TryGetReflectedDefinition can be queried with concrete instantiations of the same methods that doesnt contain type parameters.
+        // however TryGetReflectedDefinition can be queried with concrete instantiations of the same methods that doesn't contain type parameters.
         // To make these two cases match we apply the following transformations:
         // 1. if declaring type is generic - key will contain generic type definition, otherwise - type itself
         // 2. if method is instantiation of generic one - pick parameters from generic method definition, otherwise - from methods itself
@@ -1630,7 +1628,7 @@ module Patterns =
                 else 0
 #if FX_RESHAPED_REFLECTION
             // this is very unfortunate consequence of limited Reflection capabilities on .NETCore
-            // what we want: having MethodBase for some concrete method or constructor we would like to locate corresponding MethodInfo\ConstructorInfo from the open generic type (cannonical form).
+            // what we want: having MethodBase for some concrete method or constructor we would like to locate corresponding MethodInfo\ConstructorInfo from the open generic type (canonical form).
             // It is necessary to build the key for the table of reflected definitions: reflection definition is saved for open generic type but user may request it using
             // arbitrary instantiation.
             let findMethodInOpenGenericType (mb : ('T :> MethodBase)) : 'T = 
@@ -2173,7 +2171,7 @@ module ExprShape =
             | NewTupleOp(ty),_    -> mkNewTupleWithType(ty, args)
             | TupleGetOp(ty,i),[arg] -> mkTupleGet(ty,i,arg)
             | InstancePropGetOp(pinfo),(obj::args)    -> mkInstancePropGet(obj,pinfo,args)
-            | StaticPropGetOp(pinfo),[] -> mkStaticPropGet(pinfo,args)
+            | StaticPropGetOp(pinfo),_ -> mkStaticPropGet(pinfo,args)
             | InstancePropSetOp(pinfo),obj::(FrontAndBack(args,v)) -> mkInstancePropSet(obj,pinfo,args,v)
             | StaticPropSetOp(pinfo),(FrontAndBack(args,v)) -> mkStaticPropSet(pinfo,args,v)
             | InstanceFieldGetOp(finfo),[obj]   -> mkInstanceFieldGet(obj,finfo)

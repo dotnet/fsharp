@@ -4340,7 +4340,7 @@ module Project35b =
     let cleanFileName a = if a = fileName1 then "file1" else "??"
 
     let fileNames = [fileName1]
-    let internal options =  checker.GetProjectOptionsFromScript(fileName1, fileSource1) |> Async.RunSynchronously
+    let internal options =  checker.GetProjectOptionsFromScript(fileName1, fileSource1) |> Async.RunSynchronously |> fst
 
 
 [<Test>]
@@ -4817,7 +4817,11 @@ let ``Test request for parse and check doesn't check whole project`` () =
     backgroundCheckCount.Value |> shouldEqual 0
     let checkResults1 = checker.CheckFileInProject(parseResults1, ProjectBig.fileNames.[5], 0, ProjectBig.fileSources2.[5], ProjectBig.options)  |> Async.RunSynchronously
     let pD, tD = FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic
-    backgroundParseCount.Value |> shouldEqual 10 // This could be reduced to 5 - the whole project gets parsed 
+#if FCS_RETAIN_BACKGROUND_PARSE_RESULTS
+    backgroundParseCount.Value |> shouldEqual 10
+#else
+    backgroundParseCount.Value |> shouldEqual 5
+#endif
     backgroundCheckCount.Value |> shouldEqual 5
     (pD - pC) |> shouldEqual 0
     (tD - tC) |> shouldEqual 1
@@ -4826,7 +4830,11 @@ let ``Test request for parse and check doesn't check whole project`` () =
     let pE, tE = FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic
     (pE - pD) |> shouldEqual 0
     (tE - tD) |> shouldEqual 1
+#if FCS_RETAIN_BACKGROUND_PARSE_RESULTS
     backgroundParseCount.Value |> shouldEqual 10 // but note, the project does not get reparsed
+#else
+    backgroundParseCount.Value |> shouldEqual 7 // but note, the project does not get reparsed
+#endif
     backgroundCheckCount.Value |> shouldEqual 7 // only two extra typechecks of files
 
     // A subsequent ParseAndCheck of identical source code doesn't do any more anything
@@ -4834,8 +4842,30 @@ let ``Test request for parse and check doesn't check whole project`` () =
     let pF, tF = FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic
     (pF - pE) |> shouldEqual 0  // note, no new parse of the file
     (tF - tE) |> shouldEqual 0  // note, no new typecheck of the file
+#if FCS_RETAIN_BACKGROUND_PARSE_RESULTS
     backgroundParseCount.Value |> shouldEqual 10 // but note, the project does not get reparsed
+#else
+    backgroundParseCount.Value |> shouldEqual 7 // but note, the project does not get reparsed
+#endif
     backgroundCheckCount.Value |> shouldEqual 7 // only two extra typechecks of files
 
     ()
 
+[<Test>]
+// Simplified repro for https://github.com/Microsoft/visualfsharp/issues/2679
+let ``add files with same name from different folders`` () = 
+    let fileNames =
+        [ __SOURCE_DIRECTORY__ + "/data/samename/folder1/a.fs"
+          __SOURCE_DIRECTORY__ + "/data/samename/folder2/a.fs" ]
+    let projFileName = __SOURCE_DIRECTORY__ + "/data/samename/tempet.fsproj"
+    let args = mkProjectCommandLineArgs ("test.dll", fileNames)
+    let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let wholeProjectResults = checker.ParseAndCheckProject(options) |> Async.RunSynchronously
+    let errors =
+        wholeProjectResults.Errors
+        |> Array.filter (fun x -> x.Severity = FSharpErrorSeverity.Error)
+    if errors.Length > 0 then
+        printfn "add files with same name from different folders"
+        for err in errors do
+            printfn "ERROR: %s" err.Message
+    shouldEqual 0 errors.Length

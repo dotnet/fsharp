@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25123.0
 # Visual Studio 15
-VisualStudioVersion = 15.0.26020.0
+VisualStudioVersion = 15.0.26206.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler", "src\fsharp\FSharp.Compiler\FSharp.Compiler.fsproj", "{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}"
 EndProject
@@ -38,29 +38,29 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "VisualFSharp.Salsa", "vsint
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "VisualFSharp.Unittests", "vsintegration\tests\unittests\VisualFSharp.Unittests.fsproj", "{EE85AAB7-CDA0-4C4E-BDA0-A64DDDD13E3F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DefinitionLocationAttribute", "vsintegration\tests\unittests\Resources.MockTypeProviders\DefinitionLocationAttribute\DefinitionLocationAttribute.csproj", "{DA39AD38-4A58-47BF-9215-E49768295169}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DefinitionLocationAttribute", "vsintegration\tests\unittests\MockTypeProviders\DefinitionLocationAttribute\DefinitionLocationAttribute.csproj", "{DA39AD38-4A58-47BF-9215-E49768295169}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DefinitionLocationAttributeFileDoesnotExist", "vsintegration\tests\unittests\Resources.MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist\DefinitionLocationAttributeFileDoesnotExist.csproj", "{8C2439BD-0E49-4929-A8B1-29CEE228191E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DefinitionLocationAttributeFileDoesnotExist", "vsintegration\tests\unittests\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist\DefinitionLocationAttributeFileDoesnotExist.csproj", "{8C2439BD-0E49-4929-A8B1-29CEE228191E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DefinitionLocationAttributeLineDoesnotExist", "vsintegration\tests\unittests\Resources.MockTypeProviders\DefinitionLocationAttributeLineDoesnotExist\DefinitionLocationAttributeLineDoesnotExist.csproj", "{F47196DC-186D-4055-BAF2-658282A12F33}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DefinitionLocationAttributeLineDoesnotExist", "vsintegration\tests\unittests\MockTypeProviders\DefinitionLocationAttributeLineDoesnotExist\DefinitionLocationAttributeLineDoesnotExist.csproj", "{F47196DC-186D-4055-BAF2-658282A12F33}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DefinitionLocationAttributeWithSpaceInTheType", "vsintegration\tests\unittests\Resources.MockTypeProviders\DefinitionLocationAttributeWithSpaceInTheType\DefinitionLocationAttributeWithSpaceInTheType.csproj", "{D4C88934-5893-467E-A55C-A11ECD6479FE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DefinitionLocationAttributeWithSpaceInTheType", "vsintegration\tests\unittests\MockTypeProviders\DefinitionLocationAttributeWithSpaceInTheType\DefinitionLocationAttributeWithSpaceInTheType.csproj", "{D4C88934-5893-467E-A55C-A11ECD6479FE}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DummyProviderForLanguageServiceTesting", "vsintegration\tests\unittests\Resources.MockTypeProviders\DummyProviderForLanguageServiceTesting\DummyProviderForLanguageServiceTesting.fsproj", "{6AFF752D-E991-4A08-9ED2-5BF46B0E0F8B}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DummyProviderForLanguageServiceTesting", "vsintegration\tests\unittests\MockTypeProviders\DummyProviderForLanguageServiceTesting\DummyProviderForLanguageServiceTesting.fsproj", "{6AFF752D-E991-4A08-9ED2-5BF46B0E0F8B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EditorHideMethodsAttribute", "vsintegration\tests\unittests\Resources.MockTypeProviders\EditorHideMethodsAttribute\EditorHideMethodsAttribute.csproj", "{0B9CDEAF-EE8F-45E0-A4E0-34A8ED6DD09E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EditorHideMethodsAttribute", "vsintegration\tests\unittests\MockTypeProviders\EditorHideMethodsAttribute\EditorHideMethodsAttribute.csproj", "{0B9CDEAF-EE8F-45E0-A4E0-34A8ED6DD09E}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "EmptyAssembly", "vsintegration\tests\unittests\Resources.MockTypeProviders\EmptyAssembly\EmptyAssembly.fsproj", "{004982C6-93EA-4E70-B4F0-BE7D7219926A}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "EmptyAssembly", "vsintegration\tests\unittests\MockTypeProviders\EmptyAssembly\EmptyAssembly.fsproj", "{004982C6-93EA-4E70-B4F0-BE7D7219926A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XmlDocAttributeWithAdequateComment", "vsintegration\tests\unittests\Resources.MockTypeProviders\XmlDocAttributeWithAdequateComment\XmlDocAttributeWithAdequateComment.csproj", "{243A81AC-A954-4601-833A-60EEEFB00FCD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XmlDocAttributeWithAdequateComment", "vsintegration\tests\unittests\MockTypeProviders\XmlDocAttributeWithAdequateComment\XmlDocAttributeWithAdequateComment.csproj", "{243A81AC-A954-4601-833A-60EEEFB00FCD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XmlDocAttributeWithEmptyComment", "vsintegration\tests\unittests\Resources.MockTypeProviders\XmlDocAttributeWithEmptyComment\XmlDocAttributeWithEmptyComment.csproj", "{B4595EB6-053A-400E-AA1B-7727F1BC900F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XmlDocAttributeWithEmptyComment", "vsintegration\tests\unittests\MockTypeProviders\XmlDocAttributeWithEmptyComment\XmlDocAttributeWithEmptyComment.csproj", "{B4595EB6-053A-400E-AA1B-7727F1BC900F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XmlDocAttributeWithLocalizedComment", "vsintegration\tests\unittests\Resources.MockTypeProviders\XmlDocAttributeWithLocalizedComment\XmlDocAttributeWithLocalizedComment.csproj", "{A559D7E8-7EFD-473A-B618-A10B41AB523B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XmlDocAttributeWithLocalizedComment", "vsintegration\tests\unittests\MockTypeProviders\XmlDocAttributeWithLocalizedComment\XmlDocAttributeWithLocalizedComment.csproj", "{A559D7E8-7EFD-473A-B618-A10B41AB523B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XmlDocAttributeWithLongComment", "vsintegration\tests\unittests\Resources.MockTypeProviders\XmlDocAttributeWithLongComment\XmlDocAttributeWithLongComment.csproj", "{AC85EE6D-033C-45F9-B8BA-884BC22EC6D9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XmlDocAttributeWithLongComment", "vsintegration\tests\unittests\MockTypeProviders\XmlDocAttributeWithLongComment\XmlDocAttributeWithLongComment.csproj", "{AC85EE6D-033C-45F9-B8BA-884BC22EC6D9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XmlDocAttributeWithNullComment", "vsintegration\tests\unittests\Resources.MockTypeProviders\XmlDocAttributeWithNullComment\XmlDocAttributeWithNullComment.csproj", "{956BBE41-ABD1-4DBA-9F3B-BA1C9821C98C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XmlDocAttributeWithNullComment", "vsintegration\tests\unittests\MockTypeProviders\XmlDocAttributeWithNullComment\XmlDocAttributeWithNullComment.csproj", "{956BBE41-ABD1-4DBA-9F3B-BA1C9821C98C}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Build", "src\fsharp\FSharp.Build\FSharp.Build.fsproj", "{702A7979-BCF9-4C41-853E-3ADFC9897890}"
 EndProject
@@ -123,11 +123,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TextFile", "vsintegration\ItemTemplates\TextFile\TextFile.csproj", "{D11FC318-8F5D-4C8C-9287-AB40A016D13C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XMLFile", "vsintegration\ItemTemplates\XMLFile\XMLFile.csproj", "{1FB1DD07-06AA-45B4-B5AC-20FF5BEE98B6}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{A83A9A70-8C33-4253-BF6F-3AADB509F21C}"
-	ProjectSection(SolutionItems) = preProject
-		Performance1.psess = Performance1.psess
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Vsix", "Vsix", "{141F6C23-E1B1-4D89-9F10-F0B8AD58E71F}"
 EndProject

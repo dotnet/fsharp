@@ -3,12 +3,11 @@
 namespace rec Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
-open System.Collections.Immutable
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 
-[<ExportCodeFixProvider(FSharpCommonConstants.FSharpLanguageName, Name = "ProposeUpperCaseLabel"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ProposeUpperCaseLabel"); Shared>]
 type internal FSharpProposeUpperCaseLabelCodeFixProvider
     [<ImportingConstructor>]
     (
@@ -18,7 +17,7 @@ type internal FSharpProposeUpperCaseLabelCodeFixProvider
     inherit CodeFixProvider()
     let fixableDiagnosticIds = ["FS0053"]
         
-    override __.FixableDiagnosticIds = fixableDiagnosticIds.ToImmutableArray()
+    override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override __.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
@@ -27,5 +26,5 @@ type internal FSharpProposeUpperCaseLabelCodeFixProvider
             let title = FSComp.SR.replaceWithSuggestion (textChanger originalText)
             context.RegisterCodeFix(
                 CodeAction.Create(title, solutionChanger, title),
-                (context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id)).ToImmutableArray())
-        } |> Async.Ignore |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+                context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id) |> Seq.toImmutableArray)
+        } |> Async.Ignore |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

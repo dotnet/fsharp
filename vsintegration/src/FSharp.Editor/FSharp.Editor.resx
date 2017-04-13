@@ -138,19 +138,37 @@
   <data name="NameCanBeSimplified" xml:space="preserve">
     <value>Name can be simplified.</value>
   </data>
-  <data name="StyleCategory" xml:space="preserve">
-    <value>Style</value>
-  </data>
   <data name="FSharpFunctionsOrMethodsClassificationType" xml:space="preserve">
     <value>F# Functions / Methods</value>
   </data>
   <data name="FSharpMutableVarsClassificationType" xml:space="preserve">
-    <value>F# Mutable Variables</value>
+    <value>F# Mutable Variables / Reference Cells</value>
   </data>
   <data name="FSharpPrintfFormatClassificationType" xml:space="preserve">
     <value>F# Printf Format</value>
   </data>
   <data name="FSharpPropertiesClassificationType" xml:space="preserve">
     <value>F# Properties</value>
+  </data>
+  <data name="FSharpDisposablesClassificationType" xml:space="preserve">
+    <value>F# Disposable Types</value>
+  </data>
+  <data name="RemoveUnusedOpens" xml:space="preserve">
+    <value>Remove unused open declarations</value>
+  </data>
+  <data name="UnusedOpens" xml:space="preserve">
+    <value>Open declaration can be removed.</value>
+  </data>
+  <data name="6008" xml:space="preserve">
+    <value>IntelliSense</value>
+  </data>
+  <data name="IntelliSensePropertyPageMiscCategory" xml:space="preserve">
+    <value>Misc</value>
+  </data>
+  <data name="IntelliSensePropertyPageShowAfterCharIsTyped" xml:space="preserve">
+    <value>Show after a character is typed</value>
+  </data>
+  <data name="IntelliSensePropertyPageShowAfterCharIsTypedDescr" xml:space="preserve">
+    <value>Show completion list after a character is typed</value>
   </data>
 </root>

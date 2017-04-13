@@ -105,33 +105,44 @@ Where you should set proper proxy address, user name and password.
 
 # The Visual F# IDE Tools (Windows Only)
 
-To build and test Visual F# IDE Tools, you must use the latest version of [Visual Studio 2017 RC](https://www.visualstudio.com/vs/visual-studio-2017-rc/#downloadvs).  See the section titled "Development tools" in the [readme](README.md).
+To build and test Visual F# IDE Tools, you must use the latest version of [Visual Studio 2017](https://www.visualstudio.com/downloads/).  See the section titled "Development tools" in the [readme](README.md).
 
-    build.cmd vs              -- build the Visual F# IDE Tools (see below)
+    build.cmd vs              -- build the Visual F# IDE Tools in Release configuration (see below)
+    build.cmd vs debug        -- build the Visual F# IDE Tools in Debug configuration (see below)
     build.cmd vs test         -- build Visual F# IDE Tools, run all tests (see below)
 
 Use ``VisualFSharp.sln`` if you're building the Visual F# IDE Tools.
 
+Note on Debug vs Release: ``Release`` Configuration has a degraded debugging experience, so if you want to test a change locally, it is recommended to do it in the ``Debug`` configuration. For more information see https://github.com/Microsoft/visualfsharp/issues/2771 and https://github.com/Microsoft/visualfsharp/pull/2773.
+
+Note: if you face this error [#2351](https://github.com/Microsoft/visualfsharp/issues/2351):
+
+>  error VSSDK1077: Unable to locate the extensions directory. "ExternalSettingsManager::GetScopePaths failed to initialize PkgDefManager for C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\devenv.exe".
+
+Or hard crash on launch ("Unknown Error"), delete these folders:
+
+* `%localappdata%\Microsoft\VisualStudio\15.0_(some number here)FSharpDev`
+* `%localappdata%\Microsoft\VisualStudio\15.0_(some number here)`
 
 ## [Optional] Install the Visual F# IDE Tools  (Windows Only)
 
 At time of writing, the Visual F# IDE Tools can only be installed into the latest Visual Studio 2017 RC releases.
 The new builds of the Visual F# IDE Tools can no longer be installed into Visual Studio 2015.
 
-You can install Visual Studio 2017 RC from https://www.visualstudio.com/vs/visual-studio-2017-rc/#downloadvs.
+You can install Visual Studio 2017 from https://www.visualstudio.com/downloads/.
 
 **Note:** This step will install a VSIX extension into Visual Studio "Next" that changes the Visual F# IDE Tools 
 components installed in that VS installation.  You can revert this step by disabling or uninstalling the addin.
 
 For **Debug**, uninstall then reinstall:
 
-    VSIXInstaller.exe /a /u:"VisualFSharp"
-    VSIXInstaller.exe /a debug\net40\bin\VisualFSharpOpenSource.vsix
+    VSIXInstaller.exe /u:"VisualFSharp"
+    VSIXInstaller.exe debug\net40\bin\VisualFSharpOpenSource.vsix
 
 For **Release**, uninstall then reinstall:
 
-    VSIXInstaller.exe /a /u:"VisualFSharp"
-    VSIXInstaller.exe /a release\net40\bin\VisualFSharpOpenSource.vsix
+    VSIXInstaller.exe /u:"VisualFSharp"
+    VSIXInstaller.exe release\net40\bin\VisualFSharpOpenSource.vsix
 
 Restart Visual Studio, it should now be running your freshly-built Visual F# IDE Tools with updated F# Interactive.
 
@@ -151,17 +162,15 @@ This gives a much tighter inner development loop than uninstalling/reinstalling 
 
 ### [Optional] Clobber the F# SDK on the machine
 
-**Note:** Step #3 below will clobber the machine-wide installed F# SDK on your machine. This replaces the ``fsi.exe``/``fsiAnyCpu.exe`` used by Visual F# Interactive and the ``fsc.exe`` used by ``Microsoft.FSharp.targets``.  Repairing Visual Studio 15 is currently the only way to revert this step.  
+**Note:** The step below will try to clobber the machine-wide installed F# SDK on your machine. This replaces the ``fsc.exe`` used by the standard innstall location or ``Microsoft.FSharp.targets``.  **Repairing Visual Studio 15 is currently the only way to revert this step.**
 
 For **Debug**:
 
-1. Run ``vsintegration\update-vsintegration.cmd debug`` (clobbers the installed F# SDK)
+    vsintegration\update-vsintegration.cmd debug
 
 For **Release**:
 
-1. Run ``vsintegration\update-vsintegration.cmd release`` (clobbers the installed F# SDK)
-
-
+    vsintegration\update-vsintegration.cmd release
 
 
 ## Resources

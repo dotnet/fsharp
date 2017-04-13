@@ -113,7 +113,7 @@ let testHookMemberBody (membInfo: ValMemberInfo) (expr:Expr) =
 //      For correctness, this claim needs to be justified.
 //      
 //      Q:  Do any post check rewrite passes factor expressions out to other functions?      
-//      A1. The optimiser may introduce auxillary functions, e.g. by splitting out match-branches.
+//      A1. The optimiser may introduce auxiliary functions, e.g. by splitting out match-branches.
 //          This should not be done if the refactored body contains an unbound reraise.
 //      A2. TLR? Are any expression factored out into functions?
 //      
@@ -156,7 +156,7 @@ let BindTypars g env (tps:Typar list) =
     let nms = PrettyTypes.PrettyTyparNames (fun _ -> true) env.boundTyparNames tps
     (tps,nms) ||> List.iter2 (fun tp nm -> 
             if PrettyTypes.NeedsPrettyTyparName tp  then 
-                tp.Data.typar_id <- ident (nm,tp.Range))      
+                tp.typar_id <- ident (nm,tp.Range))      
     List.fold BindTypar env tps 
 
 /// Set the set of vals which are arguments in the active lambda. We are allowed to return 
@@ -1034,12 +1034,12 @@ and CheckDecisionTreeSwitch cenv env (e,cases,dflt,m) =
 
 and CheckDecisionTreeTest cenv env m discrim =
     match discrim with
-    | Test.UnionCase (_,tinst) -> CheckTypeInstPermitByrefs cenv env m tinst
-    | Test.ArrayLength (_,typ) -> CheckTypePermitByrefs cenv env m typ
-    | Test.Const _ -> ()
-    | Test.IsNull -> ()
-    | Test.IsInst (srcTyp,dstTyp)    -> CheckTypePermitByrefs cenv env m srcTyp; CheckTypePermitByrefs cenv env m dstTyp
-    | Test.ActivePatternCase (exp,_,_,_,_)     -> CheckExprNoByrefs cenv env exp
+    | DecisionTreeTest.UnionCase (_,tinst) -> CheckTypeInstPermitByrefs cenv env m tinst
+    | DecisionTreeTest.ArrayLength (_,typ) -> CheckTypePermitByrefs cenv env m typ
+    | DecisionTreeTest.Const _ -> ()
+    | DecisionTreeTest.IsNull -> ()
+    | DecisionTreeTest.IsInst (srcTyp,dstTyp)    -> CheckTypePermitByrefs cenv env m srcTyp; CheckTypePermitByrefs cenv env m dstTyp
+    | DecisionTreeTest.ActivePatternCase (exp,_,_,_,_)     -> CheckExprNoByrefs cenv env exp
 
 and CheckAttrib cenv env (Attrib(_,_,args,props,_,_,_)) = 
     props |> List.iter (fun (AttribNamedArg(_,_,_,expr)) -> CheckAttribExpr cenv env expr)
@@ -1195,7 +1195,7 @@ and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,bindRhs,_) as bind) =
 
                 // If we've already recorded a definition then skip this 
                 match v.ReflectedDefinition with 
-                | None -> v.Data.val_defn <- Some bindRhs
+                | None -> v.val_defn <- Some bindRhs
                 | Some _ -> ()
                 // Run the conversion process over the reflected definition to report any errors in the
                 // front end rather than the back end. We currently re-run this during ilxgen.fs but there's

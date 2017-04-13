@@ -40,7 +40,7 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 
-[<TestFixture>]
+[<TestFixture>][<Category "Roslyn Services">]
 module GoToDefinitionServiceTests =
 
     [<Test>]
@@ -101,7 +101,6 @@ let _ = Module1.foo 1
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
         let actual = 
            FSharpGoToDefinitionService.FindDefinition(FSharpChecker.Instance, documentId, SourceText.From(fileContents), filePath, caretPosition, [], options, 0) 
-           |> Async.RunSynchronously
            |> Option.map (fun range -> (range.StartLine, range.EndLine, range.StartColumn, range.EndColumn))
 
         if actual <> expected then 

@@ -8,10 +8,12 @@
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
 open System
-open Microsoft.FSharp.Compiler.Ast
 open System.Collections.Generic
+
 open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 
 type internal ShortIdent = string
 type Idents = ShortIdent[]
@@ -21,71 +23,7 @@ type IsAutoOpen = bool
 
 [<AutoOpen>]
 module internal Extensions =
-    [<RequireQualifiedAccess>]
-    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-    module Option =
-        let inline attempt (f: unit -> 'T) = try Some (f()) with _ -> None        
-        let inline orElse v = function Some x -> Some x | None -> v
 
-    [<RequireQualifiedAccess>]
-    [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
-    module Array =
-        /// Returns a new array with an element replaced with a given value.
-        let replace index value (array: _ []) =
-            if index >= array.Length then raise (IndexOutOfRangeException "index")
-            let res = Array.copy array
-            res.[index] <- value
-            res
-
-        /// Optimized arrays equality. ~100x faster than `array1 = array2` on strings.
-        /// ~2x faster for floats
-        /// ~0.8x slower for ints
-        let inline areEqual (xs: 'T []) (ys: 'T []) =
-            match xs, ys with
-            | null, null -> true
-            | [||], [||] -> true
-            | null, _ | _, null -> false
-            | _ when xs.Length <> ys.Length -> false
-            | _ ->
-                let mutable break' = false
-                let mutable i = 0
-                let mutable result = true
-                while i < xs.Length && not break' do
-                    if xs.[i] <> ys.[i] then 
-                        break' <- true
-                        result <- false
-                    i <- i + 1
-                result
-
-        /// Returns all heads of a given array.
-        /// For [|1;2;3|] it returns [|[|1; 2; 3|]; [|1; 2|]; [|1|]|]
-        let heads (array: 'T []) =
-            let res = Array.zeroCreate<'T[]> array.Length
-            for i = array.Length - 1 downto 0 do
-                res.[i] <- array.[0..i]
-            res
-
-        /// check if subArray is found in the wholeArray starting 
-        /// at the provided index
-        let inline isSubArray (subArray: 'T []) (wholeArray:'T []) index = 
-            if isNull subArray || isNull wholeArray then false
-            elif subArray.Length = 0 then true
-            elif subArray.Length > wholeArray.Length then false
-            elif subArray.Length = wholeArray.Length then areEqual subArray wholeArray else
-            let rec loop subidx idx =
-                if subidx = subArray.Length then true 
-                elif subArray.[subidx] = wholeArray.[idx] then loop (subidx+1) (idx+1) 
-                else false
-            loop 0 index
-        
-        /// Returns true if one array has another as its subset from index 0.
-        let startsWith (prefix: _ []) (whole: _ []) =
-            isSubArray prefix whole 0
-        
-        /// Returns true if one array has trailing elements equal to another's.
-        let endsWith (suffix: _ []) (whole: _ []) =
-            isSubArray suffix whole (whole.Length-suffix.Length)
-        
     type FSharpEntity with
         member x.TryGetFullName() =
             try x.TryFullName 
@@ -196,17 +134,14 @@ type internal LookupType =
     | Precise
 
 [<NoComparison; NoEquality>]
-type internal RawEntity = 
-    { /// Full entity name as it's seen in compiled code (raw FSharpEntity.FullName, FSharpValueOrFunction.FullName). 
-      FullName: string
-      /// Entity name parts with removed module suffixes (Ns.M1Module.M2Module.M3.entity -> Ns.M1.M2.M3.entity)
-      /// and replaced compiled names with display names (FSharpEntity.DisplayName, FSharpValueOrFucntion.DisplayName).
-      /// Note: *all* parts are cleaned, not the last one. 
+type internal AssemblySymbol = 
+    { FullName: string
       CleanedIdents: Idents
       Namespace: Idents option
-      IsPublic: bool
+      NearestRequireQualifiedAccessParent: Idents option
       TopRequireQualifiedAccessParent: Idents option
       AutoOpenParent: Idents option
+      Symbol: FSharpSymbol
       Kind: LookupType -> EntityKind }
     override x.ToString() = sprintf "%A" x  
 
@@ -215,12 +150,14 @@ type AssemblyContentType = Public | Full
 
 type internal Parent = 
     { Namespace: Idents option
-      RequiresQualifiedAccess: Idents option
+      ThisRequiresQualifiedAccess: Idents option
+      TopRequiresQualifiedAccess: Idents option
       AutoOpen: Idents option
       WithModuleSuffix: Idents option }
     static member Empty = 
         { Namespace = None
-          RequiresQualifiedAccess = None
+          ThisRequiresQualifiedAccess = None
+          TopRequiresQualifiedAccess = None
           AutoOpen = None
           WithModuleSuffix = None }
     static member RewriteParentIdents (parentIdents: Idents option) (idents: Idents) =
@@ -280,7 +217,7 @@ module internal TypedAstPatterns =
 type internal AssemblyContentCacheEntry =
     { FileWriteTime: DateTime 
       ContentType: AssemblyContentType 
-      Entities: RawEntity list }
+      Symbols: AssemblySymbol list }
 
 [<NoComparison; NoEquality>]
 type internal IAssemblyContentCache =
@@ -296,9 +233,10 @@ module internal AssemblyContentProvider =
             { FullName = fullName
               CleanedIdents = cleanIdents
               Namespace = ns
-              IsPublic = entity.Accessibility.IsPublic
-              TopRequireQualifiedAccessParent = parent.RequiresQualifiedAccess |> Option.map parent.FixParentModuleSuffix
+              NearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess |> Option.map parent.FixParentModuleSuffix
+              TopRequireQualifiedAccessParent = parent.TopRequiresQualifiedAccess |> Option.map parent.FixParentModuleSuffix
               AutoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
+              Symbol = entity
               Kind = fun lookupType ->
                 match entity, lookupType with                
                 | TypedAstPatterns.FSharpModule, _ ->
@@ -310,7 +248,7 @@ module internal AssemblyContentProvider =
                 | _, LookupType.Precise ->
                     match entity with
                     | TypedAstPatterns.Attribute -> EntityKind.Attribute 
-                    | _ -> EntityKind.Type 
+                    | _ -> EntityKind.Type
             })
 
     let private traverseMemberFunctionAndValues ns (parent: Parent) (membersFunctionsAndValues: seq<FSharpMemberOrFunctionOrValue>) =
@@ -320,10 +258,10 @@ module internal AssemblyContentProvider =
                 { FullName = fullName
                   CleanedIdents = parent.FixParentModuleSuffix idents
                   Namespace = ns
-                  IsPublic = func.Accessibility.IsPublic
-                  TopRequireQualifiedAccessParent = 
-                        parent.RequiresQualifiedAccess |> Option.map parent.FixParentModuleSuffix
+                  NearestRequireQualifiedAccessParent = parent.ThisRequiresQualifiedAccess |> Option.map parent.FixParentModuleSuffix
+                  TopRequireQualifiedAccessParent = parent.TopRequiresQualifiedAccess |> Option.map parent.FixParentModuleSuffix
                   AutoOpenParent = parent.AutoOpen |> Option.map parent.FixParentModuleSuffix
+                  Symbol = func
                   Kind = fun _ -> EntityKind.FunctionOrValue func.IsActivePattern }
 
             [ yield! func.TryGetFullDisplayName() 
@@ -355,13 +293,14 @@ module internal AssemblyContentProvider =
                     | Some x -> yield x
                     | None -> ()
 
+                    let thisRequiresQualifierAccess =
+                        if entity.IsFSharp && hasAttribute<RequireQualifiedAccessAttribute> entity.Attributes then 
+                            parent.FormatEntityFullName entity |> Option.map snd
+                        else None
+
                     let currentParent =
-                        { RequiresQualifiedAccess =
-                            parent.RequiresQualifiedAccess
-                            |> Option.orElse (
-                                if entity.IsFSharp && hasAttribute<RequireQualifiedAccessAttribute> entity.Attributes then 
-                                    parent.FormatEntityFullName entity |> Option.map snd
-                                else None)
+                        { ThisRequiresQualifiedAccess = thisRequiresQualifierAccess |> Option.orElse parent.ThisRequiresQualifiedAccess
+                          TopRequiresQualifiedAccess = parent.TopRequiresQualifiedAccess |> Option.orElse thisRequiresQualifierAccess
                           AutoOpen =
                             let isAutoOpen = entity.IsFSharpModule && hasAttribute<AutoOpenAttribute> entity.Attributes
                             match isAutoOpen, parent.AutoOpen with
@@ -388,18 +327,36 @@ module internal AssemblyContentProvider =
                         yield! traverseEntity contentType currentParent e 
                 | _ -> () }
 
-    let getAssemblySignatureContent contentType (signature: FSharpAssemblySignature) =
-            signature.TryGetEntities()
-            |> Seq.collect (traverseEntity contentType Parent.Empty)
-            |> Seq.distinctBy (fun {FullName = fullName; CleanedIdents = cleanIdents} -> (fullName, cleanIdents))
 
-    let private getAssemblySignaturesContent contentType (assemblies: FSharpAssembly list) = 
-        assemblies 
-        |> Seq.collect (fun asm -> getAssemblySignatureContent contentType asm.Contents)
+    let getAssemblySignatureContent contentType (signature: FSharpAssemblySignature) =
+
+        // We ignore all diagnostics during this operation
+        //
+        // CLEANUP: this function is run on the API user's calling thread.  It potentially accesses TAST data structures 
+        // concurrently with other threads.  On an initial review this is not a problem since type provider computations
+        // are not triggered (see "if not entity.IsProvided") and the other data accessed is immutable or computed safely 
+        // on-demand.  However a more compete review may be warranted.
+
+        use _ignoreAllDiagnostics = new ErrorScope()  
+
+        signature.TryGetEntities()
+        |> Seq.collect (traverseEntity contentType Parent.Empty)
+        |> Seq.distinctBy (fun {FullName = fullName; CleanedIdents = cleanIdents} -> (fullName, cleanIdents))
         |> Seq.toList
 
-    let getAssemblyContent (withCache: (IAssemblyContentCache -> _) -> _) 
-                           contentType (fileName: string option) (assemblies: FSharpAssembly list) =
+    let private getAssemblySignaturesContent contentType (assemblies: FSharpAssembly list) = 
+        assemblies |> List.collect (fun asm -> getAssemblySignatureContent contentType asm.Contents)
+
+    let getAssemblyContent (withCache: (IAssemblyContentCache -> _) -> _) contentType (fileName: string option) (assemblies: FSharpAssembly list) =
+
+        // We ignore all diagnostics during this operation
+        //
+        // CLEANUP: this function is run on the API user's calling thread.  It potentially accesses TAST data structures 
+        // concurrently with other threads.  On an initial review this is not a problem since type provider computations
+        // are not triggered (see "if not entity.IsProvided") and the other data accessed is immutable or computed safely 
+        // on-demand.  However a more compete review may be warranted.
+        use _ignoreAllDiagnostics = new ErrorScope()  
+
         match assemblies |> List.filter (fun x -> not x.IsProviderGenerated), fileName with
         | [], _ -> []
         | assemblies, Some fileName ->
@@ -407,17 +364,21 @@ module internal AssemblyContentProvider =
             withCache <| fun cache ->
                 match contentType, cache.TryGet fileName with 
                 | _, Some entry
-                | Public, Some entry when entry.FileWriteTime = fileWriteTime -> entry.Entities
+                | Public, Some entry when entry.FileWriteTime = fileWriteTime -> entry.Symbols
                 | _ ->
-                    let entities = getAssemblySignaturesContent contentType assemblies
-                    cache.Set fileName { FileWriteTime = fileWriteTime; ContentType = contentType; Entities = entities }
-                    entities
+                    let symbols = getAssemblySignaturesContent contentType assemblies
+                    cache.Set fileName { FileWriteTime = fileWriteTime; ContentType = contentType; Symbols = symbols }
+                    symbols
         | assemblies, None -> 
             getAssemblySignaturesContent contentType assemblies
         |> List.filter (fun entity -> 
-            match contentType, entity.IsPublic with
-            | Full, _ | Public, true -> true
-            | _ -> false)
+            match contentType, FSharpSymbol.GetAccessibility(entity.Symbol) with
+            | Full, _ -> true
+            | Public, access ->
+                match access with
+                | None -> true
+                | Some x when x.IsPublic -> true
+                | _ -> false)
 
 type internal EntityCache() =
     let dic = Dictionary<AssemblyPath, AssemblyContentCacheEntry>()
@@ -437,7 +398,8 @@ type internal Entity =
     { FullRelativeName: LongIdent
       Qualifier: LongIdent
       Namespace: LongIdent option
-      Name: LongIdent }
+      Name: LongIdent
+      LastIdent: string }
     override x.ToString() = sprintf "%A" x
 
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -512,7 +474,8 @@ module internal Entity =
                           { FullRelativeName = String.concat "." fullRelativeName //.[0..fullRelativeName.Length - identCount - 1]
                             Qualifier = String.concat "." qualifier
                             Namespace = ns
-                            Name = match restIdents with [|_|] -> "" | _ -> String.concat "." restIdents }) 
+                            Name = match restIdents with [|_|] -> "" | _ -> String.concat "." restIdents 
+                            LastIdent = Array.tryLast restIdents |> Option.defaultValue "" }) 
 
 type internal ScopeKind =
     | Namespace
@@ -522,17 +485,9 @@ type internal ScopeKind =
     | HashDirective
     override x.ToString() = sprintf "%A" x
 
-[<Measure>] type internal FCS
-
-type internal Point<[<Measure>]'t> = { Line : int; Column : int }
-
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module internal Point =
-    let make line column : Point<'t> = { Line = line; Column = column }
-
 type internal InsertContext =
     { ScopeKind: ScopeKind
-      Pos: Point<FCS> }
+      Pos: pos }
 
 module internal ParsedInput =
     open Microsoft.FSharp.Compiler
@@ -572,7 +527,7 @@ module internal ParsedInput =
         let addIdent (ident: Ident) =
             identsByEndPos.[ident.idRange.End] <- [ident]
     
-        let rec walkImplFileInput (ParsedImplFileInput(_, _, _, _, _, moduleOrNamespaceList, _)) =
+        let rec walkImplFileInput (ParsedImplFileInput(modules = moduleOrNamespaceList)) =
             List.iter walkSynModuleOrNamespace moduleOrNamespaceList
     
         and walkSynModuleOrNamespace (SynModuleOrNamespace(_, _, _, decls, _, attrs, _, _)) =
@@ -901,8 +856,13 @@ module internal ParsedInput =
         { Idents: Idents
           Kind: ScopeKind }
 
-    let tryFindInsertionContext (currentLine: int) (ast: ParsedInput) = 
-        let result: (Scope * Point<FCS>) option ref = ref None
+    let tryFindNearestPointAndModules (currentLine: int) (ast: ParsedInput) = 
+        // We ignore all diagnostics during this operation
+        //
+        // Based on an initial review, no diagnostics should be generated.  However the code should be checked more closely.
+        use _ignoreAllDiagnostics = new ErrorScope()  
+
+        let result: (Scope * pos) option ref = ref None
         let ns: string[] option ref = ref None
         let modules = ResizeArray<Idents * EndLine * Col>()  
 
@@ -915,7 +875,7 @@ module internal ParsedInput =
             if line <= currentLine then
                 match !result with
                 | None -> 
-                    result := Some ({ Idents = longIdentToIdents scope; Kind = kind }, Point.make line col)
+                    result := Some ({ Idents = longIdentToIdents scope; Kind = kind }, mkPos line col)
                 | Some (oldScope, oldPos) ->
                     match kind, oldScope.Kind with
                     | (Namespace | NestedModule | TopModule), OpenDeclaration
@@ -926,7 +886,7 @@ module internal ParsedInput =
                                         | [] -> oldScope.Idents 
                                         | _ -> longIdentToIdents scope
                                     Kind = kind },
-                                  Point.make line col)
+                                  mkPos line col)
                     | _ -> ()
 
         let getMinColumn (decls: SynModuleDecls) =
@@ -945,7 +905,7 @@ module internal ParsedInput =
                 |> Option.map (fun r -> r.StartColumn)
 
 
-        let rec walkImplFileInput (ParsedImplFileInput(_, _, _, _, _, moduleOrNamespaceList, _)) = 
+        let rec walkImplFileInput (ParsedImplFileInput(modules = moduleOrNamespaceList)) = 
             List.iter (walkSynModuleOrNamespace []) moduleOrNamespaceList
 
         and walkSynModuleOrNamespace (parent: LongIdent) (SynModuleOrNamespace(ident, _, isModule, decls, _, _, _, range)) =
@@ -996,7 +956,7 @@ module internal ParsedInput =
             !result
             |> Option.map (fun (scope, pos) ->
                 let ns = !ns |> Option.map longIdentToIdents
-                scope, ns, { pos with Line = pos.Line + 1 })
+                scope, ns, mkPos (pos.Line + 1) pos.Column)
         
         let modules = 
             modules 
@@ -1004,20 +964,64 @@ module internal ParsedInput =
             |> Seq.sortBy (fun (m, _, _) -> -m.Length)
             |> Seq.toList
 
-        fun (partiallyQualifiedName: MaybeUnresolvedIdents) 
-            (requiresQualifiedAccessParent: Idents option, autoOpenParent: Idents option, entityNamespace: Idents option, entity: Idents) ->
+        res, modules
+
+    let findBestPositionToInsertOpenDeclaration (modules: (Idents * EndLine * Col) list) scope pos (entity: Idents) =
+        match modules |> List.filter (fun (m, _, _) -> entity |> Array.startsWith m ) with
+        | [] -> { ScopeKind = scope.Kind; Pos = pos }
+        | (_, endLine, startCol) :: _ ->
+            //printfn "All modules: %A, Win module: %A" modules m
+            let scopeKind =
+                match scope.Kind with
+                | TopModule -> NestedModule
+                | x -> x
+            { ScopeKind = scopeKind; Pos = mkPos (Line.fromZ endLine) startCol }
+
+    let tryFindInsertionContext (currentLine: int) (ast: ParsedInput) (partiallyQualifiedName: MaybeUnresolvedIdents) = 
+        let res, modules = tryFindNearestPointAndModules currentLine ast
+        // CLEANUP: does this really need to be a partial application with pre-computation?  Can this be made more explicit?
+        fun (requiresQualifiedAccessParent: Idents option, autoOpenParent: Idents option, entityNamespace: Idents option, entity: Idents) ->
+
+            // We ignore all diagnostics during this operation
+            //
+            // Based on an initial review, no diagnostics should be generated.  However the code should be checked more closely.
+            use _ignoreAllDiagnostics = new ErrorScope()  
             match res with
             | None -> [||]
             | Some (scope, ns, pos) -> 
                 Entity.tryCreate(ns, scope.Idents, partiallyQualifiedName, requiresQualifiedAccessParent, autoOpenParent, entityNamespace, entity)
-                |> Array.map (fun e ->
-                    e,
-                    match modules |> List.filter (fun (m, _, _) -> entity |> Array.startsWith m ) with
-                    | [] -> { ScopeKind = scope.Kind; Pos = pos }
-                    | (_, endLine, startCol) :: _ ->
-                        //printfn "All modules: %A, Win module: %A" modules m
-                        let scopeKind =
-                            match scope.Kind with
-                            | TopModule -> NestedModule
-                            | x -> x
-                        { ScopeKind = scopeKind; Pos = Point.make (endLine + 1) startCol })
+                |> Array.map (fun e -> e, findBestPositionToInsertOpenDeclaration modules scope pos entity)
+
+    /// Corrects insertion line number based on kind of scope and text surrounding the insertion point.
+    let adjustInsertionPoint (getLineStr: int -> string) ctx  =
+        let line =
+            match ctx.ScopeKind with
+            | ScopeKind.TopModule ->
+                if ctx.Pos.Line > 1 then
+                    // it's an implicit module without any open declarations    
+                    let line = getLineStr (ctx.Pos.Line - 2)
+                    let isImpliciteTopLevelModule = not (line.StartsWith "module" && not (line.EndsWith "="))
+                    if isImpliciteTopLevelModule then 1 else ctx.Pos.Line
+                else 1
+            | ScopeKind.Namespace ->
+                // for namespaces the start line is start line of the first nested entity
+                if ctx.Pos.Line > 1 then
+                    [0..ctx.Pos.Line - 1]
+                    |> List.mapi (fun i line -> i, getLineStr line)
+                    |> List.tryPick (fun (i, lineStr) -> 
+                        if lineStr.StartsWith "namespace" then Some i
+                        else None)
+                    |> function
+                        // move to the next line below "namespace" and convert it to F# 1-based line number
+                        | Some line -> line + 2 
+                        | None -> ctx.Pos.Line
+                else 1  
+            | _ -> ctx.Pos.Line
+
+        mkPos line ctx.Pos.Column
+    
+    let tryFindNearestPointToInsertOpenDeclaration (currentLine: int) (ast: ParsedInput) (entity: Idents) =
+        match tryFindNearestPointAndModules currentLine ast with
+        | Some (scope, _, point), modules -> 
+            Some (findBestPositionToInsertOpenDeclaration modules scope point entity)
+        | _ -> None

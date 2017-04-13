@@ -11,14 +11,14 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 
-[<TestFixture>]
+[<TestFixture>][<Category "Roslyn Services">]
 type ColorizationServiceTests()  =
 
     member private this.ExtractMarkerData(fileContents: string, marker: string, defines: string list, isScriptFile: Option<bool>) =
         let textSpan = TextSpan(0, fileContents.Length)
         let fileName = if isScriptFile.IsSome && isScriptFile.Value then "test.fsx" else "test.fs"
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let tokens = CommonHelpers.getColorizationData(documentId, SourceText.From(fileContents), textSpan, Some(fileName), defines, CancellationToken.None)
+        let tokens = Tokenizer.getColorizationData(documentId, SourceText.From(fileContents), textSpan, Some(fileName), defines, CancellationToken.None)
         let markerPosition = fileContents.IndexOf(marker)
         Assert.IsTrue(markerPosition >= 0, "Cannot find marker '{0}' in file contents", marker)
         (tokens, markerPosition)
@@ -34,7 +34,6 @@ type ColorizationServiceTests()  =
         match tokens |> Seq.tryFind(fun token -> token.TextSpan.Contains(markerPosition + marker.Length - 1)) with
         | None -> Assert.Fail("Cannot find colorization data for end of marker")
         | Some(classifiedSpan) -> Assert.AreEqual(classificationType, classifiedSpan.ClassificationType, "Classification data doesn't match for end of marker")
-
 
     [<Test>]
     member this.Comment_SingleLine() = 
