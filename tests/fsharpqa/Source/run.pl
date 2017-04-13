@@ -369,7 +369,7 @@ if ($targetType == TARGET_EXE) {
 }
 
 if ($VerifyStrongName && $targetType <= TARGET_MOD) {
-  RunExit(TEST_FAIL, "Assembly failed verification:\n") if RunCommand("VerifyStroingName","sn -q -vf $targetName",1);
+  RunExit(TEST_FAIL, "Assembly failed verification:\n") if RunCommand("VerifyStrongName","sn -q -vf $targetName",1);
 }
 
 RunExit(TEST_PASS);
