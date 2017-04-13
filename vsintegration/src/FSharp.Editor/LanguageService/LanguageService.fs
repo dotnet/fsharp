@@ -101,7 +101,7 @@ type internal ProjectInfoManager [<ImportingConstructor>] (checkerProvider:FShar
                 | Some options -> options
                 | None ->
                     let project = solution.GetProject docId.ProjectId
-                    ProjectOptionsCache.createFSharpProjectOptions  projectCache.ProjectTable workspace project
+                    ProjectOptionsCache.createFSharpProjectOptions projectCache.ProjectTable workspace project
             return getProjectOptionsForSingleFile (fileName, loadTime,options, extraProjectInfo)
     }
 
@@ -288,7 +288,7 @@ and
 
     let projectInfoManager = package.ComponentModel.DefaultExportProvider.GetExport<ProjectInfoManager>().Value
 
-    let mutable projectTracker = None : VisualStudioProjectTracker option
+    //let mutable projectTracker = None : VisualStudioProjectTracker option
 
     let projectDisplayNameOf projectFileName = 
         if String.IsNullOrWhiteSpace projectFileName then projectFileName
@@ -325,7 +325,9 @@ and
         | WorkspaceChangeKind.ProjectReloaded 
         | WorkspaceChangeKind.ProjectChanged ->
             args.ProjectId |> getProject |> projectInfoManager.UpdateProjectInfo 
-        | WorkspaceChangeKind.DocumentRemoved
+        | WorkspaceChangeKind.DocumentRemoved ->
+            args.DocumentId.ProjectId |> tryRemoveSingleFileProject
+            args.DocumentId.ProjectId |> getProject |> projectInfoManager.UpdateProjectInfo 
         | WorkspaceChangeKind.DocumentAdded ->
             args.DocumentId.ProjectId |> getProject |> projectInfoManager.UpdateProjectInfo 
         | _ -> ()
@@ -354,9 +356,11 @@ and
     /// Sets up an abstract project based on the vshierarchy, adds it to the project tracker, and adds the 
     /// workspace project to the projectInfoManager
     member self.SetupProject (projectDTE:EnvDTE.Project) =
+        let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>()
+        let solutionVS = package.GetService<SVsSolution,IVsSolution>()
+
         let rec setupProject (projectDTE:EnvDTE.Project) =
-            let solutionVS = package.GetService<SVsSolution,IVsSolution>()
-            let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>()
+           
             let projectId = self.ProjectTracker.GetOrCreateProjectIdForPath (projectDTE.FullName, projectDTE.Name)
             if projectInfoManager.ContainsProject projectId then projectId else
             match solutionVS.GetProjectOfUniqueName projectDTE.UniqueName with
@@ -390,39 +394,28 @@ and
 
 
 
-    member self.ProjectTracker : VisualStudioProjectTracker =
-        match projectTracker with
-        | Some tracker -> tracker 
-        | None -> 
-            let tracker = self.Workspace.GetProjectTrackerAndInitializeIfNecessary Shell.ServiceProvider.GlobalProvider 
-            projectTracker <- Some tracker
-            tracker 
-
-    member self.OnAfterLoadProject (args:Events.LoadProjectEventArgs) = self.SetupProjectHierarchy args.RealHierarchy
+    member self.ProjectTracker : VisualStudioProjectTracker = self.Workspace.ProjectTracker
 
 
-    member __.SetupSolution _ =
-        //let projectIds = [ 
+    member self.SetupSolution _ =
+        self.Workspace.GetProjectTrackerAndInitializeIfNecessary Shell.ServiceProvider.GlobalProvider |> ignore
+
         for project in package.DTE.Solution.GetProjects () do
-                if isFSharpProject project then 
-                    //yield self.SetupProject project
-                    self.SetupProject project |> ignore
-                    projectInfoManager.AddProject (project, self.Workspace)
-        //]
-        // debug "SetupProjectsAfterSolution\nDTE get project - %s %s" project.Name project.FullName
+            if isFSharpProject project then 
+                self.SetupProject project |> ignore
 
-        // self.SetupProject project |> getProject |> projectInfoManager.AddProject
         self.ProjectTracker.StartPushingToWorkspaceAndNotifyOfOpenDocuments  self.ProjectTracker.ImmutableProjects
-        //projectIds |> List.iter (getProject >> projectInfoManager.AddProject)
-        self.Workspace.CurrentSolution.Projects |> Seq.iter projectInfoManager.AddProject
+        
+        for project in package.DTE.Solution.GetProjects () do
+            if isFSharpProject project then 
+                projectInfoManager.AddProject (project, self.Workspace)
+        
 
 
     override self.Initialize () =
         base.Initialize ()
-        let _projectTracker = (self.ProjectTracker: VisualStudioProjectTracker) 
         let solutionVS = package.GetService<SVsSolution,IVsSolution>()
-        self.Workspace.AdviseSolutionEvents solutionVS
-
+        
         self.Workspace.Options <- self.Workspace.Options.WithChangedOption (Completion.CompletionOptions.BlockForCompletionItems, FSharpConstants.FSharpLanguageName, false)
         self.Workspace.Options <- self.Workspace.Options.WithChangedOption (Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpConstants.FSharpLanguageName, Nullable false)
 
@@ -430,8 +423,6 @@ and
            tryRemoveSingleFileProject args.Document.Project.Id 
         )
 
-        
-        
         self.Workspace.DocumentOpened.Add (fun args ->
             getProject args.Document.Project.Id |> projectInfoManager.AddProject
             debug "Project Options from Info Manager"
@@ -445,9 +436,8 @@ and
         )
 
         self.Workspace.WorkspaceChanged.Add self.OnWorkspaceChanged
-        
+
         Events.SolutionEvents.OnAfterOpenProject.Add (fun args -> self.SetupProjectHierarchy args.Hierarchy)
-        //Events.SolutionEvents.OnAfterLoadProject.Add self.OnAfterLoadProject
 
         Events.SolutionEvents.OnAfterOpenSolution.Add self.SetupSolution
 
@@ -458,42 +448,9 @@ and
             projectInfoManager.Clear ()
         )
 
-        //let rec setupProjectsAfterSolutionOpen () =
-        //    async {
-        //        // waits for AfterOpenSolution and then starts projects setup
-        //        do! Async.AwaitEvent Events.SolutionEvents.OnAfterOpenSolution |> Async.Ignore
-                
-        //        use _ = Events.SolutionEvents.OnAfterOpenProject |> Observable.subscribe ( fun args ->
-        //            while true do
-        //                self.SetupProjectHierarchy args.Hierarchy 
-        //        )
-                
-        //        //for project in package.DTE.Solution.GetProjects () do 
-        //        //    debug "SetupProjectsAfterSolution\nDTE get project - %s %s" project.Name project.FullName
 
-        //            //self.SetupProject project |> getProject |> projectInfoManager.AddProject
-
-        //        do! Async.AwaitEvent Events.SolutionEvents.OnAfterCloseSolution |> Async.Ignore
-        //        // Cleanup Existing project info after solution closes before a new solution is loaded
-        //        singleFileProjects.Keys |> Seq.iter tryRemoveSingleFileProject
-        //        self.ProjectTracker.ImmutableProjects |> Seq.iter (fun project -> project.Disconnect())
-        //        projectInfoManager.Clear ()
-        //        // recurse to setup the next project that opens
-        //        do! setupProjectsAfterSolutionOpen () 
-        //    }
-        //setupProjectsAfterSolutionOpen () |> Async.StartImmediate
-
-        
-        //for project in package.DTE.Solution.GetProjects () do 
-        //    debug "DTE get project - %s %s" project.Name project.FullName
-        //    self.SetupProject project |> getProject |> projectInfoManager.AddProject
-
-        //projectTracker.StartPushingToWorkspaceAndNotifyOfOpenDocuments projectTracker.ImmutableProjects
-
-        //debug "after start pushing to workspace"
-
-        
-        //projectInfoManager.AllFSharpProjectOptions |> Seq.iter (debug "\n%A\n")
+        self.Workspace.AdviseSolutionEvents solutionVS
+        base.Setup()
 
         let theme = package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
         theme.SetColors ()
