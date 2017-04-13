@@ -714,16 +714,16 @@ if "%TEST_NET40_FSHARPQA_SUITE%" == "1" (
     set FSC=!FSCBINPATH!\fsc.exe
     set FSCOREDLLPATH=!FSCBinPath!\FSharp.Core.dll
     set PATH=!FSCBINPATH!;!PATH!
-    set perlexe= %~dp0packages\StrawberryPerl64.5.22.2.1\Tools\perl\bin\perl.exe
-    if not exist %perlexe% echo Error: perl was not downloaded from check the packages directory: %perlexe% && goto :failure
+    set perlexe=%~dp0packages\StrawberryPerl64.5.22.2.1\Tools\perl\bin\perl.exe
+    if not exist "%perlexe%" echo Error: perl was not downloaded from check the packages directory: %perlexe% && goto :failure
 
     set OUTPUTFILE=test-net40-fsharpqa-results.log
     set ERRORFILE=test-net40-fsharpqa-errors.log
     set FAILENV=test-net40-fsharpqa-errors
 
     pushd %~dp0tests\fsharpqa\source
-    echo %perlexe% %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot !RESULTSDIR! -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no !TTAGS_ARG_RUNALL! !PARALLEL_ARG!
-         %perlexe% %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot !RESULTSDIR! -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no !TTAGS_ARG_RUNALL! !PARALLEL_ARG!
+    echo !perlexe! %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot !RESULTSDIR! -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no !TTAGS_ARG_RUNALL! !PARALLEL_ARG!
+         !perlexe! %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot !RESULTSDIR! -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no !TTAGS_ARG_RUNALL! !PARALLEL_ARG!
 
     popd
     if ERRORLEVEL 1 (
