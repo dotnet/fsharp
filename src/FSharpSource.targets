@@ -99,6 +99,10 @@
     </Otherwise>
   </Choose>
 
+  <PropertyGroup Condition="'$(ProjectLanguage)' == 'FSharp'">
+    <OtherFlags >$(OtherFlags) --alwayscallvirt-"</OtherFlags>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(UseMicroBuild)' != 'true'">
     <OtherFlags >$(OtherFlags) --version:"$(MicroBuildAssemblyVersion)"</OtherFlags>
   </PropertyGroup>
