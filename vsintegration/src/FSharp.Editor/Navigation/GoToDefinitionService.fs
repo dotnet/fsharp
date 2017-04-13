@@ -336,7 +336,10 @@ type internal FSharpGoToDefinitionService [<ImportingConstructor>]
                         return results.AsEnumerable()
                     else // we need to get an FSharpSymbol from the targetRange found in the signature
                          // that symbol will be used to find the destination in the corresponding implementation file
-                        let implFilePath = Path.ChangeExtension (sigDocument.FilePath,"fs")
+                        let implFilePath =
+                            // Bugfix: apparently sigDocument not always is a signature file
+                            if isSignatureFile sigDocument.FilePath then Path.ChangeExtension (sigDocument.FilePath, "fs") 
+                            else sigDocument.FilePath
                         let! implDocument = originDocument.Project.Solution.TryGetDocumentFromPath implFilePath
                         let! implVersion = implDocument.GetTextVersionAsync () |> liftTaskAsync
                         let! implSourceText = implDocument.GetTextAsync () |> liftTaskAsync
