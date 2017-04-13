@@ -4,11 +4,47 @@ open System
 open System.Collections.Concurrent
 open Microsoft.CodeAnalysis
 open Microsoft.FSharp.Compiler.SourceCodeServices
-
+open Microsoft.VisualStudio.LanguageServices.Implementation.LanguageService
+open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 
 module internal ProjectOptionsCache =
+
+
+    let createFSharpProjectOptionsEnvDTE (projectTable:ConcurrentDictionary<ProjectId, FSharpProjectOptions>)  (workspace: VisualStudioWorkspaceImpl) (project:EnvDTE.Project): FSharpProjectOptions =
+        let loadTime = System.DateTime.Now
+        let rec generate (project:EnvDTE.Project) : FSharpProjectOptions =
+            let getProjectRefs (project:EnvDTE.Project): (string * FSharpProjectOptions)[] =
+                project.GetReferencedProjects()
+                |> Seq.map (fun pref -> 
+                    let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath (pref.FullName, pref.Name)
+                    if projectTable.ContainsKey projectId  then
+                        (pref.GetOutputPath(), projectTable.[projectId])
+                    else
+                        let fsinfo = generate pref
+                        projectTable.TryAdd (projectId , fsinfo) |> ignore
+                        (pref.GetOutputPath(), fsinfo)
+                    )
+                |> Array.ofSeq
+            
+            {   ProjectFileName = project.FullName
+                ProjectFileNames = project.GetFiles () |> Seq.filter SourceFile.IsCompilable |> Array.ofSeq
+                // TODO - This does not include all necessary compiler flags
+                // if possible all of the the requisite compiler flags should be acquired from
+                // the CodeAnalysis Project and converted into the FSC desired form
+                OtherOptions = project.GetReferencePaths () |> List.map (fun path -> sprintf " -r:%s" path) |> Array.ofList
+                ReferencedProjects =  getProjectRefs project
+                IsIncompleteTypeCheckEnvironment = false
+                UseScriptResolutionRules = false
+                LoadTime = loadTime
+                UnresolvedReferences = None
+                OriginalLoadReferences = []
+                ExtraProjectInfo = Some (box (workspace:>Workspace))
+            }
+        let fsprojOptions = generate project
+        fsprojOptions
+
  
-    let toFSharpProjectOptions (projectTable:ConcurrentDictionary<ProjectId, FSharpProjectOptions>)  (workspace: Workspace) (project:Project): FSharpProjectOptions =
+    let createFSharpProjectOptions (projectTable:ConcurrentDictionary<ProjectId, FSharpProjectOptions>)  (workspace: Workspace) (project:Project): FSharpProjectOptions =
         let loadTime = System.DateTime.Now
         let rec generate (project:Project) : FSharpProjectOptions =
             let getProjectRefs (project:Project): (string * FSharpProjectOptions)[] =
@@ -25,7 +61,7 @@ module internal ProjectOptionsCache =
                 |> Array.ofSeq
             
             {   ProjectFileName = project.FilePath
-                ProjectFileNames = project.Documents |> Seq.map (fun doc -> doc.FilePath) |> Array.ofSeq
+                ProjectFileNames = project.Documents |> Seq.map (fun doc -> doc.FilePath) |> Seq.filter SourceFile.IsCompilable  |> Array.ofSeq
                 // TODO - This does not include all necessary compiler flags
                 // if possible all of the the requisite compiler flags should be acquired from
                 // the CodeAnalysis Project and converted into the FSC desired form
@@ -36,7 +72,7 @@ module internal ProjectOptionsCache =
                 LoadTime = loadTime
                 UnresolvedReferences = None
                 OriginalLoadReferences = []
-                ExtraProjectInfo = Some (workspace :> _)
+                ExtraProjectInfo = Some (box workspace)
             }
         let fsprojOptions = generate project
         fsprojOptions
@@ -97,7 +133,8 @@ type internal ProjectOptionsCache (checker:FSharpChecker) =
     // the original options for editing
     let singleFileProjectTable = ConcurrentDictionary<ProjectId, DateTime * FSharpProjectOptions>()
 
-    let toFSharpProjectOptions = ProjectOptionsCache.toFSharpProjectOptions projectTable
+    let createFSharpProjectOptions = ProjectOptionsCache.createFSharpProjectOptions projectTable
+    let createFSharpProjectOptionsEnvDTE = ProjectOptionsCache.createFSharpProjectOptionsEnvDTE projectTable
 
     member __.TryGetOptions (projectId:ProjectId) = tryGet projectId projectTable : FSharpProjectOptions option
 
@@ -106,25 +143,46 @@ type internal ProjectOptionsCache (checker:FSharpChecker) =
     member this.AddSingleFileProject (projectId, timeStampAndOptions) = 
         singleFileProjectTable.TryAdd (projectId, timeStampAndOptions) |> ignore    
 
-
-    member __.AddProject (project:Project) = 
-        if projectTable.ContainsKey project.Id then () else 
-        let options = toFSharpProjectOptions  project.Solution.Workspace project
-        projectTable.TryAdd (project.Id, options) |> ignore
-
-
     member this.RemoveSingleFileProject projectId = 
         singleFileProjectTable.TryRemove projectId |> ignore
     
-
     member __.SingleFileProjectTable = singleFileProjectTable
 
+    member __.AddProject (project:Project) = 
+        if isNull project then () else
+        if projectTable.ContainsKey project.Id then () else 
+        let options = createFSharpProjectOptions  project.Solution.Workspace project
+        projectTable.TryAdd (project.Id, options) |> ignore
+
+
+    member __.AddProject (project:EnvDTE.Project, workspace:VisualStudioWorkspaceImpl)  = 
+        if isNull project then () else
+        let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath (project.FullName, project.Name)
+        if projectTable.ContainsKey projectId then () else 
+        let options = createFSharpProjectOptionsEnvDTE  workspace project
+        projectTable.TryAdd (projectId, options) |> ignore
+
+
+    member self.UpdateProject (project:EnvDTE.Project, workspace:VisualStudioWorkspaceImpl)  = 
+        if isNull project then () else
+        let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath (project.FullName, project.Name)
+        if projectTable.ContainsKey projectId then 
+            self.TryGetOptions projectId |> Option.iter checker.InvalidateConfiguration
+            let options = createFSharpProjectOptionsEnvDTE  workspace project
+            projectTable.[projectId] <- options
+        else 
+            self.AddProject (project, workspace)
+
+
     member self.UpdateProject (project:Project) = 
-        self.TryGetOptions project.Id |> Option.iter checker.InvalidateConfiguration
-        let options = toFSharpProjectOptions project.Solution.Workspace project
+        if isNull project then () else
         if projectTable.ContainsKey project.Id then
+            self.TryGetOptions project.Id |> Option.iter checker.InvalidateConfiguration
+            let options = createFSharpProjectOptions project.Solution.Workspace project
             projectTable.[project.Id] <- options
-        else projectTable.TryAdd (project.Id,options) |> ignore
+        else 
+            self.AddProject project
+            
 
 
     member self.RemoveProject (project:Project) = 
@@ -140,7 +198,7 @@ type internal ProjectOptionsCache (checker:FSharpChecker) =
     /// Get compilation defines relevant for syntax processing.  
     /// Quicker then TryGetOptionsForDocumentOrProject as it doesn't need to recompute the exact project 
     /// options for a script.
-    member this.GetCompilationDefinesForEditingDocument (document: Document) = 
+    member this.GetCompilationDefinesForEditingDocument (document:Document) = 
         let projectOptionsOpt = this.TryGetOptions document.Project.Id
         let otherOptions = defaultArg (projectOptionsOpt |> Option.map (fun options -> options.OtherOptions |> Array.toList)) [] 
         CompilerEnvironment.GetCompilationDefinesForEditing (document.Name, otherOptions)
@@ -148,7 +206,7 @@ type internal ProjectOptionsCache (checker:FSharpChecker) =
 
     /// Get the options for a document or project relevant for syntax processing.
     /// Quicker then TryGetOptionsForDocumentOrProject as it doesn't need to recompute the exact project options for a script.
-    member self.TryGetOptionsForEditingDocumentOrProject(document: Document) = 
+    member self.TryGetOptionsForEditingDocumentOrProject (document:Document) = 
         let projectId = document.Project.Id
         let originalOptions = 
             tryGet projectId  singleFileProjectTable |> Option.map (fun (_loadTime, originalOptions) -> originalOptions)

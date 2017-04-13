@@ -29,7 +29,7 @@ module internal SourceFile =
     let IsCompilable file =
         let ext = Path.GetExtension(file)
         compilableExtensions |> List.exists(fun e->0 = String.Compare(e,ext,StringComparison.OrdinalIgnoreCase))
-    /// Whether or not this file should be a single-file project
+    /// Whether or not this file should be a single-file project (fsx file)
     let MustBeSingleFileProject file =
         let ext = Path.GetExtension(file)
         singleFileProjectExtensions |> List.exists(fun e-> 0 = String.Compare(e,ext,StringComparison.OrdinalIgnoreCase))

@@ -16,21 +16,19 @@ let isScriptFile (filePath:string) =
     let ext = Path.GetExtension filePath 
     String.Equals (ext,".fsi",StringComparison.OrdinalIgnoreCase) || String.Equals (ext,".fsscript",StringComparison.OrdinalIgnoreCase)
 
+let isFsprojFile (filePath:string) =
+    let ext = Path.GetExtension filePath 
+    String.Equals (ext,".fsproj",StringComparison.OrdinalIgnoreCase)
+
+
 /// Path combination operator
 let (</>) path1 path2 = Path.Combine (path1, path2) 
-
-/// Null checking pipe operator
-let (?>) value fn = if isNull value then () else fn value
-
-/// Null input checking function modifier, if the arg is null return unit
-/// otherwise pass the arg to the function being wrapped
-/// Best used with partially applied functions
-let (!?) fn = fun value -> if isNull value then () else fn value
 
 let inline isNotNull x = not (isNull x)
 
 /// Get an option result from any type that has a TryGetValue method
 let inline tryGet key collection =
+    if isNull key then None else
     let mutable value = Unchecked.defaultof<'v>
     let success = (^a : (member TryGetValue : 'k * ('v byref) -> bool) collection, key, &value)
     if success then Some value else None

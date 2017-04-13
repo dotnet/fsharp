@@ -69,10 +69,10 @@ type internal FSharpCheckerProvider [<ImportingConstructor>]
 type internal ProjectInfoManager [<ImportingConstructor>] (checkerProvider:FSharpCheckerProvider) =
     let projectCache = ProjectOptionsCache checkerProvider.Checker
 
-    let getProjectOptionsForProjectSite ( fileName,loadTime,options:FSharpProjectOptions,  extraProjectInfo) = 
+    let getProjectOptionsForSingleFile ( fileName,loadTime,options:FSharpProjectOptions,  extraProjectInfo) = 
         {   ProjectFileName = options.ProjectFileName
-            ProjectFileNames = options.ProjectFileNames
-            OtherOptions = [||]
+            ProjectFileNames = options.ProjectFileNames |> Array.filter SourceFile.IsCompilable
+            OtherOptions = options.OtherOptions
             ReferencedProjects = options.ReferencedProjects
             IsIncompleteTypeCheckEnvironment = false
             UseScriptResolutionRules = SourceFile.MustBeSingleFileProject fileName
@@ -83,31 +83,32 @@ type internal ProjectInfoManager [<ImportingConstructor>] (checkerProvider:FShar
         }  
 
     member __.Checker = checkerProvider.Checker
+
     member this.SingleFileProjectTable = projectCache.SingleFileProjectTable
-
-
-    member __.GetProjectOptionsForProjectSite ( fileName, loadTime,options, extraProjectInfo) =
-        getProjectOptionsForProjectSite ( fileName,loadTime,options,  extraProjectInfo)
-
 
     /// Get the exact options for a single-file script
     member self.ComputeSingleFileOptions (fileName, loadTime, fileContents, workspace: Workspace) = async {
         let solution = workspace.CurrentSolution
         let docId = solution.GetDocumentIdsWithFilePath fileName |> Seq.head
-        let project = solution.GetProject docId.ProjectId
 
-        let options = ProjectOptionsCache.toFSharpProjectOptions  projectCache.ProjectTable workspace project
-        
         let extraProjectInfo = Some (box workspace)
         if SourceFile.MustBeSingleFileProject fileName then 
-        //if isScriptFile fileName then 
-            let! _options, _diagnostics = self.Checker.GetProjectOptionsFromScript (fileName, fileContents, loadTime, [| |], ?extraProjectInfo=extraProjectInfo) 
-            //ProjectOptionsCache.fsxProjectOptions fileName (Some workspace)
-            return getProjectOptionsForProjectSite ( fileName, loadTime,options,extraProjectInfo)
+            let! options, _diagnostics = self.Checker.GetProjectOptionsFromScript (fileName, fileContents, loadTime, [| |], ?extraProjectInfo=extraProjectInfo) 
+            return getProjectOptionsForSingleFile (fileName, loadTime, options, extraProjectInfo)
         else
-            //ProjectOptionsCache.singleFileProjectOptions fileName
-            return getProjectOptionsForProjectSite ( fileName, loadTime,options, extraProjectInfo)
+            let options = 
+                match self.TryGetOptionsForProject docId.ProjectId with
+                | Some options -> options
+                | None ->
+                    let project = solution.GetProject docId.ProjectId
+                    ProjectOptionsCache.createFSharpProjectOptions  projectCache.ProjectTable workspace project
+            return getProjectOptionsForSingleFile (fileName, loadTime,options, extraProjectInfo)
     }
+
+
+    member self.AllFSharpProjectOptions = projectCache.ProjectTable.Values
+
+    member self.AllProjectIds = projectCache.ProjectTable.Keys
 
     /// Get the exact options for a document or project
     member self.TryGetOptionsForDocumentOrProject(document: Document) = asyncMaybe { 
@@ -120,7 +121,7 @@ type internal ProjectInfoManager [<ImportingConstructor>] (checkerProvider:FShar
             let fileName = document.FilePath
             let! cancellationToken = Async.CancellationToken |> liftAsync
             let! sourceText = document.GetTextAsync cancellationToken
-            let! options = self.ComputeSingleFileOptions( fileName, loadTime,sourceText.ToString(), document.Project.Solution.Workspace) |> liftAsync
+            let! options = self.ComputeSingleFileOptions (fileName, loadTime, sourceText.ToString(), document.Project.Solution.Workspace) |> liftAsync
             projectCache.SingleFileProjectTable.[projectId] <- (loadTime, options)
             return options
         | None ->
@@ -146,19 +147,32 @@ type internal ProjectInfoManager [<ImportingConstructor>] (checkerProvider:FShar
     
 
     member this.AddSingleFileProject (projectId, timeStampAndOptions) =
-        projectCache.AddSingleFileProject (projectId,timeStampAndOptions) 
+        projectCache.AddSingleFileProject (projectId, timeStampAndOptions) 
 
 
     member this.AddProject (project:Project) =
-        projectCache.AddProject project 
+        if isFsprojFile project.FilePath then
+            projectCache.AddProject project 
+
+     
+    member self.AddProject (project:EnvDTE.Project, workspace:VisualStudioWorkspaceImpl) = 
+        projectCache.AddProject (project, workspace)
 
 
-    member this.RemoveSingleFileProject(projectId) =
+    member self.UpdateProject (project:EnvDTE.Project, workspace:VisualStudioWorkspaceImpl)  = 
+        projectCache.UpdateProject (project, workspace)
+
+
+    member this.ContainsProject (projectId:ProjectId) =
+        projectCache.ProjectTable.ContainsKey projectId
+
+
+    member this.RemoveSingleFileProject projectId =
         projectCache.RemoveSingleFileProject projectId
 
 
     /// Clear a project from the project table
-    member this.ClearProjectInfo(project: Project) =
+    member this.ClearProjectInfo (project:Project) =
         projectCache.RemoveProject project 
 
 
@@ -170,13 +184,13 @@ type internal ProjectInfoManager [<ImportingConstructor>] (checkerProvider:FShar
     /// Get compilation defines relevant for syntax processing.  
     /// Quicker then TryGetOptionsForDocumentOrProject as it doesn't need to recompute the exact project 
     /// options for a script.
-    member this.GetCompilationDefinesForEditingDocument(document: Document) = 
-        let projectOptionsOpt = this.TryGetOptionsForProject(document.Project.Id)  
+    member this.GetCompilationDefinesForEditingDocument (document:Document) = 
+        let projectOptionsOpt = this.TryGetOptionsForProject document.Project.Id
         let otherOptions = 
             match projectOptionsOpt with 
             | None -> []
             | Some options -> options.OtherOptions |> Array.toList
-        CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, otherOptions)
+        CompilerEnvironment.GetCompilationDefinesForEditing (document.Name, otherOptions)
 
     /// Get the options for a project
     member this.TryGetOptionsForProject(projectId: ProjectId) : FSharpProjectOptions option = 
@@ -273,7 +287,6 @@ and
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
 
     let projectInfoManager = package.ComponentModel.DefaultExportProvider.GetExport<ProjectInfoManager>().Value
-    let solutionDTE = package.DTE.Solution
 
     let mutable projectTracker = None : VisualStudioProjectTracker option
 
@@ -285,9 +298,9 @@ and
 
 
     let tryRemoveSingleFileProject projectId =
-        match singleFileProjects.TryRemove(projectId) with
+        match singleFileProjects.TryRemove projectId with
         | true, project ->
-            projectInfoManager.RemoveSingleFileProject(projectId)
+            projectInfoManager.RemoveSingleFileProject projectId
             project.Disconnect()
         | _ -> ()
     
@@ -298,29 +311,29 @@ and
     member self.OnWorkspaceChanged (args:WorkspaceChangeEventArgs) =
         match args.Kind with
         | WorkspaceChangeKind.SolutionAdded ->
-            args.NewSolution.Projects ?> Seq.iter projectInfoManager.AddProject
+            args.NewSolution.Projects |> Seq.iter projectInfoManager.AddProject
         | WorkspaceChangeKind.SolutionReloaded ->
             projectInfoManager.Clear ()
-            args.NewSolution.Projects ?> Seq.iter projectInfoManager.AddProject
+            args.NewSolution.Projects |> Seq.iter projectInfoManager.AddProject
         | WorkspaceChangeKind.SolutionRemoved
         | WorkspaceChangeKind.SolutionCleared ->
             projectInfoManager.Clear ()
         | WorkspaceChangeKind.ProjectAdded ->
-            args.ProjectId |> getProject ?> projectInfoManager.AddProject 
+            args.ProjectId |> getProject |> projectInfoManager.AddProject 
         | WorkspaceChangeKind.ProjectRemoved ->
-            args.ProjectId |> getProject ?> projectInfoManager.ClearProjectInfo 
+            args.ProjectId |> getProject |> projectInfoManager.ClearProjectInfo 
         | WorkspaceChangeKind.ProjectReloaded 
         | WorkspaceChangeKind.ProjectChanged ->
-            args.ProjectId |> getProject ?> projectInfoManager.UpdateProjectInfo 
+            args.ProjectId |> getProject |> projectInfoManager.UpdateProjectInfo 
         | WorkspaceChangeKind.DocumentRemoved
         | WorkspaceChangeKind.DocumentAdded ->
-            args.DocumentId.ProjectId |> getProject ?> projectInfoManager.UpdateProjectInfo 
+            args.DocumentId.ProjectId |> getProject |> projectInfoManager.UpdateProjectInfo 
         | _ -> ()
     
 
     member self.SyncProject (abstractProject: AbstractProject, projectContext: IWorkspaceProjectContext, projectDTE:EnvDTE.Project, forceUpdate) =
         let hashSetIgnoreCase x = new HashSet<string>(x, StringComparer.OrdinalIgnoreCase)
-        let updatedFiles = projectDTE.GetFiles () |> hashSetIgnoreCase
+        let updatedFiles = projectDTE.GetFiles () |> List.filter SourceFile.IsCompilable |> hashSetIgnoreCase
         let workspaceFiles = abstractProject.GetCurrentDocuments () |> Seq.map(fun file -> file.FilePath) |> hashSetIgnoreCase
 
         // If syncing project upon some reference changes, we don't have a mechanism to recognize which references have been added/removed.
@@ -335,27 +348,34 @@ and
                 projectContext.RemoveSourceFile file
                 updated <- true
         // update the cached options
-        if updated then projectInfoManager.UpdateProjectInfo <| getProject abstractProject.Id
-    
+        if updated then getProject abstractProject.Id |> projectInfoManager.UpdateProjectInfo
 
+
+    /// Sets up an abstract project based on the vshierarchy, adds it to the project tracker, and adds the 
+    /// workspace project to the projectInfoManager
     member self.SetupProject (projectDTE:EnvDTE.Project) =
         let rec setupProject (projectDTE:EnvDTE.Project) =
             let solutionVS = package.GetService<SVsSolution,IVsSolution>()
             let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>()
             let projectId = self.ProjectTracker.GetOrCreateProjectIdForPath (projectDTE.FullName, projectDTE.Name)
+            if projectInfoManager.ContainsProject projectId then projectId else
             match solutionVS.GetProjectOfUniqueName projectDTE.UniqueName with
             | VSConstants.S_OK, hierarchy ->
                 if isNull (self.Workspace.ProjectTracker.GetProject projectId) then
                     let errorReporter = ProjectExternalErrorReporter (projectId, "FS", self.SystemServiceProvider)
                     let projectContext = projectContextFactory.CreateProjectContext (FSharpConstants.FSharpLanguageName, projectDTE.Name, projectDTE.FullName, projectId.Id, hierarchy, null, errorReporter)
                     let abstractProject = projectContext :?> AbstractProject
+                    
                     self.SyncProject(abstractProject,projectContext, projectDTE,false)
                     projectDTE.GetReferencedProjects ()
                     |> List.iter(fun (project:EnvDTE.Project) -> 
+                        debug "Project [%s], reference - %s" projectDTE.FullName project.FullName
                         let projectId = setupProject project
                         abstractProject.AddProjectReference <| ProjectReference projectId
+
                     )
-                    self.ProjectTracker.AddProject abstractProject
+                    if self.ProjectTracker.ContainsProject abstractProject then () else
+                    self.ProjectTracker.AddProject abstractProject                    
             | _ -> ()
             projectId
         setupProject projectDTE
@@ -364,24 +384,10 @@ and
     member self.SetupProjectHierarchy (hierarchy:IVsHierarchy) =
         match hierarchy.TryGetProject () with
         | None -> ()
-        | Some projectDTE -> self.SetupProject projectDTE |> getProject |> projectInfoManager.AddProject
+        | Some projectDTE -> 
+            if isFSharpProject projectDTE then 
+                self.SetupProject projectDTE |> ignore
 
-
-    member self.OnAfterLoadProject (args:Events.LoadProjectEventArgs) = self.SetupProjectHierarchy args.RealHierarchy
-
-
-    /// Get the exact options for a single-file script
-    member __.ComputeSingleFileOptions (fileName, loadTime, fileContents, hierarchy, workspace: Workspace) = async {
-        let extraProjectInfo = Some (box workspace)
-        if SourceFile.MustBeSingleFileProject fileName then 
-        //if isScriptFile fileName then 
-            let! _options, _diagnostics = projectInfoManager.Checker.GetProjectOptionsFromScript (fileName, fileContents, loadTime, [| |], ?extraProjectInfo=extraProjectInfo) 
-            //ProjectOptionsCache.fsxProjectOptions fileName (Some workspace)
-            return projectInfoManager.GetProjectOptionsForProjectSite ( fileName, loadTime,hierarchy,extraProjectInfo)
-        else
-            //ProjectOptionsCache.singleFileProjectOptions fileName
-            return projectInfoManager.GetProjectOptionsForProjectSite ( fileName, loadTime,hierarchy, extraProjectInfo)
-    }
 
 
     member self.ProjectTracker : VisualStudioProjectTracker =
@@ -392,40 +398,102 @@ and
             projectTracker <- Some tracker
             tracker 
 
+    member self.OnAfterLoadProject (args:Events.LoadProjectEventArgs) = self.SetupProjectHierarchy args.RealHierarchy
+
+
+    member __.SetupSolution _ =
+        //let projectIds = [ 
+        for project in package.DTE.Solution.GetProjects () do
+                if isFSharpProject project then 
+                    //yield self.SetupProject project
+                    self.SetupProject project |> ignore
+                    projectInfoManager.AddProject (project, self.Workspace)
+        //]
+        // debug "SetupProjectsAfterSolution\nDTE get project - %s %s" project.Name project.FullName
+
+        // self.SetupProject project |> getProject |> projectInfoManager.AddProject
+        self.ProjectTracker.StartPushingToWorkspaceAndNotifyOfOpenDocuments  self.ProjectTracker.ImmutableProjects
+        //projectIds |> List.iter (getProject >> projectInfoManager.AddProject)
+        self.Workspace.CurrentSolution.Projects |> Seq.iter projectInfoManager.AddProject
+
 
     override self.Initialize () =
         base.Initialize ()
-
-        let projectTracker = (self.ProjectTracker: VisualStudioProjectTracker) 
+        let _projectTracker = (self.ProjectTracker: VisualStudioProjectTracker) 
         let solutionVS = package.GetService<SVsSolution,IVsSolution>()
         self.Workspace.AdviseSolutionEvents solutionVS
-        
+
         self.Workspace.Options <- self.Workspace.Options.WithChangedOption (Completion.CompletionOptions.BlockForCompletionItems, FSharpConstants.FSharpLanguageName, false)
         self.Workspace.Options <- self.Workspace.Options.WithChangedOption (Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpConstants.FSharpLanguageName, Nullable false)
 
         self.Workspace.DocumentClosed.Add (fun args ->
            tryRemoveSingleFileProject args.Document.Project.Id 
         )
+
+        
         
         self.Workspace.DocumentOpened.Add (fun args ->
-            projectInfoManager.AddProject <| getProject args.Document.Project.Id
+            getProject args.Document.Project.Id |> projectInfoManager.AddProject
+            debug "Project Options from Info Manager"
+            projectInfoManager.AllFSharpProjectOptions |> Seq.iter (fun opt ->
+                debug "\n%A\nFiles:\n%A\nReferencedProjects\n%A" opt.ProjectFileName opt.ProjectFileNames opt.ReferencedProjects
+            )
+            logInfof "Project Options from Info Manager"
+            projectInfoManager.AllFSharpProjectOptions |> Seq.iter (fun opt -> 
+                logInfof "\n%A\nFiles:\n%A\nReferencedProjects\n%A" opt.ProjectFileName opt.ProjectFileNames opt.ReferencedProjects
+            )
         )
 
         self.Workspace.WorkspaceChanged.Add self.OnWorkspaceChanged
-        Events.SolutionEvents.OnAfterLoadProject.Add self.OnAfterLoadProject
         
-        let setupProjects () = async {
-            do! Async.AwaitEvent Events.SolutionEvents.OnAfterOpenSolution |> Async.Ignore
-            use _ = Events.SolutionEvents.OnAfterOpenProject |> Observable.subscribe ( fun args ->
-                self.SetupProjectHierarchy args.Hierarchy |> ignore
-            )
-            for project in solutionDTE.GetProjects () do 
-                self.SetupProject project |> getProject |> projectInfoManager.AddProject
-        }
+        Events.SolutionEvents.OnAfterOpenProject.Add (fun args -> self.SetupProjectHierarchy args.Hierarchy)
+        //Events.SolutionEvents.OnAfterLoadProject.Add self.OnAfterLoadProject
 
-        setupProjects () |> Async.StartImmediate
+        Events.SolutionEvents.OnAfterOpenSolution.Add self.SetupSolution
 
-        projectTracker.StartPushingToWorkspaceAndNotifyOfOpenDocuments projectTracker.ImmutableProjects
+
+        Events.SolutionEvents.OnAfterCloseSolution.Add (fun _ ->
+            singleFileProjects.Keys |> Seq.iter tryRemoveSingleFileProject
+            self.ProjectTracker.ImmutableProjects |> Seq.iter (fun project -> project.Disconnect())
+            projectInfoManager.Clear ()
+        )
+
+        //let rec setupProjectsAfterSolutionOpen () =
+        //    async {
+        //        // waits for AfterOpenSolution and then starts projects setup
+        //        do! Async.AwaitEvent Events.SolutionEvents.OnAfterOpenSolution |> Async.Ignore
+                
+        //        use _ = Events.SolutionEvents.OnAfterOpenProject |> Observable.subscribe ( fun args ->
+        //            while true do
+        //                self.SetupProjectHierarchy args.Hierarchy 
+        //        )
+                
+        //        //for project in package.DTE.Solution.GetProjects () do 
+        //        //    debug "SetupProjectsAfterSolution\nDTE get project - %s %s" project.Name project.FullName
+
+        //            //self.SetupProject project |> getProject |> projectInfoManager.AddProject
+
+        //        do! Async.AwaitEvent Events.SolutionEvents.OnAfterCloseSolution |> Async.Ignore
+        //        // Cleanup Existing project info after solution closes before a new solution is loaded
+        //        singleFileProjects.Keys |> Seq.iter tryRemoveSingleFileProject
+        //        self.ProjectTracker.ImmutableProjects |> Seq.iter (fun project -> project.Disconnect())
+        //        projectInfoManager.Clear ()
+        //        // recurse to setup the next project that opens
+        //        do! setupProjectsAfterSolutionOpen () 
+        //    }
+        //setupProjectsAfterSolutionOpen () |> Async.StartImmediate
+
+        
+        //for project in package.DTE.Solution.GetProjects () do 
+        //    debug "DTE get project - %s %s" project.Name project.FullName
+        //    self.SetupProject project |> getProject |> projectInfoManager.AddProject
+
+        //projectTracker.StartPushingToWorkspaceAndNotifyOfOpenDocuments projectTracker.ImmutableProjects
+
+        //debug "after start pushing to workspace"
+
+        
+        //projectInfoManager.AllFSharpProjectOptions |> Seq.iter (debug "\n%A\n")
 
         let theme = package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
         theme.SetColors ()

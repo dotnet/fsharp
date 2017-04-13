@@ -230,13 +230,20 @@ type EnvDTE.Project with
         ]
 
     member self.GetReferencedProjects () = 
-        
-        (self.Object :?> VSProject).References |> Seq.cast<Reference>
-        |> Seq.choose (fun reference -> maybe {
+        [ for reference in (self.Object :?> VSProject).References -> maybe {
             let! reference = Option.ofObj reference
             let! project = Option.attempt (fun _ -> reference.SourceProject)
             return! Option.ofObj project
-        }) |> Seq.toList
+        }] |> List.choose id
+    
+
+    member self.GetReferencePaths () = 
+        [ for reference in (self.Object :?> VSProject).References -> maybe {
+            let! reference = Option.ofObj reference
+            let! project = Option.attempt (fun _ -> reference.Path)
+            return! Option.ofObj project
+        }] |> List.choose id
+
 
     member self.GetReferencedFSharpProjects () = self.GetReferencedProjects() |> List.filter isFSharpProject
 
@@ -273,6 +280,19 @@ type EnvDTE.Project with
             | true, guid -> guid
             | false, _ -> createGuid ()
         | None -> createGuid ()
+
+     member self.GetOutputPath () = 
+        maybe {
+            let getProperty tag = 
+                try Some (self.Properties.[tag].Value.ToString ()) 
+                with _ -> None        
+            let! fullPath = getProperty "FullPath"
+            let! outputPath = 
+                try Some (self.ConfigurationManager.ActiveConfiguration.Properties.["OutputPath"].Value.ToString()) 
+                with _ -> None
+            let! outputFileName = getProperty "OutputFileName" 
+            return Path.Combine (fullPath, outputPath, outputFileName) |> Path.GetFullPath
+        } |> Option.defaultValue String.Empty
 
 
 type IVsHierarchy with
