@@ -100,7 +100,7 @@
   </Choose>
 
   <PropertyGroup Condition="'$(ProjectLanguage)' == 'FSharp'">
-    <OtherFlags >$(OtherFlags) --alwayscallvirt-"</OtherFlags>
+    <OtherFlags >$(OtherFlags) --alwayscallvirt-</OtherFlags>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(UseMicroBuild)' != 'true'">
