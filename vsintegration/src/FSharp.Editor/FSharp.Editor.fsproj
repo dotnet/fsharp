@@ -39,6 +39,9 @@
     <Compile Include="Common\RoslynHelpers.fs" />
     <Compile Include="Common\CodeAnalysisExtensions.fs" />
     <Compile Include="Common\ContentType.fs" />
+    <Compile Include="Options\SettingsPersistence.fs" />
+    <Compile Include="Options\UIHelpers.fs" />
+    <Compile Include="Options\EditorOptions.fs" />
     <Compile Include="LanguageService\Tokenizer.fs" />
     <Compile Include="LanguageService\Symbols.fs" />
     <Compile Include="LanguageService\TypedAstUtils.fs" />
@@ -46,7 +49,6 @@
     <Compile Include="LanguageService\LanguageService.fs" />
     <Compile Include="LanguageService\AssemblyContentProvider.fs" />
     <Compile Include="LanguageService\SymbolHelpers.fs" />
-    <Compile Include="Properties\IntelliSensePropertyPage.fs" />
     <Compile Include="Classification\ClassificationDefinitions.fs" />
     <Compile Include="Classification\ColorizationService.fs" />
     <Compile Include="Formatting\BraceMatchingService.fs" />
