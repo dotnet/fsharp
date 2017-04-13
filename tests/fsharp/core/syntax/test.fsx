@@ -63,6 +63,48 @@ module CheckDynamicOperatorsOnTypesUnconstrained =
       let op  = OpDynamic ()
       op?Hello.Prop
 
+module MoreDynamicOpTests  =
+    module Test1 = 
+     type 'a Doge () = class end
+     with
+        static member (|~>) (_ : 'b Doge, _ : 'b -> 'c) : 'c Doge = Doge ()
+
+     let x : System.DateTime Doge = Doge ()
+
+     let y = x |~> (fun dt -> dt.Year) // error on this line around 'dt.Year'
+
+
+    module Test2 = 
+     type OpDynamic() =
+      static member ( ? ) (x, n) = x
+      member x.Prop = 1
+
+     let f()  = 
+      let op  = OpDynamic ()
+      op?Hello.Prop
+
+    module Test3 = 
+     type M() =
+        static member ($) (x:string, M) = ""
+        static member ($) (x:int   , M) = 0
+        static member ($) (x:float , M) = 0.0
+
+     let inline empty< ^R, ^M when (^R or ^M) : (static member ($) : ^R * M ->  ^R) and ^M :> M> =
+        let m = M()
+        ((^R or ^M) : (static member ($): ^R * M -> ^R ) (Unchecked.defaultof<'R>, m))
+
+     let a :int    = empty<  _ , M >
+     let b :string = empty<  _ , M >
+
+    module Test4 = 
+     type M() =
+        static member ($) (x:string, M) = ""
+        static member ($) (x:int   , M) = 0
+        static member ($) (x:float , M) = 0.0
+
+     let inline empty< ^R when ( ^R or  M) : (static member ( $ ) :  ^R *  M ->  ^R)> =        
+        let m = M()
+        Unchecked.defaultof< ^R> $ m: ^R
 
 // Copyright (c) Microsoft Corporation 2005-2006.  .
 
