@@ -1551,7 +1551,7 @@ let CollectDiagnostic (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle
             let canonical = OutputCanonicalInformation(err.Subcategory(),GetDiagnosticNumber mainError)
             let message = 
                 let os = System.Text.StringBuilder()
-                OutputPhasedDiagnostic errorStyle os mainError flattenErrors
+                OutputPhasedDiagnostic os mainError flattenErrors
                 os.ToString()
             
             let entry : DiagnosticDetailedInfo = { Location = where; Canonical = canonical; Message = message }
@@ -1566,7 +1566,7 @@ let CollectDiagnostic (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle
                     let relCanonical = OutputCanonicalInformation(err.Subcategory(),GetDiagnosticNumber mainError) // Use main error for code
                     let relMessage = 
                         let os = System.Text.StringBuilder()
-                        OutputPhasedDiagnostic errorStyle os err flattenErrors
+                        OutputPhasedDiagnostic os err flattenErrors
                         os.ToString()
 
                     let entry : DiagnosticDetailedInfo = { Location = relWhere; Canonical = relCanonical; Message = relMessage}
@@ -1574,7 +1574,7 @@ let CollectDiagnostic (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle
 
                 | _ -> 
                     let os = System.Text.StringBuilder()
-                    OutputPhasedDiagnostic errorStyle os err flattenErrors
+                    OutputPhasedDiagnostic os err flattenErrors
                     errors.Add( Diagnostic.Short(isError, os.ToString()) )
         
             relatedErrors |> List.iter OutputRelatedError
