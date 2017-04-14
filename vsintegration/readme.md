@@ -4,6 +4,10 @@ This folder contains projects and tests related to Visual Studio tooling and IDE
 
 main project for Visual F# tooling
 
+# src/FSharp.UIResources
+
+GUI controls and resources for Visual F# tooling
+
 # src/FSharp.LanguageService
 
 legacy bits (before roslyn workspace)

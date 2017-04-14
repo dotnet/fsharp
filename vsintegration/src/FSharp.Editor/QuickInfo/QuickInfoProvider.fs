@@ -47,23 +47,35 @@ module private SessionHandling =
                   member __.AugmentQuickInfoSession(session,_,_) = currentSession <- Some session
                   member __.Dispose() = () }
 
-type internal SourceLink(run) as this = 
-    inherit Documents.Hyperlink(run)
-    
-    let lessOpacity =
+module private SourceLink =
+    let solid = 70uy, DashStyles.Solid
+    let dot = 255uy, DashStyle([1.0; 5.0], 0.0)
+    let dash = 90uy, DashStyle([5.0; 5.0], 0.0)
+    let none = 0uy, DashStyles.Solid
+    let opacityCoverter =
         { new IValueConverter with
-              member this.Convert(value, targetType, _, _) =
+              member this.Convert(value, _, parameter, _) =
                   match value with 
-                  | :? Color as c when targetType = typeof<Color> ->
-                      // return same color but slightly transparent
-                      Color.FromArgb(70uy, c.R, c.G, c.B) :> _
-                  | _ -> DependencyProperty.UnsetValue
-              member this.ConvertBack(_,_,_,_) = DependencyProperty.UnsetValue }
-    
+                  | :? Color as c -> Color.FromArgb(unbox parameter, c.R, c.G, c.B) :> _
+                  | _ -> Binding.DoNothing
+              member this.ConvertBack(_,_,_,_) = Binding.DoNothing }
+    let getUnderlineStyle() =
+        if not Settings.QuickInfo.DisplayLinks then none
+        else 
+            match Settings.QuickInfo.UnderlineStyle with
+            | QuickInfoUnderlineStyle.Solid -> solid
+            | QuickInfoUnderlineStyle.Dot -> dot
+            | QuickInfoUnderlineStyle.Dash -> dash
+
+
+type internal SourceLink(run) as this = 
+    inherit Documents.Hyperlink(run)   
+
+    let opacity, dashStyle = SourceLink.getUnderlineStyle()
     let underlineBrush = Media.SolidColorBrush()
-    do BindingOperations.SetBinding(underlineBrush, SolidColorBrush.ColorProperty, Binding("Foreground.Color", Source = this, Converter = lessOpacity)) |> ignore
+    do BindingOperations.SetBinding(underlineBrush, SolidColorBrush.ColorProperty, Binding("Foreground.Color", Source = this, Converter = SourceLink.opacityCoverter, ConverterParameter = opacity)) |> ignore
     let normalUnderline = TextDecorationCollection [TextDecoration(Location = TextDecorationLocation.Underline, PenOffset = 1.0)]
-    let slightUnderline = TextDecorationCollection [TextDecoration(Location = TextDecorationLocation.Underline, PenOffset = 1.0, Pen = Pen(Brush = underlineBrush))]
+    let slightUnderline = TextDecorationCollection [TextDecoration(Location = TextDecorationLocation.Underline, PenOffset = 1.0, Pen = Pen(Brush = underlineBrush, DashStyle = dashStyle))]
     do this.TextDecorations <- slightUnderline
 
     override this.OnMouseEnter(e) = 
