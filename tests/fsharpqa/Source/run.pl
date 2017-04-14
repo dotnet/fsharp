@@ -455,11 +455,11 @@ sub RunCommand {
   unlink ASSERT_FILE;
   my ($msg,$cmd,$dumpOutput) = @_;
 
-
 #  open SAVEERR, ">&STDERR"; open STDOUT, ">&STDOUT"; 	# save a copy of stderr and redirect to stdout
   select STDERR; $| = 1; select STDOUT; $| = 1;		# enable autoflush
 
   print("$msg: [$cmd]\n");
+
   open(COMMAND,"$cmd 2>&1 |") or RunExit(TEST_FAIL, "Command Process Couldn't Be Created: $! Returned $? \n");
   @CommandOutput = <COMMAND>;
   close COMMAND;
@@ -755,9 +755,11 @@ sub RunExit {
 
   my $exit_str;
   my $test_result = $exitVal;
-  
+
   # Run POSTCMD if any
   if (defined($ENV{POSTCMD})) {
+     my $cwd = cwd();
+     my $postcommand = "$cwd/$ENV{POSTCMD}";
 
      # Do the magic to replace known tokens in the
      # PRECMD/POSTCMD: for now you can write in env.lst
@@ -771,10 +773,10 @@ sub RunExit {
      s/^\$CSC_PIPE/$CSC_PIPE/;
      s/^\$VBC_PIPE/$VBC_PIPE/;
 
-     if (RunCommand("POSTCMD",$_,1)){
-  $exitVal = TEST_FAIL;
-  $test_result = TEST_FAIL;
-  $exit_str .= "Fail to execute the POSTCMD. ";
+    if (RunCommand("POSTCMD", $postcommand, 1)){
+        $exitVal = TEST_FAIL;
+        $test_result = TEST_FAIL;
+        $exit_str .= "Fail to execute the POSTCMD. '$postcommand'";
      }
   } 
   
