@@ -16,8 +16,29 @@ let isScriptFile (filePath:string) =
     let ext = Path.GetExtension filePath 
     String.Equals (ext,".fsi",StringComparison.OrdinalIgnoreCase) || String.Equals (ext,".fsscript",StringComparison.OrdinalIgnoreCase)
 
+let isFsprojFile (filePath:string) =
+    let ext = Path.GetExtension filePath 
+    String.Equals (ext,".fsproj",StringComparison.OrdinalIgnoreCase)
+
+
 /// Path combination operator
 let (</>) path1 path2 = Path.Combine (path1, path2) 
+
+let inline isNotNull x = not (isNull x)
+
+/// Get an option result from any type that has a TryGetValue method
+let inline tryGet key collection =
+    if isNull key then None else
+    let mutable value = Unchecked.defaultof<'v>
+    let success = (^a : (member TryGetValue : 'k * ('v byref) -> bool) collection, key, &value)
+    if success then Some value else None
+
+let tryCast<'T> (item:obj) : 'T option = 
+    match item with
+    | null -> None
+    | :? 'T as value -> Some value
+    | _ -> None
+        
 
 type internal ISetThemeColors = abstract member SetColors: unit -> unit
 
@@ -228,9 +249,12 @@ type Async with
                     exceptionCont (TaskCanceledException ())
                 else successCont task.Result)
             |> ignore)    
-    static member RunTaskSynchronously task  = 
-        task |> Async.AwaitTask |> Async.RunSynchronously 
 
+    static member RunTaskSynchronously (task:Task<_>)  = 
+        task |> Async.AwaitTaskCorrect |> Async.RunSynchronously 
+    
+    static member RunTaskSynchronously (task:Task)  = 
+        task |> Async.AwaitTaskCorrect |> Async.RunSynchronously 
 
 type AsyncBuilder with
     member __.Bind(computation: System.Threading.Tasks.Task<'a>, binder: 'a -> Async<'b>): Async<'b> =

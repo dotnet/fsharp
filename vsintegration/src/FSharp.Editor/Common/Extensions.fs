@@ -5,99 +5,14 @@ module internal Microsoft.VisualStudio.FSharp.Editor.Extensions
 
 open System
 open System.IO
+open System.Runtime.CompilerServices
 open Microsoft.CodeAnalysis
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.SourceCodeServices
-
-
-type Path with
-    static member GetFullPathSafe path =
-        try Path.GetFullPath path
-        with _ -> path
-
-    static member GetFileNameSafe path =
-        try Path.GetFileName path
-        with _ -> path
-
-
-type System.IServiceProvider with
-    member x.GetService<'T>() = x.GetService(typeof<'T>) :?> 'T
-    member x.GetService<'S, 'T>() = x.GetService(typeof<'S>) :?> 'T
-
-
-type FSharpNavigationDeclarationItem with
-    member x.RoslynGlyph : Glyph =
-        match x.Glyph with
-        | FSharpGlyph.Class
-        | FSharpGlyph.Typedef
-        | FSharpGlyph.Type
-        | FSharpGlyph.Exception ->
-            match x.Access with
-            | Some SynAccess.Private -> Glyph.ClassPrivate
-            | Some SynAccess.Internal -> Glyph.ClassInternal
-            | _ -> Glyph.ClassPublic
-        | FSharpGlyph.Constant -> 
-            match x.Access with
-            | Some SynAccess.Private -> Glyph.ConstantPrivate
-            | Some SynAccess.Internal -> Glyph.ConstantInternal
-            | _ -> Glyph.ConstantPublic
-        | FSharpGlyph.Delegate -> 
-            match x.Access with
-            | Some SynAccess.Private -> Glyph.DelegatePrivate
-            | Some SynAccess.Internal -> Glyph.DelegateInternal
-            | _ -> Glyph.DelegatePublic
-        | FSharpGlyph.Union
-        | FSharpGlyph.Enum -> 
-            match x.Access with
-            | Some SynAccess.Private -> Glyph.EnumPrivate
-            | Some SynAccess.Internal -> Glyph.EnumInternal
-            | _ -> Glyph.EnumPublic
-        | FSharpGlyph.EnumMember
-        | FSharpGlyph.Variable
-        | FSharpGlyph.Field -> 
-            match x.Access with
-            | Some SynAccess.Private -> Glyph.FieldPrivate
-            | Some SynAccess.Internal -> Glyph.FieldInternal
-            | _ -> Glyph.FieldPublic
-        | FSharpGlyph.Event -> 
-            match x.Access with
-            | Some SynAccess.Private -> Glyph.EventPrivate
-            | Some SynAccess.Internal -> Glyph.EventInternal
-            | _ -> Glyph.EventPublic
-        | FSharpGlyph.Interface -> 
-            match x.Access with
-            | Some SynAccess.Private -> Glyph.InterfacePrivate
-            | Some SynAccess.Internal -> Glyph.InterfaceInternal
-            | _ -> Glyph.InterfacePublic
-        | FSharpGlyph.Method
-        | FSharpGlyph.OverridenMethod -> 
-            match x.Access with
-            | Some SynAccess.Private -> Glyph.MethodPrivate
-            | Some SynAccess.Internal -> Glyph.MethodInternal
-            | _ -> Glyph.MethodPublic
-        | FSharpGlyph.Module -> 
-            match x.Access with
-            | Some SynAccess.Private -> Glyph.ModulePrivate
-            | Some SynAccess.Internal -> Glyph.ModuleInternal
-            | _ -> Glyph.ModulePublic
-        | FSharpGlyph.NameSpace -> Glyph.Namespace
-        | FSharpGlyph.Property -> 
-            match x.Access with
-            | Some SynAccess.Private -> Glyph.PropertyPrivate
-            | Some SynAccess.Internal -> Glyph.PropertyInternal
-            | _ -> Glyph.PropertyPublic
-        | FSharpGlyph.Struct -> 
-            match x.Access with
-            | Some SynAccess.Private -> Glyph.StructurePrivate
-            | Some SynAccess.Internal -> Glyph.StructureInternal
-            | _ -> Glyph.StructurePublic
-        | FSharpGlyph.ExtensionMethod ->
-            match x.Access with
-            | Some SynAccess.Private -> Glyph.ExtensionMethodPrivate
-            | Some SynAccess.Internal -> Glyph.ExtensionMethodInternal
-            | _ -> Glyph.ExtensionMethodPublic
-        | FSharpGlyph.Error -> Glyph.Error
-
+open Microsoft.VisualStudio.Shell.Interop
+open Microsoft.VisualStudio
+open Microsoft.VisualStudio.Shell
+open VSLangProj
 
 
 [<RequireQualifiedAccess>]
@@ -200,3 +115,240 @@ module Array =
     /// Returns true if one array has trailing elements equal to another's.
     let endsWith (suffix: _ []) (whole: _ []) =
         isSubArray suffix whole (whole.Length-suffix.Length)
+
+
+type Path with
+    static member GetFullPathSafe path =
+        try Path.GetFullPath path
+        with _ -> path
+
+    static member GetFileNameSafe path =
+        try Path.GetFileName path
+        with _ -> path
+
+type System.IServiceProvider with
+    member self.GetService<'T>() = self.GetService(typeof<'T>) :?> 'T
+    member self.GetService<'S, 'T>() = self.GetService(typeof<'S>) :?> 'T
+
+
+
+type [<Extension>] SRTPExtension () =
+    /// SRTP Extension method that is added to any type that implements a TryGetValue method
+    /// returns an option instead
+    [<Extension>] static member inline TryGet (collection, key) = tryGet key collection
+
+type FSharpNavigationDeclarationItem with
+    member self.RoslynGlyph : Glyph =
+        match self.Glyph with
+        | FSharpGlyph.Class
+        | FSharpGlyph.Typedef
+        | FSharpGlyph.Type
+        | FSharpGlyph.Exception ->
+            match self.Access with
+            | Some SynAccess.Private -> Glyph.ClassPrivate
+            | Some SynAccess.Internal -> Glyph.ClassInternal
+            | _ -> Glyph.ClassPublic
+        | FSharpGlyph.Constant -> 
+            match self.Access with
+            | Some SynAccess.Private -> Glyph.ConstantPrivate
+            | Some SynAccess.Internal -> Glyph.ConstantInternal
+            | _ -> Glyph.ConstantPublic
+        | FSharpGlyph.Delegate -> 
+            match self.Access with
+            | Some SynAccess.Private -> Glyph.DelegatePrivate
+            | Some SynAccess.Internal -> Glyph.DelegateInternal
+            | _ -> Glyph.DelegatePublic
+        | FSharpGlyph.Union
+        | FSharpGlyph.Enum -> 
+            match self.Access with
+            | Some SynAccess.Private -> Glyph.EnumPrivate
+            | Some SynAccess.Internal -> Glyph.EnumInternal
+            | _ -> Glyph.EnumPublic
+        | FSharpGlyph.EnumMember
+        | FSharpGlyph.Variable
+        | FSharpGlyph.Field -> 
+            match self.Access with
+            | Some SynAccess.Private -> Glyph.FieldPrivate
+            | Some SynAccess.Internal -> Glyph.FieldInternal
+            | _ -> Glyph.FieldPublic
+        | FSharpGlyph.Event -> 
+            match self.Access with
+            | Some SynAccess.Private -> Glyph.EventPrivate
+            | Some SynAccess.Internal -> Glyph.EventInternal
+            | _ -> Glyph.EventPublic
+        | FSharpGlyph.Interface -> 
+            match self.Access with
+            | Some SynAccess.Private -> Glyph.InterfacePrivate
+            | Some SynAccess.Internal -> Glyph.InterfaceInternal
+            | _ -> Glyph.InterfacePublic
+        | FSharpGlyph.Method
+        | FSharpGlyph.OverridenMethod -> 
+            match self.Access with
+            | Some SynAccess.Private -> Glyph.MethodPrivate
+            | Some SynAccess.Internal -> Glyph.MethodInternal
+            | _ -> Glyph.MethodPublic
+        | FSharpGlyph.Module -> 
+            match self.Access with
+            | Some SynAccess.Private -> Glyph.ModulePrivate
+            | Some SynAccess.Internal -> Glyph.ModuleInternal
+            | _ -> Glyph.ModulePublic
+        | FSharpGlyph.NameSpace -> Glyph.Namespace
+        | FSharpGlyph.Property -> 
+            match self.Access with
+            | Some SynAccess.Private -> Glyph.PropertyPrivate
+            | Some SynAccess.Internal -> Glyph.PropertyInternal
+            | _ -> Glyph.PropertyPublic
+        | FSharpGlyph.Struct -> 
+            match self.Access with
+            | Some SynAccess.Private -> Glyph.StructurePrivate
+            | Some SynAccess.Internal -> Glyph.StructureInternal
+            | _ -> Glyph.StructurePublic
+        | FSharpGlyph.ExtensionMethod ->
+            match self.Access with
+            | Some SynAccess.Private -> Glyph.ExtensionMethodPrivate
+            | Some SynAccess.Internal -> Glyph.ExtensionMethodInternal
+            | _ -> Glyph.ExtensionMethodPublic
+        | FSharpGlyph.Error -> Glyph.Error
+
+
+let [<Literal>] FSharpProjectKind = "{F2A71F9B-5D33-465A-A702-920D77279786}"
+
+let isFSharpProject (project: EnvDTE.Project) = 
+    isNotNull project && isNotNull project.Kind && project.Kind.Equals(FSharpProjectKind, StringComparison.OrdinalIgnoreCase)
+
+
+type EnvDTE.Solution with
+    
+    member self.GetProjects () = seq { for p in self.Projects -> p }
+
+
+type EnvDTE.Project with
+
+    member self.GetFiles () =
+        [ for item in self.ProjectItems do // FileNames count starts at 1
+            yield! [ for x=1s to item.FileCount do yield item.FileNames x ]
+        ]
+
+    member self.GetReferencedProjects () = 
+        [ for reference in (self.Object :?> VSProject).References -> maybe {
+            let! reference = Option.ofObj reference
+            let! project = Option.attempt (fun _ -> reference.SourceProject)
+            return! Option.ofObj project
+        }] |> List.choose id
+    
+
+    member self.GetReferencePaths () = 
+        [ for reference in (self.Object :?> VSProject).References -> maybe {
+            let! reference = Option.ofObj reference
+            let! project = Option.attempt (fun _ -> reference.Path)
+            return! Option.ofObj project
+        }] |> List.choose id
+
+
+    member self.GetReferencedFSharpProjects () = self.GetReferencedProjects() |> List.filter isFSharpProject
+
+    member self.VSProject =
+        Option.ofObj self
+        |> Option.bind (fun project ->
+            Option.attempt (fun _ -> project.Object :?> VSProject)
+            |> Option.bind Option.ofObj)
+
+     
+     member self.TryGetProperty (tag:string) =
+        try let prop = self.Properties.[tag]
+            prop.Value.ToString() |> Some
+        with _ -> None
+            
+
+     member self.TryGetProjectGuid () =
+        match self.TryGetProperty "ProjectGuid" with
+        | None -> None
+        | Some guidString -> 
+            match Guid.TryParse guidString with
+            | false, _ -> None
+            | true, guid -> Some guid
+
+
+     member self.GetProjectGuid () =
+        let createGuid () =
+            let guid, prop = Guid (), self.Properties.["ProjectGuid"] 
+            prop.Value <- guid.ToString()
+            guid
+        match self.TryGetProperty "ProjectGuid" with
+        | Some guidString -> 
+            match Guid.TryParse guidString with
+            | true, guid -> guid
+            | false, _ -> createGuid ()
+        | None -> createGuid ()
+
+     member self.GetOutputPath () = 
+        maybe {
+            let getProperty tag = 
+                try Some (self.Properties.[tag].Value.ToString ()) 
+                with _ -> None        
+            let! fullPath = getProperty "FullPath"
+            let! outputPath = 
+                try Some (self.ConfigurationManager.ActiveConfiguration.Properties.["OutputPath"].Value.ToString()) 
+                with _ -> None
+            let! outputFileName = getProperty "OutputFileName" 
+            return Path.Combine (fullPath, outputPath, outputFileName) |> Path.GetFullPath
+        } |> Option.defaultValue String.Empty
+
+
+type IVsHierarchy with
+
+    member self.TryGetItemProperty<'t> (itemId:uint32,propertyId:int) : 't option =
+        match self.GetProperty (itemId, propertyId) with
+        | _, (:? 't as property) -> Some property | _ -> None
+
+
+    member self.TryGetItemProperty<'t> (itemId:uint32,propertyId:__VSHPROPID) : 't option =
+        self.TryGetItemProperty<'t> (itemId, int propertyId)
+
+
+    member self.TryGetProperty<'t> (propertyId:__VSHPROPID) : 't option =
+        self.TryGetProperty<'t> propertyId 
+
+
+    member self.TryGetProperty<'t> (propertyId:int) =
+        self.TryGetItemProperty (VSConstants.VSITEMID_ROOT, propertyId ) : 't option
+
+
+    member self.TryGetGuidProperty (propertyId:int) : Guid option =
+        match self.GetGuidProperty (VSConstants.VSITEMID_ROOT, propertyId) with
+        | VSConstants.S_OK, guid -> Some guid | _ -> None
+    
+    
+    member self.TryGetGuidProperty (propertyId:__VSHPROPID) : Guid option =
+       match  self.GetGuidProperty (VSConstants.VSITEMID_ROOT, int propertyId) with 
+       | VSConstants.S_OK, guid -> Some guid | _ -> None
+    
+    
+    member self.TryGetTypeGuid () : Guid option =
+        self.TryGetGuidProperty __VSHPROPID.VSHPROPID_TypeGuid
+ 
+ 
+    member self.TryGetProjectGuid () : Guid option =
+        self.TryGetGuidProperty __VSHPROPID.VSHPROPID_ProjectIDGuid
+
+
+    member self.TryGetProject () : EnvDTE.Project option =
+        match self.GetProperty (VSConstants.VSITEMID_ROOT, int __VSHPROPID.VSHPROPID_ExtObject) with
+        | VSConstants.S_OK, (:? EnvDTE.Project as proj) -> Some proj
+        | _ -> None
+
+
+    member self.TryGetOutputAssemblyPath () = maybe {
+        let! project = self.TryGetProject ()         
+        let getProperty tag = 
+            try Some (project.Properties.[tag].Value.ToString ()) 
+            with _ -> None        
+        let! fullPath = getProperty "FullPath"
+        let! outputPath = 
+            try Some (project.ConfigurationManager.ActiveConfiguration.Properties.["OutputPath"].Value.ToString()) 
+            with _ -> None
+        let! outputFileName = getProperty "OutputFileName" 
+        return Path.Combine (fullPath, outputPath, outputFileName) |> Path.GetFullPath
+    }
+
+

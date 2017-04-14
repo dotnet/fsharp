@@ -43,6 +43,7 @@
     <Compile Include="LanguageService\Symbols.fs" />
     <Compile Include="LanguageService\TypedAstUtils.fs" />
     <Compile Include="LanguageService\FSharpCheckerExtensions.fs" />
+    <Compile Include="LanguageService\ProjectOptionsCache.fs" />
     <Compile Include="LanguageService\LanguageService.fs" />
     <Compile Include="LanguageService\AssemblyContentProvider.fs" />
     <Compile Include="LanguageService\SymbolHelpers.fs" />
@@ -130,6 +131,14 @@
     </Reference>
     <Reference Include="EnvDTE80">
       <HintPath>$(FSharpSourcesRoot)\..\packages\EnvDTE80.8.0.1\lib\net10\EnvDTE.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="VSLangProj">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\VSSDK.VSLangProj.7.0.4\lib\net20\VSLangProj.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="VSLangProj80">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\VSSDK.VSLangProj.8.8.0.4\lib\net20\VSLangProj80.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Threading">
