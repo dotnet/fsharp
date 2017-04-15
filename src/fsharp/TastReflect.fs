@@ -903,9 +903,9 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
     override this.AssemblyQualifiedName                                                            = this.FullName + ", " + this.Assembly.FullName
 
     override this.ToString() = this.FullName
-
+    
     override __.GetGenericArguments() = gps
-    override __.GetGenericTypeDefinition() = notRequired "GetGenericTypeDefinition"
+    override __.GetGenericTypeDefinition() = this :> Type //notRequired "GetGenericTypeDefinition"
     override __.GetMember(_name, _memberType, _bindingFlags)                                                      = notRequired "TxILTypeDef: GetMember"
     override __.GUID                                                                                      = notRequired "TxILTypeDef: GUID"
     override __.GetCustomAttributes(_inherited)                                                            = notRequired "TxILTypeDef: GetCustomAttributes"
@@ -978,7 +978,7 @@ and ReflectAssembly(g, ccu: CcuThunk, location:string) as asm =
         // TODO: may need something special for "System.Void"
         let typ = stripTyEqnsWrtErasure Erasure.EraseAll g typ
         match typ with 
-        | AppTy g (tcref, tinst) -> 
+        | AppTy g (tcref, _) -> 
             let ccuofTyconRef = 
                 match ccuOfTyconRef tcref with 
                 | Some ccuofTyconRef -> ccuofTyconRef
@@ -988,9 +988,10 @@ and ReflectAssembly(g, ccu: CcuThunk, location:string) as asm =
                 | None -> failwith (sprintf "TODO: didn't get back to CCU being compiled for local tcref %s" tcref.DisplayName)
             let reflAssem = ccuofTyconRef.ReflectAssembly :?> ReflectAssembly
             let tcrefR = reflAssem.TxTypeDef None tcref
-            match tinst with 
-            | [] -> tcrefR 
-            | args -> tcrefR.MakeGenericType(Array.map asm.TxTType (Array.ofList args))  
+            tcrefR
+            //match tinst with 
+            //| [] -> tcrefR 
+            //| args -> tcrefR.MakeGenericType(Array.map asm.TxTType (Array.ofList args))  
         | ty when isArrayTy g ty -> 
             let ety = destArrayTy g ty 
             let etyR = asm.TxTType ety

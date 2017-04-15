@@ -32,7 +32,9 @@ type TypePassingTp(config: TypeProviderConfig) as this =
         rootType.AddMember(ProvidedProperty("IsNestedPublic", typeof<bool>, GetterCode = (fun args -> let v = ty.IsNestedPublic in <@@ v  @@> ), IsStatic=true))        
         rootType.AddMember(ProvidedProperty("IsPublic", typeof<bool>, GetterCode = (fun args -> let v = ty.IsPublic in <@@ v  @@> ), IsStatic=true))        
         rootType.AddMember(ProvidedProperty("IsNotPublic", typeof<bool>, GetterCode = (fun args -> let v = ty.IsNotPublic in <@@ v  @@> ), IsStatic=true))        
-        rootType.AddMember(ProvidedProperty("IsSealed", typeof<bool>, GetterCode = (fun args -> let v = ty.IsSealed in <@@ v  @@> ), IsStatic=true))        
+        rootType.AddMember(ProvidedProperty("IsSealed", typeof<bool>, GetterCode = (fun args -> let v = ty.IsSealed in <@@ v  @@> ), IsStatic=true))     
+        rootType.AddMember(ProvidedProperty("IsGenericType", typeof<bool>, GetterCode = (fun args -> let v = ty.IsGenericType in <@@ v  @@> ), IsStatic=true))  
+        rootType.AddMember(ProvidedProperty("IsGenericTypeDefinition", typeof<bool>, GetterCode = (fun args -> let v = ty.IsGenericTypeDefinition in <@@ v  @@> ), IsStatic=true))         
         rootType.AddMember(ProvidedProperty("IsRecord", typeof<bool>, GetterCode = (fun args -> let v = Reflection.FSharpType.IsRecord(ty) in <@@ v  @@> ), IsStatic=true))        
         rootType.AddMember(ProvidedProperty("IsFunction", typeof<bool>, GetterCode = (fun args -> let v = Reflection.FSharpType.IsFunction(ty) in <@@ v  @@> ), IsStatic=true))        
         rootType.AddMember(ProvidedProperty("IsModule", typeof<bool>, GetterCode = (fun args -> let v = Reflection.FSharpType.IsModule(ty) in <@@ v  @@> ), IsStatic=true))        
@@ -41,7 +43,8 @@ type TypePassingTp(config: TypeProviderConfig) as this =
         rootType.AddMember(ProvidedProperty("IsUnion", typeof<bool>, GetterCode = (fun args -> let v = Reflection.FSharpType.IsUnion(ty) in <@@ v  @@> ), IsStatic=true))        
         rootType.AddMember(ProvidedProperty("GetPublicProperties_Length", typeof<int>, GetterCode = (fun args -> let v = ty.GetProperties().Length in <@@ v  @@> ), IsStatic=true))        
         rootType.AddMember(ProvidedProperty("GetPublicConstructors_Length", typeof<int>, GetterCode = (fun args -> let v = ty.GetConstructors().Length in <@@ v  @@> ), IsStatic=true))        
-        rootType.AddMember(ProvidedProperty("GetPublicMethods_Length", typeof<int>, GetterCode = (fun args -> let v = ty.GetMethods().Length in <@@ v  @@> ), IsStatic=true))        
+        rootType.AddMember(ProvidedProperty("GetPublicMethods_Length", typeof<int>, GetterCode = (fun args -> let v = ty.GetMethods().Length in <@@ v  @@> ), IsStatic=true))    
+        rootType.AddMember(ProvidedProperty("GetGenericArguments_Length", typeof<int>, GetterCode = (fun args -> let v = ty.GetGenericArguments().Length in <@@ v  @@> ), IsStatic=true))         
 
         // Raises error is used in program
         rootType.AddMember(ProvidedProperty("Assembly_CodeBase", typeof<string>, GetterCode = (fun args -> let v = ty.Assembly.CodeBase in <@@ v  @@> ), IsStatic=true))        

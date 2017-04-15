@@ -4794,7 +4794,23 @@ and TcStaticConstantParameter cenv (env:TcEnv) tpenv kind (v:SynType) idOpt cont
             PrettyNaming.StaticArg (box st), tpenv
         else 
             TcStaticConstantParameter cenv env tpenv kind (SynType.StaticConstantExpr(SynExpr.LongIdent(false,lidwd,None,m),m)) idOpt container
-    | _ ->  
+    | SynType.App (SynType.LongIdent(LongIdentWithDots(tc,_)),_,args,_commas,_,postfix,m) ->
+        let ad = env.eAccessRights
+        let tcref = ForceRaise(ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.UseInType OpenQualified env.eNameResEnv ad tc (TypeNameResolutionStaticArgsInfo.FromTyArgs args.Length) PermitDirectReferenceToGeneratedType.No)
+        match tcref.TypeOrMeasureKind with
+        | TyparKind.Type ->
+            if postfix && tcref.Typars(m) |> List.exists (fun tp -> match tp.Kind with TyparKind.Measure -> true | _ -> false)
+            then error(Error(FSComp.SR.tcInvalidUnitsOfMeasurePrefix(), m))
+
+            let tyType, tpenv' = TcTypeApp cenv ImplictlyBoundTyparsAllowed.NewTyparsOK CheckConstraints.NoCheckCxs ItemOccurence.UseInType env tpenv m tcref [] args
+            let assm = cenv.topCcu.ReflectAssembly :?> TastReflect.ReflectAssembly
+            let st = assm.TxTType tyType
+
+            record(cenv.g.system_Type_typ);
+            PrettyNaming.StaticArg (box st), tpenv'
+        | TyparKind.Measure ->
+            error(Error(FSComp.SR.tcInvalidConstantExpression(),v.Range))
+    | _ ->
         fail()
 
 and CrackStaticConstantArgs cenv env tpenv (staticParameters: Tainted<ProvidedParameterInfo>[], args: SynType list, container, containerName, m) =

@@ -1,5 +1,6 @@
 #r "../../../../../../Debug/net40/bin/type_passing_tp.dll"
 
+open System
 open FSharp.Reflection
 open Test
 
@@ -18,6 +19,13 @@ type MyUnion =
     static member TestStaticMethod(y:string) = y
     static member TestStaticProperty = 2
 
+    
+type MyGenericRecord<'a> = 
+    { Id: 'a }
+    member x.TestInstanceProperty = 1
+    member x.TestInstanceMethod(y:string) = y
+    static member TestStaticMethod(y:string) = y
+    static member TestStaticProperty = 2
 
 let mutable failures = []
 
@@ -35,6 +43,43 @@ let inaccurate nm v1 v2 v3 =
         printfn "\n*** %s: FAILED, expected %A, got %A, would have accepted %A\n" nm v2 v1 v3
 
 // Check an F# record type from this assembly
+module MyGenericRecord = 
+    let T = typeof<MyGenericRecord<String>>
+    type S = TypePassing.Summarize<MyGenericRecord<String>>
+    check "gcnkewcwpo1" S.Name T.Name
+    inaccurate "gcnkewcwpo2" S.Assembly_DefinedTypes_Count (Seq.length T.Assembly.DefinedTypes) 0  // INACCURACY: this is wrong value, not sure why
+    inaccurate "gcnkewcwpo3" S.Assembly_FullName T.FullName "script" // INACCURACY: the full name is not returned
+    check "gcnkewcwpo3" S.IsAbstract T.IsAbstract
+    check "gcnkewcwpo3" S.IsAnsiClass T.IsAnsiClass
+    check "gcnkewcwpo3" S.IsArray T.IsArray
+    check "gcnkewcwpo4" S.IsClass T.IsClass
+    inaccurate "gcnkewcwpo5a" S.IsPublic T.IsPublic true // INACCURACY: This should report "false", and IsNestedPublic should report "true"
+    inaccurate "gcnkewcwpo5b" S.IsNestedPublic T.IsNestedPublic false // INACCURACY: This should report "true", and IsPublic should report "false"
+    check "gcnkewcwpo6" S.IsNotPublic T.IsNotPublic
+    check "gcnkewcwpo7" S.IsValueType T.IsValueType
+    check "gcnkewcwpo8" S.IsInterface T.IsInterface
+    check "gcnkewcwpo18"
+    inaccurate "gcnkewcwpo9" S.IsRecord (FSharpType.IsRecord(T)) false // INACCURACY:  Getting FSharp.Core reflection to give the right answer here is a  tricky as it looks for attributes that aren't in the TAST
+    check "gcnkewcwpo10" S.IsFunction (FSharpType.IsFunction(T))
+    check "gcnkewcwpo11" S.IsModule (FSharpType.IsModule(T))
+    check "gcnkewcwpo12" S.IsExceptionRepresentation (FSharpType.IsExceptionRepresentation(T))
+    check "gcnkewcwpo13" S.IsTuple (FSharpType.IsTuple(T))
+    check "gcnkewcwpo14" S.IsUnion (FSharpType.IsUnion(T))
+    inaccurate "gcnkewcwpo15" S.GetPublicProperties_Length (T.GetProperties().Length) 2 // INACCURACY: this should also report the properties for the F# record fields (which are not in the TAST unfortunately)
+    inaccurate "gcnkewcwpo16" S.GetPublicConstructors_Length (T.GetConstructors().Length)  0  // INACCURACY: this should also report the constructor for the F# record type
+    inaccurate "gcnkewcwpo17" S.GetPublicMethods_Length (T.GetMethods().Length)  4 // INACCURACY: like GetProperties, this should report the getter methods for the properties for the F# record fields (which are not in the TAST unfortunately)
+#if CURRENTLY_GIVES_COMPILATION_ERROR_NEED_TO_CHECK_IF_EXPECTED
+    check "gcnkewcwpo18" S.Assembly_EntryPoint_isNull true
+    check "gcnkewcwpo19" S.GUID ""
+    check "gcnkewcwpo20" (try S.Assembly_CodeBase; false with _ -> true) true
+    check "gcnkewcwpo21" S.Assembly_CustomAttributes_Count 0
+#endif
+    check "gcnkewcwpo22" S.IsGenericType (T.IsGenericType)
+    inaccurate "gcnkewcwpo23" S.IsGenericTypeDefinition (T.IsGenericTypeDefinition) true //INACCURACY: this is wrong since we currently have no distinction between constructed and generalized type defs.
+    check "gcnkewcwpo24" S.GetGenericArguments_Length (T.GetGenericArguments().Length)
+   // TODO: rest of System.Type properties and methods
+   // TODO: reset of FSharp Reflection methods 
+    
 module MyRecord = 
     let T = typeof<MyRecord>
     type S = TypePassing.Summarize<MyRecord>
@@ -65,6 +110,9 @@ module MyRecord =
     check "cnkewcwpo20" (try S.Assembly_CodeBase; false with _ -> true) true
     check "cnkewcwpo21" S.Assembly_CustomAttributes_Count 0
 #endif
+    check "cnkewcwpo22" S.IsGenericType (T.IsGenericType)
+    check "cnkewcwpo23" S.IsGenericTypeDefinition (T.IsGenericTypeDefinition)
+    check "cnkewcwpo24" S.GetGenericArguments_Length (T.GetGenericArguments().Length)
    // TODO: rest of System.Type properties and methods
    // TODO: reset of FSharp Reflection methods 
 
@@ -101,6 +149,9 @@ module MyUnion =
     check "unkewcwpo20" (try S.Assembly_CodeBase; false with _ -> true) true
     check "unkewcwpo21" S.Assembly_CustomAttributes_Count 0
 #endif
+    check "unkewcwpo22" S.IsGenericType (T.IsGenericType)
+    check "unkewcwpo23" S.IsGenericTypeDefinition (T.IsGenericTypeDefinition)
+    check "unkewcwpo24" S.GetGenericArguments_Length (T.GetGenericArguments().Length)
    // TODO: rest of System.Type properties and methods
    // TODO: reset of FSharp Reflection methods 
 
