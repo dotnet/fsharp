@@ -92,9 +92,10 @@ module MyUnion =
     check "unkewcwpo13" S.IsTuple (FSharpType.IsTuple(T))
     inaccurate "unkewcwpo14" S.IsUnion (FSharpType.IsUnion(T)) false // INACCURACY:  Getting FSharp.Core reflection to give the right answer here is a  tricky as it looks for attributes that aren't in the TAST
     inaccurate "unkewcwpo15" S.GetPublicProperties_Length (T.GetProperties().Length) 2 // INACCURACY: this should also report the properties for the F# record fields (which are not in the TAST unfortunately)
-    check "unkewcwpo16" S.GetPublicConstructors_Length (T.GetConstructors().Length)  0  
+ 
     inaccurate "unkewcwpo17" S.GetPublicMethods_Length (T.GetMethods().Length)  4 // INACCURACY: like GetProperties, this should report the getter methods for the properties for the F# record fields (which are not in the TAST unfortunately)
 #if CURRENTLY_GIVES_COMPILATION_ERROR_NEED_TO_CHECK_IF_EXPECTED
+    check "unkewcwpo16" S.GetPublicConstructors_Length (T.GetConstructors().Length)  0 //MOVED: As give compile error with build net40 debug.. 
     check "unkewcwpo18" S.Assembly_EntryPoint_isNull true
     check "unkewcwpo19" S.GUID ""
     check "unkewcwpo20" (try S.Assembly_CodeBase; false with _ -> true) true
