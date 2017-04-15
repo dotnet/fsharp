@@ -101,7 +101,7 @@ type internal FSharpDeclarationListItem =
     member Name : string
     /// Get the name for the declaration as it's presented in source code.
     member NameInCode : string
-    /// Get the description text for the declaration. Commputing this property may require using compiler
+    /// Get the description text for the declaration. Computing this property may require using compiler
     /// resources and may trigger execution of a type provider method to retrieve documentation.
     ///
     /// May return "Loading..." if timeout occurs
@@ -112,19 +112,25 @@ type internal FSharpDeclarationListItem =
     member StructuredDescriptionTextAsync : Async<FSharpStructuredToolTipText>
     member DescriptionTextAsync : Async<FSharpToolTipText>
     member Glyph : FSharpGlyph
-    member IsAttribute : bool
     member Accessibility : FSharpAccessibility option
     member Kind : CompletionItemKind
     member IsOwnMember : bool
     member MinorPriority : int
     member FullName : string
+    member IsResolved : bool
+    member NamespaceToOpen : string option
+
+type UnresolvedSymbol =
+    { DisplayName: string
+      Namespace: string[] }
 
 type internal CompletionItem =
     { Item: Item
       Kind: CompletionItemKind
       IsOwnMember: bool
       MinorPriority: int
-      Type: TyconRef option }
+      Type: TyconRef option 
+      Unresolved: UnresolvedSymbol option }
 
 [<Sealed>]
 /// Represents a set of declarations in F# source code, with information attached ready for display by an editor.
@@ -133,9 +139,11 @@ type internal CompletionItem =
 // Note: this type holds a weak reference to compiler resources. 
 type internal FSharpDeclarationListInfo =
     member Items : FSharpDeclarationListItem[]
+    member IsForType : bool
+    member IsError : bool
 
     // Implementation details used by other code in the compiler    
-    static member internal Create : infoReader:InfoReader * m:range * denv:DisplayEnv * getAccessibility:(Item -> FSharpAccessibility option) * items:CompletionItem list * reactor:IReactorOperations * checkAlive:(unit -> bool) -> FSharpDeclarationListInfo
+    static member internal Create : infoReader:InfoReader * m:range * denv:DisplayEnv * getAccessibility:(Item -> FSharpAccessibility option) * items:CompletionItem list * reactor:IReactorOperations * currentNamespace:string[] option * isAttributeApplicationContex:bool * checkAlive:(unit -> bool) -> FSharpDeclarationListInfo
     static member internal Error : message:string -> FSharpDeclarationListInfo
     static member Empty : FSharpDeclarationListInfo
 
@@ -173,6 +181,7 @@ module internal ItemDescriptionsImpl =
     val FormatStructuredDescriptionOfItem : isDecl:bool -> InfoReader -> range -> DisplayEnv -> Item -> FSharpStructuredToolTipElement
     val GlyphOfItem : DisplayEnv * Item -> FSharpGlyph
     val IsAttribute : InfoReader -> Item -> bool
+    val IsExplicitlySuppressed : TcGlobals -> Item -> bool
 
 module EnvMisc2 =
     val maxMembers : int

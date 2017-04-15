@@ -79,7 +79,6 @@ set INCLUDE_TEST_TAGS=
 set PUBLISH_VSIX=0
 set MYGET_APIKEY=
 
-
 REM ------------------ Parse all arguments -----------------------
 
 set _autoselect=1
@@ -191,6 +190,10 @@ if /i "%ARG%" == "microbuild" (
     set TEST_VS_IDEUNIT_SUITE=1
     set CI=1
     set PUBLISH_VSIX=1
+
+    REM redirecting TEMP directories
+    set TEMP=%~dp0%BUILD_CONFIG%\TEMP
+    set TMP=%~dp0%BUILD_CONFIG%\TEMP
 )
 
 REM These divide "ci" into two chunks which can be done in parallel
@@ -247,6 +250,7 @@ if /i "%ARG%" == "ci_part4" (
 )
 
 if /i "%ARG%" == "proto" (
+    set _autoselect=0
     set BUILD_PROTO=1
 )
 
@@ -348,7 +352,6 @@ goto :EOF
 :: Note: "goto :EOF" returns from an in-batchfile "call" command
 :: in preference to returning from the entire batch file.
 
-
 REM ------------------ Report config -----------------------
 
 :MAIN
@@ -379,17 +382,35 @@ echo INCLUDE_TEST_SPEC_NUNIT=%INCLUDE_TEST_SPEC_NUNIT%
 echo INCLUDE_TEST_TAGS=%INCLUDE_TEST_TAGS%
 echo PUBLISH_VSIX=%PUBLISH_VSIX%
 echo MYGET_APIKEY=%MYGET_APIKEY%
+echo TEMP=%TEMP%
+
+REM load Visual Studio 2017 developer command prompt if VS150COMNTOOLS is not set
+
+REM If this is not set, VsDevCmd.bat will change %cd% to [USERPROFILE]\source, causing the build to fail.
+SET VSCMD_START_DIR=%cd%
+
+if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" (
+    call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"
+)
+if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsDevCmd.bat" (
+    call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\Common7\Tools\VsDevCmd.bat"
+)
+if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat" (
+    call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
+)
+if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat" (
+    call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat"
+)
 
 echo .
 echo Environment
-echo 
 set
 echo .
 echo .
 
 echo ---------------- Done with arguments, starting preparation -----------------
 
-set BuildToolsPackage=Microsoft.VSSDK.BuildTools.15.0.26124-RC3
+set BuildToolsPackage=Microsoft.VSSDK.BuildTools.15.0.26201
 if "%VSSDKInstall%"=="" (
      set VSSDKInstall=%~dp0packages\%BuildToolsPackage%\tools\vssdk
 )
@@ -462,6 +483,12 @@ if defined APPVEYOR (
    )
 )
 
+if defined TF_BUILD (
+    echo Adding remote 'visualfsharptools' for internal build.
+    git remote add visualfsharptools https://github.com/Microsoft/visualfsharp.git
+    git fetch --all
+)
+
 REM set msbuildflags=/maxcpucount %_nrswitch% /nologo
 set msbuildflags=%_nrswitch% /nologo
 set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
@@ -496,7 +523,7 @@ if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
 set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
 set NUGET_PACKAGES=%~dp0Packages
 
-set _fsiexe="packages\FSharp.Compiler.Tools.4.0.1.21\tools\fsi.exe"
+set _fsiexe="packages\FSharp.Compiler.Tools.4.1.5\tools\fsi.exe"
 if not exist %_fsiexe% echo Error: Could not find %_fsiexe% && goto :failure
 %_ngenexe% install %_fsiexe% /nologo 
 
@@ -536,8 +563,8 @@ if "%BUILD_PROTO%" == "1" (
 
   if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "0" (
 
-    echo %_ngenexe% install packages\FSharp.Compiler.Tools.4.0.1.21\tools\fsc.exe /nologo 
-         %_ngenexe% install packages\FSharp.Compiler.Tools.4.0.1.21\tools\fsc.exe /nologo 
+    echo %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.5\tools\fsc.exe /nologo 
+         %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.5\tools\fsc.exe /nologo 
 
     echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
          %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
@@ -583,7 +610,8 @@ if "%OSARCH%"=="AMD64" set SYSWOW64=SysWoW64
 
 if not "%OSARCH%"=="x86" set REGEXE32BIT=%WINDIR%\syswow64\reg.exe
 
-echo  SDK environment vars from Registry
+echo SDK environment vars from Registry
+echo ==================================
                             FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\WOW6432Node\Microsoft\Microsoft SDKs\NETFXSDK\4.6.2\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
 if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\WOW6432Node\Microsoft\Microsoft SDKs\NETFXSDK\4.6.1\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
 if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
@@ -603,15 +631,15 @@ IF NOT DEFINED SNEXE64  IF EXIST "%WINSDKNETFXTOOLS%x64\sn.exe"             set 
 IF NOT DEFINED ildasm   IF EXIST "%WINSDKNETFXTOOLS%\ildasm.exe"            set ildasm=%WINSDKNETFXTOOLS%ildasm.exe
 
 echo .
-echo  SDK environment vars
-echo  =======================
+echo SDK environment vars
+echo =======================
 echo WINSDKNETFXTOOLS:  %WINSDKNETFXTOOLS%
 echo SNEXE32:           %SNEXE32%
 echo SNEXE64:           %SNEXE64%
 echo ILDASM:            %ILDASM%
 echo
 
-if "%TEST_NET40_COMPILERUNIT_SUITE%" == "0" and "%TEST_PORTABLE_COREUNIT_SUITE" == "0" and "%TEST_CORECLR_COREUNIT_SUITE%" == "0" and "%TEST_VS_IDEUNIT_SUITE%" == "0" and "%TEST_NET40_FSHARP_SUITE%" == "0" and "%TEST_NET40_FSHARPQA_SUITE%" == "0" goto :success
+if "%TEST_NET40_COMPILERUNIT_SUITE%" == "0" if "%TEST_PORTABLE_COREUNIT_SUITE%" == "0" if "%TEST_CORECLR_COREUNIT_SUITE%" == "0" if "%TEST_VS_IDEUNIT_SUITE%" == "0" if "%TEST_NET40_FSHARP_SUITE%" == "0" if "%TEST_NET40_FSHARPQA_SUITE%" == "0" goto :success
 
 echo ---------------- Done with update, starting tests -----------------------
 
@@ -625,7 +653,7 @@ echo WHERE_ARG_NUNIT=!WHERE_ARG_NUNIT!
 
 set NUNITPATH=%~dp0tests\fsharpqa\testenv\bin\nunit\
 set NUNIT3_CONSOLE=%~dp0packages\NUnit.Console.3.0.0\tools\nunit3-console.exe
-set link_exe=%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe
+set link_exe=%~dp0tests\fsharpqa\testenv\bin\link\link.exe
 if not exist "%link_exe%" (
     echo Error: failed to find "%link_exe%" use nuget to restore the VisualCppTools package
     goto :failure
@@ -644,7 +672,6 @@ ECHO NUNIT3_CONSOLE=%NUNIT3_CONSOLE%
 ECHO NUNITPATH=%NUNITPATH%
 
 REM ---------------- net40-fsharp  -----------------------
-
 
 if "%TEST_NET40_FSHARP_SUITE%" == "1" (
 
@@ -686,16 +713,16 @@ if "%TEST_NET40_FSHARPQA_SUITE%" == "1" (
     set FSC=!FSCBINPATH!\fsc.exe
     set FSCOREDLLPATH=!FSCBinPath!\FSharp.Core.dll
     set PATH=!FSCBINPATH!;!PATH!
-    set perlexe= %~dp0packages\StrawberryPerl64.5.22.2.1\Tools\perl\bin\perl.exe
-    if not exist %perlexe% echo Error: perl was not downloaded from check the packages directory: %perlexe% && goto :failure
+    set perlexe=%~dp0packages\StrawberryPerl64.5.22.2.1\Tools\perl\bin\perl.exe
+    if not exist !perlexe! (echo Error: perl was not downloaded from check the packages directory: !perlexe! && goto :failure )
 
     set OUTPUTFILE=test-net40-fsharpqa-results.log
     set ERRORFILE=test-net40-fsharpqa-errors.log
     set FAILENV=test-net40-fsharpqa-errors
 
     pushd %~dp0tests\fsharpqa\source
-    echo %perlexe% %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot !RESULTSDIR! -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no !TTAGS_ARG_RUNALL! !PARALLEL_ARG!
-         %perlexe% %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot !RESULTSDIR! -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no !TTAGS_ARG_RUNALL! !PARALLEL_ARG!
+    echo !perlexe! %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot !RESULTSDIR! -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no !TTAGS_ARG_RUNALL! !PARALLEL_ARG!
+         !perlexe! %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot !RESULTSDIR! -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no !TTAGS_ARG_RUNALL! !PARALLEL_ARG!
 
     popd
     if ERRORLEVEL 1 (
@@ -884,8 +911,7 @@ if "%PUBLISH_VSIX%" == "1" (
     if not "%MYGET_APIKEY%" == "" (
         powershell -noprofile -executionPolicy ByPass -file "%~dp0setup\publish-assets.ps1" -binariesPath "%~dp0%BUILD_CONFIG%" -branchName "%BUILD_SOURCEBRANCH%" -apiKey "%MYGET_APIKEY%"
         if errorlevel 1 goto :failure
-    )
-    else (
+    ) else (
         echo No MyGet API key specified, skipping package publish.
     )
 )

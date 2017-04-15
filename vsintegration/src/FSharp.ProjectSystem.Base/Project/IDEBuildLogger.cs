@@ -1,5 +1,4 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 using System;
 using System.Threading;
 using System.Diagnostics;
@@ -49,7 +48,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 		private string errorString = SR.GetString(SR.Error, CultureInfo.CurrentUICulture);
 		private string warningString = SR.GetString(SR.Warning, CultureInfo.CurrentUICulture);
 		private bool isLogTaskDone;
-		private TaskProvider taskProvider;
+		private Shell.TaskProvider taskProvider;
 		private IVsHierarchy hierarchy;
 		private IServiceProvider serviceProvider;
         private TaskReporter taskReporter;
@@ -95,7 +94,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             set { taskReporter = value; }
         }
 
-		internal IDEBuildLogger(IVsOutputWindowPane output, TaskProvider taskProvider, IVsHierarchy hierarchy)
+		internal IDEBuildLogger(IVsOutputWindowPane output, Shell.TaskProvider taskProvider, IVsHierarchy hierarchy)
 		{
 			if (taskProvider == null)
 				throw new ArgumentNullException("taskProvider");
@@ -108,7 +107,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 			this.hierarchy = hierarchy;
 			IOleServiceProvider site;
 			Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(hierarchy.GetSite(out site));
-			this.serviceProvider = new ServiceProvider(site);
+			this.serviceProvider = new Shell.ServiceProvider (site);
 		}
 
 		public override void Initialize(IEventSource eventSource)
@@ -256,7 +255,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 file = String.Empty;
             
             bool isWarning = errorEvent is BuildWarningEventArgs;
-            TaskPriority priority = isWarning ? TaskPriority.Normal : TaskPriority.High;
+            Shell.TaskPriority priority = isWarning ? Shell.TaskPriority.Normal : Shell.TaskPriority.High;
             
             TextSpan span;
             span.iStartLine = startLine;
@@ -336,8 +335,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 // Add error to task list
                 task.Text = Microsoft.FSharp.Compiler.ErrorLogger.NewlineifyErrorString(errorEvent.Message);
                 task.Priority = priority;
-                task.ErrorCategory = isWarning ? TaskErrorCategory.Warning : TaskErrorCategory.Error;
-                task.Category = TaskCategory.BuildCompile;
+                task.ErrorCategory = isWarning ? Shell.TaskErrorCategory.Warning : Shell.TaskErrorCategory.Error;
+                task.Category = Shell.TaskCategory.BuildCompile;
                 task.HierarchyItem = hierarchy;
                 task.Navigate += new EventHandler(NavigateTo);
 
@@ -375,7 +374,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 		private void NavigateTo(object sender, EventArgs arguments)
 		{
             try {
-                Microsoft.VisualStudio.Shell.Task task = sender as Microsoft.VisualStudio.Shell.Task;
+                Shell.Task task = sender as Shell.Task;
                 if (task == null)
                     throw new ArgumentException("sender");
 

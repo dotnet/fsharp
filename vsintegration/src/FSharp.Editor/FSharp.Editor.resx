@@ -154,7 +154,7 @@
     <value>F# Disposable Types</value>
   </data>
   <data name="RemoveUnusedOpens" xml:space="preserve">
-    <value>Remove unused open declaration</value>
+    <value>Remove unused open declarations</value>
   </data>
   <data name="UnusedOpens" xml:space="preserve">
     <value>Open declaration can be removed.</value>
@@ -162,13 +162,7 @@
   <data name="6008" xml:space="preserve">
     <value>IntelliSense</value>
   </data>
-  <data name="IntelliSensePropertyPageMiscCategory">
-    <value>Misc</value>
-  </data>
-  <data name="IntelliSensePropertyPageShowAfterCharIsTyped">
-    <value>Show after a character is typed</value>
-  </data>
-  <data name="IntelliSensePropertyPageShowAfterCharIsTypedDescr">
-    <value>Show completion list after a character is typed</value>
+  <data name="6009" xml:space="preserve">
+    <value>QuickInfo</value>
   </data>
 </root>

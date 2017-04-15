@@ -60,10 +60,11 @@ This is for those who contributed Visual Studio IDE features and platform suppor
 
 **Editor Features**
 
+* Semantic Colorization - [Vasily Kirichenko](https://github.com/vasily-kirichenko) and [Saul Rennison](https://github.com/saul)
 * Autocompletion - [Vasily Kirichenko](https://github.com/vasily-kirichenko)
 * IntelliSense Filters and Glyph improvements - [Vasily Kirichenko](https://github.com/vasily-kirichenko)
 * IntelliSense accuracy Improvements - [Vasily Kirichenko](https://github.com/vasily-kirichenko)
-* Support for Go To All - [Vasily Kirichenko](https://github.com/vasily-kirichenko)
+* Go To All - [Vasily Kirichenko](https://github.com/vasily-kirichenko) and [Jared Hester](github.com/cloudroutine)
 * Find All References - [Vasily Kirichenko](https://github.com/vasily-kirichenko)
 * Re-enabled multiple F# project support - [Ahn-Dung Phan](https://github.com/dungpa)
 * QuickInfo (hover tooltips) Improvements - [Vasily Kirichenko](https://github.com/vasily-kirichenko) and [Jared Hester](github.com/cloudroutine)
@@ -80,7 +81,7 @@ This is for those who contributed Visual Studio IDE features and platform suppor
 * Breakpoint resolution improvements - Vasily Kirichenko](https://github.com/vasily-kirichenko) and [Steffen Forkmann](https://github.com/forki)
 * Respecting `EditorBrowsable(EditorBrowsableState.Never)` attribute - [Vasily Kirichenko](https://github.com/vasily-kirichenko)
 * XML Documentation Generation - [Ahn-Dung Phan](https://github.com/dungpa)
-* Clickable Types in QuickInfo (hover tooltips) which invoke Go to Definition - [Jakub Majocha](https://github.com/majocha)
+* Clickable items in QuickInfo (hover tooltips) which invoke Go to Definition - [Jakub Majocha](https://github.com/majocha), [Jared Hester](https://github.com/cloudRoutine), and [Vasily Kirichenko](https://github.com/vasily-kirichenko)
 * Separate color themes for light and dark mode - [Jakub Majocha](https://github.com/majocha)
 * Semantic highlighting - [Vasily Kirichenko](https://github.com/vasily-kirichenko) and [Jared Hester](github.com/cloudroutine)
 * ReSharper-like ordering in Completion lists - [Vasily Kirichenko](https://github.com/vasily-kirichenko)
@@ -89,6 +90,7 @@ This is for those who contributed Visual Studio IDE features and platform suppor
 
 * Improved solution load time - [Saul Rennison](https://github.com/saul)
 * General improvements - [Jakub Majocha](https://github.com/majocha)
+* Move Up/Move Down on Solution folder nodes - [Saul Rennison](https://github.com/saul)
 
 **F# Interactive**
 
@@ -120,3 +122,5 @@ Infrastructure isn't the sexiest stuff in the world, but it's absolutely necessa
 * [Alfonso Garcia-Caro](https://github.com/alfonsogarciacaro)
 * [Zp Babbi](https://github.com/zpbappi)
 * [Gauthier Segay](https://github.com/smoothdeveloper)
+* [Jared Hester](github.com/cloudroutine)
+* [Cameron Taggert](https://github.com/ctaggart)

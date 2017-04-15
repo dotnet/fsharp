@@ -491,11 +491,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         private ConfigProvider configProvider;
 
-        private TaskProvider taskProvider;
+        private Shell.TaskProvider taskProvider;
 
         private TaskReporter taskReporter;
 
-        private ErrorListProvider projectErrorListProvider;
+        private Shell.ErrorListProvider projectErrorListProvider;
 
         private ExtensibilityEventsHelper myExtensibilityEventsHelper;
 
@@ -614,7 +614,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         public abstract string TargetFSharpCoreVersion { get; set; }
 
-        internal ErrorListProvider ProjectErrorsTaskListProvider 
+        internal Shell.ErrorListProvider ProjectErrorsTaskListProvider 
         {
             get { return projectErrorListProvider; }
         }
@@ -1080,7 +1080,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Gets the taskprovider.
         /// </summary>
-        public TaskProvider TaskProvider
+        public Shell.TaskProvider TaskProvider
         {
             get
             {
@@ -1392,15 +1392,15 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 taskProvider.Dispose();
             }
-            taskProvider = new TaskProvider(this.site);
-            taskReporter = new TaskReporter("Project System (ProjectNode.cs)");
+            taskProvider = new Shell.TaskProvider ( this.site);
+            taskReporter = new TaskReporter ("Project System (ProjectNode.cs)");
             taskReporter.TaskListProvider = new TaskListProvider(taskProvider);
             if (projectErrorListProvider != null)
             {
                 projectErrorListProvider.Dispose();
             }
 
-            projectErrorListProvider = new ErrorListProvider(this.site);
+            projectErrorListProvider = new Shell.ErrorListProvider (this.site);
 
             return VSConstants.S_OK;
         }

@@ -211,7 +211,7 @@ this file.
             <ActualEmbeddedResources
                 Condition=" '$(UsingXBuild)' == true"
                 Include="@(_CoreCompileResourceInputs);@(ManifestResourceWithNoCulture);@(ManifestNonResxWithNoCultureOnDisk);@(CompiledLicenseFile);@(AdditionalEmbeddedResource)" />
-            <ActualEmbeddedResources
+          <ActualEmbeddedResources
                 Condition=" '$(UsingXBuild)' != true"
                 Include="@(_CoreCompileResourceInputs);@(CompiledLicenseFile);@(AdditionalEmbeddedResource)" />
         </ItemGroup>
@@ -259,7 +259,10 @@ this file.
               HighEntropyVA="$(HighEntropyVA)"
               TargetProfile="$(TargetProfile)"
               DotnetFscCompilerPath="$(DotnetFscCompilerPath)"
-        />
+              SkipCompilerExecution="$(SkipCompilerExecution)"
+              ProvideCommandLineArgs="$(ProvideCommandLineArgs)">
+            <Output TaskParameter="CommandLineArgs" ItemName="FscCommandLineArgs" />
+        </Fsc>
 
         <ItemGroup>
             <_CoreCompileResourceInputs Remove="@(_CoreCompileResourceInputs)" />
@@ -302,7 +305,8 @@ this file.
             Overwrite="true"/>
 
         <ItemGroup>
-            <CompileBefore Include="$(TargetFrameworkMonikerAssemblyAttributesPath)" Condition="'$(AdditionalSourcesText)' != ''"/>
+            <CompileBefore Include="$(TargetFrameworkMonikerAssemblyAttributesPath)" Condition="'$(AdditionalSourcesText)' != '' AND ('$(OutputType)' == 'Exe' OR '$(OutputType)' == 'WinExe')"/>
+            <CompileAfter Include="$(TargetFrameworkMonikerAssemblyAttributesPath)" Condition="'$(AdditionalSourcesText)' != '' AND '$(OutputType)' != 'Exe' AND '$(OutputType)' != 'WinExe'"/>
         </ItemGroup>
 
     </Target>
