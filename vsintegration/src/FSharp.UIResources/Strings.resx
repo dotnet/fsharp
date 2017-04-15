@@ -117,52 +117,28 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="AddNewKeyword" xml:space="preserve">
-    <value>Add 'new' keyword</value>
+  <data name="Completion_Lists" xml:space="preserve">
+    <value>Completion Lists</value>
   </data>
-  <data name="ImplementInterface" xml:space="preserve">
-    <value>Implement interface</value>
+  <data name="Dash_underline" xml:space="preserve">
+    <value>D_ash underline</value>
   </data>
-  <data name="ImplementInterfaceWithoutTypeAnnotation" xml:space="preserve">
-    <value>Implement interface without type annotation</value>
+  <data name="Dot_underline" xml:space="preserve">
+    <value>D_ot underline</value>
   </data>
-  <data name="PrefixValueNameWithUnderscore" xml:space="preserve">
-    <value>Prefix value name with underscore</value>
+  <data name="Navigation_links" xml:space="preserve">
+    <value>Navigation links</value>
   </data>
-  <data name="RenameValueToUnderscore" xml:space="preserve">
-    <value>Rename value to '_'</value>
+  <data name="Show_completion_list_after_a_character_is_deleted" xml:space="preserve">
+    <value>Show completion list after a character is _deleted</value>
   </data>
-  <data name="SimplifyName" xml:space="preserve">
-    <value>Simplify name</value>
+  <data name="Show_completion_list_after_a_character_is_typed" xml:space="preserve">
+    <value>_Show completion list after a character is typed</value>
   </data>
-  <data name="NameCanBeSimplified" xml:space="preserve">
-    <value>Name can be simplified.</value>
+  <data name="Show_navigation_links_as" xml:space="preserve">
+    <value>S_how navigation links as</value>
   </data>
-  <data name="FSharpFunctionsOrMethodsClassificationType" xml:space="preserve">
-    <value>F# Functions / Methods</value>
-  </data>
-  <data name="FSharpMutableVarsClassificationType" xml:space="preserve">
-    <value>F# Mutable Variables / Reference Cells</value>
-  </data>
-  <data name="FSharpPrintfFormatClassificationType" xml:space="preserve">
-    <value>F# Printf Format</value>
-  </data>
-  <data name="FSharpPropertiesClassificationType" xml:space="preserve">
-    <value>F# Properties</value>
-  </data>
-  <data name="FSharpDisposablesClassificationType" xml:space="preserve">
-    <value>F# Disposable Types</value>
-  </data>
-  <data name="RemoveUnusedOpens" xml:space="preserve">
-    <value>Remove unused open declarations</value>
-  </data>
-  <data name="UnusedOpens" xml:space="preserve">
-    <value>Open declaration can be removed.</value>
-  </data>
-  <data name="6008" xml:space="preserve">
-    <value>IntelliSense</value>
-  </data>
-  <data name="6009" xml:space="preserve">
-    <value>QuickInfo</value>
+  <data name="Solid_underline" xml:space="preserve">
+    <value>_Solid underline</value>
   </data>
 </root>

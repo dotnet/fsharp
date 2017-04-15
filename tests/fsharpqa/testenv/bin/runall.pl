@@ -11,6 +11,8 @@
 ###    - Document where we expect a test result to get printed
 # GLOBAL VARIABLES
 
+use Config;
+
 my(
     $cleanup,             # type of cleanup requested
     $compilerServerPort,
@@ -144,6 +146,8 @@ my $INPUT_ERROR_EXITVAL = 3;
 my $STATE_ERROR_EXITVAL = 4;
 my $FILE_ERROR_EXITVAL = 5;
 my $OTHER_ERROR_EXITVAL = 9;
+
+my $perl = $Config{perlpath};
 
 BEGIN {
     @required_mods = ("Win32\\Process.pm");
@@ -3644,7 +3648,7 @@ sub check_test
 
     # perl is noisy during syntax checks; redirect to "nul".
 	# Removed !$resume_mode from this conditional to allow resumes past tests with run.pl errors
-    } elsif (!$debug && (cmd_redirect("perl -c " . quote_path($found_runpl), 'nul') != 0)) {
+    } elsif (!$debug && (cmd_redirect("$perl -c " . quote_path($found_runpl), 'nul') != 0)) {
 	$error = "run.pl contains errors";
 
     }
@@ -4043,7 +4047,7 @@ sub launch_runpl
 			$retval = system("stopit.exe -s$timeout $runpl");
 		}
 		else {
-			$retval = system("stopit.exe -s$timeout perl $runpl") >> 8;
+			$retval = system("stopit.exe -s$timeout $perl $runpl") >> 8;
 		}
 	} 
 	else {
@@ -4051,7 +4055,7 @@ sub launch_runpl
 			$retval = system("$runpl");
 		}
 		else {
-			$retval = system("perl $runpl") >> 8;
+			$retval = system("$perl $runpl") >> 8;
 		}
 	}
 
@@ -5164,7 +5168,7 @@ sub RunMultiProcess() {
 	
 			# execute runall on the test sublist
 			# ($0 means "this program's name")
-			my $subtestcmd = "perl $0 -target:$target -test test$start_subtest_name.lst ";
+			my $subtestcmd = "$perl $0 -target:$target -test test$start_subtest_name.lst ";
 	
 			# deliberately omited switches: -terse
             if(defined $compilerServerPort){
@@ -5208,7 +5212,7 @@ sub RunMultiProcess() {
 			#open SUBTESTTXT, ">>subtest.txt";
 			#print SUBTESTTXT $subtestcmd."\n\n";
 			#close SUBTESTTXT;
-			#my $subtestcmd = "perl e:\\compqa\\testenv\\bin\\newcmd.pl ";
+			#my $subtestcmd = "$perl e:\\compqa\\testenv\\bin\\newcmd.pl ";
 			
 			my $newproc;
 			my $cp = Win32::Process::Create($newproc, $^X, "$subtestcmd", 1, &Win32::Process::NORMAL_PRIORITY_CLASS, '.');
