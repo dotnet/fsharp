@@ -96,4 +96,4 @@ type internal MissingReferenceCodeFixProvider() =
                 | _ -> ()
                 )
         }
-        |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
