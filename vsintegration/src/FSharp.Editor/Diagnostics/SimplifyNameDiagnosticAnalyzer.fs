@@ -46,6 +46,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) =
         asyncMaybe {
+            do! Option.guard Settings.CodeFixes.SimplifyName
             let! options = getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document)
             let! textVersion = document.GetTextVersionAsync(cancellationToken)
             let textVersionHash = textVersion.GetHashCode()

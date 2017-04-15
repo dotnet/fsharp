@@ -64,3 +64,7 @@ module internal Guids =
     [<Literal>]
     /// "1e2b3290-4d67-41ff-a876-6f41f868e28f"
     let quickInfoOptionPageIdString = "1e2b3290-4d67-41ff-a876-6f41f868e28f"
+
+    [<Literal>]
+    /// "9A66EB6A-DE52-4169-BC26-36FBD4312FD7"
+    let codeFixesOptionPageIdString = "9A66EB6A-DE52-4169-BC26-36FBD4312FD7"
