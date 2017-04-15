@@ -929,7 +929,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Removes items from the hierarchy. Project overwrites this
         /// </summary>
         /// <param name="removeFromStorage"></param>
-        public virtual void Remove(bool removeFromStorage)
+        public virtual void Remove(bool removeFromStorage, bool promptSave = true)
         {
             string documentToRemove = this.GetMkDocument();
 
@@ -945,7 +945,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             DocumentManager manager = this.GetDocumentManager();
             if (manager != null)
             {
-                if (manager.Close(!removeFromStorage ? __FRAMECLOSE.FRAMECLOSE_PromptSave : __FRAMECLOSE.FRAMECLOSE_NoSave) == VSConstants.E_ABORT)
+                if (manager.Close(promptSave ? __FRAMECLOSE.FRAMECLOSE_PromptSave : __FRAMECLOSE.FRAMECLOSE_NoSave) == VSConstants.E_ABORT)
                 {
                     // User cancelled operation in message box.
                     return;
@@ -964,7 +964,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // Remove child if any before removing from the hierarchy
             for (HierarchyNode child = this.FirstChild; child != null; child = child.NextSibling)
             {
-                child.Remove(removeFromStorage);
+                child.Remove(removeFromStorage: false, promptSave: promptSave);
             }
 
             HierarchyNode thisParentNode = this.parentNode;
@@ -1220,7 +1220,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public virtual int ExcludeFromProject()
         {
             Debug.Assert(this.ProjectMgr != null, "The project item " + this.ToString() + " has not been initialised correctly. It has a null ProjectMgr");
-            this.Remove(false);
+            this.Remove(removeFromStorage: false);
             return VSConstants.S_OK;
         }
 
@@ -2887,7 +2887,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             HierarchyNode node = this.projectMgr.NodeFromItemId(itemId);
             if (node != null)
             {
-                node.Remove((delItemOp & (uint)__VSDELETEITEMOPERATION.DELITEMOP_DeleteFromStorage) != 0);
+                var removeFromStorage = (delItemOp & (uint)__VSDELETEITEMOPERATION.DELITEMOP_DeleteFromStorage) != 0;
+                node.Remove(removeFromStorage, promptSave: !removeFromStorage);
                 return VSConstants.S_OK;
             }
 

@@ -1521,13 +1521,15 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Removes items from the hierarchy. 
         /// </summary>
         /// <devdoc>Project overwrites this.</devdoc>
-        public override void Remove(bool removeFromStorage)
+        public override void Remove(bool removeFromStorage, bool promptSave = true)
         {
             // the project will not be deleted from disk, just removed      
             if (removeFromStorage)
             {
                 return;
             }
+
+            Debug.Assert(promptSave, "Non-save prompting removal is not supported");
 
             // Remove the entire project from the solution
             IVsSolution solution = this.Site.GetService(typeof(SVsSolution)) as IVsSolution;
@@ -5387,7 +5389,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 throw new ArgumentException(SR.GetString(SR.ParameterMustBeAValidItemId, CultureInfo.CurrentUICulture), "itemId");
             }
-            n.Remove(true);
+            n.Remove(removeFromStorage: true, promptSave: false);
             result = 1;
             return VSConstants.S_OK;
         }

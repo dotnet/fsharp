@@ -974,7 +974,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                             }
                         }
 
-                        node.Remove(true);
+                        node.Remove(removeFromStorage: true, promptSave: false);
                     }
                     else if (w != null)
                     {
