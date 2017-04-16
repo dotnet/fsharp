@@ -34,13 +34,6 @@ module SR =
     let AddProjectReference = lazy (GetString "AddProjectReference")
     let AddAssemblyReference = lazy (GetString "AddAssemblyReference")
     
-    [<Literal>]
-    let IntelliSensePropertyPageMiscCategory = "IntelliSensePropertyPageMiscCategory"
-    [<Literal>]
-    let IntelliSensePropertyPageShowAfterCharIsTyped = "IntelliSensePropertyPageShowAfterCharIsTyped"
-    [<Literal>]
-    let IntelliSensePropertyPageShowAfterCharIsTypedDescr = "IntelliSensePropertyPageShowAfterCharIsTypedDescr"
-
     //--------------------------------------------------------------------------------------
     // Attributes used to mark up editable properties 
     
