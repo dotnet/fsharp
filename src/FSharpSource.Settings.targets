@@ -46,7 +46,7 @@
 
   <PropertyGroup Condition="'$(MonoPackaging)' != 'true' AND '$(OS)' != 'Unix'">
     <UseMicroBuild>true</UseMicroBuild> 
-    <UseSourceLink Condition = " '$(UseSourceLink)' == '' ">true</UseSourceLink>
+    <UseSourceLink Condition = " '$(UseSourceLink)' == '' AND '$(Configuration)'=='Release' ">true</UseSourceLink>
     <UseGatherBinaries>true</UseGatherBinaries>
     <AddVsSdkAttributesToSomeCoreComponents>true</AddVsSdkAttributesToSomeCoreComponents>
     <VsSDKInstall Condition=" '$(VsSDKInstall)' == '' ">$(MSBuildThisFileDirectory)..\packages\$(VSSDK_BUILDTOOLS_VERSION)\tools\vssdk</VsSDKInstall>
@@ -64,8 +64,7 @@
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <!-- Settings for Debug mode        -->
-    <DebugType Condition=" '$(DebugType)' == '' and '$(TargetFramework)' != 'coreclr' and '$(UseSourceLink)' != 'true' ">full</DebugType>
-    <DebugType Condition=" '$(DebugType)' == '' ">portable</DebugType>
+    <DebugType>full</DebugType>
 
     <Optimize Condition=" '$(Optimize)' == '' ">false</Optimize>
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
@@ -91,7 +90,7 @@
 
   <PropertyGroup Condition="'$(Configuration)'=='Proto'">
     <!-- Flags used when running the Proto compiler.		-->
-    <DebugType Condition=" '$(DebugType)' == '' ">embedded</DebugType>
+    <DebugType Condition=" '$(DebugType)' == '' ">full</DebugType>
     <Optimize>true</Optimize>
     <DefineConstants>DEBUG;NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
@@ -139,7 +138,7 @@
 
     <!-- FSharp.Compiler.Tools is currently only used to get a working FSI.EXE to execute some scripts during the build -->
     <!-- The LKG FSI.EXE requires MSBuild 15 to be installed, which is painful -->
-    <FsiToolPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.0.1.21\tools</FsiToolPath>
+    <FsiToolPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.5\tools</FsiToolPath>
   </PropertyGroup>
 
   <Import Project="../Tools/Build.Common.props" Condition="'$(TargetFramework)'=='coreclr'"/>

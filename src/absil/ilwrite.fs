@@ -3542,8 +3542,9 @@ let writeDirectory os dict =
 
 let writeBytes (os: BinaryWriter) (chunk:byte[]) = os.Write(chunk,0,chunk.Length)  
 
-let writeBinaryAndReportMappings (outfile, ilg: ILGlobals, pdbfile: string option, signer: ILStrongNameSigner option, portablePDB, embeddedPDB, embedAllSource, embedSourceList,
-                                  sourceLink, fixupOverlappingSequencePoints, emitTailcalls, showTimes, dumpDebugInfo) modul =
+let writeBinaryAndReportMappings (outfile, 
+                                  ilg: ILGlobals, pdbfile: string option, signer: ILStrongNameSigner option, portablePDB, embeddedPDB, 
+                                  embedAllSource, embedSourceList, sourceLink, emitTailcalls, showTimes, dumpDebugInfo) modul =
     // Store the public key from the signer into the manifest.  This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
 
@@ -3696,7 +3697,7 @@ let writeBinaryAndReportMappings (outfile, ilg: ILGlobals, pdbfile: string optio
           let pdbOpt =
             match portablePDB with
             | true  -> 
-                let (uncompressedLength, contentId, stream) as pdbStream = generatePortablePdb fixupOverlappingSequencePoints embedAllSource embedSourceList sourceLink showTimes pdbData 
+                let (uncompressedLength, contentId, stream) as pdbStream = generatePortablePdb embedAllSource embedSourceList sourceLink showTimes pdbData 
                 if embeddedPDB then Some (compressPortablePdbStream uncompressedLength contentId stream)
                 else Some (pdbStream)
             | _ -> None
@@ -4188,7 +4189,7 @@ let writeBinaryAndReportMappings (outfile, ilg: ILGlobals, pdbfile: string optio
     begin match pdbfile with
     | None -> ()
 #if ENABLE_MONO_SUPPORT
-    | Some fmdb when runningOnMono -> 
+    | Some fmdb when runningOnMono && not portablePDB ->
         writeMdbInfo fmdb outfile pdbData
 #endif
     | Some fpdb -> 
@@ -4204,7 +4205,7 @@ let writeBinaryAndReportMappings (outfile, ilg: ILGlobals, pdbfile: string optio
 #if FX_NO_PDB_WRITER
                     Array.empty<idd>
 #else
-                    writePdbInfo fixupOverlappingSequencePoints showTimes outfile fpdb pdbData debugDataChunk
+                    writePdbInfo showTimes outfile fpdb pdbData debugDataChunk
 #endif
             reportTime showTimes "Generate PDB Info"
 
@@ -4269,14 +4270,13 @@ type options =
      embedSourceList: string list
      sourceLink: string
      signer: ILStrongNameSigner option
-     fixupOverlappingSequencePoints: bool
      emitTailcalls : bool
      showTimes: bool
      dumpDebugInfo:bool }
 
 let WriteILBinary (outfile, (args: options), modul) =
-    writeBinaryAndReportMappings (outfile, args.ilg, args.pdbfile, args.signer, args.portablePDB, args.embeddedPDB, 
-                                  args.embedAllSource, args.embedSourceList, args.sourceLink, args.fixupOverlappingSequencePoints, 
-                                  args.emitTailcalls, args.showTimes, args.dumpDebugInfo) modul 
+    writeBinaryAndReportMappings (outfile, 
+                                  args.ilg, args.pdbfile, args.signer, args.portablePDB, args.embeddedPDB, args.embedAllSource, 
+                                  args.embedSourceList, args.sourceLink, args.emitTailcalls, args.showTimes, args.dumpDebugInfo) modul 
     |> ignore
 

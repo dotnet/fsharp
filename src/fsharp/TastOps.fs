@@ -6444,6 +6444,20 @@ let MultiLambdaToTupledLambda g vs body =
         tupledv, untupler body 
       
 
+let (|RefTuple|_|) expr = 
+    match expr with
+    | Expr.Op (TOp.Tuple (TupInfo.Const false),_,args,_) -> Some args
+    | _ -> None
+
+let MultiLambdaToTupledLambdaIfNeeded g (vs,arg) body = 
+    match vs,arg with 
+    | [],_ -> failwith "MultiLambdaToTupledLambda: expected some argments"
+    | [v],_ -> [(v,arg)],body 
+    | vs,RefTuple args when args.Length = vs.Length -> List.zip vs args,body
+    | vs,_  -> 
+        let tupledv, untupler =  untupledToRefTupled g vs
+        [(tupledv, arg)], untupler body 
+
 //--------------------------------------------------------------------------
 // Beta reduction via let-bindings. Reduce immediate apps. of lambdas to let bindings. 
 // Includes binding the immediate application of generic
@@ -6495,8 +6509,9 @@ let rec MakeApplicationAndBetaReduceAux g (f, fty, tyargsl : TType list list, ar
           match tryStripLambdaN argsl.Length f with 
           | Some (argvsl, body) -> 
                assert (argvsl.Length = argsl.Length)
-               let argvs,body = List.mapFoldBack (MultiLambdaToTupledLambda g) argvsl body
-               mkLetsBind m (mkCompGenBinds argvs argsl) body
+               let pairs,body = List.mapFoldBack (MultiLambdaToTupledLambdaIfNeeded g) (List.zip argvsl argsl) body
+               let argvs2, args2 = List.unzip (List.concat pairs)
+               mkLetsBind m (mkCompGenBinds argvs2 args2) body
           | _ -> 
               mkExprApplAux g f fty argsl m 
 

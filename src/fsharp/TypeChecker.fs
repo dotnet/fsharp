@@ -8236,7 +8236,7 @@ and TcSequenceExpression cenv env tpenv comp overallTy m =
 // unambiguously implies a function type 
 //------------------------------------------------------------------------- 
 
-and PropagateThenTcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag:ExprAtomicFlag) delayed = 
+and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed = 
     
     let rec propagate delayedList mExpr exprty = 
         match delayedList with 
@@ -8266,6 +8266,9 @@ and PropagateThenTcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFla
                     error (NotAFunction(denv,overallTy,mExpr,mArg)) 
 
     propagate delayed expr.Range exprty
+
+and PropagateThenTcDelayed cenv overallTy env tpenv mExpr expr exprty (atomicFlag:ExprAtomicFlag) delayed = 
+    Propagate cenv overallTy env tpenv expr exprty delayed
     TcDelayed cenv overallTy env tpenv mExpr expr exprty atomicFlag delayed
 
 
@@ -8677,10 +8680,90 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterOverloadResolution
 
         let expr = Expr.Op(TOp.TraitCall(traitInfo), [], ves, mItem)
         let expr = mkLambdas mItem [] vs (expr,retTy)
-        let resultExpr = PropagateThenTcDelayed cenv overallTy env tpenv mItem (MakeApplicableExprNoFlex cenv expr) (tyOfExpr cenv.g expr) ExprAtomicFlag.NonAtomic delayed
-        // Add the constraint after the arguments have been checked to allow annotations to kick in on rigid type parameters
+
+        let rec isSimpleArgument e =
+            match e with
+            | SynExpr.New(_, _, synExpr, _)  
+            | SynExpr.Paren(synExpr, _, _, _) 
+            | SynExpr.Typed(synExpr, _, _) 
+            | SynExpr.TypeApp (synExpr, _, _, _, _, _, _) 
+            | SynExpr.TypeTest (synExpr, _, _) 
+            | SynExpr.Upcast(synExpr, _, _) 
+            | SynExpr.DotGet(synExpr, _, _, _) 
+            | SynExpr.Downcast(synExpr, _, _) 
+            | SynExpr.InferredUpcast(synExpr, _) 
+            | SynExpr.InferredDowncast(synExpr, _) 
+            | SynExpr.AddressOf(_, synExpr, _, _) 
+            | SynExpr.Quote(_, _, synExpr, _, _) -> isSimpleArgument synExpr
+
+            | SynExpr.Null _
+            | SynExpr.Ident _ 
+            | SynExpr.Const _ 
+            | SynExpr.LongIdent _ -> true
+
+            | SynExpr.Tuple(synExprs, _, _) 
+            | SynExpr.StructTuple(synExprs, _, _) 
+            | SynExpr.ArrayOrList(_, synExprs, _) -> synExprs |> List.forall isSimpleArgument
+            | SynExpr.Record(_,copyOpt,fields, _) -> copyOpt |> Option.forall (fst >> isSimpleArgument) && fields |> List.forall (p23 >> Option.forall isSimpleArgument) 
+            | SynExpr.App (_, _, synExpr, synExpr2, _) -> isSimpleArgument synExpr && isSimpleArgument synExpr2
+            | SynExpr.IfThenElse(synExpr, synExpr2, synExprOpt, _, _, _, _) -> isSimpleArgument synExpr && isSimpleArgument synExpr2 && Option.forall isSimpleArgument synExprOpt
+            | SynExpr.DotIndexedGet(synExpr, _, _, _) ->  isSimpleArgument synExpr 
+            | SynExpr.ObjExpr _ 
+            | SynExpr.While _ 
+            | SynExpr.For _ 
+            | SynExpr.ForEach _ 
+            | SynExpr.ArrayOrListOfSeqExpr _ 
+            | SynExpr.CompExpr _ 
+            | SynExpr.Lambda _
+            | SynExpr.MatchLambda _ 
+            | SynExpr.Match _ 
+            | SynExpr.Do _ 
+            | SynExpr.Assert _ 
+            | SynExpr.Fixed _  
+            | SynExpr.TryWith _
+            | SynExpr.TryFinally _
+            | SynExpr.Lazy _
+            | SynExpr.Sequential _
+            | SynExpr.LetOrUse _ 
+            | SynExpr.DotSet _  
+            | SynExpr.DotIndexedSet _ 
+            | SynExpr.LongIdentSet _ 
+            | SynExpr.JoinIn _
+            | SynExpr.NamedIndexedPropertySet _ 
+            | SynExpr.DotNamedIndexedPropertySet _
+            | SynExpr.LibraryOnlyILAssembly _ 
+            | SynExpr.LibraryOnlyStaticOptimization _ 
+            | SynExpr.LibraryOnlyUnionCaseFieldGet _ 
+            | SynExpr.LibraryOnlyUnionCaseFieldSet _ 
+            | SynExpr.ArbitraryAfterError(_, _) 
+            | SynExpr.FromParseError(_, _) 
+            | SynExpr.DiscardAfterMissingQualificationAfterDot(_, _) 
+            | SynExpr.ImplicitZero  _
+            | SynExpr.YieldOrReturn _
+            | SynExpr.YieldOrReturnFrom _
+            | SynExpr.LetOrUseBang _
+            | SynExpr.DoBang _ 
+            | SynExpr.TraitCall _ 
+                -> false
+
+
+        // Propagte the known application structure into function types
+        Propagate cenv overallTy env tpenv (MakeApplicableExprNoFlex cenv expr) (tyOfExpr cenv.g expr) delayed
+
+        // Take all simple arguments and process them before applying the constraint.
+        let delayed1, delayed2 = 
+            let pred = (function (DelayedApp (_,arg,_)) -> isSimpleArgument arg | _ -> false)
+            List.takeWhile pred delayed, List.skipWhile pred delayed
+        let intermediateTy = if isNil delayed2 then overallTy else NewInferenceType ()
+
+        let resultExpr, tpenv = TcDelayed cenv intermediateTy env tpenv mItem (MakeApplicableExprNoFlex cenv expr) (tyOfExpr cenv.g expr) ExprAtomicFlag.NonAtomic delayed1
+
+        // Add the constraint after the application arguments have been checked to allow annotations to kick in on rigid type parameters
         AddCxMethodConstraint env.DisplayEnv cenv.css mItem NoTrace traitInfo
-        resultExpr
+
+        // Process all remaining arguments after the constraint is asserted
+        let resultExpr2, tpenv2 = TcDelayed cenv overallTy env tpenv mItem (MakeApplicableExprNoFlex cenv resultExpr) intermediateTy ExprAtomicFlag.NonAtomic delayed2
+        resultExpr2, tpenv2
       
         
     | Item.DelegateCtor typ ->

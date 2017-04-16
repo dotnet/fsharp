@@ -47,23 +47,35 @@ module private SessionHandling =
                   member __.AugmentQuickInfoSession(session,_,_) = currentSession <- Some session
                   member __.Dispose() = () }
 
-type internal SourceLink(run) as this = 
-    inherit Documents.Hyperlink(run)
-    
-    let lessOpacity =
+module private SourceLink =
+    let solid = 70uy, DashStyles.Solid
+    let dot = 255uy, DashStyle([1.0; 5.0], 0.0)
+    let dash = 90uy, DashStyle([5.0; 5.0], 0.0)
+    let none = 0uy, DashStyles.Solid
+    let opacityCoverter =
         { new IValueConverter with
-              member this.Convert(value, targetType, _, _) =
+              member this.Convert(value, _, parameter, _) =
                   match value with 
-                  | :? Color as c when targetType = typeof<Color> ->
-                      // return same color but slightly transparent
-                      Color.FromArgb(70uy, c.R, c.G, c.B) :> _
-                  | _ -> DependencyProperty.UnsetValue
-              member this.ConvertBack(_,_,_,_) = DependencyProperty.UnsetValue }
-    
+                  | :? Color as c -> Color.FromArgb(unbox parameter, c.R, c.G, c.B) :> _
+                  | _ -> Binding.DoNothing
+              member this.ConvertBack(_,_,_,_) = Binding.DoNothing }
+    let getUnderlineStyle() =
+        if not Settings.QuickInfo.DisplayLinks then none
+        else 
+            match Settings.QuickInfo.UnderlineStyle with
+            | QuickInfoUnderlineStyle.Solid -> solid
+            | QuickInfoUnderlineStyle.Dot -> dot
+            | QuickInfoUnderlineStyle.Dash -> dash
+
+
+type internal SourceLink(run) as this = 
+    inherit Documents.Hyperlink(run)   
+
+    let opacity, dashStyle = SourceLink.getUnderlineStyle()
     let underlineBrush = Media.SolidColorBrush()
-    do BindingOperations.SetBinding(underlineBrush, SolidColorBrush.ColorProperty, Binding("Foreground.Color", Source = this, Converter = lessOpacity)) |> ignore
+    do BindingOperations.SetBinding(underlineBrush, SolidColorBrush.ColorProperty, Binding("Foreground.Color", Source = this, Converter = SourceLink.opacityCoverter, ConverterParameter = opacity)) |> ignore
     let normalUnderline = TextDecorationCollection [TextDecoration(Location = TextDecorationLocation.Underline, PenOffset = 1.0)]
-    let slightUnderline = TextDecorationCollection [TextDecoration(Location = TextDecorationLocation.Underline, PenOffset = 1.0, Pen = Pen(Brush = underlineBrush))]
+    let slightUnderline = TextDecorationCollection [TextDecoration(Location = TextDecorationLocation.Underline, PenOffset = 1.0, Pen = Pen(Brush = underlineBrush, DashStyle = dashStyle))]
     do this.TextDecorations <- slightUnderline
 
     override this.OnMouseEnter(e) = 
@@ -114,7 +126,7 @@ module private FSharpQuickInfo =
             // project options need to be retrieved because the signature file could be in another project 
             let! extProjectOptions = projectInfoManager.TryGetOptionsForProject extDocId.ProjectId
             let extDefines = CompilerEnvironment.GetCompilationDefinesForEditing (extDocument.FilePath, List.ofSeq extProjectOptions.OtherOptions)
-            let! extLexerSymbol = Tokenizer.getSymbolAtPosition(extDocId, extSourceText, extSpan.Start, declRange.FileName, extDefines, SymbolLookupKind.Greedy)
+            let! extLexerSymbol = Tokenizer.getSymbolAtPosition(extDocId, extSourceText, extSpan.Start, declRange.FileName, extDefines, SymbolLookupKind.Greedy, true)
             let! _, _, extCheckFileResults = checker.ParseAndCheckDocument(extDocument,extProjectOptions,allowStaleResults=true,sourceText=extSourceText)
             
             let! extTooltipText = 
@@ -149,7 +161,7 @@ module private FSharpQuickInfo =
             let! sourceText = document.GetTextAsync cancellationToken
             let! projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.FilePath, projectOptions.OtherOptions |> Seq.toList)
-            let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy)
+            let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, true)
             let idRange = lexerSymbol.Ident.idRange  
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, allowStaleResults = true, sourceText=sourceText)
             let textLinePos = sourceText.Lines.GetLinePosition position
@@ -189,27 +201,30 @@ module private FSharpQuickInfo =
                 // the textSpan designating where we want the tooltip to appear.
                 let! targetTooltipInfo = getTargetSymbolTooltip()
                 
-                match findSigDeclarationResult with 
-                | FSharpFindDeclResult.DeclNotFound _ -> return symbolUse, None, Some targetTooltipInfo
-                | FSharpFindDeclResult.DeclFound declRange -> 
-                    if isSignatureFile declRange.FileName then 
-                        let! sigTooltipInfo = getTooltipFromRange(checker, projectInfoManager, document, declRange, cancellationToken)
-                        // if the target was declared in a signature file, and the current file
-                        // is not the corresponding module implementation file for that signature,
-                        // the doccoms from the signature will overwrite any doccoms that might be 
-                        // present on the definition/implementation
+                let! result =
+                    match findSigDeclarationResult with 
+                    | FSharpFindDeclResult.DeclFound declRange when isSignatureFile declRange.FileName ->
+                        asyncMaybe {
+                            let! sigTooltipInfo = getTooltipFromRange(checker, projectInfoManager, document, declRange, cancellationToken)
+                            
+                            // if the target was declared in a signature file, and the current file
+                            // is not the corresponding module implementation file for that signature,
+                            // the doccoms from the signature will overwrite any doccoms that might be 
+                            // present on the definition/implementation
+                            let! findImplDefinitionResult = 
+                                checkFileResults.GetDeclarationLocationAlternate
+                                    (idRange.StartLine, idRange.EndColumn, lineText, lexerSymbol.FullIsland, preferFlag=false) |> liftAsync   
+                            
+                            match findImplDefinitionResult  with 
+                            | FSharpFindDeclResult.DeclNotFound _ -> return symbolUse, Some sigTooltipInfo, None
+                            | FSharpFindDeclResult.DeclFound declRange -> 
+                                let! implTooltipInfo = getTooltipFromRange(checker, projectInfoManager, document, declRange, cancellationToken)
+                                return symbolUse, Some sigTooltipInfo, Some { implTooltipInfo with Span = targetTooltipInfo.Span }
+                        }
+                    | _ -> async.Return None
+                    |> liftAsync
                 
-                        let! findImplDefinitionResult = 
-                            checkFileResults.GetDeclarationLocationAlternate
-                                (idRange.StartLine, idRange.EndColumn, lineText, lexerSymbol.FullIsland, preferFlag=false) |> liftAsync   
-                
-                        match findImplDefinitionResult  with 
-                        | FSharpFindDeclResult.DeclNotFound _ -> return symbolUse, Some sigTooltipInfo, None
-                        | FSharpFindDeclResult.DeclFound declRange -> 
-                            let! implTooltipInfo = getTooltipFromRange(checker, projectInfoManager, document, declRange, cancellationToken)
-                            return symbolUse, Some sigTooltipInfo, Some { implTooltipInfo with Span = targetTooltipInfo.Span }
-                    else 
-                        return symbolUse, None, Some targetTooltipInfo
+                return result |> Option.defaultValue (symbolUse, None, Some targetTooltipInfo)
         }
 
 [<ExportQuickInfoProvider(PredefinedQuickInfoProviderNames.Semantic, FSharpConstants.FSharpLanguageName)>]
@@ -305,7 +320,7 @@ type internal FSharpQuickInfoProvider
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing (filePath, options.OtherOptions |> Seq.toList)
-            let! symbol = Tokenizer.getSymbolAtPosition (documentId, sourceText, position, filePath, defines, SymbolLookupKind.Precise)
+            let! symbol = Tokenizer.getSymbolAtPosition (documentId, sourceText, position, filePath, defines, SymbolLookupKind.Precise, true)
             let! res = checkFileResults.GetStructuredToolTipTextAlternate (textLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, FSharpTokenTag.IDENT) |> liftAsync
             match res with
             | FSharpToolTipText [] 

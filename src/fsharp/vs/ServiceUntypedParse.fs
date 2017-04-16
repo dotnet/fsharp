@@ -351,12 +351,24 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
             (fun () -> 
                 let locations = findBreakPoints()
                 
-                match locations |> List.filter (fun m -> rangeContainsPos m pos) with
-                | [] ->
-                    match locations |> List.filter (fun m -> rangeBeforePos m pos |> not) with
-                    | [] -> Seq.tryHead locations
-                    | locationsAfterPos -> Seq.tryHead locationsAfterPos
-                | coveringLocations -> Seq.tryLast coveringLocations)
+                if pos.Column = 0 then
+                    // we have a breakpoint that was set with mouse at line start
+                    match locations |> List.filter (fun m -> m.StartLine = m.EndLine && pos.Line = m.StartLine) with
+                    | [] ->
+                        match locations |> List.filter (fun m -> rangeContainsPos m pos) with
+                        | [] ->
+                            match locations |> List.filter (fun m -> rangeBeforePos m pos |> not) with
+                            | [] -> Seq.tryHead locations
+                            | locationsAfterPos -> Seq.tryHead locationsAfterPos
+                        | coveringLocations -> Seq.tryLast coveringLocations
+                    | locationsOnSameLine -> Seq.tryHead locationsOnSameLine
+                else
+                    match locations |> List.filter (fun m -> rangeContainsPos m pos) with
+                    | [] ->
+                        match locations |> List.filter (fun m -> rangeBeforePos m pos |> not) with
+                        | [] -> Seq.tryHead locations
+                        | locationsAfterPos -> Seq.tryHead locationsAfterPos
+                    | coveringLocations -> Seq.tryLast coveringLocations)
             (fun _msg -> None)
             
     /// When these files appear or disappear the configuration for the current project is invalidated.

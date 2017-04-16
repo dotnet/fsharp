@@ -18,53 +18,103 @@ open Microsoft.VisualStudio.FSharp.Editor.Structure
 
 module internal BlockStructure =
     let scopeToBlockType = function
-    | Scope.Open -> BlockTypes.Imports
-    | Scope.Namespace
-    | Scope.Module -> BlockTypes.Namespace 
-    | Scope.Record
-    | Scope.Interface
-    | Scope.TypeExtension
-    | Scope.RecordDefn
-    | Scope.CompExpr
-    | Scope.ObjExpr
-    | Scope.UnionDefn
-    | Scope.Attribute
-    | Scope.Type -> BlockTypes.Type
-    | Scope.New
-    | Scope.RecordField
-    | Scope.Member -> BlockTypes.Member
-    | Scope.LetOrUse
-    | Scope.Match
-    | Scope.MatchClause
-    | Scope.EnumCase
-    | Scope.UnionCase
-    | Scope.MatchLambda
-    | Scope.ThenInIfThenElse
-    | Scope.ElseInIfThenElse
-    | Scope.TryWith
-    | Scope.TryInTryWith
-    | Scope.WithInTryWith
-    | Scope.TryFinally
-    | Scope.TryInTryFinally
-    | Scope.FinallyInTryFinally
-    | Scope.IfThenElse-> BlockTypes.Conditional
-    | Scope.Tuple
-    | Scope.ArrayOrList
-    | Scope.CompExprInternal
-    | Scope.Quote
-    | Scope.SpecialFunc
-    | Scope.Lambda
-    | Scope.LetOrUseBang
-    | Scope.Val
-    | Scope.YieldOrReturn
-    | Scope.YieldOrReturnBang
-    | Scope.TryWith -> BlockTypes.Expression
-    | Scope.Do -> BlockTypes.Statement
-    | Scope.While
-    | Scope.For -> BlockTypes.Loop
-    | Scope.HashDirective -> BlockTypes.PreprocessorRegion
-    | Scope.Comment
-    | Scope.XmlDocComment -> BlockTypes.Comment
+        | Scope.Open -> BlockTypes.Imports
+        | Scope.Namespace
+        | Scope.Module -> BlockTypes.Namespace 
+        | Scope.Record
+        | Scope.Interface
+        | Scope.TypeExtension
+        | Scope.RecordDefn
+        | Scope.CompExpr
+        | Scope.ObjExpr
+        | Scope.UnionDefn
+        | Scope.Attribute
+        | Scope.Type -> BlockTypes.Type
+        | Scope.New
+        | Scope.RecordField
+        | Scope.Member -> BlockTypes.Member
+        | Scope.LetOrUse
+        | Scope.Match
+        | Scope.MatchClause
+        | Scope.EnumCase
+        | Scope.UnionCase
+        | Scope.MatchLambda
+        | Scope.ThenInIfThenElse
+        | Scope.ElseInIfThenElse
+        | Scope.TryWith
+        | Scope.TryInTryWith
+        | Scope.WithInTryWith
+        | Scope.TryFinally
+        | Scope.TryInTryFinally
+        | Scope.FinallyInTryFinally
+        | Scope.IfThenElse-> BlockTypes.Conditional
+        | Scope.Tuple
+        | Scope.ArrayOrList
+        | Scope.CompExprInternal
+        | Scope.Quote
+        | Scope.SpecialFunc
+        | Scope.Lambda
+        | Scope.LetOrUseBang
+        | Scope.Val
+        | Scope.YieldOrReturn
+        | Scope.YieldOrReturnBang
+        | Scope.TryWith -> BlockTypes.Expression
+        | Scope.Do -> BlockTypes.Statement
+        | Scope.While
+        | Scope.For -> BlockTypes.Loop
+        | Scope.HashDirective -> BlockTypes.PreprocessorRegion
+        | Scope.Comment
+        | Scope.XmlDocComment -> BlockTypes.Comment
+
+    let isAutoCollapsible = function
+        | Scope.New
+        | Scope.Attribute
+        | Scope.Member
+        | Scope.LetOrUse
+        | Scope.EnumCase
+        | Scope.UnionCase
+        | Scope.SpecialFunc
+        | Scope.HashDirective
+        | Scope.Comment
+        | Scope.Open
+        | Scope.XmlDocComment -> true
+
+        | Scope.Namespace
+        | Scope.Module
+        | Scope.Record
+        | Scope.Interface
+        | Scope.TypeExtension
+        | Scope.RecordDefn
+        | Scope.CompExpr
+        | Scope.ObjExpr
+        | Scope.UnionDefn
+        | Scope.Type
+        | Scope.RecordField
+        | Scope.Match
+        | Scope.MatchClause
+        | Scope.MatchLambda
+        | Scope.ThenInIfThenElse
+        | Scope.ElseInIfThenElse
+        | Scope.TryWith
+        | Scope.TryInTryWith
+        | Scope.WithInTryWith
+        | Scope.TryFinally
+        | Scope.TryInTryFinally
+        | Scope.FinallyInTryFinally
+        | Scope.IfThenElse
+        | Scope.Tuple
+        | Scope.ArrayOrList
+        | Scope.CompExprInternal
+        | Scope.Quote
+        | Scope.Lambda
+        | Scope.LetOrUseBang
+        | Scope.Val
+        | Scope.YieldOrReturn
+        | Scope.YieldOrReturnBang
+        | Scope.TryWith
+        | Scope.Do
+        | Scope.While
+        | Scope.For -> false
 
     let createBlockSpans (sourceText:SourceText) (parsedInput:Ast.ParsedInput) =
         let linetext = sourceText.Lines |> Seq.map (fun x -> x.ToString()) |> Seq.toArray
@@ -84,7 +134,7 @@ module internal BlockStructure =
                     | Some span -> sourceText.GetSubText(span).ToString()+"..."
                     | None -> "..."
 
-                Some <| (BlockSpan(scopeToBlockType scopeRange.Scope, true, textSpan,hintSpan,bannerText):BlockSpan)
+                Some (BlockSpan(scopeToBlockType scopeRange.Scope, true, textSpan, hintSpan, bannerText, autoCollapse = isAutoCollapsible scopeRange.Scope))
             | _, _ -> None
         )
 
