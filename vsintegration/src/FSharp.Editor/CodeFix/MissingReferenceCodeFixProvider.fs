@@ -61,7 +61,11 @@ type internal MissingReferenceCodeFixProvider() =
                 match parts with
                 | [| _; _type; _; assemblyName; _ |] ->
 
-                    let exactProjectMatches = solution.Projects |> Seq.tryFind (fun project -> project.AssemblyName = assemblyName)
+                    let exactProjectMatches =
+                        solution.Projects
+                        |> Seq.tryFind (fun project ->
+                            String.Compare(project.AssemblyName, assemblyName, StringComparison.OrdinalIgnoreCase) = 0
+                            )
                 
                     match exactProjectMatches with
                     | Some refProject ->
@@ -78,7 +82,8 @@ type internal MissingReferenceCodeFixProvider() =
                             solution.Projects
                             |> Seq.collect (fun project -> project.MetadataReferences)
                             |> Seq.tryFind (fun ref ->
-                                Path.GetFileNameWithoutExtension(ref.Display) = assemblyName
+                                let referenceAssemblyName = Path.GetFileNameWithoutExtension(ref.Display)
+                                String.Compare(referenceAssemblyName, assemblyName, StringComparison.OrdinalIgnoreCase) = 0
                                 )
                         
                         match metadataReferences with
