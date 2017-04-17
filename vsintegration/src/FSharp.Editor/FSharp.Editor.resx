@@ -170,5 +170,7 @@
   </data>
   <data name="AddProjectReference" xml:space="preserve">
     <value>Add a project reference to '{0}'</value>
+  <data name="6010" xml:space="preserve">
+    <value>Code Fixes</value>
   </data>
 </root>

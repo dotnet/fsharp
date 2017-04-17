@@ -70,6 +70,8 @@
     <Compile Include="Navigation\NavigationBarItemService.fs" />
     <Compile Include="Navigation\NavigateToSearchService.fs" />
     <Compile Include="Navigation\FindUsagesService.fs" />
+    <Compile Include="QuickInfo\Navigation.fs" />
+    <Compile Include="QuickInfo\Views.fs" />
     <Compile Include="QuickInfo\QuickInfoProvider.fs" />
     <Compile Include="BlockComment\CommentUncommentService.fs" />
     <Compile Include="Structure\Structure.fs" />
