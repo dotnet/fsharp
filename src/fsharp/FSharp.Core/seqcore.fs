@@ -376,9 +376,9 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                         consumer.ProcessNext enumerator.Current |> ignore
 
                     consumer.ChainComplete result.HaltedIdx
-                    result.Result
                 finally
                     consumer.ChainDispose ()
+                result.Result
 
     and ConcatCommon<'T>(consumer:Activity<'T>) =
         inherit Folder<'T,NoValue>(Unchecked.defaultof<_>)
@@ -533,9 +533,9 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                     iterate alist
 
                     consumer.ChainComplete result.HaltedIdx
-                    result.Result
                 finally
                     consumer.ChainDispose ()
+                result.Result
 
     /// ThinEnumerable is used when the IEnumerable provided to ofSeq is neither an array or a list
     type ThinEnumerable<'T>(enumerable:IEnumerable<'T>) =
@@ -661,9 +661,9 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                         idx <- idx + 1
 
                     consumer.ChainComplete result.HaltedIdx
-                    result.Result
                 finally
                     consumer.ChainDispose ()
+                result.Result
 
     type ThinArrayEnumerable<'T>(array:array<'T>) =
         inherit EnumerableBase<'T>()
@@ -759,9 +759,9 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                         idx <- idx + 1
 
                     consumer.ChainComplete result.HaltedIdx
-                    result.Result
                 finally
                     consumer.ChainDispose ()
+                result.Result
 
     type ThinResizeArrayEnumerable<'T>(resizeArray:ResizeArray<'T>) =
         inherit EnumerableBase<'T>()
@@ -840,9 +840,9 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                     iterate state
 
                     consumer.ChainComplete result.HaltedIdx
-                    result.Result
                 finally
                     consumer.ChainDispose ()
+                result.Result
 
     let getInitTerminatingIdx (count:Nullable<int>) =
         // we are offset by 1 to allow for values going up to System.Int32.MaxValue
@@ -938,9 +938,9 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                         raise <| System.InvalidOperationException (SR.GetString(SR.enumerationPastIntMaxValue))
 
                     consumer.ChainComplete result.HaltedIdx
-                    result.Result
                 finally
                     consumer.ChainDispose ()
+                result.Result
 
     // The original implementation of "init" delayed the calculation of Current, and so it was possible
     // to do MoveNext without it's value being calculated.
@@ -1371,7 +1371,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
                             consumer.ProcessNext e.Current |> ignore
 
                     consumer.ChainComplete result.HaltedIdx
-                    result.Result
                 finally
                     consumer.ChainDispose ()
+                result.Result
 
