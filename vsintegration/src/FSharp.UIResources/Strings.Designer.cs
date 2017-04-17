@@ -61,6 +61,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Code Fixes.
+        /// </summary>
+        public static string Code_Fixes {
+            get {
+                return ResourceManager.GetString("Code_Fixes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Completion Lists.
         /// </summary>
         public static string Completion_Lists {
@@ -120,6 +129,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Show_navigation_links_as {
             get {
                 return ResourceManager.GetString("Show_navigation_links_as", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Simplify Name.
+        /// </summary>
+        public static string Simplify_name_code_fix {
+            get {
+                return ResourceManager.GetString("Simplify_name_code_fix", resourceCulture);
             }
         }
         
