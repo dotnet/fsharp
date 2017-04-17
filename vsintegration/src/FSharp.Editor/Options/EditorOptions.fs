@@ -22,6 +22,10 @@ type QuickInfoOptions() =
     member val DisplayLinks = true with get, set
     member val UnderlineStyle = QuickInfoUnderlineStyle.Solid with get, set
 
+[<CLIMutable>]
+type CodeFixesOptions =
+    { SimplifyName: bool }
+
 [<Export(typeof<ISettings>)>]
 type internal Settings [<ImportingConstructor>](store: SettingsStore) =
     do  // Initialize default settings
@@ -33,10 +37,14 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
         QuickInfoOptions() 
         |> store.RegisterDefault
 
+        { SimplifyName = true }
+        |> store.RegisterDefault
+
     interface ISettings
 
     static member IntelliSense : IntelliSenseOptions = getSettings()
     static member QuickInfo : QuickInfoOptions = getSettings()
+    static member CodeFixes : CodeFixesOptions = getSettings()
 
 module internal OptionsUI =
 
@@ -59,3 +67,9 @@ module internal OptionsUI =
             bindRadioButton view.dash path QuickInfoUnderlineStyle.Dash
             bindCheckBox view.displayLinks "DisplayLinks"
             upcast view
+
+    [<Guid(Guids.codeFixesOptionPageIdString)>]
+    type internal CodeFixesOptionPage() =
+        inherit AbstractOptionPage<CodeFixesOptions>()
+        override this.CreateView() =
+            upcast CodeFixesOptionControl()            

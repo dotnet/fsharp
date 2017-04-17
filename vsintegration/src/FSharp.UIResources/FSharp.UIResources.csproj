@@ -54,6 +54,9 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CodeFixesOptionControl.xaml.cs">
+      <DependentUpon>CodeFixesOptionControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="IntelliSenseOptionControl.xaml.cs">
       <DependentUpon>IntelliSenseOptionControl.xaml</DependentUpon>
     </Compile>
@@ -69,6 +72,10 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Page Include="CodeFixesOptionControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="IntelliSenseOptionControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

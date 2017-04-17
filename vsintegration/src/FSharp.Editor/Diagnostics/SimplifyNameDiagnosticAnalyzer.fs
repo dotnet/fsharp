@@ -3,7 +3,6 @@
 namespace rec Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Composition
 open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
@@ -20,7 +19,7 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 type private TextVersionHash = int
 
 // TODO Turn it on when user settings dialog is ready to switch it on and off.
-// [<DiagnosticAnalyzer(FSharpCommonConstants.FSharpLanguageName)>]
+[<DiagnosticAnalyzer(FSharpConstants.FSharpLanguageName)>]
 type internal SimplifyNameDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
     
@@ -47,6 +46,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) =
         asyncMaybe {
+            do! Option.guard Settings.CodeFixes.SimplifyName
             let! options = getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document)
             let! textVersion = document.GetTextVersionAsync(cancellationToken)
             let textVersionHash = textVersion.GetHashCode()
@@ -70,7 +70,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                             // so we have to calculate plid's start ourselves.
                             let plidStartCol = symbolUse.RangeAlternate.EndColumn - name.Length - (getPlidLength plid)
                             symbolUse, plid, plidStartCol, name)
-                        |> Array.filter (fun (_, plid, _, _) -> not (List.isEmpty plid))
+                        |> Array.filter (fun (_, plid, _, name) -> name <> "" && not (List.isEmpty plid))
                         |> Array.groupBy (fun (symbolUse, _, plidStartCol, _) -> symbolUse.RangeAlternate.StartLine, plidStartCol)
                         |> Array.map (fun (_, xs) -> xs |> Array.maxBy (fun (symbolUse, _, _, _) -> symbolUse.RangeAlternate.EndColumn))
                     

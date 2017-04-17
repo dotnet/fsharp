@@ -165,4 +165,7 @@
   <data name="6009" xml:space="preserve">
     <value>QuickInfo</value>
   </data>
+  <data name="6010" xml:space="preserve">
+    <value>Code Fixes</value>
+  </data>
 </root>
