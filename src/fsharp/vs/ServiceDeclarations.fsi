@@ -101,7 +101,7 @@ type internal FSharpDeclarationListItem =
     member Name : string
     /// Get the name for the declaration as it's presented in source code.
     member NameInCode : string
-    /// Get the description text for the declaration. Commputing this property may require using compiler
+    /// Get the description text for the declaration. Computing this property may require using compiler
     /// resources and may trigger execution of a type provider method to retrieve documentation.
     ///
     /// May return "Loading..." if timeout occurs
@@ -112,7 +112,6 @@ type internal FSharpDeclarationListItem =
     member StructuredDescriptionTextAsync : Async<FSharpStructuredToolTipText>
     member DescriptionTextAsync : Async<FSharpToolTipText>
     member Glyph : FSharpGlyph
-    member IsAttribute : bool
     member Accessibility : FSharpAccessibility option
     member Kind : CompletionItemKind
     member IsOwnMember : bool
@@ -141,9 +140,10 @@ type internal CompletionItem =
 type internal FSharpDeclarationListInfo =
     member Items : FSharpDeclarationListItem[]
     member IsForType : bool
+    member IsError : bool
 
     // Implementation details used by other code in the compiler    
-    static member internal Create : infoReader:InfoReader * m:range * denv:DisplayEnv * getAccessibility:(Item -> FSharpAccessibility option) * items:CompletionItem list * reactor:IReactorOperations * currentNamespace:string[] option * checkAlive:(unit -> bool) -> FSharpDeclarationListInfo
+    static member internal Create : infoReader:InfoReader * m:range * denv:DisplayEnv * getAccessibility:(Item -> FSharpAccessibility option) * items:CompletionItem list * reactor:IReactorOperations * currentNamespace:string[] option * isAttributeApplicationContex:bool * checkAlive:(unit -> bool) -> FSharpDeclarationListInfo
     static member internal Error : message:string -> FSharpDeclarationListInfo
     static member Empty : FSharpDeclarationListInfo
 

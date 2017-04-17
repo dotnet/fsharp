@@ -17,7 +17,7 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 
-[<ExportCodeFixProvider(FSharpCommonConstants.FSharpLanguageName, Name = "AddOpen"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "AddOpen"); Shared>]
 type internal FSharpAddOpenCodeFixProvider
     [<ImportingConstructor>]
     (
@@ -38,7 +38,7 @@ type internal FSharpAddOpenCodeFixProvider
                 async {
                     let! sourceText = context.Document.GetTextAsync()
                     return context.Document.WithText(sourceText.Replace(context.Span, qualifier))
-                } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken))
+                } |> RoslynHelpers.StartAsyncAsTask(cancellationToken))
 
     let openNamespaceFix (context: CodeFixContext) ctx name ns multipleNames = 
         let displayText = "open " + ns + if multipleNames then " (" + name + ")" else ""
@@ -50,7 +50,7 @@ type internal FSharpAddOpenCodeFixProvider
                     let! sourceText = context.Document.GetTextAsync()
                     let changedText, _ = OpenDeclarationHelper.insertOpenDeclaration sourceText ctx ns
                     return context.Document.WithText(changedText)
-                } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
+                } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
             displayText)
 
     let getSuggestions (context: CodeFixContext) (candidates: (Entity * InsertContext) list) : unit =
@@ -101,7 +101,7 @@ type internal FSharpAddOpenCodeFixProvider
             
             let! symbol = 
                 asyncMaybe {
-                    let! lexerSymbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, context.Span.End, document.FilePath, defines, SymbolLookupKind.Greedy)
+                    let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, context.Span.End, document.FilePath, defines, SymbolLookupKind.Greedy, false)
                     return! checkResults.GetSymbolUseAtLocation(Line.fromZ linePos.Line, lexerSymbol.Ident.idRange.EndColumn, line.ToString(), lexerSymbol.FullIsland)
                 } |> liftAsync
 
@@ -145,5 +145,5 @@ type internal FSharpAddOpenCodeFixProvider
             return entities |> Seq.map createEntity |> Seq.concat |> Seq.toList |> getSuggestions context
         } 
         |> Async.Ignore 
-        |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+        |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
  

@@ -32,13 +32,6 @@ module SR =
     let TheValueIsUnused = lazy (GetString "TheValueIsUnused")
     let RemoveUnusedOpens = lazy (GetString "RemoveUnusedOpens")
     let UnusedOpens = lazy (GetString "UnusedOpens")
-    
-    [<Literal>]
-    let IntelliSensePropertyPageMiscCategory = "IntelliSensePropertyPageMiscCategory"
-    [<Literal>]
-    let IntelliSensePropertyPageShowAfterCharIsTyped = "IntelliSensePropertyPageShowAfterCharIsTyped"
-    [<Literal>]
-    let IntelliSensePropertyPageShowAfterCharIsTypedDescr = "IntelliSensePropertyPageShowAfterCharIsTypedDescr"
 
     //--------------------------------------------------------------------------------------
     // Attributes used to mark up editable properties 

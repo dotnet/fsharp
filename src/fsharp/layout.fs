@@ -14,13 +14,12 @@ type layout = Internal.Utilities.StructuredFormat.Layout
 type LayoutTag = Internal.Utilities.StructuredFormat.LayoutTag
 type TaggedText = Internal.Utilities.StructuredFormat.TaggedText
 
-type NavigableTaggedText(tag, text, range: Range.range) =
+type NavigableTaggedText(taggedText: TaggedText, range: Range.range) =
     member val Range = range
     interface TaggedText with
-        member x.Tag = tag
-        member x.Text = text
-    static member Create(tt: TaggedText, range) =
-        NavigableTaggedText(tt.Tag, tt.Text, range)      
+        member x.Tag = taggedText.Tag
+        member x.Text = taggedText.Text
+let mkNav r t = NavigableTaggedText(t, r) :> TaggedText
 
 let spaces n = new String(' ',n)
 

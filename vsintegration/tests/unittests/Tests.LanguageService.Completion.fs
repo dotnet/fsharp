@@ -182,8 +182,9 @@ type UsingMSBuild() as this  =
           shouldContain // should contain
           shouldNotContain
 
-    member public this.AutoCompleteBug70080Helper(programText:string) =
-        this.AutoCompleteBug70080HelperHelper(programText, ["AttributeUsageAttribute"], [])
+    member public this.AutoCompleteBug70080Helper(programText:string, ?withSuffix: bool) =
+        let expected = if defaultArg withSuffix false then "AttributeUsageAttribute" else "AttributeUsage"
+        this.AutoCompleteBug70080HelperHelper(programText, [expected], [])
 
     member private this.testAutoCompleteAdjacentToDot op =
         let text = sprintf "System.Console%s" op
@@ -3516,17 +3517,17 @@ let x = query { for bbbb in abbbbc(*D0*) do
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToType.Bug70080``() =        
-        this.AutoCompleteBug70080Helper @"
+        this.AutoCompleteBug70080Helper(@"
                     open System
                     [<Attr     // expect AttributeUsageAttribute from System namespace
-                    type MyAttr() = inherit Attribute()"
+                    type MyAttr() = inherit Attribute()", true)
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToNothing.Bug70080``() =        
-        this.AutoCompleteBug70080Helper @"
+        this.AutoCompleteBug70080Helper(@"
                     open System
                     [<Attr     // expect AttributeUsageAttribute from System namespace
-                    // nothing here"
+                    // nothing here", true)
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToLetInNamespace.Bug70080``() =        
@@ -3538,36 +3539,36 @@ let x = query { for bbbb in abbbbc(*D0*) do
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToTypeInNamespace.Bug70080``() =        
-        this.AutoCompleteBug70080Helper @"
+        this.AutoCompleteBug70080Helper(@"
                     namespace Foo
                     open System
                     [<Attr     // expect AttributeUsageAttribute from System namespace
-                    type MyAttr() = inherit Attribute()"
+                    type MyAttr() = inherit Attribute()", true)
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToNothingInNamespace.Bug70080``() =        
-        this.AutoCompleteBug70080Helper @"
+        this.AutoCompleteBug70080Helper(@"
                     namespace Foo
                     open System
                     [<Attr     // expect AttributeUsageAttribute from System namespace
-                    // nothing here"
+                    // nothing here", true)
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToModuleInNamespace.Bug70080``() =        
-        this.AutoCompleteBug70080Helper @"
+        this.AutoCompleteBug70080Helper(@"
                     namespace Foo
                     open System
                     [<Attr     // expect AttributeUsageAttribute from System namespace
                     module Foo = 
-                        let x = 42"
+                        let x = 42", true)
 
     [<Test>]
     member public this.``Attribute.WhenAttachedToModule.Bug70080``() =        
-        this.AutoCompleteBug70080Helper @"
+        this.AutoCompleteBug70080Helper(@"
                     open System
                     [<Attr     // expect AttributeUsageAttribute from System namespace
                     module Foo = 
-                        let x = 42"
+                        let x = 42", true)
 
     [<Test>]
     member public this.``Identifer.InMatchStatemente.Bug72595``() =        
@@ -6030,7 +6031,7 @@ let rec f l =
                     let f (x:MyNamespace1.MyModule(*Maftervariable4*)) = 10
                     let y = int System.IO(*Maftervariable5*)""",
             marker = "(*Maftervariable2*)",
-            list = ["DuType";"Pet";"Dog"])
+            list = [])
 
     [<Test>]
     member this.``VariableIdentifier.MethodsInheritFomeBase``() = 
@@ -6107,7 +6108,7 @@ let rec f l =
                 type TestAttribute() = 
                     member x.print() = "print" """,
             marker = "(*Mattribute*)",
-            list = ["Int32";"ObsoleteAttribute"])
+            list = ["Obsolete"])
 
     [<Test>]
     member this.``ImportStatment.System.ImportDirectly``() = 
@@ -6207,7 +6208,7 @@ let rec f l =
                     let result5 = CopyFile_Arrays(tempFile1.ToCharArray(), tempFile2.ToCharArray(), false)
                     printfn "WithAttribute %A" result5""",
             marker = "(*Mpinvokeattribute*)",
-            list = ["SomeAttrib";"myclass"]) 
+            list = ["SomeAttrib"]) 
 
     [<Test>]
     member this.``LongIdent.PInvoke.AsParameterType``() = 
@@ -6296,7 +6297,7 @@ let rec f l =
                     let f (x:int) = MyNamespace1.MyModule.DuType(*Mtypeparameter2*)    
                     let typeFunc<[<MyNamespace1.MyModule(*Mtypeparameter3*)>] 'a> = 10""",
             marker = "(*Mtypeparameter3*)",
-            list = ["Dog";"DuType"])
+            list = [])
 
     [<Test>]
     member this.``RedefinedIdentifier.DiffScope.InScope.Positive``() =

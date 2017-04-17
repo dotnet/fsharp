@@ -2,6 +2,8 @@ namespace ThisNamespaceHasToBeTheSame
 
 #nowarn "9"
 
+open System
+
 open System.Runtime.InteropServices
 
 [<Struct>]
@@ -131,3 +133,28 @@ do()
 
 [<System.Runtime.CompilerServices.InternalsVisibleToAttribute("lib3--optimize")>]
 do()
+
+[<NoEquality; NoComparison>]
+[<Struct>]
+type StructInt32 =
+    val mutable Value: int32
+    new(value) = { Value = value }
+    static member Write(value, x: StructInt32 byref) =
+        x.Value <- value;
+    static member inline InlineWrite(value, x: StructInt32 byref) =
+        x.Value <- value;
+
+module PeverifyTest = 
+    // The test here is simply to peverify the code
+    let ``StaticWriteResultANewValue`` () =
+        let mutable v = StructInt32(3);
+        StructInt32.Write(2, &v);
+        let result = v.Value
+        (2, result)
+
+    // The test here is simply to peverify the code
+    let ``StaticInlineWriteResultANewValue`` () =
+        let mutable v = StructInt32(3)
+        StructInt32.InlineWrite(2, &v)
+        let result = v.Value
+        (2, result)

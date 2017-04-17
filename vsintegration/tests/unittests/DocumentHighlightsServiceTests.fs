@@ -58,7 +58,7 @@ let private getSpans (sourceText: SourceText) (caretPosition: int) =
 let private span sourceText isDefinition (startLine, startCol) (endLine, endCol) =
     let range = Range.mkRange filePath (Range.mkPos startLine startCol) (Range.mkPos endLine endCol)
     { IsDefinition = isDefinition
-      TextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range) }
+      TextSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range) }
 
 [<Test>]
 let ShouldHighlightAllSimpleLocalSymbolReferences() =

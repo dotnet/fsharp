@@ -187,7 +187,7 @@ type MapType() =
         Assert.IsFalse( b.Equals(a) )
         Assert.IsFalse( a.Equals(b) )
         
-        // Co/contra varience not supported
+        // Co/contra variance not supported
         let a = ([] : (string*string) list) |> Map.ofList
         let b = ([] : (System.IComparable*System.IComparable) list)    |> Map.ofList
         Assert.IsFalse(a.Equals(b))
