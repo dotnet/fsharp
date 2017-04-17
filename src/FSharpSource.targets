@@ -448,7 +448,8 @@
 
     <NugetRestoreCommand>"$(NuGetToolPath)NuGet.exe install -OutputDirectory "$(PackagesDir)" -Config "$(NuGetToolPath)NuGet.Config"</NugetRestoreCommand>
 
-    <DnuRestoreCommand>"$(NuGetToolPath)NuGet.exe" restore -OutputDirectory "$(PackagesDir)" -Config "$(NuGetToolPath)NuGet.Config"</DnuRestoreCommand>
+    <DnuRestoreCommand Condition="'$(OS)' != 'Unix'">"$(NuGetToolPath)NuGet.exe" restore -OutputDirectory "$(PackagesDir)" -Config "$(NuGetToolPath)NuGet.Config"</DnuRestoreCommand>
+    <DnuRestoreCommand Condition="'$(OS)' == 'Unix'">mono "$(NuGetToolPath)NuGet.exe" restore -OutputDirectory "$(PackagesDir)" -Config "$(NuGetToolPath)NuGet.Config"</DnuRestoreCommand>
 
     <!-- Current version of .NET Core does not support all semantics used in our packages, 
          so we ignore the pre-calculation in the lock file and calculate asset applicability in the build task -->

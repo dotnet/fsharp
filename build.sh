@@ -427,7 +427,13 @@ if [ "$BUILD_PROTO_WITH_CORECLR_LKG" = '1' ]; then
     fi
 fi
 
-# TODO: Check for existence of fsi (either on the system, or from the FSharp.Compiler.Tools package that was restored).
+export _dotnetexe="${_scriptdir}Tools/dotnetcli/dotnet.exe"
+export NUGET_PACKAGES="${_scriptdir}packages/"
+
+export _fsiexe="${NUGET_PACKAGES}FSharp.Compiler.Tools.4.0.1.21/tools/fsi.exe"
+if [ ! -f "$_fsiexe" ]; then
+    failwith "Could not find fsi.exe at $_fsiexe"
+fi
 
 build_status "Done with package restore, starting proto"
 
@@ -436,8 +442,8 @@ if [ ! -f "Proto/net40/bin/fsc-proto.exe" ]; then
   export BUILD_PROTO=1
 fi
 
-_dotnetexe=dotnet
-_architecture=win7-x64
+export _dotnetexe="${_scriptdir}Tools/dotnetcli/dotnet.exe"
+export _architecture="osx-x64"
 
 # Build Proto
 if [ "$BUILD_PROTO" = '1' ]; then
@@ -479,7 +485,7 @@ if [ "$BUILD_NET40" = '1' ]; then
 #    fi
 fi
 
-NUNITPATH="packages/NUnit.Console.3.0.0/tools/"
+NUNITPATH="${NUGET_PACKAGES}NUnit.Console.3.0.0/tools/"
 printf "set NUNITPATH=%s\n" "$NUNITPATH"
 if [ ! -d "$NUNITPATH" ]; then
     failwith "Could not find $NUNITPATH"
