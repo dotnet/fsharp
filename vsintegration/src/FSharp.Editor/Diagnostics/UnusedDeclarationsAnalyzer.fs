@@ -12,7 +12,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Diagnostics
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
-[<DiagnosticAnalyzer(FSharpCommonConstants.FSharpLanguageName)>]
+[<DiagnosticAnalyzer(FSharpConstants.FSharpLanguageName)>]
 type internal UnusedDeclarationsAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
     
@@ -32,13 +32,13 @@ type internal UnusedDeclarationsAnalyzer() =
     
     let symbolUseComparer =
         { new IEqualityComparer<FSharpSymbolUse> with
-              member __.Equals (x, y) = x.Symbol.IsEffectivelySameAs y.Symbol
-              member __.GetHashCode x = x.Symbol.GetHashCode() }
+            member __.Equals (x, y) = x.Symbol.IsEffectivelySameAs y.Symbol
+            member __.GetHashCode x = x.Symbol.GetHashCode() }
 
     let symbolComparer =
         { new IEqualityComparer<FSharpSymbol> with
-              member __.Equals (x, y) = x.IsEffectivelySameAs y
-              member __.GetHashCode x = x.GetHashCode() }
+            member __.Equals (x, y) = x.IsEffectivelySameAs y
+            member __.GetHashCode x = x.GetHashCode() }
 
     let countSymbolsUses (symbolsUses: FSharpSymbolUse[]) =
         let result = Dictionary<FSharpSymbolUse, int>(symbolUseComparer)
@@ -71,10 +71,12 @@ type internal UnusedDeclarationsAnalyzer() =
         HashSet(declarations, symbolComparer)
 
     override __.SupportedDiagnostics = ImmutableArray.Create Descriptor
+    
+    override this.AnalyzeSyntaxAsync(_, _) = Task.FromResult ImmutableArray<Diagnostic>.Empty
 
-    override this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken) =
+    override this.AnalyzeSemanticsAsync(document, cancellationToken) =
         asyncMaybe {
-            match getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document) with 
+            match getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document) with
             | Some options ->
                 let! sourceText = document.GetTextAsync()
                 let checker = getChecker document
@@ -96,14 +98,12 @@ type internal UnusedDeclarationsAnalyzer() =
                          |> Seq.map (fun symbolUse ->
                              Diagnostic.Create(
                                  Descriptor,
-                                 CommonRoslynHelpers.RangeToLocation(symbolUse.RangeAlternate, sourceText, document.FilePath)))
+                                 RoslynHelpers.RangeToLocation(symbolUse.RangeAlternate, sourceText, document.FilePath)))
                         ).ToImmutableArray()
             | None -> return ImmutableArray.Empty
         }
         |> Async.map (Option.defaultValue ImmutableArray.Empty)
-        |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
-
-    override this.AnalyzeSemanticsAsync(_, _) = Task.FromResult ImmutableArray<Diagnostic>.Empty
+        |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
     interface IBuiltInAnalyzer with
         member __.OpenFileOnly _ = true
