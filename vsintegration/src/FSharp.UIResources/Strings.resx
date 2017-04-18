@@ -142,9 +142,12 @@
     <value>S_how navigation links as</value>
   </data>
   <data name="Simplify_name_code_fix" xml:space="preserve">
-    <value>Simplify Name</value>
+    <value>Simplify names (remove unnecessary qualifiers)</value>
   </data>
   <data name="Solid_underline" xml:space="preserve">
     <value>_Solid underline</value>
+  </data>
+  <data name="Unused_opens_code_fix" xml:space="preserve">
+    <value>Remove unused open statements</value>
   </data>
 </root>
