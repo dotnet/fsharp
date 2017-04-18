@@ -1897,7 +1897,7 @@ let rec getTypeRefsInType (allTypes: AllTypes) typ acc =
     | ILType.FunctionPointer _callsig -> failwith "getTypeRefsInType: fptr"
     | ILType.Modified _   -> failwith "getTypeRefsInType: modified"
 
-let verbose2 = true
+let verbose2 = false
 
 let createTypeRef (visited : Dictionary<_,_>, created : Dictionary<_,_>) emEnv tref = 
 
