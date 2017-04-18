@@ -21,7 +21,8 @@
                     <StackPanel>
                         <CheckBox x:Name="simplifyName" IsChecked="{Binding SimplifyName}"
                                   Content="{x:Static local:Strings.Simplify_name_code_fix}"/>
-                        <StackPanel Margin="15 0 0 0"/>
+                        <CheckBox x:Name="unusedOpens" IsChecked="{Binding UnusedOpens}"
+                                  Content="{x:Static local:Strings.Unused_opens_code_fix}"/>
                     </StackPanel>
                 </GroupBox>
             </StackPanel>

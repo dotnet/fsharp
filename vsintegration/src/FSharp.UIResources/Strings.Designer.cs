@@ -133,7 +133,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Simplify Name.
+        ///   Looks up a localized string similar to Simplify names (remove unnecessary qualifiers).
         /// </summary>
         public static string Simplify_name_code_fix {
             get {
@@ -147,6 +147,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         public static string Solid_underline {
             get {
                 return ResourceManager.GetString("Solid_underline", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Remove unused open statements.
+        /// </summary>
+        public static string Unused_opens_code_fix {
+            get {
+                return ResourceManager.GetString("Unused_opens_code_fix", resourceCulture);
             }
         }
     }
