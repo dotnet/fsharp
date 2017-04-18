@@ -3733,11 +3733,11 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         inherit Activity<'T,'T>
 
         val mutable Result : 'Result
-
         val mutable HaltedIdx : int
-        member this.StopFurtherProcessing pipeIdx = this.HaltedIdx <- pipeIdx
+
         interface IOutOfBand with
-            member this.StopFurtherProcessing pipeIdx = this.StopFurtherProcessing pipeIdx
+            member this.StopFurtherProcessing pipeIdx = 
+                this.HaltedIdx <- pipeIdx
 
         new (initalResult) = {
             inherit Activity<'T,'T>()
