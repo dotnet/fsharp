@@ -1,4 +1,4 @@
-﻿namespace Microsoft.VisualStudio.FSharp.Editor
+namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.ComponentModel.Composition
 open System.Runtime.InteropServices
@@ -25,6 +25,7 @@ type QuickInfoOptions =
 type CodeFixesOptions =
     { SimplifyName: bool
       AlwaysPlaceOpensAtTopLevel: bool }
+      UnusedOpens: bool }
 
 [<Export(typeof<ISettings>)>]
 type internal Settings [<ImportingConstructor>](store: SettingsStore) =
@@ -41,6 +42,7 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
         store.RegisterDefault
             { SimplifyName = true 
               AlwaysPlaceOpensAtTopLevel = false }
+              UnusedOpens = true }
 
     interface ISettings
 

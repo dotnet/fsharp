@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="Microsoft.VisualStudio.FSharp.UIResources.CodeFixesOptionControl"
+<UserControl x:Class="Microsoft.VisualStudio.FSharp.UIResources.CodeFixesOptionControl"
              x:ClassModifier="internal"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -24,6 +24,8 @@
                         <CheckBox x:Name="alwaysPlaceOpensAtTopLevel" IsChecked="{Binding AlwaysPlaceOpensAtTopLevel}"
                             Content="{x:Static local:Strings.Always_place_opens_at_top_level}"/>
                         <StackPanel Margin="15 0 0 0"/>
+                        <CheckBox x:Name="unusedOpens" IsChecked="{Binding UnusedOpens}"
+                                  Content="{x:Static local:Strings.Unused_opens_code_fix}"/>
                     </StackPanel>
                 </GroupBox>
             </StackPanel>
