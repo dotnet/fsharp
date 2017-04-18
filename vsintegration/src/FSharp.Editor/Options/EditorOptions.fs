@@ -24,7 +24,8 @@ type QuickInfoOptions() =
 
 [<CLIMutable>]
 type CodeFixesOptions =
-    { SimplifyName: bool }
+    { SimplifyName: bool
+      UnusedOpens: bool }
 
 [<Export(typeof<ISettings>)>]
 type internal Settings [<ImportingConstructor>](store: SettingsStore) =
@@ -37,7 +38,8 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
         QuickInfoOptions() 
         |> store.RegisterDefault
 
-        { SimplifyName = true }
+        { SimplifyName = true
+          UnusedOpens = true }
         |> store.RegisterDefault
 
     interface ISettings
