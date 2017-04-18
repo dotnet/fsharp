@@ -702,7 +702,7 @@ module Cancellable =
     /// Run a cancellable computation using the given cancellation token
     let run (ct: System.Threading.CancellationToken) (Cancellable oper) = 
         if ct.IsCancellationRequested then 
-            ValueOrCancelled.Cancelled (OperationCanceledException()) 
+            ValueOrCancelled.Cancelled (OperationCanceledException ct) 
         else
             oper ct 
 
@@ -762,7 +762,7 @@ module Cancellable =
     let token () = Cancellable (fun ct -> ValueOrCancelled.Value ct)
 
     /// Represents a canceled computation
-    let canceled() = Cancellable (fun ct -> ValueOrCancelled.Cancelled (new OperationCanceledException(ct)))
+    let canceled() = Cancellable (fun ct -> ValueOrCancelled.Cancelled (OperationCanceledException ct))
 
     /// Catch exceptions in a computation
     let private catch (Cancellable e) = 
