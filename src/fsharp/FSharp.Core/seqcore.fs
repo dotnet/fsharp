@@ -387,10 +387,21 @@ namespace Microsoft.FSharp.Collections.SeqComposition
     and ConcatOutOfBand () =
         let outOfBands = ResizeArray<IOutOfBand> ()
 
+        let mutable haltedIdx = 0
+        let mutable listeners = Unchecked.defaultof<Action<PipeIdx>>
+
         interface IOutOfBand with
             member this.StopFurtherProcessing pipeIdx =
-                for i = 0 to outOfBands.Count-1 do
-                    outOfBands.[i].StopFurtherProcessing pipeIdx
+                if haltedIdx = 0 then
+                    haltedIdx <- pipeIdx
+                    for i = 0 to outOfBands.Count-1 do
+                        outOfBands.[i].StopFurtherProcessing pipeIdx
+                    match listeners with
+                    | null -> ()
+                    | a -> a.Invoke pipeIdx
+
+            member this.ListenForStopFurtherProcessing action =
+                listeners <- Delegate.Combine (listeners, action) :?> Action<PipeIdx>
 
         member this.Push outOfBand =
             outOfBands.Add outOfBand
@@ -408,7 +419,9 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         do
             outOfBand.Push this
             outOfBand.Push result
+            (Upcast.outOfBand result).ListenForStopFurtherProcessing (fun idx -> (Upcast.outOfBand outOfBand).StopFurtherProcessing idx)
             outOfBand.Push common
+            (Upcast.outOfBand common).ListenForStopFurtherProcessing (fun idx -> (Upcast.outOfBand outOfBand).StopFurtherProcessing idx)
 
         override __.ProcessNext value =
             value.Fold (fun _ -> common) |> ignore
