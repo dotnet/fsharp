@@ -866,7 +866,7 @@ module ParsedInput =
         // Based on an initial review, no diagnostics should be generated.  However the code should be checked more closely.
         use _ignoreAllDiagnostics = new ErrorScope()  
 
-        let result: (Scope * pos) option ref = ref None
+        let result: (Scope * pos * (* finished *) bool) option ref = ref None
         let ns: string[] option ref = ref None
         let modules = ResizeArray<Module>()  
 
@@ -881,9 +881,11 @@ module ParsedInput =
             if line <= currentLine then
                 match !result, insertionPoint with
                 | None, _ -> 
-                    result := Some ({ Idents = longIdentToIdents scope; Kind = kind }, mkPos line col)
-                | Some _, OpenStatementInsertionPoint.TopLevel -> ()
-                | Some (oldScope, oldPos), _ ->
+                    result := Some ({ Idents = longIdentToIdents scope; Kind = kind }, mkPos line col, false)
+                | Some (_, _, true), _ -> ()
+                | Some (oldScope, oldPos, false), OpenStatementInsertionPoint.TopLevel when kind <> OpenDeclaration ->
+                    result := Some (oldScope, oldPos, true)
+                | Some (oldScope, oldPos, _), _ ->
                     match kind, oldScope.Kind with
                     | (Namespace | NestedModule | TopModule), OpenDeclaration
                     | _ when oldPos.Line <= line ->
@@ -893,7 +895,8 @@ module ParsedInput =
                                         | [] -> oldScope.Idents 
                                         | _ -> longIdentToIdents scope
                                     Kind = kind },
-                                  mkPos line col)
+                                  mkPos line col,
+                                  false)
                     | _ -> ()
 
         let getMinColumn (decls: SynModuleDecls) =
@@ -961,7 +964,7 @@ module ParsedInput =
 
         let res =
             !result
-            |> Option.map (fun (scope, pos) ->
+            |> Option.map (fun (scope, pos, _) ->
                 let ns = !ns |> Option.map longIdentToIdents
                 scope, ns, mkPos (pos.Line + 1) pos.Column)
         
