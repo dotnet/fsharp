@@ -1773,7 +1773,6 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         interface IOutOfBand
         val mutable Result : 'Result
         val mutable HaltedIdx : int
-        member StopFurtherProcessing : PipeIdx -> unit
         override ChainComplete : PipeIdx -> unit
         override ChainDispose : unit -> unit
 

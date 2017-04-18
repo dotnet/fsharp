@@ -107,6 +107,7 @@ namespace Microsoft.FSharp.Collections
             // is fixed with the compiler then these functions can be removed.
             let inline seq<'T,'seq when 'seq :> ISeq<'T> and 'seq : not struct> (t:'seq) : ISeq<'T> = (# "" t : ISeq<'T> #)
             let inline enumerableNonGeneric<'enumerable when 'enumerable :> IEnumerable and 'enumerable : not struct> (t:'enumerable) : IEnumerable = (# "" t : IEnumerable #)
+            let inline outOfBand<'outOfBand when 'outOfBand :> IOutOfBand and 'outOfBand : not struct> (t:'outOfBand) : IOutOfBand = (# "" t : IOutOfBand #)
 
         let inline valueComparer<'T when 'T : equality> ()=
             let c = HashIdentity.Structural<'T>
@@ -184,7 +185,7 @@ namespace Microsoft.FSharp.Collections
                             this.Result <- value
                         else
                             this.State._2 <- true
-                            this.StopFurtherProcessing pipeIdx
+                            (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ =
@@ -210,7 +211,7 @@ namespace Microsoft.FSharp.Collections
                         if this.State.MoveNext() then
                             this.Result <- folder this.Result value this.State.Current
                         else
-                            this.StopFurtherProcessing pipeIdx
+                            (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ = ()
@@ -246,7 +247,7 @@ namespace Microsoft.FSharp.Collections
                         if this.State.MoveNext() then
                             f value this.State.Current
                         else
-                            this.StopFurtherProcessing pipeIdx
+                            (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ = ()
@@ -262,7 +263,7 @@ namespace Microsoft.FSharp.Collections
                             this.State._1 <- this.State._1 + 1
                             Unchecked.defaultof<_>
                         else
-                            this.StopFurtherProcessing pipeIdx
+                            (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
                             Unchecked.defaultof<_>
                     override this.OnComplete _ = () 
                     override this.OnDispose () = this.State._2.Dispose () })
@@ -273,7 +274,7 @@ namespace Microsoft.FSharp.Collections
                 { new Folder<'T, Option<'T>> (None) with
                     override this.ProcessNext value =
                         this.Result <- Some value
-                        this.StopFurtherProcessing pipeIdx
+                        (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "Head">]
@@ -306,7 +307,7 @@ namespace Microsoft.FSharp.Collections
                     override this.ProcessNext value =
                         if f value then
                             this.Result <- true
-                            this.StopFurtherProcessing pipeIdx
+                            (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "Exists2">]
@@ -317,9 +318,9 @@ namespace Microsoft.FSharp.Collections
                         if this.State.MoveNext() then
                             if predicate value this.State.Current then
                                 this.Result <- true
-                                this.StopFurtherProcessing pipeIdx
+                                (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
                         else
-                            this.StopFurtherProcessing pipeIdx
+                            (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ = ()
@@ -332,7 +333,7 @@ namespace Microsoft.FSharp.Collections
                     override this.ProcessNext value =
                         if element = value then
                             this.Result <- true
-                            this.StopFurtherProcessing pipeIdx
+                            (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "ForAll">]
@@ -342,7 +343,7 @@ namespace Microsoft.FSharp.Collections
                     override this.ProcessNext value =
                         if not (predicate value) then
                             this.Result <- false
-                            this.StopFurtherProcessing pipeIdx
+                            (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "ForAll2">]
@@ -353,9 +354,9 @@ namespace Microsoft.FSharp.Collections
                         if this.State.MoveNext() then
                             if not (predicate value this.State.Current) then
                                 this.Result <- false
-                                this.StopFurtherProcessing pipeIdx
+                                (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
                         else
-                            this.StopFurtherProcessing pipeIdx
+                            (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ = ()
@@ -443,12 +444,12 @@ namespace Microsoft.FSharp.Collections
                     override this.ProcessNext value =
                         if not (this.State.MoveNext()) then
                             this.Result <- 1
-                            this.StopFurtherProcessing pipeIdx
+                            (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
                         else
                             let c = f value this.State.Current
                             if c <> 0 then
                                 this.Result <- c
-                                this.StopFurtherProcessing pipeIdx
+                                (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *)
                     override this.OnComplete _ =
                         if this.Result = 0 && this.State.MoveNext() then
@@ -784,7 +785,7 @@ namespace Microsoft.FSharp.Collections
                         match f value with
                         | (Some _) as some ->
                             this.Result <- some
-                            this.StopFurtherProcessing pipeIdx
+                            (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
                         | None -> ()
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
@@ -795,7 +796,7 @@ namespace Microsoft.FSharp.Collections
                     override this.ProcessNext value =
                         if f value then
                             this.Result <- Some value
-                            this.StopFurtherProcessing pipeIdx
+                            (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "TryFindIndex">]
@@ -806,7 +807,7 @@ namespace Microsoft.FSharp.Collections
                     override this.ProcessNext value =
                         if predicate value then
                             this.Result <- Some this.State
-                            this.StopFurtherProcessing pipeIdx
+                            (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
                         else
                             this.State <- this.State + 1
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
