@@ -1830,12 +1830,25 @@ let rec buildTypeDefPass3 cenv nesting modB emEnv (tdef : ILTypeDef) =
 
 //----------------------------------------------------------------------------
 // buildTypeDefPass4 - Create the Types
+//
+// The code in this phase is fragile.
+// 
+// THe background is that System.Reflection.Emit implementations can be finnickity about the
+// order that CreateType calls are made when types refer to each other.  Some of these restrictions
+// are not well documented, or are related to historical bugs where the F# emit code worked around the
+// underlying problems.  Ideally the SRE implementation would just "work this out as it goes along" but
+// unfortunately that's not been the case.
+//
+// Here are some known cases:
+//
 // MSDN says: If this type is a nested type, the CreateType method must 
 // be called on the enclosing type before it is called on the nested type.
-// If the current type derives from an incomplete type or implements 
+//
+// MSDN says: If the current type derives from an incomplete type or implements 
 // incomplete interfaces, call the CreateType method on the parent 
 // type and the interface types before calling it on the current type.
-// If the enclosing type contains a field that is a value type 
+//
+// MSDN says: If the enclosing type contains a field that is a value type 
 // defined as a nested type (for example, a field that is an 
 // enumeration defined as a nested type), calling the CreateType method 
 // on the enclosing type will generate a AppDomain.TypeResolve event. 
@@ -1845,6 +1858,13 @@ let rec buildTypeDefPass3 cenv nesting modB emEnv (tdef : ILTypeDef) =
 // nested type by calling CreateType on the TypeBuilder object that represents 
 // the nested type. The code example for this topic shows how to define such 
 // an event handler.
+//
+//  
+// There is also a case where generic parameter constraints were being checked before
+// a generic method was called.  This forced the loading of the types involved in the 
+// constraints very early.
+//
+
 //----------------------------------------------------------------------------
 
 let getEnclosingTypeRefs (tref:ILTypeRef) = 
@@ -1852,71 +1872,86 @@ let getEnclosingTypeRefs (tref:ILTypeRef) =
    | [] -> []
    | h :: t -> List.scan (fun tr nm -> mkILTyRefInTyRef (tr,nm)) (mkILTyRef(tref.Scope, h)) t
 
-let rec getTypeRefsInType valueTypesOnly typ acc = 
+[<RequireQualifiedAccess>]
+type AllTypes = Yes | No
+
+// Find all constitunt type references
+let rec getTypeRefsInType (allTypes: AllTypes) typ acc = 
     match typ with
-    | ILType.Void | ILType.TypeVar _                              -> acc
-    | ILType.Ptr eltType | ILType.Byref eltType -> getTypeRefsInType valueTypesOnly eltType acc
-    | ILType.Array (_,eltType) -> if valueTypesOnly then acc else getTypeRefsInType valueTypesOnly eltType acc
-    | ILType.Value tspec -> tspec.TypeRef :: List.foldBack (getTypeRefsInType valueTypesOnly) tspec.GenericArgs acc
-    | ILType.Boxed tspec -> if valueTypesOnly then acc else tspec.TypeRef :: List.foldBack (getTypeRefsInType valueTypesOnly) tspec.GenericArgs acc
+    | ILType.Void 
+    | ILType.TypeVar _  -> acc
+    | ILType.Ptr eltType | ILType.Byref eltType -> 
+        getTypeRefsInType allTypes eltType acc
+    | ILType.Array (_,eltType) -> 
+        match allTypes with 
+        | AllTypes.No -> acc 
+        | AllTypes.Yes -> getTypeRefsInType allTypes eltType acc
+    | ILType.Value tspec -> 
+        // AllTypes.Yes because the .NET type loader appears to always eagerly requires all types
+        // referred to in an instantiation of a generic value type
+        tspec.TypeRef :: List.foldBack (getTypeRefsInType AllTypes.Yes) tspec.GenericArgs acc
+    | ILType.Boxed tspec -> 
+        match allTypes with 
+        | AllTypes.No -> acc 
+        | AllTypes.Yes -> tspec.TypeRef :: List.foldBack (getTypeRefsInType allTypes) tspec.GenericArgs acc
     | ILType.FunctionPointer _callsig -> failwith "getTypeRefsInType: fptr"
     | ILType.Modified _   -> failwith "getTypeRefsInType: modified"
 
-let verbose2 = false
+let verbose2 = true
 
 let createTypeRef (visited : Dictionary<_,_>, created : Dictionary<_,_>) emEnv tref = 
-    let rec traverseTypeDef priority (tref:ILTypeRef) (tdef:ILTypeDef) =
-        if priority >= 2 then 
-            if verbose2 then dprintf "buildTypeDefPass4: Creating Enclosing Types of %s\n" tdef.Name; 
-            tref |> getEnclosingTypeRefs |> List.iter (traverseTypeRef priority);
+
+    let rec traverseTypeDef (tref:ILTypeRef) (tdef:ILTypeDef) =
+        if verbose2 then dprintf "buildTypeDefPass4: Creating Enclosing Types of %s\n" tdef.Name; 
+        for enc in getEnclosingTypeRefs tref do
+            traverseTypeRef enc
     
         // WORKAROUND (ProductStudio FSharp 1.0 bug 615): the constraints on generic method parameters 
         // are resolved overly eagerly by reflection emit's CreateType. 
-        if priority >= 1 then 
-            if verbose2 then dprintf "buildTypeDefPass4: Doing type typar constraints of %s\n" tdef.Name; 
-            tdef.GenericParams |> List.iter (fun gp -> gp.Constraints |> List.iter (traverseType false 2));
-            if verbose2 then dprintf "buildTypeDefPass4: Doing method constraints of %s\n" tdef.Name; 
-            tdef.Methods.AsList |> List.iter   (fun md -> md.GenericParams |> List.iter (fun gp -> gp.Constraints |> List.iter (traverseType false 2)));
-            
-        // We absolutely need the parent type...
-        if priority >= 1 then 
-            if verbose2 then dprintf "buildTypeDefPass4: Creating Super Class Chain of %s\n" tdef.Name; 
-            tdef.Extends    |> Option.iter (traverseType false priority);
-        
-        // We absolutely need the interface types...
-        if priority >= 1 then 
-            if verbose2 then dprintf "buildTypeDefPass4: Creating Interface Chain of %s\n" tdef.Name; 
-            tdef.Implements |> List.iter (traverseType false priority);
-            
-        // We have to define all struct types in all methods before a class is defined. This only has any effect when there is a struct type
-        // being defined simultaneously with this type.
-        if priority >= 1 then 
-            if verbose2 then dprintf "buildTypeDefPass4: Doing value types in method signatures of %s\n" tdef.Name  
-            tdef.Methods |> Seq.iter   (fun md -> md.Parameters |> List.iter (fun p -> p.Type |> (traverseType true 1))
-                                                  md.Return.Type |> traverseType true 1);
-        
-        if priority >= 1 then 
-            if verbose2 then dprintf "buildTypeDefPass4: Do value types in fields of %s\n" tdef.Name; 
-            tdef.Fields.AsList |> List.iter (fun fd -> traverseType true 1 fd.Type);
-        
-        if verbose2 then dprintf "buildTypeDefPass4: Done with dependencies of %s\n" tdef.Name
-            
-    and traverseType valueTypesOnly priority typ = 
-        if verbose2 then dprintf "- traverseType %+A\n" typ;
-        getTypeRefsInType valueTypesOnly typ []
-        |> List.filter (isEmittedTypeRef emEnv)
-        |> List.iter (traverseTypeRef priority)
+        if verbose2 then dprintf "buildTypeDefPass4: Doing type typar constraints of %s\n" tdef.Name; 
+        for gp in tdef.GenericParams do
+            for cx in gp.Constraints do
+                traverseType AllTypes.Yes cx
 
-    and traverseTypeRef priority  tref = 
+        if verbose2 then dprintf "buildTypeDefPass4: Doing method constraints of %s\n" tdef.Name; 
+        for md in tdef.Methods.AsList do
+            for gp in md.GenericParams do 
+                for cx in gp.Constraints do 
+                    traverseType AllTypes.Yes cx
+            
+        // We absolutely need the exact parent type...
+        if verbose2 then dprintf "buildTypeDefPass4: Creating Super Class Chain of %s\n" tdef.Name; 
+        tdef.Extends |> Option.iter (traverseType AllTypes.Yes)
+        
+        // We absolutely need the exact interface types...
+        if verbose2 then dprintf "buildTypeDefPass4: Creating Interface Chain of %s\n" tdef.Name; 
+        tdef.Implements |> List.iter (traverseType AllTypes.Yes)
+            
+        if verbose2 then dprintf "buildTypeDefPass4: Do value types in fields of %s\n" tdef.Name;
+        tdef.Fields.AsList |> List.iter (fun fd -> traverseType AllTypes.No fd.Type)
+        
+        if verbose2 then dprintf "buildTypeDefPass4: Done with dependencies of %s\n" tdef.Name 
+            
+    and traverseType allTypes typ = 
+        getTypeRefsInType allTypes typ []
+        |> List.filter (isEmittedTypeRef emEnv)
+        |> List.iter traverseTypeRef 
+
+    and traverseTypeRef tref = 
         let typB = envGetTypB emEnv tref
-        if verbose2 then dprintf "- considering reference to type %s\n" typB.FullName;
-        if not (visited.ContainsKey(tref)) || visited.[tref] > priority then 
-            visited.[tref] <- priority;
+        if verbose2 then dprintf "- considering reference to type %s\n" typB.FullName
+
+        // Re-run traverseTypeDef if we've never visited the type.
+        if not (visited.ContainsKey(tref)) then 
+            visited.[tref] <- true
             let tdef = envGetTypeDef emEnv tref
-            if verbose2 then dprintf "- traversing type %s\n" typB.FullName;
+            if verbose2 then dprintf "- traversing type %s\n" typB.FullName
 #if FX_NO_APP_DOMAINS
-            traverseTypeDef priority tref tdef;
+            traverseTypeDef tref tdef
 #else
+            // This looks like a special case (perhaps bogus) of the dependency logic above, where
+            // we require the type r.Name, though with "nestingToProbe" being the enclosing types of the
+            // type being defined.
             let typeCreationHandler =
                 let nestingToProbe = tref.Enclosing 
                 ResolveEventHandler(
@@ -1930,18 +1965,22 @@ let createTypeRef (visited : Dictionary<_,_>, created : Dictionary<_,_>) emEnv t
                                 tb.Assembly
                         |   None -> null
                 )
+            // For some reason, the handler is installed while running 'traverseTypeDef' but not while defining the type
+            // itself.
             System.AppDomain.CurrentDomain.add_TypeResolve typeCreationHandler
             try
-                traverseTypeDef priority tref tdef;
+                traverseTypeDef tref tdef
             finally
                System.AppDomain.CurrentDomain.remove_TypeResolve typeCreationHandler
 #endif
+            // At this point, we've done everything we can to prepare the type for loading by eagerly forcing the
+            // load of other types.  Everything else is up to the implementation of System.Reflection.Emit.
             if not (created.ContainsKey(tref)) then 
-                created.[tref] <- true;   
-                if verbose2 then dprintf "- creating type %s\n" typB.FullName;
+                created.[tref] <- true
+                if verbose2 then dprintf "- creating type %s\n" typB.FullName
                 typB.CreateTypeAndLog()  |> ignore
     
-    traverseTypeRef 2 tref 
+    traverseTypeRef tref 
 
 let rec buildTypeDefPass4 (visited,created) nesting emEnv (tdef : ILTypeDef) =
     if verbose2 then dprintf "buildTypeDefPass4 %s\n" tdef.Name; 
