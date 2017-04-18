@@ -3240,6 +3240,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
 
     type IOutOfBand =
         abstract StopFurtherProcessing : PipeIdx -> unit
+        abstract ListenForStopFurtherProcessing : Action<PipeIdx> -> unit
 
     [<AbstractClass>]
     type Activity() =
@@ -3259,6 +3260,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
     type Folder<'T,'Result>(initalResult:'Result) =
         inherit Activity<'T,'T>()
 
+        let mutable listeners = BasicInlinedOperations.unsafeDefault<Action<PipeIdx>>
         let mutable result = initalResult
         let mutable haltedIdx = 0
 
@@ -3267,7 +3269,14 @@ namespace Microsoft.FSharp.Collections.SeqComposition
 
         interface IOutOfBand with
             member this.StopFurtherProcessing pipeIdx = 
-                haltedIdx <- pipeIdx
+                if haltedIdx = 0 then
+                    haltedIdx <- pipeIdx
+                    match listeners with
+                    | null -> ()
+                    | a -> a.Invoke pipeIdx
+
+            member this.ListenForStopFurtherProcessing action =
+                listeners <- Delegate.Combine (listeners, action) :?> Action<PipeIdx>
 
         override this.ChainComplete _ = ()
         override this.ChainDispose () = ()
