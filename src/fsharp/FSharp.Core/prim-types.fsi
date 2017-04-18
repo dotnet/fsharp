@@ -1897,8 +1897,8 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         inherit Activity<'T,'T>
         new : 'Result -> Folder<'T,'Result>
         interface IOutOfBand
-        val mutable Result : 'Result
-        val mutable HaltedIdx : int
+        member Result : 'Result with get, set
+        member HaltedIdx : PipeIdx with get
         override ChainComplete : PipeIdx -> unit
         override ChainDispose : unit -> unit
 
