@@ -1861,6 +1861,8 @@ namespace Microsoft.FSharp.Collections.SeqComposition
     type IOutOfBand =
         /// Stop the processing of any further items down the pipeline
         abstract StopFurtherProcessing : PipeIdx -> unit
+        /// Add a Action delegate that gets notified if StopFurtherProcessing is called
+        abstract ListenForStopFurtherProcessing : Action<PipeIdx> -> unit
 
     /// Activity is the root class for chains of activities. It is in a non-generic
     /// form so that it can be used by subsequent activities
