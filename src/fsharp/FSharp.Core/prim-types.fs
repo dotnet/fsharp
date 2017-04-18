@@ -3729,21 +3729,18 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         inherit Activity<'T>()
 
     [<AbstractClass>]
-    type Folder<'T,'Result> =
-        inherit Activity<'T,'T>
+    type Folder<'T,'Result>(initalResult:'Result) =
+        inherit Activity<'T,'T>()
 
-        val mutable Result : 'Result
-        val mutable HaltedIdx : int
+        let mutable result = initalResult
+        let mutable haltedIdx = 0
+
+        member __.Result with get () = result and set value = result <- value
+        member __.HaltedIdx with get () = haltedIdx
 
         interface IOutOfBand with
             member this.StopFurtherProcessing pipeIdx = 
-                this.HaltedIdx <- pipeIdx
-
-        new (initalResult) = {
-            inherit Activity<'T,'T>()
-            HaltedIdx = 0
-            Result = initalResult
-        }
+                haltedIdx <- pipeIdx
 
         override this.ChainComplete _ = ()
         override this.ChainDispose () = ()
