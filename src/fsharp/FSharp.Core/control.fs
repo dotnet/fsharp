@@ -1543,13 +1543,13 @@ namespace Microsoft.FSharp.Control
                     if completedTask.IsCanceled then
                         if useCcontForTaskCancellation
                         then args.aux.ccont (new OperationCanceledException(args.aux.token))
-                        else args.aux.econt (ExceptionDispatchInfo.Capture(new OperationCanceledException(args.aux.token)))
+                        else args.aux.econt (ExceptionDispatchInfo.Capture(new TaskCanceledException(completedTask)))
                     elif completedTask.IsFaulted then
                         args.aux.econt (MayLoseStackTrace(completedTask.Exception))
                     else
                         args.cont completedTask.Result)) |> unfake
 
-            task.ContinueWith(Action<Task<'T>>(continuation), TaskContinuationOptions.None) |> ignore |> fake
+            task.ContinueWith(Action<Task<'T>>(continuation), TaskContinuationOptions.None, args.aux.token) |> ignore |> fake
 
         let continueWithUnit (task : Task, args, useCcontForTaskCancellation) = 
 
@@ -1558,13 +1558,13 @@ namespace Microsoft.FSharp.Control
                     if completedTask.IsCanceled then
                         if useCcontForTaskCancellation
                         then args.aux.ccont (new OperationCanceledException(args.aux.token))
-                        else args.aux.econt (ExceptionDispatchInfo.Capture(new OperationCanceledException(args.aux.token)))
+                        else args.aux.econt (ExceptionDispatchInfo.Capture(new TaskCanceledException(completedTask)))
                     elif completedTask.IsFaulted then
                         args.aux.econt (MayLoseStackTrace(completedTask.Exception))
                     else
                         args.cont ())) |> unfake
 
-            task.ContinueWith(Action<Task>(continuation), TaskContinuationOptions.None) |> ignore |> fake
+            task.ContinueWith(Action<Task>(continuation), TaskContinuationOptions.None, args.aux.token) |> ignore |> fake
 #endif
 
 #if FX_NO_REGISTERED_WAIT_HANDLES
