@@ -21,6 +21,8 @@
                     <StackPanel>
                         <CheckBox x:Name="simplifyName" IsChecked="{Binding SimplifyName}"
                                   Content="{x:Static local:Strings.Simplify_name_code_fix}"/>
+                        <CheckBox x:Name="alwaysPlaceOpensAtTopLevel" IsChecked="{Binding AlwaysPlaceOpensAtTopLevel}"
+                            Content="{x:Static local:Strings.Always_place_opens_at_top_level}"/>
                         <StackPanel Margin="15 0 0 0"/>
                     </StackPanel>
                 </GroupBox>

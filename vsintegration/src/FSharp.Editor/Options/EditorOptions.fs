@@ -16,29 +16,31 @@ type IntelliSenseOptions =
 [<RequireQualifiedAccess>]
 type QuickInfoUnderlineStyle = Dot | Dash | Solid
 
-// autoproperties can be used to both define defaults and faciliate data binding in WPF controls,
-// but the type should otherwise be treated as immutable.
-type QuickInfoOptions() =
-    member val DisplayLinks = true with get, set
-    member val UnderlineStyle = QuickInfoUnderlineStyle.Solid with get, set
+[<CLIMutable>]
+type QuickInfoOptions =
+    { DisplayLinks: bool
+      UnderlineStyle: QuickInfoUnderlineStyle }
 
 [<CLIMutable>]
 type CodeFixesOptions =
-    { SimplifyName: bool }
+    { SimplifyName: bool
+      AlwaysPlaceOpensAtTopLevel: bool }
 
 [<Export(typeof<ISettings>)>]
 type internal Settings [<ImportingConstructor>](store: SettingsStore) =
     do  // Initialize default settings
         
-        { ShowAfterCharIsTyped = true
-          ShowAfterCharIsDeleted = false }
-        |> store.RegisterDefault
+        store.RegisterDefault
+            { ShowAfterCharIsTyped = true
+              ShowAfterCharIsDeleted = false }
 
-        QuickInfoOptions() 
-        |> store.RegisterDefault
+        store.RegisterDefault
+            { DisplayLinks = true
+              UnderlineStyle = QuickInfoUnderlineStyle.Solid }
 
-        { SimplifyName = true }
-        |> store.RegisterDefault
+        store.RegisterDefault
+            { SimplifyName = true 
+              AlwaysPlaceOpensAtTopLevel = false }
 
     interface ISettings
 
