@@ -1541,8 +1541,9 @@ namespace Microsoft.FSharp.Control
             let continuation (completedTask : Task<_>) : unit =
                 args.aux.trampolineHolder.Protect((fun () ->
                     if completedTask.IsCanceled then
-                        if useCcontForTaskCancellation then args.aux.ccont(new OperationCanceledException(args.aux.token))
-                        else args.aux.econt (ExceptionDispatchInfo.Capture(new TaskCanceledException(task)))
+                        if useCcontForTaskCancellation
+                        then args.aux.ccont (new OperationCanceledException(args.aux.token))
+                        else args.aux.econt (ExceptionDispatchInfo.Capture(new OperationCanceledException(args.aux.token)))
                     elif completedTask.IsFaulted then
                         args.aux.econt (MayLoseStackTrace(completedTask.Exception))
                     else
@@ -1554,9 +1555,9 @@ namespace Microsoft.FSharp.Control
 
             let continuation (completedTask : Task) : unit =
                 args.aux.trampolineHolder.Protect((fun () ->
-                    if completedTask.IsCanceled then
-                        if useCcontForTaskCancellation then args.aux.ccont (new OperationCanceledException(args.aux.token))
-                        else args.aux.econt (ExceptionDispatchInfo.Capture(new TaskCanceledException(task)))
+                        if useCcontForTaskCancellation
+                        then args.aux.ccont (new OperationCanceledException(args.aux.token))
+                        else args.aux.econt (ExceptionDispatchInfo.Capture(new OperationCanceledException(args.aux.token)))
                     elif completedTask.IsFaulted then
                         args.aux.econt (MayLoseStackTrace(completedTask.Exception))
                     else
