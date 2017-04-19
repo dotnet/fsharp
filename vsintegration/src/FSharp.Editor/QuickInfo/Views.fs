@@ -35,19 +35,18 @@ module private SessionHandling =
                   member __.Dispose() = () }
 
 module private HyperlinkStyles =
+    // TODO: move this one time initialization to a more suitable spot
     do Application.ResourceAssembly <- typeof<Microsoft.VisualStudio.FSharp.UIResources.Strings>.Assembly
     let private styles = ResourceDictionary(Source = Uri("HyperlinkStyles.xaml", UriKind.Relative))
-    let dot = styles.["dot_underline"]
-    let dash = styles.["dash_underline"]
-    let solid = styles.["solid_underline"]
-    let none = styles.["no_underline"]
     let getCurrent() : Style =
-        match Settings.QuickInfo.UnderlineStyle with
-        | QuickInfoUnderlineStyle.Solid -> solid
-        | QuickInfoUnderlineStyle.Dot -> dot
-        | QuickInfoUnderlineStyle.Dash -> dash
-        :?> _
-
+        let key =
+            if Settings.QuickInfo.DisplayLinks then
+                match Settings.QuickInfo.UnderlineStyle with
+                | QuickInfoUnderlineStyle.Solid -> "solid_underline"
+                | QuickInfoUnderlineStyle.Dot -> "dot_underline"
+                | QuickInfoUnderlineStyle.Dash -> "dash_underline"
+            else "no_underline"
+        downcast styles.[key]
 
 [<Export>]
 type internal QuickInfoViewProvider
@@ -71,9 +70,7 @@ type internal QuickInfoViewProvider
 
         let navigateAndDismiss range _ =
             navigation.NavigateTo range
-            SessionHandling.currentSession |> Option.iter ( fun session -> session.Dismiss() )
-
-        let underlineStyle = HyperlinkStyles.getCurrent()     
+            SessionHandling.currentSession |> Option.iter ( fun session -> session.Dismiss() )  
 
         let inlines = 
             seq { 
@@ -82,7 +79,7 @@ type internal QuickInfoViewProvider
                     let inl =
                         match taggedText with
                         | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->                        
-                            let h = Documents.Hyperlink(run, Style = underlineStyle, ToolTip = nav.Range.FileName)
+                            let h = Documents.Hyperlink(run, ToolTip = nav.Range.FileName)
                             h.Click.Add <| navigateAndDismiss nav.Range
                             h :> Documents.Inline
                         | _ -> run :> _
@@ -95,6 +92,7 @@ type internal QuickInfoViewProvider
             DependencyObjectExtensions.SetDefaultTextProperties(tb, formatMap.Value)
             tb.Inlines.AddRange inlines
             if tb.Inlines.Count = 0 then tb.Visibility <- Visibility.Collapsed
+            tb.Resources.[typeof<Documents.Hyperlink>] <- HyperlinkStyles.getCurrent()
             tb :> FrameworkElement
             
         { new IDeferredQuickInfoContent with member x.Create() = createTextLinks() }
