@@ -267,6 +267,9 @@
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 
   <!-- Hook compilation phase to do custom work -->
+  <!-- NOTE: The optdata and sigdata files are no longer needed by the F# compiler (the information is -->
+  <!-- integrated as resources into more recent FSharp.Core.dll's. However they are still produced to -->
+  <!-- allow older versions of the F# compiler to reference more recent FSharp.Core packages -->
   <Target Name="CopyToBuiltBin" BeforeTargets="AfterCompile" AfterTargets="CoreCompile" >
     <ItemGroup>
       <BuiltProjectOutputGroupKeyOutput Include="$(IntermediateOutputPath)\FSharp.Core.sigdata" />
