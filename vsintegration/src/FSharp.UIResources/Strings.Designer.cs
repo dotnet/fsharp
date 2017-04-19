@@ -61,6 +61,24 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Always place open statements at the top level.
+        /// </summary>
+        public static string Always_place_opens_at_top_level {
+            get {
+                return ResourceManager.GetString("Always_place_opens_at_top_level", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Code Fixes.
+        /// </summary>
+        public static string Code_Fixes {
+            get {
+                return ResourceManager.GetString("Code_Fixes", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Completion Lists.
         /// </summary>
         public static string Completion_Lists {
@@ -124,11 +142,29 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Simplify names (remove unnecessary qualifiers).
+        /// </summary>
+        public static string Simplify_name_code_fix {
+            get {
+                return ResourceManager.GetString("Simplify_name_code_fix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to _Solid underline.
         /// </summary>
         public static string Solid_underline {
             get {
                 return ResourceManager.GetString("Solid_underline", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Remove unused open statements.
+        /// </summary>
+        public static string Unused_opens_code_fix {
+            get {
+                return ResourceManager.GetString("Unused_opens_code_fix", resourceCulture);
             }
         }
     }

@@ -1,4 +1,4 @@
-﻿namespace Microsoft.VisualStudio.FSharp.Editor
+namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.ComponentModel.Composition
 open System.Runtime.InteropServices
@@ -16,27 +16,39 @@ type IntelliSenseOptions =
 [<RequireQualifiedAccess>]
 type QuickInfoUnderlineStyle = Dot | Dash | Solid
 
-// autoproperties can be used to both define defaults and faciliate data binding in WPF controls,
-// but the type should otherwise be treated as immutable.
-type QuickInfoOptions() =
-    member val DisplayLinks = true with get, set
-    member val UnderlineStyle = QuickInfoUnderlineStyle.Solid with get, set
+[<CLIMutable>]
+type QuickInfoOptions =
+    { DisplayLinks: bool
+      UnderlineStyle: QuickInfoUnderlineStyle }
+
+[<CLIMutable>]
+type CodeFixesOptions =
+    { SimplifyName: bool
+      AlwaysPlaceOpensAtTopLevel: bool
+      UnusedOpens: bool }
 
 [<Export(typeof<ISettings>)>]
 type internal Settings [<ImportingConstructor>](store: SettingsStore) =
     do  // Initialize default settings
         
-        { ShowAfterCharIsTyped = true
-          ShowAfterCharIsDeleted = false }
-        |> store.RegisterDefault
+        store.RegisterDefault
+            { ShowAfterCharIsTyped = true
+              ShowAfterCharIsDeleted = false }
 
-        QuickInfoOptions() 
-        |> store.RegisterDefault
+        store.RegisterDefault
+            { DisplayLinks = true
+              UnderlineStyle = QuickInfoUnderlineStyle.Solid }
+
+        store.RegisterDefault
+            { SimplifyName = true 
+              AlwaysPlaceOpensAtTopLevel = false
+              UnusedOpens = true }
 
     interface ISettings
 
     static member IntelliSense : IntelliSenseOptions = getSettings()
     static member QuickInfo : QuickInfoOptions = getSettings()
+    static member CodeFixes : CodeFixesOptions = getSettings()
 
 module internal OptionsUI =
 
@@ -59,3 +71,9 @@ module internal OptionsUI =
             bindRadioButton view.dash path QuickInfoUnderlineStyle.Dash
             bindCheckBox view.displayLinks "DisplayLinks"
             upcast view
+
+    [<Guid(Guids.codeFixesOptionPageIdString)>]
+    type internal CodeFixesOptionPage() =
+        inherit AbstractOptionPage<CodeFixesOptions>()
+        override this.CreateView() =
+            upcast CodeFixesOptionControl()            
