@@ -2343,7 +2343,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 root.OnItemAdded(lastNode.Parent, lastNode)
                 lastNode :?> FSharpFileNode
             
-            /// Move a node to below the 'target node' in the hierarchy.
+            /// Move a node to above/below the 'target node' in the hierarchy.
             /// If it is not valid for the node to be directly below the 'target node',
             /// a warning dialog will be shown.
             static member MoveTo(location : InsertionLocation, targetNode : HierarchyNode, nodeToBeMoved : HierarchyNode) : unit =
@@ -2437,7 +2437,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                             let folderNode = root.VerifySubFolderExists(pathStr + "\\", currentParent)
                             tryFindAdoptiveParent (path, restPath, folderNode)
                     
-                    // linked files must be placed in the root of the hierarchy
                     let pathParts = Path.GetDirectoryName(fileNode.RelativeFilePath).Split([| Path.DirectorySeparatorChar |], StringSplitOptions.RemoveEmptyEntries)
                     let parent = tryFindAdoptiveParent ([], List.ofArray pathParts, root)
                     parent.AddChild(fileNode)
