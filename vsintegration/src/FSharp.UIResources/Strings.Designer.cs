@@ -61,6 +61,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Always place open statements at the top level.
+        /// </summary>
+        public static string Always_place_opens_at_top_level {
+            get {
+                return ResourceManager.GetString("Always_place_opens_at_top_level", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Code Fixes.
         /// </summary>
         public static string Code_Fixes {
