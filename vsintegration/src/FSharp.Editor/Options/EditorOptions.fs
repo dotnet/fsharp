@@ -24,7 +24,7 @@ type QuickInfoOptions =
 [<CLIMutable>]
 type CodeFixesOptions =
     { SimplifyName: bool
-      AlwaysPlaceOpensAtTopLevel: bool }
+      AlwaysPlaceOpensAtTopLevel: bool
       UnusedOpens: bool }
 
 [<Export(typeof<ISettings>)>]
@@ -41,7 +41,7 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
 
         store.RegisterDefault
             { SimplifyName = true 
-              AlwaysPlaceOpensAtTopLevel = false }
+              AlwaysPlaceOpensAtTopLevel = false
               UnusedOpens = true }
 
     interface ISettings
