@@ -617,15 +617,19 @@ let convFieldInit x =
 let TypeBuilderInstantiationT = 
     let ty = 
 #if ENABLE_MONO_SUPPORT
-        if runningOnMono then 
-            Type.GetType("System.Reflection.MonoGenericClass")
+        if runningOnMono then
+            let ty = Type.GetType("System.Reflection.MonoGenericClass")
+            match ty with
+            | null -> Type.GetType("System.Reflection.Emit.TypeBuilderInstantiation")
+            | _ -> ty
         else
 #endif
             Type.GetType("System.Reflection.Emit.TypeBuilderInstantiation")
+
     assert (not (isNull ty))
     ty
 
-let typeIsNotQueryable (typ : Type) =
+let typeIsNotQueryable (typ : Type) = 
 #if FX_RESHAPED_REFLECTION
     let typ = typ.GetTypeInfo()
 #endif
@@ -1347,7 +1351,7 @@ let buildGenParamsPass1b cenv emEnv (genArgs : Type array) (gps : ILGenericParam
           | [ baseT ] -> gpB.SetBaseTypeConstraint(baseT)
           | _       -> failwith "buildGenParam: multiple base types"
         );
-        // set interface contraints (interfaces that instances of gp must meet)
+        // set interface constraints (interfaces that instances of gp must meet)
         gpB.SetInterfaceConstraints(Array.ofList interfaceTs);
         gp.CustomAttrs |> emitCustomAttrs cenv emEnv (wrapCustomAttr gpB.SetCustomAttribute)
 

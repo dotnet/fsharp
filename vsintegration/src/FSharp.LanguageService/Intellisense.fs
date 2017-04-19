@@ -15,7 +15,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 
 
 module internal TaggedText =
-    let appendTo (sb: System.Text.StringBuilder) (t: Layout.TaggedText) = sb.Append t.Value |> ignore 
+    let appendTo (sb: System.Text.StringBuilder) (t: Layout.TaggedText) = sb.Append t.Text |> ignore 
  
 /// Represents all the information necessary to display and navigate 
 /// within a method tip (e.g. param info, overloads, ability to move thru overloads and params)
@@ -527,7 +527,7 @@ type internal FSharpIntellisenseInfo
                                 let oldTextSnapshot = oldTextSnapshotInfo :?> ITextSnapshot
                                 hasTextChangedSinceLastTypecheck (textSnapshot, oldTextSnapshot, Range.Range.toZ range)
 
-                            let! decls = typedResults.GetDeclarationListInfo(untypedParseInfoOpt, Range.Line.fromZ line, col, lineText, fst plid, snd plid, detectTextChange) 
+                            let! decls = typedResults.GetDeclarationListInfo(untypedParseInfoOpt, Range.Line.fromZ line, col, lineText, fst plid, snd plid, (fun() -> []), detectTextChange) 
                             return (new FSharpDeclarations(documentationBuilder, decls.Items, reason) :> Declarations) 
                     else
                         // no TypeCheckInfo in ParseResult.

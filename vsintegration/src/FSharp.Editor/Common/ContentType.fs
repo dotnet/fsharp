@@ -9,19 +9,19 @@ open Microsoft.VisualStudio.Utilities
 
 module FSharpStaticTypeDefinitions = 
     [<Export>]
-    [<Name(FSharpCommonConstants.FSharpContentTypeName)>]
+    [<Name(FSharpConstants.FSharpContentTypeName)>]
     [<BaseDefinition(ContentTypeNames.RoslynContentType)>]
     let FSharpContentTypeDefinition = ContentTypeDefinition()
 
     [<Export>]
-    [<Name(FSharpCommonConstants.FSharpSignatureHelpContentTypeName)>]
+    [<Name(FSharpConstants.FSharpSignatureHelpContentTypeName)>]
     [<BaseDefinition("sighelp")>]
     let FSharpSignatureHelpContentTypeDefinition = ContentTypeDefinition()
 
-[<ExportContentTypeLanguageService(FSharpCommonConstants.FSharpContentTypeName, FSharpCommonConstants.FSharpLanguageName)>]
+[<ExportContentTypeLanguageService(FSharpConstants.FSharpContentTypeName, FSharpConstants.FSharpLanguageName)>]
 type FSharpContentType [<System.Composition.ImportingConstructor>](contentTypeRegistry : IContentTypeRegistryService) =  
     member this.contentTypeRegistryService = contentTypeRegistry
  
     interface IContentTypeLanguageService with
         member this.GetDefaultContentType() = 
-            this.contentTypeRegistryService.GetContentType(FSharpCommonConstants.FSharpContentTypeName)
+            this.contentTypeRegistryService.GetContentType(FSharpConstants.FSharpContentTypeName)

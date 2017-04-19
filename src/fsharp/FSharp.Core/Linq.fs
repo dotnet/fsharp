@@ -850,7 +850,10 @@ module LeafExpressionConverter =
     // provides no other way to evaluate the expression.
     //
     // REVIEW: It is possible it is just better to interpret the expression in many common cases, e.g. property-gets, values etc.
-    let EvaluateQuotation (e: Microsoft.FSharp.Quotations.Expr) = 
+    let EvaluateQuotation (e: Microsoft.FSharp.Quotations.Expr) : obj = 
+#if FX_NO_QUOTATIONS_COMPILE
+       raise (new NotSupportedException())
+#else
        match e with
        | Value (obj,_) -> obj
        | _ -> 
@@ -862,6 +865,6 @@ module LeafExpressionConverter =
            d.DynamicInvoke [| box () |]
        with :? System.Reflection.TargetInvocationException as exn -> 
            raise exn.InnerException
-
+#endif
 
     

@@ -18,7 +18,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 type internal NavigationBarSymbolItem(text, glyph, spans, childItems) =
     inherit NavigationBarItem(text, glyph, spans, childItems)
 
-[<ExportLanguageService(typeof<INavigationBarItemService>, FSharpCommonConstants.FSharpLanguageName); Shared>]
+[<ExportLanguageService(typeof<INavigationBarItemService>, FSharpConstants.FSharpLanguageName); Shared>]
 type internal FSharpNavigationBarItemService
     [<ImportingConstructor>]
     (
@@ -35,7 +35,7 @@ type internal FSharpNavigationBarItemService
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! parsedInput = checkerProvider.Checker.ParseDocument(document, options, sourceText)
                 let navItems = NavigationImpl.getNavigation parsedInput
-                let rangeToTextSpan range = CommonRoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range)
+                let rangeToTextSpan range = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range)
                 return 
                     navItems.Declarations
                     |> Array.choose (fun topLevelDecl ->
@@ -52,7 +52,7 @@ type internal FSharpNavigationBarItemService
                             :> NavigationBarItem)) :> IList<_>
             } 
             |> Async.map (Option.defaultValue emptyResult)
-            |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
+            |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
         
         member __.ShowItemGrayedIfNear (_item) : bool = false
         

@@ -168,12 +168,13 @@ let main argv =
                         eprintfn "querying %A %s" completion.QualifyingNames completion.PartialName
                         let! listInfo =
                             fileResults.GetDeclarationListInfo(
-                                Some parseResult
-                                , completion.Position.Line
-                                , completion.Position.Column
-                                , getLine (completion.Position.Line)
-                                , completion.QualifyingNames
-                                , completion.PartialName)
+                                Some parseResult,
+                                completion.Position.Line,
+                                completion.Position.Column,
+                                getLine (completion.Position.Line),
+                                completion.QualifyingNames,
+                                completion.PartialName,
+                                fun() -> [])
                            
                         for i in listInfo.Items do
                             eprintfn "%s" (getQuickInfoText i.DescriptionText)
