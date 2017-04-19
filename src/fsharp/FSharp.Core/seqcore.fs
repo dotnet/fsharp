@@ -151,6 +151,12 @@ namespace Microsoft.FSharp.Collections.SeqComposition
     [<Struct; NoComparison; NoEquality>]
     type NoValue = struct end
 
+    module internal TailCall =
+        // used for performance reasons; these are not recursive calls, so should be safe
+        // ** it should be noted that potential changes to the f# compiler may render this function
+        // ineffictive **
+        let inline avoid boolean = match boolean with true -> true | false -> false
+
     module internal Upcast =
         // The f# compiler outputs unnecessary unbox.any calls in upcasts. If this functionality
         // is fixed with the compiler then these functions can be removed.
@@ -382,61 +388,35 @@ namespace Microsoft.FSharp.Collections.SeqComposition
 
     and ConcatCommon<'T>(consumer:Activity<'T>) =
         inherit Folder<'T,NoValue>(Unchecked.defaultof<_>)
-        override me.ProcessNext value = consumer.ProcessNext value
 
-    and ConcatOutOfBand () =
-        let outOfBands = ResizeArray<IOutOfBand> ()
+        member __.Consumer = consumer
 
-        let mutable haltedIdx = 0
-        let mutable listeners = Unchecked.defaultof<Action<PipeIdx>>
+        override me.ProcessNext value = TailCall.avoid (consumer.ProcessNext value)
 
-        interface IOutOfBand with
-            member this.StopFurtherProcessing pipeIdx =
-                if haltedIdx = 0 then
-                    haltedIdx <- pipeIdx
-                    for i = 0 to outOfBands.Count-1 do
-                        outOfBands.[i].StopFurtherProcessing pipeIdx
-                    match listeners with
-                    | null -> ()
-                    | a -> a.Invoke pipeIdx
-
-            member this.ListenForStopFurtherProcessing action =
-                listeners <- Delegate.Combine (listeners, action) :?> Action<PipeIdx>
-
-        member this.Push outOfBand =
-            outOfBands.Add outOfBand
-
-        member this.Pop n =
-            for i = 1 to n do
-                outOfBands.RemoveAt (outOfBands.Count-1)
-
-    and IConcatGetOutOfBand =
-        abstract GetOutOfBand : unit -> ConcatOutOfBand
-
-    and ConcatFold<'T,'U,'Collection,'Result when 'Collection :> ISeq<'T>>(outOfBand:ConcatOutOfBand, result:Folder<'U,'Result>, consumer:Activity<'T,'U>, common:Folder<'T,NoValue>) as this =
+    and ConcatFold<'T,'U,'Collection,'Result when 'Collection :> ISeq<'T>>(result:Folder<'U,'Result>, consumer:Activity<'T,'U>, common:Folder<'T,NoValue>) as this =
         inherit Folder<'Collection, 'Result>(Unchecked.defaultof<_>)
 
         do
-            outOfBand.Push this
-            outOfBand.Push result
-            (Upcast.outOfBand result).ListenForStopFurtherProcessing (fun idx -> (Upcast.outOfBand outOfBand).StopFurtherProcessing idx)
-            outOfBand.Push common
-            (Upcast.outOfBand common).ListenForStopFurtherProcessing (fun idx -> (Upcast.outOfBand outOfBand).StopFurtherProcessing idx)
+            (Upcast.outOfBand this).ListenForStopFurtherProcessing (fun idx ->
+                (Upcast.outOfBand result).StopFurtherProcessing idx
+                (Upcast.outOfBand common).StopFurtherProcessing PipeIdx.MinValue)
+
+            (Upcast.outOfBand result).ListenForStopFurtherProcessing (fun idx ->
+                (Upcast.outOfBand this).StopFurtherProcessing idx
+                (Upcast.outOfBand common).StopFurtherProcessing PipeIdx.MaxValue)
 
         override __.ProcessNext value =
-            value.Fold (fun _ -> common) |> ignore
+            value.Fold (fun _ ->
+                (Upcast.outOfBand common).StopFurtherProcessing 0
+                common) |> ignore
             Unchecked.defaultof<_> (* return value unused in Fold context *)
 
         override this.ChainComplete _ =
-            outOfBand.Pop 3
             consumer.ChainComplete result.HaltedIdx
             this.Result <- result.Result
 
         override this.ChainDispose () =
             consumer.ChainDispose ()
-
-        interface IConcatGetOutOfBand with
-            member __.GetOutOfBand () = outOfBand
 
     and ConcatEnumerable<'T,'U,'Collection when 'Collection :> ISeq<'T>> (sources:ISeq<'Collection>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
         inherit EnumerableBase<'U>()
@@ -456,20 +436,16 @@ namespace Microsoft.FSharp.Collections.SeqComposition
 
                     let result = createFolder (thisPipeIdx+1)
 
-                    let outOfBand = 
-                        match box result with
-                        | :? IConcatGetOutOfBand as get -> get.GetOutOfBand ()
-                        | _ -> ConcatOutOfBand ()
+                    let outOfBand = Upcast.outOfBand result
 
-                    let consumer =
-                        transformFactory.Compose (Upcast.outOfBand outOfBand) thisPipeIdx result 
+                    let consumer = transformFactory.Compose outOfBand thisPipeIdx result 
                          
                     let common =
                         match box consumer with
-                        | :? ConcatCommon<'T> as common -> common
-                        | _ -> upcast ConcatCommon consumer
+                        | :? ConcatCommon<'T> as c -> ConcatCommon c.Consumer
+                        | _ -> ConcatCommon consumer
 
-                    upcast ConcatFold (outOfBand, result, consumer, common))
+                    upcast ConcatFold (result, consumer, common))
 
     and ThinConcatEnumerable<'T, 'Sources, 'Collection when 'Collection :> ISeq<'T>> (sources:'Sources, preEnumerate:'Sources->ISeq<'Collection>) =
         inherit EnumerableBase<'T>()

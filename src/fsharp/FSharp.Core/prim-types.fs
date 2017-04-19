@@ -3235,6 +3235,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
     open System.Collections.Generic
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Collections
+    open BasicInlinedOperations
 
     type PipeIdx = int
 
@@ -3269,11 +3270,13 @@ namespace Microsoft.FSharp.Collections.SeqComposition
 
         interface IOutOfBand with
             member this.StopFurtherProcessing pipeIdx = 
-                if haltedIdx = 0 then
-                    haltedIdx <- pipeIdx
-                    match listeners with
-                    | null -> ()
-                    | a -> a.Invoke pipeIdx
+                let currentIdx = haltedIdx
+                haltedIdx <- pipeIdx
+                if currentIdx = 0 then
+                    if haltedIdx <> 0 then
+                        match listeners with
+                        | null -> ()
+                        | a -> a.Invoke pipeIdx
 
             member this.ListenForStopFurtherProcessing action =
                 listeners <- Delegate.Combine (listeners, action) :?> Action<PipeIdx>
