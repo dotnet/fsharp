@@ -117,6 +117,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Always_place_opens_at_top_level" xml:space="preserve">
+    <value>Always place open statements at the top level</value>
+  </data>
   <data name="Code_Fixes" xml:space="preserve">
     <value>Code Fixes</value>
   </data>
@@ -142,9 +145,12 @@
     <value>S_how navigation links as</value>
   </data>
   <data name="Simplify_name_code_fix" xml:space="preserve">
-    <value>Simplify Name</value>
+    <value>Simplify names (remove unnecessary qualifiers)</value>
   </data>
   <data name="Solid_underline" xml:space="preserve">
     <value>_Solid underline</value>
+  </data>
+  <data name="Unused_opens_code_fix" xml:space="preserve">
+    <value>Remove unused open statements</value>
   </data>
 </root>
