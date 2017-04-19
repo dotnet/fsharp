@@ -31,13 +31,6 @@ module SR =
     let FSharpDisposablesClassificationType = lazy (GetString "FSharpDisposablesClassificationType")
     let RemoveUnusedOpens = lazy (GetString "RemoveUnusedOpens")
     let UnusedOpens = lazy (GetString "UnusedOpens")
-    
-    [<Literal>]
-    let IntelliSensePropertyPageMiscCategory = "IntelliSensePropertyPageMiscCategory"
-    [<Literal>]
-    let IntelliSensePropertyPageShowAfterCharIsTyped = "IntelliSensePropertyPageShowAfterCharIsTyped"
-    [<Literal>]
-    let IntelliSensePropertyPageShowAfterCharIsTypedDescr = "IntelliSensePropertyPageShowAfterCharIsTypedDescr"
 
     //--------------------------------------------------------------------------------------
     // Attributes used to mark up editable properties 

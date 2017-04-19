@@ -160,6 +160,7 @@ type internal UnusedOpensDiagnosticAnalyzer() =
 
     static member GetUnusedOpenRanges(document: Document, options, checker: FSharpChecker) =
         asyncMaybe {
+            do! Option.guard Settings.CodeFixes.UnusedOpens
             let! sourceText = document.GetTextAsync()
             let! _, parsedInput, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true)
             let! symbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
