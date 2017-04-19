@@ -50,4 +50,5 @@
       <Name>FSharp.Compiler</Name>
     </ProjectReference>
   </ItemGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 </Project>
