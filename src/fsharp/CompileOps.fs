@@ -3644,10 +3644,8 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
                         yield (ccuName, byteReader()) ]
                         
             let sigDataReaders = 
-                if List.contains ilShortAssemName externalSigAndOptData then 
+                if sigDataReaders.IsEmpty & List.contains ilShortAssemName externalSigAndOptData then 
                     let sigFileName = Path.ChangeExtension(filename, "sigdata")
-                    if not sigDataReaders.IsEmpty then 
-                        error(Error(FSComp.SR.buildDidNotExpectSigdataResource(FileSystem.GetFullPathShim filename),m))
                     if not (FileSystem.SafeExists sigFileName) then 
                         error(Error(FSComp.SR.buildExpectedSigdataFile (FileSystem.GetFullPathShim sigFileName), m))
                     [ (ilShortAssemName, FileSystem.ReadAllBytesShim sigFileName)]
@@ -3661,10 +3659,8 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
 
             // Look for optimization data in a file 
             let optDataReaders = 
-                if List.contains ilShortAssemName externalSigAndOptData then 
+                if optDataReaders.IsEmpty &&& List.contains ilShortAssemName externalSigAndOptData then 
                     let optDataFile = Path.ChangeExtension(filename, "optdata")
-                    if not optDataReaders.IsEmpty then 
-                        error(Error(FSComp.SR.buildDidNotExpectOptDataResource(FileSystem.GetFullPathShim filename),m))
                     if not (FileSystem.SafeExists optDataFile)  then 
                         error(Error(FSComp.SR.buildExpectedFileAlongSideFSharpCore(optDataFile,FileSystem.GetFullPathShim optDataFile),m))
                     [ (ilShortAssemName, (fun () -> FileSystem.ReadAllBytesShim optDataFile))]

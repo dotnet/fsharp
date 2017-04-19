@@ -444,7 +444,6 @@ let outpath outfile extn =
 //----------------------------------------------------------------------------
   
 let GenerateInterfaceData(tcConfig:TcConfig) = 
-    (* (tcConfig.target = Dll || tcConfig.target = Module) && *)
     not tcConfig.standalone && not tcConfig.noSignatureData 
 
 let EncodeInterfaceData(tcConfig:TcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild) = 
@@ -452,13 +451,11 @@ let EncodeInterfaceData(tcConfig:TcConfig, tcGlobals, exportRemapping, generated
         let resource = WriteSignatureData (tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile)
         // The resource gets written to a file for FSharp.Core
         let useDataFiles = (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib) && not isIncrementalBuild
+        if useDataFiles then 
+            let sigDataFileName = (Filename.chopExtension outfile)+".sigdata"
+            File.WriteAllBytes(sigDataFileName, resource.Bytes)
         let resources = 
-            if useDataFiles then 
-                let sigDataFileName = (Filename.chopExtension outfile)+".sigdata"
-                File.WriteAllBytes(sigDataFileName, resource.Bytes)
-                []
-            else
-                [ resource ]
+            [ resource ]
         let sigAttr = mkSignatureDataVersionAttr tcGlobals (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision) 
         [sigAttr], resources
       else 
@@ -470,28 +467,24 @@ let EncodeInterfaceData(tcConfig:TcConfig, tcGlobals, exportRemapping, generated
 //----------------------------------------------------------------------------
 
 let GenerateOptimizationData(tcConfig) = 
-    (* (tcConfig.target =Dll || tcConfig.target = Module) && *)
     GenerateInterfaceData(tcConfig) 
 
 let EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, data) = 
     if GenerateOptimizationData tcConfig then 
         let data = map2Of2 (Optimizer.RemapOptimizationInfo tcGlobals exportRemapping) data
-        if verbose then dprintn "Generating optimization data attribute..."
-        // REVIEW: need a better test for this
-        if tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib then 
+        // As with the sigdata file, the optdata gets written to a file for FSharp.Core
+        let useDataFiles = (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib) && not isIncrementalBuild
+        if useDataFiles then 
             let ccu, modulInfo = data
             let bytes = TastPickle.pickleObjWithDanglingCcus outfile tcGlobals ccu Optimizer.p_CcuOptimizationInfo modulInfo
             let optDataFileName = (Filename.chopExtension outfile)+".optdata"
             File.WriteAllBytes(optDataFileName, bytes)
-        // As with the sigdata file, the optdata gets written to a file for FSharp.Core
-        if tcGlobals.compilingFslib then 
-            []
-        else
-            let (ccu, optData) = 
-                if tcConfig.onlyEssentialOptimizationData || tcConfig.useOptimizationDataFile 
-                then map2Of2 Optimizer.AbstractOptimizationInfoToEssentials data 
-                else data
-            [ WriteOptimizationData (tcGlobals, outfile, ccu, optData) ]
+        let (ccu, optData) = 
+            if tcConfig.onlyEssentialOptimizationData then 
+                map2Of2 Optimizer.AbstractOptimizationInfoToEssentials data 
+            else 
+                data
+        [ WriteOptimizationData (tcGlobals, outfile, ccu, optData) ]
     else
         [ ]
 
