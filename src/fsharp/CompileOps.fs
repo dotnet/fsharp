@@ -3592,9 +3592,9 @@ let IsOptimizationDataResource      (r: ILResource) =
     r.Name.StartsWith FSharpOptimizationDataResourceName2
 
 let GetSignatureDataResourceName    (r: ILResource) = 
-    if r.Name.StartsWith FSharpOptimizationDataResourceName then 
+    if r.Name.StartsWith FSharpSignatureDataResourceName then 
         String.dropPrefix r.Name FSharpSignatureDataResourceName
-    elif r.Name.StartsWith FSharpOptimizationDataResourceName2 then 
+    elif r.Name.StartsWith FSharpSignatureDataResourceName2 then 
         String.dropPrefix r.Name FSharpSignatureDataResourceName2
     else failwith "GetSignatureDataResourceName"
 
