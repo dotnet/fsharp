@@ -141,7 +141,11 @@ type internal FSharpAddOpenCodeFixProvider
                           Resolved = not (ident.idRange = unresolvedIdentRange)})
                     |> List.toArray)
                                                     
-            let createEntity = ParsedInput.tryFindInsertionContext unresolvedIdentRange.StartLine parsedInput maybeUnresolvedIdents
+            let insertionPoint = 
+                if Settings.CodeFixes.AlwaysPlaceOpensAtTopLevel then OpenStatementInsertionPoint.TopLevel
+                else OpenStatementInsertionPoint.Nearest
+
+            let createEntity = ParsedInput.tryFindInsertionContext unresolvedIdentRange.StartLine parsedInput maybeUnresolvedIdents insertionPoint
             return entities |> Seq.map createEntity |> Seq.concat |> Seq.toList |> getSuggestions context
         } 
         |> Async.Ignore 

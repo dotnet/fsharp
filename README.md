@@ -15,7 +15,7 @@ You are invited to join with the F# Community and the Visual F# Tools team to he
 
 F# is a mature, open source, cross-platform, functional-first programming language which empowers users and organizations to tackle complex computing problems with simple, maintainable, and robust code. F# is used in a wide range of application areas and is supported by Microsoft and other industry-leading companies providing professional tools, and by an active open community. You can find out more about F# at http://fsharp.org.
 
-Changes contributed here are packaged into the Visual F# Tools, the F# Open Edition, and other open source F# editing tools. Microsoft coordinates packaging this repository as part of the Visual F# Tools, while the F# community coordinates packaging it as the Open Edition of F# for use on Linux, OSX, Android, iOS, and other platforms, via the [fsharp/fsharp GitHub repo](https://github.com/fsharp/fsharp/).
+Changes contributed here are packaged into the Visual F# Tools, the F# Open Edition, and other open source F# editing tools. Microsoft coordinates packaging this repository as part of the Visual F# Tools, while the F# community coordinates packaging it as the Open Edition of F# for use on Linux, macOS, Android, iOS, and other platforms, via the [fsharp/fsharp GitHub repo](https://github.com/fsharp/fsharp/).
 
 ### License
 
@@ -34,7 +34,7 @@ For F# Compiler on Windows (``build net40``)
 - [.NET 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40779)
 - [MSBuild 12.0](http://www.microsoft.com/en-us/download/details.aspx?id=40760)
 
-For F# Compiler on OSX and Linux (see .travis.yml for build steps)
+For F# Compiler on macOS and Linux (see .travis.yml for build steps)
 
 - [Mono latest](http://www.mono-project.com/download/#download-lin)
 - If building for .NET Core, then .NET Core will be downloaded from Linux packages
@@ -85,7 +85,7 @@ To download the bits for the latest CI builds see [these instructions](https://g
 
 ### Code Flow to Other Platforms
 
-This repository enables development on Windows, Linux and OSX.  It enables automated CI testing primarily on Windows.
+This repository enables development on Windows, Linux and macOS.  It enables automated CI testing primarily on Windows.
 
 If using Android, or iOS, and would like to contribute, please see the instructions provided at the [Open Edition repo](https://github.com/fsharp/fsharp/#the-open-edition-of-the-f-compiler-core-library--tools).
 
