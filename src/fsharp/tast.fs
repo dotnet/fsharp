@@ -5078,7 +5078,11 @@ let CombineCcuContentFragments m l =
 // Resource format for pickled data
 //--------------------------------------------------------------------------
 
-let FSharpOptimizationDataResourceName = "FSharpOptimizationData"
-let FSharpSignatureDataResourceName = "FSharpSignatureData"
+let FSharpOptimizationDataResourceName = "FSharpOptimizationData."
+let FSharpSignatureDataResourceName = "FSharpSignatureData."
+// For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers 
+// don't complain when they see the resource.
+let FSharpOptimizationDataResourceName2 = "FSharpOptimizationDataAlt."
+let FSharpSignatureDataResourceName2 = "FSharpSignatureDataAlt."
 
 

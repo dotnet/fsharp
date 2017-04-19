@@ -446,7 +446,7 @@ let outpath outfile extn =
 let GenerateInterfaceData(tcConfig:TcConfig) = 
     not tcConfig.standalone && not tcConfig.noSignatureData 
 
-let EncodeInterfaceData(tcConfig:TcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild) = 
+let EncodeInterfaceData(tcConfig: TcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild) = 
     if GenerateInterfaceData(tcConfig) then 
         let resource = WriteSignatureData (tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile)
         // The resource gets written to a file for FSharp.Core
@@ -469,7 +469,7 @@ let EncodeInterfaceData(tcConfig:TcConfig, tcGlobals, exportRemapping, generated
 let GenerateOptimizationData(tcConfig) = 
     GenerateInterfaceData(tcConfig) 
 
-let EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, data) = 
+let EncodeOptimizationData(tcGlobals, tcConfig: TcConfig, outfile, exportRemapping, data, isIncrementalBuild) = 
     if GenerateOptimizationData tcConfig then 
         let data = map2Of2 (Optimizer.RemapOptimizationInfo tcGlobals exportRemapping) data
         // As with the sigdata file, the optdata gets written to a file for FSharp.Core
@@ -1877,7 +1877,7 @@ let main2a(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlo
         
     // Encode the optimization data
     ReportTime tcConfig ("Encoding OptData")
-    let optDataResources = EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData))
+    let optDataResources = EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
 
     // Pass on only the minimum information required for the next phase
     Args (ctok, tcConfig, tcImports, tcGlobals, errorLogger, generatedCcu, outfile, optimizedImpls, topAttrs, pdbfile, assemblyName, (sigDataAttributes, sigDataResources), optDataResources, assemVerFromAttrib, signingInfo, metadataVersion, exiter)
