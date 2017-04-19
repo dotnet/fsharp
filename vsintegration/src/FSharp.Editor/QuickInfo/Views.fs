@@ -70,7 +70,7 @@ type internal QuickInfoViewProvider
 
         let navigateAndDismiss range _ =
             navigation.NavigateTo range
-            SessionHandling.currentSession |> Option.iter ( fun session -> session.Dismiss() )  
+            SessionHandling.currentSession |> Option.iter ( fun session -> session.Dismiss() )
 
         let inlines = 
             seq { 
