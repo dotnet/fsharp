@@ -1875,7 +1875,7 @@ let getEnclosingTypeRefs (tref:ILTypeRef) =
 [<RequireQualifiedAccess>]
 type AllTypes = Yes | No
 
-// Find all constitunt type references
+// Find all constituent type references
 let rec getTypeRefsInType (allTypes: AllTypes) typ acc = 
     match typ with
     | ILType.Void 

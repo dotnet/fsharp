@@ -1,4 +1,4 @@
-namespace global
+//namespace global
 
 //See https://github.com/Microsoft/visualfsharp/issues/2871
 module MyModule =
