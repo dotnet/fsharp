@@ -82,6 +82,10 @@ let VerifyCompletionListExactly(fileContents: string, marker: string, expected: 
 
 let VerifyNoCompletionList(fileContents: string, marker: string) =
     VerifyCompletionListExactly(fileContents, marker, [])
+
+[<OneTimeSetUp>]
+let usingDefaultSettings() = 
+    SettingsPersistence.setSettings { ShowAfterCharIsTyped = true; ShowAfterCharIsDeleted = false }
     
 [<Test>]
 let ShouldTriggerCompletionAtCorrectMarkers() =
