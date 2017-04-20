@@ -158,7 +158,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
         public virtual void Remove()
         {
             UIThread.DoOnUIThread(delegate(){
-                BaseReferenceNode.Remove(false);
+                BaseReferenceNode.Remove(removeFromStorage: false);
             });
         }
 

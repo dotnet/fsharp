@@ -530,4 +530,16 @@
   <data name="UpdatingSolutionConfiguration" xml:space="preserve">
     <value>Updating solution configuration...</value>
   </data>
+  <data name="FileCannotBePlacedBodyAbove" xml:space="preserve">
+    <value>The file '{0}' cannot be placed above '{1}' in the Solution Explorer.\n\n{2}.</value>
+  </data>
+  <data name="FileCannotBePlacedBodyBelow" xml:space="preserve">
+    <value>The file '{0}' cannot be placed below '{1}' in the Solution Explorer.\n\n{2}.</value>
+  </data>
+  <data name="FileCannotBePlacedDifferentSubtree" xml:space="preserve">
+    <value>The file is in a different subtree</value>
+  </data>
+  <data name="FileCannotBePlacedMultipleFiles" xml:space="preserve">
+    <value>The '{0}' folder cannot be moved as it already exists in the Solution Explorer in a different location</value>
+  </data>
 </root>
