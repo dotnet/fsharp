@@ -4725,7 +4725,7 @@ let ProcessMetaCommandsFromInput
                match args with 
                | [path] -> 
                    matchedm<-m
-                   match DependencyManagerIntegration.tryFindDependencyManagerInPath m (path:string) with
+                   match DependencyManagerIntegration.tryFindDependencyManagerInPath m path tcConfig.includes with
                    | DependencyManagerIntegration.ReferenceType.RegisteredDependencyManager packageManager -> 
                        packageRequireF state (packageManager,m,path)
                    | DependencyManagerIntegration.ReferenceType.Library path ->
@@ -4983,9 +4983,9 @@ module ScriptPreprocessClosure =
                         match origTcConfig.packageManagerLines |> Map.tryFind packageManagerKey with
                         | Some oldDependencyManagerLines when oldDependencyManagerLines = packageManagerLines -> ()
                         | _ ->
-                            match DependencyManagerIntegration.tryFindDependencyManagerByKey m packageManagerKey with
+                            match DependencyManagerIntegration.tryFindDependencyManagerByKey m packageManagerKey origTcConfig.includes with
                             | None ->
-                                errorR(DependencyManagerIntegration.createPackageManagerUnknownError packageManagerKey m)
+                                errorR(DependencyManagerIntegration.createPackageManagerUnknownError packageManagerKey m origTcConfig.includes)
                             | Some packageManager ->
                                 let packageManagerTextLines = packageManagerLines |> List.map fst
                                 match DependencyManagerIntegration.resolve packageManager tcConfig.Value.implicitIncludeDir scriptName m packageManagerTextLines with

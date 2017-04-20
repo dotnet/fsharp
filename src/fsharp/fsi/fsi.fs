@@ -1221,13 +1221,13 @@ type internal FsiDynamicCompiler
 
     member __.EvalDependencyManagerTextFragment (packageManager:DependencyManagerIntegration.IDependencyManagerProvider,m,path: string) =
         let path = DependencyManagerIntegration.removeDependencyManagerKey packageManager.Key path
-        
+
         match tcConfigB.packageManagerLines |> Map.tryFind packageManager.Key with
         | Some lines -> tcConfigB.packageManagerLines <- Map.add packageManager.Key (lines @ [path,m]) tcConfigB.packageManagerLines
         | _ -> tcConfigB.packageManagerLines <- Map.add packageManager.Key [path,m] tcConfigB.packageManagerLines
 
         needsPackageResolution <- true
-         
+
     member fsiDynamicCompiler.CommitDependencyManagerText (ctok, istate: FsiDynamicCompilerState, lexResourceManager, errorLogger) = 
         if not needsPackageResolution then istate else
         needsPackageResolution <- false
@@ -1239,9 +1239,9 @@ type internal FsiDynamicCompiler
             | [] -> ()
             | (_,m)::_ ->
                 let packageManagerTextLines = packageManagerLines |> List.map fst
-                match DependencyManagerIntegration.tryFindDependencyManagerByKey m packageManagerKey with
+                match DependencyManagerIntegration.tryFindDependencyManagerByKey m packageManagerKey tcConfigB.includes with
                 | None ->
-                    errorR(DependencyManagerIntegration.createPackageManagerUnknownError packageManagerKey m)
+                    errorR(DependencyManagerIntegration.createPackageManagerUnknownError packageManagerKey m tcConfigB.includes)
                 | Some packageManager ->
                     match DependencyManagerIntegration.resolve packageManager tcConfigB.implicitIncludeDir "stdin.fsx" m packageManagerTextLines with
                     | None -> () // error already reported
@@ -1916,7 +1916,7 @@ type internal FsiInteractionProcessor
                 fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, sourceFiles, lexResourceManager, errorLogger),Completed None
 
             | IHash (ParsedHashDirective(("reference" | "r"),[path],m),_) -> 
-                match DependencyManagerIntegration.tryFindDependencyManagerInPath m (path:string) with
+                match DependencyManagerIntegration.tryFindDependencyManagerInPath m path tcConfigB.includes with
                 | DependencyManagerIntegration.ReferenceType.RegisteredDependencyManager packageManager -> 
                     fsiDynamicCompiler.EvalDependencyManagerTextFragment(packageManager,m,path)
                     istate,Completed None

@@ -19,8 +19,9 @@ open Microsoft.FSharp.Core.ReflectionAdapters
 /// hardcoded to net461 as we don't have fsi on netcore
 let targetFramework = "net461"
 
+/// reflection helpers
 module ReflectionHelper =
-    let assemblyHasAttribute (theAssembly: Assembly) attributeName =
+    let assemblyHasAttributeNamed (theAssembly: Assembly) attributeName =
         try
             theAssembly.GetCustomAttributes false
             |> Seq.tryFind (fun a -> a.GetType().Name = attributeName)
@@ -58,7 +59,8 @@ module ReflectionHelper =
     let implements<'timplemented> (theType: Type) =
         typeof<'timplemented>.IsAssignableFrom(theType)
 
-(* this is the loose contract for now, just to define the shape, but this is resolved through reflection *)
+/// Contract for dependency anager provider.  This is a loose contract for now, just to define the shape, 
+/// it is resolved through reflection (ReflectionDependencyManagerProvider)
 type internal IDependencyManagerProvider =
     inherit System.IDisposable
     abstract Name : string
@@ -66,36 +68,33 @@ type internal IDependencyManagerProvider =
     abstract Key: string
     abstract ResolveDependencies : targetFramework: string * scriptDir: string * scriptName: string * packageManagerTextLines: string seq -> string option * string list
 
+/// Reference
 [<RequireQualifiedAccess>]
 type ReferenceType =
 | RegisteredDependencyManager of IDependencyManagerProvider
 | Library of string
 | UnknownType
 
+/// Dependency Manager Provider using dotnet reflection
 type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyInfo, toolNameProperty: PropertyInfo, keyProperty: PropertyInfo, resolveDeps: MethodInfo) =
     let instance = Activator.CreateInstance(theType) :?> IDisposable
     let nameProperty     = nameProperty.GetValue >> string
     let toolNameProperty = toolNameProperty.GetValue >> string
     let keyProperty      = keyProperty.GetValue >> string
-    static member InstanceMaker (theType: System.Type) = 
+    static member InstanceMaker (theType: System.Type) =
         if not (ReflectionHelper.implements<IDisposable> theType) then None
-        else        
-        match ReflectionHelper.getAttributeNamed theType "FSharpDependencyManagerAttribute" with
-        | None -> None
-        | Some _ ->
-        match ReflectionHelper.getInstanceProperty<string> theType Array.empty "Name" with
-        | None -> None
-        | Some nameProperty ->
-        match ReflectionHelper.getInstanceProperty<string> theType Array.empty "ToolName" with
-        | None -> None
-        | Some toolNameProperty ->
-        match ReflectionHelper.getInstanceProperty<string> theType Array.empty "Key" with
-        | None -> None
-        | Some keyProperty ->
-        match ReflectionHelper.getInstanceMethod<string * string list> theType [|typeof<string>;typeof<string>;typeof<string>;typeof<string seq>;|] "ResolveDependencies" with
-        | None -> None
-        | Some resolveDependenciesMethod ->
-            Some (fun () -> new ReflectionDependencyManagerProvider(theType, nameProperty, toolNameProperty, keyProperty, resolveDependenciesMethod) :> IDependencyManagerProvider)
+        else
+            match ReflectionHelper.getAttributeNamed theType "FSharpDependencyManagerAttribute" with
+            | None -> None
+            | Some _ ->
+                match ReflectionHelper.getInstanceProperty<string> theType Array.empty "Name",
+                      ReflectionHelper.getInstanceProperty<string> theType Array.empty "ToolName",
+                      ReflectionHelper.getInstanceProperty<string> theType Array.empty "Key",
+                      ReflectionHelper.getInstanceMethod<string * string list> theType [|typeof<string>;typeof<string>;typeof<string>;typeof<string seq>;|] "ResolveDependencies"
+                      with
+                | Some nameProperty, Some toolNameProperty, Some keyProperty, Some resolveDependenciesMethod ->
+                    Some (fun () -> new ReflectionDependencyManagerProvider(theType, nameProperty, toolNameProperty, keyProperty, resolveDependenciesMethod) :> IDependencyManagerProvider)
+                | _ -> None
 
     interface IDependencyManagerProvider with
         member __.Name     = instance |> nameProperty
@@ -104,29 +103,34 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
         member __.ResolveDependencies(targetFramework, scriptDir, scriptName, packageManagerTextLines) =
             let arguments = [|box targetFramework; box scriptDir; box scriptName; box packageManagerTextLines|]
             resolveDeps.Invoke(instance, arguments) :?> _
+
     interface IDisposable with
         member __.Dispose () = instance.Dispose()
-            
 
-let assemblySearchPaths = 
-    lazy(
-        [let assemblyLocation = typeof<IDependencyManagerProvider>.Assembly.Location
-         yield Path.GetDirectoryName assemblyLocation
+
+let assemblySearchLocations (additionalIncludePaths:string list) =
+    additionalIncludePaths @
+    [
+        yield Path.GetDirectoryName typeof<IDependencyManagerProvider>.Assembly.Location
 #if FX_NO_APP_DOMAINS
-         yield AppContext.BaseDirectory
+        yield AppContext.BaseDirectory
 #else
-         yield AppDomain.CurrentDomain.BaseDirectory
+        yield AppDomain.CurrentDomain.BaseDirectory
 #endif
-        ]
-        |> List.distinct
-    )
+    ] |> List.distinct
 
-let enumerateDependencyManagerAssembliesFromCurrentAssemblyLocation () =
-    assemblySearchPaths.Force()
+let enumerateDependencyManagerAssembliesFromCurrentAssemblyLocation (additionalIncludePaths:string list) =
+    /// Where to search for providers
+    /// Algorithm TBD
+    ///     1. Directory containing FSharp.Compiler.dll
+    ///     2. AppContext (AppDomain on desktop) Base directory
+    ///     3. directories supplied using --lib
+    (assemblySearchLocations additionalIncludePaths)
     |> Seq.collect (fun path -> Directory.EnumerateFiles(path,"*DependencyManager*.dll"))
     |> Seq.choose (fun path -> try Assembly.LoadFrom path |> Some with | _ -> None)
-    |> Seq.filter (fun a -> ReflectionHelper.assemblyHasAttribute a "FSharpDependencyManagerAttribute")
+    |> Seq.filter (fun a -> ReflectionHelper.assemblyHasAttributeNamed a "FSharpDependencyManagerAttribute")
 
+/// TBD
 type ProjectDependencyManager() =
     interface IDependencyManagerProvider with
         member __.Name = "Project loader"
@@ -138,9 +142,10 @@ type ProjectDependencyManager() =
     interface System.IDisposable with
         member __.Dispose() = ()
 
+/// Contract for DependencyManager for #r assemblies
 type RefDependencyManager() =
     interface IDependencyManagerProvider with
-        member __.Name = "Ref library loader"
+        member __.Name = "Library loader"
         member __.ToolName = ""
         member __.Key = "ref"
         member __.ResolveDependencies(_targetFramework:string, _scriptDir: string, _scriptName: string, _packageManagerTextLines: string seq) = 
@@ -149,54 +154,47 @@ type RefDependencyManager() =
     interface System.IDisposable with
         member __.Dispose() = ()
 
-type ImplDependencyManager() =
-    interface IDependencyManagerProvider with
-        member __.Name = "Impl library loader"
-        member __.ToolName = ""
-        member __.Key = "impl"
-        member __.ResolveDependencies(_targetFramework:string, _scriptDir: string, _scriptName: string, _packageManagerTextLines: string seq) = 
-            None,[]
+/// Get the list of registered DependencyManagers
+let registeredDependencyManagers (additionalIncludePaths: string list) = 
+    let dependencyManagers =
+        lazy (
+            let defaultProviders =
+                [new ProjectDependencyManager() :> IDependencyManagerProvider
+                 new RefDependencyManager() :> IDependencyManagerProvider ]
 
-    interface System.IDisposable with
-        member __.Dispose() = ()
+            let loadedProviders =
+                enumerateDependencyManagerAssembliesFromCurrentAssemblyLocation(additionalIncludePaths)
+                |> Seq.collect (fun a -> a.GetTypes())
+                |> Seq.choose ReflectionDependencyManagerProvider.InstanceMaker
+                |> Seq.map (fun maker -> maker ())
 
-let registeredDependencyManagers = lazy (
-    let defaultProviders =
-        [new ProjectDependencyManager() :> IDependencyManagerProvider
-         new RefDependencyManager() :> IDependencyManagerProvider
-         new ImplDependencyManager() :> IDependencyManagerProvider]
-    
-    let loadedProviders =
-        enumerateDependencyManagerAssembliesFromCurrentAssemblyLocation()
-        |> Seq.collect (fun a -> a.GetTypes())
-        |> Seq.choose ReflectionDependencyManagerProvider.InstanceMaker
-        |> Seq.map (fun maker -> maker ())
-    
-    defaultProviders
-    |> Seq.append loadedProviders
-    |> Seq.map (fun pm -> pm.Key, pm)
-    |> Map.ofSeq
-)
+        defaultProviders
+        |> Seq.append loadedProviders
+        |> Seq.map (fun pm -> pm.Key, pm)
+        |> Map.ofSeq
+        )
+    dependencyManagers.Force()
 
-let RegisteredDependencyManagers() = registeredDependencyManagers.Force()
-
-let createPackageManagerUnknownError packageManagerKey m =
-    let registeredKeys = String.Join(", ", RegisteredDependencyManagers() |> Seq.map (fun kv -> kv.Value.Key))
-    let searchPaths = assemblySearchPaths.Force()
+/// Issue PackageManner error
+let createPackageManagerUnknownError packageManagerKey m (additionalIncludePaths: string list) =
+    let registeredKeys = String.Join(", ", registeredDependencyManagers(additionalIncludePaths) |> Seq.map (fun kv -> kv.Value.Key))
+    let searchPaths = assemblySearchLocations additionalIncludePaths
     Error(FSComp.SR.packageManagerUnknown(packageManagerKey, String.Join(", ", searchPaths), registeredKeys),m)
 
-let tryFindDependencyManagerInPath m (path:string) : ReferenceType =
+/// Issue Look for a packagemanager given a #r path.  (Path may contain a package manager moniker 'nuget', 'paket' followed by ':' 
+/// or be a fully qualified Windows path 'C:...', a relative path or a UNC qualified path)
+let tryFindDependencyManagerInPath m (path:string) (additionalIncludePaths: string list): ReferenceType =
     try
         match path.IndexOf(":") with
         | -1 | 1 ->
             ReferenceType.Library path
         | _ ->
-            let managers = RegisteredDependencyManagers()
+            let managers = registeredDependencyManagers(additionalIncludePaths)
             match managers |> Seq.tryFind (fun kv -> path.StartsWith(kv.Value.Key + ":" )) with
             | None ->
-                errorR(createPackageManagerUnknownError (path.Split(':').[0]) m)
+                errorR(createPackageManagerUnknownError (path.Split(':').[0]) m additionalIncludePaths)
                 ReferenceType.UnknownType
-            | Some kv -> ReferenceType.RegisteredDependencyManager kv.Value
+            | Some kv -> (ReferenceType.RegisteredDependencyManager kv.Value)
     with
     | e ->
         errorR(Error(FSComp.SR.packageManagerError(e.Message),m))
@@ -204,9 +202,9 @@ let tryFindDependencyManagerInPath m (path:string) : ReferenceType =
 
 let removeDependencyManagerKey (packageManagerKey:string) (path:string) = path.Substring(packageManagerKey.Length + 1).Trim()
 
-let tryFindDependencyManagerByKey m (key:string) : IDependencyManagerProvider option =
+let tryFindDependencyManagerByKey m (key:string) (additionalIncludePaths: string list): IDependencyManagerProvider option =
     try
-        RegisteredDependencyManagers() |> Map.tryFind key
+        registeredDependencyManagers(additionalIncludePaths) |> Map.tryFind key
     with 
     | e -> 
         errorR(Error(FSComp.SR.packageManagerError(e.Message),m))
