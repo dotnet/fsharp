@@ -4,7 +4,8 @@
   <Extern href="stdidcmd.h"/>
   <Extern href="vsshlids.h"/>
   <Include href="..\FSharp.VS.FSI\fsiCommands.vsct"/>    <!-- FSI-LINKAGE-POINT -->
-  
+  <Include href="KnownImageIds.vsct"/>
+
   <!-- Stake a claime to existing commands so they aren't marked as unused and removed. -->
   <UsedCommands>
     <UsedCommand guid="guidVSStd2K" id="ECMD_ADDREFERENCE" />
@@ -179,6 +180,28 @@
           <CommandName>Add Existing Item</CommandName>
         </Strings>
       </Button>
+      <Button guid="FSharpProjectCmdSet" id="NewFolderAbove" priority="0x200" type="Button">
+        <Parent guid ="FSharpProjectCmdSet" id ="FSharpGroupAddAbove"/>
+        <Icon guid="ImageCatalogGuid" id="NewFolder"/>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>New Fol&amp;der</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="FSharpProjectCmdSet" id="NewFolderBelow" priority="0x200" type="Button">
+        <Parent guid ="FSharpProjectCmdSet" id ="FSharpGroupAddBelow"/>
+        <Icon guid="ImageCatalogGuid" id="NewFolder"/>
+        <CommandFlag>DynamicVisibility</CommandFlag>
+        <CommandFlag>DefaultInvisible</CommandFlag>
+        <CommandFlag>TextChanges</CommandFlag>
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>New Fol&amp;der</ButtonText>
+        </Strings>
+      </Button>
     </Buttons>
     <Bitmaps>
       <Bitmap guid="FSharpMoveUpBmp" href="Resources\MoveUp.bmp" usedList="moveUp"/>
@@ -204,6 +227,8 @@
       <IDSymbol name ="AddNewItemAbove" value ="0x3005"/>
       <IDSymbol name ="AddExistingItemAbove" value ="0x3006"/>
       <IDSymbol name ="MoveDownCmd" value ="0x3007"/>
+      <IDSymbol name ="NewFolderAbove" value ="0x3008"/>
+      <IDSymbol name ="NewFolderBelow" value ="0x3009"/>
 
       <IDSymbol name = "FSharpSendThisReferenceToInteractiveGroup" value = "0x5001"/>
       <IDSymbol name = "FSharpSendReferencesToInteractiveGroup" value = "0x5002"/>
