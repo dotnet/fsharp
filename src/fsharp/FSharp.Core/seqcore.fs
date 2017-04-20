@@ -157,6 +157,11 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         // ineffictive **
         let inline avoid boolean = match boolean with true -> true | false -> false
 
+    module internal Closure =
+        // F# inlines simple functions, which can mean that it some case you keep creating closures when
+        // a single funciton object would have done. This forces the compiler to create the object
+        let inline forceCapture<'a,'b> (f:'a->'b) : 'a->'b = (# "" f : 'a->'b #)
+
     module internal Upcast =
         // The f# compiler outputs unnecessary unbox.any calls in upcasts. If this functionality
         // is fixed with the compiler then these functions can be removed.
@@ -405,10 +410,12 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                 (Upcast.outOfBand this).StopFurtherProcessing idx
                 (Upcast.outOfBand common).StopFurtherProcessing PipeIdx.MaxValue)
 
+        let getCommonFolder = Closure.forceCapture (fun (_:PipeIdx) ->
+            (Upcast.outOfBand common).StopFurtherProcessing 0
+            common)
+
         override __.ProcessNext value =
-            value.Fold (fun _ ->
-                (Upcast.outOfBand common).StopFurtherProcessing 0
-                common) |> ignore
+            value.Fold getCommonFolder |> ignore
             Unchecked.defaultof<_> (* return value unused in Fold context *)
 
         override this.ChainComplete _ =
