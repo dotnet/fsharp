@@ -31,7 +31,9 @@ module SR =
     let FSharpDisposablesClassificationType = lazy (GetString "FSharpDisposablesClassificationType")
     let RemoveUnusedOpens = lazy (GetString "RemoveUnusedOpens")
     let UnusedOpens = lazy (GetString "UnusedOpens")
-
+    let AddProjectReference = lazy (GetString "AddProjectReference")
+    let AddAssemblyReference = lazy (GetString "AddAssemblyReference")
+    
     //--------------------------------------------------------------------------------------
     // Attributes used to mark up editable properties 
     
