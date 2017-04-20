@@ -484,13 +484,15 @@ namespace Microsoft.FSharp.Collections.SeqComposition
             member this.Fold<'Result> (createFolder:PipeIdx->Folder<'T,'Result>) =
                 let result = createFolder 1
                 try
-                    let rec iterate lst =
-                        match lst with
+                    let mutable lst = alist
+                    while 
+                      ( match lst with
                         | hd :: tl when result.HaltedIdx = 0 ->
                             result.ProcessNext hd |> ignore
-                            iterate tl
-                        | _ -> ()
-                    iterate alist
+                            lst <- tl
+                            true
+                        | _ -> false
+                      ) do ()
 
                     result.ChainComplete result.HaltedIdx
                 finally
@@ -513,13 +515,15 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                 let result = createFolder (pipeIdx+1)
                 let consumer = createFold transformFactory result pipeIdx
                 try
-                    let rec iterate lst =
-                        match lst with
+                    let mutable lst = alist
+                    while
+                      ( match lst with
                         | hd :: tl when result.HaltedIdx = 0 ->
                             consumer.ProcessNext hd |> ignore
-                            iterate tl
-                        | _ -> ()
-                    iterate alist
+                            lst <- tl
+                            true
+                        | _ -> false
+                      ) do ()
 
                     consumer.ChainComplete result.HaltedIdx
                 finally
