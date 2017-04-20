@@ -3236,6 +3236,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Collections
     open BasicInlinedOperations
+    open LanguagePrimitives.IntrinsicOperators
 
     type PipeIdx = int
 
@@ -3272,11 +3273,10 @@ namespace Microsoft.FSharp.Collections.SeqComposition
             member this.StopFurtherProcessing pipeIdx = 
                 let currentIdx = haltedIdx
                 haltedIdx <- pipeIdx
-                if currentIdx = 0 then
-                    if haltedIdx <> 0 then
-                        match listeners with
-                        | null -> ()
-                        | a -> a.Invoke pipeIdx
+                if currentIdx = 0 && haltedIdx <> 0 then
+                    match listeners with
+                    | null -> ()
+                    | a -> a.Invoke pipeIdx
 
             member this.ListenForStopFurtherProcessing action =
                 listeners <- Delegate.Combine (listeners, action) :?> Action<PipeIdx>
