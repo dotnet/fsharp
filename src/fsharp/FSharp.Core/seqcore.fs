@@ -493,9 +493,9 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                     iterate alist
 
                     result.ChainComplete result.HaltedIdx
-                    result.Result
                 finally
                     result.ChainDispose ()
+                result.Result
 
     and ListEnumerable<'T,'U>(alist:list<'T>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
         inherit EnumerableBase<'U>()
@@ -558,9 +558,9 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                         result.ProcessNext enumerator.Current |> ignore
 
                     result.ChainComplete result.HaltedIdx
-                    result.Result
                 finally
                     result.ChainDispose ()
+                result.Result
 
     type DelayedEnumerable<'T>(delayed:unit->ISeq<'T>, pipeIdx:PipeIdx) =
         inherit EnumerableBase<'T>()
@@ -601,9 +601,9 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                 let result = createFolder 1
                 try
                     result.ChainComplete result.HaltedIdx
-                    result.Result
                 finally
                     result.ChainDispose ()
+                result.Result
 
     type ArrayEnumerator<'T,'U>(array:array<'T>, activity:Activity<'T,'U>, result:Result<'U>) =
         inherit EnumeratorBase<'U>(result, activity)
@@ -676,9 +676,9 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                         idx <- idx + 1
 
                     result.ChainComplete result.HaltedIdx
-                    result.Result
                 finally
                     result.ChainDispose ()
+                result.Result
 
     type SingletonEnumerable<'T>(item:'T) =
         inherit EnumerableBase<'T>()
@@ -699,9 +699,9 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                         result.ProcessNext item |> ignore
 
                     result.ChainComplete result.HaltedIdx
-                    result.Result
                 finally
                     result.ChainDispose ()
+                result.Result
 
     type ResizeArrayEnumerator<'T,'U>(array:ResizeArray<'T>, activity:Activity<'T,'U>, result:Result<'U>) =
         inherit EnumeratorBase<'U>(result, activity)
@@ -774,9 +774,9 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                         idx <- idx + 1
 
                     result.ChainComplete result.HaltedIdx
-                    result.Result
                 finally
                     result.ChainDispose ()
+                result.Result
 
     type UnfoldEnumerator<'T,'U,'State>(generator:'State->option<'T*'State>, state:'State, activity:Activity<'T,'U>, result:Result<'U>) =
         inherit EnumeratorBase<'U>(result, activity)
@@ -1022,9 +1022,9 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                         result.ProcessNext enumerator.Current |> ignore
 
                     result.ChainComplete result.HaltedIdx
-                    result.Result
                 finally
                     result.ChainDispose ()
+                result.Result
 
 namespace Microsoft.FSharp.Core.CompilerServices
 
@@ -1318,9 +1318,9 @@ namespace Microsoft.FSharp.Core.CompilerServices
                             result.ProcessNext e.Current |> ignore
 
                     result.ChainComplete result.HaltedIdx
-                    result.Result
                 finally
                     result.ChainDispose ()
+                result.Result
 
         override this.Length () =
             use maybeGeneratedSequenceBase = this.GetFreshEnumerator ()
