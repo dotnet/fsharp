@@ -659,7 +659,7 @@ let typeIsNotQueryable (typ : Type) =
 let queryableTypeGetField _emEnv (parentT:Type) (fref: ILFieldRef)  =
     let res = parentT.GetField(fref.Name, BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance ||| BindingFlags.Static )  
     match res with 
-    | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("field", fref.Name, fref.EnclosingTypeRef.QualifiedNameWithNoShortPrimaryAssembly, fref.EnclosingTypeRef.Scope.QualifiedName), range0))
+    | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("field", fref.Name, fref.EnclosingTypeRef.FullName, fref.EnclosingTypeRef.Scope.QualifiedName), range0))
     | _ -> res
     
 let nonQueryableTypeGetField (parentTI:Type) (fieldInfo : FieldInfo) : FieldInfo = 
