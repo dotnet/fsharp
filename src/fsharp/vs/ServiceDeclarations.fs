@@ -982,7 +982,8 @@ module internal ItemDescriptionsImpl =
            FSharpStructuredToolTipElement.Single(layout, xml)
 
         // Types.
-        | Item.Types(_,((TType_app(tcref,_)):: _)) -> 
+        | Item.Types(_,((TType_app(tcref,_)):: _))
+        | Item.UnqualifiedType (tcref :: _) -> 
             let denv = { denv with shortTypeNames = true  }
             let layout =
                 NicePrint.layoutTycon denv infoReader AccessibleFromSomewhere m (* width *) tcref.Deref ^^
@@ -1042,6 +1043,7 @@ module internal ItemDescriptionsImpl =
             
         | Item.SetterArg (_, item) -> 
             FormatItemDescriptionToToolTipElement isDecl infoReader m denv item
+
         |  _ -> 
             FSharpStructuredToolTipElement.None
 
