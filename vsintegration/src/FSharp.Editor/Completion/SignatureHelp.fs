@@ -35,7 +35,7 @@ type internal FSharpSignatureHelpProvider
     static let oneColAfter (lp: LinePosition) = LinePosition(lp.Line,lp.Character+1)
     static let oneColBefore (lp: LinePosition) = LinePosition(lp.Line,max 0 (lp.Character-1))
 
-    // Unit-testable core rutine
+    // Unit-testable core routine
     static member internal ProvideMethodsAsyncAux(checker: FSharpChecker, documentationBuilder: IDocumentationBuilder, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, triggerIsTypedChar: char option, filePath: string, textVersionHash: int) = async {
         let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
         match checkFileAnswer with
@@ -130,7 +130,7 @@ type internal FSharpSignatureHelpProvider
                 
             match (computedTextSpans|> Array.tryFindIndex (fun t -> t.Contains(caretPosition))) with 
             | None -> 
-                // Because 'TextSpan.Contains' only succeeeds if 'TextSpan.Start <= caretPosition < TextSpan.End' is true,
+                // Because 'TextSpan.Contains' only succeeds if 'TextSpan.Start <= caretPosition < TextSpan.End' is true,
                 // we need to check if the caret is at the very last position in the TextSpan.
                 //
                 // We default to 0, which is the first argument, if the caret position was nowhere to be found.
@@ -225,7 +225,6 @@ type internal FSharpSignatureHelpProvider
 
 open System.ComponentModel.Composition
 open Microsoft.VisualStudio.Utilities
-open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Classification
 open Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.SignatureHelp.Presentation
 
