@@ -677,29 +677,31 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Take">]
         let take (takeCount:int) (source:ISeq<'T>) : ISeq<'T> =
-            source.PushTransform { new TransformFactory<'T,'T>() with
-                member __.Compose outOfBand pipelineIdx next =
-                    if takeCount = 0 then
-                        outOfBand.StopFurtherProcessing pipelineIdx
+            if takeCount = 0 then empty
+            else
+                source.PushTransform { new TransformFactory<'T,'T>() with
+                    member __.Compose outOfBand pipelineIdx next =
+                        if takeCount = 0 then
+                            outOfBand.StopFurtherProcessing pipelineIdx
 
-                    upcast { new TransformWithPostProcessing<'T,'U,int>(next,(*count*)0) with
-                        // member this.count = this.State
-                        override this.ProcessNext (input:'T) : bool =
-                            if this.State < takeCount then
-                                this.State <- this.State + 1
-                                if this.State = takeCount then
+                        upcast { new TransformWithPostProcessing<'T,'U,int>(next,(*count*)0) with
+                            // member this.count = this.State
+                            override this.ProcessNext (input:'T) : bool =
+                                if this.State < takeCount then
+                                    this.State <- this.State + 1
+                                    if this.State = takeCount then
+                                        outOfBand.StopFurtherProcessing pipelineIdx
+                                    TailCall.avoid (next.ProcessNext input)
+                                else
                                     outOfBand.StopFurtherProcessing pipelineIdx
-                                TailCall.avoid (next.ProcessNext input)
-                            else
-                                outOfBand.StopFurtherProcessing pipelineIdx
-                                false
+                                    false
 
-                        override this.OnComplete terminatingIdx =
-                            if terminatingIdx < pipelineIdx && this.State < takeCount then
-                                let x = takeCount - this.State
-                                invalidOpFmt "tried to take {0} {1} past the end of the seq"
-                                    [|SR.GetString SR.notEnoughElements; x; (if x=1 then "element" else "elements")|]
-                        override this.OnDispose () = () }}
+                            override this.OnComplete terminatingIdx =
+                                if terminatingIdx < pipelineIdx && this.State < takeCount then
+                                    let x = takeCount - this.State
+                                    invalidOpFmt "tried to take {0} {1} past the end of the seq"
+                                        [|SR.GetString SR.notEnoughElements; x; (if x=1 then "element" else "elements")|]
+                            override this.OnDispose () = () }}
 
         [<CompiledName "TakeWhile">]
         let inline takeWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
