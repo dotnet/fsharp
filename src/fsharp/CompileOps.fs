@@ -3499,6 +3499,12 @@ type TcAssemblyResolutions(results : AssemblyResolution list, unresolved : Unres
             let r = ar.GetILAssemblyRef(ctok) |> Cancellable.runWithoutCancellation 
             r = assref)
 
+    /// This doesn't need to be cancellable, it is only used by F# Interactive
+    member tcResolution.TryFindBySimpleAssemblyName (ctok, simpleAssemName) = 
+        results |> List.tryFind (fun ar->
+            let r = ar.GetILAssemblyRef(ctok) |> Cancellable.runWithoutCancellation 
+            r.Name = simpleAssemName)
+
     member tcResolutions.TryFindByResolvedPath nm = resolvedPathToResolution.TryFind nm
     member tcResolutions.TryFindByOriginalReferenceText nm = originalReferenceToResolution.TryFind nm
         
@@ -4467,10 +4473,12 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 #endif
 
     /// This doesn't need to be cancellable, it is only used by F# Interactive
-    member tcImports.TryFindExistingFullyQualifiedPathFromAssemblyRef(ctok, assref:ILAssemblyRef) :  string option = 
-        match resolutions.TryFindByExactILAssemblyRef (ctok, assref) with 
-        | Some r -> Some r.resolvedPath
-        | None -> None
+    member tcImports.TryFindExistingFullyQualifiedPathBySimpleAssemblyName (ctok, simpleAssemName) :  string option = 
+        resolutions.TryFindBySimpleAssemblyName (ctok, simpleAssemName) |> Option.map (fun r -> r.resolvedPath)
+
+    /// This doesn't need to be cancellable, it is only used by F# Interactive
+    member tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef(ctok, assref:ILAssemblyRef) :  string option = 
+        resolutions.TryFindByExactILAssemblyRef (ctok, assref)  |> Option.map (fun r -> r.resolvedPath)
 
     member tcImports.TryResolveAssemblyReference(ctok, assemblyReference:AssemblyReference, mode:ResolveAssemblyReferenceMode) : OperationResult<AssemblyResolution list> = 
         let tcConfig = tcConfigP.Get(ctok)
