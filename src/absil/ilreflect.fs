@@ -1873,10 +1873,10 @@ let getEnclosingTypeRefs (tref:ILTypeRef) =
    | h :: t -> List.scan (fun tr nm -> mkILTyRefInTyRef (tr,nm)) (mkILTyRef(tref.Scope, h)) t
 
 [<RequireQualifiedAccess>]
-type AllTypes = Yes | No
+type CollectTypes = ValueTypesOnly | All
 
 // Find all constituent type references
-let rec getTypeRefsInType (allTypes: AllTypes) typ acc = 
+let rec getTypeRefsInType (allTypes: CollectTypes) typ acc = 
     match typ with
     | ILType.Void 
     | ILType.TypeVar _  -> acc
@@ -1884,16 +1884,16 @@ let rec getTypeRefsInType (allTypes: AllTypes) typ acc =
         getTypeRefsInType allTypes eltType acc
     | ILType.Array (_,eltType) -> 
         match allTypes with 
-        | AllTypes.No -> acc 
-        | AllTypes.Yes -> getTypeRefsInType allTypes eltType acc
+        | CollectTypes.ValueTypesOnly -> acc 
+        | CollectTypes.All -> getTypeRefsInType allTypes eltType acc
     | ILType.Value tspec -> 
-        // AllTypes.Yes because the .NET type loader appears to always eagerly requires all types
+        // We usee CollectTypes.All because the .NET type loader appears to always eagerly require all types
         // referred to in an instantiation of a generic value type
-        tspec.TypeRef :: List.foldBack (getTypeRefsInType AllTypes.Yes) tspec.GenericArgs acc
+        tspec.TypeRef :: List.foldBack (getTypeRefsInType CollectTypes.All) tspec.GenericArgs acc
     | ILType.Boxed tspec -> 
         match allTypes with 
-        | AllTypes.No -> acc 
-        | AllTypes.Yes -> tspec.TypeRef :: List.foldBack (getTypeRefsInType allTypes) tspec.GenericArgs acc
+        | CollectTypes.ValueTypesOnly -> acc 
+        | CollectTypes.All -> tspec.TypeRef :: List.foldBack (getTypeRefsInType allTypes) tspec.GenericArgs acc
     | ILType.FunctionPointer _callsig -> failwith "getTypeRefsInType: fptr"
     | ILType.Modified _   -> failwith "getTypeRefsInType: modified"
 
@@ -1911,24 +1911,24 @@ let createTypeRef (visited : Dictionary<_,_>, created : Dictionary<_,_>) emEnv t
         if verbose2 then dprintf "buildTypeDefPass4: Doing type typar constraints of %s\n" tdef.Name; 
         for gp in tdef.GenericParams do
             for cx in gp.Constraints do
-                traverseType AllTypes.Yes cx
+                traverseType CollectTypes.All cx
 
         if verbose2 then dprintf "buildTypeDefPass4: Doing method constraints of %s\n" tdef.Name; 
         for md in tdef.Methods.AsList do
             for gp in md.GenericParams do 
                 for cx in gp.Constraints do 
-                    traverseType AllTypes.Yes cx
+                    traverseType CollectTypes.All cx
             
         // We absolutely need the exact parent type...
         if verbose2 then dprintf "buildTypeDefPass4: Creating Super Class Chain of %s\n" tdef.Name; 
-        tdef.Extends |> Option.iter (traverseType AllTypes.Yes)
+        tdef.Extends |> Option.iter (traverseType CollectTypes.All)
         
         // We absolutely need the exact interface types...
         if verbose2 then dprintf "buildTypeDefPass4: Creating Interface Chain of %s\n" tdef.Name; 
-        tdef.Implements |> List.iter (traverseType AllTypes.Yes)
+        tdef.Implements |> List.iter (traverseType CollectTypes.All)
             
         if verbose2 then dprintf "buildTypeDefPass4: Do value types in fields of %s\n" tdef.Name;
-        tdef.Fields.AsList |> List.iter (fun fd -> traverseType AllTypes.No fd.Type)
+        tdef.Fields.AsList |> List.iter (fun fd -> traverseType CollectTypes.ValueTypesOnly fd.Type)
         
         if verbose2 then dprintf "buildTypeDefPass4: Done with dependencies of %s\n" tdef.Name 
             
