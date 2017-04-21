@@ -4,7 +4,6 @@ namespace rec Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Collections.Immutable
-open System.Threading
 open System.Threading.Tasks
 open System.Collections.Generic
 
@@ -35,11 +34,6 @@ type internal UnusedDeclarationsAnalyzer() =
             member __.Equals (x, y) = x.Symbol.IsEffectivelySameAs y.Symbol
             member __.GetHashCode x = x.Symbol.GetHashCode() }
 
-    let symbolComparer =
-        { new IEqualityComparer<FSharpSymbol> with
-            member __.Equals (x, y) = x.IsEffectivelySameAs y
-            member __.GetHashCode x = x.GetHashCode() }
-
     let countSymbolsUses (symbolsUses: FSharpSymbolUse[]) =
         let result = Dictionary<FSharpSymbolUse, int>(symbolUseComparer)
     
@@ -54,21 +48,20 @@ type internal UnusedDeclarationsAnalyzer() =
             countSymbolsUses symbolsUses
             |> Seq.choose (fun (KeyValue(symbolUse, count)) ->
                 match symbolUse.Symbol with
-                | :? FSharpUnionCase when symbolUse.IsPrivateToFile -> Some symbolUse.Symbol
-                // Determining that a record, DU or module is used anywhere requires
-                // inspecting all their enclosed entities (fields, cases and func / vals)
-                // for usefulness, which is too expensive to do. Hence we never gray them out.
+                // Determining that a record, DU or module is used anywhere requires inspecting all their enclosed entities (fields, cases and func / vals)
+                // for usages, which is too expensive to do. Hence we never gray them out.
                 | :? FSharpEntity as e when e.IsFSharpRecord || e.IsFSharpUnion || e.IsInterface || e.IsFSharpModule || e.IsClass -> None
                 // FCS returns inconsistent results for override members; we're skipping these symbols.
                 | :? FSharpMemberOrFunctionOrValue as f when 
                         f.IsOverrideOrExplicitInterfaceImplementation ||
                         f.IsConstructorThisValue ||
+                        f.IsBaseValue ||
                         f.IsConstructor -> None
                 // Usage of DU case parameters does not give any meaningful feedback; we never gray them out.
-                | :? FSharpParameter -> None
-                | _ when count = 1 && symbolUse.IsFromDefinition && symbolUse.IsPrivateToFile -> Some symbolUse.Symbol
+                | :? FSharpParameter when symbolUse.IsFromDefinition -> None
+                | _ when count = 1 && symbolUse.IsFromDefinition && symbolUse.IsPrivateToFile -> Some symbolUse
                 | _ -> None)
-        HashSet(declarations, symbolComparer)
+        HashSet(declarations, symbolUseComparer)
 
     override __.SupportedDiagnostics = ImmutableArray.Create Descriptor
     
@@ -81,25 +74,12 @@ type internal UnusedDeclarationsAnalyzer() =
                 let! sourceText = document.GetTextAsync()
                 let checker = getChecker document
                 let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true)
-                let! symbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
-                let declarations = getSingleDeclarations symbolUses
-                if declarations.Count = 0 then return! None
-                else
-                    let! projectCheckResults = checker.ParseAndCheckProject(options) |> liftAsync            
-                    let! allProjectSymbolUses = projectCheckResults.GetAllUsesOfAllSymbols() |> liftAsync
-                    let unusedSymbolUses =
-                        allProjectSymbolUses
-                        |> Array.filter (fun symbolUse -> declarations.Contains symbolUse.Symbol)
-                        |> countSymbolsUses
-                        |> Seq.choose (fun (KeyValue(symbolUse, count)) -> if count < 2 then Some symbolUse else None)
-                    
-                    return 
-                        (unusedSymbolUses
-                         |> Seq.map (fun symbolUse ->
-                             Diagnostic.Create(
-                                 Descriptor,
-                                 RoslynHelpers.RangeToLocation(symbolUse.RangeAlternate, sourceText, document.FilePath)))
-                        ).ToImmutableArray()
+                let! allSymbolUsesInFile = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
+                let unusedDeclarations = getSingleDeclarations allSymbolUsesInFile
+                return 
+                    unusedDeclarations
+                     |> Seq.map (fun symbolUse -> Diagnostic.Create(Descriptor, RoslynHelpers.RangeToLocation(symbolUse.RangeAlternate, sourceText, document.FilePath)))
+                     |> Seq.toImmutableArray
             | None -> return ImmutableArray.Empty
         }
         |> Async.map (Option.defaultValue ImmutableArray.Empty)
