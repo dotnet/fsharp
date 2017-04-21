@@ -115,6 +115,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public const string FileName = "FileName";
         public const string FileNameDescription = "FileNameDescription";
         public const string FileOrFolderAlreadyExists = "FileOrFolderAlreadyExists";
+        public const string FolderCannotBeRenamed = "FolderCannotBeRenamed";
         public const string FileOrFolderCannotBeFound = "FileOrFolderCannotBeFound";
         public const string FileProperties = "FileProperties";
         public const string FolderName = "FolderName";

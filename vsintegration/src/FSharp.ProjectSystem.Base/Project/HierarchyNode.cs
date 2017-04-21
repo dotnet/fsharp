@@ -524,8 +524,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             Object nodeWithSameID = this.projectMgr.ItemIdMap[node.hierarchyId];
             if (!Object.ReferenceEquals(node, nodeWithSameID as HierarchyNode))
             {
-                if (nodeWithSameID == null && node.ID <= this.ProjectMgr.ItemIdMap.Count)
-                { // reuse our hierarchy id if possible.
+                // reuse our hierarchy id if possible.
+                if (nodeWithSameID == null)
+                {
                     this.projectMgr.ItemIdMap.SetAt(node.hierarchyId, this);
                 }
                 else
@@ -928,7 +929,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Removes items from the hierarchy. Project overwrites this
         /// </summary>
         /// <param name="removeFromStorage"></param>
-        public virtual void Remove(bool removeFromStorage)
+        public virtual void Remove(bool removeFromStorage, bool promptSave = true)
         {
             string documentToRemove = this.GetMkDocument();
 
@@ -944,7 +945,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             DocumentManager manager = this.GetDocumentManager();
             if (manager != null)
             {
-                if (manager.Close(!removeFromStorage ? __FRAMECLOSE.FRAMECLOSE_PromptSave : __FRAMECLOSE.FRAMECLOSE_NoSave) == VSConstants.E_ABORT)
+                if (manager.Close(promptSave ? __FRAMECLOSE.FRAMECLOSE_PromptSave : __FRAMECLOSE.FRAMECLOSE_NoSave) == VSConstants.E_ABORT)
                 {
                     // User cancelled operation in message box.
                     return;
@@ -963,7 +964,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // Remove child if any before removing from the hierarchy
             for (HierarchyNode child = this.FirstChild; child != null; child = child.NextSibling)
             {
-                child.Remove(removeFromStorage);
+                child.Remove(removeFromStorage: false, promptSave: promptSave);
             }
 
             HierarchyNode thisParentNode = this.parentNode;
@@ -1114,7 +1115,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Add a new Folder to the project hierarchy.
         /// </summary>
         /// <returns>S_OK if succeeded, otherwise an error</returns>
-        public virtual int AddNewFolder()
+        public virtual int AddNewFolder(Action<HierarchyNode> moveNode=null)
         {
             // Check out the project file.
             if (!this.ProjectMgr.QueryEditProjectFile(false))
@@ -1129,20 +1130,25 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 ErrorHandler.ThrowOnFailure(this.projectMgr.GenerateUniqueItemName(this.hierarchyId, String.Empty, String.Empty, out newFolderName));
 
                 // create the project part of it, the project file
-                HierarchyNode child = this.ProjectMgr.CreateFolderNodes(Path.Combine(this.virtualNodeName, newFolderName));
+                HierarchyNode node = this.ProjectMgr.CreateFolderNodes(Path.Combine(this.virtualNodeName, newFolderName));
 
-                if (child is FolderNode)
+                if (node is FolderNode)
                 {
-                    ((FolderNode)child).CreateDirectory();
+                    ((FolderNode)node).CreateDirectory();
                 }
 
+                if (moveNode != null)
+                {
+                    moveNode(node);
+                }
+                
                 // If we are in automation mode then skip the ui part which is about renaming the folder
                 if (!Utilities.IsInAutomationFunction(this.projectMgr.Site))
                 {
                     IVsUIHierarchyWindow uiWindow = UIHierarchyUtilities.GetUIHierarchyWindow(this.projectMgr.Site, SolutionExplorer);
                     // we need to get into label edit mode now...
                     // so first select the new guy...
-                    ErrorHandler.ThrowOnFailure(uiWindow.ExpandItem(this.projectMgr.InteropSafeIVsUIHierarchy, child.hierarchyId, EXPANDFLAGS.EXPF_SelectItem));
+                    ErrorHandler.ThrowOnFailure(uiWindow.ExpandItem(this.projectMgr.InteropSafeIVsUIHierarchy, node.hierarchyId, EXPANDFLAGS.EXPF_SelectItem));
                     // them post the rename command to the shell. Folder verification and creation will
                     // happen in the setlabel code...
                     IVsUIShell shell = this.projectMgr.Site.GetService(typeof(SVsUIShell)) as IVsUIShell;
@@ -1214,7 +1220,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public virtual int ExcludeFromProject()
         {
             Debug.Assert(this.ProjectMgr != null, "The project item " + this.ToString() + " has not been initialised correctly. It has a null ProjectMgr");
-            this.Remove(false);
+            this.Remove(removeFromStorage: false);
             return VSConstants.S_OK;
         }
 
@@ -1403,14 +1409,19 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             else if (cmdGroup == VsMenus.guidStandardCommandSet97)
             {
+                int result = -1;
                 HierarchyNode nodeToAddTo = this.GetDragTargetHandlerNode();
                 switch ((VsCommands)cmd)
                 {
                     case VsCommands.AddNewItem:
-                        return nodeToAddTo.AddItemToHierarchy(HierarchyAddType.AddNewItem);
+                        result = nodeToAddTo.AddItemToHierarchy(HierarchyAddType.AddNewItem);
+                        this.projectMgr.EnsureMSBuildAndSolutionExplorerAreInSync();
+                        return result;
 
                     case VsCommands.AddExistingItem:
-                        return nodeToAddTo.AddItemToHierarchy(HierarchyAddType.AddExistingItem);
+                        result = nodeToAddTo.AddItemToHierarchy(HierarchyAddType.AddExistingItem);
+                        this.projectMgr.EnsureMSBuildAndSolutionExplorerAreInSync();
+                        return result;
 
                     case VsCommands.NewFolder:
                         return nodeToAddTo.AddNewFolder();
@@ -2876,7 +2887,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             HierarchyNode node = this.projectMgr.NodeFromItemId(itemId);
             if (node != null)
             {
-                node.Remove((delItemOp & (uint)__VSDELETEITEMOPERATION.DELITEMOP_DeleteFromStorage) != 0);
+                var removeFromStorage = (delItemOp & (uint)__VSDELETEITEMOPERATION.DELITEMOP_DeleteFromStorage) != 0;
+                node.Remove(removeFromStorage, promptSave: !removeFromStorage);
                 return VSConstants.S_OK;
             }
 
@@ -3294,5 +3306,38 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         public virtual __VSPROVISIONALVIEWINGSTATUS ProvisionalViewingStatus => __VSPROVISIONALVIEWINGSTATUS.PVS_Disabled;
+        
+        /// <summary>
+        /// All nodes that are direct children of this node.
+        /// </summary>
+        public virtual IEnumerable<HierarchyNode> AllChildren
+        {
+            get
+            {
+                for (var child = this.FirstChild; child != null; child = child.NextSibling)
+                {
+                    yield return child;
+                }
+            }
+        }
+
+        /// <summary>
+        /// All nodes that are my children, plus their children, ad infinitum.
+        /// </summary>
+        public virtual IEnumerable<HierarchyNode> AllDescendants
+        {
+            get
+            {
+                foreach (var child in this.AllChildren)
+                {
+                    yield return child;
+
+                    foreach (var descendant in child.AllDescendants)
+                    {
+                        yield return descendant;
+                    }
+                }
+            }
+        }
     }
 }

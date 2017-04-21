@@ -270,7 +270,12 @@ type internal FSharpCompletionProvider
                     let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                     let! parsedInput = checkerProvider.Checker.ParseDocument(document, options)
                     let fullNameIdents = fullName |> Option.map (fun x -> x.Split '.') |> Option.defaultValue [||]
-                    let! ctx = ParsedInput.tryFindNearestPointToInsertOpenDeclaration line.LineNumber parsedInput fullNameIdents
+                    
+                    let insertionPoint = 
+                        if Settings.CodeFixes.AlwaysPlaceOpensAtTopLevel then OpenStatementInsertionPoint.TopLevel
+                        else OpenStatementInsertionPoint.Nearest
+
+                    let! ctx = ParsedInput.tryFindNearestPointToInsertOpenDeclaration line.LineNumber parsedInput fullNameIdents insertionPoint
                     let finalSourceText, changedSpanStartPos = OpenDeclarationHelper.insertOpenDeclaration textWithItemCommitted ctx ns
                     let fullChangingSpan = TextSpan.FromBounds(changedSpanStartPos, item.Span.End)
                     let changedSpan = TextSpan.FromBounds(changedSpanStartPos, item.Span.End + (finalSourceText.Length - sourceText.Length))

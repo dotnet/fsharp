@@ -165,7 +165,16 @@
   <data name="6009" xml:space="preserve">
     <value>QuickInfo</value>
   </data>
+  <data name="AddAssemblyReference" xml:space="preserve">
+    <value>Add an assembly reference to '{0}'</value>
+  </data>
+  <data name="AddProjectReference" xml:space="preserve">
+    <value>Add a project reference to '{0}'</value>
+  </data>
   <data name="6010" xml:space="preserve">
     <value>Code Fixes</value>
+  </data>
+  <data name="TheValueIsUnused" xml:space="preserve">
+    <value>The value is unused</value>
   </data>
 </root>

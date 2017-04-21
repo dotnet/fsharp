@@ -58,6 +58,7 @@
     <Compile Include="Diagnostics\DocumentDiagnosticAnalyzer.fs" />
     <Compile Include="Diagnostics\ProjectDiagnosticAnalyzer.fs" />
     <Compile Include="Diagnostics\SimplifyNameDiagnosticAnalyzer.fs" />
+    <Compile Include="Diagnostics\UnusedDeclarationsAnalyzer.fs" />
     <Compile Include="Diagnostics\UnusedOpensDiagnosticAnalyzer.fs" />
     <Compile Include="Completion\CompletionUtils.fs" />
     <Compile Include="Completion\CompletionProvider.fs" />
@@ -87,6 +88,7 @@
     <Compile Include="CodeFix\ImplementInterfaceCodeFixProvider.fs" />
     <Compile Include="CodeFix\SimplifyName.fs" />
     <Compile Include="CodeFix\RemoveUnusedOpens.fs" />
+    <Compile Include="CodeFix\MissingReferenceCodeFixProvider.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
