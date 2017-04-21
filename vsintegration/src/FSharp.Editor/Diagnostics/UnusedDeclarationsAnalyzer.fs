@@ -78,8 +78,9 @@ type internal UnusedDeclarationsAnalyzer() =
                 let unusedDeclarations = getSingleDeclarations allSymbolUsesInFile
                 return 
                     unusedDeclarations
-                     |> Seq.map (fun symbolUse -> Diagnostic.Create(Descriptor, RoslynHelpers.RangeToLocation(symbolUse.RangeAlternate, sourceText, document.FilePath)))
-                     |> Seq.toImmutableArray
+                    |> Seq.filter (fun symbolUse -> not (symbolUse.Symbol.DisplayName.StartsWith "_"))
+                    |> Seq.map (fun symbolUse -> Diagnostic.Create(Descriptor, RoslynHelpers.RangeToLocation(symbolUse.RangeAlternate, sourceText, document.FilePath)))
+                    |> Seq.toImmutableArray
             | None -> return ImmutableArray.Empty
         }
         |> Async.map (Option.defaultValue ImmutableArray.Empty)
