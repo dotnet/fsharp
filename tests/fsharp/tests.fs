@@ -499,6 +499,10 @@ module CoreTests =
                 
 
 
+    // Debug with 
+    //     ..\..\..\..\debug\net40\bin\fsi.exe --nologo < test.fsx >a.out 2>a.err
+    // then 
+    ///    windiff z.output.test.default.stdout.bsl a.out
     let printing flag diffFileOut expectedFileOut diffFileErr expectedFileErr = 
        let cfg = testConfig "core/printing"
 
