@@ -678,7 +678,8 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Take">]
         let take (takeCount:int) (source:ISeq<'T>) : ISeq<'T> =
-            if takeCount = 0 then empty
+            if takeCount < 0 then invalidArgInputMustBeNonNegative "count" takeCount
+            elif takeCount = 0 then empty
             else
                 source.PushTransform { new TransformFactory<'T,'T>() with
                     member __.Compose outOfBand pipelineIdx next =
