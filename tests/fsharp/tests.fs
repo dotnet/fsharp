@@ -1014,6 +1014,16 @@ module CoreTests =
         peverifyWithArgs cfg "/nologo /MD" "test.exe"
                 
     [<Test>]
+    let fsi_load () = 
+        let cfg = testConfig "core/fsi-load"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
+
+        testOkFile.CheckExists()
+                
+    [<Test>]
     let queriesLeafExpressionConvert () = 
         let cfg = testConfig "core/queriesLeafExpressionConvert"
 
