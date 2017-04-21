@@ -1,10 +1,9 @@
 ﻿namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.ComponentModel.Composition
+open System
 open System.Windows
 open System.Windows.Controls
-open System.Windows.Data
-open System.Windows.Media
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
@@ -35,44 +34,19 @@ module private SessionHandling =
                   member __.AugmentQuickInfoSession(session,_,_) = currentSession <- Some session
                   member __.Dispose() = () }
 
-module private SourceLink =
-    let solid = 70uy, DashStyles.Solid
-    let dot = 255uy, DashStyle([1.0; 5.0], 0.0)
-    let dash = 90uy, DashStyle([5.0; 5.0], 0.0)
-    let none = 0uy, DashStyles.Solid
-    let opacityCoverter =
-        { new IValueConverter with
-              member this.Convert(value, _, parameter, _) =
-                  match value with 
-                  | :? Color as c -> Color.FromArgb(unbox parameter, c.R, c.G, c.B) :> _
-                  | _ -> Binding.DoNothing
-              member this.ConvertBack(_,_,_,_) = Binding.DoNothing }
-    let getUnderlineStyle() =
-        if not Settings.QuickInfo.DisplayLinks then none
-        else 
-            match Settings.QuickInfo.UnderlineStyle with
-            | QuickInfoUnderlineStyle.Solid -> solid
-            | QuickInfoUnderlineStyle.Dot -> dot
-            | QuickInfoUnderlineStyle.Dash -> dash
-
-
-type internal SourceLink(run) as this = 
-    inherit Documents.Hyperlink(run)   
-
-    let opacity, dashStyle = SourceLink.getUnderlineStyle()
-    let underlineBrush = Media.SolidColorBrush()
-    do BindingOperations.SetBinding(underlineBrush, SolidColorBrush.ColorProperty, Binding("Foreground.Color", Source = this, Converter = SourceLink.opacityCoverter, ConverterParameter = opacity)) |> ignore
-    let normalUnderline = TextDecorationCollection [TextDecoration(Location = TextDecorationLocation.Underline, PenOffset = 1.0)]
-    let slightUnderline = TextDecorationCollection [TextDecoration(Location = TextDecorationLocation.Underline, PenOffset = 1.0, Pen = Pen(Brush = underlineBrush, DashStyle = dashStyle))]
-    do this.TextDecorations <- slightUnderline
-
-    override this.OnMouseEnter(e) = 
-        base.OnMouseEnter(e)
-        this.TextDecorations <- normalUnderline
-
-    override this.OnMouseLeave(e) = 
-        base.OnMouseLeave(e)
-        this.TextDecorations <- slightUnderline
+module private HyperlinkStyles =
+    // TODO: move this one time initialization to a more suitable spot
+    do Application.ResourceAssembly <- typeof<Microsoft.VisualStudio.FSharp.UIResources.Strings>.Assembly
+    let private styles = ResourceDictionary(Source = Uri("HyperlinkStyles.xaml", UriKind.Relative))
+    let getCurrent() : Style =
+        let key =
+            if Settings.QuickInfo.DisplayLinks then
+                match Settings.QuickInfo.UnderlineStyle with
+                | QuickInfoUnderlineStyle.Solid -> "solid_underline"
+                | QuickInfoUnderlineStyle.Dot -> "dot_underline"
+                | QuickInfoUnderlineStyle.Dash -> "dash_underline"
+            else "no_underline"
+        downcast styles.[key]
 
 [<Export>]
 type internal QuickInfoViewProvider
@@ -105,7 +79,7 @@ type internal QuickInfoViewProvider
                     let inl =
                         match taggedText with
                         | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->                        
-                            let h = SourceLink (run, ToolTip = nav.Range.FileName)
+                            let h = Documents.Hyperlink(run, ToolTip = nav.Range.FileName)
                             h.Click.Add <| navigateAndDismiss nav.Range
                             h :> Documents.Inline
                         | _ -> run :> _
@@ -118,6 +92,7 @@ type internal QuickInfoViewProvider
             DependencyObjectExtensions.SetDefaultTextProperties(tb, formatMap.Value)
             tb.Inlines.AddRange inlines
             if tb.Inlines.Count = 0 then tb.Visibility <- Visibility.Collapsed
+            tb.Resources.[typeof<Documents.Hyperlink>] <- HyperlinkStyles.getCurrent()
             tb :> FrameworkElement
             
         { new IDeferredQuickInfoContent with member x.Create() = createTextLinks() }
