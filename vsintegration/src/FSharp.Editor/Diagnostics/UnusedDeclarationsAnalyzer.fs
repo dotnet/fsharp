@@ -43,7 +43,7 @@ type internal UnusedDeclarationsAnalyzer() =
             | _ -> result.[symbolUse] <- 1
         result
 
-    let getSingleDeclarations (symbolsUses: FSharpSymbolUse[]) =
+    let getSingleDeclarations (symbolsUses: FSharpSymbolUse[]) (isScript: bool) =
         let declarations =
             countSymbolsUses symbolsUses
             |> Seq.choose (fun (KeyValue(symbolUse, count)) ->
@@ -59,7 +59,7 @@ type internal UnusedDeclarationsAnalyzer() =
                         f.IsConstructor -> None
                 // Usage of DU case parameters does not give any meaningful feedback; we never gray them out.
                 | :? FSharpParameter when symbolUse.IsFromDefinition -> None
-                | _ when count = 1 && symbolUse.IsFromDefinition && symbolUse.IsPrivateToFile -> Some symbolUse
+                | _ when count = 1 && symbolUse.IsFromDefinition && (isScript || symbolUse.IsPrivateToFile) -> Some symbolUse
                 | _ -> None)
         HashSet(declarations, symbolUseComparer)
 
@@ -75,7 +75,7 @@ type internal UnusedDeclarationsAnalyzer() =
                 let checker = getChecker document
                 let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true)
                 let! allSymbolUsesInFile = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
-                let unusedDeclarations = getSingleDeclarations allSymbolUsesInFile
+                let unusedDeclarations = getSingleDeclarations allSymbolUsesInFile (isScriptFile document.FilePath)
                 return 
                     unusedDeclarations
                     |> Seq.filter (fun symbolUse -> not (symbolUse.Symbol.DisplayName.StartsWith "_"))
