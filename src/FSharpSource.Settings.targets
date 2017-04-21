@@ -46,7 +46,7 @@
 
   <PropertyGroup Condition="'$(MonoPackaging)' != 'true' AND '$(OS)' != 'Unix'">
     <UseMicroBuild>true</UseMicroBuild> 
-    <UseSourceLink Condition = " '$(UseSourceLink)' == '' AND '$(Configuration)'=='Release' ">true</UseSourceLink>
+    <UseSourceLink Condition = " '$(UseSourceLink)' == '' AND '$(Configuration)'=='Release' ">false</UseSourceLink>
     <UseGatherBinaries>true</UseGatherBinaries>
     <AddVsSdkAttributesToSomeCoreComponents>true</AddVsSdkAttributesToSomeCoreComponents>
     <VsSDKInstall Condition=" '$(VsSDKInstall)' == '' ">$(MSBuildThisFileDirectory)..\packages\$(VSSDK_BUILDTOOLS_VERSION)\tools\vssdk</VsSDKInstall>
