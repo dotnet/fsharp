@@ -462,6 +462,12 @@ fi
 
 build_status "Done with proto, starting build"
 
+if [ "$BUILD_NET40" = '1' ]; then
+    { printeval "./autogen.sh"; } || failwith "./autogen.sh failed"
+
+    { printeval "make"; } || failwith "make failed"
+fi
+
 if [ "$BUILD_PHASE" = '1' ]; then
     cmd="$_msbuildexe $msbuildflags build-everything.proj /p:UseMonoPackaging=true /p:Configuration=$BUILD_CONFIG $BUILD_DIAG /p:BUILD_PUBLICSIGN=$BUILD_PUBLICSIGN"
     { printeval "$cmd"; } || failwith "'$cmd' failed"
@@ -470,7 +476,10 @@ fi
 build_status "Done with build, starting update/prepare"
 
 if [ "$BUILD_NET40" = '1' ]; then
-    echo "TODO: Call update.sh"
+
+    { printeval "sudo make install"; } || failwith "sudo make install failed"
+
+# WINDOWS:
 #    src/update.sh $BUILD_CONFIG
 #    rc=$?;
 #    if [ $rc -ne 0 ]; then
