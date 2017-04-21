@@ -860,8 +860,8 @@ let convConstructorSpec cenv emEnv (mspec:ILMethodSpec) =
     let parentTI = convType cenv emEnv mspec.EnclosingType
     let res = 
         if isEmittedTypeRef emEnv mref.EnclosingTypeRef then
-            // NOTE: if "convType becomes convCreatedType", then handle queryable types here too. [bug 4063]
-            envGetConsB emEnv mref :> ConstructorInfo
+            let consB = envGetConsB emEnv mref 
+            nonQueryableTypeGetConstructor parentTI consB 
         else
             // Prior type.
             if typeIsNotQueryable parentTI then 
