@@ -294,6 +294,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Except">]
         let inline except (itemsToExclude: seq<'T>) (source:ISeq<'T>) : ISeq<'T> when 'T:equality =
+            checkNonNull "itemsToExclude" itemsToExclude
             source.PushTransform { new TransformFactory<'T,'T>() with
                 override __.Compose _ _ next =
                     upcast { new Transform<'T,'V,Lazy<HashSet<'T>>>(next,lazy(HashSet<'T>(itemsToExclude,HashIdentity.Structural<'T>))) with
