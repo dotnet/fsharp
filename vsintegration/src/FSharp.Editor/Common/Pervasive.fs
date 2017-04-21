@@ -9,12 +9,12 @@ open System.Diagnostics
 
 /// Checks if the filePath ends with ".fsi"
 let isSignatureFile (filePath:string) = 
-    Path.GetExtension filePath = ".fsi"
+    String.Equals (Path.GetExtension filePath, ".fsi", StringComparison.OrdinalIgnoreCase)
 
 /// Checks if the file paht ends with '.fsx' or '.fsscript'
 let isScriptFile (filePath:string) = 
     let ext = Path.GetExtension filePath 
-    String.Equals (ext,".fsi",StringComparison.OrdinalIgnoreCase) || String.Equals (ext,".fsscript",StringComparison.OrdinalIgnoreCase)
+    String.Equals (ext, ".fsx", StringComparison.OrdinalIgnoreCase) || String.Equals (ext, ".fsscript", StringComparison.OrdinalIgnoreCase)
 
 /// Path combination operator
 let (</>) path1 path2 = Path.Combine (path1, path2) 

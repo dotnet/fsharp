@@ -174,4 +174,7 @@
   <data name="6010" xml:space="preserve">
     <value>Code Fixes</value>
   </data>
+  <data name="TheValueIsUnused" xml:space="preserve">
+    <value>The value is unused</value>
+  </data>
 </root>

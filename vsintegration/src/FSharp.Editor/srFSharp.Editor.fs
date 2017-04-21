@@ -29,6 +29,7 @@ module SR =
     let FSharpPrintfFormatClassificationType = lazy (GetString "FSharpPrintfFormatClassificationType")
     let FSharpPropertiesClassificationType = lazy (GetString "FSharpPropertiesClassificationType")
     let FSharpDisposablesClassificationType = lazy (GetString "FSharpDisposablesClassificationType")
+    let TheValueIsUnused = lazy (GetString "TheValueIsUnused")
     let RemoveUnusedOpens = lazy (GetString "RemoveUnusedOpens")
     let UnusedOpens = lazy (GetString "UnusedOpens")
     let AddProjectReference = lazy (GetString "AddProjectReference")
