@@ -3180,7 +3180,15 @@ let ResolveLongIdentAsExprAndComputeRange (sink:TcResultsSink) (ncenv:NameResolv
 
     let callSink refinedItem =
         if not isFakeIdents then
-            CallNameResolutionSink sink (itemRange, nenv, refinedItem, item, ItemOccurence.Use, nenv.DisplayEnv, ad)
+            let occurence = 
+                match item with
+                // It's r.h.s. `Case1` in `let (|Case1|Case1|) _ = if true then Case1 else Case2`
+                // We return `Binding` for it because it's actually not usage, but definition. If we did not
+                // it confuses detecting unused definitions.
+                | Item.ActivePatternResult _ -> ItemOccurence.Binding 
+                | _ -> ItemOccurence.Use
+
+            CallNameResolutionSink sink (itemRange, nenv, refinedItem, item, occurence, nenv.DisplayEnv, ad)
     let afterOverloadResolution =
         match sink.CurrentSink with
         |   None -> AfterOverloadResolution.DoNothing

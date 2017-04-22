@@ -31,8 +31,15 @@ type internal UnusedDeclarationsAnalyzer() =
     
     let symbolUseComparer =
         { new IEqualityComparer<FSharpSymbolUse> with
-            member __.Equals (x, y) = x.Symbol.IsEffectivelySameAs y.Symbol
-            member __.GetHashCode x = x.Symbol.GetHashCode() }
+            member __.Equals (x, y) = 
+                if x.IsFromDefinition && y.IsFromDefinition then
+                    x.RangeAlternate = y.RangeAlternate
+                else
+                    x.Symbol.DeclarationLocation = y.Symbol.DeclarationLocation || x.Symbol.IsEffectivelySameAs y.Symbol
+            member __.GetHashCode x = 
+                x.Symbol.DeclarationLocation 
+                |> Option.orElseWith (fun _ -> x.Symbol.ImplementationLocation) 
+                |> hash }
 
     let countSymbolsUses (symbolsUses: FSharpSymbolUse[]) =
         let result = Dictionary<FSharpSymbolUse, int>(symbolUseComparer)
