@@ -31,8 +31,15 @@ type internal UnusedDeclarationsAnalyzer() =
     
     let symbolUseComparer =
         { new IEqualityComparer<FSharpSymbolUse> with
-            member __.Equals (x, y) = x.Symbol.IsEffectivelySameAs y.Symbol
-            member __.GetHashCode x = x.Symbol.GetHashCode() }
+            member __.Equals (x, y) = 
+                if x.IsFromDefinition && y.IsFromDefinition then
+                    x.RangeAlternate = y.RangeAlternate
+                else
+                    x.Symbol.DeclarationLocation = y.Symbol.DeclarationLocation || x.Symbol.IsEffectivelySameAs y.Symbol
+            member __.GetHashCode x = 
+                x.Symbol.DeclarationLocation 
+                |> Option.orElseWith (fun _ -> x.Symbol.ImplementationLocation) 
+                |> hash }
 
     let countSymbolsUses (symbolsUses: FSharpSymbolUse[]) =
         let result = Dictionary<FSharpSymbolUse, int>(symbolUseComparer)
@@ -44,23 +51,39 @@ type internal UnusedDeclarationsAnalyzer() =
         result
 
     let getSingleDeclarations (symbolsUses: FSharpSymbolUse[]) (isScript: bool) =
+        let symbolUsesCounts = countSymbolsUses symbolsUses
+        
         let declarations =
-            countSymbolsUses symbolsUses
-            |> Seq.choose (fun (KeyValue(symbolUse, count)) ->
-                match symbolUse.Symbol with
-                // Determining that a record, DU or module is used anywhere requires inspecting all their enclosed entities (fields, cases and func / vals)
-                // for usages, which is too expensive to do. Hence we never gray them out.
-                | :? FSharpEntity as e when e.IsFSharpRecord || e.IsFSharpUnion || e.IsInterface || e.IsFSharpModule || e.IsClass -> None
-                // FCS returns inconsistent results for override members; we're skipping these symbols.
-                | :? FSharpMemberOrFunctionOrValue as f when 
-                        f.IsOverrideOrExplicitInterfaceImplementation ||
-                        f.IsConstructorThisValue ||
-                        f.IsBaseValue ||
-                        f.IsConstructor -> None
-                // Usage of DU case parameters does not give any meaningful feedback; we never gray them out.
-                | :? FSharpParameter when symbolUse.IsFromDefinition -> None
-                | _ when count = 1 && symbolUse.IsFromDefinition && (isScript || symbolUse.IsPrivateToFile) -> Some symbolUse
-                | _ -> None)
+            symbolUsesCounts
+            |> Seq.map (fun (KeyValue(su, count)) -> su, count)
+            |> Seq.groupBy (fun (su, _) -> su.RangeAlternate)
+            |> Seq.collect (fun (_, symbolUsesWithSameRange) ->
+                let singleDeclarationSymbolUses =
+                    symbolUsesWithSameRange
+                    |> Seq.choose(fun (symbolUse, count) ->
+                        match symbolUse.Symbol with
+                        // Determining that a record, DU or module is used anywhere requires inspecting all their enclosed entities (fields, cases and func / vals)
+                        // for usages, which is too expensive to do. Hence we never gray them out.
+                        | :? FSharpEntity as e when e.IsFSharpRecord || e.IsFSharpUnion || e.IsInterface || e.IsFSharpModule || e.IsClass -> None
+                        // FCS returns inconsistent results for override members; we're skipping these symbols.
+                        | :? FSharpMemberOrFunctionOrValue as f when 
+                                f.IsOverrideOrExplicitInterfaceImplementation ||
+                                //f.IsConstructorThisValue ||
+                                f.IsBaseValue ||
+                                f.IsConstructor -> None
+                        // Usage of DU case parameters does not give any meaningful feedback; we never gray them out.
+                        | :? FSharpParameter when symbolUse.IsFromDefinition -> None
+                        | _ when count = 1 && symbolUse.IsFromDefinition && (isScript || symbolUse.IsPrivateToFile) -> Some symbolUse
+                        | _ -> None)
+                    |> Seq.toList
+
+                // Only if *all* `SymbolUse`s are single declarations, return them. If there is at least one that should not be marked as unused, return nothing.
+                if Seq.length symbolUsesWithSameRange = List.length singleDeclarationSymbolUses then
+                    singleDeclarationSymbolUses
+                else []
+               )
+            |> Seq.toList
+
         HashSet(declarations, symbolUseComparer)
 
     override __.SupportedDiagnostics = ImmutableArray.Create Descriptor
@@ -76,7 +99,7 @@ type internal UnusedDeclarationsAnalyzer() =
                 let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true)
                 let! allSymbolUsesInFile = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
                 let unusedDeclarations = getSingleDeclarations allSymbolUsesInFile (isScriptFile document.FilePath)
-                return 
+                return
                     unusedDeclarations
                     |> Seq.filter (fun symbolUse -> not (symbolUse.Symbol.DisplayName.StartsWith "_"))
                     |> Seq.map (fun symbolUse -> Diagnostic.Create(Descriptor, RoslynHelpers.RangeToLocation(symbolUse.RangeAlternate, sourceText, document.FilePath)))
