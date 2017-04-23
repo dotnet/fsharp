@@ -86,6 +86,7 @@ type Solution with
         //The same file may be present in many projects. We choose one from current or referenced project.
         let rec matchingDoc = function
         | [] -> None
+        | [docId] -> Some docId
         | (docId:DocumentId)::_ when checkProjectId docId -> Some docId
         | docId::tail -> 
             match projectId with 
