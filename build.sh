@@ -462,15 +462,17 @@ fi
 
 build_status "Done with proto, starting build"
 
-if [ "$BUILD_NET40" = '1' ]; then
-    { printeval "./autogen.sh"; } || failwith "./autogen.sh failed"
-
-    { printeval "make"; } || failwith "make failed"
-fi
-
 if [ "$BUILD_PHASE" = '1' ]; then
     cmd="$_msbuildexe $msbuildflags build-everything.proj /p:UseMonoPackaging=true /p:Configuration=$BUILD_CONFIG $BUILD_DIAG /p:BUILD_PUBLICSIGN=$BUILD_PUBLICSIGN"
     { printeval "$cmd"; } || failwith "'$cmd' failed"
+fi
+
+build_status "Main part of build finished, completing parts of build needed for Mono setup"
+
+if [ "$BUILD_NET40" = '1' ]; then
+    { printeval "./autogen.sh --prefix=/usr"; } || failwith "./autogen.sh failed"
+
+    { printeval "make"; } || failwith "make failed"
 fi
 
 build_status "Done with build, starting update/prepare"
