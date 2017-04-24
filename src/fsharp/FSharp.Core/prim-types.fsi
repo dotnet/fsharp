@@ -1776,82 +1776,11 @@ namespace Microsoft.FSharp.Core
       /// Represents an Error or a Failure. The code failed with a value of 'TError representing what went wrong.
       | Error of ErrorValue:'TError
 
-namespace Microsoft.FSharp.Collections
-
-    open System
-    open System.Collections.Generic
-    open Microsoft.FSharp.Core
-
-    /// <summary>The type of immutable singly-linked lists.</summary>
-    ///
-    /// <remarks>Use the constructors <c>[]</c> and <c>::</c> (infix) to create values of this type, or
-    /// the notation <c>[1;2;3]</c>. Use the values in the <c>List</c> module to manipulate 
-    /// values of this type, or pattern match against the values directly.</remarks>
-    [<DefaultAugmentation(false)>]
-    [<StructuralEquality; StructuralComparison>]
-    [<CompiledName("FSharpList`1")>]
-    type List<'T> =
-        | ([])  : 'T list
-        | (::)  : Head: 'T * Tail: 'T list -> 'T list
-        /// <summary>Returns an empty list of a particular type</summary>
-        static member Empty : 'T list
-        
-        /// <summary>Gets the number of items contained in the list</summary>
-        member Length : int
-
-        /// <summary>Gets a value indicating if the list contains no entries</summary>
-        member IsEmpty : bool
-
-        /// <summary>Gets the first element of the list</summary>
-        member Head : 'T
-
-        /// <summary>Gets the tail of the list, which is a list containing all the elements of the list, excluding the first element </summary>
-        member Tail : 'T list
-
-        /// <summary>Gets the element of the list at the given position.</summary>
-        /// <remarks>Lists are represented as linked lists so this is an O(n) operation.</remarks>
-        /// <param name="index">The index.</param>
-        /// <returns>The value at the given index.</returns>
-        member Item : index:int -> 'T with get 
-        
-        /// <summary>Gets a slice of the list, the elements of the list from the given start index to the given end index.</summary>
-        /// <param name="startIndex">The start index.</param>
-        /// <param name="endIndex">The end index.</param>
-        /// <returns>The sub list specified by the input indices.</returns>
-        member GetSlice : startIndex:int option * endIndex:int option -> 'T list  
-        
-        /// <summary>Returns a list with <c>head</c> as its first element and <c>tail</c> as its subsequent elements</summary>
-        /// <param name="head">A new head value for the list.</param>
-        /// <param name="tail">The existing list.</param>
-        /// <returns>The list with head appended to the front of tail.</returns>
-        static member Cons : head:'T * tail:'T list -> 'T list
-        
-        interface System.Collections.Generic.IEnumerable<'T>
-        interface System.Collections.IEnumerable
-
-#if !FSCORE_PORTABLE_OLD
-        interface System.Collections.Generic.IReadOnlyCollection<'T>
-#endif
-        
-    /// <summary>An abbreviation for the type of immutable singly-linked lists. </summary>
-    ///
-    /// <remarks>Use the constructors <c>[]</c> and <c>::</c> (infix) to create values of this type, or
-    /// the notation <c>[1;2;3]</c>. Use the values in the <c>List</c> module to manipulate 
-    /// values of this type, or pattern match against the values directly.</remarks>
-    and 'T list = List<'T>
-
-    /// <summary>An abbreviation for the CLI type <c>System.Collections.Generic.List&lt;_&gt;</c></summary>
-    type ResizeArray<'T> = System.Collections.Generic.List<'T>
-
-    /// <summary>An abbreviation for the CLI type <c>System.Collections.Generic.IEnumerable&lt;_&gt;</c></summary>
-    type seq<'T> = IEnumerable<'T>
-
 namespace Microsoft.FSharp.Collections.SeqComposition
     open System
     open System.Collections
     open System.Collections.Generic
     open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Collections
 
     /// PipeIdx denotes the index of the element within the pipeline. 0 denotes the
     /// source of the chain.
@@ -1918,6 +1847,77 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         inherit System.Collections.Generic.IEnumerable<'T>
         abstract member PushTransform : TransformFactory<'T,'U> -> ISeq<'U>
         abstract member Fold<'Result> : f:(PipeIdx->Folder<'T,'Result>) -> 'Result
+
+namespace Microsoft.FSharp.Collections
+
+    open System
+    open System.Collections.Generic
+    open Microsoft.FSharp.Core
+
+    /// <summary>The type of immutable singly-linked lists.</summary>
+    ///
+    /// <remarks>Use the constructors <c>[]</c> and <c>::</c> (infix) to create values of this type, or
+    /// the notation <c>[1;2;3]</c>. Use the values in the <c>List</c> module to manipulate 
+    /// values of this type, or pattern match against the values directly.</remarks>
+    [<DefaultAugmentation(false)>]
+    [<StructuralEquality; StructuralComparison>]
+    [<CompiledName("FSharpList`1")>]
+    type List<'T> =
+        | ([])  : 'T list
+        | (::)  : Head: 'T * Tail: 'T list -> 'T list
+        /// <summary>Returns an empty list of a particular type</summary>
+        static member Empty : 'T list
+        
+        /// <summary>Gets the number of items contained in the list</summary>
+        member Length : int
+
+        /// <summary>Gets a value indicating if the list contains no entries</summary>
+        member IsEmpty : bool
+
+        /// <summary>Gets the first element of the list</summary>
+        member Head : 'T
+
+        /// <summary>Gets the tail of the list, which is a list containing all the elements of the list, excluding the first element </summary>
+        member Tail : 'T list
+
+        /// <summary>Gets the element of the list at the given position.</summary>
+        /// <remarks>Lists are represented as linked lists so this is an O(n) operation.</remarks>
+        /// <param name="index">The index.</param>
+        /// <returns>The value at the given index.</returns>
+        member Item : index:int -> 'T with get 
+        
+        /// <summary>Gets a slice of the list, the elements of the list from the given start index to the given end index.</summary>
+        /// <param name="startIndex">The start index.</param>
+        /// <param name="endIndex">The end index.</param>
+        /// <returns>The sub list specified by the input indices.</returns>
+        member GetSlice : startIndex:int option * endIndex:int option -> 'T list  
+        
+        /// <summary>Returns a list with <c>head</c> as its first element and <c>tail</c> as its subsequent elements</summary>
+        /// <param name="head">A new head value for the list.</param>
+        /// <param name="tail">The existing list.</param>
+        /// <returns>The list with head appended to the front of tail.</returns>
+        static member Cons : head:'T * tail:'T list -> 'T list
+        
+        interface Microsoft.FSharp.Collections.SeqComposition.ISeq<'T>
+        interface System.Collections.Generic.IEnumerable<'T>
+        interface System.Collections.IEnumerable
+
+#if !FSCORE_PORTABLE_OLD
+        interface System.Collections.Generic.IReadOnlyCollection<'T>
+#endif
+        
+    /// <summary>An abbreviation for the type of immutable singly-linked lists. </summary>
+    ///
+    /// <remarks>Use the constructors <c>[]</c> and <c>::</c> (infix) to create values of this type, or
+    /// the notation <c>[1;2;3]</c>. Use the values in the <c>List</c> module to manipulate 
+    /// values of this type, or pattern match against the values directly.</remarks>
+    and 'T list = List<'T>
+
+    /// <summary>An abbreviation for the CLI type <c>System.Collections.Generic.List&lt;_&gt;</c></summary>
+    type ResizeArray<'T> = System.Collections.Generic.List<'T>
+
+    /// <summary>An abbreviation for the CLI type <c>System.Collections.Generic.IEnumerable&lt;_&gt;</c></summary>
+    type seq<'T> = IEnumerable<'T>
 
 namespace Microsoft.FSharp.Core
 
