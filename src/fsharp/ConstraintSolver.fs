@@ -308,7 +308,7 @@ type Trace =
     
     static member New () =  { actions = [] }
 
-    member t.Undo () = List.iter (fun (_, a) -> a ()) t.actions
+    member t.Undo () = Seq.iter (fun (_, a) -> a ()) t.actions
     member t.Push f undo = t.actions <- (f, undo) :: t.actions
 
 type OptionalTrace = 
@@ -325,8 +325,8 @@ type OptionalTrace =
     member t.AddFromReplay source =
         source.actions |> List.rev |>
             match t with        
-            | WithTrace trace -> List.iter (fun (action, undo) -> trace.Push action undo; action())
-            | NoTrace         -> List.iter (fun (action, _   ) -> action())
+            | WithTrace trace -> Seq.iter (fun (action, undo) -> trace.Push action undo; action())
+            | NoTrace         -> Seq.iter (fun (action, _   ) -> action())
 
     member t.CollectThenUndoOrCommit predicate f =
         let newTrace = Trace.New()
@@ -1435,7 +1435,7 @@ and SolveRelevantMemberConstraintsForTypar (csenv:ConstraintSolverEnv) ndeep per
     let cxs = cxst.FindAll tpn
     if isNil cxs then ResultD false else
     
-    trace.Exec (fun () -> cxs |> List.iter (fun _ -> cxst.Remove tpn)) (fun () -> cxs |> List.iter (fun cx -> cxst.Add(tpn,cx)))
+    trace.Exec (fun () -> cxs |> Seq.iter (fun _ -> cxst.Remove tpn)) (fun () -> cxs |> Seq.iter (fun cx -> cxst.Add(tpn,cx)))
     assert (isNil (cxst.FindAll tpn)) 
 
     cxs 
@@ -1455,7 +1455,7 @@ and AddMemberConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace traitInfo sup
     // associate the constraint with each type variable in the free variables of the constraint.
     // This will mean the constraint gets resolved whenever one of these free variables gets solved.
     frees 
-    |> List.iter (fun tp -> 
+    |> Seq.iter (fun tp -> 
         let tpn = tp.Stamp
 
         let cxs = cxst.FindAll tpn
@@ -2480,11 +2480,11 @@ let UnifyUniqueOverloading
 let EliminateConstraintsForGeneralizedTypars csenv (trace:OptionalTrace) (generalizedTypars: Typars) =
     // Remove the global constraints where this type variable appears in the support of the constraint 
     generalizedTypars 
-    |> List.iter (fun tp -> 
+    |> Seq.iter (fun tp -> 
         let tpn = tp.Stamp
         let cxst = csenv.SolverState.ExtraCxs
         let cxs = cxst.FindAll tpn
-        cxs |> List.iter (fun cx -> trace.Exec (fun () -> cxst.Remove tpn) (fun () -> (csenv.SolverState.ExtraCxs.Add (tpn,cx))))
+        cxs |> Seq.iter (fun cx -> trace.Exec (fun () -> cxst.Remove tpn) (fun () -> (csenv.SolverState.ExtraCxs.Add (tpn,cx))))
     )
 
 

@@ -332,7 +332,7 @@ type TypeReprEnv(reprs : Map<Stamp, uint16>, count: int) =
             tyenv
 
     member tyenv.Add tps =
-        (tyenv,tps) ||> List.fold (fun tyenv tp -> tyenv.AddOne tp)
+        (tyenv,tps) ||> Seq.fold (fun tyenv tp -> tyenv.AddOne tp)
 
     member tyenv.Count = count
 
@@ -920,7 +920,7 @@ let ComputeStorageForNonLocalTopVal amap g cloc modref (v:Val) =
 
 let rec ComputeStorageForNonLocalModuleOrNamespaceRef amap g cloc acc (modref:ModuleOrNamespaceRef) (modul:ModuleOrNamespace)  = 
     let acc = 
-        (acc, modul.ModuleOrNamespaceType.ModuleAndNamespaceDefinitions) ||> List.fold (fun acc smodul -> 
+        (acc, modul.ModuleOrNamespaceType.ModuleAndNamespaceDefinitions) ||> Seq.fold (fun acc smodul -> 
             ComputeStorageForNonLocalModuleOrNamespaceRef amap g (CompLocForSubModuleOrNamespace cloc smodul) acc (modref.NestedTyconRef smodul) smodul) 
 
     let acc = 
@@ -946,21 +946,21 @@ let ComputeStorageForExternalCcu amap g  eenv (ccu:CcuThunk) =
     eenv
     
 let rec AddBindingsForLocalModuleType allocVal cloc eenv (mty:ModuleOrNamespaceType) = 
-    let eenv = List.fold (fun eenv submodul -> AddBindingsForLocalModuleType allocVal (CompLocForSubModuleOrNamespace cloc submodul) eenv submodul.ModuleOrNamespaceType) eenv mty.ModuleAndNamespaceDefinitions 
+    let eenv = Seq.fold (fun eenv submodul -> AddBindingsForLocalModuleType allocVal (CompLocForSubModuleOrNamespace cloc submodul) eenv submodul.ModuleOrNamespaceType) eenv mty.ModuleAndNamespaceDefinitions 
     let eenv = Seq.fold (fun eenv v -> allocVal cloc v eenv) eenv mty.AllValsAndMembers 
     eenv 
 
-let AddExternalCcusToIlxGenEnv amap g eenv ccus = List.fold (ComputeStorageForExternalCcu amap g) eenv ccus
+let AddExternalCcusToIlxGenEnv amap g eenv ccus = Seq.fold (ComputeStorageForExternalCcu amap g) eenv ccus
 
 let AddBindingsForTycon allocVal (cloc:CompileLocation) (tycon:Tycon) eenv  =
     let unrealizedSlots = 
         if tycon.IsFSharpObjectModelTycon
         then tycon.FSharpObjectModelTypeInfo.fsobjmodel_vslots 
         else []
-    (eenv,unrealizedSlots) ||> List.fold (fun eenv vref -> allocVal cloc vref.Deref eenv) 
+    (eenv,unrealizedSlots) ||> Seq.fold (fun eenv vref -> allocVal cloc vref.Deref eenv) 
 
 let rec AddBindingsForModuleDefs allocVal (cloc:CompileLocation) eenv  mdefs = 
-    List.fold (AddBindingsForModuleDef allocVal cloc) eenv mdefs
+    Seq.fold (AddBindingsForModuleDef allocVal cloc) eenv mdefs
 
 and AddBindingsForModuleDef allocVal cloc eenv x = 
     match x with 
@@ -1000,7 +1000,7 @@ and AddBindingsForModuleTopVals _g allocVal _cloc eenv vs =
 let AddIncrementalLocalAssemblyFragmentToIlxGenEnv (amap:ImportMap, isIncrementalFragment, g, ccu, fragName, intraAssemblyInfo, eenv, typedImplFiles) = 
     let cloc = CompLocForFragment fragName ccu
     let allocVal = ComputeAndAddStorageForLocalTopVal (amap, g, intraAssemblyInfo, true, NoShadowLocal)
-    (eenv, typedImplFiles) ||> List.fold (fun eenv (TImplFile(qname,_,mexpr,_,_)) -> 
+    (eenv, typedImplFiles) ||> Seq.fold (fun eenv (TImplFile(qname,_,mexpr,_,_)) -> 
         let cloc = { cloc with clocTopImplQualifiedName = qname.Text }
         if isIncrementalFragment then 
             match mexpr with
@@ -1067,7 +1067,7 @@ let AddPropertyDefToHash (m:range) (ht:Dictionary<PropKey,(int * ILPropertyDef)>
 /// Merge a whole group of properties all at once 
 let MergePropertyDefs m ilPropertyDefs = 
     let ht = new Dictionary<_,_>(3,HashIdentity.Structural)
-    ilPropertyDefs |> List.iter (AddPropertyDefToHash m ht)  
+    ilPropertyDefs |> Seq.iter (AddPropertyDefToHash m ht)  
     HashRangeSorted ht
 
 //--------------------------------------------------------------------------
@@ -1144,7 +1144,7 @@ and TypeDefsBuilder() =
         with :? KeyNotFoundException -> failwith ("FindTypeDefBuilder: " + nm + " not found")
 
     member b.FindNestedTypeDefsBuilder(path) = 
-        List.fold (fun (acc:TypeDefsBuilder) x -> acc.FindTypeDefBuilder(x).NestedTypeDefs) b path
+        Seq.fold (fun (acc:TypeDefsBuilder) x -> acc.FindTypeDefBuilder(x).NestedTypeDefs) b path
 
     member b.FindNestedTypeDefBuilder(tref:ILTypeRef) = 
         b.FindNestedTypeDefsBuilder(tref.Enclosing).FindTypeDefBuilder(tref.Name)
@@ -1188,7 +1188,7 @@ type AssemblyBuilder(cenv:cenv) as mgbuf =
         | Some tref ->
             let IntializeCompiledScript(fspec,m) =
                 mgbuf.AddExplicitInitToSpecificMethodDef((fun md -> md.IsEntryPoint), tref, fspec, GenPossibleILSourceMarker cenv m, [], [])              
-            scriptInitFspecs |> List.iter IntializeCompiledScript
+            scriptInitFspecs |> Seq.iter IntializeCompiledScript
         | None -> ()
 
      
@@ -1336,7 +1336,7 @@ type CodeGenBuffer(m:range,
     member cgbuf.EmitInstrs (pops,pushes,is) = 
         cgbuf.DoPops pops
         cgbuf.DoPushes pushes
-        is |> List.iter codebuf.Add 
+        is |> Seq.iter codebuf.Add 
 
     member cgbuf.GetLastSequencePoint() = 
         lastSeqPoint
@@ -1920,7 +1920,7 @@ let rec GenExpr (cenv:cenv) (cgbuf:CodeGenBuffer) eenv sp expr sequel =
   | Expr.TyChoose (_,_,m) -> error(InternalError("Unexpected Expr.TyChoose",m))
 
 and GenExprs cenv cgbuf eenv es = 
-    List.iter (fun e -> GenExpr cenv cgbuf eenv SPSuppress e Continue) es
+    Seq.iter (fun e -> GenExpr cenv cgbuf eenv SPSuppress e Continue) es
 
 and CodeGenMethodForExpr cenv mgbuf (spReq,entryPointInfo,methodName,eenv,alreadyUsedArgs,alreadyUsedLocals,expr0,sequel0) = 
     let zapFirstSeqPointToStart = (spReq = SPAlways)
@@ -2398,7 +2398,7 @@ and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr sequel =
     elif isRefTupleExpr expr then
         let es = tryDestRefTupleExpr expr
         if es.Length <> numRequiredExprs then error(InternalError("GenUntupledArgExpr (2)",m));
-        es |> List.iter (fun x -> GenExpr cenv cgbuf eenv SPSuppress x Continue);
+        es |> Seq.iter (fun x -> GenExpr cenv cgbuf eenv SPSuppress x Continue);
         GenSequel cenv eenv.cloc cgbuf sequel
     else
         let ty = tyOfExpr cenv.g expr
@@ -2626,7 +2626,7 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
                     CommitCallSequel cenv eenv m eenv.cloc cgbuf mustGenerateUnitAfterCall sequel 
                 else 
                     //printfn "%d EXTRA ARGS IN TOP APP at %s" laterArgs.Length (stringOfRange m)
-                    whereSaved |>  List.iter (function 
+                    whereSaved |>  Seq.iter (function 
                         | Choice1Of2 (ilTy,loc) -> EmitGetLocal cgbuf ilTy loc 
                         | Choice2Of2 expr -> GenExpr cenv cgbuf eenv SPSuppress expr Continue)
                     GenIndirectCall cenv cgbuf eenv (actualRetTy,[],laterArgs,m) sequel)
@@ -2707,7 +2707,7 @@ and GenIndirectCall cenv cgbuf eenv (functy,tyargs,args,m) sequel =
 
         // This does two phases: REVIEW: the code is too complex for what it's achieving and should be rewritten
         let formalRetTy,appBuilder = 
-            List.fold 
+            Seq.fold 
               (fun (formalFuncTyp,sofar) _ -> 
                 let dty,rty = destFunTy cenv.g formalFuncTyp
                 (rty,(fun acc -> sofar (Apps_app(GenType cenv.amap m feenv dty,acc)))))
@@ -4288,7 +4288,7 @@ and GenDecisionTreeSuccess cenv cgbuf inplabOpt stackAtTargets eenv es targetIdx
             // However not all targets are currently postponed (we only postpone in debug code), pending further testing of the performance
             // impact of postponing.
             (vs,es) ||> List.iter2 (GenBindRhs cenv cgbuf eenv SPSuppress) 
-            vs |> List.rev |> List.iter (fun v -> GenStoreVal cgbuf eenvAtTarget v.Range v) 
+            vs |> List.rev |> Seq.iter (fun v -> GenStoreVal cgbuf eenvAtTarget v.Range v) 
             CG.EmitInstr cgbuf (pop 0) Push0 (I_br targetMarkAfterBinds.CodeLabel) 
 
         targetInfos
@@ -4561,7 +4561,7 @@ and GenLetRecBinds cenv cgbuf eenv (allBinds: Bindings,m) =
             let isLocalTypeFunc = Option.isSome selfv && (IsNamedLocalTypeFuncVal cenv.g (Option.get selfv) e)
             let selfv = (match e with Expr.Obj _ -> None | _ when isLocalTypeFunc -> None | _ -> Option.map mkLocalValRef selfv)
             let clo,_,eenvclo =  GetIlxClosureInfo cenv m isLocalTypeFunc selfv {eenv with  letBoundVars=(mkLocalValRef boundv)::eenv.letBoundVars}  e 
-            clo.cloFreeVars |> List.iter (fun fv -> 
+            clo.cloFreeVars |> Seq.iter (fun fv -> 
                 if Zset.contains fv forwardReferenceSet then 
                     match StorageForVal m fv eenvclo with
                     | Env (_,_,ilField,_) -> fixups := (boundv, fv, (fun () -> GenLetRecFixup cenv cgbuf eenv (clo.cloSpec,access,ilField,exprForVal m fv,m))) :: !fixups
@@ -4577,7 +4577,7 @@ and GenLetRecBinds cenv cgbuf eenv (allBinds: Bindings,m) =
     let fixups = ref []
     let recursiveVars = Zset.addList (bindsPossiblyRequiringFixup |> List.map (fun v -> v.Var)) (Zset.empty valOrder)
     let _ = 
-        (recursiveVars, bindsPossiblyRequiringFixup) ||> List.fold (fun forwardReferenceSet (bind:Binding) ->
+        (recursiveVars, bindsPossiblyRequiringFixup) ||> Seq.fold (fun forwardReferenceSet (bind:Binding) ->
             // Compute fixups 
             bind.Expr |> IterateRecursiveFixups cenv.g (Some bind.Var)  
                                (computeFixupsForOneRecursiveVar bind.Var forwardReferenceSet fixups) 
@@ -4589,7 +4589,7 @@ and GenLetRecBinds cenv cgbuf eenv (allBinds: Bindings,m) =
 
     // Generate the actual bindings
     let _ = 
-        (recursiveVars, allBinds) ||> List.fold (fun forwardReferenceSet (bind:Binding) ->
+        (recursiveVars, allBinds) ||> Seq.fold (fun forwardReferenceSet (bind:Binding) ->
             GenBind cenv cgbuf eenv bind
             // Record the variable as defined
             let forwardReferenceSet = Zset.remove bind.Var forwardReferenceSet
@@ -5231,7 +5231,7 @@ and GenMethodForBinding
 
                    let flagFixups = ComputeFlagFixupsForMemberBinding cenv (v,memberInfo)
                    let mdef = mkILGenericVirtualMethod (v.CompiledName,ILMemberAccess.Public,ilMethTypars,ilParams,ilReturn,ilMethodBody)
-                   let mdef = List.fold (fun mdef f -> f mdef) mdef flagFixups
+                   let mdef = Seq.fold (fun mdef f -> f mdef) mdef flagFixups
 
                    // fixup can potentially change name of reflected definition that was already recorded - patch it if necessary
                    cgbuf.mgbuf.ReplaceNameOfReflectedDefinition(v, mdef.Name)
@@ -5331,7 +5331,7 @@ and GenPInvokeMethod (nm,dll,namedArgs) =
         CharBestFit=if (decoder.FindBool "BestFitMapping" false) then PInvokeCharBestFit.Enabled else PInvokeCharBestFit.UseAssembly }
       
 
-and GenBindings cenv cgbuf eenv binds = List.iter (GenBind cenv cgbuf eenv) binds
+and GenBindings cenv cgbuf eenv binds = Seq.iter (GenBind cenv cgbuf eenv) binds
 
 //-------------------------------------------------------------------------
 // Generate locals and other storage of values
@@ -5471,7 +5471,7 @@ and GenGetStorageAndSequel cenv cgbuf eenv m (typ,ilTy) storage storeSequel =
         CommitGetStorageSequel cenv cgbuf eenv m typ localCloInfo storeSequel
 
 and GenGetLocalVals cenv cgbuf eenvouter m fvs = 
-    List.iter (fun v -> GenGetLocalVal cenv cgbuf eenvouter m v None) fvs
+    Seq.iter (fun v -> GenGetLocalVal cenv cgbuf eenvouter m v None) fvs
 
 and GenGetLocalVal cenv cgbuf eenv m (vspec:Val) fetchSequel =
     GenGetStorageAndSequel cenv cgbuf eenv m (vspec.Type, GenTypeOfVal cenv eenv vspec) (StorageForVal m vspec eenv) fetchSequel
@@ -5527,7 +5527,7 @@ and AllocStorageForBinds cenv cgbuf scopeMarks eenv binds =
 
     // Phase 2 - run the cloinfo generators for NamedLocalClosure values against the environment recording the 
     // representation choices. 
-    reps |> List.iter (fun reprOpt -> 
+    reps |> Seq.iter (fun reprOpt -> 
        match reprOpt with 
        | Some repr -> 
            match repr with 
@@ -5583,7 +5583,7 @@ and AllocTopValWithinExpr cenv cgbuf cloc scopeMarks v eenv =
 and EmitSaveStack cenv cgbuf eenv m scopeMarks =
     let savedStack = (cgbuf.GetCurrentStack())
     let savedStackLocals,eenvinner = List.mapFold (fun eenv ty -> AllocLocal cenv cgbuf eenv true (ilxgenGlobalNng.FreshCompilerGeneratedName ("spill",m), ty, false) scopeMarks) eenv savedStack
-    List.iter (EmitSetLocal cgbuf) savedStackLocals
+    Seq.iter (EmitSetLocal cgbuf) savedStackLocals
     cgbuf.AssertEmptyStack()
     (savedStack,savedStackLocals),eenvinner (* need to return, it marks locals "live" *)
 
@@ -5762,16 +5762,16 @@ and GenModuleExpr cenv cgbuf qname lazyInitInfo eenv x   =
         GenModuleDef cenv cgbuf qname lazyInitInfo eenv def)
 
 and GenModuleDefs cenv cgbuf qname lazyInitInfo eenv  mdefs = 
-    mdefs |> List.iter (GenModuleDef cenv cgbuf qname lazyInitInfo eenv) 
+    mdefs |> Seq.iter (GenModuleDef cenv cgbuf qname lazyInitInfo eenv) 
     
 and GenModuleDef cenv (cgbuf:CodeGenBuffer) qname lazyInitInfo eenv  x = 
     match x with 
     | TMDefRec(_isRec,tycons,mbinds,m) -> 
-        tycons |> List.iter (fun tc -> 
+        tycons |> Seq.iter (fun tc -> 
             if tc.IsExceptionDecl 
             then GenExnDef cenv cgbuf.mgbuf eenv m tc 
             else GenTypeDef cenv cgbuf.mgbuf lazyInitInfo eenv m tc)
-        mbinds |> List.iter (GenModuleBinding cenv cgbuf qname lazyInitInfo eenv m) 
+        mbinds |> Seq.iter (GenModuleBinding cenv cgbuf qname lazyInitInfo eenv m) 
 
     | TMDefLet(bind,_) -> 
         GenBindings cenv cgbuf eenv [bind]
@@ -6603,8 +6603,8 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                     | _ -> ()
                     
                match tdLayout with
-               | ILTypeDefLayout.Explicit(_) -> List.iter validateExplicit ilFieldDefs
-               | ILTypeDefLayout.Sequential(_) -> List.iter validateSequential ilFieldDefs                     
+               | ILTypeDefLayout.Explicit(_) -> Seq.iter validateExplicit ilFieldDefs
+               | ILTypeDefLayout.Sequential(_) -> Seq.iter validateSequential ilFieldDefs                     
                | _ -> ()
                
                let tdef = { tdef with tdKind =  ilTypeDefKind; Layout=tdLayout; Encoding=tdEncoding }
@@ -6810,7 +6810,7 @@ and GenExnDef cenv mgbuf eenv m (exnc:Tycon) =
 let CodegenAssembly cenv eenv mgbuf fileImpls = 
     if not (isNil fileImpls) then 
       let a,b = List.frontAndBack fileImpls
-      let eenv = List.fold (GenTopImpl cenv mgbuf None) eenv a
+      let eenv = Seq.fold (GenTopImpl cenv mgbuf None) eenv a
       let _eenv = GenTopImpl cenv mgbuf cenv.opts.mainMethodInfo eenv b
       mgbuf.AddInitializeScriptsInOrderToEntryPoint()
 

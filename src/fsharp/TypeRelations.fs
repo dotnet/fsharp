@@ -145,7 +145,7 @@ let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) =
              | TyparKind.Type -> g.obj_ty 
              | TyparKind.Measure -> TType_measure Measure.One
          // Loop through the constraints computing the lub
-         ((initial,m), tp.Constraints) ||> List.fold (fun (maxSoFar,_) tpc -> 
+         ((initial,m), tp.Constraints) ||> Seq.fold (fun (maxSoFar,_) tpc -> 
              let join m x = 
                  if TypeFeasiblySubsumesType 0 g amap m x CanCoerce maxSoFar then maxSoFar
                  elif TypeFeasiblySubsumesType 0 g amap m maxSoFar CanCoerce x then x

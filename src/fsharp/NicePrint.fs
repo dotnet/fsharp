@@ -49,7 +49,7 @@ module internal PrintUtilities =
         match ls with
         | []      -> emptyL
         | [x]     -> x
-        | x :: xs -> List.fold (^^) x xs 
+        | x :: xs -> Seq.fold (^^) x xs 
 
     let suppressInheritanceAndInterfacesForTyInSimplifiedDisplays g amap m ty = 
         isEnumTy g ty || isDelegateTy g ty || ExistsHeadTypeInEntireHierarchy g amap m ty g.exn_tcr || ExistsHeadTypeInEntireHierarchy g amap m ty g.tcref_System_Attribute 

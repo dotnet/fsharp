@@ -1065,7 +1065,7 @@ module ProvidedMethodCalls =
                 let vs = boundVars.PApplyArray(id, "GetInvokerExpresson",m) |> Array.toList 
                 let vsT = List.map addVar vs
                 let delegateBodyExprT = exprToExpr delegateBodyExpr
-                List.iter removeVar vs
+                Seq.iter removeVar vs
                 let lambdaExpr = mkLambdas m [] vsT (delegateBodyExprT, tyOfExpr g delegateBodyExprT)
                 let lambdaExprTy = tyOfExpr g lambdaExpr
                 let infoReader = InfoReader(g, amap)

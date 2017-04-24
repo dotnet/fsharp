@@ -486,7 +486,7 @@ val NormalizeDeclaredTyparsForEquiRecursiveInference : TcGlobals -> Typars -> Ty
 // Compute the return type after an application
 //------------------------------------------------------------------------- 
  
-val applyTys : TcGlobals -> TType -> TType list * 'T list -> TType
+val applyTys : TcGlobals -> TType -> TType list * 'T seq -> TType
 
 //-------------------------------------------------------------------------
 // Compute free variables in types
@@ -607,6 +607,7 @@ val GetMemberCallInfo : TcGlobals -> ValRef * ValUseFlag -> int * bool * bool * 
 //------------------------------------------------------------------------- 
  
 type TyparConstraintsWithTypars = (Typar * TyparConstraint) list
+type TyparConstraintsWithTyparz = (Typar * TyparConstraint) seq
 
 
 module PrettyTypes =
@@ -689,7 +690,7 @@ module SimplifyTypes =
           inplaceConstraints :  Zmap<Typar,TType>;
           postfixConstraints : TyparConstraintsWithTypars; }
     val typeSimplificationInfo0 : TypeSimplificationInfo
-    val CollectInfo : bool -> TType list -> TyparConstraintsWithTypars -> TypeSimplificationInfo
+    val CollectInfo : bool -> TType seq -> TyparConstraintsWithTypars -> TypeSimplificationInfo
 
 //-------------------------------------------------------------------------
 // 
@@ -1349,11 +1350,11 @@ val buildAccessPath : CompilationPath option -> string
 
 val XmlDocArgsEnc : TcGlobals -> Typars * Typars -> TType list -> string
 val XmlDocSigOfVal : TcGlobals -> string -> Val -> string
-val XmlDocSigOfUnionCase : (string list -> string)
-val XmlDocSigOfField : (string list -> string)
-val XmlDocSigOfProperty : (string list -> string)
-val XmlDocSigOfTycon : (string list -> string)
-val XmlDocSigOfSubModul : (string list -> string)
+val XmlDocSigOfUnionCase : (string seq -> string)
+val XmlDocSigOfField : (string seq -> string)
+val XmlDocSigOfProperty : (string seq -> string)
+val XmlDocSigOfTycon : (string seq -> string)
+val XmlDocSigOfSubModul : (string seq -> string)
 val XmlDocSigOfEntity : EntityRef -> string
 
 //---------------------------------------------------------------------------

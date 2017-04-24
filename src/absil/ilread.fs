@@ -612,8 +612,8 @@ let fillInstrs () =
             | I_invalid_instr -> ()
             | _ -> dprintn ("warning: duplicate decode entries for "+string i)
             oneByteInstrTable.[i] <- f 
-    List.iter addInstr (instrs())
-    List.iter (fun (x,mk) -> addInstr (x,I_none_instr (noPrefixes mk))) (noArgInstrs.Force())
+    Seq.iter addInstr (instrs())
+    Seq.iter (fun (x,mk) -> addInstr (x,I_none_instr (noPrefixes mk))) (noArgInstrs.Force())
     oneByteInstrs := Some oneByteInstrTable
     twoByteInstrs := Some twoByteInstrTable
 
@@ -3045,7 +3045,7 @@ and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,numtypars) rva =
              let sehClauses = 
                 let sehMap = Dictionary<_,_>(clauses.Length, HashIdentity.Structural) 
         
-                List.iter
+                Seq.iter
                   (fun (kind,st1,sz1,st2,sz2,extra) ->
                     let tryStart = rawToLabel st1
                     let tryFinish = rawToLabel (st1 + sz1)

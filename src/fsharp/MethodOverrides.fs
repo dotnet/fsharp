@@ -272,7 +272,7 @@ module DispatchSlotChecking =
         let availPriorOverridesKeyed = availPriorOverrides |> NameMultiMap.initBy (fun ov -> ov.LogicalName)
         let overridesKeyed = overrides |> NameMultiMap.initBy (fun ov -> ov.LogicalName)
         
-        dispatchSlots |> List.iter (fun (RequiredSlot(dispatchSlot,isOptional)) -> 
+        dispatchSlots |> Seq.iter (fun (RequiredSlot(dispatchSlot,isOptional)) -> 
           
             match NameMultiMap.find dispatchSlot.LogicalName overridesKeyed 
                     |> List.filter (OverrideImplementsDispatchSlot g amap m dispatchSlot)  with
@@ -425,7 +425,7 @@ module DispatchSlotChecking =
         let reqdTyInfos = 
             intfSets |> List.map (fun (i,reqdTy,impliedTys,m) -> 
                 let reduced = 
-                    (impliedTys,intfSets) ||> List.fold (fun acc (j,jty,impliedTys2,m) -> 
+                    (impliedTys,intfSets) ||> Seq.fold (fun acc (j,jty,impliedTys2,m) -> 
                          if i <> j && TypeFeasiblySubsumesType 0 g amap m jty CanCoerce reqdTy 
                          then ListSet.subtract (TypesFeasiblyEquiv 0 g amap m) acc impliedTys2
                          else acc ) 
@@ -444,7 +444,7 @@ module DispatchSlotChecking =
             for (j,_,_,impliedTys2) in reqdTyInfos do
                 if i > j then  
                     let overlap = ListSet.intersect (TypesFeasiblyEquiv 0 g amap reqdTyRange) impliedTys impliedTys2
-                    overlap |> List.iter (fun overlappingTy -> 
+                    overlap |> Seq.iter (fun overlappingTy -> 
                         if not (isNil (GetImmediateIntrinsicMethInfosOfType (None,AccessibleFromSomewhere) g amap reqdTyRange overlappingTy |> List.filter (fun minfo -> minfo.IsVirtual))) then
                             errorR(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalStringOfType denv (List.head overlap)),reqdTyRange)))
 
@@ -605,7 +605,7 @@ module DispatchSlotChecking =
 
         // Now record the full slotsigs of the abstract members implemented by each override.
         // This is used to generate IL MethodImpls in the code generator.
-        allImmediateMembersThatMightImplementDispatchSlots |> List.iter (fun overrideBy -> 
+        allImmediateMembersThatMightImplementDispatchSlots |> Seq.iter (fun overrideBy -> 
 
             let isFakeEventProperty = overrideBy.IsFSharpEventProperty(g)
             let overriden = 

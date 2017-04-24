@@ -165,7 +165,7 @@ type LazyOrderedMultiMap<'Key,'Data when 'Key : equality>(keyf : 'Data -> 'Key, 
     let quickMap= 
         lazyItems |> lazyMap (fun entries -> 
             let t = new Dictionary<_,_>(entries.Length, HashIdentity.Structural)
-            do entries |> List.iter (fun y -> let key = keyf y in t.[key] <- y :: (if t.ContainsKey(key) then t.[key] else [])) 
+            do entries |> Seq.iter (fun y -> let key = keyf y in t.[key] <- y :: (if t.ContainsKey(key) then t.[key] else [])) 
             t)
 
     member self.Entries() = lazyItems.Force()
@@ -3459,7 +3459,7 @@ and refs_of_inst s i = refs_of_typs s i
 and refs_of_tspec s (x:ILTypeSpec) = refs_of_tref s x.TypeRef;  refs_of_inst s x.GenericArgs
 and refs_of_callsig s csig  = refs_of_typs s csig.ArgTypes; refs_of_typ s csig.ReturnType
 and refs_of_genparam s x = refs_of_typs s x.Constraints
-and refs_of_genparams s b = List.iter (refs_of_genparam s) b
+and refs_of_genparams s b = Seq.iter (refs_of_genparam s) b
     
 and refs_of_dloc s ts = refs_of_tref s ts
    
@@ -3479,7 +3479,7 @@ and refs_of_fspec s x =
     refs_of_fref s x.FieldRef;
     refs_of_typ s x.EnclosingType
 
-and refs_of_typs s l = List.iter (refs_of_typ s) l
+and refs_of_typs s l = Seq.iter (refs_of_typ s) l
   
 and refs_of_token s x = 
     match x with
@@ -3489,7 +3489,7 @@ and refs_of_token s x =
 
 and refs_of_custom_attr s x = refs_of_mspec s x.Method
     
-and refs_of_custom_attrs s (cas : ILAttributes) = List.iter (refs_of_custom_attr s) cas.AsList
+and refs_of_custom_attrs s (cas : ILAttributes) = Seq.iter (refs_of_custom_attr s) cas.AsList
 and refs_of_varargs s tyso = Option.iter (refs_of_typs s) tyso 
 and refs_of_instr s x = 
     match x with
@@ -3527,12 +3527,12 @@ and refs_of_instr s x =
   
 and refs_of_il_code s (c: ILCode)  = 
     c.Instrs |> Array.iter (refs_of_instr s) 
-    c.Exceptions |> List.iter (fun e -> e.Clause |> (function 
+    c.Exceptions |> Seq.iter (fun e -> e.Clause |> (function 
         | ILExceptionClause.TypeCatch (ilty, _) -> refs_of_typ s ilty
         | _ -> ()))
 
 and refs_of_ilmbody s (il: ILMethodBody) = 
-    List.iter (refs_of_local s) il.Locals
+    Seq.iter (refs_of_local s) il.Locals
     refs_of_il_code s il.Code 
     
 and refs_of_local s loc = refs_of_typ s loc.Type
@@ -3544,7 +3544,7 @@ and refs_of_mbody s x =
     | _ -> ()
 
 and refs_of_mdef s md = 
-    List.iter (refs_of_param s) md.Parameters;
+    Seq.iter (refs_of_param s) md.Parameters;
     refs_of_return s md.Return;
     refs_of_mbody s  md.mdBody.Contents;
     refs_of_custom_attrs s  md.CustomAttrs;
@@ -3559,10 +3559,10 @@ and refs_of_event_def s (ed: ILEventDef) =
     refs_of_mref  s ed.AddMethod ;
     refs_of_mref  s ed.RemoveMethod;
     Option.iter (refs_of_mref s) ed.FireMethod ;
-    List.iter (refs_of_mref s)  ed.OtherMethods ;
+    Seq.iter (refs_of_mref s)  ed.OtherMethods ;
     refs_of_custom_attrs  s ed.CustomAttrs
     
-and refs_of_events s (x: ILEventDefs) =  List.iter (refs_of_event_def s) x.AsList
+and refs_of_events s (x: ILEventDefs) =  Seq.iter (refs_of_event_def s) x.AsList
     
 and refs_of_property_def s pd = 
     Option.iter (refs_of_mref s)  pd.SetMethod ;
@@ -3571,15 +3571,15 @@ and refs_of_property_def s pd =
     refs_of_typs  s pd.Args ;
     refs_of_custom_attrs  s pd.CustomAttrs
     
-and refs_of_properties s (x: ILPropertyDefs) = List.iter (refs_of_property_def s) x.AsList
+and refs_of_properties s (x: ILPropertyDefs) = Seq.iter (refs_of_property_def s) x.AsList
     
 and refs_of_fdef s fd = 
     refs_of_typ  s fd.Type;
     refs_of_custom_attrs  s fd.CustomAttrs
 
-and refs_of_fields s fields = List.iter (refs_of_fdef s) fields
+and refs_of_fields s fields = Seq.iter (refs_of_fdef s) fields
     
-and refs_of_method_impls s mimpls =  List.iter (refs_of_method_impl s) mimpls
+and refs_of_method_impls s mimpls =  Seq.iter (refs_of_method_impl s) mimpls
     
 and refs_of_method_impl s m = 
     refs_of_ospec s m.Overrides;
@@ -3606,7 +3606,7 @@ and refs_of_types s (types: ILTypeDefs) = Seq.iter  (refs_of_tdef s) types
 and refs_of_exported_type s (c: ILExportedTypeOrForwarder) = 
     refs_of_custom_attrs s c.CustomAttrs
     
-and refs_of_exported_types s (tab: ILExportedTypesAndForwarders) = List.iter (refs_of_exported_type s) tab.AsList
+and refs_of_exported_types s (tab: ILExportedTypesAndForwarders) = Seq.iter (refs_of_exported_type s) tab.AsList
     
 and refs_of_resource_where s x = 
     match x with 
@@ -3618,7 +3618,7 @@ and refs_of_resource s x =
     refs_of_resource_where s x.Location;
     refs_of_custom_attrs s x.CustomAttrs
     
-and refs_of_resources s (tab: ILResources) = List.iter (refs_of_resource s) tab.AsList
+and refs_of_resources s (tab: ILResources) = Seq.iter (refs_of_resource s) tab.AsList
     
 and refs_of_modul s m = 
     refs_of_types s m.TypeDefs;

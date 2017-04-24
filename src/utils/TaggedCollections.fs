@@ -1012,7 +1012,7 @@ namespace Internal.Utilities.Collections.Tagged
 
         let toList m = fold (fun k v acc -> (k,v) :: acc) m []
         let toArray m = m |> toList |> Array.ofList
-        let ofList comparer l = List.fold (fun acc (k,v) -> add comparer k v acc) empty l
+        let ofList comparer l = Seq.fold (fun acc (k,v) -> add comparer k v acc) empty l
 
         
         let rec mkFromEnumerator comparer acc (e : IEnumerator<_>) = 

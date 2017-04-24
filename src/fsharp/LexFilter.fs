@@ -947,7 +947,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
  
                 let res = scanAhead 0
                 // Put the tokens back on and smash them up if needed
-                !stack |> List.iter (fun (tokenTup,smash) ->
+                !stack |> Seq.iter (fun (tokenTup,smash) ->
                     if smash then 
                         match tokenTup.Token with 
                         | INFIX_COMPARE_OP "</" ->

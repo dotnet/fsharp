@@ -613,7 +613,7 @@ let AddRecdField (rfref:RecdFieldRef) tab = NameMultiMap.add rfref.FieldName rfr
 
 /// Add a set of union cases to the corresponding sub-table of the environment 
 let AddUnionCases1 (tab:Map<_,_>) (ucrefs:UnionCaseRef list) = 
-    (tab, ucrefs) ||> List.fold (fun acc ucref -> 
+    (tab, ucrefs) ||> Seq.fold (fun acc ucref -> 
         let item = Item.UnionCase(GeneralizeUnionCaseRef ucref,false)
         acc.Add (ucref.CaseName, item))
 
@@ -628,7 +628,7 @@ let AddUnionCases2 bulkAddMode (eUnqualifiedItems: LayeredMap<_,_>) (ucrefs :Uni
         eUnqualifiedItems.AddAndMarkAsCollapsible items
 
     | BulkAdd.No -> 
-        (eUnqualifiedItems,ucrefs) ||> List.fold (fun acc ucref -> 
+        (eUnqualifiedItems,ucrefs) ||> Seq.fold (fun acc ucref -> 
             let item = Item.UnionCase(GeneralizeUnionCaseRef ucref,false)
             acc.Add (ucref.CaseName, item))
 
@@ -641,7 +641,7 @@ let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g:TcGlobals) 
 
     let eIndexedExtensionMembers, eUnindexedExtensionMembers = 
         let ilStyleExtensionMeths = GetCSharpStyleIndexedExtensionMembersForTyconRef amap m  tcref 
-        ((nenv.eIndexedExtensionMembers,nenv.eUnindexedExtensionMembers),ilStyleExtensionMeths) ||> List.fold (fun (tab1,tab2) extMemInfo -> 
+        ((nenv.eIndexedExtensionMembers,nenv.eUnindexedExtensionMembers),ilStyleExtensionMeths) ||> Seq.fold (fun (tab1,tab2) extMemInfo -> 
             match extMemInfo with 
             | Choice1Of2 (tcref,extMemInfo) -> tab1.Add (tcref, extMemInfo), tab2
             | Choice2Of2 extMemInfo -> tab1, extMemInfo :: tab2)  
@@ -705,7 +705,7 @@ let TryFindPatternByName name {ePatItems = patternMap} =
 /// Add a set of type definitions to the name resolution environment 
 let AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap m root nenv tcrefs =
     if isNil tcrefs then nenv else
-    let env = List.fold (AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m) nenv tcrefs
+    let env = Seq.fold (AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m) nenv tcrefs
     // Add most of the contents of the tycons en-masse, then flatten the tables if we're opening a module or namespace
     let tcrefs = Array.ofList tcrefs
     { env with
@@ -776,7 +776,7 @@ let rec AddModuleOrNamespaceRefsToNameEnv g amap m root ad nenv (modrefs: Module
               else 
                   nenv.eFullyQualifiedModulesAndNamespaces } 
     let nenv = 
-        (nenv,modrefs) ||> List.fold (fun nenv modref ->  
+        (nenv,modrefs) ||> Seq.fold (fun nenv modref ->  
             if modref.IsModule && TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute modref.Attribs = Some true then
                 AddModuleOrNamespaceContentsToNameEnv g amap ad m false nenv modref 
             else
@@ -3787,7 +3787,7 @@ let TryToResolveLongIdentAsType (ncenv: NameResolver) (nenv: NameResolutionEnv) 
         if isItemVal then typ
         else
             LookupTypeNameInEnvNoArity OpenQualified id nenv
-            |> List.fold (fun resTyp tcref ->
+            |> Seq.fold (fun resTyp tcref ->
                 // type.lookup : lookup a static something in a type 
                 let tcref = ResolveNestedTypeThroughAbbreviation ncenv tcref m
                 let typ = FreshenTycon ncenv m tcref

@@ -528,7 +528,7 @@ let writePdbInfo showTimes f fpdb info cvChunk =
                 let res = Map.toList res  // ordering may not be stable 
                 List.map (fun (_,x) -> Array.ofList !x) res
 
-              spsets |> List.iter (fun spset -> 
+              spsets |> Seq.iter (fun spset -> 
                   if spset.Length > 0 then 
                     Array.sortInPlaceWith SequencePoint.orderByOffset spset
                     let sps = 

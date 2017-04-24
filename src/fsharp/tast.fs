@@ -5069,7 +5069,7 @@ let CombineCcuContentFragments m l =
     
     and CombineModuleOrNamespaceTypeList path m l = 
         match l with
-        | h :: t -> List.fold (CombineModuleOrNamespaceTypes path m) h t
+        | h :: t -> Seq.fold (CombineModuleOrNamespaceTypes path m) h t
         | _ -> failwith "CombineModuleOrNamespaceTypeList"
 
     CombineModuleOrNamespaceTypeList [] m l

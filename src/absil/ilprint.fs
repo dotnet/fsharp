@@ -475,7 +475,7 @@ let goutput_custom_attr env os attr =
   output_custom_attr_data os attr.Data
 
 let goutput_custom_attrs env os (attrs : ILAttributes) =
-  List.iter (fun attr -> goutput_custom_attr env os attr;  output_string os "\n" ) attrs.AsList
+  Seq.iter (fun attr -> goutput_custom_attr env os attr;  output_string os "\n" ) attrs.AsList
 
 let goutput_fdef _tref env os fd =
   output_string os " .field ";
@@ -886,11 +886,11 @@ let splitTypeLayout = function
 
       
 let goutput_fdefs tref env os (fdefs: ILFieldDefs) = 
-  List.iter (fun f -> (goutput_fdef tref env) os f; output_string os "\n" ) fdefs.AsList
+  Seq.iter (fun f -> (goutput_fdef tref env) os f; output_string os "\n" ) fdefs.AsList
 let goutput_mdefs env os (mdefs: ILMethodDefs) = 
-  List.iter (fun f -> (goutput_mdef env) os f; output_string os "\n" ) mdefs.AsList
+  Seq.iter (fun f -> (goutput_mdef env) os f; output_string os "\n" ) mdefs.AsList
 let goutput_pdefs env os (pdefs: ILPropertyDefs) = 
-  List.iter (fun f -> (goutput_pdef env) os f; output_string os "\n" ) pdefs.AsList
+  Seq.iter (fun f -> (goutput_pdef env) os f; output_string os "\n" ) pdefs.AsList
 
 let rec goutput_tdef (enc) env contents os cd =
   let env = ppenv_enter_tdef cd.GenericParams env 
@@ -953,7 +953,7 @@ and goutput_lambdas env os lambdas =
    | Lambdas_return typ -> output_string os "--> "; (goutput_typ env) os typ
   
 and goutput_tdefs contents (enc) env os (td: ILTypeDefs) =
-  List.iter (goutput_tdef enc env contents os) td.AsList
+  Seq.iter (goutput_tdef enc env contents os) td.AsList
 
 let output_ver os (a,b,c,d) =
     output_string os " .ver ";
@@ -1048,8 +1048,8 @@ let output_module_fragment os  modul =
   refs
 
 let output_module_refs os refs = 
-  List.iter (fun  x -> output_assref os x; output_string os "\n") refs.AssemblyReferences;
-  List.iter (fun x -> output_modref os x; output_string os "\n") refs.ModuleReferences
+  Seq.iter (fun  x -> output_assref os x; output_string os "\n") refs.AssemblyReferences;
+  Seq.iter (fun x -> output_modref os x; output_string os "\n") refs.ModuleReferences
   
 let goutput_module_manifest env os modul = 
   output_string os " .module "; output_sqstring os modul.Name;
@@ -1058,7 +1058,7 @@ let goutput_module_manifest env os modul =
   output_string os " .file alignment "; output_i32 os modul.PhysicalAlignment;
   output_string os " .subsystem "; output_i32 os modul.SubSystemFlags;
   output_string os " .corflags "; output_i32 os ((if modul.IsILOnly then 0x0001 else 0) ||| (if modul.Is32Bit then 0x0002 else 0) ||| (if modul.Is32BitPreferred then 0x00020003 else 0));
-  List.iter (fun r -> goutput_resource env os r) modul.Resources.AsList;
+  Seq.iter (fun r -> goutput_resource env os r) modul.Resources.AsList;
   output_string os "\n";
   (output_option (goutput_manifest env)) os modul.Manifest
 

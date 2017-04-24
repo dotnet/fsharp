@@ -342,8 +342,8 @@ type Graph<'Data, 'Id when 'Id : comparison and 'Id : equality>
     member g.IterateCycles f = 
         let rec trace path node = 
             if List.exists (nodeIdentity >> (=) node.nodeId) path then f (List.rev path)
-            else List.iter (trace (node.nodeData::path)) node.nodeNeighbours
-        List.iter (fun node -> trace [] node) nodes 
+            else Seq.iter (trace (node.nodeData::path)) node.nodeNeighbours
+        Seq.iter (fun node -> trace [] node) nodes 
 
 //---------------------------------------------------------------------------
 // In some cases we play games where we use 'null' as a more efficient representation
@@ -487,7 +487,7 @@ module internal AsyncUtil =
                     else
                         postOrQueue c
             |   _ ->
-                    grabbedConts |> List.iter postOrQueue
+                    grabbedConts |> Seq.iter postOrQueue
 
         /// Get the reified result.
         member private x.AsyncPrimitiveResult =

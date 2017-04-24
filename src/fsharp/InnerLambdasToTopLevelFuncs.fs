@@ -462,7 +462,7 @@ module Pass2_DetermineReqdItems =
                 {state with
                    stack        = stack
                    reqdItemsMap = Zmap.add  fclass env   state.reqdItemsMap
-                   fclassM      = List.fold (fun mp (k,v) -> Zmap.add k v mp) state.fclassM fclass.Pairs }
+                   fclassM      = Seq.fold (fun mp (k,v) -> Zmap.add k v mp) state.fclassM fclass.Pairs }
 
     /// Log requirements for gv in the relevant stack frames 
     let LogRequiredFrom gv items state =
@@ -486,7 +486,7 @@ module Pass2_DetermineReqdItems =
           if verboseTLR then dprintf "shortCall: not-rec: %s\n" gv.LogicalName
           state
 
-    let FreeInBindings bs = List.fold (foldOn (freeInBindingRhs CollectTyparsAndLocals) unionFreeVars) emptyFreeVars bs
+    let FreeInBindings bs = Seq.fold (foldOn (freeInBindingRhs CollectTyparsAndLocals) unionFreeVars) emptyFreeVars bs
 
     /// Intercepts selected exprs.
     ///   "letrec f1,f2,... = fBody1,fBody2,... in rest" - 
@@ -529,10 +529,10 @@ module Pass2_DetermineReqdItems =
              let reqdVals0 = reqdVals0 |> Zset.ofList valOrder 
              // collect into env over bodies 
              let z          = PushFrame fclass (reqdTypars0,reqdVals0,m) z
-             let z          = (z,tlrBs) ||> List.fold (foldOn (fun b -> b.Expr) exprF) 
+             let z          = (z,tlrBs) ||> Seq.fold (foldOn (fun b -> b.Expr) exprF) 
              let z          = SaveFrame     fclass z
              (* for bindings not marked TRL, collect *)
-             let z          = (z,nonTlrBs) ||> List.fold (foldOn (fun b -> b.Expr) exprF) 
+             let z          = (z,nonTlrBs) ||> Seq.fold (foldOn (fun b -> b.Expr) exprF) 
              z
         
          match expr with
@@ -541,7 +541,7 @@ module Pass2_DetermineReqdItems =
              Some z
          | Expr.Op (TOp.LValueOp (_,v),_tys,args,_) -> 
              let z = accInstance z (v,[],[])
-             let z = List.fold exprF z args
+             let z = Seq.fold exprF z args
              Some z
          | Expr.App (f,fty,tys,args,m) -> 
              let f,_fty,tys,args,_m = destApp (f,fty,tys,args,m)
@@ -549,7 +549,7 @@ module Pass2_DetermineReqdItems =
              | Expr.Val (f,_,_) ->
                   // // YES: APP vspec tps args - log 
                  let z = accInstance z (f,tys,args)
-                 let z = List.fold exprF z args
+                 let z = Seq.fold exprF z args
                  Some z
              | _ ->
                  (* NO: app, but function is not val - no log *)
@@ -579,15 +579,15 @@ module Pass2_DetermineReqdItems =
                                             env.reqdTypars)
 
             let reqdTypars0 = env.reqdTypars
-            let reqdTypars  = List.fold Zset.union reqdTypars0 directCallReqdTypars
+            let reqdTypars  = Seq.fold Zset.union reqdTypars0 directCallReqdTypars
             let changed = changed || (not (Zset.equal reqdTypars0 reqdTypars))
             let env   = {env with reqdTypars = reqdTypars}
 #if DEBUG
             if verboseTLR then 
                 dprintf "closeStep: fc=%30A nSubs=%d reqdTypars0=%s reqdTypars=%s\n" fc directCallReqdEnvs.Length (showTyparSet reqdTypars0) (showTyparSet reqdTypars)
-                directCallReqdEnvs |> List.iter (fun f    -> dprintf "closeStep: dcall    f=%s\n" f.LogicalName)          
-                directCallReqdEnvs |> List.iter (fun f    -> dprintf "closeStep: dcall   fc=%A\n" (Zmap.find f fclassM))
-                directCallReqdTypars |> List.iter (fun _reqdTypars -> dprintf "closeStep: dcall reqdTypars=%s\n" (showTyparSet reqdTypars0)) 
+                directCallReqdEnvs |> Seq.iter (fun f    -> dprintf "closeStep: dcall    f=%s\n" f.LogicalName)          
+                directCallReqdEnvs |> Seq.iter (fun f    -> dprintf "closeStep: dcall   fc=%A\n" (Zmap.find f fclassM))
+                directCallReqdTypars |> Seq.iter (fun _reqdTypars -> dprintf "closeStep: dcall reqdTypars=%s\n" (showTyparSet reqdTypars0)) 
 #else
             ignore fc
 #endif
@@ -634,7 +634,7 @@ module Pass2_DetermineReqdItems =
         // diagnostic dump 
         if verboseTLR then
              DumpReqdValMap reqdItemsMap
-             declist |> List.iter (fun fc -> dprintf "Declist: %A\n" fc) 
+             declist |> Seq.iter (fun fc -> dprintf "Declist: %A\n" fc) 
              recShortCallS |> Zset.iter (fun f -> dprintf "RecShortCall: %s\n" f.LogicalName) 
 #endif
 

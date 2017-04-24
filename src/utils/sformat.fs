@@ -323,7 +323,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         let aboveListL = function
           | []    -> emptyL
           | [x]   -> x
-          | x::ys -> List.fold (fun pre y -> pre @@ y) x ys
+          | x::ys -> Seq.fold (fun pre y -> pre @@ y) x ys
 
         let optionL xL = function
           | None   -> wordL (tagUnionCase "None")

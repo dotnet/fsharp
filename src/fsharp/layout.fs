@@ -252,7 +252,7 @@ let tupleL xs = bracketL (sepListL (sepL Literals.comma) xs)
 let aboveListL = function
   | []    -> emptyL
   | [x]   -> x
-  | x::ys -> List.fold (fun pre y -> pre @@ y) x ys
+  | x::ys -> Seq.fold (fun pre y -> pre @@ y) x ys
 
 let optionL xL = function
   | None   -> wordL (tagUnionCase "None")

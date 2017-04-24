@@ -1354,7 +1354,7 @@ let convCustomAttr cenv emEnv cattr =
     (methInfo,data)
 
 let emitCustomAttr cenv emEnv add cattr  = add (convCustomAttr cenv emEnv cattr)
-let emitCustomAttrs cenv emEnv add (cattrs : ILAttributes) = List.iter (emitCustomAttr cenv emEnv add) cattrs.AsList
+let emitCustomAttrs cenv emEnv add (cattrs : ILAttributes) = Seq.iter (emitCustomAttr cenv emEnv add) cattrs.AsList
 
 //----------------------------------------------------------------------------
 // buildGenParams
@@ -1688,7 +1688,7 @@ let buildEventPass3 cenv (typB:TypeBuilder) emEnv (eventDef : ILEventDef) =
     eventDef.AddMethod |> (fun mref -> eventB.SetAddOnMethod(envGetMethB emEnv mref));
     eventDef.RemoveMethod |> (fun mref -> eventB.SetRemoveOnMethod(envGetMethB emEnv mref));
     eventDef.FireMethod |> Option.iter (fun mref -> eventB.SetRaiseMethod(envGetMethB emEnv mref));
-    eventDef.OtherMethods |> List.iter (fun mref -> eventB.AddOtherMethod(envGetMethB emEnv mref));
+    eventDef.OtherMethods |> Seq.iter (fun mref -> eventB.AddOtherMethod(envGetMethB emEnv mref));
     emitCustomAttrs cenv emEnv (wrapCustomAttr eventB.SetCustomAttribute) eventDef.CustomAttrs
 
 //----------------------------------------------------------------------------
@@ -1795,7 +1795,7 @@ let rec buildTypeDefPass1 cenv emEnv (modB:ModuleBuilder) rootTypeBuilder nestin
     // recurse on nested types
     let nesting = nesting @ [tdef]     
     let buildNestedType emEnv tdef = buildTypeTypeDef cenv emEnv modB typB nesting tdef
-    let emEnv = List.fold buildNestedType emEnv tdef.NestedTypes.AsList
+    let emEnv = Seq.fold buildNestedType emEnv tdef.NestedTypes.AsList
     emEnv
 
 and buildTypeTypeDef cenv emEnv modB (typB : TypeBuilder) nesting tdef =
@@ -1817,7 +1817,7 @@ let rec buildTypeDefPass1b cenv nesting emEnv (tdef : ILTypeDef) =
     buildGenParamsPass1b cenv emEnv genArgs tdef.GenericParams; 
     let emEnv = envPopTyvars emEnv     
     let nesting = nesting @ [tdef]     
-    List.iter (buildTypeDefPass1b cenv nesting emEnv) tdef.NestedTypes.AsList
+    Seq.iter (buildTypeDefPass1b cenv nesting emEnv) tdef.NestedTypes.AsList
 
 //----------------------------------------------------------------------------
 // buildTypeDefPass2
@@ -1828,15 +1828,15 @@ let rec buildTypeDefPass2 cenv nesting emEnv (tdef : ILTypeDef) =
     let typB  = envGetTypB emEnv tref
     let emEnv = envPushTyvars emEnv (getGenericArgumentsOfType (typB.AsType()))
     // add interface impls
-    tdef.Implements |> convTypes cenv emEnv |> List.iter (fun implT -> typB.AddInterfaceImplementationAndLog(implT));
+    tdef.Implements |> convTypes cenv emEnv |> Seq.iter (fun implT -> typB.AddInterfaceImplementationAndLog(implT));
     // add methods, properties
-    let emEnv = List.fold (buildMethodPass2      cenv tref typB) emEnv tdef.Methods.AsList 
-    let emEnv = List.fold (buildFieldPass2       cenv tref typB) emEnv tdef.Fields.AsList  
-    let emEnv = List.fold (buildPropertyPass2    cenv tref typB) emEnv tdef.Properties.AsList 
+    let emEnv = Seq.fold (buildMethodPass2      cenv tref typB) emEnv tdef.Methods.AsList 
+    let emEnv = Seq.fold (buildFieldPass2       cenv tref typB) emEnv tdef.Fields.AsList  
+    let emEnv = Seq.fold (buildPropertyPass2    cenv tref typB) emEnv tdef.Properties.AsList 
     let emEnv = envPopTyvars emEnv
     // nested types
     let nesting = nesting @ [tdef]
-    let emEnv = List.fold (buildTypeDefPass2 cenv nesting) emEnv tdef.NestedTypes.AsList
+    let emEnv = Seq.fold (buildTypeDefPass2 cenv nesting) emEnv tdef.NestedTypes.AsList
     emEnv
 
 //----------------------------------------------------------------------------
@@ -1849,16 +1849,16 @@ let rec buildTypeDefPass3 cenv nesting modB emEnv (tdef : ILTypeDef) =
     let emEnv = envPushTyvars emEnv (getGenericArgumentsOfType (typB.AsType()))
     // add method bodies, properties, events
     tdef.Methods |> Seq.iter (buildMethodPass3 cenv tref modB typB emEnv);
-    tdef.Properties.AsList |> List.iter (buildPropertyPass3 cenv tref typB emEnv);
-    tdef.Events.AsList |> List.iter (buildEventPass3 cenv typB emEnv);
-    tdef.Fields.AsList |> List.iter (buildFieldPass3 cenv tref typB emEnv);
-    let emEnv = List.fold (buildMethodImplsPass3 cenv tref typB) emEnv tdef.MethodImpls.AsList
+    tdef.Properties.AsList |> Seq.iter (buildPropertyPass3 cenv tref typB emEnv);
+    tdef.Events.AsList |> Seq.iter (buildEventPass3 cenv typB emEnv);
+    tdef.Fields.AsList |> Seq.iter (buildFieldPass3 cenv tref typB emEnv);
+    let emEnv = Seq.fold (buildMethodImplsPass3 cenv tref typB) emEnv tdef.MethodImpls.AsList
     tdef.CustomAttrs |> emitCustomAttrs cenv emEnv typB.SetCustomAttributeAndLog ;
     // custom attributes
     let emEnv = envPopTyvars emEnv
     // nested types
     let nesting = nesting @ [tdef]
-    let emEnv = List.fold (buildTypeDefPass3 cenv nesting modB) emEnv tdef.NestedTypes.AsList
+    let emEnv = Seq.fold (buildTypeDefPass3 cenv nesting modB) emEnv tdef.NestedTypes.AsList
     emEnv
 
 //----------------------------------------------------------------------------
@@ -1958,17 +1958,17 @@ let createTypeRef (visited : Dictionary<_,_>, created : Dictionary<_,_>) emEnv t
         
         // We absolutely need the exact interface types...
         if verbose2 then dprintf "buildTypeDefPass4: Creating Interface Chain of %s\n" tdef.Name; 
-        tdef.Implements |> List.iter (traverseType CollectTypes.All)
+        tdef.Implements |> Seq.iter (traverseType CollectTypes.All)
             
         if verbose2 then dprintf "buildTypeDefPass4: Do value types in fields of %s\n" tdef.Name;
-        tdef.Fields.AsList |> List.iter (fun fd -> traverseType CollectTypes.ValueTypesOnly fd.Type)
+        tdef.Fields.AsList |> Seq.iter (fun fd -> traverseType CollectTypes.ValueTypesOnly fd.Type)
         
         if verbose2 then dprintf "buildTypeDefPass4: Done with dependencies of %s\n" tdef.Name 
             
     and traverseType allTypes typ = 
         getTypeRefsInType allTypes typ []
         |> List.filter (isEmittedTypeRef emEnv)
-        |> List.iter traverseTypeRef 
+        |> Seq.iter traverseTypeRef 
 
     and traverseTypeRef tref = 
         let typB = envGetTypB emEnv tref
@@ -2044,25 +2044,25 @@ let buildModuleTypePass4 visited   emEnv tdef = buildTypeDefPass4 visited [] emE
 let buildModuleFragment cenv emEnv (asmB : AssemblyBuilder) (modB : ModuleBuilder) (m: ILModuleDef) =
     let tdefs = m.TypeDefs.AsList
 
-    let emEnv = (emEnv, tdefs) ||> List.fold (buildModuleTypePass1 cenv modB) 
-    tdefs |> List.iter (buildModuleTypePass1b cenv emEnv) 
-    let emEnv = (emEnv, tdefs) ||> List.fold (buildModuleTypePass2 cenv) 
+    let emEnv = (emEnv, tdefs) ||> Seq.fold (buildModuleTypePass1 cenv modB) 
+    tdefs |> Seq.iter (buildModuleTypePass1b cenv emEnv) 
+    let emEnv = (emEnv, tdefs) ||> Seq.fold (buildModuleTypePass2 cenv) 
     
     for delayedFieldInit in emEnv.delayedFieldInits do
         delayedFieldInit()
 
     let emEnv = { emEnv with delayedFieldInits = [] }
 
-    let emEnv = (emEnv, tdefs) ||> List.fold (buildModuleTypePass3 cenv modB) 
+    let emEnv = (emEnv, tdefs) ||> Seq.fold (buildModuleTypePass3 cenv modB) 
     let visited = new Dictionary<_,_>(10) 
     let created = new Dictionary<_,_>(10) 
-    tdefs |> List.iter (buildModuleTypePass4  (visited,created) emEnv) 
+    tdefs |> Seq.iter (buildModuleTypePass4  (visited,created) emEnv) 
     let emEnv = Seq.fold envUpdateCreatedTypeRef emEnv created.Keys // update typT with the created typT
     emitCustomAttrs cenv emEnv modB.SetCustomAttributeAndLog m.CustomAttrs;    
 #if FX_RESHAPED_REFEMIT
     ignore asmB
 #else
-    m.Resources.AsList |> List.iter (fun r -> 
+    m.Resources.AsList |> Seq.iter (fun r -> 
         let attribs = (match r.Access with ILResourceAccess.Public -> ResourceAttributes.Public | ILResourceAccess.Private -> ResourceAttributes.Private) 
         match r.Location with 
         | ILResourceLocation.Local bf -> 

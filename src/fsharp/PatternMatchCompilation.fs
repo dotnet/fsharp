@@ -311,7 +311,7 @@ let ShowCounterExample g denv m refuted =
           | [] -> raise CannotRefute
           | h :: t -> 
               if verbose then dprintf "h = %s\n" (Layout.showL (exprL h))
-              List.fold (CombineRefutations g) h t
+              Seq.fold (CombineRefutations g) h t
       let text = Layout.showL (NicePrint.dataExprL denv counterExample)
       let failingWhenClause = refuted |> List.exists (function RefutedWhenClause -> true | _ -> false)
       Some(text,failingWhenClause)

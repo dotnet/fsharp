@@ -246,7 +246,7 @@ let mkCallFunc cenv allocLocal numThisGenParams tl apps =
                 | tyargs,[],_ when not (isNil tyargs) ->
                     // strip again, instantiating as we go.  we could do this while we count. 
                     let (revInstTyArgs, rest') = 
-                        (([],apps), tyargs) ||> List.fold (fun (revArgsSoFar,cs) _  -> 
+                        (([],apps), tyargs) ||> Seq.fold (fun (revArgsSoFar,cs) _  -> 
                               let actual,rest' = destTyFuncApp cs
                               let rest'' = instAppsAux varCount [ actual ] rest'
                               ((actual :: revArgsSoFar),rest''))

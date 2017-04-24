@@ -485,7 +485,7 @@ type ImperativeOperationResult = OperationResult<unit>
 let ReportWarnings warns = 
     match warns with 
     | [] -> () // shortcut in common case
-    | _ -> List.iter warning warns
+    | _ -> Seq.iter warning warns
 
 let CommitOperationResult res = 
     match res with 

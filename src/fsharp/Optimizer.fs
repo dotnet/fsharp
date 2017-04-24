@@ -497,7 +497,7 @@ let BindTypeVarsToUnknown (tps:Typar list) env =
     (tps,nms) ||> List.iter2 (fun tp nm -> 
             if PrettyTypes.NeedsPrettyTyparName tp  then 
                 tp.typar_id <- ident (nm,tp.Range))      
-    List.fold (fun sofar arg -> BindTypeVar arg UnknownTypeValue sofar) env tps 
+    Seq.fold (fun sofar arg -> BindTypeVar arg UnknownTypeValue sofar) env tps 
 
 let BindCcu (ccu:Tast.CcuThunk) mval env (_g:TcGlobals) = 
     { env with globalModuleInfos=env.globalModuleInfos.Add(ccu.AssemblyName,mval)  }
@@ -2025,7 +2025,7 @@ and OptimizeLetRec cenv env (binds,bodyExpr,m) =
     // Eliminate any unused bindings, as in let case 
     let binds'',bindinfos = 
         let fvs0 = freeInExpr CollectLocals bodyExpr' 
-        let fvs = List.fold (fun acc x -> unionFreeVars acc (fst x |> freeInBindingRhs CollectLocals)) fvs0 binds'
+        let fvs = Seq.fold (fun acc x -> unionFreeVars acc (fst x |> freeInBindingRhs CollectLocals)) fvs0 binds'
         SplitValuesByIsUsedOrHasEffect cenv (fun () -> fvs.FreeLocals) binds'
     // Trim out any optimization info that involves escaping values 
     let evalue' = AbstractExprInfoByVars (vs,[]) einfo.Info 
@@ -3067,7 +3067,7 @@ and OptimizeModuleExpr cenv env x =
                     new ModuleOrNamespaceType(kind=mtyp.ModuleOrNamespaceKind, 
                                               vals= (mtyp.AllValsAndMembers |> QueueList.filter (Zset.memberOf deadSet >> not)),
                                               entities= mtyp.AllEntities)
-                mtyp.ModuleAndNamespaceDefinitions |> List.iter elimModSpec
+                mtyp.ModuleAndNamespaceDefinitions |> Seq.iter elimModSpec
                 mty
             and elimModSpec (mspec:ModuleOrNamespace) = 
                 let mtyp = elimModTy mspec.ModuleOrNamespaceType 

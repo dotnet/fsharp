@@ -216,15 +216,15 @@ let AdjustForScriptCompile(ctok, tcConfigB:TcConfigBuilder, commandLineSourceFil
             // Record the references from the analysis of the script. The full resolutions are recorded as the corresponding #I paths used to resolve them
             // are local to the scripts and not added to the tcConfigB (they are added to localized clones of the tcConfigB).
             let references = closure.References |> List.collect snd |> List.filter (fun r->r.originalReference.Range<>range0 && r.originalReference.Range<>rangeStartup)
-            references |> List.iter (fun r-> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
-            closure.NoWarns |> List.collect (fun (n, ms) -> ms|>List.map(fun m->m, n)) |> List.iter (fun (x,m) -> tcConfigB.TurnWarningOff(x, m))
-            closure.SourceFiles |> List.map fst |> List.iter AddIfNotPresent
-            closure.AllRootFileDiagnostics |> List.iter diagnosticSink
+            references |> Seq.iter (fun r-> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
+            closure.NoWarns |> List.collect (fun (n, ms) -> ms|>List.map(fun m->m, n)) |> Seq.iter (fun (x,m) -> tcConfigB.TurnWarningOff(x, m))
+            closure.SourceFiles |> List.map fst |> Seq.iter AddIfNotPresent
+            closure.AllRootFileDiagnostics |> Seq.iter diagnosticSink
             
             else AddIfNotPresent(filename)
          
     // Find closure of .fsx files.
-    commandLineSourceFiles |> List.iter AppendClosureInformation
+    commandLineSourceFiles |> Seq.iter AppendClosureInformation
 
     List.rev !allSources
 
@@ -267,7 +267,7 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, setProcessThreadLocals,
     | [] -> ()
     | h::_ -> errorR (Error(FSComp.SR.fscReferenceOnCommandLine(h), rangeStartup))
 
-    dllFiles |> List.iter (fun f->tcConfigB.AddReferencedAssemblyByPath(rangeStartup, f))
+    dllFiles |> Seq.iter (fun f->tcConfigB.AddReferencedAssemblyByPath(rangeStartup, f))
     sourceFiles
 
 
@@ -364,10 +364,10 @@ module XmlDocWriter =
                 |> Seq.toList
                 |> List.filter (fun x  -> not x.IsCompilerGenerated) 
                 |> List.filter (fun x -> x.MemberInfo.IsNone || x.IsExtensionMember)
-            List.iter (doModuleSig  path)  mtype.ModuleAndNamespaceDefinitions
-            List.iter (doTyconSig  ptext) mtype.ExceptionDefinitions
-            List.iter (doValSig    ptext) vals
-            List.iter (doTyconSig  ptext) mtype.TypeDefinitions
+            Seq.iter (doModuleSig  path)  mtype.ModuleAndNamespaceDefinitions
+            Seq.iter (doTyconSig  ptext) mtype.ExceptionDefinitions
+            Seq.iter (doValSig    ptext) vals
+            Seq.iter (doTyconSig  ptext) mtype.TypeDefinitions
        
         doModuleSig None generatedCcu.Contents          
 
@@ -403,10 +403,10 @@ module XmlDocWriter =
                 |> Seq.toList
                 |> List.filter (fun x  -> not x.IsCompilerGenerated) 
                 |> List.filter (fun x -> x.MemberInfo.IsNone || x.IsExtensionMember)
-            List.iter doModule mtype.ModuleAndNamespaceDefinitions
-            List.iter doTycon mtype.ExceptionDefinitions
-            List.iter doVal vals
-            List.iter doTycon mtype.TypeDefinitions
+            Seq.iter doModule mtype.ModuleAndNamespaceDefinitions
+            Seq.iter doTycon mtype.ExceptionDefinitions
+            Seq.iter doVal vals
+            Seq.iter doTycon mtype.TypeDefinitions
        
         doModule generatedCcu.Contents
 
@@ -416,7 +416,7 @@ module XmlDocWriter =
         fprintfn os ("<doc>")
         fprintfn os ("<assembly><name>%s</name></assembly>") assemblyName
         fprintfn os ("<members>")
-        !members |> List.iter (fun (id, doc) -> 
+        !members |> Seq.iter (fun (id, doc) -> 
             fprintfn os  "<member name=\"%s\">" id
             fprintfn os  "%s" doc
             fprintfn os  "</member>")
@@ -1402,7 +1402,7 @@ module StaticLinker =
               let providerGeneratedILModules, ilxMainModule = 
                   // Build a dictionary of all remapped IL type defs 
                   let ilOrigTyRefsForProviderGeneratedTypesToRelocate = 
-                      let rec walk acc (ProviderGeneratedType(ilOrigTyRef, _, xs) as node) = List.fold walk ((ilOrigTyRef, node)::acc) xs 
+                      let rec walk acc (ProviderGeneratedType(ilOrigTyRef, _, xs) as node) = Seq.fold walk ((ilOrigTyRef, node)::acc) xs 
                       dict (Seq.fold walk [] tcImports.ProviderGeneratedTypeRoots)
 
                   // Build a dictionary of all IL type defs, mapping ilOrigTyRef --> ilTypeDef
@@ -1473,7 +1473,7 @@ module StaticLinker =
                                mkILTypeDefs (ltdefs @ [htd] @ rtdefs)
 
                       let newTypeDefs = 
-                          (ilxMainModule.TypeDefs, generatedILTypeDefs) ||> List.fold (fun acc (ilTgtTyRef, td) -> 
+                          (ilxMainModule.TypeDefs, generatedILTypeDefs) ||> Seq.fold (fun acc (ilTgtTyRef, td) -> 
                               if debugStaticLinking then printfn "implanting '%s' at '%s'" td.Name ilTgtTyRef.QualifiedName 
                               implantTypeDef false acc ilTgtTyRef.Enclosing td) 
                       { ilxMainModule with TypeDefs = newTypeDefs } 
@@ -1766,9 +1766,9 @@ let main0(ctok, argv, referenceResolver, bannerAlreadyPrinted, exiter:Exiter, er
         AbortOnError(errorLogger, exiter)
 
     if tcConfig.printAst then                
-        inputs |> List.iter (fun (input, _filename) -> printf "AST:\n"; printfn "%+A" input; printf "\n") 
+        inputs |> Seq.iter (fun (input, _filename) -> printf "AST:\n"; printfn "%+A" input; printf "\n") 
 
-    let tcConfig = (tcConfig, inputs) ||> List.fold (fun z (x, m) -> ApplyMetaCommandsFromInputToTcConfig(z, x, m))
+    let tcConfig = (tcConfig, inputs) ||> Seq.fold (fun z (x, m) -> ApplyMetaCommandsFromInputToTcConfig(z, x, m))
     let tcConfigP = TcConfigProvider.Constant(tcConfig)
 
     // Import other assemblies

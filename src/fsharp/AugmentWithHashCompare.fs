@@ -99,7 +99,7 @@ let mkAddToHashAcc g m e accv acce =
 
      
 let mkCombineHashGenerators g m exprs accv acce =
-    (acce,exprs) ||> List.fold (fun tm e -> mkCompGenSequential m (mkAddToHashAcc g m e accv acce) tm)
+    (acce,exprs) ||> Seq.fold (fun tm e -> mkCompGenSequential m (mkAddToHashAcc g m e accv acce) tm)
 
 //-------------------------------------------------------------------------
 // Build comparison functions for union, record and exception types.

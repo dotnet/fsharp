@@ -1244,7 +1244,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
           os.Append(LetRecUnsound1E().Format v.DisplayName) |> ignore
       | LetRecUnsound (_,path,_) -> 
           let bos = new System.Text.StringBuilder()
-          (path.Tail @ [path.Head]) |> List.iter (fun (v:ValRef) -> bos.Append(LetRecUnsoundInnerE().Format v.DisplayName) |> ignore) 
+          (path.Tail @ [path.Head]) |> Seq.iter (fun (v:ValRef) -> bos.Append(LetRecUnsoundInnerE().Format v.DisplayName) |> ignore) 
           os.Append(LetRecUnsound2E().Format (List.head path).DisplayName (bos.ToString())) |> ignore
       | LetRecEvaluatedOutOfOrder (_,_,_,_) -> 
           os.Append(LetRecEvaluatedOutOfOrderE().Format) |> ignore
@@ -1577,7 +1577,7 @@ let CollectDiagnostic (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle
                     OutputPhasedDiagnostic os err flattenErrors
                     errors.Add( Diagnostic.Short(isError, os.ToString()) )
         
-            relatedErrors |> List.iter OutputRelatedError
+            relatedErrors |> Seq.iter OutputRelatedError
 
         match err with
 #if EXTENSIONTYPING
@@ -3568,17 +3568,17 @@ type TcAssemblyResolutions(results : AssemblyResolution list, unresolved : Unres
         let itFailed = ref false
         let addedText = "\nIf you want to debug this right now, attach a debugger, and put a breakpoint in 'CompileOps.fs' near the text '!itFailed', and you can re-step through the assembly resolution logic."
         unresolved 
-        |> List.iter (fun (UnresolvedAssemblyReference(referenceText,_ranges)) ->
+        |> Seq.iter (fun (UnresolvedAssemblyReference(referenceText,_ranges)) ->
             if referenceText.Contains("mscorlib") then
                 System.Diagnostics.Debug.Assert(false, sprintf "whoops, did not resolve mscorlib: '%s'%s" referenceText addedText)
                 itFailed := true)
         frameworkDLLs 
-        |> List.iter (fun x ->
+        |> Seq.iter (fun x ->
             if not(FileSystem.IsPathRootedShim(x.resolvedPath)) then
                 System.Diagnostics.Debug.Assert(false, sprintf "frameworkDLL should be absolute path: '%s'%s" x.resolvedPath addedText)
                 itFailed := true)
         nonFrameworkReferences 
-        |> List.iter (fun x -> 
+        |> Seq.iter (fun x -> 
             if not(FileSystem.IsPathRootedShim(x.resolvedPath)) then
                 System.Diagnostics.Debug.Assert(false, sprintf "nonFrameworkReference should be absolute path: '%s'%s" x.resolvedPath addedText) 
                 itFailed := true)
@@ -3777,7 +3777,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         if disposed then assert false
 
     static let ccuHasType (ccu : CcuThunk) (nsname : string list) (tname : string) =
-        match (Some ccu.Contents, nsname) ||> List.fold (fun entityOpt n -> match entityOpt with None -> None | Some entity -> entity.ModuleOrNamespaceType.AllEntitiesByCompiledAndLogicalMangledNames.TryFind n) with
+        match (Some ccu.Contents, nsname) ||> Seq.fold (fun entityOpt n -> match entityOpt with None -> None | Some entity -> entity.ModuleOrNamespaceType.AllEntitiesByCompiledAndLogicalMangledNames.TryFind n) with
         | Some ns ->
                 match Map.tryFind tname ns.ModuleOrNamespaceType.TypesByMangledName with
                 | Some _ -> true
@@ -4193,7 +4193,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 #if DEBUG
                 if typeProviderEnvironment.showResolutionMessages then
                     dprintfn "Found extension type hosting hosting assembly '%s' with the following extensions:" fileNameOfRuntimeAssembly
-                    providers |> List.iter(fun provider ->dprintfn " %s" (ExtensionTyping.DisplayNameOfTypeProvider(provider.TypeProvider, m)))
+                    providers |> Seq.iter(fun provider ->dprintfn " %s" (ExtensionTyping.DisplayNameOfTypeProvider(provider.TypeProvider, m)))
 #endif
                     
                 for provider in providers do 
@@ -4363,13 +4363,13 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                 data,ccuinfo,phase2)
                      
         // Register all before relinking to cope with mutually-referential ccus 
-        ccuRawDataAndInfos |> List.iter (p23 >> tcImports.RegisterCcu)
+        ccuRawDataAndInfos |> Seq.iter (p23 >> tcImports.RegisterCcu)
         let phase2 () = 
             (* Relink *)
             (* dprintf "Phase2: %s\n" filename; REMOVE DIAGNOSTICS *)
-            ccuRawDataAndInfos |> List.iter (fun (data,_,_) -> data.OptionalFixup(fun nm -> availableToOptionalCcu(tcImports.FindCcu(ctok,m,nm,lookupOnly=false))) |> ignore)
+            ccuRawDataAndInfos |> Seq.iter (fun (data,_,_) -> data.OptionalFixup(fun nm -> availableToOptionalCcu(tcImports.FindCcu(ctok,m,nm,lookupOnly=false))) |> ignore)
 #if EXTENSIONTYPING
-            ccuRawDataAndInfos |> List.iter (fun (_,_,phase2) -> phase2())
+            ccuRawDataAndInfos |> Seq.iter (fun (_,_,phase2) -> phase2())
 #endif
             ccuRawDataAndInfos |> List.map p23 |> List.map ResolvedImportedAssembly  
         phase2
@@ -4628,10 +4628,10 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
     member tcImports.ReportUnresolvedAssemblyReferences(knownUnresolved) =
         // Report that an assembly was not resolved.
         let reportAssemblyNotResolved(file,originalReferences:AssemblyReference list) = 
-            originalReferences |> List.iter(fun originalReference -> errorR(AssemblyNotResolved(file,originalReference.Range)))
+            originalReferences |> Seq.iter(fun originalReference -> errorR(AssemblyNotResolved(file,originalReference.Range)))
         knownUnresolved
         |> List.map (function UnresolvedAssemblyReference(file,originalReferences) -> file,originalReferences)
-        |> List.iter reportAssemblyNotResolved
+        |> Seq.iter reportAssemblyNotResolved
         
     // Note: This returns a TcImports object. TcImports are disposable - the caller owns the returned TcImports object 
     // and when hosted in Visual Studio or another long-running process must dispose this object. 
@@ -4684,7 +4684,7 @@ let RequireDLL (ctok, tcImports:TcImports, tcEnv, thisAssemblyName, m, file) =
 
     let g = tcImports.GetTcGlobals()
     let amap = tcImports.GetImportMap()
-    let tcEnv = (tcEnv, asms) ||> List.fold (fun tcEnv asm -> AddCcuToTcEnv(g,amap,m,tcEnv,thisAssemblyName,asm.FSharpViewOfMetadata,asm.AssemblyAutoOpenAttributes,asm.AssemblyInternalsVisibleToAttributes)) 
+    let tcEnv = (tcEnv, asms) ||> Seq.fold (fun tcEnv asm -> AddCcuToTcEnv(g,amap,m,tcEnv,thisAssemblyName,asm.FSharpViewOfMetadata,asm.AssemblyAutoOpenAttributes,asm.AssemblyInternalsVisibleToAttributes)) 
     tcEnv,(dllinfos,asms)
 
        
@@ -4718,7 +4718,7 @@ let ProcessMetaCommandsFromInput
                    errorR(Error(FSComp.SR.buildInvalidHashIDirective(),m))
                    state
             | ParsedHashDirective("nowarn",numbers,m) ->
-               List.fold (fun state d -> nowarnF state (m,d)) state numbers
+               Seq.fold (fun state d -> nowarnF state (m,d)) state numbers
             | ParsedHashDirective(("reference" | "r"),args,m) -> 
                if not canHaveScriptMetaCommands then 
                    errorR(HashReferenceNotAllowedInNonScript(m))
@@ -4735,7 +4735,7 @@ let ProcessMetaCommandsFromInput
                match args with 
                | _ :: _ -> 
                   matchedm<-m
-                  args |> List.iter (fun path -> loadSourceF state (m,path))
+                  args |> Seq.iter (fun path -> loadSourceF state (m,path))
                | _ -> 
                   errorR(Error(FSComp.SR.buildInvalidHashloadDirective(),m))
                state
@@ -4758,21 +4758,21 @@ let ProcessMetaCommandsFromInput
         with e -> errorRecovery e matchedm; state
 
     let rec WarnOnIgnoredSpecDecls decls = 
-        decls |> List.iter (fun d -> 
+        decls |> Seq.iter (fun d -> 
             match d with 
             | SynModuleSigDecl.HashDirective (_,m) -> warning(Error(FSComp.SR.buildDirectivesInModulesAreIgnored(),m)) 
             | SynModuleSigDecl.NestedModule (_,_,subDecls,_) -> WarnOnIgnoredSpecDecls subDecls
             | _ -> ())
 
     let rec WarnOnIgnoredImplDecls decls = 
-        decls |> List.iter (fun d -> 
+        decls |> Seq.iter (fun d -> 
             match d with 
             | SynModuleDecl.HashDirective (_,m) -> warning(Error(FSComp.SR.buildDirectivesInModulesAreIgnored(),m)) 
             | SynModuleDecl.NestedModule (_,_,subDecls,_,_) -> WarnOnIgnoredImplDecls subDecls
             | _ -> ())
 
     let ProcessMetaCommandsFromModuleSpec state (SynModuleOrNamespaceSig(_,_,_,decls,_,_,_,_)) =
-        List.fold (fun s d -> 
+        Seq.fold (fun s d -> 
             match d with 
             | SynModuleSigDecl.HashDirective (h,_) -> ProcessMetaCommand s h
             | SynModuleSigDecl.NestedModule (_,_,subDecls,_) -> WarnOnIgnoredSpecDecls subDecls; s
@@ -4781,7 +4781,7 @@ let ProcessMetaCommandsFromInput
          decls 
 
     let ProcessMetaCommandsFromModuleImpl state (SynModuleOrNamespace(_,_,_,decls,_,_,_,_)) =
-        List.fold (fun s d -> 
+        Seq.fold (fun s d -> 
             match d with 
             | SynModuleDecl.HashDirective (h,_) -> ProcessMetaCommand s h
             | SynModuleDecl.NestedModule (_,_,subDecls,_,_) -> WarnOnIgnoredImplDecls subDecls; s
@@ -4791,12 +4791,12 @@ let ProcessMetaCommandsFromInput
 
     match inp with 
     | ParsedInput.SigFile(ParsedSigFileInput(_,_,_,hashDirectives,specs)) -> 
-        let state = List.fold ProcessMetaCommand state0 hashDirectives
-        let state = List.fold ProcessMetaCommandsFromModuleSpec state specs
+        let state = Seq.fold ProcessMetaCommand state0 hashDirectives
+        let state = Seq.fold ProcessMetaCommandsFromModuleSpec state specs
         state
     | ParsedInput.ImplFile(ParsedImplFileInput(_,_,_,_,hashDirectives,impls,_)) -> 
-        let state = List.fold ProcessMetaCommand state0 hashDirectives
-        let state = List.fold ProcessMetaCommandsFromModuleImpl state impls
+        let state = Seq.fold ProcessMetaCommand state0 hashDirectives
+        let state = Seq.fold ProcessMetaCommandsFromModuleImpl state impls
         state
 
 let ApplyNoWarnsToTcConfig (tcConfig:TcConfig, inp:ParsedInput, pathOfMetaCommandSource) = 
@@ -4909,7 +4909,7 @@ module private ScriptPreprocessClosure =
         let tcConfigB = TcConfigBuilder.CreateNew(referenceResolver, Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None).Value, true (* optimize for memory *), projectDir, isInteractive, isInvalidationSupported) 
         applyCommandLineArgs tcConfigB
         match basicReferences with 
-        | None -> BasicReferencesForScriptLoadClosure(useSimpleResolution, useFsiAuxLib, assumeDotNetFramework) |> List.iter(fun f->tcConfigB.AddReferencedAssemblyByPath(range0,f)) // Add script references
+        | None -> BasicReferencesForScriptLoadClosure(useSimpleResolution, useFsiAuxLib, assumeDotNetFramework) |> Seq.iter(fun f->tcConfigB.AddReferencedAssemblyByPath(range0,f)) // Add script references
         | Some rs -> for m,r in rs do tcConfigB.AddReferencedAssemblyByPath(m,r)
 
         tcConfigB.resolutionEnvironment <-

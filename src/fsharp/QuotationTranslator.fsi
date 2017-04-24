@@ -15,7 +15,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 [<Sealed>]
 type QuotationTranslationEnv =
    static member Empty : QuotationTranslationEnv
-   member BindTypars : Typars -> QuotationTranslationEnv
+   member BindTypars : (seq<Typar>) -> QuotationTranslationEnv
 
 exception InvalidQuotedTerm of exn
 exception IgnoringPartOfQuotedTermWarning of string * Range.range

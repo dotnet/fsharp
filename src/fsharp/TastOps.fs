@@ -1393,7 +1393,7 @@ let applyForallTy g ty tyargs =
     instType (mkTyparInst tps tyargs) tau
 
 let reduceIteratedFunTy g ty args = 
-    List.fold (fun ty _ -> 
+    Seq.fold (fun ty _ -> 
         if not (isFunTy g ty) then failwith "reduceIteratedFunTy"
         snd (destFunTy g ty)) ty args
 
@@ -1975,10 +1975,10 @@ let unionFreeTyparsLeftToRight fvs1 fvs2 = ListSet.unionFavourRight typarEq fvs1
 let rec boundTyparsLeftToRight g cxFlag thruFlag  acc tps = 
     // Bound type vars form a recursively-referential set due to constraints, e.g.  A : I<B>, B : I<A> 
     // So collect up free vars in all constraints first, then bind all variables 
-    List.fold (fun acc (tp:Typar) -> accFreeInTyparConstraintsLeftToRight g cxFlag thruFlag acc tp.Constraints) tps acc
+    Seq.fold (fun acc (tp:Typar) -> accFreeInTyparConstraintsLeftToRight g cxFlag thruFlag acc tp.Constraints) tps acc
 
 and accFreeInTyparConstraintsLeftToRight g cxFlag thruFlag acc cxs =
-    List.fold (accFreeInTyparConstraintLeftToRight g cxFlag thruFlag) acc cxs 
+    Seq.fold (accFreeInTyparConstraintLeftToRight g cxFlag thruFlag) acc cxs 
 
 and accFreeInTyparConstraintLeftToRight g cxFlag thruFlag acc tpc =
     match tpc with 
@@ -2232,6 +2232,7 @@ let prefixOfRigidTypar (typar:Typar) =
 //---------------------------------------------------------------------------
 
 type TyparConstraintsWithTypars = (Typar * TyparConstraint) list
+type TyparConstraintsWithTyparz = (Typar * TyparConstraint) seq
 
 module PrettyTypes =
     let newPrettyTypar (tp:Typar) nm = 
@@ -2314,8 +2315,8 @@ module PrettyTypes =
                     computeKeep keep (tp :: change) rest
         let keep,change = computeKeep [] [] ftps
         
-        // change |> List.iter (fun tp -> dprintf "change typar: %s %s %d\n" tp.Name (tp.DisplayName) (stamp_of_typar tp));  
-        // keep |> List.iter (fun tp -> dprintf "keep typar: %s %s %d\n" tp.Name (tp.DisplayName) (stamp_of_typar tp));  
+        // change |> Seq.iter (fun tp -> dprintf "change typar: %s %s %d\n" tp.Name (tp.DisplayName) (stamp_of_typar tp));  
+        // keep |> Seq.iter (fun tp -> dprintf "keep typar: %s %s %d\n" tp.Name (tp.DisplayName) (stamp_of_typar tp));  
         let alreadyInUse = keep |> List.map (fun x -> x.Name)
         let names = PrettyTyparNames (fun x -> List.memq x change) alreadyInUse ftps
 
@@ -2407,9 +2408,9 @@ module SimplifyTypes =
         let z = f z typ
         match typ with
         | TType_forall (_,body) -> foldTypeButNotConstraints f z body
-        | TType_app (_,tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_ucase (_,tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_tuple (_,typs) -> List.fold (foldTypeButNotConstraints f) z typs
+        | TType_app (_,tinst) -> Seq.fold (foldTypeButNotConstraints f) z tinst
+        | TType_ucase (_,tinst) -> Seq.fold (foldTypeButNotConstraints f) z tinst
+        | TType_tuple (_,typs) -> Seq.fold (foldTypeButNotConstraints f) z typs
         | TType_fun (s,t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
         | TType_var _            -> z
         | TType_measure _          -> z
@@ -2425,7 +2426,7 @@ module SimplifyTypes =
     let emptyTyparCounts = Zmap.empty typarOrder
 
     // print multiple fragments of the same type using consistent naming and formatting 
-    let accTyparCountsMulti acc l = List.fold accTyparCounts acc l
+    let accTyparCountsMulti acc l = Seq.fold accTyparCounts acc l
 
     type TypeSimplificationInfo =
         { singletons         : Typar Zset
@@ -4695,7 +4696,7 @@ and fixupValData g compgen tmenv (v2:Val) =
 and copyAndRemapAndBindVals g compgen tmenv vs = 
     let vs2 = vs |> List.map (copyVal compgen)
     let tmenvinner = bindLocalVals vs vs2 tmenv
-    vs2 |> List.iter (fixupValData g compgen tmenvinner)
+    vs2 |> Seq.iter (fixupValData g compgen tmenvinner)
     vs2, tmenvinner
 
 and copyAndRemapAndBindVal g compgen tmenv v = 
@@ -5834,7 +5835,7 @@ let ExprFolder0 =
 /// To collect ids etc some additional folding needed, over formals etc.
 type ExprFolders<'State> (folders : _ ExprFolder) =
     let mutable exprFClosure = Unchecked.defaultof<_> // prevent reallocation of closure
-    let rec exprsF z xs = List.fold exprFClosure z xs
+    let rec exprsF z xs = Seq.fold exprFClosure z xs
     and exprF (z: 'State) x =
         match folders.exprIntercept exprFClosure z x with // fold this node, then recurse 
         | Some z -> z // intercepted 
@@ -5875,8 +5876,8 @@ type ExprFolders<'State> (folders : _ ExprFolder) =
 
             | Expr.Obj (_n,_typ,_basev,basecall,overrides,iimpls,_m)    -> 
                 let z = exprF z basecall
-                let z = List.fold tmethodF z overrides
-                let z = List.fold (foldOn snd (List.fold tmethodF)) z iimpls
+                let z = Seq.fold tmethodF z overrides
+                let z = Seq.fold (foldOn snd (Seq.fold tmethodF)) z iimpls
                 z
 
             | Expr.StaticOptimization (_tcs,csx,x,_) -> exprsF z [csx;x]
@@ -5887,7 +5888,7 @@ type ExprFolders<'State> (folders : _ ExprFolder) =
 
     and valBindsF dtree z binds =
         let z = folders.recBindingsIntercept z binds
-        List.fold (bindF dtree) z binds 
+        Seq.fold (bindF dtree) z binds 
 
     and bindF dtree z (bind:Binding) =
         let z = folders.valBindingSiteIntercept z (dtree,bind.Var)
@@ -5902,7 +5903,7 @@ type ExprFolders<'State> (folders : _ ExprFolder) =
         | TDSuccess (args,_)            -> exprsF z args
         | TDSwitch (test,dcases,dflt,_) -> 
             let z = exprF z test
-            let z = List.fold dcaseF z dcases
+            let z = Seq.fold dcaseF z dcases
             let z = Option.fold dtreeF z dflt
             z
 
@@ -5931,11 +5932,11 @@ type ExprFolders<'State> (folders : _ ExprFolder) =
         match x with
         | TMDefRec(_,_,mbinds,_) -> 
             (* REVIEW: also iterate the abstract slot vspecs hidden in the _vslots field in the tycons *)
-            let z = List.fold mbindF z mbinds
+            let z = Seq.fold mbindF z mbinds
             z
         | TMDefLet(bind,_) -> valBindF false z bind
         | TMDefDo(e,_) -> exprF z e
-        | TMDefs defs -> List.fold mdefF z defs 
+        | TMDefs defs -> Seq.fold mdefF z defs 
         | TMAbstract x -> mexprF z x
 
     and mbindF z x = 
@@ -6720,7 +6721,7 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
                 List.chop (min suppliedArgs.Length curriedNiceNames.Length) suppliedArgs
 
             /// The relevant range for any expressions and applications includes the arguments 
-            let appm = (m,suppliedArgs) ||> List.fold (fun m e -> unionRanges m (e.Range)) 
+            let appm = (m,suppliedArgs) ||> Seq.fold (fun m e -> unionRanges m (e.Range)) 
 
             // See if we have 'enough' suppliedArgs. If not, we have to build some lambdas, and,
             // we have to 'let' bind all arguments that we consume, e.g.
@@ -7147,7 +7148,7 @@ let XmlDocSigOfVal g path (v:Val) =
   let genArity = if arity=0 then "" else sprintf "``%d" arity
   prefix + prependPath path name + genArity + args
   
-let BuildXmlDocSig prefix paths =  prefix + List.fold prependPath "" paths
+let BuildXmlDocSig prefix paths =  prefix + Seq.fold prependPath "" paths
 
 let XmlDocSigOfUnionCase = BuildXmlDocSig "T:" // Would like to use "U:", but ParseMemberSignature only accepts C# signatures
 
@@ -7155,7 +7156,7 @@ let XmlDocSigOfField     = BuildXmlDocSig "F:"
 
 let XmlDocSigOfProperty  = BuildXmlDocSig "P:"
 
-let XmlDocSigOfTycon     = BuildXmlDocSig "T:"
+let XmlDocSigOfTycon  (x:seq<_>)   = BuildXmlDocSig "T:" x
 
 let XmlDocSigOfSubModul  = BuildXmlDocSig "T:"
 
@@ -7853,7 +7854,7 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
     and checkDecisionTreeCase vrefs (TCase(discrim,dtree)) = 
        (match discrim with DecisionTreeTest.Const _c -> true | _ -> false) && checkDecisionTree vrefs dtree
     and checkDecisionTreeTarget vrefs (TTarget(vs,e,_)) = 
-       let vrefs = ((vrefs, vs) ||> List.fold (fun s v -> s.Add v.Stamp)) 
+       let vrefs = ((vrefs, vs) ||> Seq.fold (fun s v -> s.Add v.Stamp)) 
        checkExpr vrefs e
 
     checkExpr Set.empty inputExpr    

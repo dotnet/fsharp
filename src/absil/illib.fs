@@ -459,7 +459,7 @@ module List =
 
     let rec until p l = match l with [] -> [] | h::t -> if p h then [] else h :: until p t 
 
-    let count pred xs = List.fold (fun n x -> if pred x then n+1 else n) 0 xs
+    let count pred xs = Seq.fold (fun n x -> if pred x then n+1 else n) 0 xs
 
     // WARNING: not tail-recursive 
     let mapHeadTail fhead ftail = function
@@ -474,7 +474,7 @@ module List =
     let collect2 f xs ys = List.concat (List.map2 f xs ys)
 
     let toArraySquared xss = xss |> List.map List.toArray |> List.toArray
-    let iterSquared f xss = xss |> List.iter (List.iter f)
+    let iterSquared f xss = xss |> Seq.iter (Seq.iter f)
     let collectSquared f xss = xss |> List.collect (List.collect f)
     let mapSquared f xss = xss |> List.map (List.map f)
     let mapFoldSquared f z xss = mapFold (mapFold f) z xss

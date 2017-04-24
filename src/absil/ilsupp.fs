@@ -676,7 +676,7 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
                 FileSystem.FileDelete(tempObjFileName)
             finally
                 // clean up the temp files
-                List.iter (fun tempResFileName -> FileSystem.FileDelete(tempResFileName)) tempResFiles
+                Seq.iter (fun tempResFileName -> FileSystem.FileDelete(tempResFileName)) tempResFiles
 
         // Part 2: Read the COFF file held in pbUnlinkedResource, spit it out into pResBuffer and apply the COFF fixups
         // pResBuffer will become  the .rsrc section of the PE file

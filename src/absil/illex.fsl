@@ -63,8 +63,8 @@ let keywords =
 let kwdInstrTable = 
   lazy 
    (let t = HashMultiMap(1000, HashIdentity.Structural)
-    List.iter t.Add (Lazy.force keywords);
-    let addTable f l = List.iter (fun (x,i) -> t.Add (String.concat "." x,f i)) (Lazy.force l)
+    Seq.iter t.Add (Lazy.force keywords);
+    let addTable f l = Seq.iter (fun (x,i) -> t.Add (String.concat "." x,f i)) (Lazy.force l)
     addTable (fun i -> INSTR_NONE i) NoArgInstrs;
     addTable (fun i -> INSTR_I i) Int32Instrs;
     addTable (fun i -> INSTR_I32_I32 i) Int32Int32Instrs;

@@ -142,7 +142,7 @@ let grabXmlDoc(parseState:IParseState,elemIdx) =
     LexbufLocalXmlDocStore.GrabXmlDocBeforeMarker(parseState.LexBuffer,rhs parseState elemIdx)
 
 let unionRangeWithListBy projectRangeFromThing m listOfThing = 
-    (m, listOfThing) ||> List.fold (fun m thing -> unionRanges m (projectRangeFromThing thing))
+    (m, listOfThing) ||> Seq.fold (fun m thing -> unionRanges m (projectRangeFromThing thing))
 
 let rangeOfNonNilAttrs(attrs:SynAttributes) =
     (attrs.Head.Range,attrs.Tail) ||> unionRangeWithListBy (fun a -> a.Range)
@@ -2041,7 +2041,7 @@ tyconDefnOrSpfnSimpleRepr:
   | opt_attributes opt_declVisibility unionTypeRepr
      { if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesIllegalHere(),rhs parseState 1))
        let rangesOf3 = $3 |> List.map (function |Choice1Of2(ec)->ec.Range | Choice2Of2(uc)->uc.Range)
-       let mWhole = (rhs2 parseState 1 2, rangesOf3) ||> List.fold unionRanges 
+       let mWhole = (rhs2 parseState 1 2, rangesOf3) ||> Seq.fold unionRanges 
        if $3 |> List.exists (function Choice1Of2 _ -> true | _ -> false) then (
            if Option.isSome $2 then errorR(Error(FSComp.SR.parsEnumTypesCannotHaveVisibilityDeclarations(),rhs parseState 2));
            SynTypeDefnSimpleRepr.Enum ($3 |> List.choose (function 
