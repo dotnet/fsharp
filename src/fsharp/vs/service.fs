@@ -88,16 +88,24 @@ module internal Params =
         // now printing will see a .NET-like canonical representation, that is good for sorting overloads into a reasonable order (see bug 94520)
         NicePrint.stringOfTy denv strippedType
 
-    let ParamOfRecdField g denv f =
+    let ParamOfRecdField g denv (tpinst: TyparInst) (f: RecdField) =
         FSharpMethodGroupItemParameter(
-          name = f.rfield_id.idText,
-          canonicalTypeTextForSorting = printCanonicalizedTypeName g denv f.rfield_type,
-          display = NicePrint.prettyLayoutOfTy denv f.rfield_type,
+          name = f.Name,
+          canonicalTypeTextForSorting = printCanonicalizedTypeName g denv f.FormalType,
+          // Note: the instantiation of any type parameters is currently incorporated directly into the type
+          // rather than being returned separately.
+          display = NicePrint.prettyLayoutOfTy denv (instType tpinst f.FormalType),
           isOptional=false)
     
-    let ParamOfUnionCaseField g denv isGenerated (i : int) f = 
-        let initial = ParamOfRecdField g denv f
-        let display = if isGenerated i f then initial.StructuredDisplay else NicePrint.layoutOfParamData denv (ParamData(false, false, NotOptional, NoCallerInfo, Some f.rfield_id, ReflectedArgInfo.None, f.rfield_type)) 
+    let ParamOfUnionCaseField g denv isGenerated tpinst (i: int) (f: RecdField) = 
+        let initial = ParamOfRecdField g denv tpinst f
+        let display = 
+            if isGenerated i f then 
+                initial.StructuredDisplay 
+            else 
+                // TODO: in this case ucinst is ignored - it gives the instantiation of the type parameters of
+                // the union type containing this case.
+                NicePrint.layoutOfParamData denv (ParamData(false, false, NotOptional, NoCallerInfo, Some f.Id, ReflectedArgInfo.None, f.FormalType)) 
         FSharpMethodGroupItemParameter(
           name=initial.ParameterName, 
           canonicalTypeTextForSorting=initial.CanonicalTypeTextForSorting, 
@@ -112,7 +120,7 @@ module internal Params =
           isOptional=optArgInfo.IsOptional)
 
     // TODO this code is similar to NicePrint.fs:formatParamDataToBuffer, refactor or figure out why different?
-    let ParamsOfParamDatas g denv (paramDatas:ParamData list) rty = 
+    let ParamsOfParamDatas g denv tpinst (paramDatas:ParamData list) rty = 
         let paramInfo,paramTypes = 
             paramDatas 
             |> List.map (fun (ParamData(isParamArrayArg, _isOutArg, optArgInfo, _callerInfoInfo, nmOpt, _reflArgInfo, pty)) -> 
@@ -142,18 +150,21 @@ module internal Params =
                             //sprintf "%s: " nm
                     (nm,isOptArg, prefix),pty)
             |> List.unzip
-        let paramTypeAndRetLs,_ = NicePrint.layoutPrettifiedTypes denv (paramTypes@[rty])
+        let prettyTyparRenaming,paramTypeAndRetLs,_ = NicePrint.layoutPrettifiedTypes denv (paramTypes@[rty])
         let paramTypeLs,_ = List.frontAndBack  paramTypeAndRetLs
-        (paramInfo,paramTypes,paramTypeLs) |||> List.map3 (fun (nm,isOptArg,paramPrefix) tau tyL -> 
+        let paramList = 
+          (paramInfo,paramTypes,paramTypeLs) |||> List.map3 (fun (nm,isOptArg,paramPrefix) tau tyL -> 
             FSharpMethodGroupItemParameter(
               name = nm,
               canonicalTypeTextForSorting = printCanonicalizedTypeName g denv tau,
               display = paramPrefix ^^ tyL,
               isOptional=isOptArg
             ))
+        let tpinst2 = renameTyparInst g prettyTyparRenaming tpinst
+        tpinst2, paramList
 
-    let ParamsOfTypes g denv args rtau = 
-        let ptausL, _ = NicePrint.layoutPrettifiedTypes denv (args@[rtau]) 
+    let PrettyParamsOfTypes g denv tpinst args rtau = 
+        let prettyTyparRenaming,ptausL, _ = NicePrint.layoutPrettifiedTypes denv (args@[rtau]) 
         let argsL,_ = List.frontAndBack ptausL 
         let mkParam (tau,tyL) =
             FSharpMethodGroupItemParameter(
@@ -162,7 +173,8 @@ module internal Params =
               display =  tyL,
               isOptional=false
             )
-        (args,argsL) ||> List.zip |> List.map mkParam
+        let tpinst2 = renameTyparInst g prettyTyparRenaming tpinst
+        tpinst2, (args,argsL) ||> List.zip |> List.map mkParam
 
 #if EXTENSIONTYPING
 
@@ -238,23 +250,35 @@ module internal Params =
 #endif
         | _ -> [| |]
 
-    let rec ParamsOfItem (infoReader:InfoReader) m denv d = 
+    /// Get all the information about parameters and "prettify" the types by choosing nice type variable
+    /// names.
+    let rec PrettyParamsOfItem (infoReader:InfoReader) m denv d = 
         let amap = infoReader.amap
         let g = infoReader.g
         match d with
         | Item.Value vref -> 
-            let getParamsOfTypes() = 
+            let getPrettyParamsOfTypes() = 
                 let _, tau = vref.TypeScheme
                 match tryDestFunTy denv.g tau with
                 | Some(arg,rtau) ->
                     let args = tryDestRefTupleTy denv.g arg 
-                    ParamsOfTypes g denv args rtau
+
+                    // TODO:: this should be the type instantiation relevant to the use of the item
+                    // That is, uses of values need to track the type parameter instantiation
+                    let tpinst = emptyTyparInst
+                    let _tpinstPretty, paramsPretty = PrettyParamsOfTypes g denv tpinst args rtau
+
+                    // TODO: tpinstPretty is the pretty version of the output and should be returned
+                    // for subsequent formatting
+                    paramsPretty
                 | None -> []
+
             match vref.ValReprInfo with
             | None -> 
                 // ValReprInfo = None i.e. in let bindings defined in types or in local functions
                 // in this case use old approach and return only information about types
-                getParamsOfTypes ()
+                getPrettyParamsOfTypes ()
+
             | Some valRefInfo ->
                 // ValReprInfo will exist for top-level syntactic functions
                 // per spec: binding is considered to define a syntactic function if it is either a function or its immediate right-hand-side is a anonymous function
@@ -262,7 +286,7 @@ module internal Params =
                 match argInfos with
                 | [] -> 
                     // handles cases like 'let foo = List.map'
-                    getParamsOfTypes() 
+                    getPrettyParamsOfTypes() 
                 | argInfo::_ ->
                     // result 'paramDatas' collection corresponds to the first argument of curried function
                     // i.e. let func (a : int) (b : int) = a + b
@@ -272,28 +296,64 @@ module internal Params =
                         argInfo
                         |> List.map ParamNameAndType.FromArgInfo
                         |> List.map (fun (ParamNameAndType(nmOpt, pty)) -> ParamData(false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, pty))
-                    ParamsOfParamDatas g denv paramDatas returnTy
+
+                    // TODO:: this should be the type instantiation relevant to the use of the value
+                    let tpinst = emptyTyparInst 
+                    let _tpinstPretty, paramsPretty = ParamsOfParamDatas g denv tpinst paramDatas returnTy
+                    // TODO: tpinstPretty is the pretty version of the output and should be returned
+                    // for subsequent formatting
+                    paramsPretty 
+
         | Item.UnionCase(ucr,_)   -> 
+            let tpinst = ucr.GetTyparInst(m)
             match ucr.UnionCase.RecdFields with
-            | [f] -> [ParamOfUnionCaseField g denv NicePrint.isGeneratedUnionCaseField -1 f]
-            | fs -> fs |> List.mapi (ParamOfUnionCaseField g denv NicePrint.isGeneratedUnionCaseField)
+            | [f] -> [ParamOfUnionCaseField g denv NicePrint.isGeneratedUnionCaseField tpinst -1 f]
+            | fs -> fs |> List.mapi (ParamOfUnionCaseField g denv NicePrint.isGeneratedUnionCaseField tpinst)
+
         | Item.ActivePatternCase(apref)   -> 
             let v = apref.ActivePatternVal 
             let _,tau = v.TypeScheme
             let args, _ = stripFunTy denv.g tau 
-            ParamsOfTypes g denv args tau
+
+            // TODO:: this should be the type instantiation relevant to the use of the item
+            // That is, uses of items need to track the type parameter instantiation
+            let tpinst = emptyTyparInst
+            let _tpinstPretty, paramsPretty = PrettyParamsOfTypes g denv tpinst args tau
+            // TODO: tpinstPretty is the pretty version of the output and should be returned
+            // for subsequent formatting
+            paramsPretty
+
         | Item.ExnCase(ecref)     -> 
-            ecref |> recdFieldsOfExnDefRef |> List.mapi (ParamOfUnionCaseField g denv NicePrint.isGeneratedExceptionField) 
+            ecref |> recdFieldsOfExnDefRef |> List.mapi (ParamOfUnionCaseField g denv NicePrint.isGeneratedExceptionField emptyTyparInst) 
+
         | Item.Property(_,pinfo :: _) -> 
             let paramDatas = pinfo.GetParamDatas(amap,m)
             let rty = pinfo.GetPropertyType(amap,m) 
-            ParamsOfParamDatas g denv paramDatas rty
+
+            // We currently use emptyTyparInst here because the only type parameters 
+            // active are those of the enclosing type of the property.
+            // These have already been substituted into the rty and paramDatas.
+            let tpinst = emptyTyparInst 
+            let _tpinstPretty, paramsPretty = ParamsOfParamDatas g denv tpinst paramDatas rty
+            // TODO: tpinstPretty is the pretty version of the output and should be returned
+            // for subsequent formatting
+            paramsPretty
+
         | Item.CtorGroup(_,(minfo :: _)) 
         | Item.MethodGroup(_,(minfo :: _),_) -> 
             let paramDatas = minfo.GetParamDatas(amap, m, minfo.FormalMethodInst) |> List.head
             let rty = minfo.GetFSharpReturnTy(amap, m, minfo.FormalMethodInst)
-            ParamsOfParamDatas g denv paramDatas rty
-        | Item.CustomBuilder (_,vref) -> ParamsOfItem infoReader m denv (Item.Value vref)
+            // TODO:: this should be the type instantiation relevant to the use of the item
+            // That is, uses of methods need to track the type parameter instantiation
+            let tpinst = emptyTyparInst 
+            let _tpinstPretty, paramsPretty = ParamsOfParamDatas g denv tpinst paramDatas rty
+            // TODO: tpinstPretty is the pretty version of the output and should be returned
+            // for subsequent formatting
+            paramsPretty
+
+        | Item.CustomBuilder (_,vref) -> 
+            PrettyParamsOfItem infoReader m denv (Item.Value vref)
+
         | Item.TypeVar _ -> []
 
         | Item.CustomOperation (_,usageText, Some minfo) -> 
@@ -303,26 +363,44 @@ module internal Params =
                 let _, argTys, _ = PrettyTypes.PrettifyTypesN g (argNamesAndTys |> List.map (fun (ParamNameAndType(_,ty)) -> ty))
                 let paramDatas = (argNamesAndTys, argTys) ||> List.map2 (fun (ParamNameAndType(nmOpt, _)) argTy -> ParamData(false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None,argTy))
                 let rty = minfo.GetFSharpReturnTy(amap, m, minfo.FormalMethodInst)
-                ParamsOfParamDatas g denv paramDatas rty
+                
+                // TODO:: this should be the type instantiation relevant to the use of the item
+                // That is, uses of methods need to track the type parameter instantiation
+                let tpinst = emptyTyparInst
+                let _tpinstPretty, paramsPretty = ParamsOfParamDatas g denv tpinst paramDatas rty
+
+                // TODO: tpinstPretty is the pretty version of the output and should be returned
+                // for subsequent formatting
+                paramsPretty
+
             | Some _ -> 
                 [] // no parameter data available for binary operators like 'zip', 'join' and 'groupJoin' since they use bespoke syntax 
 
         | Item.FakeInterfaceCtor _ -> []
+
         | Item.DelegateCtor delty -> 
             let (SigOfFunctionForDelegate(_, _, _, fty)) = GetSigOfFunctionForDelegate infoReader delty m AccessibleFromSomeFSharpCode
-            ParamsOfParamDatas g denv [ParamData(false, false, NotOptional, NoCallerInfo, None, ReflectedArgInfo.None, fty)] delty
+
+            // No need to pass more generic type information in here since the instanitations have already been applied
+            let tpinst = emptyTyparInst
+            let _tpinstPretty, paramsPretty = ParamsOfParamDatas g denv tpinst [ParamData(false, false, NotOptional, NoCallerInfo, None, ReflectedArgInfo.None, fty)] delty
+
+            // TODO: tpinstPretty is the pretty version of the output and should be returned
+            // for subsequent formatting
+            paramsPretty
+
         |  _ -> []
 
 
 /// A single method for Intellisense completion
 [<Sealed; NoEquality; NoComparison>]
 // Note: instances of this type do not hold any references to any compiler resources.
-type FSharpMethodGroupItem(description: FSharpToolTipText<Layout>, xmlDoc: FSharpXmlDoc, typeText: Layout, parameters: FSharpMethodGroupItemParameter[], hasParameters: bool, hasParamArrayArg: bool, staticParameters: FSharpMethodGroupItemParameter[]) = 
+type FSharpMethodGroupItem(description: FSharpToolTipText<Layout>, xmlDoc: FSharpXmlDoc, returnType: Layout, parameters: FSharpMethodGroupItemParameter[], hasParameters: bool, hasParamArrayArg: bool, staticParameters: FSharpMethodGroupItemParameter[]) = 
     member __.StructuredDescription = description
     member __.Description = Tooltips.ToFSharpToolTipText description
     member __.XmlDoc = xmlDoc
-    member __.StructuredTypeText = typeText
-    member __.TypeText = showL typeText
+    member __.StructuredReturnTypeText = returnType
+    member __.ReturnTypeText = showL returnType
     member __.Parameters = parameters
     member __.HasParameters = hasParameters
     member __.HasParamArrayArg = hasParamArrayArg
@@ -348,7 +426,7 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
         |> Array.map (fun meth -> 
             let parms = meth.Parameters
             if parms.Length = 1 && parms.[0].CanonicalTypeTextForSorting="Microsoft.FSharp.Core.Unit" then 
-                FSharpMethodGroupItem(meth.StructuredDescription, meth.XmlDoc, meth.StructuredTypeText, [||], true, meth.HasParamArrayArg, meth.StaticParameters) 
+                FSharpMethodGroupItem(meth.StructuredDescription, meth.XmlDoc, meth.StructuredReturnTypeText, [||], true, meth.HasParamArrayArg, meth.StaticParameters) 
             else 
                 meth)
         // Fix the order of methods, to be stable for unit testing.
@@ -400,9 +478,9 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
                     items |> Array.ofList |> Array.map (fun item -> 
                         FSharpMethodGroupItem(
                           description = FSharpToolTipText [FormatStructuredDescriptionOfItem true infoReader m denv item],
-                          typeText = FormatStructuredReturnTypeOfItem infoReader m denv item,
+                          returnType = FormatStructuredReturnTypeOfItem infoReader m denv item,
                           xmlDoc = GetXmlCommentForItem infoReader m item,
-                          parameters = (Params.ParamsOfItem infoReader m denv item |> Array.ofList),
+                          parameters = (Params.PrettyParamsOfItem infoReader m denv item |> Array.ofList),
                           hasParameters = (match item with Params.ItemIsProvidedTypeWithStaticArguments m g _ -> false | _ -> true),
                           hasParamArrayArg = (match item with Item.CtorGroup(_,[meth]) | Item.MethodGroup(_,[meth],_) -> meth.HasParamArrayArg(infoReader.amap, m, meth.FormalMethodInst) | _ -> false),
                           staticParameters = Params.StaticParamsOfItem infoReader m denv item

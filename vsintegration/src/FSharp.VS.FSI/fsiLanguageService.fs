@@ -84,7 +84,7 @@ type internal FsiMethods() =
     override this.GetParameterCount(i:int) = 0
     override this.GetParameterInfo(i,param_i,name:byref<string>,display:byref<string>,description:byref<string>) =
         name <- items.[i]; display <- ""; description <- ""
-    override this.GetType(i:int) = null:string
+    override this.GetReturnTypeText(i:int) = null:string
 
 // FsiSource
 type internal FsiSource(service:LanguageService, textLines:IVsTextLines, colorizer:Colorizer) =

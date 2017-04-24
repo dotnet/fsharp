@@ -1035,23 +1035,23 @@ module private PrintTypes =
         | [] -> emptyL
 
     let layoutPrettifiedTypes denv taus =
-        let _,ptaus,cxs = PrettyTypes.PrettifyTypesN denv.g taus
+        let renaming,ptaus,cxs = PrettyTypes.PrettifyTypesN denv.g taus
         let env = SimplifyTypes.CollectInfo true ptaus cxs
-        List.map (layoutTypeWithInfo denv env) ptaus,layoutConstraintsWithInfo denv env env.postfixConstraints
+        renaming, List.map (layoutTypeWithInfo denv env) ptaus,layoutConstraintsWithInfo denv env env.postfixConstraints
 
     let layoutPrettifiedTypesAndConstraints denv argInfos tau cxs = 
         let env = SimplifyTypes.CollectInfo true (tau:: List.collect (List.map fst) argInfos) cxs
         layoutTopType denv env argInfos tau env.postfixConstraints
 
     let layoutPrettifiedTypeAndConstraints denv argInfos tau = 
-        let _,(argInfos,tau),cxs = PrettyTypes.PrettifyTypesN1 denv.g (argInfos,tau)
-        layoutPrettifiedTypesAndConstraints denv [argInfos] tau cxs
+        let renaming,(argInfos,tau),cxs = PrettyTypes.PrettifyTypesN1 denv.g (argInfos,tau)
+        renaming,layoutPrettifiedTypesAndConstraints denv [argInfos] tau cxs
 
     let layoutMemberTypeAndConstraints denv argInfos retTy parentTyparTys = 
-        let _,(parentTyparTys,argInfos,retTy),cxs = PrettyTypes.PrettifyTypesNM1 denv.g (parentTyparTys,argInfos,retTy)
+        let renaming,(parentTyparTys,argInfos,retTy),cxs = PrettyTypes.PrettifyTypesNM1 denv.g (parentTyparTys,argInfos,retTy)
         // Filter out the parent typars, which don't get shown in the member signature 
         let cxs = cxs |> List.filter (fun (tp,_) -> not (parentTyparTys |> List.exists (fun ty -> match tryDestTyparTy denv.g ty with Some destTypar -> typarEq tp destTypar | None -> false))) 
-        layoutPrettifiedTypesAndConstraints denv argInfos retTy cxs
+        renaming,layoutPrettifiedTypesAndConstraints denv argInfos retTy cxs
 
     // Layout: type spec - class, datatype, record, abbrev 
 
@@ -1067,18 +1067,20 @@ module private PrintTypes =
         // aren't chosen as names for displayed variables. 
         let memberParentTypars = List.map fst memberToParentInst
         let parentTyparTys = List.map (mkTyparTy >> instType allTyparInst) memberParentTypars
+        let renaming, layout = layoutMemberTypeAndConstraints denv argInfos retTy parentTyparTys
 
-        niceMethodTypars,layoutMemberTypeAndConstraints denv argInfos retTy parentTyparTys
+        niceMethodTypars, renaming, layout
 
     let layoutMemberType denv v argInfos retTy = 
         match PartitionValRefTypars denv.g v with
         | Some(_,_,memberMethodTypars,memberToParentInst,_) ->  
             layoutMemberTypeCore denv memberToParentInst (memberMethodTypars, argInfos, retTy)
         | None -> 
-            [],layoutPrettifiedTypeAndConstraints denv (List.concat argInfos) retTy 
+            let renaming, layout = layoutPrettifiedTypeAndConstraints denv (List.concat argInfos) retTy 
+            [], renaming, layout
 
     let layoutMemberSig denv  (memberToParentInst,nm,methTypars,argInfos,retTy) = 
-        let niceMethodTypars,tauL = layoutMemberTypeCore denv memberToParentInst (methTypars, argInfos, retTy)
+        let niceMethodTypars, _, tauL = layoutMemberTypeCore denv memberToParentInst (methTypars, argInfos, retTy)
         let nameL = 
             let nameL = DemangleOperatorNameAsLayout tagMember nm
             let nameL = if denv.showTyparBinding then layoutTyparDecls denv nameL true niceMethodTypars else nameL
@@ -1121,12 +1123,12 @@ module private PrintTastMemberOrVals =
 
         match membInfo.MemberFlags.MemberKind with 
         | MemberKind.Member -> 
-            let niceMethodTypars,tauL = layoutMemberType denv v argInfos rty
+            let niceMethodTypars,_,tauL = layoutMemberType denv v argInfos rty
             let nameL = mkNameL niceMethodTypars tagMember v.LogicalName
             stat --- (nameL ^^ WordL.colon ^^ tauL)
         | MemberKind.ClassConstructor  
         | MemberKind.Constructor -> 
-            let _,tauL = layoutMemberType denv v argInfos rty
+            let _,_,tauL = layoutMemberType denv v argInfos rty
             let newL = layoutAccessibility denv v.Accessibility WordL.keywordNew
             stat ++ newL ^^ wordL (tagPunctuation ":") ^^ tauL
         | MemberKind.PropertyGetSet -> stat
@@ -1142,7 +1144,7 @@ module private PrintTastMemberOrVals =
                     | [[(ty,_)]] when isUnitTy denv.g ty -> []
                     | _ -> argInfos
 
-                let niceMethodTypars,tauL = layoutMemberType denv v argInfos rty
+                let niceMethodTypars,_,tauL = layoutMemberType denv v argInfos rty
                 let nameL = mkNameL niceMethodTypars tagProperty v.CoreDisplayName
                 stat --- (nameL ^^ WordL.colon ^^ (if isNil argInfos then tauL else tauL --- (WordL.keywordWith ^^ WordL.keywordGet)))
         | MemberKind.PropertySet -> 
@@ -1153,7 +1155,7 @@ module private PrintTastMemberOrVals =
                 stat --- nameL --- (WordL.keywordWith ^^ WordL.keywordSet)
             else 
                 let argInfos,valueInfo = List.frontAndBack argInfos.Head
-                let niceMethodTypars,tauL = layoutMemberType denv v (if isNil argInfos then [] else [argInfos]) (fst valueInfo)
+                let niceMethodTypars,_,tauL = layoutMemberType denv v (if isNil argInfos then [] else [argInfos]) (fst valueInfo)
                 let nameL = mkNameL niceMethodTypars tagProperty v.CoreDisplayName
                 stat --- (nameL ^^ wordL (tagPunctuation ":") ^^ (tauL --- (WordL.keywordWith ^^ WordL.keywordSet)))
 

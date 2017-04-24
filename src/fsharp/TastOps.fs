@@ -373,6 +373,7 @@ let instTyparConstraints tpinst x = if isNil tpinst then x else remapTyparConstr
 let instSlotSig tpinst ss = remapSlotSig (fun _ -> []) (mkInstRemap tpinst) ss
 let copySlotSig ss = remapSlotSig (fun _ -> []) Remap.Empty ss
 
+
 let mkTyparToTyparRenaming tpsOrig tps = 
     let tinst = generalizeTypars tps
     mkTyparInst tpsOrig tinst,tinst
@@ -8138,11 +8139,9 @@ let DetectAndOptimizeForExpression g option expr =
 // Used to remove Expr.Link for inner expressions in pattern matches
 let (|InnerExprPat|) expr = stripExpr expr
 
-//-------------------------------------------------------------------------
-// One of the transformations performed by the compiler
-// is to eliminate variables of static type "unit".  These are
-// utility functions related to this.
-//------------------------------------------------------------------------- 
+/// One of the transformations performed by the compiler
+/// is to eliminate variables of static type "unit".  These is a
+/// utility function related to this.
 
 let BindUnitVars g (mvs:Val list, paramInfos:ArgReprInfo list, body) = 
     match mvs,paramInfos with 
@@ -8151,4 +8150,13 @@ let BindUnitVars g (mvs:Val list, paramInfos:ArgReprInfo list, body) =
         [], mkLet NoSequencePointAtInvisibleBinding v.Range v (mkUnit g v.Range) body 
     | _ -> mvs,body
 
+
+/// Rename the type parameters in a type parametere instantiation
+let renameTyparInst g tpinst (x: TyparInst) = 
+    if isNil tpinst then x else 
+    let tps,tys = List.unzip x 
+    let remap = mkInstRemap tpinst
+    let tps2 = tps |> List.map mkTyparTy |> remapTypesAux remap |> List.map (destAnyParTy g)
+    let tys2 = tys |> remapTypesAux remap
+    mkTyparInst tps2 tys2
 

@@ -357,6 +357,9 @@ val instTypes              : TyparInst -> TypeInst -> TypeInst
 val instTyparConstraints  : TyparInst -> TyparConstraint list -> TyparConstraint list 
 val instTrait              : TyparInst -> TraitConstraintInfo -> TraitConstraintInfo 
 
+/// Rename the type paraneters being instantiated in a type parameter instantiation
+val renameTyparInst          : TcGlobals -> TyparInst -> TyparInst -> TyparInst
+
 //-------------------------------------------------------------------------
 // From typars to types 
 //------------------------------------------------------------------------- 

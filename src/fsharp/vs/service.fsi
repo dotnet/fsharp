@@ -60,10 +60,10 @@ type internal FSharpMethodGroupItem =
     member Description : FSharpToolTipText
 
     /// The The structured description representation for the method (or other item)
-    member StructuredTypeText: Layout
+    member StructuredReturnTypeText: Layout
 
     /// The formatted type text for the method (or other item)
-    member TypeText: string
+    member ReturnTypeText: string
 
     /// The parameters of the method in the overload set
     member Parameters: FSharpMethodGroupItemParameter[]
