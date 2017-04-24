@@ -97,11 +97,6 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         new : list<ISeq<'T>> -> AppendEnumerable<'T>
         override Append : ISeq<'T> -> ISeq<'T>
 
-    type internal ThinListEnumerable<'T> =
-        inherit EnumerableBase<'T>
-        new : list<'T> -> ThinListEnumerable<'T>
-        interface ISeq<'T>
-
     type internal ThinResizeArrayEnumerable<'T> =
         inherit EnumerableBase<'T>
         new : ResizeArray<'T> -> ThinResizeArrayEnumerable<'T>

@@ -131,14 +131,13 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "OfList">]
         let ofList (source:list<'T>) : ISeq<'T> =
-            Upcast.seq (ThinListEnumerable<'T> source)
+            Upcast.seq source
 
         [<CompiledName "OfSeq">]
         let ofSeq (source:seq<'T>) : ISeq<'T> =
             match source with
             | :? ISeq<'T>  as seq   -> seq
             | :? array<'T> as array -> ofArray array
-            | :? list<'T>  as list  -> ofList list
             | null                  -> nullArg "source"
             | _                     -> Upcast.seq (ThinEnumerable<'T> source)
 

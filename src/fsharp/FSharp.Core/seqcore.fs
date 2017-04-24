@@ -310,29 +310,6 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                 finally
                     activity.ChainDispose ()
 
-    type ListEnumerator<'T,'U>(alist:list<'T>, activity:Activity<'T,'U>, result:Result<'U>) =
-        inherit EnumeratorBase<'U>(result, activity)
-
-        let mutable list = alist
-
-        let rec moveNext current =
-            match result.HaltedIdx, current with
-            | 0, head::tail ->
-                if activity.ProcessNext head then
-                    list <- tail
-                    true
-                else
-                    moveNext tail
-            | _ ->
-                result.SeqState <- SeqProcessNextStates.Finished
-                activity.ChainComplete result.HaltedIdx
-                false
-
-        interface IEnumerator with
-            member __.MoveNext () =
-                result.SeqState <- SeqProcessNextStates.InProcess
-                moveNext list
-
     let length (source:ISeq<_>) =
         source.Fold (fun _ ->
             { new Folder<'T,int>(0) with
@@ -471,71 +448,10 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                 fat.Fold createFolder
 
     and AppendEnumerable<'T> (sources:list<ISeq<'T>>) =
-        inherit ThinConcatEnumerable<'T, list<ISeq<'T>>, ISeq<'T>>(sources, fun sources -> Upcast.seq (ThinListEnumerable<ISeq<'T>>(List.rev sources)))
+        inherit ThinConcatEnumerable<'T, list<ISeq<'T>>, ISeq<'T>>(sources, fun sources -> Upcast.seq (List.rev sources))
 
         override this.Append source =
             Upcast.seq (AppendEnumerable (source::sources))
-
-    and ThinListEnumerable<'T>(alist:list<'T>) =
-        inherit EnumerableBase<'T>()
-
-        override __.Length () = alist.Length
-
-        interface IEnumerable<'T> with
-            member __.GetEnumerator () = (Upcast.enumerable alist).GetEnumerator ()
-
-        interface ISeq<'T> with
-            member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
-                Upcast.seq (new ListEnumerable<'T,'U>(alist, next, 1))
-
-            member this.Fold<'Result> (createFolder:PipeIdx->Folder<'T,'Result>) =
-                let result = createFolder 1
-                try
-                    let mutable lst = alist
-                    while 
-                      ( match lst with
-                        | hd :: tl when result.HaltedIdx = 0 ->
-                            result.ProcessNext hd |> ignore
-                            lst <- tl
-                            true
-                        | _ -> false
-                      ) do ()
-
-                    result.ChainComplete result.HaltedIdx
-                finally
-                    result.ChainDispose ()
-                result.Result
-
-    and ListEnumerable<'T,'U>(alist:list<'T>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
-        inherit EnumerableBase<'U>()
-
-        interface IEnumerable<'U> with
-            member this.GetEnumerator () : IEnumerator<'U> =
-                let result = Result<'U> ()
-                Upcast.enumerator (new ListEnumerator<'T,'U>(alist, createFold transformFactory result pipeIdx, result))
-
-        interface ISeq<'U> with
-            member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
-                Upcast.seq (new ListEnumerable<'T,'V>(alist, ComposedFactory.Combine transformFactory next, pipeIdx+1))
-
-            member this.Fold<'Result> (createFolder:PipeIdx->Folder<'U,'Result>) =
-                let result = createFolder (pipeIdx+1)
-                let consumer = createFold transformFactory result pipeIdx
-                try
-                    let mutable lst = alist
-                    while
-                      ( match lst with
-                        | hd :: tl when result.HaltedIdx = 0 ->
-                            consumer.ProcessNext hd |> ignore
-                            lst <- tl
-                            true
-                        | _ -> false
-                      ) do ()
-
-                    consumer.ChainComplete result.HaltedIdx
-                finally
-                    consumer.ChainDispose ()
-                result.Result
 
     /// ThinEnumerable is used when the IEnumerable provided to ofSeq is neither an array or a list
     type ThinEnumerable<'T>(enumerable:IEnumerable<'T>) =
