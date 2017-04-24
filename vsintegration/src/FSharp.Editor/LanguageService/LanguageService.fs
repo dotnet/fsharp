@@ -47,19 +47,20 @@ type internal FSharpCheckerProvider
             // When the F# background builder refreshes the background semantic build context for a file,
             // we request Roslyn to reanalyze that individual file.
             checker.BeforeBackgroundFileCheck.Add(fun (fileName, extraProjectInfo) ->  
-               async {
-                try 
-                    match extraProjectInfo with 
-                    | Some (:? Workspace as workspace) -> 
-                        let solution = workspace.CurrentSolution
-                        let documentIds = solution.GetDocumentIdsWithFilePath(fileName)
-                        if not documentIds.IsEmpty then 
-                            analyzerService.Reanalyze(workspace,documentIds=documentIds)
-                    | _ -> ()
-                with ex -> 
-                    Assert.Exception(ex)
+                async {
+                    try 
+                        match extraProjectInfo with 
+                        | Some (:? Workspace as workspace) -> 
+                            let solution = workspace.CurrentSolution
+                            let documentIds = solution.GetDocumentIdsWithFilePath(fileName)
+                            if not documentIds.IsEmpty then 
+                                analyzerService.Reanalyze(workspace, documentIds=documentIds, highPriority=true)
+                        | _ -> ()
+                    with ex -> 
+                        Assert.Exception(ex)
                 } |> Async.StartImmediate
             )
+
             checker
 
     member this.Checker = checker.Value
@@ -208,7 +209,7 @@ type
                              CodeSense = true,
                              DefaultToNonHotURLs = true,
                              EnableCommenting = true,
-                             CodeSenseDelay = 100,
+                             CodeSenseDelay = 0,
                              ShowDropDownOptions = true)>]
     internal FSharpPackage() =
     inherit AbstractPackage<FSharpPackage, FSharpLanguageService>()
@@ -272,28 +273,39 @@ and
             
         Events.SolutionEvents.OnAfterCloseSolution.Add <| fun _ ->
             singleFileProjects.Keys |> Seq.iter tryRemoveSingleFileProject
-
-        let ctx = System.Threading.SynchronizationContext.Current
-        
+            
         let rec setupProjectsAfterSolutionOpen() =
             async {
-                use openedProjects = MailboxProcessor.Start <| fun inbox ->
+                let openedProjects = MailboxProcessor.Start <| fun inbox ->
                     async { 
                         // waits for AfterOpenSolution and then starts projects setup
                         do! Async.AwaitEvent Events.SolutionEvents.OnAfterOpenSolution |> Async.Ignore
+
                         while true do
                             let! siteProvider = inbox.Receive()
-                            do! Async.SwitchToContext ctx
-                            this.SetupProjectFile(siteProvider, this.Workspace) }
+                            this.SetupProjectFile(siteProvider, this.Workspace)
+                        }
 
-                use _ = Events.SolutionEvents.OnAfterOpenProject |> Observable.subscribe ( fun args ->
-                    match args.Hierarchy with
-                    | :? IProvideProjectSite as siteProvider -> openedProjects.Post(siteProvider)
-                    | _ -> () )
-
+                // Post F# project opens to the mailbox processor
+                let projectOpenListener =
+                    Events.SolutionEvents.OnAfterOpenProject
+                    |> Observable.subscribe (fun args ->
+                        match args.Hierarchy with
+                        | :? IProvideProjectSite as siteProvider ->
+                            openedProjects.Post siteProvider
+                        | _ -> ()
+                        )
+                
+                // Wait until the solution closes to keep listening to these events
+                // Then cleanup the processor and the listener and recurse to run again
                 do! Async.AwaitEvent Events.SolutionEvents.OnAfterCloseSolution |> Async.Ignore
+
+                (openedProjects :> IDisposable).Dispose()
+                projectOpenListener.Dispose()
+
                 do! setupProjectsAfterSolutionOpen() 
             }
+
         setupProjectsAfterSolutionOpen() |> Async.StartImmediate
 
         let theme = package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
@@ -301,7 +313,7 @@ and
         
     /// Sync the information for the project 
     member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, forceUpdate) =
-        let hashSetIgnoreCase x = new HashSet<string>(x, StringComparer.OrdinalIgnoreCase)
+        let hashSetIgnoreCase x = HashSet<string>(x, StringComparer.OrdinalIgnoreCase)
         let updatedFiles = site.SourceFilesOnDisk() |> hashSetIgnoreCase
         let workspaceFiles = project.GetCurrentDocuments() |> Seq.map(fun file -> file.FilePath) |> hashSetIgnoreCase
         
@@ -316,29 +328,50 @@ and
                 projectContext.RemoveSourceFile(file)
                 updated <- true
         
-        let updatedRefs = site.AssemblyReferences() |> hashSetIgnoreCase
+        (*
+        let updatedRefs = site.AssemblyReferences() |> Seq.filter (String.IsNullOrEmpty >> not) |> hashSetIgnoreCase
         let workspaceRefs = project.GetCurrentMetadataReferences() |> Seq.map(fun ref -> ref.FilePath) |> hashSetIgnoreCase
 
         for ref in updatedRefs do
             if not(workspaceRefs.Contains(ref)) then
                 projectContext.AddMetadataReference(ref, MetadataReferenceProperties.Assembly)
+                updated <- true
         for ref in workspaceRefs do
             if not(updatedRefs.Contains(ref)) then
                 projectContext.RemoveMetadataReference(ref)
+                updated <- true
+        *)
+        
+        (*
+        
+        let getProject = project.Workspace.CurrentSolution.GetProject
+
+        let updatedProjects =
+            ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider)
+            |> Seq.map (fun s -> s.ProjectFileName())
+            |> hashSetIgnoreCase
+        let workspaceProjects =
+            project.GetCurrentProjectReferences()
+            |> Seq.map(fun ref -> (getProject ref.ProjectId).FilePath)
+            |> hashSetIgnoreCase
+
+        for referencedSite in  do
+            let referencedProjectId = setup referencedSite                    
+            project.AddProjectReference(ProjectReference referencedProjectId)
+        *)
 
         // update the cached options
         if updated then
             projectInfoManager.UpdateProjectInfo(project.Id, site, project.Workspace)
 
     member this.SetupProjectFile(siteProvider: IProvideProjectSite, workspace: VisualStudioWorkspaceImpl) =
-        let  rec setup (site: IProjectSite) =
+        let rec setup (site: IProjectSite) =
             let projectGuid = Guid(site.ProjectGuid)
             let projectFileName = site.ProjectFileName()
             let projectDisplayName = projectDisplayNameOf projectFileName
             let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
 
             if isNull (workspace.ProjectTracker.GetProject projectId) then
-                projectInfoManager.UpdateProjectInfo(projectId, site, workspace)
                 let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
                 let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
                 
@@ -357,17 +390,32 @@ and
                         FSharpConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectGuid, hierarchy, null, errorReporter)
 
                 let project = projectContext :?> AbstractProject
-
+                
+                // Syncronise the project with Roslyn and update the cached project info
+                // if necessary.
                 this.SyncProject(project, projectContext, site, forceUpdate=false)
-                site.AdviseProjectSiteChanges(FSharpConstants.FSharpLanguageServiceCallbackName, 
-                                              AdviseProjectSiteChanges(fun () -> this.SyncProject(project, projectContext, site, forceUpdate=true)))
-                site.AdviseProjectSiteClosed(FSharpConstants.FSharpLanguageServiceCallbackName, 
-                                             AdviseProjectSiteChanges(fun () -> 
-                                                projectInfoManager.ClearProjectInfo(project.Id)
-                                                project.Disconnect()))
+
+                site.AdviseProjectSiteChanges(
+                    FSharpConstants.FSharpLanguageServiceCallbackName, 
+                    AdviseProjectSiteChanges (fun () ->
+                        // Force an update so that the project options cache is blown away for
+                        // this project
+                        this.SyncProject(project, projectContext, site, forceUpdate=true)
+                        )
+                    )
+
+                site.AdviseProjectSiteClosed(
+                    FSharpConstants.FSharpLanguageServiceCallbackName, 
+                    AdviseProjectSiteChanges (fun () -> 
+                        projectInfoManager.ClearProjectInfo(project.Id)
+                        project.Disconnect()
+                        )
+                    )
+
                 for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
                     let referencedProjectId = setup referencedSite                    
                     project.AddProjectReference(ProjectReference referencedProjectId)
+
             projectId
         setup (siteProvider.GetProjectSite()) |> ignore
 

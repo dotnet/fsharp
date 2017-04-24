@@ -872,11 +872,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             if (hierarchy == null)
                 return null;
 
-            object otherTargetFrameworkMonikerObj;
-
-            hierarchy.GetProperty(VSConstants.VSITEMID_ROOT, (int)__VSHPROPID4.VSHPROPID_TargetFrameworkMoniker, out otherTargetFrameworkMonikerObj);
-
-            string targetFrameworkMoniker = (string)otherTargetFrameworkMonikerObj;
+            object otargetFrameworkMoniker = null;
+            int hr = hierarchy.GetProperty(VSConstants.VSITEMID_ROOT, (int)__VSHPROPID4.VSHPROPID_TargetFrameworkMoniker, out otargetFrameworkMoniker);
+            if (!ErrorHandler.Succeeded(hr))
+                return null;
+            
+            string targetFrameworkMoniker = (string)otargetFrameworkMoniker;
             return new System.Runtime.Versioning.FrameworkName(targetFrameworkMoniker);
         }
 

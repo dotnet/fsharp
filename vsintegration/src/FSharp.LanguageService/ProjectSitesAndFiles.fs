@@ -11,6 +11,12 @@ open Microsoft.VisualStudio
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open System.Collections.Concurrent
+open System.Globalization
+
+type internal CacheUsage =
+    | UseCache
+    | IgnoreCache
 
 /// An additional interface that an IProjectSite object can implement to indicate it has an FSharpProjectOptions 
 /// already available, so we don't have to recreate it
@@ -121,26 +127,38 @@ type internal ProjectSitesAndFiles() =
                 | _ -> None)
         | None -> Seq.empty
                     
+    static let projectCache = ConcurrentDictionary<string,FSharpProjectOptions>()
+
     static let rec referencedProjectsOf (projectSite:IProjectSite, fileName, extraProjectInfo, serviceProvider:System.IServiceProvider) =
         referencedProvideProjectSites (projectSite, serviceProvider)
         |> Seq.choose (fun (p, ps) ->            
             fullOutputAssemblyPath p
             |> Option.map (fun path ->
-                path, getProjectOptionsForProjectSite (ps.GetProjectSite(), fileName, extraProjectInfo, serviceProvider))
+                path, getProjectOptionsForProjectSite (ps.GetProjectSite(), fileName, extraProjectInfo, serviceProvider, UseCache))
             )
         |> Seq.toArray
 
-    and getProjectOptionsForProjectSite(projectSite:IProjectSite, fileName, extraProjectInfo, serviceProvider) =            
-           {ProjectFileName = projectSite.ProjectFileName()
-            ProjectFileNames = projectSite.SourceFilesOnDisk()
-            OtherOptions = projectSite.CompilerFlags()
-            ReferencedProjects = referencedProjectsOf(projectSite, fileName, extraProjectInfo, serviceProvider)
-            IsIncompleteTypeCheckEnvironment = projectSite.IsIncompleteTypeCheckEnvironment
-            UseScriptResolutionRules = SourceFile.MustBeSingleFileProject fileName
-            LoadTime = projectSite.LoadTime
-            UnresolvedReferences = None
-            OriginalLoadReferences = []
-            ExtraProjectInfo=extraProjectInfo }   
+    and getProjectOptionsForProjectSite(projectSite:IProjectSite, fileName:string, extraProjectInfo, serviceProvider, cacheUsage:CacheUsage) =
+        let cacheKey = fileName.ToLower CultureInfo.CurrentUICulture
+        match cacheUsage, projectCache.TryGetValue cacheKey with
+        | UseCache, (true, options) ->
+            { options with ExtraProjectInfo = extraProjectInfo }
+        | _ ->
+            let options =
+                {
+                ProjectFileName = projectSite.ProjectFileName()
+                ProjectFileNames = projectSite.SourceFilesOnDisk()
+                OtherOptions = projectSite.CompilerFlags()
+                ReferencedProjects = referencedProjectsOf(projectSite, fileName, extraProjectInfo, serviceProvider)
+                IsIncompleteTypeCheckEnvironment = projectSite.IsIncompleteTypeCheckEnvironment
+                UseScriptResolutionRules = SourceFile.MustBeSingleFileProject fileName
+                LoadTime = projectSite.LoadTime
+                UnresolvedReferences = None
+                OriginalLoadReferences = []
+                ExtraProjectInfo = extraProjectInfo
+                }
+            projectCache.[cacheKey] <- options
+            options
 
     /// Construct a project site for a single file. May be a single file project (for scripts) or an orphan project site (for everything else).
     static member ProjectSiteOfSingleFile(filename:string) : IProjectSite = 
@@ -227,9 +245,10 @@ type internal ProjectSitesAndFiles() =
     /// Create project options for this project site.
     static member GetProjectOptionsForProjectSite(projectSite:IProjectSite,filename,extraProjectInfo,serviceProvider:System.IServiceProvider) =
         match projectSite with
-        | :? IHaveCheckOptions as hco -> hco.OriginalCheckOptions()
+        | :? IHaveCheckOptions as hco ->
+            hco.OriginalCheckOptions()
         | _ ->             
-            getProjectOptionsForProjectSite(projectSite, filename, extraProjectInfo, serviceProvider)
+            getProjectOptionsForProjectSite(projectSite, filename, extraProjectInfo, serviceProvider, IgnoreCache)
          
     /// Create project site for these project options
     static member CreateProjectSiteForScript (filename, checkOptions) = ProjectSiteOfScriptFile (filename, checkOptions) :> IProjectSite

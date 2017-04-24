@@ -183,6 +183,8 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     type internal FSharpProjectPackage() as this = 
             inherit ProjectPackage() 
 
+            let mutable flagsService = Unchecked.defaultof<ProjectFlagsService>
+
             let mutable vfsiToolWindow = Unchecked.defaultof<Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow>
             let GetToolWindowAsITestVFSI() =
                 if vfsiToolWindow = Unchecked.defaultof<_> then
@@ -198,6 +200,8 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             let mutable componentID = 0u
 
             let thisLock = obj()
+
+            member this.FlagsService = flagsService
 
             member this.RegisterForIdleTime() =
 
@@ -311,6 +315,13 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 // global state was needed for e.g. Tools\Options
                 //TODO the TypeProviderSecurityGlobals does not exists anymore, remove the initialization?
                 this.GetService(typeof<FSharpLanguageService>) |> ignore  
+
+                //let flagsService = this.GetService(typeof<ProjectFlagsService>) :?> ProjectFlagsService
+                //flagsService.Initialize()
+
+                let accessor = this.GetService(typeof<SVsBuildManagerAccessor>) :?> IVsBuildManagerAccessor
+                flagsService <- ProjectFlagsService(accessor)
+                flagsService.Initialize()
 
                 // FSI-LINKAGE-POINT: sited init
                 let commandService = this.GetService(typeof<IMenuCommandService>) :?> OleMenuCommandService // FSI-LINKAGE-POINT
@@ -473,7 +484,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 #if DEBUG
             let uiThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId
             let mutable compileWasActuallyCalled = false
-#endif            
+#endif
 
             // these get initialized once and for all in SetSite()
             let mutable isInCommandLineMode = false
@@ -491,7 +502,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.ImageHandler.AddImage(FSharpSR.GetObject("4100") :?> System.Drawing.Bitmap) // 4008 = EmptyProject
                 this.ImageHandler.AddImage(FSharpSR.GetObject("4103") :?> System.Drawing.Bitmap) // 4006 = ScriptFile
                 this.ImageHandler.AddImage(FSharpSR.GetObject("4102") :?> System.Drawing.Bitmap) // 4007 = Signature
-
+                
             /// Provide mapping from our browse objects and automation objects to our CATIDs
             do 
                 // The following properties classes are specific to F# so we can use their GUIDs directly
@@ -1346,21 +1357,60 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 else
                     0
 
-            // returns an array of all "foo"s of form: <Compile Include="foo"/>
+            /// Returns an array of all files specified for compile in the build project.
+            /// Returns all: <Compile Include="foo" />
             member private x.ComputeCompileItems() =
                 FSharpProjectNode.ComputeCompileItems(x.BuildProject, x.ProjectFolder)
+
             static member ComputeCompileItems(buildProject, projectFolder) =
                 [|
                 for i in buildProject.Items do
                     if i.ItemType = "Compile" then
                         yield System.IO.Path.GetFullPath(System.IO.Path.Combine(projectFolder, i.EvaluatedInclude))
                 |]
-            member x.GetCompileItems() = let sources,_ = sourcesAndFlags.Value in sources
-            member x.GetCompileFlags() = let _,flags = sourcesAndFlags.Value in flags
+           
+            /// Rudimentary approximation of compile flags
+            member private x.ComputeCompileFlags() =
+                [|
+                for ref in x.GetReferenceContainer().EnumReferences() do
+                    match ref with
+                    | :? AssemblyReferenceNode ->
+                        yield sprintf "-r:%s" ref.Url
+                    | :? ProjectReferenceNode as projRef ->
+                        yield sprintf "-r:%s" projRef.ReferencedProjectOutputPath
+                    | _ -> ()
+                yield "--noframework"
+                |]
 
-            override x.ComputeSourcesAndFlags() =
+            member x.GetCompileItems() =
+                let sources, _ = sourcesAndFlags.Value in sources
 
-                if x.IsInBatchUpdate || box x.BuildProject = null then ()
+            member x.GetCompileFlags() =
+                let _, flags = sourcesAndFlags.Value in flags
+
+            override this.AcquireExclusiveBuildResource(newActuallyBuild) =
+                let oldActuallyBuild = actuallyBuild
+                actuallyBuild <- newActuallyBuild
+
+                { new IDisposable with
+                    override __.Dispose() =
+                        actuallyBuild <- oldActuallyBuild
+                }
+
+            override this.NotifySourcesAndFlags() =
+                sourcesAndFlagsNotifier.Notify()
+
+            override this.ComputeSourcesAndFlags() =
+
+                if not this.IsInBatchUpdate && box this.BuildProject <> null && not inMidstOfReloading then
+
+                    // TODO: estimate what our current flags/sources are
+
+                    //let flagsService : ProjectFlagsService = GetService(this.Site)
+                    package.FlagsService.QueueProject this
+
+                (*
+                if true || x.IsInBatchUpdate || box x.BuildProject = null then ()
                 else
                 if not(inMidstOfReloading) && not(VsBuildManagerAccessorExtensionMethods.IsInProgress(accessor)) then
 
@@ -1402,9 +1452,9 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         // taken from System.Runtime that is not supplied
                         
                         let _ = x.InvokeMsBuild("Compile", extraProperties = [KeyValuePair("_ResolveReferenceDependencies", "true")])
-                        sourcesAndFlagsNotifier.Notify()
                     finally
                         actuallyBuild <- true
+                *)
 
             member internal x.DetermineRuntimeAndSKU(targetFrameworkMoniker : string) =
                 let frameworkName = new System.Runtime.Versioning.FrameworkName(targetFrameworkMoniker)
@@ -1558,7 +1608,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         Debug.Assert(System.Threading.Thread.CurrentThread.ManagedThreadId = uiThreadId, "called GetProjectSite() while still in Opening state from non-UI thread")
 #endif                        
                         x.ComputeSourcesAndFlags()
-                        if not(projectSite.State = ProjectSiteOptionLifetimeState.Opened) then
+                        if projectSite.State <> ProjectSiteOptionLifetimeState.Opened then
                             // We failed to Build.  This can happen e.g. when the user has custom MSBuild functionality under the "Compile" target, e.g. a CompileDependsOn that fails.
                             // We now have no reliable way to get information about the project.
                             // Rather than be in a completely useless state, we just report 0 source files and 0 compiler flags.
@@ -1567,7 +1617,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                             // Once that error is fixed, a future call to ComputeSourcesAndFlags() will successfully call through to our HostObject and get to Compile(), 
                             // which will finally populate sourcesAndFlags with good values.
                             // This means that ones the user fixes the problem, proper intellisense etc. should start immediately lighting up.
-                            sourcesAndFlags <- Some([||],[||])
+                            sourcesAndFlags <- Some(x.ComputeCompileItems(), [||]) // x.ComputeCompileFlags())
                             projectSite.Open(x.CreateRunningProjectSite())
                         ()
                     | _ -> ()
