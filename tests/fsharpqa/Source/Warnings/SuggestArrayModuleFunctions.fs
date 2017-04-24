@@ -1,5 +1,5 @@
 // #Warnings
-//<Expects status="Error" id="FS0039">The value, constructor, namespace or type 'blt' is not defined. Maybe you want one of the following: blit$</Expects>
+//<Expects status="Error" id="FS0039">The value, constructor, namespace or type 'blt' is not defined. Maybe you want one of the following:\s+blit$</Expects>
 
 let f =
     Array.blt
