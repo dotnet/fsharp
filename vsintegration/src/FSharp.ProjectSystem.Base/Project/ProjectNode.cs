@@ -697,7 +697,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         public void SetDebugLogger(Microsoft.Build.Framework.ILogger debugLogger)
         {
-            myDebugLogger = debugLogger;
+            //myDebugLogger = debugLogger;
         }
 
 
@@ -3128,7 +3128,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
+        public abstract void NotifySourcesAndFlags();
         public abstract void ComputeSourcesAndFlags();
+        public abstract IDisposable AcquireExclusiveBuildResource(bool actuallyBuild);
 
         internal abstract int FixupAppConfigOnTargetFXChange(string newTargetFramework, string targetFSharpCoreVersion, bool autoGenerateBindingRedirects);
 
