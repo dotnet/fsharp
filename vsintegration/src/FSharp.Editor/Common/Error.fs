@@ -3,16 +3,6 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 
-/// Localizable strings.
-module internal Strings = 
-    open System.Resources
-    open System.Reflection
-
-    let private resources = new ResourceManager("FSharp.Editor", Assembly.GetExecutingAssembly())
-
-    /// Exceptions:
-    let ExceptionsHeader = resources.GetString("ExceptionsHeader", System.Globalization.CultureInfo.CurrentUICulture)
-
 /// Assert helpers
 type internal Assert() = 
     /// Display a good exception for this error message and then rethrow.

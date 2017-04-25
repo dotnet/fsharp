@@ -199,7 +199,7 @@ module internal XmlDocumentation =
                         started <- true
                         AppendHardLine collector
                         AppendHardLine collector
-                        AppendOnNewLine collector Strings.ExceptionsHeader
+                        AppendOnNewLine collector SR.ExceptionsLabel.Value
                     EnsureHardLine collector
                     collector.Add(tagSpace "    ")
                     WriteTypeName collector exnType.Value
