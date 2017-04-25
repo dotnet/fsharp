@@ -2494,7 +2494,7 @@ type DisplayEnv =
 
     member x.SetOpenPaths(paths) = 
         { x with 
-             openTopPathsSorted = (lazy (paths |> List.sortWith (fun p1 p2 -> -(compare p1 p2))))
+             openTopPathsSorted = (lazy (paths |> Seq.sortWith (fun p1 p2 -> -(compare p1 p2)) |> Seq.toList))
              openTopPathsRaw = paths 
         }
 

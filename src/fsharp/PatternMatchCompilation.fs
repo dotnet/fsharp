@@ -560,7 +560,7 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
             | (Const.UInt32 i1),(Const.UInt32 i2) -> compare i1 i2
             | (Const.Char c1),(Const.Char c2) -> compare c1 c2
             | _ -> failwith "illtyped term during pattern compilation" 
-        let edges' = List.sortWith edgeCompare edges
+        let edges' = Seq.sortWith edgeCompare edges
         let rec compactify curr edges = 
             match curr,edges with 
             | None,[] -> []
@@ -585,8 +585,8 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
                 |       _ ->  (List.rev (prev::moreprev)) :: compactify None edges
 
             | _ -> failwith "internal error: compactify"
-        let edgeGroups = compactify None edges'
-        (edgeGroups, dflt) ||> List.foldBack (fun edgeGroup sofar ->  TDSwitch(expr,edgeGroup,Some sofar,m))
+        let edgeGroups = compactify None (edges' |> Seq.toList)
+        (edgeGroups, dflt) ||> Seq.foldBack (fun edgeGroup sofar ->  TDSwitch(expr,edgeGroup,Some sofar,m))
 
     // For a total pattern match, run the active pattern, bind the result and 
     // recursively build a switch in the choice type 

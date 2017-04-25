@@ -2926,10 +2926,9 @@ let SortTableRows tab (rows:GenericRow[]) =
     assert (TableRequiresSorting tab)
     let col = List.assoc tab sortedTableInfo
     rows 
-        // This needs to be a stable sort, so we use List.sortWith
-        |> Array.toList
-        |> List.sortWith (fun r1 r2 -> rowElemCompare r1.[col] r2.[col]) 
-        |> Array.ofList
+        // This needs to be a stable sort, so we use Seq.sortWith
+        |> Seq.sortWith (fun r1 r2 -> rowElemCompare r1.[col] r2.[col]) 
+        |> Seq.toArray
         //|> Array.map SharedRow
 
 let GenModule (cenv : cenv) (modul: ILModuleDef) = 

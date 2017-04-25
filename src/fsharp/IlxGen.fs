@@ -6155,8 +6155,9 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                 // sort by order of declaration
                 // REVIEW: this should be based off tcaug_adhoc_list, which is in declaration order
                 tycon.MembersOfFSharpTyconSorted
-                |> List.sortWith (fun v1 v2 -> rangeOrder.Compare(v1.DefinitionRange,v2.DefinitionRange))
-                |> List.map (GenAbstractBinding cenv eenv tref)
+                |> Seq.sortWith (fun v1 v2 -> rangeOrder.Compare(v1.DefinitionRange,v2.DefinitionRange))
+                |> Seq.map (GenAbstractBinding cenv eenv tref)
+                |> Seq.toList
                 |> List.unzip3 
                 |> mapTriple (List.concat, List.concat, List.concat)
 

@@ -270,7 +270,7 @@ module List =
     open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
 
-    let sortWithOrder (c: IComparer<'T>) elements = List.sortWith (Order.toFunction c) elements
+    let sortWithOrder (c: IComparer<'T>) elements = Seq.sortWith (Order.toFunction c) elements
     
     let splitAfter n l = 
         let rec split_after_acc n l1 l2 = if n <= 0 then List.rev l1,l2 else split_after_acc (n-1) ((List.head l2):: l1) (List.tail l2) 
