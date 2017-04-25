@@ -1,11 +1,13 @@
-﻿namespace Microsoft.VisualStudio.FSharp.Editor
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+
+namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
 open Microsoft.FSharp.Compiler.Ast
 open System.Collections.Generic
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 
-module internal Structure =
+module Structure =
     /// Set of visitor utilities, designed for the express purpose of fetching ranges
     /// from an untyped AST for the purposes of block structure.
     [<RequireQualifiedAccess>]
@@ -186,7 +188,7 @@ module internal Structure =
     }
 
     /// Validation function to ensure that ranges yielded for outlinging span 2 or more lines
-    let inline private rcheck scope collapse (fullRange:range) (collapseRange:range) = 
+    let inline rcheck scope collapse (fullRange:range) (collapseRange:range) = 
         seq {
             if fullRange.StartLine <> fullRange.EndLine then 
                 yield { Scope = scope
@@ -200,7 +202,7 @@ module internal Structure =
     //============================================//
 
 
-    let rec private parseExpr expression =
+    let rec parseExpr expression =
         seq {
             match expression with
             | SynExpr.Upcast (e,_,_)
@@ -378,7 +380,7 @@ module internal Structure =
             | _ -> ()
         }
 
-    and private parseMatchClause (SynMatchClause.Clause(synPat,_,e,_r,_) as clause) =
+    and parseMatchClause (SynMatchClause.Clause(synPat,_,e,_r,_) as clause) =
         let rec getLastPat = function
             | SynPat.Or(_, pat, _) -> getLastPat pat
             | x -> x
@@ -390,9 +392,9 @@ module internal Structure =
             yield! parseExpr e
         }
 
-    and private parseMatchClauses = Seq.collect parseMatchClause
+    and parseMatchClauses = Seq.collect parseMatchClause
 
-    and private parseAttributes (attrs: SynAttributes) =
+    and parseAttributes (attrs: SynAttributes) =
         seq {
             let attrListRange =
                 if List.isEmpty attrs then Seq.empty else
@@ -413,7 +415,7 @@ module internal Structure =
                 yield! attrs |> Seq.collect (fun attr -> parseExpr attr.ArgExpr)
         }
 
-    and private parseBinding (SynBinding.Binding (_,kind,_,_,attrs,_,SynValData(memberFlags,_,_),_,_,expr,br,_) as binding) =
+    and parseBinding (SynBinding.Binding (_,kind,_,_,attrs,_,SynValData(memberFlags,_,_),_,_,expr,br,_) as binding) =
         seq {
             match kind with
             | NormalBinding ->
@@ -434,17 +436,17 @@ module internal Structure =
             yield! parseExpr expr
         }
 
-    and private parseBindings sqs = sqs |> Seq.collect parseBinding
+    and parseBindings sqs = sqs |> Seq.collect parseBinding
 
-    and private parseExprInterface (InterfaceImpl(synType,bindings,range)) = seq{
+    and parseExprInterface (InterfaceImpl(synType,bindings,range)) = seq{
         let collapse = Range.endToEnd synType.Range range |> Range.modEnd -1
         yield! rcheck Scope.Interface Collapse.Below range collapse
         yield! parseBindings bindings
      }
 
-    and private parseExprInterfaces (intfs:SynInterfaceImpl list) = Seq.collect parseExprInterface intfs
+    and parseExprInterfaces (intfs:SynInterfaceImpl list) = Seq.collect parseExprInterface intfs
 
-    and private parseSynMemberDefn (objectModelRange: range) d =
+    and parseSynMemberDefn (objectModelRange: range) d =
         seq {
             match d with
             | SynMemberDefn.Member(SynBinding.Binding (attrs=attrs; valData=valData; headPat=synPat; range=bindingRange) as binding,_) ->
@@ -499,7 +501,7 @@ module internal Structure =
                 internal |  Json of string
                          |  Path of string
     *)
-    and private parseSimpleRepr simple =
+    and parseSimpleRepr simple =
         seq {
             match simple with
             | SynTypeDefnSimpleRepr.Enum (cases,_er) ->
@@ -519,14 +521,14 @@ module internal Structure =
             | _ -> ()
         }
 
-    and private parseTypeDefn (TypeDefn(ComponentInfo(_,typeArgs,_,_,_,_,_,r), objectModel, members, fullrange)) = 
+    and parseTypeDefn (TypeDefn(ComponentInfo(_,typeArgs,_,_,_,_,_,r), objectModel, members, fullrange)) = 
         seq {
            let typeArgsRange = rangeOfTypeArgsElse r typeArgs
            let collapse = Range.endToEnd (Range.modEnd 1 typeArgsRange) fullrange
            match objectModel with
            | SynTypeDefnRepr.ObjectModel (defnKind, objMembers, r) ->
                match defnKind with
-               | SynTypeDefnKind.TyconAugmentation ->
+               | TyconAugmentation ->
                    yield! rcheck Scope.TypeExtension Collapse.Below fullrange collapse
                | _ ->
                    yield! rcheck Scope.Type Collapse.Below fullrange collapse
@@ -540,7 +542,7 @@ module internal Structure =
            | SynTypeDefnRepr.Exception _ -> ()
         }
 
-    let private getConsecutiveModuleDecls (predicate: SynModuleDecl -> range option) (scope: Scope) (decls: SynModuleDecls) =
+    let getConsecutiveModuleDecls (predicate: SynModuleDecl -> range option) (scope: Scope) (decls: SynModuleDecls) =
         let groupConsecutiveDecls input =
             let rec loop (input: range list) (res: range list list) currentBulk =
                 match input, currentBulk with
@@ -576,7 +578,7 @@ module internal Structure =
                 Some (mkRange "" (mkPos r.StartLine prefixLength) r.End)
             | _ -> None) Scope.HashDirective
 
-    let rec private parseDeclaration (decl: SynModuleDecl) =
+    let rec parseDeclaration (decl: SynModuleDecl) =
         seq {
             match decl with
             | SynModuleDecl.Let (_,bindings,r) ->
@@ -603,13 +605,15 @@ module internal Structure =
             | _ -> ()
         }
 
-    let private parseModuleOrNamespace (SynModuleOrNamespace (longId,_,isModule,decls,_,attribs,_,r)) =
+    let parseModuleOrNamespace isScript (SynModuleOrNamespace (longId,_,isModule,decls,_,attribs,_,r)) =
         seq {
             yield! parseAttributes attribs
             let idRange = longIdentRange longId
             let fullrange = Range.startToEnd idRange r  
             let collapse = Range.endToEnd idRange r 
-            if isModule then
+            
+            // do not return range for top level implicit module in scripts
+            if isModule && not isScript then
                 yield! rcheck Scope.Module Collapse.Below fullrange collapse
 
             yield! collectHashDirectives decls
@@ -617,19 +621,19 @@ module internal Structure =
             yield! Seq.collect parseDeclaration decls
         }
 
-    type private LineNum = int
-    type private LineStr = string
-    type private CommentType = SingleLine | XmlDoc
+    type LineNum = int
+    type LineStr = string
+    type CommentType = SingleLine | XmlDoc
 
     [<NoComparison>]
-    type private CommentList =
+    type CommentList =
         { Lines: ResizeArray<LineNum * LineStr>
           Type: CommentType }
         static member New ty lineStr =
             { Type = ty; Lines = ResizeArray [| lineStr |] }
 
     /// Determine if a line is a single line or xml docummentation comment
-    let private (|Comment|_|) (line: string) =
+    let (|Comment|_|) (line: string) =
         if line.StartsWith "///" then Some XmlDoc
         elif line.StartsWith "//" then Some SingleLine
         else None
@@ -726,7 +730,7 @@ module internal Structure =
                 | _ -> range
 
 
-    let rec private parseSynMemberDefnSig (dsig:SynMemberSig) =
+    let rec parseSynMemberDefnSig (dsig:SynMemberSig) =
         seq {
             match dsig with
             | SynMemberSig.Member(valSigs,_flags,r) ->
@@ -743,7 +747,7 @@ module internal Structure =
             | _ -> ()
         }
 
-    and private parseTypeDefnSig
+    and parseTypeDefnSig
       (TypeDefnSig (ComponentInfo(attribs,typeArgs,_constraints,longId,_doc,_b,_access,r)
                 as _componentInfo, objectModel,  memberSigs, _)) = seq {
             yield! parseAttributes attribs
@@ -781,7 +785,7 @@ module internal Structure =
             | SynTypeDefnSigRepr.Exception _ -> ()
         }
 
-    let private getConsecutiveSigModuleDecls (predicate: SynModuleSigDecl -> range option) (scope:Scope) (decls: SynModuleSigDecls) =
+    let getConsecutiveSigModuleDecls (predicate: SynModuleSigDecl -> range option) (scope:Scope) (decls: SynModuleSigDecls) =
         let groupConsecutiveSigDecls input =
             let rec loop (input: range list) (res: range list list) currentBulk =
                 match input, currentBulk with
@@ -820,7 +824,7 @@ module internal Structure =
 
     let collectSigOpens = getConsecutiveSigModuleDecls (function SynModuleSigDecl.Open (_,r) -> Some r | _ -> None) Scope.Open
 
-    let rec private parseModuleSigDeclaration (decl: SynModuleSigDecl) =
+    let rec parseModuleSigDeclaration (decl: SynModuleSigDecl) =
         seq {
             match decl with
             | SynModuleSigDecl.Val ((ValSpfn(attrs,ident,_valdecls,_,_,_,_,_,_,_,valrange)),_r) ->
@@ -843,13 +847,14 @@ module internal Structure =
             | _ -> ()
         }
 
-    let private parseModuleOrNamespaceSigs (SynModuleOrNamespaceSig(longId,_,isModule,decls,_,attribs,_,r)) =
+    let parseModuleOrNamespaceSigs (SynModuleOrNamespaceSig(longId,_,isModule,decls,_,attribs,_,r)) =
         seq {
             yield! parseAttributes attribs
             let rangeEnd = lastModuleSigDeclRangeElse r decls
             let idrange = longIdentRange longId
             let fullrange = Range.startToEnd idrange rangeEnd
             let collapse = Range.endToEnd idrange rangeEnd
+            
             if isModule then
                 yield! rcheck Scope.Module Collapse.Below fullrange collapse
 
@@ -860,8 +865,8 @@ module internal Structure =
 
     let getOutliningRanges (sourceLines: string []) (parsedInput: ParsedInput) =
         match parsedInput with
-        | ParsedInput.ImplFile (ParsedImplFileInput (modules = modules)) ->
-            let astBasedRanges = Seq.collect parseModuleOrNamespace modules
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules = modules; isScript = isScript)) ->
+            let astBasedRanges = modules |> Seq.collect (parseModuleOrNamespace isScript)
             let commentRanges = getCommentRanges sourceLines
             Seq.append astBasedRanges commentRanges
         | ParsedInput.SigFile (ParsedSigFileInput (modules = moduleSigs)) ->

@@ -75,7 +75,6 @@
     <Compile Include="QuickInfo\Views.fs" />
     <Compile Include="QuickInfo\QuickInfoProvider.fs" />
     <Compile Include="BlockComment\CommentUncommentService.fs" />
-    <Compile Include="Structure\Structure.fs" />
     <Compile Include="Structure\BlockStructureService.fs" />
     <Compile Include="Commands\HelpContextService.fs" />
     <Compile Include="Commands\FsiCommandService.fs" />
