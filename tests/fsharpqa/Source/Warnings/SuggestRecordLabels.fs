@@ -1,5 +1,6 @@
 // #Warnings
-//<Expects status="Error" id="FS0039">The field, constructor or member 'ello' is not defined. Maybe you want one of the following: Hello</Expects>
+//<Expects status="Error" id="FS0039">The field, constructor or member 'ello' is not defined.</Expects>
+//<Expects>Maybe you want one of the following:\s+Hello</Expects>
 
 type MyRecord = { Hello: int; World: bool}
 

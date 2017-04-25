@@ -609,7 +609,7 @@ let getErrorString key = SR.GetString key
 
 let (|InvalidArgument|_|) (exn:exn) = match exn with :? ArgumentException as e -> Some e.Message | _ -> None
 
-let OutputPhasedErrorR errorStyle (os:StringBuilder) (err:PhasedDiagnostic) =
+let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
     let rec OutputExceptionR (os:StringBuilder) error = 
       match error with
       | ConstraintSolverTupleDiffLengths(_,tl1,tl2,m,m2) -> 
@@ -782,7 +782,7 @@ let OutputPhasedErrorR errorStyle (os:StringBuilder) (err:PhasedDiagnostic) =
           os.Append(k (DecompileOpName id.idText)) |> ignore
           let filtered = ErrorResolutionHints.FilterPredictions id.idText suggestionsF
           if List.isEmpty filtered |> not then
-              os.Append(ErrorResolutionHints.FormatPredictions errorStyle DecompileOpName filtered) |> ignore
+              os.Append(ErrorResolutionHints.FormatPredictions DecompileOpName filtered) |> ignore
           
       | InternalUndefinedItemRef(f,smr,ccuName,s) ->  
           let _, errs = f(smr, ccuName, s)  
@@ -1273,7 +1273,7 @@ let OutputPhasedErrorR errorStyle (os:StringBuilder) (err:PhasedDiagnostic) =
           os.Append(DecompileOpName s) |> ignore
           let filtered = ErrorResolutionHints.FilterPredictions idText suggestionF
           if List.isEmpty filtered |> not then
-              os.Append(ErrorResolutionHints.FormatPredictions errorStyle DecompileOpName filtered) |> ignore
+              os.Append(ErrorResolutionHints.FormatPredictions DecompileOpName filtered) |> ignore
       | NumberedError ((_,s),_) -> os.Append(s) |> ignore
       | InternalError (s,_) 
       | InvalidArgument s 
@@ -1425,10 +1425,10 @@ let OutputPhasedErrorR errorStyle (os:StringBuilder) (err:PhasedDiagnostic) =
 
 
 // remove any newlines and tabs 
-let OutputPhasedDiagnostic errorStyle (os:System.Text.StringBuilder) (err:PhasedDiagnostic) (flattenErrors:bool) = 
+let OutputPhasedDiagnostic (os:System.Text.StringBuilder) (err:PhasedDiagnostic) (flattenErrors:bool) = 
     let buf = new System.Text.StringBuilder()
 
-    OutputPhasedErrorR errorStyle buf err
+    OutputPhasedErrorR buf err
     let s = if flattenErrors then ErrorLogger.NormalizeErrorString (buf.ToString()) else buf.ToString()
     
     os.Append(s) |> ignore
@@ -1551,7 +1551,7 @@ let CollectDiagnostic (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle
             let canonical = OutputCanonicalInformation(err.Subcategory(),GetDiagnosticNumber mainError)
             let message = 
                 let os = System.Text.StringBuilder()
-                OutputPhasedDiagnostic errorStyle os mainError flattenErrors
+                OutputPhasedDiagnostic os mainError flattenErrors
                 os.ToString()
             
             let entry : DiagnosticDetailedInfo = { Location = where; Canonical = canonical; Message = message }
@@ -1566,7 +1566,7 @@ let CollectDiagnostic (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle
                     let relCanonical = OutputCanonicalInformation(err.Subcategory(),GetDiagnosticNumber mainError) // Use main error for code
                     let relMessage = 
                         let os = System.Text.StringBuilder()
-                        OutputPhasedDiagnostic errorStyle os err flattenErrors
+                        OutputPhasedDiagnostic os err flattenErrors
                         os.ToString()
 
                     let entry : DiagnosticDetailedInfo = { Location = relWhere; Canonical = relCanonical; Message = relMessage}
@@ -1574,7 +1574,7 @@ let CollectDiagnostic (implicitIncludeDir,showFullPaths,flattenErrors,errorStyle
 
                 | _ -> 
                     let os = System.Text.StringBuilder()
-                    OutputPhasedDiagnostic errorStyle os err flattenErrors
+                    OutputPhasedDiagnostic os err flattenErrors
                     errors.Add( Diagnostic.Short(isError, os.ToString()) )
         
             relatedErrors |> List.iter OutputRelatedError

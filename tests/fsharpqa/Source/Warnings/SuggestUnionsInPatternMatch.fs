@@ -1,5 +1,6 @@
 // #Warnings
-//<Expects status="Error" id="FS0039">The field, constructor or member 'Cas1' is not defined. Maybe you want one of the following: Case1</Expects>
+//<Expects status="Error" id="FS0039">The field, constructor or member 'Cas1' is not defined.</Expects>
+//<Expects>Maybe you want one of the following:\s+Case1</Expects>
 
 [<RequireQualifiedAccess>]
 type MyUnion =

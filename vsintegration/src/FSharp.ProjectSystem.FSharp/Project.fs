@@ -192,16 +192,18 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             // FSI-LINKAGE-POINT: unsited init
             do Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
-            // Get the ComponentManager one time at the start
-            let mgr : IOleComponentManager = this.GetService(typeof<SOleComponentManager>) :?> IOleComponentManager
-
             let mutable componentID = 0u
 
             let thisLock = obj()
 
+            // Get the ComponentManager lazily, as the service may not yet have been created at package instantiation
+            member internal this.ComponentManager with get () = this.GetService(typeof<SOleComponentManager>) :?> IOleComponentManager
+
             member this.RegisterForIdleTime() =
 
-                if not (isNull mgr) && componentID = 0u then
+                Debug.Assert(not (isNull this.ComponentManager), "No IOleComponentManager service. Idle operations (such as flushing the 'Error List' queue) will not be performed.")
+            
+                if not (isNull this.ComponentManager) && componentID = 0u then
                     lock (thisLock) (fun _ -> 
                         if componentID = 0u then
                             let crinfo = Array.zeroCreate<OLECRINFO>(1)
@@ -212,7 +214,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                             crinfo0.uIdleTimeInterval <- 1000u
                             crinfo.[0] <- crinfo0
      
-                            mgr.FRegisterComponent(this, crinfo, &componentID) |> ignore
+                            this.ComponentManager.FRegisterComponent(this, crinfo, &componentID) |> ignore
                     )
 
             /// This method loads a localized string based on the specified resource.
@@ -366,10 +368,10 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
             override this.Dispose(disposing) =
                 try
-                    if not (isNull mgr) && componentID <> 0u then
+                    if not (isNull this.ComponentManager) && componentID <> 0u then
                         lock (thisLock) (fun _ ->
                             if componentID <> 0u then
-                                mgr.FRevokeComponent(componentID) |> ignore
+                                this.ComponentManager.FRevokeComponent(componentID) |> ignore
                                 componentID <- 0u)
                 finally
                     base.Dispose(disposing)
@@ -388,8 +390,8 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     // see e.g "C:\Program Files\Microsoft Visual Studio 2008 SDK\VisualStudioIntegration\Common\IDL\olecm.idl" for details
                     //Trace.Print("CurrentDirectoryDebug", (fun () -> sprintf "curdir='%s'\n" (System.IO.Directory.GetCurrentDirectory())))  // can be useful for watching how GetCurrentDirectory changes
                     let periodic = (grfidlef &&& (uint32 _OLEIDLEF.oleidlefPeriodic)) <> 0u
-                    if periodic && not (isNull mgr) && mgr.FContinueIdle() <> 0 then
-                        TaskReporterIdleRegistration.DoIdle(mgr)
+                    if periodic && not (isNull this.ComponentManager) && this.ComponentManager.FContinueIdle() <> 0 then
+                        TaskReporterIdleRegistration.DoIdle(this.ComponentManager)
                     else
                         0
 

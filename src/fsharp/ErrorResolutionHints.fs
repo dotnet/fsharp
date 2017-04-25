@@ -62,21 +62,14 @@ let FilterPredictions (idText:string) (suggestionF:ErrorLogger.Suggestions) =
     |> Seq.toList
 
 /// Formats the given predictions according to the error style.
-let FormatPredictions errorStyle normalizeF (predictions: (float * string) list) =
+let FormatPredictions normalizeF (predictions: (float * string) list) =
     match predictions with
     | [] -> System.String.Empty
     | _ ->
-        " " + FSComp.SR.undefinedNameSuggestionsIntro() + 
-        match errorStyle with
-        | ErrorLogger.ErrorStyle.VSErrors ->
-            let predictionText =
-                predictions 
-                |> List.map (snd >> normalizeF)
-                |> String.concat ", "
-
-            " " + predictionText
-        | _ ->
+        let suggestions =
             predictions
             |> List.map (snd >> normalizeF) 
             |> List.map (sprintf "%s   %s" System.Environment.NewLine)
             |> String.concat ""
+
+        " " + FSComp.SR.undefinedNameSuggestionsIntro() + suggestions
