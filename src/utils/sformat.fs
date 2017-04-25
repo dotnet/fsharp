@@ -1091,7 +1091,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                                 member env.GetLayout(y) = objL (depthLim-1) Precedence.BracketIfTuple (y, y.GetType()) 
                                                 member env.MaxColumns = opts.PrintLength
                                                 member env.MaxRows = opts.PrintLength }
-                                opts.PrintIntercepts |> List.tryPick (fun intercept -> intercept env x)
+                                opts.PrintIntercepts |> Seq.tryPick (fun intercept -> intercept env x)
 #endif
 #endif
                         let res = 

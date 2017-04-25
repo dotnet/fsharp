@@ -1076,7 +1076,7 @@ module StaticLinker =
         else
 
             // Check no dependent assemblies use quotations   
-            let dependentCcuUsingQuotations = dependentILModules |> List.tryPick (function (Some ccu, _) when ccu.UsesFSharp20PlusQuotations -> Some ccu | _ -> None)   
+            let dependentCcuUsingQuotations = dependentILModules |> Seq.tryPick (function (Some ccu, _) when ccu.UsesFSharp20PlusQuotations -> Some ccu | _ -> None)   
             match dependentCcuUsingQuotations with   
             | Some ccu -> error(Error(FSComp.SR.fscQuotationLiteralsStaticLinking(ccu.AssemblyName), rangeStartup))   
             | None -> ()  

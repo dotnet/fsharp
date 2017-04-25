@@ -490,8 +490,8 @@ let CheckMultipleInterfaceInstantiations cenv interfaces m =
     let keyf ty = assert isAppTy cenv.g ty; (tcrefOfAppTy cenv.g ty).Stamp
     let table = interfaces |> MultiMap.initBy keyf
     let firstInterfaceWithMultipleGenericInstantiations = 
-        interfaces |> List.tryPick (fun typ1 -> 
-            table |> MultiMap.find (keyf typ1) |> List.tryPick (fun typ2 -> 
+        interfaces |> Seq.tryPick (fun typ1 -> 
+            table |> MultiMap.find (keyf typ1) |> Seq.tryPick (fun typ2 -> 
                    if // same nominal type
                        tyconRefEq cenv.g (tcrefOfAppTy cenv.g typ1) (tcrefOfAppTy cenv.g typ2) &&
                        // different instantiations

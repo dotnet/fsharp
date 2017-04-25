@@ -281,7 +281,7 @@ type CalledMeth<'T>
                 fullCalledArgs |> List.choose (fun calledArg ->
                     match calledArg.NameOpt with 
                     | Some nm -> 
-                        namedCallerArgs |> List.tryPick (fun (CallerNamedArg(nm2,callerArg)) -> 
+                        namedCallerArgs |> Seq.tryPick (fun (CallerNamedArg(nm2,callerArg)) -> 
                             if nm.idText = nm2.idText then Some { NamedArgIdOpt = Some nm2; CallerArg=callerArg; CalledArg=calledArg } 
                             else None) 
                     | _ -> None)
@@ -407,8 +407,8 @@ type CalledMeth<'T>
     member x.HasOptArgs             = not (isNil x.UnnamedCalledOptArgs)
     member x.HasOutArgs             = not (isNil x.UnnamedCalledOutArgs)
     member x.UsesParamArrayConversion = x.ArgSets |> Seq.exists (fun argSet -> argSet.ParamArrayCalledArgOpt.IsSome)
-    member x.ParamArrayCalledArgOpt = x.ArgSets |> List.tryPick (fun argSet -> argSet.ParamArrayCalledArgOpt)
-    member x.ParamArrayCallerArgs = x.ArgSets |> List.tryPick (fun argSet -> if Option.isSome argSet.ParamArrayCalledArgOpt then Some argSet.ParamArrayCallerArgs else None )
+    member x.ParamArrayCalledArgOpt = x.ArgSets |> Seq.tryPick (fun argSet -> argSet.ParamArrayCalledArgOpt)
+    member x.ParamArrayCallerArgs = x.ArgSets |> Seq.tryPick (fun argSet -> if Option.isSome argSet.ParamArrayCalledArgOpt then Some argSet.ParamArrayCallerArgs else None )
     member x.ParamArrayElementType = 
         assert (x.UsesParamArrayConversion)
         x.ParamArrayCalledArgOpt.Value.CalledArgumentType |> destArrayTy x.amap.g 

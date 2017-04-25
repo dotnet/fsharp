@@ -1826,7 +1826,7 @@ let TryResolveFileUsingPaths(paths,m,name) =
     if FileSystem.IsPathRootedShim(name) && FileSystem.SafeExists name 
     then Some name 
     else
-        let res = paths |> List.tryPick (fun path ->  
+        let res = paths |> Seq.tryPick (fun path ->  
                     let n = Path.Combine (path, name)
                     if FileSystem.SafeExists n then  Some n 
                     else None)
@@ -2402,7 +2402,7 @@ type TcConfigBuilder =
         if FileSystem.IsInvalidPathShim(path) then
             warning(Error(FSComp.SR.buildInvalidAssemblyName(path),m))
         elif not (tcConfigB.referencedDLLs  |> Seq.exists (fun ar2 -> m=ar2.Range && path=ar2.Text)) then // NOTE: We keep same paths if range is different.
-             let projectReference = tcConfigB.projectReferences |> List.tryPick (fun pr -> if pr.FileName = path then Some pr else None)
+             let projectReference = tcConfigB.projectReferences |> Seq.tryPick (fun pr -> if pr.FileName = path then Some pr else None)
              tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs ++ AssemblyReference(m,path,projectReference)
              
     member tcConfigB.RemoveReferencedAssemblyByPath (m,path) =
@@ -2983,7 +2983,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
             else
                 [AssemblyReference(m,nm+".dll",None);AssemblyReference(m,nm+".exe",None);AssemblyReference(m,nm+".netmodule",None)]
 
-        match rs |> List.tryPick (fun r -> tcConfig.TryResolveLibWithDirectories r) with
+        match rs |> Seq.tryPick (fun r -> tcConfig.TryResolveLibWithDirectories r) with
         | Some(res) -> Some res
         | None ->
             match ccuLoadFaulureAction with
@@ -3319,7 +3319,7 @@ let PostParseModuleSpec (_i,defaultNamespace,isLastCompiland,filename,intf) =
 
 
 let PostParseModuleImpls (defaultNamespace,filename,isLastCompiland,ParsedImplFile(hashDirectives,impls)) = 
-    match impls |> List.rev |> List.tryPick (function ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid,_,_,_,_,_,_,_)) -> Some(lid) | _ -> None) with
+    match impls |> List.rev |> Seq.tryPick (function ParsedImplFileFragment.NamedModule(SynModuleOrNamespace(lid,_,_,_,_,_,_,_)) -> Some(lid) | _ -> None) with
     | Some lid when impls.Length > 1 -> 
         errorR(Error(FSComp.SR.buildMultipleToplevelModules(),rangeOfLid lid))
     | _ -> 
@@ -3339,7 +3339,7 @@ let PostParseModuleImpls (defaultNamespace,filename,isLastCompiland,ParsedImplFi
     ParsedInput.ImplFile(ParsedImplFileInput(filename,isScript,qualName,scopedPragmas,hashDirectives,impls,isLastCompiland))
   
 let PostParseModuleSpecs (defaultNamespace,filename,isLastCompiland,ParsedSigFile(hashDirectives,specs)) = 
-    match specs |> List.rev |> List.tryPick (function ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid,_,_,_,_,_,_,_)) -> Some(lid) | _ -> None) with
+    match specs |> List.rev |> Seq.tryPick (function ParsedSigFileFragment.NamedModule(SynModuleOrNamespaceSig(lid,_,_,_,_,_,_,_)) -> Some(lid) | _ -> None) with
     | Some  lid when specs.Length > 1 -> 
         errorR(Error(FSComp.SR.buildMultipleToplevelModules(),rangeOfLid lid))
     | _ -> 

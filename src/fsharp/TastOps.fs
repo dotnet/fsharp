@@ -2685,7 +2685,7 @@ let trimPathByDisplayEnv denv path =
             else Some("")
         else None
 
-    match List.tryPick findOpenedNamespace (denv.openTopPathsSorted.Force()) with
+    match Seq.tryPick findOpenedNamespace (denv.openTopPathsSorted.Force()) with
     | Some s -> s
     | None ->  if isNil path then "" else textOfPath path + "."
 
@@ -2717,7 +2717,7 @@ let HasILAttribute tref (attrs: ILAttributes) = Seq.exists (isILAttrib tref) att
 let HasILAttributeByName tname (attrs: ILAttributes) = Seq.exists (isILAttribByName ([],tname)) attrs.AsList
 
 let TryDecodeILAttribute (g:TcGlobals) tref (attrs: ILAttributes) = 
-    attrs.AsList |> List.tryPick(fun x -> if isILAttrib tref x then Some(decodeILAttribData g.ilg x)  else None)
+    attrs.AsList |> Seq.tryPick(fun x -> if isILAttrib tref x then Some(decodeILAttribData g.ilg x)  else None)
 
 // This one is done by name to ensure the compiler doesn't take a dependency on dereferencing a type that only exists in .NET 3.5
 let ILThingHasExtensionAttribute (attrs : ILAttributes) = 
@@ -2736,7 +2736,7 @@ let HasFSharpAttributeOpt g trefOpt attrs = match trefOpt with Some tref -> Seq.
 let IsMatchingFSharpAttributeOpt g attrOpt (Attrib(tcref2,_,_,_,_,_,_)) = match attrOpt with Some ((AttribInfo(_,tcref))) -> tyconRefEq g tcref  tcref2 | _ -> false
 
 let (|ExtractAttribNamedArg|_|) nm args = 
-    args |> List.tryPick (function (AttribNamedArg(nm2,_,_,v)) when nm = nm2 -> Some v | _ -> None) 
+    args |> Seq.tryPick (function (AttribNamedArg(nm2,_,_,v)) when nm = nm2 -> Some v | _ -> None) 
 
 let (|AttribInt32Arg|_|) = function AttribExpr(_,Expr.Const (Const.Int32(n),_,_)) -> Some(n) | _ -> None
 let (|AttribInt16Arg|_|) = function AttribExpr(_,Expr.Const (Const.Int16(n),_,_)) -> Some(n) | _ -> None
@@ -2810,9 +2810,9 @@ let TryFindTyconRefBoolAttribute g m attribSpec tcref  =
 
 let TryFindAttributeUsageAttribute g m tcref  =
     TryBindTyconRefAttribute g m g.attrib_AttributeUsageAttribute tcref 
-                (fun (_,named)             -> named |> List.tryPick (function ("AllowMultiple",_,_,ILAttribElem.Bool res) -> Some res | _ -> None))
-                (fun (Attrib(_,_,_,named,_,_,_)) -> named |> List.tryPick (function AttribNamedArg("AllowMultiple",_,_,AttribBoolArg(res) ) -> Some res | _ -> None))
-                (fun (_,named)             -> named |> List.tryPick (function ("AllowMultiple", Some ((:? bool as res) : obj)) -> Some res | _ -> None))
+                (fun (_,named)             -> named |> Seq.tryPick (function ("AllowMultiple",_,_,ILAttribElem.Bool res) -> Some res | _ -> None))
+                (fun (Attrib(_,_,_,named,_,_,_)) -> named |> Seq.tryPick (function AttribNamedArg("AllowMultiple",_,_,AttribBoolArg(res) ) -> Some res | _ -> None))
+                (fun (_,named)             -> named |> Seq.tryPick (function ("AllowMultiple", Some ((:? bool as res) : obj)) -> Some res | _ -> None))
 
 
 /// Try to find a specific attribute on a type definition, where the attribute accepts a string argument.

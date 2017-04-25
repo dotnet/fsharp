@@ -6629,7 +6629,7 @@ and TcObjectExpr cenv overallTy env tpenv (synObjTy,argopt,binds,extraImpls,mNew
                             let searchForOverride = 
                                 dispatchSlotsKeyed 
                                 |> NameMultiMap.find id.idText 
-                                |> List.tryPick (fun (RequiredSlot(virt,_)) -> 
+                                |> Seq.tryPick (fun (RequiredSlot(virt,_)) -> 
                                      if DispatchSlotChecking.IsExactMatch cenv.g cenv.amap m virt ovinfo then 
                                          Some virt 
                                      else 
@@ -10436,7 +10436,7 @@ and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute)  =
                 match TryDecodeILAttribute cenv.g tref tdef.CustomAttrs with 
                 | Some ([ILAttribElem.Int32 validOn ],named) -> 
                     let inherited = 
-                        match List.tryPick (function ("Inherited",_,_,ILAttribElem.Bool res) -> Some res | _ -> None) named with 
+                        match Seq.tryPick (function ("Inherited",_,_,ILAttribElem.Bool res) -> Some res | _ -> None) named with 
                         | None -> inheritedDefault
                         | Some x -> x
                     (validOn, inherited)
@@ -15914,7 +15914,7 @@ module TcDeclarations =
                     | _ -> false)
 
             let implicitCtorSynPats = 
-                members |> List.tryPick (function 
+                members |> Seq.tryPick (function 
                     | SynMemberDefn.ImplicitCtor (_,_,spats,_, _)  -> Some spats
                     | _ -> None)
 

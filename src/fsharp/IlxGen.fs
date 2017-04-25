@@ -6197,7 +6197,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
         let defaultMemberAttrs = 
             // REVIEW: this should be based off tcaug_adhoc_list, which is in declaration order
             tycon.MembersOfFSharpTyconSorted
-            |> List.tryPick (fun vref -> 
+            |> Seq.tryPick (fun vref -> 
                 let name = vref.DisplayName
                 match vref.MemberInfo with 
                 | None -> None
