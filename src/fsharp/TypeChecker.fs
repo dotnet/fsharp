@@ -6224,7 +6224,7 @@ and TcRecordConstruction cenv overallTy env tpenv optOrigExpr objTy fldsList m =
         [ for (fname, fexpr) in fldsList do 
               let fspec = 
                   try  
-                      fspecs |> List.find (fun fspec -> fspec.Name = fname) 
+                      fspecs |> Seq.find (fun fspec -> fspec.Name = fname) 
                   with :? KeyNotFoundException -> 
                       error (Error(FSComp.SR.tcUndefinedField(fname, NicePrint.minimalStringOfType env.DisplayEnv objTy),m))
               let fty = actualTyOfRecdFieldForTycon tycon tinst fspec

@@ -2728,7 +2728,7 @@ let ILThingHasExtensionAttribute (attrs : ILAttributes) =
 // F# view of attributes (these get converted to AbsIL attributes in ilxgen) 
 let IsMatchingFSharpAttribute g (AttribInfo(_,tcref)) (Attrib(tcref2,_,_,_,_,_,_)) = tyconRefEq g tcref  tcref2
 let HasFSharpAttribute g tref attrs = Seq.exists (IsMatchingFSharpAttribute g tref) attrs
-let findAttrib g tref attrs = List.find (IsMatchingFSharpAttribute g tref) attrs
+let findAttrib g tref attrs = Seq.find (IsMatchingFSharpAttribute g tref) attrs
 let TryFindFSharpAttribute g tref attrs = Seq.tryFind (IsMatchingFSharpAttribute g tref) attrs
 let TryFindFSharpAttributeOpt g tref attrs = match tref with None -> None | Some tref -> Seq.tryFind (IsMatchingFSharpAttribute g tref) attrs
 
