@@ -980,6 +980,8 @@ type MethInfo =
      /// Get the formal generic method parameters for the method as a list of variable types.
     member x.FormalMethodInst = generalizeTypars x.FormalMethodTypars
 
+    member x.FormalMethodTyparInst = mkTyparInst x.FormalMethodTypars x.FormalMethodInst
+
      /// Get the XML documentation associated with the method
     member x.XmlDoc = 
         match x with 
@@ -2373,3 +2375,7 @@ let PropInfosEquivByNameAndSig erasureFlag g amap m (pinfo:PropInfo) (pinfo2:Pro
     let retTy = pinfo.GetPropertyType(amap,m)
     let retTy2 = pinfo2.GetPropertyType(amap,m) 
     typeEquivAux erasureFlag g retTy retTy2
+
+let SettersOfPropInfos (pinfos:PropInfo list) = pinfos |> List.choose (fun pinfo -> if pinfo.HasSetter then Some(pinfo.SetterMethod,Some pinfo) else None) 
+let GettersOfPropInfos (pinfos:PropInfo list) = pinfos |> List.choose (fun pinfo -> if pinfo.HasGetter then Some(pinfo.GetterMethod,Some pinfo) else None) 
+

@@ -279,7 +279,7 @@ module DispatchSlotChecking =
             | [ovd] -> 
                 if not ovd.IsCompilerGenerated then 
                     let item = Item.MethodGroup(ovd.LogicalName,[dispatchSlot],None)
-                    CallNameResolutionSink sink (ovd.Range,nenv,item,item,ItemOccurence.Implemented,denv,AccessorDomain.AccessibleFromSomewhere)
+                    CallNameResolutionSink sink (ovd.Range,nenv,item,item,dispatchSlot.FormalMethodTyparInst,ItemOccurence.Implemented,denv,AccessorDomain.AccessibleFromSomewhere)
                 sink |> ignore
                 ()
             | [] -> 
