@@ -34,6 +34,11 @@ module SR =
     let UnusedOpens = lazy (GetString "UnusedOpens")
     let AddProjectReference = lazy (GetString "AddProjectReference")
     let AddAssemblyReference = lazy (GetString "AddAssemblyReference")
+    let NavigatingTo = lazy (GetString "NavigatingTo")
+    let CannotDetermineSymbol = lazy (GetString "CannotDetermineSymbol")
+    let CannotNavigateUnknown = lazy (GetString "CannotNavigateUnknown")
+    let LocatingSymbol = lazy (GetString "LocatingSymbol")
+    let NavigateToFailed = lazy (GetString "NavigateToFailed")
     
     //--------------------------------------------------------------------------------------
     // Attributes used to mark up editable properties 
