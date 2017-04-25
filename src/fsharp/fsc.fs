@@ -779,7 +779,7 @@ module MainModuleBuilder =
             if tcGlobals.usesMscorlib then "System.Numerics"
             else "System.Runtime.Numerics"
         let numericsAssemblyRef =
-            match tcImports.GetImportedAssemblies() |> List.tryFind<ImportedAssembly>(fun a -> a.FSharpViewOfMetadata.AssemblyName = refNumericsDllName) with
+            match tcImports.GetImportedAssemblies() |> Seq.tryFind<ImportedAssembly>(fun a -> a.FSharpViewOfMetadata.AssemblyName = refNumericsDllName) with
             | Some asm ->
                 match asm.ILScopeRef with 
                 | ILScopeRef.Assembly aref -> Some aref

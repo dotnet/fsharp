@@ -1679,7 +1679,7 @@ and
       member mtyp.TryLinkVal(ccu:CcuThunk,key:ValLinkageFullKey) = 
           mtyp.AllValsAndMembersByPartialLinkageKey
             |> MultiMap.find key.PartialKey
-            |> List.tryFind (fun v -> match key.TypeForLinkage with 
+            |> Seq.tryFind (fun v -> match key.TypeForLinkage with 
                                       | None -> true
                                       | Some keyTy -> ccu.MemberSignatureEquality(keyTy,v.Type))
             |> ValueOption.ofOption

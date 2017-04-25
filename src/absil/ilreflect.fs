@@ -757,7 +757,7 @@ let queryableTypeGetMethodBySearch cenv emEnv parentT (mref:ILMethodRef) =
             let res = equalTypes resT haveResT && equalTypeLists argTs (haveArgTs |> Array.toList)
             res
        
-        match List.tryFind select methInfos with
+        match Seq.tryFind select methInfos with
         | None          -> failwith "convMethodRef: could not bind to method"
         | Some methInfo -> methInfo (* return MethodInfo for (generic) type's (generic) method *)
           

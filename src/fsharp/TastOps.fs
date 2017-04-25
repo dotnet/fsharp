@@ -2729,8 +2729,8 @@ let ILThingHasExtensionAttribute (attrs : ILAttributes) =
 let IsMatchingFSharpAttribute g (AttribInfo(_,tcref)) (Attrib(tcref2,_,_,_,_,_,_)) = tyconRefEq g tcref  tcref2
 let HasFSharpAttribute g tref attrs = Seq.exists (IsMatchingFSharpAttribute g tref) attrs
 let findAttrib g tref attrs = List.find (IsMatchingFSharpAttribute g tref) attrs
-let TryFindFSharpAttribute g tref attrs = List.tryFind (IsMatchingFSharpAttribute g tref) attrs
-let TryFindFSharpAttributeOpt g tref attrs = match tref with None -> None | Some tref -> List.tryFind (IsMatchingFSharpAttribute g tref) attrs
+let TryFindFSharpAttribute g tref attrs = Seq.tryFind (IsMatchingFSharpAttribute g tref) attrs
+let TryFindFSharpAttributeOpt g tref attrs = match tref with None -> None | Some tref -> Seq.tryFind (IsMatchingFSharpAttribute g tref) attrs
 
 let HasFSharpAttributeOpt g trefOpt attrs = match trefOpt with Some tref -> Seq.exists (IsMatchingFSharpAttribute g tref) attrs | _ -> false
 let IsMatchingFSharpAttributeOpt g attrOpt (Attrib(tcref2,_,_,_,_,_,_)) = match attrOpt with Some ((AttribInfo(_,tcref))) -> tyconRefEq g tcref  tcref2 | _ -> false
@@ -3762,7 +3762,7 @@ let accValRemap g aenv (msigty:ModuleOrNamespaceType) (implVal:Val) (mrpi,mhi) =
     let sigValOpt = 
         msigty.AllValsAndMembersByPartialLinkageKey 
           |> MultiMap.find implVal.LinkagePartialKey 
-          |> List.tryFind (fun sigVal -> valLinkageAEquiv g aenv implVal sigVal)
+          |> Seq.tryFind (fun sigVal -> valLinkageAEquiv g aenv implVal sigVal)
           
     let vref = mkLocalValRef implVal
     match sigValOpt with 
@@ -6984,7 +6984,7 @@ let LinearizeTopMatchAux g parent  (spBind,m,tree,targets,m2,ty) =
     let isThrowingTarget = function TTarget(_,x,_) -> isThrow x
     if 1 + List.count isThrowingTarget targetsL = targetsL.Length then
         (* Have failing targets and ONE successful one, so linearize *)
-        let (TTarget (vs,rhs,spTarget)) = Option.get (List.tryFind (isThrowingTarget >> not) targetsL)
+        let (TTarget (vs,rhs,spTarget)) = Option.get (Seq.tryFind (isThrowingTarget >> not) targetsL)
         (* note - old code here used copy value to generate locals - this was not right *)
         let fvs      = vs |> List.map (fun v -> fst(mkLocal v.Range v.LogicalName v.Type)) (* fresh *)
         let vtys     = vs |> List.map (fun v -> v.Type) 

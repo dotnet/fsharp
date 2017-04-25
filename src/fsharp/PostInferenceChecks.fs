@@ -1556,7 +1556,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                     let m = (match minfo.ArbitraryValRef with None -> m | Some vref -> vref.DefinitionRange)
                     let parentMethsOfSameName = getHash hashOfAllVirtualMethsInParent nm 
                     let checkForDup erasureFlag (minfo2:MethInfo) = minfo2.IsDispatchSlot && MethInfosEquivByNameAndSig erasureFlag true cenv.g cenv.amap m minfo minfo2
-                    match parentMethsOfSameName |> List.tryFind (checkForDup EraseAll) with
+                    match parentMethsOfSameName |> Seq.tryFind (checkForDup EraseAll) with
                     | None -> ()
                     | Some minfo ->
                         let mtext = NicePrint.stringOfMethInfo cenv.amap m cenv.denv minfo

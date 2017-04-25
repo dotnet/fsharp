@@ -3798,7 +3798,7 @@ and GetIlxClosureFreeVars cenv m selfv eenvouter takenNames expr =
 
     // Choose a base name for the closure
     let basename = 
-        let boundv = eenvouter.letBoundVars |> List.tryFind (fun v -> not v.IsCompilerGenerated) 
+        let boundv = eenvouter.letBoundVars |> Seq.tryFind (fun v -> not v.IsCompilerGenerated) 
         match boundv with
         | Some v -> v.CompiledName
         | None -> "clo"
@@ -5147,7 +5147,7 @@ and GenMethodForBinding
         List.partition (fun (Attrib(_,_,_,_,isAppliedToGetterOrSetter,_,_)) -> isAppliedToGetterOrSetter) attrs
             
     let sourceNameAttribs,compiledName = 
-        match v.Attribs |> List.tryFind (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_CompiledNameAttribute) with 
+        match v.Attribs |> Seq.tryFind (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_CompiledNameAttribute) with 
         | Some (Attrib(_,_,[ AttribStringArg(b) ],_,_,_,_))  -> [ mkCompilationSourceNameAttr cenv.g v.LogicalName ], Some b
         | _ -> [],None
     

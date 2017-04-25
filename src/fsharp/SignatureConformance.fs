@@ -576,7 +576,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                              // for each formal requirement, try to find a precisely matching actual requirement
                              let matchingPairs = 
                                  fvs |> List.choose (fun fv -> 
-                                     match avs |> List.tryFind (fun av -> 
+                                     match avs |> Seq.tryFind (fun av -> 
                                                          let res = valLinkageAEquiv g aenv av fv
                                                          //if res then printfn "%s" (bufs (fun buf -> Printf.bprintf buf "YES MATCH: fv '%a', av '%a'" (NicePrint.outputQualifiedValOrMember denv) fv (NicePrint.outputQualifiedValOrMember denv) av))
                                                          //else printfn "%s" (bufs (fun buf -> Printf.bprintf buf "NO MATCH: fv '%a', av '%a'" (NicePrint.outputQualifiedValOrMember denv) fv (NicePrint.outputQualifiedValOrMember denv) av))  
@@ -591,7 +591,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                              if someNotOk then 
                                  let noMatches,partialMatchingPairs = 
                                      fvs |> List.splitChoose (fun fv -> 
-                                         match avs |> List.tryFind (fun av -> valuesPartiallyMatch av fv) with 
+                                         match avs |> Seq.tryFind (fun av -> valuesPartiallyMatch av fv) with 
                                           | None -> Choice1Of2 fv
                                           | Some av -> Choice2Of2(fv,av))
                                  for (fv,av) in partialMatchingPairs do

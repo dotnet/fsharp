@@ -2901,7 +2901,7 @@ and OptimizeSwitch cenv env (e,cases,dflt,m) =
     let cases,dflt = 
         if cenv.settings.EliminateSwitch() && not einfo.HasEffect then
             // Attempt to find a definite success, i.e. the first case where there is definite success
-            match (List.tryFind (function (TCase(d2,_)) when TryOptimizeDecisionTreeTest cenv d2 einfo.Info  = Some(true) -> true | _ -> false) cases) with 
+            match (Seq.tryFind (function (TCase(d2,_)) when TryOptimizeDecisionTreeTest cenv d2 einfo.Info  = Some(true) -> true | _ -> false) cases) with 
             | Some(TCase(_,case)) -> [],Some(case)
             | _ -> 
                 // Filter definite failures

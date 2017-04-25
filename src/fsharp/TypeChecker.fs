@@ -1947,7 +1947,7 @@ let BuildFieldMap cenv env isPartial ty flds m =
                 warning (Error(FSComp.SR.tcFieldsDoNotDetermineUniqueRecordType(),m))
 
             // try finding a record type with the same number of fields as the ones that are given.
-            match tcrefs |> List.tryFind (fun tc -> tc.TrueFieldsAsList.Length = flds.Length) with
+            match tcrefs |> Seq.tryFind (fun tc -> tc.TrueFieldsAsList.Length = flds.Length) with
             | Some tcref -> tcref            
             | _ -> 
                 // OK, there isn't a unique, good type dictated by the intersection for the field refs. 
@@ -9502,7 +9502,6 @@ and TcMethodApplication
         | AfterResolution.RecordResolution(_, _, _, onFailure), None ->
             onFailure()
 
-
         // Raise the errors from the constraint solving 
         RaiseOperationResult errors
         match result with 
@@ -13963,7 +13962,7 @@ module TyconConstraintInference =
                    if not res then 
                        match TryFindFSharpBoolAttribute g g.attrib_StructuralComparisonAttribute tycon.Attribs with
                        | Some(true) -> 
-                           match structuralTypes |> List.tryFind (fst >> checkIfFieldTypeSupportsComparison tycon >> not) with
+                           match structuralTypes |> Seq.tryFind (fst >> checkIfFieldTypeSupportsComparison tycon >> not) with
                            | None -> 
                                assert false
                                failwith "unreachable"
@@ -13976,7 +13975,7 @@ module TyconConstraintInference =
                            ()
                        
                        | None -> 
-                           match structuralTypes |> List.tryFind (fst >> checkIfFieldTypeSupportsComparison tycon >> not) with
+                           match structuralTypes |> Seq.tryFind (fst >> checkIfFieldTypeSupportsComparison tycon >> not) with
                            | None -> 
                                assert false
                                failwith "unreachable"
@@ -14088,7 +14087,7 @@ module TyconConstraintInference =
                        match TryFindFSharpBoolAttribute g g.attrib_StructuralEqualityAttribute tycon.Attribs with
                        | Some(true) -> 
                            if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals cenv.g tycon then 
-                               match structuralTypes |> List.tryFind (fst >> checkIfFieldTypeSupportsEquality tycon >> not) with
+                               match structuralTypes |> Seq.tryFind (fst >> checkIfFieldTypeSupportsEquality tycon >> not) with
                                | None -> 
                                    assert false
                                    failwith "unreachable"
@@ -14103,7 +14102,7 @@ module TyconConstraintInference =
                            ()
                        | None -> 
                            if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals cenv.g tycon then 
-                               match structuralTypes |> List.tryFind (fst >> checkIfFieldTypeSupportsEquality tycon >> not) with
+                               match structuralTypes |> Seq.tryFind (fst >> checkIfFieldTypeSupportsEquality tycon >> not) with
                                | None -> 
                                    assert false
                                    failwith "unreachable"
@@ -15263,7 +15262,7 @@ module EstablishTypeDefinitionCores =
                 errorR(Error(FSComp.SR.tcInvalidUseNullAsTrueValue(),m))
                 
             // validate ConditionalAttribute, should it be applied (it's only valid on a type if the type is an attribute type)
-            match attrs |> List.tryFind (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_ConditionalAttribute) with
+            match attrs |> Seq.tryFind (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_ConditionalAttribute) with
             | Some _ ->
                 if not(ExistsInEntireHierarchyOfType (fun t -> typeEquiv cenv.g t (mkAppTy cenv.g.tcref_System_Attribute [])) cenv.g cenv.amap m AllowMultiIntfInstantiations.Yes thisTy) then
                     errorR(Error(FSComp.SR.tcConditionalAttributeUsage(),m))

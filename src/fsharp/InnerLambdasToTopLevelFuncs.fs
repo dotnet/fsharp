@@ -745,7 +745,7 @@ let FlatEnvPacks g fclassM topValS declist (reqdItemsMap: Zmap<BindingGroupShari
        
        // Carrier sets cannot include constrained polymorphic values. We can't just take such a value out, so for the moment 
        // we'll just abandon TLR altogether and give a warning about this condition. 
-       match vals |> List.tryFind (IsGenericValWithGenericContraints g) with 
+       match vals |> Seq.tryFind (IsGenericValWithGenericContraints g) with 
        | None -> () 
        | Some v -> raise (AbortTLR v.Range)
 

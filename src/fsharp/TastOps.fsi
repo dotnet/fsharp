@@ -1050,10 +1050,10 @@ val (|ByrefTy|_|)   : TcGlobals -> TType -> TType option
 val IsUnionTypeWithNullAsTrueValue: TcGlobals -> Tycon -> bool
 val TyconHasUseNullAsTrueValueAttribute : TcGlobals -> Tycon -> bool
 val CanHaveUseNullAsTrueValueAttribute : TcGlobals -> Tycon -> bool
-val MemberIsCompiledAsInstance : TcGlobals -> TyconRef -> bool -> ValMemberInfo -> Attribs -> bool
+val MemberIsCompiledAsInstance : TcGlobals -> TyconRef -> bool -> ValMemberInfo -> seq<Attrib> -> bool
 val ValSpecIsCompiledAsInstance : TcGlobals -> Val -> bool
 val ValRefIsCompiledAsInstanceMember : TcGlobals -> ValRef -> bool
-val ModuleNameIsMangled : TcGlobals -> Attribs -> bool
+val ModuleNameIsMangled : TcGlobals -> seq<Attrib> -> bool
 
 val CompileAsEvent : TcGlobals -> seq<Attrib> -> bool
 
@@ -1262,12 +1262,12 @@ val IsMatchingFSharpAttribute      : TcGlobals -> BuiltinAttribInfo -> Attrib ->
 val IsMatchingFSharpAttributeOpt   : TcGlobals -> BuiltinAttribInfo option -> Attrib -> bool
 val HasFSharpAttribute             : TcGlobals -> BuiltinAttribInfo -> seq<Attrib> -> bool
 val HasFSharpAttributeOpt          : TcGlobals -> BuiltinAttribInfo option -> seq<Attrib> -> bool
-val TryFindFSharpAttribute         : TcGlobals -> BuiltinAttribInfo -> Attribs -> Attrib option
-val TryFindFSharpAttributeOpt      : TcGlobals -> BuiltinAttribInfo option -> Attribs -> Attrib option
-val TryFindFSharpBoolAttribute     : TcGlobals -> BuiltinAttribInfo -> Attribs -> bool option
-val TryFindFSharpBoolAttributeAssumeFalse : TcGlobals -> BuiltinAttribInfo -> Attribs -> bool option
-val TryFindFSharpStringAttribute   : TcGlobals -> BuiltinAttribInfo -> Attribs -> string option
-val TryFindFSharpInt32Attribute    : TcGlobals -> BuiltinAttribInfo -> Attribs -> int32 option
+val TryFindFSharpAttribute         : TcGlobals -> BuiltinAttribInfo -> seq<Attrib> -> Attrib option
+val TryFindFSharpAttributeOpt      : TcGlobals -> BuiltinAttribInfo option -> seq<Attrib> -> Attrib option
+val TryFindFSharpBoolAttribute     : TcGlobals -> BuiltinAttribInfo -> seq<Attrib> -> bool option
+val TryFindFSharpBoolAttributeAssumeFalse : TcGlobals -> BuiltinAttribInfo -> seq<Attrib> -> bool option
+val TryFindFSharpStringAttribute   : TcGlobals -> BuiltinAttribInfo -> seq<Attrib> -> string option
+val TryFindFSharpInt32Attribute    : TcGlobals -> BuiltinAttribInfo -> seq<Attrib> -> int32 option
 
 /// Try to find a specific attribute on a type definition, where the attribute accepts a string argument.
 ///

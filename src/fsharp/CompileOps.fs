@@ -2622,7 +2622,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     // Check that the referenced version of FSharp.Core.dll matches the referenced version of mscorlib.dll 
     let checkFSharpBinaryCompatWithMscorlib filename (ilAssemblyRefs: ILAssemblyRef list) explicitFscoreVersionToCheckOpt m = 
         let isfslib = fileNameOfPath filename = GetFSharpCoreLibraryName() + ".dll"
-        match ilAssemblyRefs |> List.tryFind (fun aref -> aref.Name = data.primaryAssembly.Name) with 
+        match ilAssemblyRefs |> Seq.tryFind (fun aref -> aref.Name = data.primaryAssembly.Name) with 
         | Some aref ->
             match aref.Version with
             | Some(v1,_,_,_) ->
@@ -3506,13 +3506,13 @@ type TcAssemblyResolutions(results : AssemblyResolution list, unresolved : Unres
 
     /// This doesn't need to be cancellable, it is only used by F# Interactive
     member tcResolution.TryFindByExactILAssemblyRef (ctok, assref) = 
-        results |> List.tryFind (fun ar->
+        results |> Seq.tryFind (fun ar->
             let r = ar.GetILAssemblyRef(ctok) |> Cancellable.runWithoutCancellation 
             r = assref)
 
     /// This doesn't need to be cancellable, it is only used by F# Interactive
     member tcResolution.TryFindBySimpleAssemblyName (ctok, simpleAssemName) = 
-        results |> List.tryFind (fun ar->
+        results |> Seq.tryFind (fun ar->
             let r = ar.GetILAssemblyRef(ctok) |> Cancellable.runWithoutCancellation 
             r.Name = simpleAssemName)
 
