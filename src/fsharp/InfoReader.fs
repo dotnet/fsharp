@@ -513,7 +513,7 @@ let private FilterItemsInSuperTypesBasedOnItemsInSubTypes nmf keepTest itemLists
     loop itemLists IndexedList.Empty
 
 let private ExcludeItemsInSuperTypesBasedOnEquivTestWithItemsInSubTypes nmf equivTest itemLists = 
-    FilterItemsInSuperTypesBasedOnItemsInSubTypes nmf (fun item1 items -> not (items |> List.exists (fun item2 -> equivTest item1 item2))) itemLists 
+    FilterItemsInSuperTypesBasedOnItemsInSubTypes nmf (fun item1 items -> not (items |> Seq.exists (fun item2 -> equivTest item1 item2))) itemLists 
 
 /// Filter the overrides of methods or properties, either keeping the overrides or keeping the dispatch slots.
 let private FilterOverrides findFlag (isVirt:'a->bool,isNewSlot,isDefiniteOverride,isFinal,equivSigs,nmf:'a->string) items = 
@@ -531,7 +531,7 @@ let private FilterOverrides findFlag (isVirt:'a->bool,isNewSlot,isDefiniteOverri
         
         |> List.map (fun items -> 
             let definiteOverrides = items |> List.filter isDefiniteOverride 
-            items |> List.filter (fun item -> (isDefiniteOverride item || not (List.exists (equivVirts item) definiteOverrides))))
+            items |> List.filter (fun item -> (isDefiniteOverride item || not (Seq.exists (equivVirts item) definiteOverrides))))
        
         // only keep virtuals that are not signature-equivalent to virtuals in subtypes
         |> ExcludeItemsInSuperTypesBasedOnEquivTestWithItemsInSubTypes nmf equivVirts 
@@ -574,8 +574,8 @@ let private FilterOverrides findFlag (isVirt:'a->bool,isNewSlot,isDefiniteOverri
 
           |> FilterItemsInSuperTypesBasedOnItemsInSubTypes nmf (fun item1 superTypeItems -> 
                   not (isNewSlot item1 && 
-                       superTypeItems |> List.exists (equivNewSlots item1) &&
-                       superTypeItems |> List.exists (fun item2 -> isDefiniteOverride item1 && equivVirts item1 item2))) 
+                       superTypeItems |> Seq.exists (equivNewSlots item1) &&
+                       superTypeItems |> Seq.exists (fun item2 -> isDefiniteOverride item1 && equivVirts item1 item2))) 
 
     
 /// Filter the overrides of methods, either keeping the overrides or keeping the dispatch slots.
@@ -684,7 +684,7 @@ let TryDestStandardDelegateTyp (infoReader:InfoReader) m ad delTy =
     let g = infoReader.g
     let (SigOfFunctionForDelegate(_,compiledViewOfDelArgTys,delRetTy,_)) = GetSigOfFunctionForDelegate infoReader delTy m ad
     match compiledViewOfDelArgTys with 
-    | senderTy :: argTys when (isObjTy g senderTy) && not (List.exists (isByrefTy g) argTys)  -> Some(mkRefTupledTy g argTys,delRetTy)
+    | senderTy :: argTys when (isObjTy g senderTy) && not (Seq.exists (isByrefTy g) argTys)  -> Some(mkRefTupledTy g argTys,delRetTy)
     | _ -> None
 
 

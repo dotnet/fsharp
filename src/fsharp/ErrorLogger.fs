@@ -564,7 +564,7 @@ let TryD f g =
     | res -> res
 
 let rec RepeatWhileD ndeep body = body ndeep ++ (fun x -> if x then RepeatWhileD (ndeep+1) body else CompleteD) 
-let AtLeastOneD f l = MapD f l ++ (fun res -> ResultD (List.exists id res))
+let AtLeastOneD f l = MapD f l ++ (fun res -> ResultD (Seq.exists id res))
 
 
 // Code below is for --flaterrors flag that is only used by the IDE

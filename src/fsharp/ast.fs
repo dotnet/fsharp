@@ -1932,7 +1932,7 @@ module SynInfo =
 
     /// Check if there are any optional arguments in the syntactic argument information. Used when adjusting the
     /// types of optional arguments for function and member signatures.
-    let HasOptionalArgs (SynValInfo(args,_)) = List.exists (List.exists IsOptionalArg) args
+    let HasOptionalArgs (SynValInfo(args,_)) = Seq.exists (Seq.exists IsOptionalArg) args
 
     /// Add a parameter entry to the syntactic value information to represent the '()' argument to a property getter. This is
     /// used for the implicit '()' argument in property getter signature specifications.
@@ -2275,9 +2275,9 @@ type StableNiceNameGenerator() =
 
 let rec synExprContainsError inpExpr =
     let rec walkBind (Binding(_, _, _, _, _, _, _, _, _, synExpr, _, _)) = walkExpr synExpr
-    and walkExprs es = es |> List.exists walkExpr
-    and walkBinds es = es |> List.exists walkBind
-    and walkMatchClauses cl = cl |> List.exists (fun (Clause(_,whenExpr,e,_,_)) -> walkExprOpt whenExpr || walkExpr e)
+    and walkExprs es = es |> Seq.exists walkExpr
+    and walkBinds es = es |> Seq.exists walkBind
+    and walkMatchClauses cl = cl |> Seq.exists (fun (Clause(_,whenExpr,e,_,_)) -> walkExprOpt whenExpr || walkExpr e)
     and walkExprOpt eOpt = eOpt |> Option.exists walkExpr
     and walkExpr e =
           match e with

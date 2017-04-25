@@ -178,7 +178,7 @@ module ListAssoc =
 //------------------------------------------------------------------------
 
 module ListSet = 
-    let inline contains f x l = List.exists (f x) l
+    let inline contains f x l = Seq.exists (f x) l
 
     (* NOTE: O(n)! *)
     let insert f x l = if contains f x l then l else x::l
@@ -341,7 +341,7 @@ type Graph<'Data, 'Id when 'Id : comparison and 'Id : equality>
 
     member g.IterateCycles f = 
         let rec trace path node = 
-            if List.exists (nodeIdentity >> (=) node.nodeId) path then f (List.rev path)
+            if Seq.exists (nodeIdentity >> (=) node.nodeId) path then f (List.rev path)
             else Seq.iter (trace (node.nodeData::path)) node.nodeNeighbours
         Seq.iter (fun node -> trace [] node) nodes 
 

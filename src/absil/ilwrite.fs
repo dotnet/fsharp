@@ -2133,7 +2133,7 @@ module Codebuf =
           (lrange_inside_lrange lab2pc tryspec1.Range lr && clause_inside_lrange tryspec1.Clause lr) 
 
         let tryspec_inside_clause tryspec1 cl =
-          List.exists (fun lr -> tryspec_inside_lrange tryspec1 lr) (lranges_of_clause cl) 
+          Seq.exists (fun lr -> tryspec_inside_lrange tryspec1 lr) (lranges_of_clause cl) 
 
         let tryspec_inside_tryspec tryspec1 (tryspec2: ILExceptionSpec) =
           tryspec_inside_lrange tryspec1 tryspec2.Range ||

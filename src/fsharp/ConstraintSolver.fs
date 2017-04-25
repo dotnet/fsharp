@@ -213,7 +213,7 @@ let rec occursCheck g un ty =
     match stripTyEqns g ty with 
     | TType_ucase(_,l)
     | TType_app (_,l) 
-    | TType_tuple (_,l) -> List.exists (occursCheck g un) l
+    | TType_tuple (_,l) -> Seq.exists (occursCheck g un) l
     | TType_fun (d,r) -> occursCheck g un d || occursCheck g un r
     | TType_var r   ->  typarEq un r 
     | TType_forall (_,tau) -> occursCheck g un tau
@@ -1226,10 +1226,10 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
 
           // Now check if there are no feasible solutions at all
           match minfos, recdPropSearch with 
-          | [], None when not (tys |> List.exists (isAnyParTy g)) ->
-              if tys |> List.exists (isFunTy g) then 
+          | [], None when not (tys |> Seq.exists (isAnyParTy g)) ->
+              if tys |> Seq.exists (isFunTy g) then 
                   ErrorD (ConstraintSolverError(FSComp.SR.csExpectTypeWithOperatorButGivenFunction(DecompileOpName nm),m,m2)) 
-              elif tys |> List.exists (isAnyTupleTy g) then 
+              elif tys |> Seq.exists (isAnyTupleTy g) then 
                   ErrorD (ConstraintSolverError(FSComp.SR.csExpectTypeWithOperatorButGivenTuple(DecompileOpName nm),m,m2)) 
               else
                   match nm, argtys with 
@@ -1461,7 +1461,7 @@ and AddMemberConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace traitInfo sup
         let cxs = cxst.FindAll tpn
 
         // check the constraint is not already listed for this type variable
-        if not (cxs |> List.exists (fun (traitInfo2,_) -> traitsAEquiv g aenv traitInfo traitInfo2)) then 
+        if not (cxs |> Seq.exists (fun (traitInfo2,_) -> traitsAEquiv g aenv traitInfo traitInfo2)) then 
             trace.Exec (fun () -> csenv.SolverState.ExtraCxs.Add (tpn,(traitInfo,m2))) (fun () -> csenv.SolverState.ExtraCxs.Remove tpn)
     )
 
@@ -1593,7 +1593,7 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
         enforceMutualConsistency 0 allCxs 
     end ++ (fun ()  ->
     
-    let impliedByExistingConstraints = existingConstraints |> List.exists (fun tpc2 -> implies tpc2 newConstraint) 
+    let impliedByExistingConstraints = existingConstraints |> Seq.exists (fun tpc2 -> implies tpc2 newConstraint) 
     
     if impliedByExistingConstraints then 
         CompleteD
@@ -1622,7 +1622,7 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
                   match cxs with 
                   | [] -> acc
                   | cx :: rest -> 
-                      eliminateRedundant rest (if List.exists (fun cx2 -> implies cx2 cx) acc then acc else (cx::acc))
+                      eliminateRedundant rest (if Seq.exists (fun cx2 -> implies cx2 cx) acc then acc else (cx::acc))
                   
               eliminateRedundant allCxs []
               
@@ -1805,7 +1805,7 @@ and SolveTypChoice (csenv:ConstraintSolverEnv) ndeep m2 trace ty tys =
     | Some destTypar ->
         AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.SimpleChoice(tys,m)) 
     | None ->
-        if List.exists (typeEquivAux Erasure.EraseMeasures g ty) tys then CompleteD
+        if Seq.exists (typeEquivAux Erasure.EraseMeasures g ty) tys then CompleteD
         else ErrorD (ConstraintSolverError(FSComp.SR.csTypeNotCompatibleBecauseOfPrintf((NicePrint.minimalStringOfType denv ty), (String.concat "," (List.map (NicePrint.prettyStringOfTy denv) tys))),m,m2))
 
 
@@ -1834,7 +1834,7 @@ and SolveTypRequiresDefaultConstructor (csenv:ConstraintSolverEnv) ndeep m2 trac
             CompleteD
         else
             if GetIntrinsicConstructorInfosOfType csenv.InfoReader m ty 
-               |> List.exists (fun x -> IsMethInfoAccessible amap m AccessibleFromEverywhere x && x.IsNullary)
+               |> Seq.exists (fun x -> IsMethInfoAccessible amap m AccessibleFromEverywhere x && x.IsNullary)
             then 
                 match tryDestAppTy g ty with
                 | Some tcref when HasFSharpAttribute g g.attrib_AbstractClassAttribute tcref.Attribs ->
@@ -2068,9 +2068,9 @@ and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNam
                 if minfo.IsConstructor then
                     let couldBeNameArgs =
                         cmeth.ArgSets
-                        |> List.exists (fun argSet ->
+                        |> Seq.exists (fun argSet ->
                             argSet.UnnamedCallerArgs 
-                            |> List.exists (fun c -> isSequential c.Expr))
+                            |> Seq.exists (fun c -> isSequential c.Expr))
 
                     if couldBeNameArgs then
                         Error (FSComp.SR.csCtorSignatureMismatchArityProp(methodName, nReqd, nActual, signature), m)
@@ -2168,7 +2168,7 @@ and ResolveOverloading
           // - Always take the return type into account for
           //      -- op_Explicit, op_Implicit
           //      -- candidate method sets that potentially use tupling of unfilled out args
-          let alwaysCheckReturn = isOpConversion || candidates |> List.exists (fun cmeth -> cmeth.HasOutArgs)
+          let alwaysCheckReturn = isOpConversion || candidates |> Seq.exists (fun cmeth -> cmeth.HasOutArgs)
 
           // Exact match rule.
           //
@@ -2329,10 +2329,10 @@ and ResolveOverloading
                                     []) @
                                ((candidate.AllUnnamedCalledArgs, other.AllUnnamedCalledArgs) ||> List.map2 compareArg) 
                            // "all args are at least as good, and one argument is actually better"
-                           if cs |> List.forall (fun x -> x >= 0) && cs |> List.exists (fun x -> x > 0) then 
+                           if cs |> List.forall (fun x -> x >= 0) && cs |> Seq.exists (fun x -> x > 0) then 
                                1
                            // "all args are at least as bad, and one argument is actually worse"
-                           elif cs |> List.forall (fun x -> x <= 0) && cs |> List.exists (fun x -> x < 0) then 
+                           elif cs |> List.forall (fun x -> x <= 0) && cs |> Seq.exists (fun x -> x < 0) then 
                                -1
                            // "argument lists are incomparable"
                            else

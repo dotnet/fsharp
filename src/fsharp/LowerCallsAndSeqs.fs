@@ -390,7 +390,7 @@ let LowerSeqExpr g amap overallExpr =
                 let tgl = List.map Option.get tgl
                 let labs = tgl |> List.collect (fun res -> res.labels)
                 let stateVars = tgl |> List.collect (fun res -> res.stateVars)
-                let significantClose = tgl |> List.exists (fun res -> res.significantClose)
+                let significantClose = tgl |> Seq.exists (fun res -> res.significantClose)
                 Some { phase2 = (fun ctxt -> 
                             let gtgs,disposals,checkDisposes = 
                                 (Array.toList targets,tgl) 

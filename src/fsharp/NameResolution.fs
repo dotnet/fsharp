@@ -1392,7 +1392,7 @@ let ItemsAreEffectivelyEqual g orig other =
         | _ -> false
 
     | Item.ModuleOrNamespaces modrefs1, Item.ModuleOrNamespaces modrefs2 ->
-        modrefs1 |> List.exists (fun modref1 -> modrefs2 |> List.exists (fun r -> tyconRefDefnEq g modref1 r || fullDisplayTextOfModRef modref1 = fullDisplayTextOfModRef r))
+        modrefs1 |> Seq.exists (fun modref1 -> modrefs2 |> Seq.exists (fun r -> tyconRefDefnEq g modref1 r || fullDisplayTextOfModRef modref1 = fullDisplayTextOfModRef r))
 
     | _ -> false
 
@@ -1797,7 +1797,7 @@ let private ResolveObjectConstructorPrim (ncenv:NameResolver) edenv resInfo m ad
             success (resInfo, Item.FakeInterfaceCtor typ)
         else 
             let defaultStructCtorInfo = 
-                if (not (ctorInfos |> List.exists (fun x -> x.IsNullary)) &&
+                if (not (ctorInfos |> Seq.exists (fun x -> x.IsNullary)) &&
                     isStructTy g typ && 
                     not (isRecdTy g typ) && 
                     not (isUnionTy g typ)) 
@@ -1986,7 +1986,7 @@ let GetRecordLabelsForType g nenv typ =
         nenv.eFieldLabels
         |> Seq.filter (fun kv -> 
             kv.Value 
-            |> List.exists (fun r -> r.TyconRef.DisplayName = typeName))
+            |> Seq.exists (fun r -> r.TyconRef.DisplayName = typeName))
         |> Seq.map (fun kv -> kv.Key)
         |> Set.ofSeq
     else
@@ -2987,7 +2987,7 @@ let SuggestLabelsOfRelatedRecords g (nenv:NameResolutionEnv) (id:Ident) (allFiel
                     |> Seq.filter (fun kv -> 
                         kv.Value 
                         |> List.map (fun r -> r.TyconRef.DisplayName)
-                        |> List.exists possibleRecords.Contains)
+                        |> Seq.exists possibleRecords.Contains)
                     |> Seq.map (fun kv -> kv.Key)
                     |> Set.ofSeq
 
@@ -3244,8 +3244,8 @@ let ResolveLongIdentAsExprAndComputeRange (sink:TcResultsSink) (ncenv:NameResolv
 
 let (|NonOverridable|_|) namedItem =
     match namedItem with
-    |   Item.MethodGroup(_,minfos,_) when minfos |> List.exists(fun minfo -> minfo.IsVirtual || minfo.IsAbstract) -> None
-    |   Item.Property(_,pinfos) when pinfos |> List.exists(fun pinfo -> pinfo.IsVirtualProperty) -> None
+    |   Item.MethodGroup(_,minfos,_) when minfos |> Seq.exists(fun minfo -> minfo.IsVirtual || minfo.IsAbstract) -> None
+    |   Item.Property(_,pinfos) when pinfos |> Seq.exists(fun pinfo -> pinfo.IsVirtualProperty) -> None
     |   _ -> Some ()
 
 
@@ -3552,7 +3552,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
                 if methsWithStaticParams.IsEmpty then minfos
                 else minfos |> List.filter (fun minfo -> 
                         let nm = minfo.LogicalName
-                        not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWith(m))))
+                        not (nm.Contains "," && methsWithStaticParams |> Seq.exists (fun m -> nm.StartsWith(m))))
 #endif
 
             minfos 
@@ -4180,7 +4180,7 @@ let private ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad stat
                         if methsWithStaticParams.IsEmpty then minfos
                         else minfos |> List.filter (fun minfo -> 
                                 let nm = minfo.LogicalName
-                                not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWith(m))))
+                                not (nm.Contains "," && methsWithStaticParams |> Seq.exists (fun m -> nm.StartsWith(m))))
         #endif
         
                     minfos 

@@ -455,7 +455,7 @@ let AddNonLocalCcu g amap scopem env assemblyName  (ccu:CcuThunk, internalsVisib
 
     let internalsVisible = 
         internalsVisibleToAttributes 
-        |> List.exists (fun visibleTo ->             
+        |> Seq.exists (fun visibleTo ->             
             try
                 System.Reflection.AssemblyName(visibleTo).Name = assemblyName                
             with e ->
@@ -761,7 +761,7 @@ let ReportImplicitlyIgnoredBoolExpression denv m ty expr =
                         match propRef.ActualParent with
                         | Parent entityRef ->
                             entityRef.MembersOfFSharpTyconSorted
-                            |> List.exists (fun valRef -> valRef.IsPropertySetterMethod && valRef.PropertyName = propertyName)
+                            |> Seq.exists (fun valRef -> valRef.IsPropertySetterMethod && valRef.PropertyName = propertyName)
                         | _ -> false
 
                     if hasCorrespondingSetter then
@@ -2196,7 +2196,7 @@ module GeneralizationHelpers =
             match tp.Constraints |> List.partition (function (TyparConstraint.CoercesTo _) -> true | _ -> false) with 
             | [TyparConstraint.CoercesTo(cxty,_)], others -> 
                  // Throw away null constraints if they are implied 
-                 if others |> List.exists (function (TyparConstraint.SupportsNull(_)) -> not (TypeSatisfiesNullConstraint cenv.g m cxty) | _ -> true) 
+                 if others |> Seq.exists (function (TyparConstraint.SupportsNull(_)) -> not (TypeSatisfiesNullConstraint cenv.g m cxty) | _ -> true) 
                  then None
                  else Some cxty
             | _ -> None
@@ -2225,7 +2225,7 @@ module GeneralizationHelpers =
             not (ListSet.contains typarEq tp lhsConstraintTypars) &&
             // A condensation typar must occur precisely once in tyIJ, and must not occur free in any other tyIJ
             (match allUntupledArgTysWithFreeVars |> List.partition (fun (ty,_) -> match tryDestTyparTy cenv.g ty with Some destTypar -> typarEq destTypar tp | _ -> false) with
-             | [_], rest -> not (rest |> List.exists (fun (_,fvs) -> ListSet.contains typarEq tp fvs))
+             | [_], rest -> not (rest |> Seq.exists (fun (_,fvs) -> ListSet.contains typarEq tp fvs))
              | _ -> false)
              
         let condensationTypars, generalizedTypars = generalizedTypars |> List.partition IsCondensationTypar
@@ -2900,7 +2900,7 @@ let MakeApplicableExprWithFlex cenv (env: TcEnv) expr =
     let argTys,retTy = stripFunTy cenv.g exprTy
     let curriedActualTypes = argTys |> List.map (tryDestRefTupleTy cenv.g)
     if (curriedActualTypes.IsEmpty ||
-        curriedActualTypes |> List.exists (List.exists (isByrefTy cenv.g)) ||
+        curriedActualTypes |> Seq.exists (Seq.exists (isByrefTy cenv.g)) ||
         curriedActualTypes |> List.forall (List.forall isNonFlexibleType)) then 
        
         ApplicableExpr (cenv,expr,true)
@@ -3279,7 +3279,7 @@ let AnalyzeArbitraryExprAsEnumerable cenv (env: TcEnv) localAlloc m exprty expr 
                 
                 match TryFindIntrinsicOrExtensionMethInfo cenv env m ad "get_Item" tyToSearchForGetEnumeratorAndItem with
                 | (minfo :: others) when (allEquivReturnTypes minfo others &&
-                                          List.exists isInt32OrObjectIndexer (minfo :: others)) -> 
+                                          Seq.exists isInt32OrObjectIndexer (minfo :: others)) -> 
                     minfo.GetFSharpReturnTy(cenv.amap, m, [])
                 
                 | _ -> 
@@ -3287,7 +3287,7 @@ let AnalyzeArbitraryExprAsEnumerable cenv (env: TcEnv) localAlloc m exprty expr 
                 // Some types such as XmlNodeList have only an Item method  
                 match TryFindIntrinsicOrExtensionMethInfo cenv env m ad "Item" tyToSearchForGetEnumeratorAndItem with
                 | (minfo :: others) when (allEquivReturnTypes minfo others &&
-                                          List.exists isInt32OrObjectIndexer (minfo :: others)) -> 
+                                          Seq.exists isInt32OrObjectIndexer (minfo :: others)) -> 
                     minfo.GetFSharpReturnTy(cenv.amap, m, [])
                 
                 | _ -> enumElemTy
@@ -4495,7 +4495,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
             error(Error(FSComp.SR.tcExpectedUnitOfMeasureNotType(), m)) 
             TType_measure (NewErrorMeasure ()), tpenv
         | _, TyparKind.Type ->
-            if postfix && tcref.Typars(m) |> List.exists (fun tp -> match tp.Kind with TyparKind.Measure -> true | _ -> false) 
+            if postfix && tcref.Typars(m) |> Seq.exists (fun tp -> match tp.Kind with TyparKind.Measure -> true | _ -> false) 
             then error(Error(FSComp.SR.tcInvalidUnitsOfMeasurePrefix(), m))
             TcTypeApp cenv newOk checkCxs occ env tpenv m tcref [] args 
         | _, TyparKind.Measure ->
@@ -4517,7 +4517,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
         TcTypeApp cenv newOk checkCxs occ env tpenv m tcref tinst args 
 
     | SynType.Tuple(args,m) ->   
-        let isMeasure = match optKind with Some TyparKind.Measure -> true | None -> List.exists (fun (isquot,_) -> isquot) args | _ -> false
+        let isMeasure = match optKind with Some TyparKind.Measure -> true | None -> Seq.exists (fun (isquot,_) -> isquot) args | _ -> false
         if isMeasure then
             let ms,tpenv = TcMeasuresAsTuple cenv newOk checkCxs occ env tpenv args m
             TType_measure ms,tpenv
@@ -6260,7 +6260,7 @@ and TcRecordConstruction cenv overallTy env tpenv optOrigExpr objTy fldsList m =
     
     // Check all fields are bound
     fspecs |> Seq.iter (fun fspec ->
-      if not (fldsList |> List.exists (fun (fname,_) -> fname = fspec.Name)) then
+      if not (fldsList |> Seq.exists (fun (fname,_) -> fname = fspec.Name)) then
         error(Error(FSComp.SR.tcFieldRequiresAssignment(fspec.rfield_id.idText, fullDisplayTextOfTyconRef tcref),m)))
 
     // Other checks (overlap with above check now clear)
@@ -6356,7 +6356,7 @@ and FreshenObjExprAbstractSlot cenv (env: TcEnv) (implty:TType) virtNameAndArity
             let tcref = tcrefOfAppTy cenv.g implty
             let containsNonAbstractMemberWithSameName = 
                 tcref.MembersOfFSharpTyconByName
-                |> Seq.exists (fun kv -> kv.Value |> List.exists (fun valRef -> valRef.DisplayName = bindName))
+                |> Seq.exists (fun kv -> kv.Value |> Seq.exists (fun valRef -> valRef.DisplayName = bindName))
 
             let suggestVirtualMembers() =
                 virtNameAndArityPairs
@@ -7413,7 +7413,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
             ((fun m ->
                   let (patvs: Val list, env) = varSpace.Force m 
                   let vs, envinner = f m env 
-                  let patvs = List.append patvs (vs |> List.filter (fun v -> not (patvs |> List.exists (fun v2 -> v.LogicalName = v2.LogicalName))))
+                  let patvs = List.append patvs (vs |> List.filter (fun v -> not (patvs |> Seq.exists (fun v2 -> v.LogicalName = v2.LogicalName))))
                   patvs, envinner), 
               id)
 
@@ -9181,7 +9181,7 @@ and TcMethodApplication
         match calledMeths with 
         | [calledMeth] when not isProp && calledMeth.NumArgs.Length > 1 ->
             [], NewInferenceType (),[ for x in curriedCallerArgs -> DelayedApp(ExprAtomicFlag.NonAtomic, x, x.Range) ] @ delayed
-        | _ when not isProp && calledMeths |> List.exists (fun calledMeth -> calledMeth.NumArgs.Length > 1) ->
+        | _ when not isProp && calledMeths |> Seq.exists (fun calledMeth -> calledMeth.NumArgs.Length > 1) ->
             // This condition should only apply when multiple conflicting curried extension members are brought into scope
             error(Error(FSComp.SR.tcOverloadsCannotHaveCurriedArguments(),mMethExpr))
         | _ -> 
@@ -9328,7 +9328,7 @@ and TcMethodApplication
                 let argTys = if isUnitTy cenv.g domainTy then [] else  tryDestRefTupleTy cenv.g domainTy
                 // Only apply this rule if a candidate method exists with this number of arguments
                 let argTys = 
-                    if candidates |> List.exists (CalledMethHasSingleArgumentGroupOfThisLength argTys.Length) then 
+                    if candidates |> Seq.exists (CalledMethHasSingleArgumentGroupOfThisLength argTys.Length) then 
                        argTys
                     else 
                        [domainTy]
@@ -9399,7 +9399,7 @@ and TcMethodApplication
                     let argTys = if isUnitTy cenv.g domainTy then [] else  tryDestRefTupleTy cenv.g domainTy
                     // Only apply this rule if a candidate method exists with this number of arguments
                     let argTys = 
-                        if candidates |> List.exists (CalledMethHasSingleArgumentGroupOfThisLength argTys.Length) then 
+                        if candidates |> Seq.exists (CalledMethHasSingleArgumentGroupOfThisLength argTys.Length) then 
                             argTys                                  
                         else
                             [domainTy]
@@ -11016,7 +11016,7 @@ and AnalyzeRecursiveInstanceMemberDecl (cenv,envinner: TcEnv, tpenv, declKind, s
 
          CheckForNonAbstractInterface declKind tcref memberFlags memberId.idRange 
          
-         // Determine if a uniquely-identified-override List.exists based on the information 
+         // Determine if a uniquely-identified-override Seq.exists based on the information 
          // at the member signature. If so, we know the type of this member, and the full slotsig 
          // it implements. Apply the inferred slotsig. 
          let optInferredImplSlotTys, declaredTypars = 
@@ -11999,7 +11999,7 @@ let TcOpenDecl tcSink (g:TcGlobals) amap m scopem env (longId : Ident list)  =
            errorR(Error(FSComp.SR.tcModuleRequiresQualifiedAccess(fullDisplayTextOfModRef modref),m)))
 
     // Bug FSharp 1.0 3133: 'open Lexing'. Skip this warning if we successfully resolved to at least a module name
-    if not (modrefs |> List.exists (fun (_,modref,_) -> modref.IsModule && not (HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute modref.Attribs))) then
+    if not (modrefs |> Seq.exists (fun (_,modref,_) -> modref.IsModule && not (HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute modref.Attribs))) then
         modrefs |> Seq.iter (fun (_,modref,_) ->
             if IsPartiallyQualifiedNamespace modref  then 
                  errorR(Error(FSComp.SR.tcOpenUsedWithPartiallyQualifiedPath(fullDisplayTextOfModRef modref),m)))
@@ -13009,7 +13009,7 @@ module MutRecBindingChecking =
                     match defnAs with 
                     | (Phase2AIncrClassCtor _ as b1) :: rest -> 
                         let rest = 
-                            if rest |> List.exists (function Phase2AIncrClassCtorJustAfterSuperInit -> true | _ -> false) then 
+                            if rest |> Seq.exists (function Phase2AIncrClassCtorJustAfterSuperInit -> true | _ -> false) then 
                                 rest
                             else
                                 Phase2AIncrClassCtorJustAfterSuperInit :: rest
@@ -13021,7 +13021,7 @@ module MutRecBindingChecking =
                                 | Phase2AOpen _ 
 #endif
                                 | Phase2AIncrClassCtor _ | Phase2AInherit _ | Phase2AIncrClassCtorJustAfterSuperInit -> false
-                                | Phase2AIncrClassBindings (_,binds,_,_,_) -> binds |> List.exists (function (Binding (_,DoBinding,_,_,_,_,_,_,_,_,_,_)) -> true | _ -> false)
+                                | Phase2AIncrClassBindings (_,binds,_,_,_) -> binds |> Seq.exists (function (Binding (_,DoBinding,_,_,_,_,_,_,_,_,_,_)) -> true | _ -> false)
                                 | Phase2AIncrClassCtorJustAfterLastLet
                                 | Phase2AMember _ -> true
                             let restRev = List.rev rest
@@ -13337,11 +13337,11 @@ module MutRecBindingChecking =
                         
                         // We only need safe static init checks if there are some static field bindings (actually, we look for non-method bindings)
                         let hasStaticBindings = 
-                            defnCs |> List.exists (function 
+                            defnCs |> Seq.exists (function 
                                 | Phase2CIncrClassBindings groups -> 
-                                    groups |> List.exists (function 
+                                    groups |> Seq.exists (function 
                                         | IncrClassBindingGroup(binds,isStatic,_) ->
-                                            isStatic && (binds |> List.exists (IncrClassReprInfo.IsMethodRepr cenv >> not)) 
+                                            isStatic && (binds |> Seq.exists (IncrClassReprInfo.IsMethodRepr cenv >> not)) 
                                         | _ -> false) 
                                 | _ -> false)
 
@@ -13759,7 +13759,7 @@ let TcMutRecDefns_Phase2 cenv envInitial bindsm scopem mutRecNSInfo (envMutRec: 
 
 module AddAugmentationDeclarations = 
     let tcaugHasNominalInterface g (tcaug: TyconAugmentation) tcref =
-        tcaug.tcaug_interfaces |> List.exists (fun (x,_,_) -> 
+        tcaug.tcaug_interfaces |> Seq.exists (fun (x,_,_) -> 
             isAppTy g x && tyconRefEq g (tcrefOfAppTy g x) tcref)
 
         
@@ -13910,12 +13910,12 @@ module TyconConstraintInference =
                 match tryDestTyparTy cenv.g ty with
                 | Some tp ->
                     // Look for an explicit 'comparison' constraint
-                    if tp.Constraints |> List.exists (function TyparConstraint.SupportsComparison _ -> true | _ -> false) then 
+                    if tp.Constraints |> Seq.exists (function TyparConstraint.SupportsComparison _ -> true | _ -> false) then 
                         true
                     
                     // Within structural types, type parameters can be optimistically assumed to have comparison
                     // We record the ones for which we have made this assumption.
-                    elif tycon.TyparsNoRange |> List.exists (fun tp2 -> typarRefEq tp tp2) then 
+                    elif tycon.TyparsNoRange |> Seq.exists (fun tp2 -> typarRefEq tp tp2) then 
                         assumedTyparsAcc := (!assumedTyparsAcc).Add(tp.Stamp)
                         true
                     
@@ -14035,12 +14035,12 @@ module TyconConstraintInference =
                 match tryDestTyparTy cenv.g ty with
                 | Some tp ->
                     // Look for an explicit 'equality' constraint
-                    if tp.Constraints |> List.exists (function TyparConstraint.SupportsEquality _ -> true | _ -> false) then 
+                    if tp.Constraints |> Seq.exists (function TyparConstraint.SupportsEquality _ -> true | _ -> false) then 
                         true
 
                     // Within structural types, type parameters can be optimistically assumed to have ewquality
                     // We record the ones for which we have made this assumption.
-                    elif tycon.Typars(tycon.Range) |> List.exists (fun tp2 -> typarRefEq tp tp2) then                     
+                    elif tycon.Typars(tycon.Range) |> Seq.exists (fun tp2 -> typarRefEq tp tp2) then                     
                         assumedTyparsAcc := (!assumedTyparsAcc).Add(tp.Stamp)
                         true
                     else
@@ -15373,7 +15373,7 @@ module EstablishTypeDefinitionCores =
             // Record edge (tycon,tycon2), only when tycon2 is an "initial" tycon.
             let insertEdgeToTycon tycon2 acc = 
                 if ListSet.contains (===) tycon2 tycons && // note: only add if tycon2 is initial
-                    not (List.exists (fun (tc,tc2) -> tc === tycon && tc2 === tycon2) acc)  // note: only add if (tycon,tycon2) not already an edge
+                    not (Seq.exists (fun (tc,tc2) -> tc === tycon && tc2 === tycon2) acc)  // note: only add if (tycon,tycon2) not already an edge
                 then
                     (tycon,tycon2)::acc
                 else acc // note: all edges added are (tycon,_)
@@ -15419,7 +15419,7 @@ module EstablishTypeDefinitionCores =
 
             // collect edges from the fields of a given struct type.
             and accStructFields includeStaticFields ty (structTycon:Tycon) tinst (doneTypes,acc) =
-                if List.exists (typeEquiv cenv.g ty) doneTypes then
+                if Seq.exists (typeEquiv cenv.g ty) doneTypes then
                     // This type (type instance) has been seen before, so no need to collect the same edges again (and avoid loops!)
                     doneTypes,acc 
                 else
@@ -15894,7 +15894,7 @@ module TcDeclarations =
                 preMembers @ postMembers
 
             let isConcrete = 
-                members |> List.exists (function 
+                members |> Seq.exists (function 
                     | SynMemberDefn.Member(Binding(_,_,_,_,_,_,SynValData(Some memberFlags,_,_),_,_,_,_,_),_) -> not memberFlags.IsDispatchSlot 
                     | SynMemberDefn.Interface (_,defOpt,_) -> Option.isSome defOpt
                     | SynMemberDefn.LetBindings _ -> true
@@ -15903,12 +15903,12 @@ module TcDeclarations =
                     | _ -> false)
 
             let isIncrClass = 
-                members |> List.exists (function 
+                members |> Seq.exists (function 
                     | SynMemberDefn.ImplicitCtor _ -> true
                     | _ -> false)
 
             let hasSelfReferentialCtor = 
-                members |> List.exists (function 
+                members |> Seq.exists (function 
                     | SynMemberDefn.ImplicitCtor (_,_,_,thisIdOpt,_) 
                     | SynMemberDefn.Member(Binding(_,_,_,_,_,_,SynValData(_,_,thisIdOpt),_,_,_,_,_),_) -> thisIdOpt.IsSome
                     | _ -> false)
@@ -15921,7 +15921,7 @@ module TcDeclarations =
             // An ugly bit of code to pre-determine if a type has a nullary constructor, prior to establishing the 
             // members of the type
             let preEstablishedHasDefaultCtor = 
-                members |> List.exists (function 
+                members |> Seq.exists (function 
                     | SynMemberDefn.Member(Binding(_,_,_,_,_,_,SynValData(Some memberFlags,_,_),SynPatForConstructorDecl(SynPatForNullaryArgs),_,_,_,_),_) -> 
                         memberFlags.MemberKind=MemberKind.Constructor 
                     | SynMemberDefn.ImplicitCtor (_,_,spats,_, _) -> isNil spats
@@ -16032,14 +16032,14 @@ module TcDeclarations =
                                                           | SynMemberSig.NestedType  (_,m) -> error(Error(FSComp.SR.tcTypesCannotContainNestedTypes(),m)); false
                                                           | _ -> false)
             let isConcrete = 
-                members |> List.exists (function 
+                members |> Seq.exists (function 
                     | SynMemberSig.Member (_,memberFlags,_) -> memberFlags.MemberKind=MemberKind.Constructor 
                     | _ -> false)
 
             // An ugly bit of code to pre-determine if a type has a nullary constructor, prior to establishing the 
             // members of the type
             let preEstablishedHasDefaultCtor = 
-                members |> List.exists (function 
+                members |> Seq.exists (function 
                     | SynMemberSig.Member (valSpfn,memberFlags,_) -> 
                         memberFlags.MemberKind=MemberKind.Constructor  && 
                         // REVIEW: This is a syntactic approximation
@@ -16839,7 +16839,7 @@ let CheckValueRestriction denvAtEnd rootSigOpt implFileTypePriorToSig m =
           for v in mty.AllValsAndMembers do
               let ftyvs = (freeInVal CollectTyparsNoCaching v).FreeTypars |> Zset.elements
               if (not v.IsCompilerGenerated && 
-                  not (ftyvs |> List.exists (fun tp -> tp.IsFromError)) && 
+                  not (ftyvs |> Seq.exists (fun tp -> tp.IsFromError)) && 
                   // Do not apply the value restriction to methods and functions
                   // Note, normally these completely generalize their argument types anyway. However,
                   // some methods (property getters/setters, constructors) can't be as generic

@@ -1114,11 +1114,11 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
         // It is impossible to decide for sure if we're in one of those two cases, so we must err conservatively if we might be.
         let thereIsACtxtMemberBodyOnTheStackAndWeShouldPopStackForUpcomingMember ctxtStack = 
             // a 'member' starter keyword is coming; should we pop?
-            if not(List.exists (function CtxtMemberBody _ -> true | _ -> false) ctxtStack) then
+            if not(Seq.exists (function CtxtMemberBody _ -> true | _ -> false) ctxtStack) then
                 false // no member currently on the stack, nothing to pop
             else
                 // there is a member context
-                if List.exists (function CtxtParen(LBRACE,_) -> true | _ -> false) ctxtStack then
+                if Seq.exists (function CtxtParen(LBRACE,_) -> true | _ -> false) ctxtStack then
                     false  // an LBRACE could mean an object expression, and object expressions can have 'member' tokens in them, so do not pop, to be safe
                 elif List.count (function CtxtParen(LPAREN,_) -> true | _ -> false) ctxtStack >= 2 then
                     false  // static member constraints always are embedded in at least two LPARENS, so do not pop, to be safe

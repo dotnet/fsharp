@@ -406,7 +406,7 @@ type CalledMeth<'T>
 
     member x.HasOptArgs             = not (isNil x.UnnamedCalledOptArgs)
     member x.HasOutArgs             = not (isNil x.UnnamedCalledOutArgs)
-    member x.UsesParamArrayConversion = x.ArgSets |> List.exists (fun argSet -> argSet.ParamArrayCalledArgOpt.IsSome)
+    member x.UsesParamArrayConversion = x.ArgSets |> Seq.exists (fun argSet -> argSet.ParamArrayCalledArgOpt.IsSome)
     member x.ParamArrayCalledArgOpt = x.ArgSets |> List.tryPick (fun argSet -> argSet.ParamArrayCalledArgOpt)
     member x.ParamArrayCallerArgs = x.ArgSets |> List.tryPick (fun argSet -> if Option.isSome argSet.ParamArrayCalledArgOpt then Some argSet.ParamArrayCallerArgs else None )
     member x.ParamArrayElementType = 
@@ -801,7 +801,7 @@ let BuildNewDelegateExpr (eventInfoOpt:EventInfo option, g, amap, delegateTy, in
         match lambdaContents with 
         | None -> 
         
-            if List.exists (isByrefTy g) delArgTys then
+            if Seq.exists (isByrefTy g) delArgTys then
                     error(Error(FSComp.SR.tcFunctionRequiresExplicitLambda(List.length delArgTys),m)) 
 
             let delArgVals = delArgTys |> List.map (fun argty -> fst (mkCompGenLocal m "delegateArg" argty)) 

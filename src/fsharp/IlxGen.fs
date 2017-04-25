@@ -1682,7 +1682,7 @@ let rec FirstEmittedCodeWillBeSequencePoint g sp expr =
             FirstEmittedCodeWillBeSequencePoint g sp bind.Expr || 
             (BindingEmitsNoCode g bind && FirstEmittedCodeWillBeSequencePoint g sp body)
         | Expr.LetRec(binds,body,_,_) -> 
-            binds |> List.exists (BindingEmitsSequencePoint g) || 
+            binds |> Seq.exists (BindingEmitsSequencePoint g) || 
             (binds |> List.forall (BindingEmitsNoCode g) && FirstEmittedCodeWillBeSequencePoint g sp body)
         | Expr.Sequential (_, _, NormalSeq,spSeq,_) -> 
             match spSeq with 
@@ -1712,7 +1712,7 @@ let AlwaysSuppressSequencePoint g sp expr =
         
         // We suppress sequence points at invisible let bindings even if they are requested by SPAlways.
         | Expr.Let (bind,_,_,_) when bindIsInvisible bind -> true
-        | Expr.LetRec(binds,_,_,_) when (binds |> List.exists bindHasSeqPt) || (binds |> List.forall bindIsInvisible) -> true
+        | Expr.LetRec(binds,_,_,_) when (binds |> Seq.exists bindHasSeqPt) || (binds |> List.forall bindIsInvisible) -> true
 
         // We always suppress at sequential where the sequence point is missing. We need to document better why.
         | Expr.Sequential _ -> true 
@@ -2571,7 +2571,7 @@ and GenApp cenv cgbuf eenv (f,fty,tyargs,args,m) sequel =
           let isTailCall = 
               if isNil laterArgs && not isSelfInit then 
                   let isDllImport = IsValRefIsDllImport cenv.g vref
-                  let hasByrefArg = mspec.FormalArgTypes |> List.exists (function ILType.Byref _ -> true | _ -> false)
+                  let hasByrefArg = mspec.FormalArgTypes |> Seq.exists (function ILType.Byref _ -> true | _ -> false)
                   let makesNoCriticalTailcalls = vref.MakesNoCriticalTailcalls 
                   CanTailcall((boxity=AsValue),ccallInfo,eenv.withinSEH,hasByrefArg,mustGenerateUnitAfterCall,isDllImport,isSelfInit,makesNoCriticalTailcalls,sequel)
               else Normalcall
@@ -3234,7 +3234,7 @@ and GenQuotation cenv cgbuf eenv (ast,conv,m,ety) sequel =
 //-------------------------------------------------------------------------- 
 
 and GenILCall cenv cgbuf eenv (virt,valu,newobj,valUseFlags,isDllImport,ilMethRef:ILMethodRef,enclArgTys,methArgTys,argExprs,returnTys,m) sequel =
-    let hasByrefArg  =  ilMethRef.ArgTypes |> List.exists IsILTypeByref
+    let hasByrefArg  =  ilMethRef.ArgTypes |> Seq.exists IsILTypeByref
     let isSuperInit = match valUseFlags with CtorValUsedAsSuperInit -> true | _ -> false
     let isBaseCall = match valUseFlags with VSlotDirectCall -> true | _ -> false
     let ccallInfo = match valUseFlags with PossibleConstrainedCall ty -> Some ty | _ -> None
@@ -3374,9 +3374,9 @@ and GenDefaultValue cenv cgbuf eenv (ty,m) =
 
 and GenGenericParam cenv eenv (tp:Typar) = 
     let subTypeConstraints             = tp.Constraints |> List.choose (function | TyparConstraint.CoercesTo(ty,_) -> Some(ty) | _ -> None) |> List.map (GenTypeAux cenv.amap tp.Range eenv.tyenv VoidNotOK PtrTypesNotOK)
-    let refTypeConstraint              = tp.Constraints |> List.exists (function TyparConstraint.IsReferenceType _ -> true | TyparConstraint.SupportsNull _ -> true | _ -> false)
-    let notNullableValueTypeConstraint = tp.Constraints |> List.exists (function TyparConstraint.IsNonNullableStruct _ -> true | _ -> false)
-    let defaultConstructorConstraint   = tp.Constraints |> List.exists (function TyparConstraint.RequiresDefaultConstructor _ -> true | _ -> false)
+    let refTypeConstraint              = tp.Constraints |> Seq.exists (function TyparConstraint.IsReferenceType _ -> true | TyparConstraint.SupportsNull _ -> true | _ -> false)
+    let notNullableValueTypeConstraint = tp.Constraints |> Seq.exists (function TyparConstraint.IsNonNullableStruct _ -> true | _ -> false)
+    let defaultConstructorConstraint   = tp.Constraints |> Seq.exists (function TyparConstraint.RequiresDefaultConstructor _ -> true | _ -> false)
     { Name= 
 
           // use the CompiledName if given
@@ -4604,7 +4604,7 @@ and GenLetRec cenv cgbuf eenv (binds,body,m) sequel =
     let eenv = AllocStorageForBinds cenv cgbuf scopeMarks eenv binds
     GenLetRecBinds cenv cgbuf eenv (binds,m)
     
-    let sp = if List.exists (BindingEmitsSequencePoint cenv.g) binds then SPAlways else SPSuppress 
+    let sp = if Seq.exists (BindingEmitsSequencePoint cenv.g) binds then SPAlways else SPSuppress 
     GenExpr cenv cgbuf eenv sp body (EndLocalScope(sequel,endScope))
 
 //-------------------------------------------------------------------------
@@ -6578,7 +6578,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                         
                         // All structs are sequential by default 
                         // Structs with no instance fields get size 1, pack 0
-                        if tycon.AllFieldsAsList |> List.exists (fun f -> not f.IsStatic) ||
+                        if tycon.AllFieldsAsList |> Seq.exists (fun f -> not f.IsStatic) ||
                             // Reflection emit doesn't let us emit 'pack' and 'size' for generic structs.
                             // In that case we generate a dummy field instead
                            (cenv.opts.workAroundReflectionEmitBugs && not tycon.TyparsNoRange.IsEmpty) 
@@ -6690,7 +6690,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
         // order in the sequential initialization of the file.
         //
         // In this case, the .cctor for this type must force the .cctor of the backing static class for the file.
-        if tycon.TyparsNoRange.IsEmpty && tycon.MembersOfFSharpTyconSorted |> List.exists (fun vref -> vref.Deref.IsClassConstructor) then
+        if tycon.TyparsNoRange.IsEmpty && tycon.MembersOfFSharpTyconSorted |> Seq.exists (fun vref -> vref.Deref.IsClassConstructor) then
           GenForceWholeFileInitializationAsPartOfCCtor cenv mgbuf lazyInitInfo tref m
 
 

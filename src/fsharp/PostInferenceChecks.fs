@@ -1454,15 +1454,15 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                 && (minfo.IsInstance = minfo2.IsInstance)
                 && MethInfosEquivWrtUniqueness erasureFlag m minfo minfo2
 
-            if others |> List.exists (checkForDup EraseAll) then 
-                if others |> List.exists (checkForDup EraseNone) then 
+            if others |> Seq.exists (checkForDup EraseAll) then 
+                if others |> Seq.exists (checkForDup EraseNone) then 
                     errorR(Error(FSComp.SR.chkDuplicateMethod(nm),m))
                 else
                     errorR(Error(FSComp.SR.chkDuplicateMethodWithSuffix(nm),m))
 
             let numCurriedArgSets = minfo.NumArgs.Length
 
-            if numCurriedArgSets > 1 && others |> List.exists (fun minfo2 -> not (IsAbstractDefaultPair2 minfo minfo2)) then 
+            if numCurriedArgSets > 1 && others |> Seq.exists (fun minfo2 -> not (IsAbstractDefaultPair2 minfo minfo2)) then 
                 errorR(Error(FSComp.SR.chkDuplicateMethodCurried nm,m))
 
             if numCurriedArgSets > 1 && 
@@ -1516,8 +1516,8 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                  not (IsAbstractDefaultPair pinfo pinfo2 || IsAbstractDefaultPair pinfo2 pinfo)
                  && PropInfosEquivByNameAndPartialSig erasureFlag cenv.g cenv.amap m pinfo pinfo2 (* partial ignores return type *)
 
-            if others |> List.exists (checkForDup EraseAll) then
-                if others |> List.exists (checkForDup EraseNone) then 
+            if others |> Seq.exists (checkForDup EraseAll) then
+                if others |> Seq.exists (checkForDup EraseNone) then 
                     errorR(Error(FSComp.SR.chkDuplicateProperty(nm) ,m))
                 else
                     errorR(Error(FSComp.SR.chkDuplicatePropertyWithSuffix(nm) ,m))
@@ -1530,7 +1530,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                   setterArgs.Length <> getterArgs.Length)
                 || 
                  (let nargs = pinfo.GetParamTypes(cenv.amap,m).Length
-                  others |> List.exists (fun pinfo2 -> (isNil(pinfo2.GetParamTypes(cenv.amap,m))) <> (nargs = 0)))) then 
+                  others |> Seq.exists (fun pinfo2 -> (isNil(pinfo2.GetParamTypes(cenv.amap,m))) <> (nargs = 0)))) then 
                   
                   errorR(Error(FSComp.SR.chkPropertySameNameIndexer(nm),m))
 
@@ -1560,7 +1560,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                     | None -> ()
                     | Some minfo ->
                         let mtext = NicePrint.stringOfMethInfo cenv.amap m cenv.denv minfo
-                        if parentMethsOfSameName |> List.exists (checkForDup EraseNone) then 
+                        if parentMethsOfSameName |> Seq.exists (checkForDup EraseNone) then 
                             warning(Error(FSComp.SR.tcNewMemberHidesAbstractMember(mtext),m))
                         else
                             warning(Error(FSComp.SR.tcNewMemberHidesAbstractMemberWithSuffix(mtext),m))
@@ -1573,8 +1573,8 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                     let checkForDup erasureFlag minfo2 = MethInfosEquivByNameAndSig erasureFlag true cenv.g cenv.amap m minfo minfo2
                     //if minfo.NumArgs.Length > 1 then 
                     //    warning(Error(sprintf "Abstract methods taking curried arguments Duplicate method. The method '%s' has curried arguments but has the same name as another method in this type. Methods with curried arguments may not be overloaded" nm,(match minfo.ArbitraryValRef with None -> m | Some vref -> vref.DefinitionRange)))
-                    if parentMethsOfSameName |> List.exists (checkForDup EraseAll) then
-                        if parentMethsOfSameName |> List.exists (checkForDup EraseNone) then 
+                    if parentMethsOfSameName |> Seq.exists (checkForDup EraseAll) then
+                        if parentMethsOfSameName |> Seq.exists (checkForDup EraseNone) then 
                             errorR(Error(FSComp.SR.chkDuplicateMethodInheritedType(nm),m))
                         else
                             errorR(Error(FSComp.SR.chkDuplicateMethodInheritedTypeWithSuffix(nm),m))

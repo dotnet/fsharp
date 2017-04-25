@@ -244,7 +244,7 @@ let RefuteDiscrimSet g m path discrims =
              (* Choose the first ucref based on ordering of names *)
              let others = 
                  tcref.UnionCasesAsRefList 
-                 |> List.filter (fun ucref -> not (List.exists (g.unionCaseRefEq ucref) ucrefs)) 
+                 |> List.filter (fun ucref -> not (Seq.exists (g.unionCaseRefEq ucref) ucrefs)) 
                  |> List.sortBy (fun ucref -> ucref.CaseName)
              match others with 
              | [] -> raise CannotRefute
@@ -313,7 +313,7 @@ let ShowCounterExample g denv m refuted =
               if verbose then dprintf "h = %s\n" (Layout.showL (exprL h))
               Seq.fold (CombineRefutations g) h t
       let text = Layout.showL (NicePrint.dataExprL denv counterExample)
-      let failingWhenClause = refuted |> List.exists (function RefutedWhenClause -> true | _ -> false)
+      let failingWhenClause = refuted |> Seq.exists (function RefutedWhenClause -> true | _ -> false)
       Some(text,failingWhenClause)
       
     with 
@@ -633,7 +633,7 @@ let rec isPatternPartial p =
     | TPat_disjs (ps,_) | TPat_conjs(ps,_) 
     | TPat_tuple (_,ps,_,_) | TPat_exnconstr(_,ps,_) 
     | TPat_array (ps,_,_) | TPat_unioncase (_,_,ps,_)
-    | TPat_recd (_,_,ps,_) -> List.exists isPatternPartial ps
+    | TPat_recd (_,_,ps,_) -> Seq.exists isPatternPartial ps
     | TPat_range _ -> false
     | TPat_null _ -> false
     | TPat_isinst _ -> false
@@ -933,7 +933,7 @@ let CompilePatternBasic
 
         ([],simulSetOfEdgeDiscrims) ||> List.collectFold (fun taken (EdgeDiscrim(i',discrim,m)) -> 
              // Check to see if we've already collected the edge for this case, in which case skip it. 
-             if List.exists (isDiscrimSubsumedBy g amap m discrim) taken  then 
+             if Seq.exists (isDiscrimSubsumedBy g amap m discrim) taken  then 
                  // Skip this edge: it is refuted 
                  ([],taken) 
              else 
@@ -1003,7 +1003,7 @@ let CompilePatternBasic
             isMemOfActives path active' &&
             let p = lookupActive path active' |> snd
             match getDiscrimOfPattern p with 
-            | Some(discrim) -> List.exists (isDiscrimSubsumedBy g amap exprm discrim) simulSetOfDiscrims 
+            | Some(discrim) -> Seq.exists (isDiscrimSubsumedBy g amap exprm discrim) simulSetOfDiscrims 
             | None -> false
 
         match simulSetOfDiscrims with 
@@ -1242,7 +1242,7 @@ let isPartialOrWhenClause (c:TypedMatchClause) = isPatternPartial c.Pattern || c
 
 let rec CompilePattern  g denv amap exprm matchm warnOnUnused actionOnFailure (topv,topgtvs) (clausesL: TypedMatchClause list) inputTy resultTy =
   match clausesL with 
-  | _ when List.exists isPartialOrWhenClause clausesL ->
+  | _ when Seq.exists isPartialOrWhenClause clausesL ->
         // Partial clauses cause major code explosion if treated naively 
         // Hence treat any pattern matches with any partial clauses clause-by-clause 
         

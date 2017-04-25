@@ -237,7 +237,7 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, setProcessThreadLocals,
     let inputFilesRef   = ref ([] : string list)
     let collect name = 
         let lower = String.lowercase name
-        if List.exists (Filename.checkSuffix lower) [".resx"]  then
+        if Seq.exists (Filename.checkSuffix lower) [".resx"]  then
             error(Error(FSComp.SR.fscResxSourceFileDeprecated name, rangeStartup))
         else
             inputFilesRef := name :: !inputFilesRef
@@ -299,7 +299,7 @@ module InterfaceFileWriter =
             if tcConfig.printSignatureFile="" then Console.Out
             else (File.CreateText tcConfig.printSignatureFile :> TextWriter)
 
-        if tcConfig.printSignatureFile <> "" && not (List.exists (Filename.checkSuffix tcConfig.printSignatureFile) FSharpLightSyntaxFileSuffixes) then
+        if tcConfig.printSignatureFile <> "" && not (Seq.exists (Filename.checkSuffix tcConfig.printSignatureFile) FSharpLightSyntaxFileSuffixes) then
             fprintfn os "#light" 
             fprintfn os "" 
 
@@ -1082,11 +1082,11 @@ module StaticLinker =
             | None -> ()  
                 
             // Check we're not static linking a .EXE
-            if dependentILModules |> List.exists (fun (_, x) -> not x.IsDLL)  then 
+            if dependentILModules |> Seq.exists (fun (_, x) -> not x.IsDLL)  then 
                 error(Error(FSComp.SR.fscStaticLinkingNoEXE(), rangeStartup))
 
             // Check we're not static linking something that is not pure IL
-            if dependentILModules |> List.exists (fun (_, x) -> not x.IsILOnly)  then 
+            if dependentILModules |> Seq.exists (fun (_, x) -> not x.IsILOnly)  then 
                 error(Error(FSComp.SR.fscStaticLinkingNoMixedDLL(), rangeStartup))
 
             // The set of short names for the all dependent assemblies
@@ -1194,7 +1194,7 @@ module StaticLinker =
             let fakeModule = mkILSimpleModule "" "" true (4, 0) false (mkILTypeDefs tdefs2) None None 0 (mkILExportedTypes []) ""
             let fakeModule = 
                   fakeModule |> Morphs.morphILTypeRefsInILModuleMemoized ilGlobals (fun tref -> 
-                      if MainModuleBuilder.injectedCompatTypes.Contains(tref.Name)  || (tref.Enclosing  |> List.exists (fun x -> MainModuleBuilder.injectedCompatTypes.Contains(x))) then 
+                      if MainModuleBuilder.injectedCompatTypes.Contains(tref.Name)  || (tref.Enclosing  |> Seq.exists (fun x -> MainModuleBuilder.injectedCompatTypes.Contains(x))) then 
                           tref
                           //|> Morphs.morphILScopeRefsInILTypeRef (function ILScopeRef.Local -> ilGlobals.mscorlibScopeRef | x -> x) 
                       // The implementations of Tuple use two private methods from System.Environment to get a resource string. Remap it

@@ -944,9 +944,9 @@ let inline AddFunctionSizes l = l |> List.sumBy (fun x -> x.FunctionSize)
 //-------------------------------------------------------------------------
 // opt list/array combinators - zipping (_,_) return type
 //------------------------------------------------------------------------- 
-let inline OrEffects l = List.exists (fun x -> x.HasEffect) l
+let inline OrEffects l = Seq.exists (fun x -> x.HasEffect) l
 
-let inline OrTailcalls l = List.exists (fun x -> x.MightMakeCriticalTailcall) l
+let inline OrTailcalls l = Seq.exists (fun x -> x.MightMakeCriticalTailcall) l
         
 let OptimizeList f l = l |> List.map f |> List.unzip 
 
@@ -1069,10 +1069,10 @@ let AbstractExprInfoByVars (boundVars:Val list,boundTyVars) ivalue =
           match ivalue with 
           // Check for escaping value. Revert to old info if possible  
           | ValValue (VRefLocal v2,detail) when  
-            (not (isNil boundVars) && List.exists (valEq v2) boundVars) || 
+            (not (isNil boundVars) && Seq.exists (valEq v2) boundVars) || 
             (not (isNil boundTyVars) &&
              let ftyvs = freeInVal CollectTypars v2
-             List.exists (Zset.memberOf ftyvs.FreeTypars) boundTyVars) -> 
+             Seq.exists (Zset.memberOf ftyvs.FreeTypars) boundTyVars) -> 
 
              // hiding value when used in expression 
               abstractExprInfo detail
@@ -1084,8 +1084,8 @@ let AbstractExprInfoByVars (boundVars:Val list,boundTyVars) ivalue =
           // Check for escape in lambda 
           | CurriedLambdaValue (_,_,_,expr,_) | ConstExprValue(_,expr)  when 
             (let fvs = freeInExpr (if isNil boundTyVars then CollectLocals else CollectTyparsAndLocals) expr
-             (not (isNil boundVars) && List.exists (Zset.memberOf fvs.FreeLocals) boundVars) ||
-             (not (isNil boundTyVars) && List.exists (Zset.memberOf fvs.FreeTyvars.FreeTypars) boundTyVars) ||
+             (not (isNil boundVars) && Seq.exists (Zset.memberOf fvs.FreeLocals) boundVars) ||
+             (not (isNil boundTyVars) && Seq.exists (Zset.memberOf fvs.FreeTyvars.FreeTypars) boundTyVars) ||
              (fvs.UsesMethodLocalConstructs )) ->
               
               // Trimming lambda
@@ -1095,7 +1095,7 @@ let AbstractExprInfoByVars (boundVars:Val list,boundTyVars) ivalue =
           | ConstValue(_,ty) when 
             (not (isNil boundTyVars) && 
              (let ftyvs = freeInType CollectTypars ty
-              List.exists (Zset.memberOf ftyvs.FreeTypars) boundTyVars)) ->
+              Seq.exists (Zset.memberOf ftyvs.FreeTypars) boundTyVars)) ->
               UnknownValue
 
           // Otherwise check all sub-values 
@@ -1227,7 +1227,7 @@ let IlAssemblyCodeInstrHasEffect i =
     | I_ldstr _ | I_ldtoken _  -> false
     | _ -> true
   
-let IlAssemblyCodeHasEffect instrs = List.exists IlAssemblyCodeInstrHasEffect instrs
+let IlAssemblyCodeHasEffect instrs = Seq.exists IlAssemblyCodeInstrHasEffect instrs
 
 //-------------------------------------------------------------------------
 // Effects
@@ -1255,8 +1255,8 @@ let rec ExprHasEffect g expr =
     | Expr.Let(bind,body,_,_) -> BindingHasEffect g bind || ExprHasEffect g body
     // REVIEW: could add Expr.Obj on an interface type - these are similar to records of lambda expressions 
     | _ -> true
-and ExprsHaveEffect g exprs = List.exists (ExprHasEffect g) exprs
-and BindingsHaveEffect g binds = List.exists (BindingHasEffect g) binds
+and ExprsHaveEffect g exprs = Seq.exists (ExprHasEffect g) exprs
+and BindingsHaveEffect g binds = Seq.exists (BindingHasEffect g) binds
 and BindingHasEffect g bind = bind.Expr |> ExprHasEffect g
 and OpHasEffect g op = 
     match op with 
@@ -2503,7 +2503,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list,args: Expr list,m) =
         // Don't inline recursively! 
         not (Zset.contains lambdaId env.dontInline) &&
         (// Check the number of argument groups is enough to saturate the lambdas of the target. 
-         (if tyargs |> List.exists (fun t -> match t with TType_measure _ -> false | _ -> true) then 1 else 0) + args.Length = arities &&
+         (if tyargs |> Seq.exists (fun t -> match t with TType_measure _ -> false | _ -> true) then 1 else 0) + args.Length = arities &&
           (// Enough args
            (if size > cenv.settings.lambdaInlineThreshold + args.Length then
               // Not inlining lambda near, size too big
@@ -2539,7 +2539,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list,args: Expr list,m) =
         let isSecureMethod =
           match finfo.Info with
           |  ValValue(vref,_) ->
-                vref.Attribs |> List.exists (fun a -> (IsSecurityAttribute cenv.g cenv.amap cenv.casApplied a m) || (IsSecurityCriticalAttribute cenv.g a))
+                vref.Attribs |> Seq.exists (fun a -> (IsSecurityAttribute cenv.g cenv.amap cenv.casApplied a m) || (IsSecurityCriticalAttribute cenv.g a))
           | _ -> false                              
 
         if isSecureMethod then None else

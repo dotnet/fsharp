@@ -477,7 +477,7 @@ module Pass2_DetermineReqdItems =
         {state with stack = List.map logIntoFrame state.stack}
 
     let LogShortCall gv state =
-        if state.stack  |> List.exists (fun (fclass,_reqdVals0,_env) ->  fclass.Contains gv) then
+        if state.stack  |> Seq.exists (fun (fclass,_reqdVals0,_env) ->  fclass.Contains gv) then
            if verboseTLR then dprintf "shortCall:     rec: %s\n" gv.LogicalName
            // Have short call to gv within it's (mutual) definition(s) 
            {state with

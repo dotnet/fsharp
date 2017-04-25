@@ -63,7 +63,7 @@ let IsAccessible ad taccess =
     | AccessibleFromSomeFSharpCode -> canAccessFromSomewhere taccess
     | AccessibleFromSomewhere -> true
     | AccessibleFrom (cpaths,_tcrefViewedFromOption) -> 
-        List.exists (canAccessFrom taccess) cpaths
+        Seq.exists (canAccessFrom taccess) cpaths
 
 /// Indicates if an IL member is accessible (ignoring its enclosing type)
 let private IsILMemberAccessible g amap m (tcrefOfViewedItem : TyconRef) ad access = 

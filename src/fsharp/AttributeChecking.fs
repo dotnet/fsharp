@@ -453,7 +453,7 @@ let MethInfoIsUnseen g m typ minfo =
         // just to look at the attributes on IL methods.
         if tcref.IsILTycon then 
                 tcref.ILTyconRawMetadata.CustomAttrs.AsList 
-                |> List.exists (fun attr -> attr.Method.EnclosingType.TypeSpec.Name = typeof<TypeProviderEditorHideMethodsAttribute>.FullName)
+                |> Seq.exists (fun attr -> attr.Method.EnclosingType.TypeSpec.Name = typeof<TypeProviderEditorHideMethodsAttribute>.FullName)
         else 
             false
 #else

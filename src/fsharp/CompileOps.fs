@@ -1074,7 +1074,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
          
                   
                   // Canonicalize the categories and check for a unique category
-                  ctxt.ReducibleProductions |> List.exists (fun prods -> 
+                  ctxt.ReducibleProductions |> Seq.exists (fun prods -> 
                       match prods 
                             |> List.map Parser.prodIdxToNonTerminal 
                             |> List.map (function 
@@ -2316,7 +2316,7 @@ type TcConfigBuilder =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
         if sourceFiles = [] then errorR(Error(FSComp.SR.buildNoInputsSpecified(),rangeCmdArgs))
         let ext() = match tcConfigB.target with Dll -> ".dll" | Module -> ".netmodule" | ConsoleExe | WinExe -> ".exe"
-        let implFiles = sourceFiles |> List.filter (fun lower -> List.exists (Filename.checkSuffix (String.lowercase lower)) FSharpImplFileSuffixes)
+        let implFiles = sourceFiles |> List.filter (fun lower -> Seq.exists (Filename.checkSuffix (String.lowercase lower)) FSharpImplFileSuffixes)
         let outfile = 
             match tcConfigB.outputFile, List.rev implFiles with 
             | None,[] -> "out" + ext()
@@ -2401,7 +2401,7 @@ type TcConfigBuilder =
     member tcConfigB.AddReferencedAssemblyByPath (m,path) = 
         if FileSystem.IsInvalidPathShim(path) then
             warning(Error(FSComp.SR.buildInvalidAssemblyName(path),m))
-        elif not (tcConfigB.referencedDLLs  |> List.exists (fun ar2 -> m=ar2.Range && path=ar2.Text)) then // NOTE: We keep same paths if range is different.
+        elif not (tcConfigB.referencedDLLs  |> Seq.exists (fun ar2 -> m=ar2.Range && path=ar2.Text)) then // NOTE: We keep same paths if range is different.
              let projectReference = tcConfigB.projectReferences |> List.tryPick (fun pr -> if pr.FileName = path then Some pr else None)
              tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs ++ AssemblyReference(m,path,projectReference)
              
@@ -2861,7 +2861,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member tcConfig.ComputeLightSyntaxInitialStatus(filename) = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
         let lower = String.lowercase filename
-        let lightOnByDefault = List.exists (Filename.checkSuffix lower) FSharpLightSyntaxFileSuffixes
+        let lightOnByDefault = Seq.exists (Filename.checkSuffix lower) FSharpLightSyntaxFileSuffixes
         if lightOnByDefault then (tcConfig.light <> Some(false)) else (tcConfig.light = Some(true) )
 
     member tcConfig.GetAvailableLoadedSources() =
@@ -2889,7 +2889,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member tcConfig.IsSystemAssembly (filename:string) =  
         try 
             FileSystem.SafeExists filename && 
-            ((tcConfig.GetTargetFrameworkDirectories() |> List.exists (fun clrRoot -> clrRoot = Path.GetDirectoryName filename)) ||
+            ((tcConfig.GetTargetFrameworkDirectories() |> Seq.exists (fun clrRoot -> clrRoot = Path.GetDirectoryName filename)) ||
              (systemAssemblies.Contains(fileNameWithoutExtension filename)))
         with _ ->
             false    
@@ -3113,7 +3113,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                     
             // O(N^2) here over a small set of referenced assemblies.
             let IsResolved(originalName:string) =
-                if resultingResolutions |> List.exists(fun resolution -> resolution.originalReference.Text = originalName) then true
+                if resultingResolutions |> Seq.exists(fun resolution -> resolution.originalReference.Text = originalName) then true
                 else 
                     // MSBuild resolution may have unified the result of two duplicate references. Try to re-resolve now.
                     // If re-resolution worked then this was a removed duplicate.
@@ -3188,7 +3188,7 @@ type ErrorLoggerFilteringByScopedPragmas (checkFile, scopedPragmas, errorLogger:
             let warningNum = GetDiagnosticNumber phasedError
             match GetRangeOfDiagnostic phasedError with 
             | Some m -> 
-                not (scopedPragmas |> List.exists (fun pragma ->
+                not (scopedPragmas |> Seq.exists (fun pragma ->
                     match pragma with 
                     | ScopedPragma.WarningOff(pragmaRange,warningNumFromPragma) -> 
                         warningNum = warningNumFromPragma && 
@@ -3214,7 +3214,7 @@ let CanonicalizeFilename filename =
 
 let IsScript filename = 
     let lower = String.lowercase filename 
-    FSharpScriptFileSuffixes |> List.exists (Filename.checkSuffix lower)
+    FSharpScriptFileSuffixes |> Seq.exists (Filename.checkSuffix lower)
     
 // Give a unique name to the different kinds of inputs. Used to correlate signature and implementation files
 //   QualFileNameOfModuleName - files with a single module declaration or an anonymous module
@@ -3273,7 +3273,7 @@ let PostParseModuleImpl (_i,defaultNamespace,isLastCompiland,filename,impl) =
     | ParsedImplFileFragment.AnonModule (defs,m)-> 
         let isLast, isExe = isLastCompiland 
         let lower = String.lowercase filename
-        if not (isLast && isExe) && not (doNotRequireNamespaceOrModuleSuffixes |> List.exists (Filename.checkSuffix lower)) then
+        if not (isLast && isExe) && not (doNotRequireNamespaceOrModuleSuffixes |> Seq.exists (Filename.checkSuffix lower)) then
             match defs with
             | SynModuleDecl.NestedModule(_) :: _ -> errorR(Error(FSComp.SR.noEqualSignAfterModule(),trimRangeToLine m))
             | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(),trimRangeToLine m))
@@ -3301,7 +3301,7 @@ let PostParseModuleSpec (_i,defaultNamespace,isLastCompiland,filename,intf) =
     | ParsedSigFileFragment.AnonModule (defs,m) -> 
         let isLast, isExe = isLastCompiland
         let lower = String.lowercase filename
-        if not (isLast && isExe) && not (doNotRequireNamespaceOrModuleSuffixes |> List.exists (Filename.checkSuffix lower)) then 
+        if not (isLast && isExe) && not (doNotRequireNamespaceOrModuleSuffixes |> Seq.exists (Filename.checkSuffix lower)) then 
             match defs with
             | SynModuleSigDecl.NestedModule(_) :: _ -> errorR(Error(FSComp.SR.noEqualSignAfterModule(),m))
             | _ -> errorR(Error(FSComp.SR.buildMultiFileRequiresNamespaceOrModule(),m))
@@ -3403,13 +3403,13 @@ let ParseInput (lexer,errorLogger:ErrorLogger,lexbuf:UnicodeLexing.Lexbuf,defaul
     let mutable scopedPragmas  = []
     try     
         let input = 
-            if mlCompatSuffixes |> List.exists (Filename.checkSuffix lower)   then  
+            if mlCompatSuffixes |> Seq.exists (Filename.checkSuffix lower)   then  
                 mlCompatWarning (FSComp.SR.buildCompilingExtensionIsForML()) rangeStartup 
 
-            if FSharpImplFileSuffixes |> List.exists (Filename.checkSuffix lower)   then  
+            if FSharpImplFileSuffixes |> Seq.exists (Filename.checkSuffix lower)   then  
                 let impl = Parser.implementationFile lexer lexbuf 
                 PostParseModuleImpls (defaultNamespace,filename,isLastCompiland,impl)
-            elif FSharpSigFileSuffixes |> List.exists (Filename.checkSuffix lower)  then  
+            elif FSharpSigFileSuffixes |> Seq.exists (Filename.checkSuffix lower)  then  
                 let intfs = Parser.signatureFile lexer lexbuf 
                 PostParseModuleSpecs (defaultNamespace,filename,isLastCompiland,intfs)
             else 
@@ -3477,7 +3477,7 @@ let ParseOneInputLexbuf (tcConfig:TcConfig,lexResourceManager,conditionalCompila
 let ParseOneInputFile (tcConfig:TcConfig,lexResourceManager,conditionalCompilationDefines,filename,isLastCompiland,errorLogger,retryLocked) =
     try 
        let lower = String.lowercase filename
-       if List.exists (Filename.checkSuffix lower) (FSharpSigFileSuffixes@FSharpImplFileSuffixes)  then  
+       if Seq.exists (Filename.checkSuffix lower) (FSharpSigFileSuffixes@FSharpImplFileSuffixes)  then  
             if not(FileSystem.SafeExists(filename)) then
                 error(Error(FSComp.SR.buildCouldNotFindSourceFile(filename),rangeStartup))
             // bug 3155: if the file name is indirect, use a full path
@@ -3717,10 +3717,10 @@ type RawFSharpAssemblyDataBackedByFileOnDisk (ilModule: ILModuleDef, ilAssemblyR
          member __.ILAssemblyRefs = ilAssemblyRefs
          member __.HasAnyFSharpSignatureDataAttribute = 
             let attrs = GetCustomAttributesOfILModule ilModule
-            List.exists IsSignatureDataVersionAttr attrs
+            Seq.exists IsSignatureDataVersionAttr attrs
          member __.HasMatchingFSharpSignatureDataAttribute(ilg) = 
             let attrs = GetCustomAttributesOfILModule ilModule
-            List.exists (IsMatchingSignatureDataVersionAttr ilg (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision)) attrs
+            Seq.exists (IsMatchingSignatureDataVersionAttr ilg (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision)) attrs
 
 
 //----------------------------------------------------------------------------
@@ -4028,7 +4028,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 
     member tcImports.IsAlreadyRegistered nm =
         CheckDisposed()
-        tcImports.GetDllInfos() |> List.exists (fun dll -> 
+        tcImports.GetDllInfos() |> Seq.exists (fun dll -> 
             match dll.ILScopeRef with 
             | ILScopeRef.Assembly a -> a.Name =  nm 
             | _ -> false)
@@ -4112,7 +4112,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                                 
                 // Add to the existing list of extensions
                 | TProvidedNamespaceExtensionPoint(resolutionFolder, prior) as repr -> 
-                    if not(prior |> List.exists(fun r->Tainted.EqTainted r provider)) then 
+                    if not(prior |> Seq.exists(fun r->Tainted.EqTainted r provider)) then 
                         TProvidedNamespaceExtensionPoint(resolutionFolder, provider::prior)
                     else 
                         repr

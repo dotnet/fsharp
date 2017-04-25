@@ -2042,7 +2042,7 @@ tyconDefnOrSpfnSimpleRepr:
      { if not (isNil $1) then errorR(Error(FSComp.SR.parsAttributesIllegalHere(),rhs parseState 1))
        let rangesOf3 = $3 |> List.map (function |Choice1Of2(ec)->ec.Range | Choice2Of2(uc)->uc.Range)
        let mWhole = (rhs2 parseState 1 2, rangesOf3) ||> Seq.fold unionRanges 
-       if $3 |> List.exists (function Choice1Of2 _ -> true | _ -> false) then (
+       if $3 |> Seq.exists (function Choice1Of2 _ -> true | _ -> false) then (
            if Option.isSome $2 then errorR(Error(FSComp.SR.parsEnumTypesCannotHaveVisibilityDeclarations(),rhs parseState 2));
            SynTypeDefnSimpleRepr.Enum ($3 |> List.choose (function 
                                               | Choice1Of2 data ->  

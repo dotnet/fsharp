@@ -164,7 +164,7 @@ let private FoldHierarchyOfTypeAux followInterfaces allowMultiIntfInst skipUnref
         let seenThisTycon = isAppTy g typ && Set.contains (tcrefOfAppTy g typ).Stamp visitedTycon 
 
         // Do not visit the same type twice. Could only be doing this if we've seen this tycon
-        if seenThisTycon && List.exists (typeEquiv g typ) (visited.Find (tcrefOfAppTy g typ)) then state else
+        if seenThisTycon && Seq.exists (typeEquiv g typ) (visited.Find (tcrefOfAppTy g typ)) then state else
 
         // Do not visit the same tycon twice, e.g. I<int> and I<string>, collect I<int> only, unless directed to allow this
         if seenThisTycon && allowMultiIntfInst = AllowMultiIntfInstantiations.No then state else

@@ -71,7 +71,7 @@ let rec TypeDefinitelySubsumesTypeNoCoercion ndeep g amap m ty1 ty2 =
 
            (isInterfaceTy g ty1 &&
             ty2 |> GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m 
-                |> List.exists (TypeDefinitelySubsumesTypeNoCoercion (ndeep+1) g amap m ty1))))
+                |> Seq.exists (TypeDefinitelySubsumesTypeNoCoercion (ndeep+1) g amap m ty1))))
 
 
 
@@ -129,7 +129,7 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
          | Some ty -> TypeFeasiblySubsumesType (ndeep+1) g amap m ty1 NoCoerce ty
          end ||
          ty2 |> GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m 
-             |> List.exists (TypeFeasiblySubsumesType (ndeep+1) g amap m ty1 NoCoerce))
+             |> Seq.exists (TypeFeasiblySubsumesType (ndeep+1) g amap m ty1 NoCoerce))
                    
 
 /// Choose solutions for Expr.TyChoose type "hidden" variables introduced

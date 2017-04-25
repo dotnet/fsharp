@@ -27,8 +27,8 @@ type TcEnv =
     member NameEnv : NameResolution.NameResolutionEnv
     member AccessRights : AccessorDomain
 
-val CreateInitialTcEnv : TcGlobals * ImportMap * range * assemblyName: string * (CcuThunk * string list * string list) seq -> TcEnv 
-val AddCcuToTcEnv      : TcGlobals * ImportMap * range * TcEnv * assemblyName: string * ccu: CcuThunk * autoOpens: string list * internalsVisibleToAttributes: string list -> TcEnv 
+val CreateInitialTcEnv : TcGlobals * ImportMap * range * assemblyName: string * (CcuThunk * string list * #seq<string>) seq -> TcEnv 
+val AddCcuToTcEnv      : TcGlobals * ImportMap * range * TcEnv * assemblyName: string * ccu: CcuThunk * autoOpens: string list * internalsVisibleToAttributes: seq<string> -> TcEnv 
 val AddLocalRootModuleOrNamespace : NameResolution.TcResultsSink -> TcGlobals -> ImportMap -> range -> TcEnv -> ModuleOrNamespaceType -> TcEnv
 val TcOpenDecl         : NameResolution.TcResultsSink  -> TcGlobals -> ImportMap -> range -> range -> TcEnv -> Ast.LongIdent -> TcEnv 
 

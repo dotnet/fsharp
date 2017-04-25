@@ -442,7 +442,7 @@ let rec MeasureVarExponent tp unt =
 let ListMeasureVarOccs unt =
     let rec gather acc unt =  
         match stripUnitEqnsFromMeasure unt with
-        | Measure.Var tp -> if List.exists (typarEq tp) acc then acc else tp::acc
+        | Measure.Var tp -> if Seq.exists (typarEq tp) acc then acc else tp::acc
         | Measure.Prod(unt1,unt2) -> gather (gather acc unt1) unt2
         | Measure.RationalPower(unt',_) -> gather acc unt'
         | Measure.Inv unt' -> gather acc unt'
@@ -454,7 +454,7 @@ let ListMeasureVarOccsWithNonZeroExponents untexpr =
     let rec gather acc unt =  
         match stripUnitEqnsFromMeasure unt with
         | Measure.Var tp -> 
-            if List.exists (fun (tp', _) -> typarEq tp tp') acc then acc 
+            if Seq.exists (fun (tp', _) -> typarEq tp tp') acc then acc 
             else 
                 let e = MeasureVarExponent tp untexpr
                 if e = ZeroRational then acc else (tp,e)::acc
@@ -469,7 +469,7 @@ let ListMeasureConOccsWithNonZeroExponents g eraseAbbrevs untexpr =
     let rec gather acc unt =  
         match (if eraseAbbrevs then stripUnitEqnsFromMeasure unt else stripUnitEqns unt) with
         | Measure.Con c -> 
-            if List.exists (fun (c', _) -> tyconRefEq g c c') acc then acc else 
+            if Seq.exists (fun (c', _) -> tyconRefEq g c c') acc then acc else 
             let e = MeasureExprConExponent g eraseAbbrevs c untexpr
             if e = ZeroRational then acc else (c,e)::acc
         | Measure.Prod(unt1,unt2) -> gather (gather acc unt1) unt2
@@ -483,7 +483,7 @@ let ListMeasureConOccsWithNonZeroExponents g eraseAbbrevs untexpr =
 let ListMeasureConOccsAfterRemapping g r unt =
     let rec gather acc unt =  
         match stripUnitEqnsFromMeasure unt with
-        | Measure.Con c -> if List.exists (tyconRefEq g (r c)) acc then acc else r c::acc
+        | Measure.Con c -> if Seq.exists (tyconRefEq g (r c)) acc then acc else r c::acc
         | Measure.Prod(unt1,unt2) -> gather (gather acc unt1) unt2
         | Measure.RationalPower(unt',_) -> gather acc unt'
         | Measure.Inv unt' -> gather acc unt'
@@ -2309,7 +2309,7 @@ module PrettyTypes =
             match tps with 
             | [] -> List.rev keep, List.rev change 
             | tp :: rest -> 
-                if not (NeedsPrettyTyparName tp) && (not (keep |> List.exists (fun tp2 -> tp.Name = tp2.Name)))  then
+                if not (NeedsPrettyTyparName tp) && (not (keep |> Seq.exists (fun tp2 -> tp.Name = tp2.Name)))  then
                     computeKeep (tp :: keep) change rest
                 else 
                     computeKeep keep (tp :: change) rest
@@ -2712,9 +2712,9 @@ let isILAttrib (tref:ILTypeRef) (attr: ILAttribute) =
 // These linear iterations cost us a fair bit when there are lots of attributes
 // on imported types. However this is fairly rare and can also be solved by caching the
 // results of attribute lookups in the TAST
-let HasILAttribute tref (attrs: ILAttributes) = List.exists (isILAttrib tref) attrs.AsList
+let HasILAttribute tref (attrs: ILAttributes) = Seq.exists (isILAttrib tref) attrs.AsList
 
-let HasILAttributeByName tname (attrs: ILAttributes) = List.exists (isILAttribByName ([],tname)) attrs.AsList
+let HasILAttributeByName tname (attrs: ILAttributes) = Seq.exists (isILAttribByName ([],tname)) attrs.AsList
 
 let TryDecodeILAttribute (g:TcGlobals) tref (attrs: ILAttributes) = 
     attrs.AsList |> List.tryPick(fun x -> if isILAttrib tref x then Some(decodeILAttribData g.ilg x)  else None)
@@ -2722,17 +2722,17 @@ let TryDecodeILAttribute (g:TcGlobals) tref (attrs: ILAttributes) =
 // This one is done by name to ensure the compiler doesn't take a dependency on dereferencing a type that only exists in .NET 3.5
 let ILThingHasExtensionAttribute (attrs : ILAttributes) = 
     attrs.AsList 
-    |> List.exists (fun attr -> 
+    |> Seq.exists (fun attr -> 
         attr.Method.EnclosingType.TypeSpec.Name = "System.Runtime.CompilerServices.ExtensionAttribute")
     
 // F# view of attributes (these get converted to AbsIL attributes in ilxgen) 
 let IsMatchingFSharpAttribute g (AttribInfo(_,tcref)) (Attrib(tcref2,_,_,_,_,_,_)) = tyconRefEq g tcref  tcref2
-let HasFSharpAttribute g tref attrs = List.exists (IsMatchingFSharpAttribute g tref) attrs
+let HasFSharpAttribute g tref attrs = Seq.exists (IsMatchingFSharpAttribute g tref) attrs
 let findAttrib g tref attrs = List.find (IsMatchingFSharpAttribute g tref) attrs
 let TryFindFSharpAttribute g tref attrs = List.tryFind (IsMatchingFSharpAttribute g tref) attrs
 let TryFindFSharpAttributeOpt g tref attrs = match tref with None -> None | Some tref -> List.tryFind (IsMatchingFSharpAttribute g tref) attrs
 
-let HasFSharpAttributeOpt g trefOpt attrs = match trefOpt with Some tref -> List.exists (IsMatchingFSharpAttribute g tref) attrs | _ -> false
+let HasFSharpAttributeOpt g trefOpt attrs = match trefOpt with Some tref -> Seq.exists (IsMatchingFSharpAttribute g tref) attrs | _ -> false
 let IsMatchingFSharpAttributeOpt g attrOpt (Attrib(tcref2,_,_,_,_,_,_)) = match attrOpt with Some ((AttribInfo(_,tcref))) -> tyconRefEq g tcref  tcref2 | _ -> false
 
 let (|ExtractAttribNamedArg|_|) nm args = 
@@ -5453,7 +5453,7 @@ let rec targetOfSuccessDecisionTree tree =
 let rec decisionTreeHasNonTrivialBindings tree =
     match tree with 
     | TDSwitch (_,edges,dflt,_) -> 
-        edges |> List.exists (fun c -> decisionTreeHasNonTrivialBindings c.CaseTree) || 
+        edges |> Seq.exists (fun c -> decisionTreeHasNonTrivialBindings c.CaseTree) || 
         dflt |> Option.exists decisionTreeHasNonTrivialBindings 
     | TDSuccess _ -> false
     | TDBind (_,t) -> Option.isNone (targetOfSuccessDecisionTree t)
@@ -7756,19 +7756,19 @@ let isCompiledConstraint cx =
 // Used to turn off TLR and method splitting
 let IsGenericValWithGenericContraints g (v:Val) = 
     isForallTy g v.Type && 
-    v.Type |> destForallTy g |> fst |> List.exists (fun tp -> List.exists isCompiledConstraint tp.Constraints)
+    v.Type |> destForallTy g |> fst |> Seq.exists (fun tp -> Seq.exists isCompiledConstraint tp.Constraints)
 
 // Does a type support a given interface? 
 type Entity with 
     member tycon.HasInterface g ty = 
-        tycon.TypeContents.tcaug_interfaces |> List.exists (fun (x,_,_) -> typeEquiv g ty x)  
+        tycon.TypeContents.tcaug_interfaces |> Seq.exists (fun (x,_,_) -> typeEquiv g ty x)  
 
     // Does a type have an override matching the given name and argument types? 
     // Used to detect the presence of 'Equals' and 'GetHashCode' in type checking 
     member tycon.HasOverride g nm argtys = 
         tycon.TypeContents.tcaug_adhoc 
         |> NameMultiMap.find nm
-        |> List.exists (fun vref -> 
+        |> Seq.exists (fun vref -> 
                           match vref.MemberInfo with 
                           | None -> false 
                           | Some membInfo -> 
@@ -7780,7 +7780,7 @@ type Entity with
     member tycon.HasMember g nm argtys = 
         tycon.TypeContents.tcaug_adhoc 
         |> NameMultiMap.find nm
-        |> List.exists (fun vref -> 
+        |> Seq.exists (fun vref -> 
                           match vref.MemberInfo with 
                           | None -> false 
                           | _ -> let argInfos = ArgInfosOfMember g vref 

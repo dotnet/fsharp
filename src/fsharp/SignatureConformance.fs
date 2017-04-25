@@ -104,7 +104,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                     | None ->
 
                     // Look for an attribute in the signature that has the same type. If so, give a warning
-                    let existsSimilarAttrib = sigAttribs |> List.exists (attribsHaveSameTycon implAttrib)
+                    let existsSimilarAttrib = sigAttribs |> Seq.exists (attribsHaveSameTycon implAttrib)
 
                     if existsSimilarAttrib then 
                         let (Attrib(implTcref,_,_,_,_,_,implRange)) = implAttrib
@@ -141,7 +141,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                       // defaults can be dropped in the signature 
                       | TyparConstraint.DefaultsTo(_,_acty,_) -> true
                       | _ -> 
-                          if not (List.exists  (typarConstraintsAEquiv g aenv implTyparCx) sigTypar.Constraints)
+                          if not (Seq.exists  (typarConstraintsAEquiv g aenv implTyparCx) sigTypar.Constraints)
                           then (errorR(Error(FSComp.SR.typrelSigImplNotCompatibleConstraintsDiffer(sigTypar.Name, Layout.showL(NicePrint.layoutTyparConstraint denv (implTypar,implTyparCx))),m)); false)
                           else  true) &&
 
@@ -154,7 +154,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                       | TyparConstraint.SupportsComparison _ -> true
                       | TyparConstraint.SupportsEquality _ -> true
                       | _ -> 
-                          if not (List.exists  (fun implTyparCx -> typarConstraintsAEquiv g aenv implTyparCx sigTyparCx) implTypar.Constraints) then
+                          if not (Seq.exists  (fun implTyparCx -> typarConstraintsAEquiv g aenv implTyparCx sigTyparCx) implTypar.Constraints) then
                               (errorR(Error(FSComp.SR.typrelSigImplNotCompatibleConstraintsDifferRemove(sigTypar.Name, Layout.showL(NicePrint.layoutTyparConstraint denv (sigTypar,sigTyparCx))),m)); false)
                           else  
                               true) &&

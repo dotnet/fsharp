@@ -480,7 +480,7 @@ module List =
     let mapFoldSquared f z xss = mapFold (mapFold f) z xss
     let forallSquared f xss = xss |> List.forall (List.forall f)
     let mapiSquared f xss = xss |> List.mapi (fun i xs -> xs |> List.mapi (fun j x -> f i j x))
-    let existsSquared f xss = xss |> List.exists (fun xs -> xs |> List.exists (fun x -> f x))
+    let existsSquared f xss = xss |> Seq.exists (fun xs -> xs |> Seq.exists (fun x -> f x))
     let mapiFoldSquared f z xss =  mapFoldSquared f z (xss |> mapiSquared (fun i j x -> (i,j,x)))
 
 [<Struct>]
@@ -1147,7 +1147,7 @@ module NameMap =
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module NameMultiMap = 
-    let existsInRange f (m: NameMultiMap<'T>) = NameMap.exists (fun _ l -> List.exists f l) m
+    let existsInRange f (m: NameMultiMap<'T>) = NameMap.exists (fun _ l -> Seq.exists f l) m
     let find v (m: NameMultiMap<'T>) = match Map.tryFind v m with None -> [] | Some r -> r
     let add v x (m: NameMultiMap<'T>) = NameMap.add v (x :: find v m) m
     let range (m: NameMultiMap<'T>) = Map.foldBack (fun _ x sofar -> x @ sofar) m []
@@ -1161,7 +1161,7 @@ module NameMultiMap =
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module MultiMap = 
-    let existsInRange f (m: MultiMap<_,_>) = Map.exists (fun _ l -> List.exists f l) m
+    let existsInRange f (m: MultiMap<_,_>) = Map.exists (fun _ l -> Seq.exists f l) m
     let find v (m: MultiMap<_,_>) = match Map.tryFind v m with None -> [] | Some r -> r
     let add v x (m: MultiMap<_,_>) = Map.add v (x :: find v m) m
     let range (m: MultiMap<_,_>) = Map.foldBack (fun _ x sofar -> x @ sofar) m []

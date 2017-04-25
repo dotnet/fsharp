@@ -1834,10 +1834,10 @@ module private InferredSigPrinting =
         let rec isConcreteNamespace x = 
             match x with 
             | TMDefRec(_,tycons,mbinds,_) -> 
-                not (isNil tycons) || (mbinds |> List.exists (function ModuleOrNamespaceBinding.Binding _ -> true | ModuleOrNamespaceBinding.Module(x,_) -> not x.IsNamespace))
+                not (isNil tycons) || (mbinds |> Seq.exists (function ModuleOrNamespaceBinding.Binding _ -> true | ModuleOrNamespaceBinding.Module(x,_) -> not x.IsNamespace))
             | TMDefLet _  -> true
             | TMDefDo _  -> true
-            | TMDefs defs -> defs |> List.exists isConcreteNamespace 
+            | TMDefs defs -> defs |> Seq.exists isConcreteNamespace 
             | TMAbstract(ModuleOrNamespaceExprWithSig(_,def,_)) -> isConcreteNamespace def
 
         let rec imexprLP denv  (ModuleOrNamespaceExprWithSig(_,def,_)) = imdefL denv def

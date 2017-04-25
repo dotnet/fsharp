@@ -233,7 +233,7 @@ module DispatchSlotChecking =
         
         let ttpinst = 
             // check we can reverse - in some error recovery situations we can't 
-            if mtpinst |> List.exists (snd >> isTyparTy g >> not) then ttpinst 
+            if mtpinst |> Seq.exists (snd >> isTyparTy g >> not) then ttpinst 
             else ComposeTyparInsts ttpinst (ReverseTyparRenaming g mtpinst)
 
         // Compare under the composed substitutions 
@@ -251,7 +251,7 @@ module DispatchSlotChecking =
     let DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed (dispatchSlot: MethInfo) =
         availPriorOverridesKeyed 
             |> NameMultiMap.find  dispatchSlot.LogicalName  
-            |> List.exists (OverrideImplementsDispatchSlot g amap m dispatchSlot)
+            |> Seq.exists (OverrideImplementsDispatchSlot g amap m dispatchSlot)
 
 
     /// Check all dispatch slots are implemented by some override.
@@ -327,7 +327,7 @@ module DispatchSlotChecking =
                             errorR(Error(FSComp.SR.typrelOverloadNotFound(FormatMethInfoSig g amap m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot),overrideBy.Range))
 
                     | [ overrideBy ] -> 
-                        if dispatchSlots |> List.exists (fun (RequiredSlot(dispatchSlot,_)) -> OverrideImplementsDispatchSlot g amap m dispatchSlot overrideBy) then
+                        if dispatchSlots |> Seq.exists (fun (RequiredSlot(dispatchSlot,_)) -> OverrideImplementsDispatchSlot g amap m dispatchSlot overrideBy) then
                             noimpl()
                         else
                             // Error will be reported below in CheckOverridesAreAllUsedOnce 
@@ -462,7 +462,7 @@ module DispatchSlotChecking =
             // Is a member an abstract slot of one of the implied interface types?
             let isImpliedInterfaceType ty =
                 isImpliedInterfaceTable.ContainsKey (tcrefOfAppTy g ty) &&
-                impliedTys |> List.exists (TypesFeasiblyEquiv 0 g amap reqdTyRange ty)
+                impliedTys |> Seq.exists (TypesFeasiblyEquiv 0 g amap reqdTyRange ty)
 
             //let isSlotImpl (minfo:MethInfo) = 
             //    not minfo.IsAbstract && minfo.IsVirtual 

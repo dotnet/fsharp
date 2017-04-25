@@ -1055,7 +1055,7 @@ val ValSpecIsCompiledAsInstance : TcGlobals -> Val -> bool
 val ValRefIsCompiledAsInstanceMember : TcGlobals -> ValRef -> bool
 val ModuleNameIsMangled : TcGlobals -> Attribs -> bool
 
-val CompileAsEvent : TcGlobals -> Attribs -> bool
+val CompileAsEvent : TcGlobals -> seq<Attrib> -> bool
 
 val TypeNullIsExtraValue : TcGlobals -> range -> TType -> bool
 val TypeNullIsTrueValue : TcGlobals -> TType -> bool
@@ -1260,8 +1260,8 @@ val TryFindILAttributeOpt : BuiltinAttribInfo option -> ILAttributes -> bool
 
 val IsMatchingFSharpAttribute      : TcGlobals -> BuiltinAttribInfo -> Attrib -> bool
 val IsMatchingFSharpAttributeOpt   : TcGlobals -> BuiltinAttribInfo option -> Attrib -> bool
-val HasFSharpAttribute             : TcGlobals -> BuiltinAttribInfo -> Attribs -> bool
-val HasFSharpAttributeOpt          : TcGlobals -> BuiltinAttribInfo option -> Attribs -> bool
+val HasFSharpAttribute             : TcGlobals -> BuiltinAttribInfo -> seq<Attrib> -> bool
+val HasFSharpAttributeOpt          : TcGlobals -> BuiltinAttribInfo option -> seq<Attrib> -> bool
 val TryFindFSharpAttribute         : TcGlobals -> BuiltinAttribInfo -> Attribs -> Attrib option
 val TryFindFSharpAttributeOpt      : TcGlobals -> BuiltinAttribInfo option -> Attribs -> Attrib option
 val TryFindFSharpBoolAttribute     : TcGlobals -> BuiltinAttribInfo -> Attribs -> bool option
