@@ -85,6 +85,7 @@ let FSharpScriptFileSuffixes = [".fsscript";".fsx"]
 let doNotRequireNamespaceOrModuleSuffixes = [".mli";".ml"] @ FSharpScriptFileSuffixes
 let FSharpLightSyntaxFileSuffixes : string list = [ ".fs";".fsscript";".fsx";".fsi" ]
 
+let packageManagerPrefix = "paket:"
 
 //----------------------------------------------------------------------------
 // ERROR REPORTING
@@ -2026,8 +2027,9 @@ type TcConfigBuilder =
       mutable implicitlyResolveAssemblies: bool
       mutable light: bool option
       mutable conditionalCompilationDefines: string list
-      mutable loadedSources: (range * string) list
+      mutable loadedSources: (range * string * string) list
       mutable referencedDLLs : AssemblyReference list
+      mutable packageManagerTextLines : string list
       mutable projectReferences : IProjectReference list
       mutable knownUnresolvedReferences : UnresolvedAssemblyReference list
       optimizeForMemory: bool
@@ -2190,6 +2192,7 @@ type TcConfigBuilder =
           framework=true
           implicitlyResolveAssemblies=true
           referencedDLLs = []
+          packageManagerTextLines = []
           projectReferences = []
           knownUnresolvedReferences = []
           loadedSources = []
@@ -2379,18 +2382,18 @@ type TcConfigBuilder =
         if ok && not (List.contains absolutePath tcConfigB.includes) then 
            tcConfigB.includes <- tcConfigB.includes ++ absolutePath
 
-    member tcConfigB.AddLoadedSource(m,path,pathLoadedFrom) =
-        if FileSystem.IsInvalidPathShim(path) then
-            warning(Error(FSComp.SR.buildInvalidFilename(path),m))    
+    member tcConfigB.AddLoadedSource(m,originalPath,pathLoadedFrom) =
+        if FileSystem.IsInvalidPathShim(originalPath) then
+            warning(Error(FSComp.SR.buildInvalidFilename(originalPath),m))    
         else 
             let path = 
-                match TryResolveFileUsingPaths(tcConfigB.includes @ [pathLoadedFrom],m,path) with 
+                match TryResolveFileUsingPaths(tcConfigB.includes @ [pathLoadedFrom],m,originalPath) with 
                 | Some(path) -> path
                 | None ->
                     // File doesn't exist in the paths. Assume it will be in the load-ed from directory.
-                    ComputeMakePathAbsolute pathLoadedFrom path
-            if not (List.contains path (List.map snd tcConfigB.loadedSources)) then 
-                tcConfigB.loadedSources <- tcConfigB.loadedSources ++ (m,path)
+                    ComputeMakePathAbsolute pathLoadedFrom originalPath
+            if not (List.contains path (List.map (fun (_,_,path) -> path) tcConfigB.loadedSources)) then 
+                tcConfigB.loadedSources <- tcConfigB.loadedSources ++ (m,originalPath,path)
 
     member tcConfigB.AddEmbeddedSourceFile (file) = 
         tcConfigB.embedSourceList <- tcConfigB.embedSourceList ++ file
@@ -2404,6 +2407,10 @@ type TcConfigBuilder =
         elif not (tcConfigB.referencedDLLs  |> List.exists (fun ar2 -> m=ar2.Range && path=ar2.Text)) then // NOTE: We keep same paths if range is different.
              let projectReference = tcConfigB.projectReferences |> List.tryPick (fun pr -> if pr.FileName = path then Some pr else None)
              tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs ++ AssemblyReference(m,path,projectReference)
+             
+    member tcConfigB.AddPackageManagerText (text:string) = 
+        let text = text.Substring(packageManagerPrefix.Length).Trim()
+        tcConfigB.packageManagerTextLines <- tcConfigB.packageManagerTextLines ++ text
              
     member tcConfigB.RemoveReferencedAssemblyByPath (m,path) =
         tcConfigB.referencedDLLs <- tcConfigB.referencedDLLs |> List.filter (fun ar-> ar.Range <> m || ar.Text <> path)
@@ -2746,6 +2753,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     member x.embedAllSource  = data.embedAllSource
     member x.embedSourceList  = data.embedSourceList
     member x.sourceLink  = data.sourceLink
+    member x.packageManagerTextLines  = data.packageManagerTextLines
     member x.ignoreSymbolStoreSequencePoints  = data.ignoreSymbolStoreSequencePoints
     member x.internConstantStrings  = data.internConstantStrings
     member x.extraOptimizationIterations  = data.extraOptimizationIterations
@@ -2855,13 +2863,23 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
 
     member tcConfig.GetAvailableLoadedSources() =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
-        let resolveLoadedSource (m,path) =
+        let resolveLoadedSource (m,originalPath,path) =
             try
                 if not(FileSystem.SafeExists(path)) then 
-                    error(LoadedSourceNotFoundIgnoring(path,m))                         
-                    None
+                    let secondTrial = 
+                        tcConfig.includes
+                        |> List.tryPick (fun root ->
+                            let path = ComputeMakePathAbsolute root originalPath
+                            if FileSystem.SafeExists(path) then Some path else None)
+
+                    match secondTrial with
+                    | Some path -> Some(m,path)
+                    | None ->
+                        error(LoadedSourceNotFoundIgnoring(path,m))                         
+                        None
                 else Some(m,path)
             with e -> errorRecovery e m; None
+
         tcConfig.loadedSources 
         |> List.choose resolveLoadedSource 
         |> List.distinct     
@@ -4676,8 +4694,6 @@ let RequireDLL (ctok, tcImports:TcImports, tcEnv, thisAssemblyName, m, file) =
     let tcEnv = (tcEnv, asms) ||> List.fold (fun tcEnv asm -> AddCcuToTcEnv(g,amap,m,tcEnv,thisAssemblyName,asm.FSharpViewOfMetadata,asm.AssemblyAutoOpenAttributes,asm.AssemblyInternalsVisibleToAttributes)) 
     tcEnv,(dllinfos,asms)
 
-       
-       
 let ProcessMetaCommandsFromInput 
      (nowarnF: 'state -> range * string -> 'state,
       dllRequireF: 'state -> range * string -> 'state,
@@ -4708,6 +4724,7 @@ let ProcessMetaCommandsFromInput
                    state
             | ParsedHashDirective("nowarn",numbers,m) ->
                List.fold (fun state d -> nowarnF state (m,d)) state numbers
+
             | ParsedHashDirective(("reference" | "r"),args,m) -> 
                if not canHaveScriptMetaCommands then 
                    errorR(HashReferenceNotAllowedInNonScript(m))
@@ -4739,6 +4756,22 @@ let ProcessMetaCommandsFromInput
                | _ -> 
                    errorR(Error(FSComp.SR.buildInvalidHashtimeDirective(),m))
                state
+
+            | ParsedHashDirective(x,args,m) when ReferenceLoading.GenericHandler.PragmaHandlers |> List.exists (fun y -> y.PragmaName = x) ->
+                let handlers =
+                    ReferenceLoading.GenericHandler.PragmaHandlers
+                    |> List.filter (fun y -> y.PragmaName = x)
+                match handlers with
+                | [handler] ->
+                    match args with
+                    | [arg] ->
+                        handler.ProcessArg arg
+                        state
+                    | _ ->
+                        // TODO: Change this error message
+                        errorR(Error(FSComp.SR.buildInvalidHashrDirective(),m))
+                        state
+                | _ -> state
                
             | _ -> 
                
@@ -4794,7 +4827,7 @@ let ApplyNoWarnsToTcConfig (tcConfig:TcConfig, inp:ParsedInput, pathOfMetaComman
     let addNoWarn = fun () (m,s) -> tcConfigB.TurnWarningOff(m, s)
     let addReferencedAssemblyByPath = fun () (_m,_s) -> ()
     let addLoadedSource = fun () (_m,_s) -> ()
-    ProcessMetaCommandsFromInput (addNoWarn, addReferencedAssemblyByPath, addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())
+    ProcessMetaCommandsFromInput (addNoWarn, addReferencedAssemblyByPath,  addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())
     TcConfig.Create(tcConfigB, validate=false)
 
 let ApplyMetaCommandsFromInputToTcConfig (tcConfig:TcConfig, inp:ParsedInput, pathOfMetaCommandSource) = 
@@ -4852,8 +4885,7 @@ type CodeContext =
     | Compilation  // in fsc.exe
     | Editing // in VS
     
-
-module private ScriptPreprocessClosure = 
+module ScriptPreprocessClosure = 
     open Internal.Utilities.Text.Lexing
     
     /// Represents an input to the closure finding process
@@ -4947,12 +4979,33 @@ module private ScriptPreprocessClosure =
             let tcConfigB = tcConfig.CloneOfOriginalBuilder 
             TcConfig.Create(tcConfigB, validate=false),nowarns
     
-    let FindClosureFiles(closureSources, tcConfig:TcConfig, codeContext, lexResourceManager:Lexhelp.LexResourceManager) =
-        let tcConfig = ref tcConfig
+    let FindClosureFiles(mainFile, m, closureSources, origTcConfig:TcConfig, codeContext, lexResourceManager:Lexhelp.LexResourceManager) =
+        let tcConfig = ref origTcConfig
         
         let observedSources = Observed()
-        let rec loop (ClosureSource(filename,m,source,parseRequired)) = 
-          [     if not (observedSources.HaveSeen(filename)) then
+
+        // Resolve the packages
+        let rec resolvePackageManagerSources() =
+            if tcConfig.Value.packageManagerTextLines = origTcConfig.packageManagerTextLines then
+                []
+            else
+                let (processedScripts, additionalIncludeFolders) =
+                    Microsoft.FSharp.Compiler.ReferenceLoading.GenericHandler.PragmaHandlers
+                    |> List.choose (fun handler -> handler.ChangesToScript tcConfig.Value.implicitIncludeDir)
+                    |> List.unzip
+                let additionalIncludeFolders = additionalIncludeFolders |> List.collect id
+                if not additionalIncludeFolders.IsEmpty then
+                    let tcConfigB = tcConfig.Value.CloneOfOriginalBuilder
+                    for folder in additionalIncludeFolders do
+                        tcConfigB.AddIncludePath(m,folder,"")
+                        tcConfig := TcConfig.Create(tcConfigB, validate=false)
+                match processedScripts with
+                | [sc] -> loop (ClosureSource(sc,m,File.ReadAllText(sc),true))
+                | _ -> [] // TODO: Handle all pragma handlers
+
+
+        and loop (ClosureSource(filename,m,source,parseRequired)) = 
+            [   if not (observedSources.HaveSeen(filename)) then
                     observedSources.SetSeen(filename)
                     //printfn "visiting %s" filename
                     if IsScript(filename) || parseRequired then 
@@ -4967,17 +5020,20 @@ module private ScriptPreprocessClosure =
                             let errorLogger = CapturingErrorLogger("FindClosureMetaCommands")                    
                             use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _ -> errorLogger)
                             let pathOfMetaCommandSource = Path.GetDirectoryName(filename)
+                            
                             let preSources = (!tcConfig).GetAvailableLoadedSources()
 
                             let tcConfigResult, noWarns = ApplyMetaCommandsFromInputToTcConfigAndGatherNoWarn (!tcConfig, parsedScriptAst, pathOfMetaCommandSource)
                             tcConfig := tcConfigResult // We accumulate the tcConfig in order to collect assembly references
-                        
+                            
+                            if filename = mainFile then
+                                yield! resolvePackageManagerSources()
+
                             let postSources = (!tcConfig).GetAvailableLoadedSources()
                             let sources = if preSources.Length < postSources.Length then postSources.[preSources.Length..] else []
 
                             //for (_,subFile) in sources do
                             //   printfn "visiting %s - has subsource of %s " filename subFile
-
                             for (m,subFile) in sources do
                                 if IsScript(subFile) then 
                                     for subSource in ClosureSourceOfFilename(subFile,m,tcConfigResult.inputCodePage,false) do
@@ -4996,7 +5052,9 @@ module private ScriptPreprocessClosure =
                         //printfn "yielding non-script source %s" filename
                         yield ClosureFile(filename, m, None, [], [], []) ]
 
-        closureSources |> List.collect loop, !tcConfig
+        let sources = closureSources |> List.collect loop
+
+        sources, !tcConfig
         
     /// Reduce the full directive closure into LoadClosure
     let GetLoadClosure(ctok, rootFilename, closureFiles, tcConfig:TcConfig, codeContext) = 
@@ -5051,7 +5109,7 @@ module private ScriptPreprocessClosure =
               UnresolvedReferences = unresolvedReferences
               Inputs = sourceInputs
               NoWarns = List.groupByFirst globalNoWarns
-              OriginalLoadReferences = tcConfig.loadedSources
+              OriginalLoadReferences = tcConfig.loadedSources |> List.map (fun (m,_,path) -> m,path)
               ResolutionDiagnostics = resolutionDiagnostics
               AllRootFileDiagnostics = allRootDiagnostics
               LoadClosureRootFileDiagnostics = loadClosureRootDiagnostics }       
@@ -5073,15 +5131,15 @@ module private ScriptPreprocessClosure =
         let tcConfig = CreateScriptSourceTcConfig(referenceResolver, filename, codeContext, useSimpleResolution, useFsiAuxLib, Some references0, applyCommmandLineArgs, assumeDotNetFramework)
 
         let closureSources = [ClosureSource(filename,range0,source,true)]
-        let closureFiles,tcConfig = FindClosureFiles(closureSources, tcConfig, codeContext, lexResourceManager)
+        let closureFiles,tcConfig = FindClosureFiles(filename, range0, closureSources, tcConfig, codeContext, lexResourceManager)
         GetLoadClosure(ctok, filename, closureFiles, tcConfig, codeContext)
         
     /// Given source filename, find the full load closure
     /// Used from fsi.fs and fsc.fs, for #load and command line
     let GetFullClosureOfScriptFiles(ctok, tcConfig:TcConfig,files:(string*range) list,codeContext,lexResourceManager:Lexhelp.LexResourceManager) = 
-        let mainFile = fst (List.last files)
+        let mainFile, mainFileRange = List.last files
         let closureSources = files |> List.collect (fun (filename,m) -> ClosureSourceOfFilename(filename,m,tcConfig.inputCodePage,true))
-        let closureFiles,tcConfig = FindClosureFiles(closureSources, tcConfig, codeContext, lexResourceManager)
+        let closureFiles,tcConfig = FindClosureFiles(mainFile, mainFileRange, closureSources, tcConfig, codeContext, lexResourceManager)
         GetLoadClosure(ctok, mainFile, closureFiles, tcConfig, codeContext)        
 
 type LoadClosure with

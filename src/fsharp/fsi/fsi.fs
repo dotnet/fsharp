@@ -73,6 +73,8 @@ open System.Runtime.CompilerServices
 [<Dependency("FSharp.Core",LoadHint.Always)>] do ()
 #endif
 
+let packageManagerPrefix = "paket:"
+
 //----------------------------------------------------------------------------
 // For the FSI as a service methods...
 //----------------------------------------------------------------------------
@@ -1216,6 +1218,27 @@ type internal FsiDynamicCompiler
         resolutions,
         { istate with tcState = tcState.NextStateAfterIncrementalFragment(tcEnv); optEnv = optEnv }
 
+
+    member fsiDynamicCompiler.CommitPackageManagerText (ctok, istate: FsiDynamicCompilerState, lexResourceManager, errorLogger, m) =
+        let needsResolution =
+            Microsoft.FSharp.Compiler.ReferenceLoading.GenericHandler.PragmaHandlers
+            |> List.filter (fun x -> x.HasPendingChanges)
+        if needsResolution.IsEmpty then istate else
+
+        let (processedScripts, additionalIncludeFolders) =
+            needsResolution
+            |> List.choose (fun handler -> handler.ChangesToScript tcConfigB.implicitIncludeDir)
+            |> List.unzip
+
+        let additionalIncludeFolders = additionalIncludeFolders |> List.collect id
+
+        for folder in additionalIncludeFolders do
+            tcConfigB.AddIncludePath (m,folder,"")
+        match processedScripts with
+        | [] -> istate
+        | _ -> fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, processedScripts, lexResourceManager, errorLogger)
+
+
     member fsiDynamicCompiler.ProcessMetaCommandsFromInputAsInteractiveCommands(ctok, istate, sourceFile, inp) =
         WithImplicitHome
            (tcConfigB, directoryName sourceFile) 
@@ -1868,16 +1891,22 @@ type internal FsiInteractionProcessor
     let ExecInteraction (ctok, tcConfig:TcConfig, istate, action:ParsedFsiInteraction, errorLogger: ErrorLogger) =
         istate |> InteractiveCatch errorLogger (fun istate -> 
             match action with 
-            | IDefns ([  ],_) ->
+            | IDefns ([  ],m) ->
+                let istate = fsiDynamicCompiler.CommitPackageManagerText(ctok, istate, lexResourceManager, errorLogger, m) 
                 istate,Completed None
-            | IDefns ([  SynModuleDecl.DoExpr(_,expr,_)],_) ->
+
+            | IDefns ([  SynModuleDecl.DoExpr(_,expr,_)],m) ->
+                let istate = fsiDynamicCompiler.CommitPackageManagerText(ctok, istate, lexResourceManager, errorLogger, m) 
                 fsiDynamicCompiler.EvalParsedExpression(ctok, errorLogger, istate, expr)
-            | IDefns (defs,_) -> 
+
+            | IDefns (defs,m) -> 
+                let istate = fsiDynamicCompiler.CommitPackageManagerText(ctok, istate, lexResourceManager, errorLogger, m) 
                 fsiDynamicCompiler.EvalParsedDefinitions (ctok, errorLogger, istate, true, false, defs),Completed None
 
             | IHash (ParsedHashDirective("load",sourceFiles,m),_) -> 
+                let istate = fsiDynamicCompiler.CommitPackageManagerText(ctok, istate, lexResourceManager, errorLogger, m) 
                 fsiDynamicCompiler.EvalSourceFiles (ctok, istate, m, sourceFiles, lexResourceManager, errorLogger),Completed None
-
+                
             | IHash (ParsedHashDirective(("reference" | "r"),[path],m),_) -> 
                 let resolutions,istate = fsiDynamicCompiler.EvalRequireReference(ctok, istate, m, path)
                 resolutions |> List.iter (fun ar -> 
@@ -1958,6 +1987,15 @@ type internal FsiInteractionProcessor
 
             | IHash (ParsedHashDirective("help",[],_),_) ->
                 fsiOptions.ShowHelp()
+                istate,Completed None
+
+            | IHash (ParsedHashDirective(c,[arg],_),_) when Microsoft.FSharp.Compiler.ReferenceLoading.GenericHandler.PragmaHandlers |> List.exists (fun x -> x.PragmaName = c) ->
+                let handlers =
+                    Microsoft.FSharp.Compiler.ReferenceLoading.GenericHandler.PragmaHandlers
+                    |> List.filter (fun x -> x.PragmaName = c)
+                match handlers with
+                | [handler] -> handler.ProcessArg arg
+                | _ -> ()
                 istate,Completed None
 
             | IHash (ParsedHashDirective(c,arg,_),_) -> 
