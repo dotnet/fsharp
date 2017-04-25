@@ -76,7 +76,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             get
             {
-                return this.myAssemblyPath;
+                return Path.GetFullPath(this.myAssemblyPath);
             }
         }
 

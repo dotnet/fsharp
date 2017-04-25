@@ -25,43 +25,26 @@ type internal ProjectFlagsService
     ) =
 
     let queueLock = obj()
-    let projectQueue = Stack<ProjectNode>()
+    let projectAdded = Event<ProjectNode>()
     let dirtyProjects = Dictionary<ProjectNode,bool>()
 
     /// Insert a project into the front of the queue to be processed.
     member __.QueueProject(project : ProjectNode) =
         lock queueLock <| fun () ->
             dirtyProjects.[project] <- true
-            projectQueue.Push project
+            projectAdded.Trigger project
     
     /// Moves a project to the front of the queue if it is already in the queue.
     member __.PrioritiseProject(project : ProjectNode) =
         lock queueLock <| fun () ->
             match dirtyProjects.TryGetValue project with
             | true, true ->
-                projectQueue.Push project
+                projectAdded.Trigger project
             | _ -> ()
     
     member __.Clear() =
         lock queueLock <| fun () ->
             dirtyProjects.Clear()
-            projectQueue.Clear()
-    
-    member __.TryPop() =
-        lock queueLock <| fun () ->
-            if projectQueue.Count > 0 then 
-                let project = projectQueue.Pop()
-
-                // Only process the project if it is dirty.
-                // A project can be in the queue and clean if it was in the queue multiple times
-                // and it's already been processed.
-                if dirtyProjects.[project] then
-                    dirtyProjects.[project] <- false
-                    Some project
-                else
-                    None
-            else
-                None
     
     member this.StartProcessing() =
         let processProject (project : ProjectNode) = async {
@@ -106,18 +89,40 @@ type internal ProjectFlagsService
 
         async {
             while true do
-                match this.TryPop() with
-                | None -> ()
-                | Some project ->
-                    do! processProject project
+                use processor = MailboxProcessor.Start <| fun inbox -> async {
+                    // Wait for AfterOpenSolution and then start processing
+                    do! Async.AwaitEvent Events.SolutionEvents.OnAfterOpenSolution |> Async.Ignore
 
-                // Having an exclusive lock on design-time builds means the user can't initiate
-                // any builds themselves. Wait a few seconds before trying to grab one again.
-                do! Async.Sleep 2000
+                    while true do
+                        let! project = inbox.Receive()
+
+                        // Set the project to clean and keep track of whether it was dirty
+                        let wasDirty =
+                            lock queueLock <| fun () ->
+                                let oldDirty = dirtyProjects.[project]
+                                dirtyProjects.[project] <- false
+                                oldDirty
+                        
+                        // Only process the project if it was still dirty
+                        if wasDirty then
+                            do! processProject project
+
+                            // Having an exclusive lock on design-time builds means the user
+                            // can't initiate any builds themselves. Wait a few seconds before
+                            // trying to grab one again.
+                            do! Async.Sleep 2000
+                    }
+
+                // Post F# project opens to the mailbox processor
+                use _ = projectAdded.Publish |> Observable.subscribe processor.Post
+                
+                // Wait until the solution closes to keep listening to these events
+                // Then cleanup the processor and the listener and recurse to run again
+                do! Async.AwaitEvent Events.SolutionEvents.OnAfterCloseSolution |> Async.Ignore
+
+                // Clear after solution is closed
+                this.Clear()
         }
     
     member this.Initialize() =
         this.StartProcessing() |> Async.StartImmediate
-
-        // Clear the queue when the solution is closed
-        Events.SolutionEvents.OnAfterCloseSolution.Add (ignore >> this.Clear)

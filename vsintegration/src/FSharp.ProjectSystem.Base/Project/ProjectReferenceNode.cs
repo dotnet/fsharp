@@ -483,7 +483,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // build the full path adding the name of the assembly to the output path.
             outputPath = System.IO.Path.Combine(outputPath, assemblyName);
 
-            return outputPath;
+            return System.IO.Path.GetFullPath(outputPath);
 
         }
 

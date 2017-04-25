@@ -189,7 +189,7 @@ type internal FSharpCheckerWorkspaceServiceFactory
             upcast { new FSharpCheckerWorkspaceService with
                 member this.Checker = checkerProvider.Checker
                 member this.ProjectInfoManager = projectInfoManager }
-
+                
 type
     [<Guid(FSharpConstants.packageGuidString)>]
     [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.IntelliSenseOptionPage>, "F#", null, "IntelliSense", "6008")>]
@@ -248,65 +248,102 @@ and
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
 
     let projectInfoManager = package.ComponentModel.DefaultExportProvider.GetExport<ProjectInfoManager>().Value
+    let textViewAdapter = package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
+    let runningDocumentTable = package.GetService<SVsRunningDocumentTable>() :?> IVsRunningDocumentTable4
 
     let projectDisplayNameOf projectFileName = 
-        if String.IsNullOrWhiteSpace projectFileName then projectFileName
+        if String.IsNullOrWhiteSpace projectFileName
+        then projectFileName
         else Path.GetFileNameWithoutExtension projectFileName
+    
+    let projectContexts = ConcurrentDictionary<ProjectId, IWorkspaceProjectContext>()
+    let singleFileProjects = ConcurrentDictionary<ProjectId, AbstractProject>()
 
-    let singleFileProjects = ConcurrentDictionary<_, AbstractProject>()
-
-    let tryRemoveSingleFileProject projectId =
+    let tryRemoveSingleFileProjectById projectId =
         match singleFileProjects.TryRemove(projectId) with
         | true, project ->
             projectInfoManager.RemoveSingleFileProject(projectId)
             project.Disconnect()
-        | _ -> ()
+        | _ ->
+            ()
+    
+    let tryRemoveSingleFileProjectByName fileName =
+        singleFileProjects
+        |> Seq.tryFind (fun (KeyValue(_, project)) ->
+            project.GetCurrentDocuments()
+            |> Seq.exists (fun doc -> doc.FilePath.Equals(fileName, StringComparison.OrdinalIgnoreCase))
+            )
+        |> Option.iter (fun (KeyValue(id, _)) ->
+            tryRemoveSingleFileProjectById id
+            )
+     
+    // Ideally we'd move this over to Roslyn's MiscellaneousFilesWorkspace, but we can't do that
+    // until 15.3. We can just implement the barebones of what we need with respect to file
+    // tracking with the running document table.
+
+    interface IVsRunningDocTableEvents with
+        member this.OnAfterAttributeChange(_docCookie: uint32, _grfAttribs: uint32): int = 
+            VSConstants.S_OK
+        member this.OnAfterDocumentWindowHide(_docCookie: uint32, _pFrame: IVsWindowFrame): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnAfterFirstDocumentLock(_docCookie: uint32, _dwRDTLockType: uint32, _dwReadLocksRemaining: uint32, _dwEditLocksRemaining: uint32): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnAfterSave(_docCookie: uint32): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnBeforeDocumentWindowShow(_docCookie: uint32, _fFirstShow: int, _pFrame: IVsWindowFrame): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnBeforeLastDocumentUnlock(docCookie: uint32, _dwRDTLockType: uint32, dwReadLocksRemaining: uint32, dwEditLocksRemaining: uint32): int = 
+            if dwReadLocksRemaining + dwEditLocksRemaining = 0u then
+                runningDocumentTable.GetDocumentMoniker docCookie
+                |> tryRemoveSingleFileProjectByName
+                |> ignore
+ 
+            VSConstants.S_OK
+
+    interface IVsRunningDocTableEvents2 with
+        member this.OnAfterAttributeChange(_docCookie: uint32, _grfAttribs: uint32): int = 
+            VSConstants.S_OK
+        member this.OnAfterDocumentWindowHide(_docCookie: uint32, _pFrame: IVsWindowFrame): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnAfterFirstDocumentLock(_docCookie: uint32, _dwRDTLockType: uint32, _dwReadLocksRemaining: uint32, _dwEditLocksRemaining: uint32): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnAfterSave(_docCookie: uint32): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnBeforeDocumentWindowShow(_docCookie: uint32, _fFirstShow: int, _pFrame: IVsWindowFrame): int = 
+            VSConstants.E_NOTIMPL
+        member this.OnBeforeLastDocumentUnlock(_docCookie: uint32, _dwRDTLockType: uint32, _dwReadLocksRemaining: uint32, _dwEditLocksRemaining: uint32): int = 
+            VSConstants.S_OK
+        member this.OnAfterAttributeChangeEx(docCookie: uint32, grfAttribs: uint32, _pHierOld: IVsHierarchy, _itemidOld: uint32, pszMkDocumentOld: string, _pHierNew: IVsHierarchy, _itemidNew: uint32, pszMkDocumentNew: string): int = 
+            // Did we rename?
+            if grfAttribs &&& uint32 __VSRDTATTRIB.RDTA_MkDocument <> 0u then
+                tryRemoveSingleFileProjectByName pszMkDocumentOld
+                this.TrackDocument pszMkDocumentNew
+            
+            // The document is now initialized, we should try tracking it
+            if grfAttribs &&& uint32 __VSRDTATTRIB3.RDTA_DocumentInitialized <> 0u then
+                runningDocumentTable.GetDocumentMoniker docCookie
+                |> this.TrackDocument
+
+            VSConstants.S_OK
 
     override this.Initialize() =
         base.Initialize()
-
+        
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Completion.CompletionOptions.BlockForCompletionItems, FSharpConstants.FSharpLanguageName, false)
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpConstants.FSharpLanguageName, Nullable false)
-
-        this.Workspace.DocumentClosed.Add <| fun args ->
-            tryRemoveSingleFileProject args.Document.Project.Id 
+        
+        let cookie = ref 0u
+        (runningDocumentTable :?> IVsRunningDocumentTable).AdviseRunningDocTableEvents(this, cookie) |> ignore
+            
+        Events.SolutionEvents.OnAfterOpenProject.Add <| fun args ->
+            match args.Hierarchy with
+            | :? IProvideProjectSite as siteProvider ->
+                this.SetupProjectFile(siteProvider, this.Workspace)
+            | _ -> ()
             
         Events.SolutionEvents.OnAfterCloseSolution.Add <| fun _ ->
-            singleFileProjects.Keys |> Seq.iter tryRemoveSingleFileProject
-            
-        let rec setupProjectsAfterSolutionOpen() =
-            async {
-                let openedProjects = MailboxProcessor.Start <| fun inbox ->
-                    async { 
-                        // waits for AfterOpenSolution and then starts projects setup
-                        do! Async.AwaitEvent Events.SolutionEvents.OnAfterOpenSolution |> Async.Ignore
-
-                        while true do
-                            let! siteProvider = inbox.Receive()
-                            this.SetupProjectFile(siteProvider, this.Workspace)
-                        }
-
-                // Post F# project opens to the mailbox processor
-                let projectOpenListener =
-                    Events.SolutionEvents.OnAfterOpenProject
-                    |> Observable.subscribe (fun args ->
-                        match args.Hierarchy with
-                        | :? IProvideProjectSite as siteProvider ->
-                            openedProjects.Post siteProvider
-                        | _ -> ()
-                        )
-                
-                // Wait until the solution closes to keep listening to these events
-                // Then cleanup the processor and the listener and recurse to run again
-                do! Async.AwaitEvent Events.SolutionEvents.OnAfterCloseSolution |> Async.Ignore
-
-                (openedProjects :> IDisposable).Dispose()
-                projectOpenListener.Dispose()
-
-                do! setupProjectsAfterSolutionOpen() 
-            }
-
-        setupProjectsAfterSolutionOpen() |> Async.StartImmediate
+            singleFileProjects.Keys |> Seq.iter tryRemoveSingleFileProjectById
+            projectContexts.Clear()
 
         let theme = package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
         theme.SetColors()
@@ -314,10 +351,12 @@ and
     /// Sync the information for the project 
     member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, forceUpdate) =
         let hashSetIgnoreCase x = HashSet<string>(x, StringComparer.OrdinalIgnoreCase)
-        let updatedFiles = site.SourceFilesOnDisk() |> hashSetIgnoreCase
-        let workspaceFiles = project.GetCurrentDocuments() |> Seq.map(fun file -> file.FilePath) |> hashSetIgnoreCase
         
         let mutable updated = forceUpdate
+
+        // Synchronise source files
+        let updatedFiles = site.SourceFilesOnDisk() |> hashSetIgnoreCase
+        let workspaceFiles = project.GetCurrentDocuments() |> Seq.map(fun file -> file.FilePath) |> hashSetIgnoreCase
 
         for file in updatedFiles do
             if not(workspaceFiles.Contains(file)) then
@@ -328,7 +367,7 @@ and
                 projectContext.RemoveSourceFile(file)
                 updated <- true
         
-        (*
+        // Synchronise assembly references
         let updatedRefs = site.AssemblyReferences() |> Seq.filter (String.IsNullOrEmpty >> not) |> hashSetIgnoreCase
         let workspaceRefs = project.GetCurrentMetadataReferences() |> Seq.map(fun ref -> ref.FilePath) |> hashSetIgnoreCase
 
@@ -340,39 +379,43 @@ and
             if not(updatedRefs.Contains(ref)) then
                 projectContext.RemoveMetadataReference(ref)
                 updated <- true
-        *)
         
-        (*
-        
-        let getProject = project.Workspace.CurrentSolution.GetProject
-
+        // Synchronise project references
+        let getProjectContextByName name =
+            projectContexts.Values
+            |> Seq.find (fun context -> context.ProjectFilePath.Equals(name, StringComparison.OrdinalIgnoreCase))
+            
         let updatedProjects =
             ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider)
             |> Seq.map (fun s -> s.ProjectFileName())
             |> hashSetIgnoreCase
         let workspaceProjects =
             project.GetCurrentProjectReferences()
-            |> Seq.map(fun ref -> (getProject ref.ProjectId).FilePath)
+            |> Seq.map(fun ref -> projectContexts.[ref.ProjectId].ProjectFilePath)
             |> hashSetIgnoreCase
 
-        for referencedSite in  do
-            let referencedProjectId = setup referencedSite                    
-            project.AddProjectReference(ProjectReference referencedProjectId)
-        *)
-
-        // update the cached options
+        for projectName in updatedProjects do
+            if not(workspaceProjects.Contains(projectName)) then
+                projectContext.AddProjectReference(getProjectContextByName projectName, MetadataReferenceProperties())
+                updated <- true
+        for projectName in workspaceProjects do
+            if not(updatedProjects.Contains(projectName)) then
+                projectContext.RemoveProjectReference(getProjectContextByName projectName)
+                updated <- true
+            
         if updated then
             projectInfoManager.UpdateProjectInfo(project.Id, site, project.Workspace)
 
     member this.SetupProjectFile(siteProvider: IProvideProjectSite, workspace: VisualStudioWorkspaceImpl) =
+        let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>()
+
         let rec setup (site: IProjectSite) =
-            let projectGuid = Guid(site.ProjectGuid)
+            let projectGuid = Guid site.ProjectGuid
             let projectFileName = site.ProjectFileName()
             let projectDisplayName = projectDisplayNameOf projectFileName
             let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
 
             if isNull (workspace.ProjectTracker.GetProject projectId) then
-                let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
                 let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
                 
                 let hierarchy =
@@ -390,6 +433,12 @@ and
                         FSharpConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectGuid, hierarchy, null, errorReporter)
 
                 let project = projectContext :?> AbstractProject
+                projectContexts.[projectId] <- projectContext
+
+                // Recursively create any referenced projects.
+                // We need the project IDs in the projectContexts dictionary for SyncProject
+                ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider)
+                |> Seq.iter setup
                 
                 // Syncronise the project with Roslyn and update the cached project info
                 // if necessary.
@@ -412,21 +461,15 @@ and
                         )
                     )
 
-                for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
-                    let referencedProjectId = setup referencedSite                    
-                    project.AddProjectReference(ProjectReference referencedProjectId)
-
-            projectId
-        setup (siteProvider.GetProjectSite()) |> ignore
+        setup (siteProvider.GetProjectSite())
 
     member this.SetupStandAloneFile(fileName: string, fileContents: string, workspace: VisualStudioWorkspaceImpl, hier: IVsHierarchy) =
-
+    
         let loadTime = DateTime.Now
         let options = projectInfoManager.ComputeSingleFileOptions (fileName, loadTime, fileContents, workspace) |> Async.RunSynchronously
-
         let projectFileName = fileName
         let projectDisplayName = projectDisplayNameOf projectFileName
-
+        
         let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
         projectInfoManager.AddSingleFileProject(projectId, (loadTime, options))
 
@@ -448,24 +491,13 @@ and
     override this.DebuggerLanguageId = DebuggerEnvironment.GetLanguageID()
 
     override this.CreateContext(_,_,_,_,_) = raise(System.NotImplementedException())
-
-    override this.SetupNewTextView(textView) =
-        base.SetupNewTextView(textView)
-
-        let textViewAdapter = package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
-               
-        match textView.GetBuffer() with
-        | (VSConstants.S_OK, textLines) ->
-            let filename = VsTextLines.GetFilename textLines
-            match VsRunningDocumentTable.FindDocumentWithoutLocking(package.RunningDocumentTable,filename) with
-            | Some (hier, _) ->
-                match hier with
-                | :? IProvideProjectSite as siteProvider when not (IsScript(filename)) -> 
-                    this.SetupProjectFile(siteProvider, this.Workspace)
-                | _ -> 
-                    let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
-                    this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
-            | _ -> ()
+    
+    member this.TrackDocument(fileName) =
+        match VsRunningDocumentTable.FindDocumentWithoutLocking(package.RunningDocumentTable, fileName) with
+        | Some (:? IProvideProjectSite as siteProvider, _) when not (IsScript fileName) ->
+            this.SetupProjectFile(siteProvider, this.Workspace)
+        | Some (hier, textLines) when IsScript fileName ->
+            let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
+            this.SetupStandAloneFile(fileName, fileContents, this.Workspace, hier)
         | _ -> ()
-
-      
+        
