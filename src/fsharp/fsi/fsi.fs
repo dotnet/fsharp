@@ -450,9 +450,9 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, g: TcGlobals,
                     if isEmptyL lay then None else Some lay // suppress empty layout 
         let denv = { denv with suppressMutableKeyword = true } // suppress 'mutable' in 'val mutable it = ...'
         let fullL = if Option.isNone rhsL || isEmptyL rhsL.Value then
-                      NicePrint.layoutValOrMember denv vref (* the rhs was suppressed by the printer, so no value to print *)
+                      NicePrint.prettyLayoutOfValOrMember denv vref (* the rhs was suppressed by the printer, so no value to print *)
                     else
-                      (NicePrint.layoutValOrMember denv vref ++ wordL (TaggedTextOps.tagText "=")) --- rhsL.Value
+                      (NicePrint.prettyLayoutOfValOrMember denv vref ++ wordL (TaggedTextOps.tagText "=")) --- rhsL.Value
 
         Utilities.colorPrintL outWriter opts fullL
 

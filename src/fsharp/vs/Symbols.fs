@@ -1859,8 +1859,8 @@ and FSharpType(cenv, typ:TType) =
         "type " + NicePrint.prettyStringOfTyNoCx (DisplayEnv.Empty(cenv.g)) typ 
 
     static member Prettify(typ: FSharpType) = 
-        let t = PrettyTypes.PrettifyTypes1 typ.cenv.g typ.V  |> p23
-        typ.AdjustType t
+        let ty = PrettyTypes.PrettifyType typ.cenv.g typ.V  |> fst
+        typ.AdjustType ty
 
     static member Prettify(typs: IList<FSharpType>) = 
         let xs = typs |> List.ofSeq
@@ -1868,12 +1868,12 @@ and FSharpType(cenv, typ:TType) =
         | [] -> []
         | h :: _ -> 
             let cenv = h.cenv
-            let prettyTyps = PrettyTypes.PrettifyTypes cenv.g [ for t in xs -> t.V ] |> p23
+            let prettyTyps = PrettyTypes.PrettifyTypes cenv.g [ for t in xs -> t.V ] |> fst
             (xs, prettyTyps) ||> List.map2 (fun p pty -> p.AdjustType(pty))
         |> makeReadOnlyCollection
 
     static member Prettify(parameter: FSharpParameter) = 
-        let prettyTyp = parameter.V |> PrettyTypes.PrettifyTypes1 parameter.cenv.g |> p23
+        let prettyTyp = parameter.V |> PrettyTypes.PrettifyType parameter.cenv.g |> fst
         parameter.AdjustType(prettyTyp)
 
     static member Prettify(parameters: IList<FSharpParameter>) = 
@@ -1882,7 +1882,7 @@ and FSharpType(cenv, typ:TType) =
         | [] -> []
         | h :: _ -> 
             let cenv = h.cenv
-            let prettyTyps = parameters |> List.map (fun p -> p.V) |> PrettyTypes.PrettifyTypes cenv.g |> p23
+            let prettyTyps = parameters |> List.map (fun p -> p.V) |> PrettyTypes.PrettifyTypes cenv.g |> fst
             (parameters, prettyTyps) ||> List.map2 (fun p pty -> p.AdjustType(pty))
         |> makeReadOnlyCollection
 
@@ -1893,14 +1893,14 @@ and FSharpType(cenv, typ:TType) =
         | None -> xs
         | Some h -> 
             let cenv = h.cenv
-            let prettyTyps = xs |> List.mapSquared (fun p -> p.V) |> PrettyTypes.PrettifyCurriedTypes cenv.g |> p23
+            let prettyTyps = xs |> List.mapSquared (fun p -> p.V) |> PrettyTypes.PrettifyCurriedTypes cenv.g |> fst
             (xs, prettyTyps) ||> List.map2 (List.map2 (fun p pty -> p.AdjustType(pty)))
         |> List.map makeReadOnlyCollection |> makeReadOnlyCollection
 
     static member Prettify(parameters: IList<IList<FSharpParameter>>, returnParameter: FSharpParameter) = 
         let xs = parameters |> List.ofSeq |> List.map List.ofSeq
         let cenv = returnParameter.cenv
-        let prettyTyps, prettyRetTy = xs |> List.mapSquared (fun p -> p.V) |> (fun tys -> PrettyTypes.PrettifyCurriedSigTypes cenv.g (tys,returnParameter.V) )|> p23
+        let prettyTyps, prettyRetTy = xs |> List.mapSquared (fun p -> p.V) |> (fun tys -> PrettyTypes.PrettifyCurriedSigTypes cenv.g (tys,returnParameter.V) )|> fst
         let ps = (xs, prettyTyps) ||> List.map2 (List.map2 (fun p pty -> p.AdjustType(pty))) |> List.map makeReadOnlyCollection |> makeReadOnlyCollection
         ps, returnParameter.AdjustType(prettyRetTy)
 
