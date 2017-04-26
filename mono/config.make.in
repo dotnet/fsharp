@@ -59,34 +59,14 @@ endif
 
 endif
 
-ifeq (x-$(TargetFramework)-,x-monodroid-)
+ifeq (x-$(TargetFramework)-,x-monoandroid10+monotouch10+xamarinios10-)
 VERSION = 3.98.41.0
 outsuffix = $(TargetFramework)
 endif
 
-
-ifeq (x-$(TargetFramework)-,x-monotouch-)
-VERSION = 3.98.41.0
-outsuffix = $(TargetFramework)
-endif
-
-ifeq (x-$(TargetFramework)-,x-xamarinwatchos-)
-VERSION = 3.98.41.0
-outsuffix = $(TargetFramework)
-endif
-
-ifeq (x-$(TargetFramework)-,x-xamarintvos-)
-VERSION = 3.98.41.0
-outsuffix = $(TargetFramework)
-endif
 
 ifeq (x-$(TargetFramework)-,x-xamarinmacmobile-)
 VERSION = 3.99.41.0
-outsuffix = $(TargetFramework)
-endif
-
-ifeq (x-$(TargetFramework)-,x-xamarinmacfull-)
-VERSION = 3.100.41.0
 outsuffix = $(TargetFramework)
 endif
 

@@ -54,23 +54,11 @@ endif
 ifeq ("$(pclenabled259)", "yes")
 	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=portable259 src/fsharp/FSharp.Core/FSharp.Core.fsproj
 endif
-ifeq ("$(monotouchenabled)", "yes")
-	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=monotouch src/fsharp/FSharp.Core/FSharp.Core.fsproj
-endif
-ifeq ("$(monotouchenabled)", "yes")
-	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=xamarinwatchos src/fsharp/FSharp.Core/FSharp.Core.fsproj
-endif
-ifeq ("$(monotouchenabled)", "yes")
-	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=xamarintvos src/fsharp/FSharp.Core/FSharp.Core.fsproj
-endif
 ifeq ("$(monodroidenabled)", "yes")
-	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=monodroid src/fsharp/FSharp.Core/FSharp.Core.fsproj
+	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=monoandroid10+monotouch10+xamarinios10 src/fsharp/FSharp.Core/FSharp.Core.fsproj
 endif
 ifeq ("$(xamarinmacenabled)", "yes")
 	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=xamarinmacmobile src/fsharp/FSharp.Core/FSharp.Core.fsproj
-endif
-ifeq ("$(xamarinmacenabled)", "yes")
-	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=xamarinmacfull src/fsharp/FSharp.Core/FSharp.Core.fsproj
 endif
 
 
@@ -119,23 +107,11 @@ endif
 ifeq ("$(pclenabled259)", "yes")
 	$(MAKE) -C mono/FSharp.Core TargetFramework=portable259 install
 endif
-ifeq ("$(monotouchenabled)", "yes")
-	$(MAKE) -C mono/FSharp.Core TargetFramework=monotouch install
-endif
-ifeq ("$(monotouchenabled)", "yes")
-	$(MAKE) -C mono/FSharp.Core TargetFramework=xamarinwatchos install
-endif
-ifeq ("$(monotouchenabled)", "yes")
-	$(MAKE) -C mono/FSharp.Core TargetFramework=xamarintvos install
-endif
 ifeq ("$(monodroidenabled)", "yes")
-	$(MAKE) -C mono/FSharp.Core TargetFramework=monodroid install
+	$(MAKE) -C mono/FSharp.Core TargetFramework=monoandroid10+monotouch10+xamarinios10 install
 endif
 ifeq ("$(xamarinmacenabled)", "yes")
 	$(MAKE) -C mono/FSharp.Core TargetFramework=xamarinmacmobile install
-endif
-ifeq ("$(xamarinmacenabled)", "yes")
-	$(MAKE) -C mono/FSharp.Core TargetFramework=xamarinmacfull install
 endif
 	echo "------------------------------ INSTALLED FILES --------------"
 	ls -xlR $(DESTDIR)$(monodir)/fsharp $(DESTDIR)$(monodir)/xbuild $(DESTDIR)$(monodir)/gac/FSharp* $(DESTDIR)$(monodir)/Microsoft*

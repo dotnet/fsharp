@@ -8,12 +8,8 @@
     <FSCoreVersion Condition="'$(TargetFramework)' == 'portable47'">3.47.41.0</FSCoreVersion>
     <FSCoreVersion Condition="'$(TargetFramework)' == 'portable78'">3.78.41.0</FSCoreVersion>
     <FSCoreVersion Condition="'$(TargetFramework)' == 'portable259'">3.259.41.0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(TargetFramework)' == 'monodroid' ">3.98.41.0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(TargetFramework)' == 'monotouch' ">3.98.41.0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(TargetFramework)' == 'xamarinwatchos' ">3.98.41.0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(TargetFramework)' == 'xamarintvos' ">3.98.41.0</FSCoreVersion>
+    <FSCoreVersion Condition="'$(TargetFramework)' == 'monoandroid10+monotouch10+xamarinios10' ">3.98.41.0</FSCoreVersion>
     <FSCoreVersion Condition="'$(TargetFramework)' == 'xamarinmacmobile' ">3.99.41.0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(TargetFramework)' == 'xamarinmacfull' ">3.100.41.0</FSCoreVersion>
     <FSCoreVersion Condition="'$(FSharpCoreBackVersion)' == '3.0' AND '$(FSCoreVersion)' == '4.4.1.0'">4.3.0.0</FSCoreVersion>
     <FSCoreVersion Condition="'$(FSharpCoreBackVersion)' == '3.1' AND '$(FSCoreVersion)' == '4.4.1.0'">4.3.1.0</FSCoreVersion>
     <FSCoreVersion Condition="'$(FSharpCoreBackVersion)' == '4.0' AND '$(FSCoreVersion)' == '4.4.1.0'">4.4.0.0</FSCoreVersion>
@@ -155,7 +151,7 @@
 
 
   <!-- MonoAndroid, MonoTouch, XamarinWatchOS, XamarinTVOS -->
-  <PropertyGroup Condition="('$(TargetFramework)'=='monodroid') OR ('$(TargetFramework)'=='monotouch') OR ('$(TargetFramework)'=='xamarinwatchos') OR ('$(TargetFramework)'=='xamarintvos')">
+  <PropertyGroup Condition="('$(TargetFramework)'=='monoandroid10+monotouch10+xamarinios10')">
     <!-- Although Reflection Emit is available on MonoAndroid, we don't use it for FSharp.Core -->
     <!-- because we want the FSharp.Core DLLs to be identical for MonoAndroid and MonoTouch -->
     <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_EMIT</DefineConstants>
@@ -166,38 +162,14 @@
   </PropertyGroup>
 
   <!-- Target MonoAndroid -->
-  <PropertyGroup Condition="'$(TargetFramework)'=='monodroid'">
+  <PropertyGroup Condition="'$(TargetFramework)'=='monoandroid10+monotouch10+xamarinios10'">
     <AssemblySearchPaths>$(FSharpSourcesRoot)\..\mono\dependencies\2.1\MonoAndroid;$(AssemblySearchPaths)</AssemblySearchPaths>
 
   </PropertyGroup>
 
-  <!-- Target MonoTouch: identical to MonoAndroid configurations, though we sanity check by building against the MonoTouch mscorlib -->
-  <PropertyGroup Condition="'$(TargetFramework)'=='monotouch'">
-    <AssemblySearchPaths>$(FSharpSourcesRoot)\..\mono\dependencies\2.1\MonoTouch;$(AssemblySearchPaths)</AssemblySearchPaths>
-
-  </PropertyGroup>
-
-  <!-- Target XamarinWatchOS: identical to MonoTouch configurations, though we sanity check by building against the Xamarin.WatchOS mscorlib -->
-  <PropertyGroup Condition="'$(TargetFramework)'=='xamarinwatchos'">
-    <AssemblySearchPaths>$(FSharpSourcesRoot)\..\mono\dependencies\2.1\XamarinWatchOS;$(AssemblySearchPaths)</AssemblySearchPaths>
-
-  </PropertyGroup>
-
-  <!-- Target XamarinTVOS: identical to MonoTouch configurations, though we sanity check by building against the Xamarin.TVOS mscorlib -->
-  <PropertyGroup Condition="'$(TargetFramework)'=='xamarintvos'">
-    <AssemblySearchPaths>$(FSharpSourcesRoot)\..\mono\dependencies\2.1\XamarinTVOS;$(AssemblySearchPaths)</AssemblySearchPaths>
-
-  </PropertyGroup>
-
-  <!-- Target xamarinmacmobile similar to monotouch configurations, with Reflection.emit, structural equality, and BigInt -->
+  <!-- Target xamarinmacmobile similar to monoandroid10+monotouch10+xamarinios10 configurations, with Reflection.emit, structural equality, and BigInt -->
   <PropertyGroup Condition="'$(TargetFramework)'=='xamarinmacmobile'">
     <AssemblySearchPaths>$(FSharpSourcesRoot)\..\mono\dependencies\2.1\XamarinMac;$(AssemblySearchPaths)</AssemblySearchPaths>
-
-  </PropertyGroup>
-
-  <!-- Target xamarinmacfull should be identical to desktop with missing System.Config, System.Drawing etc -->
-  <PropertyGroup Condition="'$(TargetFramework)'=='xamarinmacfull'">
-    <AssemblySearchPaths>$(FSharpSourcesRoot)\..\mono\dependencies\4.5\XamarinMac;$(AssemblySearchPaths)</AssemblySearchPaths>
 
   </PropertyGroup>
 
