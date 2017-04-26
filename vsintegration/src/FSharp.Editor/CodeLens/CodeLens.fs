@@ -27,6 +27,7 @@ open Internal.Utilities.StructuredFormat
 open Microsoft.VisualStudio.Text.Tagging
 open Microsoft.VisualStudio.Text.Editor
 
+
 type internal CodeLensAdornment
     (
         workspace: Workspace,
@@ -38,7 +39,7 @@ type internal CodeLensAdornment
     ) as self =
     
     let formatMap = lazy typeMap.Value.ClassificationFormatMapService.GetClassificationFormatMap "tooltip"
-    let codeLensLines = Dictionary()
+    let codeLensLines = System.Collections.Concurrent.ConcurrentDictionary()
 
     do assert (documentId <> null)
 
@@ -106,12 +107,11 @@ type internal CodeLensAdornment
 
                             match func.FullTypeSafe with
                             | Some ty ->
-                                let typeLayout = ty.FormatLayout(displayContext)
-                                let taggedText = ResizeArray()
-                                Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
-                                
                                 let bufferPosition = view.TextSnapshot.GetLineFromLineNumber(lineNumber).Start
-                                if not (codeLensLines.ContainsKey lineNumber) then 
+                                if not (codeLensLines.ContainsKey lineNumber) then
+                                    let typeLayout = ty.FormatLayout(displayContext)
+                                    let taggedText = ResizeArray()
+                                    Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
                                     codeLensLines.[lineNumber] <- taggedText
                                     applyCodeLens bufferPosition taggedText
                             | None -> ()
@@ -129,8 +129,6 @@ type internal CodeLensAdornment
                             for func in entity.MembersFunctionsAndValues do
                                 useResults (symbolUse.DisplayContext, func)
                         | _ -> ()
-                        
-                Application.Current.Dispatcher.Invoke(Action(fun _ -> view.VisualElement.InvalidateArrange()))
             with
             | _ -> () // TODO: Should report error
         }
@@ -150,11 +148,13 @@ type internal CodeLensAdornment
         // Non expensive computations which have to be done immediate
         for line in e.NewOrReformattedLines do
             let lineNumber = view.TextSnapshot.GetLineNumberFromPosition(line.Start.Position)
-            codeLensLines.Remove(lineNumber) |> ignore //All changed lines are supposed to be now No-CodeLens-Lines (Reset)
-
-        for line in view.TextViewLines.WpfTextViewLines do
+            codeLensLines.TryRemove(lineNumber) |> ignore //All changed lines are supposed to be now No-CodeLens-Lines (Reset)
             if line.VisibilityState = VisibilityState.Unattached then 
                 view.DisplayTextLineContainingBufferPosition(line.Start, 0., ViewRelativePosition.Top) //Force refresh (works partly...)
+
+        //for line in view.TextViewLines.WpfTextViewLines do
+        //    if line.VisibilityState = VisibilityState.Unattached then 
+        //        view.DisplayTextLineContainingBufferPosition(line.Start, 0., ViewRelativePosition.Top) //Force refresh (works partly...)
         
         cancellationTokenSource.Cancel() // Stop all ongoing async workflow. 
         cancellationTokenSource.Dispose()
