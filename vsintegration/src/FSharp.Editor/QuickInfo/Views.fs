@@ -34,19 +34,6 @@ module private SessionHandling =
                   member __.AugmentQuickInfoSession(session,_,_) = currentSession <- Some session
                   member __.Dispose() = () }
 
-module private HyperlinkStyles =
-    // TODO: move this one time initialization to a more suitable spot
-    do Application.ResourceAssembly <- typeof<Microsoft.VisualStudio.FSharp.UIResources.Strings>.Assembly
-    let private styles = ResourceDictionary(Source = Uri("HyperlinkStyles.xaml", UriKind.Relative))
-    let getCurrent() : Style =
-        let key =
-            if Settings.QuickInfo.DisplayLinks then
-                match Settings.QuickInfo.UnderlineStyle with
-                | QuickInfoUnderlineStyle.Solid -> "solid_underline"
-                | QuickInfoUnderlineStyle.Dot -> "dot_underline"
-                | QuickInfoUnderlineStyle.Dash -> "dash_underline"
-            else "no_underline"
-        downcast styles.[key]
 
 [<Export>]
 type internal QuickInfoViewProvider
@@ -56,6 +43,20 @@ type internal QuickInfoViewProvider
         typeMap: Lazy<ClassificationTypeMap>,
         glyphService: IGlyphService
     ) =
+
+    do Application.ResourceAssembly <- typeof<Microsoft.VisualStudio.FSharp.UIResources.Strings>.Assembly
+
+    let styles = ResourceDictionary(Source = Uri("HyperlinkStyles.xaml", UriKind.Relative))
+
+    let getStyle() : Style =
+        let key =
+            if Settings.QuickInfo.DisplayLinks then
+                match Settings.QuickInfo.UnderlineStyle with
+                | QuickInfoUnderlineStyle.Solid -> "solid_underline"
+                | QuickInfoUnderlineStyle.Dot -> "dot_underline"
+                | QuickInfoUnderlineStyle.Dash -> "dash_underline"
+            else "no_underline"
+        downcast styles.[key]
 
     let formatMap = lazy typeMap.Value.ClassificationFormatMapService.GetClassificationFormatMap "tooltip"
 
@@ -92,7 +93,7 @@ type internal QuickInfoViewProvider
             DependencyObjectExtensions.SetDefaultTextProperties(tb, formatMap.Value)
             tb.Inlines.AddRange inlines
             if tb.Inlines.Count = 0 then tb.Visibility <- Visibility.Collapsed
-            tb.Resources.[typeof<Documents.Hyperlink>] <- HyperlinkStyles.getCurrent()
+            tb.Resources.[typeof<Documents.Hyperlink>] <- getStyle()
             tb :> FrameworkElement
             
         { new IDeferredQuickInfoContent with member x.Create() = createTextLinks() }

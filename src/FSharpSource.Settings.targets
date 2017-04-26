@@ -46,7 +46,7 @@
 
   <PropertyGroup Condition="'$(MonoPackaging)' != 'true' AND '$(OS)' != 'Unix'">
     <UseMicroBuild>true</UseMicroBuild> 
-    <UseSourceLink Condition = " '$(UseSourceLink)' == '' AND '$(Configuration)'=='Release' ">true</UseSourceLink>
+    <UseSourceLink Condition = " '$(UseSourceLink)' == '' AND '$(Configuration)'=='Release' ">false</UseSourceLink>
     <UseGatherBinaries>true</UseGatherBinaries>
     <AddVsSdkAttributesToSomeCoreComponents>true</AddVsSdkAttributesToSomeCoreComponents>
     <VsSDKInstall Condition=" '$(VsSDKInstall)' == '' ">$(MSBuildThisFileDirectory)..\packages\$(VSSDK_BUILDTOOLS_VERSION)\tools\vssdk</VsSDKInstall>
@@ -77,11 +77,10 @@
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <!-- Flags used for Release mode.		-->
-    <DebugType Condition=" '$(DebugType)' == '' and '$(TargetFramework)' != 'coreclr' and '$(UseSourceLink)' != 'true' ">pdbonly</DebugType>
-    <DebugType Condition=" '$(DebugType)' == '' ">portable</DebugType>
+    <DebugType>pdbonly</DebugType>
+
     <Optimize Condition=" '$(Optimize)' == '' ">true</Optimize>
     <EmbedAllSource>false</EmbedAllSource>
-
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
     <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">TRACE;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">TRACE=True,$(DefineConstants)</DefineConstants>

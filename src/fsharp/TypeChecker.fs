@@ -9391,14 +9391,15 @@ and TcMethodApplication
 
         let callerArgCounts = (List.sumBy List.length unnamedCurriedCallerArgs, List.sumBy List.length namedCurriedCallerArgs)
 
+        let callerArgs = List.zip unnamedCurriedCallerArgs namedCurriedCallerArgs
+
         let makeOneCalledMeth (minfo,pinfoOpt,usesParamArrayConversion) = 
             let minst = FreshenMethInfo mItem minfo
             let callerTyArgs = 
                 match tyargsOpt with 
                 | Some tyargs -> minfo.AdjustUserTypeInstForFSharpStyleIndexedExtensionMembers(tyargs)
                 | None -> minst
-            let allArgs = List.zip unnamedCurriedCallerArgs namedCurriedCallerArgs
-            CalledMeth<SynExpr>(cenv.infoReader,Some(env.NameEnv),checkingAttributeCall, FreshenMethInfo, mMethExpr,ad,minfo,minst,callerTyArgs,pinfoOpt,callerObjArgTys,allArgs,usesParamArrayConversion,true,objTyOpt)
+            CalledMeth<SynExpr>(cenv.infoReader,Some(env.NameEnv),checkingAttributeCall, FreshenMethInfo, mMethExpr,ad,minfo,minst,callerTyArgs,pinfoOpt,callerObjArgTys,callerArgs,usesParamArrayConversion,true,objTyOpt)
 
         let preArgumentTypeCheckingCalledMethGroup = 
             [ for (minfo,pinfoOpt) in candidateMethsAndProps do
@@ -9484,13 +9485,14 @@ and TcMethodApplication
     /// Select the called method that's the result of overload resolution
     let finalCalledMeth = 
 
+        let callerArgs = List.zip unnamedCurriedCallerArgs namedCurriedCallerArgs
+
         let postArgumentTypeCheckingCalledMethGroup = 
             preArgumentTypeCheckingCalledMethGroup |> List.map (fun (minfo:MethInfo,minst,pinfoOpt,usesParamArrayConversion) ->
                 let callerTyArgs = 
                     match tyargsOpt with 
                     | Some tyargs -> minfo.AdjustUserTypeInstForFSharpStyleIndexedExtensionMembers(tyargs)
                     | None -> minst
-                let callerArgs = List.zip unnamedCurriedCallerArgs namedCurriedCallerArgs
                 CalledMeth<Expr>(cenv.infoReader,Some(env.NameEnv),checkingAttributeCall,FreshenMethInfo, mMethExpr,ad,minfo,minst,callerTyArgs,pinfoOpt,callerObjArgTys,callerArgs,usesParamArrayConversion,true,objTyOpt))
           
         let callerArgCounts = (unnamedCurriedCallerArgs.Length, namedCurriedCallerArgs.Length)
