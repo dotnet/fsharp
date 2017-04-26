@@ -1830,7 +1830,7 @@ let rec buildTypeDefPass2 cenv nesting emEnv (tdef : ILTypeDef) =
     // add interface impls
     tdef.Implements |> convTypes cenv emEnv |> Seq.iter (fun implT -> typB.AddInterfaceImplementationAndLog(implT));
     // add methods, properties
-    let emEnv = Seq.fold (buildMethodPass2      cenv tref typB) emEnv tdef.Methods.AsList 
+    let emEnv = Seq.fold (buildMethodPass2      cenv tref typB) emEnv tdef.Methods.AsSeq 
     let emEnv = Seq.fold (buildFieldPass2       cenv tref typB) emEnv tdef.Fields.AsList  
     let emEnv = Seq.fold (buildPropertyPass2    cenv tref typB) emEnv tdef.Properties.AsList 
     let emEnv = envPopTyvars emEnv
@@ -1947,7 +1947,7 @@ let createTypeRef (visited : Dictionary<_,_>, created : Dictionary<_,_>) emEnv t
                 traverseType CollectTypes.All cx
 
         if verbose2 then dprintf "buildTypeDefPass4: Doing method constraints of %s\n" tdef.Name; 
-        for md in tdef.Methods.AsList do
+        for md in tdef.Methods.AsSeq do
             for gp in md.GenericParams do 
                 for cx in gp.Constraints do 
                     traverseType CollectTypes.All cx

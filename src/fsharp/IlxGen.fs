@@ -1084,7 +1084,7 @@ type TypeDefBuilder(tdef, tdefDiscards) =
     
     member b.Close() = 
         { tdef with 
-            Methods = mkILMethods      (tdef.Methods.AsList @ ResizeArray.toList gmethods)
+            Methods = mkILMethods      (Seq.append tdef.Methods.AsSeq gmethods)
             Fields  = mkILFields      (tdef.Fields.AsList  @ ResizeArray.toList gfields)
             Properties = mkILProperties (tdef.Properties.AsList @ HashRangeSorted gproperties )
             Events     = mkILEvents     (tdef.Events.AsList     @ ResizeArray.toList gevents)
@@ -1136,7 +1136,7 @@ and TypeDefsBuilder() =
                  || not tdef.Fields.AsList.IsEmpty 
                  || not tdef.Events.AsList.IsEmpty 
                  || not tdef.Properties.AsList.IsEmpty 
-                 || not tdef.Methods.AsList.IsEmpty then 
+                 || not (Seq.isEmpty tdef.Methods.AsSeq) then 
                   yield tdef  ]
 
     member b.FindTypeDefBuilder(nm) = 
@@ -4059,7 +4059,7 @@ and GenDelegateExpr cenv cgbuf eenvouter expr (TObjExprMethod((TSlotSig(_,delega
             if isILAppTy cenv.g delegateTy then 
                 let tcref = tcrefOfAppTy cenv.g delegateTy
                 let tdef = tcref.ILTyconRawMetadata
-                match tdef.Methods.FindByName ".ctor" with 
+                match tdef.Methods.FindByName ".ctor" |> Seq.toList with 
                 | [ctorMDef] -> 
                     match ctorMDef.Parameters with 
                     | [ _;p2 ] -> (p2.Type.TypeSpec.Name = "System.UIntPtr")

@@ -888,7 +888,7 @@ let splitTypeLayout = function
 let goutput_fdefs tref env os (fdefs: ILFieldDefs) = 
   Seq.iter (fun f -> (goutput_fdef tref env) os f; output_string os "\n" ) fdefs.AsList
 let goutput_mdefs env os (mdefs: ILMethodDefs) = 
-  Seq.iter (fun f -> (goutput_mdef env) os f; output_string os "\n" ) mdefs.AsList
+  Seq.iter (fun f -> (goutput_mdef env) os f; output_string os "\n" ) mdefs.AsSeq
 let goutput_pdefs env os (pdefs: ILPropertyDefs) = 
   Seq.iter (fun f -> (goutput_pdef env) os f; output_string os "\n" ) pdefs.AsList
 

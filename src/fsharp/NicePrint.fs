@@ -453,8 +453,8 @@ module private PrintIL =
 
             let memberBlockLs (fieldDefs:ILFieldDefs, methodDefs:ILMethodDefs, propertyDefs:ILPropertyDefs, eventDefs:ILEventDefs) =
                 let ctors  =
-                    methodDefs.AsList
-                    |> List.filter isPublicILCtor 
+                    methodDefs.AsSeq
+                    |> Seq.filter isPublicILCtor 
                     |> Seq.sortBy (fun md -> md.Parameters.Length)
                     |> Seq.toList
                     |> shrinkOverloads (layoutILMethodDef denv ilTyparSubst typeDef.Name) (fun _ xL -> xL) 
@@ -475,13 +475,14 @@ module private PrintIL =
                     |> List.map (layoutILEventDef denv ilTyparSubst)
 
                 let meths = 
-                    methodDefs.AsList
-                    |> List.filter isPublicILMethod 
-                    |> List.filter isNotSpecialName 
-                    |> List.map (fun md -> (md.Name, md.Parameters.Length), md)
+                    methodDefs.AsSeq
+                    |> Seq.filter isPublicILMethod 
+                    |> Seq.filter isNotSpecialName 
+                    |> Seq.map (fun md -> (md.Name, md.Parameters.Length), md)
                     // collect into overload groups
-                    |> List.groupBy (fst >> fst)
-                    |> List.collect (fun (_,group) -> group |> Seq.sortBy fst |> Seq.toList |> shrinkOverloads (snd >> layoutILMethodDef denv ilTyparSubst typeDef.Name) (fun x xL -> (fst x,xL)))
+                    |> Seq.groupBy (fst >> fst)
+                    |> Seq.collect (fun (_,group) -> group |> Seq.sortBy fst |> Seq.toList |> shrinkOverloads (snd >> layoutILMethodDef denv ilTyparSubst typeDef.Name) (fun x xL -> (fst x,xL)))
+                    |> Seq.toList
 
                 let members = 
                     (props @ meths) 
@@ -494,13 +495,13 @@ module private PrintIL =
 
             let bodyStatic   = 
                 memberBlockLs (typeDef.Fields.AsList |> List.filter (fun fd -> fd.IsStatic)                 |> mkILFields,
-                                typeDef.Methods.AsList |> List.filter (fun md -> md.IsStatic)                |> mkILMethods,
+                                typeDef.Methods.AsSeq |> Seq.filter (fun md -> md.IsStatic)                |> mkILMethods,
                                 typeDef.Properties.AsList |> List.filter (fun pd -> isStaticILProperty pd)     |> mkILProperties,
                                 typeDef.Events.AsList |> List.filter (fun ed -> isStaticILEvent ed)            |> mkILEvents)
 
             let bodyInstance = 
                 memberBlockLs (typeDef.Fields.AsList |> List.filter (fun fd -> not(fd.IsStatic))                |> mkILFields,
-                                typeDef.Methods.AsList |> List.filter (fun md -> not(md.IsStatic))               |> mkILMethods,
+                                typeDef.Methods.AsSeq |> Seq.filter (fun md -> not(md.IsStatic))               |> mkILMethods,
                                 typeDef.Properties.AsList |> List.filter (fun pd -> not(isStaticILProperty pd))    |> mkILProperties,
                                 typeDef.Events.AsList |> List.filter (fun ed -> not(isStaticILEvent ed))           |> mkILEvents )
   
@@ -530,7 +531,7 @@ module private PrintIL =
 
         | ILTypeDefKind.Delegate  -> 
             let rhs = 
-                match typeDef.Methods.AsList |> List.filter (fun m -> m.Name = "Invoke") with // the delegate delegates to the type of `Invoke`
+                match typeDef.Methods.AsSeq |> Seq.filter (fun m -> m.Name = "Invoke") |> Seq.toList with // the delegate delegates to the type of `Invoke`
                 | m :: _ -> layoutILCallingSignature denv ilTyparSubst None m.CallingSignature
                 | _      -> comment "`Invoke` method could not be found"
             WordL.keywordDelegate ^^ WordL.keywordOf ^^ rhs

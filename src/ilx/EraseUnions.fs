@@ -1056,7 +1056,7 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
     // The class can be abstract if each alternative is represented by a derived type
     let isAbstract = (altTypeDefs.Length = cud.cudAlternatives.Length)        
 
-    let existingMeths = td.Methods.AsList 
+    let existingMeths = td.Methods.AsSeq |> Seq.toList 
     let existingProps = td.Properties.AsList
 
     let enumTypeDef = 

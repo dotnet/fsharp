@@ -126,7 +126,7 @@ type cenv =
       addMethodGeneratedAttrs: ILMethodDef -> ILMethodDef }
   
 let addMethodGeneratedAttrsToTypeDef cenv tdef = 
-    { tdef with Methods = tdef.Methods.AsList |> List.map (fun md -> md |> cenv.addMethodGeneratedAttrs) |> mkILMethods }
+    { tdef with Methods = tdef.Methods.AsSeq |> Seq.map (fun md -> md |> cenv.addMethodGeneratedAttrs) |> mkILMethods }
 
 let newIlxPubCloEnv(ilg,addMethodGeneratedAttrs,addFieldGeneratedAttrs,addFieldNeverAttrs) =
     { ilg=ilg;
@@ -642,7 +642,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                   Extends= (match td.Extends with None -> Some cenv.ilg.typ_Object | Some x -> Some(x));
                   Name = td.Name;
                   GenericParams= td.GenericParams;
-                  Methods= mkILMethods (ctorMethodDef :: List.map (convMethodDef (Some nowCloSpec)) td.Methods.AsList); 
+                  Methods= mkILMethods (Seq.append [ctorMethodDef] (Seq.map (convMethodDef (Some nowCloSpec)) td.Methods.AsSeq)); 
                   Fields= mkILFields (mkILCloFldDefs cenv nowFields @ td.Fields.AsList);
                   tdKind = ILTypeDefKind.Class; } 
 

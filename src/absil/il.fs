@@ -1428,9 +1428,9 @@ type ILMethodDefs(f : (unit -> ILMethodDef[])) =
         member x.GetEnumerator() = (array.Value :> IEnumerable<ILMethodDef>).GetEnumerator()
 
     member x.AsArray = array.Value
-    member x.AsList = array.Value|> Array.toList
-    member x.FindByName nm  =  if dict.Value.ContainsKey nm then dict.Value.[nm] else []
-    member x.FindByNameAndArity (nm,arity) = x.FindByName nm |> List.filter (fun x -> List.length x.Parameters = arity)
+    member x.AsSeq = array.Value|> Seq.ofArray
+    member x.FindByName nm  =  if dict.Value.ContainsKey nm then Seq.ofList dict.Value.[nm] else Seq.ofList []
+    member x.FindByNameAndArity (nm,arity) = x.FindByName nm |> Seq.filter (fun x -> List.length x.Parameters = arity)
 
 [<NoComparison; NoEquality>]
 type ILEventDef =
@@ -1944,7 +1944,7 @@ let emptyILTypeDefs = mkILTypeDefsFromArray [| |]
 // -------------------------------------------------------------------- 
 
 let mkILMethodsFromArray xs =  ILMethodDefs (fun () -> xs)
-let mkILMethods xs =  xs |> Array.ofList |> mkILMethodsFromArray
+let mkILMethods xs =  xs |> Seq.toArray |> mkILMethodsFromArray
 let mkILMethodsComputed f =  ILMethodDefs f
 let emptyILMethods = mkILMethodsFromArray [| |]
 
@@ -2512,7 +2512,7 @@ let prependInstrsToMethod new_code md  =
 let cdef_cctorCode2CodeOrCreate tag f cd = 
     let mdefs = cd.Methods
     let cctor = 
-        match mdefs.FindByName ".cctor" with 
+        match mdefs.FindByName ".cctor" |> Seq.toList with 
         | [mdef] -> mdef
         | [] -> mkILClassCtor (mkMethodBody (false,[],1,nonBranchingInstrsToCode [ ],tag))
         | _ -> failwith "bad method table: more than one .cctor found"
@@ -3687,14 +3687,14 @@ let resolveILMethodRefWithRescope r td (mref:ILMethodRef) =
     let nargs = args.Length
     let nm = mref.Name
     let possibles = td.Methods.FindByNameAndArity (nm,nargs)
-    if isNil possibles then failwith ("no method named " + nm + " found in type " + td.Name)
+    if Seq.isEmpty possibles then failwith ("no method named " + nm + " found in type " + td.Name)
     match 
-      possibles |> List.filter (fun md -> 
+      possibles |> Seq.filter (fun md -> 
           mref.CallingConv = md.CallingConv &&
           // REVIEW: this uses equality on ILType.  For CMOD_OPTIONAL this is not going to be correct
           (md.Parameters,mref.ArgTypes) ||> List.lengthsEqAndForall2 (fun p1 p2 -> r p1.Type = p2) &&
           // REVIEW: this uses equality on ILType.  For CMOD_OPTIONAL this is not going to be correct 
-          r md.Return.Type = mref.ReturnType) with 
+          r md.Return.Type = mref.ReturnType) |> Seq.toList with 
     | [] -> failwith ("no method named "+nm+" with appropriate argument types found in type "+td.Name)
     | [mdef] ->  mdef
     | _ -> failwith ("multiple methods named "+nm+" appear with identical argument types in type "+td.Name)

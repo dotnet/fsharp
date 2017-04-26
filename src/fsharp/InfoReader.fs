@@ -68,8 +68,8 @@ let GetImmediateIntrinsicMethInfosOfType (optFilter,ad) g amap m typ =
 #endif
         | ILTypeMetadata (TILObjectReprData(_,_,tdef)) -> 
             let mdefs = tdef.Methods
-            let mdefs = (match optFilter with None -> mdefs.AsList | Some nm -> mdefs.FindByName nm)
-            mdefs |> List.map (fun mdef -> MethInfo.CreateILMeth(amap, m, typ, mdef)) 
+            let mdefs = (match optFilter with None -> mdefs.AsSeq | Some nm -> mdefs.FindByName nm)
+            mdefs |> Seq.map (fun mdef -> MethInfo.CreateILMeth(amap, m, typ, mdef)) |> Seq.toList
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
             match tryDestAppTy g typ with
             | None -> []
@@ -427,8 +427,9 @@ let GetIntrinsicConstructorInfosOfType (infoReader:InfoReader) m ty =
         | ILTypeMetadata _ -> 
             let tinfo = ILTypeInfo.FromType g ty
             tinfo.RawMetadata.Methods.FindByName ".ctor" 
-            |> List.filter (fun md -> match md.mdKind with MethodKind.Ctor -> true | _ -> false) 
-            |> List.map (fun mdef -> MethInfo.CreateILMeth (amap, m, ty, mdef)) 
+            |> Seq.filter (fun md -> match md.mdKind with MethodKind.Ctor -> true | _ -> false) 
+            |> Seq.map (fun mdef -> MethInfo.CreateILMeth (amap, m, ty, mdef)) 
+            |> Seq.toList
 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
             let tcref = tcrefOfAppTy g ty

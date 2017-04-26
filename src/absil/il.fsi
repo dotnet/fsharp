@@ -1092,8 +1092,8 @@ type ILMethodDef =
 type ILMethodDefs =
     interface IEnumerable<ILMethodDef>
     member AsArray : ILMethodDef[]
-    member AsList : ILMethodDef list
-    member FindByName : string -> ILMethodDef list
+    member AsSeq : ILMethodDef seq
+    member FindByName : string -> ILMethodDef seq
 
 /// Field definitions.
 [<NoComparison; NoEquality>]
@@ -1752,7 +1752,7 @@ val mkILProperties: ILPropertyDef list -> ILPropertyDefs
 val mkILPropertiesLazy: Lazy<ILPropertyDef list> -> ILPropertyDefs
 val emptyILProperties: ILPropertyDefs
 
-val mkILMethods: ILMethodDef list -> ILMethodDefs
+val mkILMethods: ILMethodDef seq -> ILMethodDefs
 val mkILMethodsFromArray: ILMethodDef[] -> ILMethodDefs
 val mkILMethodsComputed: (unit -> ILMethodDef[]) -> ILMethodDefs
 val emptyILMethods: ILMethodDefs

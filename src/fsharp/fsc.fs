@@ -1157,7 +1157,7 @@ module StaticLinker =
             let topTypeDef = 
                 let topTypeDefs = List.concat topTypeDefs
                 mkILTypeDefForGlobalFunctions ilGlobals
-                   (mkILMethods (topTypeDefs |> List.collect (fun td -> td.Methods.AsList)), 
+                   (mkILMethods (topTypeDefs |> Seq.collect (fun td -> td.Methods.AsSeq)), 
                     mkILFields (topTypeDefs |> List.collect (fun td -> td.Fields.AsList)))
 
             let ilxMainModule = 
@@ -1211,8 +1211,8 @@ module StaticLinker =
                       ([ for td in fakeModule.TypeDefs do 
                             yield {td with 
                                       Methods =
-                                        td.Methods.AsList
-                                        |> List.map (fun md ->
+                                        td.Methods.AsSeq
+                                        |> Seq.map (fun md ->
                                             {md with CustomAttrs = 
                                                         mkILCustomAttrs (td.CustomAttrs.AsList |> List.filter (fun ilattr ->
                                                             ilattr.Method.EnclosingType.TypeRef.FullName <> "System.Runtime.TargetedPatchingOptOutAttribute")  )}) 
