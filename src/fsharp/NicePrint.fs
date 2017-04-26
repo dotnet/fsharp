@@ -1029,22 +1029,24 @@ module private PrintTypes =
             (if prefix || not (isNil tpcs) then nmL ^^ angleL (coreL --- tpcsL) else bracketL coreL --- nmL)
 
 
-    let layoutTyparConstraint denv typars = 
-        match layoutConstraintWithInfo denv SimplifyTypes.typeSimplificationInfo0 typars  with 
+    let layoutTyparConstraint denv (tp, tpc) = 
+        match layoutConstraintWithInfo denv SimplifyTypes.typeSimplificationInfo0 (tp, tpc) with 
         | h::_ -> h 
         | [] -> emptyL
 
-    let prettyLayoutOfInstAndSig denv (tpinst: TyparInst, tys, rty) =
-        let (prettyTyparInst, prettyTys, prettyRetTy), cxs = PrettyTypes.PrettifyInstAndSig denv.g (tpinst, tys, rty)
+    let prettyLayoutOfInstAndSig denv (typarInst, tys, retTy) =
+        let (prettyTyparInst, prettyTys, prettyRetTy), cxs = PrettyTypes.PrettifyInstAndSig denv.g (typarInst, tys, retTy)
         let env = SimplifyTypes.CollectInfo true (prettyRetTy :: prettyTys) cxs
         let prettyTysL = List.map (layoutTypeWithInfo denv env) prettyTys
         let prettyRetTyL = layoutTopType denv env [[]] prettyRetTy []
         prettyTyparInst, (prettyTys, prettyRetTy), (prettyTysL, prettyRetTyL), layoutConstraintsWithInfo denv env env.postfixConstraints
 
-    let prettyLayoutOfTopTypeInfoAux denv argInfos tau cxs = 
-        let env = SimplifyTypes.CollectInfo true (tau:: List.collect (List.map fst) argInfos) cxs
-        layoutTopType denv env argInfos tau env.postfixConstraints
+    let prettyLayoutOfTopTypeInfoAux denv argInfos retTy cxs = 
+        let env = SimplifyTypes.CollectInfo true (retTy :: List.collect (List.map fst) argInfos) cxs
+        layoutTopType denv env argInfos retTy env.postfixConstraints
 
+    // Oddly this is called in multiple places with argInfos=[] and denv.useColonForReturnType=true, as a complex
+    // way of giving give ": ty"
     let prettyLayoutOfUncurriedSig denv argInfos retTy = 
         let (prettyArgInfos,prettyRetTy),cxs = PrettyTypes.PrettifyUncurriedSig denv.g (argInfos,retTy)
         prettyLayoutOfTopTypeInfoAux denv [prettyArgInfos] prettyRetTy cxs
