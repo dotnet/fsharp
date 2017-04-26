@@ -1868,7 +1868,7 @@ and FSharpType(cenv, typ:TType) =
         | [] -> []
         | h :: _ -> 
             let cenv = h.cenv
-            let prettyTyps = PrettyTypes.PrettifyTypesN cenv.g [ for t in xs -> t.V ] |> p23
+            let prettyTyps = PrettyTypes.PrettifyTypes cenv.g [ for t in xs -> t.V ] |> p23
             (xs, prettyTyps) ||> List.map2 (fun p pty -> p.AdjustType(pty))
         |> makeReadOnlyCollection
 
@@ -1882,7 +1882,7 @@ and FSharpType(cenv, typ:TType) =
         | [] -> []
         | h :: _ -> 
             let cenv = h.cenv
-            let prettyTyps = parameters |> List.map (fun p -> p.V) |> PrettyTypes.PrettifyTypesN cenv.g |> p23
+            let prettyTyps = parameters |> List.map (fun p -> p.V) |> PrettyTypes.PrettifyTypes cenv.g |> p23
             (parameters, prettyTyps) ||> List.map2 (fun p pty -> p.AdjustType(pty))
         |> makeReadOnlyCollection
 

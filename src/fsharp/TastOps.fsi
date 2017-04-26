@@ -357,9 +357,6 @@ val instTypes              : TyparInst -> TypeInst -> TypeInst
 val instTyparConstraints  : TyparInst -> TyparConstraint list -> TyparConstraint list 
 val instTrait              : TyparInst -> TraitConstraintInfo -> TraitConstraintInfo 
 
-/// Rename the type paraneters being instantiated in a type parameter instantiation
-val renameTyparInst          : TcGlobals -> TyparInst -> TyparInst -> TyparInst
-
 //-------------------------------------------------------------------------
 // From typars to types 
 //------------------------------------------------------------------------- 
@@ -618,11 +615,13 @@ module PrettyTypes =
     val PrettyTyparNames : (Typar -> bool) -> string list -> Typars -> string list
     val PrettifyTypes1 : TcGlobals -> TType -> TyparInst * TType * TyparConstraintsWithTypars
     val PrettifyTypes2 : TcGlobals -> TType * TType -> TyparInst * (TType * TType) * TyparConstraintsWithTypars
-    val PrettifyTypesN : TcGlobals -> TType list -> TyparInst * TType list * TyparConstraintsWithTypars
+    val PrettifyTypes : TcGlobals -> TTypes -> TyparInst * TTypes * TyparConstraintsWithTypars
+    val PrettifyInstAndTypes : TcGlobals -> TyparInst * TTypes -> TyparInst * (TyparInst * TTypes) * TyparConstraintsWithTypars
+    val PrettifyInstAndSig : TcGlobals -> TyparInst * TTypes * TType -> TyparInst * (TyparInst * TTypes * TType) * TyparConstraintsWithTypars
     val PrettifyTypesNN : TcGlobals -> TType list list -> TyparInst * TType list list * TyparConstraintsWithTypars
     val PrettifyTypesNN1 : TcGlobals -> TType list list * TType -> TyparInst * (TType list list * TType) * TyparConstraintsWithTypars
-    val PrettifyTypesN1 : TcGlobals -> UncurriedArgInfos * TType -> TyparInst * (UncurriedArgInfos * TType) * TyparConstraintsWithTypars
-    val PrettifyTypesNM1 : TcGlobals -> TType list * CurriedArgInfos * TType -> TyparInst * (TType list * CurriedArgInfos * TType) * TyparConstraintsWithTypars
+    val PrettifyUncurriedSig : TcGlobals -> UncurriedArgInfos * TType -> TyparInst * (UncurriedArgInfos * TType) * TyparConstraintsWithTypars
+    val PrettifyCurriedSig : TcGlobals -> TType list * CurriedArgInfos * TType -> TyparInst * (TType list * CurriedArgInfos * TType) * TyparConstraintsWithTypars
 
 [<NoEquality; NoComparison>]
 type DisplayEnv = 

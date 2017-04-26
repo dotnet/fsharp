@@ -69,7 +69,7 @@ module DispatchSlotChecking =
            match argTys with 
            | [] -> [[(denv.g.unit_ty,ValReprInfo.unnamedTopArg1)]]
            | _ -> argTys |> List.mapSquared (fun ty -> (ty, ValReprInfo.unnamedTopArg1)) 
-       Layout.bufferL os (NicePrint.layoutMemberSig denv (memberToParentInst,id.idText,mtps, argInfos, retTy))
+       Layout.bufferL os (NicePrint.prettyLayoutOfMemberSig denv (memberToParentInst,id.idText,mtps, argInfos, retTy))
 
     /// Print the signature of a MethInfo to a buffer as part of an error message
     let PrintMethInfoSigToBuffer g amap m denv os minfo =
@@ -78,7 +78,7 @@ module DispatchSlotChecking =
         let retTy = (retTy  |> GetFSharpViewOfReturnType g)
         let argInfos = argTys |> List.mapSquared (fun ty -> (ty, ValReprInfo.unnamedTopArg1))
         let nm = minfo.LogicalName
-        Layout.bufferL os (NicePrint.layoutMemberSig denv (ttpinst,nm,fmtps, argInfos, retTy))
+        Layout.bufferL os (NicePrint.prettyLayoutOfMemberSig denv (ttpinst,nm,fmtps, argInfos, retTy))
 
     /// Format the signature of an override as a string as part of an error message
     let FormatOverride denv d = bufs (fun buf -> PrintOverrideToBuffer denv buf d)

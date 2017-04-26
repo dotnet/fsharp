@@ -125,13 +125,13 @@ type UnresolvedSymbol =
       Namespace: string[] }
 
 type internal CompletionItem =
-    { Item: Item
+    { ItemWithInst: ItemWithInst
       Kind: CompletionItemKind
       IsOwnMember: bool
       MinorPriority: int
       Type: TyconRef option 
       Unresolved: UnresolvedSymbol option }
-
+    member Item : Item
 
 [<Sealed>]
 /// Represents a set of declarations in F# source code, with information attached ready for display by an editor.
@@ -213,7 +213,7 @@ type internal FSharpMethodGroup =
     /// The methods (or other items) in the group
     member Methods: FSharpMethodGroupItem[] 
 
-    static member internal Create : InfoReader * range * DisplayEnv * (Item * TyparInst) list -> FSharpMethodGroup
+    static member internal Create : InfoReader * range * DisplayEnv * ItemWithInst list -> FSharpMethodGroup
 
 // implementation details used by other code in the compiler    
 module internal ItemDescriptionsImpl = 
@@ -230,21 +230,18 @@ module internal ItemDescriptionsImpl =
     val GetXmlDocSigOfProp : InfoReader -> range -> PropInfo -> (string option * string) option
     val GetXmlDocSigOfEvent : InfoReader -> range -> EventInfo -> (string option * string) option
     val GetXmlCommentForItem : InfoReader -> range -> Item -> FSharpXmlDoc
-    val FormatStructuredDescriptionOfItem : bool -> InfoReader -> range -> DisplayEnv -> Item -> FSharpToolTipElement<Layout>
-    val FormatDescriptionOfItem : bool -> InfoReader -> range -> DisplayEnv -> Item -> FSharpToolTipElement<string>
-    val RemoveDuplicateItems : TcGlobals -> Item list -> Item list
-    val RemoveDuplicateItemsWithType : TcGlobals -> (Item * TType option) list -> (Item * TType option) list
-    val RemoveExplicitlySuppressed : TcGlobals -> Item list -> Item list
+    val FormatStructuredDescriptionOfItem : isDecl:bool -> InfoReader -> range -> DisplayEnv -> ItemWithInst -> FSharpStructuredToolTipElement
+    val FormatDescriptionOfItem : bool -> InfoReader -> range -> DisplayEnv -> ItemWithInst -> FSharpToolTipElement<string>
+    val RemoveDuplicateItems : TcGlobals -> ItemWithInst list -> ItemWithInst list
+    val RemoveExplicitlySuppressed : TcGlobals -> ItemWithInst list -> ItemWithInst list
     val RemoveDuplicateCompletionItems : TcGlobals -> CompletionItem list -> CompletionItem list
     val RemoveExplicitlySuppressedCompletionItems : TcGlobals -> CompletionItem list -> CompletionItem list
-    val RemoveExplicitlySuppressedItemsWithType : TcGlobals -> (Item * TType option) list -> (Item * TType option) list
     val GetF1Keyword : TcGlobals -> Item -> string option
     val rangeOfItem : TcGlobals -> bool option -> Item -> range option
     val fileNameOfItem : TcGlobals -> string option -> range -> Item -> string
     val FullNameOfItem : TcGlobals -> Item -> string
     val ccuOfItem : TcGlobals -> Item -> CcuThunk option
     val mutable ToolTipFault : string option
-    val FormatStructuredDescriptionOfItem : isDecl:bool -> InfoReader -> range -> DisplayEnv -> Item -> FSharpStructuredToolTipElement
     val GlyphOfItem : DisplayEnv * Item -> FSharpGlyph
     val IsAttribute : InfoReader -> Item -> bool
     val IsExplicitlySuppressed : TcGlobals -> Item -> bool

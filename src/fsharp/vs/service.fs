@@ -93,7 +93,7 @@ type FSharpFindDeclResult =
 [<RequireQualifiedAccess>]
 [<NoEquality; NoComparison>]
 type internal NameResResult = 
-    | Members of (Item list * DisplayEnv * range)
+    | Members of (ItemWithInst list * DisplayEnv * range)
     | Cancel of DisplayEnv * range
     | Empty
     | TypecheckStaleAndTextChanged
@@ -109,7 +109,7 @@ type GetPreciseCompletionListFromExprTypingsResult =
     | NoneBecauseTypecheckIsStaleAndTextChanged
     | NoneBecauseThereWereTypeErrors
     | None
-    | Some of (Item list * DisplayEnv * range) * TType
+    | Some of (ItemWithInst list * DisplayEnv * range) * TType
 
 type Names = string list 
 
@@ -254,12 +254,12 @@ type TypeCheckInfo
     /// noisy. Filter a few things out.
     ///
     /// e.g. prefer types to constructors for FSharpToolTipText 
-    let FilterItemsForCtors filterCtors items =
-        let items = items |> List.filter (function (Item.CtorGroup _) when filterCtors = ResolveTypeNamesToTypeRefs -> false | _ -> true) 
+    let FilterItemsForCtors filterCtors (items: ItemWithInst list) =
+        let items = items |> List.filter (fun item -> match item.Item with (Item.CtorGroup _) when filterCtors = ResolveTypeNamesToTypeRefs -> false | _ -> true) 
         items
         
     // Filter items to show only valid & return Some if there are any
-    let ReturnItemsOfType items g denv (m:range) filterCtors hasTextChangedSinceLastTypecheck f =
+    let ReturnItemsOfType (items: ItemWithInst list) g denv (m:range) filterCtors hasTextChangedSinceLastTypecheck =
         let items = 
             items 
             |> RemoveDuplicateItems g
@@ -270,7 +270,7 @@ type TypeCheckInfo
             if hasTextChangedSinceLastTypecheck(textSnapshotInfo, m) then
                 NameResResult.TypecheckStaleAndTextChanged // typecheck is stale, wait for second-chance IntelliSense to bring up right result
             else
-                f(items, denv, m) 
+                NameResResult.Members (items, denv, m) 
         else NameResResult.Empty
 
     let GetCapturedNameResolutions endOfNamesPos resolveOverloads =
@@ -291,15 +291,16 @@ type TypeCheckInfo
         let endOfNamesPos = mkPos line colAtEndOfNames
 
         // Logic below expects the list to be in reverse order of resolution
-        let items = GetCapturedNameResolutions endOfNamesPos resolveOverloads |> ResizeArray.toList |> List.rev
+        let cnrs = GetCapturedNameResolutions endOfNamesPos resolveOverloads |> ResizeArray.toList |> List.rev
 
-        match items, membersByResidue with 
+        match cnrs, membersByResidue with 
         
         // If we're looking for members using a residue, we'd expect only
         // a single item (pick the first one) and we need the residue (which may be "")
-        | CNR(_,Item.Types(_,(typ::_)),_,denv,nenv,ad,m)::_, Some _ -> 
+        | CNR(_,Item.Types(_,(typ::_)), _, denv, nenv, ad, m)::_, Some _ -> 
             let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)) m ad true typ 
-            ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck NameResResult.Members 
+            let items = List.map ItemWithNoInst items
+            ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck 
         
         // Value reference from the name resolution. Primarily to disallow "let x.$ = 1"
         // In most of the cases, value references can be obtained from expression typings or from environment,
@@ -331,15 +332,18 @@ type TypeCheckInfo
                 | _ -> ad
 
               let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)) m ad false ty
-              ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck NameResResult.Members
+              let items = List.map ItemWithNoInst items
+              ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck
         
         // No residue, so the items are the full resolution of the name
-        | CNR(_,_,_,denv,_,_,m) :: _, None -> 
-            let items = items |> List.map (fun (CNR(_,item,_,_,_,_,_)) -> item) 
-                              // "into" is special magic syntax, not an identifier or a library call.  It is part of capturedNameResolutions as an 
-                              // implementation detail of syntax coloring, but we should not report name resolution results for it, to prevent spurious QuickInfo.
-                              |> List.filter (function Item.CustomOperation(CustomOperations.Into,_,_) -> false | _ -> true) 
-            ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck NameResResult.Members
+        | CNR(_, _, _, denv, _, _, m) :: _, None -> 
+            let items = 
+                cnrs 
+                |> List.map (fun cnr -> cnr.ItemWithInst)
+                // "into" is special magic syntax, not an identifier or a library call.  It is part of capturedNameResolutions as an 
+                // implementation detail of syntax coloring, but we should not report name resolution results for it, to prevent spurious QuickInfo.
+                |> List.filter (fun item -> match item.Item with Item.CustomOperation(CustomOperations.Into,_,_) -> false | _ -> true) 
+            ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck
         | _ , _ -> NameResResult.Empty
     
     let TryGetTypeFromNameResolution(line, colAtEndOfNames, membersByResidue, resolveOverloads) = 
@@ -369,11 +373,12 @@ type TypeCheckInfo
         let cnrs = GetCapturedNameResolutions endOfExprPos ResolveOverloads.No |> ResizeArray.toList |> List.rev
         let result =
             match cnrs with
-            | CNR(_, Item.CtorGroup(_, ((ctor::_) as ctors)), _, denv, nenv, ad, m)::_ ->
+            | CNR(_, Item.CtorGroup(_, ((ctor::_) as ctors)), _, denv, nenv, ad, m) ::_ ->
                 let props = ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false ctor.EnclosingType
                 let parameters = CollectParameters ctors amap m
-                Some (denv, m, props @ parameters)
-            | CNR(_, Item.MethodGroup(_, methods, _), _, denv, nenv, ad, m)::_ ->
+                let items = props @ parameters
+                Some (denv, m, items)
+            | CNR(_, Item.MethodGroup(_, methods, _), _, denv, nenv, ad, m) ::_ ->
                 let props = 
                     methods
                     |> List.collect (fun meth ->
@@ -381,14 +386,16 @@ type TypeCheckInfo
                         ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false retTy
                     )
                 let parameters = CollectParameters methods amap m
-                Some (denv, m, props @ parameters)
+                let items = props @ parameters
+                Some (denv, m, items)
             | _ -> 
                 None
         match result with
         | None -> 
             NameResResult.Empty
-        | Some (denv, m, result) -> 
-            ReturnItemsOfType result g denv m TypeNameResolutionFlag.ResolveTypeNamesToTypeRefs hasTextChangedSinceLastTypecheck NameResResult.Members
+        | Some (denv, m, items) -> 
+            let items = List.map ItemWithNoInst items
+            ReturnItemsOfType items g denv m TypeNameResolutionFlag.ResolveTypeNamesToTypeRefs hasTextChangedSinceLastTypecheck
     
     /// finds captured typing for the given position
     let GetExprTypingForPosition(endOfExprPos) = 
@@ -469,6 +476,7 @@ type TypeCheckInfo
             | Some bestQual ->
                 let (_,typ,denv,nenv,ad,m) = bestQual 
                 let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)) m ad false typ 
+                let items = items |> List.map ItemWithNoInst
                 let items = items |> RemoveDuplicateItems g
                 let items = items |> RemoveExplicitlySuppressed g
                 let items = items |> FilterItemsForCtors filterCtors 
@@ -478,25 +486,27 @@ type TypeCheckInfo
                 else GetPreciseCompletionListFromExprTypingsResult.None
 
     /// Find items in the best naming environment.
-    let GetEnvironmentLookupResolutions(nenv, ad, m, plid, filterCtors, showObsolete) : Item list * DisplayEnv * range = 
+    let GetEnvironmentLookupResolutions(nenv, ad, m, plid, filterCtors, showObsolete) = 
         let items = NameResolution.ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad plid showObsolete
+        let items = items |> List.map ItemWithNoInst
         let items = items |> RemoveDuplicateItems g 
         let items = items |> RemoveExplicitlySuppressed g
         let items = items |> FilterItemsForCtors filterCtors 
         (items, nenv.DisplayEnv, m)
 
     /// Find items in the best naming environment.
-    let GetEnvironmentLookupResolutionsAtPosition(cursorPos, plid, filterCtors, showObsolete) : Item list * DisplayEnv * range = 
+    let GetEnvironmentLookupResolutionsAtPosition(cursorPos, plid, filterCtors, showObsolete) = 
         let (nenv,ad),m = GetBestEnvForPos cursorPos
         GetEnvironmentLookupResolutions(nenv, ad, m, plid, filterCtors, showObsolete)
 
     /// Find record fields in the best naming environment.
-    let GetClassOrRecordFieldsEnvironmentLookupResolutions(cursorPos, plid, (_residue : string option)) : Item list * DisplayEnv * range = 
+    let GetClassOrRecordFieldsEnvironmentLookupResolutions(cursorPos, plid) = 
         let (nenv, ad),m = GetBestEnvForPos cursorPos
         let items = NameResolution.ResolvePartialLongIdentToClassOrRecdFields ncenv nenv m ad plid false
+        let items = items |> List.map ItemWithNoInst
         let items = items |> RemoveDuplicateItems g 
         let items = items |> RemoveExplicitlySuppressed g
-        items, nenv.DisplayEnv,m 
+        items, nenv.DisplayEnv, m 
 
     /// Resolve a location and/or text to items.
     //   Three techniques are used
@@ -557,9 +567,9 @@ type TypeCheckInfo
             p <- p - 1
         if p >= 0 then Some p else None
     
-    let CompletionItem (ty: TyconRef option) (unresolvedEntity: AssemblySymbol option) (item: Item) =
+    let CompletionItem (ty: TyconRef option) (unresolvedEntity: AssemblySymbol option) (item: ItemWithInst) =
         let kind = 
-            match item with
+            match item.Item with
             | Item.MethodGroup (_, minfo :: _, _) -> CompletionItemKind.Method minfo.IsExtensionMember
             | Item.RecdField _
             | Item.Property _ -> CompletionItemKind.Property
@@ -582,15 +592,16 @@ type TypeCheckInfo
                 { DisplayName = displayName
                   Namespace = ns })
 
-        { Item = item
+        { ItemWithInst = item
           MinorPriority = 0
           Kind = kind
           IsOwnMember = false
           Type = ty 
           Unresolved = unresolved }
 
-    let DefaultCompletionItem = CompletionItem None None
+    let DefaultCompletionItem item = CompletionItem None None item
     
+    let getItem (x: ItemWithInst) = x.Item
     let GetDeclaredItems (parseResultsOpt: FSharpParseFileResults option, lineStr: string, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, line, loc, 
                           filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, isInRangeOperator, allSymbols: unit -> AssemblySymbol list) =
  
@@ -662,7 +673,7 @@ type TypeCheckInfo
             match nameResItems with            
             | NameResResult.TypecheckStaleAndTextChanged -> None // second-chance intellisense will try again
             | NameResResult.Cancel(denv,m) -> Some([], denv, m)
-            | NameResResult.Members(FilterRelevantItems id exactMatchResidueOpt (items, denv, m)) -> 
+            | NameResResult.Members(FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m)) -> 
                 // lookup based on name resolution results successful
                 Some (items |> List.map (CompletionItem (getType()) None), denv, m)
             | _ ->
@@ -692,7 +703,7 @@ type TypeCheckInfo
                             GetPreciseCompletionListFromExprTypingsResult.None, false
                 
                     match qualItems,thereIsADotInvolved with            
-                    | GetPreciseCompletionListFromExprTypingsResult.Some(FilterRelevantItems id exactMatchResidueOpt (items, denv, m), ty), _
+                    | GetPreciseCompletionListFromExprTypingsResult.Some(FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m), ty), _
                             // Initially we only use the expression typings when looking up, e.g. (expr).Nam or (expr).Name1.Nam
                             // These come through as an empty plid and residue "". Otherwise we try an environment lookup
                             // and then return to the qualItems. This is because the expression typings are a little inaccurate, primarily because
@@ -726,12 +737,12 @@ type TypeCheckInfo
                            
                            // If we have nonempty items from environment that were resolved from a type, then use them... 
                            // (that's better than the next case - here we'd return 'int' as a type)
-                           | _, FilterRelevantItems id exactMatchResidueOpt (items, denv, m), _ when not (isNil items) ->
+                           | _, FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m), _ when not (isNil items) ->
                                // lookup based on name and environment successful
                                Some(items |> List.map (CompletionItem (getType()) None), denv, m)
                            
                            // Try again with the qualItems
-                           | _, _, GetPreciseCompletionListFromExprTypingsResult.Some(FilterRelevantItems id exactMatchResidueOpt (items, denv, m), ty) ->
+                           | _, _, GetPreciseCompletionListFromExprTypingsResult.Some(FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m), ty) ->
                                Some(items |> List.map (CompletionItem (tryDestAppTy g ty) None), denv, m)
                            
                            | _ -> None
@@ -755,7 +766,7 @@ type TypeCheckInfo
                                    Some(
                                        entities 
                                        |> List.map(fun entity ->
-                                            CompletionItem (getType()) (Some entity) entity.Symbol.Item), denv, m)
+                                            CompletionItem (getType()) (Some entity) (ItemWithNoInst entity.Symbol.Item)), denv, m)
                                | _ -> None
                            | _ -> None // do not return unresolved items after dot
 
@@ -766,7 +777,7 @@ type TypeCheckInfo
                        | None, None -> None
 
 
-    let toCompletionItems (items: Item list, denv: DisplayEnv, m: range) : CompletionItem list * DisplayEnv * range =
+    let toCompletionItems (items: ItemWithInst list, denv: DisplayEnv, m: range ) =
         items |> List.map DefaultCompletionItem, denv, m
 
     /// Get the auto-complete items at a particular location.
@@ -793,41 +804,43 @@ type TypeCheckInfo
             // Completion at 'inherit C(...)"
             | Some (CompletionContext.Inherit(InheritanceContext.Class, (plid, _))) ->
                 GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false)
-                |> FilterRelevantItemsBy id None GetBaseClassCandidates
+                |> FilterRelevantItemsBy getItem None (getItem >> GetBaseClassCandidates)
                 |> Option.map toCompletionItems
             
             // Completion at 'interface ..."
             | Some (CompletionContext.Inherit(InheritanceContext.Interface, (plid, _))) ->
                 GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false)
-                |> FilterRelevantItemsBy id None GetInterfaceCandidates
+                |> FilterRelevantItemsBy getItem None (getItem >> GetInterfaceCandidates)
                 |> Option.map toCompletionItems
             
             // Completion at 'implement ..."
             | Some (CompletionContext.Inherit(InheritanceContext.Unknown, (plid, _))) ->
                 GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false) 
-                |> FilterRelevantItemsBy id None (fun t -> GetBaseClassCandidates t || GetInterfaceCandidates t)
+                |> FilterRelevantItemsBy getItem None (getItem >> (fun t -> GetBaseClassCandidates t || GetInterfaceCandidates t))
                 |> Option.map toCompletionItems
             
             // Completion at ' { XXX = ... } "
-            | Some(CompletionContext.RecordField(RecordContext.New(plid, residue))) ->
+            | Some(CompletionContext.RecordField(RecordContext.New(plid, _))) ->
                 // { x. } can be either record construction or computation expression. Try to get all visible record fields first
-                match GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid, residue) |> toCompletionItems with
+                match GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid) |> toCompletionItems with
                 | [],_,_ -> 
                     // no record fields found, return completion list as if we were outside any computation expression
                     GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, line, loc, filterCtors,resolveOverloads, hasTextChangedSinceLastTypecheck, false, fun() -> [])
                 | result -> Some(result)
             
             // Completion at ' { XXX = ... with ... } "
-            | Some(CompletionContext.RecordField(RecordContext.CopyOnUpdate(r, (plid, residue)))) -> 
+            | Some(CompletionContext.RecordField(RecordContext.CopyOnUpdate(r, (plid, _)))) -> 
                 match GetRecdFieldsForExpr(r) with
                 | None -> 
-                    Some (GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid, residue))
+                    Some (GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid))
                     |> Option.map toCompletionItems
-                | x -> x |> Option.map toCompletionItems
+                | Some (items, denv, m) -> 
+                    Some (List.map ItemWithNoInst items, denv, m) 
+                    |> Option.map toCompletionItems
             
             // Completion at ' { XXX = ... with ... } "
             | Some(CompletionContext.RecordField(RecordContext.Constructor(typeName))) ->
-                Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, [typeName], None))
+                Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, [typeName]))
                 |> Option.map toCompletionItems
             
             // Completion at ' SomeMethod( ... ) ' with named arguments 
@@ -844,9 +857,9 @@ type TypeCheckInfo
                         items 
                         |> RemoveDuplicateItems g
                         |> RemoveExplicitlySuppressed g
-                        |> List.filter (fun m -> not (fields.Contains m.DisplayName))
-                        |> List.map (fun x -> 
-                            { Item = x
+                        |> List.filter (fun item -> not (fields.Contains item.Item.DisplayName))
+                        |> List.map (fun item -> 
+                            { ItemWithInst = item
                               Kind = CompletionItemKind.Argument
                               MinorPriority = 0
                               IsOwnMember = false
@@ -1024,7 +1037,7 @@ type TypeCheckInfo
                     match GetDeclItemsForNamesAtPosition(ctok, None,Some(names),None,line,lineStr,colAtEndOfNames,ResolveTypeNamesToCtors,ResolveOverloads.Yes,(fun() -> []),fun _ -> false) with
                     | None -> FSharpToolTipText []
                     | Some(items, denv, _, m) ->
-                         FSharpToolTipText(items |> List.map (fun x -> FormatStructuredDescriptionOfItem false infoReader m denv x.Item)))
+                         FSharpToolTipText(items |> List.map (fun x -> FormatStructuredDescriptionOfItem false infoReader m denv x.ItemWithInst)))
                 (fun err -> FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError err])
                
         // See devdiv bug 646520 for rationale behind truncating and caching these quick infos (they can be big!)
@@ -1076,7 +1089,7 @@ type TypeCheckInfo
             (fun () -> 
                 match GetDeclItemsForNamesAtPosition(ctok, None,namesOpt,None,line,lineStr,colAtEndOfNames,ResolveTypeNamesToCtors,ResolveOverloads.No,(fun() -> []),fun _ -> false) with
                 | None -> FSharpMethodGroup("",[| |])
-                | Some (items, denv,_, m) -> FSharpMethodGroup.Create(infoReader,m,denv,items |> List.map (fun x -> x.Item)))
+                | Some (items, denv, _, m) -> FSharpMethodGroup.Create(infoReader, m, denv, items |> List.map (fun x -> x.ItemWithInst)))
             (fun msg -> 
                 FSharpMethodGroup(msg,[| |]))
 
@@ -1219,7 +1232,7 @@ type TypeCheckInfo
                Some (m, SemanticClassificationType.Function)
             | CNR(_, Item.RecdField EnumCaseFieldInfo, _, _, _, _, m) ->
                 Some (m, SemanticClassificationType.Enumeration)
-            | CNR(_, Item.MethodGroup(_, _, _), _, _, _, _, m) ->
+            | CNR(_, Item.MethodGroup _, _, _, _, _, m) ->
                 Some (m, SemanticClassificationType.Function)
             // custom builders, custom operations get colored as keywords
             | CNR(_, (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, _, _, _, m) ->

@@ -1823,9 +1823,9 @@ let MakeAndPublishSimpleVals cenv env m names mergeNamesInOneNameresEnv =
                 let sink =
                     { new ITypecheckResultsSink with
                         member this.NotifyEnvWithScope(_, _, _) = () // ignore EnvWithScope reports
-                        member this.NotifyNameResolution(pos, a, b, occurence, denv, nenv, ad, m, replacing) = 
+                        member this.NotifyNameResolution(pos, item, itemGroup, itemTyparInst, occurence, denv, nenv, ad, m, replacing) = 
                             if not m.IsSynthetic then
-                                nameResolutions.Add(pos, a, b, occurence, denv, nenv, ad, m, replacing)
+                                nameResolutions.Add(pos, item, itemGroup, itemTyparInst, occurence, denv, nenv, ad, m, replacing)
                         member this.NotifyExprHasType(_, _, _, _, _, _) = assert false // no expr typings in MakeSimpleVals
                         member this.NotifyFormatSpecifierLocation _ = ()
                         member this.CurrentSource = None } 
@@ -1834,11 +1834,11 @@ let MakeAndPublishSimpleVals cenv env m names mergeNamesInOneNameresEnv =
                 MakeSimpleVals cenv env names
     
             if nameResolutions.Count <> 0 then 
-                let (_, _, _, _, _, _, ad, m1, _replacing) = nameResolutions.[0]
+                let (_, _, _, _, _, _, _, ad, m1, _replacing) = nameResolutions.[0]
                 // mergedNameEnv - name resolution env that contains all names
                 // mergedRange - union of ranges of names
                 let mergedNameEnv, mergedRange = 
-                    ((env.NameEnv, m1), nameResolutions) ||> Seq.fold (fun (nenv, merged) (_pos, item, _b, _occurence, _denv, _nenv, _ad, m, _) ->
+                    ((env.NameEnv, m1), nameResolutions) ||> Seq.fold (fun (nenv, merged) (_, item, _, _, _, _, _, _, m, _) ->
                         // MakeAndPublishVal creates only Item.Value
                         let item = match item with Item.Value(item) -> item | _ -> failwith "impossible"
                         (AddFakeNamedValRefToNameEnv item.DisplayName nenv item), (unionRanges m merged)
@@ -1846,8 +1846,8 @@ let MakeAndPublishSimpleVals cenv env m names mergeNamesInOneNameresEnv =
                 // send notification about mergedNameEnv
                 CallEnvSink cenv.tcSink (mergedRange, mergedNameEnv, ad)
                 // call CallNameResolutionSink for all captured name resolutions using mergedNameEnv
-                for (_, item, b, occurence, denv, _nenv, ad, m, _replacing) in nameResolutions do
-                    CallNameResolutionSink cenv.tcSink (m, mergedNameEnv, item, b, emptyTyparInst, occurence, denv,  ad)
+                for (_, item, itemGroup, itemTyparInst, occurence, denv, _nenv, ad, m, _replacing) in nameResolutions do
+                    CallNameResolutionSink cenv.tcSink (m, mergedNameEnv, item, itemGroup, itemTyparInst, occurence, denv,  ad)
 
             values,vspecMap
 
@@ -9346,7 +9346,10 @@ and TcMethodApplication
             let csenv = MakeConstraintSolverEnv ContextInfo.NoContext cenv.css mMethExpr denv
             let res = UnifyUniqueOverloading csenv callerArgCounts methodName ad preArgumentTypeCheckingCalledMethGroup returnTy
             match res with
-            |   ErrorResult _ -> afterResolution.OnOverloadResolutionFailure()
+            |   ErrorResult _ -> 
+                match afterResolution with
+                | AfterResolution.DoNothing -> ()
+                | AfterResolution.OverloadResolution(_, _, onFailure) -> onFailure()
             |   _ -> ()
             res |> CommitOperationResult
 
@@ -9446,7 +9449,7 @@ and TcMethodApplication
         | AfterResolution.DoNothing, _ -> ()
 
         // Record the precise override resolution
-        | AfterResolution.OverloadResolution(Some unrefinedItem, callSink,_), Some result 
+        | AfterResolution.OverloadResolution(Some unrefinedItem, callSink, _), Some result 
              when result.Method.IsVirtual ->
 
             let overriding = 

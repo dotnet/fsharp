@@ -22,7 +22,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library.ResultOrException
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
-open Microsoft.FSharp.Compiler.AbstractIL.IL // Abstract IL 
+open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.AccessibilityLogic
 open Microsoft.FSharp.Compiler.AttributeChecking
@@ -257,6 +257,17 @@ let valRefHash (vref: ValRef) =
     match vref.TryDeref with 
     | VNone -> 0 
     | VSome v -> LanguagePrimitives.PhysicalHash v
+
+[<RequireQualifiedAccess>]
+/// Pairs an Item with a TyparInst showing how generic type variables of the item are instnatiated at 
+/// a particular usage point.
+type ItemWithInst = 
+    { Item : Item
+      TyparInst: TyparInst }
+
+let ItemWithNoInst item = ({ Item = item; TyparInst = emptyTyparInst } : ItemWithInst)
+
+let (|ItemWithInst|) (x:ItemWithInst) = (x.Item, x.TyparInst)
 
 /// Represents a record field resolution and the information if the usage is deprecated.
 type FieldResolution = FieldResolution of RecdFieldRef * bool
@@ -1389,7 +1400,7 @@ let ItemsAreEffectivelyEqual g orig other =
 type CapturedNameResolution(p:pos, i:Item, tpinst, io:ItemOccurence, de:DisplayEnv, nre:NameResolutionEnv, ad:AccessorDomain, m:range) =
     member this.Pos = p
     member this.Item = i
-    member this.TyparInst = tpinst
+    member this.ItemWithInst = ({ Item = i; TyparInst = tpinst } : ItemWithInst)
     member this.ItemOccurence = io
     member this.DisplayEnv = de
     member this.NameResolutionEnv = nre
@@ -1618,7 +1629,7 @@ type ResolutionInfo =
                     Item.ModuleOrNamespaces [eref] 
                 else 
                     Item.Types(eref.DisplayName,[FreshenTycon ncenv m eref])
-            CallNameResolutionSink sink (m,nenv,item,item,occ,nenv.eDisplayEnv,ad))
+            CallNameResolutionSink sink (m,nenv,item,item,emptyTyparInst,occ,nenv.eDisplayEnv,ad))
         warnings(typarChecker)
  
     static member Empty = 
@@ -2734,7 +2745,7 @@ let ResolveTypeLongIdentInTyconRef sink (ncenv:NameResolver) nenv typeNameResInf
     let resInfo,tcref = ForceRaise (ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad ResolutionInfo.Empty PermitDirectReferenceToGeneratedType.No 0 m tcref lid)
     ResolutionInfo.SendEntityPathToSink(sink,ncenv,nenv,ItemOccurence.Use,ad,resInfo,ResultTyparChecker(fun () -> true))
     let item = Item.Types(tcref.DisplayName,[FreshenTycon ncenv m tcref])
-    CallNameResolutionSink sink (rangeOfLid lid,nenv,item,item,ItemOccurence.UseInType,nenv.eDisplayEnv,ad)
+    CallNameResolutionSink sink (rangeOfLid lid,nenv,item,item,emptyTyparInst,ItemOccurence.UseInType,nenv.eDisplayEnv,ad)
     tcref
 
 /// Create an UndefinedName error with details 
@@ -2880,7 +2891,7 @@ let ResolveTypeLongIdent sink (ncenv:NameResolver) occurence fullyQualified nenv
     | Result (resInfo,tcref) -> 
         ResolutionInfo.SendEntityPathToSink(sink,ncenv,nenv,ItemOccurence.UseInType, ad,resInfo,ResultTyparChecker(fun () -> true))
         let item = Item.Types(tcref.DisplayName,[FreshenTycon ncenv m tcref])
-        CallNameResolutionSink sink (m,nenv,item,item,occurence,nenv.eDisplayEnv,ad)
+        CallNameResolutionSink sink (m,nenv,item,item,emptyTyparInst,occurence,nenv.eDisplayEnv,ad)
     | _ -> ()
     res |?> snd
 
@@ -3156,10 +3167,10 @@ let FilterMethodGroups (ncenv:NameResolver) itemRange item staticOnly =
         Item.MethodGroup(nm, minfos, orig)
     | item -> item
 
-let NeedsOverloadResolution namedItem =
+let NeedsWorkAfterResolution namedItem =
   match namedItem with
   | Item.MethodGroup(_,minfos,_) 
-  | Item.CtorGroup(_,minfos) -> minfos.Length > 1 || minfos |> List.exists (fun minfo -> nonNil minfo.FormalMethodInst)
+  | Item.CtorGroup(_,minfos) -> minfos.Length > 1 || minfos |> List.exists (fun minfo -> not (isNil minfo.FormalMethodInst))
   | Item.Property(_,pinfos) -> pinfos.Length > 1
   | _ -> false
 
@@ -3219,10 +3230,10 @@ let ResolveLongIdentAsExprAndComputeRange (sink:TcResultsSink) (ncenv:NameResolv
         match sink.CurrentSink with
         | None -> AfterResolution.DoNothing
         | Some _ ->
-            if NeedsOverloadResolution item then
-                AfterResolution.OverloadResolution(None, callSinkWithSpecificOverload, (fun () -> callSink item))
+            if NeedsWorkAfterResolution item then
+                AfterResolution.OverloadResolution(None, callSinkWithSpecificOverload, (fun () -> callSink (item, emptyTyparInst)))
             else
-               callSink item
+               callSink (item, emptyTyparInst)
                AfterResolution.DoNothing
 
     item, itemRange, rest, afterResolution
@@ -3260,29 +3271,30 @@ let ResolveExprDotLongIdentAndComputeRange (sink:TcResultsSink) (ncenv:NameResol
                     let _,item,_,itemRange = resolveExpr FindMemberFlag.PreferOverrides                
                     item, itemRange,true
 
-            let callSink refinedItem = 
+            let callSink (refinedItem, tpinst) = 
                 let staticOnly = thisIsActuallyATyAppNotAnExpr
                 let refinedItem = FilterMethodGroups ncenv itemRange refinedItem staticOnly
                 let unrefinedItem = FilterMethodGroups ncenv itemRange unrefinedItem staticOnly
-                CallNameResolutionSink sink (itemRange, nenv, refinedItem, unrefinedItem, ItemOccurence.Use, nenv.DisplayEnv, ad)                                
+                CallNameResolutionSink sink (itemRange, nenv, refinedItem, unrefinedItem, tpinst, ItemOccurence.Use, nenv.DisplayEnv, ad)                                
 
-            let callSinkWithSpecificOverload (minfo: MethInfo, pinfoOpt: PropInfo option) =
+            let callSinkWithSpecificOverload (minfo: MethInfo, pinfoOpt: PropInfo option, tpinst) =
                 let refinedItem = 
                     match pinfoOpt with 
                     | None when minfo.IsConstructor -> Item.CtorGroup(minfo.LogicalName,[minfo])
                     | None -> Item.MethodGroup(minfo.LogicalName,[minfo],None)
                     | Some pinfo -> Item.Property(pinfo.PropertyName,[pinfo])
 
-                callSink refinedItem 
+                callSink (refinedItem, tpinst)
 
-            match overrides,NeedsOverloadResolution unrefinedItem with
+            match overrides, NeedsWorkAfterResolution unrefinedItem with
             | false, true -> 
-                AfterResolution.OverloadResolution (None, callSinkWithSpecificOverload, (fun () -> callSink unrefinedItem))
+                AfterResolution.OverloadResolution (None, callSinkWithSpecificOverload, (fun () -> callSink (unrefinedItem, emptyTyparInst)))
             | true, true  -> 
-                AfterResolution.OverloadResolution (Some unrefinedItem, callSinkWithSpecificOverload, (fun () -> callSink unrefinedItem))
+                AfterResolution.OverloadResolution (Some unrefinedItem, callSinkWithSpecificOverload, (fun () -> callSink (unrefinedItem, emptyTyparInst)))
             | _ , false   -> 
-                callSink unrefinedItem
+                callSink (unrefinedItem, emptyTyparInst)
                 AfterResolution.DoNothing
+
     item, itemRange, rest, afterResolution
 
 

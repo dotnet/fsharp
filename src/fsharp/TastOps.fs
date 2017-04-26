@@ -2301,7 +2301,7 @@ module PrettyTypes =
                           
         choose tps (0,0) []
 
-    let PrettifyTypes g foldTys mapTys tys = 
+    let PrettifyTypesAux g foldTys mapTys tys = 
         let ftps = foldTys (accFreeInTypeLeftToRight g true false) emptyFreeTyparsLeftToRight tys
         let ftps = List.rev ftps
         let rec computeKeep (keep: Typars) change (tps: Typars) = 
@@ -2336,13 +2336,43 @@ module PrettyTypes =
         prettyTypars,
         tpconstraints
 
-    let PrettifyTypes1   g x = PrettifyTypes g (fun f -> f) (fun f -> f) x
-    let PrettifyTypes2   g x = PrettifyTypes g (fun f -> foldPair (f,f)) (fun f -> mapPair (f,f)) x
-    let PrettifyTypesN   g x = PrettifyTypes g List.fold List.map   x
-    let PrettifyTypesNN   g x = PrettifyTypes g (fun f -> List.fold (List.fold f)) List.mapSquared   x
-    let PrettifyTypesNN1   g x = PrettifyTypes g (fun f -> foldPair (List.fold (List.fold f),f)) (fun f -> mapPair (List.mapSquared f,f)) x
-    let PrettifyTypesN1  g (x:UncurriedArgInfos * TType) = PrettifyTypes g (fun f -> foldPair (List.fold (fold1Of2  f), f)) (fun f -> mapPair (List.map (map1Of2  f),f)) x
-    let PrettifyTypesNM1 g (x:TType list * CurriedArgInfos * TType) = PrettifyTypes g (fun f -> foldTriple (List.fold f, List.fold (List.fold (fold1Of2 f)),f)) (fun f -> mapTriple (List.map f, List.mapSquared (map1Of2  f), f)) x
+    let PrettifyTypes1   g x = PrettifyTypesAux g (fun f -> f) (fun f -> f) x
+    let PrettifyTypes2   g x = PrettifyTypesAux g (fun f -> foldPair (f,f)) (fun f -> mapPair (f,f)) x
+    let PrettifyTypes   g x = PrettifyTypesAux g List.fold List.map   x
+    let PrettifyTypesNN   g x = PrettifyTypesAux g (fun f -> List.fold (List.fold f)) List.mapSquared   x
+    let PrettifyTypesNN1   g x = PrettifyTypesAux g (fun f -> foldPair (List.fold (List.fold f),f)) (fun f -> mapPair (List.mapSquared f,f)) x
+
+    let foldUnurriedArgInfos f z (x: UncurriedArgInfos) = List.fold (fold1Of2  f) z x
+    let mapUnurriedArgInfos f (x: UncurriedArgInfos) = List.map (map1Of2  f) x
+    let foldTyparInst f z (x: TyparInst) =  List.fold (foldPair (foldOn mkTyparTy f, f)) z x
+    let mapTyparInst g f (x: TyparInst) : TyparInst = List.map (mapPair ((mkTyparTy >> f >> destAnyParTy g),f)) x
+
+    let PrettifyUncurriedSig  g (x:UncurriedArgInfos * TType) = 
+        PrettifyTypesAux g 
+            (fun f -> foldPair (foldUnurriedArgInfos f, f)) 
+            (fun f -> mapPair (List.map (map1Of2  f),f)) x
+
+    let PrettifyCurriedSig g (x:TType list * CurriedArgInfos * TType) = 
+        PrettifyTypesAux g 
+            (fun f -> foldTriple (List.fold f, List.fold (List.fold (fold1Of2 f)),f)) 
+            (fun f -> mapTriple (List.map f, List.mapSquared (map1Of2  f), f)) x
+
+    let PrettifyInstAndSig g x = 
+        PrettifyTypesAux g 
+            (fun f -> foldTriple (foldTyparInst f, List.fold f, f))
+            (fun f -> mapTriple (mapTyparInst g f, List.map f, f) )
+            x
+
+    let PrettifyInstAndUncurriedSig g x = 
+        PrettifyTypesAux g 
+            (fun f -> foldTriple (foldTyparInst f, foldUnurriedArgInfos f, List.fold f))
+            (fun f -> mapTriple (mapTyparInst g f, mapUnurriedArgInfos f, List.map f)) 
+            x
+
+    let PrettifyInstAndTypes g x = 
+        PrettifyTypesAux g 
+            (fun f -> foldPair (foldTyparInst f, List.fold f)) 
+            (fun f -> mapPair (mapTyparInst g f, List.map f)) x
  
 module SimplifyTypes =
 
@@ -8150,13 +8180,4 @@ let BindUnitVars g (mvs:Val list, paramInfos:ArgReprInfo list, body) =
         [], mkLet NoSequencePointAtInvisibleBinding v.Range v (mkUnit g v.Range) body 
     | _ -> mvs,body
 
-
-/// Rename the type parameters in a type parametere instantiation
-let renameTyparInst g tpinst (x: TyparInst) = 
-    if isNil tpinst then x else 
-    let tps,tys = List.unzip x 
-    let remap = mkInstRemap tpinst
-    let tps2 = tps |> List.map mkTyparTy |> remapTypesAux remap |> List.map (destAnyParTy g)
-    let tys2 = tys |> remapTypesAux remap
-    mkTyparInst tps2 tys2
 

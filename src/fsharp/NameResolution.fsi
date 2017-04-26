@@ -119,6 +119,16 @@ type Item =
 
     member DisplayName : string
 
+[<RequireQualifiedAccess>]
+/// Pairs an Item with a TyparInst showing how generic type variables of the item are instnatiated at 
+/// a particular usage point.
+type ItemWithInst = 
+    { Item : Item
+      TyparInst: TyparInst }
+
+val (|ItemWithInst|) : ItemWithInst -> Item * TyparInst
+val ItemWithNoInst : Item -> ItemWithInst
+
 /// Represents a record field resolution and the information if the usage is deprecated.
 type FieldResolution = FieldResolution of RecdFieldRef * bool
 
@@ -245,6 +255,9 @@ type internal CapturedNameResolution =
     /// Named item
     member Item : Item
 
+    /// The active instantiation for any generic type parameters
+    member ItemWithInst: ItemWithInst
+
     /// Information about the occurrence of the symbol
     member ItemOccurence : ItemOccurence
 
@@ -305,7 +318,7 @@ type ITypecheckResultsSink =
     abstract NotifyExprHasType    : pos * TType * DisplayEnv * NameResolutionEnv * AccessorDomain * range -> unit
 
     /// Record that a name resolution occurred at a specific location in the source
-    abstract NotifyNameResolution : pos * Item * Item * ItemOccurence * DisplayEnv * NameResolutionEnv * AccessorDomain * range * bool -> unit
+    abstract NotifyNameResolution : pos * Item * Item * TyparInst * ItemOccurence * DisplayEnv * NameResolutionEnv * AccessorDomain * range * bool -> unit
 
     /// Record that a printf format specifier occurred at a specific location in the source
     abstract NotifyFormatSpecifierLocation : range -> unit
@@ -427,9 +440,6 @@ val internal ResolvePartialLongIdentToClassOrRecdFields : NameResolver -> NameRe
 /// Return the fields for the given class or record
 val internal ResolveRecordOrClassFieldsOfType       : NameResolver -> range -> AccessorDomain -> TType -> bool -> Item list
 
-/// If overload resolution fails, the set of possible overloads is reported via this adjustment.
-type IfOverloadResolutionFails = IfOverloadResolutionFails of (unit -> unit)
-
 /// Specifies extra work to do after overload resolution 
 [<RequireQualifiedAccess>]
 type AfterResolution =
@@ -438,8 +448,6 @@ type AfterResolution =
 
     /// Notify the sink of the resolution of an overload. The 'Item' contains the candidate overrides.
     | OverloadResolution of Item option * (MethInfo * PropInfo option * TyparInst -> unit) * (unit -> unit)
-
-    member OnOverloadResolutionFailure : unit -> unit
 
 /// Resolve a long identifier occurring in an expression position.
 val internal ResolveLongIdentAsExprAndComputeRange  : TcResultsSink -> NameResolver -> range -> AccessorDomain -> NameResolutionEnv -> TypeNameResolutionInfo -> Ident list -> Item * range * Ident list * AfterResolution
