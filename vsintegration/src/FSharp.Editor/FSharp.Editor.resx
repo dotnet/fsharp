@@ -177,4 +177,7 @@
   <data name="TheValueIsUnused" xml:space="preserve">
     <value>The value is unused</value>
   </data>
+  <data name="ExceptionsHeader" xml:space="preserve">
+    <value>Exceptions:</value>
+  </data>
 </root>

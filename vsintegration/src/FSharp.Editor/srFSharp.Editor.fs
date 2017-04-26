@@ -34,6 +34,7 @@ module SR =
     let UnusedOpens = lazy (GetString "UnusedOpens")
     let AddProjectReference = lazy (GetString "AddProjectReference")
     let AddAssemblyReference = lazy (GetString "AddAssemblyReference")
+    let ExceptionsLabel = lazy (GetString "ExceptionsHeader")
     
     //--------------------------------------------------------------------------------------
     // Attributes used to mark up editable properties 
