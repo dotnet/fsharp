@@ -477,7 +477,7 @@ type private IndexedList<'T>(itemLists: 'T list list, itemsByName: NameMultiMap<
         // Have we already seen an item with the same name and that is in the same equivalence class?
         // If so, ignore this one. Note we can check against the original incoming 'ilist' because we are assuming that
         // none the elements of 'itemsToAdd' are equivalent. 
-        itemsToAdd |> List.filter (fun item -> List.forall (keepTest item) (x.ItemsWithName(nmf item)))
+        itemsToAdd |> List.filter (fun item -> Seq.forall (keepTest item) (x.ItemsWithName(nmf item)))
 
 /// Add all the items to the IndexedList, preferring the ones in the super-types. This is used to hide methods
 /// in super classes and/or hide overrides of methods in subclasses.

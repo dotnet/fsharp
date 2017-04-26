@@ -210,7 +210,7 @@ module Pass1_DetermineTLRAndArities =
 
         let hasDelayedRepr f = isDelayedRepr f (Zmap.force f xinfo.Defns ("IsValueRecursionFree - hasDelayedRepr",nameOfVal))
         let isRecursive,mudefs = Zmap.force f xinfo.RecursiveBindings ("IsValueRecursionFree",nameOfVal)
-        not isRecursive || List.forall hasDelayedRepr mudefs
+        not isRecursive || Seq.forall hasDelayedRepr mudefs
 
     let DumpArity arityM =
         let dump f n = dprintf "tlr: arity %50s = %d\n" (showL (valL f)) n

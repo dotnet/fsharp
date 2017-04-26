@@ -196,7 +196,7 @@ let rec IsTypeAccessible g amap m ad ty =
 and IsTypeInstAccessible g amap m ad tinst = 
     match tinst with 
     | [] -> true 
-    | _ -> List.forall (IsTypeAccessible g amap m ad) tinst
+    | _ -> Seq.forall (IsTypeAccessible g amap m ad) tinst
 
 /// Indicate if a provided member is accessible
 let IsProvidedMemberAccessible (amap:Import.ImportMap) m ad ty access = 

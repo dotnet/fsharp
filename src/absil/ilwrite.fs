@@ -2127,7 +2127,7 @@ module Codebuf =
     let rec makeSEHTree cenv env (pc2pos: int[]) (lab2pc : Dictionary<ILCodeLabel, int>) (exs : ILExceptionSpec list) = 
 
         let clause_inside_lrange cl lr =
-          List.forall (fun lr1 -> lrange_inside_lrange lab2pc lr1 lr) (lranges_of_clause cl) 
+          Seq.forall (fun lr1 -> lrange_inside_lrange lab2pc lr1 lr) (lranges_of_clause cl) 
 
         let tryspec_inside_lrange (tryspec1: ILExceptionSpec) lr =
           (lrange_inside_lrange lab2pc tryspec1.Range lr && clause_inside_lrange tryspec1.Clause lr) 
@@ -2288,7 +2288,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
             let smallSize = (seh.Length * 12 + 4)
             let canUseSmall = 
               smallSize <= 0xFF &&
-              seh |> List.forall (fun (st1,sz1,st2,sz2,_) -> 
+              seh |> Seq.forall (fun (st1,sz1,st2,sz2,_) -> 
                   st1 <= 0xFFFF && st2 <= 0xFFFF && sz1 <= 0xFF && sz2 <= 0xFF) 
             
             let kindAsInt32 k = 

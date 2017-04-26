@@ -4810,12 +4810,12 @@ let canAccessFromOneOf cpaths cpathTest =
     cpaths |> Seq.exists (fun cpath -> canAccessCompPathFrom cpath cpathTest) 
 
 let canAccessFrom (TAccess x) cpath = 
-    x |> List.forall (fun cpath1 -> canAccessCompPathFrom cpath1 cpath)
+    x |> Seq.forall (fun cpath1 -> canAccessCompPathFrom cpath1 cpath)
 
 let canAccessFromEverywhere (TAccess x) = x.IsEmpty
 let canAccessFromSomewhere (TAccess _) = true
 let isLessAccessible (TAccess aa) (TAccess bb)  = 
-    not (aa |> List.forall(fun a -> bb |> Seq.exists (fun b -> canAccessCompPathFrom a b)))
+    not (aa |> Seq.forall(fun a -> bb |> Seq.exists (fun b -> canAccessCompPathFrom a b)))
 
 /// Given (newPath,oldPath) replace oldPath by newPath in the TAccess.
 let accessSubstPaths (newPath,oldPath) (TAccess paths) =

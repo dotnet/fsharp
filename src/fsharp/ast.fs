@@ -2024,7 +2024,7 @@ module SynInfo =
 
         let explicitArgsAreSimple =
             match pat with
-            | Some(SynPat.LongIdent(_,_,_, SynConstructorArgs.Pats curriedArgs,_,_)) -> List.forall isSimplePattern curriedArgs
+            | Some(SynPat.LongIdent(_,_,_, SynConstructorArgs.Pats curriedArgs,_,_)) -> Seq.forall isSimplePattern curriedArgs
             | _ -> true
 
         let retInfo = InferSynReturnData retInfo

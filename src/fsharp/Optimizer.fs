@@ -1406,7 +1406,7 @@ let ExpandStructuralBindingRaw cenv expr =
         when (isRefTupleExpr rhs &&
               CanExpandStructuralBinding v) ->
           let args   = tryDestRefTupleExpr rhs
-          if List.forall ExprIsValue args then
+          if Seq.forall ExprIsValue args then
               expr (* avoid re-expanding when recursion hits original binding *)
           else
               let argTys = destRefTupleTy cenv.g v.Type

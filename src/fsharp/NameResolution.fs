@@ -1560,7 +1560,7 @@ type ResultTyparChecker = ResultTyparChecker of (unit -> bool)
 let CheckAllTyparsInferrable amap m item = 
     match item with
     | Item.Property(_,pinfos) -> 
-        pinfos |> List.forall (fun pinfo -> 
+        pinfos |> Seq.forall (fun pinfo -> 
             pinfo.IsExtensionMember ||
             let freeInDeclaringType = freeInType CollectTyparsNoCaching pinfo.EnclosingType
             let freeInArgsAndRetType = 
@@ -1570,7 +1570,7 @@ let CheckAllTyparsInferrable amap m item =
             free.IsEmpty)
 
     | Item.MethodGroup(_,minfos,_) -> 
-        minfos |> List.forall (fun minfo -> 
+        minfos |> Seq.forall (fun minfo -> 
             minfo.IsExtensionMember ||
             let fminst = minfo.FormalMethodInst
             let freeInDeclaringType = freeInType CollectTyparsNoCaching minfo.EnclosingType
@@ -3207,7 +3207,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink:TcResultsSink) (ncenv:NameResolv
         match lid with
         | [] | [_] -> false
         | head :: ids ->
-            ids |> List.forall (fun id -> id.idRange = head.idRange)
+            ids |> Seq.forall (fun id -> id.idRange = head.idRange)
 
     let callSink (refinedItem, tpinst) =
         if not isFakeIdents then

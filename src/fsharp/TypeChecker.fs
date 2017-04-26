@@ -1001,7 +1001,7 @@ type ValMemberInfoTransient = ValMemberInfoTransient of ValMemberInfo * string *
 // optImplSlotTy = None (for classes) or Some ty (when implementing interface type ty) 
 let MakeMemberDataAndMangledNameForMemberVal(g,tcref,isExtrinsic,attrs,optImplSlotTys,memberFlags,valSynData,id,isCompGen)  =
     let logicalName = ComputeLogicalName id memberFlags
-    let optIntfSlotTys = if optImplSlotTys |> List.forall (isInterfaceTy g) then optImplSlotTys else []
+    let optIntfSlotTys = if optImplSlotTys |> Seq.forall (isInterfaceTy g) then optImplSlotTys else []
     let memberInfo : ValMemberInfo = 
         { ApparentParent=tcref 
           MemberFlags=memberFlags 
@@ -2120,10 +2120,10 @@ module GeneralizationHelpers =
             | TOp.ILAsm([],_) -> true
 
             | _ -> false
-            && List.forall (IsGeneralizableValue g) args
+            && Seq.forall (IsGeneralizableValue g) args
 
         | Expr.LetRec(binds,body,_,_)  ->
-            binds |> List.forall (fun b -> IsGeneralizableValue g b.Expr) &&
+            binds |> Seq.forall (fun b -> IsGeneralizableValue g b.Expr) &&
             IsGeneralizableValue g body
         | Expr.Let(bind,body,_,_) -> 
             IsGeneralizableValue g bind.Expr &&
@@ -2901,7 +2901,7 @@ let MakeApplicableExprWithFlex cenv (env: TcEnv) expr =
     let curriedActualTypes = argTys |> List.map (tryDestRefTupleTy cenv.g)
     if (curriedActualTypes.IsEmpty ||
         curriedActualTypes |> Seq.exists (Seq.exists (isByrefTy cenv.g)) ||
-        curriedActualTypes |> List.forall (List.forall isNonFlexibleType)) then 
+        curriedActualTypes |> Seq.forall (Seq.forall isNonFlexibleType)) then 
        
         ApplicableExpr (cenv,expr,true)
     else
@@ -3266,7 +3266,7 @@ let AnalyzeArbitraryExprAsEnumerable cenv (env: TcEnv) localAlloc m exprty expr 
                 // Look for an 'Item' property, or a set of these with consistent return types 
                 let allEquivReturnTypes (minfo:MethInfo) (others:MethInfo list) = 
                     let returnTy = minfo.GetFSharpReturnTy(cenv.amap, m, [])
-                    others |> List.forall (fun other -> typeEquiv cenv.g (other.GetFSharpReturnTy(cenv.amap, m, [])) returnTy)
+                    others |> Seq.forall (fun other -> typeEquiv cenv.g (other.GetFSharpReturnTy(cenv.amap, m, [])) returnTy)
                 
                 let isInt32OrObjectIndexer (minfo:MethInfo) = 
                     match minfo.GetParamTypes(cenv.amap, m, []) with
@@ -3431,7 +3431,7 @@ let (|ExprAsPat|_|) (f:SynExpr) =
     | SingleIdent v1 | SynExprParen(SingleIdent v1, _, _, _) -> Some (mkSynPatVar None v1)
     | SynExprParen(SynExpr.Tuple (elems, _, _), _, _, _) -> 
         let elems = elems |> List.map (|SingleIdent|_|) 
-        if elems |> List.forall (fun x -> x.IsSome) then 
+        if elems |> Seq.forall (fun x -> x.IsSome) then 
             Some (SynPat.Tuple((elems |> List.map (fun x -> mkSynPatVar None x.Value)), f.Range))
         else
             None
@@ -3447,8 +3447,8 @@ let (|SimpleSemicolonSequence|_|) acceptDeprecated c =
         match expr with 
         | SynExpr.Sequential (_,_,e1,e2,_) -> YieldFree e1 && YieldFree e2
         | SynExpr.IfThenElse (_,e2,e3opt,_,_,_,_) -> YieldFree e2 && Option.forall YieldFree e3opt
-        | SynExpr.TryWith (e1,_,clauses,_,_,_,_) -> YieldFree e1 && clauses |> List.forall (fun (Clause(_,_,e,_,_)) -> YieldFree e)
-        | SynExpr.Match (_,_,clauses,_,_) -> clauses |> List.forall (fun (Clause(_,_,e,_,_)) -> YieldFree e)
+        | SynExpr.TryWith (e1,_,clauses,_,_,_,_) -> YieldFree e1 && clauses |> Seq.forall (fun (Clause(_,_,e,_,_)) -> YieldFree e)
+        | SynExpr.Match (_,_,clauses,_,_) -> clauses |> Seq.forall (fun (Clause(_,_,e,_,_)) -> YieldFree e)
         | SynExpr.For (_,_,_,_,_,body,_) 
         | SynExpr.TryFinally (body,_,_,_,_)
         | SynExpr.LetOrUse (_,_,_,body,_) 
@@ -5795,9 +5795,9 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
                 if isArray then 
                     // This are to improve parsing/processing speed for parser tables by converting to an array blob ASAP 
                     let nelems = elems.Length 
-                    if nelems > 0 && List.forall (function SynExpr.Const(SynConst.UInt16 _,_) -> true | _ -> false) elems 
+                    if nelems > 0 && Seq.forall (function SynExpr.Const(SynConst.UInt16 _,_) -> true | _ -> false) elems 
                     then SynExpr.Const (SynConst.UInt16s (Array.ofList (List.map (function SynExpr.Const(SynConst.UInt16 x,_) -> x | _ -> failwith "unreachable") elems)), m)
-                    elif nelems > 0 && List.forall (function SynExpr.Const(SynConst.Byte _,_) -> true | _ -> false) elems 
+                    elif nelems > 0 && Seq.forall (function SynExpr.Const(SynConst.Byte _,_) -> true | _ -> false) elems 
                     then SynExpr.Const (SynConst.Bytes (Array.ofList (List.map (function SynExpr.Const(SynConst.Byte x,_) -> x | _ -> failwith "unreachable") elems), m), m)
                     else SynExpr.ArrayOrList(isArray, elems, m)
                 else 
@@ -6245,7 +6245,7 @@ and TcRecordConstruction cenv overallTy env tpenv optOrigExpr objTy fldsList m =
         | None -> [], id
         | Some (_,_,oldve) -> 
             let wrap,oldveaddr = mkExprAddrOfExpr cenv.g tycon.IsStructOrEnumTycon false NeverMutates oldve None m
-            let fieldNameUnbound nom = List.forall (fun (name,_) -> name <> nom) fldsList
+            let fieldNameUnbound nom = Seq.forall (fun (name,_) -> name <> nom) fldsList
             let flds = 
                 fspecs |> List.choose (fun rfld -> 
                     if fieldNameUnbound rfld.Name && not rfld.IsZeroInit 
@@ -8665,8 +8665,8 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterResolution) delaye
 
             | SynExpr.Tuple(synExprs, _, _) 
             | SynExpr.StructTuple(synExprs, _, _) 
-            | SynExpr.ArrayOrList(_, synExprs, _) -> synExprs |> List.forall isSimpleArgument
-            | SynExpr.Record(_,copyOpt,fields, _) -> copyOpt |> Option.forall (fst >> isSimpleArgument) && fields |> List.forall (p23 >> Option.forall isSimpleArgument) 
+            | SynExpr.ArrayOrList(_, synExprs, _) -> synExprs |> Seq.forall isSimpleArgument
+            | SynExpr.Record(_,copyOpt,fields, _) -> copyOpt |> Option.forall (fst >> isSimpleArgument) && fields |> Seq.forall (p23 >> Option.forall isSimpleArgument) 
             | SynExpr.App (_, _, synExpr, synExpr2, _) -> isSimpleArgument synExpr && isSimpleArgument synExpr2
             | SynExpr.IfThenElse(synExpr, synExpr2, synExprOpt, _, _, _, _) -> isSimpleArgument synExpr && isSimpleArgument synExpr2 && Option.forall isSimpleArgument synExprOpt
             | SynExpr.DotIndexedGet(synExpr, _, _, _) ->  isSimpleArgument synExpr 
@@ -9228,7 +9228,7 @@ and TcMethodApplication
           //      x.M ((x,y)) 
           match candidates with 
           | [calledMeth] 
-                when (namedCurriedCallerArgs |> List.forall isNil && 
+                when (namedCurriedCallerArgs |> Seq.forall isNil && 
                       let curriedCalledArgs = calledMeth.GetParamAttribs(cenv.amap, mItem)
                       curriedCalledArgs.Length = 1 &&
                       curriedCalledArgs.Head.Length = 1 && 
@@ -9245,13 +9245,13 @@ and TcMethodApplication
           // Without this rule this requires 
           //      x.M (fst p,snd p) 
           | [calledMeth] 
-                when (namedCurriedCallerArgs |> List.forall isNil && 
+                when (namedCurriedCallerArgs |> Seq.forall isNil && 
                       unnamedCurriedCallerArgs.Length = 1 &&
                       unnamedCurriedCallerArgs.Head.Length = 1 && 
                       let curriedCalledArgs = calledMeth.GetParamAttribs(cenv.amap, mItem)
                       curriedCalledArgs.Length = 1 &&
                       curriedCalledArgs.Head.Length > 1 &&
-                      curriedCalledArgs.Head |> List.forall isSimpleFormalArg) ->
+                      curriedCalledArgs.Head |> Seq.forall isSimpleFormalArg) ->
 
               // The call lambda has function type
               let exprTy = mkFunTy (NewInferenceType ()) exprTy
@@ -12957,7 +12957,7 @@ module MutRecBindingChecking =
                             | _ -> ()
 
                             if tcref.IsStructOrEnumTycon && not isStatic then 
-                                let allDo = letBinds |> List.forall (function (Binding(_,DoBinding,_,_,_,_,_,_,_,_,_,_)) -> true | _ -> false)
+                                let allDo = letBinds |> Seq.forall (function (Binding(_,DoBinding,_,_,_,_,_,_,_,_,_,_)) -> true | _ -> false)
                                 // Code for potential future design change to allow functions-compiled-as-members in structs
                                 if allDo then 
                                     errorR(Deprecated(FSComp.SR.tcStructsMayNotContainDoBindings(),(trimRangeToLine m)))
@@ -13446,7 +13446,7 @@ module MutRecBindingChecking =
         let ad = env.eAccessRights
         let mvvs = ForceRaise (ResolveLongIndentAsModuleOrNamespace ResultCollectionSettings.AllResults cenv.amap m OpenQualified env.eNameResEnv ad p)
         let modrefs = mvvs |> List.map p23 
-        if modrefs.Length > 0 && modrefs |> List.forall (fun modref -> modref.IsNamespace) then 
+        if modrefs.Length > 0 && modrefs |> Seq.forall (fun modref -> modref.IsNamespace) then 
             errorR(Error(FSComp.SR.tcModuleAbbreviationForNamespace(fullDisplayTextOfModRef (List.head modrefs)),m))
         let modrefs = modrefs |> List.filter (fun mvv -> not mvv.IsNamespace)
         modrefs |> Seq.iter (fun modref -> CheckEntityAttributes cenv.g modref m |> CommitOperationResult)        
@@ -13924,7 +13924,7 @@ module TyconConstraintInference =
                     match ty with 
                     // Look for array, UIntPtr and IntPtr types
                     | SpecialComparableHeadType g tinst -> 
-                        tinst |> List.forall (checkIfFieldTypeSupportsComparison  tycon)
+                        tinst |> Seq.forall (checkIfFieldTypeSupportsComparison  tycon)
 
                     // Otherwise it's a nominal type
                     | _ -> 
@@ -13956,7 +13956,7 @@ module TyconConstraintInference =
                    if cenv.g.compilingFslib && AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare cenv.g tycon && not (HasFSharpAttribute g g.attrib_StructuralComparisonAttribute tycon.Attribs) && not (HasFSharpAttribute g g.attrib_NoComparisonAttribute tycon.Attribs) then 
                        errorR(Error(FSComp.SR.tcFSharpCoreRequiresExplicit(),tycon.Range)) 
 
-                   let res = (structuralTypes |> List.forall (fst >> checkIfFieldTypeSupportsComparison tycon))
+                   let res = (structuralTypes |> Seq.forall (fst >> checkIfFieldTypeSupportsComparison tycon))
 
                    // If the type was excluded, say why
                    if not res then 
@@ -14047,7 +14047,7 @@ module TyconConstraintInference =
                 | None ->
                     match ty with 
                     | SpecialEquatableHeadType g tinst -> 
-                        tinst |> List.forall (checkIfFieldTypeSupportsEquality tycon)
+                        tinst |> Seq.forall (checkIfFieldTypeSupportsEquality tycon)
                     | SpecialNotEquatableHeadType g -> 
                         false
                     | _ -> 
@@ -14080,7 +14080,7 @@ module TyconConstraintInference =
                        errorR(Error(FSComp.SR.tcFSharpCoreRequiresExplicit(),tycon.Range)) 
 
                    // Remove structural types with incomparable elements from the assumedTycons
-                   let res = (structuralTypes |> List.forall (fst >> checkIfFieldTypeSupportsEquality tycon))
+                   let res = (structuralTypes |> Seq.forall (fst >> checkIfFieldTypeSupportsEquality tycon))
 
                    // If the type was excluded, say why
                    if not res then 
@@ -16188,7 +16188,7 @@ let rec TcSignatureElementNonMutRec cenv parent typeNames endm (env: TcEnv) synS
             let mvvs = ForceRaise (ResolveLongIndentAsModuleOrNamespace ResultCollectionSettings.AllResults cenv.amap m OpenQualified env.eNameResEnv ad p)
             let scopem = unionRanges m endm
             let modrefs = mvvs |> List.map p23 
-            if modrefs.Length > 0 && modrefs |> List.forall (fun modref -> modref.IsNamespace) then 
+            if modrefs.Length > 0 && modrefs |> Seq.forall (fun modref -> modref.IsNamespace) then 
                 errorR(Error(FSComp.SR.tcModuleAbbreviationForNamespace(fullDisplayTextOfModRef (List.head modrefs)),m))
             let modrefs = modrefs |> List.filter (fun modref -> not modref.IsNamespace)
             modrefs |> Seq.iter (fun modref -> CheckEntityAttributes cenv.g modref m |> CommitOperationResult)        

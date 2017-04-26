@@ -1073,7 +1073,7 @@ let rec TypeDefinitelyHasEquality g ty =
     else 
         match ty with 
         | SpecialEquatableHeadType g tinst -> 
-            tinst |> List.forall (TypeDefinitelyHasEquality g)
+            tinst |> Seq.forall (TypeDefinitelyHasEquality g)
         | SpecialNotEquatableHeadType g _ -> 
             false
         | _ -> 

@@ -188,7 +188,7 @@ let rec CanImportILType (env:ImportMap) m typ =
     | ILType.Array(_bounds,ty) -> CanImportILType env m ty
     | ILType.Boxed  tspec | ILType.Value tspec ->
         CanImportILTypeRef env m tspec.TypeRef 
-        && tspec.GenericArgs |> List.forall (CanImportILType env m) 
+        && tspec.GenericArgs |> Seq.forall (CanImportILType env m) 
     | ILType.Byref ty -> CanImportILType env m ty
     | ILType.Ptr ty  -> CanImportILType env m ty
     | ILType.FunctionPointer _ -> true

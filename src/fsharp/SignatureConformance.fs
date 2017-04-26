@@ -136,7 +136,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                   implTypar.SetCompilerGenerated false 
 
                   // Check the constraints in the implementation are present in the signature
-                  implTypar.Constraints |> List.forall (fun implTyparCx -> 
+                  implTypar.Constraints |> Seq.forall (fun implTyparCx -> 
                       match implTyparCx with 
                       // defaults can be dropped in the signature 
                       | TyparConstraint.DefaultsTo(_,_acty,_) -> true
@@ -146,7 +146,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                           else  true) &&
 
                   // Check the constraints in the signature are present in the implementation
-                  sigTypar.Constraints |> List.forall (fun sigTyparCx -> 
+                  sigTypar.Constraints |> Seq.forall (fun sigTyparCx -> 
                       match sigTyparCx with 
                       // defaults can be present in the signature and not in the implementation  because they are erased
                       | TyparConstraint.DefaultsTo(_,_acty,_) -> true
@@ -192,7 +192,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 let fintfs     = flatten fintfs 
               
                 let unimpl = ListSet.subtract (fun fity aity -> typeAEquiv g aenv aity fity) fintfs aintfs
-                (unimpl |> List.forall (fun ity -> errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleMissingInterface(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName, NicePrint.minimalStringOfType denv ity),m)); false)) &&
+                (unimpl |> Seq.forall (fun ity -> errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleMissingInterface(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName, NicePrint.minimalStringOfType denv ity),m)); false)) &&
                 let hidden = ListSet.subtract (typeAEquiv g aenv) aintfsUser fintfs
                 hidden |> Seq.iter (fun ity -> (if implTycon.IsFSharpInterfaceTycon then error else warning) (InterfaceNotRevealed(denv,ity,implTycon.Range)))
 
@@ -585,7 +585,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                                       | Some av -> Some(fv,av))
                              
                              // Check the ones with matching linkage
-                             let allPairsOk = matchingPairs |> List.map (fun (fv,av) -> checkVal implModRef aenv av fv) |> List.forall id
+                             let allPairsOk = matchingPairs |> List.map (fun (fv,av) -> checkVal implModRef aenv av fv) |> Seq.forall id
                              let someNotOk = matchingPairs.Length < fvs.Length
                              // Report an error for those that don't. Try pairing up by enclosing-type/name
                              if someNotOk then 

@@ -564,7 +564,7 @@ module DispatchSlotChecking =
                 // Are we looking at the implementation of the class hierarchy? If so include all the override members
                 not (isInterfaceTy g reqdTy)
            | ss -> 
-                 ss |> List.forall (fun ss -> 
+                 ss |> Seq.forall (fun ss -> 
                      let ty = ss.ImplementedType
                      if isInterfaceTy g ty then 
                          // Is this a method impl listed under the reqdTy?

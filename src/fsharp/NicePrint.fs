@@ -587,7 +587,7 @@ module private PrintTypes =
         let (|Public|Internal|Private|) (TAccess p) = 
             match p with 
             | [] -> Public 
-            | _ when List.forall isInternalCompPath p  -> Internal 
+            | _ when Seq.forall isInternalCompPath p  -> Internal 
             | _ -> Private
         match denv.contextAccessibility,accessibility with
         | Public,Internal  -> WordL.keywordInternal ++ itemL    // print modifier, since more specific than context
@@ -923,7 +923,7 @@ module private PrintTypes =
         match stripTyparEqns typ with 
 
         // Layout a type application 
-        | TType_app (tc,args) when tc.IsMeasureableReprTycon && List.forall (isDimensionless denv.g) args ->
+        | TType_app (tc,args) when tc.IsMeasureableReprTycon && Seq.forall (isDimensionless denv.g) args ->
           layoutTypeWithInfoAndPrec denv env prec (reduceTyconRefMeasureableOrProvided denv.g tc args)
 
         | TType_app (tc,args) -> 
@@ -1882,7 +1882,7 @@ module private InferredSigPrinting =
                 let denv  = denv.AddAccessibility mspec.Accessibility 
                 let basic = imdefL denv def
                 // Check if its an outer module or a nested module
-                if (outerPath |> List.forall (fun (_,istype) -> istype = Namespace) ) then 
+                if (outerPath |> Seq.forall (fun (_,istype) -> istype = Namespace) ) then 
                     // OK, this is an outer module
                     if showHeader then 
                         // OK, we're not in F# Interactive

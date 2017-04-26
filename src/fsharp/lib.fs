@@ -208,9 +208,9 @@ module ListSet =
       | (h::t) -> subtract f (remove (fun y2 y1 ->  f y1 y2) h l1) t
       | [] -> l1
 
-    let isSubsetOf f l1 l2 = List.forall (fun x1 -> contains f x1 l2) l1
+    let isSubsetOf f l1 l2 = Seq.forall (fun x1 -> contains f x1 l2) l1
     (* nb. preserve orders here: f must be applied to elements of l1 then elements of l2*)
-    let isSupersetOf f l1 l2 = List.forall (fun x2 -> contains (fun y2 y1 ->  f y1 y2) x2 l1) l2
+    let isSupersetOf f l1 l2 = Seq.forall (fun x2 -> contains (fun y2 y1 ->  f y1 y2) x2 l1) l2
     let equals f l1 l2 = isSubsetOf f l1 l2 && isSupersetOf f l1 l2
 
     let unionFavourLeft f l1 l2 = 

@@ -650,7 +650,7 @@ let rec stripTyEqnsA g canShortcut ty =
         | Some abbrevTy -> 
             stripTyEqnsA g canShortcut (applyTyconAbbrev abbrevTy tycon tinst)
         | None -> 
-            if tycon.IsMeasureableReprTycon && List.forall (isDimensionless g) tinst then
+            if tycon.IsMeasureableReprTycon && Seq.forall (isDimensionless g) tinst then
                 stripTyEqnsA g canShortcut (reduceTyconMeasureableOrProvided g tycon tinst)
             else 
                 ty
@@ -900,9 +900,9 @@ and measureAEquiv g aenv un1 un2 =
     let cons1 = ListMeasureConOccsAfterRemapping g remapTyconRef un1
     let cons2 = ListMeasureConOccsAfterRemapping g remapTyconRef un2 
  
-    List.forall (fun v -> MeasureVarExponent v un1 = MeasureVarExponent (trans v) un2) vars1 &&
-    List.forall (fun v -> MeasureVarExponent v un1 = MeasureVarExponent v un2) vars2 &&
-    List.forall (fun c -> MeasureConExponentAfterRemapping g remapTyconRef c un1 = MeasureConExponentAfterRemapping g remapTyconRef c un2) (cons1@cons2)  
+    Seq.forall (fun v -> MeasureVarExponent v un1 = MeasureVarExponent (trans v) un2) vars1 &&
+    Seq.forall (fun v -> MeasureVarExponent v un1 = MeasureVarExponent v un2) vars2 &&
+    Seq.forall (fun c -> MeasureConExponentAfterRemapping g remapTyconRef c un1 = MeasureConExponentAfterRemapping g remapTyconRef c un2) (cons1@cons2)  
 
 
 and typesAEquivAux erasureFlag g aenv l1 l2 = List.lengthsEqAndForall2 (typeAEquivAux erasureFlag g aenv) l1 l2
@@ -1674,7 +1674,7 @@ let rec isUnmanagedTy g ty =
                 true
             elif tycon.IsStructOrEnumTycon then
                 match tycon.TyparsNoRange with
-                | [] -> tycon.AllInstanceFieldsAsList |> List.forall (fun r -> isUnmanagedTy g r.rfield_type) 
+                | [] -> tycon.AllInstanceFieldsAsList |> Seq.forall (fun r -> isUnmanagedTy g r.rfield_type) 
                 | _ -> false // generic structs are never 
             else false
     | None ->
@@ -1719,7 +1719,7 @@ let MemberIsExplicitImpl g (membInfo:ValMemberInfo) =
    membInfo.MemberFlags.IsOverrideOrExplicitImpl &&
    match membInfo.ImplementedSlotSigs with 
    | [] -> false
-   | slotsigs -> slotsigs |> List.forall (fun slotsig -> isInterfaceTy g slotsig.ImplementedType)
+   | slotsigs -> slotsigs |> Seq.forall (fun slotsig -> isInterfaceTy g slotsig.ImplementedType)
 
 let ValIsExplicitImpl g (v:Val) = 
     match v.MemberInfo with 
@@ -7244,9 +7244,9 @@ let rec TypeHasDefaultValue g m ty =
                   // We can ignore fields with the DefaultValue(false) attribute 
                   |> List.filter (fun fld -> not (TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute fld.FieldAttribs = Some(false)))
 
-            flds |> List.forall (actualTyOfRecdField (mkTyconRefInst tcref tinst) >> TypeHasDefaultValue g m)
+            flds |> Seq.forall (actualTyOfRecdField (mkTyconRefInst tcref tinst) >> TypeHasDefaultValue g m)
          elif isStructTupleTy g ty then 
-            destStructTupleTy g ty |> List.forall (TypeHasDefaultValue g m)
+            destStructTupleTy g ty |> Seq.forall (TypeHasDefaultValue g m)
          else
             // All struct types defined in other .NET languages have a DefaultValue regardless of their
             // instantiation
@@ -7848,8 +7848,8 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
 
     and checkDecisionTree vrefs x = 
         match x with 
-        | TDSuccess (es,_n) -> es |> List.forall (checkExpr vrefs)
-        | TDSwitch (e,cases,dflt,_m) -> checkExpr vrefs e && cases |> List.forall (checkDecisionTreeCase vrefs) && dflt |> Option.forall (checkDecisionTree vrefs)
+        | TDSuccess (es,_n) -> es |> Seq.forall (checkExpr vrefs)
+        | TDSwitch (e,cases,dflt,_m) -> checkExpr vrefs e && cases |> Seq.forall (checkDecisionTreeCase vrefs) && dflt |> Option.forall (checkDecisionTree vrefs)
         | TDBind (bind,body) -> checkExpr vrefs bind.Expr && checkDecisionTree (vrefs.Add bind.Var.Stamp) body
     and checkDecisionTreeCase vrefs (TCase(discrim,dtree)) = 
        (match discrim with DecisionTreeTest.Const _c -> true | _ -> false) && checkDecisionTree vrefs dtree

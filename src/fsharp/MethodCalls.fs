@@ -243,7 +243,7 @@ type CalledMeth<'T>
             let unnamedCalledArgs = 
                 fullCalledArgs |> List.filter (fun calledArg -> 
                     match calledArg.NameOpt with 
-                    | Some nm -> namedCallerArgs |> List.forall (fun (CallerNamedArg(nm2,_e)) -> nm.idText <> nm2.idText)   
+                    | Some nm -> namedCallerArgs |> Seq.forall (fun (CallerNamedArg(nm2,_e)) -> nm.idText <> nm2.idText)   
                     | None -> true)
 
             // See if any of them are 'out' arguments being returned as part of a return tuple 
@@ -253,10 +253,10 @@ type CalledMeth<'T>
                     let unnamedCalledArgsTrimmed,unnamedCalledOptOrOutArgs = List.chop nUnnamedCallerArgs unnamedCalledArgs
                     
                     // Check if all optional/out arguments are byref-out args
-                    if unnamedCalledOptOrOutArgs |> List.forall (fun x -> x.IsOutArg && isByrefTy g x.CalledArgumentType) then 
+                    if unnamedCalledOptOrOutArgs |> Seq.forall (fun x -> x.IsOutArg && isByrefTy g x.CalledArgumentType) then 
                         unnamedCalledArgsTrimmed,[],unnamedCalledOptOrOutArgs 
                     // Check if all optional/out arguments are optional args
-                    elif unnamedCalledOptOrOutArgs |> List.forall (fun x -> x.OptArgInfo.IsOptional) then 
+                    elif unnamedCalledOptOrOutArgs |> Seq.forall (fun x -> x.OptArgInfo.IsOptional) then 
                         unnamedCalledArgsTrimmed,unnamedCalledOptOrOutArgs,[]
                     // Otherwise drop them on the floor
                     else
@@ -288,7 +288,7 @@ type CalledMeth<'T>
 
             let unassignedNamedItem = 
                 namedCallerArgs |> List.filter (fun (CallerNamedArg(nm,_e)) -> 
-                    fullCalledArgs |> List.forall (fun calledArg -> 
+                    fullCalledArgs |> Seq.forall (fun calledArg -> 
                         match calledArg.NameOpt with 
                         | Some nm2 -> nm.idText <> nm2.idText
                         | None -> true))
@@ -421,7 +421,7 @@ type CalledMeth<'T>
 
     member x.HasCorrectArity =
       (x.NumCalledTyArgs = x.NumCallerTyArgs)  &&
-      x.ArgSets |> List.forall (fun argSet -> argSet.NumUnnamedCalledArgs = argSet.NumUnnamedCallerArgs) 
+      x.ArgSets |> Seq.forall (fun argSet -> argSet.NumUnnamedCalledArgs = argSet.NumUnnamedCallerArgs) 
 
     member x.HasCorrectGenericArity =
       (x.NumCalledTyArgs = x.NumCallerTyArgs)  

@@ -1683,7 +1683,7 @@ let rec FirstEmittedCodeWillBeSequencePoint g sp expr =
             (BindingEmitsNoCode g bind && FirstEmittedCodeWillBeSequencePoint g sp body)
         | Expr.LetRec(binds,body,_,_) -> 
             binds |> Seq.exists (BindingEmitsSequencePoint g) || 
-            (binds |> List.forall (BindingEmitsNoCode g) && FirstEmittedCodeWillBeSequencePoint g sp body)
+            (binds |> Seq.forall (BindingEmitsNoCode g) && FirstEmittedCodeWillBeSequencePoint g sp body)
         | Expr.Sequential (_, _, NormalSeq,spSeq,_) -> 
             match spSeq with 
             | SequencePointsAtSeq -> true
@@ -1712,7 +1712,7 @@ let AlwaysSuppressSequencePoint g sp expr =
         
         // We suppress sequence points at invisible let bindings even if they are requested by SPAlways.
         | Expr.Let (bind,_,_,_) when bindIsInvisible bind -> true
-        | Expr.LetRec(binds,_,_,_) when (binds |> Seq.exists bindHasSeqPt) || (binds |> List.forall bindIsInvisible) -> true
+        | Expr.LetRec(binds,_,_,_) when (binds |> Seq.exists bindHasSeqPt) || (binds |> Seq.forall bindIsInvisible) -> true
 
         // We always suppress at sequential where the sequence point is missing. We need to document better why.
         | Expr.Sequential _ -> true 
@@ -1807,7 +1807,7 @@ let rec GenExpr (cenv:cenv) (cgbuf:CodeGenBuffer) eenv sp expr sequel =
   | Expr.Lambda _  | Expr.TyLambda _  -> 
       GenLambda cenv cgbuf eenv false None expr sequel
   | Expr.App(Expr.Val(vref, _, m) as v, _, tyargs, [], _) when 
-        List.forall (isMeasureTy cenv.g) tyargs &&
+        Seq.forall (isMeasureTy cenv.g) tyargs &&
         (
             // inline only values that are stored in local variables
             match StorageForValRef m vref eenv with 
@@ -5364,7 +5364,7 @@ and GenBindRhs cenv cgbuf eenv sp (vspec:Val) e =
         match e with
         | Expr.TyLambda(_, tyargs, body, _, ttype) when 
             (
-                tyargs |> List.forall (fun tp -> tp.IsErased) &&
+                tyargs |> Seq.forall (fun tp -> tp.IsErased) &&
                 (match StorageForVal vspec.Range vspec eenv with Local _ -> true | _ -> false) && 
                 (isLocalTypeFunc || 
                     (match ttype with 
@@ -6253,7 +6253,7 @@ and GenTypeDef cenv mgbuf lazyInitInfo eenv m (tycon:Tycon) =
                 (match ilTypeDefKind with ILTypeDefKind.ValueType -> true | _ -> false) &&
                 // All structs are sequential by default 
                 // Structs with no instance fields get size 1, pack 0
-                tycon.AllFieldsAsList |> List.forall (fun f -> f.IsStatic)
+                tycon.AllFieldsAsList |> Seq.forall (fun f -> f.IsStatic)
 
             isEmptyStruct && cenv.opts.workAroundReflectionEmitBugs && not tycon.TyparsNoRange.IsEmpty
         
