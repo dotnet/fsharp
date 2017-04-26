@@ -1283,32 +1283,32 @@ module internal ItemDescriptionsImpl =
             | Some valRefInfo ->
                 // ValReprInfo will exist for top-level syntactic functions
                 // per spec: binding is considered to define a syntactic function if it is either a function or its immediate right-hand-side is a anonymous function
-                let (_, argInfos,  retTy, _) = GetTopValTypeInFSharpForm  g valRefInfo vref.Type m
+                let (_, argInfos,  lastRetTy, _) = GetTopValTypeInFSharpForm  g valRefInfo vref.Type m
                 match argInfos with
                 | [] -> 
                     // handles cases like 'let foo = List.map'
                     getPrettyParamsOfTypes() 
-                | argInfo::_ ->
+                | firstCurriedArgInfo::_ ->
                     // result 'paramDatas' collection corresponds to the first argument of curried function
                     // i.e. let func (a : int) (b : int) = a + b
                     // paramDatas will contain information about a and retTy will be: int -> int
                     // This is good enough as we don't provide ways to display info for the second curried argument
-                    let paramDatas = 
-                        argInfo
+                    let firstCurriedParamDatas = 
+                        firstCurriedArgInfo
                         |> List.map ParamNameAndType.FromArgInfo
                         |> List.map (fun (ParamNameAndType(nmOpt, pty)) -> ParamData(false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, pty))
 
                     // Adjust the return type so it only strips the first argument
-                    let retTy = 
+                    let curriedRetTy = 
                         match tryDestFunTy denv.g vref.TauType with
                         | Some(_,rtau) -> rtau
-                        | None -> retTy
+                        | None -> lastRetTy
 
-                    let _prettyTyparInst, prettyParams, prettyRetTyL, prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst paramDatas retTy
-                    let prettyRetTyL = RightL.colon ^^ prettyRetTyL ^^ SepL.space ^^ prettyConstraintsL
-                    // FUTURE: prettyTyparInst is the pretty version of the known instantiations of type parameters in the output. It could be returned
-                    // for display as part of the method group
-                    prettyParams, prettyRetTyL
+                    let _prettyTyparInst, prettyFirstCurriedParams, prettyCurriedRetTyL, prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst firstCurriedParamDatas curriedRetTy
+                    
+                    let prettyCurriedRetTyL = prettyCurriedRetTyL ^^ SepL.space ^^ prettyConstraintsL
+
+                    prettyFirstCurriedParams, prettyCurriedRetTyL
 
         | Item.UnionCase(ucinfo,_)   -> 
             let prettyParams = 
@@ -1463,9 +1463,9 @@ module internal ItemDescriptionsImpl =
 #if EXTENSIONTYPING
              | ProvidedField _ -> None
 #endif
-        | Item.Types(_,((TType_app(tcref,_)) :: _)) 
-        | Item.DelegateCtor(TType_app(tcref,_))
-        | Item.FakeInterfaceCtor(TType_app(tcref,_))
+        | Item.Types(_,((AppTy g (tcref,_)) :: _)) 
+        | Item.DelegateCtor(AppTy g (tcref,_))
+        | Item.FakeInterfaceCtor(AppTy g (tcref,_))
         | Item.UnqualifiedType (tcref::_)
         | Item.ExnCase tcref -> 
             // strip off any abbreviation
@@ -1528,10 +1528,9 @@ module internal ItemDescriptionsImpl =
             | FSEvent(_,pinfo,_,_) ->
                 match pinfo.ArbitraryValRef with 
                 | Some vref ->
-                   // per spec, extension members in F1 keywords are qualified with definition class
+                   // per spec, members in F1 keywords are qualified with definition class
                    match vref.ActualParent with 
-                   | Parent tcref ->
-                        (tcref |> ticksAndArgCountTextOfTyconRef)+"."+vref.PropertyName|> Some                     
+                   | Parent tcref -> (tcref |> ticksAndArgCountTextOfTyconRef)+"."+vref.PropertyName|> Some                     
                    | ParentNone -> None
                 | None -> None
 #if EXTENSIONTYPING
@@ -1541,10 +1540,8 @@ module internal ItemDescriptionsImpl =
             match minfos with 
             | [] -> None
             | FSMeth(_, _, vref, _) :: _ ->
-                   // per spec, extension members in F1 keywords are qualified with definition class
                    match vref.ActualParent with
-                   | Parent tcref ->
-                        (tcref |> ticksAndArgCountTextOfTyconRef) + ".#ctor"|> Some
+                   | Parent tcref -> (tcref |> ticksAndArgCountTextOfTyconRef) + ".#ctor"|> Some
                    | ParentNone -> None
             | (ILMeth (_,minfo,_)) :: _ ->
                 let tcref = minfo.DeclaringTyconRef

@@ -340,10 +340,12 @@ type HelpContextServiceTests() =
     [<Test>]
     member public this.``Regression.NewInstance.854367`` () =
         let file =
-            [   "let q1 = new System.Runtime.Remoting.Type$Entry()"
+            [   "let q : System.Runtime.Remoting.TypeE$ntry = null"
+                "let q1 = new System.Runtime.Remoting.Type$Entry()" // this consutrctor doesn't exist, but the help entry still goes to the right place
             ]
         let keywords = 
             [   Some "System.Runtime.Remoting.TypeEntry"
+                Some "System.Runtime.Remoting.TypeEntry"
             ]
         this.TestF1Keywords(keywords, file)
 
@@ -351,20 +353,39 @@ type HelpContextServiceTests() =
     [<Test>]
     member public this.``Classes`` () =
         let file =
-            [   "let q : System.Runtime.Remoting.TypeE$ntry = null"
-                "let q1 = new System.Runtime.Remoting.Type$Entry()"
-                "let w : System.Net.Web$Client = new System.Net.Web$Client()"
-                "let x : System.Collections.Generic.L$ist<int> = null"
-                "let z : Resi$zeArray<int> = null" 
-             ]
+            [   "let w : System.Net.Web$Client = new System.Net.Web$Client()" ]
         let keywords = 
-            [   Some "System.Runtime.Remoting.TypeEntry"
-                Some "System.Runtime.Remoting.TypeEntry"
-                Some "System.Net.WebClient"
+            [   Some "System.Net.WebClient"
                 Some "System.Net.WebClient.#ctor"
-                Some "System.Collections.Generic.List`1"
-                Some "System.Collections.Generic.List`1"
              ]
+        this.TestF1Keywords(keywords, file)
+
+
+    [<Test>]
+    member public this.``Classes`` () =
+        let file =
+            [   "let w : System.Object = new System.Obj$ect()" ]
+        let keywords = 
+            [   Some "System.Object"
+                Some "System.Object.#ctor"
+             ]
+        this.TestF1Keywords(keywords, file)
+
+
+    [<Test>]
+    member public this.``ClassesGeneric`` () =
+        let file =
+            [   "let x : System.Collections.Generic.L$ist<int> = null" ]
+        let keywords = 
+            [   Some "System.Collections.Generic.List`1" ]
+        this.TestF1Keywords(keywords, file)
+
+    [<Test>]
+    member public this.``ClassesAbbrev`` () =
+        let file =
+            [   "let z : Resi$zeArray<int> = null" ]
+        let keywords = 
+            [   Some "System.Collections.Generic.List`1" ]
         this.TestF1Keywords(keywords, file)
 
     [<Test>]
