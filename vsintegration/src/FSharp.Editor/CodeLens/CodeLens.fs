@@ -11,95 +11,153 @@ open Microsoft.VisualStudio.Text.Formatting
 open System.ComponentModel.Composition
 open Microsoft.VisualStudio.Utilities
 open Microsoft.CodeAnalysis
+open System.Threading
+open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.VisualStudio.Shell
+open Microsoft.VisualStudio
+open Microsoft.VisualStudio.LanguageServices
+open System.Windows
+open System.Collections.Generic
+open Microsoft.FSharp.Compiler.Range
 
-type internal CodeLensAdornment(view:IWpfTextView) as this=
-    /// <summary>
-    /// Text view where the adornment is created.
-    /// </summary>
-    let view = view
+type internal CodeLensAdornment
+    (
+        document: Lazy<Document>,
+        view: IWpfTextView, 
+        checker: FSharpChecker,
+        projectInfoManager: ProjectInfoManager
+    ) as self =
+    
+    let codeLensLines = Dictionary()
 
-    /// <summary>
+    do assert (document <> null)
+
+    let mutable cancellationTokenSource = new CancellationTokenSource()
+    let mutable cancellationToken = cancellationTokenSource.Token
+
     /// Get the interline layer. CodeLens belong there.
-    /// </summary>
     let interlineLayer = view.GetAdornmentLayer(PredefinedAdornmentLayers.InterLine)
-    do view.LayoutChanged.AddHandler (fun _ e -> this.OnLayoutChanged e)
+    do view.LayoutChanged.AddHandler (fun _ e -> self.OnLayoutChanged e)
+    
+    let executeCodeLenseAsync () =
+        asyncMaybe {
+            try 
+                let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document.Value)
+                let! _, _, checkFileResults = checker.ParseAndCheckDocument(document.Value, options, allowStaleResults = true)
+                let! symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
 
-    /// <summary>
-    /// Entry point for CodeLens logic
-    /// </summary>
-    let needsCodeLens (line:ITextViewLine) = 
-        // Dummy code. Giving lines which contain an a CodeLens
-        let res = [0 .. line.Length - 1] |> Seq.exists(fun i -> line.Start.Add(i).GetChar() = 'a')
+                let applyCodeLens bufferPosition text =
+                    let DoUI () = 
+                        try
+                            let line = view.TextViewLines.GetTextViewLineContainingBufferPosition(bufferPosition)
+                            
+                            let offset = 
+                                [0..line.Length - 1] |> Seq.tryFind (fun i -> not (Char.IsWhiteSpace (line.Start.Add(i).GetChar())))
+                                |> Option.defaultValue 0
 
-        (res, "Contains a")
+                            let realStart = line.Start.Add(offset)
+                            let span = SnapshotSpan(line.Snapshot, Span.FromBounds(int realStart, int line.End))
+                            let geometry = view.TextViewLines.GetMarkerGeometry(span)
+                            let textBox = TextBlock(Width = 500., Background = Brushes.Transparent, Opacity = 0.5, Text = text)
+                            Canvas.SetLeft(textBox, geometry.Bounds.Left)
+                            Canvas.SetTop(textBox, geometry.Bounds.Top - 15.)
+                            interlineLayer.AddAdornment(AdornmentPositioningBehavior.TextRelative, Nullable (span), null, textBox, null) |> ignore
+                            if line.VisibilityState = VisibilityState.Unattached then view.DisplayTextLineContainingBufferPosition(line.Start, 0., ViewRelativePosition.Top)
+                        with
+                        | _ -> ()
+                    
+                    Application.Current.Dispatcher.Invoke(fun _ -> DoUI())
+                
+                let useResults (displayContext: FSharpDisplayContext, func: FSharpMemberOrFunctionOrValue) =
+                    try
+                        let lineNumber = Line.toZ func.DeclarationLocation.StartLine
+                        
+                        if lineNumber >= 0 || lineNumber < view.TextSnapshot.LineCount then
+                            let typeName = func.FullType.Format(displayContext)
+                            let bufferPosition = view.TextSnapshot.GetLineFromLineNumber(lineNumber).Start
+                            if not (codeLensLines.ContainsKey lineNumber) then 
+                                codeLensLines.[lineNumber] <- typeName
+                                applyCodeLens bufferPosition typeName
+                    with
+                    | _ -> () // supress any exception according wrong line numbers -.-
+                
+                //let forceReformat () =
+                //    view.VisualSnapshot.Lines
+                //    |> Seq.iter(fun line -> view.DisplayTextLineContainingBufferPosition(line.Start, 25., ViewRelativePosition.Top))
 
-    /// <summary>
+                for symbolUse in symbolUses do
+                    if symbolUse.IsFromDefinition then
+                        match symbolUse.Symbol with
+                        | :? FSharpMemberOrFunctionOrValue as func -> useResults (symbolUse.DisplayContext, func)
+                        | _ -> ()
+                        
+                Application.Current.Dispatcher.Invoke(Action(fun _ -> view.VisualElement.InvalidateArrange()))
+            with
+            | _ -> () // TODO: Should report error
+        }
+
     /// Handles required transformation depending on whether CodeLens are required or not required
-    /// </summary>
     interface ILineTransformSource with
-        override t.GetLineTransform(line, _, _) =
-            let (applyCodeLens, _) = needsCodeLens line
+        override __.GetLineTransform(line, _, _) =
+            let applyCodeLens = codeLensLines.ContainsKey(view.TextSnapshot.GetLineNumberFromPosition(line.Start.Position))
             if applyCodeLens then
                 // Give us space for CodeLens
                 LineTransform(15., 1., 1.)
             else
-                //Restore old transformation
-                LineTransform()
-                
+                // Restore old transformation
+                line.DefaultLineTransform
 
-    /// <summary>
-    /// Handles whenever the text displayed in the view changes by adding the adornment to any reformatted lines
-    /// </summary>
-    /// <remarks><para>This event is raised whenever the rendered text displayed in the <see cref="ITextView"/> changes.</para>
-    /// <para>It is raised whenever the view does a layout (which happens when DisplayTextLineContainingBufferPosition is called or in response to text or classification changes).</para>
-    /// <para>It is also raised whenever the view scrolls horizontally or when its size changes.</para>
-    /// </remarks>
-    /// <param name="sender">The event sender.</param>
-    /// <param name="e">The event arguments.</param>
-    member t.OnLayoutChanged (e:TextViewLayoutChangedEventArgs) =
-        e.NewOrReformattedLines
-        |> Seq.iter (fun i -> t.checkCodeLens(i) )
+    member __.OnLayoutChanged (e:TextViewLayoutChangedEventArgs) =
+        // Non expensive computations which have to be done immediate
+        for line in e.NewOrReformattedLines do
+            let lineNumber = view.TextSnapshot.GetLineNumberFromPosition(line.Start.Position)
+            codeLensLines.Remove(lineNumber) |> ignore //All changed lines are supposed to be now No-CodeLens-Lines (Reset)
 
-    /// <summary>
-    /// Adds the CodeLens above the given line with the given result of needsCodeLens
-    /// </summary>
-    /// <param name="line">Line to check whether CodeLens are needed </param>
-    member t.checkCodeLens line =
-        let (applyCodeLens, text) = needsCodeLens line
-        if applyCodeLens then
-            let panel = StackPanel()
-            let textBox = TextBlock(Width = 100., Background = Brushes.Transparent, Opacity = 0.5, Text = text)
-            let border = Border()
-            do border.BorderBrush <- SolidColorBrush(Colors.Black)
-            do border.BorderThickness <- Windows.Thickness(1.)
-            do border.Child <- textBox
-            do panel.Children.Add(border) |> ignore
-            let geometry = view.TextViewLines.GetMarkerGeometry(line.Extent)
-            Canvas.SetLeft(panel, 0.)
-            Canvas.SetTop(panel, geometry.Bounds.Top - 15.)
-            do interlineLayer.AddAdornment(AdornmentPositioningBehavior.TextRelative, Nullable line.Extent, null, panel, null) |> ignore
-        else
-            // Code lens are not required anymore. Remove them
-            interlineLayer.RemoveAdornmentsByVisualSpan(line.Extent)
+        for line in view.TextViewLines.WpfTextViewLines do
+            if line.VisibilityState = VisibilityState.Unattached then 
+                view.DisplayTextLineContainingBufferPosition(line.Start, 0., ViewRelativePosition.Top) //Force refresh (works partly...)
+        
+        cancellationTokenSource.Cancel() // Stop all ongoing async workflow. 
+        cancellationTokenSource.Dispose()
+        cancellationTokenSource <- new CancellationTokenSource()
+        cancellationToken <- cancellationTokenSource.Token
+        executeCodeLenseAsync() |> Async.Ignore |> RoslynHelpers.StartAsyncSafe cancellationToken
+
+[<Export(typeof<ILineTransformSourceProvider>)>]
+[<ContentType(FSharpConstants.FSharpContentTypeName)>]
+[<TextViewRole(PredefinedTextViewRoles.Document)>]
+type internal CodeLensProvider 
+    [<ImportingConstructor>]
+    (
+        textDocumentFactory: ITextDocumentFactoryService,
+        checkerProvider: FSharpCheckerProvider,
+        projectInfoManager: ProjectInfoManager
+    ) =
+    let TextAdornments = ResizeArray<IWpfTextView * CodeLensAdornment>()
+    let componentModel = Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
+    let workspace = componentModel.GetService<VisualStudioWorkspace>()
     
-
-[<Export(typeof<ILineTransformSourceProvider>); ContentType("text"); TextViewRole(PredefinedTextViewRoles.Document)>]
-type internal CodeLensProvider() =
-    let TextAdornments = Collections.Generic.List<IWpfTextView * CodeLensAdornment>()
-
-    /// <summary>
-    /// Returns an provider for the textView if already one has been created.
-    /// Else create one.
-    /// </summary>
-    let getSuitableAdornmentProvider (textView:IWpfTextView) =
+    /// Returns an provider for the textView if already one has been created. Else create one.
+    let getSuitableAdornmentProvider (textView: IWpfTextView) =
         let res = TextAdornments |> Seq.tryFind(fun (view, _) -> view = textView)
         match res with
         | Some (_, res) -> res
-        | None -> 
-            let provider = CodeLensAdornment(textView)
+        | None ->
+            let document = 
+                lazy(
+                    match textDocumentFactory.TryGetTextDocument(textView.TextBuffer) with
+                    | true, textDocument ->
+                         workspace.CurrentSolution.GetDocumentIdsWithFilePath(textDocument.FilePath) 
+                         |> Seq.tryHead
+                         |> Option.bind (fun documentId -> workspace.CurrentSolution.GetDocument(documentId) |> Option.ofObj)
+                    | _ -> None
+                    |> Option.get
+                )
+
+            let provider = CodeLensAdornment(document, textView, checkerProvider.Checker, projectInfoManager)
             TextAdornments.Add((textView, provider))
             provider
 
     interface ILineTransformSourceProvider with
-        override t.Create textView = 
+        override __.Create textView = 
             getSuitableAdornmentProvider(textView) :> ILineTransformSource

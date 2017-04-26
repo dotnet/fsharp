@@ -97,7 +97,18 @@ module internal RoslynHelpers =
         Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)
 
     let StartAsyncUnitAsTask cancellationToken (computation:Async<unit>) = 
-        StartAsyncAsTask cancellationToken computation  :> Task
+        StartAsyncAsTask cancellationToken computation :> Task
+
+    let StartAsyncSafe cancellationToken computation =
+        let computation =
+            async {
+                try
+                    return! computation
+                with e ->
+                    Assert.Exception(e)
+                    return Unchecked.defaultof<_>
+            }
+        Async.Start (computation, cancellationToken)
 
     let SupportedDiagnostics() =
         // We are constructing our own descriptors at run-time. Compiler service is already doing error formatting and localization.
