@@ -9341,7 +9341,7 @@ and TcMethodApplication
                 let namedCurriedCallerArgs = namedCurriedCallerArgs |> List.mapSquared (fun (id,isOpt,argExpr,argTy,mArg) -> CallerNamedArg(id,CallerArg(argTy,mArg,isOpt,argExpr))) 
                 unnamedCurriedCallerArgs, namedCurriedCallerArgs, exprTy
 
-        let callerArgCounts = (List.sumBy List.length unnamedCurriedCallerArgs, List.sumBy List.length namedCurriedCallerArgs)
+        let callerArgCounts = (Seq.sumBy List.length unnamedCurriedCallerArgs, Seq.sumBy List.length namedCurriedCallerArgs)
 
         let callerArgs = List.zip unnamedCurriedCallerArgs namedCurriedCallerArgs
 

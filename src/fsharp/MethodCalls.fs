@@ -448,9 +448,9 @@ type CalledMeth<'T>
        x.ArgSets |> List.map (fun argSet -> argSet.AssignedNamedArgs)
 
     member x.AllUnnamedCalledArgs = x.ArgSets |> List.collect (fun x -> x.UnnamedCalledArgs)
-    member x.TotalNumUnnamedCalledArgs = x.ArgSets |> List.sumBy (fun x -> x.NumUnnamedCalledArgs)
-    member x.TotalNumUnnamedCallerArgs = x.ArgSets |> List.sumBy (fun x -> x.NumUnnamedCallerArgs)
-    member x.TotalNumAssignedNamedArgs = x.ArgSets |> List.sumBy (fun x -> x.NumAssignedNamedArgs)
+    member x.TotalNumUnnamedCalledArgs = x.ArgSets |> Seq.sumBy (fun x -> x.NumUnnamedCalledArgs)
+    member x.TotalNumUnnamedCallerArgs = x.ArgSets |> Seq.sumBy (fun x -> x.NumUnnamedCallerArgs)
+    member x.TotalNumAssignedNamedArgs = x.ArgSets |> Seq.sumBy (fun x -> x.NumAssignedNamedArgs)
 
 let NamesOfCalledArgs (calledArgs: CalledArg list) = 
     calledArgs |> List.choose (fun x -> x.NameOpt) 

@@ -938,8 +938,8 @@ let mkAssemblyCodeValueInfo g instrs argvals tys =
 
 let [<Literal>] localVarSize = 1
 
-let inline AddTotalSizes l = l |> List.sumBy (fun x -> x.TotalSize) 
-let inline AddFunctionSizes l = l |> List.sumBy (fun x -> x.FunctionSize) 
+let inline AddTotalSizes l = l |> Seq.sumBy (fun x -> x.TotalSize) 
+let inline AddFunctionSizes l = l |> Seq.sumBy (fun x -> x.FunctionSize) 
 
 //-------------------------------------------------------------------------
 // opt list/array combinators - zipping (_,_) return type

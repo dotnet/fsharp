@@ -3689,7 +3689,7 @@ let rec genOpenBinaryReader infile is opts =
       codedBigness 2 TableNames.TypeRef
       
     let rowKindSize (RowKind kinds) = 
-      kinds |> List.sumBy (fun x -> 
+      kinds |> Seq.sumBy (fun x -> 
             match x with 
             | UShort -> 2
             | ULong -> 4

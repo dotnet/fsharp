@@ -3951,7 +3951,7 @@ and ValReprInfo  =
     /// Get the total number of arguments 
     member x.TotalArgCount = 
         let (ValReprInfo(_,args,_)) = x in 
-        // This is List.sumBy List.length args
+        // This is Seq.sumBy List.length args
         // We write this by hand as it can be a performance bottleneck in LinkagePartialKey
         let rec loop (args:ArgReprInfo list list) acc = 
             match args with 

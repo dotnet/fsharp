@@ -978,7 +978,7 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
                     errorR(Error(FSComp.SR.chkReturnTypeNoByref(), m)))
 
             for tp in tps do 
-                if tp.Constraints |> List.sumBy (function TyparConstraint.CoercesTo(ty,_) when isClassTy cenv.g ty -> 1 | _ -> 0) > 1 then 
+                if tp.Constraints |> Seq.sumBy (function TyparConstraint.CoercesTo(ty,_) when isClassTy cenv.g ty -> 1 | _ -> 0) > 1 then 
                     errorR(Error(FSComp.SR.chkTyparMultipleClassConstraints(), m))
                 
     // This path is for expression bindings that are not actually lambdas
