@@ -9785,7 +9785,9 @@ and TcMethodApplication
             outArgs
         
         let allArgs = 
-            allArgs |> List.sortBy (fun x -> x.Position)
+            allArgs
+            |> Seq.sortBy (fun x -> x.Position)
+            |> Seq.toList
 
         optArgPreBinder,allArgs,outArgExprs,outArgTmpBinds
 
@@ -11649,7 +11651,7 @@ and TcLetrec  overridesOK cenv env tpenv (binds,bindsm,scopem) =
     // to prevent the generalization 
     assert preGeneralizationRecBinds.IsEmpty
     
-    let generalizedRecBinds = generalizedRecBinds |> List.sortBy (fun pgrbind -> pgrbind.RecBindingInfo.Index)
+    let generalizedRecBinds = generalizedRecBinds |> Seq.sortBy (fun pgrbind -> pgrbind.RecBindingInfo.Index) |> Seq.toList
     let generalizedTyparsForRecursiveBlock = 
          generalizedRecBinds 
             |> List.map (fun pgrbind -> pgrbind.GeneralizedTypars)

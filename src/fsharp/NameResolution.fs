@@ -218,11 +218,11 @@ type Item =
     | UnqualifiedType of TyconRef list
 
     static member MakeMethGroup (nm,minfos:MethInfo list) = 
-        let minfos = minfos |> List.sortBy (fun minfo -> minfo.NumArgs |> List.sum)
+        let minfos = minfos |> Seq.sortBy (fun minfo -> minfo.NumArgs |> List.sum) |> Seq.toList
         Item.MethodGroup (nm,minfos,None)
 
     static member MakeCtorGroup (nm,minfos:MethInfo list) = 
-        let minfos = minfos |> List.sortBy (fun minfo -> minfo.NumArgs |> List.sum)
+        let minfos = minfos |> Seq.sortBy (fun minfo -> minfo.NumArgs |> List.sum) |> Seq.toList
         Item.CtorGroup (nm,minfos)
 
     member d.DisplayName =
@@ -1665,9 +1665,10 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
     let tcrefs = 
         tcrefs 
         // remove later duplicates (if we've opened the same module more than once)
-        |> List.distinctBy (fun (_,tcref) -> tcref.Stamp) 
-        // List.sortBy is a STABLE sort (the order matters!)
-        |> List.sortBy (fun (_,tcref) -> tcref.Typars(m).Length)
+        |> Seq.distinctBy (fun (_,tcref) -> tcref.Stamp) 
+        // Seq.sortBy is a STABLE sort (the order matters!)
+        |> Seq.sortBy (fun (_,tcref) -> tcref.Typars(m).Length)
+        |> Seq.toList
 
     let tcrefs = 
         match tcrefs with 

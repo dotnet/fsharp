@@ -1810,7 +1810,7 @@ and seekReadGenericParamsUncached ctxtH (GenericParamsIdx(numtypars,a,b)) =
                        HasReferenceTypeConstraint= (flags &&& 0x0004) <> 0
                        HasNotNullableValueTypeConstraint= (flags &&& 0x0008) <> 0
                        HasDefaultConstructorConstraint=(flags &&& 0x0010) <> 0 }))
-    pars |> List.sortBy fst |> List.map snd 
+    pars |> Seq.sortBy fst |> Seq.map snd |> Seq.toList
 
 and seekReadGenericParamConstraintsUncached ctxt numtypars gpidx =
     seekReadIndexedRows 

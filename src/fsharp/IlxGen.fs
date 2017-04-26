@@ -1032,7 +1032,7 @@ let GenPossibleILSourceMarker cenv m =
 //--------------------------------------------------------------------------
 
 let HashRangeSorted (ht: IDictionary<_, (int * _)>) = 
-    [ for KeyValue(_k,v) in ht -> v ] |> List.sortBy fst |> List.map snd 
+    [ for KeyValue(_k,v) in ht -> v ] |> Seq.sortBy fst |> Seq.map snd |> Seq.toList
 
 let MergeOptions m o1 o2 = 
     match o1,o2 with
@@ -1245,8 +1245,9 @@ type AssemblyBuilder(cenv:cenv) as mgbuf =
         // old implementation adds new element to the head of list so result was accumulated in reversed order
         let orderedReflectedDefinitions = 
             [for (KeyValue(vspec, (name, n, expr))) in reflectedDefinitions -> n, ((name,vspec), expr)]
-            |> List.sortBy (fst >> (~-)) // invert the result to get 'order-by-descending' behavior (items in list are 0..* so we don't need to worry about int.MinValue)
-            |> List.map snd
+            |> Seq.sortBy (fst >> (~-)) // invert the result to get 'order-by-descending' behavior (items in list are 0..* so we don't need to worry about int.MinValue)
+            |> Seq.map snd
+            |> Seq.toList
         gtdefs.Close(), orderedReflectedDefinitions
     member mgbuf.cenv = cenv
     member mgbuf.GetExplicitEntryPointInfo() = explicitEntryPointInfo
@@ -4454,7 +4455,7 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
                 // Check if it's worth using a switch 
                 // REVIEW: this is using switches even for single integer matches! 
                 if mx - mn = (List.length dests - 1) then
-                    let destinationLabels = dests |> List.sortBy fst |> List.map snd 
+                    let destinationLabels = dests |> Seq.sortBy fst |> Seq.map snd |> Seq.toList
                     if mn <> 0 then 
                       CG.EmitInstrs cgbuf (pop 0) (Push [cenv.g.ilg.typ_Int32]) [ mkLdcInt32 mn]
                       CG.EmitInstrs cgbuf (pop 1) Push0 [ AI_sub ]

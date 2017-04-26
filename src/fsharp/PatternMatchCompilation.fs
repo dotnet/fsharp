@@ -244,8 +244,9 @@ let RefuteDiscrimSet g m path discrims =
              (* Choose the first ucref based on ordering of names *)
              let others = 
                  tcref.UnionCasesAsRefList 
-                 |> List.filter (fun ucref -> not (Seq.exists (g.unionCaseRefEq ucref) ucrefs)) 
-                 |> List.sortBy (fun ucref -> ucref.CaseName)
+                 |> Seq.filter (fun ucref -> not (Seq.exists (g.unionCaseRefEq ucref) ucrefs)) 
+                 |> Seq.sortBy (fun ucref -> ucref.CaseName)
+                 |> Seq.toList
              match others with 
              | [] -> raise CannotRefute
              | ucref2 :: _ -> 

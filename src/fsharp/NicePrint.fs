@@ -455,7 +455,8 @@ module private PrintIL =
                 let ctors  =
                     methodDefs.AsList
                     |> List.filter isPublicILCtor 
-                    |> List.sortBy (fun md -> md.Parameters.Length)
+                    |> Seq.sortBy (fun md -> md.Parameters.Length)
+                    |> Seq.toList
                     |> shrinkOverloads (layoutILMethodDef denv ilTyparSubst typeDef.Name) (fun _ xL -> xL) 
 
                 let fields = 
@@ -480,12 +481,13 @@ module private PrintIL =
                     |> List.map (fun md -> (md.Name, md.Parameters.Length), md)
                     // collect into overload groups
                     |> List.groupBy (fst >> fst)
-                    |> List.collect (fun (_,group) -> group |> List.sortBy fst |> shrinkOverloads (snd >> layoutILMethodDef denv ilTyparSubst typeDef.Name) (fun x xL -> (fst x,xL)))
+                    |> List.collect (fun (_,group) -> group |> Seq.sortBy fst |> Seq.toList |> shrinkOverloads (snd >> layoutILMethodDef denv ilTyparSubst typeDef.Name) (fun x xL -> (fst x,xL)))
 
                 let members = 
                     (props @ meths) 
-                    |> List.sortBy fst 
-                    |> List.map snd // (properties and members) are sorted by name/arity 
+                    |> Seq.sortBy fst 
+                    |> Seq.map snd // (properties and members) are sorted by name/arity 
+                    |> Seq.toList
 
 
                 ctors @ fields @ members @ events
@@ -509,9 +511,10 @@ module private PrintIL =
   
             let types  = 
                 typeDef.NestedTypes.AsList
-                |> List.filter isPublicILTypeDef
-                |> List.sortBy(fun t -> adjustILName t.Name)   
-                |> List.map (layoutILNestedClassDef denv)
+                |> Seq.filter isPublicILTypeDef
+                |> Seq.sortBy(fun t -> adjustILName t.Name)   
+                |> Seq.map (layoutILNestedClassDef denv)
+                |> Seq.toList
   
             let post   = WordL.keywordEnd
             renderL pre (baseT @ body @ types ) post
@@ -888,8 +891,8 @@ module private PrintTypes =
 
     /// Layout a unit expression 
     and private layoutMeasure denv unt =
-        let sortVars vs = vs |> List.sortBy (fun (v:Typar,_) -> v.DisplayName) 
-        let sortCons cs = cs |> List.sortBy (fun (c:TyconRef,_) -> c.DisplayName) 
+        let sortVars vs = vs |> Seq.sortBy (fun (v:Typar,_) -> v.DisplayName) |> Seq.toList
+        let sortCons cs = cs |> Seq.sortBy (fun (c:TyconRef,_) -> c.DisplayName) |> Seq.toList
         let negvs,posvs = ListMeasureVarOccsWithNonZeroExponents              unt |> sortVars |> List.partition (fun (_,e) -> SignRational e < 0)
         let negcs,poscs = ListMeasureConOccsWithNonZeroExponents denv.g false unt |> sortCons |> List.partition (fun (_,e) -> SignRational e < 0)
         let unparL uv = layoutTyparRef denv uv
@@ -1591,7 +1594,7 @@ module private TastDefinitionPrinting =
             events
             |> List.map (fun x -> (true,x.IsStatic,x.EventName,0,0), layoutEventInfo denv amap m x)
 
-        let membLs = (methLs @ fieldLs @ propLs @ eventLs) |> List.sortBy fst  |> List.map snd
+        let membLs = (methLs @ fieldLs @ propLs @ eventLs) |> Seq.sortBy fst  |> Seq.map snd |> Seq.toList
 
         let nestedTypeLs  = 
           match tcref.TypeReprInfo with 
@@ -1600,8 +1603,9 @@ module private TastDefinitionPrinting =
                     for nestedType in info.ProvidedType.PApplyArray((fun sty -> sty.GetNestedTypes()), "GetNestedTypes", m) do 
                         yield nestedType.PUntaint((fun t -> t.IsClass, t.Name), m)
                 ] 
-                |> List.sortBy snd
-                |> List.map (fun (isClass, t) -> WordL.keywordNested ^^ WordL.keywordType ^^ wordL ((if isClass then tagClass else tagStruct) t))
+                |> Seq.sortBy snd
+                |> Seq.map (fun (isClass, t) -> WordL.keywordNested ^^ WordL.keywordType ^^ wordL ((if isClass then tagClass else tagStruct) t))
+                |> Seq.toList
           | _ -> 
               []
 
@@ -1675,7 +1679,7 @@ module private TastDefinitionPrinting =
                                     (if v.IsCompiledAsTopLevel then v.ValReprInfo.Value.NumCurriedArgs else 0),  // sort by #curried
                                     (if v.IsCompiledAsTopLevel then v.ValReprInfo.Value.AritiesOfArgs  else [])  // sort by arity 
                                     )            
-          let adhoc = adhoc |> List.sortBy sortKey
+          let adhoc = adhoc |> Seq.sortBy sortKey |> Seq.toList
           let iimpls = 
               match tycon.TypeReprInfo with 
               | TFSharpObjectRepr r when (match r.fsobjmodel_kind with TTyconInterface -> true | _ -> false) -> []

@@ -1604,7 +1604,7 @@ module Codebuf =
         go 0 (Array.length arr)
 
     let applyBrFixups (origCode :byte[]) origExnClauses origReqdStringFixups (origAvailBrFixups: Dictionary<ILCodeLabel,int>) origReqdBrFixups origSeqPoints origScopes = 
-      let orderedOrigReqdBrFixups = origReqdBrFixups |> List.sortBy (fun (_,fixuploc,_) -> fixuploc)
+      let orderedOrigReqdBrFixups = origReqdBrFixups |> Seq.sortBy (fun (_,fixuploc,_) -> fixuploc) |> Seq.toList
 
       let newCode = ByteBuffer.Create origCode.Length
 

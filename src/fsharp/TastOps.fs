@@ -3072,8 +3072,8 @@ module DebugPrint = begin
           (match !global_g with
            | None -> wordL (tagText "<no global g>")
            | Some g -> 
-             let sortVars (vs:(Typar * Rational) list) = vs |> List.sortBy (fun (v,_) -> v.DisplayName) 
-             let sortCons (cs:(TyconRef * Rational) list) = cs |> List.sortBy (fun (c,_) -> c.DisplayName) 
+             let sortVars (vs:(Typar * Rational) list) = vs |> Seq.sortBy (fun (v,_) -> v.DisplayName) |> Seq.toList
+             let sortCons (cs:(TyconRef * Rational) list) = cs |> Seq.sortBy (fun (c,_) -> c.DisplayName) |> Seq.toList
              let negvs,posvs = ListMeasureVarOccsWithNonZeroExponents         unt |> sortVars |> List.partition (fun (_,e) -> SignRational e < 0)
              let negcs,poscs = ListMeasureConOccsWithNonZeroExponents g false unt |> sortCons |> List.partition (fun (_,e) -> SignRational e < 0)
              let unparL (uv:Typar) = wordL (tagText ("'" ^  uv.DisplayName))
