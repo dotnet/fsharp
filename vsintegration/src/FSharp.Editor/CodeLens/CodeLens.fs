@@ -25,7 +25,7 @@ open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.CodeAnalysis.Classification
 open Internal.Utilities.StructuredFormat
 open Microsoft.VisualStudio.Text.Tagging
-open Microsoft.VisualStudio.Text.Editor
+open System.Collections.Concurrent
 
 type internal CodeLensAdornment
     (
@@ -38,7 +38,7 @@ type internal CodeLensAdornment
     ) as self =
     
     let formatMap = lazy typeMap.Value.ClassificationFormatMapService.GetClassificationFormatMap "tooltip"
-    let codeLensLines = Dictionary()
+    let codeLensLines = ConcurrentDictionary()
 
     do assert (documentId <> null)
 
@@ -150,7 +150,7 @@ type internal CodeLensAdornment
         // Non expensive computations which have to be done immediate
         for line in e.NewOrReformattedLines do
             let lineNumber = view.TextSnapshot.GetLineNumberFromPosition(line.Start.Position)
-            codeLensLines.Remove(lineNumber) |> ignore //All changed lines are supposed to be now No-CodeLens-Lines (Reset)
+            codeLensLines.TryRemove(lineNumber) |> ignore //All changed lines are supposed to be now No-CodeLens-Lines (Reset)
 
         for line in view.TextViewLines.WpfTextViewLines do
             if line.VisibilityState = VisibilityState.Unattached then 
