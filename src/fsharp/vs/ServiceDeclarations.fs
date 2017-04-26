@@ -871,7 +871,7 @@ module internal ItemDescriptionsImpl =
         | Item.ActivePatternCase apref -> 
             let v = apref.ActivePatternVal
             // Format the type parameters to get e.g. ('a -> 'a) rather than ('?1234 -> '?1234)
-            let _,tau = v.TypeScheme
+            let tau = v.TauType
             // REVIEW: use _cxs here
             let ptau, _cxs = PrettyTypes.PrettifyType denv.g tau
             let layout =
@@ -1262,7 +1262,7 @@ module internal ItemDescriptionsImpl =
         match item.Item with
         | Item.Value vref -> 
             let getPrettyParamsOfTypes() = 
-                let _, tau = vref.TypeScheme
+                let tau = vref.TauType
                 match tryDestFunTy denv.g tau with
                 | Some(arg,rtau) ->
                     let args = tryDestRefTupleTy denv.g arg 
@@ -1300,8 +1300,8 @@ module internal ItemDescriptionsImpl =
 
                     // Adjust the return type so it only strips the first argument
                     let retTy = 
-                        match tryDestFunTy denv.g vref.TypeScheme with
-                        | Some(arg,rtau) -> rtau
+                        match tryDestFunTy denv.g vref.TauType with
+                        | Some(_,rtau) -> rtau
                         | None -> retTy
 
                     let _prettyTyparInst, prettyParams, prettyRetTyL, prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst paramDatas retTy
@@ -1321,7 +1321,7 @@ module internal ItemDescriptionsImpl =
 
         | Item.ActivePatternCase(apref)   -> 
             let v = apref.ActivePatternVal 
-            let _,tau = v.TypeScheme
+            let tau = v.TauType
             let args, resTy = stripFunTy denv.g tau 
 
             let apinfo = Option.get (TryGetActivePatternInfo v)
