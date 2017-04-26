@@ -52,7 +52,7 @@ type internal ProjectFlagsService
             
             // Keep trying to grab the exclusive lock for a design time build
             while accessor.BeginDesignTimeBuild() |> ErrorHandler.Failed do
-                do! Async.Sleep 2000
+                do! Async.Sleep 500
 
             // Notify the project to not invoke compilation when a call comes from Fsc. We're
             // only interested in the source files and flags that are passed from MSBuild.
@@ -78,8 +78,8 @@ type internal ProjectFlagsService
             // the compiler will be very unhappy as all fundamental types should be taken from
             // System.Runtime that is not supplied.
             
-            let projectInstance = ref null
             UIThread.Run(fun () ->
+                let projectInstance = ref null
                 project.DoMSBuildSubmission(BuildKind.ASYNC, "Compile", projectInstance, MSBuildCoda onComplete, [KeyValuePair("_ResolveReferenceDependencies", "true")]) |> ignore
                 )
             
@@ -90,7 +90,9 @@ type internal ProjectFlagsService
         async {
             while true do
                 use processor = MailboxProcessor.Start <| fun inbox -> async {
-                    // Wait for AfterOpenSolution and then start processing
+                    // Don't do any builds until the solution is fully loaded.
+                    // This is due to race conditions that can occur when the project system tries
+                    // to retrieve properties from project files that are still being loaded.
                     do! Async.AwaitEvent Events.SolutionEvents.OnAfterOpenSolution |> Async.Ignore
 
                     while true do
@@ -105,7 +107,10 @@ type internal ProjectFlagsService
                         
                         // Only process the project if it was still dirty
                         if wasDirty then
-                            do! processProject project
+                            try
+                                do! processProject project
+                            with e ->
+                                System.Diagnostics.Debug.Assert(false, "Failed to process project in ProjectFlagsService", e.ToString())
 
                             // Having an exclusive lock on design-time builds means the user
                             // can't initiate any builds themselves. Wait a few seconds before

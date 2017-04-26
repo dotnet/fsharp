@@ -160,6 +160,9 @@ type internal ProjectSitesAndFiles() =
             projectCache.[cacheKey] <- options
             options
 
+    static member ClearCache() : unit =
+        projectCache.Clear()
+
     /// Construct a project site for a single file. May be a single file project (for scripts) or an orphan project site (for everything else).
     static member ProjectSiteOfSingleFile(filename:string) : IProjectSite = 
         if SourceFile.MustBeSingleFileProject(filename) then 

@@ -335,15 +335,18 @@ and
         let cookie = ref 0u
         (runningDocumentTable :?> IVsRunningDocumentTable).AdviseRunningDocTableEvents(this, cookie) |> ignore
             
+        // Setup the project with Roslyn workspaces
         Events.SolutionEvents.OnAfterOpenProject.Add <| fun args ->
             match args.Hierarchy with
             | :? IProvideProjectSite as siteProvider ->
                 this.SetupProjectFile(siteProvider, this.Workspace)
             | _ -> ()
             
+        // Clear any state that we had for projects in the closing solution
         Events.SolutionEvents.OnAfterCloseSolution.Add <| fun _ ->
             singleFileProjects.Keys |> Seq.iter tryRemoveSingleFileProjectById
             projectContexts.Clear()
+            ProjectSitesAndFiles.ClearCache()
 
         let theme = package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
         theme.SetColors()
