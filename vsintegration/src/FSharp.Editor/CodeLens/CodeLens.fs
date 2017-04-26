@@ -24,6 +24,8 @@ open Microsoft.CodeAnalysis.Editor.Shared.Extensions
 open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.CodeAnalysis.Classification
 open Internal.Utilities.StructuredFormat
+open Microsoft.VisualStudio.Text.Tagging
+open Microsoft.VisualStudio.Text.Editor
 
 type internal CodeLensAdornment
     (
@@ -82,7 +84,10 @@ type internal CodeLensAdornment
 
                             Canvas.SetLeft(textBox, geometry.Bounds.Left)
                             Canvas.SetTop(textBox, geometry.Bounds.Top - 15.)
-                            interlineLayer.AddAdornment(AdornmentPositioningBehavior.TextRelative, Nullable (span), null, textBox, null) |> ignore
+                            let tag = new IntraTextAdornmentTag(textBox, (fun _ _ -> ()))
+                            let adornment = new SpaceNegotiatingAdornmentTag(0., 0., 0., 0., 0., PositionAffinity.Predecessor, tag, tag)
+
+                            interlineLayer.AddAdornment(AdornmentPositioningBehavior.TextRelative, Nullable (span), adornment, textBox, null) |> ignore
                             if line.VisibilityState = VisibilityState.Unattached then view.DisplayTextLineContainingBufferPosition(line.Start, 0., ViewRelativePosition.Top)
                         with
                         | _ -> ()
