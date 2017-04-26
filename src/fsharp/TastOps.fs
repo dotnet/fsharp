@@ -6055,7 +6055,7 @@ let liftAllBefore sigma =
             if existsR 0 (i' - 1) (fun j' -> invSigma.[j'] > i)  then 
                     yield i ]
 
-    if lifted.IsEmpty then 0 else List.max lifted + 1
+    if lifted.IsEmpty then 0 else Seq.max lifted + 1
 
 
 ///  Put record field assignments in order.

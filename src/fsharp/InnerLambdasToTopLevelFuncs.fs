@@ -188,7 +188,7 @@ module Pass1_DetermineTLRAndArities =
        match Zmap.tryFind f xinfo.Uses with
        | None       -> 0 (* no call sites *)
        | Some sites -> 
-           sites |> List.map (fun (_accessors,_tinst,args) -> List.length args) |> List.max
+           sites |> List.map (fun (_accessors,_tinst,args) -> List.length args) |> Seq.max
 
     let SelectTLRVals g xinfo f e =
         if IsRefusedTLR g f then None 

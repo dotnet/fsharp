@@ -3017,7 +3017,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                 |> Seq.groupBy(fun (_, reference) -> reference.Text)
                 |> Seq.map(fun (assemblyName,assemblyAndIndexGroup)->
                     let assemblyAndIndexGroup = assemblyAndIndexGroup |> List.ofSeq
-                    let highestPosition = assemblyAndIndexGroup |> List.maxBy fst |> fst
+                    let highestPosition = assemblyAndIndexGroup |> Seq.maxBy fst |> fst
                     let assemblyGroup = assemblyAndIndexGroup |> List.map snd
                     assemblyName, highestPosition, assemblyGroup)
                 |> Array.ofSeq
