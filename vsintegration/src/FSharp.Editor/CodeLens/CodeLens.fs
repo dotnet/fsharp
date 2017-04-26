@@ -61,8 +61,6 @@ type internal CodeLensAdornment
             try 
                 let! document = workspace.CurrentSolution.GetDocument(documentId.Value) |> Option.ofObj
                 let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
-                let! text = document.GetTextAsync()
-                Logging.Logging.logInfof ">>>>>>>>>>>\n%O" text
                 let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true)
                 let! symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
 
