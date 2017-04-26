@@ -94,14 +94,17 @@ type internal CodeLensAdornment
                         let lineNumber = Line.toZ func.DeclarationLocation.StartLine
                         
                         if lineNumber >= 0 || lineNumber < view.TextSnapshot.LineCount then
-                            let typeLayout = func.FullType.FormatLayout(displayContext)
-                            let taggedText = ResizeArray()
-                            Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
-
-                            let bufferPosition = view.TextSnapshot.GetLineFromLineNumber(lineNumber).Start
-                            if not (codeLensLines.ContainsKey lineNumber) then 
-                                codeLensLines.[lineNumber] <- taggedText
-                                applyCodeLens bufferPosition taggedText
+                            match func.FullTypeSafe with
+                            | Some ty ->
+                                let typeLayout = ty.FormatLayout(displayContext)
+                                let taggedText = ResizeArray()
+                                Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
+                                
+                                let bufferPosition = view.TextSnapshot.GetLineFromLineNumber(lineNumber).Start
+                                if not (codeLensLines.ContainsKey lineNumber) then 
+                                    codeLensLines.[lineNumber] <- taggedText
+                                    applyCodeLens bufferPosition taggedText
+                            | None -> ()
                     with
                     | _ -> () // supress any exception according wrong line numbers -.-
                 
@@ -112,7 +115,9 @@ type internal CodeLensAdornment
                 for symbolUse in symbolUses do
                     if symbolUse.IsFromDefinition then
                         match symbolUse.Symbol with
-                        | :? FSharpMemberOrFunctionOrValue as func -> useResults (symbolUse.DisplayContext, func)
+                        | :? FSharpEntity as entity ->
+                            for func in entity.MembersFunctionsAndValues do
+                                useResults (symbolUse.DisplayContext, func)
                         | _ -> ()
                         
                 Application.Current.Dispatcher.Invoke(Action(fun _ -> view.VisualElement.InvalidateArrange()))
