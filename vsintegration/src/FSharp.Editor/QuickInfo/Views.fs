@@ -73,6 +73,13 @@ type internal QuickInfoViewProvider
             navigation.NavigateTo range
             SessionHandling.currentSession |> Option.iter ( fun session -> session.Dismiss() )
 
+        let createTooltip text =
+            let t = ToolTip(Content = text)
+            DependencyObjectExtensions.SetDefaultTextProperties(t, formatMap.Value)
+            let color = Microsoft.VisualStudio.PlatformUI.VSColorTheme.GetThemedColor(Microsoft.VisualStudio.PlatformUI.EnvironmentColors.ToolTipBrushKey)
+            t.Background <- Media.SolidColorBrush(Media.Color.FromRgb(color.R, color.G, color.B))
+            t
+
         let inlines = 
             seq { 
                 for taggedText in content do
@@ -80,7 +87,7 @@ type internal QuickInfoViewProvider
                     let inl =
                         match taggedText with
                         | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->                        
-                            let h = Documents.Hyperlink(run, ToolTip = nav.Range.FileName)
+                            let h = Documents.Hyperlink(run, ToolTip = createTooltip nav.Range.FileName)
                             h.Click.Add <| navigateAndDismiss nav.Range
                             h :> Documents.Inline
                         | _ -> run :> _
