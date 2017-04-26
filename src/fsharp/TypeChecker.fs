@@ -5205,7 +5205,7 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
             let activePatExpr, tpenv = PropagateThenTcDelayed cenv activePatType env tpenv m vexp vexpty ExprAtomicFlag.NonAtomic delayed
 
             if idx >= activePatResTys.Length then error(Error(FSComp.SR.tcInvalidIndexIntoActivePatternArray(),m))
-            let argty = List.item idx activePatResTys
+            let argty = Seq.item idx activePatResTys
                 
             let arg',(tpenv,names,takenNames) = TcPat warnOnUpper cenv env None vFlags (tpenv,names,takenNames) argty patarg
             
@@ -7174,7 +7174,7 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
         | None -> false
         | Some argInfos ->
             i < argInfos.Length && 
-            let (_,argInfo) = List.item i argInfos
+            let (_,argInfo) = Seq.item i argInfos
             HasFSharpAttribute cenv.g cenv.g.attrib_ProjectionParameterAttribute argInfo.Attribs
 
 
@@ -8440,7 +8440,7 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterResolution) delaye
 
                             if isSpecialCaseForBackwardCompatibility then
                                 assert (isNull(box fittedArgs.[currentIndex]))
-                                fittedArgs.[currentIndex] <- List.item currentIndex args // grab original argument, not item from the list of named parameters
+                                fittedArgs.[currentIndex] <- Seq.item currentIndex args // grab original argument, not item from the list of named parameters
                                 currentIndex <- currentIndex + 1
                             else
                                 let caseName = 

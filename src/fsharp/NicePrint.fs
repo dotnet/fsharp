@@ -189,7 +189,7 @@ module private PrintIL =
         | ILType.Ptr t
         | ILType.Byref t            -> layoutILType denv ilTyparSubst t
         | ILType.FunctionPointer t  -> layoutILCallingSignature denv ilTyparSubst None t
-        | ILType.TypeVar n          -> List.item (int n) ilTyparSubst
+        | ILType.TypeVar n          -> Seq.item (int n) ilTyparSubst
         | ILType.Modified (_, _, t) -> layoutILType denv ilTyparSubst t // Just recurse through them to the contained ILType
 
     /// Layout a function pointer signature using type-only-F#-style. No argument names are printed.

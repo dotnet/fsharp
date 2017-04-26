@@ -707,7 +707,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
         let entries2 =
             [| 
-              "FSharpFunc`2" ,       v_fastFunc_tcr      , (fun tinst -> mkFunTy (List.item 0 tinst) (List.item 1 tinst))
+              "FSharpFunc`2" ,       v_fastFunc_tcr      , (fun tinst -> mkFunTy (Seq.item 0 tinst) (Seq.item 1 tinst))
               "Tuple`2"      ,       v_ref_tuple2_tcr    , decodeTupleTy tupInfoRef
               "Tuple`3"      ,       v_ref_tuple3_tcr    , decodeTupleTy tupInfoRef
               "Tuple`4"      ,       v_ref_tuple4_tcr    , decodeTupleTy tupInfoRef

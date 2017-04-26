@@ -2234,7 +2234,7 @@ and GenGetExnField cenv cgbuf eenv (e,ecref,fieldNum,m) sequel =
     let typ = GenExnType cenv.amap m eenv.tyenv ecref
     CG.EmitInstrs cgbuf (pop 0) Push0 [ I_castclass typ]
 
-    let fld = List.item fieldNum exnc.TrueInstanceFieldsAsList
+    let fld = Seq.item fieldNum exnc.TrueInstanceFieldsAsList
     let ftyp = GenType cenv.amap m eenv.tyenv fld.FormalType
 
     let mspec = mkILNonGenericInstanceMethSpecInTy (typ,"get_" + fld.Name, [], ftyp)
@@ -2247,7 +2247,7 @@ and GenSetExnField cenv cgbuf eenv (e,ecref,fieldNum,e2,m) sequel =
     let exnc = stripExnEqns ecref
     let typ = GenExnType cenv.amap m eenv.tyenv ecref
     CG.EmitInstrs cgbuf (pop 0) Push0 [ I_castclass typ ]
-    let fld = List.item fieldNum exnc.TrueInstanceFieldsAsList
+    let fld = Seq.item fieldNum exnc.TrueInstanceFieldsAsList
     let ftyp = GenType cenv.amap m eenv.tyenv fld.FormalType
     let ilFieldName = ComputeFieldName exnc fld
     GenExpr cenv cgbuf eenv SPSuppress e2 Continue

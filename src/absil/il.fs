@@ -2227,7 +2227,7 @@ and instILTypeAux numFree (inst:ILGenericArgs) typ =
         if v - numFree >= top then 
             ILType.TypeVar (uint16 (v - top)) 
         else 
-            List.item (v - numFree) inst
+            Seq.item (v - numFree) inst
     | x -> x
     
 and instILGenericArgsAux numFree inst i = List.map (instILTypeAux numFree inst) i

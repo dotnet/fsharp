@@ -178,7 +178,7 @@ let rec ImportILType (env:ImportMap) m tinst typ =
          // All custom modifiers are ignored
          ImportILType env m tinst ty
     | ILType.TypeVar u16 -> 
-         try List.item (int u16) tinst
+         try Seq.item (int u16) tinst
          with _ -> 
               error(Error(FSComp.SR.impNotEnoughTypeParamsInScopeWhileImporting(),m))
 

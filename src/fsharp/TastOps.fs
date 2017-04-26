@@ -5318,7 +5318,7 @@ let rec tyOfExpr g e =
         | TOp.ExnConstr _ -> g.exn_ty
         | TOp.Bytes _ -> mkByteArrayTy g
         | TOp.UInt16s _ -> mkArrayType g g.uint16_ty
-        | TOp.TupleFieldGet(_,i) -> List.item i tinst
+        | TOp.TupleFieldGet(_,i) -> Seq.item i tinst
         | TOp.Tuple tupInfo -> mkAnyTupledTy g tupInfo tinst
         | (TOp.For _ | TOp.While _) -> g.unit_ty
         | TOp.Array -> (match tinst with [ty] -> mkArrayType g ty | _ -> failwith "bad TOp.Array node")
@@ -7441,7 +7441,7 @@ type ActivePatternElemRef with
         | Some apinfo -> 
             let nms = apinfo.ActiveTags
             if n < 0 || n >= List.length nms  then error(InternalError("name_of_apref: index out of range for active pattern reference", vref.Range));
-            List.item n nms
+            Seq.item n nms
 
 let mkChoiceTyconRef (g:TcGlobals) m n = 
      match n with 

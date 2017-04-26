@@ -2035,8 +2035,8 @@ and sigptrGetTy ctxt numtypars bytes sigptr =
         let lobounds, sigptr = sigptrFold sigptrGetZInt32 numLoBounded bytes sigptr
         let shape = 
             let dim i =
-              (if i <  numLoBounded then Some (List.item i lobounds) else None),
-              (if i <  numSized then Some (List.item i sizes) else None)
+              (if i <  numLoBounded then Some (Seq.item i lobounds) else None),
+              (if i <  numSized then Some (Seq.item i sizes) else None)
             ILArrayShape (Array.toList (Array.init rank dim))
         mkILArrTy (typ, shape), sigptr
         
