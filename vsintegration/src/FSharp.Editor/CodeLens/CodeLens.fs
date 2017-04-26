@@ -29,7 +29,8 @@ open Microsoft.VisualStudio.Text.Editor
 
 type internal CodeLensAdornment
     (
-        document: Lazy<Document>,
+        workspace: Workspace,
+        documentId: Lazy<DocumentId>,
         view: IWpfTextView, 
         checker: FSharpChecker,
         projectInfoManager: ProjectInfoManager,
@@ -39,7 +40,7 @@ type internal CodeLensAdornment
     let formatMap = lazy typeMap.Value.ClassificationFormatMapService.GetClassificationFormatMap "tooltip"
     let codeLensLines = Dictionary()
 
-    do assert (document <> null)
+    do assert (documentId <> null)
 
     let mutable cancellationTokenSource = new CancellationTokenSource()
     let mutable cancellationToken = cancellationTokenSource.Token
@@ -58,8 +59,9 @@ type internal CodeLensAdornment
     let executeCodeLenseAsync () =
         asyncMaybe {
             try 
-                let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document.Value)
-                let! _, _, checkFileResults = checker.ParseAndCheckDocument(document.Value, options, allowStaleResults = true)
+                let! document = workspace.CurrentSolution.GetDocument(documentId.Value) |> Option.ofObj
+                let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true)
                 let! symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
 
                 let applyCodeLens bufferPosition (taggedText: seq<Layout.TaggedText>) =
@@ -74,7 +76,7 @@ type internal CodeLensAdornment
                             let realStart = line.Start.Add(offset)
                             let span = SnapshotSpan(line.Snapshot, Span.FromBounds(int realStart, int line.End))
                             let geometry = view.TextViewLines.GetMarkerGeometry(span)
-                            let textBox = TextBlock(Width = 500., Background = Brushes.Transparent, Opacity = 0.5)
+                            let textBox = TextBlock(Width = 500., Background = Brushes.Transparent, Opacity = 0.7)
                             DependencyObjectExtensions.SetDefaultTextProperties(textBox, formatMap.Value)
                             
                             for text in taggedText do
@@ -98,7 +100,10 @@ type internal CodeLensAdornment
                     try
                         let lineNumber = Line.toZ func.DeclarationLocation.StartLine
                         
-                        if lineNumber >= 0 || lineNumber < view.TextSnapshot.LineCount then
+                        if (lineNumber >= 0 || lineNumber < view.TextSnapshot.LineCount) && 
+                            not func.IsPropertyGetterMethod && 
+                            not func.IsPropertySetterMethod then
+
                             match func.FullTypeSafe with
                             | Some ty ->
                                 let typeLayout = ty.FormatLayout(displayContext)
@@ -178,18 +183,16 @@ type internal CodeLensProvider
         match res with
         | Some (_, res) -> res
         | None ->
-            let document = 
+            let documentId = 
                 lazy(
                     match textDocumentFactory.TryGetTextDocument(textView.TextBuffer) with
                     | true, textDocument ->
-                         workspace.CurrentSolution.GetDocumentIdsWithFilePath(textDocument.FilePath) 
-                         |> Seq.tryHead
-                         |> Option.bind (fun documentId -> workspace.CurrentSolution.GetDocument(documentId) |> Option.ofObj)
+                         Seq.tryHead (workspace.CurrentSolution.GetDocumentIdsWithFilePath(textDocument.FilePath))
                     | _ -> None
                     |> Option.get
                 )
 
-            let provider = CodeLensAdornment(document, textView, checkerProvider.Checker, projectInfoManager, typeMap)
+            let provider = CodeLensAdornment(workspace, documentId, textView, checkerProvider.Checker, projectInfoManager, typeMap)
             TextAdornments.Add((textView, provider))
             provider
 
