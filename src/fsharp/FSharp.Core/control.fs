@@ -1536,33 +1536,43 @@ namespace Microsoft.FSharp.Control
     // Contains helpers that will attach continuation to the given task.
     // Should be invoked as a part of protectedPrimitive(withResync) call
     module TaskHelpers = 
+        let private continueWithExtra token =
+#if FSCORE_PORTABLE_OLD || FSCORE_PORTABLE_NEW
+            token |> ignore
+            TaskContinuationOptions.None
+#else
+            token
+#endif
+
         let continueWith (task : Task<'T>, args, useCcontForTaskCancellation) = 
 
             let continuation (completedTask : Task<_>) : unit =
                 args.aux.trampolineHolder.Protect((fun () ->
                     if completedTask.IsCanceled then
-                        if useCcontForTaskCancellation then args.aux.ccont(new OperationCanceledException(args.aux.token))
+                        if useCcontForTaskCancellation
+                        then args.aux.ccont (new OperationCanceledException(args.aux.token))
                         else args.aux.econt (ExceptionDispatchInfo.Capture(new TaskCanceledException(completedTask)))
                     elif completedTask.IsFaulted then
                         args.aux.econt (MayLoseStackTrace(completedTask.Exception))
                     else
                         args.cont completedTask.Result)) |> unfake
 
-            task.ContinueWith(Action<Task<'T>>(continuation), TaskContinuationOptions.None) |> ignore |> fake
+            task.ContinueWith(Action<Task<'T>>(continuation), continueWithExtra args.aux.token) |> ignore |> fake
 
         let continueWithUnit (task : Task, args, useCcontForTaskCancellation) = 
 
             let continuation (completedTask : Task) : unit =
                 args.aux.trampolineHolder.Protect((fun () ->
                     if completedTask.IsCanceled then
-                        if useCcontForTaskCancellation then args.aux.ccont (new OperationCanceledException(args.aux.token))
+                        if useCcontForTaskCancellation
+                        then args.aux.ccont (new OperationCanceledException(args.aux.token))
                         else args.aux.econt (ExceptionDispatchInfo.Capture(new TaskCanceledException(completedTask)))
                     elif completedTask.IsFaulted then
                         args.aux.econt (MayLoseStackTrace(completedTask.Exception))
                     else
                         args.cont ())) |> unfake
 
-            task.ContinueWith(Action<Task>(continuation), TaskContinuationOptions.None) |> ignore |> fake
+            task.ContinueWith(Action<Task>(continuation), continueWithExtra args.aux.token) |> ignore |> fake
 #endif
 
 #if FX_NO_REGISTERED_WAIT_HANDLES

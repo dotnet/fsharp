@@ -76,8 +76,8 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
                 }
             
             let results = 
-               HashSet(errors, errorInfoEqualityComparer)
-               |> Seq.choose(fun error ->
+                HashSet(errors, errorInfoEqualityComparer)
+                |> Seq.choose(fun error ->
                     if error.StartLineAlternate = 0 || error.EndLineAlternate = 0 then
                         // F# error line numbers are one-based. Compiler returns 0 for global errors (reported by ProjectDiagnosticAnalyzer)
                         None
@@ -99,7 +99,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
                         
                         let location = Location.Create(filePath, correctedTextSpan , linePositionSpan)
                         Some(RoslynHelpers.ConvertError(error, location)))
-               |> Seq.toImmutableArray
+                |> Seq.toImmutableArray
             return results
         }
 
