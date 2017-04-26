@@ -525,7 +525,7 @@ let PrintOptionInfo (tcConfigB:TcConfigBuilder) =
     printfn "  resolutionEnvironment  : %+A" tcConfigB.resolutionEnvironment
     printfn "  product  . . . . . . . : %+A" tcConfigB.productNameForBannerText
     printfn "  copyFSharpCore . . . . : %+A" tcConfigB.copyFSharpCore
-    tcConfigB.includes |> List.sort
+    tcConfigB.includes |> Seq.sort
                        |> Seq.iter (printfn "  include  . . . . . . . : %A")
 
 // OptionBlock: Input files

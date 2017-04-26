@@ -2389,8 +2389,9 @@ and ResolveOverloading
                             | m -> m |> List.map (fun (x,_,_) -> x)
 
                         methods
-                        |> List.map (fun cmeth -> NicePrint.stringOfMethInfo amap m denv cmeth.Method)
-                        |> List.sort
+                        |> Seq.map (fun cmeth -> NicePrint.stringOfMethInfo amap m denv cmeth.Method)
+                        |> Seq.sort
+                        |> Seq.toList
                     let msg = FSComp.SR.csMethodIsOverloaded methodName
                     let msg = 
                         match methodNames with
