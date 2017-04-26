@@ -1134,8 +1134,9 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("ToList")>]
         let toList (source : ISeq<'T>) =
-            checkNonNull "source" source
-            Microsoft.FSharp.Primitives.Basics.List.ofISeq source
+            match source with
+            | :? list<'T> as lst -> lst
+            | _ -> Microsoft.FSharp.Primitives.Basics.List.ofISeq source
 
         [<CompiledName("Replicate")>]
         let replicate count x =
@@ -1144,8 +1145,11 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("IsEmpty")>]
         let isEmpty (source : ISeq<'T>)  =
-            use ie = source.GetEnumerator()
-            not (ie.MoveNext())
+            match source with
+            | :? list<'T> as lst -> lst.IsEmpty
+            | _ ->
+                use ie = source.GetEnumerator()
+                not (ie.MoveNext())
 
         [<CompiledName("Cast")>]
         let cast (source: IEnumerable) : ISeq<'T> =
