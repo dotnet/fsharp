@@ -6368,9 +6368,9 @@ and FreshenObjExprAbstractSlot cenv (env: TcEnv) (implty:TType) virtNameAndArity
             else
                 errorR(ErrorWithSuggestions(FSComp.SR.tcNoAbstractOrVirtualMemberFound(bindName),mBinding,bindName,suggestVirtualMembers))
         | [(_,absSlot:MethInfo)]     ->
-            errorR(Error(FSComp.SR.tcArgumentArityMismatch(bindName, List.sum absSlot.NumArgs, arity, getSignature absSlot, getDetails absSlot),mBinding))
+            errorR(Error(FSComp.SR.tcArgumentArityMismatch(bindName, Seq.sum absSlot.NumArgs, arity, getSignature absSlot, getDetails absSlot),mBinding))
         | (_,absSlot:MethInfo) :: _  ->
-            errorR(Error(FSComp.SR.tcArgumentArityMismatchOneOverload(bindName, List.sum absSlot.NumArgs, arity, getSignature absSlot, getDetails absSlot),mBinding))
+            errorR(Error(FSComp.SR.tcArgumentArityMismatchOneOverload(bindName, Seq.sum absSlot.NumArgs, arity, getSignature absSlot, getDetails absSlot),mBinding))
         
         None
         

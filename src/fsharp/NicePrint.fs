@@ -1529,7 +1529,7 @@ module private TastDefinitionPrinting =
             (not v.IsConstructor, 
               not v.IsInstance,  // instance first
               v.DisplayName,            // sort by name 
-              List.sum v.NumArgs ,  // sort by #curried
+              Seq.sum v.NumArgs ,  // sort by #curried
               v.NumArgs.Length)  // sort by arity 
 
         let shouldShow (valRef : ValRef option) =

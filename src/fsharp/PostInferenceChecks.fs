@@ -1304,7 +1304,7 @@ let CheckModuleBinding cenv env (TBind(v,e,_) as bind) =
                             let hasNoArgs = 
                                 match v.ValReprInfo with 
                                 | None -> false 
-                                | Some arity -> List.sum arity.AritiesOfArgs - v.NumObjArgs <= 0 && arity.NumTypars = 0
+                                | Some arity -> Seq.sum arity.AritiesOfArgs - v.NumObjArgs <= 0 && arity.NumTypars = 0
 
                             //  In unions user cannot define properties that clash with generated ones 
                             if tcref.UnionCasesArray.Length = 1 && hasNoArgs then 

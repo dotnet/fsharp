@@ -218,11 +218,11 @@ type Item =
     | UnqualifiedType of TyconRef list
 
     static member MakeMethGroup (nm,minfos:MethInfo list) = 
-        let minfos = minfos |> Seq.sortBy (fun minfo -> minfo.NumArgs |> List.sum) |> Seq.toList
+        let minfos = minfos |> Seq.sortBy (fun minfo -> minfo.NumArgs |> Seq.sum) |> Seq.toList
         Item.MethodGroup (nm,minfos,None)
 
     static member MakeCtorGroup (nm,minfos:MethInfo list) = 
-        let minfos = minfos |> Seq.sortBy (fun minfo -> minfo.NumArgs |> List.sum) |> Seq.toList
+        let minfos = minfos |> Seq.sortBy (fun minfo -> minfo.NumArgs |> Seq.sum) |> Seq.toList
         Item.CtorGroup (nm,minfos)
 
     member d.DisplayName =
