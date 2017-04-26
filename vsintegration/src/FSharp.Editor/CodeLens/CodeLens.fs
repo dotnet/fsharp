@@ -19,15 +19,22 @@ open Microsoft.VisualStudio.LanguageServices
 open System.Windows
 open System.Collections.Generic
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler
+open Microsoft.CodeAnalysis.Editor.Shared.Extensions
+open Microsoft.CodeAnalysis.Editor.Shared.Utilities
+open Microsoft.CodeAnalysis.Classification
+open Internal.Utilities.StructuredFormat
 
 type internal CodeLensAdornment
     (
         document: Lazy<Document>,
         view: IWpfTextView, 
         checker: FSharpChecker,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: ProjectInfoManager,
+        typeMap: Lazy<ClassificationTypeMap>
     ) as self =
     
+    let formatMap = lazy typeMap.Value.ClassificationFormatMapService.GetClassificationFormatMap "tooltip"
     let codeLensLines = Dictionary()
 
     do assert (document <> null)
@@ -39,6 +46,13 @@ type internal CodeLensAdornment
     let interlineLayer = view.GetAdornmentLayer(PredefinedAdornmentLayers.InterLine)
     do view.LayoutChanged.AddHandler (fun _ e -> self.OnLayoutChanged e)
     
+    let layoutTagToFormatting (layoutTag: LayoutTag) =
+        layoutTag
+        |> RoslynHelpers.roslynTag
+        |> ClassificationTags.GetClassificationTypeName
+        |> typeMap.Value.GetClassificationType
+        |> formatMap.Value.GetTextProperties
+
     let executeCodeLenseAsync () =
         asyncMaybe {
             try 
@@ -46,7 +60,7 @@ type internal CodeLensAdornment
                 let! _, _, checkFileResults = checker.ParseAndCheckDocument(document.Value, options, allowStaleResults = true)
                 let! symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
 
-                let applyCodeLens bufferPosition text =
+                let applyCodeLens bufferPosition (taggedText: seq<Layout.TaggedText>) =
                     let DoUI () = 
                         try
                             let line = view.TextViewLines.GetTextViewLineContainingBufferPosition(bufferPosition)
@@ -58,7 +72,14 @@ type internal CodeLensAdornment
                             let realStart = line.Start.Add(offset)
                             let span = SnapshotSpan(line.Snapshot, Span.FromBounds(int realStart, int line.End))
                             let geometry = view.TextViewLines.GetMarkerGeometry(span)
-                            let textBox = TextBlock(Width = 500., Background = Brushes.Transparent, Opacity = 0.5, Text = text)
+                            let textBox = TextBlock(Width = 500., Background = Brushes.Transparent, Opacity = 0.5)
+                            DependencyObjectExtensions.SetDefaultTextProperties(textBox, formatMap.Value)
+                            
+                            for text in taggedText do
+                                let run = Documents.Run text.Text
+                                DependencyObjectExtensions.SetTextProperties (run, layoutTagToFormatting text.Tag)
+                                textBox.Inlines.Add run
+
                             Canvas.SetLeft(textBox, geometry.Bounds.Left)
                             Canvas.SetTop(textBox, geometry.Bounds.Top - 15.)
                             interlineLayer.AddAdornment(AdornmentPositioningBehavior.TextRelative, Nullable (span), null, textBox, null) |> ignore
@@ -73,11 +94,14 @@ type internal CodeLensAdornment
                         let lineNumber = Line.toZ func.DeclarationLocation.StartLine
                         
                         if lineNumber >= 0 || lineNumber < view.TextSnapshot.LineCount then
-                            let typeName = func.FullType.Format(displayContext)
+                            let typeLayout = func.FullType.FormatLayout(displayContext)
+                            let taggedText = ResizeArray()
+                            Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
+
                             let bufferPosition = view.TextSnapshot.GetLineFromLineNumber(lineNumber).Start
                             if not (codeLensLines.ContainsKey lineNumber) then 
-                                codeLensLines.[lineNumber] <- typeName
-                                applyCodeLens bufferPosition typeName
+                                codeLensLines.[lineNumber] <- taggedText
+                                applyCodeLens bufferPosition taggedText
                     with
                     | _ -> () // supress any exception according wrong line numbers -.-
                 
@@ -131,7 +155,8 @@ type internal CodeLensProvider
     (
         textDocumentFactory: ITextDocumentFactoryService,
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: ProjectInfoManager,
+        typeMap: Lazy<ClassificationTypeMap>
     ) =
     let TextAdornments = ResizeArray<IWpfTextView * CodeLensAdornment>()
     let componentModel = Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
@@ -154,7 +179,7 @@ type internal CodeLensProvider
                     |> Option.get
                 )
 
-            let provider = CodeLensAdornment(document, textView, checkerProvider.Checker, projectInfoManager)
+            let provider = CodeLensAdornment(document, textView, checkerProvider.Checker, projectInfoManager, typeMap)
             TextAdornments.Add((textView, provider))
             provider
 
