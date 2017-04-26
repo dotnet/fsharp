@@ -120,7 +120,7 @@ type Item =
     member DisplayName : string
 
 [<RequireQualifiedAccess>]
-/// Pairs an Item with a TyparInst showing how generic type variables of the item are instnatiated at 
+/// Pairs an Item with a TyparInst showing how generic type variables of the item are instantiated at 
 /// a particular usage point.
 type ItemWithInst = 
     { Item : Item

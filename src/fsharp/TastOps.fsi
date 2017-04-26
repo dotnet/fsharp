@@ -618,8 +618,8 @@ module PrettyTypes =
     val PrettifyTypes : TcGlobals -> TTypes -> TyparInst * TTypes * TyparConstraintsWithTypars
     val PrettifyInstAndTypes : TcGlobals -> TyparInst * TTypes -> TyparInst * (TyparInst * TTypes) * TyparConstraintsWithTypars
     val PrettifyInstAndSig : TcGlobals -> TyparInst * TTypes * TType -> TyparInst * (TyparInst * TTypes * TType) * TyparConstraintsWithTypars
-    val PrettifyTypesNN : TcGlobals -> TType list list -> TyparInst * TType list list * TyparConstraintsWithTypars
-    val PrettifyTypesNN1 : TcGlobals -> TType list list * TType -> TyparInst * (TType list list * TType) * TyparConstraintsWithTypars
+    val PrettifyCurriedTypes : TcGlobals -> TType list list -> TyparInst * TType list list * TyparConstraintsWithTypars
+    val PrettifyCurriedSigTypes : TcGlobals -> TType list list * TType -> TyparInst * (TType list list * TType) * TyparConstraintsWithTypars
     val PrettifyUncurriedSig : TcGlobals -> UncurriedArgInfos * TType -> TyparInst * (UncurriedArgInfos * TType) * TyparConstraintsWithTypars
     val PrettifyCurriedSig : TcGlobals -> TType list * CurriedArgInfos * TType -> TyparInst * (TType list * CurriedArgInfos * TType) * TyparConstraintsWithTypars
 

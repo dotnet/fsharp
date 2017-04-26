@@ -2339,8 +2339,8 @@ module PrettyTypes =
     let PrettifyTypes1   g x = PrettifyTypesAux g (fun f -> f) (fun f -> f) x
     let PrettifyTypes2   g x = PrettifyTypesAux g (fun f -> foldPair (f,f)) (fun f -> mapPair (f,f)) x
     let PrettifyTypes   g x = PrettifyTypesAux g List.fold List.map   x
-    let PrettifyTypesNN   g x = PrettifyTypesAux g (fun f -> List.fold (List.fold f)) List.mapSquared   x
-    let PrettifyTypesNN1   g x = PrettifyTypesAux g (fun f -> foldPair (List.fold (List.fold f),f)) (fun f -> mapPair (List.mapSquared f,f)) x
+    let PrettifyCurriedTypes   g x = PrettifyTypesAux g (fun f -> List.fold (List.fold f)) List.mapSquared   x
+    let PrettifyCurriedSigTypes   g x = PrettifyTypesAux g (fun f -> foldPair (List.fold (List.fold f),f)) (fun f -> mapPair (List.mapSquared f,f)) x
 
     let foldUnurriedArgInfos f z (x: UncurriedArgInfos) = List.fold (fold1Of2  f) z x
     let mapUnurriedArgInfos f (x: UncurriedArgInfos) = List.map (map1Of2  f) x

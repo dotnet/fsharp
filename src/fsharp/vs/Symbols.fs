@@ -1893,14 +1893,14 @@ and FSharpType(cenv, typ:TType) =
         | None -> xs
         | Some h -> 
             let cenv = h.cenv
-            let prettyTyps = xs |> List.mapSquared (fun p -> p.V) |> PrettyTypes.PrettifyTypesNN cenv.g |> p23
+            let prettyTyps = xs |> List.mapSquared (fun p -> p.V) |> PrettyTypes.PrettifyCurriedTypes cenv.g |> p23
             (xs, prettyTyps) ||> List.map2 (List.map2 (fun p pty -> p.AdjustType(pty)))
         |> List.map makeReadOnlyCollection |> makeReadOnlyCollection
 
     static member Prettify(parameters: IList<IList<FSharpParameter>>, returnParameter: FSharpParameter) = 
         let xs = parameters |> List.ofSeq |> List.map List.ofSeq
         let cenv = returnParameter.cenv
-        let prettyTyps, prettyRetTy = xs |> List.mapSquared (fun p -> p.V) |> (fun tys -> PrettyTypes.PrettifyTypesNN1 cenv.g (tys,returnParameter.V) )|> p23
+        let prettyTyps, prettyRetTy = xs |> List.mapSquared (fun p -> p.V) |> (fun tys -> PrettyTypes.PrettifyCurriedSigTypes cenv.g (tys,returnParameter.V) )|> p23
         let ps = (xs, prettyTyps) ||> List.map2 (List.map2 (fun p pty -> p.AdjustType(pty))) |> List.map makeReadOnlyCollection |> makeReadOnlyCollection
         ps, returnParameter.AdjustType(prettyRetTy)
 
