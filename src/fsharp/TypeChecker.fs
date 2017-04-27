@@ -821,11 +821,14 @@ module AttributeTargets =
 let ForNewConstructors tcSink (env:TcEnv) mObjTy methodName meths =
     let sendToSink minst refinedMeths =
         CallNameResolutionSink tcSink (mObjTy,env.NameEnv,Item.CtorGroup(methodName,refinedMeths),Item.CtorGroup(methodName,meths),minst,ItemOccurence.Use,env.DisplayEnv,env.eAccessRights)
-    if meths.Length > 1 then 
-        AfterResolution.OverloadResolution (None, (fun (minfo,_,minst) -> sendToSink minst [minfo]), (fun () -> sendToSink emptyTyparInst meths))
-    else
+    match meths with
+    | [] -> 
+        AfterResolution.DoNothing
+    | [_] ->     
         sendToSink emptyTyparInst meths
         AfterResolution.DoNothing
+    | _ -> 
+        AfterResolution.OverloadResolution (None, (fun (minfo,_,minst) -> sendToSink minst [minfo]), (fun () -> sendToSink emptyTyparInst meths))
 
 
 /// Typecheck rational constant terms in units-of-measure exponents
