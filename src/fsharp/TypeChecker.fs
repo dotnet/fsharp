@@ -5295,7 +5295,8 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv,names,takenNames) ty pat
                 checkNoArgsForLiteral()
                 UnifyTypes cenv env m ty rfinfo.FieldType
                 let item = Item.RecdField(rfinfo)
-                // TODO: make this rfinfo.TyparInst
+                // FUTURE: can we do better than emptyTyparInst here, in order to display instantiations
+                // of type variables in the quick info provided in the IDE.
                 CallNameResolutionSink cenv.tcSink (m,env.NameEnv,item,item,emptyTyparInst,ItemOccurence.Pattern,env.DisplayEnv,env.AccessRights)
                 (fun _ -> TPat_const (lit,m)),(tpenv,names,takenNames)             
 
@@ -7475,7 +7476,9 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 
             // Record the resolution of the custom operation for posterity
             let item = Item.CustomOperation (opName, (fun () -> customOpUsageText nm), Some methInfo)
-            // TODO: consider whether we can do better than emptyTyparInst here
+
+            // FUTURE: consider whether we can do better than emptyTyparInst here, in order to display instantiations
+            // of type variables in the quick info provided in the IDE.
             CallNameResolutionSink cenv.tcSink (nm.idRange,env.NameEnv,item,item,emptyTyparInst,ItemOccurence.Use,env.DisplayEnv,env.eAccessRights)
 
             let mkJoinExpr keySelector1 keySelector2 innerPat e = 
@@ -7667,7 +7670,9 @@ and TcComputationExpression cenv env overallTy mWhole interpExpr builderTy tpenv
 
                     // Record the resolution of the custom operation for posterity
                     let item = Item.CustomOperation (opName, (fun () -> customOpUsageText nm), Some methInfo)
-                    // TODO: consider whether we can do better than emptyTyparInst here
+
+                    // FUTURE: consider whether we can do better than emptyTyparInst here, in order to display instantiations
+                    // of type variables in the quick info provided in the IDE.
                     CallNameResolutionSink cenv.tcSink (nm.idRange,env.NameEnv,item,item,emptyTyparInst,ItemOccurence.Use,env.DisplayEnv,env.eAccessRights)
 
                     if isLikeZip || isLikeJoin || isLikeGroupJoin then
@@ -8529,9 +8534,11 @@ and TcItemThen cenv overallTy env tpenv (item,mItem,rest,afterResolution) delaye
 
             let tyargs,tpenv = TcTypesOrMeasures None cenv NewTyparsOK CheckCxs ItemOccurence.UseInType env tpenv tys mTypeArgs
             
-            // TODO: can we do better than emptyTyparInst here?  But note we haven't yet even checked if the
+            // FUTURE: can we do better than emptyTyparInst here, in order to display instantiations
+            // of type variables in the quick info provided in the IDE?  But note we haven't yet even checked if the
             // number of type arguments is correct...
             CallNameResolutionSink cenv.tcSink (mExprAndTypeArgs,env.NameEnv,item,item,emptyTyparInst,ItemOccurence.Use,env.DisplayEnv,env.eAccessRights)                        
+
             match otherDelayed with 
             | DelayedApp(atomicFlag, arg, mExprAndArg) :: otherDelayed -> 
                 TcMethodApplicationThen cenv env overallTy None tpenv (Some tyargs) [] mExprAndArg mItem methodName ad NeverMutates false meths afterResolution NormalValUse [arg] atomicFlag otherDelayed
@@ -9101,7 +9108,13 @@ and TcMethodApplicationThen
 
     // Call the helper below to do the real checking 
     let (expr,attributeAssignedNamedItems,delayed),tpenv = 
-        TcMethodApplication false cenv env tpenv callerTyArgs objArgs mWholeExpr mItem methodName objTyOpt ad mut isProp meths afterResolution isSuperInit args exprTy delayed
+        try 
+           TcMethodApplication false cenv env tpenv callerTyArgs objArgs mWholeExpr mItem methodName objTyOpt ad mut isProp meths afterResolution isSuperInit args exprTy delayed
+        with e ->
+            match afterResolution with
+            | AfterResolution.DoNothing -> ()
+            | AfterResolution.OverloadResolution(_, _, onFailure) -> onFailure()
+            reraise()
 
     // Give errors if some things couldn't be assigned 
     if not (isNil attributeAssignedNamedItems) then 
@@ -9345,12 +9358,14 @@ and TcMethodApplication
         let uniquelyResolved = 
             let csenv = MakeConstraintSolverEnv ContextInfo.NoContext cenv.css mMethExpr denv
             let res = UnifyUniqueOverloading csenv callerArgCounts methodName ad preArgumentTypeCheckingCalledMethGroup returnTy
+
             match res with
             |   ErrorResult _ -> 
                 match afterResolution with
                 | AfterResolution.DoNothing -> ()
                 | AfterResolution.OverloadResolution(_, _, onFailure) -> onFailure()
             |   _ -> ()
+
             res |> CommitOperationResult
 
         uniquelyResolved,preArgumentTypeCheckingCalledMethGroup
@@ -16524,8 +16539,6 @@ let rec TcModuleOrNamespaceElementNonMutRec (cenv:cenv) parent typeNames scopem 
 
           let mtypNS = !(envNS.eModuleOrNamespaceTypeAccumulator)
           let mtypRoot, mspecNSOpt = BuildRootModuleType enclosingNamespacePath envNS.eCompPath mtypNS
-
-          // TODO: test 'namespace rec global'
 
           // For 'namespace rec' and 'module rec' we add the thing being defined 
           let envNS = if isRec then AddLocalRootModuleOrNamespace cenv.tcSink cenv.g cenv.amap m envNS mtypRoot else envNS

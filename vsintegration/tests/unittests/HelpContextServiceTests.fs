@@ -340,13 +340,18 @@ type HelpContextServiceTests() =
     [<Test>]
     member public this.``Regression.NewInstance.854367`` () =
         let file =
-            [   "let q : System.Runtime.Remoting.TypeE$ntry = null"
-                "let q1 = new System.Runtime.Remoting.Type$Entry()" // this consutrctor doesn't exist, but the help entry still goes to the right place
+            [   "let q : System.Runtime.Remoting.TypeE$ntry = null" ]
+        let keywords = 
+            [   Some "System.Runtime.Remoting.TypeEntry" ]
+        this.TestF1Keywords(keywords, file)
+
+    [<Test>]
+    member public this.``Regression.NewInstance.854367.2`` () =
+        let file =
+            [   "let q1 = new System.Runtime.Remoting.Type$Entry()" // this consutrctor doesn't exist, but the help entry still goes to the right place
             ]
         let keywords = 
-            [   Some "System.Runtime.Remoting.TypeEntry"
-                Some "System.Runtime.Remoting.TypeEntry"
-            ]
+            [   Some "System.Runtime.Remoting.TypeEntry" ]
         this.TestF1Keywords(keywords, file)
 
 
@@ -364,7 +369,7 @@ type HelpContextServiceTests() =
     [<Test>]
     member public this.``Classes.Object`` () =
         let file =
-            [   "let w : System.Object = new System.Obj$ect()" ]
+            [   "let w : System.Ob$ject = new System.Obj$ect()" ]
         let keywords = 
             [   Some "System.Object"
                 Some "System.Object.#ctor"

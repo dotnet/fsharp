@@ -182,7 +182,7 @@ type UsingMSBuild()  =
         let fileContent = """
            let f x y = x + y
            f((*Mark*)"""
-        this.VerifyFirstParameterInfoColonContent(fileContent,"(*Mark*)",": int -> int ")  
+        this.VerifyFirstParameterInfoColonContent(fileContent,"(*Mark*)",": (int -> int) ")  
 
     [<Test>]
     member public this.``Regression.StaticVsInstance.Bug3626.Case1``() =
