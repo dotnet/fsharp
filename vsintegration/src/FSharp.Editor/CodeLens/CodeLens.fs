@@ -59,82 +59,72 @@ type internal CodeLensAdornment
         |> formatMap.Value.GetTextProperties
 
     let executeCodeLenseAsync () =
+        let uiContext = SynchronizationContext.Current
         asyncMaybe {
             try 
                 let! document = workspace.CurrentSolution.GetDocument(documentId.Value) |> Option.ofObj
                 let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true)
                 let! symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
-                let hyperlinkStyles = HyperlinkStyles.getCurrent()
+                do! Async.SwitchToContext uiContext |> liftAsync
 
                 let applyCodeLens bufferPosition (taggedText: seq<Layout.TaggedText>) m =
-                    let DoUI () = 
-                        try
-                            let line = view.TextViewLines.GetTextViewLineContainingBufferPosition(bufferPosition)
-                            
-                            let offset = 
-                                [0..line.Length - 1] |> Seq.tryFind (fun i -> not (Char.IsWhiteSpace (line.Start.Add(i).GetChar())))
-                                |> Option.defaultValue 0
-
-                            let realStart = line.Start.Add(offset)
-                            let span = SnapshotSpan(line.Snapshot, Span.FromBounds(int realStart, int line.End))
-                            let geometry = view.TextViewLines.GetMarkerGeometry(span)
-                            let textBox = TextBlock(Width = 500., Background = Brushes.Transparent, Opacity = 0.5, TextTrimming = TextTrimming.WordEllipsis)
-                            DependencyObjectExtensions.SetDefaultTextProperties(textBox, formatMap.Value)
-                            let navigation = QuickInfoNavigation(gotoDefinitionService, document, m)
-                            for text in taggedText do
-                                let run = Documents.Run text.Text
-                                DependencyObjectExtensions.SetTextProperties (run, layoutTagToFormatting text.Tag)
-                                let inl =
-                                   match text with
-                                   | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->                        
-                                       let h = Documents.Hyperlink(run, ToolTip = nav.Range.FileName)
-                                       h.Click.Add (fun _ -> navigation.NavigateTo nav.Range)
-                                       h :> Documents.Inline
-                                   | _ -> run :> _
-                                textBox.Inlines.Add inl
-                            
-                            textBox.Resources.[typeof<Documents.Hyperlink>] <- hyperlinkStyles
-                            Canvas.SetLeft(textBox, geometry.Bounds.Left)
-                            Canvas.SetTop(textBox, geometry.Bounds.Top - 15.)
-                            let tag = new IntraTextAdornmentTag(textBox, (fun _ _ -> ()))
-                            let adornment = new SpaceNegotiatingAdornmentTag(0., 0., 0., 0., 0., PositionAffinity.Predecessor, tag, tag)
-
-                            interlineLayer.AddAdornment(AdornmentPositioningBehavior.TextRelative, Nullable (span), adornment, textBox, null) |> ignore
-                            if line.VisibilityState = VisibilityState.Unattached then view.DisplayTextLineContainingBufferPosition(line.Start, 0., ViewRelativePosition.Top)
-                        with
-                        | _ -> ()
+                    let line = view.TextViewLines.GetTextViewLineContainingBufferPosition(bufferPosition)
                     
-                    Application.Current.Dispatcher.Invoke(fun _ -> DoUI())
+                    let offset = 
+                        [0..line.Length - 1] |> Seq.tryFind (fun i -> not (Char.IsWhiteSpace (line.Start.Add(i).GetChar())))
+                        |> Option.defaultValue 0
+
+                    let realStart = line.Start.Add(offset)
+                    let span = SnapshotSpan(line.Snapshot, Span.FromBounds(int realStart, int line.End))
+                    let geometry = view.TextViewLines.GetMarkerGeometry(span)
+                    let textBox = TextBlock(Width = 500., Background = Brushes.Transparent, Opacity = 0.5, TextTrimming = TextTrimming.WordEllipsis)
+                    DependencyObjectExtensions.SetDefaultTextProperties(textBox, formatMap.Value)
+                    let navigation = QuickInfoNavigation(gotoDefinitionService, document, m)
+                    for text in taggedText do
+                        let run = Documents.Run text.Text
+                        DependencyObjectExtensions.SetTextProperties (run, layoutTagToFormatting text.Tag)
+                        let inl =
+                           match text with
+                           | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->                        
+                               let h = Documents.Hyperlink(run, ToolTip = nav.Range.FileName)
+                               h.Click.Add (fun _ -> navigation.NavigateTo nav.Range)
+                               h :> Documents.Inline
+                           | _ -> run :> _
+                        textBox.Inlines.Add inl
+                    
+                    Canvas.SetLeft(textBox, geometry.Bounds.Left)
+                    Canvas.SetTop(textBox, geometry.Bounds.Top - 15.)
+                    let tag = IntraTextAdornmentTag(textBox, (fun _ _ -> ()))
+                    let adornment = SpaceNegotiatingAdornmentTag(0., 0., 0., 0., 0., PositionAffinity.Predecessor, tag, tag)
+                    interlineLayer.AddAdornment(AdornmentPositioningBehavior.TextRelative, Nullable span, adornment, textBox, null) |> ignore
+                    if line.VisibilityState = VisibilityState.Unattached then view.DisplayTextLineContainingBufferPosition(line.Start, 0., ViewRelativePosition.Top)
                 
                 let useResults (displayContext: FSharpDisplayContext, func: FSharpMemberOrFunctionOrValue) =
                     async {
-                        try
-                            let lineNumber = Line.toZ func.DeclarationLocation.StartLine
-                            
-                            if (lineNumber >= 0 || lineNumber < view.TextSnapshot.LineCount) && 
-                                not func.IsPropertyGetterMethod && 
-                                not func.IsPropertySetterMethod then
+                        let lineNumber = Line.toZ func.DeclarationLocation.StartLine
                         
-                                match func.FullTypeSafe with
-                                | Some ty ->
-                                    let bufferPosition = view.TextSnapshot.GetLineFromLineNumber(lineNumber).Start
-                                    if not (codeLensLines.ContainsKey lineNumber) then
-                                        let! displayEnv = checkFileResults.GetDisplayEnvForPos(func.DeclarationLocation.Start)
-                                        
-                                        let displayContext =
-                                            match displayEnv with
-                                            | Some denv -> FSharpDisplayContext(fun _ -> denv)
-                                            | None -> displayContext
-                                             
-                                        let typeLayout = ty.FormatLayout(displayContext)
-                                        let taggedText = ResizeArray()
-                                        Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
-                                        codeLensLines.[lineNumber] <- taggedText
-                                        applyCodeLens bufferPosition taggedText func.DeclarationLocation
-                                | None -> ()
-                        with
-                        | _ -> () // suppress any exception according wrong line numbers -.-
+                        if (lineNumber >= 0 || lineNumber < view.TextSnapshot.LineCount) && 
+                            not func.IsPropertyGetterMethod && 
+                            not func.IsPropertySetterMethod then
+                        
+                            match func.FullTypeSafe with
+                            | Some ty ->
+                                let bufferPosition = view.TextSnapshot.GetLineFromLineNumber(lineNumber).Start
+                                if not (codeLensLines.ContainsKey lineNumber) then
+                                    let! displayEnv = checkFileResults.GetDisplayEnvForPos(func.DeclarationLocation.Start)
+                                    
+                                    let displayContext =
+                                        match displayEnv with
+                                        | Some denv -> FSharpDisplayContext(fun _ -> denv)
+                                        | None -> displayContext
+                                         
+                                    let typeLayout = ty.FormatLayout(displayContext)
+                                    let taggedText = ResizeArray()
+                                    Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
+                                    codeLensLines.[lineNumber] <- taggedText
+                                    applyCodeLens bufferPosition taggedText func.DeclarationLocation
+                            | None -> ()
                     }
                 
                 //let forceReformat () =
