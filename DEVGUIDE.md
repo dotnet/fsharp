@@ -5,8 +5,8 @@ Follow the instructions below to build and develop the F# Compiler, Core Library
 * [Developing the F# Compiler (Windows)](#developing-the-f-compiler-windows)
 * [Developing the F# Compiler (Linux)](#developing-the-f-compiler-linux)
 * [Developing the F# Compiler (macOS)](#developing-the-f-compiler-macos)
-* [Developing the Visual F# IDE Tools (Windows Only)](#the-visual-f-ide-tools-windows-only) 
-* [Notes](#notes)
+* [Developing the Visual F# IDE Tools (Windows Only)](#developing-the-visual-f-ide-tools-windows-only) 
+* [Notes and Resources](#notes)
 
 ###  Developing the F# Compiler (Windows)
 
@@ -84,7 +84,7 @@ Install Xamarin Studio, then
     make
     sudo make install
 
-# The Visual F# IDE Tools (Windows Only)
+### Developing the Visual F# IDE Tools (Windows Only)
 
 To build and test Visual F# IDE Tools, install these requirements:
 - [Visual Studio 2017](https://www.visualstudio.com/downloads/)
@@ -114,7 +114,7 @@ Or hard crash on launch ("Unknown Error"), delete these folders:
 * `%localappdata%\Microsoft\VisualStudio\15.0_(some number here)FSharpDev`
 * `%localappdata%\Microsoft\VisualStudio\15.0_(some number here)`
 
-## [Optional] Install the Visual F# IDE Tools  (Windows Only)
+#### [Optional] Install the Visual F# IDE Tools  (Windows Only)
 
 At time of writing, the Visual F# IDE Tools can only be installed into the latest Visual Studio 2017 RC releases.
 The new builds of the Visual F# IDE Tools can no longer be installed into Visual Studio 2015.
@@ -136,7 +136,7 @@ For **Release**, uninstall then reinstall:
 
 Restart Visual Studio, it should now be running your freshly-built Visual F# IDE Tools with updated F# Interactive.
 
-### [Optional] F5 testing of local changes
+#### [Optional] F5 testing of local changes
 
 To test your changes locally _without_ overwriting your default installed F# tools, set the `VisualFSharp\Vsix\VisualFSharpOpenSource`
 project as the startup project.  When you hit F5 a new instance of Visual Studio will be started in the `FSharpDev` hive with your
@@ -150,7 +150,7 @@ For the brave, you can rapidly deploy incrementally updated versions of Visual F
 
 This gives a much tighter inner development loop than uninstalling/reinstalling the VSIX, as you do not have to restart VIsual Studio. Caveat emptor.
 
-### [Optional] Clobber the F# SDK on the machine
+#### [Optional] Clobber the F# SDK on the machine
 
 **Note:** The step below will try to clobber the machine-wide installed F# SDK on your machine. This replaces the ``fsc.exe`` used by the standard innstall location or ``Microsoft.FSharp.targets``.  **Repairing Visual Studio 15 is currently the only way to revert this step.**
 
