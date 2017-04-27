@@ -102,10 +102,10 @@ type internal QuickInfoViewProvider
         { new IDeferredQuickInfoContent with 
             member x.Create() = TextBlock(Visibility = Visibility.Collapsed) :> FrameworkElement }
 
-    let createDeferredContent (symbolGlyph, mainDescription, documentation, after) =
-        QuickInfoDisplayDeferredContent(symbolGlyph, null, mainDescription, documentation, after, empty, empty, empty)
+    let createDeferredContent (symbolGlyph, mainDescription, documentation, exceptions, typeParameterMap) =
+        QuickInfoDisplayDeferredContent(symbolGlyph, null, mainDescription, documentation, typeParameterMap, (* anonymous types *) empty, (* usage text *) empty, exceptions)
 
-    member __.ProvideContent(glyph: Glyph, description: seq<TaggedText>, documentation: seq<TaggedText>, after: seq<TaggedText>, navigation: QuickInfoNavigation) =
-        let navigableText = formatText navigation
+    member __.ProvideContent(glyph: Glyph, description: seq<TaggedText>, documentation: seq<TaggedText>, typeParameterMap: seq<TaggedText>, exceptions: seq<TaggedText>, navigation: QuickInfoNavigation) =
+        let navigableText x = formatText navigation x
         let glyphContent = SymbolGlyphDeferredContent(glyph, glyphService)
-        createDeferredContent(glyphContent, navigableText description, navigableText documentation, navigableText after)
+        createDeferredContent(glyphContent, navigableText description, navigableText documentation, navigableText exceptions, navigableText typeParameterMap)
