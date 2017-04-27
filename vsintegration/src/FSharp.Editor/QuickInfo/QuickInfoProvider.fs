@@ -159,9 +159,9 @@ module private FSharpQuickInfo =
 
 [<ExportQuickInfoProvider(PredefinedQuickInfoProviderNames.Semantic, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpQuickInfoProvider 
-    [<System.ComponentModel.Composition.ImportingConstructor>] 
+    [<ImportingConstructor>] 
     (
-        [<System.ComponentModel.Composition.Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
+        [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: ProjectInfoManager,
         gotoDefinitionService: FSharpGoToDefinitionService,
