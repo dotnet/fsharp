@@ -108,18 +108,55 @@ Full name: System.Console"
 [<Test>]
 let ShouldShowQuickInfoForGenericParameters() =
     let testCases = 
-       [ "GroupBy", Some "Expected-for-GroupBu"
-         "Sort", Some "Expected-for-Sort" ]
-
-    for (symbol: string, expected: string option) in testCases do
+        [("GroupBy", Some
+    "(extension) System.Collections.Generic.IEnumerable.GroupBy<'TSource,'TKey>(keySelector: System.Func<'TSource,'TKey>) : System.Collections.Generic.IEnumerable<IGrouping<'TKey,'TSource>>
+'TSource: int * string
+'TKey: int");
+         ("Sort", Some "System.Array.Sort<'T>(array: 'T []) : unit
+'T: int");
+         ("let test4 x = C().FSharpGenericMethodExplitTypeParams", Some
+    "member C.FSharpGenericMethodExplitTypeParams : a:'T * y:'T -> 'T * 'T
+'T: 'a list");
+        ("let test5<'U> (x: 'U) = C().FSharpGenericMethodExplitTypeParams", Some
+    "member C.FSharpGenericMethodExplitTypeParams : a:'T * y:'T -> 'T * 'T
+'T: 'U list");
+         ("let test6 = C().FSharpGenericMethodExplitTypeParams", Some
+    "member C.FSharpGenericMethodExplitTypeParams : a:'T * y:'T -> 'T * 'T
+'T: int");
+        ("let test7 x = C().FSharpGenericMethodInferredTypeParams", Some
+    "member C.FSharpGenericMethodInferredTypeParams : a:'a * y:'b -> 'a * 'b
+'a: 'a0 list
+'b: 'a0 list");
+        ("let test8 = C().FSharpGenericMethodInferredTypeParams", Some
+    "member C.FSharpGenericMethodInferredTypeParams : a:'a * y:'b -> 'a * 'b
+'a: int
+'b: int");
+        ("let test9<'U> (x: 'U) = C().FSharpGenericMethodInferredTypeParams", Some
+    "member C.FSharpGenericMethodInferredTypeParams : a:'a * y:'b -> 'a * 'b
+'a: 'U list
+'b: 'U list")]
+    let actualForAllTests = 
+     [ for (symbol: string, expected: string option) in testCases do
         let expected = expected |> Option.map normalizeLineEnds
         let fileContents = """
+
+type C() = 
+    member x.FSharpGenericMethodExplitTypeParams<'T>(a:'T, y:'T) = (a,y)
+
+    member x.FSharpGenericMethodInferredTypeParams(a, y) = (a,y)
+
 open System.Linq
 let coll = [ for i in 1 .. 100 -> (i, string i) ]
 let res1 = coll.GroupBy (fun (a, b) -> a)
 let res2 = System.Array.Sort [| 1 |]
+let test4 x = C().FSharpGenericMethodExplitTypeParams([x], [x])
+let test5<'U> (x: 'U) = C().FSharpGenericMethodExplitTypeParams([x], [x])
+let test6 = C().FSharpGenericMethodExplitTypeParams(1, 1)
+let test7 x = C().FSharpGenericMethodInferredTypeParams([x], [x])
+let test8 = C().FSharpGenericMethodInferredTypeParams(1, 1)
+let test9<'U> (x: 'U) = C().FSharpGenericMethodInferredTypeParams([x], [x])
     """
-        let caretPosition = fileContents.IndexOf(symbol)
+        let caretPosition = fileContents.IndexOf(symbol) + symbol.Length - 2
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
         
         let quickInfo =
@@ -127,7 +164,7 @@ let res2 = System.Array.Sort [| 1 |]
             |> Async.RunSynchronously
         
         let actual = quickInfo |> Option.map (fun (text, _, _, _) -> getQuickInfoText text)
-        printfn "ShouldShowQuickInfoForGenericParameters:"
-        printfn "  expected = %A" expected
-        printfn "  actual = %A" actual
-        Assert.AreEqual(expected, actual)
+        yield symbol, actual ]
+    printfn "results:\n%A" actualForAllTests
+    for ((symbol, expected),(_,actual)) in List.zip testCases actualForAllTests do
+       Assert.AreEqual(Option.map normalizeLineEnds expected, Option.map normalizeLineEnds actual)
