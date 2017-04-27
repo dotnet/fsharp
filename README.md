@@ -8,8 +8,6 @@ You are invited to to help produce future releases of the F# language compiler, 
 * [Contributing](#contributing)
 * [Using](#using)
 
-## What is F#?
-
 F# is a mature, open source, cross-platform, functional-first programming language which empowers users and organizations to tackle complex computing problems with simple, maintainable, and robust code. F# is used in a wide range of application areas and is supported by industry-leading companies providing professional tools, and by an active open community. You can find out more about F# at http://fsharp.org.
 
 ## Build Status
