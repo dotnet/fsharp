@@ -1,22 +1,19 @@
 # Development Guide
 
-## Quick Start: Build, Test, Develop
+* [Developing the F# Compiler](#f-compiler) (Linux, macOS, Windows)
+* [Developing the Visual F# IDE Tools](#the-visual-f-ide-tools-windows-only) (Windows Only)
+* [Notes](#notes)
 
-### F# Compiler (Linux)
+## F# Compiler
 
-First [install Mono](http://www.mono-project.com/docs/getting-started/install/linux/).   Then:
-    
-    ./autoconf.sh --prefix /usr
-    make
-    make install
-
-Full testing is not yet enabled on Linux, nor is a .NET Core build of the compiler.
-
-You can alternatively use
-
-    ./build.sh
+Follow the instructions below to build and develop the F# Compiler, Core Library and tools on Windows, macOS and Linux.
 
 ### F# Compiler (Windows)
+
+Install
+
+- [.NET 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40779)
+- [MSBuild 12.0](http://www.microsoft.com/en-us/download/details.aspx?id=40760)
 
 On Windows you can build the F# compiler for .NET Framework as follows:
 
@@ -61,29 +58,35 @@ Building ``FSharp.sln`` builds nearly everything. However building portable prof
 FSharp.Core.dll is not included.  If you are just developing the core compiler and library
 then building the solution will be enough.
 
+### F# Compiler (Linux)
 
-### Required Tools for Development and Testing
-
-#### Linux (Mono): Development tools
-
-For Mono, follow [these instructions](http://www.mono-project.com/docs/getting-started/install/linux/)
-
-Also you may need:
+For Linux/Mono, follow [these instructions](http://www.mono-project.com/docs/getting-started/install/linux/). Also you may need:
 
     sudo apt-get install mono-complete autoconf libtool pkg-config make git automake
 
+Then:
+    
+    ./autoconf.sh --prefix /usr
+    make
+    make install
 
-#### Windows: Development tools
+Full testing is not yet enabled on Linux, nor is a .NET Core build of the compiler.
 
-For F# Compiler on Windows (``build net40``)
+You can alternatively use
 
-- [.NET 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40779)
-- [MSBuild 12.0](http://www.microsoft.com/en-us/download/details.aspx?id=40760)
+    ./build.sh
 
-#### Windows: Visual F# IDE Tools Development
+### F# Compiler (macOS)
 
-For Visual F# IDE Tools 4.1 development (Windows)
+Install Xamarin Studio, then
 
+    ./autogen.sh --prefix=/Library/Frameworks/Mono.framework/Versions/Current/
+    make
+    sudo make install
+
+# The Visual F# IDE Tools (Windows Only)
+
+To build and test Visual F# IDE Tools, install these requirements:
 - [Visual Studio 2017](https://www.visualstudio.com/downloads/)
   - Under the "Windows" workloads, select ".NET desktop development"
     - Select "F# language support" under the optional components
@@ -91,51 +94,14 @@ For Visual F# IDE Tools 4.1 development (Windows)
   - Under the "Individual components" tab select "Windows 10 SDK" as shown below (needed for compiling RC resource, see #2556): \
   ![image](https://cloud.githubusercontent.com/assets/1249087/23730261/5c78c850-041b-11e7-9d9d-62766351fd0f.png)
 
-
-#### Windows: Additional frameworks
-
-- [Git for windows](http://msysgit.github.io/)
-- [.NET 3.5](http://www.microsoft.com/en-us/download/details.aspx?id=21)
-- [.NET 4.5](http://www.microsoft.com/en-us/download/details.aspx?id=30653)
-- [.NET 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40779)
-- [.NET 4.6](http://www.microsoft.com/en-us/download/details.aspx?id=48137)
-- [MSBuild 12.0](http://www.microsoft.com/en-us/download/details.aspx?id=40760)
-- [Windows 7 SDK](http://www.microsoft.com/en-us/download/details.aspx?id=8279)
-- [Windows 8 SDK](http://msdn.microsoft.com/en-us/windows/desktop/hh852363.aspx)
-- [Windows 8.1 SDK](http://msdn.microsoft.com/en-us/library/windows/desktop/bg162891.aspx)
-- [Windows 10 SDK](https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk)
-
-
-### Notes on the Windows .NET Framework build
-
-1. The `update.cmd` script adds required strong name validation skips, and NGens the compiler and libraries. This requires admin privileges.
-1. The compiler binaries produced are "private" and strong-named signed with a test key.
-1. Some additional tools are required to build the compiler, notably `fslex.exe`, `fsyacc.exe`, `FSharp.PowerPack.Build.Tasks.dll`, `FsSrGen.exe`, `FSharp.SRGen.Build.Tasks.dll`, and the other tools found in the `lkg` directory.
-1. The overall bootstrapping process executes as follows
- - We first need an existing F# compiler. We use the one in the `lkg` directory. Let's assume this compiler has an `FSharp.Core.dll` with version X.
- - We use this compiler to compile the source in this distribution, to produce a "proto" compiler, dropped to the `proto` directory. When run, this compiler still relies on `FSharp.Core.dll` with version X.
- - We use the proto compiler to compile the source for `FSharp.Core.dll` in this distribution.
- - We use the proto compiler to compile the source for `FSharp.Compiler.dll`, `fsc.exe`, `fsi.exe`, and other binaries found in this distribution.
-
-### Configuring proxy server
-
-If you are behind a proxy server, NuGet client tool must be configured to use it:
-
-    .nuget\nuget.exe config -set http_proxy=proxy.domain.com:8080 -ConfigFile .nuget\NuGet.Config
-    .nuget\nuget.exe config -set http_proxy.user=user_name -ConfigFile .nuget\NuGet.Config
-    .nuget\nuget.exe config -set http_proxy.password=user_password -ConfigFile .nuget\NuGet.Config
-
-Where you should set proper proxy address, user name and password.
-
-# The Visual F# IDE Tools (Windows Only)
-
-To build and test Visual F# IDE Tools, you must use the latest version of [Visual Studio 2017](https://www.visualstudio.com/downloads/).  See the section titled "Development tools" in the [readme](README.md).
+Steps to build:
 
     build.cmd vs              -- build the Visual F# IDE Tools in Release configuration (see below)
     build.cmd vs debug        -- build the Visual F# IDE Tools in Debug configuration (see below)
     build.cmd vs test         -- build Visual F# IDE Tools, run all tests (see below)
 
 Use ``VisualFSharp.sln`` if you're building the Visual F# IDE Tools.
+
 
 Note on Debug vs Release: ``Release`` Configuration has a degraded debugging experience, so if you want to test a change locally, it is recommended to do it in the ``Debug`` configuration. For more information see https://github.com/Microsoft/visualfsharp/issues/2771 and https://github.com/Microsoft/visualfsharp/pull/2773.
 
@@ -196,6 +162,43 @@ For **Release**:
 
     vsintegration\update-vsintegration.cmd release
 
+
+# Notes
+
+#### Windows: Links to  Additional frameworks
+
+- [Git for windows](http://msysgit.github.io/)
+- [.NET 3.5](http://www.microsoft.com/en-us/download/details.aspx?id=21)
+- [.NET 4.5](http://www.microsoft.com/en-us/download/details.aspx?id=30653)
+- [.NET 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40779)
+- [.NET 4.6](http://www.microsoft.com/en-us/download/details.aspx?id=48137)
+- [MSBuild 12.0](http://www.microsoft.com/en-us/download/details.aspx?id=40760)
+- [Windows 7 SDK](http://www.microsoft.com/en-us/download/details.aspx?id=8279)
+- [Windows 8 SDK](http://msdn.microsoft.com/en-us/windows/desktop/hh852363.aspx)
+- [Windows 8.1 SDK](http://msdn.microsoft.com/en-us/library/windows/desktop/bg162891.aspx)
+- [Windows 10 SDK](https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk)
+
+
+### Notes on the Windows .NET Framework build
+
+1. The `update.cmd` script adds required strong name validation skips, and NGens the compiler and libraries. This requires admin privileges.
+1. The compiler binaries produced are "private" and strong-named signed with a test key.
+1. Some additional tools are required to build the compiler, notably `fslex.exe`, `fsyacc.exe`, `FSharp.PowerPack.Build.Tasks.dll`, `FsSrGen.exe`, `FSharp.SRGen.Build.Tasks.dll`, and the other tools found in the `lkg` directory.
+1. The overall bootstrapping process executes as follows
+ - We first need an existing F# compiler. We use the one in the `lkg` directory. Let's assume this compiler has an `FSharp.Core.dll` with version X.
+ - We use this compiler to compile the source in this distribution, to produce a "proto" compiler, dropped to the `proto` directory. When run, this compiler still relies on `FSharp.Core.dll` with version X.
+ - We use the proto compiler to compile the source for `FSharp.Core.dll` in this distribution.
+ - We use the proto compiler to compile the source for `FSharp.Compiler.dll`, `fsc.exe`, `fsi.exe`, and other binaries found in this distribution.
+
+### Configuring proxy server
+
+If you are behind a proxy server, NuGet client tool must be configured to use it:
+
+    .nuget\nuget.exe config -set http_proxy=proxy.domain.com:8080 -ConfigFile .nuget\NuGet.Config
+    .nuget\nuget.exe config -set http_proxy.user=user_name -ConfigFile .nuget\NuGet.Config
+    .nuget\nuget.exe config -set http_proxy.password=user_password -ConfigFile .nuget\NuGet.Config
+
+Where you should set proper proxy address, user name and password.
 
 ## Resources
 
