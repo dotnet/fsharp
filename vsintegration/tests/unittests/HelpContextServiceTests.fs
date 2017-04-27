@@ -351,7 +351,7 @@ type HelpContextServiceTests() =
 
 
     [<Test>]
-    member public this.``Classes`` () =
+    member public this.``Classes.WebClient`` () =
         let file =
             [   "let w : System.Net.Web$Client = new System.Net.Web$Client()" ]
         let keywords = 
@@ -362,7 +362,7 @@ type HelpContextServiceTests() =
 
 
     [<Test>]
-    member public this.``Classes`` () =
+    member public this.``Classes.Object`` () =
         let file =
             [   "let w : System.Object = new System.Obj$ect()" ]
         let keywords = 
@@ -373,7 +373,7 @@ type HelpContextServiceTests() =
 
 
     [<Test>]
-    member public this.``ClassesGeneric`` () =
+    member public this.``Classes.Generic`` () =
         let file =
             [   "let x : System.Collections.Generic.L$ist<int> = null" ]
         let keywords = 
@@ -381,7 +381,7 @@ type HelpContextServiceTests() =
         this.TestF1Keywords(keywords, file)
 
     [<Test>]
-    member public this.``ClassesAbbrev`` () =
+    member public this.``Classes.Abbrev`` () =
         let file =
             [   "let z : Resi$zeArray<int> = null" ]
         let keywords = 
