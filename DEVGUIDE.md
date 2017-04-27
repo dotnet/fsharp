@@ -1,13 +1,12 @@
 # Development Guide
 
-Contents:
+Follow the instructions below to build and develop the F# Compiler, Core Library and tools on Windows, macOS and Linux.
+
 * [Developing the F# Compiler (WindowS)](#developing-the-f-compiler-windows)
 * [Developing the F# Compiler (Linux)](#developing-the-f-compiler-linux)
 * [Developing the F# Compiler (macOS)](#developing-the-f-compiler-macos)
 * [Developing the Visual F# IDE Tools (Windows Only)](#the-visual-f-ide-tools-windows-only) 
 * [Notes](#notes)
-
-Follow the instructions below to build and develop the F# Compiler, Core Library and tools on Windows, macOS and Linux.
 
 ###  Developing the F# Compiler (Windows)
 
