@@ -1,7 +1,7 @@
 # F# Compiler, Core Library and Visual F# Tools Open Contribution Repository
 
 This repo is where you can contribute to the F# compiler, core library and the Visual F# Tools.
-To learn what F# is and why it's interesting, go to [fsharp.org](http://fsharp.org). To get a free F# environment, go to [fsharp.org](http://fsharp.org/use/windows).
+To learn what F# is and why it's interesting, go to [fsharp.org](http://fsharp.org). To get a free F# environment, go to [fsharp.org](http://fsharp.org/).
 
 **Compiler Technical Documentation**
 
@@ -25,17 +25,17 @@ The primary technical documents for the F# compiler code are
 
 ### F# Compiler (Linux)
 
-Currently you can do on Linux a bootstrap of the Mono version of the compiler.  Full testing is not enabled,
-nor is a .NET Core build of the compiler.
-
 First [install Mono](http://www.mono-project.com/docs/getting-started/install/linux/).   Then:
     
+    ./autoconf.sh --prefix /usr
+    make
+    make install
+
+Full testing is not yet enabled on Linux, nor is a .NET Core build of the compiler.
+
+You can alternatively use
+
     ./build.sh
-
-results will be in ``Debug\net40\bin\...``.  This doesn't do any testing (beyond the bootstrap). You can
-run the compiler ``fsc.exe`` and F# Interactive ``fsi.exe`` by hand to test it.
-
-These steps are tested under the Linux/Mono configuration(s) in ``.travis.yml`` (Ubuntu).
 
 ### F# Compiler (Windows)
 
