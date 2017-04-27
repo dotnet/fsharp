@@ -58,7 +58,7 @@ let private getQuickInfoText (FSharpToolTipText elements) : string =
         | FSharpToolTipElement.SingleParameter(text, _, _) -> text
         | FSharpToolTipElement.Group(xs) -> 
             let text = xs |> List.map (fun (a,_,_) -> a) |> String.concat "\n"
-            let tps = xs |> List.map (fun (_,_,c) -> c)
+            let tps = xs |> List.collect (fun (_,_,c) -> c)
             let tptext = (match tps with [] -> "" | _ -> "\n" + String.concat "\n" tps)
             text + tptext
         | FSharpToolTipElement.CompositionError(error) -> error
@@ -103,4 +103,31 @@ Full name: System.Console"
             |> Async.RunSynchronously
         
         let actual = quickInfo |> Option.map (fun (text, _, _, _) -> getQuickInfoText text)
+        Assert.AreEqual(expected, actual)
+
+[<Test>]
+let ShouldShowQuickInfoForGenericParameters() =
+    let testCases = 
+       [ "GroupBy", Some "Expected-for-GroupBu"
+         "Sort", Some "Expected-for-Sort" ]
+
+    for (symbol: string, expected: string option) in testCases do
+        let expected = expected |> Option.map normalizeLineEnds
+        let fileContents = """
+open System.Linq
+let coll = [ for i in 1 .. 100 -> (i, string i) ]
+let res1 = coll.GroupBy (fun (a, b) -> a)
+let res2 = System.Array.Sort [| 1 |]
+    """
+        let caretPosition = fileContents.IndexOf(symbol)
+        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+        
+        let quickInfo =
+            FSharpQuickInfoProvider.ProvideQuickInfo(FSharpChecker.Instance, documentId, SourceText.From(fileContents), filePath, caretPosition, options, 0)
+            |> Async.RunSynchronously
+        
+        let actual = quickInfo |> Option.map (fun (text, _, _, _) -> getQuickInfoText text)
+        printfn "ShouldShowQuickInfoForGenericParameters:"
+        printfn "  expected = %A" expected
+        printfn "  actual = %A" actual
         Assert.AreEqual(expected, actual)

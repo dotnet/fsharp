@@ -659,8 +659,8 @@ let ``Test TPProject errors`` () =
 let internal extractToolTipText (FSharpToolTipText(els)) = 
     [ for e in els do 
         match e with
-        | FSharpToolTipElement.Single (txt,_) -> yield txt
-        | FSharpToolTipElement.Group txts -> for (t,_) in txts do yield t
+        | FSharpToolTipElement.Single (txt,_,_) -> yield txt
+        | FSharpToolTipElement.Group txts -> for (t,_,_) in txts do yield t
         | FSharpToolTipElement.CompositionError err -> yield err
         | FSharpToolTipElement.None -> yield "NONE!"
         | FSharpToolTipElement.SingleParameter (txt,p,_) -> yield txt ] 
