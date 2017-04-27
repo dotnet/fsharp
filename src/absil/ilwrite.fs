@@ -551,6 +551,7 @@ type MetadataTable =
 type cenv = 
     { ilg: ILGlobals
       emitTailcalls: bool
+      deterministic: bool
       showTimes: bool
       desiredMetadataVersion: ILVersionInfo
       requiredDataFixups: (int32 * (int * bool)) list ref
@@ -2903,9 +2904,15 @@ and newGuid (modul: ILModuleDef) =
     let m2 = hash modul.Name
     [| b0 m; b1 m; b2 m; b3 m; b0 m2; b1 m2; b2 m2; b3 m2; 0xa7uy; 0x45uy; 0x03uy; 0x83uy; b0 n; b1 n; b2 n; b3 n |]
 
-and GetModuleAsRow cenv (modul: ILModuleDef) = 
+and deterministicGuid (modul: ILModuleDef) =
+    let n = 0
+    let m = hash n
+    let m2 = hash modul.Name
+    [| b0 m; b1 m; b2 m; b3 m; b0 m2; b1 m2; b2 m2; b3 m2; 0xa7uy; 0x45uy; 0x03uy; 0x83uy; b0 n; b1 n; b2 n; b3 n |]
+
+and GetModuleAsRow (cenv:cenv) (modul: ILModuleDef) = 
     // Store the generated MVID in the environment (needed for generating debug information)
-    let modulGuid = newGuid modul
+    let modulGuid = if cenv.deterministic then deterministicGuid modul else newGuid modul
     cenv.moduleGuid <- modulGuid
     UnsharedRow 
         [| UShort (uint16 0x0) 
@@ -2954,11 +2961,12 @@ let GenModule (cenv : cenv) (modul: ILModuleDef) =
     GenTypeDefsPass4 [] cenv tds
     reportTime cenv.showTimes "Module Generation Pass 4"
 
-let generateIL requiredDataFixups (desiredMetadataVersion,generatePdb, ilg : ILGlobals, emitTailcalls,showTimes)  (m : ILModuleDef) cilStartAddress =
+let generateIL requiredDataFixups (desiredMetadataVersion,generatePdb, ilg : ILGlobals, emitTailcalls, deterministic, showTimes)  (m : ILModuleDef) cilStartAddress =
     let isDll = m.IsDLL
 
     let cenv = 
         { emitTailcalls=emitTailcalls
+          deterministic = deterministic
           showTimes=showTimes
           ilg = ilg
           desiredMetadataVersion=desiredMetadataVersion
@@ -3098,7 +3106,7 @@ module FileSystemUtilites =
 #endif
         ()
 
-let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls,showTimes) modul cilStartAddress = 
+let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls,deterministic,showTimes) modul cilStartAddress =
 
     // When we know the real RVAs of the data section we fixup the references for the FieldRVA table. 
     // These references are stored as offsets into the metadata we return from this function 
@@ -3107,7 +3115,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
     let next = cilStartAddress
 
     let strings,userStrings,blobs,guids,tables,entryPointToken,code,requiredStringFixups,data,resources,pdbData,mappings = 
-      generateIL requiredDataFixups (desiredMetadataVersion,generatePdb,ilg,emitTailcalls,showTimes) modul cilStartAddress
+      generateIL requiredDataFixups (desiredMetadataVersion,generatePdb,ilg,emitTailcalls,deterministic,showTimes) modul cilStartAddress
 
     reportTime showTimes "Generated Tables and Code"
     let tableSize (tab: TableName) = tables.[tab.Index].Count
@@ -3550,7 +3558,7 @@ let writeBytes (os: BinaryWriter) (chunk:byte[]) = os.Write(chunk,0,chunk.Length
 
 let writeBinaryAndReportMappings (outfile, 
                                   ilg: ILGlobals, pdbfile: string option, signer: ILStrongNameSigner option, portablePDB, embeddedPDB, 
-                                  embedAllSource, embedSourceList, sourceLink, emitTailcalls, showTimes, dumpDebugInfo) modul =
+                                  embedAllSource, embedSourceList, sourceLink, emitTailcalls, deterministic, showTimes, dumpDebugInfo ) modul =
     // Store the public key from the signer into the manifest.  This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
 
@@ -3667,7 +3675,7 @@ let writeBinaryAndReportMappings (outfile,
                     | None -> failwith "Expected msorlib to have a version number"
 
           let entryPointToken,code,codePadding,metadata,data,resources,requiredDataFixups,pdbData,mappings = 
-            writeILMetadataAndCode ((pdbfile <> None), desiredMetadataVersion, ilg,emitTailcalls,showTimes) modul next
+            writeILMetadataAndCode ((pdbfile <> None), desiredMetadataVersion, ilg,emitTailcalls, deterministic, showTimes) modul next
 
           reportTime showTimes "Generated IL and metadata";
           let _codeChunk,next = chunk code.Length next
@@ -3849,7 +3857,10 @@ let writeBinaryAndReportMappings (outfile,
             writeInt32AsUInt16 os 0x014c;   // Machine - IMAGE_FILE_MACHINE_I386 
             
           writeInt32AsUInt16 os numSections;
-          writeInt32 os timestamp   // date since 1970 
+          if deterministic then
+            writeInt32 os -1          // High bit set, to stop tool chains becoming confused
+          else 
+            writeInt32 os timestamp   // date since 1970
           writeInt32 os 0x00; // Pointer to Symbol Table Always 0 
        // 00000090 
           writeInt32 os 0x00; // Number of Symbols Always 0 
@@ -4277,12 +4288,13 @@ type options =
      sourceLink: string
      signer: ILStrongNameSigner option
      emitTailcalls : bool
+     deterministic : bool
      showTimes: bool
      dumpDebugInfo:bool }
 
 let WriteILBinary (outfile, (args: options), modul) =
     writeBinaryAndReportMappings (outfile, 
                                   args.ilg, args.pdbfile, args.signer, args.portablePDB, args.embeddedPDB, args.embedAllSource, 
-                                  args.embedSourceList, args.sourceLink, args.emitTailcalls, args.showTimes, args.dumpDebugInfo) modul 
+                                  args.embedSourceList, args.sourceLink, args.emitTailcalls, args.deterministic, args.showTimes, args.dumpDebugInfo) modul
     |> ignore
 

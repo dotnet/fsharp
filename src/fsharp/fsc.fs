@@ -2016,6 +2016,7 @@ let main4 dynamicAssemblyCreator (Args (ctok, tcConfig, errorLogger: ErrorLogger
                   { ilg = tcGlobals.ilg
                     pdbfile=pdbfile
                     emitTailcalls = tcConfig.emitTailcalls
+                    deterministic = tcConfig.deterministic
                     showTimes = tcConfig.showTimes
                     portablePDB = tcConfig.portablePDB
                     embeddedPDB = tcConfig.embeddedPDB
