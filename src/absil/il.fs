@@ -162,10 +162,18 @@ let splitTypeNameRight nm =
 /// This is used to store event, property and field maps.
 type LazyOrderedMultiMap<'Key,'Data when 'Key : equality>(keyf : 'Data -> 'Key, lazyItems : Lazy<'Data list>) = 
 
-    let quickMap= 
-        lazyItems |> lazyMap (fun entries -> 
-            let t = new Dictionary<_,_>(entries.Length, HashIdentity.Structural)
-            do entries |> Seq.iter (fun y -> let key = keyf y in t.[key] <- y :: (if t.ContainsKey(key) then t.[key] else [])) 
+    let quickMap = 
+        lazyItems
+        |> lazyMap (fun entries -> 
+            let t = Dictionary (entries.Length, HashIdentity.Structural)
+
+            entries
+            |> Seq.iter (fun y ->
+                let key = keyf y
+                t.[key] <-
+                    match t.TryGetValue key with
+                    | true, existing -> y :: existing
+                    | false, _ -> [y]) 
             t)
 
     member self.Entries() = lazyItems.Force()
@@ -174,7 +182,12 @@ type LazyOrderedMultiMap<'Key,'Data when 'Key : equality>(keyf : 'Data -> 'Key, 
     
     member self.Filter(f) = new LazyOrderedMultiMap<'Key,'Data>(keyf, lazyItems |> lazyMap (List.filter f))
 
-    member self.Item with get(x) = let t = quickMap.Force() in if t.ContainsKey x then t.[x] else []
+    member self.Item
+        with get(x) =
+            let t = quickMap.Force()
+            match t.TryGetValue x with
+            | true, item -> item
+            | false, _ -> []
 
 
 //---------------------------------------------------------------------
