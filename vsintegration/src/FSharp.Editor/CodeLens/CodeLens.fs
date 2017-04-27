@@ -27,6 +27,7 @@ open Internal.Utilities.StructuredFormat
 open Microsoft.VisualStudio.Text.Tagging
 open System.Collections.Concurrent
 
+
 type internal CodeLensAdornment
     (
         workspace: Workspace,
@@ -76,7 +77,7 @@ type internal CodeLensAdornment
                             let realStart = line.Start.Add(offset)
                             let span = SnapshotSpan(line.Snapshot, Span.FromBounds(int realStart, int line.End))
                             let geometry = view.TextViewLines.GetMarkerGeometry(span)
-                            let textBox = TextBlock(Width = 500., Background = Brushes.Transparent, Opacity = 0.7)
+                            let textBox = TextBlock(Width = 500., Background = Brushes.Transparent, Opacity = 0.5)
                             DependencyObjectExtensions.SetDefaultTextProperties(textBox, formatMap.Value)
                             
                             for text in taggedText do
@@ -97,26 +98,34 @@ type internal CodeLensAdornment
                     Application.Current.Dispatcher.Invoke(fun _ -> DoUI())
                 
                 let useResults (displayContext: FSharpDisplayContext, func: FSharpMemberOrFunctionOrValue) =
-                    try
-                        let lineNumber = Line.toZ func.DeclarationLocation.StartLine
+                    async {
+                        try
+                            let lineNumber = Line.toZ func.DeclarationLocation.StartLine
+                            
+                            if (lineNumber >= 0 || lineNumber < view.TextSnapshot.LineCount) && 
+                                not func.IsPropertyGetterMethod && 
+                                not func.IsPropertySetterMethod then
                         
-                        if (lineNumber >= 0 || lineNumber < view.TextSnapshot.LineCount) && 
-                            not func.IsPropertyGetterMethod && 
-                            not func.IsPropertySetterMethod then
-
-                            match func.FullTypeSafe with
-                            | Some ty ->
-                                let typeLayout = ty.FormatLayout(displayContext)
-                                let taggedText = ResizeArray()
-                                Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
-                                
-                                let bufferPosition = view.TextSnapshot.GetLineFromLineNumber(lineNumber).Start
-                                if not (codeLensLines.ContainsKey lineNumber) then 
-                                    codeLensLines.[lineNumber] <- taggedText
-                                    applyCodeLens bufferPosition taggedText
-                            | None -> ()
-                    with
-                    | _ -> () // supress any exception according wrong line numbers -.-
+                                match func.FullTypeSafe with
+                                | Some ty ->
+                                    let bufferPosition = view.TextSnapshot.GetLineFromLineNumber(lineNumber).Start
+                                    if not (codeLensLines.ContainsKey lineNumber) then
+                                        let! displayEnv = checkFileResults.GetDisplayEnvForPos(func.DeclarationLocation.Start)
+                                        
+                                        let displayContext =
+                                            match displayEnv with
+                                            | Some denv -> FSharpDisplayContext(fun _ -> denv)
+                                            | None -> displayContext
+                                             
+                                        let typeLayout = ty.FormatLayout(displayContext)
+                                        let taggedText = ResizeArray()
+                                        Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
+                                        codeLensLines.[lineNumber] <- taggedText
+                                        applyCodeLens bufferPosition taggedText
+                                | None -> ()
+                        with
+                        | _ -> () // suppress any exception according wrong line numbers -.-
+                    }
                 
                 //let forceReformat () =
                 //    view.VisualSnapshot.Lines
@@ -127,10 +136,8 @@ type internal CodeLensAdornment
                         match symbolUse.Symbol with
                         | :? FSharpEntity as entity ->
                             for func in entity.MembersFunctionsAndValues do
-                                useResults (symbolUse.DisplayContext, func)
+                                do! useResults (symbolUse.DisplayContext, func) |> liftAsync
                         | _ -> ()
-                        
-                Application.Current.Dispatcher.Invoke(Action(fun _ -> view.VisualElement.InvalidateArrange()))
             with
             | _ -> () // TODO: Should report error
         }
@@ -151,10 +158,12 @@ type internal CodeLensAdornment
         for line in e.NewOrReformattedLines do
             let lineNumber = view.TextSnapshot.GetLineNumberFromPosition(line.Start.Position)
             codeLensLines.TryRemove(lineNumber) |> ignore //All changed lines are supposed to be now No-CodeLens-Lines (Reset)
-
-        for line in view.TextViewLines.WpfTextViewLines do
             if line.VisibilityState = VisibilityState.Unattached then 
                 view.DisplayTextLineContainingBufferPosition(line.Start, 0., ViewRelativePosition.Top) //Force refresh (works partly...)
+
+        //for line in view.TextViewLines.WpfTextViewLines do
+        //    if line.VisibilityState = VisibilityState.Unattached then 
+        //        view.DisplayTextLineContainingBufferPosition(line.Start, 0., ViewRelativePosition.Top) //Force refresh (works partly...)
         
         cancellationTokenSource.Cancel() // Stop all ongoing async workflow. 
         cancellationTokenSource.Dispose()

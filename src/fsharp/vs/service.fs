@@ -1635,6 +1635,9 @@ type TypeCheckInfo
     member x.CcuSig = ccuSig
     member x.ThisCcu = thisCcu
 
+    /// Find the most precise display context for the given line and column.
+    member x.GetBestDisplayEnvForPos cursorPos  = GetBestEnvForPos cursorPos
+
 module internal Parser = 
 
         // We'll need number of lines for adjusting error messages at EOF
@@ -2278,6 +2281,12 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
         reactorOp "IsRelativeNameResolvable" true (fun ctok scope -> 
             DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
             scope.IsRelativeNameResolvable(pos, plid, item))
+
+    member info.GetDisplayEnvForPos(pos: pos) : Async<DisplayEnv option> = 
+        reactorOp "GetDisplayContextAtPos" None (fun ctok scope -> 
+            DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent ctok
+            let (nenv, _), _ = scope.GetBestDisplayEnvForPos(pos)
+            Some nenv.DisplayEnv)
     
 //----------------------------------------------------------------------------
 // BackgroundCompiler

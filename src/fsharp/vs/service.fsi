@@ -312,6 +312,10 @@ type internal FSharpCheckFileResults =
 
     /// Determines if a long ident is resolvable at a specific point.
     member IsRelativeNameResolvable: cursorPos : pos * plid : string list * item: Item -> Async<bool>
+    
+    /// Find the most precise display environment for the given line and column.
+    member GetDisplayEnvForPos : pos : pos -> Async<DisplayEnv option>
+
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
 type internal FSharpCheckProjectResults =
