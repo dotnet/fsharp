@@ -200,3 +200,26 @@ module Array =
     /// Returns true if one array has trailing elements equal to another's.
     let endsWith (suffix: _ []) (whole: _ []) =
         isSubArray suffix whole (whole.Length-suffix.Length)
+
+
+[<RequireQualifiedAccess>]
+module Exception =
+
+    /// Returns a flattened string of the exception's message and all of its inner exception
+    /// messages recursively.
+    let flattenMessage (root: System.Exception) =
+
+        let rec flattenInner (exc: System.Exception) =
+            match exc with
+            | null -> []
+            | _ -> [exc.Message] @ (flattenInner exc.InnerException)
+        
+        // If an aggregate exception only has a single inner exception, use that as the root
+        match root with
+        | :? AggregateException as agg ->
+            if agg.InnerExceptions.Count = 1
+            then agg.InnerExceptions.[0]
+            else agg :> exn
+        | _ -> root
+        |> flattenInner
+        |> String.concat " ---> "

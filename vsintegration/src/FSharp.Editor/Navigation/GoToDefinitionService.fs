@@ -22,6 +22,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open System
+open System.Windows.Forms
 
 type internal FSharpNavigableItem(document: Document, textSpan: TextSpan) =
     interface INavigableItem with
@@ -126,12 +127,14 @@ type private StatusBar(statusBar: IVsStatusbar) =
         this.Message msg
         async {
             do! Async.Sleep 4000
-            clear()
+            match statusBar.GetText() with
+            | 0, currentText when currentText <> msg -> ()
+            | _ -> clear()
         }|> Async.Start
     
     member __.Clear() = clear()
 
-    /// Animated Magnifying glass that displays on the status bar while a symbol search is in progress.
+    /// Animated magnifying glass that displays on the status bar while a symbol search is in progress.
     member __.Animate() : IDisposable = 
         statusBar.Animation (1, &searchIcon) |> ignore
         { new IDisposable with
@@ -144,7 +147,7 @@ type internal FSharpGoToDefinitionService
     (
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: ProjectInfoManager,
-        [<ImportMany>] presenters: IEnumerable<INavigableItemsPresenter>
+        [<ImportMany>] _presenters: IEnumerable<INavigableItemsPresenter>
     ) =
     let gotoDefinition = GoToDefinition(checkerProvider.Checker, projectInfoManager)
     let serviceProvider =  ServiceProvider.GlobalProvider
@@ -152,10 +155,11 @@ type internal FSharpGoToDefinitionService
 
     let tryNavigateToItem (navigableItem: #INavigableItem option) =
         use __ = statusBar.Animate()
-        statusBar.Message "Trying to locate symbol..." 
 
         match navigableItem with
         | Some navigableItem ->
+            statusBar.Message SR.NavigatingTo.Value
+
             let workspace = navigableItem.Document.Project.Solution.Workspace
             let navigationService = workspace.Services.GetService<IDocumentNavigationService>()
             // prefer open documents in the preview tab
@@ -164,12 +168,12 @@ type internal FSharpGoToDefinitionService
             
             if result then 
                 statusBar.Clear()
-                result
             else 
-                statusBar.TempMessage "Could Not Navigate to Definition of Symbol Under Caret"
-                result
+                statusBar.TempMessage SR.CannotNavigateUnknown.Value
+            
+            result
         | None ->
-            statusBar.TempMessage "Could Not Navigate to Definition of Symbol Under Caret"
+            statusBar.TempMessage SR.CannotDetermineSymbol.Value
             true
 
     /// Navigate to the positon of the textSpan in the provided document
@@ -182,11 +186,11 @@ type internal FSharpGoToDefinitionService
         if navigationService.TryNavigateToSpan (workspace, navigableItem.Document.Id, navigableItem.SourceSpan, options) then 
             true 
         else
-            statusBar.TempMessage "Could Not Navigate to Definition of Symbol Under Caret"
+            statusBar.TempMessage SR.CannotNavigateUnknown.Value
             false
 
     /// find the declaration location (signature file/.fsi) of the target symbol if possible, fall back to definition 
-    member __.NavigateToSymbolDeclarationAsync (targetDocument: Document, targetSourceText: SourceText, symbolRange: range) = 
+    member __.NavigateToSymbolDeclarationAsync (targetDocument: Document, targetSourceText: SourceText, symbolRange: range) =
         gotoDefinition.FindDeclarationOfSymbolAtRange(targetDocument, symbolRange, targetSourceText) |> Async.map tryNavigateToItem
 
     /// find the definition location (implementation file/.fs) of the target symbol
@@ -296,36 +300,39 @@ type internal FSharpGoToDefinitionService
         member this.TryGoToDefinition(document: Document, position: int, cancellationToken: CancellationToken) =
             let definitionTask = this.FindDefinitionsTask (document, position, cancellationToken)
             
-            statusBar.Message "Trying to locate symbol..." 
+            statusBar.Message SR.LocatingSymbol.Value
             use __ = statusBar.Animate()
-            definitionTask.Wait()
 
-            // REVIEW: document this use of a blocking wait on the cancellation token, explaining why it is ok
-            if definitionTask.Status = TaskStatus.RanToCompletion && definitionTask.Result.Any() then
-                let navigableItem = definitionTask.Result.First() // F# API provides only one INavigableItem
-                let workspace = document.Project.Solution.Workspace
-                let navigationService = workspace.Services.GetService<IDocumentNavigationService>()
-                ignore presenters
-                // prefer open documents in the preview tab
-                let options = workspace.Options.WithChangedOption (NavigationOptions.PreferProvisionalTab, true)
-                let result = navigationService.TryNavigateToSpan (workspace, navigableItem.Document.Id, navigableItem.SourceSpan, options)
-                
-                if result then 
-                    statusBar.Clear()
-                    result 
+            // Wrap this in a try/with as if the user clicks "Cancel" on the thread dialog, we'll be cancelled
+            // Task.Wait throws an exception if the task is cancelled, so be sure to catch it.
+            let completionError =
+                try
+                    // REVIEW: document this use of a blocking wait on the cancellation token, explaining why it is ok
+                    definitionTask.Wait()
+                    None
+                with exc -> Some <| Exception.flattenMessage exc
+            
+            match completionError with
+            | Some message ->
+                statusBar.TempMessage <| String.Format(SR.NavigateToFailed.Value, message)
+
+                // Don't show the dialog box as it's most likely that the user cancelled.
+                // Don't make them click twice.
+                true
+            | None ->
+                if definitionTask.Status = TaskStatus.RanToCompletion && definitionTask.Result <> null && definitionTask.Result.Any() then
+                    let navigableItem = definitionTask.Result.First() // F# API provides only one INavigableItem
+                    tryNavigateToItem (Some navigableItem)
+
+                    // FSROSLYNTODO: potentially display multiple results here
+                    // If GotoDef returns one result then it should try to jump to a discovered location. If it returns multiple results then it should use 
+                    // presenters to render items so user can choose whatever he needs. Given that per comment F# API always returns only one item then we 
+                    // should always navigate to definition and get rid of presenters.
+                    //
+                    //let refDisplayString = refSourceText.GetSubText(refTextSpan).ToString()
+                    //for presenter in presenters do
+                    //    presenter.DisplayResult(navigableItem.DisplayString, definitionTask.Result)
+                    //true
                 else 
-                    statusBar.TempMessage "Could Not Navigate to Definition of Symbol Under Caret"
-                    result
-
-                // FSROSLYNTODO: potentially display multiple results here
-                // If GotoDef returns one result then it should try to jump to a discovered location. If it returns multiple results then it should use 
-                // presenters to render items so user can choose whatever he needs. Given that per comment F# API always returns only one item then we 
-                // should always navigate to definition and get rid of presenters.
-                //
-                //let refDisplayString = refSourceText.GetSubText(refTextSpan).ToString()
-                //for presenter in presenters do
-                //    presenter.DisplayResult(navigableItem.DisplayString, definitionTask.Result)
-                //true
-            else 
-                statusBar.TempMessage "Could Not Navigate to Definition of Symbol Under Caret"
-                false 
+                    statusBar.TempMessage SR.CannotDetermineSymbol.Value
+                    false
