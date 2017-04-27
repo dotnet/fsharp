@@ -1,25 +1,4 @@
-# F# Compiler, Core Library and Visual F# Tools Open Contribution Repository
-
-This repo is where you can contribute to the F# compiler, core library and the Visual F# Tools.
-To learn what F# is and why it's interesting, go to [fsharp.org](http://fsharp.org). To get a free F# environment, go to [fsharp.org](http://fsharp.org/).
-
-**Compiler Technical Documentation**
-
-The primary technical documents for the F# compiler code are
-
-* [The F# Language and Core Library RFC Process](http://fsharp.github.io/2016/09/26/fsharp-rfc-process.html)
-
-* [The F# Language Specification](http://fsharp.org/specs/language-spec/)
-
-* [The F# Compiler Technical Guide](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html) 
-  maintained by contributors to this repository.  Please read
-  and contribute to that guide.
-
-**License**
-> Contributions made to this repo are subject to terms and conditions of the Apache License, Version 2.0. A copy of the license can be found in the [License.txt](License.txt) file at the root of this distribution.
-> By using this source code in any fashion, you are agreeing to be bound by the terms of the Apache License, Version 2.0. You must not remove this notice, or any other, from this software.
-
-**Questions?** If you have questions about the source code, please ask in the issues.
+# Development Guide
 
 ## Quick Start: Build, Test, Develop
 
@@ -82,7 +61,52 @@ Building ``FSharp.sln`` builds nearly everything. However building portable prof
 FSharp.Core.dll is not included.  If you are just developing the core compiler and library
 then building the solution will be enough.
 
-### Notes on the .NET Framework build
+
+### Required Tools for Development and Testing
+
+#### Linux (Mono): Development tools
+
+For Mono, follow [these instructions](http://www.mono-project.com/docs/getting-started/install/linux/)
+
+Also you may need:
+
+    sudo apt-get install mono-complete autoconf libtool pkg-config make git automake
+
+
+#### Windows: Development tools
+
+For F# Compiler on Windows (``build net40``)
+
+- [.NET 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40779)
+- [MSBuild 12.0](http://www.microsoft.com/en-us/download/details.aspx?id=40760)
+
+#### Windows: Visual F# IDE Tools Development
+
+For Visual F# IDE Tools 4.1 development (Windows)
+
+- [Visual Studio 2017](https://www.visualstudio.com/downloads/)
+  - Under the "Windows" workloads, select ".NET desktop development"
+    - Select "F# language support" under the optional components
+  - Under the "Other Toolsets" workloads, select "Visual Studio extension development"
+  - Under the "Individual components" tab select "Windows 10 SDK" as shown below (needed for compiling RC resource, see #2556): \
+  ![image](https://cloud.githubusercontent.com/assets/1249087/23730261/5c78c850-041b-11e7-9d9d-62766351fd0f.png)
+
+
+#### Windows: Additional frameworks
+
+- [Git for windows](http://msysgit.github.io/)
+- [.NET 3.5](http://www.microsoft.com/en-us/download/details.aspx?id=21)
+- [.NET 4.5](http://www.microsoft.com/en-us/download/details.aspx?id=30653)
+- [.NET 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40779)
+- [.NET 4.6](http://www.microsoft.com/en-us/download/details.aspx?id=48137)
+- [MSBuild 12.0](http://www.microsoft.com/en-us/download/details.aspx?id=40760)
+- [Windows 7 SDK](http://www.microsoft.com/en-us/download/details.aspx?id=8279)
+- [Windows 8 SDK](http://msdn.microsoft.com/en-us/windows/desktop/hh852363.aspx)
+- [Windows 8.1 SDK](http://msdn.microsoft.com/en-us/library/windows/desktop/bg162891.aspx)
+- [Windows 10 SDK](https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk)
+
+
+### Notes on the Windows .NET Framework build
 
 1. The `update.cmd` script adds required strong name validation skips, and NGens the compiler and libraries. This requires admin privileges.
 1. The compiler binaries produced are "private" and strong-named signed with a test key.
