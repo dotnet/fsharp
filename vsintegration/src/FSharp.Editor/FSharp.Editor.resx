@@ -192,4 +192,7 @@
   <data name="NavigateToFailed" xml:space="preserve">
     <value>Navigate to symbol failed: {0}</value>
   </data>
+  <data name="ExceptionsHeader" xml:space="preserve">
+    <value>Exceptions:</value>
+  </data>
 </root>
