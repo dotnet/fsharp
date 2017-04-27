@@ -35,54 +35,6 @@ How we label issues and PRs:  https://github.com/dotnet/roslyn/wiki/Labels-used-
 If you would like to contribute to the F# ecosystem more generally see the F# Software Foundation's [Community Projects](http://fsharp.org/community/projects/) pages.
 
 
-### Required Tools for Windows Development and Testing
-
-#### Linux (Mono): Development tools
-
-Follow [these instructions](http://www.mono-project.com/docs/getting-started/install/linux/)
-
-Then as follows or equivalent:
-
-    sudo apt-get install mono-complete autoconf libtool pkg-config make git automake
-    git clone https://github.com/Microsoft/visualfsahrp
-    cd visualfsharp
-     ./autogen.sh --prefix /usr
-    make
-    sudo make install
-
-
-#### Windows: Development tools
-
-For F# Compiler on Windows (``build net40``)
-
-- [.NET 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40779)
-- [MSBuild 12.0](http://www.microsoft.com/en-us/download/details.aspx?id=40760)
-
-#### Windows: Visual F# IDE Tools Development
-
-For Visual F# IDE Tools 4.1 development (Windows)
-
-- [Visual Studio 2017](https://www.visualstudio.com/downloads/)
-  - Under the "Windows" workloads, select ".NET desktop development"
-    - Select "F# language support" under the optional components
-  - Under the "Other Toolsets" workloads, select "Visual Studio extension development"
-  - Under the "Individual components" tab select "Windows 10 SDK" as shown below (needed for compiling RC resource, see #2556): \
-  ![image](https://cloud.githubusercontent.com/assets/1249087/23730261/5c78c850-041b-11e7-9d9d-62766351fd0f.png)
-
-
-#### Additional frameworks
-
-- [Git for windows](http://msysgit.github.io/)
-- [.NET 3.5](http://www.microsoft.com/en-us/download/details.aspx?id=21)
-- [.NET 4.5](http://www.microsoft.com/en-us/download/details.aspx?id=30653)
-- [.NET 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40779)
-- [.NET 4.6](http://www.microsoft.com/en-us/download/details.aspx?id=48137)
-- [MSBuild 12.0](http://www.microsoft.com/en-us/download/details.aspx?id=40760)
-- [Windows 7 SDK](http://www.microsoft.com/en-us/download/details.aspx?id=8279)
-- [Windows 8 SDK](http://msdn.microsoft.com/en-us/windows/desktop/hh852363.aspx)
-- [Windows 8.1 SDK](http://msdn.microsoft.com/en-us/library/windows/desktop/bg162891.aspx)
-- [Windows 10 SDK](https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk)
-
 ### Using Nightly Releases of Visual F# Tools
 
 To setup Visual Studio to use the latest nightly releases of the Visual F# Tools, follow the [Using CI Builds](https://github.com/Microsoft/visualfsharp/wiki/Using-CI-Builds) instructions.
@@ -109,7 +61,7 @@ The actual package is built in https://github.com/fsharp/fsharp.
 You will need to adjust the targets reference on your project file to use the targets file from the installed ``FSharp.Compiler.Tools`` package.
 See https://github.com/fsharp/fsharp/issues/676 for how to modify your project file.
 
-### Code of COnduct
+### Code of Conduct
 
 This project has adopted the code of conduct defined by the [Contributor Covenant](http://contributor-covenant.org/) to clarify expected behavior in our community. This code of conduct has been [adopted by many other projects](http://contributor-covenant.org/adopters/). For more information see the [Code of conduct](https://github.com/Microsoft/visualfsharp/wiki/Code-of-Conduct).
 
