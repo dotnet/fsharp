@@ -344,8 +344,9 @@ module internal XmlDocumentation =
             if not tps.IsEmpty then
                 AppendOnNewLine afterCollector SR.GenericParametersLabel.Value
                 for tp in tps do 
+                    afterCollector.Add Literals.lineBreak
                     afterCollector.Add(tagSpace "    ")
-                    renderL (taggedTextListR textCollector.Add) tp |> ignore
+                    renderL (taggedTextListR afterCollector.Add) tp |> ignore
 
         let Process add (dataTipElement: FSharpStructuredToolTipElement) =
 
