@@ -25,7 +25,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for general guidelines on the contributio
 To contribute to the F# ecosystem more generally see the F# Software Foundation's [Community Projects](http://fsharp.org/community/projects/) pages.
 
 
-#### Technical Documentation
+### Technical Documentation
 
 * [The F# Language and Core Library RFC Process](http://fsharp.github.io/2016/09/26/fsharp-rfc-process.html)
 
@@ -35,7 +35,7 @@ To contribute to the F# ecosystem more generally see the F# Software Foundation'
   maintained by contributors to this repository.  Please read
   and contribute to that guide.
 
-#### License
+### License
 
 This project is subject to the Apache Licence, Version 2.0. A copy of the license can be found in [License.txt](License.txt) at the root of this repo.
 
@@ -52,17 +52,17 @@ Changes contributed here are eventually included in all packagings of F# and ope
 
 For typical installs of  F#, see http://fsharp.org.
 
-#### Using Nightly Releases of Visual F# Tools
+### Using Nightly Releases of Visual F# Tools
 
 To setup Visual Studio to use the latest nightly releases of the Visual F# Tools, follow the [Using CI Builds](https://github.com/Microsoft/visualfsharp/wiki/Using-CI-Builds) instructions.
 
-#### Using CI Builds
+### Using CI Builds
 
 To install F#, see http://fsharp.org.
 
 To download the bits for the latest CI builds see [these instructions](https://github.com/Microsoft/visualfsharp/wiki/Using-CI-Builds). This includes and ZIPs containing the F# compiler and VSIX installers for the Visual F# IDE Tools.
 
-#### Using F# on a build server or computer without an F# installation
+### Using F# on a build server or computer without an F# installation
 
 If you wish to use the latest F# compiler on a computer without Visual Studio 2017 installed, you can add the nuget package ``FSharp.Compiler.Tools`` to your projects. This will replace the in-box compiler with the version contained in the package.
 The actual package is built in https://github.com/fsharp/fsharp.
