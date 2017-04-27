@@ -1,7 +1,7 @@
 
 [![Join the chat at https://gitter.im/Microsoft/visualfsharp](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Microsoft/visualfsharp?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-# Visual F# Tools
+# The Combined F# Language, Library, and Tools Repository
 
 ## Windows build
 
@@ -15,7 +15,8 @@ You are invited to join with the F# Community and the Visual F# Tools team to he
 
 F# is a mature, open source, cross-platform, functional-first programming language which empowers users and organizations to tackle complex computing problems with simple, maintainable, and robust code. F# is used in a wide range of application areas and is supported by Microsoft and other industry-leading companies providing professional tools, and by an active open community. You can find out more about F# at http://fsharp.org.
 
-Changes contributed here are packaged into the Visual F# Tools, the F# Open Edition, and other open source F# editing tools. Microsoft coordinates packaging this repository as part of the Visual F# Tools, while the F# community coordinates packaging it as the Open Edition of F# for use on Linux, macOS, Android, iOS, and other platforms, via the [fsharp/fsharp GitHub repo](https://github.com/fsharp/fsharp/).
+Changes contributed here are eventually included in all packagings of F# and open source F# editing tools. Microsoft coordinates packaging this repository
+as part of the Visual F# Tools, and the F# community coordinates packaging [other editions of F#](https://github.com/fsharp/fsharp/) for use on Linux, macOS, Android, iOS, and other platforms.
 
 ### License
 
@@ -34,11 +35,10 @@ For F# Compiler on Windows (``build net40``)
 - [.NET 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40779)
 - [MSBuild 12.0](http://www.microsoft.com/en-us/download/details.aspx?id=40760)
 
-For F# Compiler on macOS and Linux (see .travis.yml for build steps)
+For F# Compiler on macOS and Linux (``build.sh``)
 
 - [Mono latest](http://www.mono-project.com/download/#download-lin)
 - If building for .NET Core, then .NET Core will be downloaded from Linux packages
-
 
 For Visual F# IDE Tools 4.1 development (Windows)
 
@@ -96,15 +96,10 @@ Although the primary focus of this repo is F# for Windows and the Visual Studio 
 If you wish to use the latest F# compiler on a computer without Visual Studio 2017 installed, you can add the nuget package ``FSharp.Compiler.Tools`` to your projects. This will replace the in-box compiler with the version contained in the package.
 The actual package is built in https://github.com/fsharp/fsharp.
 
-Note that while this will remove the dependency on VS 2017, you will still need to have MSBuild and the required targets files installed, which come with any older version of VS (e.g. 2013 or 2015).
-
-#### ... With an older version of VS
-Just install the nuget package, it will then use MSBuild and the targets files from the older version. If you get an error, see below.
-
-#### ... With VS (any version) installed, but without the optional F# tools installed
-The currently distributed F# templates depend on machine-wide installed .targets files. You can manually modify your project to instead use the .targets file from the nuget package. This will allow you to build your project on a computer with VS but without the optional F# tools installed. See https://github.com/fsharp/fsharp/issues/676 for how to modify your project file.
+You will need to adjust the targets reference on your project file to use the targets file from the installed ``FSharp.Compiler.Tools`` package.
+See https://github.com/fsharp/fsharp/issues/676 for how to modify your project file.
 
 ### Get In Touch
 
-Keep up with the Visual F# Team and the development of the Visual F# Tools by following us [@VisualFSharp](https://twitter.com/VisualFSharp) or subscribing to the [.NET Blog](https://blogs.msdn.microsoft.com/dotnet/).
+Follow [@VisualFSharp](https://twitter.com/VisualFSharp) on twitter or subscribe to the [.NET Blog](https://blogs.msdn.microsoft.com/dotnet/).
 

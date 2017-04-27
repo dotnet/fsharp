@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env sh
 
 # OS detection
 
@@ -23,20 +23,16 @@ if [ $OS = 'Linux' ]; then
     sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
     echo "deb http://download.mono-project.com/repo/debian wheezy main" | sudo tee /etc/apt/sources.list.d/mono-xamarin.list
     sudo apt-get update
-    sudo apt-get -y install mono-devel autoconf libtool pkg-config make git
+    sudo apt-get -y install mono-devel
 fi
 
 # Check if SSL certificates have been imported into Mono's certificate store.
 # If certs haven't been installed, some/all of the Nuget packages will fail to restore.
-# Note, the result of the certmgr and grep commands returns the number of installed X.509 certificates.
-# We need to run the command twice -- on some systems (e.g. macOS) the certs are installed in the user store,
-# and on other systems (e.g., Ubuntu) they're installed to the machine store. certmgr only shows what's in
-# the selected store, which is why we need to check both.
-if [ "$(certmgr -list -c Trust | grep -c -F "X.509")" -le 1 ] && [ "$(certmgr -list -c -m Trust | grep -c -F "X.509")" -le 1 ]; then
-  echo "No SSL certificates installed so unable to restore NuGet packages." >&2;
-  echo "Run 'mozroots --sync --import' to install certificates to Mono's certificate store." >&2;
-  exit 1
-fi
+#if [ $('certmgr -list -c Trust | grep -c -F "X.509"') -le 1 ]; then
+#  echo "No SSL certificates installed so unable to restore NuGet packages." >&2;
+#  echo "Run 'mozroots --sync --import' to install certificates to Mono's certificate store." >&2;
+#  exit 1
+#fi
 
 # Restore NuGet packages (needed for compiler bootstrap and tests).
 mono .nuget/NuGet.exe restore packages.config -PackagesDirectory packages -ConfigFile .nuget/NuGet.Config
@@ -58,6 +54,9 @@ fi)
 fi)
 
 #TODO: work out how to avoid the need for this
+echo "chmod u+x packages/FSharp.Compiler.Tools.4.1.5/tools/fsi.exe"
+echo "chmod u+x packages/FsLexYacc.7.0.4/build/fslex.exe"
+echo "chmod u+x packages/FsLexYacc.7.0.4/build/fsyacc.exe"
 chmod u+x packages/FSharp.Compiler.Tools.4.1.5/tools/fsi.exe 
 chmod u+x packages/FsLexYacc.7.0.4/build/fslex.exe
 chmod u+x packages/FsLexYacc.7.0.4/build/fsyacc.exe
