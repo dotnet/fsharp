@@ -1239,7 +1239,7 @@ type ILTypeDefKind =
 type ILTypeDefs =
     interface IEnumerable<ILTypeDef>
     member AsArray : ILTypeDef[]
-    member AsList : ILTypeDef list
+    member AsSeq : ILTypeDef seq
 
     /// Get some information about the type defs, but do not force the read of the type defs themselves.
     member AsArrayOfLazyTypeDefs : (string list * string * ILAttributes * Lazy<ILTypeDef>) array
@@ -1765,7 +1765,7 @@ val mkILMethodImpls: ILMethodImplDef list -> ILMethodImplDefs
 val mkILMethodImplsLazy: Lazy<ILMethodImplDef list> -> ILMethodImplDefs
 val emptyILMethodImpls: ILMethodImplDefs
 
-val mkILTypeDefs: ILTypeDef list -> ILTypeDefs
+val mkILTypeDefs: ILTypeDef seq -> ILTypeDefs
 val mkILTypeDefsFromArray: ILTypeDef[] -> ILTypeDefs
 val emptyILTypeDefs: ILTypeDefs
 

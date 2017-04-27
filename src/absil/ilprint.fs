@@ -953,7 +953,7 @@ and goutput_lambdas env os lambdas =
    | Lambdas_return typ -> output_string os "--> "; (goutput_typ env) os typ
   
 and goutput_tdefs contents (enc) env os (td: ILTypeDefs) =
-  Seq.iter (goutput_tdef enc env contents os) td.AsList
+  Seq.iter (goutput_tdef enc env contents os) td.AsSeq
 
 let output_ver os (a,b,c,d) =
     output_string os " .ver ";

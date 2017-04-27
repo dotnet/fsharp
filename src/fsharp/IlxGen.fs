@@ -1088,7 +1088,7 @@ type TypeDefBuilder(tdef, tdefDiscards) =
             Fields  = mkILFields      (tdef.Fields.AsList  @ ResizeArray.toList gfields)
             Properties = mkILProperties (tdef.Properties.AsList @ HashRangeSorted gproperties )
             Events     = mkILEvents     (tdef.Events.AsList     @ ResizeArray.toList gevents)
-            NestedTypes     = mkILTypeDefs      (tdef.NestedTypes.AsList @ gnested.Close()) }
+            NestedTypes     = mkILTypeDefs      (Seq.append tdef.NestedTypes.AsSeq (gnested.Close())) }
 
 
     member b.AddEventDef(edef) = gevents.Add edef
@@ -1132,7 +1132,7 @@ and TypeDefsBuilder() =
               let tdef = b.Close() 
               // Skip the <PrivateImplementationDetails$> type if it is empty
               if not eliminateIfEmpty 
-                 || not tdef.NestedTypes.AsList.IsEmpty 
+                 || not (Seq.isEmpty tdef.NestedTypes.AsSeq)
                  || not tdef.Fields.AsList.IsEmpty 
                  || not tdef.Events.AsList.IsEmpty 
                  || not tdef.Properties.AsList.IsEmpty 

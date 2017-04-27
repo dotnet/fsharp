@@ -1601,7 +1601,7 @@ and [<Sealed>] ILTypeDefs(f : unit -> (string list * string * ILAttributes * Laz
             t)
 
     member x.AsArray = [| for (_,_,_,ltd) in array.Value -> ltd.Force() |]
-    member x.AsList = x.AsArray |> Array.toList
+    member x.AsSeq = array.Value |> Seq.map (fun (_,_,_,ltd) -> ltd.Value)
 
     interface IEnumerable with 
         member x.GetEnumerator() = ((x :> IEnumerable<ILTypeDef>).GetEnumerator() :> IEnumerator)
@@ -1948,7 +1948,7 @@ let getName (ltd: Lazy<ILTypeDef>) =
 
 let addILTypeDef td (tdefs: ILTypeDefs) = ILTypeDefs (fun () -> [| yield getName (notlazy td); yield! tdefs.AsArrayOfLazyTypeDefs |])
 let mkILTypeDefsFromArray l =  ILTypeDefs (fun () -> Array.map (notlazy >> getName) l)
-let mkILTypeDefs l =  mkILTypeDefsFromArray (Array.ofList l)
+let mkILTypeDefs l =  mkILTypeDefsFromArray (Seq.toArray l)
 let mkILTypeDefsComputed f = ILTypeDefs f
 let emptyILTypeDefs = mkILTypeDefsFromArray [| |]
 
@@ -2721,7 +2721,7 @@ let mkILSimpleClass (ilg: ILGlobals) (nm, access, methods, fields, nestedTypes, 
 let mkILTypeDefForGlobalFunctions ilg (methods,fields) = mkILSimpleClass ilg (typeNameForGlobalFunctions, ILTypeDefAccess.Public, methods, fields, emptyILTypeDefs, emptyILProperties, emptyILEvents, emptyILCustomAttrs,ILTypeInit.BeforeField)
 
 let destTypeDefsWithGlobalFunctionsFirst ilg (tdefs: ILTypeDefs) = 
-  let l = tdefs.AsList
+  let l = tdefs.AsSeq |> Seq.toList
   let top,nontop = l |> List.partition (fun td -> td.Name = typeNameForGlobalFunctions)
   let top2 = if isNil top then [ mkILTypeDefForGlobalFunctions ilg (emptyILMethods, emptyILFields) ] else top
   top2@nontop

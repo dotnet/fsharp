@@ -1795,7 +1795,7 @@ let rec buildTypeDefPass1 cenv emEnv (modB:ModuleBuilder) rootTypeBuilder nestin
     // recurse on nested types
     let nesting = nesting @ [tdef]     
     let buildNestedType emEnv tdef = buildTypeTypeDef cenv emEnv modB typB nesting tdef
-    let emEnv = Seq.fold buildNestedType emEnv tdef.NestedTypes.AsList
+    let emEnv = Seq.fold buildNestedType emEnv tdef.NestedTypes.AsSeq
     emEnv
 
 and buildTypeTypeDef cenv emEnv modB (typB : TypeBuilder) nesting tdef =
@@ -1817,7 +1817,7 @@ let rec buildTypeDefPass1b cenv nesting emEnv (tdef : ILTypeDef) =
     buildGenParamsPass1b cenv emEnv genArgs tdef.GenericParams; 
     let emEnv = envPopTyvars emEnv     
     let nesting = nesting @ [tdef]     
-    Seq.iter (buildTypeDefPass1b cenv nesting emEnv) tdef.NestedTypes.AsList
+    Seq.iter (buildTypeDefPass1b cenv nesting emEnv) tdef.NestedTypes.AsSeq
 
 //----------------------------------------------------------------------------
 // buildTypeDefPass2
@@ -1836,7 +1836,7 @@ let rec buildTypeDefPass2 cenv nesting emEnv (tdef : ILTypeDef) =
     let emEnv = envPopTyvars emEnv
     // nested types
     let nesting = nesting @ [tdef]
-    let emEnv = Seq.fold (buildTypeDefPass2 cenv nesting) emEnv tdef.NestedTypes.AsList
+    let emEnv = Seq.fold (buildTypeDefPass2 cenv nesting) emEnv tdef.NestedTypes.AsSeq
     emEnv
 
 //----------------------------------------------------------------------------
@@ -1858,7 +1858,7 @@ let rec buildTypeDefPass3 cenv nesting modB emEnv (tdef : ILTypeDef) =
     let emEnv = envPopTyvars emEnv
     // nested types
     let nesting = nesting @ [tdef]
-    let emEnv = Seq.fold (buildTypeDefPass3 cenv nesting modB) emEnv tdef.NestedTypes.AsList
+    let emEnv = Seq.fold (buildTypeDefPass3 cenv nesting modB) emEnv tdef.NestedTypes.AsSeq
     emEnv
 
 //----------------------------------------------------------------------------
@@ -2042,7 +2042,7 @@ let buildModuleTypePass4 visited   emEnv tdef = buildTypeDefPass4 visited [] emE
 //----------------------------------------------------------------------------
     
 let buildModuleFragment cenv emEnv (asmB : AssemblyBuilder) (modB : ModuleBuilder) (m: ILModuleDef) =
-    let tdefs = m.TypeDefs.AsList
+    let tdefs = m.TypeDefs.AsSeq
 
     let emEnv = (emEnv, tdefs) ||> Seq.fold (buildModuleTypePass1 cenv modB) 
     tdefs |> Seq.iter (buildModuleTypePass1b cenv emEnv) 

@@ -511,7 +511,7 @@ module private PrintIL =
             let body = applyMaxMembers denv.maxMembers body
   
             let types  = 
-                typeDef.NestedTypes.AsList
+                typeDef.NestedTypes.AsSeq
                 |> Seq.filter isPublicILTypeDef
                 |> Seq.sortBy(fun t -> adjustILName t.Name)   
                 |> Seq.map (layoutILNestedClassDef denv)

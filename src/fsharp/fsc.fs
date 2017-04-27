@@ -1151,7 +1151,7 @@ module StaticLinker =
 
             let topTypeDefs, normalTypeDefs = 
                 moduls 
-                |> List.map (fun m -> m.TypeDefs.AsList |> List.partition (fun td -> isTypeNameForGlobalFunctions td.Name)) 
+                |> List.map (fun m -> m.TypeDefs.AsSeq |> Seq.toList |> List.partition (fun td -> isTypeNameForGlobalFunctions td.Name)) 
                 |> List.unzip
 
             let topTypeDef = 
@@ -1185,8 +1185,8 @@ module StaticLinker =
                             pdbPath = None } 
             ILBinaryReader.OpenILModuleReader mscorlib40 opts
               
-        let tdefs1 = ilxMainModule.TypeDefs.AsList  |> List.filter (fun td -> not (MainModuleBuilder.injectedCompatTypes.Contains(td.Name)))
-        let tdefs2 = ilBinaryReader.ILModuleDef.TypeDefs.AsList |> List.filter (fun td -> MainModuleBuilder.injectedCompatTypes.Contains(td.Name))
+        let tdefs1 = ilxMainModule.TypeDefs.AsSeq |> Seq.filter (fun td -> not (MainModuleBuilder.injectedCompatTypes.Contains(td.Name)))
+        let tdefs2 = ilBinaryReader.ILModuleDef.TypeDefs.AsSeq |> Seq.filter (fun td -> MainModuleBuilder.injectedCompatTypes.Contains(td.Name)) |> Seq.toList
         //printfn "tdefs2 = %A" (tdefs2 |> List.map (fun tdef -> tdef.Name))
 
         // rewrite the mscorlib references 
@@ -1218,11 +1218,11 @@ module StaticLinker =
                                                             ilattr.Method.EnclosingType.TypeRef.FullName <> "System.Runtime.TargetedPatchingOptOutAttribute")  )}) 
                                         |> mkILMethods } ])}
             //ILAsciiWriter.output_module stdout fakeModule
-            fakeModule.TypeDefs.AsList
+            fakeModule.TypeDefs.AsSeq
 
         let ilxMainModule = 
             { ilxMainModule with 
-                TypeDefs = mkILTypeDefs (tdefs1 @ tdefs2) }
+                TypeDefs = mkILTypeDefs (Seq.append tdefs1 tdefs2) }
         ilxMainModule
 
     [<NoEquality; NoComparison>]
@@ -1461,7 +1461,7 @@ module StaticLinker =
                           match enc with 
                           | [] -> addILTypeDef td tdefs
                           | h::t -> 
-                               let tdefs = tdefs.AsList
+                               let tdefs = tdefs.AsSeq |> Seq.toList
                                let (ltdefs, htd, rtdefs) = 
                                    match tdefs |> trySplitFind (fun td -> td.Name = h) with 
                                    | (ltdefs, None, rtdefs) -> 

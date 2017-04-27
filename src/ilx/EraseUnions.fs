@@ -924,8 +924,8 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
     let baseMethsFromAlt = results |> List.collect (fun (a,_,_,_,_,_) -> a) 
     let basePropsFromAlt = results |> List.collect (fun (_,a,_,_,_,_) -> a) 
     let altUniqObjMeths  = results |> List.collect (fun (_,_,a,_,_,_) -> a) 
-    let altTypeDefs      = results |> List.collect (fun (_,_,_,a,_,_) -> a) 
-    let altDebugTypeDefs = results |> List.collect (fun (_,_,_,_,a,_) -> a) 
+    let altTypeDefs      = results |> Seq.collect (fun (_,_,_,a,_,_) -> a) 
+    let altDebugTypeDefs = results |> Seq.collect (fun (_,_,_,_,a,_) -> a) 
     let altNullaryFields = results |> List.collect (fun (_,_,_,_,_,a) -> a) 
        
     let tagFieldsInObject = 
@@ -1054,7 +1054,7 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
         tagMeths, tagProps, tagEnumFields
 
     // The class can be abstract if each alternative is represented by a derived type
-    let isAbstract = (altTypeDefs.Length = cud.cudAlternatives.Length)        
+    let isAbstract = (Seq.length altTypeDefs = cud.cudAlternatives.Length)        
 
     let existingMeths = td.Methods.AsSeq |> Seq.toList 
     let existingProps = td.Properties.AsList
@@ -1092,9 +1092,9 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
 
     let baseTypeDef = 
        { td with 
-          NestedTypes = mkILTypeDefs (Option.toList enumTypeDef @ altTypeDefs @ altDebugTypeDefs @ td.NestedTypes.AsList)
+          NestedTypes = mkILTypeDefs (Seq.concat [Option.toList enumTypeDef :> seq<_>; altTypeDefs; altDebugTypeDefs; td.NestedTypes.AsSeq])
           IsAbstract = isAbstract
-          IsSealed = altTypeDefs.IsEmpty
+          IsSealed = Seq.isEmpty altTypeDefs
           IsComInterop=false
           Extends= (match td.Extends with None -> Some ilg.typ_Object | _ -> td.Extends) 
           Methods= mkILMethods (ctorMeths @ baseMethsFromAlt @ selfMeths @ tagMeths @ altUniqObjMeths @ existingMeths)

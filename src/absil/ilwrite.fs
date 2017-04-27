@@ -678,9 +678,9 @@ let GetTypeNameAsElemPair cenv n =
 
 let rec GenTypeDefPass1 enc cenv (td:ILTypeDef) = 
   ignore (cenv.typeDefs.AddUniqueEntry "type index" (fun (TdKey (_,n)) -> n) (TdKey (enc,td.Name)))
-  GenTypeDefsPass1 (enc@[td.Name]) cenv td.NestedTypes.AsList
+  GenTypeDefsPass1 (enc@[td.Name]) cenv td.NestedTypes.AsSeq
 
-and GenTypeDefsPass1 enc cenv tds = Seq.iter (GenTypeDefPass1 enc cenv) tds
+and GenTypeDefsPass1 enc cenv (tds:seq<_>) = Seq.iter (GenTypeDefPass1 enc cenv) tds
 
 //=====================================================================
 // Pass 2 - allocate indexes for methods and fields and write rows for types 
@@ -1223,7 +1223,7 @@ and GenTypeDefPass2 pidx enc cenv (td:ILTypeDef) =
       events |> Seq.iter (GenEventDefPass2 cenv tidx)
       td.Fields.AsList |> Seq.iter (GenFieldDefPass2 cenv tidx)
       td.Methods |> Seq.iter (GenMethodDefPass2 cenv tidx)
-      td.NestedTypes.AsList |> GenTypeDefsPass2 tidx (enc@[td.Name]) cenv
+      td.NestedTypes.AsSeq |> GenTypeDefsPass2 tidx (enc@[td.Name]) cenv
    with e ->
      failwith ("Error in pass2 for type "+td.Name+", error: "+e.Message)
 
@@ -2787,7 +2787,7 @@ let rec GenTypeDefPass3 enc cenv (td:ILTypeDef) =
       td.SecurityDecls.AsList |> GenSecurityDeclsPass3 cenv (hds_TypeDef,tidx)
       td.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_TypeDef,tidx)
       td.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_TypeDef,tidx) gp)  
-      td.NestedTypes.AsList |> GenTypeDefsPass3 (enc@[td.Name]) cenv
+      td.NestedTypes.AsSeq |> GenTypeDefsPass3 (enc@[td.Name]) cenv
    with e ->
       failwith  ("Error in pass3 for type "+td.Name+", error: "+e.Message)
       reraise()
@@ -2805,7 +2805,7 @@ let rec GenTypeDefPass4 enc cenv (td:ILTypeDef) =
        let tidx = GetIdxForTypeDef cenv (TdKey(enc,td.Name))
        td.Methods |> Seq.iter (GenMethodDefPass4 cenv env) 
        List.iteri (fun n gp -> GenGenericParamPass4 cenv env n (tomd_TypeDef,tidx) gp) td.GenericParams 
-       GenTypeDefsPass4 (enc@[td.Name]) cenv td.NestedTypes.AsList
+       GenTypeDefsPass4 (enc@[td.Name]) cenv td.NestedTypes.AsSeq
    with e ->
        failwith ("Error in pass4 for type "+td.Name+", error: "+e.Message)
        reraise()
