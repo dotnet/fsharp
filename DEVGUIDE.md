@@ -1,14 +1,15 @@
 # Development Guide
 
-* [Developing the F# Compiler](#f-compiler) (Linux, macOS, Windows)
-* [Developing the Visual F# IDE Tools](#the-visual-f-ide-tools-windows-only) (Windows Only)
+Contents:
+* [Developing the F# Compiler (WindowS)](#developing-the-f-compiler-windows)
+* [Developing the F# Compiler (Linux)](#developing-the-f-compiler-linux)
+* [Developing the F# Compiler (macOS)](#developing-the-f-compiler-macos)
+* [Developing the Visual F# IDE Tools (Windows Only)](#the-visual-f-ide-tools-windows-only) 
 * [Notes](#notes)
-
-## F# Compiler
 
 Follow the instructions below to build and develop the F# Compiler, Core Library and tools on Windows, macOS and Linux.
 
-### F# Compiler (Windows)
+###  Developing the F# Compiler (Windows)
 
 Install
 
@@ -58,7 +59,7 @@ Building ``FSharp.sln`` builds nearly everything. However building portable prof
 FSharp.Core.dll is not included.  If you are just developing the core compiler and library
 then building the solution will be enough.
 
-### F# Compiler (Linux)
+###  Developing the F# Compiler (Linux)
 
 For Linux/Mono, follow [these instructions](http://www.mono-project.com/docs/getting-started/install/linux/). Also you may need:
 
@@ -76,7 +77,7 @@ You can alternatively use
 
     ./build.sh
 
-### F# Compiler (macOS)
+###  Developing the F# Compiler (macOS)
 
 Install Xamarin Studio, then
 
