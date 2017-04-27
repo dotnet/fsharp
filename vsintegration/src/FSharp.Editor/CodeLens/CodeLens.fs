@@ -25,7 +25,7 @@ open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.CodeAnalysis.Classification
 open Internal.Utilities.StructuredFormat
 open Microsoft.VisualStudio.Text.Tagging
-open Microsoft.VisualStudio.Text.Editor
+open System.Collections.Concurrent
 
 
 type internal CodeLensAdornment
@@ -35,11 +35,12 @@ type internal CodeLensAdornment
         view: IWpfTextView, 
         checker: FSharpChecker,
         projectInfoManager: ProjectInfoManager,
-        typeMap: Lazy<ClassificationTypeMap>
+        typeMap: Lazy<ClassificationTypeMap>,
+        gotoDefinitionService: FSharpGoToDefinitionService
     ) as self =
     
     let formatMap = lazy typeMap.Value.ClassificationFormatMapService.GetClassificationFormatMap "tooltip"
-    let codeLensLines = System.Collections.Concurrent.ConcurrentDictionary()
+    let codeLensLines = ConcurrentDictionary()
 
     do assert (documentId <> null)
 
@@ -64,8 +65,9 @@ type internal CodeLensAdornment
                 let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true)
                 let! symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
+                let hyperlinkStyles = HyperlinkStyles.getCurrent()
 
-                let applyCodeLens bufferPosition (taggedText: seq<Layout.TaggedText>) =
+                let applyCodeLens bufferPosition (taggedText: seq<Layout.TaggedText>) m =
                     let DoUI () = 
                         try
                             let line = view.TextViewLines.GetTextViewLineContainingBufferPosition(bufferPosition)
@@ -77,14 +79,22 @@ type internal CodeLensAdornment
                             let realStart = line.Start.Add(offset)
                             let span = SnapshotSpan(line.Snapshot, Span.FromBounds(int realStart, int line.End))
                             let geometry = view.TextViewLines.GetMarkerGeometry(span)
-                            let textBox = TextBlock(Width = 500., Background = Brushes.Transparent, Opacity = 0.7)
+                            let textBox = TextBlock(Width = 500., Background = Brushes.Transparent, Opacity = 0.5, TextTrimming = TextTrimming.WordEllipsis)
                             DependencyObjectExtensions.SetDefaultTextProperties(textBox, formatMap.Value)
-                            
+                            let navigation = QuickInfoNavigation(gotoDefinitionService, document, m)
                             for text in taggedText do
                                 let run = Documents.Run text.Text
                                 DependencyObjectExtensions.SetTextProperties (run, layoutTagToFormatting text.Tag)
-                                textBox.Inlines.Add run
-
+                                let inl =
+                                   match text with
+                                   | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->                        
+                                       let h = Documents.Hyperlink(run, ToolTip = nav.Range.FileName)
+                                       h.Click.Add (fun _ -> navigation.NavigateTo nav.Range)
+                                       h :> Documents.Inline
+                                   | _ -> run :> _
+                                textBox.Inlines.Add inl
+                            
+                            textBox.Resources.[typeof<Documents.Hyperlink>] <- hyperlinkStyles
                             Canvas.SetLeft(textBox, geometry.Bounds.Left)
                             Canvas.SetTop(textBox, geometry.Bounds.Top - 15.)
                             let tag = new IntraTextAdornmentTag(textBox, (fun _ _ -> ()))
@@ -98,25 +108,34 @@ type internal CodeLensAdornment
                     Application.Current.Dispatcher.Invoke(fun _ -> DoUI())
                 
                 let useResults (displayContext: FSharpDisplayContext, func: FSharpMemberOrFunctionOrValue) =
-                    try
-                        let lineNumber = Line.toZ func.DeclarationLocation.StartLine
+                    async {
+                        try
+                            let lineNumber = Line.toZ func.DeclarationLocation.StartLine
+                            
+                            if (lineNumber >= 0 || lineNumber < view.TextSnapshot.LineCount) && 
+                                not func.IsPropertyGetterMethod && 
+                                not func.IsPropertySetterMethod then
                         
-                        if (lineNumber >= 0 || lineNumber < view.TextSnapshot.LineCount) && 
-                            not func.IsPropertyGetterMethod && 
-                            not func.IsPropertySetterMethod then
-
-                            match func.FullTypeSafe with
-                            | Some ty ->
-                                let bufferPosition = view.TextSnapshot.GetLineFromLineNumber(lineNumber).Start
-                                if not (codeLensLines.ContainsKey lineNumber) then
-                                    let typeLayout = ty.FormatLayout(displayContext)
-                                    let taggedText = ResizeArray()
-                                    Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
-                                    codeLensLines.[lineNumber] <- taggedText
-                                    applyCodeLens bufferPosition taggedText
-                            | None -> ()
-                    with
-                    | _ -> () // supress any exception according wrong line numbers -.-
+                                match func.FullTypeSafe with
+                                | Some ty ->
+                                    let bufferPosition = view.TextSnapshot.GetLineFromLineNumber(lineNumber).Start
+                                    if not (codeLensLines.ContainsKey lineNumber) then
+                                        let! displayEnv = checkFileResults.GetDisplayEnvForPos(func.DeclarationLocation.Start)
+                                        
+                                        let displayContext =
+                                            match displayEnv with
+                                            | Some denv -> FSharpDisplayContext(fun _ -> denv)
+                                            | None -> displayContext
+                                             
+                                        let typeLayout = ty.FormatLayout(displayContext)
+                                        let taggedText = ResizeArray()
+                                        Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
+                                        codeLensLines.[lineNumber] <- taggedText
+                                        applyCodeLens bufferPosition taggedText func.DeclarationLocation
+                                | None -> ()
+                        with
+                        | _ -> () // suppress any exception according wrong line numbers -.-
+                    }
                 
                 //let forceReformat () =
                 //    view.VisualSnapshot.Lines
@@ -127,7 +146,7 @@ type internal CodeLensAdornment
                         match symbolUse.Symbol with
                         | :? FSharpEntity as entity ->
                             for func in entity.MembersFunctionsAndValues do
-                                useResults (symbolUse.DisplayContext, func)
+                                do! useResults (symbolUse.DisplayContext, func) |> liftAsync
                         | _ -> ()
             with
             | _ -> () // TODO: Should report error
@@ -171,7 +190,8 @@ type internal CodeLensProvider
         textDocumentFactory: ITextDocumentFactoryService,
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: ProjectInfoManager,
-        typeMap: Lazy<ClassificationTypeMap>
+        typeMap: Lazy<ClassificationTypeMap>,
+        gotoDefinitionService: FSharpGoToDefinitionService
     ) =
     let TextAdornments = ResizeArray<IWpfTextView * CodeLensAdornment>()
     let componentModel = Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
@@ -192,7 +212,7 @@ type internal CodeLensProvider
                     |> Option.get
                 )
 
-            let provider = CodeLensAdornment(workspace, documentId, textView, checkerProvider.Checker, projectInfoManager, typeMap)
+            let provider = CodeLensAdornment(workspace, documentId, textView, checkerProvider.Checker, projectInfoManager, typeMap, gotoDefinitionService)
             TextAdornments.Add((textView, provider))
             provider
 

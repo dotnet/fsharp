@@ -34,7 +34,7 @@ module private SessionHandling =
                   member __.AugmentQuickInfoSession(session,_,_) = currentSession <- Some session
                   member __.Dispose() = () }
 
-module private HyperlinkStyles =
+module internal HyperlinkStyles =
     // TODO: move this one time initialization to a more suitable spot
     do Application.ResourceAssembly <- typeof<Microsoft.VisualStudio.FSharp.UIResources.Strings>.Assembly
     let private styles = ResourceDictionary(Source = Uri("HyperlinkStyles.xaml", UriKind.Relative))
