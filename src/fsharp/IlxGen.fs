@@ -2153,7 +2153,7 @@ and GenNewArraySimple cenv cgbuf eenv (elems,elemTy,m) sequel =
     let ilArrTy = mkILArr1DTy ilElemTy
     
     CG.EmitInstrs cgbuf (pop 0) (Push [ilArrTy]) [ (AI_ldc (DT_I4,ILConst.I4 (elems.Length))); I_newarr (ILArrayShape.SingleDimensional,ilElemTy) ]
-    elems |> List.iteri (fun i e ->             
+    elems |> Seq.iteri (fun i e ->             
         CG.EmitInstrs cgbuf (pop 0) (Push [ilArrTy; cenv.g.ilg.typ_Int32]) [ AI_dup; (AI_ldc (DT_I4,ILConst.I4  i)) ]
         GenExpr cenv cgbuf eenv SPSuppress e Continue          
         CG.EmitInstr cgbuf (pop 3) Push0  (I_stelem_any (ILArrayShape.SingleDimensional,ilElemTy))) 
@@ -2411,7 +2411,7 @@ and GenUntupledArgExpr cenv cgbuf eenv m argInfos expr sequel =
             let tys = destRefTupleTy cenv.g ty
             assert (tys.Length = numRequiredExprs)
             // TODO - tupInfoRef
-            argInfos |> List.iteri (fun i _ -> GenGetTupleField cenv cgbuf eenvinner (tupInfoRef (* TODO *),loce,tys,i,m) Continue);
+            argInfos |> Seq.iteri (fun i _ -> GenGetTupleField cenv cgbuf eenvinner (tupInfoRef (* TODO *),loce,tys,i,m) Continue);
             GenSequel cenv eenv.cloc cgbuf sequel
         )
 

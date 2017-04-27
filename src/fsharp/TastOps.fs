@@ -5749,7 +5749,7 @@ let rec IterateRecursiveFixups g (selfv : Val option) rvs ((access : Expr),set) 
   match exprToFix with 
   | Expr.Const _ -> ()
   | Expr.Op (TOp.Tuple tupInfo,argtys,args,m) when not (evalTupInfoIsStruct tupInfo) ->
-      args |> List.iteri (fun n -> 
+      args |> Seq.iteri (fun n -> 
           IterateRecursiveFixups g None rvs 
             (mkTupleFieldGet g (tupInfo,access,argtys,n,m), 
             (fun e -> 
@@ -5758,7 +5758,7 @@ let rec IterateRecursiveFixups g (selfv : Val option) rvs ((access : Expr),set) 
               e)))
 
   | Expr.Op (TOp.UnionCase (c),tinst,args,m) ->
-      args |> List.iteri (fun n -> 
+      args |> Seq.iteri (fun n -> 
           IterateRecursiveFixups g None rvs 
             (mkUnionCaseFieldGetUnprovenViaExprAddr (access,c,tinst,n,m), 
              (fun e -> 

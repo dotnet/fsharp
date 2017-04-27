@@ -996,7 +996,7 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
 and CheckExprs cenv env exprs contexts =
     let contexts = Array.ofList contexts 
     let argArity i = if i < contexts.Length then contexts.[i] else NoByrefs 
-    exprs |> List.iteri (fun i exp -> CheckExpr cenv env exp (argArity i)) 
+    exprs |> Seq.iteri (fun i exp -> CheckExpr cenv env exp (argArity i)) 
 
 and CheckExprsNoByrefs cenv env exprs = 
     exprs |> Seq.iter (CheckExprNoByrefs cenv env) 

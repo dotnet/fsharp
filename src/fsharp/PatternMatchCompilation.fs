@@ -681,7 +681,7 @@ let CompilePatternBasic
     // Note the input expression has already been evaluated and saved into a variable.
     // Hence no need for a new sequence point.
     let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding,exprm)
-    clausesL |> List.iteri (fun _i c -> mbuilder.AddTarget c.Target |> ignore) 
+    clausesL |> Seq.iteri (fun _i c -> mbuilder.AddTarget c.Target |> ignore) 
     
     // Add the incomplete or rethrow match clause on demand, printing a 
     // warning if necessary (only if it is ever exercised) 
@@ -1233,7 +1233,7 @@ let CompilePatternBasic
     if warnOnUnused then 
         let used = HashSet<_>(accTargetsOfDecisionTree dtree [],HashIdentity.Structural)
 
-        clausesL |> List.iteri (fun i c ->  
+        clausesL |> Seq.iteri (fun i c ->  
             if not (used.Contains i) then warning (RuleNeverMatched c.Range)) 
 
     dtree,targets

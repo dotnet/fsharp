@@ -2610,10 +2610,10 @@ let GenMethodDefPass3 cenv env (md:ILMethodDef) =
     let idx2 = AddUnsharedRow cenv TableNames.Method (GenMethodDefAsRow cenv env midx md)
     if midx <> idx2 then failwith "index of method def on pass 3 does not match index on pass 2"
     GenReturnPass3 cenv md.Return  
-    md.Parameters |> List.iteri (fun n param -> GenParamPass3 cenv env (n+1) param) 
+    md.Parameters |> Seq.iteri (fun n param -> GenParamPass3 cenv env (n+1) param) 
     md.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_MethodDef,midx) 
     md.SecurityDecls.AsList |> GenSecurityDeclsPass3 cenv (hds_MethodDef,midx)
-    md.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_MethodDef, midx) gp) 
+    md.GenericParams |> Seq.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_MethodDef, midx) gp) 
     match md.mdBody.Contents with 
     | MethodBody.PInvoke attr ->
         let flags = 
@@ -2653,7 +2653,7 @@ let GenMethodDefPass3 cenv env (md:ILMethodDef) =
 
 let GenMethodDefPass4 cenv env  md = 
     let midx = GetMethodDefIdx cenv md
-    List.iteri (fun n gp -> GenGenericParamPass4 cenv env n (tomd_MethodDef, midx) gp) md.GenericParams
+    Seq.iteri (fun n gp -> GenGenericParamPass4 cenv env n (tomd_MethodDef, midx) gp) md.GenericParams
 
 let GenPropertyMethodSemanticsPass3 cenv pidx kind mref =
     // REVIEW: why are we catching exceptions here?
@@ -2786,7 +2786,7 @@ let rec GenTypeDefPass3 enc cenv (td:ILTypeDef) =
                        
       td.SecurityDecls.AsList |> GenSecurityDeclsPass3 cenv (hds_TypeDef,tidx)
       td.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_TypeDef,tidx)
-      td.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_TypeDef,tidx) gp)  
+      td.GenericParams |> Seq.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_TypeDef,tidx) gp)  
       td.NestedTypes.AsSeq |> GenTypeDefsPass3 (enc@[td.Name]) cenv
    with e ->
       failwith  ("Error in pass3 for type "+td.Name+", error: "+e.Message)
@@ -2804,7 +2804,7 @@ let rec GenTypeDefPass4 enc cenv (td:ILTypeDef) =
        let env = envForTypeDef td
        let tidx = GetIdxForTypeDef cenv (TdKey(enc,td.Name))
        td.Methods |> Seq.iter (GenMethodDefPass4 cenv env) 
-       List.iteri (fun n gp -> GenGenericParamPass4 cenv env n (tomd_TypeDef,tidx) gp) td.GenericParams 
+       Seq.iteri (fun n gp -> GenGenericParamPass4 cenv env n (tomd_TypeDef,tidx) gp) td.GenericParams 
        GenTypeDefsPass4 (enc@[td.Name]) cenv td.NestedTypes.AsSeq
    with e ->
        failwith ("Error in pass4 for type "+td.Name+", error: "+e.Message)

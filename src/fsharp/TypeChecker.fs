@@ -10287,7 +10287,7 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv overallTy safeThisValOpt 
                 if Option.isSome memberFlagsOpt || (not apinfo.IsTotal && apinfo.ActiveTags.Length > 1) then 
                     error(Error(FSComp.SR.tcInvalidActivePatternName(),mBinding))
 
-                apinfo.ActiveTagsWithRanges |> List.iteri (fun i (_tag,tagRange) ->
+                apinfo.ActiveTagsWithRanges |> Seq.iteri (fun i (_tag,tagRange) ->
                     let item = Item.ActivePatternResult(apinfo, cenv.g.unit_ty, i, tagRange)
                     CallNameResolutionSink cenv.tcSink (tagRange,env.NameEnv,item,item,emptyTyparInst,ItemOccurence.Binding,env.DisplayEnv,env.eAccessRights))
 
@@ -11762,8 +11762,8 @@ let CheckNamespaceModuleOrTypeName (g:TcGlobals) (id:Ident) =
         errorR(Error(FSComp.SR.tcInvalidNamespaceModuleTypeUnionName(),id.idRange))
 
 let CheckDuplicates (idf : _ -> Ident) k elems = 
-    elems |> List.iteri (fun i uc1 -> 
-        elems |> List.iteri (fun j uc2 -> 
+    elems |> Seq.iteri (fun i uc1 -> 
+        elems |> Seq.iteri (fun j uc2 -> 
             let id1 = (idf uc1)
             let id2 = (idf uc2)
             if j > i &&  id1.idText = id2.idText then 

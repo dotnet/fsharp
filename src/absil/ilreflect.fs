@@ -1374,7 +1374,7 @@ let buildGenParamsPass1b cenv emEnv (genArgs : Type array) (gps : ILGenericParam
 #else
     let genpBs =  genArgs |>  Array.map (fun x -> (x :?> GenericTypeParameterBuilder)) 
 #endif
-    gps |> List.iteri (fun i (gp:ILGenericParameterDef) ->
+    gps |> Seq.iteri (fun i (gp:ILGenericParameterDef) ->
         let gpB = genpBs.[i]
         // the Constraints are either the parent (base) type or interfaces.
         let constraintTs = convTypes cenv emEnv gp.Constraints
@@ -1567,7 +1567,7 @@ let rec buildMethodPass3 cenv tref modB (typB:TypeBuilder) emEnv (mdef : ILMetho
           assert isNil mdef.GenericParams
           // Value parameters       
           let defineParameter (i,attr,name) = consB.DefineParameterAndLog(i+1,attr,name)
-          mdef.Parameters |> List.iteri (emitParameter cenv emEnv defineParameter);
+          mdef.Parameters |> Seq.iteri (emitParameter cenv emEnv defineParameter);
           // Body
           emitMethodBody cenv modB emEnv consB.GetILGenerator mdef.Name mdef.mdBody;
           emitCustomAttrs cenv emEnv (wrapCustomAttr consB.SetCustomAttribute) mdef.CustomAttrs;
@@ -1587,7 +1587,7 @@ let rec buildMethodPass3 cenv tref modB (typB:TypeBuilder) emEnv (mdef : ILMetho
 
           // Value parameters
           let defineParameter (i,attr,name) = methB.DefineParameterAndLog(i+1,attr,name) 
-          mdef.Parameters |> List.iteri (fun a b -> emitParameter cenv emEnv defineParameter a b);
+          mdef.Parameters |> Seq.iteri (fun a b -> emitParameter cenv emEnv defineParameter a b);
           // Body
           if not isPInvoke then 
               emitMethodBody cenv modB emEnv methB.GetILGeneratorAndLog mdef.Name mdef.mdBody;
