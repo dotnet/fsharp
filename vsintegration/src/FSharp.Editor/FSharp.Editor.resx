@@ -180,4 +180,7 @@
   <data name="ExceptionsHeader" xml:space="preserve">
     <value>Exceptions:</value>
   </data>
+  <data name="GenericParametersHeaders" xml:space="preserve">
+    <value>Generic Parameters:</value>
+  </data>
 </root>

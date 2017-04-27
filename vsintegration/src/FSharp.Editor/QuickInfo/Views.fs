@@ -67,7 +67,7 @@ type internal QuickInfoViewProvider
         |> typeMap.Value.GetClassificationType
         |> formatMap.Value.GetTextProperties
     
-    let formatText (navigation: QuickInfoNavigation) (content: Layout.TaggedText seq) : IDeferredQuickInfoContent =
+    let formatText (navigation: QuickInfoNavigation) (content: seq<Layout.TaggedText>) : IDeferredQuickInfoContent =
 
         let navigateAndDismiss range _ =
             navigation.NavigateTo range
@@ -102,10 +102,10 @@ type internal QuickInfoViewProvider
         { new IDeferredQuickInfoContent with 
             member x.Create() = TextBlock(Visibility = Visibility.Collapsed) :> FrameworkElement }
 
-    let createDeferredContent (symbolGlyph, mainDescription, documentation) =
-        QuickInfoDisplayDeferredContent(symbolGlyph, null, mainDescription, documentation, empty, empty, empty, empty)
+    let createDeferredContent (symbolGlyph, mainDescription, documentation, after) =
+        QuickInfoDisplayDeferredContent(symbolGlyph, null, mainDescription, documentation, after, empty, empty, empty)
 
-    member __.ProvideContent(glyph: Glyph, description: TaggedText seq, documentation: TaggedText seq, navigation: QuickInfoNavigation) =
+    member __.ProvideContent(glyph: Glyph, description: seq<TaggedText>, documentation: seq<TaggedText>, after: seq<TaggedText>, navigation: QuickInfoNavigation) =
         let navigableText = formatText navigation
         let glyphContent = SymbolGlyphDeferredContent(glyph, glyphService)
-        createDeferredContent(glyphContent, navigableText description, navigableText documentation)
+        createDeferredContent(glyphContent, navigableText description, navigableText documentation, navigableText after)

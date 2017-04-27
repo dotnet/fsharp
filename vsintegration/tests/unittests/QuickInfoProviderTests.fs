@@ -52,9 +52,15 @@ let private normalizeLineEnds (s: string) = s.Replace("\r\n", "\n").Replace("\n\
 let private getQuickInfoText (FSharpToolTipText elements) : string =
     let rec parseElement = function
         | FSharpToolTipElement.None -> ""
-        | FSharpToolTipElement.Single(text, _) -> text
+        | FSharpToolTipElement.Single(text, _, tps) -> 
+            let tptext = (match tps with [] -> "" | _ -> "\n" + String.concat "\n" tps)
+            text + tptext
         | FSharpToolTipElement.SingleParameter(text, _, _) -> text
-        | FSharpToolTipElement.Group(xs) -> xs |> List.map fst |> String.concat "\n"
+        | FSharpToolTipElement.Group(xs) -> 
+            let text = xs |> List.map (fun (a,_,_) -> a) |> String.concat "\n"
+            let tps = xs |> List.map (fun (_,_,c) -> c)
+            let tptext = (match tps with [] -> "" | _ -> "\n" + String.concat "\n" tps)
+            text + tptext
         | FSharpToolTipElement.CompositionError(error) -> error
     elements |> List.map (Tooltips.ToFSharpToolTipElement >> parseElement) |> String.concat "\n" |> normalizeLineEnds
 

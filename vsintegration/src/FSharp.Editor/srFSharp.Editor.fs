@@ -35,6 +35,7 @@ module SR =
     let AddProjectReference = lazy (GetString "AddProjectReference")
     let AddAssemblyReference = lazy (GetString "AddAssemblyReference")
     let ExceptionsLabel = lazy (GetString "ExceptionsHeader")
+    let GenericParametersLabel = lazy (GetString "GenericParametersHeader")
     
     //--------------------------------------------------------------------------------------
     // Attributes used to mark up editable properties 

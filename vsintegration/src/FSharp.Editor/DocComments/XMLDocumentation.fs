@@ -330,37 +330,52 @@ module internal XmlDocumentation =
             AppendHardLine collector
 
     /// Build a data tip text string with xml comments injected.
-    let BuildTipText(documentationProvider:IDocumentationBuilder, dataTipText: FSharpStructuredToolTipElement list, textCollector, xmlCollector, showText, showExceptions, showParameters, showOverloadText) = 
+    let BuildTipText(documentationProvider:IDocumentationBuilder, dataTipText: FSharpStructuredToolTipElement list, textCollector, xmlCollector, afterCollector, showText, showExceptions, showParameters, showOverloadText) = 
         let textCollector: ITaggedTextCollector = TextSanitizingCollector(textCollector, lineLimit = 45) :> _
         let xmlCollector: ITaggedTextCollector = TextSanitizingCollector(xmlCollector, lineLimit = 45) :> _
+        let afterCollector: ITaggedTextCollector = TextSanitizingCollector(afterCollector, lineLimit = 6) :> _
 
         let addSeparatorIfNecessary add =
             if add then
                 AddSeparator textCollector
                 AddSeparator xmlCollector
 
+        let ProcessGenericParameters (tps: Layout list) =
+            if not tps.IsEmpty then
+                AppendOnNewLine afterCollector SR.GenericParametersLabel.Value
+                for tp in tps do 
+                    afterCollector.Add(tagSpace "    ")
+                    renderL (taggedTextListR textCollector.Add) tp |> ignore
+
         let Process add (dataTipElement: FSharpStructuredToolTipElement) =
+
             match dataTipElement with 
-            | FSharpStructuredToolTipElement.None -> false
-            | FSharpStructuredToolTipElement.Single (text, xml) ->
+            | FSharpStructuredToolTipElement.None -> 
+                false
+
+            | FSharpStructuredToolTipElement.Single (text, xml, tps) ->
                 addSeparatorIfNecessary add
                 if showText then 
                     renderL (taggedTextListR textCollector.Add) text |> ignore
                 AppendXmlComment(documentationProvider, xmlCollector, xml, showExceptions, showParameters, None)
+                if showText then 
+                    ProcessGenericParameters tps
                 true
+
             | FSharpStructuredToolTipElement.SingleParameter(text, xml, paramName) ->
                 addSeparatorIfNecessary add
                 if showText then
                     renderL (taggedTextListR textCollector.Add) text |> ignore
                 AppendXmlComment(documentationProvider, xmlCollector, xml, showExceptions, showParameters, Some paramName)
                 true
+
             | FSharpStructuredToolTipElement.Group (overloads) -> 
                 let overloads = Array.ofList overloads
                 let len = Array.length overloads
                 if len >= 1 then
                     addSeparatorIfNecessary add
                     if showOverloadText then 
-                        let AppendOverload(text,_) = 
+                        let AppendOverload(text,_,_) = 
                             if not(isEmptyL text) then
                                 if not textCollector.IsEmpty then textCollector.Add Literals.lineBreak
                                 renderL (taggedTextListR textCollector.Add) text |> ignore
@@ -374,8 +389,12 @@ module internal XmlDocumentation =
                             textCollector.Add Literals.lineBreak
                             textCollector.Add (tagText(PrettyNaming.FormatAndOtherOverloadsString(len-5)))
 
-                    let _,xml = overloads.[0]
+                    let _,xml, tps = overloads.[0]
                     AppendXmlComment(documentationProvider, textCollector, xml, showExceptions, showParameters, None)
+
+                    if showText then 
+                        ProcessGenericParameters tps
+
                     true
                 else
                     false
@@ -386,11 +405,11 @@ module internal XmlDocumentation =
 
         List.fold Process false dataTipText |> ignore
 
-    let BuildDataTipText(documentationProvider, textCollector, xmlCollector, FSharpToolTipText(dataTipText)) = 
-        BuildTipText(documentationProvider, dataTipText, textCollector, xmlCollector, true, true, false, true) 
+    let BuildDataTipText(documentationProvider, textCollector, xmlCollector,afterCollector, FSharpToolTipText(dataTipText)) = 
+        BuildTipText(documentationProvider, dataTipText, textCollector, xmlCollector, afterCollector, true, true, false, true) 
 
     let BuildMethodOverloadTipText(documentationProvider, textCollector, xmlCollector, FSharpToolTipText(dataTipText), showParams) = 
-        BuildTipText(documentationProvider, dataTipText, textCollector, xmlCollector, false, false, showParams, false) 
+        BuildTipText(documentationProvider, dataTipText, textCollector, xmlCollector, ignore, false, false, showParams, false) 
 
     let BuildMethodParamText(documentationProvider, xmlCollector, xml, paramName) =
         AppendXmlComment(documentationProvider, TextSanitizingCollector(xmlCollector), xml, false, true, Some paramName)

@@ -195,23 +195,23 @@ type internal FSharpQuickInfoProvider
                 | None, None -> return null
                 | Some tooltip, None  
                 | None, Some tooltip -> 
-                    let mainDescription = ResizeArray()
-                    let documentation = ResizeArray()
-                    XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, documentation.Add, tooltip.StructuredText)
+                    let mainDescription, documentation, after = ResizeArray(), ResizeArray(), ResizeArray()
+                    XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, documentation.Add, after.Add, tooltip.StructuredText)
                     let glyph = Tokenizer.GetGlyphForSymbol(tooltip.Symbol, tooltip.SymbolKind)
                     let navigation = QuickInfoNavigation(gotoDefinitionService, document, symbolUse.RangeAlternate)
-                    let content = viewProvider.ProvideContent( glyph, mainDescription, documentation, navigation)
+                    let content = viewProvider.ProvideContent( glyph, mainDescription, documentation, after, navigation)
                     return QuickInfoItem (tooltip.Span, content)
 
                 | Some sigTooltip, Some targetTooltip ->
-                    let description, targetDocumentation, sigDocumentation = ResizeArray(), ResizeArray(), ResizeArray()
-                    XmlDocumentation.BuildDataTipText(documentationBuilder, ignore, sigDocumentation.Add, sigTooltip.StructuredText)
-                    XmlDocumentation.BuildDataTipText(documentationBuilder, description.Add, targetDocumentation.Add, targetTooltip.StructuredText)
+                    let description, targetDocumentation, sigDocumentation, after = ResizeArray(), ResizeArray(), ResizeArray(), ResizeArray()
+                    XmlDocumentation.BuildDataTipText(documentationBuilder, ignore, sigDocumentation.Add, ignore, sigTooltip.StructuredText)
+                    XmlDocumentation.BuildDataTipText(documentationBuilder, description.Add, targetDocumentation.Add, after.Add, targetTooltip.StructuredText)
 
                     let width = 
                         description
                         |> Seq.append targetDocumentation
                         |> Seq.append sigDocumentation
+                        |> Seq.append after
                         |> Seq.map (fun x -> x.Text.Length)
                         |> Seq.max
 
@@ -242,7 +242,7 @@ type internal FSharpQuickInfoProvider
                               yield! targetDocumentation ]
                     let glyph = Tokenizer.GetGlyphForSymbol(targetTooltip.Symbol, targetTooltip.SymbolKind)
                     let navigation = QuickInfoNavigation(gotoDefinitionService, document, symbolUse.RangeAlternate)
-                    let content = viewProvider.ProvideContent(glyph, description, documentation, navigation)
+                    let content = viewProvider.ProvideContent(glyph, description, documentation, after, navigation)
                     return QuickInfoItem (targetTooltip.Span, content)
             }   |> Async.map Option.toObj
                 |> RoslynHelpers.StartAsyncAsTask cancellationToken 

@@ -167,8 +167,8 @@ type TypeCheckInfo
            thisCcu: CcuThunk,
            tcImports: TcImports,
            tcAccessRights: AccessorDomain,
-           projectFileName: string ,
-           mainInputFileName: string ,
+           projectFileName: string,
+           mainInputFileName: string,
            sResolutions: TcResolutions,
            sSymbolUses: TcSymbolUses,
            // This is a name resolution environment to use if no better match can be found.
@@ -344,7 +344,7 @@ type TypeCheckInfo
                 // implementation detail of syntax coloring, but we should not report name resolution results for it, to prevent spurious QuickInfo.
                 |> List.filter (fun item -> match item.Item with Item.CustomOperation(CustomOperations.Into,_,_) -> false | _ -> true) 
             ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck
-        | _ , _ -> NameResResult.Empty
+        | _, _ -> NameResResult.Empty
     
     let TryGetTypeFromNameResolution(line, colAtEndOfNames, membersByResidue, resolveOverloads) = 
         let endOfNamesPos = mkPos line colAtEndOfNames
@@ -355,7 +355,7 @@ type TypeCheckInfo
         | CNR(_, Item.Value(vref), occurence,_,_,_,_)::_, Some _ ->
             if (occurence = ItemOccurence.Binding || occurence = ItemOccurence.Pattern) then None
             else Some (StripSelfRefCell(g, vref.BaseOrThisInfo, vref.TauType))
-        | _ , _ -> None
+        | _, _ -> None
 
     let CollectParameters (methods: MethInfo list) amap m: Item list = 
         methods
@@ -1021,7 +1021,7 @@ type TypeCheckInfo
             | resolved::_ // Take the first seen
             | [resolved] -> 
                 let tip = wordL (TaggedTextOps.tagStringLiteral((resolved.prepareToolTip ()).TrimEnd([|'\n'|])))
-                FSharpStructuredToolTipText.FSharpToolTipText [FSharpStructuredToolTipElement.Single(tip ,FSharpXmlDoc.None)]
+                FSharpStructuredToolTipText.FSharpToolTipText [FSharpStructuredToolTipElement.Single(tip, FSharpXmlDoc.None, [])]
 
             | [] -> FSharpStructuredToolTipText.FSharpToolTipText []
                                     
@@ -1105,7 +1105,7 @@ type TypeCheckInfo
           match GetDeclItemsForNamesAtPosition (ctok, None,Some(names), None, line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,ResolveOverloads.Yes,(fun() -> []), fun _ -> false) with
           | None
           | Some ([], _, _, _) -> FSharpFindDeclResult.DeclNotFound FSharpFindDeclFailureReason.Unknown
-          | Some (item :: _ , _, _, _) -> 
+          | Some (item :: _, _, _, _) -> 
 
               // For IL-based entities, switch to a different item. This is because
               // rangeOfItem, ccuOfItem don't work on IL methods or fields.
@@ -1146,7 +1146,7 @@ type TypeCheckInfo
     member scope.GetSymbolUseAtLocation (ctok, line, lineStr, colAtEndOfNames, names) =
         match GetDeclItemsForNamesAtPosition (ctok, None,Some(names), None, line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors, ResolveOverloads.Yes,(fun() -> []), fun _ -> false) with
         | None | Some ([], _, _, _) -> None
-        | Some (item :: _ , denv, _, m) -> 
+        | Some (item :: _, denv, _, m) -> 
             let symbol = FSharpSymbol.Create(g, thisCcu, tcImports, item.Item)
             Some (symbol, denv, m)
 
@@ -1781,7 +1781,7 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
         match details with
         | None -> 
             return dflt
-        | Some (_ , Some builder, _) when not builder.IsAlive -> 
+        | Some (_, Some builder, _) when not builder.IsAlive -> 
             System.Diagnostics.Debug.Assert(false,"unexpected dead builder") 
             return dflt
         | Some (scope, builderOpt, reactor) -> 
@@ -1796,7 +1796,7 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
         match details with
         | None -> 
             dflt()
-        | Some (_ , Some builder, _) when not builder.IsAlive -> 
+        | Some (_, Some builder, _) when not builder.IsAlive -> 
             System.Diagnostics.Debug.Assert(false,"unexpected dead builder") 
             dflt()
         | Some (scope, builderOpt, ops) -> 

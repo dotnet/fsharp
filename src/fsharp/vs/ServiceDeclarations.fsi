@@ -23,8 +23,10 @@ open Microsoft.FSharp.Compiler.Tastops
 type internal FSharpXmlDoc =
     /// No documentation is available
     | None
+
     /// The text for documentation 
     | Text of string
+
     /// Indicates that the text for the documentation can be found in a .xml documentation file, using the given signature key
     | XmlDocFileSignature of (*File:*) string * (*Signature:*)string
 
@@ -36,12 +38,16 @@ type internal Layout = Internal.Utilities.StructuredFormat.Layout
 [<RequireQualifiedAccess>]
 type internal FSharpToolTipElement<'T> = 
     | None
+
     /// A single type, method, etc with comment.
-    | Single of (* text *) 'T * FSharpXmlDoc
+    | Single of (* text *) 'T * FSharpXmlDoc * (* typar insantiation text, to go after xml: *) 'T list
+
     /// A single parameter, with the parameter name.
     | SingleParameter of (* text *) 'T * FSharpXmlDoc * string
+
     /// For example, a method overload group.
-    | Group of ((* text *) 'T * FSharpXmlDoc) list
+    | Group of ((* text *) 'T * FSharpXmlDoc * (* typar insantiation text, to go after xml: *) 'T list) list
+
     /// An error occurred formatting this element
     | CompositionError of string
 

@@ -345,27 +345,31 @@ module internal XmlDocumentation =
                 AddSeparator xmlCollector
 
         let Process add (dataTipElement: FSharpStructuredToolTipElement) =
+
             match dataTipElement with 
             | FSharpStructuredToolTipElement.None -> false
-            | FSharpStructuredToolTipElement.Single (text, xml) ->
+
+            | FSharpStructuredToolTipElement.Single (text, xml, _tptext) ->
                 addSeparatorIfNecessary add
                 if showText then 
                     renderL (taggedTextListR textCollector.Add) text |> ignore
                 AppendXmlComment(documentationProvider, xmlCollector, xml, showExceptions, showParameters, None)
                 true
+
             | FSharpStructuredToolTipElement.SingleParameter(text, xml, paramName) ->
                 addSeparatorIfNecessary add
                 if showText then
                     renderL (taggedTextListR textCollector.Add) text |> ignore
                 AppendXmlComment(documentationProvider, xmlCollector, xml, showExceptions, showParameters, Some paramName)
                 true
+
             | FSharpStructuredToolTipElement.Group (overloads) -> 
                 let overloads = Array.ofList overloads
                 let len = Array.length overloads
                 if len >= 1 then
                     addSeparatorIfNecessary add
                     if showOverloadText then 
-                        let AppendOverload(text,_) = 
+                        let AppendOverload(text,_,_) = 
                             if not(Microsoft.FSharp.Compiler.Layout.isEmptyL text) then
                                 if not textCollector.IsEmpty then textCollector.Add Literals.lineBreak
                                 renderL (taggedTextListR textCollector.Add) text |> ignore
@@ -379,7 +383,7 @@ module internal XmlDocumentation =
                             textCollector.Add Literals.lineBreak
                             textCollector.Add (tagText(PrettyNaming.FormatAndOtherOverloadsString(len-5)))
 
-                    let _,xml = overloads.[0]
+                    let _,xml,_ = overloads.[0]
                     AppendXmlComment(documentationProvider, textCollector, xml, showExceptions, showParameters, None)
                     true
                 else
