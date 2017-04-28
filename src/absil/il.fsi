@@ -261,23 +261,31 @@ type ILGenericVariance =
 /// Type refs, i.e. references to types in some .NET assembly
 [<Sealed>]
 type ILTypeRef =
+
     /// Create a ILTypeRef.
     static member Create : scope: ILScopeRef * enclosing: string list * name: string -> ILTypeRef
 
     /// Where is the type, i.e. is it in this module, in another module in this assembly or in another assembly? 
     member Scope: ILScopeRef
+
     /// The list of enclosing type names for a nested type. If non-nil then the first of these also contains the namespace.
     member Enclosing: string list
+
     /// The name of the type. This also contains the namespace if Enclosing is empty.
     member Name: string
+
     /// The name of the type in the assembly using the '.' notation for nested types.
     member FullName: string
+
     /// The name of the type in the assembly using the '+' notation for nested types.
     member BasicQualifiedName : string
+
     member QualifiedName: string
+
 #if EXTENSIONTYPING
     member QualifiedNameWithNoShortPrimaryAssembly: string
 #endif
+
     interface System.IComparable
     
 /// Type specs and types.  
@@ -295,6 +303,7 @@ type ILTypeSpec =
 
     /// Which type is being referred to?
     member TypeRef: ILTypeRef
+
     /// The type instantiation if the type is generic, otherwise empty
     member GenericArgs: ILGenericArgs
     member Scope: ILScopeRef
@@ -1710,8 +1719,8 @@ val prependInstrsToClassCtor: ILInstr list -> ILSourceMarker option -> ILTypeDef
 
 /// Derived functions for making some simple constructors
 val mkILStorageCtor: ILSourceMarker option * ILInstr list * ILType * (string * ILType) list * ILMemberAccess -> ILMethodDef
-val mkILSimpleStorageCtor: ILSourceMarker option * ILTypeSpec option * ILType * (string * ILType) list * ILMemberAccess -> ILMethodDef
-val mkILSimpleStorageCtorWithParamNames: ILSourceMarker option * ILTypeSpec option * ILType * (string * string * ILType) list * ILMemberAccess -> ILMethodDef
+val mkILSimpleStorageCtor: ILSourceMarker option * ILTypeSpec option * ILType * ILParameter list * (string * ILType) list * ILMemberAccess -> ILMethodDef
+val mkILSimpleStorageCtorWithParamNames: ILSourceMarker option * ILTypeSpec option * ILType * ILParameter list * (string * string * ILType) list * ILMemberAccess -> ILMethodDef
 
 val mkILDelegateMethods: ILGlobals -> ILType * ILType -> ILParameter list * ILReturn -> ILMethodDef list
 

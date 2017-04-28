@@ -17,7 +17,6 @@ type CreateFSharpManifestResourceName public () =
                     (dependentUponFileName:string), (* may be null *) 
                     (binaryStream:System.IO.Stream) (* may be null *)) : string = 
 
-#if CROSS_PLATFORM_COMPILER
         // The Visual CSharp and XBuild CSharp toolchains transform resource names like this:
         //     SubDir\abc.resx --> SubDir.abc.resources
         //     SubDir\abc.txt --> SubDir.abc.txt
@@ -42,7 +41,6 @@ type CreateFSharpManifestResourceName public () =
                 false  
         let fileName = if not runningOnMono || fileName.EndsWith(".resources", StringComparison.OrdinalIgnoreCase) then fileName else Path.GetFileName(fileName)
         let linkFileName = if not runningOnMono || linkFileName.EndsWith(".resources", StringComparison.OrdinalIgnoreCase) then linkFileName else Path.GetFileName(linkFileName)
-#endif
 
         let embeddedFileName = 
             match linkFileName with

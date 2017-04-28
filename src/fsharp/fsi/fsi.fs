@@ -581,11 +581,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
        not (runningOnMono && System.Environment.OSVersion.Platform = System.PlatformID.Win32NT) 
 #endif
 // In the cross-platform edition of F#, 'gui' support is currently off by default
-#if CROSS_PLATFORM_COMPILER
-    let mutable gui        = false // override via "--gui", off by default
-#else
-    let mutable gui        = true // override via "--gui", on by default
-#endif
+    let mutable gui        = not runningOnMono // override via "--gui", on by default
 #if DEBUG
     let mutable showILCode = false // show modul il code 
 #endif
@@ -1613,6 +1609,15 @@ module internal MagicAssemblyResolution =
                let assemblyReferenceTextDll = (simpleAssemName + ".dll") 
                let assemblyReferenceTextExe = (simpleAssemName + ".exe") 
                let overallSearchResult =           
+
+                   // OK, try to resolve as an existing DLL in the resolved reference set.  This does unification by assembly name
+                   // once an assembly has been referenced.
+                   let searchResult = tcImports.TryFindExistingFullyQualifiedPathBySimpleAssemblyName (ctok, simpleAssemName)
+
+                   match searchResult with
+                   | Some r -> OkResult ([], Choice1Of2 r)
+                   | _ -> 
+
                    // OK, try to resolve as a .dll
                    let searchResult = tcImports.TryResolveAssemblyReference (ctok, AssemblyReference (m, assemblyReferenceTextDll, None), ResolveAssemblyReferenceMode.Speculative)
 
@@ -1649,7 +1654,7 @@ module internal MagicAssemblyResolution =
 #endif
                    
                    // As a last resort, try to find the reference without an extension
-                   match tcImports.TryFindExistingFullyQualifiedPathFromAssemblyRef(ctok, ILAssemblyRef.Create(simpleAssemName,None,None,false,None,None)) with
+                   match tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef(ctok, ILAssemblyRef.Create(simpleAssemName,None,None,false,None,None)) with
                    | Some(resolvedPath) -> 
                        OkResult([],Choice1Of2 resolvedPath)
                    | None -> 
@@ -2613,7 +2618,7 @@ type internal FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:st
         | Some assembly -> Some (Choice2Of2 assembly)
         | None -> 
 #endif
-        match tcImports.TryFindExistingFullyQualifiedPathFromAssemblyRef (ctok, aref) with
+        match tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef (ctok, aref) with
         | Some resolvedPath -> Some (Choice1Of2 resolvedPath)
         | None -> None
           

@@ -1,0 +1,11 @@
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <TargetFrameworkIdentifier>MonoAndroid</TargetFrameworkIdentifier>
+        <MonoAndroidVersion>v1.0</MonoAndroidVersion>
+        <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v2.2</TargetFrameworkVersion>
+        <AndroidLinkMode Condition="'$(AndroidLinkMode)' == ''">SdkOnly</AndroidLinkMode>
+    </PropertyGroup>
+    <Import Project="$(MSBuildExtensionsPath32)\FSharp\1.0\Microsoft.FSharp.Targets" Condition="!Exists('$(MSBuildBinPath)\Microsoft.Build.Tasks.v4.0.dll')" />
+	<Import Project="$(MSBuildExtensionsPath32)\..\Microsoft F#\v4.0\Microsoft.FSharp.Targets" Condition=" Exists('$(MSBuildBinPath)\Microsoft.Build.Tasks.v4.0.dll')" />
+    <Import Project="Novell.MonoDroid.Common.targets" />
+</Project>

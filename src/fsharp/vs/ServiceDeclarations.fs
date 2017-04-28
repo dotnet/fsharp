@@ -986,7 +986,8 @@ module internal ItemDescriptionsImpl =
            FSharpStructuredToolTipElement.Single(layout, xml)
 
         // Types.
-        | Item.Types(_,((TType_app(tcref,_)):: _)) -> 
+        | Item.Types(_,((TType_app(tcref,_)):: _))
+        | Item.UnqualifiedType (tcref :: _) -> 
             let denv = { denv with shortTypeNames = true  }
             let layout =
                 NicePrint.layoutTycon denv infoReader AccessibleFromSomewhere m (* width *) tcref.Deref ^^
@@ -1057,6 +1058,7 @@ module internal ItemDescriptionsImpl =
             
         | Item.SetterArg (_, item) -> 
             FormatItemDescriptionToToolTipElement isDecl infoReader m denv item
+
         |  _ -> 
             FSharpStructuredToolTipElement.None
 
@@ -1360,8 +1362,24 @@ module internal ItemDescriptionsImpl =
             | Item.MethodGroup (_, minfos, _) when minfos |> List.forall (fun minfo -> minfo.IsExtensionMember) -> FSharpGlyph.ExtensionMethod
             | Item.MethodGroup _ -> FSharpGlyph.Method
             | Item.TypeVar _ 
-            | Item.Types _ 
-            | Item.UnqualifiedType _ -> FSharpGlyph.Class   
+            | Item.Types _  -> FSharpGlyph.Class
+            | Item.UnqualifiedType (tcref :: _) -> 
+                if tcref.IsEnumTycon || tcref.IsILEnumTycon then FSharpGlyph.Enum
+                elif tcref.IsExceptionDecl then FSharpGlyph.Exception
+                elif tcref.IsFSharpDelegateTycon then FSharpGlyph.Delegate
+                elif tcref.IsFSharpInterfaceTycon then FSharpGlyph.Interface
+                elif tcref.IsFSharpStructOrEnumTycon then FSharpGlyph.Struct
+                elif tcref.IsModule then FSharpGlyph.Module
+                elif tcref.IsNamespace then FSharpGlyph.NameSpace
+                elif tcref.IsUnionTycon then FSharpGlyph.Union
+                elif tcref.IsILTycon then 
+                    let (TILObjectReprData (_, _, tydef)) = tcref.ILTyconInfo
+                    if tydef.IsInterface then FSharpGlyph.Interface
+                    elif tydef.IsDelegate then FSharpGlyph.Delegate
+                    elif tydef.IsEnum then FSharpGlyph.Enum
+                    elif tydef.IsStructOrEnum then FSharpGlyph.Struct
+                    else FSharpGlyph.Class
+                else FSharpGlyph.Class
             | Item.ModuleOrNamespaces(modref::_) -> 
                   if modref.IsNamespace then FSharpGlyph.NameSpace else FSharpGlyph.Module
             | Item.ArgName _ -> FSharpGlyph.Variable

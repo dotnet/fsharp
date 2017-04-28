@@ -8,6 +8,13 @@
     <FSCoreVersion Condition="'$(TargetFramework)' == 'portable47'">3.47.41.0</FSCoreVersion>
     <FSCoreVersion Condition="'$(TargetFramework)' == 'portable78'">3.78.41.0</FSCoreVersion>
     <FSCoreVersion Condition="'$(TargetFramework)' == 'portable259'">3.259.41.0</FSCoreVersion>
+    <FSCoreVersion Condition="'$(TargetFramework)' == 'monoandroid10+monotouch10+xamarinios10' ">3.98.41.0</FSCoreVersion>
+    <FSCoreVersion Condition="'$(TargetFramework)' == 'xamarinmacmobile' ">3.99.41.0</FSCoreVersion>
+    <FSCoreVersion Condition="'$(FSharpCoreBackVersion)' == '3.0' AND '$(FSCoreVersion)' == '4.4.1.0'">4.3.0.0</FSCoreVersion>
+    <FSCoreVersion Condition="'$(FSharpCoreBackVersion)' == '3.1' AND '$(FSCoreVersion)' == '4.4.1.0'">4.3.1.0</FSCoreVersion>
+    <FSCoreVersion Condition="'$(FSharpCoreBackVersion)' == '4.0' AND '$(FSCoreVersion)' == '4.4.1.0'">4.4.0.0</FSCoreVersion>
+
+  
   </PropertyGroup>
 
   <Choose>
@@ -140,6 +147,30 @@
     <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile></TargetFrameworkProfile>
     <!-- MSbuild works out the assembly references -->
+  </PropertyGroup>
+
+
+  <!-- MonoAndroid, MonoTouch, XamarinWatchOS, XamarinTVOS -->
+  <PropertyGroup Condition="('$(TargetFramework)'=='monoandroid10+monotouch10+xamarinios10')">
+    <!-- Although Reflection Emit is available on MonoAndroid, we don't use it for FSharp.Core -->
+    <!-- because we want the FSharp.Core DLLs to be identical for MonoAndroid and MonoTouch -->
+    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_EMIT</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_BIGINT</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_STRUCTURAL_EQUALITY</DefineConstants>
+    <AssemblySearchPaths>$(FSharpSourcesRoot)\..\mono\dependencies\2.1\XamarinWatchOS;$(AssemblySearchPaths)</AssemblySearchPaths>
+
+  </PropertyGroup>
+
+  <!-- Target MonoAndroid -->
+  <PropertyGroup Condition="'$(TargetFramework)'=='monoandroid10+monotouch10+xamarinios10'">
+    <AssemblySearchPaths>$(FSharpSourcesRoot)\..\mono\dependencies\2.1\MonoAndroid;$(AssemblySearchPaths)</AssemblySearchPaths>
+
+  </PropertyGroup>
+
+  <!-- Target xamarinmacmobile similar to monoandroid10+monotouch10+xamarinios10 configurations, with Reflection.emit, structural equality, and BigInt -->
+  <PropertyGroup Condition="'$(TargetFramework)'=='xamarinmacmobile'">
+    <AssemblySearchPaths>$(FSharpSourcesRoot)\..\mono\dependencies\2.1\XamarinMac;$(AssemblySearchPaths)</AssemblySearchPaths>
+
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TargetFramework)'=='coreclr'">
@@ -371,14 +402,23 @@
     <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.5</TargetFrameworkVersion>
   </PropertyGroup>
 
+  <!-- If building an FSharp.Core for a back version (Mono Debian source builds only), put it in a ualified directory -->
+  <PropertyGroup>
+    <TargetFrameworkOutputDirectory Condition="'$(FSharpCoreBackVersion)' == ''">$(TargetFramework)</TargetFrameworkOutputDirectory>
+    <TargetFrameworkOutputDirectory Condition="'$(FSharpCoreBackVersion)' == '3.0'">fsharp30\$(TargetFramework)</TargetFrameworkOutputDirectory>
+    <TargetFrameworkOutputDirectory Condition="'$(FSharpCoreBackVersion)' == '3.1'">fsharp31\$(TargetFramework)</TargetFrameworkOutputDirectory>
+    <TargetFrameworkOutputDirectory Condition="'$(FSharpCoreBackVersion)' == '4.0'">fsharp40\$(TargetFramework)</TargetFrameworkOutputDirectory>
+    <IntermediateOutputPath>obj\$(TargetFrameworkOutputDirectory)\</IntermediateOutputPath>
+  </PropertyGroup>
+
   <Choose>
     <When Condition="'$(BuildWith)' == 'LKG' AND '$(BUILD_PROTO_WITH_CORECLR_LKG)' == '1'">
       <PropertyGroup >
         <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(ProtoFlavour)\bin</OutputPath>
         <!-- When using coreclr to bootstrap to proto. We acquire the FSharp.Core LKG, targets LKG, the FSharp.Build LKG from the .NET Framework compiler tools LKG package. -->
-        <FSharpCoreLkgPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.0.1.21\tools</FSharpCoreLkgPath>
+        <FSharpCoreLkgPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.5\tools</FSharpCoreLkgPath>
         <FSharpNetCoreLkgPath>$(FSharpSourcesRoot)\..\Tools\lkg</FSharpNetCoreLkgPath>
-        <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.0.1.21\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
+        <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.1.5\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
         <!-- When using coreclr to bootstrap, the compiler binary comes from the coreclr LKG, invoked using corehost.exe -->
         <FscToolPath>$(FSharpSourcesRoot)\..\Tools\dotnetcli</FscToolPath>
         <FscToolExe Condition="'$(OS)' != 'Unix'">dotnet.exe</FscToolExe>
@@ -390,14 +430,14 @@
        <!-- Use .NET Framework to bootstrap to proto -->
       <PropertyGroup >
         <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(ProtoFlavour)\bin</OutputPath>
-        <FSharpCoreLkgPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.0.1.21\tools</FSharpCoreLkgPath>
-        <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.0.1.21\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
+        <FSharpCoreLkgPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.5\tools</FSharpCoreLkgPath>
+        <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.1.5\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
       </PropertyGroup>
     </When>
     <When Condition="'$(BuildWith)' == '' AND ('$(TargetFramework)'=='portable47' OR '$(TargetFramework)'=='portable7' OR '$(TargetFramework)'=='portable78' OR '$(TargetFramework)'=='portable259' OR '$(TargetFramework)'=='coreclr')">
       <!-- Compiling portable/coreclr with Proto, currently always use a .NET Framework/Mono proto -->
       <PropertyGroup>
-        <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutputPath>
+        <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFrameworkOutputDirectory)\bin</OutputPath>
         <FscToolPath>$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin</FscToolPath>
         <FscToolExe>fsc-proto.exe</FscToolExe>
         <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.Portable.FSharp-proto.targets</FSharpTargetsPath>
@@ -406,7 +446,7 @@
     <Otherwise>
       <!-- Compiling net40 with Proto -->
       <PropertyGroup>
-        <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutputPath>
+        <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFrameworkOutputDirectory)\bin</OutputPath>
         <FscToolPath>$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin</FscToolPath>
         <FscToolExe>fsc-proto.exe</FscToolExe>
         <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.FSharp-proto.targets</FSharpTargetsPath>
@@ -488,40 +528,30 @@
   <Import Project="scripts\fssrgen.targets" />
   <Import Project="Microbuild.Settings.targets" Condition="'$(UseMicroBuild)' == 'true'"/>
 
-  <Target Name="ReorderCompileItems"
-      BeforeTargets="CoreCompile"
-      Condition="'$(GenerateTargetFrameworkAttribute)' == 'true' AND '$(AssemblyName)' == 'FSharp.Core'">  
-    <ItemGroup>
-        <!-- Infrastructure puts AssemblyAttributes.fs at the beginning of the list and this will result and error when compiling FSharp.Core because all primitive types are not defined yet - fixup is required-->
-        <CompileAfter Include="@(CompileBefore)"/>
-        <CompileBefore Remove="@(CompileBefore)"/>   
-    </ItemGroup>
-  </Target>
-
   <Target Name="dotnetrestore" BeforeTargets="Build" Condition=" '$(TargetFramework)' == 'coreclr' ">
    <Exec Command="$(MSBuildThisFileDirectory)..\.nuget\nuget.exe restore -PackagesDirectory $(PackagesDir) -Config $(MSBuildThisFileDirectory)..\.nuget\NuGet.Config project.json" />
   </Target>
 
   <Target Name="dotnetrestore" BeforeTargets="Build" Condition=" '$(DOTNET_PUBLISH)' == 'true' ">
     <SetEnvVar Name="NUGET_PACKAGES" Value="$(NUGET_PACKAGES)" />
-    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe restore --configfile $(MSBuildThisFileDirectory)..\.nuget\NuGet.Config project.json"/>
+    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe restore &#45;&#45;configfile $(MSBuildThisFileDirectory)..\.nuget\NuGet.Config project.json"/>
   </Target>
 
   <Target Name="dotnetpublish" AfterTargets="Build" Condition=" '$(DOTNET_PUBLISH)' == 'true' ">
     <SetEnvVar Name="NUGET_PACKAGES" Value="$(NUGET_PACKAGES)" />
-    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe --verbose publish --no-build project.json -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_PATH)"/>
+    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe &#45;&#45;verbose publish &#45;&#45;no-build project.json -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_PATH)"/>
   </Target>
 
   <Target Name="dotnetpublishfsccompiler" AfterTargets="CopyFilesToOutputDirectory" Condition=" '$(DOTNET_PUBLISH_FSC)' == 'true' ">
     <SetEnvVar Name="NUGET_PACKAGES" Value="$(NUGET_PACKAGES)" />
     <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe restore DeployCompiler\fsc\project.json"/>
-    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe --verbose publish --no-build DeployCompiler\fsc\project.json -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_FSC_PATH)"/>
+    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe &#45;&#45;verbose publish &#45;&#45;no-build DeployCompiler\fsc\project.json -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_FSC_PATH)"/>
   </Target>
 
   <Target Name="dotnetpublishfsicompiler" AfterTargets="CopyFilesToOutputDirectory" Condition=" '$(DOTNET_PUBLISH_FSI)' == 'true' ">
     <SetEnvVar Name="NUGET_PACKAGES" Value="$(NUGET_PACKAGES)" />
     <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe restore DeployCompiler\fsi\project.json"/>
-    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe --verbose publish --no-build DeployCompiler\fsi\project.json -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_FSI_PATH)"/>
+    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe &#45;&#45;verbose publish &#45;&#45;no-build DeployCompiler\fsi\project.json -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_FSI_PATH)"/>
   </Target>
 
   <Target Name="GenerateSourceLink" BeforeTargets="CoreCompile" Condition="'$(UseSourceLink)' == 'true'">

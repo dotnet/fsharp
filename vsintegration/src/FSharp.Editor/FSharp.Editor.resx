@@ -162,13 +162,37 @@
   <data name="6008" xml:space="preserve">
     <value>IntelliSense</value>
   </data>
-  <data name="IntelliSensePropertyPageMiscCategory" xml:space="preserve">
-    <value>Misc</value>
+  <data name="6009" xml:space="preserve">
+    <value>QuickInfo</value>
   </data>
-  <data name="IntelliSensePropertyPageShowAfterCharIsTyped" xml:space="preserve">
-    <value>Show after a character is typed</value>
+  <data name="AddAssemblyReference" xml:space="preserve">
+    <value>Add an assembly reference to '{0}'</value>
   </data>
-  <data name="IntelliSensePropertyPageShowAfterCharIsTypedDescr" xml:space="preserve">
-    <value>Show completion list after a character is typed</value>
+  <data name="AddProjectReference" xml:space="preserve">
+    <value>Add a project reference to '{0}'</value>
+  </data>
+  <data name="6010" xml:space="preserve">
+    <value>Code Fixes</value>
+  </data>
+  <data name="TheValueIsUnused" xml:space="preserve">
+    <value>The value is unused</value>
+  </data>
+  <data name="CannotDetermineSymbol" xml:space="preserve">
+    <value>Cannot determine the symbol under the caret</value>
+  </data>
+  <data name="CannotNavigateUnknown" xml:space="preserve">
+    <value>Cannot navigate to the requested location</value>
+  </data>
+  <data name="LocatingSymbol" xml:space="preserve">
+    <value>Locating the symbol under the caret...</value>
+  </data>
+  <data name="NavigatingTo" xml:space="preserve">
+    <value>Navigating to symbol...</value>
+  </data>
+  <data name="NavigateToFailed" xml:space="preserve">
+    <value>Navigate to symbol failed: {0}</value>
+  </data>
+  <data name="ExceptionsHeader" xml:space="preserve">
+    <value>Exceptions:</value>
   </data>
 </root>

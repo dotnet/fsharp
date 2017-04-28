@@ -66,7 +66,7 @@ this file.
 
     <PropertyGroup>
         <UsingXBuild>false</UsingXBuild>
-        <UsingXBuild Condition="$(MSBuildExtensionsPath32.Contains('xbuild'))">true</UsingXBuild>
+        <UsingXBuild Condition="'$(MSBuildAssemblyVersion)' == ''">true</UsingXBuild>
     </PropertyGroup>
 
     <Target
@@ -211,7 +211,7 @@ this file.
             <ActualEmbeddedResources
                 Condition=" '$(UsingXBuild)' == true"
                 Include="@(_CoreCompileResourceInputs);@(ManifestResourceWithNoCulture);@(ManifestNonResxWithNoCultureOnDisk);@(CompiledLicenseFile);@(AdditionalEmbeddedResource)" />
-            <ActualEmbeddedResources
+          <ActualEmbeddedResources
                 Condition=" '$(UsingXBuild)' != true"
                 Include="@(_CoreCompileResourceInputs);@(CompiledLicenseFile);@(AdditionalEmbeddedResource)" />
         </ItemGroup>
@@ -305,7 +305,8 @@ this file.
             Overwrite="true"/>
 
         <ItemGroup>
-            <CompileBefore Include="$(TargetFrameworkMonikerAssemblyAttributesPath)" Condition="'$(AdditionalSourcesText)' != ''"/>
+            <CompileBefore Include="$(TargetFrameworkMonikerAssemblyAttributesPath)" Condition="'$(AdditionalSourcesText)' != '' AND ('$(OutputType)' == 'Exe' OR '$(OutputType)' == 'WinExe')"/>
+            <CompileAfter Include="$(TargetFrameworkMonikerAssemblyAttributesPath)" Condition="'$(AdditionalSourcesText)' != '' AND '$(OutputType)' != 'Exe' AND '$(OutputType)' != 'WinExe'"/>
         </ItemGroup>
 
     </Target>

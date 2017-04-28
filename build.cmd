@@ -190,6 +190,10 @@ if /i "%ARG%" == "microbuild" (
     set TEST_VS_IDEUNIT_SUITE=1
     set CI=1
     set PUBLISH_VSIX=1
+
+    REM redirecting TEMP directories
+    set TEMP=%~dp0%BUILD_CONFIG%\TEMP
+    set TMP=%~dp0%BUILD_CONFIG%\TEMP
 )
 
 REM These divide "ci" into two chunks which can be done in parallel
@@ -378,6 +382,7 @@ echo INCLUDE_TEST_SPEC_NUNIT=%INCLUDE_TEST_SPEC_NUNIT%
 echo INCLUDE_TEST_TAGS=%INCLUDE_TEST_TAGS%
 echo PUBLISH_VSIX=%PUBLISH_VSIX%
 echo MYGET_APIKEY=%MYGET_APIKEY%
+echo TEMP=%TEMP%
 
 REM load Visual Studio 2017 developer command prompt if VS150COMNTOOLS is not set
 
@@ -518,7 +523,7 @@ if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
 set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
 set NUGET_PACKAGES=%~dp0Packages
 
-set _fsiexe="packages\FSharp.Compiler.Tools.4.0.1.21\tools\fsi.exe"
+set _fsiexe="packages\FSharp.Compiler.Tools.4.1.5\tools\fsi.exe"
 if not exist %_fsiexe% echo Error: Could not find %_fsiexe% && goto :failure
 %_ngenexe% install %_fsiexe% /nologo 
 
@@ -558,8 +563,8 @@ if "%BUILD_PROTO%" == "1" (
 
   if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "0" (
 
-    echo %_ngenexe% install packages\FSharp.Compiler.Tools.4.0.1.21\tools\fsc.exe /nologo 
-         %_ngenexe% install packages\FSharp.Compiler.Tools.4.0.1.21\tools\fsc.exe /nologo 
+    echo %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.5\tools\fsc.exe /nologo 
+         %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.5\tools\fsc.exe /nologo 
 
     echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
          %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
@@ -648,7 +653,7 @@ echo WHERE_ARG_NUNIT=!WHERE_ARG_NUNIT!
 
 set NUNITPATH=%~dp0tests\fsharpqa\testenv\bin\nunit\
 set NUNIT3_CONSOLE=%~dp0packages\NUnit.Console.3.0.0\tools\nunit3-console.exe
-set link_exe=%~dp0packages\VisualCppTools.14.0.24519-Pre\lib\native\bin\link.exe
+set link_exe=%~dp0tests\fsharpqa\testenv\bin\link\link.exe
 if not exist "%link_exe%" (
     echo Error: failed to find "%link_exe%" use nuget to restore the VisualCppTools package
     goto :failure
@@ -667,7 +672,6 @@ ECHO NUNIT3_CONSOLE=%NUNIT3_CONSOLE%
 ECHO NUNITPATH=%NUNITPATH%
 
 REM ---------------- net40-fsharp  -----------------------
-
 
 if "%TEST_NET40_FSHARP_SUITE%" == "1" (
 
@@ -709,16 +713,16 @@ if "%TEST_NET40_FSHARPQA_SUITE%" == "1" (
     set FSC=!FSCBINPATH!\fsc.exe
     set FSCOREDLLPATH=!FSCBinPath!\FSharp.Core.dll
     set PATH=!FSCBINPATH!;!PATH!
-    set perlexe= %~dp0packages\StrawberryPerl64.5.22.2.1\Tools\perl\bin\perl.exe
-    if not exist %perlexe% echo Error: perl was not downloaded from check the packages directory: %perlexe% && goto :failure
+    set perlexe=%~dp0packages\StrawberryPerl64.5.22.2.1\Tools\perl\bin\perl.exe
+    if not exist !perlexe! (echo Error: perl was not downloaded from check the packages directory: !perlexe! && goto :failure )
 
     set OUTPUTFILE=test-net40-fsharpqa-results.log
     set ERRORFILE=test-net40-fsharpqa-errors.log
     set FAILENV=test-net40-fsharpqa-errors
 
     pushd %~dp0tests\fsharpqa\source
-    echo %perlexe% %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot !RESULTSDIR! -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no !TTAGS_ARG_RUNALL! !PARALLEL_ARG!
-         %perlexe% %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot !RESULTSDIR! -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no !TTAGS_ARG_RUNALL! !PARALLEL_ARG!
+    echo !perlexe! %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot !RESULTSDIR! -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no !TTAGS_ARG_RUNALL! !PARALLEL_ARG!
+         !perlexe! %~dp0tests\fsharpqa\testenv\bin\runall.pl -resultsroot !RESULTSDIR! -results !OUTPUTFILE! -log !ERRORFILE! -fail !FAILENV! -cleanup:no !TTAGS_ARG_RUNALL! !PARALLEL_ARG!
 
     popd
     if ERRORLEVEL 1 (
