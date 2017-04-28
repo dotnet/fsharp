@@ -184,7 +184,7 @@ type CodeLensTag(width, topSpace, baseline, textHeight, bottomSpace, affinity, i
     member val Text = text with get, set
 
 
-type internal CodeLensTagger  
+type internal CodeLensTagger   
     (
         workspace: Workspace,
         documentId: Lazy<DocumentId>,
@@ -220,20 +220,21 @@ type internal CodeLensTagger
                     let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true)
                     let! symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
                     
+                    do! Async.SwitchToContext uiContext |> liftAsync
                     codeLensLines.Clear()
                     let view = self.WpfTextView.Value;
+                    let textSnapshot = view.TextSnapshot.TextBuffer.CurrentSnapshot
                     Logging.Logging.logInfof "Updating code lens due to buffer edit!"
                     let useResults (displayContext: FSharpDisplayContext, func: FSharpMemberOrFunctionOrValue) =
                         async {
                             let lineNumber = Line.toZ func.DeclarationLocation.StartLine
                         
-                            if (lineNumber >= 0 || lineNumber < view.TextSnapshot.LineCount) && 
+                            if (lineNumber >= 0 || lineNumber < textSnapshot.LineCount) && 
                                 not func.IsPropertyGetterMethod && 
                                 not func.IsPropertySetterMethod then
                         
                                 match func.FullTypeSafe with
                                 | Some ty ->
-                                    let bufferPosition = view.TextSnapshot.GetLineFromLineNumber(lineNumber).Start
                                     let! displayEnv = checkFileResults.GetDisplayEnvForPos(func.DeclarationLocation.Start)
                                     
                                     let displayContext =
@@ -246,15 +247,7 @@ type internal CodeLensTagger
                                     Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
 
                                     let m = func.DeclarationLocation
-                                    let line = view.TextViewLines.GetTextViewLineContainingBufferPosition(bufferPosition)
-                    
-                                    let offset = 
-                                        [0..line.Length - 1] |> Seq.tryFind (fun i -> not (Char.IsWhiteSpace (line.Start.Add(i).GetChar())))
-                                        |> Option.defaultValue 0
-
-                                    let realStart = line.Start.Add(offset)
-                                    let span = SnapshotSpan(line.Snapshot, Span.FromBounds(int realStart, int line.End))
-                                    let geometry = view.TextViewLines.GetMarkerGeometry(span)
+                                    
                                     let textBox = TextBlock(Width = 500., Background = Brushes.Transparent, Opacity = 0.5, TextTrimming = TextTrimming.WordEllipsis)
                                     DependencyObjectExtensions.SetDefaultTextProperties(textBox, formatMap.Value)
                                     let navigation = QuickInfoNavigation(gotoDefinitionService, document, m)
@@ -269,9 +262,6 @@ type internal CodeLensTagger
                                                 h :> Documents.Inline
                                             | _ -> run :> _
                                         textBox.Inlines.Add inl
-                    
-                                    Canvas.SetLeft(textBox, geometry.Bounds.Left)
-                                    Canvas.SetTop(textBox, geometry.Bounds.Top - 15.)
                                         
                                     codeLensLines.[lineNumber] <- textBox
 
@@ -286,7 +276,6 @@ type internal CodeLensTagger
                                     do! useResults (symbolUse.DisplayContext, func) |> liftAsync
                             | _ -> ()
                     
-                    do! Async.SwitchToContext uiContext |> liftAsync
                     view.DisplayTextLineContainingBufferPosition(view.TextViewLines.FirstVisibleLine.Start, 0., ViewRelativePosition.Top)
                 with
                 | e -> Logging.Logging.logErrorf "Error occured: %A" e
@@ -319,10 +308,19 @@ type internal CodeLensTagger
                         if not self.CodeLensLayer.IsValueCreated then
                             self.CodeLensLayer.Force() |> ignore
                         let layer = self.CodeLensLayer.Value
+                        let offset = 
+                            [0..line.Length - 1] |> Seq.tryFind (fun i -> not (Char.IsWhiteSpace (line.Start.Add(i).GetChar())))
+                            |> Option.defaultValue 0
+                        let view = self.WpfTextView.Value
+                        let realStart = line.Start.Add(offset)
+                        let span = SnapshotSpan(line.Snapshot, Span.FromBounds(int realStart, int line.End))
+                        let geometry = view.TextViewLines.GetMarkerGeometry(span)
                         let ui = codeLensLines.[buffer.CurrentSnapshot.GetLineNumberFromPosition(line.Start.Position)]
+                        Canvas.SetLeft(ui, geometry.Bounds.Left)
+                        Canvas.SetTop(ui, geometry.Bounds.Top - 15.)
                         layer.AddAdornment(line.Extent, t, ui) |> ignore
                     with
-                    | _ -> ()
+                    | e -> Logging.Logging.logErrorf "Error occured: %A" e
                     ()
             ()
 
@@ -395,6 +393,7 @@ type internal CodeLensProvider
             let tagger = getSuitableAdornmentProvider view.TextBuffer
             tagger.WpfTextView <- Lazy<_>.CreateFromValue view
             tagger.CodeLensLayer <- Lazy<_>.CreateFromValue(view.GetAdornmentLayer "CodeLens")
+            view.LayoutChanged.AddHandler(fun _ e -> tagger.LayoutChanged e)
             ()
 
     interface ITaggerProvider with
