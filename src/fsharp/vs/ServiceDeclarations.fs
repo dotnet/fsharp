@@ -509,7 +509,7 @@ module internal ItemDescriptionsImpl =
 
     let FormatTyparMapping denv (prettyTyparInst: TyparInst) = 
         [ for (tp,ty) in prettyTyparInst -> 
-            wordL (tagTypeParameter ("'" + tp.DisplayName))  ^^ RightL.colon ^^ NicePrint.layoutType denv ty  ]
+            wordL (tagTypeParameter ("'" + tp.DisplayName))  ^^ wordL Literals.colon ^^ NicePrint.layoutType denv ty  ]
 
     /// Generate the structured tooltip for a method info
     let FormatOverloadsToList (infoReader:InfoReader) m denv (item: ItemWithInst) minfos : FSharpStructuredToolTipElement = 
