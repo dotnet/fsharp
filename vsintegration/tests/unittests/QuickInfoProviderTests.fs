@@ -55,8 +55,10 @@ let private getQuickInfoText (FSharpToolTipText elements) : string =
         | FSharpToolTipElement.Group(xs) -> 
             let text = xs |> List.map (fun item -> item.MainDescription) |> String.concat "\n"
             let tps = xs |> List.collect (fun item -> item.TypeMapping)
-            let tptext = (match tps with [] -> "" | _ -> "\n" + String.concat "\n" tps)
-            text + tptext
+            let remarks = xs |> List.choose (fun item -> item.Remarks)
+            let tpText = (match tps with [] -> "" | _ -> "\n" + String.concat "\n" tps)
+            let remarksText = (match remarks with [] -> "" | _ -> "\n" + String.concat "\n" remarks)
+            text + remarksText + tpText
         | FSharpToolTipElement.CompositionError(error) -> error
     elements |> List.map (Tooltips.ToFSharpToolTipElement >> parseElement) |> String.concat "\n" |> normalizeLineEnds
 

@@ -1,4 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+//
+// THIS CODE IS DEPRECATED AND IS ONLY USED FOR UNIT TESTING
+//
 
 namespace Microsoft.VisualStudio.FSharp.LanguageService
 
@@ -223,27 +226,6 @@ module internal XmlDocumentation =
         do solutionEvents.add_AfterClosing(fun () -> 
             xmlCache.Clear(vsToken))
 
-    #if DEBUG // Keep under DEBUG so that it can keep building.
-
-        let _AppendTypeParameters (collector: ITaggedTextCollector) (memberData:IVsXMLMemberData3) = 
-            let ok,count = memberData.GetTypeParamCount()
-            if Com.Succeeded(ok) && count > 0 then 
-                for param in 0..count do
-                    let ok,name,text = memberData.GetTypeParamTextAt(param)
-                    if Com.Succeeded(ok) then
-                        EnsureHardLine collector
-                        collector.Add(tagTypeParameter name)
-                        collector.Add(Literals.space)
-                        collector.Add(tagPunctuation "-")
-                        collector.Add(Literals.space)
-                        collector.Add(tagText text)
-
-        let _AppendRemarks (collector: ITaggedTextCollector) (memberData:IVsXMLMemberData3) = 
-            let ok,remarksText = memberData.GetRemarksText()
-            if Com.Succeeded(ok) then 
-                AppendOnNewLine collector remarksText            
-    #endif
-
         let _AppendReturns (collector: ITaggedTextCollector) (memberData:IVsXMLMemberData3) = 
             let ok,returnsText = memberData.GetReturnsText()
             if Com.Succeeded(ok) then 
@@ -370,9 +352,13 @@ module internal XmlDocumentation =
                             textCollector.Add (tagText(PrettyNaming.FormatAndOtherOverloadsString(len-5)))
 
                     let item0 = overloads.[0]
-                    AppendXmlComment(documentationProvider, textCollector, item0.XmlDoc, showExceptions, showParameters, item0.ParamName)
+
                     item0.Remarks |> Option.iter (fun r -> 
+                        textCollector.Add Literals.lineBreak
                         renderL (taggedTextListR textCollector.Add) r |> ignore)
+
+                    AppendXmlComment(documentationProvider, xmlCollector, item0.XmlDoc, showExceptions, showParameters, item0.ParamName)
+
                     true
                 else
                     false

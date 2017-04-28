@@ -383,11 +383,13 @@ module internal XmlDocumentation =
                             textCollector.Add (tagText(PrettyNaming.FormatAndOtherOverloadsString(len-5)))
 
                     let item0 = overloads.[0]
-                    AppendXmlComment(documentationProvider, xmlCollector, exnCollector, item0.XmlDoc, showExceptions, showParameters, item0.ParamName)
+
                     item0.Remarks |> Option.iter (fun r -> 
                         if not(isEmptyL r) then
                             AppendHardLine usageCollector
                             renderL (taggedTextListR usageCollector.Add) r |> ignore)
+
+                    AppendXmlComment(documentationProvider, xmlCollector, exnCollector, item0.XmlDoc, showExceptions, showParameters, item0.ParamName)
 
                     if showText then 
                         ProcessGenericParameters item0.TypeMapping

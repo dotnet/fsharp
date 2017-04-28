@@ -3664,7 +3664,7 @@ query."
                         where (result |> Array.exists(fun i -> i = char)) 
                         yield char
                        } """
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Mark1*)", "member WorkflowBuilder.Combine : f:'b * g:'c -> 'c",queryAssemblyRefs)
+        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Mark1*)", "member WorkflowBuilder.Combine : f:'b0 * g:'c1 -> 'c1",queryAssemblyRefs)
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Mark2*)", "member WorkflowBuilder.Zero : unit -> unit",queryAssemblyRefs)
 
     [<Test>]
