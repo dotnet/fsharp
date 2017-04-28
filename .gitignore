@@ -79,12 +79,11 @@ Release
 Proto
 sign_temp
 .libs
-Makefile
 configure
 launcher
 autom4te.cache
 config.log
-config.make
+mono/config.make
 config.status
 *~
 *.suo
