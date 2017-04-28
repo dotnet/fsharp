@@ -347,13 +347,6 @@ let isMscorlib data =
     if System.String.Compare(data.assemRefName, "mscorlib") = 0 then true 
     else false
 
-let GetReferenceUnifiedVersion data = 
-    let mutable highest = data.assemRefVersion
-    if not (isMscorlib data) then 
-        for ref in AssemblyRefUniqueStampGenerator.Table do
-            if System.String.Compare(ref.assemRefName, data.assemRefName) = 0 && highest < ref.assemRefVersion then 
-                highest <- ref.assemRefVersion
-    highest
 
 [<Sealed>]
 type ILAssemblyRef(data)  =  
@@ -362,7 +355,7 @@ type ILAssemblyRef(data)  =
     member x.Hash=data.assemRefHash
     member x.PublicKey=data.assemRefPublicKeyInfo
     member x.Retargetable=data.assemRefRetargetable  
-    member x.Version=GetReferenceUnifiedVersion data
+    member x.Version=data.assemRefVersion
     member x.Locale=data.assemRefLocale
     member x.UniqueStamp=uniqueStamp
     override x.GetHashCode() = uniqueStamp
