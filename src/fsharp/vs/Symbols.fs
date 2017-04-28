@@ -218,6 +218,11 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
     let isResolved() = not (isUnresolved())
     let checkIsResolved() = checkEntityIsResolved entity
 
+    let isDefinedInFSharpCore() =
+        match ccuOfTyconRef entity with
+        | None -> false
+        | Some ccu -> ccuEq ccu cenv.g.fslibCcu
+
     member __.Entity = entity
         
     member __.LogicalName = 
@@ -520,16 +525,33 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
 
     member __.AllCompilationPaths =
         checkIsResolved()
-        let (CompilationPath.CompPath(_, parts)) = entity.CompilationPath
-        ([], parts) ||> List.fold (fun res (part, kind) ->
-            let parts =
-                match kind with
-                | ModuleOrNamespaceKind.FSharpModuleWithSuffix ->
-                    [part; part.[..part.Length - 7]]
-                | _ -> [part]
+        let (CompPath(_, parts)) = entity.CompilationPath
+        let partsList =
+            [ yield parts
+              match parts with
+              | ("Microsoft", ModuleOrNamespaceKind.Namespace) :: rest when isDefinedInFSharpCore() -> yield rest
+              | _ -> ()]
 
-            parts |> List.collect (fun part -> 
-                res |> List.map (fun path -> path + "." + part)))
+        let walkParts (parts: (string * ModuleOrNamespaceKind) list) = //: string list list =
+            let rec loop currentPath parts =
+                match parts with
+                | [] -> List.rev currentPath
+                | (name: string, kind) :: rest ->
+                    match kind with
+                    | ModuleOrNamespaceKind.FSharpModuleWithSuffix ->
+                       let p = name :: currentPath
+                       let res = loop p rest
+                       let p = name.[..name.Length - 7] :: currentPath
+                       loop p rest
+                    | _ -> 
+                       let p = name :: currentPath
+                       loop p rest
+            loop [] parts |> String.concat "."
+            
+        let res =
+            [ for parts in partsList do
+                yield! walkParts parts ]
+        res
 
     override x.Equals(other : obj) =
         box x === other ||
