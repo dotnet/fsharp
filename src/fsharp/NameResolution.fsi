@@ -446,8 +446,16 @@ type AfterResolution =
     /// Notification is not needed
     | DoNothing
 
-    /// Notify the sink of the resolution of an overload. The 'Item' contains the candidate overrides.
-    | OverloadResolution of Item option * (MethInfo * PropInfo option * TyparInst -> unit) * (unit -> unit)
+    /// Notify the sink of the information needed to complete recording a use of a symbol
+    /// for the purposes of the language service.  One of the callbacks should be called by 
+    /// the checker.
+    ///
+    /// The first callback represents a case where we have learned the type 
+    /// instantiation of a generic method or value.
+    ///
+    /// The second represents the case where we have resolved overloading and/or 
+    /// a specific override. The 'Item option' contains the candidate overrides.
+    | RecordResolution of Item option * (TyparInst -> unit) * (MethInfo * PropInfo option * TyparInst -> unit) * (unit -> unit)
 
 /// Resolve a long identifier occurring in an expression position.
 val internal ResolveLongIdentAsExprAndComputeRange  : TcResultsSink -> NameResolver -> range -> AccessorDomain -> NameResolutionEnv -> TypeNameResolutionInfo -> Ident list -> Item * range * Ident list * AfterResolution

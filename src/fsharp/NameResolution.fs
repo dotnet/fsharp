@@ -3168,11 +3168,15 @@ let FilterMethodGroups (ncenv:NameResolver) itemRange item staticOnly =
     | item -> item
 
 let NeedsWorkAfterResolution namedItem =
-  match namedItem with
-  | Item.MethodGroup(_,minfos,_) 
-  | Item.CtorGroup(_,minfos) -> minfos.Length > 1 || minfos |> List.exists (fun minfo -> not (isNil minfo.FormalMethodInst))
-  | Item.Property(_,pinfos) -> pinfos.Length > 1
-  | _ -> false
+    match namedItem with
+    | Item.MethodGroup(_,minfos,_) 
+    | Item.CtorGroup(_,minfos) -> minfos.Length > 1 || minfos |> List.exists (fun minfo -> not (isNil minfo.FormalMethodInst))
+    | Item.Property(_,pinfos) -> pinfos.Length > 1
+    | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) }) 
+    | Item.Value vref | Item.CustomBuilder (_,vref) -> vref.Typars.Length > 0
+    | Item.CustomOperation (_,_,Some minfo) -> not (isNil minfo.FormalMethodInst)
+    | Item.ActivePatternCase apref -> apref.ActivePatternVal.Typars.Length > 0
+    | _ -> false
 
 /// Specifies additional work to do after an item has been processed further in type checking.
 [<RequireQualifiedAccess>]
@@ -3182,7 +3186,7 @@ type AfterResolution =
     | DoNothing
 
     /// Notify the tcSink of a precise resolution. The 'Item' contains the candidate overrides.
-    | OverloadResolution of Item option * (MethInfo * PropInfo option * TyparInst -> unit) * (unit -> unit)
+    | RecordResolution of Item option * (TyparInst -> unit) * (MethInfo * PropInfo option * TyparInst -> unit) * (unit -> unit)
 
 /// Resolve a long identifier occurring in an expression position.
 ///
@@ -3231,7 +3235,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink:TcResultsSink) (ncenv:NameResolv
         | None -> AfterResolution.DoNothing
         | Some _ ->
             if NeedsWorkAfterResolution item then
-                AfterResolution.OverloadResolution(None, callSinkWithSpecificOverload, (fun () -> callSink (item, emptyTyparInst)))
+                AfterResolution.RecordResolution(None, (fun tpinst -> callSink(item,tpinst)), callSinkWithSpecificOverload, (fun () -> callSink (item, emptyTyparInst)))
             else
                callSink (item, emptyTyparInst)
                AfterResolution.DoNothing
@@ -3288,9 +3292,9 @@ let ResolveExprDotLongIdentAndComputeRange (sink:TcResultsSink) (ncenv:NameResol
 
             match overrides, NeedsWorkAfterResolution unrefinedItem with
             | false, true -> 
-                AfterResolution.OverloadResolution (None, callSinkWithSpecificOverload, (fun () -> callSink (unrefinedItem, emptyTyparInst)))
+                AfterResolution.RecordResolution (None, (fun tpinst -> callSink(item,tpinst)), callSinkWithSpecificOverload, (fun () -> callSink (unrefinedItem, emptyTyparInst)))
             | true, true  -> 
-                AfterResolution.OverloadResolution (Some unrefinedItem, callSinkWithSpecificOverload, (fun () -> callSink (unrefinedItem, emptyTyparInst)))
+                AfterResolution.RecordResolution (Some unrefinedItem, (fun tpinst -> callSink(item,tpinst)), callSinkWithSpecificOverload, (fun () -> callSink (unrefinedItem, emptyTyparInst)))
             | _ , false   -> 
                 callSink (unrefinedItem, emptyTyparInst)
                 AfterResolution.DoNothing

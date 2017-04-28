@@ -2357,22 +2357,22 @@ module PrettyTypes =
     let foldTyparInst f z (x: TyparInst) =  List.fold (foldPair (foldTypar f, f)) z x
     let mapTyparInst g f (x: TyparInst) : TyparInst = List.map (mapPair (mapTypar g f, f)) x
 
-    let PrettifyTyparsAndType g x = 
+    let PrettifyInstAndTyparsAndType g x = 
         PrettifyThings g 
-            (fun f -> foldPair (foldTypars f, f)) 
-            (fun f-> mapPair (mapTypars g f, f)) 
+            (fun f -> foldTriple (foldTyparInst f, foldTypars f, f)) 
+            (fun f-> mapTriple (mapTyparInst g f, mapTypars g f, f)) 
             x
 
-    let PrettifyUncurriedSig  g (x:UncurriedArgInfos * TType) = 
+    let PrettifyInstAndUncurriedSig  g (x: TyparInst * UncurriedArgInfos * TType) = 
         PrettifyThings g 
-            (fun f -> foldPair (foldUnurriedArgInfos f, f)) 
-            (fun f -> mapPair (List.map (map1Of2  f),f))
+            (fun f -> foldTriple (foldTyparInst f, foldUnurriedArgInfos f, f)) 
+            (fun f -> mapTriple (mapTyparInst g f, List.map (map1Of2  f),f))
             x
 
-    let PrettifyCurriedSig g (x:TType list * CurriedArgInfos * TType) = 
+    let PrettifyInstAndCurriedSig g (x: TyparInst * TTypes * CurriedArgInfos * TType) = 
         PrettifyThings g 
-            (fun f -> foldTriple (List.fold f, List.fold (List.fold (fold1Of2 f)),f)) 
-            (fun f -> mapTriple (List.map f, List.mapSquared (map1Of2  f), f))
+            (fun f -> foldQuadruple (foldTyparInst f, List.fold f, List.fold (List.fold (fold1Of2 f)),f)) 
+            (fun f -> mapQuadruple (mapTyparInst g f, List.map f, List.mapSquared (map1Of2 f), f))
             x
 
     let PrettifyInstAndSig g x = 
@@ -2381,16 +2381,16 @@ module PrettyTypes =
             (fun f -> mapTriple (mapTyparInst g f, List.map f, f) )
             x
 
-    let PrettifyInstAndUncurriedSig g x = 
-        PrettifyThings g 
-            (fun f -> foldTriple (foldTyparInst f, foldUnurriedArgInfos f, List.fold f))
-            (fun f -> mapTriple (mapTyparInst g f, mapUnurriedArgInfos f, List.map f)) 
-            x
-
     let PrettifyInstAndTypes g x = 
         PrettifyThings g 
             (fun f -> foldPair (foldTyparInst f, List.fold f)) 
             (fun f -> mapPair (mapTyparInst g f, List.map f))
+            x
+ 
+    let PrettifyInstAndType g x = 
+        PrettifyThings g 
+            (fun f -> foldPair (foldTyparInst f, f)) 
+            (fun f -> mapPair (mapTyparInst g f, f))
             x
  
     let PrettifyInst g x = 

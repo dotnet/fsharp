@@ -614,16 +614,17 @@ module PrettyTypes =
     val NewPrettyTypars : TyparInst -> Typars -> string list -> Typars * TyparInst
     val PrettyTyparNames : (Typar -> bool) -> string list -> Typars -> string list
     val PrettifyType : TcGlobals -> TType -> TType * TyparConstraintsWithTypars
-    val PrettifyTyparsAndType : TcGlobals -> Typars * TType -> (Typars * TType) * TyparConstraintsWithTypars
+    val PrettifyInstAndTyparsAndType : TcGlobals -> TyparInst * Typars * TType -> (TyparInst * Typars * TType) * TyparConstraintsWithTypars
     val PrettifyTypePair : TcGlobals -> TType * TType -> (TType * TType) * TyparConstraintsWithTypars
     val PrettifyTypes : TcGlobals -> TTypes -> TTypes * TyparConstraintsWithTypars
     val PrettifyInst : TcGlobals -> TyparInst -> TyparInst * TyparConstraintsWithTypars
+    val PrettifyInstAndType : TcGlobals -> TyparInst * TType -> (TyparInst * TType) * TyparConstraintsWithTypars
     val PrettifyInstAndTypes : TcGlobals -> TyparInst * TTypes -> (TyparInst * TTypes) * TyparConstraintsWithTypars
     val PrettifyInstAndSig : TcGlobals -> TyparInst * TTypes * TType -> (TyparInst * TTypes * TType) * TyparConstraintsWithTypars
     val PrettifyCurriedTypes : TcGlobals -> TType list list -> TType list list * TyparConstraintsWithTypars
     val PrettifyCurriedSigTypes : TcGlobals -> TType list list * TType -> (TType list list * TType) * TyparConstraintsWithTypars
-    val PrettifyUncurriedSig : TcGlobals -> UncurriedArgInfos * TType -> (UncurriedArgInfos * TType) * TyparConstraintsWithTypars
-    val PrettifyCurriedSig : TcGlobals -> TType list * CurriedArgInfos * TType -> (TType list * CurriedArgInfos * TType) * TyparConstraintsWithTypars
+    val PrettifyInstAndUncurriedSig : TcGlobals -> TyparInst * UncurriedArgInfos * TType -> (TyparInst * UncurriedArgInfos * TType) * TyparConstraintsWithTypars
+    val PrettifyInstAndCurriedSig : TcGlobals -> TyparInst * TTypes * CurriedArgInfos * TType -> (TyparInst * TTypes * CurriedArgInfos * TType) * TyparConstraintsWithTypars
 
 [<NoEquality; NoComparison>]
 type DisplayEnv = 

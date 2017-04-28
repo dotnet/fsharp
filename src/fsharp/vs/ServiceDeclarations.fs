@@ -495,6 +495,10 @@ module internal ItemDescriptionsImpl =
     let GetXmlCommentForMethInfoItem infoReader m d (minfo: MethInfo) = 
         GetXmlCommentForItemAux (if minfo.HasDirectXmlComment then Some minfo.XmlDoc else None) infoReader m d 
 
+    let FormatTyparMapping denv (prettyTyparInst: TyparInst) = 
+        [ for (tp,ty) in prettyTyparInst -> 
+            wordL (tagTypeParameter ("'" + tp.DisplayName))  ^^ RightL.colon ^^ NicePrint.layoutType denv ty  ]
+
     /// Generate the structured tooltip for a method info
     let FormatOverloadsToList (infoReader:InfoReader) m denv (item: ItemWithInst) minfos : FSharpStructuredToolTipElement = 
         ToolTipFault |> Option.iter (fun msg -> 
@@ -506,9 +510,7 @@ module internal ItemDescriptionsImpl =
             [ for minfo in minfos -> 
                 let prettyTyparInst, layout = NicePrint.prettyLayoutOfMethInfoFreeStyle infoReader.amap m denv item.TyparInst minfo
                 let xml = GetXmlCommentForMethInfoItem infoReader m item.Item minfo
-                let tpsL = 
-                    [ for (tp,ty) in prettyTyparInst -> 
-                        wordL (tagTypeParameter ("'" + tp.DisplayName))  ^^ RightL.colon ^^ NicePrint.layoutType denv ty  ]
+                let tpsL = FormatTyparMapping denv prettyTyparInst
                 (layout, xml, tpsL) ]
  
         FSharpStructuredToolTipElement.Group(layouts)
@@ -831,7 +833,7 @@ module internal ItemDescriptionsImpl =
             | _ -> false
         with _ -> false
 
-    /// Output the description of a language item
+    /// Output the quick info information of a language item
     let rec FormatItemDescriptionToToolTipElement isDecl (infoReader:InfoReader) m denv (item: ItemWithInst) = 
         let g = infoReader.g
         let amap = infoReader.amap
@@ -843,11 +845,14 @@ module internal ItemDescriptionsImpl =
             FormatItemDescriptionToToolTipElement isDecl infoReader m denv { item with Item = Item.Value vref }
 
         | Item.Value vref | Item.CustomBuilder (_,vref) ->            
+            let prettyTyparInst, resL = NicePrint.layoutQualifiedValOrMember denv item.TyparInst vref.Deref
             let layout = 
-                NicePrint.layoutQualifiedValOrMember denv vref.Deref ^^
+                resL ^^
                 OutputFullName isDecl pubpath_of_vref fullDisplayTextOfValRefAsLayout vref
 
-            FSharpStructuredToolTipElement.Single(layout, xml, [])
+            let tpsL = FormatTyparMapping denv prettyTyparInst
+
+            FSharpStructuredToolTipElement.Single(layout, xml, tpsL)
 
         // Union tags (constructors)
         | Item.UnionCase(ucinfo,_) -> 
@@ -880,14 +885,17 @@ module internal ItemDescriptionsImpl =
             // Format the type parameters to get e.g. ('a -> 'a) rather than ('?1234 -> '?1234)
             let tau = v.TauType
             // REVIEW: use _cxs here
-            let ptau, _cxs = PrettyTypes.PrettifyType denv.g tau
+            let (prettyTyparInst,ptau), _cxs = PrettyTypes.PrettifyInstAndType denv.g (item.TyparInst, tau)
             let layout =
                 wordL (tagText (FSComp.SR.typeInfoActiveRecognizer())) ^^
                 wordL (tagActivePatternCase apref.Name |> mkNav v.DefinitionRange) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv ptau ^^
                 OutputFullName isDecl pubpath_of_vref fullDisplayTextOfValRefAsLayout v
-            FSharpStructuredToolTipElement.Single(layout, xml, [])
+
+            let tpsL = FormatTyparMapping denv prettyTyparInst
+
+            FSharpStructuredToolTipElement.Single(layout, xml, tpsL)
 
         // F# exception names
         | Item.ExnCase ecref -> 
@@ -1278,7 +1286,7 @@ module internal ItemDescriptionsImpl =
                     // for display as part of the method group
                     prettyParams, prettyRetTyL
                 | None -> 
-                    let prettyTyL = NicePrint.prettyLayoutOfUncurriedSig denv [] tau
+                    let _prettyTyparInst, prettyTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] tau
                     [], prettyTyL
 
             match vref.ValReprInfo with
@@ -1343,19 +1351,19 @@ module internal ItemDescriptionsImpl =
 
         | Item.ExnCase ecref -> 
             let prettyParams = ecref |> recdFieldsOfExnDefRef |> List.mapi (PrettyParamOfUnionCaseField g denv NicePrint.isGeneratedExceptionField) 
-            let prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv [] g.exn_ty
+            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] g.exn_ty
             prettyParams, prettyRetTyL
 
         | Item.RecdField rfinfo ->
-            let prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv [] rfinfo.FieldType
+            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] rfinfo.FieldType
             [], prettyRetTyL
 
         | Item.ILField finfo ->
-            let prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv [] (finfo.FieldType(amap,m))
+            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] (finfo.FieldType(amap,m))
             [], prettyRetTyL
 
         | Item.Event einfo ->
-            let prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv [] (PropTypOfEventInfo infoReader m AccessibleFromSomewhere einfo)
+            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] (PropTypOfEventInfo infoReader m AccessibleFromSomewhere einfo)
             [], prettyRetTyL
 
         | Item.Property(_,pinfo :: _) -> 
@@ -1397,11 +1405,11 @@ module internal ItemDescriptionsImpl =
 
             | Some _ -> 
                 let rty = minfo.GetFSharpReturnTy(amap, m, minfo.FormalMethodInst)
-                let prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv [] rty
+                let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] rty
                 [], prettyRetTyL  // no parameter data available for binary operators like 'zip', 'join' and 'groupJoin' since they use bespoke syntax 
 
         | Item.FakeInterfaceCtor typ -> 
-            let prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv [] typ
+            let _prettyTyparInst, prettyRetTyL = NicePrint.prettyLayoutOfUncurriedSig denv item.TyparInst [] typ
             [], prettyRetTyL
 
         | Item.DelegateCtor delty -> 
