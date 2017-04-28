@@ -88,14 +88,14 @@ type Miscellaneous() =
             )
             
     [<Test>]
-    member public this.``Miscellaneous.FSharpFileNode.GetRelativePath`` () =
+    member public this.``Miscellaneous.FSharpFileNode.RelativeFilePath`` () =
         this.MakeProjectAndDo(["orig1.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "orig1.fs")
             let files = new List<FSharpFileNode>()
             project.FindNodesOfType(files)
             Assert.AreEqual(1, files.Count)
             let file = files.[0]
-            let path = file.GetRelativePath()
+            let path = file.RelativeFilePath
             Assert.AreEqual("orig1.fs", path)
             ))
            

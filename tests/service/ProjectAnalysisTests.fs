@@ -1471,8 +1471,8 @@ let ``Test project 5 all symbols`` () =
             ("val op_Modulus", "Microsoft.FSharp.Core.Operators.( % )", "file1",
              ((4, 34), (4, 35)), []);
             ("val input", "input", "file1", ((4, 28), (4, 33)), []);
-            ("symbol ", "Even", "file1", ((4, 47), (4, 51)), []);
-            ("symbol ", "Odd", "file1", ((4, 57), (4, 60)), []);
+            ("symbol ", "Even", "file1", ((4, 47), (4, 51)), ["defn"]);
+            ("symbol ", "Odd", "file1", ((4, 57), (4, 60)), ["defn"]);
             ("val |Even|Odd|", "ActivePatterns.( |Even|Odd| )", "file1",
              ((4, 5), (4, 15)), ["defn"]);
             ("val input", "input", "file1", ((7, 15), (7, 20)), ["defn"]);

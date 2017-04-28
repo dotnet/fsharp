@@ -9,12 +9,12 @@ open System.Diagnostics
 
 /// Checks if the filePath ends with ".fsi"
 let isSignatureFile (filePath:string) = 
-    Path.GetExtension filePath = ".fsi"
+    String.Equals (Path.GetExtension filePath, ".fsi", StringComparison.OrdinalIgnoreCase)
 
 /// Checks if the file paht ends with '.fsx' or '.fsscript'
 let isScriptFile (filePath:string) = 
     let ext = Path.GetExtension filePath 
-    String.Equals (ext,".fsi",StringComparison.OrdinalIgnoreCase) || String.Equals (ext,".fsscript",StringComparison.OrdinalIgnoreCase)
+    String.Equals (ext, ".fsx", StringComparison.OrdinalIgnoreCase) || String.Equals (ext, ".fsscript", StringComparison.OrdinalIgnoreCase)
 
 /// Path combination operator
 let (</>) path1 path2 = Path.Combine (path1, path2) 
@@ -197,40 +197,7 @@ module Async =
                     replyCh.Reply res 
             }
         async { return! agent.PostAndAsyncReply id }
-
-
-type Async with 
-
-    /// Better implementation of Async.AwaitTask that correctly passes the exception of a failed task to the async mechanism
-    static member AwaitTaskCorrect (task:Task) : Async<unit> =
-        Async.FromContinuations (fun (successCont,exceptionCont,_cancelCont) ->
-            task.ContinueWith (fun (task:Task) ->
-                if task.IsFaulted then
-                    let e = task.Exception
-                    if e.InnerExceptions.Count = 1 then 
-                        exceptionCont e.InnerExceptions.[0]
-                    else exceptionCont e
-                elif task.IsCanceled then
-                    exceptionCont(TaskCanceledException ())
-                else successCont ())
-            |> ignore)
-
-    /// Better implementation of Async.AwaitTask that correctly passes the exception of a failed task to the async mechanism
-    static member AwaitTaskCorrect (task:'T Task) : Async<'T> =
-        Async.FromContinuations( fun (successCont,exceptionCont,_cancelCont) ->
-            task.ContinueWith (fun (task:'T Task) ->
-                if task.IsFaulted then
-                    let e = task.Exception
-                    if e.InnerExceptions.Count = 1 then 
-                        exceptionCont e.InnerExceptions.[0]
-                    else exceptionCont e
-                elif task.IsCanceled then
-                    exceptionCont (TaskCanceledException ())
-                else successCont task.Result)
-            |> ignore)    
-    static member RunTaskSynchronously task  = 
-        task |> Async.AwaitTask |> Async.RunSynchronously 
-
+        
 
 type AsyncBuilder with
     member __.Bind(computation: System.Threading.Tasks.Task<'a>, binder: 'a -> Async<'b>): Async<'b> =
