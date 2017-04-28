@@ -532,21 +532,23 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
               | ("Microsoft", ModuleOrNamespaceKind.Namespace) :: rest when isDefinedInFSharpCore() -> yield rest
               | _ -> ()]
 
+        let mapEachCurrentPath (paths: string list list) path =
+            match paths with
+            | [] -> [[path]]
+            | _ -> paths |> List.map (fun x -> path :: x)
+
         let walkParts (parts: (string * ModuleOrNamespaceKind) list) = //: string list list =
-            let rec loop currentPath parts =
+            let rec loop (currentPaths: string list list) parts =
                 match parts with
-                | [] -> List.rev currentPath
+                | [] -> currentPaths
                 | (name: string, kind) :: rest ->
                     match kind with
                     | ModuleOrNamespaceKind.FSharpModuleWithSuffix ->
-                       let p = name :: currentPath
-                       let res = loop p rest
-                       let p = name.[..name.Length - 7] :: currentPath
-                       loop p rest
+                        [ yield! loop (mapEachCurrentPath currentPaths name) rest
+                          yield! loop (mapEachCurrentPath currentPaths (name.[..name.Length - 7])) rest ]
                     | _ -> 
-                       let p = name :: currentPath
-                       loop p rest
-            loop [] parts |> String.concat "."
+                       loop (mapEachCurrentPath currentPaths name) rest
+            loop [] parts |> List.map (List.rev >> String.concat ".")
             
         let res =
             [ for parts in partsList do

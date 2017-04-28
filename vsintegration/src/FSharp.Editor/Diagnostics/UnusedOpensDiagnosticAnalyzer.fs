@@ -64,9 +64,6 @@ module private UnusedOpens =
                   if ent.HasFSharpModuleSuffix then
                     yield Some (ent.AccessPath + "." + ent.DisplayName)]
             else
-                let cc = ent.AllCompilationPaths
-                let _x = cc
-
                 [ yield ent.Namespace
                   yield Some ent.AccessPath
                   yield getAutoOpenAccessPath ent
