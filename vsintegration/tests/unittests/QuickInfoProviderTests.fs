@@ -52,13 +52,9 @@ let private normalizeLineEnds (s: string) = s.Replace("\r\n", "\n").Replace("\n\
 let private getQuickInfoText (FSharpToolTipText elements) : string =
     let rec parseElement = function
         | FSharpToolTipElement.None -> ""
-        | FSharpToolTipElement.Single(text, _, tps) -> 
-            let tptext = (match tps with [] -> "" | _ -> "\n" + String.concat "\n" tps)
-            text + tptext
-        | FSharpToolTipElement.SingleParameter(text, _, _) -> text
         | FSharpToolTipElement.Group(xs) -> 
-            let text = xs |> List.map (fun (a,_,_) -> a) |> String.concat "\n"
-            let tps = xs |> List.collect (fun (_,_,c) -> c)
+            let text = xs |> List.map (fun item -> item.MainDescription) |> String.concat "\n"
+            let tps = xs |> List.collect (fun item -> item.TypeMapping)
             let tptext = (match tps with [] -> "" | _ -> "\n" + String.concat "\n" tps)
             text + tptext
         | FSharpToolTipElement.CompositionError(error) -> error
@@ -108,33 +104,83 @@ Full name: System.Console"
 [<Test>]
 let ShouldShowQuickInfoForGenericParameters() =
     let testCases = 
-        [("GroupBy", Some
-    "(extension) System.Collections.Generic.IEnumerable.GroupBy<'TSource,'TKey>(keySelector: System.Func<'TSource,'TKey>) : System.Collections.Generic.IEnumerable<IGrouping<'TKey,'TSource>>
+
+        [("GroupBy",
+          Some
+            "(extension) System.Collections.Generic.IEnumerable.GroupBy<'TSource,'TKey>(keySelector: System.Func<'TSource,'TKey>) : System.Collections.Generic.IEnumerable<IGrouping<'TKey,'TSource>>
 'TSource: int * string
 'TKey: int");
          ("Sort", Some "System.Array.Sort<'T>(array: 'T []) : unit
 'T: int");
-         ("let test4 x = C().FSharpGenericMethodExplitTypeParams", Some
-    "member C.FSharpGenericMethodExplitTypeParams : a:'T * y:'T -> 'T * 'T
+         ("let test4 x = C().FSharpGenericMethodExplitTypeParams",
+          Some
+            "member C.FSharpGenericMethodExplitTypeParams : a:'T0 * y:'T0 -> 'T0 * 'T0
 'T: 'a list");
-        ("let test5<'U> (x: 'U) = C().FSharpGenericMethodExplitTypeParams", Some
-    "member C.FSharpGenericMethodExplitTypeParams : a:'T * y:'T -> 'T * 'T
+         ("let test5<'U> (x: 'U) = C().FSharpGenericMethodExplitTypeParams",
+          Some
+    "member C.FSharpGenericMethodExplitTypeParams : a:'T0 * y:'T0 -> 'T0 * 'T0
 'T: 'U list");
-         ("let test6 = C().FSharpGenericMethodExplitTypeParams", Some
-    "member C.FSharpGenericMethodExplitTypeParams : a:'T * y:'T -> 'T * 'T
+         ("let test6 = C().FSharpGenericMethodExplitTypeParams",
+          Some
+    "member C.FSharpGenericMethodExplitTypeParams : a:'T0 * y:'T0 -> 'T0 * 'T0
 'T: int");
-        ("let test7 x = C().FSharpGenericMethodInferredTypeParams", Some
-    "member C.FSharpGenericMethodInferredTypeParams : a:'a * y:'b -> 'a * 'b
+         ("let test7 x = C().FSharpGenericMethodInferredTypeParams",
+          Some
+    "member C.FSharpGenericMethodInferredTypeParams : a:'a1 * y:'b2 -> 'a1 * 'b2
 'a: 'a0 list
 'b: 'a0 list");
-        ("let test8 = C().FSharpGenericMethodInferredTypeParams", Some
-    "member C.FSharpGenericMethodInferredTypeParams : a:'a * y:'b -> 'a * 'b
+         ("let test8 = C().FSharpGenericMethodInferredTypeParams",
+          Some
+    "member C.FSharpGenericMethodInferredTypeParams : a:'a0 * y:'b1 -> 'a0 * 'b1
 'a: int
 'b: int");
-        ("let test9<'U> (x: 'U) = C().FSharpGenericMethodInferredTypeParams", Some
-    "member C.FSharpGenericMethodInferredTypeParams : a:'a * y:'b -> 'a * 'b
+         ("let test9<'U> (x: 'U) = C().FSharpGenericMethodInferredTypeParams",
+          Some
+    "member C.FSharpGenericMethodInferredTypeParams : a:'a0 * y:'b1 -> 'a0 * 'b1
 'a: 'U list
-'b: 'U list")]
+'b: 'U list");
+         ("let res3 = [1] |>",
+          Some
+    "val ( |> ) : arg:'T1 -> func:('T1 -> 'U) -> 'U
+'T1: int list
+'U: int list");
+         ("let res3 = [1] |> List.map id", Some "val id : x:'T -> 'T
+'T: int");
+         ("let res4 = (1.0,[1]) ||>",
+          Some
+    "val ( ||> ) : arg1:'T1 * arg2:'T2 -> func:('T1 -> 'T2 -> 'U) -> 'U
+'T1: float
+'T2: int list
+'U: float");
+         ("let res4 = (1.0,[1]) ||> List.fold",
+          Some
+    "val fold : folder:('State -> 'T -> 'State) -> state:'State -> list:'T list -> 'State
+'T: int
+'State: float");
+         ("let res4 = (1.0,[1]) ||> List.fold (fun s x -> string s +",
+          Some
+    "val ( + ) : x:'T1 -> y:'T2 -> 'T3 (requires member ( + ))
+'T1: string
+'T2: string
+'T3: float");
+         ("let res5 = 1 +",
+          Some
+    "val ( + ) : x:'T1 -> y:'T2 -> 'T3 (requires member ( + ))
+'T1: int
+'T2: int
+'T3: int");
+         ("let res6 = System.DateTime.Now +",
+          Some
+    "val ( + ) : x:'T1 -> y:'T2 -> 'T3 (requires member ( + ))
+'T1: System.DateTime
+'T2: System.TimeSpan
+'T3: System.DateTime");
+         ("let res7 = sin",
+          Some "val sin : value:'T -> 'T (requires member Sin)
+'T: float");
+         ("let res8 = abs",
+          Some "val abs : value:'T -> 'T (requires member Abs)
+'T: int")]
     let actualForAllTests = 
      [ for (symbol: string, expected: string option) in testCases do
         let expected = expected |> Option.map normalizeLineEnds
@@ -155,8 +201,14 @@ let test6 = C().FSharpGenericMethodExplitTypeParams(1, 1)
 let test7 x = C().FSharpGenericMethodInferredTypeParams([x], [x])
 let test8 = C().FSharpGenericMethodInferredTypeParams(1, 1)
 let test9<'U> (x: 'U) = C().FSharpGenericMethodInferredTypeParams([x], [x])
+let res3 = [1] |> List.map id
+let res4 = (1.0,[1]) ||> List.fold (fun s x -> string s + string x) // note there is a type error here, still cehck quickinfo any way
+let res5 = 1 + 2
+let res6 = System.DateTime.Now + System.TimeSpan.Zero
+let res7 = sin 5.0
+let res8 = abs 5.0<kg>
     """
-        let caretPosition = fileContents.IndexOf(symbol) + symbol.Length - 2
+        let caretPosition = fileContents.IndexOf(symbol) + symbol.Length - 1
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
         
         let quickInfo =

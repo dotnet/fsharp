@@ -32,6 +32,18 @@ type internal FSharpXmlDoc =
 
 type internal Layout = Internal.Utilities.StructuredFormat.Layout
 
+/// A single data tip display element
+[<RequireQualifiedAccess>]
+type FSharpToolTipElementData<'T> = 
+    { MainDescription:  'T 
+      XmlDoc: FSharpXmlDoc
+      /// typar insantiation text, to go after xml
+      TypeMapping: 'T list
+      /// Extra text, goes at the end
+      Remarks: 'T option
+      /// Parameter name
+      ParamName : string option }
+
 /// A single tool tip display element
 //
 // Note: instances of this type do not hold any references to any compiler resources.
@@ -39,17 +51,12 @@ type internal Layout = Internal.Utilities.StructuredFormat.Layout
 type internal FSharpToolTipElement<'T> = 
     | None
 
-    /// A single type, method, etc with comment.
-    | Single of (* text *) 'T * FSharpXmlDoc * (* typar insantiation text, to go after xml: *) 'T list
-
-    /// A single parameter, with the parameter name.
-    | SingleParameter of (* text *) 'T * FSharpXmlDoc * string
-
-    /// For example, a method overload group.
-    | Group of ((* text *) 'T * FSharpXmlDoc * (* typar insantiation text, to go after xml: *) 'T list) list
+    /// A single type, method, etc with comment. May represent a method overload group.
+    | Group of FSharpToolTipElementData<'T> list
 
     /// An error occurred formatting this element
     | CompositionError of string
+    static member Single : 'T * FSharpXmlDoc * ?typeMapping: 'T list * ?paramName: string * ?remarks : 'T  -> FSharpToolTipElement<'T>
 
 /// A single data tip display element with where text is expressed as string
 type FSharpToolTipElement = FSharpToolTipElement<string>
@@ -237,7 +244,6 @@ module internal ItemDescriptionsImpl =
     val GetXmlDocSigOfEvent : InfoReader -> range -> EventInfo -> (string option * string) option
     val GetXmlCommentForItem : InfoReader -> range -> Item -> FSharpXmlDoc
     val FormatStructuredDescriptionOfItem : isDecl:bool -> InfoReader -> range -> DisplayEnv -> ItemWithInst -> FSharpStructuredToolTipElement
-    val FormatDescriptionOfItem : bool -> InfoReader -> range -> DisplayEnv -> ItemWithInst -> FSharpToolTipElement<string>
     val RemoveDuplicateItems : TcGlobals -> ItemWithInst list -> ItemWithInst list
     val RemoveExplicitlySuppressed : TcGlobals -> ItemWithInst list -> ItemWithInst list
     val RemoveDuplicateCompletionItems : TcGlobals -> CompletionItem list -> CompletionItem list
