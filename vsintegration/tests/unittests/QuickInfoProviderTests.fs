@@ -110,92 +110,92 @@ let ShouldShowQuickInfoForGenericParameters() =
         [("GroupBy",
           Some
             "(extension) System.Collections.Generic.IEnumerable.GroupBy<'TSource,'TKey>(keySelector: System.Func<'TSource,'TKey>) : System.Collections.Generic.IEnumerable<IGrouping<'TKey,'TSource>>
-'TSource: int * string
-'TKey: int");
+'TSource : int * string
+'TKey : int");
          ("Sort", Some "System.Array.Sort<'T>(array: 'T []) : unit
-'T: int");
+'T : int");
          ("let test4 x = C().FSharpGenericMethodExplitTypeParams",
           Some
             "member C.FSharpGenericMethodExplitTypeParams : a:'T0 * y:'T0 -> 'T0 * 'T0
-'T: 'a list");
+'T : 'a list");
          ("let test5<'U> (x: 'U) = C().FSharpGenericMethodExplitTypeParams",
           Some
             "member C.FSharpGenericMethodExplitTypeParams : a:'T0 * y:'T0 -> 'T0 * 'T0
-'T: 'U list");
+'T : 'U list");
          ("let test6 = C().FSharpGenericMethodExplitTypeParams",
           Some
             "member C.FSharpGenericMethodExplitTypeParams : a:'T0 * y:'T0 -> 'T0 * 'T0
-'T: int");
+'T : int");
          ("let test7 x = C().FSharpGenericMethodInferredTypeParams",
           Some
             "member C.FSharpGenericMethodInferredTypeParams : a:'a1 * y:'b2 -> 'a1 * 'b2
-'a: 'a0 list
-'b: 'a0 list");
+'a : 'a0 list
+'b : 'a0 list");
          ("let test8 = C().FSharpGenericMethodInferredTypeParams",
           Some
             "member C.FSharpGenericMethodInferredTypeParams : a:'a0 * y:'b1 -> 'a0 * 'b1
-'a: int
-'b: int");
+'a : int
+'b : int");
          ("let test9<'U> (x: 'U) = C().FSharpGenericMethodInferredTypeParams",
           Some
             "member C.FSharpGenericMethodInferredTypeParams : a:'a0 * y:'b1 -> 'a0 * 'b1
-'a: 'U list
-'b: 'U list");
+'a : 'U list
+'b : 'U list");
          ("let res3 = [1] |>",
           Some
             "val ( |> ) : arg:'T1 -> func:('T1 -> 'U) -> 'U
 Full name: Microsoft.FSharp.Core.Operators.( |> )
-'T1: int list
-'U: int list");
+'T1 : int list
+'U :  int list");
          ("let res3 = [1] |> List.map id",
           Some
             "val id : x:'T -> 'T
 Full name: Microsoft.FSharp.Core.Operators.id
-'T: int");
+'T :  int");
          ("let res4 = (1.0,[1]) ||>",
           Some
             "val ( ||> ) : arg1:'T1 * arg2:'T2 -> func:('T1 -> 'T2 -> 'U) -> 'U
 Full name: Microsoft.FSharp.Core.Operators.( ||> )
-'T1: float
-'T2: int list
-'U: float");
+'T1 : float
+'T2 : int list
+'U : float");
          ("let res4 = (1.0,[1]) ||> List.fold",
           Some
             "val fold : folder:('State -> 'T -> 'State) -> state:'State -> list:'T list -> 'State
 Full name: Microsoft.FSharp.Collections.List.fold
-'T: int
-'State: float");
+'T : int
+'State : float");
          ("let res4 = (1.0,[1]) ||> List.fold (fun s x -> string s +",
           Some
             "val ( + ) : x:'T1 -> y:'T2 -> 'T3 (requires member ( + ))
 Full name: Microsoft.FSharp.Core.Operators.( + )
-'T1: string
-'T2: string
-'T3: float");
+'T1 : string
+'T2 : string
+'T3 : float");
          ("let res5 = 1 +",
           Some
             "val ( + ) : x:'T1 -> y:'T2 -> 'T3 (requires member ( + ))
 Full name: Microsoft.FSharp.Core.Operators.( + )
-'T1: int
-'T2: int
-'T3: int");
+'T1 : int
+'T2 : int
+'T3 : int");
          ("let res6 = System.DateTime.Now +",
           Some
             "val ( + ) : x:'T1 -> y:'T2 -> 'T3 (requires member ( + ))
 Full name: Microsoft.FSharp.Core.Operators.( + )
-'T1: System.DateTime
-'T2: System.TimeSpan
-'T3: System.DateTime");
+'T1 : System.DateTime
+'T2 : System.TimeSpan
+'T3 : System.DateTime");
          ("let res7 = sin",
           Some
             "val sin : value:'T -> 'T (requires member Sin)
 Full name: Microsoft.FSharp.Core.Operators.sin
-'T: float");
+'T : float");
          ("let res8 = abs",
           Some
             "val abs : value:'T -> 'T (requires member Abs)
 Full name: Microsoft.FSharp.Core.Operators.abs
-'T: int")]    
+'T : int")]    
     let actualForAllTests = 
      [ for (symbol: string, expected: string option) in testCases do
         let expected = expected |> Option.map normalizeLineEnds
