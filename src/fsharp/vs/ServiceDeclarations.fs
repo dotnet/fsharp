@@ -172,8 +172,7 @@ module internal ItemDescriptionsImpl =
       if not isListItem then 
         match ppF r with 
         | None -> emptyL
-        | Some _ -> 
-            sepL (tagLineBreak "\n\n") ^^ wordL (tagText (FSComp.SR.typeInfoFullName())) ^^ RightL.colon ^^ (fnF r)
+        | Some _ -> wordL (tagText (FSComp.SR.typeInfoFullName())) ^^ RightL.colon ^^ (fnF r)
       else emptyL
           
     let rangeOfValRef preferFlag (vref:ValRef) =
@@ -1764,7 +1763,7 @@ type FSharpAccessibility(a:Accessibility, ?isProtected) =
 
     member __.Contents = a
 
-    override x.ToString() = 
+    override __.ToString() = 
         let (TAccess paths) = a
         let mangledTextOfCompPath (CompPath(scoref,path)) = getNameOfScopeRef scoref + "/" + textOfPath (List.map fst path)  
         String.concat ";" (List.map mangledTextOfCompPath paths)
@@ -1777,10 +1776,10 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: strin
     let mutable descriptionTextHolder: FSharpToolTipText<_> option = None
     let mutable task = null
 
-    member decl.Name = name
-    member decl.NameInCode = nameInCode
+    member __.Name = name
+    member __.NameInCode = nameInCode
 
-    member decl.StructuredDescriptionTextAsync = 
+    member __.StructuredDescriptionTextAsync = 
         match info with
         | Choice1Of2 (items: CompletionItem list, infoReader, m, denv, reactor:IReactorOperations, checkAlive) -> 
             // reactor causes the lambda to execute on the background compiler thread, through the Reactor
@@ -1828,21 +1827,21 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: strin
                 result
 
     member decl.DescriptionText = decl.StructuredDescriptionText |> Tooltips.ToFSharpToolTipText
-    member decl.Glyph = glyph 
-    member decl.Accessibility = accessibility
-    member decl.Kind = kind
-    member decl.IsOwnMember = isOwnMember
-    member decl.MinorPriority = priority
-    member decl.FullName = fullName
-    member decl.IsResolved = isResolved
-    member decl.NamespaceToOpen = namespaceToOpen
+    member __.Glyph = glyph 
+    member __.Accessibility = accessibility
+    member __.Kind = kind
+    member __.IsOwnMember = isOwnMember
+    member __.MinorPriority = priority
+    member __.FullName = fullName
+    member __.IsResolved = isResolved
+    member __.NamespaceToOpen = namespaceToOpen
 
 /// A table of declarations for Intellisense completion 
 [<Sealed>]
 type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForType: bool, isError: bool) = 
-    member self.Items = declarations
-    member self.IsForType = isForType
-    member self.IsError = isError
+    member __.Items = declarations
+    member __.IsForType = isForType
+    member __.IsError = isError
 
     // Make a 'Declarations' object for a set of selected items
     static member Create(infoReader:InfoReader, m, denv, getAccessibility, items: CompletionItem list, reactor, currentNamespaceOrModule: string[] option, isAttributeApplicationContext: bool, checkAlive) = 
@@ -2027,9 +2026,9 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
             let parms = meth.Parameters
             parms.Length, (parms |> Array.map (fun p -> p.CanonicalTypeTextForSorting)))
 
-    member x.MethodName = name
+    member __.MethodName = name
 
-    member x.Methods = methods
+    member __.Methods = methods
 
     static member Create (infoReader: InfoReader, m, denv, items:ItemWithInst list) = 
         let g = infoReader.g

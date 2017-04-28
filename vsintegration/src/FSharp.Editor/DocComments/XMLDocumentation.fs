@@ -385,7 +385,9 @@ module internal XmlDocumentation =
                     let item0 = overloads.[0]
                     AppendXmlComment(documentationProvider, xmlCollector, exnCollector, item0.XmlDoc, showExceptions, showParameters, item0.ParamName)
                     item0.Remarks |> Option.iter (fun r -> 
-                        renderL (taggedTextListR usageCollector.Add) r |> ignore)
+                        if not(isEmptyL r) then
+                            AppendHardLine usageCollector
+                            renderL (taggedTextListR usageCollector.Add) r |> ignore)
 
                     if showText then 
                         ProcessGenericParameters item0.TypeMapping

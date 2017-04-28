@@ -372,7 +372,6 @@ module internal XmlDocumentation =
                     let item0 = overloads.[0]
                     AppendXmlComment(documentationProvider, textCollector, item0.XmlDoc, showExceptions, showParameters, item0.ParamName)
                     item0.Remarks |> Option.iter (fun r -> 
-                        EnsureHardLine textCollector
                         renderL (taggedTextListR textCollector.Add) r |> ignore)
                     true
                 else
