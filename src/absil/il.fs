@@ -1601,7 +1601,7 @@ and [<Sealed>] ILTypeDefs(f : unit -> (string list * string * ILAttributes * Laz
             t)
 
     member x.AsArray = [| for (_,_,_,ltd) in array.Value -> ltd.Force() |]
-    member x.AsSeq = array.Value |> Seq.map (fun (_,_,_,ltd) -> ltd.Value)
+    member x.AsSeq = array.Value |> Seq.map (fun (_,_,_,ltd) -> ltd.Value) |> Seq.toArray |> Seq.ofArray
 
     interface IEnumerable with 
         member x.GetEnumerator() = ((x :> IEnumerable<ILTypeDef>).GetEnumerator() :> IEnumerator)
