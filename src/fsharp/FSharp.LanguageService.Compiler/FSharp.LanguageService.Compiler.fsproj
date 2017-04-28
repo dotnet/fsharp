@@ -575,6 +575,12 @@
     <Compile Include="..\vs\ServiceInterfaceStubGenerator.fs">
       <Link>Service/ServiceInterfaceStubGenerator.fs</Link>
     </Compile>
+    <Compile Include="..\vs\ServiceStructure.fsi">
+      <Link>Service/ServiceStructure.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceStructure.fs">
+      <Link>Service/ServiceStructure.fs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />

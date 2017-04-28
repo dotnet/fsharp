@@ -210,6 +210,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             } 
         } 
 
+        public virtual string RelativeFilePath
+        {
+            get
+            {
+                return PackageUtilities.MakeRelativeIfRooted(this.Url, this.ProjectMgr.BaseURI);
+            }
+        }
+
         public override NodeProperties CreatePropertiesObject()
         {
             return new FileNodeProperties(this);

@@ -5,74 +5,21 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.Threading
 open System.Threading.Tasks
-open System.Windows
-open System.Windows.Controls
-open System.Windows.Data
-open System.Windows.Media
 open System.ComponentModel.Composition
 open System.Text
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Editor
-open Microsoft.CodeAnalysis.Editor.Shared.Utilities
-open Microsoft.CodeAnalysis.Editor.Shared.Extensions
-open Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.QuickInfo
 open Microsoft.CodeAnalysis.Text
 
-
-open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.VisualStudio.Utilities
-open Microsoft.VisualStudio.Language.Intellisense
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler
 
 open Internal.Utilities.StructuredFormat
-
-module private SessionHandling =
-    let mutable currentSession = None
-    
-    [<Export (typeof<IQuickInfoSourceProvider>)>]
-    [<Name (FSharpProviderConstants.SessionCapturingProvider)>]
-    [<Order (After = PredefinedQuickInfoProviderNames.Semantic)>]
-    [<ContentType (FSharpConstants.FSharpContentTypeName)>]
-    type SourceProviderForCapturingSession () =
-        interface IQuickInfoSourceProvider with 
-            member x.TryCreateQuickInfoSource _ =
-              { new IQuickInfoSource with
-                  member __.AugmentQuickInfoSession(session,_,_) = currentSession <- Some session
-                  member __.Dispose() = () }
-
-type internal SourceLink(run) as this = 
-    inherit Documents.Hyperlink(run)
-    
-    let lessOpacity =
-        { new IValueConverter with
-              member this.Convert(value, targetType, _, _) =
-                  match value with 
-                  | :? Color as c when targetType = typeof<Color> ->
-                      // return same color but slightly transparent
-                      Color.FromArgb(70uy, c.R, c.G, c.B) :> _
-                  | _ -> DependencyProperty.UnsetValue
-              member this.ConvertBack(_,_,_,_) = DependencyProperty.UnsetValue }
-    
-    let underlineBrush = Media.SolidColorBrush()
-    do BindingOperations.SetBinding(underlineBrush, SolidColorBrush.ColorProperty, Binding("Foreground.Color", Source = this, Converter = lessOpacity)) |> ignore
-    let normalUnderline = TextDecorationCollection [TextDecoration(Location = TextDecorationLocation.Underline, PenOffset = 1.0)]
-    let slightUnderline = TextDecorationCollection [TextDecoration(Location = TextDecorationLocation.Underline, PenOffset = 1.0, Pen = Pen(Brush = underlineBrush))]
-    do this.TextDecorations <- slightUnderline
-
-    override this.OnMouseEnter(e) = 
-        base.OnMouseEnter(e)
-        this.TextDecorations <- normalUnderline
-
-    override this.OnMouseLeave(e) = 
-        base.OnMouseLeave(e)
-        this.TextDecorations <- slightUnderline
 
 type private TooltipInfo =
     { StructuredText: FSharpStructuredToolTipText 
@@ -81,13 +28,6 @@ type private TooltipInfo =
       SymbolKind: LexerSymbolKind }
 
 module private FSharpQuickInfo =
-    
-    let private empty = 
-        { new IDeferredQuickInfoContent with 
-            member x.Create() = TextBlock(Visibility = Visibility.Collapsed) :> FrameworkElement }
-
-    let createDeferredContent (symbolGlyph, mainDescription, documentation) =
-        QuickInfoDisplayDeferredContent(symbolGlyph, null, mainDescription, documentation, empty, empty, empty, empty)
 
     // when a construct has been declared in a signature file the documentation comments that are
     // written in that file are the ones that go into the generated xml when the project is compiled
@@ -217,87 +157,14 @@ module private FSharpQuickInfo =
 
 [<ExportQuickInfoProvider(PredefinedQuickInfoProviderNames.Semantic, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpQuickInfoProvider 
-    [<System.ComponentModel.Composition.ImportingConstructor>] 
+    [<ImportingConstructor>] 
     (
-        [<System.ComponentModel.Composition.Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
+        [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: ProjectInfoManager,
-        typeMap: Shared.Utilities.ClassificationTypeMap,
-        gotoDefinitionService:FSharpGoToDefinitionService,
-        glyphService: IGlyphService
+        gotoDefinitionService: FSharpGoToDefinitionService,
+        viewProvider: QuickInfoViewProvider
     ) =
-
-    let fragment (content: Layout.TaggedText seq, typemap: ClassificationTypeMap, initialDoc: Document, thisSymbolUseRange: range) : IDeferredQuickInfoContent =
-
-        let workspace = initialDoc.Project.Solution.Workspace
-        let solution = workspace.CurrentSolution
-
-        let isTargetValid range =
-            range <> rangeStartup && solution.TryGetDocumentIdFromFSharpRange (range,initialDoc.Project.Id) |> Option.isSome
-
-        let navigateTo (range:range) = 
-            asyncMaybe { 
-                let targetPath = range.FileName 
-                let! targetDoc = solution.TryGetDocumentFromFSharpRange (range,initialDoc.Project.Id)
-                let! targetSource = targetDoc.GetTextAsync() 
-                let! targetTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (targetSource, range)
-                // to ensure proper navigation decsions we need to check the type of document the navigation call
-                // is originating from and the target we're provided by default
-                //  - signature files (.fsi) should navigate to other signature files 
-                //  - implementation files (.fs) should navigate to other implementation files
-                let (|Signature|Implementation|) filepath =
-                    if isSignatureFile filepath then Signature else Implementation
-
-                match initialDoc.FilePath, targetPath with 
-                | Signature, Signature 
-                | Implementation, Implementation ->
-                    return (gotoDefinitionService.TryNavigateToTextSpan (targetDoc, targetTextSpan))
-                // adjust the target from signature to implementation
-                | Implementation, Signature  ->
-                    return! gotoDefinitionService.NavigateToSymbolDefinitionAsync (targetDoc, targetSource, range)|>liftAsync
-                // adjust the target from implmentation to signature
-                | Signature, Implementation -> 
-                    return! gotoDefinitionService.NavigateToSymbolDeclarationAsync (targetDoc, targetSource, range)|>liftAsync
-            } 
-            |> Async.map(
-                function
-                | Some true -> SessionHandling.currentSession |> Option.iter (fun session -> session.Dismiss())
-                | _ -> ()) 
-            |> Async.Ignore 
-            |> Async.StartImmediate 
-
-        let formatMap = typemap.ClassificationFormatMapService.GetClassificationFormatMap "tooltip"
-
-        let layoutTagToFormatting (layoutTag: LayoutTag) =
-            layoutTag
-            |> RoslynHelpers.roslynTag
-            |> ClassificationTags.GetClassificationTypeName
-            |> typemap.GetClassificationType
-            |> formatMap.GetTextProperties
-
-        let inlines = 
-            seq { 
-                for taggedText in content do
-                    let run = Documents.Run taggedText.Text
-                    let inl =
-                        match taggedText with
-                        | :? Layout.NavigableTaggedText as nav when thisSymbolUseRange <> nav.Range && isTargetValid nav.Range ->                        
-                            let h = SourceLink (run, ToolTip = nav.Range.FileName)
-                            h.Click.Add (fun _ -> navigateTo nav.Range)
-                            h :> Documents.Inline
-                        | _ -> run :> _
-                    DependencyObjectExtensions.SetTextProperties (inl, layoutTagToFormatting taggedText.Tag)
-                    yield inl
-            }
-
-        let createTextLinks () =
-            let tb = TextBlock(TextWrapping = TextWrapping.Wrap, TextTrimming = TextTrimming.None)
-            DependencyObjectExtensions.SetDefaultTextProperties(tb, formatMap)
-            tb.Inlines.AddRange inlines
-            if tb.Inlines.Count = 0 then tb.Visibility <- Visibility.Collapsed
-            tb :> FrameworkElement
-            
-        { new IDeferredQuickInfoContent with member x.Create() = createTextLinks() }
 
     let xmlMemberIndexService = serviceProvider.GetService(typeof<SVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
@@ -331,11 +198,9 @@ type internal FSharpQuickInfoProvider
                     let mainDescription = ResizeArray()
                     let documentation = ResizeArray()
                     XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, documentation.Add, tooltip.StructuredText)
-                    let content = 
-                        FSharpQuickInfo.createDeferredContent
-                            (SymbolGlyphDeferredContent(Tokenizer.GetGlyphForSymbol(tooltip.Symbol, tooltip.SymbolKind), glyphService),
-                             fragment (mainDescription, typeMap, document, symbolUse.RangeAlternate),
-                             fragment (documentation, typeMap, document, symbolUse.RangeAlternate))
+                    let glyph = Tokenizer.GetGlyphForSymbol(tooltip.Symbol, tooltip.SymbolKind)
+                    let navigation = QuickInfoNavigation(gotoDefinitionService, document, symbolUse.RangeAlternate)
+                    let content = viewProvider.ProvideContent( glyph, mainDescription, documentation, navigation)
                     return QuickInfoItem (tooltip.Span, content)
 
                 | Some sigTooltip, Some targetTooltip ->
@@ -350,8 +215,8 @@ type internal FSharpQuickInfoProvider
                         |> Seq.map (fun x -> x.Text.Length)
                         |> Seq.max
 
-                    let seperator = TaggedTextOps.tag LayoutTag.Text (String.replicate width "-")  
-                    let lineBreak = TaggedTextOps.tag LayoutTag.LineBreak  "\n"
+                    let seperator = TaggedTextOps.tag Text (String.replicate width "-")  
+                    let lineBreak = TaggedTextOps.tag LineBreak "\n"
 
                     // get whitespace nomalized documentation text
                     let getText (tts: seq<Layout.TaggedText>) = 
@@ -375,13 +240,9 @@ type internal FSharpQuickInfoProvider
                               yield seperator
                               yield lineBreak
                               yield! targetDocumentation ]
-
-                    let content = 
-                        FSharpQuickInfo.createDeferredContent
-                            (SymbolGlyphDeferredContent (Tokenizer.GetGlyphForSymbol (targetTooltip.Symbol, targetTooltip.SymbolKind), glyphService),
-                            fragment (description, typeMap, document, symbolUse.RangeAlternate),
-                            fragment (documentation, typeMap, document, symbolUse.RangeAlternate))
-
+                    let glyph = Tokenizer.GetGlyphForSymbol(targetTooltip.Symbol, targetTooltip.SymbolKind)
+                    let navigation = QuickInfoNavigation(gotoDefinitionService, document, symbolUse.RangeAlternate)
+                    let content = viewProvider.ProvideContent(glyph, description, documentation, navigation)
                     return QuickInfoItem (targetTooltip.Span, content)
             }   |> Async.map Option.toObj
                 |> RoslynHelpers.StartAsyncAsTask cancellationToken 
