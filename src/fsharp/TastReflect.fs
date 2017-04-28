@@ -978,7 +978,7 @@ and ReflectAssembly(g, ccu: CcuThunk, location:string) as asm =
         // TODO: may need something special for "System.Void"
         let typ = stripTyEqnsWrtErasure Erasure.EraseAll g typ
         match typ with 
-        | AppTy g (tcref, _) -> 
+        | AppTy g (tcref, tinst) -> 
             let ccuofTyconRef = 
                 match ccuOfTyconRef tcref with 
                 | Some ccuofTyconRef -> ccuofTyconRef
@@ -988,10 +988,9 @@ and ReflectAssembly(g, ccu: CcuThunk, location:string) as asm =
                 | None -> failwith (sprintf "TODO: didn't get back to CCU being compiled for local tcref %s" tcref.DisplayName)
             let reflAssem = ccuofTyconRef.ReflectAssembly :?> ReflectAssembly
             let tcrefR = reflAssem.TxTypeDef None tcref
-            tcrefR
-            //match tinst with 
-            //| [] -> tcrefR 
-            //| args -> tcrefR.MakeGenericType(Array.map asm.TxTType (Array.ofList args))  
+            match tinst with 
+            | [] -> tcrefR 
+            | args -> tcrefR.MakeGenericType(Array.map asm.TxTType (Array.ofList args))  
         | ty when isArrayTy g ty -> 
             let ety = destArrayTy g ty 
             let etyR = asm.TxTType ety
@@ -1005,13 +1004,7 @@ and ReflectAssembly(g, ccu: CcuThunk, location:string) as asm =
             let etyR = destByrefTy g ty  |> asm.TxTType 
             etyR.MakeByRefType()  
         | ty when isTyparTy g ty -> 
-            // TODO: finish generic parameters
-            //let tp = destTyparTy g ty  
-            failwith "NYI: generic typars"
-    //        let (gps1:Type[]),(gps2:Type[]) = gps
-    //        if n < gps1.Length then gps1.[n] 
-    //        elif n < gps1.Length + gps2.Length then gps2.[n - gps1.Length] 
-    //        else failwith (sprintf "generic parameter index our of range: %d" n)
-    
+            let tp = destTyparTy g ty  
+            asm.TxTType (mkTyparTy tp)
         | _ -> failwithf "Unsupported TxTType %+A" typ
       
