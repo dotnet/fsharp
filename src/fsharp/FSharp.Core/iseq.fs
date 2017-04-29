@@ -115,6 +115,12 @@ namespace Microsoft.FSharp.Collections
                     member __.GetHashCode o    = c.GetHashCode o._1
                     member __.Equals (lhs,rhs) = c.Equals (lhs._1, rhs._1) }
 
+        [<CompiledName "Empty">]
+        let empty<'T> = Microsoft.FSharp.Collections.SeqComposition.Core.EmptyEnumerable<'T>.Instance
+
+        [<CompiledName("Singleton")>]
+        let singleton x = Upcast.seq (new SingletonEnumerable<_>(x))
+
         /// wraps a ResizeArray in the ISeq framework. Care must be taken that the underlying ResizeArray
         /// is not modified whilst it can be accessed as the ISeq, so check on version is performed.
         /// i.e. usually iteration on calls the enumerator provied by GetEnumerator ensure that the
@@ -127,7 +133,10 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "OfArray">]
         let ofArray (source:array<'T>) : ISeq<'T> =
             checkNonNull "source" source
-            Upcast.seq (ThinArrayEnumerable<'T> source)
+            match source.Length with
+            | 0 -> empty
+            | 1 -> singleton source.[0]
+            | _ -> Upcast.seq (ThinArrayEnumerable<'T> source)
 
         [<CompiledName "OfList">]
         let ofList (source:list<'T>) : ISeq<'T> =
@@ -170,9 +179,6 @@ namespace Microsoft.FSharp.Collections
                             invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
                         this.Result <- LanguagePrimitives.DivideByInt<'U> this.Result this.State
                     override this.OnDispose () = () })
-
-        [<CompiledName "Empty">]
-        let empty<'T> = Microsoft.FSharp.Collections.SeqComposition.Core.EmptyEnumerable<'T>.Instance
 
         [<CompiledName "ExactlyOne">]
         let exactlyOne (source:ISeq<'T>) : 'T =
@@ -595,9 +601,6 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Concat")>]
         let concat (sources:ISeq<#ISeq<'T>>) : ISeq<'T> =
             Upcast.seq (ThinConcatEnumerable (sources, id))
-
-        [<CompiledName("Singleton")>]
-        let singleton x = Upcast.seq (new SingletonEnumerable<_>(x))
 
         [<CompiledName "Scan">]
         let inline scan (folder:'State->'T->'State) (initialState:'State) (source:ISeq<'T>) :ISeq<'State> =
