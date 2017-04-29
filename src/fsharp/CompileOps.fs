@@ -2816,16 +2816,22 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
             if runningOnMono then 
                 [ let runtimeRoot = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
                   let runtimeRootWithoutSlash = runtimeRoot.TrimEnd('/', '\\')
-                  let api = runtimeRootWithoutSlash + "-api"
-                  yield runtimeRoot // The default FSharp.Core is found in lib/mono/4.5
-                  if Directory.Exists(api) then
-                     yield api
-                     let facades = Path.Combine(api, "Facades")
-                     if Directory.Exists(facades) then
-                        yield facades
-                  let facades = Path.Combine(runtimeRoot, "Facades")
-                  if Directory.Exists(facades) then
-                     yield facades
+                  match tcConfig.resolutionEnvironment with
+#if !FSI_TODO_NETCORE
+                  | ReferenceResolver.RuntimeLike ->
+                      yield runtimeRoot
+#endif
+                  | _ ->
+                      let api = runtimeRootWithoutSlash + "-api"
+                      yield runtimeRoot // The default FSharp.Core is found in lib/mono/4.5
+                      if Directory.Exists(api) then
+                         yield api
+                         let facades = Path.Combine(api, "Facades")
+                         if Directory.Exists(facades) then
+                            yield facades
+                      let facades = Path.Combine(runtimeRoot, "Facades")
+                      if Directory.Exists(facades) then
+                         yield facades
                 ]
             else                                
 #endif
