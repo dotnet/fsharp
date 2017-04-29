@@ -152,7 +152,7 @@ let cattr_typ2typ ilg f c =
 
 
 let cattrs_typ2typ ilg f (cs: ILAttributes) =
-    mkILCustomAttrs (List.map (cattr_typ2typ ilg f) cs.AsList)
+    mkILCustomAttrs (Seq.map (cattr_typ2typ ilg f) cs.AsSeq)
 
 let fdef_typ2typ ilg ftype (fd: ILFieldDef) = 
     {fd with Type=ftype fd.Type; 

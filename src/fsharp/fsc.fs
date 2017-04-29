@@ -1104,7 +1104,7 @@ module StaticLinker =
                 [ for (_, depILModule) in dependentILModules do 
                     match depILModule.Manifest with 
                     | Some m -> 
-                        for ca in m.CustomAttrs.AsList do
+                        for ca in m.CustomAttrs.AsSeq do
                            if ca.Method.MethodRef.EnclosingTypeRef.FullName = typeof<CompilationMappingAttribute>.FullName then 
                                yield ca
                     | _ -> () ]
@@ -1162,8 +1162,8 @@ module StaticLinker =
 
             let ilxMainModule = 
                 { ilxMainModule with 
-                    Manifest = (let m = ilxMainModule.ManifestOfAssembly in Some {m with CustomAttrs = mkILCustomAttrs (m.CustomAttrs.AsList @ savedManifestAttrs) })
-                    CustomAttrs = mkILCustomAttrs [ for m in moduls do yield! m.CustomAttrs.AsList ]
+                    Manifest = (let m = ilxMainModule.ManifestOfAssembly in Some {m with CustomAttrs = mkILCustomAttrs (Seq.append m.CustomAttrs.AsSeq savedManifestAttrs) })
+                    CustomAttrs = mkILCustomAttrs [ for m in moduls do yield! m.CustomAttrs.AsSeq ]
                     TypeDefs = mkILTypeDefs (topTypeDef :: List.concat normalTypeDefs)
                     Resources = mkILResources (savedResources @ ilxMainModule.Resources.AsList)
                     NativeResources = savedNativeResources }
@@ -1214,7 +1214,7 @@ module StaticLinker =
                                         td.Methods.AsSeq
                                         |> Seq.map (fun md ->
                                             {md with CustomAttrs = 
-                                                        mkILCustomAttrs (td.CustomAttrs.AsList |> List.filter (fun ilattr ->
+                                                        mkILCustomAttrs (td.CustomAttrs.AsSeq |> Seq.filter (fun ilattr ->
                                                             ilattr.Method.EnclosingType.TypeRef.FullName <> "System.Runtime.TargetedPatchingOptOutAttribute")  )}) 
                                         |> mkILMethods } ])}
             //ILAsciiWriter.output_module stdout fakeModule

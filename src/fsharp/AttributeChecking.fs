@@ -123,7 +123,7 @@ type AttribInfo =
 /// Check custom attributes. This is particularly messy because custom attributes come in in three different
 /// formats.
 let AttribInfosOfIL g amap scoref m (attribs: ILAttributes) = 
-    attribs.AsList  |> List.map (fun a -> ILAttribInfo (g, amap, scoref, a, m))
+    attribs.AsSeq |> Seq.map (fun a -> ILAttribInfo (g, amap, scoref, a, m)) |> Seq.toList
 
 let AttribInfosOfFS g attribs = 
     attribs |> List.map (fun a -> FSAttribInfo (g, a))
@@ -452,7 +452,7 @@ let MethInfoIsUnseen g m typ minfo =
         // We are only interested in filtering out the method on System.Object, so it is sufficient
         // just to look at the attributes on IL methods.
         if tcref.IsILTycon then 
-                tcref.ILTyconRawMetadata.CustomAttrs.AsList 
+                tcref.ILTyconRawMetadata.CustomAttrs.AsSeq 
                 |> Seq.exists (fun attr -> attr.Method.EnclosingType.TypeSpec.Name = typeof<TypeProviderEditorHideMethodsAttribute>.FullName)
         else 
             false

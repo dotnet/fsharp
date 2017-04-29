@@ -475,7 +475,7 @@ let goutput_custom_attr env os attr =
   output_custom_attr_data os attr.Data
 
 let goutput_custom_attrs env os (attrs : ILAttributes) =
-  Seq.iter (fun attr -> goutput_custom_attr env os attr;  output_string os "\n" ) attrs.AsList
+  Seq.iter (fun attr -> goutput_custom_attr env os attr;  output_string os "\n" ) attrs.AsSeq
 
 let goutput_fdef _tref env os fd =
   output_string os " .field ";

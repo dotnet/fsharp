@@ -850,7 +850,7 @@ type ILAttribute =
 
 [<NoEquality; NoComparison; Sealed>]
 type ILAttributes =
-    member AsList : ILAttribute list
+    member AsSeq : ILAttribute seq
 
 /// Method parameters and return values.
 
@@ -1732,7 +1732,7 @@ val mkCtorMethSpecForDelegate: ILGlobals -> ILType * bool -> ILMethodSpec
 val mkILTypeForGlobalFunctions: ILScopeRef -> ILType
 
 /// Making tables of custom attributes, etc.
-val mkILCustomAttrs: ILAttribute list -> ILAttributes
+val mkILCustomAttrs: ILAttribute seq -> ILAttributes
 val mkILCustomAttrsFromArray: ILAttribute[] -> ILAttributes
 val mkILComputedCustomAttrs: (unit -> ILAttribute[]) -> ILAttributes
 val emptyILCustomAttrs: ILAttributes

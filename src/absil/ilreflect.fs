@@ -1354,7 +1354,7 @@ let convCustomAttr cenv emEnv cattr =
     (methInfo,data)
 
 let emitCustomAttr cenv emEnv add cattr  = add (convCustomAttr cenv emEnv cattr)
-let emitCustomAttrs cenv emEnv add (cattrs : ILAttributes) = Seq.iter (emitCustomAttr cenv emEnv add) cattrs.AsList
+let emitCustomAttrs cenv emEnv add (cattrs : ILAttributes) = Seq.iter (emitCustomAttr cenv emEnv add) cattrs.AsSeq
 
 //----------------------------------------------------------------------------
 // buildGenParams
@@ -1579,9 +1579,8 @@ let rec buildMethodPass3 cenv tref modB (typB:TypeBuilder) emEnv (mdef : ILMetho
                                              (getGenericArgumentsOfType (typB.AsType()))
                                              (getGenericArgumentsOfMethod methB))
 
-          match mdef.Return.CustomAttrs.AsList with
-          | [] -> ()
-          | _ ->
+          if Seq.isEmpty mdef.Return.CustomAttrs.AsSeq then ()
+          else
               let retB = methB.DefineParameterAndLog(0,System.Reflection.ParameterAttributes.Retval,null) 
               emitCustomAttrs cenv emEnv (wrapCustomAttr retB.SetCustomAttribute) mdef.Return.CustomAttrs
 

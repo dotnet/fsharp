@@ -854,7 +854,7 @@ type ILAttribute =
 type ILAttributes(f: unit -> ILAttribute[]) = 
    let mutable array = InlineDelayInit<_>(f)
    member x.AsArray = array.Value
-   member x.AsList = x.AsArray |> Array.toList
+   member x.AsSeq = x.AsArray |> Seq.ofArray
 
 type ILCodeLabel = int
 
@@ -1867,7 +1867,7 @@ let mkILFieldSpecInTy (typ:ILType,nm,fty) =
 let emptyILCustomAttrs = ILAttributes (fun () -> [| |])
 
 let mkILCustomAttrsFromArray (l: ILAttribute[]) = if l.Length = 0 then emptyILCustomAttrs else ILAttributes (fun () -> l)
-let mkILCustomAttrs l = l |> List.toArray |> mkILCustomAttrsFromArray
+let mkILCustomAttrs l = l |> Seq.toArray |> mkILCustomAttrsFromArray
 let mkILComputedCustomAttrs f = ILAttributes f
 
 let andTailness x y = 
@@ -3502,7 +3502,7 @@ and refs_of_token s x =
 
 and refs_of_custom_attr s x = refs_of_mspec s x.Method
     
-and refs_of_custom_attrs s (cas : ILAttributes) = Seq.iter (refs_of_custom_attr s) cas.AsList
+and refs_of_custom_attrs s (cas : ILAttributes) = Seq.iter (refs_of_custom_attr s) cas.AsSeq
 and refs_of_varargs s tyso = Option.iter (refs_of_typs s) tyso 
 and refs_of_instr s x = 
     match x with

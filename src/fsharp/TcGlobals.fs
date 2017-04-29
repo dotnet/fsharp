@@ -651,7 +651,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
            generatedAttribsCache <- res
            res
        | res -> res
-    mkILCustomAttrs (attrs.AsList @ attribs)
+    mkILCustomAttrs (Seq.append attrs.AsSeq attribs)
 
   let addMethodGeneratedAttrs (mdef:ILMethodDef)   = {mdef with CustomAttrs   = addGeneratedAttrs mdef.CustomAttrs}
   let addPropertyGeneratedAttrs (pdef:ILPropertyDef) = {pdef with CustomAttrs = addGeneratedAttrs pdef.CustomAttrs}
@@ -671,7 +671,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
           res
       | Some res -> res
 
-  let addNeverAttrs (attrs: ILAttributes) = mkILCustomAttrs (attrs.AsList @ [mkDebuggerBrowsableNeverAttribute()])
+  let addNeverAttrs (attrs: ILAttributes) = mkILCustomAttrs (Seq.append attrs.AsSeq (Seq.singleton (mkDebuggerBrowsableNeverAttribute())))
   let addPropertyNeverAttrs (pdef:ILPropertyDef) = {pdef with CustomAttrs = addNeverAttrs pdef.CustomAttrs}
   let addFieldNeverAttrs (fdef:ILFieldDef) = {fdef with CustomAttrs = addNeverAttrs fdef.CustomAttrs}
   let mkDebuggerTypeProxyAttribute (ty : ILType) = mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerTypeProxyAttribute,  [ilg.typ_Type], [ILAttribElem.TypeRef (Some ty.TypeRef)], [])

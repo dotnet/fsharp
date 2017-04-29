@@ -1420,7 +1420,7 @@ and GenCustomAttrPass3Or4 cenv hca attr =
     AddUnsharedRow cenv TableNames.CustomAttribute (GetCustomAttrRow cenv hca attr) |> ignore
 
 and GenCustomAttrsPass3Or4 cenv hca (attrs: ILAttributes) = 
-    attrs.AsList |> Seq.iter (GenCustomAttrPass3Or4 cenv hca) 
+    attrs.AsSeq |> Seq.iter (GenCustomAttrPass3Or4 cenv hca) 
 
 // -------------------------------------------------------------------- 
 // ILPermissionSet --> DeclSecurity rows
@@ -2490,7 +2490,7 @@ let GenReturnAsParamRow (returnv : ILReturn) =
            StringE 0 |]  
 
 let GenReturnPass3 cenv (returnv: ILReturn) = 
-    if Option.isSome returnv.Marshal || not (isNil returnv.CustomAttrs.AsList) then
+    if Option.isSome returnv.Marshal || not (Seq.isEmpty returnv.CustomAttrs.AsSeq) then
         let pidx = AddUnsharedRow cenv TableNames.Param (GenReturnAsParamRow returnv)
         GenCustomAttrsPass3Or4 cenv (hca_ParamDef,pidx) returnv.CustomAttrs
         match returnv.Marshal with 
