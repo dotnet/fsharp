@@ -3051,7 +3051,7 @@ and OptimizeModuleExpr cenv env x =
                     // Check the thing is not compiled as a static field or property, since reflected definitions and other reflective stuff might need it
                     not (IsCompiledAsStaticProperty cenv.g bind.Var))
 
-            let deadSet = Zset.addList (dead |> List.map (fun (bind,_) -> bind.Var)) (Zset.empty valOrder)
+            let deadSet = Zset.addSeq (dead |> List.map (fun (bind,_) -> bind.Var)) (Zset.empty valOrder)
 
             // Eliminate dead private bindings from a module type by mutation. Note that the optimizer doesn't
             // actually copy the entire term - it copies the expression portions of the term and leaves the 

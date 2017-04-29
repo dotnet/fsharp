@@ -262,7 +262,7 @@ let fmap2Of2 f z (a1,a2)       = let z,a2 = f z a2 in z,(a1,a2)
 
 module List = 
     let noRepeats xOrder xs =
-        let s = Zset.addList   xs (Zset.empty xOrder) // build set 
+        let s = Zset.addSeq   xs (Zset.empty xOrder) // build set 
         Zset.elements s          // get elements... no repeats
 
 //---------------------------------------------------------------------------
@@ -282,7 +282,7 @@ module Zmap =
 //------------------------------------------------------------------------- 
 
 module Zset =
-    let ofList order xs = Zset.addList   xs (Zset.empty order)
+    let ofSeq order xs = Zset.addSeq   xs (Zset.empty order)
 
     // CLEANUP NOTE: move to Zset?
     let rec fixpoint f (s as s0) =

@@ -19,7 +19,7 @@ module internal Zset =
     val contains  : 'T -> Zset<'T> -> bool
     val memberOf  : Zset<'T> -> 'T -> bool
     val add       : 'T -> Zset<'T> -> Zset<'T>
-    val addList   : 'T seq -> Zset<'T> -> Zset<'T>
+    val addSeq   : 'T seq -> Zset<'T> -> Zset<'T>
     val singleton : IComparer<'T> -> 'T -> Zset<'T>
     val remove    : 'T -> Zset<'T> -> Zset<'T>
 

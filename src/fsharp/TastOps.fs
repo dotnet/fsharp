@@ -2440,7 +2440,7 @@ module SimplifyTypes =
 
     let categorizeConstraints simplify m cxs =
         let singletons = if simplify then Zmap.chooseL (fun tp n -> if n = 1 then Some tp else None) m else []
-        let singletons = Zset.addList singletons (Zset.empty typarOrder)
+        let singletons = Zset.addSeq singletons (Zset.empty typarOrder)
         // Here, singletons are typars that occur once in the type.
         // However, they may also occur in a type constraint.
         // If they do, they are really multiple occurrence - so we should remove them.
@@ -7481,7 +7481,7 @@ type PrettyNaming.ActivePatternInfo with
 // not by their argument types.
 let doesActivePatternHaveFreeTypars g (v:ValRef) =
     let vty  = v.TauType
-    let vtps = v.Typars |> Zset.ofList typarOrder
+    let vtps = v.Typars |> Zset.ofSeq typarOrder
     if not (isFunTy g v.TauType) then
         errorR(Error(FSComp.SR.activePatternIdentIsNotFunctionTyped(v.LogicalName),v.Range))
     let argtys,resty  = stripFunTy g vty

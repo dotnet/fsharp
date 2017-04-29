@@ -225,7 +225,7 @@ module Pass1_DetermineTLRAndArities =
        let rejectS = GetValsBoundUnderMustInline xinfo
        let fArities = List.filter (fun (v,_) -> not (Zset.contains v rejectS)) fArities
        (*-*)
-       let tlrS   = Zset.ofList valOrder (List.map fst fArities)
+       let tlrS   = Zset.ofSeq valOrder (List.map fst fArities)
        let topValS   = xinfo.TopLevelBindings                     (* genuinely top level *)
        let topValS   = Zset.filter (IsMandatoryNonTopLevel g >> not) topValS     (* restrict *)
        (* REPORT MISSED CASES *)
@@ -304,7 +304,7 @@ module Pass1_DetermineTLRAndArities =
 /// [Each fclass has an env, the fclass are the handles to envs.]
 type BindingGroupSharingSameReqdItems(bindings: Bindings) =
     let vals = valsOfBinds bindings
-    let vset = Zset.addList vals (Zset.empty valOrder)
+    let vset = Zset.addSeq vals (Zset.empty valOrder)
 
     member fclass.Vals = vals
 
@@ -350,11 +350,11 @@ type ReqdItemsForDefn =
 
     member env.Extend (typars,items) =
         {env with
-               reqdTypars   = Zset.addList typars env.reqdTypars
-               reqdItems = Zset.addList items  env.reqdItems}
+               reqdTypars   = Zset.addSeq typars env.reqdTypars
+               reqdItems = Zset.addSeq items  env.reqdItems}
 
     static member Initial typars m = 
-        {reqdTypars   = Zset.addList typars  (Zset.empty typarOrder)
+        {reqdTypars   = Zset.addSeq typars  (Zset.empty typarOrder)
          reqdItems = Zset.empty reqdItemOrder
          m      = m }
 
@@ -526,7 +526,7 @@ module Pass2_DetermineReqdItems =
              let reqdVals0 = frees.FreeLocals |> Zset.elements
              // tlrBs are not reqdVals0 for themselves 
              let reqdVals0 = reqdVals0 |> List.filter (fun gv -> not (fclass.Contains gv)) 
-             let reqdVals0 = reqdVals0 |> Zset.ofList valOrder 
+             let reqdVals0 = reqdVals0 |> Zset.ofSeq valOrder 
              // collect into env over bodies 
              let z          = PushFrame fclass (reqdTypars0,reqdVals0,m) z
              let z          = (z,tlrBs) ||> Seq.fold (foldOn (fun b -> b.Expr) exprF) 

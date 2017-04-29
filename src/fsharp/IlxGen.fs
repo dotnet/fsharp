@@ -93,7 +93,7 @@ let ChooseFreeVarNames takenNames ts =
           let names = Zset.add tn names
           tn,names
 
-    let names    = Zset.empty String.order |> Zset.addList takenNames
+    let names    = Zset.empty String.order |> Zset.addSeq takenNames
     let ts,_names = List.mapFold chooseName names tns
     ts
 
@@ -3577,7 +3577,7 @@ and GenObjectExpr cenv cgbuf eenvouter expr (baseType,baseValOpt,basecall,overri
 
 and GenSequenceExpr cenv (cgbuf:CodeGenBuffer) eenvouter (nextEnumeratorValRef:ValRef,pcvref:ValRef,currvref:ValRef,stateVars,generateNextExpr,closeExpr,checkCloseExpr:Expr,seqElemTy, m)  sequel =
     let stateVars = [ pcvref; currvref ] @ stateVars
-    let stateVarsSet = stateVars |> List.map (fun vref -> vref.Deref) |> Zset.ofList valOrder 
+    let stateVarsSet = stateVars |> List.map (fun vref -> vref.Deref) |> Zset.ofSeq valOrder 
 
     // pretend that the state variables are bound
     let eenvouter = 
@@ -4576,7 +4576,7 @@ and GenLetRecBinds cenv cgbuf eenv (allBinds: Bindings,m) =
 
 
     let fixups = ref []
-    let recursiveVars = Zset.addList (bindsPossiblyRequiringFixup |> List.map (fun v -> v.Var)) (Zset.empty valOrder)
+    let recursiveVars = Zset.addSeq (bindsPossiblyRequiringFixup |> List.map (fun v -> v.Var)) (Zset.empty valOrder)
     let _ = 
         (recursiveVars, bindsPossiblyRequiringFixup) ||> Seq.fold (fun forwardReferenceSet (bind:Binding) ->
             // Compute fixups 

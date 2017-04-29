@@ -3462,7 +3462,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
                   yield einfo.GetRemoveMethod().DisplayName ]
         else []
 
-    let suppressedMethNames = Zset.ofList String.order (pinfoMethNames @ einfoMethNames)
+    let suppressedMethNames = Zset.ofSeq String.order (pinfoMethNames @ einfoMethNames)
 
     let pinfos = 
         pinfosIncludingUnseen
@@ -4097,7 +4097,7 @@ let private ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad stat
                       yield einfo.GetAddMethod().DisplayName
                       yield einfo.GetRemoveMethod().DisplayName ]
         
-            let suppressedMethNames = Zset.ofList String.order (pinfoMethNames @ einfoMethNames)
+            let suppressedMethNames = Zset.ofSeq String.order (pinfoMethNames @ einfoMethNames)
         
             let pinfos = 
                 pinfosIncludingUnseen
