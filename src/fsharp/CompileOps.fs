@@ -2818,7 +2818,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                   let runtimeRootWithoutSlash = runtimeRoot.TrimEnd('/', '\\')
                   let api = runtimeRootWithoutSlash + "-api"
                   let rootFacades = Path.Combine(runtimeRootWithoutSlash, "Facades")
-                  let facades = Path.Combine(api, "Facades")
+                  let apiFacades = Path.Combine(api, "Facades")
                   match tcConfig.resolutionEnvironment with
 #if !FSI_TODO_NETCORE
                   // For F# Interactive code we must inly reference impementation assemblies
@@ -2828,10 +2828,14 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                           yield rootFacades // System.Runtime.dll is in /usr/lib/mono/4.5/Facades
 #endif
                   | _ ->
-                      yield runtimeRoot  // The default FSharp.Core is found in lib/mono/4.5
+                      // The default FSharp.Core is found in lib/mono/4.5
+                      yield runtimeRoot  
+                      if Directory.Exists(rootFacades) then
+                          yield rootFacades // System.Runtime.dll is in /usr/lib/mono/4.5/Facades
+                      // It's not clear why we would need to reference the 4.5-api directory.  
                       if Directory.Exists(api) then
                           yield api
-                      if Directory.Exists(facades) then
+                      if Directory.Exists(apiFacades) then
                           yield facades
                 ]
             else                                
