@@ -558,14 +558,8 @@ namespace Internal.Utilities.Collections.Tagged
             copyToArray s res 0;
             res
 
-        let rec mkFromEnumerator comparer acc (e : IEnumerator<_>) = 
-            if e.MoveNext() then 
-              mkFromEnumerator comparer (add comparer e.Current acc) e
-            else acc
-          
         let ofSeq comparer (c : IEnumerable<_>) =
-            use ie = c.GetEnumerator()
-            mkFromEnumerator comparer empty ie 
+            Seq.fold (fun acc k -> add comparer k acc) empty c
 
         let ofArray comparer l = Array.fold (fun acc k -> add comparer k acc) empty l    
 
@@ -1014,16 +1008,8 @@ namespace Internal.Utilities.Collections.Tagged
         let toArray m = m |> toList |> Array.ofList
         let ofList comparer l = Seq.fold (fun acc (k,v) -> add comparer k v acc) empty l
 
-        
-        let rec mkFromEnumerator comparer acc (e : IEnumerator<_>) = 
-            if e.MoveNext() then 
-                let (x,y) = e.Current 
-                mkFromEnumerator comparer (add comparer x y acc) e
-            else acc
-          
         let ofSeq comparer (c : seq<_>) =
-            use ie = c.GetEnumerator()
-            mkFromEnumerator comparer empty ie 
+            Seq.fold (fun acc (k,v) -> add comparer k v acc) empty c
           
         let copyToArray s (arr: _[]) i =
             let j = ref i 
