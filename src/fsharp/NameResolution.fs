@@ -2973,15 +2973,15 @@ let SuggestLabelsOfRelatedRecords g (nenv:NameResolutionEnv) (id:Ident) (allFiel
                 NameMap.domainL nenv.eFieldLabels |> Set.ofList |> Set.remove "contents"
             else
                 let possibleRecords =
-                    [for fld in givenFields do
-                        match Map.tryFind fld nenv.eFieldLabels with
-                        | None -> ()
-                        | Some recordTypes -> yield! (recordTypes |> List.map (fun r -> r.TyconRef.DisplayName, fld)) ]
-                    |> List.groupBy fst
-                    |> List.map (fun (r,fields) -> r, fields |> List.map snd |> Set.ofList)
-                    |> List.filter (fun (_,fields) -> Set.isSubset givenFields fields)
-                    |> List.map fst
-                    |> Set.ofList
+                    seq {for fld in givenFields do
+                            match Map.tryFind fld nenv.eFieldLabels with
+                            | None -> ()
+                            | Some recordTypes -> yield! (recordTypes |> List.map (fun r -> r.TyconRef.DisplayName, fld))}
+                    |> Seq.groupBy fst
+                    |> Seq.map (fun (r,fields) -> r, fields |> Seq.map snd |> Set.ofSeq)
+                    |> Seq.filter (fun (_,fields) -> Set.isSubset givenFields fields)
+                    |> Seq.map fst
+                    |> Set.ofSeq
 
                 let labelsOfPossibleRecords =
                     nenv.eFieldLabels
@@ -3443,26 +3443,31 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
 
     // Exclude get_ and set_ methods accessed by properties 
     let pinfoMethNames = 
-      (pinfosIncludingUnseen 
-       |> List.filter (fun pinfo -> pinfo.HasGetter)
-       |> List.map (fun pinfo -> pinfo.GetterMethod.LogicalName))
-      @
-      (pinfosIncludingUnseen 
-       |> List.filter (fun pinfo -> pinfo.HasSetter)
-       |> List.map (fun pinfo -> pinfo.SetterMethod.LogicalName))
-    
+      let getters =
+        pinfosIncludingUnseen 
+        |> Seq.filter (fun pinfo -> pinfo.HasGetter)
+        |> Seq.map (fun pinfo -> pinfo.GetterMethod.LogicalName)
+      
+      let setters = 
+        pinfosIncludingUnseen 
+        |> Seq.filter (fun pinfo -> pinfo.HasSetter)
+        |> Seq.map (fun pinfo -> pinfo.SetterMethod.LogicalName)
+
+      Seq.append getters setters
+
     let einfoMethNames = 
         if completionTargets.ResolveAll then
-            [ for einfo in einfos do 
-                let delegateType = einfo.GetDelegateType(amap,m)
-                let (SigOfFunctionForDelegate(invokeMethInfo,_,_,_)) = GetSigOfFunctionForDelegate ncenv.InfoReader delegateType m ad 
-                // Only events with void return types are suppressed in intellisense.
-                if slotSigHasVoidReturnTy (invokeMethInfo.GetSlotSig(amap, m)) then 
-                  yield einfo.GetAddMethod().DisplayName
-                  yield einfo.GetRemoveMethod().DisplayName ]
-        else []
+            seq {
+                for einfo in einfos do 
+                    let delegateType = einfo.GetDelegateType(amap,m)
+                    let (SigOfFunctionForDelegate(invokeMethInfo,_,_,_)) = GetSigOfFunctionForDelegate ncenv.InfoReader delegateType m ad 
+                    // Only events with void return types are suppressed in intellisense.
+                    if slotSigHasVoidReturnTy (invokeMethInfo.GetSlotSig(amap, m)) then 
+                      yield einfo.GetAddMethod().DisplayName
+                      yield einfo.GetRemoveMethod().DisplayName }
+        else Seq.empty
 
-    let suppressedMethNames = Zset.ofSeq String.order (pinfoMethNames @ einfoMethNames)
+    let suppressedMethNames = Zset.ofSeq String.order (Seq.append pinfoMethNames einfoMethNames)
 
     let pinfos = 
         pinfosIncludingUnseen
@@ -3975,25 +3980,25 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
         // empty plid - return namespaces\modules\record types\accessible fields
        let iltyconNames =
           nenv.TyconsByAccessNames(fullyQualified).Values
-          |> List.choose (fun tyconRef -> if tyconRef.IsILTycon then Some tyconRef.DisplayName else None)
-          |> Set.ofList
+          |> Seq.choose (fun tyconRef -> if tyconRef.IsILTycon then Some tyconRef.DisplayName else None)
+          |> Set.ofSeq
 
        let mods = 
            nenv.ModulesAndNamespaces(fullyQualified)
            |> NameMultiMap.range 
-           |> List.filter (fun x -> 
+           |> Seq.filter (fun x -> 
                 let demangledName = x.DemangledModuleOrNamespaceName
                 IsInterestingModuleName demangledName && notFakeContainerModule iltyconNames demangledName)
-           |> List.filter (EntityRefContainsSomethingAccessible ncenv m ad)
-           |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
-           |> List.map ItemForModuleOrNamespaceRef
+           |> Seq.filter (EntityRefContainsSomethingAccessible ncenv m ad)
+           |> Seq.filter (IsTyconUnseen ad g ncenv.amap m >> not)
+           |> Seq.map ItemForModuleOrNamespaceRef
 
        let recdTyCons = 
            nenv.TyconsByDemangledNameAndArity(fullyQualified).Values
-           |> List.filter (fun tcref -> not (tcref.LogicalName.Contains(",")))
-           |> List.filter (fun tcref -> tcref.IsRecordTycon) 
-           |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
-           |> List.map (ItemOfTyconRef ncenv m)
+           |> Seq.filter (fun tcref -> not (tcref.LogicalName.Contains(",")))
+           |> Seq.filter (fun tcref -> tcref.IsRecordTycon) 
+           |> Seq.filter (IsTyconUnseen ad g ncenv.amap m >> not)
+           |> Seq.map (ItemOfTyconRef ncenv m)
 
        let recdFields = 
            nenv.eFieldLabels
@@ -4001,9 +4006,8 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
            |> Seq.map (fun fref -> 
                 let typeInsts = fref.TyconRef.TyparsNoRange |> List.map (fun tyar -> tyar.AsType)
                 Item.RecdField(RecdFieldInfo(typeInsts, fref)))
-           |> List.ofSeq
 
-       mods @ recdTyCons @ recdFields
+       Seq.concat [mods; recdTyCons; recdFields] |> Seq.toList
 
     | id::rest -> 
         // Get results
@@ -4073,31 +4077,36 @@ let private ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad stat
                     IsPropInfoAccessible g amap m ad x)
         
             // Exclude get_ and set_ methods accessed by properties 
-            let pinfoMethNames = 
-              (pinfosIncludingUnseen 
-               |> List.filter (fun pinfo -> pinfo.HasGetter)
-               |> List.map (fun pinfo -> pinfo.GetterMethod.LogicalName))
-              @
-              (pinfosIncludingUnseen 
-               |> List.filter (fun pinfo -> pinfo.HasSetter)
-               |> List.map (fun pinfo -> pinfo.SetterMethod.LogicalName))
+            let pinfoMethNames =
+                let getters = 
+                    pinfosIncludingUnseen 
+                    |> Seq.filter (fun pinfo -> pinfo.HasGetter)
+                    |> Seq.map (fun pinfo -> pinfo.GetterMethod.LogicalName)
+
+                let setters =
+                    pinfosIncludingUnseen 
+                    |> Seq.filter (fun pinfo -> pinfo.HasSetter)
+                    |> Seq.map (fun pinfo -> pinfo.SetterMethod.LogicalName)
+
+                Seq.append getters setters
             
             let einfoMethNames = 
                 let einfos = 
                     ncenv.InfoReader.GetEventInfosOfType(None,ad,m,typ)
-                    |> List.filter (fun x -> 
+                    |> Seq.filter (fun x -> 
                         IsStandardEventInfo ncenv.InfoReader m ad x &&
                         x.IsStatic = statics)
                 
-                [ for einfo in einfos do 
-                    let delegateType = einfo.GetDelegateType(amap, m)
-                    let (SigOfFunctionForDelegate(invokeMethInfo,_,_,_)) = GetSigOfFunctionForDelegate ncenv.InfoReader delegateType m ad 
-                    // Only events with void return types are suppressed in intellisense.
-                    if slotSigHasVoidReturnTy (invokeMethInfo.GetSlotSig(amap, m)) then 
-                      yield einfo.GetAddMethod().DisplayName
-                      yield einfo.GetRemoveMethod().DisplayName ]
+                seq {
+                    for einfo in einfos do 
+                        let delegateType = einfo.GetDelegateType(amap, m)
+                        let (SigOfFunctionForDelegate(invokeMethInfo,_,_,_)) = GetSigOfFunctionForDelegate ncenv.InfoReader delegateType m ad 
+                        // Only events with void return types are suppressed in intellisense.
+                        if slotSigHasVoidReturnTy (invokeMethInfo.GetSlotSig(amap, m)) then 
+                          yield einfo.GetAddMethod().DisplayName
+                          yield einfo.GetRemoveMethod().DisplayName }
         
-            let suppressedMethNames = Zset.ofSeq String.order (pinfoMethNames @ einfoMethNames)
+            let suppressedMethNames = Zset.ofSeq String.order (Seq.append pinfoMethNames einfoMethNames)
         
             let pinfos = 
                 pinfosIncludingUnseen

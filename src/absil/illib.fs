@@ -1103,10 +1103,10 @@ module NameMap =
 
     /// Union entries by identical key, using the provided function to union sets of values
     let union unionf (ms: NameMap<_> seq) = 
-        seq { for m in ms do yield! m } 
-           |> Seq.groupBy (fun (KeyValue(k,_v)) -> k) 
-           |> Seq.map (fun (k,es) -> (k,unionf (Seq.map (fun (KeyValue(_k,v)) -> v) es))) 
-           |> Map.ofSeq
+        Seq.concat ms
+        |> Seq.groupBy (fun (KeyValue(k,_v)) -> k) 
+        |> Seq.map (fun (k,es) -> (k,unionf (Seq.map (fun (KeyValue(_k,v)) -> v) es))) 
+        |> Map.ofSeq
 
     /// For every entry in m2 find an entry in m1 and fold 
     let subfold2 errf f m1 m2 acc =

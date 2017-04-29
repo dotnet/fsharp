@@ -4576,7 +4576,7 @@ and GenLetRecBinds cenv cgbuf eenv (allBinds: Bindings,m) =
 
 
     let fixups = ref []
-    let recursiveVars = Zset.addSeq (bindsPossiblyRequiringFixup |> List.map (fun v -> v.Var)) (Zset.empty valOrder)
+    let recursiveVars = Zset.addSeq (bindsPossiblyRequiringFixup |> Seq.map (fun v -> v.Var)) (Zset.empty valOrder)
     let _ = 
         (recursiveVars, bindsPossiblyRequiringFixup) ||> Seq.fold (fun forwardReferenceSet (bind:Binding) ->
             // Compute fixups 

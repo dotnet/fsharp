@@ -1101,12 +1101,12 @@ and CheckAttribs cenv env (attribs: Attribs) =
     let duplicates = 
         tcrefs
         |> Seq.groupBy (fun (tcref,_) -> tcref.Stamp) 
-        |> Seq.map (fun (_,elems) -> List.last (List.ofSeq elems), Seq.length elems) 
+        |> Seq.map (fun (_,elems) -> Seq.last elems, Seq.length elems) 
         |> Seq.filter (fun (_,count) -> count > 1) 
         |> Seq.map fst 
-        |> Seq.toList
         // Filter for allowMultiple = false
-        |> List.filter (fun (tcref,m) -> TryFindAttributeUsageAttribute cenv.g m tcref <> Some(true))
+        |> Seq.filter (fun (tcref,m) -> TryFindAttributeUsageAttribute cenv.g m tcref <> Some(true))
+        |> Seq.toList
 
     if cenv.reportErrors then 
        for (tcref,m) in duplicates do
