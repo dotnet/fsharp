@@ -5211,6 +5211,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             bool found = false;
             bool fFolderCase = false;
             HierarchyNode parent = this.NodeFromItemId(itemIdLoc);
+            
+            if (parent is FileNode)
+                parent = parent.Parent;
 
             extToUse = ext.Trim();
             if (String.Compare(extToUse, ".config", StringComparison.OrdinalIgnoreCase) == 0 ||
