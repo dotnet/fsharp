@@ -2836,7 +2836,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                       if Directory.Exists(api) then
                           yield api
                       if Directory.Exists(apiFacades) then
-                          yield facades
+                          yield apiFacades
                 ]
             else                                
 #endif
