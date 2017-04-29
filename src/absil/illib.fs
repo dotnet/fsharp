@@ -474,14 +474,16 @@ module List =
     let collect2 f xs ys = List.concat (List.map2 f xs ys)
 
     let toArraySquared xss = xss |> List.map List.toArray |> List.toArray
-    let iterSquared f xss = xss |> Seq.iter (Seq.iter f)
     let collectSquared f xss = xss |> List.collect (List.collect f)
     let mapSquared f xss = xss |> List.map (List.map f)
     let mapFoldSquared f z xss = mapFold (mapFold f) z xss
-    let forallSquared f xss = xss |> Seq.forall (Seq.forall f)
     let mapiSquared f xss = xss |> List.mapi (fun i xs -> xs |> List.mapi (fun j x -> f i j x))
-    let existsSquared f xss = xss |> Seq.exists (fun xs -> xs |> Seq.exists (fun x -> f x))
     let mapiFoldSquared f z xss =  mapFoldSquared f z (xss |> mapiSquared (fun i j x -> (i,j,x)))
+
+module Seq =
+    let iterSquared f xss = xss |> Seq.iter (Seq.iter f)
+    let forallSquared f xss = xss |> Seq.forall (Seq.forall f)
+    let existsSquared f xss = xss |> Seq.exists (fun xs -> xs |> Seq.exists (fun x -> f x))
 
 [<Struct>]
 type ValueOption<'T> =

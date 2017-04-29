@@ -106,7 +106,7 @@ let rec accExpr   (cenv:cenv) (env:env) expr =
 
 and accMethods cenv env baseValOpt l = Seq.iter (accMethod cenv env baseValOpt) l
 and accMethod cenv env _baseValOpt (TObjExprMethod(_slotsig,_attribs,_tps,vs,e,_m)) = 
-    vs |> List.iterSquared (accVal cenv env)
+    vs |> Seq.iterSquared (accVal cenv env)
     accExpr cenv env e
 
 and accIntfImpls cenv env baseValOpt l = Seq.iter (accIntfImpl cenv env baseValOpt) l
@@ -140,7 +140,7 @@ and accLambdas cenv env topValInfo e ety =
     | Expr.TyLambda _ ->
         let _tps,ctorThisValOpt,baseValOpt,vsl,body,bodyty = destTopLambda cenv.g cenv.amap topValInfo (e, ety) 
         accTy cenv env bodyty
-        vsl |> List.iterSquared (accVal cenv env)
+        vsl |> Seq.iterSquared (accVal cenv env)
         baseValOpt |> Option.iter (accVal cenv env)
         ctorThisValOpt |> Option.iter (accVal cenv env)
         accExpr cenv env body
@@ -181,7 +181,7 @@ and accAttrib cenv env (Attrib(_,_k,args,props,_,_,_m)) =
 and accAttribs cenv env attribs = Seq.iter (accAttrib cenv env) attribs
 
 and accValReprInfo cenv env (ValReprInfo(_,args,ret)) =
-    args |> List.iterSquared (accArgReprInfo cenv env)
+    args |> Seq.iterSquared (accArgReprInfo cenv env)
     ret |> accArgReprInfo cenv env
 
 and accArgReprInfo cenv env (argInfo: ArgReprInfo) = 

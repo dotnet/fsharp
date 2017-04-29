@@ -6340,7 +6340,7 @@ and FreshenObjExprAbstractSlot cenv (env: TcEnv) (implty:TType) virtNameAndArity
         let absSlotsByName = List.filter (fst >> fst >> (=) bindName) virtNameAndArityPairs
         let getSignature absSlot = (NicePrint.stringOfMethInfo cenv.amap mBinding env.DisplayEnv absSlot).Replace("abstract ","")
         let getDetails (absSlot:MethInfo) = 
-            if absSlot.GetParamTypes(cenv.amap,mBinding,[]) |> List.existsSquared (isAnyTupleTy cenv.g) then
+            if absSlot.GetParamTypes(cenv.amap,mBinding,[]) |> Seq.existsSquared (isAnyTupleTy cenv.g) then
                 FSComp.SR.tupleRequiredInAbstractMethod()
             else ""
 
@@ -9545,7 +9545,7 @@ and TcMethodApplication
         if HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_Dictionary finalCalledMethInfo.EnclosingType  &&
            finalCalledMethInfo.IsConstructor &&
            not (finalCalledMethInfo.GetParamDatas(cenv.amap, mItem, finalCalledMeth.CalledTyArgs) 
-                |> List.existsSquared (fun (ParamData(_,_,_,_,_,_,ty)) ->  
+                |> Seq.existsSquared (fun (ParamData(_,_,_,_,_,_,ty)) ->  
                     HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IEqualityComparer ty)) then 
             
             match argsOfAppTy cenv.g finalCalledMethInfo.EnclosingType with 

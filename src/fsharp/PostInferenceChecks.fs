@@ -1115,7 +1115,7 @@ and CheckAttribs cenv env (attribs: Attribs) =
     attribs |> Seq.iter (CheckAttrib cenv env) 
 
 and CheckValInfo cenv env (ValReprInfo(_,args,ret)) =
-    args |> List.iterSquared (CheckArgInfo cenv env)
+    args |> Seq.iterSquared (CheckArgInfo cenv env)
     ret |> CheckArgInfo cenv env
 
 and CheckArgInfo cenv env (argInfo : ArgReprInfo)  = 
@@ -1467,13 +1467,13 @@ let CheckEntityDefn cenv env (tycon:Entity) =
 
             if numCurriedArgSets > 1 && 
                (minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst) 
-                |> List.existsSquared (fun (ParamData(isParamArrayArg, isOutArg, optArgInfo, callerInfoInfo, _, reflArgInfo, ty)) -> 
+                |> Seq.existsSquared (fun (ParamData(isParamArrayArg, isOutArg, optArgInfo, callerInfoInfo, _, reflArgInfo, ty)) -> 
                     isParamArrayArg || isOutArg || reflArgInfo.AutoQuote || optArgInfo.IsOptional || callerInfoInfo <> NoCallerInfo || isByrefTy cenv.g ty)) then 
                 errorR(Error(FSComp.SR.chkCurriedMethodsCantHaveOutParams(), m))
 
             if numCurriedArgSets = 1 then
                 minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst) 
-                |> List.iterSquared (fun (ParamData(_, _, optArgInfo, callerInfoInfo, _, _, ty)) ->
+                |> Seq.iterSquared (fun (ParamData(_, _, optArgInfo, callerInfoInfo, _, _, ty)) ->
                     match (optArgInfo, callerInfoInfo) with
                     | _, NoCallerInfo -> ()
                     | NotOptional, _ -> errorR(Error(FSComp.SR.tcCallerInfoNotOptional(callerInfoInfo.ToString()),m))
@@ -1611,7 +1611,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                 //ss.ClassTypars 
                 //ss.MethodTypars 
                 ss.FormalReturnType |> Option.iter visitType
-                ss.FormalParams |> List.iterSquared (fun (TSlotParam(_,ty,_,_,_,_)) -> visitType ty)
+                ss.FormalParams |> Seq.iterSquared (fun (TSlotParam(_,ty,_,_,_,_)) -> visitType ty)
             | _ -> ()
         | _ -> ()
 

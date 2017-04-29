@@ -495,8 +495,8 @@ let ExamineArgumentForLambdaPropagation (infoReader:InfoReader) (arg: AssignedCa
 let ExamineMethodForLambdaPropagation(x:CalledMeth<SynExpr>) =
     let unnamedInfo = x.AssignedUnnamedArgs |> List.mapSquared (ExamineArgumentForLambdaPropagation x.infoReader)
     let namedInfo = x.AssignedNamedArgs |> List.mapSquared (fun arg -> (arg.NamedArgIdOpt.Value, ExamineArgumentForLambdaPropagation x.infoReader arg))
-    if unnamedInfo |> List.existsSquared (function CallerLambdaHasArgTypes _ -> true | _ -> false) || 
-       namedInfo |> List.existsSquared (function (_,CallerLambdaHasArgTypes _) -> true | _ -> false) then 
+    if unnamedInfo |> Seq.existsSquared (function CallerLambdaHasArgTypes _ -> true | _ -> false) || 
+       namedInfo |> Seq.existsSquared (function (_,CallerLambdaHasArgTypes _) -> true | _ -> false) then 
         Some (unnamedInfo, namedInfo)
     else
         None

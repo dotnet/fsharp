@@ -1507,7 +1507,7 @@ type MethInfo =
 
     /// Get the ParamData objects for the parameters of a MethInfo
     member x.HasParamArrayArg(amap, m, minst) = 
-        x.GetParamDatas(amap, m, minst) |> List.existsSquared (fun (ParamData(isParamArrayArg,_,_,_,_,_,_)) -> isParamArrayArg)
+        x.GetParamDatas(amap, m, minst) |> Seq.existsSquared (fun (ParamData(isParamArrayArg,_,_,_,_,_,_)) -> isParamArrayArg)
 
 
     /// Select all the type parameters of the declaring type of a method. 
