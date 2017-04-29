@@ -3412,7 +3412,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
     
     reportTime showTimes "Layout Metadata"
 
-    let metadata = 
+    let metadata, guidStart =
       let mdbuf =  ByteBuffer.Create 500000 
       mdbuf.EmitIntsAsBytes 
         [| 0x42; 0x53; 0x4a; 0x42; // Magic signature 
@@ -3470,6 +3470,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
 
       reportTime showTimes "Write Metadata User Strings";
     // The GUID stream 
+      let guidStart = mdbuf.Position
       Array.iter mdbuf.EmitBytes guids;
       
     // The blob stream 
@@ -3481,7 +3482,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
           mdbuf.EmitIntAsByte 0x00;
       reportTime showTimes "Write Blob Stream";
      // Done - close the buffer and return the result. 
-      mdbuf.Close()
+      mdbuf.Close(), guidStart
     
 
    // Now we know the user string tables etc. we can fixup the 
@@ -3496,7 +3497,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
               applyFixup32 code locInCode token
     reportTime showTimes "Fixup Metadata";
 
-    entryPointToken,code, codePadding,metadata,data,resources,!requiredDataFixups,pdbData,mappings
+    entryPointToken,code, codePadding,metadata,data,resources,!requiredDataFixups,pdbData,mappings,guidStart
 
 //---------------------------------------------------------------------
 // PHYSICAL METADATA+BLOBS --> PHYSICAL PE FORMAT
@@ -3674,7 +3675,7 @@ let writeBinaryAndReportMappings (outfile,
                     | Some v -> v
                     | None -> failwith "Expected msorlib to have a version number"
 
-          let entryPointToken,code,codePadding,metadata,data,resources,requiredDataFixups,pdbData,mappings = 
+          let entryPointToken,code,codePadding,metadata,data,resources,requiredDataFixups,pdbData,mappings,guidStart =
             writeILMetadataAndCode ((pdbfile <> None), desiredMetadataVersion, ilg,emitTailcalls, deterministic, showTimes) modul next
 
           reportTime showTimes "Generated IL and metadata";
@@ -3857,10 +3858,30 @@ let writeBinaryAndReportMappings (outfile,
             writeInt32AsUInt16 os 0x014c;   // Machine - IMAGE_FILE_MACHINE_I386 
             
           writeInt32AsUInt16 os numSections;
-          if deterministic then
-            writeInt32 os -1          // High bit set, to stop tool chains becoming confused
-          else 
-            writeInt32 os timestamp   // date since 1970
+
+          let pdbData = 
+            if deterministic then
+              // Hash code, data and metadata
+              use sha = System.Security.Cryptography.SHA1.Create()    // IncrementalHash is core only
+              let hCode = sha.ComputeHash code
+              let hData = sha.ComputeHash data
+              let hMeta = sha.ComputeHash metadata
+              let final = [| hCode; hData; hMeta |] |> Array.collect id |> sha.ComputeHash
+
+              // TEMP test until proper tests in
+              if metadata.[ guidStart..guidStart+3] <> [| 0uy; 0uy; 0uy; 0uy |] then failwith "Failed to find MVID"
+
+              // Update MVID guid in metadata
+              Array.blit final 0 metadata guidStart 16
+
+              // Use last 4 bytes for timestamp
+              writeBytes os [| final.[16] ||| 128uy ; final.[17]; final.[18]; final.[19] |] // High bit set, to stop tool chains becoming confused
+              // Update pdbData with new guid
+              { pdbData with ModuleID = final.[0..15] }
+            else
+              writeInt32 os timestamp   // date since 1970
+              pdbData
+
           writeInt32 os 0x00; // Pointer to Symbol Table Always 0 
        // 00000090 
           writeInt32 os 0x00; // Number of Symbols Always 0 
