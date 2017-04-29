@@ -32,7 +32,7 @@ open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.InfoReader
 
-type internal Layout = layout
+type Layout = layout
 
 module EnvMisc2 =
     let maxMembers = GetEnvInteger "FCS_MaxMembersInQuickInfo" 10
@@ -75,7 +75,7 @@ type FSharpToolTipElement<'T> =
 type FSharpToolTipElement = FSharpToolTipElement<string>
 
 /// A single data tip display element with where text is expressed as <see cref="Layout"/>
-type internal FSharpStructuredToolTipElement = FSharpToolTipElement<Layout>
+type FSharpStructuredToolTipElement = FSharpToolTipElement<Layout>
 
 /// Information for building a data tip box.
 //
@@ -87,9 +87,9 @@ type FSharpToolTipText<'T> =
 // specialization that stores data as strings
 type FSharpToolTipText = FSharpToolTipText<string>
 // specialization that stores data as <see cref="Layout"/>
-type internal FSharpStructuredToolTipText = FSharpToolTipText<Layout>
+type FSharpStructuredToolTipText = FSharpToolTipText<Layout>
 
-module internal Tooltips =
+module Tooltips =
     let ToFSharpToolTipElement tooltip = 
         match tooltip with
         | FSharpStructuredToolTipElement.None -> FSharpToolTipElement.None
@@ -305,8 +305,11 @@ module internal ItemDescriptionsImpl =
             // Generalize to get a formal signature 
             let formalTypars = tcref.Typars(m)
             let formalTypeInst = generalizeTypars formalTypars
-            let formalTypeInfo = ILTypeInfo.FromType g (TType_app(tcref,formalTypeInst))
-            Some(nlref.Ccu.FileName,formalTypars,formalTypeInfo)
+            let ty = TType_app(tcref,formalTypeInst)
+            if isILAppTy g ty then
+                let formalTypeInfo = ILTypeInfo.FromType g ty
+                Some(nlref.Ccu.FileName,formalTypars,formalTypeInfo)
+            else None
 
     let mkXmlComment thing =
         match thing with
@@ -1367,7 +1370,7 @@ module internal ItemDescriptionsImpl =
             | Item.SetterArg _ -> FSharpGlyph.Variable
             | _ -> FSharpGlyph.Error)
 
-type FSharpAccessibility(a:Accessibility, ?isProtected) = 
+type FSharpAccessibility internal (a:Accessibility, ?isProtected) = 
     let isProtected = defaultArg isProtected  false
 
     let isInternalCompPath x = 
@@ -1389,7 +1392,7 @@ type FSharpAccessibility(a:Accessibility, ?isProtected) =
 
     member __.IsProtected = isProtected
 
-    member __.Contents = a
+    member internal __.Contents = a
 
     override x.ToString() = 
         let (TAccess paths) = a
@@ -1428,12 +1431,13 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: strin
         |> Tooltips.Map Tooltips.ToFSharpToolTipText
 
     member decl.StructuredDescriptionText = 
+      ErrorScope.Protect Range.range0 
+       (fun () -> 
         match descriptionTextHolder with
         | Some descriptionText -> descriptionText
         | None ->
             match info with
             | Choice1Of2 _ -> 
-
                 // The dataTipSpinWaitTime limits how long we block the UI thread while a tooltip pops up next to a selected item in an IntelliSense completion list.
                 // This time appears to be somewhat amortized by the time it takes the VS completion UI to actually bring up the tooltip after selecting an item in the first place.
                 if isNull task then
@@ -1451,7 +1455,8 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: strin
 
             | Choice2Of2 result -> 
                 result
-
+       )
+       (fun err -> FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError err])
     member decl.DescriptionText = decl.StructuredDescriptionText |> Tooltips.ToFSharpToolTipText
     member decl.Glyph = glyph 
     member decl.Accessibility = accessibility

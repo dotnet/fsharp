@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
+module (*internal*) Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 #nowarn "1178" // The struct, record or union type 'internal_instr_extension' is not structurally comparable because the type
 
 
@@ -9,8 +9,6 @@ open System.Collections
 open System.Collections.Generic
 open System.Reflection
 open Internal.Utilities
-open Internal.Utilities.Collections
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 
 #if FX_RESHAPED_REFLECTION
 open Microsoft.FSharp.Core.ReflectionAdapters
@@ -38,7 +36,7 @@ let reportTime =
             let t = System.Diagnostics.Process.GetCurrentProcess().UserProcessorTime.TotalSeconds
             let prev = match !tPrev with None -> 0.0 | Some t -> t
             let first = match !tFirst with None -> (tFirst := Some t; t) | Some t -> t
-            dprintf "ilwrite: TIME %10.3f (total)   %10.3f (delta) - %s\n" (t - first) (t - prev) descr
+            printf "ilwrite: TIME %10.3f (total)   %10.3f (delta) - %s\n" (t - first) (t - prev) descr
             tPrev := Some t
 
 //-------------------------------------------------------------------------
@@ -249,8 +247,25 @@ module Option =
 
     let attempt (f: unit -> 'T) = try Some (f()) with _ -> None        
 
+    
+    let orElseWith f opt = 
+        match opt with 
+        | None -> f()
+        | x -> x
+
+    let orElse v opt = 
+        match opt with 
+        | None -> v
+        | x -> x
+
+    let defaultValue v opt = 
+        match opt with 
+        | None -> v
+        | Some x -> x
+
 module List = 
 
+    let item n xs = List.nth xs n
 #if FX_RESHAPED_REFLECTION
     open PrimReflectionAdapters
     open Microsoft.FSharp.Core.ReflectionAdapters

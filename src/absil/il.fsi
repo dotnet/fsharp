@@ -2,7 +2,7 @@
 
 /// The "unlinked" view of .NET metadata and code.  Central to 
 ///  to Abstract IL library
-module internal Microsoft.FSharp.Compiler.AbstractIL.IL 
+module (*internal*) Microsoft.FSharp.Compiler.AbstractIL.IL 
 
 open Internal.Utilities
 open System.Collections.Generic
@@ -57,7 +57,7 @@ type PrimaryAssembly =
 // ==================================================================== 
 
 // Guids (Note: consider adjusting these to the System.Guid type)
-type Guid = byte[]
+type ILGuid = byte[]
 
 [<StructuralEquality; StructuralComparison>]
 type ILPlatform = 
@@ -69,10 +69,10 @@ type ILPlatform =
 /// points and some other locations. 
 [<Sealed>]
 type ILSourceDocument =
-    static member Create : language: Guid option * vendor: Guid option * documentType: Guid option * file: string -> ILSourceDocument
-    member Language: Guid option
-    member Vendor: Guid option
-    member DocumentType: Guid option
+    static member Create : language: ILGuid option * vendor: ILGuid option * documentType: ILGuid option * file: string -> ILSourceDocument
+    member Language: ILGuid option
+    member Vendor: ILGuid option
+    member DocumentType: ILGuid option
     member File: string
 
 
@@ -748,7 +748,7 @@ type ILNativeVariant =
 [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
 type ILNativeType = 
     | Empty
-    | Custom of Guid * string * string * byte[] (* guid,nativeTypeName,custMarshallerName,cookieString *)
+    | Custom of ILGuid * string * string * byte[] (* guid,nativeTypeName,custMarshallerName,cookieString *)
     | FixedSysString of int32
     | FixedArray of int32
     | Currency
@@ -845,7 +845,7 @@ type ILAttributeNamedArg = string * ILType * bool * ILAttribElem
 /// Custom attributes.  See 'decodeILAttribData' for a helper to parse the byte[] 
 /// to ILAttribElem's as best as possible.  
 type ILAttribute =
-    { Method: ILMethodSpec;
+    { Method: ILMethodSpec;  
       Data: byte[] }
 
 [<NoEquality; NoComparison; Sealed>]
@@ -1843,6 +1843,9 @@ val rescopeILMethodRef: ILScopeRef -> ILMethodRef -> ILMethodRef
 /// Rescoping. The first argument tells the function how to reference the original scope from 
 /// the new scope. 
 val rescopeILFieldRef: ILScopeRef -> ILFieldRef -> ILFieldRef
+
+/// Unscoping. Clears every scope information, use for looking up IL method references only.
+val unscopeILType: ILType -> ILType
 
 //-----------------------------------------------------------------------
 // The ILCode Builder utility.

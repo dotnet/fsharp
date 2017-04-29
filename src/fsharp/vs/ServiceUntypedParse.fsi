@@ -15,7 +15,7 @@ open Microsoft.FSharp.Compiler.ErrorLogger
 
 [<Sealed>]
 /// Represents the results of parsing an F# file
-type internal FSharpParseFileResults = 
+type FSharpParseFileResults = 
 
     /// The syntax tree resulting from the parse
     member ParseTree : Ast.ParsedInput option
@@ -31,9 +31,6 @@ type internal FSharpParseFileResults =
 
     /// Return the inner-most range associated with a possible breakpoint location
     member ValidateBreakpointLocation : pos:pos -> range option
-
-    /// When these files change then the build is invalid
-    member DependencyFiles : string list
 
     /// Get the errors and warnings for the parse
     member Errors : FSharpErrorInfo[]
@@ -52,19 +49,19 @@ module internal SourceFile =
    /// Whether or not this file should be a single-file project
    val MustBeSingleFileProject : string -> bool
 
-type internal CompletionPath = string list * string option // plid * residue
+type CompletionPath = string list * string option // plid * residue
 
-type internal InheritanceContext = 
+type InheritanceContext = 
     | Class
     | Interface
     | Unknown
 
-type internal RecordContext =
+type RecordContext =
     | CopyOnUpdate of range * CompletionPath // range
     | Constructor of string // typename
     | New of CompletionPath
 
-type internal CompletionContext = 
+type CompletionContext = 
     // completion context cannot be determined due to errors
     | Invalid
     // completing something after the inherit keyword
@@ -78,16 +75,16 @@ type internal CompletionContext =
     | AttributeApplication
     | OpenDeclaration
 
-type internal ModuleKind = { IsAutoOpen: bool; HasModuleSuffix: bool }
+type ModuleKind = { IsAutoOpen: bool; HasModuleSuffix: bool }
 
-type internal EntityKind =
+type EntityKind =
     | Attribute
     | Type
     | FunctionOrValue of isActivePattern:bool
     | Module of ModuleKind
 
 // implementation details used by other code in the compiler    
-module internal UntypedParseImpl =
+module UntypedParseImpl =
     val TryFindExpressionASTLeftOfDotLeftOfCursor : pos * ParsedInput option -> (pos * bool) option
     val GetRangeOfExprLeftOfDot : pos  * ParsedInput option -> range option
     val TryFindExpressionIslandInPosition : pos * ParsedInput option -> string option

@@ -1627,7 +1627,6 @@ let OutputDiagnosticContext prefix fileLineFn os err =
 
 let GetFSharpCoreLibraryName () = "FSharp.Core"
 
-type internal TypeInThisAssembly = class end
 let GetFSharpCoreReferenceUsedByCompiler(useSimpleResolution) = 
   // On Mono, there is no good reference resolution
   if useSimpleResolution then 
@@ -1639,17 +1638,27 @@ let GetFSharpCoreReferenceUsedByCompiler(useSimpleResolution) =
     // So use the FSharp.Core.dll from alongside the fsc compiler.
     // This can also be used for the out of gac work on DEV15
     let fscCoreLocation = 
-        let fscLocation = typeof<TypeInThisAssembly>.Assembly.Location
+        let fscLocation = typeof<Microsoft.FSharp.Core.MeasureAttribute>.Assembly.Location
         Path.Combine(Path.GetDirectoryName(fscLocation), fsCoreName + ".dll")
     if File.Exists(fscCoreLocation) then fscCoreLocation
-    else failwithf "Internal error: Could not find %s" fsCoreName
+    else failwithf "Internal error: Could not find %s" fscCoreLocation
 #else
-    // TODO:  Remove this when we do out of GAC for DEV 15 because above code will work everywhere.
-    typeof<TypeInThisAssembly>.Assembly.GetReferencedAssemblies()
-    |> Array.pick (fun name ->
-        if name.Name = fsCoreName then Some(name.ToString())
-        else None
-    )
+    // check if FSharp.Core can be found from the hosting environment
+    let foundReference =
+        match System.Reflection.Assembly.GetEntryAssembly() with
+        | null -> None
+        | entryAssembly ->
+            entryAssembly.GetReferencedAssemblies()
+            |> Array.tryPick (fun name ->
+                if name.Name = fsCoreName then Some(name.ToString())
+                else None)
+
+    // if not we use the referenced FSharp.Core from this project
+    match foundReference with
+    | Some fsharpCore -> fsharpCore
+    | None ->                        
+        // FSharp.Compiler.Service for F# 4.0 defaults to FSharp.Core 4.4.0.0 if no FSharp.Core is referenced statically by the host process.
+        "FSharp.Core, Version=4.4.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
 #endif
 let GetFsiLibraryName () = "FSharp.Compiler.Interactive.Settings"  
 
@@ -1683,13 +1692,26 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
           yield "System.Collections" // System.Collections.Generic.List<T>
           yield "System.Runtime.Numerics" // BigInteger
           yield "System.Threading"  // OperationCanceledException
-          yield "System.ValueTuple"
+          //yield "System.ValueTuple"
 
           yield "System.Web"
           yield "System.Web.Services"
           yield "System.Windows.Forms"
           yield "System.Numerics" 
-     ]
+      else
+          yield Path.Combine(Path.GetDirectoryName(typeof<System.Object>.Assembly.Location),"mscorlib.dll"); // mscorlib
+          yield typeof<System.Console>.Assembly.Location; // System.Console
+          yield typeof<System.ComponentModel.DefaultValueAttribute>.Assembly.Location; // System.Runtime
+          yield typeof<System.ComponentModel.PropertyChangedEventArgs>.Assembly.Location; // System.ObjectModel             
+          yield typeof<System.IO.BufferedStream>.Assembly.Location; // System.IO
+          yield typeof<System.Linq.Enumerable>.Assembly.Location; // System.Linq
+          yield typeof<System.Xml.Linq.XDocument>.Assembly.Location; // System.Xml.Linq
+          yield typeof<System.Net.WebRequest>.Assembly.Location; // System.Net.Requests
+          yield typeof<System.Numerics.BigInteger>.Assembly.Location; // System.Runtime.Numerics
+          yield typeof<System.Threading.Tasks.TaskExtensions>.Assembly.Location; // System.Threading.Tasks
+          yield typeof<Microsoft.FSharp.Core.MeasureAttribute>.Assembly.Location; // FSharp.Core
+    ]
+
 
 // A set of assemblies to always consider to be system assemblies.  A common set of these can be used a shared 
 // resources between projects in the compiler services.  Also all assembles where well-known system types exist
@@ -1698,7 +1720,7 @@ let SystemAssemblies () =
    HashSet
     [ yield "mscorlib"
       yield "System.Runtime"
-      yield "FSharp.Core"
+      yield GetFSharpCoreLibraryName() 
       yield "System"
       yield "System.Xml" 
       yield "System.Runtime.Remoting"
@@ -1804,8 +1826,14 @@ let SystemAssemblies () =
 // REVIEW: it isn't clear if there is any negative effect
 // of leaving an assembly off this list.
 let BasicReferencesForScriptLoadClosure(useSimpleResolution, useFsiAuxLib, assumeDotNetFramework) = 
-    [ if assumeDotNetFramework then 
+    [
+     if assumeDotNetFramework then 
+         
+#if TODO_REWORK_ASSEMBLY_LOAD
+         yield Path.Combine(Path.GetDirectoryName(typeof<System.Object>.Assembly.Location),"mscorlib.dll"); // mscorlib
+#else
          yield "mscorlib"
+#endif
          yield GetFSharpCoreReferenceUsedByCompiler(useSimpleResolution) ] @ // Need to resolve these explicitly so they will be found in the reference assemblies directory which is where the .xml files are.
     DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) @ 
     [ if useFsiAuxLib then yield GetFsiLibraryName () ]
@@ -2135,7 +2163,6 @@ type TcConfigBuilder =
 
       /// pause between passes? 
       mutable pause : bool
-      
       /// whenever possible, emit callvirt instead of call
       mutable alwaysCallVirt : bool
 
@@ -2168,7 +2195,12 @@ type TcConfigBuilder =
         System.Diagnostics.Debug.Assert(FileSystem.IsPathRootedShim(implicitIncludeDir), sprintf "implicitIncludeDir should be absolute: '%s'" implicitIncludeDir)
         if (String.IsNullOrEmpty(defaultFSharpBinariesDir)) then 
             failwith "Expected a valid defaultFSharpBinariesDir"
-        { primaryAssembly = PrimaryAssembly.Mscorlib // default value, can be overridden using the command line switch
+        { 
+#if TODO_REWORK_ASSEMBLY_LOAD
+          primaryAssembly = PrimaryAssembly.DotNetCore // defaut value, can be overridden using the command line switch
+#else
+          primaryAssembly = PrimaryAssembly.Mscorlib // defaut value, can be overridden using the command line switch
+#endif          
           light = None
           noFeedback=false
           stackReserveSize=None
@@ -2303,7 +2335,7 @@ type TcConfigBuilder =
           sqmSessionStartedTime = System.DateTime.Now.Ticks
           emitDebugInfoInQuotations = false
           exename = None
-          copyFSharpCore = true
+          copyFSharpCore = false
           shadowCopyReferences = false
         }
 
@@ -2509,7 +2541,6 @@ type AssemblyResolution =
             this.ilAssemblyRef := Some(assRef)
             return assRef
       }
-
 
 //----------------------------------------------------------------------------
 // Names to match up refs and defs for assemblies and modules
@@ -4151,7 +4182,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                  { resolutionFolder       = tcConfig.implicitIncludeDir
                    outputFile             = tcConfig.outputFile
                    showResolutionMessages = tcConfig.showExtensionTypeMessages 
-                   referencedAssemblies   = Array.distinct [| for r in tcImports.AllAssemblyResolutions() -> r.resolvedPath |]
+                   referencedAssemblies   = [| for r in tcImports.AllAssemblyResolutions() -> r.resolvedPath |] |> Seq.distinct |> Seq.toArray
                    temporaryFolder        = FileSystem.GetTempPathShim() }
 
             // The type provider should not hold strong references to disposed
@@ -4498,6 +4529,12 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         | Some assemblyResolution -> 
             ResultD [assemblyResolution]
         | None ->
+#if NO_MSBUILD_REFERENCE_RESOLUTION
+           try 
+               ResultD [tcConfig.ResolveLibWithDirectories assemblyReference]
+           with e -> 
+               ErrorD(e)
+#else                      
             // Next try to lookup up by the exact full resolved path.
             match resolutions.TryFindByResolvedPath assemblyReference.Text with 
             | Some assemblyResolution -> 
@@ -4530,6 +4567,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                         // the empty list and we convert the failure into an AssemblyNotResolved here.
                         ErrorD(AssemblyNotResolved(assemblyReference.Text,assemblyReference.Range))
                         
+#endif
      
 
     member tcImports.ResolveAssemblyReference(ctok, assemblyReference, mode) : AssemblyResolution list = 
@@ -4922,6 +4960,9 @@ module private ScriptPreprocessClosure =
             | CodeContext.Compilation | CodeContext.Evaluation -> ReferenceResolver.RuntimeLike
 #endif
         tcConfigB.framework <- false 
+        tcConfigB.useSimpleResolution <- useSimpleResolution
+        // Indicates that there are some references not in BasicReferencesForScriptLoadClosure which should
+        // be added conditionally once the relevant version of mscorlib.dll has been detected.
         tcConfigB.implicitlyResolveAssemblies <- false
         TcConfig.Create(tcConfigB,validate=true)
         

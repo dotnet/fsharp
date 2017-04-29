@@ -5,7 +5,7 @@
 //--------------------------------------------------------------------------
 
 /// Anything to do with special names of identifiers and other lexical rules 
-module internal Microsoft.FSharp.Compiler.PrettyNaming
+module (*internal*) Microsoft.FSharp.Compiler.PrettyNaming
     open Internal.Utilities
     open Microsoft.FSharp.Compiler
     open Microsoft.FSharp.Compiler.AbstractIL.Internal

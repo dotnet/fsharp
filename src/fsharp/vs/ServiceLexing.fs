@@ -751,3 +751,33 @@ type FSharpSourceTokenizer(defineConstants : string list, filename : Option<stri
         let lexbuf = UnicodeLexing.FunctionAsLexbuf bufferFiller
         FSharpLineTokenizer(lexbuf, None, filename, lexArgsLightOn, lexArgsLightOff)
 
+module Keywords =
+    open Microsoft.FSharp.Compiler.Lexhelp.Keywords
+
+    let QuoteIdentifierIfNeeded s = QuoteIdentifierIfNeeded s
+    let NormalizeIdentifierBackticks s = NormalizeIdentifierBackticks s
+    let KeywordsWithDescription = keywordsWithDescription
+
+[<System.Obsolete("This type has been renamed to FSharpSourceTokenizer")>]
+type SourceTokenizer = FSharpSourceTokenizer
+
+[<System.Obsolete("This type has been renamed to FSharpLineTokenizer")>]
+type LineTokenizer = FSharpLineTokenizer
+
+[<System.Obsolete("This type has been renamed to FSharpTokenInfo")>]
+type TokenInformation = FSharpTokenInfo
+
+[<System.Obsolete("This type has been renamed to FSharpTokenTriggerClass")>]
+type TriggerClass = FSharpTokenTriggerClass
+
+[<System.Obsolete("This type has been renamed to FSharpTokenCharKind")>]
+type TokenCharKind = FSharpTokenCharKind
+
+[<System.Obsolete("This type has been renamed to FSharpTokenColorKind")>]
+type TokenColorKind = FSharpTokenColorKind
+
+[<System.Obsolete("This type has been renamed to FSharpTokenizerColorState")>]
+type ColorState = FSharpTokenizerColorState
+
+[<System.Obsolete("This type has been renamed to FSharpTokenizerLexState")>]
+type LexState = FSharpTokenizerLexState

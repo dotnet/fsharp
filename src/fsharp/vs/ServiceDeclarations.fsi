@@ -20,7 +20,7 @@ open Microsoft.FSharp.Compiler.Tastops
 //
 // Note: instances of this type do not hold any references to any compiler resources.
 [<RequireQualifiedAccess>]
-type internal FSharpXmlDoc =
+type FSharpXmlDoc =
     /// No documentation is available
     | None
     /// The text for documentation 
@@ -28,13 +28,13 @@ type internal FSharpXmlDoc =
     /// Indicates that the text for the documentation can be found in a .xml documentation file, using the given signature key
     | XmlDocFileSignature of (*File:*) string * (*Signature:*)string
 
-type internal Layout = Internal.Utilities.StructuredFormat.Layout
+type Layout = Internal.Utilities.StructuredFormat.Layout
 
 /// A single tool tip display element
 //
 // Note: instances of this type do not hold any references to any compiler resources.
 [<RequireQualifiedAccess>]
-type internal FSharpToolTipElement<'T> = 
+type FSharpToolTipElement<'T> = 
     | None
     /// A single type, method, etc with comment.
     | Single of (* text *) 'T * FSharpXmlDoc
@@ -49,17 +49,17 @@ type internal FSharpToolTipElement<'T> =
 type FSharpToolTipElement = FSharpToolTipElement<string>
 
 /// A single data tip display element with where text is expressed as <see cref="Layout"/>
-type internal FSharpStructuredToolTipElement = FSharpToolTipElement<Layout>
+type FSharpStructuredToolTipElement = FSharpToolTipElement<Layout>
 
 /// Information for building a tool tip box.
 //
 // Note: instances of this type do not hold any references to any compiler resources.
-type internal FSharpToolTipText<'T> = 
+type FSharpToolTipText<'T> = 
     /// A list of data tip elements to display.
     | FSharpToolTipText of FSharpToolTipElement<'T> list  
 
 type FSharpToolTipText = FSharpToolTipText<string>
-type internal FSharpStructuredToolTipText = FSharpToolTipText<Layout>
+type FSharpStructuredToolTipText = FSharpToolTipText<Layout>
 
 module internal Tooltips =
     val ToFSharpToolTipElement: FSharpStructuredToolTipElement -> FSharpToolTipElement
@@ -67,7 +67,7 @@ module internal Tooltips =
     val Map: f: ('T1 -> 'T2) -> a: Async<'T1> -> Async<'T2>
 
 [<RequireQualifiedAccess>]
-type internal CompletionItemKind =
+type CompletionItemKind =
     | Field
     | Property
     | Method of isExtension : bool
@@ -76,8 +76,8 @@ type internal CompletionItemKind =
     | Other
 
 /// Indicates the accessibility of a symbol, as seen by the F# language
-and [<Class>] internal FSharpAccessibility = 
-    new: Accessibility * ?isProtected: bool -> FSharpAccessibility
+and [<Class>] FSharpAccessibility = 
+    internal new: Accessibility * ?isProtected: bool -> FSharpAccessibility
 
     /// Indicates the symbol has public accessibility
     member IsPublic : bool
@@ -89,14 +89,14 @@ and [<Class>] internal FSharpAccessibility =
     member IsInternal : bool
 
     /// The underlying Accessibility
-    member Contents : Accessibility
+    member internal Contents : Accessibility
 
 [<Sealed>]
 /// Represents a declaration in F# source code, with information attached ready for display by an editor.
 /// Returned by GetDeclarations.
 //
 // Note: this type holds a weak reference to compiler resources. 
-type internal FSharpDeclarationListItem =
+type FSharpDeclarationListItem =
     /// Get the display name for the declaration.
     member Name : string
     /// Get the name for the declaration as it's presented in source code.
@@ -137,7 +137,7 @@ type internal CompletionItem =
 /// Returned by GetDeclarations.
 //
 // Note: this type holds a weak reference to compiler resources. 
-type internal FSharpDeclarationListInfo =
+type FSharpDeclarationListInfo =
     member Items : FSharpDeclarationListItem[]
     member IsForType : bool
     member IsError : bool

@@ -53,10 +53,10 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #endif
 
     [<StructuralEquality; NoComparison>]
-#if COMPILER
-    type internal LayoutTag =
-#else
+#if COMPILER_SERVICE
     type LayoutTag =
+#else
+    type internal LayoutTag =
 #endif
         | ActivePatternCase
         | ActivePatternResult
@@ -92,18 +92,18 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         | UnknownType
         | UnknownEntity
 
-#if COMPILER
-    type internal TaggedText =
-#else
+#if COMPILER_SERVICE
     type TaggedText =
+#else
+    type (* internal *) TaggedText =
 #endif
         abstract Tag: LayoutTag
         abstract Text: string
     
-#if COMPILER
-    type internal TaggedTextWriter =
-#else
+#if COMPILER_SERVICE
     type TaggedTextWriter =
+#else
+    type (* internal *) TaggedTextWriter =
 #endif
         abstract Write: t: TaggedText -> unit
         abstract WriteLine: unit -> unit
@@ -112,10 +112,10 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     ///  - unbreakable, or
     ///  - breakable, and if broken the second block has a given indentation.
     [<StructuralEquality; NoComparison>]
-#if COMPILER
-    type internal Joint =
-#else
+#if COMPILER_SERVICE
     type Joint =
+#else
+    type (* internal *) Joint =
 #endif
      | Unbreakable
      | Breakable of int
@@ -126,42 +126,42 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     ///
     /// If either juxt flag is true, then no space between words.
     [<NoEquality; NoComparison>]
-#if COMPILER
-    type internal Layout =
-#else
+#if COMPILER_SERVICE
     type Layout =
+#else
+    type (* internal *) Layout =
 #endif
      | ObjLeaf of bool * obj * bool
      | Leaf of bool * TaggedText * bool
      | Node of bool * layout * bool * layout * bool * joint
      | Attr of string * (string * string) list * layout
 
-#if COMPILER
-    and internal layout = Layout
-#else
+#if COMPILER_SERVICE
     and layout = Layout
+#else
+    and internal layout = Layout
 #endif
 
-#if COMPILER
-    and internal joint = Joint
-#else
+#if COMPILER_SERVICE
     and joint = Joint
+#else
+    and internal joint = Joint
 #endif
 
     [<NoEquality; NoComparison>]
-#if COMPILER
-    type internal IEnvironment = 
-#else
+#if COMPILER_SERVICE
     type IEnvironment = 
+#else
+    type internal IEnvironment = 
 #endif
         abstract GetLayout : obj -> layout
         abstract MaxColumns : int
         abstract MaxRows : int
 
-#if COMPILER 
-    module internal TaggedTextOps =
-#else
+#if COMPILER_SERVICE
     module TaggedTextOps =
+#else
+    module (* internal *) TaggedTextOps =
 #endif
         let tag tag text = 
           { new TaggedText with 
@@ -248,10 +248,10 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             let arrow = tagPunctuation "->"
             let questionMark = tagPunctuation "?"
      
-#if COMPILER
-    module internal LayoutOps = 
-#else
+#if COMPILER_SERVICE
     module LayoutOps = 
+#else
+    module (* internal *) LayoutOps = 
 #endif
         open TaggedTextOps
 
@@ -353,10 +353,10 @@ namespace Microsoft.FSharp.Text.StructuredFormat
           
     /// These are a typical set of options used to control structured formatting.
     [<NoEquality; NoComparison>]
-#if COMPILER
-    type internal FormatOptions =
-#else
+#if COMPILER_SERVICE
     type FormatOptions =
+#else
+    type internal FormatOptions =
 #endif
         { FloatingPointFormat: string;
           AttributeProcessor: (string -> (string * string) list -> bool -> unit);
@@ -404,10 +404,10 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 
 
 
-#if COMPILER
-    module internal ReflectUtils = 
-#else
+#if COMPILER_SERVICE
     module ReflectUtils = 
+#else
+    module internal ReflectUtils = 
 #endif
         open System
         open System.Reflection
@@ -536,10 +536,10 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                 | _ -> 
                   GetValueInfoOfObject bindingFlags (obj) 
 
-#if COMPILER
-    module internal Display = 
-#else
+#if COMPILER_SERVICE
     module Display = 
+#else
+    module internal Display = 
 #endif
 
         open ReflectUtils

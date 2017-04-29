@@ -17,19 +17,15 @@ open Microsoft.FSharp.Compiler.Tast
 
 
 [<RequireQualifiedAccess>]
-type internal FSharpErrorSeverity = 
+type (*internal*) FSharpErrorSeverity = 
     | Warning 
     | Error
 
 [<Class>]
-type internal FSharpErrorInfo = 
+type (*internal*) FSharpErrorInfo = 
     member FileName: string
     member StartLineAlternate:int
     member EndLineAlternate:int
-    [<Obsolete("This member has been replaced by StartLineAlternate, which produces 1-based line numbers rather than a 0-based line numbers. See https://github.com/fsharp/FSharp.Compiler.Service/issues/64")>]
-    member StartLine:Line0
-    [<Obsolete("This member has been replaced by EndLineAlternate, which produces 1-based line numbers rather than a 0-based line numbers. See https://github.com/fsharp/FSharp.Compiler.Service/issues/64")>]
-    member EndLine:Line0
     member StartColumn:int
     member EndColumn:int
     member Severity:FSharpErrorSeverity
@@ -97,7 +93,9 @@ type internal PartialCheckResults =
       /// Represents the collected uses of symbols from type checking
       TcSymbolUses: TcSymbolUses list 
 
-      /// Represents the collected attributes to apply to the module of assembly generates
+      TcDependencyFiles: string list
+
+      /// Represents the collected attributes to apply to the module of assuembly generates
       TopAttribs: TypeChecker.TopAttribs option
 
       TimeStamp: DateTime }
@@ -138,7 +136,7 @@ type internal IncrementalBuilder =
       member ImportedCcusInvalidated : IEvent<string>
 
       /// The list of files the build depends on
-      member Dependencies : string list
+      member AllDependenciesDeprecated : string list
 #if EXTENSIONTYPING
       /// Whether there are any 'live' type providers that may need a refresh when a project is Cleaned
       member ThereAreLiveTypeProviders : bool

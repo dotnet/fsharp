@@ -1,21 +1,31 @@
 ﻿
 #if INTERACTIVE
-#r "../../Debug/net40/bin/FSharp.LanguageService.Compiler.dll"
-#r "../../Debug/net40/bin/nunit.framework.dll"
+#r "../../bin/v4.5/FSharp.Compiler.Service.dll"
+#r "../../packages/NUnit/lib/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
 module Tests.Service.MultiProjectAnalysisTests
 #endif
 
+open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.SourceCodeServices
+
 open NUnit.Framework
 open FsUnit
 open System
 open System.IO
+
+open System
 open System.Collections.Generic
-open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests.Common
+
+let numProjectsForStressTest = 100
+let checker = FSharpChecker.Create(projectCacheSize=numProjectsForStressTest + 10)
+
+/// Extract range info 
+let tups (m:Range.range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
 
 
 module Project1A = 
@@ -42,7 +52,7 @@ let x2 = C.M(arg1 = 3, arg2 = 4, ?arg3 = Some 5)
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let internal options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
 
 
@@ -71,7 +81,7 @@ let x =
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let internal options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
 
 // A project referencing two sub-projects
@@ -96,7 +106,7 @@ let p = (Project1A.x1, Project1B.b)
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let internal options = 
+    let options = 
         let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
         { options with 
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + Project1A.dllName); ("-r:" + Project1B.dllName) |]
@@ -242,6 +252,7 @@ let ``Test ManyProjectsStressTest whole project errors`` () =
 
     let checker = ManyProjectsStressTest.makeCheckerForStressTest true
     let wholeProjectResults = checker.ParseAndCheckProject(ManyProjectsStressTest.jointProject.Options) |> Async.RunSynchronously
+    let wholeProjectResults = checker.ParseAndCheckProject(ManyProjectsStressTest.jointProject.Options) |> Async.RunSynchronously
 
     wholeProjectResults .Errors.Length |> shouldEqual 0
     wholeProjectResults.ProjectContext.GetReferencedAssemblies().Length |> shouldEqual (ManyProjectsStressTest.numProjectsForStressTest + 4)
@@ -279,8 +290,6 @@ let ``Test ManyProjectsStressTest cache too small`` () =
     [ for x in wholeProjectResults.AssemblySignature.Entities.[0].MembersFunctionsAndValues -> x.DisplayName ] 
         |> shouldEqual ["p"]
 
-    for d in disposals do d.Dispose()
-
 [<Test>]
 let ``Test ManyProjectsStressTest all symbols`` () = 
 
@@ -313,7 +322,7 @@ let ``Test ManyProjectsStressTest all symbols`` () =
 
 //-----------------------------------------------------------------------------------------
 
-module internal MultiProjectDirty1 = 
+module MultiProjectDirty1 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -335,7 +344,7 @@ let x = "F#"
         let args = mkProjectCommandLineArgs (dllName, fileNames)
         checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
-module internal MultiProjectDirty2 = 
+module MultiProjectDirty2 = 
     open System.IO
 
 
@@ -557,7 +566,7 @@ type C() =
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let internal options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
 //Project2A.fileSource1
 // A project referencing Project2A
@@ -577,7 +586,7 @@ let v = Project2A.C().InternalMember // access an internal symbol
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let internal options = 
+    let options = 
         let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
         { options with 
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + Project2A.dllName);  |]
@@ -602,7 +611,7 @@ let v = Project2A.C().InternalMember // access an internal symbol
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let internal options = 
+    let options = 
         let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
         { options with 
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + Project2A.dllName);  |]
@@ -668,7 +677,7 @@ let (|DivisibleBy|_|) by n =
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let internal options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
 
 // A project referencing a sub-project
@@ -694,7 +703,7 @@ let fizzBuzz = function
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let internal options = 
+    let options = 
         let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
         { options with 
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + Project3A.dllName) |]
@@ -731,3 +740,39 @@ let ``Test active patterns' XmlDocSig declared in referenced projects`` () =
     let divisibleByEntity = divisibleByGroup.EnclosingEntity.Value
     divisibleByEntity.ToString() |> shouldEqual "Project3A"
 
+//------------------------------------------------------------------------------------
+
+
+
+[<Test>]
+let ``Test max memory gets triggered`` () =
+    let checker = FSharpChecker.Create()
+    let reached = ref false 
+    checker.MaxMemoryReached.Add (fun () -> reached := true)
+    let wholeProjectResults = checker.ParseAndCheckProject(MultiProject3.options) |> Async.RunSynchronously
+    reached.Value |> shouldEqual false
+    checker.MaxMemory <- 0
+    let wholeProjectResults2 = checker.ParseAndCheckProject(MultiProject3.options) |> Async.RunSynchronously
+    reached.Value |> shouldEqual true
+    let wholeProjectResults3 = checker.ParseAndCheckProject(MultiProject3.options) |> Async.RunSynchronously
+    reached.Value |> shouldEqual true
+
+
+//------------------------------------------------------------------------------------
+
+#if FX_ATLEAST_45
+
+[<Test>]
+let ``Type provider project references should not throw exceptions`` () =
+    let projectFile = __SOURCE_DIRECTORY__ + @"/data/TypeProviderConsole/TypeProviderConsole.fsproj"
+    let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug")])
+    //printfn "options: %A" options
+    let fileName = __SOURCE_DIRECTORY__ + @"/data/TypeProviderConsole/Program.fs"    
+    let fileSource = File.ReadAllText(fileName)
+    let fileCheckResults, _ = checker.ParseAndCheckFileInProject(fileName, 0, fileSource, options) |> Async.RunSynchronously
+    //printfn "Errors: %A" fileCheckResults.Errors
+    fileCheckResults.Errors |> Array.exists (fun error -> error.Severity = FSharpErrorSeverity.Error) |> shouldEqual false
+
+#endif
+
+//------------------------------------------------------------------------------------

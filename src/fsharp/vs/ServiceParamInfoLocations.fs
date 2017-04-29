@@ -266,3 +266,5 @@ type FSharpNoteworthyParamInfoLocations with
             r
         | _ -> None
 
+[<System.Obsolete("This type has been renamed to FSharpNoteworthyParamInfoLocations")>]
+type NoteworthyParamInfoLocations = FSharpNoteworthyParamInfoLocations

@@ -1183,6 +1183,7 @@ module UntypedParseImpl =
                             match parseLid lidwd with
                             | Some (completionPath) -> GetCompletionContextForInheritSynMember (componentInfo, typeDefnKind, completionPath)
                             | None -> Some (CompletionContext.Invalid) // A $ .B -> no completion list
+
                         | _ -> None 
                         
                     member this.VisitBinding(defaultTraverse, (Binding(headPat = headPat) as synBinding)) = 
@@ -1221,7 +1222,7 @@ module UntypedParseImpl =
                         
                     member this.VisitModuleOrNamespace(SynModuleOrNamespace(longId = idents)) =
                         match List.tryLast idents with
-                        | Some lastIdent when pos.Line = lastIdent.idRange.EndLine ->
+                        | Some lastIdent when pos.Line = lastIdent.idRange.EndLine && lastIdent.idRange.EndColumn >= 0 && pos.Column <= lineStr.Length ->
                             let stringBetweenModuleNameAndPos = lineStr.[lastIdent.idRange.EndColumn..pos.Column - 1]
                             if stringBetweenModuleNameAndPos |> Seq.forall (fun x -> x = ' ' || x = '.') then
                                 Some CompletionContext.Invalid

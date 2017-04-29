@@ -13,7 +13,7 @@ open Microsoft.FSharp.Compiler.Ast
  
 
 /// A range of utility functions to assist with traversing an AST
-module internal AstTraversal =
+module (*internal*) AstTraversal =
     // treat ranges as though they are half-open: [,)
     let rangeContainsPosLeftEdgeInclusive (m1:range) p =
         if posEq m1.Start m1.End then

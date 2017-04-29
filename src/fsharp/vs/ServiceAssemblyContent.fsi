@@ -10,36 +10,36 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 
 /// Assembly content type.
-type internal AssemblyContentType = 
+type AssemblyContentType = 
     /// Public assembly content only.
     | Public 
     /// All assembly content.
     | Full
 
 /// Short identifier, i.e. an identifier that contains no dots.
-type internal ShortIdent = string
+type ShortIdent = string
 
 /// An array of `ShortIdent`.
-type internal Idents = ShortIdent[]
+type Idents = ShortIdent[]
 
 /// `ShortIdent` with a flag indicating if it's resolved in some scope.
-type internal MaybeUnresolvedIdent = { Ident: ShortIdent; Resolved: bool }
+type MaybeUnresolvedIdent = { Ident: ShortIdent; Resolved: bool }
 
 /// Array of `MaybeUnresolvedIdent`.
-type internal MaybeUnresolvedIdents = MaybeUnresolvedIdent[]
+type MaybeUnresolvedIdents = MaybeUnresolvedIdent[]
 
 /// Entity lookup type.
 [<RequireQualifiedAccess>]
-type internal LookupType =
+type LookupType =
     | Fuzzy
     | Precise
 
 /// Assembly path.
-type internal AssemblyPath = string
+type AssemblyPath = string
 
 /// Represents type, module, member, function or value in a compiled assembly.
 [<NoComparison; NoEquality>]
-type internal AssemblySymbol = 
+type AssemblySymbol = 
     { /// Full entity name as it's seen in compiled code (raw FSharpEntity.FullName, FSharpValueOrFunction.FullName). 
       FullName: string
       /// Entity name parts with removed module suffixes (Ns.M1Module.M2Module.M3.entity -> Ns.M1.M2.M3.entity)
@@ -69,14 +69,14 @@ type internal AssemblyContentCacheEntry =
 
 /// Assembly content cache.
 [<NoComparison; NoEquality>]
-type internal IAssemblyContentCache =
+type IAssemblyContentCache =
     /// Try get an assembly cached content.
     abstract TryGet: AssemblyPath -> AssemblyContentCacheEntry option
     /// Store an assembly content.
     abstract Set: AssemblyPath -> AssemblyContentCacheEntry -> unit
 
 /// Thread safe wrapper over `IAssemblyContentCache`.
-type internal EntityCache =
+type EntityCache =
     interface IAssemblyContentCache 
     new : unit -> EntityCache
     /// Clears the cache.
@@ -84,24 +84,24 @@ type internal EntityCache =
     /// Performs an operation on the cache in thread safe manner.
     member Locking : (IAssemblyContentCache -> 'T) -> 'T
 
-/// Long identifier (i.e. it may contain dots).
-type internal LongIdent = string
+/// Lond identifier (i.e. it may contain dots).
+type StringLongIdent = string
 
-/// Helper data structure representing a symbol, suitable for implementing unresolved identifiers resolution code fixes.
-type internal Entity =
+/// Helper data structure representing a symbol, sutable for implementing unresolved identifiers resolution code fixes.
+type Entity =
     { /// Full name, relative to the current scope.
-      FullRelativeName: LongIdent
+      FullRelativeName: StringLongIdent
       /// Ident parts needed to append to the current ident to make it resolvable in current scope.
-      Qualifier: LongIdent
+      Qualifier: StringLongIdent
       /// Namespace that is needed to open to make the entity resolvable in the current scope.
-      Namespace: LongIdent option
+      Namespace: StringLongIdent option
       /// Full display name (i.e. last ident plus modules with `RequireQualifiedAccess` attribute prefixed).
-      Name: LongIdent
+      Name: StringLongIdent
       /// Last part of the entity's full name.
       LastIdent: string }
 
 /// Provides assembly content.
-module internal AssemblyContentProvider =
+module AssemblyContentProvider =
     /// Given a `FSharpAssemblySignature`, returns assembly content.
     val getAssemblySignatureContent : AssemblyContentType -> FSharpAssemblySignature -> AssemblySymbol list
 
@@ -114,7 +114,7 @@ module internal AssemblyContentProvider =
           -> AssemblySymbol list
 
 /// Kind of lexical scope.
-type internal ScopeKind =
+type ScopeKind =
     | Namespace
     | TopModule
     | NestedModule
@@ -122,7 +122,7 @@ type internal ScopeKind =
     | HashDirective
 
 /// Insert open namespace context.
-type internal InsertContext =
+type InsertContext =
     { /// Current scope kind.
       ScopeKind: ScopeKind
       /// Current position (F# compiler line number).
@@ -134,7 +134,7 @@ type internal OpenStatementInsertionPoint =
     | Nearest
 
 /// Parse AST helpers.
-module internal ParsedInput =
+module ParsedInput =
 
     /// Returns `InsertContext` based on current position and symbol idents.
     val tryFindInsertionContext : 
@@ -153,7 +153,7 @@ module internal ParsedInput =
     val adjustInsertionPoint : getLineStr: (int -> string) -> ctx: InsertContext -> pos
 
 [<AutoOpen>]
-module internal Extensions =
+module Extensions =
     type FSharpEntity with
         /// Safe version of `FullName`.
         member TryGetFullName : unit -> string option

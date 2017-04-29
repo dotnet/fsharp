@@ -91,7 +91,7 @@ val GetDiagnosticNumber : PhasedDiagnostic -> int
 val SplitRelatedDiagnostics : PhasedDiagnostic -> PhasedDiagnostic * PhasedDiagnostic list
 
 /// Output an error to a buffer
-val OutputPhasedDiagnostic : StringBuilder -> PhasedDiagnostic -> isError: bool -> unit
+val OutputPhasedDiagnostic : StringBuilder -> PhasedDiagnostic -> flattenErrors: bool -> unit
 
 /// Output an error or warning to a buffer
 val OutputDiagnostic : implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle *  isError:bool -> StringBuilder -> PhasedDiagnostic -> unit

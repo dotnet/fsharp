@@ -11,7 +11,7 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 
 [<Sealed>]
-type internal FSharpNoteworthyParamInfoLocations =
+type (*internal*) FSharpNoteworthyParamInfoLocations =
     member LongId : string list
     member LongIdStartLocation : pos
     member LongIdEndLocation : pos

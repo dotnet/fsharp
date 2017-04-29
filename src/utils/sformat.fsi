@@ -48,20 +48,20 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     /// Data representing joints in structured layouts of terms.  The representation
     /// of this data type is only for the consumption of formatting engines.
     [<StructuralEquality; NoComparison>]
-#if COMPILER
-    type internal Joint =
-#else
+#if COMPILER_SERVICE
     type Joint =
+#else
+    type (* internal *) Joint =
 #endif
         | Unbreakable
         | Breakable of int
         | Broken of int
     
     [<StructuralEquality; NoComparison>]
-#if COMPILER
-    type internal LayoutTag =
-#else
+#if COMPILER_SERVICE
     type LayoutTag =
+#else
+    type internal LayoutTag =
 #endif
         | ActivePatternCase
         | ActivePatternResult
@@ -97,19 +97,19 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         | UnknownType
         | UnknownEntity
 
-#if COMPILER
-    type internal TaggedText =
-#else
+#if COMPILER_SERVICE
     type TaggedText =
+#else
+    type (* internal *) TaggedText =
 #endif
         abstract Tag : LayoutTag
         abstract Text : string
 
     
-#if COMPILER
-    type internal TaggedTextWriter =
-#else
+#if COMPILER_SERVICE
     type TaggedTextWriter =
+#else
+    type (* internal *) TaggedTextWriter =
 #endif
         abstract Write: t: TaggedText -> unit
         abstract WriteLine: unit -> unit
@@ -117,10 +117,10 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     /// Data representing structured layouts of terms.  The representation
     /// of this data type is only for the consumption of formatting engines.
     [<NoEquality; NoComparison>]
-#if COMPILER
-    type internal Layout =
-#else
+#if COMPILER_SERVICE
     type Layout =
+#else
+    type (* internal *) Layout = 
 #endif
      | ObjLeaf of bool * obj * bool
      | Leaf of bool * TaggedText * bool
@@ -128,12 +128,11 @@ namespace Microsoft.FSharp.Text.StructuredFormat
      | Attr of string * (string * string) list * Layout
 #endif
 
-    module
-#if RUNTIME || COMPILER
-        internal
+#if COMPILER_SERVICE
+    module TaggedTextOps =
 #else
+    module internal TaggedTextOps =
 #endif
-            TaggedTextOps =
         val tag : LayoutTag -> string -> TaggedText
         val keywordFunctions : Set<string>
         val tagAlias : string -> TaggedText
@@ -182,10 +181,10 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 
 #if RUNTIME   // FSharp.Core.dll doesn't use PrintIntercepts
 #else  // FSharp.Compiler.dll, FSharp.Compiler-proto.dll, FSharp.PowerPack.dll
-#if COMPILER
-    type internal IEnvironment = 
-#else
+#if COMPILER_SERVICE
     type IEnvironment = 
+#else
+    type internal IEnvironment = 
 #endif
         /// Return to the layout-generation 
         /// environment to layout any otherwise uninterpreted object
@@ -205,15 +204,11 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     /// A joint is either unbreakable, breakable or broken.
     /// If a joint is broken the RHS layout occurs on the next line with optional indentation.
     /// A layout can be squashed to for given width which forces breaks as required.
-    module
-#if RUNTIME   // FSharp.Core.dll
-      internal 
+#if COMPILER_SERVICE
+    module LayoutOps =
 #else
-#if COMPILER
-      internal
+    module internal LayoutOps =
 #endif
-#endif
-         LayoutOps =
 
         /// The empty layout
         val emptyL     : Layout
@@ -309,15 +304,11 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     /// </pre>
     /// </example>
     [<NoEquality; NoComparison>]
-    type
-#if RUNTIME   // FSharp.Core.dll
-      internal 
+#if COMPILER_SERVICE
+    type FormatOptions =
 #else
-#if COMPILER
-      internal
+    type internal FormatOptions =
 #endif
-#endif
-         FormatOptions = 
         { FloatingPointFormat: string
           AttributeProcessor: (string -> (string * string) list -> bool -> unit);
 #if RUNTIME  // FSharp.Core.dll: PrintIntercepts aren't used there
@@ -341,16 +332,11 @@ namespace Microsoft.FSharp.Text.StructuredFormat
           ShowIEnumerable: bool  }
         static member Default : FormatOptions
 
-    module
-#if RUNTIME   // FSharp.Core.dll
-      internal 
+#if COMPILER_SERVICE
+    module Display =
 #else
-#if COMPILER
-      internal
+    module internal Display =
 #endif
-#endif
-         Display = 
-
 
         /// Convert any value to a string using a standard formatter
         /// Data is typically formatted in a structured format, e.g.

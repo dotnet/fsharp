@@ -30,17 +30,45 @@ val internal ProcessCommandLineFlags : TcConfigBuilder * setProcessThreadLocals:
 // The entry point used by fsc.exe
 
 val typecheckAndCompile : 
+    ctok: CompilationThreadToken *
     argv : string[] * 
     referenceResolver: ReferenceResolver.Resolver * 
     bannerAlreadyPrinted : bool * 
+    openBinariesInMemory: bool * 
     exiter : Exiter *
-    loggerProvider: ErrorLoggerProvider -> unit
+    loggerProvider: ErrorLoggerProvider *
+    tcImportsCapture: (TcImports -> unit) option *
+    dynamicAssemblyCreator: (TcGlobals * string * ILModuleDef -> unit) option
+      -> unit
 
 val mainCompile : 
-    argv : string[] * 
+    ctok: CompilationThreadToken *
+    argv: string[] * 
     referenceResolver: ReferenceResolver.Resolver * 
-    bannerAlreadyPrinted : bool * 
-    exiter : Exiter -> unit
+    bannerAlreadyPrinted: bool * 
+    openBinariesInMemory: bool * 
+    exiter: Exiter * 
+    loggerProvider: ErrorLoggerProvider * 
+    tcImportsCapture: (TcImports -> unit) option *
+    dynamicAssemblyCreator: (TcGlobals * string * ILModuleDef -> unit) option
+      -> unit
+
+val compileOfAst : 
+    ctok: CompilationThreadToken *
+    referenceResolver: ReferenceResolver.Resolver * 
+    openBinariesInMemory: bool * 
+    assemblyName:string * 
+    target:CompilerTarget * 
+    targetDll:string * 
+    targetPdb:string option * 
+    dependencies:string list * 
+    noframework:bool *
+    exiter:Exiter * 
+    loggerProvider: ErrorLoggerProvider * 
+    inputs:ParsedInput list *
+    tcImportsCapture : (TcImports -> unit) option *
+    dynamicAssemblyCreator: (TcGlobals * string * ILModuleDef -> unit) option
+      -> unit
 
 
 /// Part of LegacyHostedCompilerForTesting
