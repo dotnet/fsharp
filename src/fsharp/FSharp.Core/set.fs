@@ -495,17 +495,9 @@ namespace Microsoft.FSharp.Collections
             let res = Array.zeroCreate n 
             copyToArray s res 0;
             res
-
-
-
-        let rec mkFromEnumerator comparer acc (e : IEnumerator<_>) = 
-          if e.MoveNext() then 
-            mkFromEnumerator comparer (add comparer e.Current acc) e
-          else acc
           
         let ofSeq comparer (c : IEnumerable<_>) =
-          use ie = c.GetEnumerator()
-          mkFromEnumerator comparer SetEmpty ie 
+          Seq.fold (fun acc k -> add comparer k acc) SetEmpty c
 
         let ofArray comparer l = Array.fold (fun acc k -> add comparer k acc) SetEmpty l    
 
@@ -848,7 +840,6 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("OfSeq")>]
         let ofSeq (c : seq<_>) = new Set<_>(c)
-
 
         [<CompiledName("Difference")>]
         let difference (s1: Set<'T>) (s2: Set<'T>) = s1 - s2
