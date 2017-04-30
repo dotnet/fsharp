@@ -14,7 +14,7 @@ open Microsoft.CodeAnalysis.CodeActions
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
-[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ReplaceUnusedValueWithUnderscore"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "RenameUnusedValue"); Shared>]
 type internal FSharpReplaceUnusedValueWithUnderscoreCodeFixProvider
     [<ImportingConstructor>]
     (
@@ -25,7 +25,7 @@ type internal FSharpReplaceUnusedValueWithUnderscoreCodeFixProvider
     inherit CodeFixProvider()
     let fixableDiagnosticIds = ["FS1182"]
         
-    let createCodeFix (title: string, context: CodeFixContext, textChange: TextChange) =
+    let createCodeFix (symbolName, title: string, context: CodeFixContext, textChange: TextChange) =
         CodeAction.Create(
             title,
             (fun (cancellationToken: CancellationToken) ->
@@ -33,7 +33,7 @@ type internal FSharpReplaceUnusedValueWithUnderscoreCodeFixProvider
                     let! sourceText = context.Document.GetTextAsync()
                     return context.Document.WithText(sourceText.WithChanges(textChange))
                 } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
-            title)
+            symbolName + title)
 
     override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
@@ -54,12 +54,17 @@ type internal FSharpReplaceUnusedValueWithUnderscoreCodeFixProvider
                 let lineText = (sourceText.Lines.GetLineFromPosition context.Span.Start).ToString()  
                 let! symbolUse = checkResults.GetSymbolUseAtLocation(m.StartLine, m.EndColumn, lineText, lexerSymbol.FullIsland)
                 let diagnostics = context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id) |> Seq.toImmutableArray
-                
+                let symbolName = symbolUse.Symbol.DisplayName
+
                 match symbolUse.Symbol with
-                | :? FSharpMemberOrFunctionOrValue as func when func.IsMemberThisValue ->
-                    context.RegisterCodeFix(createCodeFix(SR.RenameValueToDoubleUnderscore.Value, context, TextChange(context.Span, "__")), diagnostics)
-                | _ ->
-                    context.RegisterCodeFix(createCodeFix(SR.RenameValueToUnderscore.Value, context, TextChange(context.Span, "_")), diagnostics)
+                | :? FSharpMemberOrFunctionOrValue as func ->
+                    context.RegisterCodeFix(createCodeFix(symbolName, SR.PrefixValueNameWithUnderscore.Value, context, TextChange(TextSpan(context.Span.Start, 0), "_")), diagnostics)
+
+                    if func.IsMemberThisValue then
+                        context.RegisterCodeFix(createCodeFix(symbolName, SR.RenameValueToDoubleUnderscore.Value, context, TextChange(context.Span, "__")), diagnostics)
+                    elif not func.IsMember then
+                        context.RegisterCodeFix(createCodeFix(symbolName, SR.RenameValueToUnderscore.Value, context, TextChange(context.Span, "_")), diagnostics)
+                | _ -> ()
         } 
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
