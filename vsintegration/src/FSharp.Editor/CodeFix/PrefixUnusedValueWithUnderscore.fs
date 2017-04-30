@@ -40,5 +40,4 @@ type internal FSharpPrefixUnusedValueWithUnderscoreCodeFixProvider() =
             if not (PrettyNaming.IsOperatorOrBacktickedName ident) && not (ident.StartsWith "``") then
                 let diagnostics = context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id) |> Seq.toImmutableArray
                 context.RegisterCodeFix(createCodeFix(SR.PrefixValueNameWithUnderscore.Value, context, TextChange(TextSpan(context.Span.Start, 0), "_")), diagnostics)
-                context.RegisterCodeFix(createCodeFix(SR.RenameValueToUnderscore.Value, context, TextChange(context.Span, "_")), diagnostics)
         } |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
