@@ -61,7 +61,7 @@ type NameResolver(g:TcGlobals,
 
 /// Get references to all the union cases in the type definition
 let UnionCaseRefsInTycon (modref: ModuleOrNamespaceRef) (tycon:Tycon) = 
-    tycon.UnionCasesAsList |> List.map (mkModuleUnionCaseRef modref tycon)
+    tycon.UnionCasesAsSeq |> Seq.map (mkModuleUnionCaseRef modref tycon) |> Seq.toList
 
 /// Get references to all the union cases defined in the module
 let UnionCaseRefsInModuleOrNamespace (modref:ModuleOrNamespaceRef) = 
@@ -636,7 +636,7 @@ let AddUnionCases2 bulkAddMode (eUnqualifiedItems: LayeredMap<_,_>) (ucrefs :Uni
 let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g:TcGlobals) amap m  nenv (tcref:TyconRef) = 
 
     let isIL = tcref.IsILTycon
-    let ucrefs = if isIL then [] else tcref.UnionCasesAsList |> List.map tcref.MakeNestedUnionCaseRef 
+    let ucrefs = if isIL then [] else tcref.UnionCasesAsSeq |> Seq.map tcref.MakeNestedUnionCaseRef |> Seq.toList
     let flds =  if isIL then [| |] else tcref.AllFieldsArray
 
     let eIndexedExtensionMembers, eUnindexedExtensionMembers = 

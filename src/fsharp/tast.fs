@@ -836,7 +836,7 @@ type Entity =
         | None -> [| |] 
 
     /// Get the union cases for a type, if any, as a list
-    member x.UnionCasesAsList = x.UnionCasesArray |> Array.toList
+    member x.UnionCasesAsSeq = x.UnionCasesArray |> Seq.ofArray
 
     /// Get a union case of a type by name
     member x.GetUnionCaseByName n =
@@ -1363,7 +1363,7 @@ and
         if n >= 0 && n < x.CasesByIndex.Length then x.CasesByIndex.[n] 
         else invalidArg "n" "GetUnionCaseByIndex"
 
-    member x.UnionCasesAsList = x.CasesByIndex |> Array.toList
+    member x.UnionCasesAsSeq = x.CasesByIndex |> Seq.ofArray
 
 and 
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1373,7 +1373,7 @@ and
       /// The ILX data structure representing the discriminated union. 
       CompiledRepresentation: IlxUnionRef cache 
     }
-    member x.UnionCasesAsList = x.CasesTable.CasesByIndex |> Array.toList
+    member x.UnionCasesAsSeq = x.CasesTable.CasesByIndex |> Seq.ofArray
 
 and 
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -3050,7 +3050,7 @@ and
     member x.UnionCasesArray           = x.Deref.UnionCasesArray
 
     /// Get the union cases for a type, if any, as a list
-    member x.UnionCasesAsList          = x.Deref.UnionCasesAsList
+    member x.UnionCasesAsSeq          = x.Deref.UnionCasesAsSeq
 
     /// Get a union case of a type by name
     member x.GetUnionCaseByName n      = x.Deref.GetUnionCaseByName n
@@ -3148,7 +3148,7 @@ and
     /// Indicates if we have pre-determined that a type definition has a self-referential constructor using 'as x'
     member x.HasSelfReferentialConstructor = x.Deref.HasSelfReferentialConstructor
 
-    member x.UnionCasesAsRefList         = x.UnionCasesAsList         |> List.map x.MakeNestedUnionCaseRef
+    member x.UnionCasesAsRefList         = x.UnionCasesAsSeq         |> Seq.map x.MakeNestedUnionCaseRef |> Seq.toList
 
     member x.TrueInstanceFieldsAsRefList = x.TrueInstanceFieldsAsList |> List.map x.MakeNestedRecdFieldRef
 
@@ -4836,13 +4836,14 @@ let combineAccess (TAccess a1) (TAccess a2) = TAccess(a1@a2)
 let NewFreeVarsCache() = newCache ()
 
 let MakeUnionCasesTable ucs : TyconUnionCases = 
-    { CasesByIndex = Array.ofList ucs 
-      CasesByName = NameMap.ofKeyedList (fun uc -> uc.DisplayName) ucs }
+    let casesByIndex = Seq.toArray ucs 
+    { CasesByIndex = casesByIndex
+      CasesByName = casesByIndex |> NameMap.ofKeyedList (fun uc -> uc.DisplayName) }
                                                                   
 let MakeRecdFieldsTable ucs : TyconRecdFields = 
-    { FieldsByIndex = Array.ofList ucs 
-      FieldsByName = ucs  |> NameMap.ofKeyedList (fun rfld -> rfld.Name) }
-                                                                  
+    let fieldsByIndex = Seq.toArray ucs 
+    { FieldsByIndex = fieldsByIndex 
+      FieldsByName = fieldsByIndex|> NameMap.ofKeyedList (fun rfld -> rfld.Name) }
 
 let MakeUnionCases ucs : TyconUnionData = 
     { CasesTable=MakeUnionCasesTable ucs 

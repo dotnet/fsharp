@@ -335,7 +335,7 @@ let mkExnEqualityWithComparer g exnref (exnc:Tycon) (_thisv,thise) thatobje (tha
 /// Build the comparison implementation for a union type
 let mkUnionCompare g tcref (tycon:Tycon) = 
     let m = tycon.Range 
-    let ucases = tycon.UnionCasesAsList 
+    let ucases = tycon.UnionCasesAsSeq 
     let tinst,ty = mkMinimalTy g tcref
     let thisv,thataddrv,thise,thataddre = mkThisVarThatVar g m ty 
     let thistagv,thistage = mkCompGenLocal m "thisTag" g.int_ty  
@@ -365,7 +365,7 @@ let mkUnionCompare g tcref (tycon:Tycon) =
                             (mkCompareTestConjuncts g m (List.mapi (mkTest thisucve thatucve) rfields)))
             Some (mkCase(DecisionTreeTest.UnionCase(cref,tinst),mbuilder.AddResultTarget(test,SuppressSequencePointAtTarget)))
         
-        let nullary,nonNullary = List.partition Option.isNone (List.map mkCase ucases)  
+        let nullary,nonNullary = List.partition Option.isNone (Seq.map mkCase ucases |> Seq.toList)  
         if isNil nonNullary then mkZero g m else 
         let cases = nonNullary |> List.map (function (Some c) -> c | None -> failwith "mkUnionCompare")
         let dflt = if isNil nullary then None else Some (mbuilder.AddResultTarget(mkZero g m,SuppressSequencePointAtTarget))
@@ -373,7 +373,7 @@ let mkUnionCompare g tcref (tycon:Tycon) =
         mbuilder.Close(dtree,m,g.int_ty)
 
     let expr = 
-        if ucases.Length = 1 then expr else
+        if Seq.length ucases = 1 then expr else
         let tagsEqTested = 
             mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m g.int_ty  
               (mkILAsmCeq g m thistage thattage)
@@ -392,7 +392,7 @@ let mkUnionCompare g tcref (tycon:Tycon) =
 /// Build the comparison implementation for a union type when parameterized by a comparer
 let mkUnionCompareWithComparer g tcref (tycon:Tycon) (_thisv,thise) (_thatobjv,thatcaste) compe = 
     let m = tycon.Range 
-    let ucases = tycon.UnionCasesAsList
+    let ucases = tycon.UnionCasesAsSeq
     let tinst,ty = mkMinimalTy g tcref
     let tcv,tce = mkCompGenLocal m "objTemp" ty    // let tcv = (thatobj :?> ty)
     let thataddrvOpt,thataddre = mkThatAddrLocalIfNeeded g m tce ty // let thataddrv = &tcv if struct, otherwise thataddre is just tce
@@ -425,7 +425,7 @@ let mkUnionCompareWithComparer g tcref (tycon:Tycon) (_thisv,thise) (_thatobjv,t
 
             Some (mkCase(DecisionTreeTest.UnionCase(cref,tinst),mbuilder.AddResultTarget(test,SuppressSequencePointAtTarget)))
         
-        let nullary,nonNullary = List.partition Option.isNone (List.map mkCase ucases)  
+        let nullary,nonNullary = List.partition Option.isNone (Seq.map mkCase ucases |> Seq.toList)  
         if isNil nonNullary then mkZero g m else 
         let cases = nonNullary |> List.map (function (Some c) -> c | None -> failwith "mkUnionCompare")
         let dflt = if isNil nullary then None else Some (mbuilder.AddResultTarget(mkZero g m,SuppressSequencePointAtTarget))
@@ -433,7 +433,7 @@ let mkUnionCompareWithComparer g tcref (tycon:Tycon) (_thisv,thise) (_thatobjv,t
         mbuilder.Close(dtree,m,g.int_ty)
 
     let expr = 
-        if ucases.Length = 1 then expr else
+        if Seq.length ucases = 1 then expr else
         let tagsEqTested = 
             mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m g.int_ty  
               (mkILAsmCeq g m thistage thattage)
@@ -454,7 +454,7 @@ let mkUnionCompareWithComparer g tcref (tycon:Tycon) (_thisv,thise) (_thatobjv,t
 /// Build the equality implementation for a union type
 let mkUnionEquality g tcref (tycon:Tycon) = 
     let m = tycon.Range 
-    let ucases = tycon.UnionCasesAsList 
+    let ucases = tycon.UnionCasesAsSeq 
     let tinst,ty = mkMinimalTy g tcref
     let thisv,thataddrv,thise,thataddre = mkThisVarThatVar g m ty 
     let thistagv,thistage = mkCompGenLocal m "thisTag" g.int_ty  
@@ -485,7 +485,7 @@ let mkUnionEquality g tcref (tycon:Tycon) =
 
             Some (mkCase(DecisionTreeTest.UnionCase(cref,tinst), mbuilder.AddResultTarget(test, SuppressSequencePointAtTarget)))
         
-        let nullary,nonNullary = List.partition Option.isNone (List.map mkCase ucases)  
+        let nullary,nonNullary = List.partition Option.isNone (Seq.map mkCase ucases |> Seq.toList)  
         if isNil nonNullary then mkTrue g m else 
         let cases = List.map (function (Some c) -> c | None -> failwith "mkUnionEquality") nonNullary
         let dflt = (if isNil nullary then None else Some (mbuilder.AddResultTarget(mkTrue g m,SuppressSequencePointAtTarget)))
@@ -493,7 +493,7 @@ let mkUnionEquality g tcref (tycon:Tycon) =
         mbuilder.Close(dtree,m,g.bool_ty)
         
     let expr = 
-        if ucases.Length = 1 then expr else
+        if Seq.length ucases = 1 then expr else
         let tagsEqTested = 
           mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m g.bool_ty  
             (mkILAsmCeq g m thistage thattage)
@@ -514,7 +514,7 @@ let mkUnionEquality g tcref (tycon:Tycon) =
 /// Build the equality implementation for a union type when parameterized by a comparer
 let mkUnionEqualityWithComparer g tcref (tycon:Tycon) (_thisv,thise) thatobje (thatv,thate) compe =
     let m = tycon.Range 
-    let ucases = tycon.UnionCasesAsList
+    let ucases = tycon.UnionCasesAsSeq
     let tinst,ty = mkMinimalTy g tcref
     let thistagv,thistage = mkCompGenLocal m "thisTag" g.int_ty  
     let thattagv,thattage = mkCompGenLocal m "thatTag" g.int_ty  
@@ -548,7 +548,7 @@ let mkUnionEqualityWithComparer g tcref (tycon:Tycon) (_thisv,thise) thatobje (t
 
             Some (mkCase(DecisionTreeTest.UnionCase(cref,tinst), mbuilder.AddResultTarget (test, SuppressSequencePointAtTarget)))
         
-        let nullary,nonNullary = List.partition Option.isNone (List.map mkCase ucases)  
+        let nullary,nonNullary = List.partition Option.isNone (Seq.map mkCase ucases |> Seq.toList) 
         if isNil nonNullary then mkTrue g m else 
         let cases = List.map (function (Some c) -> c | None -> failwith "mkUnionEquality") nonNullary
         let dflt = if isNil nullary then None else Some (mbuilder.AddResultTarget(mkTrue g m,SuppressSequencePointAtTarget))
@@ -556,7 +556,7 @@ let mkUnionEqualityWithComparer g tcref (tycon:Tycon) (_thisv,thise) thatobje (t
         mbuilder.Close(dtree,m,g.bool_ty)
         
     let expr = 
-        if ucases.Length = 1 then expr else
+        if Seq.length ucases = 1 then expr else
         let tagsEqTested = 
           mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m g.bool_ty  
             (mkILAsmCeq g m thistage thattage)
@@ -618,7 +618,7 @@ let mkExnHashWithComparer g exnref (exnc:Tycon) compe =
 /// Structural hash implementation for union types when parameterized by a comparer   
 let mkUnionHashWithComparer g tcref (tycon:Tycon) compe =
     let m = tycon.Range
-    let ucases = tycon.UnionCasesAsList
+    let ucases = tycon.UnionCasesAsSeq
     let tinst,ty = mkMinimalTy g tcref
     let thisv,thise = mkThisVar g m ty
     let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding,m ) 
@@ -648,7 +648,8 @@ let mkUnionHashWithComparer g tcref (tycon:Tycon) compe =
             Some(mkCase(DecisionTreeTest.UnionCase(c1ref,tinst),mbuilder.AddResultTarget(test,SuppressSequencePointAtTarget)))
 
     let nullary,nonNullary = ucases
-                             |> List.mapi mkCase
+                             |> Seq.mapi mkCase
+                             |> Seq.toList
                              |> List.partition (fun i -> i.IsNone)
     let cases = nonNullary |> List.map (function (Some c) -> c | None -> failwith "mkUnionHash")
     let dflt = if isNil nullary then None 

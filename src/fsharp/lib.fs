@@ -91,7 +91,7 @@ module Pair =
 type NameSet =  Zset<string>
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module NameSet =
-    let ofList l : NameSet = List.foldBack Zset.add l (Zset.empty String.order)
+    let ofList l : NameSet = Seq.foldBack Zset.add l (Zset.empty String.order)
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module NameMap = 

@@ -1591,7 +1591,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
     superOfTycon cenv.g tycon |> CheckTypeNoByrefs cenv env m                             
 
     if tycon.IsUnionTycon then                             
-        tycon.UnionCasesAsList |> Seq.iter (fun uc ->
+        tycon.UnionCasesAsSeq |> Seq.iter (fun uc ->
             CheckAttribs cenv env uc.Attribs 
             uc.RecdFields |> Seq.iter (CheckRecdField true cenv env tycon))
 

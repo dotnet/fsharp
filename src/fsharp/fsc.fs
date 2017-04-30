@@ -336,8 +336,9 @@ module XmlDocWriter =
             if (hasDoc tc.XmlDoc) then tc.XmlDocSig <- XmlDocSigOfTycon [ptext; tc.CompiledName]
             for vref in tc.MembersOfFSharpTyconSorted do 
                 doValSig ptext vref.Deref
-            for uc in tc.UnionCasesAsList do
-                if (hasDoc uc.XmlDoc) then uc.XmlDocSig <- XmlDocSigOfUnionCase [ptext; tc.CompiledName; uc.Id.idText]
+            tc.UnionCasesAsSeq
+            |> Seq.filter (fun uc -> hasDoc uc.XmlDoc)
+            |> Seq.iter (fun uc -> uc.XmlDocSig <- XmlDocSigOfUnionCase [ptext; tc.CompiledName; uc.Id.idText])
             for rf in tc.AllFieldsAsList do
                 if (hasDoc rf.XmlDoc) then
                     rf.XmlDocSig <-
@@ -361,9 +362,9 @@ module XmlDocWriter =
             if mspec.IsModule then doModuleMemberSig ptext mspec
             let vals = 
                 mtype.AllValsAndMembers
+                |> Seq.filter (fun x  -> not x.IsCompilerGenerated) 
+                |> Seq.filter (fun x -> x.MemberInfo.IsNone || x.IsExtensionMember)
                 |> Seq.toList
-                |> List.filter (fun x  -> not x.IsCompilerGenerated) 
-                |> List.filter (fun x -> x.MemberInfo.IsNone || x.IsExtensionMember)
             Seq.iter (doModuleSig  path)  mtype.ModuleAndNamespaceDefinitions
             Seq.iter (doTyconSig  ptext) mtype.ExceptionDefinitions
             Seq.iter (doValSig    ptext) vals
@@ -387,8 +388,7 @@ module XmlDocWriter =
             addMember tc.XmlDocSig tc.XmlDoc
             for vref in tc.MembersOfFSharpTyconSorted do 
                 doVal vref.Deref 
-            for uc in tc.UnionCasesAsList do
-                doUnionCase uc
+            tc.UnionCasesAsSeq |> Seq.iter doUnionCase
             for rf in tc.AllFieldsAsList do
                 doField rf
 

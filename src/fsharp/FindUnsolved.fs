@@ -211,7 +211,7 @@ let accTycon cenv env (tycon:Tycon) =
     accAttribs cenv env tycon.Attribs
     tycon.AllFieldsArray |> Seq.iter (accTyconRecdField cenv env tycon)
     if tycon.IsUnionTycon then                             (* This covers finite unions. *)
-      tycon.UnionCasesAsList |> Seq.iter (fun uc ->
+      tycon.UnionCasesAsSeq |> Seq.iter (fun uc ->
           accAttribs cenv env uc.Attribs
           uc.RecdFields |> Seq.iter (accTyconRecdField cenv env tycon))
   

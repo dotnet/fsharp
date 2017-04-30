@@ -902,7 +902,7 @@ and measureAEquiv g aenv un1 un2 =
  
     Seq.forall (fun v -> MeasureVarExponent v un1 = MeasureVarExponent (trans v) un2) vars1 &&
     Seq.forall (fun v -> MeasureVarExponent v un1 = MeasureVarExponent v un2) vars2 &&
-    Seq.forall (fun c -> MeasureConExponentAfterRemapping g remapTyconRef c un1 = MeasureConExponentAfterRemapping g remapTyconRef c un2) (cons1@cons2)  
+    Seq.forall (fun c -> MeasureConExponentAfterRemapping g remapTyconRef c un1 = MeasureConExponentAfterRemapping g remapTyconRef c un2) (List.append cons1 cons2)  
 
 
 and typesAEquivAux erasureFlag g aenv l1 l2 = List.lengthsEqAndForall2 (typeAEquivAux erasureFlag g aenv) l1 l2
@@ -3343,8 +3343,13 @@ module DebugPrint = begin
             | argtys -> (prefixL ^^ nmL ^^ wordL(tagText "of")) --- layoutUnionCaseArgTypes argtys
 
         let layoutUnionCases ucases =
+<<<<<<< HEAD
             let prefixL = if not (isNilOrSingleton ucases) then wordL(tagText "|") else emptyL
             List.map (ucaseL prefixL) ucases
+=======
+            let prefixL = if Seq.length ucases > 1 then wordL(tagText "|") else emptyL
+            Seq.map (ucaseL prefixL) ucases
+>>>>>>> UnionCasesAsList to UnionCasesAsSeq
             
         let layoutRecdField (fld:RecdField) =
             let lhs = wordL (tagText fld.Name)
@@ -3383,7 +3388,7 @@ module DebugPrint = begin
                     let alldecls = inherits @ vsprs @ vals
                     let emptyMeasure = match tycon.TypeOrMeasureKind with TyparKind.Measure -> isNil alldecls | _ -> false
                     if emptyMeasure then emptyL else (wordL (tagText start) @@-- aboveListL alldecls) @@ wordL(tagText "end")
-            | TUnionRepr _        -> tycon.UnionCasesAsList |> layoutUnionCases |> aboveListL 
+            | TUnionRepr _        -> tycon.UnionCasesAsSeq |> layoutUnionCases |> Seq.toList |> aboveListL 
             | TAsmRepr _                      -> wordL(tagText "(# ... #)")
             | TMeasureableRepr ty             -> typeL ty
             | TILObjectRepr (TILObjectReprData(_,_,td)) -> wordL (tagText td.Name)
@@ -3728,7 +3733,7 @@ let accEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi,mhi) =
                                 let rfref = tcref.MakeNestedRecdFieldRef rfield
                                 { mhi with mhiRecdFields =  Zset.add rfref mhi.mhiRecdFields })
                         entity.AllFieldsArray
-                |> List.foldBack  (fun (ucase:UnionCase) mhi ->
+                |> Seq.foldBack  (fun (ucase:UnionCase) mhi ->
                             match sigtycon.GetUnionCaseByName ucase.DisplayName with 
                             | Some _  -> 
                                 // The constructor is in the signature. Hence it is not hidden. 
@@ -3737,7 +3742,7 @@ let accEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi,mhi) =
                                 // The constructor is not in the signature. Hence it is regarded as hidden. 
                                 let ucref = tcref.MakeNestedUnionCaseRef ucase
                                 { mhi with mhiUnionCases =  Zset.add ucref mhi.mhiUnionCases })
-                        (entity.UnionCasesAsList)  
+                        (entity.UnionCasesAsSeq)  
         (mrpi,mhi) 
 
 let accSubEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi,mhi) =
@@ -3879,14 +3884,14 @@ let accTyconHidingInfoAtAssemblyBoundary (tycon:Tycon) mhi =
                        { mhi with mhiRecdFields = Zset.add rfref mhi.mhiRecdFields } 
                    else mhi)
                tycon.AllFieldsArray  
-        |> List.foldBack  
+        |> Seq.foldBack  
                (fun (ucase:UnionCase) mhi ->
                    if not (canAccessFromEverywhere ucase.Accessibility) then 
                        let tcref = mkLocalTyconRef tycon
                        let ucref = tcref.MakeNestedUnionCaseRef ucase
                        { mhi with mhiUnionCases = Zset.add ucref mhi.mhiUnionCases } 
                    else mhi)
-               (tycon.UnionCasesAsList)   
+               (tycon.UnionCasesAsSeq)   
 
 // Collect up the values hidden at the assembly boundary. This is used by IsHiddenVal to 
 // determine if something is considered hidden. This is used in turn to eliminate optimization
@@ -4921,7 +4926,7 @@ and remapUnionCase g tmenv (x:UnionCase) =
           FieldTable = x.FieldTable |> remapRecdFields g tmenv;
           ReturnType     = x.ReturnType     |> remapType tmenv;
           Attribs = x.Attribs |> remapAttribs g tmenv; } 
-and remapUnionCases g tmenv (x:TyconUnionData) = x.UnionCasesAsList |> List.map (remapUnionCase g tmenv)|> MakeUnionCases 
+and remapUnionCases g tmenv (x:TyconUnionData) = x.UnionCasesAsSeq |> Seq.map (remapUnionCase g tmenv)|> MakeUnionCases 
 
 and remapFsObjData g tmenv x = 
     { x with 

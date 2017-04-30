@@ -468,12 +468,12 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             | (TMeasureableRepr _), TNoRepr -> 
                 (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleTypeIsHidden(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName),m)); false)
             | (TUnionRepr r1), (TUnionRepr r2) -> 
-                let ucases1 = r1.UnionCasesAsList
-                let ucases2 = r2.UnionCasesAsList
-                if ucases1.Length <> ucases2.Length then
-                  let names (l: UnionCase list) = l |> List.map (fun c -> c.Id.idText)
+                let ucases1 = r1.UnionCasesAsSeq
+                let ucases2 = r2.UnionCasesAsSeq
+                if Seq.length ucases1 <> Seq.length ucases2 then
+                  let names (l: UnionCase seq) = l |> Seq.map (fun c -> c.Id.idText)
                   reportNiceError "union case" (names ucases1) (names ucases2) 
-                else List.forall2 (checkUnionCase aenv) ucases1 ucases2
+                else Seq.forall2 (checkUnionCase aenv) ucases1 ucases2
             | (TRecdRepr implFields), (TRecdRepr sigFields) -> 
                 checkRecordFields m aenv implTycon implFields sigFields
             | (TFSharpObjectRepr r1), (TFSharpObjectRepr r2) -> 
