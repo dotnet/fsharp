@@ -12,8 +12,6 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Text
 
-
-open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 
@@ -217,8 +215,8 @@ type internal FSharpQuickInfoProvider
                         |> Seq.map (fun x -> x.Text.Length)
                         |> Seq.max
 
-                    let seperator = TaggedTextOps.tag LayoutTag.Text (String.replicate width "-")  
-                    let lineBreak = TaggedTextOps.tag LayoutTag.LineBreak  "\n"
+                    let seperator = TaggedTextOps.tag Text (String.replicate width "-")  
+                    let lineBreak = TaggedTextOps.tag LineBreak "\n"
 
                     // get whitespace nomalized documentation text
                     let getText (tts: seq<Layout.TaggedText>) = 
