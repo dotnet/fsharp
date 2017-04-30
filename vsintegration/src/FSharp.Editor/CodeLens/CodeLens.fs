@@ -222,7 +222,7 @@ type internal CodeLensTagger
         bufferChangedCts <- new CancellationTokenSource()
         
         asyncMaybe {
-            Logging.Logging.logInfof "Rechecking code due to buffer edit!"
+            logInfof "Rechecking code due to buffer edit!"
             let! document = workspace.CurrentSolution.GetDocument(documentId.Value) |> Option.ofObj
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true)
@@ -265,6 +265,7 @@ type internal CodeLensTagger
                             let lineNumber = Line.toZ func.DeclarationLocation.StartLine
                             if lineNumber >= 0 || lineNumber < textSnapshot.LineCount then
                                 lensesByLine.[lineNumber] <- Async.cache (getLensText (symbolUse.DisplayContext, func))
+                                logInfof "!!! Stored async for ln %d" lineNumber
                     | _ -> ()
             
             do! Async.SwitchToContext uiContext |> liftAsync
