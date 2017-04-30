@@ -34,7 +34,7 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
         
         store.RegisterDefault
             { ShowAfterCharIsTyped = true
-              ShowAfterCharIsDeleted = false
+              ShowAfterCharIsDeleted = true
               ShowAllSymbols = true }
 
         store.RegisterDefault
