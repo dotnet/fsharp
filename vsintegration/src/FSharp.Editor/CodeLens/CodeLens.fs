@@ -193,7 +193,7 @@ type internal CodeLensTagger
     let tagsChanged = new Event<EventHandler<SnapshotSpanEventArgs>, SnapshotSpanEventArgs>()
 
     //let formatMap = lazy typeMap.Value.ClassificationFormatMapService.GetClassificationFormatMap "tooltip"
-    let lensesByLine = ConcurrentDictionary<int, Async<UIElement option>>()
+    let lensesByLine = ConcurrentDictionary<int, Async<string option>>()
 
     do assert (documentId <> null)
 
@@ -216,13 +216,12 @@ type internal CodeLensTagger
     member __.SetView value = view <- Some value
     
     member __.BufferChanged _ =
-        let uiContext = SynchronizationContext.Current
         bufferChangedCts.Cancel() // Stop all ongoing async workflow. 
         bufferChangedCts.Dispose()
         bufferChangedCts <- new CancellationTokenSource()
         
         asyncMaybe {
-            Logging.Logging.logInfof "Rechecking code due to buffer edit!"
+            logInfof "Rechecking code due to buffer edit!"
             let! document = workspace.CurrentSolution.GetDocument(documentId.Value) |> Option.ofObj
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true)
@@ -230,27 +229,26 @@ type internal CodeLensTagger
             let! view = view
             let textSnapshot = view.TextSnapshot.TextBuffer.CurrentSnapshot
             
-            let getLensText (displayContext: FSharpDisplayContext, func: FSharpMemberOrFunctionOrValue) : Async<UIElement option> =
+            let getLensText (displayContext: FSharpDisplayContext, func: FSharpMemberOrFunctionOrValue) : Async<string option> =
                 asyncMaybe {
-                    do! Option.guard (not func.IsPropertyGetterMethod)
-                    do! Option.guard (not func.IsPropertySetterMethod)
-                    let! ty = func.FullTypeSafe
-                    let! displayEnv = checkFileResults.GetDisplayEnvForPos(func.DeclarationLocation.Start) |> liftAsync
-                    
-                    let displayContext =
-                        match displayEnv with
-                        | Some denv -> FSharpDisplayContext(fun _ -> denv)
-                        | None -> displayContext
-                         
-                    let typeLayout = ty.FormatLayout(displayContext)
-                    let taggedText = ResizeArray()
-                    Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
-                    let text = [ for t in taggedText -> t.Text ] |> String.concat ""
-                    let label = new Label()
-                    label.Width <- 500.
-                    label.Height <- 50.
-                    label.Content <- text
-                    return label :> UIElement
+                    try
+                        do! Option.guard (not func.IsPropertyGetterMethod)
+                        do! Option.guard (not func.IsPropertySetterMethod)
+                        let! ty = func.FullTypeSafe
+                        let! displayEnv = checkFileResults.GetDisplayEnvForPos(func.DeclarationLocation.Start) |> liftAsync
+                        
+                        let displayContext =
+                            match displayEnv with
+                            | Some denv -> FSharpDisplayContext(fun _ -> denv)
+                            | None -> displayContext
+                             
+                        let typeLayout = ty.FormatLayout(displayContext)
+                        let taggedText = ResizeArray()
+                        Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
+                        return [ for t in taggedText -> t.Text ] |> String.concat ""
+                    with e -> 
+                        logErrorf "%O" e
+                        return null
                 }
             
             lensesByLine.Clear()
@@ -265,15 +263,16 @@ type internal CodeLensTagger
                             let lineNumber = Line.toZ func.DeclarationLocation.StartLine
                             if lineNumber >= 0 || lineNumber < textSnapshot.LineCount then
                                 lensesByLine.[lineNumber] <- Async.cache (getLensText (symbolUse.DisplayContext, func))
+                                logInfof "!!! Stored async for ln %d" lineNumber
                     | _ -> ()
             
-            do! Async.SwitchToContext uiContext |> liftAsync
-            view.DisplayTextLineContainingBufferPosition(view.TextViewLines.FirstVisibleLine.Start, 0., ViewRelativePosition.Top)
+            //do! Async.SwitchToContext uiContext |> liftAsync
+            //view.DisplayTextLineContainingBufferPosition(view.TextViewLines.FirstVisibleLine.Start, 0., ViewRelativePosition.Top)
         }
         |> Async.Ignore 
         |> RoslynHelpers.StartAsyncSafe bufferChangedCts.Token
 
-    member __.LayoutChanged (_: TextViewLayoutChangedEventArgs) = 
+    member this.LayoutChanged (_: TextViewLayoutChangedEventArgs) = 
         let uiContext = SynchronizationContext.Current
         layoutChangedCts.Cancel()
         layoutChangedCts.Dispose()
@@ -288,32 +287,45 @@ type internal CodeLensTagger
             let endLine = buffer.CurrentSnapshot.GetLineNumberFromPosition view.TextViewLines.LastVisibleLine.Start.Position
 
             for lineNumber in startLine..endLine do
-                let line = view.TextViewLines.[lineNumber]
-                if not (adornments.ContainsKey lineNumber) then
-                    do! Async.SwitchToThreadPool() |> liftAsync
-                    logInfof "Getting async ui for ln %d..." lineNumber
-                    let! ui = lensesByLine.TryFind lineNumber
-                    logInfof "Got async ui for ln %d. Executing it..." lineNumber
-                    let! ui = ui
-                    logInfof "Got real ui for ln %d!" lineNumber
-                    
-                    match line.GetAdornmentTags self |> Seq.tryHead with
-                    | Some tag ->
-                        do! Async.SwitchToContext uiContext |> liftAsync
-                        
-                        let offset = 
-                            [0..line.Length - 1] 
-                            |> Seq.tryFind (fun i -> not (Char.IsWhiteSpace (line.Start.Add(i).GetChar())))
-                            |> Option.defaultValue 0
-                        
-                        let realStart = line.Start.Add offset
-                        let span = SnapshotSpan(line.Snapshot, Span.FromBounds(int realStart, int line.End))
-                        let geometry = view.TextViewLines.GetMarkerGeometry(span)
-                        Canvas.SetLeft(ui, geometry.Bounds.Left)
-                        Canvas.SetTop(ui, geometry.Bounds.Top - 15.)
-                        layer.AddAdornment(line.Extent, tag, ui) |> ignore
-                        adornments.[lineNumber] <- ui
-                    | None -> ()
+                if lineNumber < view.TextViewLines.Count then
+                    let line = view.TextViewLines.[lineNumber]
+                    //if not (adornments.ContainsKey lineNumber) then
+                    if true then
+                        do! asyncMaybe {
+                                logInfof "Getting async text for ln %d..." lineNumber
+                                match lensesByLine.TryFind lineNumber with
+                                | Some text ->
+                                    logInfof "Got async text for ln %d. Executing it..." lineNumber
+                                    let! text = text
+                                    do! Async.SwitchToContext uiContext |> liftAsync
+                                    let label = new Label()
+                                    label.Width <- 500.
+                                    label.Height <- 50.
+                                    label.Content <- text
+                                    logInfof "Created ui for ln %d!" lineNumber
+                                    
+                                    match line.GetAdornmentTags this |> Seq.tryHead with
+                                    | Some tag ->
+                                        
+                                        let offset = 
+                                            [0..line.Length - 1] 
+                                            |> Seq.tryFind (fun i -> not (Char.IsWhiteSpace (line.Start.Add(i).GetChar())))
+                                            |> Option.defaultValue 0
+                                        
+                                        let realStart = line.Start.Add offset
+                                        let span = SnapshotSpan(line.Snapshot, Span.FromBounds(int realStart, int line.End))
+                                        let geometry = view.TextViewLines.GetMarkerGeometry(span)
+                                        Canvas.SetLeft(label, geometry.Bounds.Left)
+                                        Canvas.SetTop(label, geometry.Bounds.Top - 15.)
+                                        layer.AddAdornment(line.Extent, tag, label) |> ignore
+                                        adornments.[lineNumber] <- label
+                                    | None -> ()
+                                | None -> logWarningf "HAS NOT GOT ASYNC UI FOR LN %d, all lines with lenses:\%A" 
+                                                      lineNumber
+                                                      (lensesByLine |> Seq.map (fun (KeyValue(ln, _)) -> ln) |> Seq.toList)
+                            } 
+                            |> Async.Ignore
+                            |> liftAsync
         } 
         |> Async.Ignore 
         |> RoslynHelpers.StartAsyncSafe layoutChangedCts.Token
@@ -322,7 +334,7 @@ type internal CodeLensTagger
         [<CLIEvent>]
         member __.TagsChanged = tagsChanged.Publish
 
-        override __.GetTags spans =
+        override this.GetTags spans =
             seq {
                 if view.IsSome then
                     let translatedSpans = 
@@ -333,11 +345,13 @@ type internal CodeLensTagger
                     //Logging.Logging.logMsgf "Iterating over %A spans" spans.Count
                     for tagSpan in translatedSpans do
                         let lineNumber = buffer.CurrentSnapshot.GetLineNumberFromPosition(tagSpan.Start.Position)
-                        if lensesByLine.ContainsKey lineNumber then
+                        let thereIsLense = lensesByLine.ContainsKey lineNumber
+                        logInfof "GetTags: lensesByLine.ContainsKey %d = %b" lineNumber thereIsLense
+                        if thereIsLense then
                             match tags.TryFind lineNumber with
                             | Some tag -> yield tag
                             | _ ->
-                                let res = TagSpan(tagSpan, CodeLensTag(0., 15., 0., 0., 0., PositionAffinity.Predecessor, self, self)) :> ITagSpan<CodeLensTag>
+                                let res = TagSpan(tagSpan, CodeLensTag(0., 15., 0., 0., 0., PositionAffinity.Predecessor, this, this)) :> ITagSpan<CodeLensTag>
                                 tags.[lineNumber] <- res
                                 yield res
             }
