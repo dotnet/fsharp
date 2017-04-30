@@ -232,25 +232,30 @@ type internal CodeLensTagger
             
             let getLensText (displayContext: FSharpDisplayContext, func: FSharpMemberOrFunctionOrValue) : Async<UIElement option> =
                 asyncMaybe {
-                    do! Option.guard (not func.IsPropertyGetterMethod)
-                    do! Option.guard (not func.IsPropertySetterMethod)
-                    let! ty = func.FullTypeSafe
-                    let! displayEnv = checkFileResults.GetDisplayEnvForPos(func.DeclarationLocation.Start) |> liftAsync
-                    
-                    let displayContext =
-                        match displayEnv with
-                        | Some denv -> FSharpDisplayContext(fun _ -> denv)
-                        | None -> displayContext
-                         
-                    let typeLayout = ty.FormatLayout(displayContext)
-                    let taggedText = ResizeArray()
-                    Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
-                    let text = [ for t in taggedText -> t.Text ] |> String.concat ""
-                    let label = new Label()
-                    label.Width <- 500.
-                    label.Height <- 50.
-                    label.Content <- text
-                    return label :> UIElement
+                    try
+                        do! Option.guard (not func.IsPropertyGetterMethod)
+                        do! Option.guard (not func.IsPropertySetterMethod)
+                        let! ty = func.FullTypeSafe
+                        let! displayEnv = checkFileResults.GetDisplayEnvForPos(func.DeclarationLocation.Start) |> liftAsync
+                        
+                        let displayContext =
+                            match displayEnv with
+                            | Some denv -> FSharpDisplayContext(fun _ -> denv)
+                            | None -> displayContext
+                             
+                        let typeLayout = ty.FormatLayout(displayContext)
+                        let taggedText = ResizeArray()
+                        Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
+                        let text = [ for t in taggedText -> t.Text ] |> String.concat ""
+                        do! Async.SwitchToContext uiContext |> liftAsync
+                        let label = new Label()
+                        label.Width <- 500.
+                        label.Height <- 50.
+                        label.Content <- text
+                        return label :> UIElement
+                    with e -> 
+                        logErrorf "%O" e
+                        return null
                 }
             
             lensesByLine.Clear()
@@ -289,32 +294,35 @@ type internal CodeLensTagger
             let endLine = buffer.CurrentSnapshot.GetLineNumberFromPosition view.TextViewLines.LastVisibleLine.Start.Position
 
             for lineNumber in startLine..endLine do
-                let line = view.TextViewLines.[lineNumber]
-                if not (adornments.ContainsKey lineNumber) then
-                    do! Async.SwitchToThreadPool() |> liftAsync
-                    logInfof "Getting async ui for ln %d..." lineNumber
-                    let! ui = lensesByLine.TryFind lineNumber
-                    logInfof "Got async ui for ln %d. Executing it..." lineNumber
-                    let! ui = ui
-                    logInfof "Got real ui for ln %d!" lineNumber
-                    
-                    match line.GetAdornmentTags self |> Seq.tryHead with
-                    | Some tag ->
-                        do! Async.SwitchToContext uiContext |> liftAsync
-                        
-                        let offset = 
-                            [0..line.Length - 1] 
-                            |> Seq.tryFind (fun i -> not (Char.IsWhiteSpace (line.Start.Add(i).GetChar())))
-                            |> Option.defaultValue 0
-                        
-                        let realStart = line.Start.Add offset
-                        let span = SnapshotSpan(line.Snapshot, Span.FromBounds(int realStart, int line.End))
-                        let geometry = view.TextViewLines.GetMarkerGeometry(span)
-                        Canvas.SetLeft(ui, geometry.Bounds.Left)
-                        Canvas.SetTop(ui, geometry.Bounds.Top - 15.)
-                        layer.AddAdornment(line.Extent, tag, ui) |> ignore
-                        adornments.[lineNumber] <- ui
-                    | None -> ()
+                if lineNumber < view.TextViewLines.Count then
+                    let line = view.TextViewLines.[lineNumber]
+                    if not (adornments.ContainsKey lineNumber) then
+                        do! asyncMaybe {
+                                logInfof "Getting async ui for ln %d..." lineNumber
+                                let! ui = lensesByLine.TryFind lineNumber
+                                logInfof "Got async ui for ln %d. Executing it..." lineNumber
+                                let! ui = ui
+                                logInfof "Got real ui for ln %d!" lineNumber
+                                
+                                match line.GetAdornmentTags self |> Seq.tryHead with
+                                | Some tag ->
+                                    
+                                    let offset = 
+                                        [0..line.Length - 1] 
+                                        |> Seq.tryFind (fun i -> not (Char.IsWhiteSpace (line.Start.Add(i).GetChar())))
+                                        |> Option.defaultValue 0
+                                    
+                                    let realStart = line.Start.Add offset
+                                    let span = SnapshotSpan(line.Snapshot, Span.FromBounds(int realStart, int line.End))
+                                    let geometry = view.TextViewLines.GetMarkerGeometry(span)
+                                    Canvas.SetLeft(ui, geometry.Bounds.Left)
+                                    Canvas.SetTop(ui, geometry.Bounds.Top - 15.)
+                                    layer.AddAdornment(line.Extent, tag, ui) |> ignore
+                                    adornments.[lineNumber] <- ui
+                                | None -> ()
+                            } 
+                            |> Async.Ignore
+                            |> liftAsync
         } 
         |> Async.Ignore 
         |> RoslynHelpers.StartAsyncSafe layoutChangedCts.Token
