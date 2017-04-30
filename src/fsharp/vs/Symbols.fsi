@@ -858,6 +858,8 @@ and [<Class>] internal FSharpType =
     /// Format the type using the rules of the given display context
     member Format : context: FSharpDisplayContext -> string
 
+    /// Format the type using the rules of the given display context
+    member FormatLayout : context: FSharpDisplayContext -> Layout
     /// Instantiate generic type parameters in a type
     member Instantiate : (FSharpGenericParameter * FSharpType) list -> FSharpType
 

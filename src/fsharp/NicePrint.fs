@@ -1971,6 +1971,7 @@ let isGeneratedExceptionField pos f     = TastDefinitionPrinting.isGeneratedExce
 let stringOfTyparConstraint denv tpc  = stringOfTyparConstraints denv [tpc]
 let stringOfTy              denv x    = x |> PrintTypes.layoutType denv |> showL
 let prettyLayoutOfTy        denv x    = x |> PrintTypes.layoutPrettyType denv
+let prettyLayoutOfTyNoCx    denv x    = x |> PrintTypes.layoutPrettyTypeNoCx denv
 let prettyStringOfTy        denv x    = x |> PrintTypes.layoutPrettyType denv |> showL
 let prettyStringOfTyNoCx    denv x    = x |> PrintTypes.layoutPrettyTypeNoCx denv |> showL
 let stringOfRecdField       denv x    = x |> TastDefinitionPrinting.layoutRecdField false denv |> showL

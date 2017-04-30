@@ -1854,6 +1854,10 @@ and FSharpType(cenv, typ:TType) =
        protect <| fun () -> 
         NicePrint.prettyStringOfTyNoCx (denv.Contents cenv.g) typ 
 
+    member x.FormatLayout(denv: FSharpDisplayContext) =
+       protect <| fun () -> 
+        NicePrint.prettyLayoutOfTyNoCx (denv.Contents cenv.g) typ
+
     override x.ToString() = 
        protect <| fun () -> 
         "type " + NicePrint.prettyStringOfTyNoCx (DisplayEnv.Empty(cenv.g)) typ 
