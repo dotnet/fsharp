@@ -46,6 +46,7 @@ type internal CodeLensTagger
 
         let formatMap = lazy typeMap.Value.ClassificationFormatMapService.GetClassificationFormatMap "tooltip"
         let mutable codeLensLines = ConcurrentDictionary()
+        let mutable firstTimeChecked = false
 
         do assert (documentId <> null)
 
@@ -59,7 +60,7 @@ type internal CodeLensTagger
             |> typeMap.Value.GetClassificationType
             |> formatMap.Value.GetTextProperties   
          
-        let executeCodeLenseAsync (__:TextContentChangedEventArgs) =  
+        let executeCodeLenseAsync () =  
             let uiContext = SynchronizationContext.Current
             asyncMaybe {
                 try 
@@ -118,11 +119,19 @@ type internal CodeLensTagger
                     let handler = tagsChanged;
                     handler.Trigger(self, SnapshotSpanEventArgs(SnapshotSpan(view.TextViewLines.FirstVisibleLine.Start, view.TextViewLines.LastVisibleLine.End)))
                     Logging.Logging.logInfof "Finished updating code lens." |> ignore
+                    if not firstTimeChecked then
+                        firstTimeChecked <- true
                 with
                 | ex -> Logging.Logging.logErrorf "Error occured: %A" ex
                         
             }
-       
+        
+        do asyncMaybe{
+            while not firstTimeChecked do
+                do! executeCodeLenseAsync()
+                Async.Sleep(1000) |> Async.RunSynchronously
+           } |> Async.Ignore |> Async.Start
+
         let createCodeLensUIElementByLine (line:ITextViewLine) =
             let view = self.WpfTextView.Value
             let offset = 
@@ -154,12 +163,12 @@ type internal CodeLensTagger
 
 
         do buffer.Changed.AddHandler(fun _ e -> (self.BufferChanged e))
-        member __.BufferChanged e =
+        member __.BufferChanged ___ =
             cancellationTokenSourceBufferChanged.Cancel() // Stop all ongoing async workflow. 
             cancellationTokenSourceBufferChanged.Dispose()
             cancellationTokenSourceBufferChanged <- new CancellationTokenSource()
             cancellationTokenBufferChanged <- cancellationTokenSourceBufferChanged.Token
-            executeCodeLenseAsync e |> Async.Ignore |> RoslynHelpers.StartAsyncSafe cancellationTokenBufferChanged
+            executeCodeLenseAsync () |> Async.Ignore |> RoslynHelpers.StartAsyncSafe cancellationTokenBufferChanged
                 
         member val WpfTextView : Lazy<IWpfTextView> = Lazy<IWpfTextView>() with get,set 
 
@@ -280,12 +289,13 @@ type internal CodeLensProvider
             view.DisplayTextLineContainingBufferPosition(view.TextViewLines.FirstVisibleLine.Start, 0., ViewRelativePosition.Top)
             ()
 
-    interface ITaggerProvider with
+    interface ITaggerProvider with 
         override __.CreateTagger(buffer) =
             let tagger = getSuitableAdornmentProvider buffer
             box (tagger) :?> _
 
-
+module Test = 
+     let a = "a"
 
 //module Test = 
 //    let t = ""
