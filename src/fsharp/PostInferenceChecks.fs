@@ -1014,7 +1014,7 @@ and CheckExprPermitByrefReturn cenv env expr =
     CheckExpr cenv env expr (PermitByref true)
 
 and CheckDecisionTreeTargets cenv env targets context = 
-    targets |> Array.iter (CheckDecisionTreeTarget cenv env context) 
+    targets |> Seq.iter (CheckDecisionTreeTarget cenv env context) 
 
 and CheckDecisionTreeTarget cenv env context (TTarget(vs,e,_)) = 
     BindVals cenv env vs 
@@ -1580,7 +1580,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                             errorR(Error(FSComp.SR.chkDuplicateMethodInheritedTypeWithSuffix(nm),m))
     // Considers TFSharpObjectRepr, TRecdRepr and TUnionRepr. 
     // [Review] are all cases covered: TILObjectRepr,TAsmRepr. [Yes - these are FSharp.Core.dll only]
-    tycon.AllFieldsArray |> Array.iter (CheckRecdField false cenv env tycon)
+    tycon.AllFieldsArray |> Seq.iter (CheckRecdField false cenv env tycon)
     
     // Abstract slots can have byref arguments and returns
     abstractSlotValsOfTycons [tycon] |> Seq.iter (typeOfVal >> CheckTypePermitByrefs cenv env m) 

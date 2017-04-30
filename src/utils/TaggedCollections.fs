@@ -561,7 +561,7 @@ namespace Internal.Utilities.Collections.Tagged
         let ofSeq comparer (c : IEnumerable<_>) =
             Seq.fold (fun acc k -> add comparer k acc) empty c
 
-        let ofArray comparer l = Array.fold (fun acc k -> add comparer k acc) empty l    
+        let ofArray comparer l = Seq.fold (fun acc k -> add comparer k acc) empty l    
 
 
 #if FX_NO_DEBUG_DISPLAYS

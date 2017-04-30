@@ -362,7 +362,7 @@ type IncrementalOptimizationEnv =
 let rec IsPartialExprVal x = (* IsPartialExprVal can not rebuild to an expr *)
     match x with
     | UnknownValue -> true
-    | TupleValue args | RecdValue (_,args) | UnionCaseValue (_,args) -> Array.exists IsPartialExprVal args
+    | TupleValue args | RecdValue (_,args) | UnionCaseValue (_,args) -> Seq.exists IsPartialExprVal args
     | ConstValue _ | CurriedLambdaValue _ | ConstExprValue _ -> false
     | ValValue (_,a) 
     | SizeValue(_,a) -> IsPartialExprVal a
@@ -1013,12 +1013,12 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
         | TupleValue vinfos         -> 
             TupleValue (Array.map abstractExprInfo vinfos)
         | RecdValue (tcref,vinfos)  -> 
-            if hiddenTyconRepr tcref.Deref || Array.exists (tcref.MakeNestedRecdFieldRef >> hiddenRecdField) tcref.AllFieldsArray
+            if hiddenTyconRepr tcref.Deref || Seq.exists (tcref.MakeNestedRecdFieldRef >> hiddenRecdField) tcref.AllFieldsArray
             then UnknownValue 
             else RecdValue (tcref,Array.map abstractExprInfo vinfos)
         | UnionCaseValue(ucref,vinfos) -> 
             let tcref = ucref.TyconRef
-            if hiddenTyconRepr ucref.Tycon || tcref.UnionCasesArray |> Array.exists (tcref.MakeNestedUnionCaseRef >> hiddenUnionCase) 
+            if hiddenTyconRepr ucref.Tycon || tcref.UnionCasesArray |> Seq.exists (tcref.MakeNestedUnionCaseRef >> hiddenUnionCase) 
             then UnknownValue 
             else UnionCaseValue (ucref,Array.map abstractExprInfo vinfos)
         | SizeValue(_vdepth,vinfo)   -> MakeSizedValueInfo (abstractExprInfo vinfo)
@@ -1580,7 +1580,7 @@ let rec tryRewriteToSeqCombinators g (e: Expr) =
     // match --> match
     | Expr.Match (spBind,exprm,pt,targets,m,_ty) ->
         let targets = targets |> Array.map (fun (TTarget(vs,e,spTarget)) -> match tryRewriteToSeqCombinators g e with None -> None | Some e -> Some(TTarget(vs,e,spTarget)))
-        if targets |> Array.forall Option.isSome then 
+        if targets |> Seq.forall Option.isSome then 
             let targets = targets |> Array.map Option.get
             let ty = targets |> Array.pick (fun (TTarget(_,e,_)) -> Some(tyOfExpr g e))
             Some (Expr.Match (spBind,exprm,pt,targets,m,ty))

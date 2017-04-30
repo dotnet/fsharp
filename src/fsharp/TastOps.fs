@@ -1472,7 +1472,7 @@ let IsCompiledAsStaticPropertyWithField g (v:Val) =
 
 let isArrayTyconRef (g:TcGlobals) tcr =
     g.il_arr_tcr_map
-    |> Array.exists (tyconRefEq g tcr)
+    |> Seq.exists (tyconRefEq g tcr)
 
 let rankOfArrayTyconRef (g:TcGlobals) tcr =
     match g.il_arr_tcr_map |> Array.tryFindIndex (tyconRefEq g tcr) with
@@ -5225,14 +5225,14 @@ and remarkBind m (TBind(v,repr,_)) =
 //--------------------------------------------------------------------------
 
 let isRecdOrStructFieldAllocObservable (f:RecdField) = not f.IsStatic && f.IsMutable
-let isUnionCaseAllocObservable (uc:UnionCase) = uc.FieldTable.FieldsByIndex |> Array.exists isRecdOrStructFieldAllocObservable
+let isUnionCaseAllocObservable (uc:UnionCase) = uc.FieldTable.FieldsByIndex |> Seq.exists isRecdOrStructFieldAllocObservable
 let isUnionCaseRefAllocObservable (uc:UnionCaseRef) = uc.UnionCase |> isUnionCaseAllocObservable
   
 let isRecdOrUnionOrStructTyconAllocObservable (_g:TcGlobals) (tycon:Tycon) =
     if tycon.IsUnionTycon then 
-        tycon.UnionCasesArray |> Array.exists isUnionCaseAllocObservable
+        tycon.UnionCasesArray |> Seq.exists isUnionCaseAllocObservable
     elif tycon.IsRecordTycon || tycon.IsStructOrEnumTycon then 
-        tycon.AllFieldsArray |> Array.exists isRecdOrStructFieldAllocObservable
+        tycon.AllFieldsArray |> Seq.exists isRecdOrStructFieldAllocObservable
     else
         false
 
@@ -5488,7 +5488,7 @@ let foldLinearBindingTargetsOfMatch tree (targets: _[]) =
         let isLinearTarget bs = match bs with [_] -> true | _ -> false
         let isLinearTgtIdx i = isLinearTarget branchesToTargets.[i] 
         let getLinearTgtIdx i = branchesToTargets.[i].Head
-        let hasLinearTgtIdx = branchesToTargets |> Array.exists isLinearTarget
+        let hasLinearTgtIdx = branchesToTargets |> Seq.exists isLinearTarget
 
         if not hasLinearTgtIdx then 
 
@@ -5865,7 +5865,7 @@ type ExprFolders<'State> (folders : _ ExprFolder) =
 
             | Expr.Match (_spBind,_exprm,dtree,targets,_m,_ty)                 -> 
                 let z = dtreeF z dtree
-                let z = Array.fold targetF z targets
+                let z = Seq.fold targetF z targets
                 z
             | Expr.Quote(e,{contents=Some(_typeDefs,_argTypes,argExprs,_)},_,_,_)  -> 
                 let z = exprF z e
@@ -7187,7 +7187,7 @@ let CanHaveUseNullAsTrueValueAttribute (_g:TcGlobals) (tycon:Tycon) =
    let ucs = tycon.UnionCasesArray
    (ucs.Length = 0 ||
      (ucs |> Array.existsOne (fun uc -> uc.IsNullary) &&
-      ucs |> Array.exists (fun uc -> not uc.IsNullary))))
+      ucs |> Seq.exists (fun uc -> not uc.IsNullary))))
 
 // WARNING: this must match optimizeAlternativeToNull in ilx/cu_erase.fs
 let IsUnionTypeWithNullAsTrueValue (g:TcGlobals) (tycon:Tycon) =
@@ -7196,7 +7196,7 @@ let IsUnionTypeWithNullAsTrueValue (g:TcGlobals) (tycon:Tycon) =
    (ucs.Length = 0 ||
      (TyconHasUseNullAsTrueValueAttribute g tycon &&
       ucs |> Array.existsOne (fun uc -> uc.IsNullary) &&
-      ucs |> Array.exists (fun uc -> not uc.IsNullary))))
+      ucs |> Seq.exists (fun uc -> not uc.IsNullary))))
 
 let TyconCompilesInstanceMembersAsStatic g tycon = IsUnionTypeWithNullAsTrueValue g tycon
 let TcrefCompilesInstanceMembersAsStatic g (tcref: TyconRef) = TyconCompilesInstanceMembersAsStatic g tcref.Deref
@@ -7834,7 +7834,7 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
                    (not (typeEquiv g (tyOfExpr g arg1) g.string_ty)  && not (typeEquiv g (tyOfExpr g arg1) g.decimal_ty) )
                 -> checkExpr vrefs arg1 && checkExpr vrefs arg2 
         | Expr.Val(vref,_,_) -> vref.Deref.IsCompiledAsStaticPropertyWithoutField || vrefs.Contains vref.Stamp
-        | Expr.Match(_,_,dtree,targets,_,_) -> checkDecisionTree vrefs dtree && targets |> Array.forall (checkDecisionTreeTarget vrefs)
+        | Expr.Match(_,_,dtree,targets,_,_) -> checkDecisionTree vrefs dtree && targets |> Seq.forall (checkDecisionTreeTarget vrefs)
         | Expr.Let(b,e,_,_) -> checkExpr vrefs b.Expr && checkExpr (vrefs.Add b.Var.Stamp) e
         // Detect standard constants 
         | Expr.TyChoose (_,b,_) -> checkExpr vrefs b

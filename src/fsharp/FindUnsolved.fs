@@ -148,7 +148,7 @@ and accLambdas cenv env topValInfo e ety =
         accExpr cenv env e
 
 and accExprs            cenv env exprs = exprs |> Seq.iter (accExpr cenv env) 
-and accTargets cenv env m ty targets = Array.iter (accTarget cenv env m ty) targets
+and accTargets cenv env m ty targets = Seq.iter (accTarget cenv env m ty) targets
 
 and accTarget cenv env _m _ty (TTarget(_vs,e,_)) = accExpr cenv env e
 
@@ -209,7 +209,7 @@ let accTyconRecdField cenv env _tycon (rfield:RecdField) =
 
 let accTycon cenv env (tycon:Tycon) =
     accAttribs cenv env tycon.Attribs
-    tycon.AllFieldsArray |> Array.iter (accTyconRecdField cenv env tycon)
+    tycon.AllFieldsArray |> Seq.iter (accTyconRecdField cenv env tycon)
     if tycon.IsUnionTycon then                             (* This covers finite unions. *)
       tycon.UnionCasesAsList |> Seq.iter (fun uc ->
           accAttribs cenv env uc.Attribs

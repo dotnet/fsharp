@@ -3062,7 +3062,7 @@ let chunk sz next = ({addr=next; size=sz},next + sz)
 let nochunk next = ({addr= 0x0;size= 0x0; } ,next)
 
 let count f arr = 
-    Array.fold (fun x y -> x + f y) 0x0 arr 
+    Seq.fold (fun x y -> x + f y) 0x0 arr 
 
 module FileSystemUtilites = 
     open System
@@ -3162,7 +3162,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
 
     // 64bit bitvector indicating which tables are in the metadata. 
     let (valid1,valid2),_ = 
-       (((0,0), 0), tables) ||> Array.fold (fun ((valid1,valid2) as valid,n) rows -> 
+       (((0,0), 0), tables) ||> Seq.fold (fun ((valid1,valid2) as valid,n) rows -> 
           let valid = 
               if  rows.Count = 0 then valid else
               ( (if n < 32 then  valid1 ||| (1 <<< n     ) else valid1),
@@ -3460,7 +3460,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
 
       reportTime showTimes "Write Metadata User Strings";
     // The GUID stream 
-      Array.iter mdbuf.EmitBytes guids;
+      Seq.iter mdbuf.EmitBytes guids;
       
     // The blob stream 
       mdbuf.EmitByte 0x00uy;

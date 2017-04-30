@@ -331,7 +331,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env:ImportMap) (m:range) (mbase: Tain
                         declaringType
                 let methods = declaringGenericTypeDefn.PApplyArray((fun x -> x.GetMethods()),"GetMethods",m) 
                 let metadataToken = minfo.PUntaint((fun minfo -> minfo.MetadataToken),m)
-                let found = methods |> Array.tryFind (fun x -> x.PUntaint((fun x -> x.MetadataToken),m) = metadataToken) 
+                let found = methods |> Seq.tryFind (fun x -> x.PUntaint((fun x -> x.MetadataToken),m) = metadataToken) 
                 match found with
                 |   Some found -> found.Coerce(m)
                 |   None -> 
@@ -352,7 +352,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env:ImportMap) (m:range) (mbase: Tain
                         [ for p in cinfo.PApplyArray((fun x -> x.GetParameters()), "GetParameters",m) do
                             yield ImportProvidedType env m (p.PApply((fun p -> p.ParameterType),m)) ]
                     let actualGenericArgs = argsOfAppTy env.g (ImportProvidedType env m declaringType)
-                    ctors |> Array.tryFind (fun ctor -> 
+                    ctors |> Seq.tryFind (fun ctor -> 
                        let formalParameterTypesAfterInstantiation = 
                            [ for p in ctor.PApplyArray((fun x -> x.GetParameters()), "GetParameters",m) do
                                 let ilFormalTy = ImportProvidedTypeAsILType env m (p.PApply((fun p -> p.ParameterType),m))

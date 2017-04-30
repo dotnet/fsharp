@@ -276,7 +276,7 @@ type CapturingErrorLogger(nm) =
     member x.CommitDelayedDiagnostics(errorLogger:ErrorLogger) = 
         // Eagerly grab all the errors and warnings from the mutable collection
         let errors = diagnostics.ToArray()
-        errors |> Array.iter errorLogger.DiagnosticSink
+        errors |> Seq.iter errorLogger.DiagnosticSink
 
 
 /// Type holds thread-static globals for use by the compile.

@@ -3539,7 +3539,7 @@ and refs_of_instr s x =
       
   
 and refs_of_il_code s (c: ILCode)  = 
-    c.Instrs |> Array.iter (refs_of_instr s) 
+    c.Instrs |> Seq.iter (refs_of_instr s) 
     c.Exceptions |> Seq.iter (fun e -> e.Clause |> (function 
         | ILExceptionClause.TypeCatch (ilty, _) -> refs_of_typ s ilty
         | _ -> ()))

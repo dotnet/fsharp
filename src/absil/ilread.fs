@@ -3257,7 +3257,7 @@ let getPdbReader opts infile =
               let pdbdocs = pdbReaderGetDocuments pdbr
   
               let tab = new Dictionary<_,_>(Array.length pdbdocs)
-              pdbdocs |> Array.iter  (fun pdbdoc -> 
+              pdbdocs |> Seq.iter  (fun pdbdoc -> 
                   let url = pdbDocumentGetURL pdbdoc
                   tab.[url] <-
                       ILSourceDocument.Create(language=Some (pdbDocumentGetLanguage pdbdoc),

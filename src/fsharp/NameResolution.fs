@@ -556,8 +556,8 @@ let AddValRefsToNameEnvWithPriority bulkAddMode pri nenv (vrefs: ValRef []) =
     if vrefs.Length = 0 then nenv else
     { nenv with 
         eUnqualifiedItems = AddValRefsToItems bulkAddMode nenv.eUnqualifiedItems vrefs
-        eIndexedExtensionMembers = (nenv.eIndexedExtensionMembers,vrefs) ||> Array.fold (AddValRefToExtensionMembers pri)
-        ePatItems = (nenv.ePatItems,vrefs) ||> Array.fold AddValRefsToActivePatternsNameEnv }
+        eIndexedExtensionMembers = (nenv.eIndexedExtensionMembers,vrefs) ||> Seq.fold (AddValRefToExtensionMembers pri)
+        ePatItems = (nenv.ePatItems,vrefs) ||> Seq.fold AddValRefsToActivePatternsNameEnv }
 
 /// Add a single F# value to the environment.
 let AddValRefToNameEnv nenv (vref:ValRef) = 
@@ -595,7 +595,7 @@ let AddTyconsByDemangledNameAndArity (bulkAddMode: BulkAdd) (tcrefs: TyconRef[])
 
     match bulkAddMode with
     | BulkAdd.Yes -> tab.AddAndMarkAsCollapsible entries
-    | BulkAdd.No -> (tab,entries) ||> Array.fold (fun tab (KeyValue(k,v)) -> tab.Add(k,v))
+    | BulkAdd.No -> (tab,entries) ||> Seq.fold (fun tab (KeyValue(k,v)) -> tab.Add(k,v))
 
 /// Add type definitions to the sub-table of the environment indexed by access name 
 let AddTyconByAccessNames bulkAddMode (tcrefs:TyconRef[]) (tab: LayeredMultiMap<string,_>) =
@@ -606,7 +606,7 @@ let AddTyconByAccessNames bulkAddMode (tcrefs:TyconRef[]) (tab: LayeredMultiMap<
 
     match bulkAddMode with
     | BulkAdd.Yes -> tab.AddAndMarkAsCollapsible entries
-    | BulkAdd.No -> (tab,entries) ||> Array.fold (fun tab (KeyValue(k,v)) -> tab.Add (k,v))
+    | BulkAdd.No -> (tab,entries) ||> Seq.fold (fun tab (KeyValue(k,v)) -> tab.Add (k,v))
 
 /// Add a record field to the corresponding sub-table of the name resolution environment 
 let AddRecdField (rfref:RecdFieldRef) tab = NameMultiMap.add rfref.FieldName rfref tab
@@ -651,7 +651,7 @@ let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g:TcGlobals) 
         if isILOrRequiredQualifiedAccess || not tcref.IsRecordTycon || flds.Length = 0 then 
             nenv.eFieldLabels 
         else 
-            (nenv.eFieldLabels,flds) ||> Array.fold (fun acc f -> 
+            (nenv.eFieldLabels,flds) ||> Seq.fold (fun acc f -> 
                    if f.IsStatic || f.IsCompilerGenerated then acc 
                    else AddRecdField (tcref.MakeNestedRecdFieldRef f) acc)
     
@@ -2384,7 +2384,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
                                           if not hasRequireQualifiedAccessAttribute then 
                                               None
                                           else
-                                              if e.Value.IsUnionTycon && e.Value.UnionCasesArray |> Array.exists (fun c -> c.DisplayName = id.idText) then
+                                              if e.Value.IsUnionTycon && e.Value.UnionCasesArray |> Seq.exists (fun c -> c.DisplayName = id.idText) then
                                                   Some e.Value
                                               else
                                                   None)

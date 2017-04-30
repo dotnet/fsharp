@@ -1231,7 +1231,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                     | :? System.Collections.IEnumerable as ie ->
                          let showContent = 
                             // do not display content of IQueryable since its execution may take significant time
-                            opts.ShowIEnumerable && (ie.GetType().GetInterfaces() |> Array.exists(fun ty -> ty.FullName = "System.Linq.IQueryable") |> not)
+                            opts.ShowIEnumerable && (ie.GetType().GetInterfaces() |> Seq.exists(fun ty -> ty.FullName = "System.Linq.IQueryable") |> not)
 
                          if showContent then
                            let word = "seq"

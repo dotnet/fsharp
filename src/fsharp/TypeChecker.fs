@@ -3724,7 +3724,7 @@ let EliminateInitializationGraphs
                 CheckExpr (strict st) e
             | Expr.Match (_,_,pt,targets,_,_) -> 
                 CheckDecisionTree (strict st) pt 
-                Array.iter (CheckDecisionTreeTarget (strict st)) targets 
+                Seq.iter (CheckDecisionTreeTarget (strict st)) targets 
             | Expr.App(e1,_,_,args,_) -> 
                 CheckExpr (strict st) e1  
                 Seq.iter (CheckExpr (strict st)) args 
@@ -4758,7 +4758,7 @@ and CrackStaticConstantArgs cenv env tpenv (staticParameters: Tainted<ProvidedPa
     for (n,_) in namedArgs do
          match indexedStaticParameters |> List.filter (fun (j,sp) -> j >= unnamedArgs.Length && n.idText = sp.PUntaint((fun sp -> sp.Name), m)) with
          | [] -> 
-             if staticParameters |> Array.exists (fun sp -> n.idText = sp.PUntaint((fun sp -> sp.Name), n.idRange)) then 
+             if staticParameters |> Seq.exists (fun sp -> n.idText = sp.PUntaint((fun sp -> sp.Name), n.idRange)) then 
                  error (Error(FSComp.SR.etStaticParameterAlreadyHasValue n.idText,n.idRange))
              else
                  error (Error(FSComp.SR.etNoStaticParameterWithName n.idText,n.idRange))
@@ -9917,8 +9917,8 @@ and TcMethodNamedArg cenv env (lambdaPropagationInfo,tpenv) (CallerNamedArg(id,a
     // Try to find the lambda propagation info for the corresponding named argument
     let lambdaPropagationInfoForArg = 
         [| for (_,namedInfo) in lambdaPropagationInfo -> 
-             namedInfo |> Array.tryPick (fun namedInfoForArgSet -> 
-                namedInfoForArgSet |> Array.tryPick (fun (nm,info) -> 
+             namedInfo |> Seq.tryPick (fun namedInfoForArgSet -> 
+                namedInfoForArgSet |> Seq.tryPick (fun (nm,info) -> 
                         if nm.idText = id.idText then Some info else None)) |]
         |> Array.map (fun x -> defaultArg x NoInfo)
 
@@ -9933,7 +9933,7 @@ and TcMethodArg  cenv env  (lambdaPropagationInfo,tpenv) (lambdaPropagationInfoF
     begin
         if lambdaPropagationInfoForArg.Length > 0 then 
             let allOverloadsAreFuncOrMismatchForThisArg = 
-                lambdaPropagationInfoForArg |> Array.forall (function ArgDoesNotMatch | CallerLambdaHasArgTypes _ -> true | NoInfo | CalledArgMatchesType _ -> false)
+                lambdaPropagationInfoForArg |> Seq.forall (function ArgDoesNotMatch | CallerLambdaHasArgTypes _ -> true | NoInfo | CalledArgMatchesType _ -> false)
 
             if allOverloadsAreFuncOrMismatchForThisArg then 
               let overloadsWhichAreFuncAtThisPosition = lambdaPropagationInfoForArg |> Array.choose (function CallerLambdaHasArgTypes r -> Some (List.toArray r) | _ -> None)

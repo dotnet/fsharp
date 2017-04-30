@@ -128,7 +128,7 @@ let PrintCompilerOption (CompilerOption(_s,_tag,_spec,_,help) as compilerOption)
           printf  " %s" word
           column + 1 + word.Length
     let words = match help with None -> [| |] | Some s -> s.Split [| ' ' |]
-    let _finalColumn = Array.fold printWord flagWidth words
+    let _finalColumn = Seq.fold printWord flagWidth words
     printfn "" (* newline *)
 
 let PrintPublicOptions (heading,opts) =

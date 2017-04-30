@@ -3079,7 +3079,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
             
             let toMsBuild = [|0..groupedReferences.Length-1|] 
                              |> Array.map(fun i->(p13 groupedReferences.[i]),(p23 groupedReferences.[i]),i) 
-                             |> Array.filter (fun (_,i0,_)->resolvedAsFile|>Array.exists(fun (i1,_) -> i0=i1)|>not)
+                             |> Array.filter (fun (_,i0,_)->resolvedAsFile|>Seq.exists(fun (i1,_) -> i0=i1)|>not)
                              |> Array.map(fun (ref,_,i)->ref,string i)
 
             let resolutions = Resolve(toMsBuild,(*showMessages*)true)  
@@ -4574,7 +4574,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         //    printfn "found non-sys ccu %s" ccu.resolvedPath
 
         let tryFindSysTypeCcu path typeName =
-            sysCcus |> Array.tryFind (fun ccu -> ccuHasType ccu path typeName) 
+            sysCcus |> Seq.tryFind (fun ccu -> ccuHasType ccu path typeName) 
 
         let fslibCcu = 
             if tcConfig.compilingFslib then 

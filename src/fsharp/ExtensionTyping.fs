@@ -1024,7 +1024,7 @@ module internal ExtensionTyping =
                 tryNamespaces providedNamespaces
 
         and tryNamespaces (providedNamespaces: Tainted<IProvidedNamespace>[]) = 
-            providedNamespaces |> Array.tryPick tryNamespace
+            providedNamespaces |> Seq.tryPick tryNamespace
 
         let providedNamespaces = resolver.PApplyArray((fun resolver -> resolver.GetNamespaces()), "GetNamespaces", range=m)
         match tryNamespaces providedNamespaces with 

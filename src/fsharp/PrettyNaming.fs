@@ -245,7 +245,7 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
                     else
                         let choice =
                             opCharTranslateTable
-                            |> Array.tryFind (fun (_, opCharName) ->
+                            |> Seq.tryFind (fun (_, opCharName) ->
                                 // If this operator character name is longer than the remaining piece of 'opName',
                                 // it's obviously not a match.
                                 let opCharNameLen = opCharName.Length
@@ -426,7 +426,7 @@ module internal Microsoft.FSharp.Compiler.PrettyNaming
         let s = DecompileOpName s
         let skipIgnoredChars = s.TrimStart(ignoredChars)
         let afterSkipStartsWith prefix   = skipIgnoredChars.StartsWith(prefix,System.StringComparison.Ordinal)
-        let afterSkipStarts     prefixes = Array.exists afterSkipStartsWith prefixes
+        let afterSkipStarts     prefixes = Seq.exists afterSkipStartsWith prefixes
         // The following conditions follow the declExpr infix clauses.
         // The test corresponds to the lexer definition for the token.
         s = ":=" ||                                    // COLON_EQUALS

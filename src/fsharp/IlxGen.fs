@@ -81,7 +81,7 @@ let markup s = Seq.indexed s
 
 // Approximation for purposes of optimization and giving a warning when compiling definition-only files as EXEs 
 let rec CheckCodeDoesSomething (code: ILCode) = 
-    code.Instrs |> Array.exists (function AI_ldnull | AI_nop | AI_pop | I_ret |  I_seqpoint _ -> false | _ -> true) 
+    code.Instrs |> Seq.exists (function AI_ldnull | AI_nop | AI_pop | I_ret |  I_seqpoint _ -> false | _ -> true) 
 
 let ChooseFreeVarNames takenNames ts =
     let tns = List.map (fun t -> (t,None)) ts
@@ -269,7 +269,7 @@ let CleanUpGeneratedTypeName (nm:string) =
     if nm.IndexOfAny IllegalCharactersInTypeAndNamespaceNames = -1 then 
         nm
     else
-        (nm,IllegalCharactersInTypeAndNamespaceNames) ||> Array.fold (fun nm c -> nm.Replace(string c, "-"))
+        (nm,IllegalCharactersInTypeAndNamespaceNames) ||> Seq.fold (fun nm c -> nm.Replace(string c, "-"))
   
 
 let TypeNameForInitClass cloc = "<StartupCode$" + (CleanUpGeneratedTypeName cloc.clocQualifiedNameOfFile) + ">.$" + cloc.clocTopImplQualifiedName 
@@ -1493,7 +1493,7 @@ let GenString cenv cgbuf s =
 
 let GenConstArray cenv (cgbuf:CodeGenBuffer) eenv ilElementType (data:'a[]) (write : ByteBuffer -> 'a -> unit) = 
     let buf = ByteBuffer.Create data.Length
-    data |> Array.iter (write buf)
+    data |> Seq.iter (write buf)
     let bytes = buf.Close()
     let ilArrayType = mkILArr1DTy ilElementType
     if data.Length = 0 then 
@@ -2185,7 +2185,7 @@ and GenNewArray cenv cgbuf eenv (elems: Expr list,elemTy,m) sequel =
           | Expr.Const(Const.Int64  _,_,_) -> (function Const.Int64  _ -> true | _ -> false), (fun buf -> function Const.Int64 b -> buf.EmitInt64 b | _ -> failwith "unreachable")          
           | _ -> (function _ -> false), (fun _ _ -> failwith "unreachable")
 
-      if elems' |> Array.forall (function Expr.Const(c,_,_) -> test c | _ -> false) then
+      if elems' |> Seq.forall (function Expr.Const(c,_,_) -> test c | _ -> false) then
            let ilElemTy = GenType cenv.amap m eenv.tyenv elemTy
            GenConstArray cenv cgbuf eenv ilElemTy elems' (fun buf -> function Expr.Const(c,_,_) -> write buf c | _ -> failwith "unreachable")
            GenSequel cenv eenv.cloc cgbuf sequel
