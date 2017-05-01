@@ -44,9 +44,7 @@ type internal QuickInfoViewProvider
         glyphService: IGlyphService
     ) =
 
-    do Application.ResourceAssembly <- typeof<Microsoft.VisualStudio.FSharp.UIResources.Strings>.Assembly
-
-    let styles = ResourceDictionary(Source = Uri("HyperlinkStyles.xaml", UriKind.Relative))
+    let styles = ResourceDictionary(Source = Uri(@"/FSharp.UIResources;component/HyperlinkStyles.xaml", UriKind.Relative))
 
     let getStyle() : Style =
         let key =
