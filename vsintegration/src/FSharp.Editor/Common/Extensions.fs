@@ -200,3 +200,9 @@ module Array =
     /// Returns true if one array has trailing elements equal to another's.
     let endsWith (suffix: _ []) (whole: _ []) =
         isSubArray suffix whole (whole.Length-suffix.Length)
+
+type System.Collections.Concurrent.ConcurrentDictionary<'k, 'v> with
+    member this.TryFind (key: 'k) : 'v option =
+        match this.TryGetValue key with
+        | true, v -> Some v
+        | _ -> None
