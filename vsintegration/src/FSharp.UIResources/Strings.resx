@@ -135,6 +135,9 @@
   <data name="Navigation_links" xml:space="preserve">
     <value>Navigation links</value>
   </data>
+  <data name="Show_all_symbols" xml:space="preserve">
+    <value>Show s_ymbols in unopened namespaces</value>
+  </data>
   <data name="Show_completion_list_after_a_character_is_deleted" xml:space="preserve">
     <value>Show completion list after a character is _deleted</value>
   </data>

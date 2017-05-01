@@ -25,6 +25,8 @@
                             <CheckBox x:Name="charDeleted" IsEnabled="{Binding IsChecked, ElementName=charTyped}" IsChecked="{Binding ShowAfterCharIsDeleted}"
                                       Content="{x:Static local:Strings.Show_completion_list_after_a_character_is_deleted}"/>
                         </StackPanel>
+                        <CheckBox x:Name="showAllSymbols" IsChecked="{Binding ShowAllSymbols}"
+                                  Content="{x:Static local:Strings.Show_all_symbols}"/>
                     </StackPanel>
                 </GroupBox>
             </StackPanel>

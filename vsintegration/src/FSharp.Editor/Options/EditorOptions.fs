@@ -11,7 +11,8 @@ open OptionsUIHelpers
 [<CLIMutable>]
 type IntelliSenseOptions =
   { ShowAfterCharIsTyped: bool
-    ShowAfterCharIsDeleted: bool }
+    ShowAfterCharIsDeleted: bool
+    ShowAllSymbols : bool }
 
 [<RequireQualifiedAccess>]
 type QuickInfoUnderlineStyle = Dot | Dash | Solid
@@ -33,7 +34,8 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
         
         store.RegisterDefault
             { ShowAfterCharIsTyped = true
-              ShowAfterCharIsDeleted = false }
+              ShowAfterCharIsDeleted = true
+              ShowAllSymbols = true }
 
         store.RegisterDefault
             { DisplayLinks = true

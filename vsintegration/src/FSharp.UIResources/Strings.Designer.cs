@@ -115,6 +115,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Show s_ymbols in unopened namespaces.
+        /// </summary>
+        public static string Show_all_symbols {
+            get {
+                return ResourceManager.GetString("Show_all_symbols", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Show completion list after a character is _deleted.
         /// </summary>
         public static string Show_completion_list_after_a_character_is_deleted {
