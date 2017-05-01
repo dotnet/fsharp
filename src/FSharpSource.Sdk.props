@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
@@ -65,10 +64,12 @@ $(DefineConstants)
 
   </PropertyGroup>
 
-  <!--<PropertyGroup>
+  <PropertyGroup>
     <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\..\Tools\MSFT.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
     <PublicSign Condition="'$(OS)' != 'Windows_NT'">true</PublicSign>
-  </PropertyGroup>-->
+    <DelaySign>true</DelaySign>
+    <OtherFlags>$(OtherFlags) --delaysign+</OtherFlags>
+  </PropertyGroup>
 
 </Project>

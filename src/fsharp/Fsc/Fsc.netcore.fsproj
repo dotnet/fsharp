@@ -3,7 +3,7 @@
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
   </PropertyGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.props" />
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Sdk.props" />
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -37,5 +37,7 @@
       <Link>fscmain.fs</Link>
     </Compile>
   </ItemGroup>
+
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Sdk.targets" />
 
 </Project>

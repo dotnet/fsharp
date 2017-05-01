@@ -3,7 +3,7 @@
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
   </PropertyGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.props" />
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Sdk.props" />
 
   <PropertyGroup>
     <TargetFramework>netstandard1.6</TargetFramework>
@@ -497,5 +497,7 @@
       <Link>LegacyHostedCompilerForTesting.fs</Link>
     </Compile>
   </ItemGroup>
+
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Sdk.targets" />
 
 </Project>
