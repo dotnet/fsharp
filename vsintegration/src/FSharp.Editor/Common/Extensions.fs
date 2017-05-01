@@ -223,7 +223,7 @@ module Exception =
         | _ -> root
         |> flattenInner
         |> String.concat " ---> "
-
+        
 type System.Collections.Concurrent.ConcurrentDictionary<'k, 'v> with
     member this.TryFind (key: 'k) : 'v option =
         match this.TryGetValue key with
