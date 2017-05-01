@@ -215,7 +215,10 @@ type internal FSharpCompletionProvider
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
             let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken)
             let! _, _, fileCheckResults = checkerProvider.Checker.ParseAndCheckDocument(document, options, true)
-            let getAllSymbols() = assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies(fileCheckResults)
+            let getAllSymbols() =
+                if Settings.IntelliSense.ShowAllSymbols
+                then assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies(fileCheckResults)
+                else []
             let! results = 
                 FSharpCompletionProvider.ProvideCompletionsAsyncAux(checkerProvider.Checker, sourceText, context.Position, options, 
                                                                     document.FilePath, textVersion.GetHashCode(), getAllSymbols)
