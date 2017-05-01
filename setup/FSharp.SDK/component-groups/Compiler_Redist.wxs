@@ -54,6 +54,7 @@
         <!-- F# compiler -->
         <File Id="FSharp_Core_Sigdata_File" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.sigdata" />
         <File Id="FSharp_Core_Optdata_File" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.optdata" />
+        <File Id="FSharp_Core_Xml_File" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.xml" />
       </Component>
 
       <Component Id="Compiler_Redist_FSharp.Build.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Build.dll, $(var.LocaleCode)))">
