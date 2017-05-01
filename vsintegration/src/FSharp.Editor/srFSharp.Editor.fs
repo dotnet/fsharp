@@ -20,6 +20,7 @@ module SR =
     let AddNewKeyword = lazy ( GetString "AddNewKeyword" )                                   // "Add 'new' keyword"
     let PrefixValueNameWithUnderscore = lazy ( GetString "PrefixValueNameWithUnderscore" )   // "Prefix value name with underscore"
     let RenameValueToUnderscore = lazy ( GetString "RenameValueToUnderscore" )               // "Rename value to '_'"
+    let RenameValueToDoubleUnderscore = lazy ( GetString "RenameValueToDoubleUnderscore" )               // "Rename value to '__'"
     let ImplementInterface = lazy ( GetString "ImplementInterface" ) 
     let ImplementInterfaceWithoutTypeAnnotation = lazy ( GetString "ImplementInterfaceWithoutTypeAnnotation" ) 
     let SimplifyName = lazy ( GetString "SimplifyName")
