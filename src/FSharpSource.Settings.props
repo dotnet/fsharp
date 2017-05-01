@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <OtherFlags>$(OtherFlags) --times</OtherFlags>
+    <NoWarn>$(NoWarn);69;65;54;61;75</NoWarn>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningLevel>3</WarningLevel>
+
+    <_MyTargetFramework>coreclr</_MyTargetFramework>
+
+    <!-- Disable wildcard include of resx .-->
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+
+    <DefineConstants>
+MSBUILD_AT_LEAST_14;
+STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;
+TRACE;
+VS_VERSION_DEV15;
+FX_PORTABLE_OR_NETSTANDARD;
+PREFERRED_UI_LANG;
+FX_NO_APP_DOMAINS;
+FX_NO_ARRAY_LONG_LENGTH;
+FX_NO_BEGINEND_READWRITE;
+FX_NO_BINARY_SERIALIZATION;
+FX_NO_CONVERTER;
+FX_NO_DEFAULT_DEPENDENCY_TYPE;
+FX_NO_CORHOST_SIGNER;
+FX_NO_CRYPTO;
+FX_NO_EVENTWAITHANDLE_IDISPOSABLE;
+FX_NO_EXIT_CONTEXT_FLAGS;
+FX_NO_HEAPTERMINATION;
+FX_NO_LINKEDRESOURCES;
+FX_NO_LOADER_OPTIMIZATION;
+FX_NO_SIMPLIFIED_LOADER;
+FX_NO_PARAMETERIZED_THREAD_START;
+FX_NO_PDB_READER;
+FX_NO_PDB_WRITER;
+FX_NO_REFLECTION_MODULE_HANDLES;
+FX_NO_REFLECTION_ONLY;
+FX_NO_RUNTIMEENVIRONMENT;
+FX_NO_SECURITY_PERMISSIONS;
+FX_NO_SERVERCODEPAGES;
+FX_NO_SYMBOLSTORE;
+FX_NO_SYSTEM_CONFIGURATION;
+FX_NO_THREAD;
+FX_NO_THREADABORT;
+FX_NO_WAITONE_MILLISECONDS;
+FX_NO_WEB_CLIENT;
+FX_NO_WIN_REGISTRY;
+FX_NO_WINFORMS;
+FX_REDUCED_EXCEPTIONS;
+FX_REDUCED_CONSOLE;
+FX_RESHAPED_REFEMIT;
+FX_RESHAPED_CONSOLE;
+FX_RESHAPED_GLOBALIZATION;
+FX_RESHAPED_REFLECTION;
+FX_JITTRACKING_ISSUE;
+FX_RESHAPED_MSBUILD;
+FSI_TODO_NETCORE;
+SIGNED;
+$(DefineConstants)
+    </DefineConstants>
+
+  </PropertyGroup>
+
+  <!--<PropertyGroup>
+    <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\..\Tools\MSFT.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
+    <PublicSign Condition="'$(OS)' != 'Windows_NT'">true</PublicSign>
+  </PropertyGroup>-->
+
+</Project>

@@ -1,0 +1,41 @@
+﻿<Project Sdk="FSharp.NET.Sdk;Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
+  </PropertyGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.props" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp1.1</TargetFramework>
+
+    <AssemblyName>fsc</AssemblyName>
+    <NoWarn>$(NoWarn);62</NoWarn>
+    <AssemblyName>fsc</AssemblyName>
+
+    <DefineConstants>EXTENSIONTYPING;COMPILER;$(DefineConstants)</DefineConstants>
+
+    <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FSharp.NET.Sdk" Version="1.0.*" PrivateAssets="All" />
+
+    <PackageReference Include="System.Reflection.Metadata" Version="1.4.2" />
+    <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
+
+    <ProjectReference Include="..\FSharp.Core\FSharp.Core.netcore.fsproj" />
+    <ProjectReference Include="..\FSharp.Compiler\FSharp.Compiler.netcore.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="InternalsVisibleTo.fs" />
+    <Compile Include="..\..\assemblyinfo\assemblyinfo.fsc.exe.fs">
+      <Link>Resources/assemblyinfo.fsc.exe.fs</Link>
+    </Compile>
+    <Compile Include="..\fscmain.fs">
+      <Link>fscmain.fs</Link>
+    </Compile>
+  </ItemGroup>
+
+</Project>
