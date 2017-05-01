@@ -20,14 +20,13 @@ open System.Windows
 open System.Collections.Generic
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler
-open Microsoft.CodeAnalysis.Editor.Shared.Extensions
 open Microsoft.CodeAnalysis.Editor.Shared.Utilities
-open Microsoft.CodeAnalysis.Classification
 open Internal.Utilities.StructuredFormat
 open Microsoft.VisualStudio.Text.Tagging
 open System.Collections.Concurrent
 open System.Collections
 open System.Windows.Media.Animation
+
 open Microsoft.VisualStudio.FSharp.Editor.Logging
 
 type CodeLensTag(width, topSpace, baseline, textHeight, bottomSpace, affinity, tag:obj, providerTag:obj) =
@@ -293,6 +292,7 @@ type internal CodeLensProvider
     ) as __ =
 
     let taggers = ResizeArray()
+    
     let componentModel = Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
     let workspace = componentModel.GetService<VisualStudioWorkspace>()
 
@@ -311,14 +311,14 @@ type internal CodeLensProvider
                     |> Option.get
                 )
 
-            let provider = CodeLensTagger(workspace, documentId, buffer, checkerProvider.Checker, projectInfoManager, typeMap, gotoDefinitionService)
-            taggers.Add((buffer, provider))
-            provider
 
-    [<Export(typeof<AdornmentLayerDefinition>)>]
-    [<Name "CodeLens">]
-    [<Order(Before = PredefinedAdornmentLayers.Text)>]
-    [<TextViewRole(PredefinedTextViewRoles.Document)>]
+            let tagger = CodeLensTagger(workspace, documentId, buffer, checkerProvider.Checker, projectInfoManager, typeMap, gotoDefinitionService)
+            codeLens.Add((buffer, tagger))
+            tagger
+
+    [<Export(typeof<AdornmentLayerDefinition>); Name("CodeLens");
+      Order(Before = PredefinedAdornmentLayers.Text);
+      TextViewRole(PredefinedTextViewRoles.Document)>]
     member val CodeLensAdornmentLayerDefinition : AdornmentLayerDefinition = null with get, set
 
     interface IWpfTextViewCreationListener with
@@ -330,7 +330,7 @@ type internal CodeLensProvider
             tagger.TriggerTagsChanged (SnapshotSpanEventArgs(SnapshotSpan(view.TextViewLines.FirstVisibleLine.Start, view.TextViewLines.LastVisibleLine.End)))
             ()
 
-    interface ITaggerProvider with 
-        override __.CreateTagger(buffer) =
-            let tagger = getSuitableAdornmentProvider buffer
-            box (tagger) :?> _
+
+
+    interface ITaggerProvider with
+        override __.CreateTagger(buffer) = box (getSuitableAdornmentProvider buffer) :?> _

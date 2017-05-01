@@ -29,68 +29,74 @@ type internal UnusedDeclarationsAnalyzer() =
             isEnabledByDefault = true,
             customTags = DiagnosticCustomTags.Unnecessary)
     
-    let symbolUseComparer =
-        { new IEqualityComparer<FSharpSymbolUse> with
-            member __.Equals (x, y) = 
-                if x.IsFromDefinition && y.IsFromDefinition then
-                    x.RangeAlternate = y.RangeAlternate
-                else
-                    x.Symbol.DeclarationLocation = y.Symbol.DeclarationLocation || x.Symbol.IsEffectivelySameAs y.Symbol
-            member __.GetHashCode x = 
-                x.Symbol.DeclarationLocation 
-                |> Option.orElseWith (fun _ -> x.Symbol.ImplementationLocation) 
-                |> hash }
+    let isPotentiallyUnusedDeclaration (symbol: FSharpSymbol) : bool =
+        match symbol with
+        // Determining that a record, DU or module is used anywhere requires inspecting all their enclosed entities (fields, cases and func / vals)
+        // for usages, which is too expensive to do. Hence we never gray them out.
+        | :? FSharpEntity as e when e.IsFSharpRecord || e.IsFSharpUnion || e.IsInterface || e.IsFSharpModule || e.IsClass -> false
+        // FCS returns inconsistent results for override members; we're skipping these symbols.
+        | :? FSharpMemberOrFunctionOrValue as f when 
+                f.IsOverrideOrExplicitInterfaceImplementation ||
+                f.IsBaseValue ||
+                f.IsConstructor -> false
+        // Usage of DU case parameters does not give any meaningful feedback; we never gray them out.
+        | :? FSharpParameter -> false
+        | _ -> true
 
-    let countSymbolsUses (symbolsUses: FSharpSymbolUse[]) =
-        let result = Dictionary<FSharpSymbolUse, int>(symbolUseComparer)
-    
-        for symbolUse in symbolsUses do
-            match result.TryGetValue symbolUse with
-            | true, count -> result.[symbolUse] <- count + 1
-            | _ -> result.[symbolUse] <- 1
-        result
+    let getUnusedDeclarationRanges (symbolsUses: FSharpSymbolUse[]) (isScript: bool) =
+        let definitions =
+            symbolsUses
+            |> Array.filter (fun su -> 
+                su.IsFromDefinition && 
+                su.Symbol.DeclarationLocation.IsSome && 
+                (isScript || su.IsPrivateToFile) && 
+                not (su.Symbol.DisplayName.StartsWith "_") &&
+                isPotentiallyUnusedDeclaration su.Symbol)
 
-    let getSingleDeclarations (symbolsUses: FSharpSymbolUse[]) (isScript: bool) =
-        let symbolUsesCounts = countSymbolsUses symbolsUses
-        
-        let declarations =
-            symbolUsesCounts
-            |> Seq.map (fun (KeyValue(su, count)) -> su, count)
-            |> Seq.groupBy (fun (su, _) -> su.RangeAlternate)
-            |> Seq.collect (fun (_, symbolUsesWithSameRange) ->
-                let singleDeclarationSymbolUses =
-                    symbolUsesWithSameRange
-                    |> Seq.choose(fun (symbolUse, count) ->
-                        match symbolUse.Symbol with
-                        // Determining that a record, DU or module is used anywhere requires inspecting all their enclosed entities (fields, cases and func / vals)
-                        // for usages, which is too expensive to do. Hence we never gray them out.
-                        | :? FSharpEntity as e when e.IsFSharpRecord || e.IsFSharpUnion || e.IsInterface || e.IsFSharpModule || e.IsClass -> None
-                        // FCS returns inconsistent results for override members; we're skipping these symbols.
-                        | :? FSharpMemberOrFunctionOrValue as f when 
-                                f.IsOverrideOrExplicitInterfaceImplementation ||
-                                //f.IsConstructorThisValue ||
-                                f.IsBaseValue ||
-                                f.IsConstructor -> None
-                        // Usage of DU case parameters does not give any meaningful feedback; we never gray them out.
-                        | :? FSharpParameter when symbolUse.IsFromDefinition -> None
-                        | _ when count = 1 && symbolUse.IsFromDefinition && (isScript || symbolUse.IsPrivateToFile) -> Some symbolUse
-                        | _ -> None)
-                    |> Seq.toList
+        let usages =
+            let usages = 
+                symbolsUses
+                |> Array.filter (fun su -> not su.IsFromDefinition)
+                |> Array.choose (fun su -> su.Symbol.DeclarationLocation)
+            HashSet(usages)
 
-                // Only if *all* `SymbolUse`s are single declarations, return them. If there is at least one that should not be marked as unused, return nothing.
-                if Seq.length symbolUsesWithSameRange = List.length singleDeclarationSymbolUses then
-                    singleDeclarationSymbolUses
-                else []
-               )
-            |> Seq.toList
+        let unusedRanges =
+            definitions
+            |> Array.map (fun defSu -> defSu, usages.Contains defSu.Symbol.DeclarationLocation.Value)
+            |> Array.groupBy (fun (defSu, _) -> defSu.RangeAlternate)
+            |> Array.filter (fun (_, defSus) -> defSus |> Array.forall (fun (_, isUsed) -> not isUsed))
+            |> Array.map (fun (m, _) -> m)
 
-        HashSet(declarations, symbolUseComparer)
+        //#if DEBUG
+        //let formatRange (x: Microsoft.FSharp.Compiler.Range.range) = sprintf "(%d, %d) - (%d, %d)" x.StartLine x.StartColumn x.EndLine x.EndColumn
+
+        //symbolsUses
+        //|> Array.map (fun su -> sprintf "%s, %s, is definition = %b, Symbol (def range = %A)" 
+        //                                (formatRange su.RangeAlternate) su.Symbol.DisplayName su.IsFromDefinition
+        //                                (su.Symbol.DeclarationLocation |> Option.map formatRange))
+        //|> Logging.Logging.logInfof "SymbolUses:\n%+A"
+        //
+        //definitions
+        //|> Seq.map (fun su -> sprintf "su range = %s, symbol range = %A, symbol name = %s" 
+        //                              (formatRange su.RangeAlternate) (su.Symbol.DeclarationLocation |> Option.map formatRange) su.Symbol.DisplayName)
+        //|> Logging.Logging.logInfof "Definitions:\n%A"
+        //
+        //usages
+        //|> Seq.map formatRange
+        //|> Seq.toArray
+        //|> Logging.Logging.logInfof "Used ranges:\n%A"
+        //
+        //unusedRanges
+        //|> Array.map formatRange
+        //|> Logging.Logging.logInfof "Unused ranges: %A"
+        //#endif
+        unusedRanges
 
     override __.SupportedDiagnostics = ImmutableArray.Create Descriptor
     
-    override this.AnalyzeSyntaxAsync(_, _) = Task.FromResult ImmutableArray<Diagnostic>.Empty
+    override __.AnalyzeSyntaxAsync(_, _) = Task.FromResult ImmutableArray<Diagnostic>.Empty
 
-    override this.AnalyzeSemanticsAsync(document, cancellationToken) =
+    override __.AnalyzeSemanticsAsync(document, cancellationToken) =
         asyncMaybe {
             match getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document) with
             | Some options ->
@@ -98,11 +104,10 @@ type internal UnusedDeclarationsAnalyzer() =
                 let checker = getChecker document
                 let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true)
                 let! allSymbolUsesInFile = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
-                let unusedDeclarations = getSingleDeclarations allSymbolUsesInFile (isScriptFile document.FilePath)
+                let unusedRanges = getUnusedDeclarationRanges allSymbolUsesInFile (isScriptFile document.FilePath)
                 return
-                    unusedDeclarations
-                    |> Seq.filter (fun symbolUse -> not (symbolUse.Symbol.DisplayName.StartsWith "_"))
-                    |> Seq.map (fun symbolUse -> Diagnostic.Create(Descriptor, RoslynHelpers.RangeToLocation(symbolUse.RangeAlternate, sourceText, document.FilePath)))
+                    unusedRanges
+                    |> Seq.map (fun m -> Diagnostic.Create(Descriptor, RoslynHelpers.RangeToLocation(m, sourceText, document.FilePath)))
                     |> Seq.toImmutableArray
             | None -> return ImmutableArray.Empty
         }
