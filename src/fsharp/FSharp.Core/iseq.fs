@@ -133,10 +133,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "OfArray">]
         let ofArray (source:array<'T>) : ISeq<'T> =
             checkNonNull "source" source
-            match source.Length with
-            | 0 -> empty
-            | 1 -> singleton source.[0]
-            | _ -> Upcast.seq (ThinArrayEnumerable<'T> source)
+            Upcast.seq (ThinArrayEnumerable<'T> source)
 
         [<CompiledName "OfList">]
         let ofList (source:list<'T>) : ISeq<'T> =
@@ -961,6 +958,7 @@ namespace Microsoft.FSharp.Collections
         let length (source:ISeq<'T>)  =
             match source with
             | :? EnumerableBase<'T> as s -> s.Length ()
+            | :? list<'T> as l -> l.Length
             | _ -> length source
 
         [<CompiledName("ToArray")>]
