@@ -2837,7 +2837,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                     MethodTextType.MTT_TYPEPREFIX,
                     () =>
                         {
-                            string str = this.methods.GetType(method);
+                            string str = this.methods.GetReturnTypeText(method);
                             if (str == null) return null;
                             return this.methods.TypePrefix + str + this.methods.TypePostfix;
                         }

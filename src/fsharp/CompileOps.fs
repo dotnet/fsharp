@@ -814,7 +814,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
           os.Append(TypeIsImplicitlyAbstractE().Format) |> ignore
       | NonRigidTypar(denv,tpnmOpt,typarRange,ty1,ty,_) -> 
           // REVIEW: consider if we need to show _cxs (the type parameter constraints)
-          let _, (ty1,ty), _cxs = PrettyTypes.PrettifyTypes2 denv.g (ty1,ty)
+          let (ty1,ty), _cxs = PrettyTypes.PrettifyTypePair denv.g (ty1,ty)
           match tpnmOpt with 
           | None -> 
               os.Append(NonRigidTypar1E().Format (stringOfRange typarRange) (NicePrint.stringOfTy denv ty)) |> ignore
@@ -1154,13 +1154,13 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
         *)
       | RuntimeCoercionSourceSealed(denv,ty,_) -> 
           // REVIEW: consider if we need to show _cxs (the type parameter constraints)
-          let _, ty, _cxs = PrettyTypes.PrettifyTypes1 denv.g ty
+          let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
           if isTyparTy denv.g ty 
           then os.Append(RuntimeCoercionSourceSealed1E().Format (NicePrint.stringOfTy denv ty)) |> ignore
           else os.Append(RuntimeCoercionSourceSealed2E().Format (NicePrint.stringOfTy denv ty)) |> ignore
       | CoercionTargetSealed(denv,ty,_) -> 
           // REVIEW: consider if we need to show _cxs (the type parameter constraints)
-          let _, ty, _cxs= PrettyTypes.PrettifyTypes1 denv.g ty
+          let ty, _cxs= PrettyTypes.PrettifyType denv.g ty
           os.Append(CoercionTargetSealedE().Format (NicePrint.stringOfTy denv ty)) |> ignore
       | UpcastUnnecessary(_) -> 
           os.Append(UpcastUnnecessaryE().Format) |> ignore
@@ -1220,7 +1220,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
           os.Append(DeprecatedThreadStaticBindingWarningE().Format) |> ignore
       | FunctionValueUnexpected (denv,ty,_) ->
           // REVIEW: consider if we need to show _cxs (the type parameter constraints)
-          let _, ty, _cxs = PrettyTypes.PrettifyTypes1 denv.g ty
+          let ty, _cxs = PrettyTypes.PrettifyType denv.g ty
           os.Append(FunctionValueUnexpectedE().Format (NicePrint.stringOfTy denv ty)) |> ignore
       | UnitTypeExpected (_,_,_) ->
           let warningText = UnitTypeExpectedE().Format
