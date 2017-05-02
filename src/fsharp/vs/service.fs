@@ -806,7 +806,7 @@ type TypeCheckInfo
                 GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false)
                 |> FilterRelevantItemsBy getItem None (getItem >> GetBaseClassCandidates)
                 |> Option.map toCompletionItems
-            
+             
             // Completion at 'interface ..."
             | Some (CompletionContext.Inherit(InheritanceContext.Interface, (plid, _))) ->
                 GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false)
