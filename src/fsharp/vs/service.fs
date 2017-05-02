@@ -1144,7 +1144,7 @@ type TypeCheckInfo
                 GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false)
                 |> FilterRelevantItemsBy id None GetBaseClassCandidates
                 |> Option.map toCompletionItems
-            
+             
             // Completion at 'interface ..."
             | Some (CompletionContext.Inherit(InheritanceContext.Interface, (plid, _))) ->
                 GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false)

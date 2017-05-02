@@ -46,21 +46,25 @@ module internal SourceFileImpl =
            
 type CompletionPath = string list * string option // plid * residue
 
+[<RequireQualifiedAccess>]
 type InheritanceOrigin = 
     | Class
     | Interface
     | Unknown
 
+[<RequireQualifiedAccess>]
 type InheritanceContext = 
     | Class
     | Interface
     | Unknown
 
+[<RequireQualifiedAccess>]
 type RecordContext =
     | CopyOnUpdate of range * CompletionPath // range of copy-expr + current field
     | Constructor of string // typename
     | New of CompletionPath
 
+[<RequireQualifiedAccess>]
 type CompletionContext = 
     // completion context cannot be determined due to errors
     | Invalid
@@ -391,6 +395,7 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
 
 type ModuleKind = { IsAutoOpen: bool; HasModuleSuffix: bool }
 
+[<RequireQualifiedAccess>]
 type EntityKind =
     | Attribute
     | Type
@@ -994,7 +999,7 @@ module UntypedParseImpl =
 
         let GetCompletionContextForInheritSynMember ((ComponentInfo(synAttributes, _, _, _,_, _, _, _)), typeDefnKind : SynTypeDefnKind, completionPath) = 
             
-            let success k = Some (Inherit (k, completionPath))
+            let success k = Some (CompletionContext.Inherit (k, completionPath))
 
             // if kind is specified - take it
             // if kind is non-specified 
@@ -1003,22 +1008,22 @@ module UntypedParseImpl =
             match typeDefnKind with
             | TyconClass -> 
                 match synAttributes with
-                | Class | Unknown -> success Class
+                | Class | Unknown -> success InheritanceContext.Class
                 | _ -> Some CompletionContext.Invalid // non-matching attributes
             | TyconInterface -> 
                 match synAttributes with
-                | Interface | Unknown -> success Interface
+                | Interface | Unknown -> success InheritanceContext.Interface
                 | _ -> Some CompletionContext.Invalid // non-matching attributes
             | TyconStruct -> 
                 // display nothing for structs
                 Some CompletionContext.Invalid
             | TyconUnspecified ->
                 match synAttributes with
-                | Class -> success Class
-                | Interface -> success Interface
+                | Class -> success InheritanceContext.Class
+                | Interface -> success InheritanceContext.Interface
                 | Unknown -> 
                     // user do not specify kind explicitly or via attributes
-                    success Unknown
+                    success InheritanceContext.Unknown
                 | _ -> 
                     // unable to uniquely detect kind from the attributes - return invalid context
                     Some CompletionContext.Invalid
