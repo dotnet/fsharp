@@ -14,6 +14,7 @@ open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.Tast
+open Microsoft.FSharp.Compiler.SourceCodeServices
 
 /// Lookup the global static cache for building the FrameworkTcImports
 type internal FrameworkImportsCache = 

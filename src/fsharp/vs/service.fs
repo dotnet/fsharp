@@ -37,7 +37,7 @@ open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.TypeChecker
-open Microsoft.FSharp.Compiler.SourceCodeServices.ItemDescriptionsImpl 
+open Microsoft.FSharp.Compiler.SourceCodeServices.SymbolHelpers 
 
 open Internal.Utilities
 open Internal.Utilities.Collections
@@ -1080,7 +1080,7 @@ type TypeCheckInfo
         match GetDeclItemsForNamesAtPosition (ctok, None,Some(names), None, line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors, ResolveOverloads.No,(fun() -> []),fun _ -> false) with
         | None | Some ([],_,_,_) -> None
         | Some (items, denv, _, m) ->
-            let allItems = items |> List.collect (fun item -> ItemDescriptionsImpl.FlattenItems g m item.Item)
+            let allItems = items |> List.collect (fun item -> SymbolHelpers.FlattenItems g m item.Item)
             let symbols = allItems |> List.map (fun item -> FSharpSymbol.Create(g, thisCcu, tcImports, item))
             Some (symbols, denv, m)
 
@@ -1106,7 +1106,7 @@ type TypeCheckInfo
               let fail defaultReason = 
                   match item with            
 #if EXTENSIONTYPING
-                  | ItemDescriptionsImpl.ItemIsProvidedType g (tcref) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.ProvidedType(tcref.DisplayName))
+                  | SymbolHelpers.ItemIsProvidedType g (tcref) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.ProvidedType(tcref.DisplayName))
                   | Item.CtorGroup(name, ProvidedMeth(_)::_)
                   | Item.MethodGroup(name, ProvidedMeth(_)::_, _)
                   | Item.Property(name, ProvidedProp(_)::_) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.ProvidedMember(name))
@@ -2688,7 +2688,14 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
 
     /// Instantiate an interactive checker.    
     static member Create(?projectCacheSize, ?keepAssemblyContents, ?keepAllBackgroundResolutions, ?msbuildEnabled) = 
-        let referenceResolver = SimulatedMSBuildReferenceResolver.GetBestAvailableResolver(defaultArg msbuildEnabled true)
+
+        let msbuildEnabled = defaultArg msbuildEnabled true
+#if COMPILER_SERVICE_DLL && !COMPILER_SERVICE_DLL_VISUAL_STUDIO
+        let referenceResolver = SimulatedMSBuildReferenceResolver.GetBestAvailableResolver(msbuildEnabled)
+#else
+        let referenceResolver = (assert msbuildEnabled); MSBuildReferenceResolver.Resolver 
+#endif
+
         let keepAssemblyContents = defaultArg keepAssemblyContents false
         let keepAllBackgroundResolutions = defaultArg keepAllBackgroundResolutions true
         let projectCacheSizeReal = defaultArg projectCacheSize projectCacheSizeDefault

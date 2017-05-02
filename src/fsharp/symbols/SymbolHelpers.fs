@@ -303,7 +303,7 @@ type CompletionItem =
       
 
 [<AutoOpen>]
-module internal ItemDescriptionsImpl = 
+module internal SymbolHelpers = 
 
     let isFunction g typ =
         let _,tau = tryDestForallTy g typ
@@ -1210,14 +1210,6 @@ module internal ItemDescriptionsImpl =
 
         |  _ -> 
             FSharpStructuredToolTipElement.None
-
-    let printCanonicalizedTypeName g (denv:DisplayEnv) tau =
-        // get rid of F# abbreviations and such
-        let strippedType = stripTyEqnsWrtErasure EraseAll g tau
-        // pretend no namespaces are open
-        let denv = denv.SetOpenPaths([])
-        // now printing will see a .NET-like canonical representation, that is good for sorting overloads into a reasonable order (see bug 94520)
-        NicePrint.stringOfTy denv strippedType
 
 #if EXTENSIONTYPING
 

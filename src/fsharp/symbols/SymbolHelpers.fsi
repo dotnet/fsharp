@@ -18,10 +18,13 @@ open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.ErrorLogger
 
+//----------------------------------------------------------------------------
+// Object model for diagnostics
+
 
 [<RequireQualifiedAccess>]
 #if COMPILER_PUBLIC_API
-type (*internal*) FSharpErrorSeverity = 
+type FSharpErrorSeverity = 
 #else
 type internal FSharpErrorSeverity = 
 #endif
@@ -30,7 +33,7 @@ type internal FSharpErrorSeverity =
 
 [<Class>]
 #if COMPILER_PUBLIC_API
-type (*internal*) FSharpErrorInfo = 
+type FSharpErrorInfo = 
 #else
 type internal FSharpErrorInfo = 
 #endif
@@ -45,6 +48,9 @@ type internal FSharpErrorInfo =
     member ErrorNumber:int
     static member internal CreateFromExceptionAndAdjustEof : PhasedDiagnostic * isError: bool * trim: bool * range * lastPosInFile:(int*int) -> FSharpErrorInfo
     static member internal CreateFromException : PhasedDiagnostic * isError: bool * trim: bool * range -> FSharpErrorInfo
+
+//----------------------------------------------------------------------------
+// Object model for quick info
 
 /// Describe a comment as either a block of text or a file+signature reference into an intellidoc file.
 //
@@ -138,6 +144,10 @@ type internal FSharpToolTipText = FSharpToolTipText<string>
 type internal FSharpStructuredToolTipText = FSharpToolTipText<Layout>
 #endif
 
+//----------------------------------------------------------------------------
+// Object model for completion list entries (one of several in the API...)
+
+
 [<RequireQualifiedAccess>]
 #if COMPILER_PUBLIC_API
 type CompletionItemKind =
@@ -151,19 +161,11 @@ type internal CompletionItemKind =
     | Argument
     | Other
 
-#if COMPILER_PUBLIC_API
-type UnresolvedSymbol =
-#else
 type internal UnresolvedSymbol =
-#endif
     { DisplayName: string
       Namespace: string[] }
 
-#if COMPILER_PUBLIC_API
-type CompletionItem =
-#else
 type internal CompletionItem =
-#endif
     { ItemWithInst: ItemWithInst
       Kind: CompletionItemKind
       IsOwnMember: bool
@@ -182,7 +184,7 @@ module internal Tooltips =
     val Map: f: ('T1 -> 'T2) -> a: Async<'T1> -> Async<'T2>
 
 // Implementation details used by other code in the compiler    
-module internal ItemDescriptionsImpl = 
+module internal SymbolHelpers = 
     val isFunction : TcGlobals -> TType -> bool
     val ParamNameAndTypesOfUnaryCustomOperation : TcGlobals -> MethInfo -> ParamNameAndType list
 
@@ -210,8 +212,15 @@ module internal ItemDescriptionsImpl =
     val IsAttribute : InfoReader -> Item -> bool
     val IsExplicitlySuppressed : TcGlobals -> Item -> bool
     val FlattenItems : TcGlobals -> range -> Item -> Item list
+#if EXTENSIONTYPING
     val (|ItemIsProvidedType|_|) : TcGlobals -> Item -> TyconRef option
+    val (|ItemIsWithStaticArguments|_|): range -> TcGlobals -> Item -> Tainted<ExtensionTyping.ProvidedParameterInfo>[] option
+    val (|ItemIsProvidedTypeWithStaticArguments|_|): range -> TcGlobals -> Item -> Tainted<ExtensionTyping.ProvidedParameterInfo>[] option
+#endif
+    val SimplerDisplayEnv : DisplayEnv -> DisplayEnv
 
+//----------------------------------------------------------------------------
+// Internal only
 
 // Implementation details used by other code in the compiler    
 [<Sealed>]

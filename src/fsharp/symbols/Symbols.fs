@@ -178,7 +178,7 @@ module Impl =
         member __.tcImports = tcImports
 
     let getXmlDocSigForEntity (cenv: cenv) (ent:EntityRef)=
-        match ItemDescriptionsImpl.GetXmlDocSigOfEntityRef cenv.infoReader ent.Range ent with
+        match SymbolHelpers.GetXmlDocSigOfEntityRef cenv.infoReader ent.Range ent with
         | Some (_, docsig) -> docsig
         | _ -> ""
 
@@ -191,20 +191,20 @@ type FSharpDisplayContext(denv: TcGlobals -> DisplayEnv) =
 type FSharpSymbol(cenv:cenv, item: (unit -> Item), access: (FSharpSymbol -> CcuThunk -> AccessorDomain -> bool)) =
 
     member x.Assembly = 
-        let ccu = defaultArg (ItemDescriptionsImpl.ccuOfItem cenv.g x.Item) cenv.thisCcu 
+        let ccu = defaultArg (SymbolHelpers.ccuOfItem cenv.g x.Item) cenv.thisCcu 
         FSharpAssembly(cenv,  ccu)
 
     member x.IsAccessible(rights: FSharpAccessibilityRights) = access x rights.ThisCcu rights.Contents
 
-    member x.IsExplicitlySuppressed = ItemDescriptionsImpl.IsExplicitlySuppressed cenv.g x.Item
+    member x.IsExplicitlySuppressed = SymbolHelpers.IsExplicitlySuppressed cenv.g x.Item
 
-    member x.FullName = ItemDescriptionsImpl.FullNameOfItem cenv.g x.Item 
+    member x.FullName = SymbolHelpers.FullNameOfItem cenv.g x.Item 
 
-    member x.DeclarationLocation = ItemDescriptionsImpl.rangeOfItem cenv.g None x.Item
+    member x.DeclarationLocation = SymbolHelpers.rangeOfItem cenv.g None x.Item
 
-    member x.ImplementationLocation = ItemDescriptionsImpl.rangeOfItem cenv.g (Some(false)) x.Item
+    member x.ImplementationLocation = SymbolHelpers.rangeOfItem cenv.g (Some(false)) x.Item
 
-    member x.SignatureLocation = ItemDescriptionsImpl.rangeOfItem cenv.g (Some(true)) x.Item
+    member x.SignatureLocation = SymbolHelpers.rangeOfItem cenv.g (Some(true)) x.Item
 
     member x.IsEffectivelySameAs(y:FSharpSymbol) = 
         x.Equals(y) || ItemsAreEffectivelyEqual cenv.g x.Item y.Item
@@ -672,7 +672,7 @@ and FSharpUnionCase(cenv, v: UnionCaseRef) =
     member __.XmlDocSig = 
         checkIsResolved()
         let unionCase = UnionCaseInfo(generalizeTypars v.TyconRef.TyparsNoRange,v)
-        match ItemDescriptionsImpl.GetXmlDocSigOfUnionCaseInfo unionCase with
+        match SymbolHelpers.GetXmlDocSigOfUnionCaseInfo unionCase with
         | Some (_, docsig) -> docsig
         | _ -> ""
 
@@ -798,12 +798,12 @@ and FSharpField(cenv: cenv, d: FSharpFieldData)  =
             match d with 
             | RecdOrClass v -> 
                 let recd = RecdFieldInfo(generalizeTypars v.TyconRef.TyparsNoRange,v)
-                ItemDescriptionsImpl.GetXmlDocSigOfRecdFieldInfo recd
+                SymbolHelpers.GetXmlDocSigOfRecdFieldInfo recd
             | Union (v,_) -> 
                 let unionCase = UnionCaseInfo(generalizeTypars v.TyconRef.TyparsNoRange,v)
-                ItemDescriptionsImpl.GetXmlDocSigOfUnionCaseInfo unionCase
+                SymbolHelpers.GetXmlDocSigOfUnionCaseInfo unionCase
             | ILField (_,f) -> 
-                ItemDescriptionsImpl.GetXmlDocSigOfILFieldInfo cenv.infoReader range0 f
+                SymbolHelpers.GetXmlDocSigOfILFieldInfo cenv.infoReader range0 f
         match xmlsig with
         | Some (_, docsig) -> docsig
         | _ -> ""
@@ -909,7 +909,7 @@ and FSharpActivePatternCase(cenv, apinfo: PrettyNaming.ActivePatternInfo, typ, n
     member __.XmlDocSig = 
         let xmlsig = 
             match valOpt with
-            | Some valref -> ItemDescriptionsImpl.GetXmlDocSigOfValRef cenv.g valref
+            | Some valref -> SymbolHelpers.GetXmlDocSigOfValRef cenv.g valref
             | None -> None
         match xmlsig with
         | Some (_, docsig) -> docsig
@@ -1574,23 +1574,23 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         match d with 
         | E e ->
             let range = defaultArg __.DeclarationLocationOpt range0
-            match ItemDescriptionsImpl.GetXmlDocSigOfEvent cenv.infoReader range e with
+            match SymbolHelpers.GetXmlDocSigOfEvent cenv.infoReader range e with
             | Some (_, docsig) -> docsig
             | _ -> ""
         | P p ->
             let range = defaultArg __.DeclarationLocationOpt range0
-            match ItemDescriptionsImpl.GetXmlDocSigOfProp cenv.infoReader range p with
+            match SymbolHelpers.GetXmlDocSigOfProp cenv.infoReader range p with
             | Some (_, docsig) -> docsig
             | _ -> ""
         | M m | C m -> 
             let range = defaultArg __.DeclarationLocationOpt range0
-            match ItemDescriptionsImpl.GetXmlDocSigOfMethInfo cenv.infoReader range m with
+            match SymbolHelpers.GetXmlDocSigOfMethInfo cenv.infoReader range m with
             | Some (_, docsig) -> docsig
             | _ -> ""
         | V v ->
             match v.ActualParent with 
             | Parent entityRef -> 
-                match ItemDescriptionsImpl.GetXmlDocSigOfScopedValRef cenv.g entityRef v with
+                match SymbolHelpers.GetXmlDocSigOfScopedValRef cenv.g entityRef v with
                 | Some (_, docsig) -> docsig
                 | _ -> ""
             | ParentNone -> "" 

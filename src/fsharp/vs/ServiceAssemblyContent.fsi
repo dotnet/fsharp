@@ -10,36 +10,69 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 
 /// Assembly content type.
+#if COMPILER_PUBLIC_API
 type AssemblyContentType = 
-    /// Public assembly content only.
+#else
+type internal AssemblyContentType = 
+#endif
+/// Public assembly content only.
     | Public 
     /// All assembly content.
     | Full
 
 /// Short identifier, i.e. an identifier that contains no dots.
+#if COMPILER_PUBLIC_API
 type ShortIdent = string
+#else
+type internal ShortIdent = string
+#endif
 
 /// An array of `ShortIdent`.
+#if COMPILER_PUBLIC_API
 type Idents = ShortIdent[]
+#else
+type internal Idents = ShortIdent[]
+#endif
 
 /// `ShortIdent` with a flag indicating if it's resolved in some scope.
-type MaybeUnresolvedIdent = { Ident: ShortIdent; Resolved: bool }
+#if COMPILER_PUBLIC_API
+type MaybeUnresolvedIdent = 
+#else
+type internal MaybeUnresolvedIdent = 
+#endif
+    { Ident: ShortIdent; Resolved: bool }
 
 /// Array of `MaybeUnresolvedIdent`.
+#if COMPILER_PUBLIC_API
 type MaybeUnresolvedIdents = MaybeUnresolvedIdent[]
+#else
+type internal MaybeUnresolvedIdents = MaybeUnresolvedIdent[]
+#endif
 
 /// Entity lookup type.
 [<RequireQualifiedAccess>]
+#if COMPILER_PUBLIC_API
 type LookupType =
+#else
+type internal LookupType =
+#endif
     | Fuzzy
     | Precise
 
 /// Assembly path.
+#if COMPILER_PUBLIC_API
 type AssemblyPath = string
+#else
+type internal AssemblyPath = string
+#endif
 
 /// Represents type, module, member, function or value in a compiled assembly.
 [<NoComparison; NoEquality>]
+#if COMPILER_PUBLIC_API
 type AssemblySymbol = 
+#else
+type internal AssemblySymbol = 
+#endif
     { /// Full entity name as it's seen in compiled code (raw FSharpEntity.FullName, FSharpValueOrFunction.FullName). 
       FullName: string
       /// Entity name parts with removed module suffixes (Ns.M1Module.M2Module.M3.entity -> Ns.M1.M2.M3.entity)
@@ -69,14 +102,22 @@ type internal AssemblyContentCacheEntry =
 
 /// Assembly content cache.
 [<NoComparison; NoEquality>]
+#if COMPILER_PUBLIC_API
 type IAssemblyContentCache =
+#else
+type internal IAssemblyContentCache =
+#endif
     /// Try get an assembly cached content.
     abstract TryGet: AssemblyPath -> AssemblyContentCacheEntry option
     /// Store an assembly content.
     abstract Set: AssemblyPath -> AssemblyContentCacheEntry -> unit
 
 /// Thread safe wrapper over `IAssemblyContentCache`.
+#if COMPILER_PUBLIC_API
 type EntityCache =
+#else
+type internal EntityCache =
+#endif
     interface IAssemblyContentCache 
     new : unit -> EntityCache
     /// Clears the cache.
@@ -85,10 +126,18 @@ type EntityCache =
     member Locking : (IAssemblyContentCache -> 'T) -> 'T
 
 /// Lond identifier (i.e. it may contain dots).
+#if COMPILER_PUBLIC_API
 type StringLongIdent = string
+#else
+type internal StringLongIdent = string
+#endif
 
 /// Helper data structure representing a symbol, sutable for implementing unresolved identifiers resolution code fixes.
+#if COMPILER_PUBLIC_API
 type Entity =
+#else
+type internal Entity =
+#endif
     { /// Full name, relative to the current scope.
       FullRelativeName: StringLongIdent
       /// Ident parts needed to append to the current ident to make it resolvable in current scope.
@@ -101,7 +150,11 @@ type Entity =
       LastIdent: string }
 
 /// Provides assembly content.
+#if COMPILER_PUBLIC_API
 module AssemblyContentProvider =
+#else
+module internal AssemblyContentProvider =
+#endif
     /// Given a `FSharpAssemblySignature`, returns assembly content.
     val getAssemblySignatureContent : AssemblyContentType -> FSharpAssemblySignature -> AssemblySymbol list
 
@@ -114,7 +167,11 @@ module AssemblyContentProvider =
           -> AssemblySymbol list
 
 /// Kind of lexical scope.
+#if COMPILER_PUBLIC_API
 type ScopeKind =
+#else
+type internal ScopeKind =
+#endif
     | Namespace
     | TopModule
     | NestedModule
@@ -122,19 +179,31 @@ type ScopeKind =
     | HashDirective
 
 /// Insert open namespace context.
+#if COMPILER_PUBLIC_API
 type InsertContext =
+#else
+type internal InsertContext =
+#endif
     { /// Current scope kind.
       ScopeKind: ScopeKind
       /// Current position (F# compiler line number).
       Pos: pos }
 
 /// Where open statements should be added.
+#if COMPILER_PUBLIC_API
+type OpenStatementInsertionPoint =
+#else
 type internal OpenStatementInsertionPoint =
+#endif
     | TopLevel
     | Nearest
 
 /// Parse AST helpers.
+#if COMPILER_PUBLIC_API
 module ParsedInput =
+#else
+module internal ParsedInput =
+#endif
 
     /// Returns `InsertContext` based on current position and symbol idents.
     val tryFindInsertionContext : 
@@ -153,7 +222,11 @@ module ParsedInput =
     val adjustInsertionPoint : getLineStr: (int -> string) -> ctx: InsertContext -> pos
 
 [<AutoOpen>]
+#if COMPILER_PUBLIC_API
 module Extensions =
+#else
+module internal Extensions =
+#endif
     type FSharpEntity with
         /// Safe version of `FullName`.
         member TryGetFullName : unit -> string option

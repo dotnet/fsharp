@@ -32,8 +32,6 @@ open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.InfoReader
 
-type Layout = layout
-
 [<AutoOpen>]
 module EnvMisc3 =
     /// dataTipSpinWaitTime limits how long we block the UI thread while a tooltip pops up next to a selected item in an IntelliSense completion list.
@@ -42,7 +40,7 @@ module EnvMisc3 =
 
 
 [<Sealed>]
-type FSharpMethodGroupItemParameter(name: string, canonicalTypeTextForSorting: string, display: Layout, isOptional: bool) = 
+type FSharpMethodGroupItemParameter(name: string, canonicalTypeTextForSorting: string, display: layout, isOptional: bool) = 
     member __.ParameterName = name
     member __.CanonicalTypeTextForSorting = canonicalTypeTextForSorting
     member __.StructuredDisplay = display
@@ -50,12 +48,20 @@ type FSharpMethodGroupItemParameter(name: string, canonicalTypeTextForSorting: s
     member __.IsOptional = isOptional
 
 [<AutoOpen>]
-module internal ItemDescriptionsImpl = 
+module internal DescriptionListsImpl = 
 
     let isFunction g typ =
         let _,tau = tryDestForallTy g typ
         isFunTy g tau 
    
+    let printCanonicalizedTypeName g (denv:DisplayEnv) tau =
+        // get rid of F# abbreviations and such
+        let strippedType = stripTyEqnsWrtErasure EraseAll g tau
+        // pretend no namespaces are open
+        let denv = denv.SetOpenPaths([])
+        // now printing will see a .NET-like canonical representation, that is good for sorting overloads into a reasonable order (see bug 94520)
+        NicePrint.stringOfTy denv strippedType
+
     let PrettyParamOfRecdField g denv (f: RecdField) =
         FSharpMethodGroupItemParameter(
           name = f.Name,
@@ -164,7 +170,7 @@ module internal ItemDescriptionsImpl =
         let amap = infoReader.amap
         let g = infoReader.g
         match item with
-        | ItemIsWithStaticArguments m g staticParameters ->
+        | SymbolHelpers.ItemIsWithStaticArguments m g staticParameters ->
             staticParameters 
                 |> Array.map (fun sp -> 
                     let typ = Import.ImportProvidedType amap m (sp.PApply((fun x -> x.ParameterType),m))
@@ -187,7 +193,7 @@ module internal ItemDescriptionsImpl =
     let rec PrettyParamsAndReturnTypeOfItem (infoReader:InfoReader) m denv (item: ItemWithInst) = 
         let amap = infoReader.amap
         let g = infoReader.g
-        let denv = {SimplerDisplayEnv denv with useColonForReturnType=true}
+        let denv = { SymbolHelpers.SimplerDisplayEnv denv with useColonForReturnType=true}
         match item.Item with
         | Item.Value vref -> 
             let getPrettyParamsOfTypes() = 
@@ -307,7 +313,7 @@ module internal ItemDescriptionsImpl =
         | Item.CustomOperation (_,usageText, Some minfo) -> 
             match usageText() with 
             | None -> 
-                let argNamesAndTys = ParamNameAndTypesOfUnaryCustomOperation g minfo 
+                let argNamesAndTys = SymbolHelpers.ParamNameAndTypesOfUnaryCustomOperation g minfo 
                 let argTys, _ = PrettyTypes.PrettifyTypes g (argNamesAndTys |> List.map (fun (ParamNameAndType(_,ty)) -> ty))
                 let paramDatas = (argNamesAndTys, argTys) ||> List.map2 (fun (ParamNameAndType(nmOpt, _)) argTy -> ParamData(false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None,argTy))
                 let rty = minfo.GetFSharpReturnTy(amap, m, minfo.FormalMethodInst)
@@ -452,7 +458,7 @@ module internal ItemDescriptionsImpl =
             let pinfo = List.head pinfos 
             if pinfo.IsIndexer then [item] else []
 #if EXTENSIONTYPING
-        | ItemIsWithStaticArguments m g _ -> 
+        | SymbolHelpers.ItemIsWithStaticArguments m g _ -> 
             // we pretend that provided-types-with-static-args are method-like in order to get ParamInfo for them
             [item] 
 #endif
@@ -486,7 +492,7 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: strin
                 // disposal. Yes, you are right to scratch your head here, but this is ok.
                 cancellable.Return(
                     if checkAlive() then 
-                        FSharpToolTipText(items |> List.map (fun x -> ItemDescriptionsImpl.FormatStructuredDescriptionOfItem true infoReader m denv x.ItemWithInst))
+                        FSharpToolTipText(items |> List.map (fun x -> SymbolHelpers.FormatStructuredDescriptionOfItem true infoReader m denv x.ItemWithInst))
                     else 
                         FSharpToolTipText [ FSharpStructuredToolTipElement.Single(wordL (tagText (FSComp.SR.descriptionUnavailable())), FSharpXmlDoc.None) ]))
             | Choice2Of2 result -> 
@@ -514,7 +520,7 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: strin
 
                 // The dataTipSpinWaitTime limits how long we block the UI thread while a tooltip pops up next to a selected item in an IntelliSense completion list.
                 // This time appears to be somewhat amortized by the time it takes the VS completion UI to actually bring up the tooltip after selecting an item in the first place.
-                task.Wait EnvMisc2.dataTipSpinWaitTime  |> ignore
+                task.Wait EnvMisc3.dataTipSpinWaitTime  |> ignore
                 match descriptionTextHolder with 
                 | Some text -> text
                 | None -> FSharpToolTipText [ FSharpStructuredToolTipElement.Single(wordL (tagText (FSComp.SR.loadingDescription())), FSharpXmlDoc.None) ]
@@ -544,7 +550,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
     static member Create(infoReader:InfoReader, m, denv, getAccessibility, items: CompletionItem list, reactor, currentNamespaceOrModule: string[] option, isAttributeApplicationContext: bool, checkAlive) = 
         let g = infoReader.g
         let isForType = items |> List.exists (fun x -> x.Type.IsSome)
-        let items = items |> ItemDescriptionsImpl.RemoveExplicitlySuppressedCompletionItems g
+        let items = items |> SymbolHelpers.RemoveExplicitlySuppressedCompletionItems g
         
         let tyconRefOptEq tref1 tref2 =
             match tref1 with
@@ -586,7 +592,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
             // Prefer items from file check results to ones from referenced assemblies via GetAssemblyContent ("all entities")
             |> List.sortBy (fun x -> x.Unresolved.IsSome) 
             // Remove all duplicates. We've put the types first, so this removes the DelegateCtor and DefaultStructCtor's.
-            |> RemoveDuplicateCompletionItems g
+            |> SymbolHelpers.RemoveDuplicateCompletionItems g
             |> List.groupBy (fun x ->
                 match x.Unresolved with
                 | Some u -> 
@@ -625,7 +631,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
                         | resolved, _ -> resolved 
                     
                     let item = items.Head
-                    let glyph = ItemDescriptionsImpl.GlyphOfItem(denv, item.Item)
+                    let glyph = GlyphOfItem(denv, item.Item)
 
                     let name, nameInCode =
                         if displayName.StartsWith "( " && displayName.EndsWith " )" then
@@ -638,7 +644,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
                             | Some _ -> displayName
                             | None -> Lexhelp.Keywords.QuoteIdentifierIfNeeded displayName
 
-                    let isAttribute = ItemDescriptionsImpl.IsAttribute infoReader item.Item
+                    let isAttribute = SymbolHelpers.IsAttribute infoReader item.Item
                     
                     let cutAttributeSuffix (name: string) =
                         if isAttributeApplicationContext && isAttribute && name <> "Attribute" && name.EndsWith "Attribute" then
@@ -647,7 +653,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
 
                     let name = cutAttributeSuffix name
                     let nameInCode = cutAttributeSuffix nameInCode
-                    let fullName = ItemDescriptionsImpl.FullNameOfItem g item.Item
+                    let fullName = SymbolHelpers.FullNameOfItem g item.Item
                     
                     let namespaceToOpen = 
                         item.Unresolved 
@@ -684,7 +690,7 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
 /// A single method for Intellisense completion
 [<Sealed; NoEquality; NoComparison>]
 // Note: instances of this type do not hold any references to any compiler resources.
-type FSharpMethodGroupItem(description: FSharpToolTipText<Layout>, xmlDoc: FSharpXmlDoc, returnType: Layout, parameters: FSharpMethodGroupItemParameter[], hasParameters: bool, hasParamArrayArg: bool, staticParameters: FSharpMethodGroupItemParameter[]) = 
+type FSharpMethodGroupItem(description: FSharpToolTipText<layout>, xmlDoc: FSharpXmlDoc, returnType: layout, parameters: FSharpMethodGroupItemParameter[], hasParameters: bool, hasParamArrayArg: bool, staticParameters: FSharpMethodGroupItemParameter[]) = 
     member __.StructuredDescription = description
     member __.Description = Tooltips.ToFSharpToolTipText description
     member __.XmlDoc = xmlDoc
@@ -748,7 +754,7 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
                                 (fun () -> PrettyParamsAndReturnTypeOfItem infoReader m denv  { item with Item = flatItem })
                                 (fun err -> [], wordL (tagText err))
                             
-                        let description = FSharpToolTipText [FormatStructuredDescriptionOfItem true infoReader m denv { item with Item = flatItem }]
+                        let description = FSharpToolTipText [SymbolHelpers.FormatStructuredDescriptionOfItem true infoReader m denv { item with Item = flatItem }]
 
                         let hasParamArrayArg = 
                             match flatItem with 
@@ -758,13 +764,13 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
 
                         let hasStaticParameters = 
                             match flatItem with 
-                            | ItemIsProvidedTypeWithStaticArguments m g _ -> false 
+                            | SymbolHelpers.ItemIsProvidedTypeWithStaticArguments m g _ -> false 
                             | _ -> true
 
                         FSharpMethodGroupItem(
                           description = description,
                           returnType = prettyRetTyL,
-                          xmlDoc = GetXmlCommentForItem infoReader m flatItem,
+                          xmlDoc = SymbolHelpers.GetXmlCommentForItem infoReader m flatItem,
                           parameters = (prettyParams |> Array.ofList),
                           hasParameters = hasStaticParameters,
                           hasParamArrayArg = hasParamArrayArg,

@@ -2493,12 +2493,10 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         if containsRequiredFiles then defaultFSharpBinariesDir 
         else Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None).Value
 
-#if COMPILER_SERVICE_DLL
+#if COMPILER_SERVICE_DLL && !COMPILER_SERVICE_DLL_VISUAL_STUDIO
     let referenceResolver = SimulatedMSBuildReferenceResolver.GetBestAvailableResolver(msbuildEnabled)
 #else
-    let referenceResolver = 
-        assert msbuildEnabled
-        MSBuildReferenceResolver.Resolver 
+    let referenceResolver = (assert msbuildEnabled); MSBuildReferenceResolver.Resolver 
 #endif
 
     let tcConfigB = 

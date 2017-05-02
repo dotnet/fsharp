@@ -20,7 +20,7 @@ open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.Lib
 
 /// Methods for dealing with F# sources files.
-module internal SourceFile =
+module SourceFile =
     /// Source file extensions
     let private compilableExtensions = CompileOps.FSharpSigFileSuffixes @ CompileOps.FSharpImplFileSuffixes @ CompileOps.FSharpScriptFileSuffixes
     /// Single file projects extensions
@@ -34,7 +34,7 @@ module internal SourceFile =
         let ext = Path.GetExtension(file)
         singleFileProjectExtensions |> List.exists(fun e-> 0 = String.Compare(e,ext,StringComparison.OrdinalIgnoreCase))
 
-module internal SourceFileImpl =
+module SourceFileImpl =
     let IsInterfaceFile file =
         let ext = Path.GetExtension(file)
         0 = String.Compare(".fsi",ext,StringComparison.OrdinalIgnoreCase)

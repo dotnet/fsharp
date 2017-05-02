@@ -20,7 +20,11 @@ open Microsoft.FSharp.Compiler.Tastops
 /// Returned by GetDeclarations.
 //
 // Note: this type holds a weak reference to compiler resources. 
+#if COMPILER_PUBLIC_API
 type FSharpDeclarationListItem =
+#else
+type internal FSharpDeclarationListItem =
+#endif
     /// Get the display name for the declaration.
     member Name : string
     /// Get the name for the declaration as it's presented in source code.
@@ -50,7 +54,11 @@ type FSharpDeclarationListItem =
 /// Returned by GetDeclarations.
 //
 // Note: this type holds a weak reference to compiler resources. 
+#if COMPILER_PUBLIC_API
 type FSharpDeclarationListInfo =
+#else
+type internal FSharpDeclarationListInfo =
+#endif
     member Items : FSharpDeclarationListItem[]
     member IsForType : bool
     member IsError : bool
@@ -62,7 +70,11 @@ type FSharpDeclarationListInfo =
 
 /// Represents one parameter for one method (or other item) in a group. 
 [<Sealed>]
+#if COMPILER_PUBLIC_API
+type FSharpMethodGroupItemParameter = 
+#else
 type internal FSharpMethodGroupItemParameter = 
+#endif
 
     /// The name of the parameter.
     member ParameterName: string
@@ -84,7 +96,11 @@ type internal FSharpMethodGroupItemParameter =
 /// Represents one method (or other item) in a method group. The item may represent either a method or 
 /// a single, non-overloaded item such as union case or a named function value.
 [<Sealed>]
+#if COMPILER_PUBLIC_API
+type FSharpMethodGroupItem = 
+#else
 type internal FSharpMethodGroupItem = 
+#endif
 
     /// The documentation for the item
     member XmlDoc : FSharpXmlDoc
@@ -115,7 +131,11 @@ type internal FSharpMethodGroupItem =
 
 /// Represents a group of methods (or other items) returned by GetMethods.  
 [<Sealed>]
+#if COMPILER_PUBLIC_API
+type FSharpMethodGroup = 
+#else
 type internal FSharpMethodGroup = 
+#endif
 
     internal new : string * FSharpMethodGroupItem[] -> FSharpMethodGroup
 
