@@ -13,6 +13,9 @@
     <!-- Disable wildcard include of resx .-->
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
 
+    <FscToolPath>e:\github\fsharp\src\fsharp\FSharp.Compiler\..\..\..\Proto\net40\bin\</FscToolPath>
+    <FscToolExe>fsc-proto.exe</FscToolExe>
+
     <DefineConstants>
 MSBUILD_AT_LEAST_14;
 STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;
