@@ -2201,9 +2201,9 @@ and GenCoerce cenv cgbuf eenv (e,tgty,m,srcty) sequel =
        if (isInterfaceTy cenv.g tgty) then (
            GenExpr cenv cgbuf eenv SPSuppress e Continue
            let ilToTy = GenType cenv.amap m eenv.tyenv tgty
-           // I believe section "III.1.8.1.3 Merging stack states" of ECMA-335 implies that no unboxing
+           // Section "III.1.8.1.3 Merging stack states" of ECMA-335 implies that no unboxing
            // is required, but we still push the coerce'd type on to the code gen buffer.
-           CG.EmitInstrs cgbuf (pop 1) (Push [ilToTy]) [ (*I_unbox_any ilToTy*)  ]
+           CG.EmitInstrs cgbuf (pop 1) (Push [ilToTy]) []
            GenSequel cenv eenv.cloc cgbuf sequel
        ) else (
            GenExpr cenv cgbuf eenv SPSuppress e sequel
