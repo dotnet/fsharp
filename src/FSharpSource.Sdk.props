@@ -6,6 +6,7 @@
     <NoWarn>$(NoWarn);69;65;54;61;75</NoWarn>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningLevel>3</WarningLevel>
+    <DebugType>pdbonly</DebugType>
 
     <_MyTargetFramework>coreclr</_MyTargetFramework>
 
