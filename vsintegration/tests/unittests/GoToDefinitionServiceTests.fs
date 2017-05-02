@@ -28,9 +28,9 @@ open NUnit.Framework
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
-
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
+open UnitTests.TestLib.LanguageService
 
 [<TestFixture>][<Category "Roslyn Services">]
 module GoToDefinitionServiceTests =
@@ -121,7 +121,7 @@ let _ = Module1.foo 1
         let caretPosition = fileContents.IndexOf(caretMarker) + caretMarker.Length - 1 // inside the marker
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
         let actual = 
-           findDefinition(FSharpChecker.Instance, documentId, SourceText.From(fileContents), filePath, caretPosition, [], options, 0) 
+           findDefinition(checker, documentId, SourceText.From(fileContents), filePath, caretPosition, [], options, 0) 
            |> Option.map (fun range -> (range.StartLine, range.EndLine, range.StartColumn, range.EndColumn))
 
         if actual <> expected then 

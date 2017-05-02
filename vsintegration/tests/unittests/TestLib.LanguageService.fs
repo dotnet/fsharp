@@ -16,6 +16,10 @@ open System.Text.RegularExpressions
 open Microsoft.FSharp.Compiler.SourceCodeServices
 #nowarn "52" // The value has been copied to ensure the original is not mutated
 
+[<AutoOpen>]
+module Globals = 
+    let checker = FSharpChecker.Create()
+
 //open Internal.Utilities
 type internal TextSpan       = Microsoft.VisualStudio.TextManager.Interop.TextSpan
 

@@ -749,7 +749,11 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
            let abbrevArgs = GetAbbrevFlagSet tcConfigB false
            ParseCompilerOptions (collect, fsiCompilerOptions, List.tail (PostProcessCompilerArgs abbrevArgs argv))
         with e ->
+#if COMPILER_SERVICE
             stopProcessingRecovery e range0; failwithf "Error creating evaluation session: %A" e
+#else
+            stopProcessingRecovery e range0; exit 1
+#endif
         inputFilesAcc
 
     do 
@@ -1081,17 +1085,12 @@ type internal FsiDynamicCompiler
         // Explicitly register the resources with the QuotationPickler module 
         // We would save them as resources into the dynamic assembly but there is missing 
         // functionality System.Reflection for dynamic modules that means they can't be read back out 
-#if COMPILER_SERVICE_DLL_ASSUMES_FSHARP_CORE_4_4_0_0
         let cenv = { ilg = ilGlobals ; generatePdb = generateDebugInfo; resolveAssemblyRef=resolveAssemblyRef; tryFindSysILTypeRef=tcGlobals.TryFindSysILTypeRef }
         for (referencedTypeDefs, bytes) in codegenResults.quotationResourceInfo do 
             let referencedTypes = 
                 [| for tref in referencedTypeDefs do 
                       yield ILRuntimeWriter.LookupTypeRef cenv emEnv tref  |]
             Microsoft.FSharp.Quotations.Expr.RegisterReflectedDefinitions (assemblyBuilder, fragName, bytes, referencedTypes);
-#else
-        for (_referencedTypeDefs, bytes) in codegenResults.quotationResourceInfo do 
-            Microsoft.FSharp.Quotations.Expr.RegisterReflectedDefinitions (assemblyBuilder, fragName, bytes);
-#endif            
             
 
         ReportTime tcConfig "Run Bindings";

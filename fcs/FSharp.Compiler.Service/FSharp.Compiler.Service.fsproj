@@ -29,7 +29,6 @@
     <DefineConstants>$(DefineConstants);COMPILER_PUBLIC_API</DefineConstants>
     <DefineConstants>$(DefineConstants);COMPILER_SERVICE</DefineConstants>
     <DefineConstants>$(DefineConstants);COMPILER_SERVICE_DLL</DefineConstants>
-    <DefineConstants>$(DefineConstants);COMPILER_SERVICE_DLL_ASSUMES_FSHARP_CORE_4_4_0_0</DefineConstants>
     <DefineConstants>$(DefineConstants);NO_STRONG_NAMES</DefineConstants>
     <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
     <TargetFrameworkProfile />

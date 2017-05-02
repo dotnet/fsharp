@@ -2478,6 +2478,7 @@ let OpenILBinary(filename,optimizeForMemory,openBinariesInMemory,ilGlobalsOpt, p
           ILBinaryReader.OpenILModuleReaderAfterReadingAllBytes filename opts
       else
         let location =
+#if !FX_RESHAPED_REFLECTION_CORECLR // shadow copy not supported
           // In order to use memory mapped files on the shadow copied version of the Assembly, we `preload the assembly
           // We swallow all exceptions so that we do not change the exception contract of this API
           if shadowCopyReferences then 
@@ -2485,6 +2486,7 @@ let OpenILBinary(filename,optimizeForMemory,openBinariesInMemory,ilGlobalsOpt, p
               System.Reflection.Assembly.ReflectionOnlyLoadFrom(filename).Location
             with e -> filename
           else
+#endif
             filename
         ILBinaryReader.OpenILModuleReader location opts
 

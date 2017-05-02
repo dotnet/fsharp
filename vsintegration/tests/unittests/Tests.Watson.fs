@@ -4,6 +4,8 @@ namespace Tests.Compiler.Watson
 
 #nowarn "52" // The value has been copied to ensure the original is not mutated
 
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
+open Microsoft.FSharp.Compiler.Driver
 open NUnit.Framework
 open System
 open System.Text.RegularExpressions 
@@ -23,7 +25,9 @@ type Check =
                     File.Delete("watson-test.fs")
                 File.WriteAllText("watson-test.fs", "// Hello watson" )
                 let argv = [| "--simulateException:"+simulationCode; "watson-test.fs"|]
-                let _code = Microsoft.FSharp.Compiler.Driver.mainCompile (argv, Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver, false, Microsoft.FSharp.Compiler.ErrorLogger.QuitProcessExiter)
+
+                let ctok = AssumeCompilationThreadWithoutEvidence ()
+                let _code = mainCompile (ctok, argv, Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver, false, Microsoft.FSharp.Compiler.ErrorLogger.QuitProcessExiter, ConsoleLoggerProvider(), None, None)
                 ()
             with 
             | :? 'TException as e -> 
