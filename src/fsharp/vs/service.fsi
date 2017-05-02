@@ -24,68 +24,6 @@ open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 
-/// Represents one parameter for one method (or other item) in a group. 
-[<Sealed>]
-type internal FSharpMethodGroupItemParameter = 
-
-    /// The name of the parameter.
-    member ParameterName: string
-
-    /// A key that can be used for sorting the parameters, used to help sort overloads.
-    member CanonicalTypeTextForSorting: string
-
-    /// The structured representation for the parameter including its name, its type and visual indicators of other
-    /// information such as whether it is optional.
-    member StructuredDisplay: Layout
-
-    /// The text to display for the parameter including its name, its type and visual indicators of other
-    /// information such as whether it is optional.
-    member Display: string
-
-    /// Is the parameter optional
-    member IsOptional: bool
-
-/// Represents one method (or other item) in a method group. The item may represent either a method or 
-/// a single, non-overloaded item such as union case or a named function value.
-[<Sealed>]
-type internal FSharpMethodGroupItem = 
-
-    /// The documentation for the item
-    member XmlDoc : FSharpXmlDoc
-
-    /// The structured description representation for the method (or other item)
-    member StructuredDescription : FSharpStructuredToolTipText
-
-    /// The formatted description text for the method (or other item)
-    member Description : FSharpToolTipText
-
-    /// The The structured description representation for the method (or other item)
-    member StructuredTypeText: Layout
-
-    /// The formatted type text for the method (or other item)
-    member TypeText: string
-
-    /// The parameters of the method in the overload set
-    member Parameters: FSharpMethodGroupItemParameter[]
-
-    /// Does the method support an arguments list?  This is always true except for static type instantiations like TP<42,"foo">.
-    member HasParameters: bool
-
-    /// Does the method support a params list arg?
-    member HasParamArrayArg: bool
-
-    /// Does the type name or method support a static arguments list, like TP<42,"foo"> or conn.CreateCommand<42, "foo">(arg1, arg2)?
-    member StaticParameters: FSharpMethodGroupItemParameter[]
-
-/// Represents a group of methods (or other items) returned by GetMethods.  
-[<Sealed>]
-type internal FSharpMethodGroup = 
-    /// The shared name of the methods (or other items) in the group
-    member MethodName: string
-
-    /// The methods (or other items) in the group
-    member Methods: FSharpMethodGroupItem[] 
-
 /// Represents the reason why the GetDeclarationLocation operation failed.
 [<RequireQualifiedAccess>]
 type internal FSharpFindDeclFailureReason = 

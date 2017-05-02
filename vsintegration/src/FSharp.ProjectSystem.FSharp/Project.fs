@@ -2823,3 +2823,4 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
             override x.OnElementValueChanged(_elementid, _varValueOld, _varValueNew) = VSConstants.S_OK
 
+

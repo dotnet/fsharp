@@ -41,6 +41,7 @@ module SR =
     let LocatingSymbol = lazy (GetString "LocatingSymbol")
     let NavigateToFailed = lazy (GetString "NavigateToFailed")
     let ExceptionsLabel = lazy (GetString "ExceptionsHeader")
+    let GenericParametersLabel = lazy (GetString "GenericParametersHeader")
     
     //--------------------------------------------------------------------------------------
     // Attributes used to mark up editable properties 

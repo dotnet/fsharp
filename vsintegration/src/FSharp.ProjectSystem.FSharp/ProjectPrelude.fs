@@ -364,3 +364,4 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         [<assembly: CLSCompliant(false)>]
 #endif
         do()
+

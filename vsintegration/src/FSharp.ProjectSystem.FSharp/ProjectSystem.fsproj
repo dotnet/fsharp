@@ -211,6 +211,11 @@
     <Reference Include="Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion), Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion).$(RoslynVSPackagesVersion)\lib\Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion).dll</HintPath>
     </Reference>
+    <!-- Microsoft.CodeAnalysis.Features requires 1.2.1 but the rest of F# uses 1.2.0 -->
+    <!-- If we don't get the version right here the wrong version is copied during the build  -->
+    <Reference Include="System.Collections.Immutable, Version=1.2.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.1.2.0\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+    </Reference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.LanguageService.Compiler\FSharp.LanguageService.Compiler.fsproj">
       <Project>{a437a6ec-5323-47c2-8f86-e2cac54ff152}</Project>
       <Name>FSharp.LanguageService.Compiler</Name>

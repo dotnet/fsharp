@@ -22,7 +22,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library.ResultOrException
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
-open Microsoft.FSharp.Compiler.AbstractIL.IL // Abstract IL 
+open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.AccessibilityLogic
 open Microsoft.FSharp.Compiler.AttributeChecking
@@ -139,19 +139,25 @@ type ArgumentContainer =
 //   let (|A|B|) x = if x < 0 then A else B    // A and B are reported as results using 'Item.ActivePatternResult' 
 //   match () with | A | B -> ()               // A and B are reported using 'Item.ActivePatternCase'
 
-[<NoEquality; NoComparison>]
+[<NoEquality; NoComparison; RequireQualifiedAccess>]
 /// Represents an item that results from name resolution
 type Item = 
-    /// Represents the resolution of a name to an F# value or function.
+
+    /// Represents the resolution of a name to an F# value or function. 
     | Value of  ValRef
+
     /// Represents the resolution of a name to an F# union case.
     | UnionCase of UnionCaseInfo * bool
+
     /// Represents the resolution of a name to an F# active pattern result.
     | ActivePatternResult of ActivePatternInfo * TType * int  * range
+
     /// Represents the resolution of a name to an F# active pattern case within the body of an active pattern.
     | ActivePatternCase of ActivePatternElemRef 
+
     /// Represents the resolution of a name to an F# exception definition.
     | ExnCase of TyconRef 
+
     /// Represents the resolution of a name to an F# record field.
     | RecdField of RecdFieldInfo
 
@@ -160,38 +166,54 @@ type Item =
 
     /// Represents the resolution of a name at the point of its own definition.
     | NewDef of Ident
+
     /// Represents the resolution of a name to a .NET field 
     | ILField of ILFieldInfo
+
     /// Represents the resolution of a name to an event
     | Event of EventInfo
+
     /// Represents the resolution of a name to a property
     | Property of string * PropInfo list
+
     /// Represents the resolution of a name to a group of methods. 
     | MethodGroup of displayName: string * methods: MethInfo list * uninstantiatedMethodOpt: MethInfo option
+
     /// Represents the resolution of a name to a constructor
     | CtorGroup of string * MethInfo list
+
     /// Represents the resolution of a name to the fake constructor simulated for an interface type.
     | FakeInterfaceCtor of TType
+
     /// Represents the resolution of a name to a delegate
     | DelegateCtor of TType
+
     /// Represents the resolution of a name to a group of types
     | Types of string * TType list
+
     /// CustomOperation(nm, helpText, methInfo)
     /// 
     /// Used to indicate the availability or resolution of a custom query operation such as 'sortBy' or 'where' in computation expression syntax
     | CustomOperation of string * (unit -> string option) * MethInfo option
+
     /// Represents the resolution of a name to a custom builder in the F# computation expression syntax
     | CustomBuilder of string * ValRef
+
     /// Represents the resolution of a name to a type variable
     | TypeVar of string * Typar
+
     /// Represents the resolution of a name to a module or namespace
     | ModuleOrNamespaces of Tast.ModuleOrNamespaceRef list
+
     /// Represents the resolution of a name to an operator
     | ImplicitOp of Ident * TraitConstraintSln option ref
+
     /// Represents the resolution of a name to a named argument
     | ArgName of Ident * TType * ArgumentContainer option
+
     /// Represents the resolution of a name to a named property setter
     | SetterArg of Ident * Item 
+
     /// Represents the potential resolution of an unqualified name to a type.
     | UnqualifiedType of TyconRef list
 
@@ -235,6 +257,17 @@ let valRefHash (vref: ValRef) =
     match vref.TryDeref with 
     | VNone -> 0 
     | VSome v -> LanguagePrimitives.PhysicalHash v
+
+[<RequireQualifiedAccess>]
+/// Pairs an Item with a TyparInst showing how generic type variables of the item are instantiated at 
+/// a particular usage point.
+type ItemWithInst = 
+    { Item : Item
+      TyparInst: TyparInst }
+
+let ItemWithNoInst item = ({ Item = item; TyparInst = emptyTyparInst } : ItemWithInst)
+
+let (|ItemWithInst|) (x:ItemWithInst) = (x.Item, x.TyparInst)
 
 /// Represents a record field resolution and the information if the usage is deprecated.
 type FieldResolution = FieldResolution of RecdFieldRef * bool
@@ -1197,7 +1230,7 @@ type ItemOccurence =
 type ITypecheckResultsSink =
     abstract NotifyEnvWithScope : range * NameResolutionEnv * AccessorDomain -> unit
     abstract NotifyExprHasType : pos * TType * Tastops.DisplayEnv * NameResolutionEnv * AccessorDomain * range -> unit
-    abstract NotifyNameResolution : pos * Item * Item * ItemOccurence * Tastops.DisplayEnv * NameResolutionEnv * AccessorDomain * range * bool -> unit
+    abstract NotifyNameResolution : pos * Item * Item * TyparInst * ItemOccurence * Tastops.DisplayEnv * NameResolutionEnv * AccessorDomain * range * bool -> unit
     abstract NotifyFormatSpecifierLocation : range -> unit
     abstract CurrentSource : string option
 
@@ -1364,9 +1397,10 @@ let ItemsAreEffectivelyEqual g orig other =
     | _ -> false
 
 [<System.Diagnostics.DebuggerDisplay("{DebugToString()}")>]
-type CapturedNameResolution(p:pos, i:Item, io:ItemOccurence, de:DisplayEnv, nre:NameResolutionEnv, ad:AccessorDomain, m:range) =
+type CapturedNameResolution(p:pos, i:Item, tpinst, io:ItemOccurence, de:DisplayEnv, nre:NameResolutionEnv, ad:AccessorDomain, m:range) =
     member this.Pos = p
     member this.Item = i
+    member this.ItemWithInst = ({ Item = i; TyparInst = tpinst } : ItemWithInst)
     member this.ItemOccurence = io
     member this.DisplayEnv = de
     member this.NameResolutionEnv = nre
@@ -1441,7 +1475,7 @@ type TcResultsSinkImpl(g, ?source: string) =
             if allowedRange m then 
                 capturedExprTypings.Add((endPos,ty,denv,nenv,ad,m))
 
-        member sink.NotifyNameResolution(endPos,item,itemMethodGroup,occurenceType,denv,nenv,ad,m,replace) = 
+        member sink.NotifyNameResolution(endPos,item,itemMethodGroup,tpinst,occurenceType,denv,nenv,ad,m,replace) = 
             // Desugaring some F# constructs (notably computation expressions with custom operators)
             // results in duplication of textual variables. So we ensure we never record two name resolutions 
             // for the same identifier at the same location.
@@ -1462,8 +1496,8 @@ type TcResultsSinkImpl(g, ?source: string) =
                     capturedMethodGroupResolutions.RemoveAll(fun cnr -> cnr.Range = m) |> ignore
 
                 if not alreadyDone then 
-                    capturedNameResolutions.Add(CapturedNameResolution(endPos,item,occurenceType,denv,nenv,ad,m)) 
-                    capturedMethodGroupResolutions.Add(CapturedNameResolution(endPos,itemMethodGroup,occurenceType,denv,nenv,ad,m)) 
+                    capturedNameResolutions.Add(CapturedNameResolution(endPos,item,tpinst,occurenceType,denv,nenv,ad,m)) 
+                    capturedMethodGroupResolutions.Add(CapturedNameResolution(endPos,itemMethodGroup,[],occurenceType,denv,nenv,ad,m)) 
 
         member sink.NotifyFormatSpecifierLocation(m) = 
             capturedFormatSpecifierLocations.Add(m)
@@ -1498,15 +1532,15 @@ let CallEnvSink (sink:TcResultsSink) (scopem,nenv,ad) =
     | Some sink -> sink.NotifyEnvWithScope(scopem,nenv,ad)
 
 /// Report a specific name resolution at a source range
-let CallNameResolutionSink (sink:TcResultsSink) (m:range,nenv,item,itemMethodGroup,occurenceType,denv,ad) = 
+let CallNameResolutionSink (sink:TcResultsSink) (m:range,nenv,item,itemMethodGroup,tpinst,occurenceType,denv,ad) = 
     match sink.CurrentSink with 
     | None -> () 
-    | Some sink -> sink.NotifyNameResolution(m.End,item,itemMethodGroup,occurenceType,denv,nenv,ad,m,false)  
+    | Some sink -> sink.NotifyNameResolution(m.End,item,itemMethodGroup,tpinst,occurenceType,denv,nenv,ad,m,false)  
 
-let CallNameResolutionSinkReplacing (sink:TcResultsSink) (m:range,nenv,item,itemMethodGroup,occurenceType,denv,ad) = 
+let CallNameResolutionSinkReplacing (sink:TcResultsSink) (m:range,nenv,item,itemMethodGroup,tpinst,occurenceType,denv,ad) = 
     match sink.CurrentSink with 
     | None -> () 
-    | Some sink -> sink.NotifyNameResolution(m.End,item,itemMethodGroup,occurenceType,denv,nenv,ad,m,true)  
+    | Some sink -> sink.NotifyNameResolution(m.End,item,itemMethodGroup,tpinst,occurenceType,denv,nenv,ad,m,true)  
 
 /// Report a specific expression typing at a source range
 let CallExprHasTypeSink (sink:TcResultsSink) (m:range,nenv,typ,denv,ad) = 
@@ -1581,12 +1615,12 @@ let CheckAllTyparsInferrable amap m item =
 /// System and Console, i.e. the 'entity path' of the resolution. 
 ///
 /// Each of the resolution routines keeps track of the entity path and 
-/// ultimately calls ResolutionInfo.SendToSink to record it for 
+/// ultimately calls ResolutionInfo.Method to record it for 
 /// later use by Visual Studio.
 type ResolutionInfo = 
     | ResolutionInfo of (*entityPath, reversed*)(range * EntityRef) list * (*warnings/errors*)(ResultTyparChecker -> unit)
 
-    static member SendToSink(sink, ncenv: NameResolver, nenv, occ, ad, ResolutionInfo(entityPath,warnings), typarChecker) = 
+    static member SendEntityPathToSink(sink, ncenv: NameResolver, nenv, occ, ad, ResolutionInfo(entityPath,warnings), typarChecker) = 
         entityPath |> List.iter (fun (m,eref:EntityRef) -> 
             CheckEntityAttributes ncenv.g eref m |> CommitOperationResult        
             CheckTyconAccessible ncenv.amap m ad eref |> ignore
@@ -1595,7 +1629,7 @@ type ResolutionInfo =
                     Item.ModuleOrNamespaces [eref] 
                 else 
                     Item.Types(eref.DisplayName,[FreshenTycon ncenv m eref])
-            CallNameResolutionSink sink (m,nenv,item,item,occ,nenv.eDisplayEnv,ad))
+            CallNameResolutionSink sink (m,nenv,item,item,emptyTyparInst,occ,nenv.eDisplayEnv,ad))
         warnings(typarChecker)
  
     static member Empty = 
@@ -2093,7 +2127,7 @@ let ResolveLongIdentInType sink ncenv nenv lookupKind m ad lid findFlag typeName
         ResolveLongIdentInTypePrim (ncenv:NameResolver) nenv lookupKind ResolutionInfo.Empty 0 m ad lid findFlag typeNameResInfo typ
         |> AtMostOneResult m
         |> ForceRaise
-    ResolutionInfo.SendToSink (sink,ncenv,nenv,ItemOccurence.UseInType,ad,resInfo,ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
+    ResolutionInfo.SendEntityPathToSink (sink,ncenv,nenv,ItemOccurence.UseInType,ad,resInfo,ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
     item,rest
 
 let private ResolveLongIdentInTyconRef (ncenv:NameResolver) nenv lookupKind resInfo depth m ad lid typeNameResInfo tcref =
@@ -2284,7 +2318,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
                   match AtMostOneResult m search with 
                   | Result _ as res -> 
                       let resInfo,item,rest = ForceRaise res
-                      ResolutionInfo.SendToSink(sink,ncenv,nenv,ItemOccurence.Use,ad,resInfo,ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
+                      ResolutionInfo.SendEntityPathToSink(sink,ncenv,nenv,ItemOccurence.Use,ad,resInfo,ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
                       Some(item,rest)
                   | Exception e -> typeError := Some e; None
 
@@ -2364,7 +2398,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
                               raze (UndefinedName(0,FSComp.SR.undefinedNameValueOfConstructor,id,suggestNamesAndTypes))
                       ForceRaise failingCase
 
-              ResolutionInfo.SendToSink(sink,ncenv,nenv,ItemOccurence.Use,ad,resInfo,ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
+              ResolutionInfo.SendEntityPathToSink(sink,ncenv,nenv,ItemOccurence.Use,ad,resInfo,ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
               item,rest
               
             
@@ -2483,7 +2517,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
                         let failingCase = raze (UndefinedName(0,FSComp.SR.undefinedNameValueNamespaceTypeOrModule,id,suggestEverythingInScope))
                         ForceRaise failingCase
 
-          ResolutionInfo.SendToSink(sink,ncenv,nenv,ItemOccurence.Use,ad,resInfo,ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
+          ResolutionInfo.SendEntityPathToSink(sink,ncenv,nenv,ItemOccurence.Use,ad,resInfo,ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap m item))
           item,rest
 
 let ResolveExprLongIdent sink (ncenv:NameResolver) m ad nenv typeNameResInfo lid =
@@ -2632,7 +2666,7 @@ let rec ResolvePatternLongIdentPrim sink (ncenv:NameResolver) fullyQualified war
             | Result _ as res -> ForceRaise res
             | _ ->  
                 ForceRaise (AtMostOneResult m (tyconSearch AccessibleFromSomeFSharpCode +++ moduleSearch AccessibleFromSomeFSharpCode))
-        ResolutionInfo.SendToSink(sink,ncenv,nenv,ItemOccurence.Use,ad,resInfo,ResultTyparChecker(fun () -> true))
+        ResolutionInfo.SendEntityPathToSink(sink,ncenv,nenv,ItemOccurence.Use,ad,resInfo,ResultTyparChecker(fun () -> true))
   
         if not (isNil rest) then error(Error(FSComp.SR.nrIsNotConstructorOrLiteral(),(List.head rest).idRange))
         res
@@ -2709,9 +2743,9 @@ let rec ResolveTypeLongIdentInTyconRefPrim (ncenv:NameResolver) (typeNameResInfo
 /// Resolve a long identifier representing a type name and report the result
 let ResolveTypeLongIdentInTyconRef sink (ncenv:NameResolver) nenv typeNameResInfo ad m tcref (lid: Ident list) =
     let resInfo,tcref = ForceRaise (ResolveTypeLongIdentInTyconRefPrim ncenv typeNameResInfo ad ResolutionInfo.Empty PermitDirectReferenceToGeneratedType.No 0 m tcref lid)
-    ResolutionInfo.SendToSink(sink,ncenv,nenv,ItemOccurence.Use,ad,resInfo,ResultTyparChecker(fun () -> true))
+    ResolutionInfo.SendEntityPathToSink(sink,ncenv,nenv,ItemOccurence.Use,ad,resInfo,ResultTyparChecker(fun () -> true))
     let item = Item.Types(tcref.DisplayName,[FreshenTycon ncenv m tcref])
-    CallNameResolutionSink sink (rangeOfLid lid,nenv,item,item,ItemOccurence.UseInType,nenv.eDisplayEnv,ad)
+    CallNameResolutionSink sink (rangeOfLid lid,nenv,item,item,emptyTyparInst,ItemOccurence.UseInType,nenv.eDisplayEnv,ad)
     tcref
 
 /// Create an UndefinedName error with details 
@@ -2855,9 +2889,9 @@ let ResolveTypeLongIdent sink (ncenv:NameResolver) occurence fullyQualified nenv
     // Register the result as a name resolution
     match res with 
     | Result (resInfo,tcref) -> 
-        ResolutionInfo.SendToSink(sink,ncenv,nenv,ItemOccurence.UseInType, ad,resInfo,ResultTyparChecker(fun () -> true))
+        ResolutionInfo.SendEntityPathToSink(sink,ncenv,nenv,ItemOccurence.UseInType, ad,resInfo,ResultTyparChecker(fun () -> true))
         let item = Item.Types(tcref.DisplayName,[FreshenTycon ncenv m tcref])
-        CallNameResolutionSink sink (m,nenv,item,item,occurence,nenv.eDisplayEnv,ad)
+        CallNameResolutionSink sink (m,nenv,item,item,emptyTyparInst,occurence,nenv.eDisplayEnv,ad)
     | _ -> ()
     res |?> snd
 
@@ -3065,7 +3099,7 @@ let ResolveField sink ncenv nenv ad typ (mp,id) allFields =
     let checker = ResultTyparChecker(fun () -> true)
     res 
     |> List.map (fun (resInfo,rfref) ->
-        ResolutionInfo.SendToSink(sink,ncenv,nenv,ItemOccurence.UseInType,ad,resInfo,checker)
+        ResolutionInfo.SendEntityPathToSink(sink,ncenv,nenv,ItemOccurence.UseInType,ad,resInfo,checker)
         rfref)
 
 /// Generate a new reference to a record field with a fresh type instantiation
@@ -3133,28 +3167,26 @@ let FilterMethodGroups (ncenv:NameResolver) itemRange item staticOnly =
         Item.MethodGroup(nm, minfos, orig)
     | item -> item
 
-let NeedsOverloadResolution namedItem =
-  match namedItem with
-  | Item.MethodGroup(_,_::_::_,_) 
-  | Item.CtorGroup(_,_::_::_)
-  | Item.Property(_,_::_::_) -> true
-  | _ -> false
+let NeedsWorkAfterResolution namedItem =
+    match namedItem with
+    | Item.MethodGroup(_,minfos,_) 
+    | Item.CtorGroup(_,minfos) -> minfos.Length > 1 || minfos |> List.exists (fun minfo -> not (isNil minfo.FormalMethodInst))
+    | Item.Property(_,pinfos) -> pinfos.Length > 1
+    | Item.ImplicitOp(_, { contents = Some(TraitConstraintSln.FSMethSln(_, vref, _)) }) 
+    | Item.Value vref | Item.CustomBuilder (_,vref) -> vref.Typars.Length > 0
+    | Item.CustomOperation (_,_,Some minfo) -> not (isNil minfo.FormalMethodInst)
+    | Item.ActivePatternCase apref -> apref.ActivePatternVal.Typars.Length > 0
+    | _ -> false
 
-/// An adjustment to perform to the name resolution results if overload resolution fails.
-/// If overload resolution succeeds, the specific overload resolution is reported. If it fails, the 
-/// set of possible overloads is reported via this adjustment.
-type IfOverloadResolutionFails = IfOverloadResolutionFails of (unit -> unit)
-
-/// Specifies if overload resolution needs to notify Language Service of overload resolution
+/// Specifies additional work to do after an item has been processed further in type checking.
 [<RequireQualifiedAccess>]
-type AfterOverloadResolution =
-    /// Notification is not needed
-    |   DoNothing
-    /// Notify the sink
-    |   SendToSink of (Item -> unit) * IfOverloadResolutionFails // Overload resolution failure fallback
-    /// Find override among given overrides and notify the sink. The 'Item' contains the candidate overrides.
-    |   ReplaceWithOverrideAndSendToSink of Item * (Item -> unit) * IfOverloadResolutionFails // Overload resolution failure fallback
+type AfterResolution =
 
+    /// Notification is not needed
+    | DoNothing
+
+    /// Notify the tcSink of a precise resolution. The 'Item' contains the candidate overrides.
+    | RecordResolution of Item option * (TyparInst -> unit) * (MethInfo * PropInfo option * TyparInst -> unit) * (unit -> unit)
 
 /// Resolve a long identifier occurring in an expression position.
 ///
@@ -3163,7 +3195,6 @@ let ResolveLongIdentAsExprAndComputeRange (sink:TcResultsSink) (ncenv:NameResolv
     let item1,rest = ResolveExprLongIdent sink ncenv wholem ad nenv typeNameResInfo lid
     let itemRange = ComputeItemRange wholem lid rest
     
-    // Record the precise resolution of the field for intellisense
     let item = FilterMethodGroups ncenv itemRange item1 true
 
     match item1,item with
@@ -3178,7 +3209,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink:TcResultsSink) (ncenv:NameResolv
         | head :: ids ->
             ids |> List.forall (fun id -> id.idRange = head.idRange)
 
-    let callSink refinedItem =
+    let callSink (refinedItem, tpinst) =
         if not isFakeIdents then
             let occurence = 
                 match item with
@@ -3188,17 +3219,28 @@ let ResolveLongIdentAsExprAndComputeRange (sink:TcResultsSink) (ncenv:NameResolv
                 | Item.ActivePatternResult _ -> ItemOccurence.Binding 
                 | _ -> ItemOccurence.Use
 
-            CallNameResolutionSink sink (itemRange, nenv, refinedItem, item, occurence, nenv.DisplayEnv, ad)
-    let afterOverloadResolution =
+            CallNameResolutionSink sink (itemRange, nenv, refinedItem, item, tpinst, occurence, nenv.DisplayEnv, ad)
+
+    let callSinkWithSpecificOverload (minfo: MethInfo, pinfoOpt: PropInfo option, tpinst) =
+        let refinedItem = 
+            match pinfoOpt with 
+            | None when minfo.IsConstructor -> Item.CtorGroup(minfo.LogicalName,[minfo])
+            | None -> Item.MethodGroup(minfo.LogicalName,[minfo],None)
+            | Some pinfo -> Item.Property(pinfo.PropertyName,[pinfo])
+
+        callSink (refinedItem, tpinst)
+
+    let afterResolution =
         match sink.CurrentSink with
-        |   None -> AfterOverloadResolution.DoNothing
-        |   Some _ ->
-              if NeedsOverloadResolution item then
-                  AfterOverloadResolution.SendToSink(callSink, (fun () -> callSink item) |> IfOverloadResolutionFails)
-              else
-                 callSink item
-                 AfterOverloadResolution.DoNothing
-    item, itemRange, rest, afterOverloadResolution
+        | None -> AfterResolution.DoNothing
+        | Some _ ->
+            if NeedsWorkAfterResolution item then
+                AfterResolution.RecordResolution(None, (fun tpinst -> callSink(item,tpinst)), callSinkWithSpecificOverload, (fun () -> callSink (item, emptyTyparInst)))
+            else
+               callSink (item, emptyTyparInst)
+               AfterResolution.DoNothing
+
+    item, itemRange, rest, afterResolution
 
 let (|NonOverridable|_|) namedItem =
     match namedItem with
@@ -3217,35 +3259,47 @@ let ResolveExprDotLongIdentAndComputeRange (sink:TcResultsSink) (ncenv:NameResol
         resInfo,item,rest,itemRange
     // "true" resolution
     let resInfo,item,rest,itemRange = resolveExpr findFlag 
-    ResolutionInfo.SendToSink(sink,ncenv,nenv,ItemOccurence.Use,ad,resInfo,ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap itemRange item))
+    ResolutionInfo.SendEntityPathToSink(sink,ncenv,nenv,ItemOccurence.Use,ad,resInfo,ResultTyparChecker(fun () -> CheckAllTyparsInferrable ncenv.amap itemRange item))
     
     // Record the precise resolution of the field for intellisense/goto definition
-    let afterOverloadResolution =
-      match sink.CurrentSink with 
-      |   None -> AfterOverloadResolution.DoNothing // do not retypecheck if nobody listens
-      |   Some _ ->
-              // resolution for goto definition
-              let unrefinedItem,itemRange,overrides = 
-                  match findFlag, item with
-                  |   FindMemberFlag.PreferOverrides, _ 
-                  |   _,                              NonOverridable() -> item,itemRange,false
-                  |   FindMemberFlag.IgnoreOverrides,_ -> 
-                          let _,item,_,itemRange = resolveExpr FindMemberFlag.PreferOverrides                
-                          item, itemRange,true
-              let sendToSink refinedItem = 
-                  let staticOnly = thisIsActuallyATyAppNotAnExpr
-                  let refinedItem = FilterMethodGroups ncenv itemRange refinedItem staticOnly
-                  let unrefinedItem = FilterMethodGroups ncenv itemRange unrefinedItem staticOnly
-                  CallNameResolutionSink sink (itemRange, nenv, refinedItem, unrefinedItem, ItemOccurence.Use, nenv.DisplayEnv, ad)                                
-              match overrides,NeedsOverloadResolution unrefinedItem with
-              |     false, true -> 
-                        AfterOverloadResolution.SendToSink(sendToSink, IfOverloadResolutionFails(fun () -> sendToSink unrefinedItem))
-              |     true, true  -> 
-                        AfterOverloadResolution.ReplaceWithOverrideAndSendToSink(unrefinedItem,sendToSink, IfOverloadResolutionFails(fun () -> sendToSink unrefinedItem))
-              |     _ , false   -> 
-                        sendToSink unrefinedItem
-                        AfterOverloadResolution.DoNothing
-    item, itemRange, rest, afterOverloadResolution
+    let afterResolution =
+        match sink.CurrentSink with 
+        | None -> AfterResolution.DoNothing // do not refine the resolution if nobody listens
+        | Some _ ->
+            // resolution for goto definition
+            let unrefinedItem,itemRange,overrides = 
+                match findFlag, item with
+                | FindMemberFlag.PreferOverrides, _ 
+                | _, NonOverridable() -> item,itemRange,false
+                | FindMemberFlag.IgnoreOverrides,_ -> 
+                    let _,item,_,itemRange = resolveExpr FindMemberFlag.PreferOverrides                
+                    item, itemRange,true
+
+            let callSink (refinedItem, tpinst) = 
+                let staticOnly = thisIsActuallyATyAppNotAnExpr
+                let refinedItem = FilterMethodGroups ncenv itemRange refinedItem staticOnly
+                let unrefinedItem = FilterMethodGroups ncenv itemRange unrefinedItem staticOnly
+                CallNameResolutionSink sink (itemRange, nenv, refinedItem, unrefinedItem, tpinst, ItemOccurence.Use, nenv.DisplayEnv, ad)                                
+
+            let callSinkWithSpecificOverload (minfo: MethInfo, pinfoOpt: PropInfo option, tpinst) =
+                let refinedItem = 
+                    match pinfoOpt with 
+                    | None when minfo.IsConstructor -> Item.CtorGroup(minfo.LogicalName,[minfo])
+                    | None -> Item.MethodGroup(minfo.LogicalName,[minfo],None)
+                    | Some pinfo -> Item.Property(pinfo.PropertyName,[pinfo])
+
+                callSink (refinedItem, tpinst)
+
+            match overrides, NeedsWorkAfterResolution unrefinedItem with
+            | false, true -> 
+                AfterResolution.RecordResolution (None, (fun tpinst -> callSink(item,tpinst)), callSinkWithSpecificOverload, (fun () -> callSink (unrefinedItem, emptyTyparInst)))
+            | true, true  -> 
+                AfterResolution.RecordResolution (Some unrefinedItem, (fun tpinst -> callSink(item,tpinst)), callSinkWithSpecificOverload, (fun () -> callSink (unrefinedItem, emptyTyparInst)))
+            | _ , false   -> 
+                callSink (unrefinedItem, emptyTyparInst)
+                AfterResolution.DoNothing
+
+    item, itemRange, rest, afterResolution
 
 
 //-------------------------------------------------------------------------

@@ -431,16 +431,16 @@ module internal Tokenizer =
         let isOperator t = t.ColorClass = FSharpTokenColorKind.Operator
         let isPunctuation t = t.ColorClass = FSharpTokenColorKind.Punctuation
     
-        let inline (|GenericTypeParameterPrefix|StaticallyResolvedTypeParameterPrefix|ActivePattern|Other|) (token: FSharpTokenInfo) =
+        let (|GenericTypeParameterPrefix|StaticallyResolvedTypeParameterPrefix|ActivePattern|Other|) (token: FSharpTokenInfo) =
             if token.Tag = FSharpTokenTag.QUOTE then GenericTypeParameterPrefix
             elif token.Tag = FSharpTokenTag.INFIX_AT_HAT_OP then
                     // The lexer return INFIX_AT_HAT_OP token for both "^" and "@" symbols.
                     // We have to check the char itself to distinguish one from another.
-                    if token.FullMatchedLength = 1 && lineStr.[token.LeftColumn] = '^' then 
+                    if token.FullMatchedLength = 1 && token.LeftColumn < lineStr.Length && lineStr.[token.LeftColumn] = '^' then 
                         StaticallyResolvedTypeParameterPrefix
                     else Other
             elif token.Tag = FSharpTokenTag.LPAREN then
-                if token.FullMatchedLength = 1 && lineStr.[token.LeftColumn+1] = '|' then
+                if token.FullMatchedLength = 1 && token.LeftColumn+1 < lineStr.Length && lineStr.[token.LeftColumn+1] = '|' then
                     ActivePattern
                 else Other
             else Other

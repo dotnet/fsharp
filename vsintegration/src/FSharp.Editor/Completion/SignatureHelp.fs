@@ -152,12 +152,12 @@ type internal FSharpSignatureHelpProvider
                 None  // not a named argument
 
         // Prepare the results
-        let results = List<_>()
+        let results = ResizeArray()
 
         for method in methods do
             // Create the documentation. Note, do this on the background thread, since doing it in the documentationBuild fails to build the XML index
-            let mainDescription = List()
-            let documentation = List()
+            let mainDescription = ResizeArray()
+            let documentation = ResizeArray()
             XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, RoslynHelpers.CollectTaggedText mainDescription, RoslynHelpers.CollectTaggedText documentation, method.StructuredDescription, false)
 
             let parameters = 

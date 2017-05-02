@@ -138,8 +138,8 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
 
             let documentationProvider = 
                 { new IDocumentationBuilder with
-                    override doc.AppendDocumentationFromProcessedXML(_, _, _, _, _) = ()
-                    override doc.AppendDocumentation(_, _, _, _, _, _) = ()
+                    override doc.AppendDocumentationFromProcessedXML(_, _, _, _, _, _) = ()
+                    override doc.AppendDocumentation(_, _, _, _, _, _, _) = ()
                 } 
 
             let triggerChar = if marker = "," then Some ',' elif marker = "(" then Some '(' elif marker = "<" then Some '<' else None
