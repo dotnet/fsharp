@@ -1078,6 +1078,42 @@ module Tables =
             else
                 res <- f x; t.[x] <- res;  res
 
+
+/// Interface that defines methods for comparing objects using partial equality relation
+type IPartialEqualityComparer<'T> = 
+    inherit IEqualityComparer<'T>
+    /// Can the specified object be tested for equality?
+    abstract InEqualityRelation : 'T -> bool
+
+module IPartialEqualityComparer = 
+    let On f (c: IPartialEqualityComparer<_>) = 
+          { new IPartialEqualityComparer<_> with 
+                member __.InEqualityRelation x = c.InEqualityRelation (f x)
+                member __.Equals(x, y) = c.Equals(f x, f y)
+                member __.GetHashCode x = c.GetHashCode(f x) }
+    
+
+
+    // Wrapper type for use by the 'partialDistinctBy' function
+    [<StructuralEquality; NoComparison>]
+    type private WrapType<'T> = Wrap of 'T
+    
+    // Like Seq.distinctBy but only filters out duplicates for some of the elements
+    let partialDistinctBy (per:IPartialEqualityComparer<'T>) seq =
+        let wper = 
+            { new IPartialEqualityComparer<WrapType<'T>> with
+                member __.InEqualityRelation (Wrap x) = per.InEqualityRelation (x)
+                member __.Equals(Wrap x, Wrap y) = per.Equals(x, y)
+                member __.GetHashCode (Wrap x) = per.GetHashCode(x) }
+        // Wrap a Wrap _ around all keys in case the key type is itself a type using null as a representation
+        let dict = Dictionary<WrapType<'T>,obj>(wper)
+        seq |> List.filter (fun v -> 
+            let key = Wrap(v)
+            if (per.InEqualityRelation(v)) then 
+                if dict.ContainsKey(key) then false else (dict.[key] <- null; true)
+            else true)
+
+
 //-------------------------------------------------------------------------
 // Library: Name maps
 //------------------------------------------------------------------------

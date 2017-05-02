@@ -78,9 +78,14 @@ type InProcErrorLoggerProvider =
     member CapturedWarnings : Diagnostic[]
     member CapturedErrors : Diagnostic[]
 
+/// The default ErrorLogger implementation, reporting messages to the Console up to the maxerrors maximum
+type ConsoleLoggerProvider = 
+    new : unit -> ConsoleLoggerProvider
+    inherit ErrorLoggerProvider
 
+// For unit testing
 module internal MainModuleBuilder =
     
-    val fileVersion: warn: (exn -> unit) -> findStringAttr: (string -> string option) -> assemblyVersion: AbstractIL.IL.ILVersionInfo -> AbstractIL.IL.ILVersionInfo
-    val productVersion: warn: (exn -> unit) -> findStringAttr: (string -> string option) -> fileVersion: AbstractIL.IL.ILVersionInfo -> string
-    val productVersionToILVersionInfo: string -> AbstractIL.IL.ILVersionInfo
+    val fileVersion: warn: (exn -> unit) -> findStringAttr: (string -> string option) -> assemblyVersion: ILVersionInfo -> ILVersionInfo
+    val productVersion: warn: (exn -> unit) -> findStringAttr: (string -> string option) -> fileVersion: ILVersionInfo -> string
+    val productVersionToILVersionInfo: string -> ILVersionInfo

@@ -52,8 +52,6 @@ open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.StructuredFormat
 
-type FormatOptions = Internal.Utilities.StructuredFormat.FormatOptions
-
 //----------------------------------------------------------------------------
 // Hardbinding dependencies should we NGEN fsi.exe
 //----------------------------------------------------------------------------
@@ -226,6 +224,7 @@ type internal FsiValuePrinterMode =
     | PrintExpr 
     | PrintDecl
 
+#if COMPILER_SERVICE_AS_DLL
 type EvaluationEventArgs(fsivalue : FsiValue option, symbolUse : FSharpSymbolUse, decl: FSharpImplementationFileDeclaration) =
     inherit EventArgs()
     member x.Name = symbolUse.Symbol.DisplayName
@@ -233,12 +232,15 @@ type EvaluationEventArgs(fsivalue : FsiValue option, symbolUse : FSharpSymbolUse
     member x.SymbolUse = symbolUse
     member x.Symbol = symbolUse.Symbol
     member x.ImplementationDeclaration = decl
+#endif
 
 [<AbstractClass>]
 /// User-configurable information that changes how F# Interactive operates, stored in the 'fsi' object
 /// and accessible via the programming model
-type public FsiEvaluationSessionHostConfig () = 
+type FsiEvaluationSessionHostConfig () = 
+#if COMPILER_SERVICE_AS_DLL
     let evaluationEvent = new Event<EvaluationEventArgs> () 
+#endif
     /// Called by the evaluation session to ask the host for parameters to format text for output
     abstract FormatProvider: System.IFormatProvider  
     /// Called by the evaluation session to ask the host for parameters to format text for output
@@ -304,10 +306,12 @@ type public FsiEvaluationSessionHostConfig () =
     /// Implicitly reference FSharp.Compiler.Interactive.Settings.dll
     abstract UseFsiAuxLib : bool
 
+#if COMPILER_SERVICE_AS_DLL
     /// Hook for listening for evaluation bindings
     member x.OnEvaluation = evaluationEvent.Publish
     member internal x.TriggerEvaluation (value, symbolUse, decl) =
         evaluationEvent.Trigger (EvaluationEventArgs (value, symbolUse, decl) )
+#endif
 
 /// Used to print value signatures along with their values, according to the current
 /// set of pretty printers installed in the system, and default printing rules.
@@ -1169,6 +1173,7 @@ type internal FsiDynamicCompiler
         let tcState = istate.tcState 
         let newState = { istate with tcState = tcState.NextStateAfterIncrementalFragment(tcEnvAtEndOfLastInput) }
 
+#if COMPILER_SERVICE_AS_DLL
         // Find all new declarations the EvaluationListener
         begin
             let contents = FSharpAssemblyContents(tcGlobals, tcState.Ccu, tcImports, declaredImpls)
@@ -1203,6 +1208,9 @@ type internal FsiDynamicCompiler
                         ()
             | _ -> ()
         end
+#else
+        ignore declaredImpls
+#endif
 
         newState
       
@@ -2358,11 +2366,13 @@ type internal FsiInteractionProcessor
         let names  = names |> List.filter (fun name -> name.StartsWith(stem,StringComparison.Ordinal)) 
         names
 
+#if COMPILER_SERVICE_DLL
     member __.ParseAndCheckInteraction (ctok, referenceResolver, checker, istate, text:string) =
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
 
         let fsiInteractiveChecker = FsiInteractiveChecker(referenceResolver, checker, tcConfig, istate.tcGlobals, istate.tcImports, istate.tcState)
         fsiInteractiveChecker.ParseAndCheckInteraction(ctok, text)
+#endif
 
 
 //----------------------------------------------------------------------------
@@ -2483,7 +2493,14 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         if containsRequiredFiles then defaultFSharpBinariesDir 
         else Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None).Value
 
+#if COMPILER_SERVICE_DLL
     let referenceResolver = SimulatedMSBuildReferenceResolver.GetBestAvailableResolver(msbuildEnabled)
+#else
+    let referenceResolver = 
+        assert msbuildEnabled
+        MSBuildReferenceResolver.Resolver 
+#endif
+
     let tcConfigB = 
         TcConfigBuilder.CreateNew(referenceResolver,
                                   defaultFSharpBinariesDir, 
@@ -2566,6 +2583,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     let fsiConsoleInput = FsiConsoleInput(fsi, fsiOptions, inReader, outWriter)
 
+#if COMPILER_SERVICE_DLL
     /// The single, global interactive checker that can be safely used in conjunction with other operations
     /// on the FsiEvaluationSession.  
     let checker = FSharpChecker.Create(msbuildEnabled=msbuildEnabled)
@@ -2582,6 +2600,13 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
           TcImports.BuildNonFrameworkTcImports(ctokStartup, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences) |> Cancellable.runWithoutCancellation
       with e -> 
           stopProcessingRecovery e range0; failwithf "Error creating evaluation session: %A" e
+#else
+    let tcGlobals,tcImports =  
+      try 
+          TcImports.BuildTcImports(ctokStartup, tcConfigP)  |> Cancellable.runWithoutCancellation
+      with e -> 
+          stopProcessingRecovery e range0; exit 1
+#endif
 
     let ilGlobals  = tcGlobals.ilg
 
@@ -2633,7 +2658,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
             | Choice2Of2 None -> Choice2Of2 (System.Exception "Operation could not be completed due to earlier error")
             | Choice2Of2 (Some userExn) -> Choice2Of2 userExn
 
-        userRes, FsiInteractiveChecker.CreateErrorInfos (tcConfig, true, scriptFile, errs)
+        userRes, ErrorHelpers.CreateErrorInfos (tcConfig, true, scriptFile, errs)
 
     let dummyScriptFileName = "input.fsx"
 
@@ -2650,9 +2675,13 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     member x.GetCompletions(longIdent) = 
         fsiInteractionProcessor.CompletionsForPartialLID (fsiInteractionProcessor.CurrentState, longIdent)  |> Seq.ofList
 
+#if COMPILER_SERVICE_DLL
     member x.ParseAndCheckInteraction(code) = 
         let ctok = AssumeCompilationThreadWithoutEvidence ()
         fsiInteractionProcessor.ParseAndCheckInteraction (ctok, referenceResolver, checker.ReactorOps, fsiInteractionProcessor.CurrentState, code)  
+
+    member x.InteractiveChecker = checker
+#endif
 
     member x.CurrentPartialAssemblySignature = 
         fsiDynamicCompiler.CurrentPartialAssemblySignature (fsiInteractionProcessor.CurrentState)  
@@ -2736,7 +2765,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     member x.PartialAssemblySignatureUpdated = fsiInteractionProcessor.PartialAssemblySignatureUpdated
 
-    member x.InteractiveChecker = checker
 
     member x.FormatValue(obj:obj, objTy) = 
         fsiDynamicCompiler.FormatValue(obj, objTy)
@@ -2880,9 +2908,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     
     static member GetDefaultConfiguration(fsiObj:obj) = FsiEvaluationSession.GetDefaultConfiguration(fsiObj, true)
     
-    static member GetDefaultConfiguration(fsiObj:obj, useFsiAuxLib) =
-    
-
+    static member GetDefaultConfiguration(fsiObj:obj, useFsiAuxLib: bool) =
         // We want to avoid modifying FSharp.Compiler.Interactive.Settings to avoid republishing that DLL.
         // So we access these via reflection
         { // Connect the configuration through to the 'fsi' object from FSharp.Compiler.Interactive.Settings
@@ -2916,6 +2942,8 @@ module Settings =
         abstract Invoke : (unit -> 'T) -> 'T 
         abstract ScheduleRestart : unit -> unit
     
+#if COMPILER_SERVICE_DLL // FSharp.Compiler.Service.dll avoids a hard dependency on FSharp.Compiler.Interave.Settings.dll by providing an optional reimplementation of the functionality in FSharp.Compiler.Service.dll itself
+
     // An implementation of IEventLoop suitable for the command-line console
     [<AutoSerializable(false)>]
     type internal SimpleEventLoop() = 
@@ -3004,6 +3032,7 @@ module Settings =
 type FsiEvaluationSession with 
     static member GetDefaultConfiguration() = 
         FsiEvaluationSession.GetDefaultConfiguration(Settings.fsi, false)
+#endif
 
 /// Defines a read-only input stream used to feed content to the hosted F# Interactive dynamic compiler.
 [<AllowNullLiteral>]

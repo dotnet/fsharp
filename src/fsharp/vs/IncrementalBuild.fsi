@@ -15,44 +15,6 @@ open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.Tast
 
-
-[<RequireQualifiedAccess>]
-#if COMPILER_PUBLIC_API
-type (*internal*) FSharpErrorSeverity = 
-#else
-type internal FSharpErrorSeverity = 
-#endif
-| Warning 
-    | Error
-
-[<Class>]
-#if COMPILER_PUBLIC_API
-type (*internal*) FSharpErrorInfo = 
-#else
-type internal FSharpErrorInfo = 
-#endif
-    member FileName: string
-    member StartLineAlternate:int
-    member EndLineAlternate:int
-    member StartColumn:int
-    member EndColumn:int
-    member Severity:FSharpErrorSeverity
-    member Message:string
-    member Subcategory:string
-    member ErrorNumber:int
-    static member internal CreateFromExceptionAndAdjustEof : PhasedDiagnostic * isError: bool * trim: bool * range * lastPosInFile:(int*int) -> FSharpErrorInfo
-    static member internal CreateFromException : PhasedDiagnostic * isError: bool * trim: bool * range -> FSharpErrorInfo
-
-// Implementation details used by other code in the compiler    
-[<Sealed>]
-type internal ErrorScope = 
-    interface IDisposable
-    new : unit -> ErrorScope
-    member Diagnostics : FSharpErrorInfo list
-    static member Protect<'a> : range -> (unit->'a) -> (string->'a) -> 'a
-    static member ProtectWithDefault<'a> : range -> (unit -> 'a) -> 'a -> 'a
-    static member ProtectAndDiscard : range -> (unit -> unit) -> unit
-
 /// Lookup the global static cache for building the FrameworkTcImports
 type internal FrameworkImportsCache = 
     new : size: int -> FrameworkImportsCache
@@ -70,16 +32,6 @@ module internal IncrementalBuilderEventTesting =
 
   val GetMostRecentIncrementalBuildEvents : int -> IBEvent list
   val GetCurrentIncrementalBuildEventNum : unit -> int
-
-/// An error logger that capture errors, filtering them according to warning levels etc.
-type internal CompilationErrorLogger = 
-    inherit ErrorLogger
-
-    /// Create the error logger
-    new : debugName:string * tcConfig:TcConfig ->  CompilationErrorLogger
-            
-    /// Get the captured errors
-    member GetErrors : unit -> (PhasedDiagnostic * FSharpErrorSeverity) list
 
 /// Represents the state in the incremental graph associated with checking a file
 type internal PartialCheckResults = 
@@ -292,9 +244,3 @@ module internal IncrementalBuild =
         /// Set the concrete inputs for this build. 
         member GetInitialPartialBuild : vectorinputs: BuildInput list -> PartialBuild
 
-/// This represents the global state established as each task function runs as part of the build.
-///
-/// Use to reset error and warning handlers.
-type internal CompilationGlobalsScope =
-    new : ErrorLogger * BuildPhase -> CompilationGlobalsScope
-    interface IDisposable

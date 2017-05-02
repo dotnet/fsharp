@@ -18,19 +18,46 @@ open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.TcGlobals
+open Microsoft.FSharp.Compiler.NameResolution
 
+// Implementation details used by other code in the compiler    
 module internal Impl = 
     type internal cenv = 
         new : TcGlobals * thisCcu:CcuThunk * tcImports: TcImports -> cenv
         member amap: Import.ImportMap
         member g: TcGlobals
 
+/// Indicates the accessibility of a symbol, as seen by the F# language
+#if COMPILER_PUBLIC_API
+type FSharpAccessibility = 
+#else
+type internal FSharpAccessibility = 
+#endif
+    internal new: Accessibility * ?isProtected: bool -> FSharpAccessibility
+
+    /// Indicates the symbol has public accessibility
+    member IsPublic : bool
+
+    /// Indicates the symbol has private accessibility
+    member IsPrivate : bool
+
+    /// Indicates the symbol has internal accessibility
+    member IsInternal : bool
+
+    /// The underlying Accessibility
+    member internal Contents : Accessibility
+
+
 /// Represents the information needed to format types and other information in a style
 /// suitable for use in F# source text at a particular source location.
 ///
 /// Acquired via GetDisplayEnvAtLocationAlternate and similar methods. May be passed 
 /// to the Format method on FSharpType and other methods.
+#if COMPILER_PUBLIC_API
 type [<Class>] FSharpDisplayContext = 
+#else
+type [<Class>] internal FSharpDisplayContext = 
+#endif
     internal new : denv: (TcGlobals -> Tastops.DisplayEnv) -> FSharpDisplayContext
     static member Empty: FSharpDisplayContext
 
@@ -39,7 +66,11 @@ type [<Class>] FSharpDisplayContext =
 /// The subtype of the symbol may reveal further information and can be one of FSharpEntity, FSharpUnionCase
 /// FSharpField, FSharpGenericParameter, FSharpStaticParameter, FSharpMemberOrFunctionOrValue, FSharpParameter,
 /// or FSharpActivePatternCase.
+#if COMPILER_PUBLIC_API
 type [<Class>] FSharpSymbol = 
+#else
+type [<Class>] internal FSharpSymbol = 
+#endif
     /// Internal use only. 
     static member internal Create : g:TcGlobals * thisCcu: CcuThunk * tcImports: TcImports * item:NameResolution.Item -> FSharpSymbol
 
@@ -79,7 +110,11 @@ type [<Class>] FSharpSymbol =
     static member GetAccessibility : FSharpSymbol -> FSharpAccessibility option
 
 /// Represents an assembly as seen by the F# language
+#if COMPILER_PUBLIC_API
 and [<Class>] FSharpAssembly = 
+#else
+and [<Class>] internal FSharpAssembly = 
+#endif
 
     internal new : tcGlobals: TcGlobals * tcImports: TcImports * ccu: CcuThunk -> FSharpAssembly
 
@@ -103,7 +138,11 @@ and [<Class>] FSharpAssembly =
 #endif
 
 /// Represents an inferred signature of part of an assembly as seen by the F# language
+#if COMPILER_PUBLIC_API
 and [<Class>] FSharpAssemblySignature = 
+#else
+and [<Class>] internal FSharpAssemblySignature = 
+#endif
 
     internal new : tcGlobals: TcGlobals * thisCcu: CcuThunk * tcImports: TcImports * topAttribs: TypeChecker.TopAttribs option * contents: ModuleOrNamespaceType -> FSharpAssemblySignature
 
@@ -116,7 +155,11 @@ and [<Class>] FSharpAssemblySignature =
 
 
 /// A subtype of FSharpSymbol that represents a type definition or module as seen by the F# language
+#if COMPILER_PUBLIC_API
 and [<Class>] FSharpEntity = 
+#else
+and [<Class>] internal FSharpEntity = 
+#endif
     inherit FSharpSymbol
     
     internal new : Impl.cenv * EntityRef -> FSharpEntity
@@ -258,6 +301,7 @@ and [<Class>] FSharpEntity =
 
     /// Get the properties, events and methods of a type definitions, or the functions and values of a module
     member MembersFunctionsAndValues : IList<FSharpMemberOrFunctionOrValue>
+
     [<System.Obsolete("Renamed to MembersFunctionsAndValues")>]
     member MembersOrValues : IList<FSharpMemberOrFunctionOrValue>
 
@@ -292,7 +336,11 @@ and [<Class>] FSharpEntity =
     member AllCompilationPaths : string list
 
 /// Represents a delegate signature in an F# symbol
+#if COMPILER_PUBLIC_API
 and [<Class>] FSharpDelegateSignature =
+#else
+and [<Class>] FSharpDelegateSignature =
+#endif
     /// Get the argument types of the delegate signature
     member DelegateArguments : IList<string option * FSharpType>
 
@@ -300,7 +348,11 @@ and [<Class>] FSharpDelegateSignature =
     member DelegateReturnType : FSharpType
 
 /// Represents a parameter in an abstract method of a class or interface
+#if COMPILER_PUBLIC_API
 and [<Class>] FSharpAbstractParameter =
+#else
+and [<Class>] internal FSharpAbstractParameter =
+#endif
 
     /// The optional name of the parameter
     member Name : string option
@@ -321,7 +373,11 @@ and [<Class>] FSharpAbstractParameter =
     member Attributes : IList<FSharpAttribute>     
 
 /// Represents the signature of an abstract slot of a class or interface 
+#if COMPILER_PUBLIC_API
 and [<Class>] FSharpAbstractSignature =
+#else
+and [<Class>] internal FSharpAbstractSignature =
+#endif
     internal new : Impl.cenv * SlotSig -> FSharpAbstractSignature
 
     /// Get the arguments of the abstract slot
@@ -343,7 +399,11 @@ and [<Class>] FSharpAbstractSignature =
     member DeclaringType : FSharpType
 
 /// A subtype of FSharpSymbol that represents a union case as seen by the F# language
+#if COMPILER_PUBLIC_API
 and [<Class>] FSharpUnionCase =
+#else 
+and [<Class>] internal FSharpUnionCase =
+#endif
     inherit FSharpSymbol
     internal new : Impl.cenv * UnionCaseRef -> FSharpUnionCase
 
@@ -378,11 +438,13 @@ and [<Class>] FSharpUnionCase =
     member IsUnresolved : bool
 
 
-/// Renamed to FSharpField
-and [<System.Obsolete("Renamed to FSharpField")>] FSharpRecordField = FSharpField
 
 /// A subtype of FSharpSymbol that represents a record or union case field as seen by the F# language
+#if COMPILER_PUBLIC_API
 and [<Class>] FSharpField =
+#else
+and [<Class>] internal FSharpField =
+#endif
 
     inherit FSharpSymbol
     internal new : Impl.cenv * RecdFieldRef -> FSharpField
@@ -440,12 +502,20 @@ and [<Class>] FSharpField =
     member IsUnresolved : bool
 
 /// Represents the rights of a compilation to access symbols
+#if COMPILER_PUBLIC_API
 and [<Class>] FSharpAccessibilityRights =
+#else
+and [<Class>] internal FSharpAccessibilityRights =
+#endif
     internal new : CcuThunk * AccessorDomain -> FSharpAccessibilityRights
     member internal Contents : AccessorDomain
 
 /// A subtype of FSharpSymbol that represents a generic parameter for an FSharpSymbol
+#if COMPILER_PUBLIC_API
 and [<Class>] FSharpGenericParameter = 
+#else
+and [<Class>] internal FSharpGenericParameter = 
+#endif
 
     inherit FSharpSymbol
     internal new : Impl.cenv * Typar -> FSharpGenericParameter
@@ -473,9 +543,15 @@ and [<Class>] FSharpGenericParameter =
        
     /// Get the declared or inferred constraints for the type parameter
     member Constraints: IList<FSharpGenericParameterConstraint> 
+
+
 #if EXTENSIONTYPING
 /// A subtype of FSharpSymbol that represents a static parameter to an F# type provider
+#if COMPILER_PUBLIC_API
 and [<Class>] FSharpStaticParameter = 
+#else
+and [<Class>] internal FSharpStaticParameter = 
+#endif
 
     inherit FSharpSymbol
 
@@ -499,8 +575,11 @@ and [<Class>] FSharpStaticParameter =
 #endif
 
 /// Represents further information about a member constraint on a generic type parameter
-and [<Class; NoEquality; NoComparison>] 
-    FSharpGenericParameterMemberConstraint = 
+#if COMPILER_PUBLIC_API
+and [<Class; NoEquality; NoComparison>] FSharpGenericParameterMemberConstraint = 
+#else
+and [<Class; NoEquality; NoComparison>] internal FSharpGenericParameterMemberConstraint = 
+#endif
 
     /// Get the types that may be used to satisfy the constraint
     member MemberSources : IList<FSharpType>
@@ -518,8 +597,11 @@ and [<Class; NoEquality; NoComparison>]
     member MemberReturnType : FSharpType 
 
 /// Represents further information about a delegate constraint on a generic type parameter
-and [<Class; NoEquality; NoComparison>] 
-    FSharpGenericParameterDelegateConstraint = 
+#if COMPILER_PUBLIC_API
+and [<Class; NoEquality; NoComparison>] FSharpGenericParameterDelegateConstraint = 
+#else
+and [<Class; NoEquality; NoComparison>] internal FSharpGenericParameterDelegateConstraint = 
+#endif
 
     /// Get the tupled argument type required by the constraint
     member DelegateTupledArgumentType : FSharpType
@@ -528,8 +610,11 @@ and [<Class; NoEquality; NoComparison>]
     member DelegateReturnType : FSharpType 
 
 /// Represents further information about a 'defaults to' constraint on a generic type parameter
-and [<Class; NoEquality; NoComparison>] 
-    FSharpGenericParameterDefaultsToConstraint = 
+#if COMPILER_PUBLIC_API
+and [<Class; NoEquality; NoComparison>] FSharpGenericParameterDefaultsToConstraint = 
+#else
+and [<Class; NoEquality; NoComparison>] internal FSharpGenericParameterDefaultsToConstraint = 
+#endif
 
     /// Get the priority off the 'defaults to' constraint
     member DefaultsToPriority : int
@@ -538,8 +623,11 @@ and [<Class; NoEquality; NoComparison>]
     member DefaultsToTarget : FSharpType
 
 /// Represents a constraint on a generic type parameter
-and [<Class; NoEquality; NoComparison>] 
-    FSharpGenericParameterConstraint = 
+#if COMPILER_PUBLIC_API
+and [<Class; NoEquality; NoComparison>] FSharpGenericParameterConstraint = 
+#else
+and [<Class; NoEquality; NoComparison>] internal FSharpGenericParameterConstraint = 
+#endif
     /// Indicates a constraint that a type is a subtype of the given type 
     member IsCoercesToConstraint : bool
 
@@ -598,7 +686,11 @@ and [<Class; NoEquality; NoComparison>]
     member DelegateConstraintData : FSharpGenericParameterDelegateConstraint
 
 
+#if COMPILER_PUBLIC_API
 and [<RequireQualifiedAccess>] FSharpInlineAnnotation = 
+#else
+and [<RequireQualifiedAccess>] internal FSharpInlineAnnotation = 
+#endif
    /// Indictes the value is inlined and compiled code for the function does not exist
    | PseudoValue
    /// Indictes the value is inlined but compiled code for the function still exists, e.g. to satisfy interfaces on objects, but that it is also always inlined 
@@ -608,13 +700,12 @@ and [<RequireQualifiedAccess>] FSharpInlineAnnotation =
    /// Indictes the value is never inlined 
    | NeverInline 
 
-/// Renamed to FSharpMemberOrFunctionOrValue
-and [<System.Obsolete("Renamed to FSharpMemberOrFunctionOrValue")>] FSharpMemberOrVal =  FSharpMemberOrFunctionOrValue
-/// Renamed to FSharpMemberOrFunctionOrValue
-and [<System.Obsolete("Renamed to FSharpMemberOrFunctionOrValue")>] FSharpMemberFunctionOrValue =  FSharpMemberOrFunctionOrValue
-
 /// A subtype of F# symbol that represents an F# method, property, event, function or value, including extension members.
+#if COMPILER_PUBLIC_API
 and [<Class>] FSharpMemberOrFunctionOrValue = 
+#else
+and [<Class>] internal FSharpMemberOrFunctionOrValue = 
+#endif
 
     inherit FSharpSymbol
     internal new : Impl.cenv * ValRef -> FSharpMemberOrFunctionOrValue
@@ -798,7 +889,11 @@ and [<Class>] FSharpMemberOrFunctionOrValue =
 
 
 /// A subtype of FSharpSymbol that represents a parameter 
+#if COMPILER_PUBLIC_API
 and [<Class>] FSharpParameter =
+#else
+and [<Class>] internal FSharpParameter =
+#endif
     inherit FSharpSymbol
 
     /// The optional name of the parameter 
@@ -824,7 +919,12 @@ and [<Class>] FSharpParameter =
 
 
 /// A subtype of FSharpSymbol that represents a single case within an active pattern
+#if COMPILER_PUBLIC_API
 and [<Class>] FSharpActivePatternCase =
+#else
+and [<Class>] internal FSharpActivePatternCase =
+#endif
+
     inherit FSharpSymbol
 
     /// The name of the active pattern case 
@@ -843,7 +943,11 @@ and [<Class>] FSharpActivePatternCase =
     member XmlDocSig: string
 
 /// Represents all cases within an active pattern
+#if COMPILER_PUBLIC_API
 and [<Class>] FSharpActivePatternGroup =
+#else
+and [<Class>] internal FSharpActivePatternGroup =
+#endif
     /// The names of the active pattern cases
     member Names: IList<string> 
 
@@ -856,7 +960,11 @@ and [<Class>] FSharpActivePatternGroup =
     /// Try to get the enclosing entity of the active pattern
     member EnclosingEntity : FSharpEntity option
 
+#if COMPILER_PUBLIC_API
 and [<Class>] FSharpType =
+#else
+and [<Class>] internal FSharpType =
+#endif
     /// Internal use only. Create a ground type.
     internal new : g:TcGlobals * thisCcu: CcuThunk * tcImports: TcImports * typ:TType -> FSharpType
     internal new : Impl.cenv * typ:TType -> FSharpType
@@ -940,8 +1048,12 @@ and [<Class>] FSharpType =
 
 
 /// Represents a custom attribute attached to F# source code or a compiler .NET component
+#if COMPILER_PUBLIC_API
 and [<Class>] FSharpAttribute = 
-        
+#else
+and [<Class>] internal FSharpAttribute = 
+#endif
+
     /// The type of the attribute
     member AttributeType : FSharpEntity
 
@@ -958,4 +1070,45 @@ and [<Class>] FSharpAttribute =
     member Format : context: FSharpDisplayContext -> string
 
 
+
+/// Represents the use of an F# symbol from F# source code
+[<Sealed>]
+#if COMPILER_PUBLIC_API
+type FSharpSymbolUse = 
+#else
+type internal FSharpSymbolUse = 
+#endif
+    // For internal use only
+    internal new : g:TcGlobals * denv: Tastops.DisplayEnv * symbol:FSharpSymbol * itemOcc:ItemOccurence * range: range -> FSharpSymbolUse
+
+    /// The symbol referenced
+    member Symbol : FSharpSymbol 
+
+    /// The display context active at the point where the symbol is used. Can be passed to FSharpType.Format
+    /// and other methods to format items in a way that is suitable for a specific source code location.
+    member DisplayContext : FSharpDisplayContext
+
+    /// Indicates if the reference is a definition for the symbol, either in a signature or implementation
+    member IsFromDefinition : bool
+
+    /// Indicates if the reference is in a pattern
+    member IsFromPattern : bool
+
+    /// Indicates if the reference is in a syntactic type
+    member IsFromType : bool
+
+    /// Indicates if the reference is in an attribute
+    member IsFromAttribute : bool
+
+    /// Indicates if the reference is via the member being implemented in a class or object expression
+    member IsFromDispatchSlotImplementation : bool
+
+    /// Indicates if the reference is either a builder or a custom operation in a computation expression
+    member IsFromComputationExpression : bool
+
+    /// The file name the reference occurs in 
+    member FileName: string 
+
+    /// The range of text representing the reference to the symbol
+    member RangeAlternate: range
 

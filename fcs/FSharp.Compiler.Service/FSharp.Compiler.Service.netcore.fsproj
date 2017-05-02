@@ -507,23 +507,23 @@
     <Compile Include="../vs/ServiceConstants.fs">
       <Link>Service/ServiceConstants.fs</Link>
     </Compile>
-    <Compile Include="../vs/ServiceDeclarations.fsi">
-      <Link>Service/ServiceDeclarations.fsi</Link>
+    <Compile Include="../vs/SymbolHelpers.fsi">
+      <Link>Symbols/SymbolHelpers.fsi</Link>
     </Compile>
-    <Compile Include="../vs/ServiceDeclarations.fs">
-      <Link>Service/ServiceDeclarations.fs</Link>
+    <Compile Include="../vs/SymbolHelpers.fs">
+      <Link>Symbols/SymbolHelpers.fs</Link>
     </Compile>
     <Compile Include="../vs/Symbols.fsi">
-      <Link>Service/Symbols.fsi</Link>
+      <Link>Symbols/Symbols.fsi</Link>
     </Compile>
     <Compile Include="../vs/Symbols.fs">
-      <Link>Service/Symbols.fs</Link>
+      <Link>Symbols/Symbols.fs</Link>
     </Compile>
     <Compile Include="../vs/Exprs.fsi">
-      <Link>Service/Exprs.fsi</Link>
+      <Link>Symbols/Exprs.fsi</Link>
     </Compile>
     <Compile Include="../vs/Exprs.fs">
-      <Link>Service/Exprs.fs</Link>
+      <Link>Symbols/Exprs.fs</Link>
     </Compile>
     <Compile Include="../vs/ServiceLexing.fsi">
       <Link>Service/ServiceLexing.fsi</Link>

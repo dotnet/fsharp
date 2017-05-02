@@ -11,7 +11,11 @@ open Microsoft.FSharp.Compiler.CompileOps
 
 
 /// Represents the definitional contents of an assembly, as seen by the F# language
-type [<Class>] FSharpAssemblyContents = 
+#if COMPILER_PUBLIC_API
+type FSharpAssemblyContents = 
+#else
+type internal FSharpAssemblyContents = 
+#endif
 
     internal new : tcGlobals: TcGlobals * thisCcu: CcuThunk * tcImports: TcImports * mimpls: TypedImplFile list -> FSharpAssemblyContents
 
@@ -19,7 +23,11 @@ type [<Class>] FSharpAssemblyContents =
     member ImplementationFiles:  FSharpImplementationFileContents list
 
 /// Represents the definitional contents of a single file or fragment in an assembly, as seen by the F# language
+#if COMPILER_PUBLIC_API
 and [<Class>] FSharpImplementationFileContents = 
+#else
+and [<Class>] internal FSharpImplementationFileContents = 
+#endif
 
     /// The qualified name acts to fully-qualify module specifications and implementations
     member QualifiedName: string
@@ -37,8 +45,12 @@ and [<Class>] FSharpImplementationFileContents =
     member HasExplicitEntryPoint:  bool
 
 /// Represents a declaration in an implementation file, as seen by the F# language
+#if COMPILER_PUBLIC_API
 and FSharpImplementationFileDeclaration = 
-    /// Represents the declaration of a type
+#else
+and internal FSharpImplementationFileDeclaration = 
+#endif
+/// Represents the declaration of a type
     | Entity of FSharpEntity * FSharpImplementationFileDeclaration list
     /// Represents the declaration of a member, function or value, including the parameters and body of the member
     | MemberOrFunctionOrValue  of FSharpMemberOrFunctionOrValue * FSharpMemberOrFunctionOrValue list list * FSharpExpr
@@ -50,7 +62,11 @@ and FSharpImplementationFileDeclaration =
 ///
 /// Pattern matching is reduced to decision trees and conditional tests. Some other
 /// constructs may be represented in reduced form.
+#if COMPILER_PUBLIC_API
 and [<Sealed>]  FSharpExpr =
+#else
+and [<Sealed>]  internal FSharpExpr =
+#endif
     /// The range of the expression
     member Range : range
 
@@ -61,18 +77,29 @@ and [<Sealed>]  FSharpExpr =
     member ImmediateSubExpressions : FSharpExpr list
 
 /// Represents a checked method in an object expression, as seen by the F# language.  
+#if COMPILER_PUBLIC_API
 and [<Sealed>]  FSharpObjectExprOverride = 
+#else
+and [<Sealed>]  internal FSharpObjectExprOverride = 
+#endif
     /// The signature of the implemented abstract slot
     member Signature : FSharpAbstractSignature
+
     /// The generic parameters of the method
     member GenericParameters : FSharpGenericParameter list
+
     /// The parameters of the method
     member CurriedParameterGroups : FSharpMemberOrFunctionOrValue list list
+
     /// The expression that forms the body of the method
     member Body : FSharpExpr
 
 /// A collection of active patterns to analyze expressions
+#if COMPILER_PUBLIC_API
 module BasicPatterns =
+#else
+module internal BasicPatterns =
+#endif
 
     /// Matches expressions which are uses of values 
     val (|Value|_|) : FSharpExpr -> FSharpMemberOrFunctionOrValue option 

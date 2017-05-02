@@ -491,6 +491,18 @@
     <Compile Include="..\fsc.fs">
       <Link>Driver\fsc.fs</Link>
     </Compile>
+    <Compile Include="..\symbols\SymbolHelpers.fsi">
+      <Link>Symbols/SymbolHelpers.fsi</Link>
+    </Compile>
+    <Compile Include="..\symbols\SymbolHelpers.fs">
+      <Link>Symbols/SymbolHelpers.fs</Link>
+    </Compile>
+    <Compile Include="..\symbols\Symbols.fsi">
+      <Link>Symbols/Symbols.fsi</Link>
+    </Compile>
+    <Compile Include="..\symbols\Symbols.fs">
+      <Link>Symbols/Symbols.fs</Link>
+    </Compile>
     <Compile Include="..\vs\IncrementalBuild.fsi">
       <Link>Service/IncrementalBuild.fsi</Link>
     </Compile>
@@ -506,17 +518,11 @@
     <Compile Include="..\vs\ServiceConstants.fs">
       <Link>Service/ServiceConstants.fs</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceDeclarations.fsi">
-      <Link>Service/ServiceDeclarations.fsi</Link>
+    <Compile Include="..\vs\ServiceDeclarationLists.fsi">
+      <Link>Service/ServiceDeclarationLists.fsi</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceDeclarations.fs">
-      <Link>Service/ServiceDeclarations.fs</Link>
-    </Compile>
-    <Compile Include="..\vs\Symbols.fsi">
-      <Link>Service/Symbols.fsi</Link>
-    </Compile>
-    <Compile Include="..\vs\Symbols.fs">
-      <Link>Service/Symbols.fs</Link>
+    <Compile Include="..\vs\ServiceDeclarationLists.fs">
+      <Link>Service/ServiceDeclarationLists.fs</Link>
     </Compile>
     <Compile Include="..\vs\ServiceLexing.fsi">
       <Link>Service/ServiceLexing.fsi</Link>
@@ -547,6 +553,12 @@
     </Compile>
     <Compile Include="..\MSBuildReferenceResolver.fs">
       <Link>Service/MSBuildReferenceResolver.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceDeclarationLists.fsi">
+      <Link>Service/ServiceDeclarationLists.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceDeclarationLists.fs">
+      <Link>Service/ServiceDeclarationLists.fs</Link>
     </Compile>
     <Compile Include="..\vs\ServiceAssemblyContent.fsi">
       <Link>Service/ServiceAssemblyContent.fsi</Link>

@@ -21,6 +21,35 @@ open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.PrettyNaming
 open Internal.Utilities
 
+type FSharpAccessibility(a:Accessibility, ?isProtected) = 
+    let isProtected = defaultArg isProtected  false
+
+    let isInternalCompPath x = 
+        match x with 
+        | CompPath(ILScopeRef.Local,[]) -> true 
+        | _ -> false
+
+    let (|Public|Internal|Private|) (TAccess p) = 
+        match p with 
+        | [] -> Public 
+        | _ when List.forall isInternalCompPath p  -> Internal 
+        | _ -> Private
+
+    member __.IsPublic = not isProtected && match a with Public -> true | _ -> false
+
+    member __.IsPrivate = not isProtected && match a with Private -> true | _ -> false
+
+    member __.IsInternal = not isProtected && match a with Internal -> true | _ -> false
+
+    member __.IsProtected = isProtected
+
+    member internal __.Contents = a
+
+    override __.ToString() = 
+        let (TAccess paths) = a
+        let mangledTextOfCompPath (CompPath(scoref,path)) = getNameOfScopeRef scoref + "/" + textOfPath (List.map fst path)  
+        String.concat ";" (List.map mangledTextOfCompPath paths)
+
 [<AutoOpen>]
 module Impl = 
     let protect f = 
@@ -2213,3 +2242,26 @@ type FSharpSymbol with
         | :? FSharpUnionCase as x -> Some x.Accessibility
         | :? FSharpMemberFunctionOrValue as x -> Some x.Accessibility
         | _ -> None
+
+[<Sealed>]
+type FSharpSymbolUse(g:TcGlobals, denv: DisplayEnv, symbol:FSharpSymbol, itemOcc, range: range) = 
+    member __.Symbol  = symbol
+    member __.DisplayContext  = FSharpDisplayContext(fun _ -> denv)
+    member x.IsDefinition = x.IsFromDefinition
+    member __.IsFromDefinition = (match itemOcc with ItemOccurence.Binding -> true | _ -> false)
+    member __.IsFromPattern = (match itemOcc with ItemOccurence.Pattern -> true | _ -> false)
+    member __.IsFromType = (match itemOcc with ItemOccurence.UseInType -> true | _ -> false)
+    member __.IsFromAttribute = (match itemOcc with ItemOccurence.UseInAttribute -> true | _ -> false)
+    member __.IsFromDispatchSlotImplementation = (match itemOcc with ItemOccurence.Implemented -> true | _ -> false)
+    member __.IsFromComputationExpression = 
+        match symbol.Item, itemOcc with 
+        // 'seq' in 'seq { ... }' gets colored as keywords
+        | (Item.Value vref), ItemOccurence.Use when valRefEq g g.seq_vref vref ->  true
+        // custom builders, custom operations get colored as keywords
+        | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use ->  true
+        | _ -> false
+
+    member __.FileName = range.FileName
+    member __.Range = Range.toZ range
+    member __.RangeAlternate = range
+

@@ -478,6 +478,24 @@
     <Compile Include="..\fsc.fs">
       <Link>Driver/fsc.fs</Link>
     </Compile>
+    <Compile Include="..\symbols\SymbolHelpers.fsi">
+      <Link>Symbols/SymbolHelpers.fsi</Link>
+    </Compile>
+    <Compile Include="..\symbols\SymbolHelpers.fs">
+      <Link>Symbols/SymbolHelpers.fs</Link>
+    </Compile>
+    <Compile Include="..\symbols\Symbols.fsi">
+      <Link>Symbols/Symbols.fsi</Link>
+    </Compile>
+    <Compile Include="..\symbols\Symbols.fs">
+      <Link>Symbols/Symbols.fs</Link>
+    </Compile>
+    <Compile Include="..\symbols\Exprs.fsi">
+      <Link>Symbols/Exprs.fsi</Link>
+    </Compile>
+    <Compile Include="..\symbols\Exprs.fs">
+      <Link>Symbols/Exprs.fs</Link>
+    </Compile>
     <Compile Include="..\vs\IncrementalBuild.fsi">
       <Link>Service/IncrementalBuild.fsi</Link>
     </Compile>
@@ -492,24 +510,6 @@
     </Compile>
     <Compile Include="..\vs\ServiceConstants.fs">
       <Link>Service/ServiceConstants.fs</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceDeclarations.fsi">
-      <Link>Service/ServiceDeclarations.fsi</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceDeclarations.fs">
-      <Link>Service/ServiceDeclarations.fs</Link>
-    </Compile>
-    <Compile Include="..\vs\Symbols.fsi">
-      <Link>Service/Symbols.fsi</Link>
-    </Compile>
-    <Compile Include="..\vs\Symbols.fs">
-      <Link>Service/Symbols.fs</Link>
-    </Compile>
-    <Compile Include="..\vs\Exprs.fsi">
-      <Link>Service/Exprs.fsi</Link>
-    </Compile>
-    <Compile Include="..\vs\Exprs.fs">
-      <Link>Service/Exprs.fs</Link>
     </Compile>
     <Compile Include="..\vs\ServiceLexing.fsi">
       <Link>Service/ServiceLexing.fsi</Link>

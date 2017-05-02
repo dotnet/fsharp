@@ -31,26 +31,11 @@
       <HasLceComments>false</HasLceComments>
       <InProject>false</InProject>
     </FilesToLocalize>
-    <FsSrGen Include="FSIstrings.txt">
-      <Link>FSIstrings.txt</Link>
-    </FsSrGen>
     <Compile Include="..\..\assemblyinfo\assemblyinfo.fsi.exe.fs">
       <Link>assemblyinfo.fsi.exe.fs</Link>
     </Compile>
-    <Compile Include="..\InternalCollections.fsi">
-      <Link>Utilities/InternalCollections.fsi</Link>
-    </Compile>
-    <Compile Include="..\InternalCollections.fs">
-      <Link>Utilities/InternalCollections.fs</Link>
-    </Compile>
-    <Compile Include="console.fs">
-      <Link>Console/console.fs</Link>
-    </Compile>
-    <Compile Include="fsi.fsi">
-      <Link>InteractiveSession/fsi.fsi</Link>
-    </Compile>
-    <Compile Include="fsi.fs">
-      <Link>InteractiveSession/fsi.fs</Link>
+    <Compile Include="fsimain.fs">
+      <Link>fsimain.fs</Link>
     </Compile>
     <None Include="fsi.exe.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

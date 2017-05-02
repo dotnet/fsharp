@@ -8087,8 +8087,8 @@ let (|CompiledForEachExpr|_|) g expr =
                       enumerableVar.IsCompilerGenerated &&
                       enumeratorVar.IsCompilerGenerated &&
                       (let fvs = (freeInExpr CollectLocals bodyExpr)
-                      not (Zset.contains enumerableVar fvs.FreeLocals) && 
-                      not (Zset.contains enumeratorVar fvs.FreeLocals)) ->
+                       not (Zset.contains enumerableVar fvs.FreeLocals) && 
+                       not (Zset.contains enumeratorVar fvs.FreeLocals)) ->
 
         // Extract useful ranges
         let mEnumExpr = enumerableExpr.Range

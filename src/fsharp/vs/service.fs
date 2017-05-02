@@ -114,28 +114,6 @@ type GetPreciseCompletionListFromExprTypingsResult =
 
 type Names = string list 
 
-[<Sealed>]
-type FSharpSymbolUse(g:TcGlobals, denv: DisplayEnv, symbol:FSharpSymbol, itemOcc, range: range) = 
-    member __.Symbol  = symbol
-    member __.DisplayContext  = FSharpDisplayContext(fun _ -> denv)
-    member x.IsDefinition = x.IsFromDefinition
-    member __.IsFromDefinition = (match itemOcc with ItemOccurence.Binding -> true | _ -> false)
-    member __.IsFromPattern = (match itemOcc with ItemOccurence.Pattern -> true | _ -> false)
-    member __.IsFromType = (match itemOcc with ItemOccurence.UseInType -> true | _ -> false)
-    member __.IsFromAttribute = (match itemOcc with ItemOccurence.UseInAttribute -> true | _ -> false)
-    member __.IsFromDispatchSlotImplementation = (match itemOcc with ItemOccurence.Implemented -> true | _ -> false)
-    member __.IsFromComputationExpression = 
-        match symbol.Item, itemOcc with 
-        // 'seq' in 'seq { ... }' gets colored as keywords
-        | (Item.Value vref), ItemOccurence.Use when valRefEq g g.seq_vref vref ->  true
-        // custom builders, custom operations get colored as keywords
-        | (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use ->  true
-        | _ -> false
-
-    member __.FileName = range.FileName
-    member __.Range = Range.toZ range
-    member __.RangeAlternate = range
-
 [<RequireQualifiedAccess>]
 type SemanticClassificationType =
     | ReferenceType
@@ -1289,27 +1267,6 @@ module internal Parser =
         let lastLineLength = source.Length - source.LastIndexOf("\n",StringComparison.Ordinal) - 1
         lastLine, lastLineLength
          
-    let ReportError (tcConfig:TcConfig, allErrors, mainInputFileName, fileInfo, (exn, sev)) = 
-        [ let isError = (sev = FSharpErrorSeverity.Error) || ReportWarningAsError (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn, tcConfig.specificWarnAsError, tcConfig.specificWarnAsWarn, tcConfig.globalWarnAsError) exn                
-          if (isError || ReportWarning (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn) exn) then 
-            let oneError trim exn = 
-                [ // We use the first line of the file as a fallbackRange for reporting unexpected errors.
-                  // Not ideal, but it's hard to see what else to do.
-                  let fallbackRange = rangeN mainInputFileName 1
-                  let ei = FSharpErrorInfo.CreateFromExceptionAndAdjustEof (exn, isError, trim, fallbackRange, fileInfo)
-                  if allErrors || (ei.FileName=mainInputFileName) || (ei.FileName=Microsoft.FSharp.Compiler.TcGlobals.DummyFileNameForRangesWithoutASpecificLocation) then
-                      yield ei ]
-                      
-            let mainError,relatedErrors = SplitRelatedDiagnostics exn 
-            yield! oneError false mainError
-            for e in relatedErrors do 
-                yield! oneError true e ]
-
-    let CreateErrorInfos (tcConfig:TcConfig, allErrors, mainInputFileName, errors) = 
-        let fileInfo = (Int32.MaxValue, Int32.MaxValue)
-        [| for (exn,isError) in errors do 
-              yield! ReportError (tcConfig, allErrors, mainInputFileName, fileInfo, (exn, isError)) |]
-                            
 
     /// Error handler for parsing & type checking while processing a single file
     type ErrorHandler(reportErrors, mainInputFileName, tcConfig: TcConfig, source: string) =
@@ -1332,7 +1289,7 @@ module internal Parser =
                 else exn
             if reportErrors then 
                 let report exn = 
-                    for ei in ReportError (tcConfig, false, mainInputFileName, fileInfo, (exn, sev)) do
+                    for ei in ErrorHelpers.ReportError (tcConfig, false, mainInputFileName, fileInfo, (exn, sev)) do
                         errorsAndWarningsCollector.Add ei
                         if sev = FSharpErrorSeverity.Error then 
                             errorCount <- errorCount + 1
@@ -2316,7 +2273,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             | None -> return FSharpParseFileResults(List.toArray creationErrors, None, true, [])
             | Some builder -> 
             let! inputOpt,_,_,parseErrors = builder.GetParseResultsForFile (ctok, filename)
-            let errors = [| yield! creationErrors; yield! Parser.CreateErrorInfos (builder.TcConfig, false, filename, parseErrors) |]
+            let errors = [| yield! creationErrors; yield! ErrorHelpers.CreateErrorInfos (builder.TcConfig, false, filename, parseErrors) |]
             return FSharpParseFileResults(errors = errors, input = inputOpt, parseHadErrors = false, dependencyFiles = builder.AllDependenciesDeprecated)
           }
         )
@@ -2509,8 +2466,8 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             | Some builder -> 
                 let! (inputOpt, _, _, untypedErrors) = builder.GetParseResultsForFile (ctok, filename)
                 let! tcProj = builder.GetCheckResultsAfterFileInProject (ctok, filename)
-                let untypedErrors = [| yield! creationErrors; yield! Parser.CreateErrorInfos (builder.TcConfig, false, filename, untypedErrors) |]
-                let tcErrors = [| yield! creationErrors; yield! Parser.CreateErrorInfos (builder.TcConfig, false, filename, tcProj.Errors) |]
+                let untypedErrors = [| yield! creationErrors; yield! ErrorHelpers.CreateErrorInfos (builder.TcConfig, false, filename, untypedErrors) |]
+                let tcErrors = [| yield! creationErrors; yield! ErrorHelpers.CreateErrorInfos (builder.TcConfig, false, filename, tcProj.Errors) |]
                 let parseResults = FSharpParseFileResults(errors = untypedErrors, input = inputOpt, parseHadErrors = false, dependencyFiles = builder.AllDependenciesDeprecated)
                 let loadClosure = scriptClosureCacheLock.AcquireLock (fun ltok -> scriptClosureCache.TryGet (ltok, options) )
                 let scope = 
@@ -2545,7 +2502,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             return FSharpCheckProjectResults (keepAssemblyContents, Array.ofList creationErrors, None, reactorOps)
         | Some builder -> 
             let! (tcProj, ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt)  = builder.GetCheckResultsAndImplementationsForProject(ctok)
-            let errors = [| yield! creationErrors; yield! Parser.CreateErrorInfos (tcProj.TcConfig, true, Microsoft.FSharp.Compiler.TcGlobals.DummyFileNameForRangesWithoutASpecificLocation, tcProj.Errors) |]
+            let errors = [| yield! creationErrors; yield! ErrorHelpers.CreateErrorInfos (tcProj.TcConfig, true, Microsoft.FSharp.Compiler.TcGlobals.DummyFileNameForRangesWithoutASpecificLocation, tcProj.Errors) |]
             return FSharpCheckProjectResults (keepAssemblyContents, errors, Some(tcProj.TcGlobals, tcProj.TcImports, tcProj.TcState.Ccu, tcProj.TcState.PartialAssemblySignature, tcProj.TcSymbolUses, tcProj.TopAttribs, tcAssemblyDataOpt, ilAssemRef, tcProj.TcEnvAtEnd.AccessRights, tcAssemblyExprOpt, tcProj.TcDependencyFiles), reactorOps)
       }
 
@@ -2992,9 +2949,6 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
 
 type FsiInteractiveChecker(referenceResolver, reactorOps: IReactorOperations, tcConfig: TcConfig, tcGlobals, tcImports, tcState) =
     let keepAssemblyContents = false
-
-    static member CreateErrorInfos (tcConfig, allErrors, mainInputFileName, errors) = 
-        Parser.CreateErrorInfos(tcConfig, allErrors, mainInputFileName, errors)
 
     member __.ParseAndCheckInteraction (ctok, source) =
         async {

@@ -1,13 +1,4 @@
-//----------------------------------------------------------------------------
-// Copyright (c) 2002-2012 Microsoft Corporation. 
-//
-// This source code is subject to terms and conditions of the Apache License, Version 2.0. A 
-// copy of the license can be found in the License.html file at the root of this distribution. 
-// By using this source code in any fashion, you are agreeing to be bound 
-// by the terms of the Apache License, Version 2.0.
-//
-// You must not remove this notice, or any other, from this software.
-//----------------------------------------------------------------------------
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 
 #if COMPILER_PUBLIC_API
@@ -32,20 +23,26 @@ type FsiValue =
     member FSharpType : FSharpType
 #endif 
 
+#if COMPILER_SERVICE_AS_DLL
 [<Class>]
 type EvaluationEventArgs =
     inherit System.EventArgs
-    //new : unit -> CompilerOutputStream
+
     /// The display name of the symbol defined
     member Name : string
+
     /// The value of the symbol defined, if any
     member FsiValue : FsiValue option
+
     /// The FSharpSymbolUse for the symbol defined
     member SymbolUse : FSharpSymbolUse
+
     /// The symbol defined
     member Symbol : FSharpSymbol
+
     /// The details of the expression defined
     member ImplementationDeclaration : FSharpImplementationFileDeclaration
+#endif
 
 [<AbstractClass>]
 type public FsiEvaluationSessionHostConfig = 
@@ -73,8 +70,11 @@ type public FsiEvaluationSessionHostConfig =
     /// The evaluation session calls this to report the preferred view of the command line arguments after 
     /// stripping things like "/use:file.fsx", "-r:Foo.dll" etc.
     abstract ReportUserCommandLineArgs : string [] -> unit
+
+#if COMPILER_SERVICE_AS_DLL
     /// Hook for listening for evaluation bindings
     member OnEvaluation : IEvent<EvaluationEventArgs>
+#endif
 
 
     ///<summary>
@@ -141,6 +141,7 @@ type FsiEvaluationSession =
     /// by input from 'stdin'.
     member GetCompletions : longIdent: string -> seq<string>
 
+#if COMPILER_SERVICE_DLL
     /// Execute the code as if it had been entered as one or more interactions, with an
     /// implicit termination at the end of the input. Stop on first error, discarding the rest
     /// of the input. Errors are sent to the output writer, a 'true' return value indicates there
@@ -220,6 +221,8 @@ type FsiEvaluationSession =
     /// for additional checking operations.
     member InteractiveChecker: FSharpChecker
 
+#endif
+
     /// Get a handle to the resolved view of the current signature of the incrementally generated assembly.
     member CurrentPartialAssemblySignature : FSharpAssemblySignature
 
@@ -257,10 +260,11 @@ type FsiEvaluationSession =
     /// FSharp.Compiler.Interactive.Settings.dll  is referenced by default.
     static member GetDefaultConfiguration: fsiObj: obj -> FsiEvaluationSessionHostConfig
 
+#if COMPILER_SERVICE_DLL // FSharp.Compiler.Service.dll avoids a hard dependency on FSharp.Compiler.Interave.Settings.dll by providing an optional reimplementation of the functionality in FSharp.Compiler.Service.dll itself
     /// Get a configuration that uses a private inbuilt implementation of the 'fsi' object and does not
     /// implicitly reference FSharp.Compiler.Interactive.Settings.dll. 
     static member GetDefaultConfiguration: unit -> FsiEvaluationSessionHostConfig
-
+#endif
 
 
 /// A default implementation of the 'fsi' object, used by GetDefaultConfiguration()
@@ -277,6 +281,7 @@ module Settings =
         /// <summary>Schedule a restart for the event loop.</summary>
         abstract ScheduleRestart : unit -> unit
 
+#if COMPILER_SERVICE_AS_DLL
     [<Sealed>]
     /// <summary>Operations supported by the currently executing F# Interactive session.</summary>
     type InteractiveSettings =
@@ -322,6 +327,7 @@ module Settings =
     /// which can be used as an alternative implementation of the interactiev settings if passed as a parameter
     /// to GetDefaultConfiguration(fsiObj).
     val fsi : InteractiveSettings
+#endif
 
 /// Defines a read-only input stream used to feed content to the hosted F# Interactive dynamic compiler.
 [<AllowNullLiteral>]

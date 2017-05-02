@@ -31,26 +31,11 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' " />
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' " />
   <ItemGroup>
-    <FsSrGen Include="..\fsi\FSIstrings.txt">
-      <Link>FSIstrings.txt</Link>
-    </FsSrGen>
     <Compile Include="..\..\assemblyinfo\assemblyinfo.fsi.exe.fs">
       <Link>assemblyinfo.fsi.exe.fs</Link>
     </Compile>
-    <Compile Include="..\InternalCollections.fsi">
-      <Link>InternalCollections.fsi</Link>
-    </Compile>
-    <Compile Include="..\InternalCollections.fs">
-      <Link>InternalCollections.fs</Link>
-    </Compile>
-    <Compile Include="..\fsi\console.fs">
-      <Link>console.fs</Link>
-    </Compile>
-    <Compile Include="..\fsi\fsi.fsi">
-      <Link>fsi.fsi</Link>
-    </Compile>
-    <Compile Include="..\fsi\fsi.fs">
-      <Link>fsi.fs</Link>
+    <Compile Include="..\fsi\fsimain.fs">
+      <Link>fsimain.fs</Link>
     </Compile>
     <None Include="..\fsi\fsiAnyCpu.exe.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

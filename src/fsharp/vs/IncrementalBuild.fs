@@ -23,6 +23,7 @@ open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.TypeChecker
 open Microsoft.FSharp.Compiler.Tast 
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.SourceCodeServices
 open Internal.Utilities
 open Internal.Utilities.Collections
 
@@ -968,100 +969,6 @@ module internal IncrementalBuild =
             ToBound(ToBuild outputs,inputs)   
 
 
-[<RequireQualifiedAccess>]
-type FSharpErrorSeverity = 
-    | Warning 
-    | Error
-
-type FSharpErrorInfo(fileName, s:pos, e:pos, severity: FSharpErrorSeverity, message: string, subcategory: string, errorNum: int) = 
-    member __.StartLine = Line.toZ s.Line
-    member __.StartLineAlternate = s.Line
-    member __.EndLine = Line.toZ e.Line
-    member __.EndLineAlternate = e.Line
-    member __.StartColumn = s.Column
-    member __.EndColumn = e.Column
-    member __.Severity = severity
-    member __.Message = message
-    member __.Subcategory = subcategory
-    member __.FileName = fileName
-    member __.ErrorNumber = errorNum
-    member __.WithStart(newStart) = FSharpErrorInfo(fileName, newStart, e, severity, message, subcategory, errorNum)
-    member __.WithEnd(newEnd) = FSharpErrorInfo(fileName, s, newEnd, severity, message, subcategory, errorNum)
-    override __.ToString()= sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName (int s.Line) (s.Column + 1) (int e.Line) (e.Column + 1) subcategory (if severity=FSharpErrorSeverity.Warning then "warning" else "error")  message
-            
-    /// Decompose a warning or error into parts: position, severity, message, error number
-    static member CreateFromException(exn, isError, trim:bool, fallbackRange:range) = 
-        let m = match GetRangeOfDiagnostic exn with Some m -> m | None -> fallbackRange 
-        let e = if trim then m.Start else m.End
-        let msg = bufs (fun buf -> OutputPhasedDiagnostic buf exn false)
-        let errorNum = GetDiagnosticNumber exn
-        FSharpErrorInfo(m.FileName, m.Start, e, (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning), msg, exn.Subcategory(), errorNum)
-        
-    /// Decompose a warning or error into parts: position, severity, message, error number
-    static member CreateFromExceptionAndAdjustEof(exn, isError, trim:bool, fallbackRange:range, (linesCount:int, lastLength:int)) = 
-        let r = FSharpErrorInfo.CreateFromException(exn,isError,trim,fallbackRange)
-                
-        // Adjust to make sure that errors reported at Eof are shown at the linesCount        
-        let startline, schange = min (r.StartLineAlternate, false) (linesCount, true)
-        let endline,   echange = min (r.EndLineAlternate, false)   (linesCount, true)
-        
-        if not (schange || echange) then r
-        else
-            let r = if schange then r.WithStart(mkPos startline lastLength) else r
-            if echange then r.WithEnd(mkPos  endline (1 + lastLength)) else r
-
-    
-/// Use to reset error and warning handlers            
-[<Sealed>]
-type ErrorScope()  = 
-    let mutable errors = [] 
-    static let mutable mostRecentError = None
-    let unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
-    let unwindEL =        
-        PushErrorLoggerPhaseUntilUnwind (fun _oldLogger -> 
-            { new ErrorLogger("ErrorScope") with 
-                member x.DiagnosticSink(exn, isError) = 
-                      let err = FSharpErrorInfo.CreateFromException(exn,isError,false,range.Zero)
-                      errors <- err :: errors
-                      if isError then 
-                          mostRecentError <- Some err
-                member x.ErrorCount = errors.Length })
-        
-    member x.Errors = errors |> List.filter (fun error -> error.Severity = FSharpErrorSeverity.Error)
-    member x.Warnings = errors |> List.filter (fun error -> error.Severity = FSharpErrorSeverity.Warning)
-    member x.Diagnostics = errors
-    member x.TryGetFirstErrorText() =
-        match x.Errors with 
-        | error :: _ -> Some error.Message
-        | [] -> None
-    
-    interface IDisposable with
-          member d.Dispose() = 
-              unwindEL.Dispose() (* unwind pushes when ErrorScope disposes *)
-              unwindBP.Dispose()
-
-    static member MostRecentError = mostRecentError
-    
-    static member Protect<'a> (m:range) (f:unit->'a) (err:string->'a): 'a = 
-        use errorScope = new ErrorScope()
-        let res = 
-            try 
-                Some (f())
-            with e -> errorRecovery e m; None
-        match res with 
-        | Some res ->res
-        | None -> 
-            match errorScope.TryGetFirstErrorText() with 
-            | Some text -> err text
-            | None -> err ""
-
-    static member ProtectWithDefault m f dflt = 
-        ErrorScope.Protect m f (fun _ -> dflt)
-
-    static member ProtectAndDiscard m f = 
-        ErrorScope.Protect m f (fun _ -> ())
-      
-
         
 
 // Record the most recent IncrementalBuilder events, so we can more easily unittest/debug the 
@@ -1169,38 +1076,6 @@ type FrameworkImportsCache(keepStrongly) =
         return tcGlobals,frameworkTcImports,nonFrameworkResolutions,unresolved
       }
 
-/// An error logger that capture errors, filtering them according to warning levels etc.
-type internal CompilationErrorLogger (debugName:string, tcConfig:TcConfig) = 
-    inherit ErrorLogger("CompilationErrorLogger("+debugName+")")
-            
-    let mutable errorCount = 0
-    let diagnostics = new ResizeArray<_>()
-
-    override x.DiagnosticSink(exn, isError) = 
-        if isError || ReportWarningAsError (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn, tcConfig.specificWarnAsError, tcConfig.specificWarnAsWarn, tcConfig.globalWarnAsError) exn then
-            diagnostics.Add(exn, isError)
-            errorCount <- errorCount + 1
-        else if ReportWarning (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn) exn then 
-            diagnostics.Add(exn, isError)
-
-    override x.ErrorCount = errorCount
-
-    member x.GetErrors() = 
-        [ for (e,isError) in diagnostics -> e, (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning) ]
-
-
-/// This represents the global state established as each task function runs as part of the build.
-///
-/// Use to reset error and warning handlers.
-type CompilationGlobalsScope(errorLogger:ErrorLogger, phase: BuildPhase) = 
-    let unwindEL = PushErrorLoggerPhaseUntilUnwind(fun _ -> errorLogger)
-    let unwindBP = PushThreadBuildPhaseUntilUnwind phase
-    // Return the disposable object that cleans up
-    interface IDisposable with
-        member d.Dispose() =
-            unwindBP.Dispose()         
-            unwindEL.Dispose()
-                            
 
 //------------------------------------------------------------------------------------
 // Rules for reactive building.

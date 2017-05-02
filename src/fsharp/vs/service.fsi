@@ -75,47 +75,6 @@ type internal FSharpProjectContext =
     member AccessibilityRights : FSharpAccessibilityRights
 
 
-/// Represents the use of an F# symbol from F# source code
-[<Sealed>]
-#if COMPILER_PUBLIC_API
-type FSharpSymbolUse = 
-#else
-type internal FSharpSymbolUse = 
-#endif
-    // For internal use only
-    internal new : g:TcGlobals * denv: Tastops.DisplayEnv * symbol:FSharpSymbol * itemOcc:ItemOccurence * range: range -> FSharpSymbolUse
-
-    /// The symbol referenced
-    member Symbol : FSharpSymbol 
-
-    /// The display context active at the point where the symbol is used. Can be passed to FSharpType.Format
-    /// and other methods to format items in a way that is suitable for a specific source code location.
-    member DisplayContext : FSharpDisplayContext
-
-    /// Indicates if the reference is a definition for the symbol, either in a signature or implementation
-    member IsFromDefinition : bool
-
-    /// Indicates if the reference is in a pattern
-    member IsFromPattern : bool
-
-    /// Indicates if the reference is in a syntactic type
-    member IsFromType : bool
-
-    /// Indicates if the reference is in an attribute
-    member IsFromAttribute : bool
-
-    /// Indicates if the reference is via the member being implemented in a class or object expression
-    member IsFromDispatchSlotImplementation : bool
-
-    /// Indicates if the reference is either a builder or a custom operation in a computation expression
-    member IsFromComputationExpression : bool
-
-    /// The file name the reference occurs in 
-    member FileName: string 
-
-    /// The range of text representing the reference to the symbol
-    member RangeAlternate: range
-
 [<RequireQualifiedAccess>]
 #if COMPILER_PUBLIC_API
 type SemanticClassificationType =
@@ -676,7 +635,6 @@ type internal FSharpChecker =
 type internal FsiInteractiveChecker =
     internal new : ReferenceResolver.Resolver * ops: IReactorOperations * tcConfig: TcConfig * tcGlobals: TcGlobals * tcImports: TcImports * tcState: TcState ->  FsiInteractiveChecker 
     member internal ParseAndCheckInteraction : CompilationThreadToken * source:string -> Async<FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults>
-    static member internal CreateErrorInfos : tcConfig: TcConfig * allErrors:bool * mainInputFileName : string * seq<ErrorLogger.PhasedDiagnostic * FSharpErrorSeverity> -> FSharpErrorInfo[]
 
 /// Information about the compilation environment
 #if COMPILER_PUBLIC_API
