@@ -340,31 +340,57 @@ type HelpContextServiceTests() =
     [<Test>]
     member public this.``Regression.NewInstance.854367`` () =
         let file =
-            [   "let q1 = new System.Runtime.Remoting.Type$Entry()"
+            [   "let q : System.Runtime.Remoting.TypeE$ntry = null" ]
+        let keywords = 
+            [   Some "System.Runtime.Remoting.TypeEntry" ]
+        this.TestF1Keywords(keywords, file)
+
+    [<Test>]
+    member public this.``Regression.NewInstance.854367.2`` () =
+        let file =
+            [   "let q1 = new System.Runtime.Remoting.Type$Entry()" // this consutrctor exists but is not accessible (it is protected), but the help entry still goes to the type
             ]
         let keywords = 
-            [   Some "System.Runtime.Remoting.TypeEntry"
-            ]
+            [   Some "System.Runtime.Remoting.TypeEntry" ]
         this.TestF1Keywords(keywords, file)
 
 
     [<Test>]
-    member public this.``Classes`` () =
+    member public this.``Classes.WebClient`` () =
         let file =
-            [   "let q : System.Runtime.Remoting.TypeE$ntry = null"
-                "let q1 = new System.Runtime.Remoting.Type$Entry()"
-                "let w : System.Net.Web$Client = new System.Net.Web$Client()"
-                "let x : System.Collections.Generic.L$ist<int> = null"
-                "let z : Resi$zeArray<int> = null" 
-             ]
+            [   "let w : System.Net.Web$Client = new System.Net.Web$Client()" ]
         let keywords = 
-            [   Some "System.Runtime.Remoting.TypeEntry"
-                Some "System.Runtime.Remoting.TypeEntry"
-                Some "System.Net.WebClient"
+            [   Some "System.Net.WebClient"
                 Some "System.Net.WebClient.#ctor"
-                Some "System.Collections.Generic.List`1"
-                Some "System.Collections.Generic.List`1"
              ]
+        this.TestF1Keywords(keywords, file)
+
+
+    [<Test>]
+    member public this.``Classes.Object`` () =
+        let file =
+            [   "let w : System.Ob$ject = new System.Obj$ect()" ]
+        let keywords = 
+            [   Some "System.Object"
+                Some "System.Object.#ctor"
+             ]
+        this.TestF1Keywords(keywords, file)
+
+
+    [<Test>]
+    member public this.``Classes.Generic`` () =
+        let file =
+            [   "let x : System.Collections.Generic.L$ist<int> = null" ]
+        let keywords = 
+            [   Some "System.Collections.Generic.List`1" ]
+        this.TestF1Keywords(keywords, file)
+
+    [<Test>]
+    member public this.``Classes.Abbrev`` () =
+        let file =
+            [   "let z : Resi$zeArray<int> = null" ]
+        let keywords = 
+            [   Some "System.Collections.Generic.List`1" ]
         this.TestF1Keywords(keywords, file)
 
     [<Test>]
