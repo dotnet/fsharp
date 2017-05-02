@@ -310,18 +310,30 @@ module List =
 
         ch [] [] l
 
+    let rec checkq l1 l2 = 
+        match l1,l2 with 
+        | h1::t1,h2::t2 -> h1 === h2 && checkq t1 t2
+        | _ -> true
+
     let mapq (f: 'T -> 'T) inp =
         assert not (typeof<'T>.IsValueType) 
         match inp with
         | [] -> inp
+        | [h1a] -> 
+            let h2a = f h1a
+            if h1a === h2a then inp else [h2a]
+        | [h1a; h1b] -> 
+            let h2a = f h1a
+            let h2b = f h1b
+            if h1a === h2a && h1b === h2b then inp else [h2a; h2b]
+        | [h1a; h1b; h1c] -> 
+            let h2a = f h1a
+            let h2b = f h1b
+            let h2c = f h1c
+            if h1a === h2a && h1b === h2b && h1c === h2c then inp else [h2a; h2b; h2c]
         | _ -> 
             let res = List.map f inp 
-            let rec check l1 l2 = 
-                match l1,l2 with 
-                | h1::t1,h2::t2 -> 
-                    System.Runtime.CompilerServices.RuntimeHelpers.Equals(h1,h2) && check t1 t2
-                | _ -> true
-            if check inp res then inp else res
+            if checkq inp res then inp else res
         
     let frontAndBack l = 
         let rec loop acc l = 
@@ -457,6 +469,19 @@ module List =
     let existsSquared f xss = xss |> List.exists (fun xs -> xs |> List.exists (fun x -> f x))
     let mapiFoldSquared f z xss =  mapFoldSquared f z (xss |> mapiSquared (fun i j x -> (i,j,x)))
 
+[<Struct>]
+type ValueOption<'T> =
+    | VSome of 'T
+    | VNone
+    member x.IsSome = match x with VSome _ -> true | VNone -> false
+    member x.IsNone = match x with VSome _ -> false | VNone -> true
+    member x.Value = match x with VSome r -> r | VNone -> failwith "ValueOption.Value: value is None"
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module ValueOption =
+    let inline ofOption x = match x with Some x -> VSome x | None -> VNone
+    let inline bind f x = match x with VSome x -> f x | VNone -> VNone
+
 module String = 
     let indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException("An index for the character was not found in the string"))
 
@@ -585,7 +610,7 @@ module Lazy =
     let force (x: Lazy<'T>) = x.Force()
 
 //----------------------------------------------------------------------------
-// Singe threaded execution and mutual exclusion
+// Single threaded execution and mutual exclusion
 
 /// Represents a permission active at this point in execution
 type ExecutionToken = interface end
@@ -596,18 +621,18 @@ type ExecutionToken = interface end
 ///   - we can access various caches in the SourceCodeServices
 ///
 /// Like other execution tokens this should be passed via argument passing and not captured/stored beyond
-/// the lifetime of stack-based calls. This is not checked, it is a discipline withinn the compiler code. 
+/// the lifetime of stack-based calls. This is not checked, it is a discipline within the compiler code. 
 type CompilationThreadToken() = interface ExecutionToken
 
-/// Represnts a place where we are stating that execution on the compilation thread is required.  The
+/// Represents a place where we are stating that execution on the compilation thread is required.  The
 /// reason why will be documented in a comment in the code at the callsite.
 let RequireCompilationThread (_ctok: CompilationThreadToken) = ()
 
-/// Represnts a place in the compiler codebase where we are passed a CompilationThreadToken unnecessarily.
+/// Represents a place in the compiler codebase where we are passed a CompilationThreadToken unnecessarily.
 /// This reprents code that may potentially not need to be executed on the compilation thread.
 let DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  (_ctok: CompilationThreadToken) = ()
 
-/// Represnts a place in the compiler codebase where we assume we are executing on a compilation thread
+/// Represents a place in the compiler codebase where we assume we are executing on a compilation thread
 let AssumeCompilationThreadWithoutEvidence () = Unchecked.defaultof<CompilationThreadToken>
 
 /// Represents a token that indicates execution on a any of several potential user threads calling the F# compiler services.
@@ -668,7 +693,7 @@ type ValueOrCancelled<'TResult> =
 /// Represents a cancellable computation with explicit representation of a cancelled result.
 ///
 /// A cancellable computation is passed may be cancelled via a CancellationToken, which is propagated implicitly.  
-/// If cancellation occurs, it is propagated as data rather than by raising an OperationCancelledException.  
+/// If cancellation occurs, it is propagated as data rather than by raising an OperationCanceledException.  
 type Cancellable<'TResult> = Cancellable of (System.Threading.CancellationToken -> ValueOrCancelled<'TResult>)
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -677,7 +702,7 @@ module Cancellable =
     /// Run a cancellable computation using the given cancellation token
     let run (ct: System.Threading.CancellationToken) (Cancellable oper) = 
         if ct.IsCancellationRequested then 
-            ValueOrCancelled.Cancelled (OperationCanceledException()) 
+            ValueOrCancelled.Cancelled (OperationCanceledException ct) 
         else
             oper ct 
 
@@ -737,7 +762,7 @@ module Cancellable =
     let token () = Cancellable (fun ct -> ValueOrCancelled.Value ct)
 
     /// Represents a canceled computation
-    let canceled() = Cancellable (fun _ -> ValueOrCancelled.Cancelled (new OperationCanceledException()))
+    let canceled() = Cancellable (fun ct -> ValueOrCancelled.Cancelled (OperationCanceledException ct))
 
     /// Catch exceptions in a computation
     let private catch (Cancellable e) = 
@@ -760,7 +785,7 @@ module Cancellable =
         catch e |> bind (fun res ->  
             match res with Choice1Of2 r -> ret r | Choice2Of2 err -> handler err)
     
-    // /// Run the cancellable computation within an Async computation.  This isn't actaully used in the codebase, but left
+    // Run the cancellable computation within an Async computation.  This isn't actually used in the codebase, but left
     // here in case we need it in the future 
     //
     // let toAsync e =    
@@ -891,7 +916,7 @@ module Eventually =
         catch e 
         |> bind (function Result v -> Done v | Exception e -> handler e)
     
-    // All eventually computations carry a CompiationThreadToken
+    // All eventually computations carry a CompilationThreadToken
     let token =    
         NotYetDone (fun ctok -> Done ctok)
     

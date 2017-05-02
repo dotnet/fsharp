@@ -33,9 +33,12 @@ module Commands =
         Directory.CreateDirectory ( Path.Combine(workDir, dir) ) |> ignore
 
     let rm dir path =
-        log "rm %s" path
         let p = path |> getfullpath dir
-        if File.Exists(p) then File.Delete(p)
+        if File.Exists(p) then 
+            (log "rm %s" p) |> ignore
+            File.Delete(p)
+        else
+            (log "not found: %s p") |> ignore
 
     let pathAddBackslash (p: FilePath) = 
         if String.IsNullOrWhiteSpace (p) then p
@@ -178,7 +181,17 @@ let config configurationName envVars =
     let ILDASM = requireFile (CORSDK ++ "ildasm.exe")
     let SN = requireFile (CORSDK ++ "sn.exe") 
     let PEVERIFY = requireFile (CORSDK ++ "peverify.exe")
-    let FSI_FOR_SCRIPTS = requireFile (SCRIPT_ROOT ++ ".." ++ ".." ++ (System.Environment.GetEnvironmentVariable("_fsiexe").Trim([| '\"' |])))
+    let FSI_FOR_SCRIPTS =
+        match envVars |> Map.tryFind "_fsiexe" with
+        | Some fsiexe when (not (String.IsNullOrWhiteSpace fsiexe)) -> requireFile (SCRIPT_ROOT ++ ".." ++ ".." ++ (fsiexe.Trim([| '\"' |])))
+        | _ ->
+            // build.cmd sets that var, if it is not set, we are probably called directly from visual studio or the nunit console runner.
+            let packagesDir = SCRIPT_ROOT ++ ".." ++ ".." ++ @"packages"
+            let fsharpCompilerTools = Directory.GetDirectories(packagesDir, "FSharp.Compiler.Tools.*")
+            match fsharpCompilerTools with
+            | [||] -> failwithf "Could not find any 'FSharp.Compiler.Tools' inside '%s'" packagesDir
+            | [| dir |] -> Path.Combine(dir, "tools", "fsi.exe")
+            | _ -> failwithf "Found more than one 'FSharp.Compiler.Tools' inside '%s', please clean up." packagesDir
     let dotNetExe = SCRIPT_ROOT ++ ".." ++ ".." ++ "Tools" ++ "dotnetcli" ++ "dotnet.exe"
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS

@@ -10,7 +10,7 @@ open UnitTests.TestLib.ProjectSystem
 open Microsoft.VisualStudio.FSharp.ProjectSystem
 
 
-[<TestFixture>]
+[<TestFixture>][<Category "ProjectSystem">]
 type ProjectItems() = 
     inherit TheTests()
     
@@ -71,26 +71,6 @@ type ProjectItems() =
                     project.AddNewFileNodeToHierarchy(project.FindChild("Folder"),absFilePath) |> ignore)
                 let msbuildInfo = TheTests.MsBuildCompileItems(project.BuildProject)
                 AssertEqual ["orig.fs"; "Folder\\f1.fs"; "Folder\\f2.fs"; "Folder\\a.fs"; "final.fs"] msbuildInfo
-            finally
-                File.Delete(absFilePath)
-            ))
-    
-    [<Test>]
-    member public this.``AddNewItem.ItemAppearsAtBottomOfFsprojFileEvenIfUnknownItemWithSameName``() =
-        this.MakeProjectAndDo([], [], @"
-                <ItemGroup>
-                    <Unknown Include=""a.fs"" />
-                    <Compile Include=""orig.fs"" />
-                </ItemGroup>
-            ", (fun project ->
-            let absFilePath = Path.Combine(project.ProjectFolder, "a.fs")
-            try
-                File.AppendAllText(absFilePath, "#light")
-                // Note: this is not the same code path as the UI, but it is close
-                project.MoveNewlyAddedFileToBottomOfGroup (fun () ->
-                    project.AddNewFileNodeToHierarchy(project,absFilePath) |> ignore)
-                let msbuildInfo = TheTests.MsBuildCompileItems(project.BuildProject)
-                AssertEqual ["orig.fs"; "a.fs"] msbuildInfo
             finally
                 File.Delete(absFilePath)
             ))

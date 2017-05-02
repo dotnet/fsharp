@@ -13,7 +13,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 
-[<ExportCodeFixProvider(FSharpCommonConstants.FSharpLanguageName, Name = "ReplaceWithSuggestion"); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = "ReplaceWithSuggestion"); Shared>]
 type internal FSharpReplaceWithSuggestionCodeFixProvider() =
     inherit CodeFixProvider()
     let fixableDiagnosticIds = set ["FS0039"; "FS1129"; "FS0495"]
@@ -26,7 +26,7 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider() =
                 async {
                     let! sourceText = context.Document.GetTextAsync()
                     return context.Document.WithText(sourceText.WithChanges(textChange))
-                } |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)),
+                } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
             title)
 
     override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
@@ -53,4 +53,4 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider() =
                                 context,
                                 TextChange(context.Span, replacement))
                         context.RegisterCodeFix(codefix, diagnostics))
-        } |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+        } |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)

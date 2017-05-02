@@ -38,6 +38,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     open Microsoft.VisualStudio.FSharp.Editor
     open Microsoft.VisualStudio.Editors
     open Microsoft.VisualStudio.Editors.PropertyPages
+    open Microsoft.VisualStudio.PlatformUI
     
     open EnvDTE
 
@@ -100,6 +101,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             member ips.IsIncompleteTypeCheckEnvironment = false
             member ips.LoadTime = inner.LoadTime 
             member ips.ProjectProvider = inner.ProjectProvider
+            member ips.AssemblyReferences() = inner.AssemblyReferences()
 
     type internal ProjectSiteOptionLifetimeState =
         | Opening=1  // The project has been opened, but has not yet called Compile() to compute sources/flags
@@ -167,10 +169,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         "F# Tools", "F# Interactive",   // category/sub-category on Tools>Options...
                         6000s,      6001s,              // resource id for localisation of the above
                         true)>]                         // true = supports automation
-    [<ProvideOptionPage(typeof<IntelliSensePropertyPage>,
-                        "F# Tools", "IntelliSense",     // category/sub-category on Tools>Options...
-                        6000s,      6008s,              // resource id for localisation of the above
-                        true)>]                         // true = supports automation
     [<ProvideKeyBindingTable("{dee22b65-9761-4a26-8fb2-759b971d6dfc}", 6001s)>] // <-- resource ID for localised name
     [<ProvideToolWindow(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiToolWindow>, 
                         // The following should place the ToolWindow with the OutputWindow by default.
@@ -194,16 +192,18 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             // FSI-LINKAGE-POINT: unsited init
             do Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
-            // Get the ComponentManager one time at the start
-            let mgr : IOleComponentManager = this.GetService(typeof<SOleComponentManager>) :?> IOleComponentManager
-
             let mutable componentID = 0u
 
             let thisLock = obj()
 
+            // Get the ComponentManager lazily, as the service may not yet have been created at package instantiation
+            member internal this.ComponentManager with get () = this.GetService(typeof<SOleComponentManager>) :?> IOleComponentManager
+
             member this.RegisterForIdleTime() =
 
-                if not (isNull mgr) && componentID = 0u then
+                Debug.Assert(not (isNull this.ComponentManager), "No IOleComponentManager service. Idle operations (such as flushing the 'Error List' queue) will not be performed.")
+            
+                if not (isNull this.ComponentManager) && componentID = 0u then
                     lock (thisLock) (fun _ -> 
                         if componentID = 0u then
                             let crinfo = Array.zeroCreate<OLECRINFO>(1)
@@ -214,7 +214,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                             crinfo0.uIdleTimeInterval <- 1000u
                             crinfo.[0] <- crinfo0
      
-                            mgr.FRegisterComponent(this, crinfo, &componentID) |> ignore
+                            this.ComponentManager.FRegisterComponent(this, crinfo, &componentID) |> ignore
                     )
 
             /// This method loads a localized string based on the specified resource.
@@ -319,8 +319,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
                 // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
                 let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
-                // private method GetDialogPage forces intellisense options to be loaded
-                let _intelliSensePropertyPage = this.GetDialogPage(typeof<IntelliSensePropertyPage>)
                 this.RegisterForIdleTime()
                 ()
 
@@ -370,10 +368,10 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
             override this.Dispose(disposing) =
                 try
-                    if not (isNull mgr) && componentID <> 0u then
+                    if not (isNull this.ComponentManager) && componentID <> 0u then
                         lock (thisLock) (fun _ ->
                             if componentID <> 0u then
-                                mgr.FRevokeComponent(componentID) |> ignore
+                                this.ComponentManager.FRevokeComponent(componentID) |> ignore
                                 componentID <- 0u)
                 finally
                     base.Dispose(disposing)
@@ -392,8 +390,8 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     // see e.g "C:\Program Files\Microsoft Visual Studio 2008 SDK\VisualStudioIntegration\Common\IDL\olecm.idl" for details
                     //Trace.Print("CurrentDirectoryDebug", (fun () -> sprintf "curdir='%s'\n" (System.IO.Directory.GetCurrentDirectory())))  // can be useful for watching how GetCurrentDirectory changes
                     let periodic = (grfidlef &&& (uint32 _OLEIDLEF.oleidlefPeriodic)) <> 0u
-                    if periodic && not (isNull mgr) && mgr.FContinueIdle() <> 0 then
-                        TaskReporterIdleRegistration.DoIdle(mgr)
+                    if periodic && not (isNull this.ComponentManager) && this.ComponentManager.FContinueIdle() <> 0 then
+                        TaskReporterIdleRegistration.DoIdle(this.ComponentManager)
                     else
                         0
 
@@ -688,7 +686,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     vsProject
                         
             [<Conditional("DEBUG")>]
-            member this.EnsureMSBuildAndSolutionExplorerAreInSync() =
+            override this.EnsureMSBuildAndSolutionExplorerAreInSync() =
                 let AllSolutionExplorerFilenames() =
                     let rec Compute (node : HierarchyNode, accum) =
                         if obj.ReferenceEquals(node,null) then
@@ -730,7 +728,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
             override x.GetGuidProperty(propid:int, guid:byref<Guid> ) =
                 if (enum propid = __VSHPROPID.VSHPROPID_PreferredLanguageSID) then 
-                    guid <- new Guid(FSharpCommonConstants.languageServiceGuidString)
+                    guid <- new Guid(FSharpConstants.languageServiceGuidString)
                     VSConstants.S_OK
                 // below is how VS decide 'which templates' to associate with an 'add new item' call in this project
                 elif (enum propid = __VSHPROPID2.VSHPROPID_AddItemTemplatesGuid) then 
@@ -739,13 +737,19 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 else
                     base.GetGuidProperty(propid, &guid)
 
-            member fshProjNode.MoveNewlyAddedFileSomehow<'a>(move : (*relativeFileName*)string -> unit, f : unit -> 'a) : 'a =
+            member fshProjNode.MoveNewlyAddedFileSomehow<'a>(move : FSharpFileNode -> unit, f : unit -> 'a) : 'a =
                 Debug.Assert(addFilesNotification.IsNone, "bad use of addFilesNotification")
-                addFilesNotification <- Some(fun files -> 
+                addFilesNotification <- Some (fun files -> 
                     Debug.Assert(files.Length = 1)
                     let absoluteFileName = files.[0]
-                    let relativeFileName = PackageUtilities.MakeRelativeIfRooted(absoluteFileName, fshProjNode.BaseURI)
-                    move(relativeFileName))
+
+                    match fshProjNode.FindChild absoluteFileName with
+                    | :? FSharpFileNode as fileNode ->
+                        move fileNode
+                    | node ->
+                        let relativeFileName = PackageUtilities.MakeRelativeIfRooted(absoluteFileName, fshProjNode.BaseURI)
+                        Debug.Assert(false, sprintf "Expected to find newly added FSharpFileNode in hierarchy '%s', but found '%O'" relativeFileName node)
+                    )
                 try
                     let r = f()
                     fshProjNode.ComputeSourcesAndFlags()
@@ -754,21 +758,30 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     addFilesNotification <- None
 
             member fshProjNode.MoveNewlyAddedFileAbove<'a>(nodeToMoveAbove : HierarchyNode, f : unit -> 'a) : 'a =
-                fshProjNode.MoveNewlyAddedFileSomehow((fun relativeFileName -> MSBuildUtilities.MoveFileAbove(relativeFileName, nodeToMoveAbove, fshProjNode)
-                                                                               FSharpFileNode.MoveLastToAbove(nodeToMoveAbove, fshProjNode) |> ignore)
-                                                      , f)
+                fshProjNode.MoveNewlyAddedFileSomehow((fun fileNode ->
+                    FSharpFileNode.MoveToBottomOfGroup(fileNode)
+                    FSharpFileNode.MoveTo(Above, nodeToMoveAbove, fileNode)
+                    MSBuildUtilities.SyncWithHierarchy(fileNode)
+                    ), f)
 
             member fshProjNode.MoveNewlyAddedFileBelow<'a>(nodeToMoveBelow : HierarchyNode, f : unit -> 'a) : 'a =
-                fshProjNode.MoveNewlyAddedFileSomehow((fun relativeFileName -> MSBuildUtilities.MoveFileBelow(relativeFileName, nodeToMoveBelow, fshProjNode)
-                                                                               FSharpFileNode.MoveLastToBelow(nodeToMoveBelow, fshProjNode) |> ignore)
-                                                      , f)
+                fshProjNode.MoveNewlyAddedFileSomehow((fun fileNode ->
+                    FSharpFileNode.MoveToBottomOfGroup(fileNode)
+                    FSharpFileNode.MoveTo(Below, nodeToMoveBelow, fileNode)
+                    MSBuildUtilities.SyncWithHierarchy(fileNode)
+                    ), f)
 
             member fshProjNode.MoveNewlyAddedFileToBottomOfGroup<'a> (f : unit -> 'a) : 'a =
-                fshProjNode.MoveNewlyAddedFileSomehow((fun relativeFileName -> MSBuildUtilities.MoveFileToBottomOfGroup(relativeFileName, fshProjNode)), f)
+                fshProjNode.MoveNewlyAddedFileSomehow((fun fileNode ->
+                    FSharpFileNode.MoveToBottomOfGroup(fileNode)
+                    MSBuildUtilities.SyncWithHierarchy(fileNode)
+                    ), f)
 
-            override fshProjNode.MoveFileToBottomIfNoOtherPendingMove(relativeFileName) = 
+            override fshProjNode.MoveFileToBottomIfNoOtherPendingMove(fileNode) = 
                 match addFilesNotification with
-                | None -> MSBuildUtilities.MoveFileToBottomOfGroup(relativeFileName, fshProjNode)
+                | None ->
+                    FSharpFileNode.MoveToBottomOfGroup(fileNode)
+                    MSBuildUtilities.SyncWithHierarchy(fileNode)
                 | Some _ -> ()
 
             override fshProjNode.ExecCommandOnNode(guidCmdGroup:Guid, cmd:uint32, nCmdexecopt:uint32, pvaIn:IntPtr, pvaOut:IntPtr ) =
@@ -798,13 +811,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     base.ExecCommandOnNode(guidCmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut)
 
             override fshProjNode.QueryStatusOnNode(guidCmdGroup : Guid, cmd : UInt32, pCmdText : IntPtr, result : byref<QueryStatusResult>) =
-                if guidCmdGroup = VsMenus.guidStandardCommandSet97 then
-                    if (cmd |> int32 |> enum) = Microsoft.VisualStudio.VSConstants.VSStd97CmdID.NewFolder then
-                        result <- result ||| QueryStatusResult.SUPPORTED ||| QueryStatusResult.INVISIBLE 
-                        VSConstants.S_OK
-                    else
-                        base.QueryStatusOnNode(guidCmdGroup, cmd, pCmdText, &result)
-                elif guidCmdGroup = VsMenus.guidStandardCommandSet2K then
+                if guidCmdGroup = VsMenus.guidStandardCommandSet2K then
                     match (cmd |> int32 |> enum) : VSConstants.VSStd2KCmdID with 
                     | _ when cmd = MyVSConstants.ExploreFolderInWindows ->
                         result <- result ||| QueryStatusResult.SUPPORTED ||| QueryStatusResult.ENABLED
@@ -946,6 +953,9 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     ProjectFileConstants.Content
                 elif (String.Compare(Path.GetExtension(strFileName), ".map", StringComparison.OrdinalIgnoreCase) = 0) then
                     ProjectFileConstants.Content
+                
+                elif (String.Compare(Path.GetExtension(strFileName), ".xaml", StringComparison.OrdinalIgnoreCase) = 0) then
+                    ProjectFileConstants.Resource
                 
                 // None (including .fsx/.fsscript)
                 else
@@ -1490,6 +1500,14 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member this.ProjectGuid = x.GetProjectGuid()
                     member this.LoadTime = creationTime
                     member this.ProjectProvider = Some (x :> IProvideProjectSite)
+                    member this.AssemblyReferences() =
+                        x.GetReferenceContainer().EnumReferences()
+                        |> Seq.choose (
+                            function
+                            | :? AssemblyReferenceNode as arn -> Some arn.Url
+                            | _ -> None
+                            )
+                        |> Array.ofSeq
                 }
 
             // Snapshot-capture relevent values from "this", and returns an IProjectSite 
@@ -1506,6 +1524,14 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 let taskReporter = Some(x.TaskReporter)
                 let targetFrameworkMoniker = x.GetTargetFrameworkMoniker()
                 let creationTime = System.DateTime.Now 
+                let assemblyReferences =
+                    x.GetReferenceContainer().EnumReferences()
+                    |> Seq.choose (
+                        function
+                        | :? AssemblyReferenceNode as arn -> Some arn.Url
+                        | _ -> None
+                        )
+                    |> Array.ofSeq
                 // This object is thread-safe
                 { new Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite with
                     member ips.SourceFilesOnDisk() = compileItems
@@ -1522,6 +1548,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member this.ProjectGuid = x.GetProjectGuid()
                     member this.LoadTime = creationTime
                     member this.ProjectProvider = Some (x :> IProvideProjectSite)
+                    member this.AssemblyReferences() = assemblyReferences
                 }
 
             // let the language service ask us questions
@@ -1607,7 +1634,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     // in the registry hive so that more editors can be added without changing this part of the
                     // code. FSharp only makes usage of one Editor Factory and therefore we will return 
                     // that guid
-                    guidEditorType <- new Guid(FSharpCommonConstants.editorFactoryGuidString)
+                    guidEditorType <- new Guid(FSharpConstants.editorFactoryGuidString)
                     VSConstants.S_OK
 
             interface IVsProjectSpecificEditorMap2 with 
@@ -1621,7 +1648,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     // in the registry hive so that more editors can be added without changing this part of the
                     // code. FSharp only makes usage of one Editor Factory and therefore we will return 
                     // that guid
-                    guidEditorType <- new Guid(FSharpCommonConstants.editorFactoryGuidString)
+                    guidEditorType <- new Guid(FSharpConstants.editorFactoryGuidString)
                     VSConstants.S_OK
 
                 member x.GetSpecificLanguageService(_mkDocument:string, guidLanguageService:byref<Guid> ) =
@@ -1960,32 +1987,128 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             inherit FolderNode(root, relativePath, projectElement)
 
             override x.QueryStatusOnNode(guidCmdGroup:Guid, cmd:uint32, pCmdText:IntPtr, result:byref<QueryStatusResult>) =
+                
+                let accessor = x.ProjectMgr.Site.GetService(typeof<SVsBuildManagerAccessor>) :?> IVsBuildManagerAccessor
+                let noBuildInProgress = not(VsBuildManagerAccessorExtensionMethods.IsInProgress(accessor))
+
                 if (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
-                   (cmd = (uint32)VSProjectConstants.MoveUpCmd.ID) then
-                        result <- result ||| QueryStatusResult.SUPPORTED
-                        if FSharpFileNode.CanMoveUp(x) then
-                            result <- result ||| QueryStatusResult.ENABLED
-                        VSConstants.S_OK
+                    (cmd = (uint32)VSProjectConstants.MoveUpCmd.ID) then
+
+                    result <- result ||| QueryStatusResult.SUPPORTED
+                    if noBuildInProgress && root.GetSelectedNodes().Count < 2 && FSharpFileNode.CanMoveUp(x) then
+                        result <- result ||| QueryStatusResult.ENABLED
+                    VSConstants.S_OK
+
                 elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
-                   (cmd = (uint32)VSProjectConstants.MoveDownCmd.ID) then
-                        result <- result ||| QueryStatusResult.SUPPORTED
-                        if FSharpFileNode.CanMoveDown(x) then
-                            result <- result ||| QueryStatusResult.ENABLED
-                        VSConstants.S_OK
+                    (cmd = (uint32)VSProjectConstants.MoveDownCmd.ID) then
+
+                    result <- result ||| QueryStatusResult.SUPPORTED
+                    if noBuildInProgress && root.GetSelectedNodes().Count < 2 && FSharpFileNode.CanMoveDown(x) then
+                        result <- result ||| QueryStatusResult.ENABLED
+                    VSConstants.S_OK
+
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.AddExistingItemAbove.ID) then
+
+                    result <- result ||| QueryStatusResult.SUPPORTED
+                    if noBuildInProgress && root.GetSelectedNodes().Count < 2 then
+                        result <- result ||| QueryStatusResult.ENABLED
+                    VSConstants.S_OK
+
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.AddNewItemAbove.ID) then
+
+                    result <- result ||| QueryStatusResult.SUPPORTED
+                    if noBuildInProgress && root.GetSelectedNodes().Count < 2 then
+                        result <- result ||| QueryStatusResult.ENABLED
+                    VSConstants.S_OK
+                        
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.AddExistingItemBelow.ID) then
+
+                    result <- result ||| QueryStatusResult.SUPPORTED
+                    if noBuildInProgress && root.GetSelectedNodes().Count < 2 then
+                        result <- result ||| QueryStatusResult.ENABLED
+                    VSConstants.S_OK
+
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.AddNewItemBelow.ID) then
+
+                    result <- result ||| QueryStatusResult.SUPPORTED
+                    if noBuildInProgress && root.GetSelectedNodes().Count < 2 then
+                        result <- result ||| QueryStatusResult.ENABLED
+                    VSConstants.S_OK
+
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.NewFolderAbove.ID) then
+
+                    result <- result ||| QueryStatusResult.SUPPORTED
+                    if noBuildInProgress && root.GetSelectedNodes().Count < 2 then
+                        result <- result ||| QueryStatusResult.ENABLED
+                    VSConstants.S_OK
+
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.NewFolderBelow.ID) then
+
+                    result <- result ||| QueryStatusResult.SUPPORTED
+                    if noBuildInProgress && root.GetSelectedNodes().Count < 2 then
+                        result <- result ||| QueryStatusResult.ENABLED
+                    VSConstants.S_OK
+
                 else
-                        base.QueryStatusOnNode(guidCmdGroup, cmd, pCmdText, &result)
+                    base.QueryStatusOnNode(guidCmdGroup, cmd, pCmdText, &result)
 
             override x.ExecCommandOnNode(guidCmdGroup:Guid, cmd:uint32, nCmdexecopt:uint32, pvaIn:IntPtr, pvaOut:IntPtr ) =
                 if (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
-                   (cmd = (uint32)VSProjectConstants.MoveUpCmd.ID) then 
-                       FSharpFileNode.MoveUp(x, root)
-                       VSConstants.S_OK
+                    (cmd = (uint32)VSProjectConstants.MoveUpCmd.ID) then 
+                    FSharpFileNode.MoveUp(x, root)
+                    VSConstants.S_OK
+
                 elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
-                   (cmd = (uint32)VSProjectConstants.MoveDownCmd.ID) then 
-                       FSharpFileNode.MoveDown(x, root)
-                       VSConstants.S_OK
+                    (cmd = (uint32)VSProjectConstants.MoveDownCmd.ID) then 
+                    FSharpFileNode.MoveDown(x, root)
+                    VSConstants.S_OK
+
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.AddNewItemAbove.ID) then 
+                    let result = root.MoveNewlyAddedFileAbove (x, fun () ->
+                        x.Parent.AddItemToHierarchy(HierarchyAddType.AddNewItem))
+                    root.EnsureMSBuildAndSolutionExplorerAreInSync()
+                    result
+                        
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.AddExistingItemAbove.ID) then 
+                    let result = root.MoveNewlyAddedFileAbove (x, fun () ->
+                        x.Parent.AddItemToHierarchy(HierarchyAddType.AddExistingItem))
+                    root.EnsureMSBuildAndSolutionExplorerAreInSync()
+                    result
+                        
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.AddNewItemBelow.ID) then 
+                    let result = root.MoveNewlyAddedFileBelow (x, fun () ->
+                        x.Parent.AddItemToHierarchy(HierarchyAddType.AddNewItem))
+                    root.EnsureMSBuildAndSolutionExplorerAreInSync()
+                    result
+                        
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.AddExistingItemBelow.ID) then 
+                    let result = root.MoveNewlyAddedFileBelow (x, fun () ->
+                        x.Parent.AddItemToHierarchy(HierarchyAddType.AddExistingItem))
+                    root.EnsureMSBuildAndSolutionExplorerAreInSync()
+                    result
+                    
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.NewFolderAbove.ID) then 
+
+                    x.Parent.AddNewFolder(fun newNode -> FSharpFileNode.MoveTo(Above, x, newNode))
+
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.NewFolderBelow.ID) then 
+                    
+                    x.Parent.AddNewFolder(fun newNode -> FSharpFileNode.MoveTo(Below, x, newNode))
+
                 else
-                        base.ExecCommandOnNode(guidCmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut)
+                    base.ExecCommandOnNode(guidCmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut)
             
     type internal FSharpBuildAction =
        | None = 0
@@ -2049,7 +2172,10 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             if (not(fileNameEditable) && (propertyDescriptor.Name = "FileName"))
             then Microsoft.VisualStudio.Editors.PropertyPages.FilteredObjectWrapper.ReadOnlyPropertyDescriptorWrapper(propertyDescriptor) :> PropertyDescriptor
             else base.CreateDesignPropertyDescriptor(propertyDescriptor)
-
+       
+    type internal InsertionLocation =
+    | Above
+    | Below
 
     /// Represents most (non-reference) nodes in the solution hierarchy of an F# project (e.g. foo.fs, bar.fsi, app.config)
     type internal FSharpFileNode(root:FSharpProjectNode, e:ProjectElement, hierarchyId) = 
@@ -2080,6 +2206,18 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 let sp = new Microsoft.VisualStudio.Shell.ServiceProvider(iOle)
 
                 Some(new SelectionElementValueChangedListener(sp))
+
+            /// Unlink a node from its siblings.
+            static let unlinkFromSiblings (node : HierarchyNode) =
+                match node.PreviousSibling with
+                | null ->
+                    node.Parent.FirstChild <- node.NextSibling
+                | previous ->
+                    previous.NextSibling <- node.NextSibling
+                if node.Parent.LastChild = node then
+                    node.Parent.LastChild <- node.PreviousSibling
+                node.NextSibling <- null
+                node.OnItemDeleted()
 
             do selectionChangedListener.Value.Init()
                         
@@ -2224,40 +2362,116 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 lastNode.NextSibling <- tmp
                 root.OnItemAdded(lastNode.Parent, lastNode)
                 lastNode :?> FSharpFileNode
+            
+            /// Move a node to above/below the 'target node' in the hierarchy.
+            /// If it is not valid for the node to be directly below the 'target node',
+            /// a warning dialog will be shown.
+            static member MoveTo(location : InsertionLocation, targetNode : HierarchyNode, nodeToBeMoved : HierarchyNode) : unit =
+                let root = nodeToBeMoved.ProjectMgr
+                Debug.Assert(targetNode.ProjectMgr = nodeToBeMoved.ProjectMgr)
 
+                // if targetNode and nodeToBeMoved are not siblings, try to find
+                // the (grand)parent of nodeToBeMoved that is a sibling
+                let rec tryFindTargetNodeSibling =
+                    function
+                    | (null : HierarchyNode) ->
+                        None
+                    | node when node.Parent = targetNode.Parent ->
+                        Some node
+                    | node ->
+                        tryFindTargetNodeSibling node.Parent
+                   
+                let isFileNode : HierarchyNode -> bool =
+                    function
+                    | :? FSharpFileNode -> true
+                    | _ -> false
+                
+                match tryFindTargetNodeSibling nodeToBeMoved with
+                | Some siblingNode when siblingNode <> nodeToBeMoved ->
+                    let fileChildren = siblingNode.AllDescendants |> Seq.filter isFileNode |> List.ofSeq
+                    if fileChildren = [nodeToBeMoved] then
+                        Ok siblingNode
+                    else
+                        Error <| String.Format(FSharpSR.GetString(FSharpSR.FileCannotBePlacedMultipleFiles), siblingNode.VirtualNodeName)
+                | Some siblingNode ->
+                    Ok siblingNode
+                | None ->
+                    Error <| FSharpSR.GetString(FSharpSR.FileCannotBePlacedDifferentSubtree)
+                |> function
+                | Ok node ->
+                    unlinkFromSiblings node
+
+                    match location with
+                    | Above ->
+                        match targetNode.PreviousSibling with
+                        | null -> targetNode.Parent.FirstChild <- node
+                        | prev -> prev.NextSibling <- node
+
+                        node.NextSibling <- targetNode
+                    | Below ->
+                        match targetNode.NextSibling with
+                        | null -> targetNode.Parent.LastChild <- node
+                        | next -> node.NextSibling <- next
+                        
+                        targetNode.NextSibling <- node
+                        
+                    root.OnItemAdded(node.Parent, node)
+                | Error message ->
+                    // If it is not called from an automation method show a dialog box
+                    if Utilities.IsInAutomationFunction(root.Site) then
+                        raise <| InvalidOperationException message
+                    else
+                        let title = null
+                        let icon = OLEMSGICON.OLEMSGICON_WARNING
+                        let buttons = OLEMSGBUTTON.OLEMSGBUTTON_OK
+                        let defaultButton = OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST
+
+                        let relPath = PackageUtilities.MakeRelativeIfRooted(nodeToBeMoved.Url, root.BaseURI)
+                        let relTargetPath = PackageUtilities.MakeRelativeIfRooted(targetNode.Url, root.BaseURI)
+
+                        let bodyString =
+                            match location with
+                            | Above -> FSharpSR.FileCannotBePlacedBodyAbove
+                            | Below -> FSharpSR.FileCannotBePlacedBodyBelow
+                            |> FSharpSR.GetStringWithCR
+
+                        let entireMessage = String.Format(bodyString, relPath, relTargetPath, message)
+                        VsShellUtilities.ShowMessageBox(root.Site, title, entireMessage, icon, buttons, defaultButton) |> ignore
+            
+            /// Move the node to the bottom of its subfolder within the Solution Explorer.
+            /// If its directory hierarchy does not exist, create it.
+            static member MoveToBottomOfGroup(node : HierarchyNode) : unit =
+                match node with
+                | :? FSharpFileNode as fileNode ->
+                    let root = fileNode.ProjectMgr
+
+                    unlinkFromSiblings fileNode
+                    
+                    let rec tryFindAdoptiveParent (currentPath : string list, remainingPath : string list, currentParent : HierarchyNode) =
+                        match remainingPath with
+                        | [] ->
+                            currentParent
+                        | folderName::restPath ->
+                            let path = currentPath @ [folderName]
+                            let pathStr = String.concat "\\" path
+                            let folderNode = root.VerifySubFolderExists(pathStr + "\\", currentParent)
+                            tryFindAdoptiveParent (path, restPath, folderNode)
+                    
+                    let pathParts = Path.GetDirectoryName(fileNode.RelativeFilePath).Split([| Path.DirectorySeparatorChar |], StringSplitOptions.RemoveEmptyEntries)
+                    let parent = tryFindAdoptiveParent ([], List.ofArray pathParts, root)
+                    parent.AddChild(fileNode)
+                | _ ->
+                    Debug.Assert(false, sprintf "Unable to find FSharpFileNode '%s'" node.Url)
+            
             override x.ExecCommandOnNode(guidCmdGroup:Guid, cmd:uint32, nCmdexecopt:uint32, pvaIn:IntPtr, pvaOut:IntPtr ) =
                 Debug.Assert(x.ProjectMgr <> null, "The FSharpFileNode has no project manager")
 
                 let completeRenameIfNecessary() = 
-                    let tree = 
-                        match UIHierarchyUtilities.GetUIHierarchyWindow(root.Site, HierarchyNode.SolutionExplorer) with
-                        | :? Microsoft.VisualStudio.PlatformUI.SolutionNavigatorPane as snp ->
-                            match snp.Navigator with 
-                            | null -> null 
-                            | n -> 
-                                match n.TreeView with 
-                                | null -> null
-                                | t -> t
-                        | _ -> null
-                    if tree <> null && tree.IsInRenameMode then
-                        let id = x.ID
-                        let oldName = x.GetEditLabel()
-                        // if tree is in rename mode now - commit renaming
-                        // since rename is implemented via remove\add set of operations - after renaming we need to fetch node that corresponds to the current one
-
-                        // rename may fail (i.e if new name contains invalid characters), in this case user will see error message and after that failure will be swallowed
-                        // if this happens - we need to cancel current transaction,
-                        // otherwise it will hold current hierarchy node. After move operation is completed - current node will become invalid => may lead to ObjectDisposedExceptions.
-                        // Since error is not appear directly in the code - we check if old and new labels match and if yes - treat it as reason that error happens
-                        tree.CommitRename(Microsoft.Internal.VisualStudio.PlatformUI.RenameItemCompletionFocusBehavior.Refocus)
-                        
-                        let node = root.ItemIdMap.[id] :?> FSharpFileNode
-                        if node.GetEditLabel() = oldName then
-                            tree.CancelRename(Microsoft.Internal.VisualStudio.PlatformUI.RenameItemCompletionFocusBehavior.Refocus)
-                        node
-                    else
-                        x
-                
+                    match SolutionPaneUtil.TryRenameAndReturnNode 
+                            (root, HierarchyNode.SolutionExplorer, x.ID, fun()-> x.GetEditLabel()) with
+                    | null -> x
+                    | node -> node :?> FSharpFileNode
+             
                 if (x.ProjectMgr= null) then 
                     raise <| InvalidOperationException()
 
@@ -2278,30 +2492,41 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
                    (cmd = (uint32)VSProjectConstants.AddNewItemAbove.ID) then 
                         let result = root.MoveNewlyAddedFileAbove (x, fun () ->
-                            root.AddItemToHierarchy(HierarchyAddType.AddNewItem))
+                            x.AddItemToHierarchy(HierarchyAddType.AddNewItem))
                         root.EnsureMSBuildAndSolutionExplorerAreInSync()
                         result
                         
                 elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
                    (cmd = (uint32)VSProjectConstants.AddExistingItemAbove.ID) then 
                         let result = root.MoveNewlyAddedFileAbove (x, fun () ->
-                            root.AddItemToHierarchy(HierarchyAddType.AddExistingItem))
+                            x.AddItemToHierarchy(HierarchyAddType.AddExistingItem))
                         root.EnsureMSBuildAndSolutionExplorerAreInSync()
                         result
                         
                 elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
                    (cmd = (uint32)VSProjectConstants.AddNewItemBelow.ID) then 
                         let result = root.MoveNewlyAddedFileBelow (x, fun () ->
-                            root.AddItemToHierarchy(HierarchyAddType.AddNewItem))
+                            x.AddItemToHierarchy(HierarchyAddType.AddNewItem))
                         root.EnsureMSBuildAndSolutionExplorerAreInSync()
                         result
                         
                 elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
                    (cmd = (uint32)VSProjectConstants.AddExistingItemBelow.ID) then 
                         let result = root.MoveNewlyAddedFileBelow (x, fun () ->
-                            root.AddItemToHierarchy(HierarchyAddType.AddExistingItem))
+                            x.AddItemToHierarchy(HierarchyAddType.AddExistingItem))
                         root.EnsureMSBuildAndSolutionExplorerAreInSync()
                         result
+
+                    
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.NewFolderAbove.ID) then 
+                    
+                    x.Parent.AddNewFolder(fun newNode -> FSharpFileNode.MoveTo(Above, x, newNode))
+
+                elif (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.NewFolderBelow.ID) then 
+
+                    x.Parent.AddNewFolder(fun newNode -> FSharpFileNode.MoveTo(Below, x, newNode))
                         
                 else
                     base.ExecCommandOnNode(guidCmdGroup, cmd, nCmdexecopt, pvaIn, pvaOut)
@@ -2391,6 +2616,24 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                             result <- result ||| QueryStatusResult.ENABLED
                         VSConstants.S_OK
                         
+                | _ when 
+                    (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.NewFolderAbove.ID) ->
+
+                    result <- result ||| QueryStatusResult.SUPPORTED
+                    if noBuildInProgress && root.GetSelectedNodes().Count < 2 then
+                        result <- result ||| QueryStatusResult.ENABLED
+                    VSConstants.S_OK
+
+                | _ when 
+                    (guidCmdGroup = VSProjectConstants.guidFSharpProjectCmdSet) &&
+                    (cmd = (uint32)VSProjectConstants.NewFolderBelow.ID) ->
+
+                    result <- result ||| QueryStatusResult.SUPPORTED
+                    if noBuildInProgress && root.GetSelectedNodes().Count < 2 then
+                        result <- result ||| QueryStatusResult.ENABLED
+                    VSConstants.S_OK
+
                 | _ -> base.QueryStatusOnNode(guidCmdGroup, cmd, pCmdText, &result)
 
             static member CanMoveDown(node : HierarchyNode) =
@@ -2520,15 +2763,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 root.SetProjectFileDirty(true)
                 // Recompute & notify of changes
                 root.ComputeSourcesAndFlags()
-
-            member x.GetRelativePath() = 
-                let mutable relativePath = Path.GetFileName(x.ItemNode.GetMetadata(ProjectFileConstants.Include))
-                let mutable  parent = x.Parent
-                while (parent <> null && not (parent :? ProjectNode)) do
-                    relativePath <- Path.Combine(parent.Caption, relativePath)
-                    parent <- parent.Parent
-                relativePath
-
+                
             member x.ServiceCreator : OleServiceProvider.ServiceCreatorCallback =
                 new OleServiceProvider.ServiceCreatorCallback(x.CreateServices)
 

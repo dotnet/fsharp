@@ -261,23 +261,31 @@ type ILGenericVariance =
 /// Type refs, i.e. references to types in some .NET assembly
 [<Sealed>]
 type ILTypeRef =
+
     /// Create a ILTypeRef.
     static member Create : scope: ILScopeRef * enclosing: string list * name: string -> ILTypeRef
 
     /// Where is the type, i.e. is it in this module, in another module in this assembly or in another assembly? 
     member Scope: ILScopeRef
+
     /// The list of enclosing type names for a nested type. If non-nil then the first of these also contains the namespace.
     member Enclosing: string list
+
     /// The name of the type. This also contains the namespace if Enclosing is empty.
     member Name: string
+
     /// The name of the type in the assembly using the '.' notation for nested types.
     member FullName: string
+
     /// The name of the type in the assembly using the '+' notation for nested types.
     member BasicQualifiedName : string
+
     member QualifiedName: string
+
 #if EXTENSIONTYPING
     member QualifiedNameWithNoShortPrimaryAssembly: string
 #endif
+
     interface System.IComparable
     
 /// Type specs and types.  
@@ -295,6 +303,7 @@ type ILTypeSpec =
 
     /// Which type is being referred to?
     member TypeRef: ILTypeRef
+
     /// The type instantiation if the type is generic, otherwise empty
     member GenericArgs: ILGenericArgs
     member Scope: ILScopeRef
@@ -1397,7 +1406,7 @@ type ILAssemblyManifest =
       JitTracking: bool;
       IgnoreSymbolStoreSequencePoints: bool;
       Retargetable: bool;
-      /// Records the types impemented by this asssembly in auxiliary 
+      /// Records the types implemented by this assembly in auxiliary 
       /// modules. 
       ExportedTypes: ILExportedTypesAndForwarders;
       /// Records whether the entrypoint resides in another module. 
@@ -1484,7 +1493,7 @@ val ungenericizeTypeName: string -> string (* e.g. List`1 --> List *)
 // e.g. by filling in all appropriate record fields.
 // ==================================================================== *)
 
-/// A table of common references to items in primary assebly (System.Runtime or mscorlib).
+/// A table of common references to items in primary assembly (System.Runtime or mscorlib).
 /// If a particular version of System.Runtime.dll has been loaded then you should 
 /// reference items from it via an ILGlobals for that specific version built using mkILGlobals. 
 [<NoEquality; NoComparison; Class>]
@@ -1591,7 +1600,7 @@ val mkILFieldSpecInTy: ILType * string * ILType -> ILFieldSpec
 
 val mkILCallSig: ILCallingConv * ILType list * ILType -> ILCallingSignature
 
-/// Make generalized verions of possibly-generic types,
+/// Make generalized versions of possibly-generic types,
 /// e.g. Given the ILTypeDef for List, return the type "List<T>".
 val mkILFormalBoxedTy: ILTypeRef -> ILGenericParameterDef list -> ILType
 val mkILFormalNamedTy: ILBoxity -> ILTypeRef -> ILGenericParameterDef list -> ILType
@@ -1710,8 +1719,8 @@ val prependInstrsToClassCtor: ILInstr list -> ILSourceMarker option -> ILTypeDef
 
 /// Derived functions for making some simple constructors
 val mkILStorageCtor: ILSourceMarker option * ILInstr list * ILType * (string * ILType) list * ILMemberAccess -> ILMethodDef
-val mkILSimpleStorageCtor: ILSourceMarker option * ILTypeSpec option * ILType * (string * ILType) list * ILMemberAccess -> ILMethodDef
-val mkILSimpleStorageCtorWithParamNames: ILSourceMarker option * ILTypeSpec option * ILType * (string * string * ILType) list * ILMemberAccess -> ILMethodDef
+val mkILSimpleStorageCtor: ILSourceMarker option * ILTypeSpec option * ILType * ILParameter list * (string * ILType) list * ILMemberAccess -> ILMethodDef
+val mkILSimpleStorageCtorWithParamNames: ILSourceMarker option * ILTypeSpec option * ILType * ILParameter list * (string * string * ILType) list * ILMemberAccess -> ILMethodDef
 
 val mkILDelegateMethods: ILGlobals -> ILType * ILType -> ILParameter list * ILReturn -> ILMethodDef list
 

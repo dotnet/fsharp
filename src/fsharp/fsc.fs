@@ -72,7 +72,7 @@ type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameFo
 
     /// Called when an error or warning occurs
     abstract HandleIssue: tcConfigB: TcConfigBuilder * error: PhasedDiagnostic * isError: bool -> unit
-    /// Called when 'too many errors' has occured
+    /// Called when 'too many errors' has occurred
     abstract HandleTooManyErrors: text: string -> unit
 
     override x.ErrorCount = errors
@@ -152,7 +152,7 @@ type ConsoleLoggerProvider() =
     override this.CreateErrorLoggerUpToMaxErrors(tcConfigBuilder, exiter) = ConsoleErrorLoggerUpToMaxErrors(tcConfigBuilder, exiter)
 
 
-/// Notify the exiter if any error has occured 
+/// Notify the exiter if any error has occurred 
 let AbortOnError (errorLogger:ErrorLogger, exiter : Exiter) = 
     if errorLogger.ErrorCount > 0 then
         exiter.Exit 1
@@ -444,21 +444,18 @@ let outpath outfile extn =
 //----------------------------------------------------------------------------
   
 let GenerateInterfaceData(tcConfig:TcConfig) = 
-    (* (tcConfig.target = Dll || tcConfig.target = Module) && *)
     not tcConfig.standalone && not tcConfig.noSignatureData 
 
-let EncodeInterfaceData(tcConfig:TcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild) = 
+let EncodeInterfaceData(tcConfig: TcConfig, tcGlobals, exportRemapping, generatedCcu, outfile, isIncrementalBuild) = 
     if GenerateInterfaceData(tcConfig) then 
         let resource = WriteSignatureData (tcConfig, tcGlobals, exportRemapping, generatedCcu, outfile)
         // The resource gets written to a file for FSharp.Core
         let useDataFiles = (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib) && not isIncrementalBuild
+        if useDataFiles then 
+            let sigDataFileName = (Filename.chopExtension outfile)+".sigdata"
+            File.WriteAllBytes(sigDataFileName, resource.Bytes)
         let resources = 
-            if useDataFiles then 
-                let sigDataFileName = (Filename.chopExtension outfile)+".sigdata"
-                File.WriteAllBytes(sigDataFileName, resource.Bytes)
-                []
-            else
-                [ resource ]
+            [ resource ]
         let sigAttr = mkSignatureDataVersionAttr tcGlobals (IL.parseILVersion Internal.Utilities.FSharpEnvironment.FSharpBinaryMetadataFormatRevision) 
         [sigAttr], resources
       else 
@@ -470,28 +467,24 @@ let EncodeInterfaceData(tcConfig:TcConfig, tcGlobals, exportRemapping, generated
 //----------------------------------------------------------------------------
 
 let GenerateOptimizationData(tcConfig) = 
-    (* (tcConfig.target =Dll || tcConfig.target = Module) && *)
     GenerateInterfaceData(tcConfig) 
 
-let EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, data) = 
+let EncodeOptimizationData(tcGlobals, tcConfig: TcConfig, outfile, exportRemapping, data, isIncrementalBuild) = 
     if GenerateOptimizationData tcConfig then 
         let data = map2Of2 (Optimizer.RemapOptimizationInfo tcGlobals exportRemapping) data
-        if verbose then dprintn "Generating optimization data attribute..."
-        // REVIEW: need a better test for this
-        if tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib then 
+        // As with the sigdata file, the optdata gets written to a file for FSharp.Core
+        let useDataFiles = (tcConfig.useOptimizationDataFile || tcGlobals.compilingFslib) && not isIncrementalBuild
+        if useDataFiles then 
             let ccu, modulInfo = data
             let bytes = TastPickle.pickleObjWithDanglingCcus outfile tcGlobals ccu Optimizer.p_CcuOptimizationInfo modulInfo
             let optDataFileName = (Filename.chopExtension outfile)+".optdata"
             File.WriteAllBytes(optDataFileName, bytes)
-        // As with the sigdata file, the optdata gets written to a file for FSharp.Core
-        if tcGlobals.compilingFslib then 
-            []
-        else
-            let (ccu, optData) = 
-                if tcConfig.onlyEssentialOptimizationData || tcConfig.useOptimizationDataFile 
-                then map2Of2 Optimizer.AbstractOptimizationInfoToEssentials data 
-                else data
-            [ WriteOptimizationData (tcGlobals, outfile, ccu, optData) ]
+        let (ccu, optData) = 
+            if tcConfig.onlyEssentialOptimizationData then 
+                map2Of2 Optimizer.AbstractOptimizationInfoToEssentials data 
+            else 
+                data
+        [ WriteOptimizationData (tcGlobals, outfile, ccu, optData) ]
     else
         [ ]
 
@@ -1761,6 +1754,12 @@ let main0(ctok, argv, referenceResolver, bannerAlreadyPrinted, exiter:Exiter, er
         with e -> 
             errorRecoveryNoRange e
             exiter.Exit 1
+    
+    let inputs =
+        // Deduplicate module names
+        let moduleNamesDict = Dictionary<string,Set<string>>()
+        inputs
+        |> List.map (fun (input,x) -> DeduplicateParsedInputModuleName moduleNamesDict input,x)
 
     if tcConfig.parseOnly then exiter.Exit 0 
     if not tcConfig.continueAfterParseFailure then 
@@ -1878,7 +1877,7 @@ let main2a(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlo
         
     // Encode the optimization data
     ReportTime tcConfig ("Encoding OptData")
-    let optDataResources = EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData))
+    let optDataResources = EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
 
     // Pass on only the minimum information required for the next phase
     Args (ctok, tcConfig, tcImports, tcGlobals, errorLogger, generatedCcu, outfile, optimizedImpls, topAttrs, pdbfile, assemblyName, (sigDataAttributes, sigDataResources), optDataResources, assemVerFromAttrib, signingInfo, metadataVersion, exiter)
@@ -1956,7 +1955,6 @@ let main4 (Args (ctok, tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainMod
                     embedSourceList = tcConfig.embedSourceList
                     sourceLink = tcConfig.sourceLink
                     signer = GetStrongNameSigner signingInfo
-                    fixupOverlappingSequencePoints = false
                     dumpDebugInfo = tcConfig.dumpDebugInfo }, 
                   ilxMainModule)
             with Failure msg -> 

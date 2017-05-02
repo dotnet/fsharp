@@ -16,6 +16,8 @@ open Microsoft.FSharp.Compiler.AbstractIL.Extensions
 open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX
 open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 open Microsoft.FSharp.Compiler.AbstractIL.IL
+open Microsoft.FSharp.Compiler.ErrorLogger
+open Microsoft.FSharp.Compiler.Range
 
 open Microsoft.FSharp.Core.Printf
 
@@ -359,11 +361,15 @@ let convTypeRefAux (cenv:cenv) (tref:ILTypeRef) =
                 let asmName    = convAssemblyRef asmref
                 FileSystem.AssemblyLoad(asmName)
         let typT = assembly.GetType(qualifiedName)
-        typT |> nonNull "convTypeRefAux" 
+        match typT with 
+        | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", qualifiedName, asmref.QualifiedName), range0))
+        | res -> res
     | ILScopeRef.Module _ 
     | ILScopeRef.Local _ ->
         let typT = Type.GetType(qualifiedName) 
-        typT |> nonNull "convTypeRefAux" 
+        match typT with 
+        | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", qualifiedName, "<emitted>"), range0))
+        | res -> res
 
 
 
@@ -431,11 +437,15 @@ let envUpdateCreatedTypeRef emEnv (tref:ILTypeRef) =
         emEnv
 
 let convTypeRef cenv emEnv preferCreated (tref:ILTypeRef) = 
-    match Zmap.tryFind tref emEnv.emTypMap with
-    | Some (_typT,_typB,_typeDef,Some createdTyp) when preferCreated -> createdTyp |> nonNull "convTypeRef: null create type table?"
-    | Some (typT,_typB,_typeDef,_)                                  -> typT       |> nonNull "convTypeRef: null type table?"
-    | None                                                        -> convTypeRefAux cenv tref 
-
+    let res = 
+        match Zmap.tryFind tref emEnv.emTypMap with
+        | Some (_typT,_typB,_typeDef,Some createdTyp) when preferCreated -> createdTyp 
+        | Some (typT,_typB,_typeDef,_)                                  -> typT       
+        | None                                                        -> convTypeRefAux cenv tref 
+    match res with 
+    | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", tref.QualifiedName, tref.Scope.QualifiedName), range0))
+    | _ -> res
+  
 let envBindConsRef emEnv (mref:ILMethodRef) consB = 
     {emEnv with emConsMap = Zmap.add mref consB emEnv.emConsMap}
 
@@ -484,11 +494,12 @@ let envPopTyvars  emEnv      =  {emEnv with emTyvars = List.tail emEnv.emTyvars}
 let envGetTyvar   emEnv u16  =  
     match emEnv.emTyvars with
     | []     -> failwith "envGetTyvar: not scope of type vars"
-    | tvs::_ -> let i = int32 u16 
-                if i<0 || i>= Array.length tvs then
-                    failwith (sprintf "want tyvar #%d, but only had %d tyvars" i (Array.length tvs))
-                else
-                    tvs.[i]
+    | tvs::_ -> 
+        let i = int32 u16 
+        if i<0 || i>= Array.length tvs then
+            failwith (sprintf "want tyvar #%d, but only had %d tyvars" i (Array.length tvs))
+        else
+            tvs.[i]
 
 let isEmittedTypeRef emEnv tref = Zmap.mem tref emEnv.emTypMap
 
@@ -519,16 +530,20 @@ let convCallConv (Callconv (hasThis,basic)) =
 let rec convTypeSpec cenv emEnv preferCreated (tspec:ILTypeSpec) =
     let typT   = convTypeRef cenv emEnv preferCreated tspec.TypeRef 
     let tyargs = List.map (convTypeAux cenv emEnv preferCreated) tspec.GenericArgs
-    match isNil tyargs,typT.IsGenericType with
-    | _   ,true  -> typT.MakeGenericType(List.toArray tyargs)   |> nonNull "convTypeSpec: generic" 
-    | true,false -> typT                                          |> nonNull "convTypeSpec: non generic" 
-    | _   ,false -> failwithf "- convTypeSpec: non-generic type '%O' has type instance of length %d?" typT tyargs.Length 
+    let res = 
+        match isNil tyargs,typT.IsGenericType with
+        | _   ,true  -> typT.MakeGenericType(List.toArray tyargs)   
+        | true,false -> typT                                          
+        | _   ,false -> null
+    match res with 
+    | null -> error(Error(FSComp.SR.itemNotFoundDuringDynamicCodeGen ("type", tspec.TypeRef.QualifiedName, tspec.Scope.QualifiedName), range0))
+    | _ -> res
       
 and convTypeAux cenv emEnv preferCreated typ =
     match typ with
     | ILType.Void               -> Type.GetType("System.Void")
     | ILType.Array (shape,eltType) -> 
-        let baseT = convTypeAux cenv emEnv preferCreated eltType |> nonNull "convType: array base"
+        let baseT = convTypeAux cenv emEnv preferCreated eltType 
         let nDims = shape.Rank
         // MakeArrayType()  returns "eltType[]"
         // MakeArrayType(1) returns "eltType[*]"
@@ -538,15 +553,18 @@ and convTypeAux cenv emEnv preferCreated typ =
         if nDims=1
         then baseT.MakeArrayType() 
         else baseT.MakeArrayType shape.Rank
-    | ILType.Value tspec        -> convTypeSpec cenv emEnv preferCreated tspec              |> nonNull "convType: value"
-    | ILType.Boxed tspec        -> convTypeSpec cenv emEnv preferCreated tspec             |> nonNull "convType: boxed"
-    | ILType.Ptr eltType        -> let baseT = convTypeAux cenv emEnv preferCreated eltType  |> nonNull "convType: ptr eltType"
-                                   baseT.MakePointerType()                             |> nonNull "convType: ptr" 
-    | ILType.Byref eltType      -> let baseT = convTypeAux cenv emEnv preferCreated eltType |> nonNull "convType: byref eltType"
-                                   baseT.MakeByRefType()                               |> nonNull "convType: byref" 
-    | ILType.TypeVar tv         -> envGetTyvar emEnv tv                                |> nonNull "convType: tyvar" 
+    | ILType.Value tspec        -> convTypeSpec cenv emEnv preferCreated tspec
+    | ILType.Boxed tspec        -> convTypeSpec cenv emEnv preferCreated tspec
+    | ILType.Ptr eltType        -> 
+        let baseT = convTypeAux cenv emEnv preferCreated eltType
+        baseT.MakePointerType()
+    | ILType.Byref eltType      -> 
+        let baseT = convTypeAux cenv emEnv preferCreated eltType
+        baseT.MakeByRefType()
+    | ILType.TypeVar tv         -> envGetTyvar emEnv tv
     // Consider completing the following cases:                                                      
-    | ILType.Modified (false, _, modifiedTy)  -> convTypeAux cenv emEnv preferCreated modifiedTy
+    | ILType.Modified (false, _, modifiedTy)  -> 
+        convTypeAux cenv emEnv preferCreated modifiedTy
     | ILType.Modified (true, _, _) -> failwith "convType: modreq"
     | ILType.FunctionPointer _callsig -> failwith "convType: fptr"
 
@@ -617,15 +635,19 @@ let convFieldInit x =
 let TypeBuilderInstantiationT = 
     let ty = 
 #if ENABLE_MONO_SUPPORT
-        if runningOnMono then 
-            Type.GetType("System.Reflection.MonoGenericClass")
+        if runningOnMono then
+            let ty = Type.GetType("System.Reflection.MonoGenericClass")
+            match ty with
+            | null -> Type.GetType("System.Reflection.Emit.TypeBuilderInstantiation")
+            | _ -> ty
         else
 #endif
             Type.GetType("System.Reflection.Emit.TypeBuilderInstantiation")
+
     assert (not (isNull ty))
     ty
 
-let typeIsNotQueryable (typ : Type) =
+let typeIsNotQueryable (typ : Type) = 
 #if FX_RESHAPED_REFLECTION
     let typ = typ.GetTypeInfo()
 #endif
@@ -635,11 +657,18 @@ let typeIsNotQueryable (typ : Type) =
 //----------------------------------------------------------------------------
 
 let queryableTypeGetField _emEnv (parentT:Type) (fref: ILFieldRef)  =
-    parentT.GetField(fref.Name, BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance ||| BindingFlags.Static )  
-        |> nonNull "queryableTypeGetField"
+    let res = parentT.GetField(fref.Name, BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance ||| BindingFlags.Static )  
+    match res with 
+    | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("field", fref.Name, fref.EnclosingTypeRef.FullName, fref.EnclosingTypeRef.Scope.QualifiedName), range0))
+    | _ -> res
     
 let nonQueryableTypeGetField (parentTI:Type) (fieldInfo : FieldInfo) : FieldInfo = 
-    if parentTI.IsGenericType then TypeBuilder.GetField(parentTI,fieldInfo) else fieldInfo
+    let res = 
+        if parentTI.IsGenericType then TypeBuilder.GetField(parentTI,fieldInfo) 
+        else fieldInfo
+    match res with 
+    | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("field", fieldInfo.Name, parentTI.AssemblyQualifiedName, parentTI.Assembly.FullName), range0))
+    | _ -> res
 
 
 let convFieldSpec cenv emEnv fspec =
@@ -731,10 +760,9 @@ let queryableTypeGetMethodBySearch cenv emEnv parentT (mref:ILMethodRef) =
         match List.tryFind select methInfos with
         | None          -> failwith "convMethodRef: could not bind to method"
         | Some methInfo -> methInfo (* return MethodInfo for (generic) type's (generic) method *)
-                           |> nonNull "convMethodRef"
           
 let queryableTypeGetMethod cenv emEnv parentT (mref:ILMethodRef) =
-    assert(not (typeIsNotQueryable(parentT)));
+    assert(not (typeIsNotQueryable(parentT)))
     if mref.GenericArity = 0 then 
         let tyargTs = getGenericArgumentsOfType parentT      
         let argTs,resT = 
@@ -771,20 +799,23 @@ let nonQueryableTypeGetMethod (parentTI:Type) (methInfo : MethodInfo) : MethodIn
 
 let convMethodRef cenv emEnv (parentTI:Type) (mref:ILMethodRef) =
     let parent = mref.EnclosingTypeRef
-    if isEmittedTypeRef emEnv parent then
-        // NOTE: if "convType becomes convCreatedType", then handle queryable types here too. [bug 4063]      
-        // Emitted type, can get fully generic MethodBuilder from env.
-        let methB = envGetMethB emEnv mref
-        nonQueryableTypeGetMethod parentTI methB
-        |> nonNull "convMethodRef (emitted)"
-    else
-        // Prior type.
-        if typeIsNotQueryable parentTI then 
-            let parentT = getTypeConstructor parentTI
-            let methInfo = queryableTypeGetMethod cenv emEnv parentT mref 
-            nonQueryableTypeGetMethod parentTI methInfo
-        else 
-            queryableTypeGetMethod cenv emEnv parentTI mref 
+    let res = 
+        if isEmittedTypeRef emEnv parent then
+            // NOTE: if "convType becomes convCreatedType", then handle queryable types here too. [bug 4063]      
+            // Emitted type, can get fully generic MethodBuilder from env.
+            let methB = envGetMethB emEnv mref
+            nonQueryableTypeGetMethod parentTI methB
+        else
+            // Prior type.
+            if typeIsNotQueryable parentTI then 
+                let parentT = getTypeConstructor parentTI
+                let methInfo = queryableTypeGetMethod cenv emEnv parentT mref 
+                nonQueryableTypeGetMethod parentTI methInfo
+            else 
+                queryableTypeGetMethod cenv emEnv parentTI mref 
+    match res with 
+    | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("method", mref.Name, parentTI.FullName, parentTI.Assembly.FullName), range0))
+    | _ -> res
 
 //----------------------------------------------------------------------------
 // convMethodSpec
@@ -800,7 +831,7 @@ let convMethodSpec cenv emEnv (mspec:ILMethodSpec) =
             let minstTs  = convTypesToArray cenv emEnv mspec.GenericArgs
             let methInfo = methInfo.MakeGenericMethod minstTs // instantiate method 
             methInfo
-    methInfo |> nonNull "convMethodSpec"
+    methInfo 
 
 //----------------------------------------------------------------------------
 // - QueryableTypeGetConstructors: get a constructor on a non-TypeBuilder type
@@ -811,7 +842,11 @@ let queryableTypeGetConstructor cenv emEnv (parentT:Type) (mref:ILMethodRef)  =
     let reqArgTs  = 
         let emEnv = envPushTyvars emEnv tyargTs
         convTypesToArray cenv emEnv mref.ArgTypes
-    parentT.GetConstructor(BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance,null, reqArgTs,null)  
+    let res = parentT.GetConstructor(BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance,null, reqArgTs,null)  
+    match res with 
+    | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("constructor", mref.Name, parentT.FullName, parentT.Assembly.FullName), range0))
+    | _ -> res
+
 
 let nonQueryableTypeGetConstructor (parentTI:Type) (consInfo : ConstructorInfo) : ConstructorInfo = 
     if parentTI.IsGenericType then TypeBuilder.GetConstructor(parentTI,consInfo) else consInfo
@@ -823,18 +858,21 @@ let nonQueryableTypeGetConstructor (parentTI:Type) (consInfo : ConstructorInfo) 
 let convConstructorSpec cenv emEnv (mspec:ILMethodSpec) =
     let mref   = mspec.MethodRef
     let parentTI = convType cenv emEnv mspec.EnclosingType
-    if isEmittedTypeRef emEnv mref.EnclosingTypeRef then
-        // NOTE: if "convType becomes convCreatedType", then handle queryable types here too. [bug 4063]
-        let consB = envGetConsB emEnv mref
-        nonQueryableTypeGetConstructor parentTI consB |> nonNull "convConstructorSpec: (emitted)"
-    else
-        // Prior type.
-        if typeIsNotQueryable parentTI then 
-            let parentT  = getTypeConstructor parentTI       
-            let ctorG = queryableTypeGetConstructor cenv emEnv parentT mref 
-            nonQueryableTypeGetConstructor parentTI ctorG
+    let res = 
+        if isEmittedTypeRef emEnv mref.EnclosingTypeRef then
+            let consB = envGetConsB emEnv mref 
+            nonQueryableTypeGetConstructor parentTI consB 
         else
-            queryableTypeGetConstructor cenv emEnv parentTI mref 
+            // Prior type.
+            if typeIsNotQueryable parentTI then 
+                let parentT  = getTypeConstructor parentTI       
+                let ctorG = queryableTypeGetConstructor cenv emEnv parentT mref 
+                nonQueryableTypeGetConstructor parentTI ctorG
+            else
+                queryableTypeGetConstructor cenv emEnv parentTI mref 
+    match res with 
+    | null -> error(Error(FSComp.SR.itemNotFoundInTypeDuringDynamicCodeGen ("constructor", "", parentTI.FullName, parentTI.Assembly.FullName), range0))
+    | _ -> res
 
 //----------------------------------------------------------------------------
 // emitLabelMark
@@ -1347,7 +1385,7 @@ let buildGenParamsPass1b cenv emEnv (genArgs : Type array) (gps : ILGenericParam
           | [ baseT ] -> gpB.SetBaseTypeConstraint(baseT)
           | _       -> failwith "buildGenParam: multiple base types"
         );
-        // set interface contraints (interfaces that instances of gp must meet)
+        // set interface constraints (interfaces that instances of gp must meet)
         gpB.SetInterfaceConstraints(Array.ofList interfaceTs);
         gp.CustomAttrs |> emitCustomAttrs cenv emEnv (wrapCustomAttr gpB.SetCustomAttribute)
 
@@ -1742,7 +1780,6 @@ let rec buildTypeDefPass1 cenv emEnv (modB:ModuleBuilder) rootTypeBuilder nestin
 
     // TypeBuilder from TypeAttributes.
     let typB : TypeBuilder = rootTypeBuilder  (tdef.Name,attrsType)
-    let typB = typB |> nonNull "buildTypeDefPass1 cenv: typB is null!"
     cattrsLayout |> Option.iter typB.SetCustomAttributeAndLog;
 
     buildGenParamsPass1 emEnv typB.DefineGenericParametersAndLog tdef.GenericParams; 
@@ -1826,12 +1863,25 @@ let rec buildTypeDefPass3 cenv nesting modB emEnv (tdef : ILTypeDef) =
 
 //----------------------------------------------------------------------------
 // buildTypeDefPass4 - Create the Types
+//
+// The code in this phase is fragile.
+// 
+// THe background is that System.Reflection.Emit implementations can be finnickity about the
+// order that CreateType calls are made when types refer to each other.  Some of these restrictions
+// are not well documented, or are related to historical bugs where the F# emit code worked around the
+// underlying problems.  Ideally the SRE implementation would just "work this out as it goes along" but
+// unfortunately that's not been the case.
+//
+// Here are some known cases:
+//
 // MSDN says: If this type is a nested type, the CreateType method must 
 // be called on the enclosing type before it is called on the nested type.
-// If the current type derives from an incomplete type or implements 
+//
+// MSDN says: If the current type derives from an incomplete type or implements 
 // incomplete interfaces, call the CreateType method on the parent 
 // type and the interface types before calling it on the current type.
-// If the enclosing type contains a field that is a value type 
+//
+// MSDN says: If the enclosing type contains a field that is a value type 
 // defined as a nested type (for example, a field that is an 
 // enumeration defined as a nested type), calling the CreateType method 
 // on the enclosing type will generate a AppDomain.TypeResolve event. 
@@ -1841,6 +1891,13 @@ let rec buildTypeDefPass3 cenv nesting modB emEnv (tdef : ILTypeDef) =
 // nested type by calling CreateType on the TypeBuilder object that represents 
 // the nested type. The code example for this topic shows how to define such 
 // an event handler.
+//
+//  
+// There is also a case where generic parameter constraints were being checked before
+// a generic method was called.  This forced the loading of the types involved in the 
+// constraints very early.
+//
+
 //----------------------------------------------------------------------------
 
 let getEnclosingTypeRefs (tref:ILTypeRef) = 
@@ -1848,71 +1905,86 @@ let getEnclosingTypeRefs (tref:ILTypeRef) =
    | [] -> []
    | h :: t -> List.scan (fun tr nm -> mkILTyRefInTyRef (tr,nm)) (mkILTyRef(tref.Scope, h)) t
 
-let rec getTypeRefsInType valueTypesOnly typ acc = 
+[<RequireQualifiedAccess>]
+type CollectTypes = ValueTypesOnly | All
+
+// Find all constituent type references
+let rec getTypeRefsInType (allTypes: CollectTypes) typ acc = 
     match typ with
-    | ILType.Void | ILType.TypeVar _                              -> acc
-    | ILType.Ptr eltType | ILType.Byref eltType -> getTypeRefsInType valueTypesOnly eltType acc
-    | ILType.Array (_,eltType) -> if valueTypesOnly then acc else getTypeRefsInType valueTypesOnly eltType acc
-    | ILType.Value tspec -> tspec.TypeRef :: List.foldBack (getTypeRefsInType valueTypesOnly) tspec.GenericArgs acc
-    | ILType.Boxed tspec -> if valueTypesOnly then acc else tspec.TypeRef :: List.foldBack (getTypeRefsInType valueTypesOnly) tspec.GenericArgs acc
+    | ILType.Void 
+    | ILType.TypeVar _  -> acc
+    | ILType.Ptr eltType | ILType.Byref eltType -> 
+        getTypeRefsInType allTypes eltType acc
+    | ILType.Array (_,eltType) -> 
+        match allTypes with 
+        | CollectTypes.ValueTypesOnly -> acc 
+        | CollectTypes.All -> getTypeRefsInType allTypes eltType acc
+    | ILType.Value tspec -> 
+        // We usee CollectTypes.All because the .NET type loader appears to always eagerly require all types
+        // referred to in an instantiation of a generic value type
+        tspec.TypeRef :: List.foldBack (getTypeRefsInType CollectTypes.All) tspec.GenericArgs acc
+    | ILType.Boxed tspec -> 
+        match allTypes with 
+        | CollectTypes.ValueTypesOnly -> acc 
+        | CollectTypes.All -> tspec.TypeRef :: List.foldBack (getTypeRefsInType allTypes) tspec.GenericArgs acc
     | ILType.FunctionPointer _callsig -> failwith "getTypeRefsInType: fptr"
     | ILType.Modified _   -> failwith "getTypeRefsInType: modified"
 
 let verbose2 = false
 
 let createTypeRef (visited : Dictionary<_,_>, created : Dictionary<_,_>) emEnv tref = 
-    let rec traverseTypeDef priority (tref:ILTypeRef) (tdef:ILTypeDef) =
-        if priority >= 2 then 
-            if verbose2 then dprintf "buildTypeDefPass4: Creating Enclosing Types of %s\n" tdef.Name; 
-            tref |> getEnclosingTypeRefs |> List.iter (traverseTypeRef priority);
+
+    let rec traverseTypeDef (tref:ILTypeRef) (tdef:ILTypeDef) =
+        if verbose2 then dprintf "buildTypeDefPass4: Creating Enclosing Types of %s\n" tdef.Name; 
+        for enc in getEnclosingTypeRefs tref do
+            traverseTypeRef enc
     
         // WORKAROUND (ProductStudio FSharp 1.0 bug 615): the constraints on generic method parameters 
         // are resolved overly eagerly by reflection emit's CreateType. 
-        if priority >= 1 then 
-            if verbose2 then dprintf "buildTypeDefPass4: Doing type typar constraints of %s\n" tdef.Name; 
-            tdef.GenericParams |> List.iter (fun gp -> gp.Constraints |> List.iter (traverseType false 2));
-            if verbose2 then dprintf "buildTypeDefPass4: Doing method constraints of %s\n" tdef.Name; 
-            tdef.Methods.AsList |> List.iter   (fun md -> md.GenericParams |> List.iter (fun gp -> gp.Constraints |> List.iter (traverseType false 2)));
-            
-        // We absolutely need the parent type...
-        if priority >= 1 then 
-            if verbose2 then dprintf "buildTypeDefPass4: Creating Super Class Chain of %s\n" tdef.Name; 
-            tdef.Extends    |> Option.iter (traverseType false priority);
-        
-        // We absolutely need the interface types...
-        if priority >= 1 then 
-            if verbose2 then dprintf "buildTypeDefPass4: Creating Interface Chain of %s\n" tdef.Name; 
-            tdef.Implements |> List.iter (traverseType false priority);
-            
-        // We have to define all struct types in all methods before a class is defined. This only has any effect when there is a struct type
-        // being defined simultaneously with this type.
-        if priority >= 1 then 
-            if verbose2 then dprintf "buildTypeDefPass4: Doing value types in method signatures of %s\n" tdef.Name  
-            tdef.Methods |> Seq.iter   (fun md -> md.Parameters |> List.iter (fun p -> p.Type |> (traverseType true 1))
-                                                  md.Return.Type |> traverseType true 1);
-        
-        if priority >= 1 then 
-            if verbose2 then dprintf "buildTypeDefPass4: Do value types in fields of %s\n" tdef.Name; 
-            tdef.Fields.AsList |> List.iter (fun fd -> traverseType true 1 fd.Type);
-        
-        if verbose2 then dprintf "buildTypeDefPass4: Done with dependencies of %s\n" tdef.Name
-            
-    and traverseType valueTypesOnly priority typ = 
-        if verbose2 then dprintf "- traverseType %+A\n" typ;
-        getTypeRefsInType valueTypesOnly typ []
-        |> List.filter (isEmittedTypeRef emEnv)
-        |> List.iter (traverseTypeRef priority)
+        if verbose2 then dprintf "buildTypeDefPass4: Doing type typar constraints of %s\n" tdef.Name; 
+        for gp in tdef.GenericParams do
+            for cx in gp.Constraints do
+                traverseType CollectTypes.All cx
 
-    and traverseTypeRef priority  tref = 
+        if verbose2 then dprintf "buildTypeDefPass4: Doing method constraints of %s\n" tdef.Name; 
+        for md in tdef.Methods.AsList do
+            for gp in md.GenericParams do 
+                for cx in gp.Constraints do 
+                    traverseType CollectTypes.All cx
+            
+        // We absolutely need the exact parent type...
+        if verbose2 then dprintf "buildTypeDefPass4: Creating Super Class Chain of %s\n" tdef.Name; 
+        tdef.Extends |> Option.iter (traverseType CollectTypes.All)
+        
+        // We absolutely need the exact interface types...
+        if verbose2 then dprintf "buildTypeDefPass4: Creating Interface Chain of %s\n" tdef.Name; 
+        tdef.Implements |> List.iter (traverseType CollectTypes.All)
+            
+        if verbose2 then dprintf "buildTypeDefPass4: Do value types in fields of %s\n" tdef.Name;
+        tdef.Fields.AsList |> List.iter (fun fd -> traverseType CollectTypes.ValueTypesOnly fd.Type)
+        
+        if verbose2 then dprintf "buildTypeDefPass4: Done with dependencies of %s\n" tdef.Name 
+            
+    and traverseType allTypes typ = 
+        getTypeRefsInType allTypes typ []
+        |> List.filter (isEmittedTypeRef emEnv)
+        |> List.iter traverseTypeRef 
+
+    and traverseTypeRef tref = 
         let typB = envGetTypB emEnv tref
-        if verbose2 then dprintf "- considering reference to type %s\n" typB.FullName;
-        if not (visited.ContainsKey(tref)) || visited.[tref] > priority then 
-            visited.[tref] <- priority;
+        if verbose2 then dprintf "- considering reference to type %s\n" typB.FullName
+
+        // Re-run traverseTypeDef if we've never visited the type.
+        if not (visited.ContainsKey(tref)) then 
+            visited.[tref] <- true
             let tdef = envGetTypeDef emEnv tref
-            if verbose2 then dprintf "- traversing type %s\n" typB.FullName;
+            if verbose2 then dprintf "- traversing type %s\n" typB.FullName
 #if FX_NO_APP_DOMAINS
-            traverseTypeDef priority tref tdef;
+            traverseTypeDef tref tdef
 #else
+            // This looks like a special case (perhaps bogus) of the dependency logic above, where
+            // we require the type r.Name, though with "nestingToProbe" being the enclosing types of the
+            // type being defined.
             let typeCreationHandler =
                 let nestingToProbe = tref.Enclosing 
                 ResolveEventHandler(
@@ -1926,18 +1998,22 @@ let createTypeRef (visited : Dictionary<_,_>, created : Dictionary<_,_>) emEnv t
                                 tb.Assembly
                         |   None -> null
                 )
+            // For some reason, the handler is installed while running 'traverseTypeDef' but not while defining the type
+            // itself.
             System.AppDomain.CurrentDomain.add_TypeResolve typeCreationHandler
             try
-                traverseTypeDef priority tref tdef;
+                traverseTypeDef tref tdef
             finally
                System.AppDomain.CurrentDomain.remove_TypeResolve typeCreationHandler
 #endif
+            // At this point, we've done everything we can to prepare the type for loading by eagerly forcing the
+            // load of other types.  Everything else is up to the implementation of System.Reflection.Emit.
             if not (created.ContainsKey(tref)) then 
-                created.[tref] <- true;   
-                if verbose2 then dprintf "- creating type %s\n" typB.FullName;
+                created.[tref] <- true
+                if verbose2 then dprintf "- creating type %s\n" typB.FullName
                 typB.CreateTypeAndLog()  |> ignore
     
-    traverseTypeRef 2 tref 
+    traverseTypeRef tref 
 
 let rec buildTypeDefPass4 (visited,created) nesting emEnv (tdef : ILTypeDef) =
     if verbose2 then dprintf "buildTypeDefPass4 %s\n" tdef.Name; 

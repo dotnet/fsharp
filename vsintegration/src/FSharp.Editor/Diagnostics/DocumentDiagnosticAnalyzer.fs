@@ -3,7 +3,6 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Composition
 open System.Collections.Immutable
 open System.Collections.Generic
 open System.Threading
@@ -11,22 +10,18 @@ open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Diagnostics
-open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
-open Microsoft.CodeAnalysis.SolutionCrawler
 
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.Range
 
-open Microsoft.VisualStudio.FSharp.LanguageService
 
 [<RequireQualifiedAccess>]
 type internal DiagnosticsType =
     | Syntax
     | Semantic
 
-[<DiagnosticAnalyzer(FSharpCommonConstants.FSharpLanguageName)>]
+[<DiagnosticAnalyzer(FSharpConstants.FSharpLanguageName)>]
 type internal FSharpDocumentDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
 
@@ -81,8 +76,8 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
                 }
             
             let results = 
-               HashSet(errors, errorInfoEqualityComparer)
-               |> Seq.choose(fun error ->
+                HashSet(errors, errorInfoEqualityComparer)
+                |> Seq.choose(fun error ->
                     if error.StartLineAlternate = 0 || error.EndLineAlternate = 0 then
                         // F# error line numbers are one-based. Compiler returns 0 for global errors (reported by ProjectDiagnosticAnalyzer)
                         None
@@ -103,12 +98,12 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
                                 TextSpan.FromBounds(start, sourceText.Length)
                         
                         let location = Location.Create(filePath, correctedTextSpan , linePositionSpan)
-                        Some(CommonRoslynHelpers.ConvertError(error, location)))
-               |> Seq.toImmutableArray
+                        Some(RoslynHelpers.ConvertError(error, location)))
+                |> Seq.toImmutableArray
             return results
         }
 
-    override this.SupportedDiagnostics = CommonRoslynHelpers.SupportedDiagnostics()
+    override this.SupportedDiagnostics = RoslynHelpers.SupportedDiagnostics()
 
     override this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
         let projectInfoManager = getProjectInfoManager document
@@ -121,7 +116,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
                 |> liftAsync
         } 
         |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
-        |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+        |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
         let projectInfoManager = getProjectInfoManager document
@@ -134,7 +129,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
                 |> liftAsync
         }
         |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
-        |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+        |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
     interface IBuiltInAnalyzer with
         member __.GetAnalyzerCategory() : DiagnosticAnalyzerCategory = DiagnosticAnalyzerCategory.SemanticDocumentAnalysis

@@ -1681,7 +1681,7 @@ and p_tycon_repr x st =
             p_byte 1 st; p_byte 2 st; p_ILType (mkILBoxedType(ILTypeSpec.Create(ExtensionTyping.GetILTypeRefOfProvidedType(info.ProvidedType ,range0),[]))) st; true
     | TProvidedNamespaceExtensionPoint _ -> p_byte 0 st; false
 #endif
-    | TILObjectRepr (_,_,td) -> error (Failure("Unexpected IL type definition"+td.Name))
+    | TILObjectRepr (TILObjectReprData (_,_,td)) -> error (Failure("Unexpected IL type definition"+td.Name))
 
 and p_tycon_objmodel_data x st = 
   p_tup3 p_tycon_objmodel_kind (p_vrefs "vslots") p_rfield_table 
@@ -1892,7 +1892,7 @@ and u_tycon_repr st =
                             | h::t -> let nestedTypeDef = tdefs.FindByName h
                                       find (tdefs.FindByName h :: acc) t nestedTypeDef.NestedTypes
                         let nestedILTypeDefs,ilTypeDef = find [] iltref.Enclosing iILModule.TypeDefs
-                        TILObjectRepr(st.iilscope,nestedILTypeDefs,ilTypeDef)
+                        TILObjectRepr(TILObjectReprData(st.iilscope,nestedILTypeDefs,ilTypeDef))
                     with _ -> 
                         System.Diagnostics.Debug.Assert(false, sprintf "failed to find IL backing metadata for cross-assembly generated type %s" iltref.FullName)
                         TNoRepr

@@ -156,24 +156,24 @@ module internal Utilities =
 
                 member r.AddText z s =
                     let color =
-                        match s with
-                        | TaggedText.Keyword _ -> ConsoleColor.White
-                        | TaggedText.TypeParameter _
-                        | TaggedText.Alias _
-                        | TaggedText.Class _ 
-                        | TaggedText.Module _
-                        | TaggedText.Interface _
-                        | TaggedText.Record _
-                        | TaggedText.Struct _
-                        | TaggedText.Union _
-                        | TaggedText.UnknownType _ -> ConsoleColor.Cyan
-                        | TaggedText.UnionCase _
-                        | TaggedText.ActivePatternCase _ -> ConsoleColor.Magenta
-                        | TaggedText.StringLiteral _ -> ConsoleColor.Yellow
-                        | TaggedText.NumericLiteral _ -> ConsoleColor.Green
+                        match s.Tag with
+                        | LayoutTag.Keyword -> ConsoleColor.White
+                        | LayoutTag.TypeParameter
+                        | LayoutTag.Alias
+                        | LayoutTag.Class 
+                        | LayoutTag.Module
+                        | LayoutTag.Interface
+                        | LayoutTag.Record
+                        | LayoutTag.Struct
+                        | LayoutTag.Union
+                        | LayoutTag.UnknownType -> ConsoleColor.Cyan
+                        | LayoutTag.UnionCase
+                        | LayoutTag.ActivePatternCase -> ConsoleColor.Magenta
+                        | LayoutTag.StringLiteral -> ConsoleColor.Yellow
+                        | LayoutTag.NumericLiteral -> ConsoleColor.Green
                         | _ -> Console.ForegroundColor
 
-                    DoWithColor color (fun () -> outWriter.Write s.Value)
+                    DoWithColor color (fun () -> outWriter.Write s.Text)
 
                     z
 
@@ -581,11 +581,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
        not (runningOnMono && System.Environment.OSVersion.Platform = System.PlatformID.Win32NT) 
 #endif
 // In the cross-platform edition of F#, 'gui' support is currently off by default
-#if CROSS_PLATFORM_COMPILER
-    let mutable gui        = false // override via "--gui", off by default
-#else
-    let mutable gui        = true // override via "--gui", on by default
-#endif
+    let mutable gui        = not runningOnMono // override via "--gui", on by default
 #if DEBUG
     let mutable showILCode = false // show modul il code 
 #endif
@@ -630,7 +626,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
     let tagFile        = "<file>"
     let tagNone        = ""
   
-    /// These options preceed the FsiCoreCompilerOptions in the help blocks
+    /// These options precede the FsiCoreCompilerOptions in the help blocks
     let fsiUsagePrefix tcConfigB =
       [PublicOptions(FSIstrings.SR.fsiInputFiles(),
         [CompilerOption("use",tagFile, OptionString (fun s -> inputFilesAcc <- inputFilesAcc @ [(s,true)]), None,
@@ -810,14 +806,14 @@ let internal SetServerCodePages(fsiOptions: FsiCommandLineOptions) =
                                 | Some(n:int) ->
                                       let encoding = System.Text.Encoding.GetEncoding(n) 
                                       // Note this modifies the real honest-to-goodness settings for the current shell.
-                                      // and the modifiations hang around even after the process has exited.
+                                      // and the modifications hang around even after the process has exited.
                                       Console.InputEncoding <- encoding
                              do match outputCodePageOpt with 
                                 | None -> () 
                                 | Some(n:int) -> 
                                       let encoding = System.Text.Encoding.GetEncoding n
                                       // Note this modifies the real honest-to-goodness settings for the current shell.
-                                      // and the modifiations hang around even after the process has exited.
+                                      // and the modifications hang around even after the process has exited.
                                       Console.OutputEncoding <- encoding
                              do successful := true  });
         for pause in [10;50;100;1000;2000;10000] do 
@@ -1528,7 +1524,7 @@ type internal FsiInterruptController(fsiOptions : FsiCommandLineOptions,
                                 killThreadRequest <- NoRequest
                                 threadToKill.Abort()
                             | ExitRequest -> 
-                                // Mono has some wierd behaviour where it blocks on exit
+                                // Mono has some weird behaviour where it blocks on exit
                                 // once CtrlC has ever been pressed.  Who knows why?  Perhaps something
                                 // to do with having a signal handler installed, but it only happens _after_
                                 // at least one CtrLC has been pressed.  Maybe raising a ThreadAbort causes
@@ -1555,7 +1551,7 @@ type internal FsiInterruptController(fsiOptions : FsiCommandLineOptions,
 
     member x.PosixInvoke(n:int) = 
          // we run this code once with n = -1 to make sure it is JITted before execution begins
-         // since we are not allowed to JIT a signal handler.  THis also ensures the "PosixInvoke"
+         // since we are not allowed to JIT a signal handler.  This also ensures the "PosixInvoke"
          // method is not eliminated by dead-code elimination
          if n >= 0 then 
              posixReinstate()
@@ -1653,6 +1649,15 @@ module internal MagicAssemblyResolution =
                let assemblyReferenceTextDll = (simpleAssemName + ".dll") 
                let assemblyReferenceTextExe = (simpleAssemName + ".exe") 
                let overallSearchResult =           
+
+                   // OK, try to resolve as an existing DLL in the resolved reference set.  This does unification by assembly name
+                   // once an assembly has been referenced.
+                   let searchResult = tcImports.TryFindExistingFullyQualifiedPathBySimpleAssemblyName (ctok, simpleAssemName)
+
+                   match searchResult with
+                   | Some r -> OkResult ([], Choice1Of2 r)
+                   | _ -> 
+
                    // OK, try to resolve as a .dll
                    let searchResult = tcImports.TryResolveAssemblyReference (ctok, AssemblyReference (m, assemblyReferenceTextDll, None), ResolveAssemblyReferenceMode.Speculative)
 
@@ -1689,7 +1694,7 @@ module internal MagicAssemblyResolution =
 #endif
                    
                    // As a last resort, try to find the reference without an extension
-                   match tcImports.TryFindExistingFullyQualifiedPathFromAssemblyRef(ctok, ILAssemblyRef.Create(simpleAssemName,None,None,false,None,None)) with
+                   match tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef(ctok, ILAssemblyRef.Create(simpleAssemName,None,None,false,None,None)) with
                    | Some(resolvedPath) -> 
                        OkResult([],Choice1Of2 resolvedPath)
                    | None -> 
@@ -2667,7 +2672,7 @@ type internal FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:st
         | Some assembly -> Some (Choice2Of2 assembly)
         | None -> 
 #endif
-        match tcImports.TryFindExistingFullyQualifiedPathFromAssemblyRef (ctok, aref) with
+        match tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef (ctok, aref) with
         | Some resolvedPath -> Some (Choice1Of2 resolvedPath)
         | None -> None
           
@@ -2760,7 +2765,7 @@ type internal FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:st
                         // Instead it will be interpreted as unhandled exception and crash the whole process.
 
                         // FIX: detect if current process in 64 bit running on Windows 7 or Windows 8 and if yes - swallow the StopProcessing and ScheduleRestart instead.
-                        // Visible behavior should not be different, previosuly exception unwinds the stack and aborts currently running Application.
+                        // Visible behavior should not be different, previously exception unwinds the stack and aborts currently running Application.
                         // After that it will be intercepted and suppressed in DriveFsiEventLoop.
                         // Now we explicitly shut down Application so after execution of callback will be completed the control flow 
                         // will also go out of WinFormsEventLoop.Run and again get to DriveFsiEventLoop => restart the loop. I'd like the fix to be  as conservative as possible

@@ -19,10 +19,10 @@
 //    Use F# Interactive.  This only works for FSharp.Compiler.Service.dll which has a public API
 
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+[<NUnit.Framework.Category "Roslyn Services">]
 module Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn.QuickInfoProviderTests
 
 open System
-open System.Threading
 
 open NUnit.Framework
 
@@ -30,11 +30,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 
-//open Microsoft.VisualStudio.FSharp.Editor
-//open Microsoft.VisualStudio.FSharp.LanguageService
-
 open Microsoft.FSharp.Compiler.SourceCodeServices
-//open Microsoft.FSharp.Compiler.Range
 
 let filePath = "C:\\test.fs"
 
@@ -53,7 +49,7 @@ let internal options = {
 
 let private normalizeLineEnds (s: string) = s.Replace("\r\n", "\n").Replace("\n\n", "\n")
 
-let private getQuickInfoText (FSharpStructuredToolTipText.FSharpToolTipText elements) : string =
+let private getQuickInfoText (FSharpToolTipText elements) : string =
     let rec parseElement = function
         | FSharpToolTipElement.None -> ""
         | FSharpToolTipElement.Single(text, _) -> text
@@ -95,7 +91,6 @@ Full name: System.Console"
     """
         let caretPosition = fileContents.IndexOf(symbol)
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let getInfo() = documentId, filePath, []
         
         let quickInfo =
             FSharpQuickInfoProvider.ProvideQuickInfo(FSharpChecker.Instance, documentId, SourceText.From(fileContents), filePath, caretPosition, options, 0)

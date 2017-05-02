@@ -19,6 +19,7 @@
 //    Use F# Interactive.  This only works for FSharp.Compiler.Service.dll which has a public API
 
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+[<NUnit.Framework.Category "Roslyn Services">]
 module Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn.DocumentHighlightsServiceTests
 
 open System
@@ -57,7 +58,7 @@ let private getSpans (sourceText: SourceText) (caretPosition: int) =
 let private span sourceText isDefinition (startLine, startCol) (endLine, endCol) =
     let range = Range.mkRange filePath (Range.mkPos startLine startCol) (Range.mkPos endLine endCol)
     { IsDefinition = isDefinition
-      TextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range) }
+      TextSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range) }
 
 [<Test>]
 let ShouldHighlightAllSimpleLocalSymbolReferences() =

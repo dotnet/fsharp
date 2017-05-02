@@ -233,8 +233,8 @@ type Item =
 
 let valRefHash (vref: ValRef) = 
     match vref.TryDeref with 
-    | None -> 0 
-    | Some v -> LanguagePrimitives.PhysicalHash v
+    | VNone -> 0 
+    | VSome v -> LanguagePrimitives.PhysicalHash v
 
 /// Represents a record field resolution and the information if the usage is deprecated.
 type FieldResolution = FieldResolution of RecdFieldRef * bool
@@ -422,7 +422,7 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap:Import.Import
                  try 
                     let rs = 
                         match metadataOfTycon tcrefOfStaticClass.Deref, minfo with 
-                        | ILTypeMetadata (scoref,_), ILMeth(_,ILMethInfo(_,_,_,ilMethod,_),_) ->
+                        | ILTypeMetadata (TILObjectReprData(scoref,_,_)), ILMeth(_,ILMethInfo(_,_,_,ilMethod,_),_) ->
                             match ilMethod.ParameterTypes with 
                             | firstTy :: _ -> 
                                 match firstTy with 
@@ -3180,7 +3180,15 @@ let ResolveLongIdentAsExprAndComputeRange (sink:TcResultsSink) (ncenv:NameResolv
 
     let callSink refinedItem =
         if not isFakeIdents then
-            CallNameResolutionSink sink (itemRange, nenv, refinedItem, item, ItemOccurence.Use, nenv.DisplayEnv, ad)
+            let occurence = 
+                match item with
+                // It's r.h.s. `Case1` in `let (|Case1|Case1|) _ = if true then Case1 else Case2`
+                // We return `Binding` for it because it's actually not usage, but definition. If we did not
+                // it confuses detecting unused definitions.
+                | Item.ActivePatternResult _ -> ItemOccurence.Binding 
+                | _ -> ItemOccurence.Use
+
+            CallNameResolutionSink sink (itemRange, nenv, refinedItem, item, occurence, nenv.DisplayEnv, ad)
     let afterOverloadResolution =
         match sink.CurrentSink with
         |   None -> AfterOverloadResolution.DoNothing
