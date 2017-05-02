@@ -21,6 +21,8 @@ Usage: fsharpi <options> [script.fsx [<arguments>]]
                                          into the output file).
 --optimize[+|-]                          Enable optimizations (Short form: -O)
 --tailcalls[+|-]                         Enable or disable tailcalls
+--deterministic[+|-]                     Produce a deterministic assembly (including
+                                         module version GUID and timestamp)
 --crossoptimize[+|-]                     Enable or disable cross-module optimizations
 
 
