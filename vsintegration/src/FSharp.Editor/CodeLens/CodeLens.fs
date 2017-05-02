@@ -20,7 +20,9 @@ open System.Windows
 open System.Collections.Generic
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler
+open Microsoft.CodeAnalysis.Editor.Shared.Extensions
 open Microsoft.CodeAnalysis.Editor.Shared.Utilities
+open Microsoft.CodeAnalysis.Classification
 open Internal.Utilities.StructuredFormat
 open Microsoft.VisualStudio.Text.Tagging
 open System.Collections.Concurrent
@@ -139,8 +141,11 @@ type internal CodeLensTagger
     
     do async {
           while not firstTimeChecked do
-              do! executeCodeLenseAsync()
-              do! Async.Sleep(1000)
+              try
+                  do! executeCodeLenseAsync()
+                  do! Async.Sleep(1000)
+              with
+              | e -> logErrorf "Code Lens startup failed with: %A" e
        } |> Async.Start
     
     /// Creates the code lens ui elements for the specified line
@@ -231,14 +236,15 @@ type internal CodeLensTagger
                 do! Async.Sleep(500) |> liftAsync
                 // We need a new snapshot, it could be already outdated
                 let buffer = view.TextBuffer.CurrentSnapshot
-                
-                let firstLine, lastLine =
-                    let firstLine, lastLine=  (view.TextViewLines.FirstVisibleLine, view.TextViewLines.LastVisibleLine)
-                    buffer.GetLineNumberFromPosition(firstLine.Start.Position),
-                    buffer.GetLineNumberFromPosition(lastLine.Start.Position)
 
-                let lineAlreadyProcessed pos = not (visibleLines.ContainsKey (buffer.GetLineNumberFromPosition(pos)))
-                let realNewLines = e.NewOrReformattedLines |> Seq.filter (fun line -> lineAlreadyProcessed line.Start.Position)
+                let lineNotProcessed (line:ITextViewLine) = 
+                    if line.IsValid then
+                        let pos = line.Start.Position
+                        not (visibleLines.ContainsKey (buffer.GetLineNumberFromPosition(pos)))
+                    else
+                        false
+
+                let realNewLines = e.NewOrReformattedLines |> Seq.filter lineNotProcessed
                 
                 for line in realNewLines do
                     if line.IsValid then
@@ -249,10 +255,8 @@ type internal CodeLensTagger
                             | Some textBox ->
                                 layer.AddAdornment(line.Extent, this, textBox) |> ignore
                                 textBox.BeginAnimation(UIElement.OpacityProperty, da)
+                                visibleLines.TryAdd(buffer.GetLineNumberFromPosition(line.Start.Position), ()) |> ignore
                             | None -> ()
-                
-                for line in firstLine..lastLine do
-                    visibleLines.[line] <- ()
         }
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncSafe layoutChangedCts.Token
@@ -313,7 +317,7 @@ type internal CodeLensProvider
 
 
             let tagger = CodeLensTagger(workspace, documentId, buffer, checkerProvider.Checker, projectInfoManager, typeMap, gotoDefinitionService)
-            codeLens.Add((buffer, tagger))
+            taggers.Add((buffer, tagger))
             tagger
 
     [<Export(typeof<AdornmentLayerDefinition>); Name("CodeLens");
