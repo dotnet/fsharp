@@ -1838,7 +1838,6 @@ type internal FsiInteractionProcessor
     let mutable currState = initialInteractiveState
     let event = Control.Event<unit>()
     let setCurrState s = currState <- s; event.Trigger()
-    //let mutable queueAgent = None
 
     let runCodeOnEventLoop errorLogger f istate = 
         try 
@@ -2516,8 +2515,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     do SetDebugSwitch    tcConfigB (Some "pdbonly") OptionSwitch.On
     do SetTailcallSwitch tcConfigB OptionSwitch.On    
 
-#if FSI_TODO_NETCORE
-#else
+#if !FSI_TODO_NETCORE
     // set platform depending on whether the current process is a 64-bit process.
     // BUG 429882 : FsiAnyCPU.exe issues warnings (x64 v MSIL) when referencing 64-bit assemblies
     do tcConfigB.platform <- if IntPtr.Size = 8 then Some AMD64 else Some X86

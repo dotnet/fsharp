@@ -1825,7 +1825,7 @@ let BasicReferencesForScriptLoadClosure(useSimpleResolution, useFsiAuxLib, assum
     [
      if assumeDotNetFramework then 
          
-#if TODO_REWORK_ASSEMBLY_LOAD
+#if COMPILER_SERVICE_DLL && NETSTANDARD1_6
          yield Path.Combine(Path.GetDirectoryName(typeof<System.Object>.Assembly.Location),"mscorlib.dll"); // mscorlib
 #else
          yield "mscorlib"
@@ -2192,7 +2192,7 @@ type TcConfigBuilder =
         if (String.IsNullOrEmpty(defaultFSharpBinariesDir)) then 
             failwith "Expected a valid defaultFSharpBinariesDir"
         { 
-#if TODO_REWORK_ASSEMBLY_LOAD
+#if COMPILER_SERVICE_DLL && NETSTANDARD1_6
           primaryAssembly = PrimaryAssembly.DotNetCore // defaut value, can be overridden using the command line switch
 #else
           primaryAssembly = PrimaryAssembly.Mscorlib // defaut value, can be overridden using the command line switch

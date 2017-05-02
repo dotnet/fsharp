@@ -1713,7 +1713,7 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
                     define::tcConfigB.conditionalCompilationDefines
 
                 tcConfigB.projectReferences <- projectReferences
-#if TODO_REWORK_ASSEMBLY_LOAD
+#if COMPILER_SERVICE_DLL && NETSTANDARD1_6
                 tcConfigB.useSimpleResolution <- true // turn off msbuild resolution
 #endif
                 // Apply command-line arguments and collect more source files if they are in the arguments
