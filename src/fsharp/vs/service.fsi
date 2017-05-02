@@ -560,6 +560,14 @@ type internal FSharpChecker =
     /// Set the project to be checked in the background.  Overrides any previous call to <c>CheckProjectInBackground</c>
     member CheckProjectInBackground: options: FSharpProjectOptions -> unit
 
+    /// Stop the background compile.
+    //[<Obsolete("Explicitly stopping background compilation is not recommended and the functionality to allow this may be rearchitected in future release.  If you use this functionality please add an issue on http://github.com/fsharp/FSharp.Compiler.Service describing how you use it and ignore this warning.")>]
+    member StopBackgroundCompile : unit -> unit
+
+    /// Block until the background compile finishes.
+    //[<Obsolete("Explicitly waiting for background compilation is not recommended and the functionality to allow this may be rearchitected in future release.  If you use this functionality please add an issue on http://github.com/fsharp/FSharp.Compiler.Service describing how you use it and ignore this warning.")>]
+    member WaitForBackgroundCompile : unit -> unit
+   
     /// Report a statistic for testability
     static member GlobalForegroundParseCountStatistic : int
 
