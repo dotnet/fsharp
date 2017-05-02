@@ -732,9 +732,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
          (* Renamed --readline and --no-readline to --tabcompletion:+|- *)
          CompilerOption("readline",             tagNone, OptionSwitch(fun flag -> enableConsoleKeyProcessing <- (flag = OptionSwitch.On)),           None, Some(FSIstrings.SR.fsiReadline()));
          CompilerOption("quotations-debug",     tagNone, OptionSwitch(fun switch -> tcConfigB.emitDebugInfoInQuotations <- switch = OptionSwitch.On),None, Some(FSIstrings.SR.fsiEmitDebugInfoInQuotations()));
-#if FSI_SHADOW_COPY_REFERENCES
          CompilerOption("shadowcopyreferences", tagNone, OptionSwitch(fun flag -> tcConfigB.shadowCopyReferences <- flag = OptionSwitch.On),         None, Some(FSIstrings.SR.shadowCopyReferences()));
-#endif
         ]);
       ]
 
@@ -1835,9 +1833,7 @@ type internal FsiInteractionProcessor
                              lexResourceManager : LexResourceManager,
                              initialInteractiveState) = 
 
-#if FSI_SHADOW_COPY_REFERENCES
     let referencedAssemblies = Dictionary<string, DateTime>()
-#endif
 
     let mutable currState = initialInteractiveState
     let event = Control.Event<unit>()
@@ -1930,7 +1926,6 @@ type internal FsiInteractionProcessor
                 let resolutions,istate = fsiDynamicCompiler.EvalRequireReference(ctok, istate, m, path)
                 resolutions |> List.iter (fun ar -> 
                     let format = 
-#if FSI_SHADOW_COPY_REFERENCES
                         if tcConfig.shadowCopyReferences then
                             let resolvedPath = ar.resolvedPath.ToUpperInvariant()
                             let fileTime = File.GetLastWriteTimeUtc(resolvedPath)
@@ -1943,7 +1938,6 @@ type internal FsiInteractionProcessor
                             | _ ->
                                 FSIstrings.SR.fsiDidAHashr(ar.resolvedPath)
                         else
-#endif
                             FSIstrings.SR.fsiDidAHashrWithLockWarning(ar.resolvedPath)
                     fsiConsoleOutput.uprintnfnn "%s" format)
                 istate,Completed None
@@ -2366,7 +2360,7 @@ type internal FsiInteractionProcessor
         let names  = names |> List.filter (fun name -> name.StartsWith(stem,StringComparison.Ordinal)) 
         names
 
-#if COMPILER_SERVICE_DLL
+#if COMPILER_SERVICE
     member __.ParseAndCheckInteraction (ctok, referenceResolver, checker, istate, text:string) =
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
 
@@ -2493,7 +2487,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         if containsRequiredFiles then defaultFSharpBinariesDir 
         else Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None).Value
 
-#if COMPILER_SERVICE_DLL && !COMPILER_SERVICE_DLL_VISUAL_STUDIO
+#if COMPILER_SERVICE && !COMPILER_SERVICE_DLL_VISUAL_STUDIO
     let referenceResolver = SimulatedMSBuildReferenceResolver.GetBestAvailableResolver(msbuildEnabled)
 #else
     let referenceResolver = (assert msbuildEnabled); MSBuildReferenceResolver.Resolver 
@@ -2581,7 +2575,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     let fsiConsoleInput = FsiConsoleInput(fsi, fsiOptions, inReader, outWriter)
 
-#if COMPILER_SERVICE_DLL
+#if COMPILER_SERVICE
     /// The single, global interactive checker that can be safely used in conjunction with other operations
     /// on the FsiEvaluationSession.  
     let checker = FSharpChecker.Create(msbuildEnabled=msbuildEnabled)
@@ -2673,7 +2667,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     member x.GetCompletions(longIdent) = 
         fsiInteractionProcessor.CompletionsForPartialLID (fsiInteractionProcessor.CurrentState, longIdent)  |> Seq.ofList
 
-#if COMPILER_SERVICE_DLL
+#if COMPILER_SERVICE
     member x.ParseAndCheckInteraction(code) = 
         let ctok = AssumeCompilationThreadWithoutEvidence ()
         fsiInteractionProcessor.ParseAndCheckInteraction (ctok, referenceResolver, checker.ReactorOps, fsiInteractionProcessor.CurrentState, code)  
@@ -2940,7 +2934,7 @@ module Settings =
         abstract Invoke : (unit -> 'T) -> 'T 
         abstract ScheduleRestart : unit -> unit
     
-#if COMPILER_SERVICE_DLL // FSharp.Compiler.Service.dll avoids a hard dependency on FSharp.Compiler.Interave.Settings.dll by providing an optional reimplementation of the functionality in FSharp.Compiler.Service.dll itself
+#if COMPILER_SERVICE // FSharp.Compiler.Service.dll avoids a hard dependency on FSharp.Compiler.Interave.Settings.dll by providing an optional reimplementation of the functionality in FSharp.Compiler.Service.dll itself
 
     // An implementation of IEventLoop suitable for the command-line console
     [<AutoSerializable(false)>]

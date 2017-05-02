@@ -59,7 +59,7 @@ open Microsoft.FSharp.Core.ReflectionAdapters
 
 #if DEBUG
 [<AutoOpen>]
-#if COMPILER_SERVICE_DLL
+#if COMPILER_SERVICE
 module internal CompilerService =
 #else
 module internal FullCompiler =
@@ -1686,7 +1686,9 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
           yield "System.Collections" // System.Collections.Generic.List<T>
           yield "System.Runtime.Numerics" // BigInteger
           yield "System.Threading"  // OperationCanceledException
-          //yield "System.ValueTuple"
+#if !COMPILER_SERVICE_DLL // avoid a default reference to System.ValueTuple.dll when compiling with FSharp.Compiler.Service.dll. This is an inconsistency that is still to be ironed out.
+          yield "System.ValueTuple"
+#endif
 
           yield "System.Web"
           yield "System.Web.Services"
@@ -2329,7 +2331,11 @@ type TcConfigBuilder =
           sqmSessionStartedTime = System.DateTime.Now.Ticks
           emitDebugInfoInQuotations = false
           exename = None
+#if COMPILER_SERVICE_DLL // FSharp.Compiler.Service doesn't copy FSharp.Core.dll implicitly
           copyFSharpCore = false
+#else
+          copyFSharpCore = true
+#endif
           shadowCopyReferences = false
         }
 
@@ -2472,7 +2478,6 @@ let OpenILBinary(filename,optimizeForMemory,openBinariesInMemory,ilGlobalsOpt, p
           ILBinaryReader.OpenILModuleReaderAfterReadingAllBytes filename opts
       else
         let location =
-#if FSI_SHADOW_COPY_REFERENCES
           // In order to use memory mapped files on the shadow copied version of the Assembly, we `preload the assembly
           // We swallow all exceptions so that we do not change the exception contract of this API
           if shadowCopyReferences then 
@@ -2480,9 +2485,6 @@ let OpenILBinary(filename,optimizeForMemory,openBinariesInMemory,ilGlobalsOpt, p
               System.Reflection.Assembly.ReflectionOnlyLoadFrom(filename).Location
             with e -> filename
           else
-#else
-            ignore shadowCopyReferences 
-#endif
             filename
         ILBinaryReader.OpenILModuleReader location opts
 

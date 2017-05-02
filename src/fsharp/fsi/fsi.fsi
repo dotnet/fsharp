@@ -141,7 +141,7 @@ type FsiEvaluationSession =
     /// by input from 'stdin'.
     member GetCompletions : longIdent: string -> seq<string>
 
-#if COMPILER_SERVICE_DLL
+#if COMPILER_SERVICE
     /// Execute the code as if it had been entered as one or more interactions, with an
     /// implicit termination at the end of the input. Stop on first error, discarding the rest
     /// of the input. Errors are sent to the output writer, a 'true' return value indicates there
@@ -260,7 +260,7 @@ type FsiEvaluationSession =
     /// FSharp.Compiler.Interactive.Settings.dll  is referenced by default.
     static member GetDefaultConfiguration: fsiObj: obj -> FsiEvaluationSessionHostConfig
 
-#if COMPILER_SERVICE_DLL // FSharp.Compiler.Service.dll avoids a hard dependency on FSharp.Compiler.Interave.Settings.dll by providing an optional reimplementation of the functionality in FSharp.Compiler.Service.dll itself
+#if COMPILER_SERVICE // FSharp.Compiler.Service.dll avoids a hard dependency on FSharp.Compiler.Interave.Settings.dll by providing an optional reimplementation of the functionality in FSharp.Compiler.Service.dll itself
     /// Get a configuration that uses a private inbuilt implementation of the 'fsi' object and does not
     /// implicitly reference FSharp.Compiler.Interactive.Settings.dll. 
     static member GetDefaultConfiguration: unit -> FsiEvaluationSessionHostConfig

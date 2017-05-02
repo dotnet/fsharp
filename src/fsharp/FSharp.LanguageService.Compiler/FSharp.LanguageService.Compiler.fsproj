@@ -12,7 +12,7 @@
     <AssemblyName>FSharp.LanguageService.Compiler</AssemblyName>
     <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
-    <DefineConstants>COMPILER_SERVICE_DLL;$(DefineConstants)</DefineConstants>
+    <DefineConstants>COMPILER_SERVICE;$(DefineConstants)</DefineConstants>
     <DefineConstants>COMPILER_SERVICE_DLL_VISUAL_STUDIO;$(DefineConstants)</DefineConstants>
     <DefineConstants>NO_INLINE_IL_PARSER;$(DefineConstants)</DefineConstants>
     <NoWarn>$(NoWarn);62;9;75</NoWarn>

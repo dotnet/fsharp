@@ -2690,7 +2690,7 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
     static member Create(?projectCacheSize, ?keepAssemblyContents, ?keepAllBackgroundResolutions, ?msbuildEnabled) = 
 
         let msbuildEnabled = defaultArg msbuildEnabled true
-#if COMPILER_SERVICE_DLL && !COMPILER_SERVICE_DLL_VISUAL_STUDIO
+#if COMPILER_SERVICE && !COMPILER_SERVICE_DLL_VISUAL_STUDIO
         let referenceResolver = SimulatedMSBuildReferenceResolver.GetBestAvailableResolver(msbuildEnabled)
 #else
         let referenceResolver = (assert msbuildEnabled); MSBuildReferenceResolver.Resolver 

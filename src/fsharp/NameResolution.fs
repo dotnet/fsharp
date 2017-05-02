@@ -1430,7 +1430,7 @@ type TcResolutions
 type TcSymbolUses(g, capturedNameResolutions : ResizeArray<CapturedNameResolution>, formatSpecifierLocations: (range * int)[]) = 
     
     // Make sure we only capture the information we really need to report symbol uses
-#if COMPILER_SERVICE_DLL // avoid a hard dependency on System.ValueTuple.dll
+#if COMPILER_SERVICE_DLL // avoid a hard dependency on System.ValueTuple.dll from FSharp.Compiler.Service.dll
     let cnrs = [| for cnr in capturedNameResolutions  -> (* struct *) (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.Range) |]
 #else
     let cnrs = [| for cnr in capturedNameResolutions  ->    struct (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.Range) |]
@@ -1439,7 +1439,7 @@ type TcSymbolUses(g, capturedNameResolutions : ResizeArray<CapturedNameResolutio
     do ignore capturedNameResolutions // don't capture this!
 
     member this.GetUsesOfSymbol(item) = 
-#if COMPILER_SERVICE_DLL // avoid a hard dependency on System.ValueTuple.dll
+#if COMPILER_SERVICE_DLL // avoid a hard dependency on System.ValueTuple.dll from FSharp.Compiler.Service.dll
         [| for ( (* struct *)  (cnrItem,occ,denv,m)) in cnrs do
 #else
         [| for (    struct     (cnrItem,occ,denv,m)) in cnrs do
@@ -1448,7 +1448,7 @@ type TcSymbolUses(g, capturedNameResolutions : ResizeArray<CapturedNameResolutio
                   yield occ, denv, m |]
 
     member this.GetAllUsesOfSymbols() = 
-#if COMPILER_SERVICE_DLL // avoid a hard dependency on System.ValueTuple.dll
+#if COMPILER_SERVICE_DLL // avoid a hard dependency on System.ValueTuple.dll from FSharp.Compiler.Service.dll
         [| for ( (* struct *) (cnrItem,occ,denv,m)) in cnrs do
 #else
         [| for (    struct    (cnrItem,occ,denv,m)) in cnrs do
