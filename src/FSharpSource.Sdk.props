@@ -67,6 +67,7 @@ $(DefineConstants)
 
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\..\Tools\MSFT.snk</AssemblyOriginatorKeyFile>
+    <!--<AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\fsharp\msft.pubkey</AssemblyOriginatorKeyFile>-->
     <SignAssembly>true</SignAssembly>
     <PublicSign Condition="'$(OS)' != 'Windows_NT'">true</PublicSign>
     <DelaySign>true</DelaySign>
