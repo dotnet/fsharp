@@ -49,6 +49,9 @@
     <FsSrGen Include="..\FSComp.txt">
       <Link>FSComp.txt</Link>
     </FsSrGen>
+    <EmbeddedResource Include="obj\coreclr\FSComp.resources">
+      <Link>FSComp.resources</Link>
+    </EmbeddedResource>
     <EmbeddedResource Include="..\FSStrings.resx">
       <Link>FSStrings.resx</Link>
     </EmbeddedResource>
