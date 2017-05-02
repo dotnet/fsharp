@@ -12,10 +12,8 @@
     <AssemblyName>FSharp.LanguageService.Compiler</AssemblyName>
     <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
-    <DefineConstants>COMPILED_AS_LANGUAGE_SERVICE_DLL;$(DefineConstants)</DefineConstants>
-    <DefineConstants>INCLUDE_METADATA_READER;$(DefineConstants)</DefineConstants>
+    <DefineConstants>COMPILER_SERVICE_DLL;$(DefineConstants)</DefineConstants>
     <DefineConstants>NO_INLINE_IL_PARSER;$(DefineConstants)</DefineConstants>
-    <DefineConstants>INCLUDE_METADATA_WRITER;$(DefineConstants)</DefineConstants>
     <NoWarn>$(NoWarn);62;9;75</NoWarn>
     <ProjectGuid>{a437a6ec-5323-47c2-8f86-e2cac54ff152}</ProjectGuid>
     <AllowCrossTargeting>true</AllowCrossTargeting>

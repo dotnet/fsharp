@@ -1648,9 +1648,7 @@ let main0(ctok, argv, referenceResolver, bannerAlreadyPrinted, openBinariesInMem
 
     let directoryBuildingFrom = Directory.GetCurrentDirectory()
     let setProcessThreadLocals tcConfigB =
-#if COMPILER_SERVICE
                     tcConfigB.openBinariesInMemory <- openBinariesInMemory
-#endif
 #if PREFERRED_UI_LANG
                     match tcConfigB.preferredUiLang with
                     | Some s -> System.Globalization.CultureInfo.CurrentUICulture <- new System.Globalization.CultureInfo(s)

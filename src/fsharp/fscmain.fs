@@ -43,7 +43,7 @@ module Driver =
                     failwithf "%s" <| FSComp.SR.elSysEnvExitDidntExit() 
             }
 
-        mainCompile (argv, MSBuildReferenceResolver.Resolver, false, quitProcessExiter)
+        mainCompile (argv, MSBuildReferenceResolver.Resolver, false, false, quitProcessExiter, None, None)
         0 
 
 [<EntryPoint>]

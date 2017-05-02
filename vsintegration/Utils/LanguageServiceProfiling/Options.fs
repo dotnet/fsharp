@@ -208,8 +208,8 @@ let FCS (repositoryDir: string) : Options =
             @"--define:FX_LCIDFROMCODEPAGE"; "--define:FX_RESX_RESOURCE_READER";
             @"--define:FX_RESIDENT_COMPILER"; "--define:SHADOW_COPY_REFERENCES";
             @"--define:EXTENSIONTYPING";
-            @"--define:COMPILER_SERVICE_ASSUMES_FSHARP_CORE_4_4_0_0";
-            @"--define:COMPILER_SERVICE"; "--define:NO_STRONG_NAMES"; "--define:TRACE";
+            @"--define:COMPILER_SERVICE_DLL_ASSUMES_FSHARP_CORE_4_4_0_0";
+            @"--define:COMPILER_SERVICE_DLL"; "--define:NO_STRONG_NAMES"; "--define:TRACE";
             @"--doc:..\..\..\bin\v4.5\FSharp.Compiler.Service.xml"; "--optimize-";
             @"--platform:anycpu";
             @"-r:" + (repositoryDir </> @"packages\Microsoft.DiaSymReader\lib\net20\Microsoft.DiaSymReader.dll");

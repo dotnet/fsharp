@@ -17,7 +17,7 @@ type Check =
         try 
             try
 #if DEBUG
-                Microsoft.FSharp.Compiler.CompileOps.CompilerService.showAssertForUnexpectedException := false
+                Microsoft.FSharp.Compiler.CompileOps.LanguageService_Compiler.showAssertForUnexpectedException := false
 #endif
                 if (File.Exists("watson-test.fs")) then
                     File.Delete("watson-test.fs")

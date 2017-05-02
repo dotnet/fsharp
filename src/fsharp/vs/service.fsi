@@ -31,7 +31,11 @@ open Microsoft.FSharp.Compiler.Tastops
 
 /// Represents one parameter for one method (or other item) in a group. 
 [<Sealed>]
+#if COMPILER_PUBLIC_API
 type FSharpMethodGroupItemParameter = 
+#else
+type internal FSharpMethodGroupItemParameter = 
+#endif
 
     /// The name of the parameter.
     member ParameterName: string
@@ -56,7 +60,11 @@ type FSharpMethodGroupItemParameter =
 /// Represents one method (or other item) in a method group. The item may represent either a method or 
 /// a single, non-overloaded item such as union case or a named function value.
 [<Sealed>]
+#if COMPILER_PUBLIC_API
 type FSharpMethodGroupItem = 
+#else
+type internal FSharpMethodGroupItem = 
+#endif
 
     /// The documentation for the item
     member XmlDoc : FSharpXmlDoc
@@ -87,7 +95,11 @@ type FSharpMethodGroupItem =
 
 /// Represents a group of methods (or other items) returned by GetMethods.  
 [<Sealed>]
+#if COMPILER_PUBLIC_API
 type FSharpMethodGroup = 
+#else
+type internal FSharpMethodGroup = 
+#endif
     /// The shared name of the methods (or other items) in the group
     member MethodName: string
 
@@ -96,7 +108,11 @@ type FSharpMethodGroup =
 
 /// Represents the reason why the GetDeclarationLocation operation failed.
 [<RequireQualifiedAccess>]
+#if COMPILER_PUBLIC_API
 type FSharpFindDeclFailureReason = 
+#else
+type internal FSharpFindDeclFailureReason = 
+#endif
 
     /// Generic reason: no particular information about error
     | Unknown
@@ -112,7 +128,11 @@ type FSharpFindDeclFailureReason =
 
 /// Represents the result of the GetDeclarationLocation operation.
 [<RequireQualifiedAccess>]
+#if COMPILER_PUBLIC_API
 type FSharpFindDeclResult = 
+#else
+type internal FSharpFindDeclResult = 
+#endif
     /// Indicates a declaration location was not found, with an additional reason
     | DeclNotFound of FSharpFindDeclFailureReason
     /// Indicates a declaration location was found
@@ -120,7 +140,11 @@ type FSharpFindDeclResult =
      
 /// Represents the checking context implied by the ProjectOptions 
 [<Sealed>]
+#if COMPILER_PUBLIC_API
 type FSharpProjectContext =
+#else
+type internal FSharpProjectContext =
+#endif
     /// Get the resolution and full contents of the assemblies referenced by the project options
     member GetReferencedAssemblies : unit -> FSharpAssembly list
 
@@ -130,7 +154,11 @@ type FSharpProjectContext =
 
 /// Represents the use of an F# symbol from F# source code
 [<Sealed>]
+#if COMPILER_PUBLIC_API
 type FSharpSymbolUse = 
+#else
+type internal FSharpSymbolUse = 
+#endif
     // For internal use only
     internal new : g:TcGlobals * denv: Tastops.DisplayEnv * symbol:FSharpSymbol * itemOcc:ItemOccurence * range: range -> FSharpSymbolUse
 
@@ -166,7 +194,11 @@ type FSharpSymbolUse =
     member RangeAlternate: range
 
 [<RequireQualifiedAccess>]
-type (*internal*) SemanticClassificationType =
+#if COMPILER_PUBLIC_API
+type SemanticClassificationType =
+#else
+type internal SemanticClassificationType =
+#endif
     | ReferenceType
     | ValueType
     | UnionCase
@@ -185,7 +217,11 @@ type (*internal*) SemanticClassificationType =
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
+#if COMPILER_PUBLIC_API
 type FSharpCheckFileResults =
+#else
+type internal FSharpCheckFileResults =
+#endif
     /// The errors returned by parsing a source file.
     member Errors : FSharpErrorInfo[]
 
@@ -335,7 +371,12 @@ type FSharpCheckFileResults =
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
+#if COMPILER_PUBLIC_API
 type FSharpCheckProjectResults =
+#else
+type internal FSharpCheckProjectResults =
+#endif
+
     /// The errors returned by processing the project
     member Errors : FSharpErrorInfo[]
 
@@ -363,10 +404,18 @@ type FSharpCheckProjectResults =
     member DependencyFiles : string list
 
 /// <summary>Unused in this API</summary>
+#if COMPILER_PUBLIC_API
 type UnresolvedReferencesSet 
+#else
+type internal UnresolvedReferencesSet 
+#endif
 
 /// <summary>A set of information describing a project or script build configuration.</summary>
+#if COMPILER_PUBLIC_API
 type FSharpProjectOptions = 
+#else
+type internal FSharpProjectOptions = 
+#endif
     { 
       // Note that this may not reduce to just the project directory, because there may be two projects in the same directory.
       ProjectFileName: string
@@ -397,13 +446,21 @@ type FSharpProjectOptions =
          
 /// The result of calling TypeCheckResult including the possibility of abort and background compiler not caught up.
 [<RequireQualifiedAccess>]
+#if COMPILER_PUBLIC_API
 type FSharpCheckFileAnswer =
+#else
+type internal FSharpCheckFileAnswer =
+#endif
     | Aborted // because cancellation caused an abandonment of the operation
     | Succeeded of FSharpCheckFileResults    
 
 [<Sealed; AutoSerializable(false)>]      
 /// Used to parse and check F# source code.
+#if COMPILER_PUBLIC_API
 type FSharpChecker =
+#else
+type internal FSharpChecker =
+#endif
     /// <summary>
     /// Create an instance of an FSharpChecker.  
     /// </summary>
@@ -547,7 +604,6 @@ type FSharpChecker =
     /// so that references are re-resolved.</param>
     member GetProjectOptionsFromCommandLineArgs : projectFileName: string * argv: string[] * ?loadedTimeStamp: DateTime * ?extraProjectInfo: obj -> FSharpProjectOptions
            
-#if FX_ATLEAST_45
     /// <summary>
     /// <para>Get the project options implied by a standard F# project file in the xbuild/msbuild format.</para>
     /// </summary>
@@ -558,7 +614,6 @@ type FSharpChecker =
     /// so that an 'unload' and 'reload' action will cause the project to be considered as a new project.</param>
     [<Obsolete("This functionality has been moved to the new NuGet package 'FSharp.Compiler.Service.ProjectCracker'", true)>]
     member GetProjectOptionsFromProjectFile : projectFileName: string * ?properties : (string * string) list * ?loadedTimeStamp: DateTime -> FSharpProjectOptions
-#endif
 
     /// <summary>
     /// <para>Like ParseFileInProject, but uses results from the background builder.</para>
@@ -701,13 +756,21 @@ type internal FsiInteractiveChecker =
     static member internal CreateErrorInfos : tcConfig: TcConfig * allErrors:bool * mainInputFileName : string * seq<ErrorLogger.PhasedDiagnostic * FSharpErrorSeverity> -> FSharpErrorInfo[]
 
 /// Information about the compilation environment
+#if COMPILER_PUBLIC_API
 type [<Class>] CompilerEnvironment =
+#else
+type [<Class>] internal CompilerEnvironment =
+#endif
     /// The default location of FSharp.Core.dll and fsc.exe based on the version of fsc.exe that is running
     static member BinFolderOfDefaultFSharpCompiler : string option -> string option
 
 /// Information about the compilation environment 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]   
+#if COMPILER_PUBLIC_API
 module CompilerEnvironment =
+#else
+module internal CompilerEnvironment =
+#endif
     /// These are the names of assemblies that should be referenced for .fs or .fsi files that
     /// are not associated with a project.
     val DefaultReferencesForOrphanSources : assumeDotNetFramework: bool -> string list
@@ -717,14 +780,23 @@ module CompilerEnvironment =
     val IsCheckerSupportedSubcategory : string -> bool
 
 /// Information about the debugging environment
+#if COMPILER_PUBLIC_API
 module DebuggerEnvironment =
+#else
+module internal DebuggerEnvironment =
+#endif
     /// Return the language ID, which is the expression evaluator id that the
     /// debugger will use.
     val GetLanguageID : unit -> Guid
     
 
 /// A set of helpers related to naming of identifiers
+#if COMPILER_PUBLIC_API
 module PrettyNaming =
+#else
+module internal PrettyNaming =
+#endif
+
     val IsIdentifierPartCharacter     : char -> bool
     val IsLongIdentifierPartCharacter : char -> bool
     val IsOperatorName                : string -> bool

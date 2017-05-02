@@ -10,7 +10,11 @@ namespace Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler 
 
 /// Indicates a kind of item to show in an F# navigation bar
+#if COMPILER_PUBLIC_API
 type FSharpNavigationDeclarationItemKind =
+#else
+type internal FSharpNavigationDeclarationItemKind =
+#endif
     | NamespaceDecl
     | ModuleFileDecl
     | ExnDecl
@@ -22,7 +26,11 @@ type FSharpNavigationDeclarationItemKind =
     | OtherDecl
 
 [<RequireQualifiedAccess>]
+#if COMPILER_PUBLIC_API
 type FSharpEnclosingEntityKind =
+#else
+type internal FSharpEnclosingEntityKind =
+#endif
     | Namespace
     | Module
     | Class
@@ -34,7 +42,11 @@ type FSharpEnclosingEntityKind =
 
 /// Represents an item to be displayed in the navigation bar
 [<Sealed>]
-type (*internal*) FSharpNavigationDeclarationItem = 
+#if COMPILER_PUBLIC_API
+type FSharpNavigationDeclarationItem = 
+#else
+type internal FSharpNavigationDeclarationItem = 
+#endif
     member Name : string
     member UniqueName : string
     member Glyph : FSharpGlyph
@@ -49,7 +61,11 @@ type (*internal*) FSharpNavigationDeclarationItem =
 /// Represents top-level declarations (that should be in the type drop-down)
 /// with nested declarations (that can be shown in the member drop-down)
 [<NoEquality; NoComparison>]
-type (*internal*) FSharpNavigationTopLevelDeclaration = 
+#if COMPILER_PUBLIC_API
+type FSharpNavigationTopLevelDeclaration = 
+#else
+type internal FSharpNavigationTopLevelDeclaration = 
+#endif
     { Declaration : FSharpNavigationDeclarationItem
       Nested : FSharpNavigationDeclarationItem[] }
       
@@ -57,7 +73,11 @@ type (*internal*) FSharpNavigationTopLevelDeclaration =
 /// all the members and currently selected indices. First level correspond to
 /// types & modules and second level are methods etc.
 [<Sealed>]
-type (*internal*) FSharpNavigationItems =
+#if COMPILER_PUBLIC_API
+type FSharpNavigationItems =
+#else
+type internal FSharpNavigationItems =
+#endif
     member Declarations : FSharpNavigationTopLevelDeclaration[]
 
 // implementation details used by other code in the compiler    
@@ -67,7 +87,11 @@ module internal NavigationImpl =
     val internal getNavigation : Ast.ParsedInput -> FSharpNavigationItems
     val internal empty : FSharpNavigationItems
 
+#if COMPILER_PUBLIC_API
 module NavigateTo =
+#else
+module internal NavigateTo =
+#endif
     [<RequireQualifiedAccess>]
     type NavigableItemKind =
         | Module

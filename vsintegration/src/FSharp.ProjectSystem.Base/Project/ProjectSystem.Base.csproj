@@ -23,7 +23,6 @@
     <DefineConstants>$(DefineConstants);CODE_ANALYSIS</DefineConstants>
     <AsmmetaDependsOnMSBuildInVS>true</AsmmetaDependsOnMSBuildInVS>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
-    <DefineConstants>$(DefineConstants);FSHARP_CORE_4_5</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_PREFERRED_UI_LANG</DefineConstants>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>

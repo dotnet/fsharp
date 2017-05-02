@@ -10,7 +10,11 @@
 //----------------------------------------------------------------------------
 
 
+#if COMPILER_PUBLIC_API
 module Microsoft.FSharp.Compiler.Interactive.Shell
+#else
+module internal Microsoft.FSharp.Compiler.Interactive.Shell
+#endif
 
 open System.IO
 open Microsoft.FSharp.Compiler
@@ -23,8 +27,10 @@ type FsiValue =
     member ReflectionValue : obj
     /// The type of the value, from the point of view of the .NET type system
     member ReflectionType : System.Type
+#if COMPILER_API
     /// The type of the value, from the point of view of the F# type system
     member FSharpType : FSharpType
+#endif 
 
 [<Class>]
 type EvaluationEventArgs =

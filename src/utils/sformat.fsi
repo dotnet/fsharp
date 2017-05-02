@@ -48,17 +48,17 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     /// Data representing joints in structured layouts of terms.  The representation
     /// of this data type is only for the consumption of formatting engines.
     [<StructuralEquality; NoComparison>]
-#if COMPILER_SERVICE
+#if COMPILER_PUBLIC_API
     type Joint =
 #else
-    type (* internal *) Joint =
+    type internal Joint =
 #endif
         | Unbreakable
         | Breakable of int
         | Broken of int
     
     [<StructuralEquality; NoComparison>]
-#if COMPILER_SERVICE
+#if COMPILER_PUBLIC_API
     type LayoutTag =
 #else
     type internal LayoutTag =
@@ -97,19 +97,19 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         | UnknownType
         | UnknownEntity
 
-#if COMPILER_SERVICE
+#if COMPILER_PUBLIC_API
     type TaggedText =
 #else
-    type (* internal *) TaggedText =
+    type internal TaggedText =
 #endif
         abstract Tag : LayoutTag
         abstract Text : string
 
     
-#if COMPILER_SERVICE
+#if COMPILER_PUBLIC_API
     type TaggedTextWriter =
 #else
-    type (* internal *) TaggedTextWriter =
+    type internal TaggedTextWriter =
 #endif
         abstract Write: t: TaggedText -> unit
         abstract WriteLine: unit -> unit
@@ -117,10 +117,10 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     /// Data representing structured layouts of terms.  The representation
     /// of this data type is only for the consumption of formatting engines.
     [<NoEquality; NoComparison>]
-#if COMPILER_SERVICE
+#if COMPILER_PUBLIC_API
     type Layout =
 #else
-    type (* internal *) Layout = 
+    type internal Layout = 
 #endif
      | ObjLeaf of bool * obj * bool
      | Leaf of bool * TaggedText * bool
@@ -128,7 +128,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
      | Attr of string * (string * string) list * Layout
 #endif
 
-#if COMPILER_SERVICE
+#if COMPILER_PUBLIC_API
     module TaggedTextOps =
 #else
     module internal TaggedTextOps =
@@ -181,7 +181,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 
 #if RUNTIME   // FSharp.Core.dll doesn't use PrintIntercepts
 #else  // FSharp.Compiler.dll, FSharp.Compiler-proto.dll, FSharp.PowerPack.dll
-#if COMPILER_SERVICE
+#if COMPILER_PUBLIC_API
     type IEnvironment = 
 #else
     type internal IEnvironment = 
@@ -204,7 +204,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     /// A joint is either unbreakable, breakable or broken.
     /// If a joint is broken the RHS layout occurs on the next line with optional indentation.
     /// A layout can be squashed to for given width which forces breaks as required.
-#if COMPILER_SERVICE
+#if COMPILER_PUBLIC_API
     module LayoutOps =
 #else
     module internal LayoutOps =
@@ -304,7 +304,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     /// </pre>
     /// </example>
     [<NoEquality; NoComparison>]
-#if COMPILER_SERVICE
+#if COMPILER_PUBLIC_API
     type FormatOptions =
 #else
     type internal FormatOptions =
@@ -332,7 +332,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
           ShowIEnumerable: bool  }
         static member Default : FormatOptions
 
-#if COMPILER_SERVICE
+#if COMPILER_PUBLIC_API
     module Display =
 #else
     module internal Display =

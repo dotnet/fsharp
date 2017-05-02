@@ -33,7 +33,6 @@
     <!-- Copy everything to SuiteBin so that it can be unittested -->
     <CopyToSuiteBin>true</CopyToSuiteBin>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
-    <DefineConstants>$(DefineConstants),FSHARP_CORE_4_5=True</DefineConstants>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
     <ImportVSSDKTargets>true</ImportVSSDKTargets>

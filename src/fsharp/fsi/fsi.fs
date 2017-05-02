@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-module (*internal*) Microsoft.FSharp.Compiler.Interactive.Shell
+module Microsoft.FSharp.Compiler.Interactive.Shell
 
 #nowarn "55"
 
@@ -1078,7 +1078,7 @@ type internal FsiDynamicCompiler
         // Explicitly register the resources with the QuotationPickler module 
         // We would save them as resources into the dynamic assembly but there is missing 
         // functionality System.Reflection for dynamic modules that means they can't be read back out 
-#if COMPILER_SERVICE_ASSUMES_FSHARP_CORE_4_4_0_0
+#if COMPILER_SERVICE_DLL_ASSUMES_FSHARP_CORE_4_4_0_0
         let cenv = { ilg = ilGlobals ; generatePdb = generateDebugInfo; resolveAssemblyRef=resolveAssemblyRef; tryFindSysILTypeRef=tcGlobals.TryFindSysILTypeRef }
         for (referencedTypeDefs, bytes) in codegenResults.quotationResourceInfo do 
             let referencedTypes = 
@@ -1602,10 +1602,10 @@ module internal MagicAssemblyResolution =
     //  It is an explicit user trust decision to load an assembly with #r. Scripts are not run automatically (for example, by double-clicking in explorer).
     //  We considered setting loadFromRemoteSources in fsi.exe.config but this would transitively confer unsafe loading to the code in the referenced 
     //  assemblies. Better to let those assemblies decide for themselves which is safer.
-#if FX_ATLEAST_40
-        Assembly.UnsafeLoadFrom(path)
-#else
+#if FSI_TODO_NETCORE
         Assembly.LoadFrom(path)
+#else
+        Assembly.UnsafeLoadFrom(path)
 #endif
 
     let Install(tcConfigB, tcImports: TcImports, fsiDynamicCompiler: FsiDynamicCompiler, fsiConsoleOutput: FsiConsoleOutput) = 
@@ -2506,7 +2506,8 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     do SetDebugSwitch    tcConfigB (Some "pdbonly") OptionSwitch.On
     do SetTailcallSwitch tcConfigB OptionSwitch.On    
 
-#if FX_ATLEAST_40
+#if FSI_TODO_NETCORE
+#else
     // set platform depending on whether the current process is a 64-bit process.
     // BUG 429882 : FsiAnyCPU.exe issues warnings (x64 v MSIL) when referencing 64-bit assemblies
     do tcConfigB.platform <- if IntPtr.Size = 8 then Some AMD64 else Some X86

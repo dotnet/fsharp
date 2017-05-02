@@ -30,7 +30,7 @@ open Microsoft.FSharp.Compiler.ExtensionTyping
 
 #if DEBUG
 
-#if COMPILED_AS_LANGUAGE_SERVICE_DLL
+#if COMPILER_SERVICE_DLL
 module internal CompilerService =
 #else
 module internal FullCompiler =

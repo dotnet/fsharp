@@ -17,12 +17,20 @@ open Microsoft.FSharp.Compiler.Tast
 
 
 [<RequireQualifiedAccess>]
+#if COMPILER_PUBLIC_API
 type (*internal*) FSharpErrorSeverity = 
-    | Warning 
+#else
+type internal FSharpErrorSeverity = 
+#endif
+| Warning 
     | Error
 
 [<Class>]
+#if COMPILER_PUBLIC_API
 type (*internal*) FSharpErrorInfo = 
+#else
+type internal FSharpErrorInfo = 
+#endif
     member FileName: string
     member StartLineAlternate:int
     member EndLineAlternate:int

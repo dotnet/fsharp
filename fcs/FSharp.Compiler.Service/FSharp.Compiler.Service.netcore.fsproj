@@ -4,12 +4,10 @@
     <TargetFramework>netstandard1.6</TargetFramework>
     <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <DefineConstants>$(DefineConstants);BUILDING_WITH_LKG</DefineConstants>
-    <DefineConstants>$(DefineConstants);COMPILED_AS_LANGUAGE_SERVICE_DLL</DefineConstants>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
-    <DefineConstants>$(DefineConstants);COMPILER_SERVICE</DefineConstants>
-    <DefineConstants>$(DefineConstants);COMPILER_SERVICE_ASSUMES_FSHARP_CORE_4_4_0_0</DefineConstants>
-    <DefineConstants>$(DefineConstants);EXTENSIBLE_DUMPER</DefineConstants>
-    <DefineConstants>$(DefineConstants);FSHARP_CORE_4_5</DefineConstants>
+    <DefineConstants>$(DefineConstants);COMPILER_PUBLIC_API</DefineConstants>
+    <DefineConstants>$(DefineConstants);COMPILER_SERVICE_DLL</DefineConstants>
+    <DefineConstants>$(DefineConstants);COMPILER_SERVICE_DLL_ASSUMES_FSHARP_CORE_4_4_0_0</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_PORTABLE_OR_NETSTANDARD</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_PORTABLE</DefineConstants>
     <DefineConstants>$(DefineConstants);NETSTANDARD1_6</DefineConstants>
@@ -49,8 +47,6 @@
     <DefineConstants>$(DefineConstants);FX_RESHAPED_REFLECTION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_REFLECTION_CORECLR</DefineConstants>
     <DefineConstants>$(DefineConstants);FSI_TODO_NETCORE</DefineConstants>
-    <DefineConstants>$(DefineConstants);INCLUDE_METADATA_READER</DefineConstants>
-    <DefineConstants>$(DefineConstants);INCLUDE_METADATA_WRITER</DefineConstants>
     <DefineConstants>$(DefineConstants);NO_DEBUG_LOG</DefineConstants>
     <DefineConstants>$(DefineConstants);NO_INLINE_IL_PARSER</DefineConstants>
     <DefineConstants>$(DefineConstants);NO_LOADER_OPTIMIZATION</DefineConstants>

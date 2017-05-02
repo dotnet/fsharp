@@ -58,20 +58,14 @@ open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
 
 #if DEBUG
-
-#if COMPILED_AS_LANGUAGE_SERVICE_DLL
+[<AutoOpen>]
+#if COMPILER_SERVICE_DLL
 module internal CompilerService =
 #else
 module internal FullCompiler =
 #endif
     let showAssertForUnexpectedException = ref true
-#if COMPILED_AS_LANGUAGE_SERVICE_DLL
-open CompilerService
-#else
-open FullCompiler
-#endif
-
-#endif
+#endif // DEBUG
 
 //----------------------------------------------------------------------------
 // Some Globals
@@ -1705,7 +1699,7 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
           yield typeof<System.ComponentModel.PropertyChangedEventArgs>.Assembly.Location; // System.ObjectModel             
           yield typeof<System.IO.BufferedStream>.Assembly.Location; // System.IO
           yield typeof<System.Linq.Enumerable>.Assembly.Location; // System.Linq
-          yield typeof<System.Xml.Linq.XDocument>.Assembly.Location; // System.Xml.Linq
+          //yield typeof<System.Xml.Linq.XDocument>.Assembly.Location; // System.Xml.Linq
           yield typeof<System.Net.WebRequest>.Assembly.Location; // System.Net.Requests
           yield typeof<System.Numerics.BigInteger>.Assembly.Location; // System.Runtime.Numerics
           yield typeof<System.Threading.Tasks.TaskExtensions>.Assembly.Location; // System.Threading.Tasks

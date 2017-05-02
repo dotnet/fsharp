@@ -46,6 +46,9 @@
     <Compile Include="..\fsi\console.fs">
       <Link>console.fs</Link>
     </Compile>
+    <Compile Include="..\fsi\fsi.fsi">
+      <Link>fsi.fsi</Link>
+    </Compile>
     <Compile Include="..\fsi\fsi.fs">
       <Link>fsi.fs</Link>
     </Compile>

@@ -428,7 +428,7 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
 //--------------------------------------------------------------------------
 
 [<RequireQualifiedAccess>]
-type (*internal*) FSharpFindDeclFailureReason = 
+type FSharpFindDeclFailureReason = 
     // generic reason: no particular information about error
     | Unknown
     // source code file is not available
@@ -2315,7 +2315,7 @@ type FSharpCheckFileAnswer =
 
 /// Callback that indicates whether a requested result has become obsolete.    
 [<NoComparison;NoEquality>]
-type (*internal*) IsResultObsolete = 
+type IsResultObsolete = 
     | IsResultObsolete of (unit->bool)
 
 
@@ -3298,10 +3298,8 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
           OriginalLoadReferences=[]
           ExtraProjectInfo=extraProjectInfo }
 
-#if FX_ATLEAST_45
     member ic.GetProjectOptionsFromProjectFile(_ : string, ?_a : (string * string) list, ?_b : System.DateTime) : FSharpProjectOptions =
         failwithf "This method has been removed."
-#endif
 
     /// Begin background parsing the given project.
     member ic.StartBackgroundCompile(options) = backgroundCompiler.CheckProjectInBackground(options) 

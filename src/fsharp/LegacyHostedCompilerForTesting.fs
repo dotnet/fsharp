@@ -65,7 +65,7 @@ type internal InProcCompiler(referenceResolver) =
             { new Exiter with
                  member this.Exit n = exitCode := n; raise StopProcessing }
         try 
-            typecheckAndCompile(ctok, argv, referenceResolver, false, exiter, loggerProvider.Provider)
+            typecheckAndCompile(ctok, argv, referenceResolver, false, false, exiter, loggerProvider.Provider, None, None)
         with 
             | StopProcessing -> ()
             | ReportedError _  | WrappedError(ReportedError _,_)  ->

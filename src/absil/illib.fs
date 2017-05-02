@@ -1,6 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-module (*internal*) Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
+#if COMPILER_PUBLIC_API
+module Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
+#else
+module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
+#endif
 #nowarn "1178" // The struct, record or union type 'internal_instr_extension' is not structurally comparable because the type
 
 
@@ -265,7 +269,7 @@ module Option =
 
 module List = 
 
-    let item n xs = List.nth xs n
+    //let item n xs = List.nth xs n
 #if FX_RESHAPED_REFLECTION
     open PrimReflectionAdapters
     open Microsoft.FSharp.Core.ReflectionAdapters
