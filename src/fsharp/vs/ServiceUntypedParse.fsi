@@ -63,6 +63,7 @@ type CompletionPath = string list * string option // plid * residue
 type internal CompletionPath = string list * string option // plid * residue
 #endif
 
+[<RequireQualifiedAccess>]
 #if COMPILER_PUBLIC_API
 type InheritanceContext = 
 #else
@@ -72,6 +73,7 @@ type internal InheritanceContext =
     | Interface
     | Unknown
 
+[<RequireQualifiedAccess>]
 #if COMPILER_PUBLIC_API
 type RecordContext =
 #else
@@ -81,6 +83,7 @@ type internal RecordContext =
     | Constructor of string // typename
     | New of CompletionPath
 
+[<RequireQualifiedAccess>]
 #if COMPILER_PUBLIC_API
 type CompletionContext = 
 #else
@@ -105,6 +108,7 @@ type ModuleKind = { IsAutoOpen: bool; HasModuleSuffix: bool }
 type internal ModuleKind = { IsAutoOpen: bool; HasModuleSuffix: bool }
 #endif
 
+[<RequireQualifiedAccess>]
 #if COMPILER_PUBLIC_API
 type EntityKind =
 #else
