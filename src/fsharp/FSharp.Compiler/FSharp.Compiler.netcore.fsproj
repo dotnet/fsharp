@@ -18,6 +18,9 @@
     <DefineConstants>INCLUDE_METADATA_READER;$(DefineConstants)</DefineConstants>
     <DefineConstants>INCLUDE_METADATA_WRITER;$(DefineConstants)</DefineConstants>
     <DefineConstants>FX_RESHAPED_REFLECTION_CORECLR;$(DefineConstants)</DefineConstants>
+
+    <OtherFlags>$(OtherFlags) --keyfile:e:\github\fsharp\src\fsharp\Fsc\..\..\fsharp\msft.pubkey</OtherFlags>
+    <OtherFlags>$(OtherFlags) -g</OtherFlags>
   </PropertyGroup>
 
   <ItemGroup>

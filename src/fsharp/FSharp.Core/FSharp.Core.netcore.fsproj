@@ -17,6 +17,8 @@
 
     <OtherFlags>$(OtherFlags) --warnon:1182 --compiling-fslib --maxerrors:20   --extraoptimizationloops:1 </OtherFlags>
     <OtherFlags Condition=" '$(_MyTargetFramework)' == 'coreclr' ">$(OtherFlags)     --compiling-fslib-40</OtherFlags>
+
+    <OtherFlags>$(OtherFlags) --keyfile:e:\github\fsharp\src\fsharp\Fsc\..\..\fsharp\msft.pubkey</OtherFlags>
   </PropertyGroup>
 
   <ItemGroup>

@@ -14,8 +14,11 @@
     <AssemblyName>fsc</AssemblyName>
 
     <DefineConstants>EXTENSIONTYPING;COMPILER;$(DefineConstants)</DefineConstants>
+    <DefineConstants>FX_RESHAPED_REFLECTION_CORECLR;$(DefineConstants)</DefineConstants>
 
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
+    <OtherFlags>$(OtherFlags) --platform:anycpu</OtherFlags>
+    <OtherFlags>$(OtherFlags) --keyfile:e:\github\fsharp\src\fsharp\Fsc\..\..\fsharp\msft.pubkey</OtherFlags>
   </PropertyGroup>
 
   <ItemGroup>
