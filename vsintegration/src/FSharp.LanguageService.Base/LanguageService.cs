@@ -1430,7 +1430,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
         internal abstract string GetDescription(int index);
 
-        internal abstract string GetType(int index);
+        internal abstract string GetReturnTypeText(int index);
 
         internal abstract int GetParameterCount(int index);
 

@@ -107,7 +107,7 @@ type UsingMSBuild()  =
         Assert.IsTrue(methodstr.IsSome, "Expected a method group")
         let methodstr = methodstr.Value
 
-        Assert.AreEqual(expectedStr, methodstr.GetType(0)) // Expecting a method info like X(a:int,b:int) : int [used to be  X(a:int,b:int) -> int]
+        Assert.AreEqual(expectedStr, methodstr.GetReturnTypeText(0)) // Expecting a method info like X(a:int,b:int) : int [used to be  X(a:int,b:int) -> int]
 
     member private this.VerifyParameterCount(fileContents : string, marker : string, expectedCount: int) =
         let methodstr = this.GetMethodListForAMethodTip(fileContents,marker)
@@ -182,7 +182,7 @@ type UsingMSBuild()  =
         let fileContent = """
            let f x y = x + y
            f((*Mark*)"""
-        this.VerifyFirstParameterInfoColonContent(fileContent,"(*Mark*)",": int -> int ")  
+        this.VerifyFirstParameterInfoColonContent(fileContent,"(*Mark*)",": (int -> int) ")  
 
     [<Test>]
     member public this.``Regression.StaticVsInstance.Bug3626.Case1``() =

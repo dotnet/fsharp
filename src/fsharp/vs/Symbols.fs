@@ -220,6 +220,11 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
     let isResolved() = not (isUnresolved())
     let checkIsResolved() = checkEntityIsResolved entity
 
+    let isDefinedInFSharpCore() =
+        match ccuOfTyconRef entity with
+        | None -> false
+        | Some ccu -> ccuEq ccu cenv.g.fslibCcu
+
     member __.Entity = entity
         
     member __.LogicalName = 
@@ -552,16 +557,35 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
 
     member __.AllCompilationPaths =
         checkIsResolved()
-        let (CompilationPath.CompPath(_, parts)) = entity.CompilationPath
-        ([], parts) ||> List.fold (fun res (part, kind) ->
-            let parts =
-                match kind with
-                | ModuleOrNamespaceKind.FSharpModuleWithSuffix ->
-                    [part; part.[..part.Length - 7]]
-                | _ -> [part]
+        let (CompPath(_, parts)) = entity.CompilationPath
+        let partsList =
+            [ yield parts
+              match parts with
+              | ("Microsoft", ModuleOrNamespaceKind.Namespace) :: rest when isDefinedInFSharpCore() -> yield rest
+              | _ -> ()]
 
-            parts |> List.collect (fun part -> 
-                res |> List.map (fun path -> path + "." + part)))
+        let mapEachCurrentPath (paths: string list list) path =
+            match paths with
+            | [] -> [[path]]
+            | _ -> paths |> List.map (fun x -> path :: x)
+
+        let walkParts (parts: (string * ModuleOrNamespaceKind) list) = //: string list list =
+            let rec loop (currentPaths: string list list) parts =
+                match parts with
+                | [] -> currentPaths
+                | (name: string, kind) :: rest ->
+                    match kind with
+                    | ModuleOrNamespaceKind.FSharpModuleWithSuffix ->
+                        [ yield! loop (mapEachCurrentPath currentPaths name) rest
+                          yield! loop (mapEachCurrentPath currentPaths (name.[..name.Length - 7])) rest ]
+                    | _ -> 
+                       loop (mapEachCurrentPath currentPaths name) rest
+            loop [] parts |> List.map (List.rev >> String.concat ".")
+            
+        let res =
+            [ for parts in partsList do
+                yield! walkParts parts ]
+        res
 
     override x.Equals(other : obj) =
         box x === other ||
@@ -1911,8 +1935,8 @@ and FSharpType(cenv, typ:TType) =
         "type " + NicePrint.prettyStringOfTyNoCx (DisplayEnv.Empty(cenv.g)) typ 
 
     static member Prettify(typ: FSharpType) = 
-        let t = PrettyTypes.PrettifyTypes1 typ.cenv.g typ.V  |> p23
-        typ.AdjustType t
+        let ty = PrettyTypes.PrettifyType typ.cenv.g typ.V  |> fst
+        typ.AdjustType ty
 
     static member Prettify(typs: IList<FSharpType>) = 
         let xs = typs |> List.ofSeq
@@ -1920,12 +1944,12 @@ and FSharpType(cenv, typ:TType) =
         | [] -> []
         | h :: _ -> 
             let cenv = h.cenv
-            let prettyTyps = PrettyTypes.PrettifyTypesN cenv.g [ for t in xs -> t.V ] |> p23
+            let prettyTyps = PrettyTypes.PrettifyTypes cenv.g [ for t in xs -> t.V ] |> fst
             (xs, prettyTyps) ||> List.map2 (fun p pty -> p.AdjustType(pty))
         |> makeReadOnlyCollection
 
     static member Prettify(parameter: FSharpParameter) = 
-        let prettyTyp = parameter.V |> PrettyTypes.PrettifyTypes1 parameter.cenv.g |> p23
+        let prettyTyp = parameter.V |> PrettyTypes.PrettifyType parameter.cenv.g |> fst
         parameter.AdjustType(prettyTyp)
 
     static member Prettify(parameters: IList<FSharpParameter>) = 
@@ -1934,7 +1958,7 @@ and FSharpType(cenv, typ:TType) =
         | [] -> []
         | h :: _ -> 
             let cenv = h.cenv
-            let prettyTyps = parameters |> List.map (fun p -> p.V) |> PrettyTypes.PrettifyTypesN cenv.g |> p23
+            let prettyTyps = parameters |> List.map (fun p -> p.V) |> PrettyTypes.PrettifyTypes cenv.g |> fst
             (parameters, prettyTyps) ||> List.map2 (fun p pty -> p.AdjustType(pty))
         |> makeReadOnlyCollection
 
@@ -1945,14 +1969,14 @@ and FSharpType(cenv, typ:TType) =
         | None -> xs
         | Some h -> 
             let cenv = h.cenv
-            let prettyTyps = xs |> List.mapSquared (fun p -> p.V) |> PrettyTypes.PrettifyTypesNN cenv.g |> p23
+            let prettyTyps = xs |> List.mapSquared (fun p -> p.V) |> PrettyTypes.PrettifyCurriedTypes cenv.g |> fst
             (xs, prettyTyps) ||> List.map2 (List.map2 (fun p pty -> p.AdjustType(pty)))
         |> List.map makeReadOnlyCollection |> makeReadOnlyCollection
 
     static member Prettify(parameters: IList<IList<FSharpParameter>>, returnParameter: FSharpParameter) = 
         let xs = parameters |> List.ofSeq |> List.map List.ofSeq
         let cenv = returnParameter.cenv
-        let prettyTyps, prettyRetTy = xs |> List.mapSquared (fun p -> p.V) |> (fun tys -> PrettyTypes.PrettifyTypesNN1 cenv.g (tys,returnParameter.V) )|> p23
+        let prettyTyps, prettyRetTy = xs |> List.mapSquared (fun p -> p.V) |> (fun tys -> PrettyTypes.PrettifyCurriedSigTypes cenv.g (tys,returnParameter.V) )|> fst
         let ps = (xs, prettyTyps) ||> List.map2 (List.map2 (fun p pty -> p.AdjustType(pty))) |> List.map makeReadOnlyCollection |> makeReadOnlyCollection
         ps, returnParameter.AdjustType(prettyRetTy)
 

@@ -71,7 +71,7 @@ type internal FSharpMethodListForAMethodTip(documentationBuilder: IDocumentation
         buf.ToString()
         )
             
-    override x.GetType(methodIndex) = safe methodIndex "" (fun m -> m.TypeText)
+    override x.GetReturnTypeText(methodIndex) = safe methodIndex "" (fun m -> m.ReturnTypeText)
 
     override x.GetParameterCount(methodIndex) =  safe methodIndex 0 (fun m -> getParameters(m).Length)
             
