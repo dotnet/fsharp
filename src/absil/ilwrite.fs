@@ -3066,12 +3066,14 @@ let count f arr =
     Array.fold (fun x y -> x + f y) 0x0 arr 
 
 module FileSystemUtilites = 
+    open System
     open System.Reflection
+    open System.Globalization
 #if FX_RESHAPED_REFLECTION
     open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
     let progress = try System.Environment.GetEnvironmentVariable("FSharp_DebugSetFilePermissions") <> null with _ -> false
-    let setExecutablePermission filename =
+    let setExecutablePermission (filename: string) =
 
 #if ENABLE_MONO_SUPPORT
       if runningOnMono then 
@@ -3079,10 +3081,13 @@ module FileSystemUtilites =
             let monoPosix = Assembly.Load("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756")
             if progress then eprintf "loading type Mono.Unix.UnixFileInfo...\n"
             let monoUnixFileInfo = monoPosix.GetType("Mono.Unix.UnixFileSystemInfo") 
-            let fileEntry = monoUnixFileInfo.InvokeMember("GetFileSystemEntry", (BindingFlags.InvokeMethod ||| BindingFlags.Static ||| BindingFlags.Public), null, null, [| box filename |],System.Globalization.CultureInfo.InvariantCulture)
-            let prevPermissions = monoUnixFileInfo.InvokeMember("get_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| |],System.Globalization.CultureInfo.InvariantCulture) |> unbox<int>
+            let fileEntry = monoUnixFileInfo.InvokeMember("GetFileSystemEntry", (BindingFlags.InvokeMethod ||| BindingFlags.Static ||| BindingFlags.Public), null, null, [| box filename |],CultureInfo.InvariantCulture)
+            let prevPermissions = monoUnixFileInfo.InvokeMember("get_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| |],CultureInfo.InvariantCulture) 
+            let prevPermissionsValue = prevPermissions |> unbox<int>
+            let newPermissionsValue = prevPermissionsValue ||| 0x000001ED
+            let newPermissions = Enum.ToObject(prevPermissions.GetType(), newPermissionsValue)
             // Add 0x000001ED (UserReadWriteExecute, GroupReadExecute, OtherReadExecute) to the access permissions on Unix
-            monoUnixFileInfo.InvokeMember("set_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| box (prevPermissions ||| 0x000001ED) |],System.Globalization.CultureInfo.InvariantCulture) |> ignore
+            monoUnixFileInfo.InvokeMember("set_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| newPermissions |],CultureInfo.InvariantCulture) |> ignore
         with e -> 
             if progress then eprintf "failure: %s...\n" (e.ToString())
             // Fail silently

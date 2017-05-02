@@ -2817,15 +2817,26 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                 [ let runtimeRoot = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
                   let runtimeRootWithoutSlash = runtimeRoot.TrimEnd('/', '\\')
                   let api = runtimeRootWithoutSlash + "-api"
-                  yield runtimeRoot // The default FSharp.Core is found in lib/mono/4.5
-                  if Directory.Exists(api) then
-                     yield api
-                     let facades = Path.Combine(api, "Facades")
-                     if Directory.Exists(facades) then
-                        yield facades
-                  let facades = Path.Combine(runtimeRoot, "Facades")
-                  if Directory.Exists(facades) then
-                     yield facades
+                  let rootFacades = Path.Combine(runtimeRootWithoutSlash, "Facades")
+                  let apiFacades = Path.Combine(api, "Facades")
+                  match tcConfig.resolutionEnvironment with
+#if !FSI_TODO_NETCORE
+                  // For F# Interactive code we must inly reference impementation assemblies
+                  | ReferenceResolver.RuntimeLike ->
+                      yield runtimeRoot
+                      if Directory.Exists(rootFacades) then
+                          yield rootFacades // System.Runtime.dll is in /usr/lib/mono/4.5/Facades
+#endif
+                  | _ ->
+                      // The default FSharp.Core is found in lib/mono/4.5
+                      yield runtimeRoot  
+                      if Directory.Exists(rootFacades) then
+                          yield rootFacades // System.Runtime.dll is in /usr/lib/mono/4.5/Facades
+                      // It's not clear why we would need to reference the 4.5-api directory.  
+                      if Directory.Exists(api) then
+                          yield api
+                      if Directory.Exists(apiFacades) then
+                          yield apiFacades
                 ]
             else                                
 #endif

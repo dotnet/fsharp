@@ -1556,21 +1556,6 @@ type UsingMSBuild() as this =
               "#load \"" // Unclosed
               "#load \"Hello There\""]
             ) 
-        
-    //regression test for bug 2530
-    [<Test>]
-    [<Category("fsx moved from tao test")>]
-    member public this.``Fsx.IntellisenseForFSI``() =
-        let code = 
-                                      ["module Script"
-                                       "fsi(*MarkerFSI*)" 
-                                       ]
-        let (_, script1) = createSingleFileFsxFromLines code
-        TakeCoffeeBreak(this.VS)
-        let marker = "(*MarkerFSI*)"
-        let list = ["FormatProvider";"CommandLineArgs"]
-        let completions = DotCompletionAtStartOfMarker script1 marker
-        AssertCompListContainsAll(completions, list)
 
     [<Test>]
     [<Category("TypeProvider")>]
