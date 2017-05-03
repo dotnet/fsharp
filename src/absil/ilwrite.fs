@@ -2780,8 +2780,8 @@ let rec GenTypeDefPass3 enc cenv (td:ILTypeDef) =
           if Option.isSome layout.Pack || Option.isSome layout.Size then 
             AddUnsharedRow cenv TableNames.ClassLayout
                 (UnsharedRow 
-                    [| UShort (match layout.Pack with None -> uint16 0x0 | Some p -> p)
-                       ULong (match layout.Size with None -> 0x0 | Some p -> p)
+                    [| UShort (defaultArg layout.Pack (uint16 0x0))
+                       ULong (defaultArg layout.Size 0x0)
                        SimpleIndex (TableNames.TypeDef, tidx) |]) |> ignore
                        
       td.SecurityDecls.AsList |> GenSecurityDeclsPass3 cenv (hds_TypeDef,tidx)
