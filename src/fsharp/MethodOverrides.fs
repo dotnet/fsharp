@@ -305,12 +305,13 @@ module DispatchSlotChecking =
                         | [] -> 
                             noimpl()
                         | [ Override(_,_,_,(mtps,_),argTys,_,_,_) as overrideBy ] ->
-                            let notMoreThanOnePossibleDispatchSlot =
+                            let moreThanOnePossibleDispatchSlot =
                                 dispatchSlots
                                 |> List.filter (fun (RequiredSlot(dispatchSlot,_)) -> IsNameMatch dispatchSlot overrideBy && IsImplMatch g dispatchSlot overrideBy)
                                 |> isNilOrSingleton
+                                |> not
                            
-                            if not notMoreThanOnePossibleDispatchSlot then
+                            if moreThanOnePossibleDispatchSlot then
                                 // Error will be reported below in CheckOverridesAreAllUsedOnce 
                                 ()
 
