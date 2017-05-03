@@ -381,7 +381,7 @@ csSeeAvailableOverloads,"The available overloads are shown below (or in the Erro
 534,parsModuleAbbreviationMustBeSimpleName,"A module abbreviation must be a simple name, not a path"
 535,parsIgnoreAttributesOnModuleAbbreviation,"Ignoring attributes on module abbreviation"
 536,parsIgnoreAttributesOnModuleAbbreviationAlwaysPrivate,"Ignoring accessibility attribute on module abbreviation. Module abbreviations are always private."
-537,parsIgnoreVisibilityOnModuleAbbreviationAlwaysPrivate,"Ignoring visibility attribute on module abbreviation. Module abbreviations are always private."
+537,parsIgnoreVisibilityOnModuleAbbreviationAlwaysPrivate,"Ignoring '%s' visibility attribute on module abbreviation. Module abbreviations are always private."
 538,parsUnClosedBlockInHashLight,"Unclosed block"
 539,parsUnmatchedBeginOrStruct,"Unmatched 'begin' or 'struct'"
 541,parsModuleDefnMustBeSimpleName,"A module name must be a simple name, not a path"

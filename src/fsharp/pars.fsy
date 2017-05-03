@@ -55,12 +55,12 @@ let mkRecdField lidwd = lidwd, true
 let mkSynDoBinding (vis,strict,expr,m) = 
     match vis with
     | Some vis -> errorR(Error(FSComp.SR.parsDoCannotHaveVisibilityDeclarations (vis.ToString()),m))
-    | None ->
-        Binding (None,
-                 (if strict then DoBinding else StandaloneExpression),
-                 false,false,[],PreXmlDoc.Empty,SynInfo.emptySynValData,
-                 (if strict then SynPat.Const(SynConst.Unit,m) else SynPat.Wild m),
-                 None,expr,m,NoSequencePointAtDoBinding)
+    | None -> ()
+    Binding (None,
+             (if strict then DoBinding else StandaloneExpression),
+             false,false,[],PreXmlDoc.Empty,SynInfo.emptySynValData,
+             (if strict then SynPat.Const(SynConst.Unit,m) else SynPat.Wild m),
+             None,expr,m,NoSequencePointAtDoBinding)
 
 let mkSynDoDecl (e: SynExpr) = 
     let spExpr = if IsControlFlowExpression e then NoSequencePointAtDoBinding else SequencePointAtBinding e.Range in
@@ -549,10 +549,10 @@ interactiveDefns:
 interactiveExpr:
   | opt_attributes opt_declVisibility declExpr
       { match $2 with
-      | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()),rhs parseState 3))
-      | _ ->
-            let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] in 
-            attrDecls @ [ mkSynDoDecl($3)] }
+        | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()),rhs parseState 3))
+        | _ -> ()
+        let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] in 
+        attrDecls @ [ mkSynDoDecl($3)] }
 
 
 /* A #directive interaction in F# Interactive */
@@ -736,8 +736,9 @@ moduleSpfn:
         if isRec then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidUseOfRec())
         if List.length path <> 1 then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName())
         if List.length $1 <> 0   then raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviation())
-        if Option.isSome vis then raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreVisibilityOnModuleAbbreviationAlwaysPrivate())
-        SynModuleSigDecl.ModuleAbbrev(List.head path,$5,rhs2 parseState 3 5) } 
+        match vis with
+        | Some vis -> raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreVisibilityOnModuleAbbreviationAlwaysPrivate(vis.ToString()))
+        | _ -> SynModuleSigDecl.ModuleAbbrev(List.head path,$5,rhs2 parseState 3 5) } 
 
   | opt_attributes opt_declVisibility  moduleIntro colonOrEquals moduleSpecBlock
       { let isRec, path, xml, vis = $3 
@@ -1137,23 +1138,23 @@ moduleDefnsOrExpr:
   | opt_attributes opt_declVisibility declExpr topSeparators moduleDefnsOrExpr 
       { match $2 with
         | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()),rhs parseState 3))
-        | _ ->
-            let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
-            attrDecls @ mkSynDoDecl ($3) :: $5 }
+        | _ -> ()
+        let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
+        attrDecls @ mkSynDoDecl ($3) :: $5 }
 
   | opt_attributes opt_declVisibility declExpr topSeparators
       { match $2 with
         | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()),rhs parseState 3))
-        | _ ->
-            let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
-            attrDecls @ [ mkSynDoDecl($3) ] }
+        | _ -> ()
+        let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
+        attrDecls @ [ mkSynDoDecl($3) ] }
 
   | opt_attributes opt_declVisibility declExpr
       { match $2 with
         | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()),rhs parseState 3))
-        | _ ->
-            let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
-            attrDecls @ [ mkSynDoDecl($3) ] }
+        | _ -> ()
+        let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
+        attrDecls @ [ mkSynDoDecl($3) ] }
 
   | moduleDefns 
       { $1 } 
