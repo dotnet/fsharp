@@ -2378,9 +2378,10 @@ defnBindings:
         BindingSetPreAttrs(mLetKwd,isRec,isUse,
             (fun attrs vis -> 
                 // apply the builder
-                let binds = localBindingsBuilder attrs vis mLetKwd 
-                if not isRec && List.hasLengthGreaterThen binds then 
-                      reportParseErrorAt mLetKwd (FSComp.SR.parsLetAndForNonRecBindings())), 
+                let binds = localBindingsBuilder attrs vis mLetKwd
+                if not isRec && not (isNilOrSingleton binds) then 
+                      reportParseErrorAt mLetKwd (FSComp.SR.parsLetAndForNonRecBindings())
+                [],binds), 
             bindingSetRange) }
 
   | cPrototype
@@ -2416,13 +2417,10 @@ hardwhiteLetBindings:
 
         // the first binding swallow any attributes prior to the 'let' 
         BindingSetPreAttrs(mLetKwd,isRec,isUse,
-          (fun attrs vis -> 
-            let binds = localBindingsBuilder attrs vis mLetKwd 
-            if isRec then [],binds else
-            match binds with
-            | []
-            | [_] -> ()
-            | _ -> reportParseErrorAt mLetKwd (FSComp.SR.parsLetAndForNonRecBindings())
+          (fun attrs vis ->
+            let binds = localBindingsBuilder attrs vis mLetKwd
+            if not isRec && not (isNilOrSingleton binds) then
+                reportParseErrorAt mLetKwd (FSComp.SR.parsLetAndForNonRecBindings())
             [],binds),
           bindingSetRange), (unionRanges mLetKwd bindingSetRange) }
 
