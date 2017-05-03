@@ -22,7 +22,7 @@ open FSharp.Compiler.Service.Tests.Common
 // Create an interactive checker instance 
 let checker = FSharpChecker.Create()
 
-module Project1 = 
+module internal Project1 = 
     open System.IO
 
     let fileNamesI = [ for i in 1 .. 10 -> (i, Path.ChangeExtension(Path.GetTempFileName(), ".fs")) ]

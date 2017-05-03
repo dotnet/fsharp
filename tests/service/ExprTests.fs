@@ -251,7 +251,7 @@ module Utils =
 //---------------------------------------------------------------------------------------------------------
 // This project is a smoke test for a whole range of standard and obscure expressions
 
-module Project1 = 
+module internal Project1 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -654,7 +654,7 @@ let ``Test Declarations project1`` () =
 //---------------------------------------------------------------------------------------------------------
 // This big list expression was causing us trouble
 
-module ProjectStressBigExpressions = 
+module internal ProjectStressBigExpressions = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")

@@ -20,8 +20,8 @@
     <BaseAddress>0x0A000000</BaseAddress>
     <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
-    <DefineConstants>FSI_SHADOW_COPY_REFERENCES;$(DefineConstants)</DefineConstants>
-    <DefineConstants>FSI_SERVER;$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition="'$(TargetFramework)'=='net40'">FSI_SHADOW_COPY_REFERENCES;$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition="'$(TargetFramework)'=='net40'">FSI_SERVER;$(DefineConstants)</DefineConstants>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <Win32Resource>fsi.res</Win32Resource>

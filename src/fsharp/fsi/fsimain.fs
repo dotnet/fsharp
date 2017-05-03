@@ -8,6 +8,7 @@ open System.Globalization
 open System.IO
 open System.Reflection
 open System.Threading
+open System.Runtime.CompilerServices
 #if !FX_NO_WINFORMS
 open System.Windows.Forms
 #endif
@@ -17,12 +18,26 @@ open Microsoft.FSharp.Compiler.Interactive.Shell
 open Microsoft.FSharp.Compiler.Interactive
 open Microsoft.FSharp.Compiler
 
+#if FX_RESHAPED_REFLECTION
+open Microsoft.FSharp.Core.ReflectionAdapters
+#endif
+
 #nowarn "55"
 #nowarn "40" // let rec on value 'fsiConfig'
 
+
+
+// Hardbinding dependencies should we NGEN fsi.exe
+#if !FX_NO_DEFAULT_DEPENDENCY_TYPE
+[<Dependency("FSharp.Compiler",LoadHint.Always)>] do ()
+[<Dependency("FSharp.Core",LoadHint.Always)>] do ()
+#endif
+
+// Standard attributes
 [<assembly: System.Runtime.InteropServices.ComVisible(false)>]
 [<assembly: System.CLSCompliant(true)>]  
 do()
+
 
 /// Set the current ui culture for the current thread.
 #if FX_LCIDFROMCODEPAGE

@@ -4,7 +4,7 @@
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
-module internal Tests.Service.ProjectAnalysisTests
+module Tests.Service.ProjectAnalysisTests
 #endif
 
 let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e ->  false
@@ -20,7 +20,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler.Service.Tests.Common
 
-module Project1 = 
+module internal Project1 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -619,7 +619,7 @@ let ``Test file explicit parse all symbols`` () =
 
 //-----------------------------------------------------------------------------------------
 
-module Project2 = 
+module internal Project2 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -816,7 +816,7 @@ let ``Test project2 all uses of all symbols`` () =
 
 //-----------------------------------------------------------------------------------------
 
-module Project3 = 
+module internal Project3 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -1257,7 +1257,7 @@ let ``Test project3 all uses of all signature symbols`` () =
 
 //-----------------------------------------------------------------------------------------
 
-module Project4 = 
+module internal Project4 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -1412,7 +1412,7 @@ let ``Test project4 T symbols`` () =
 //-----------------------------------------------------------------------------------------
 
 
-module Project5 = 
+module internal Project5 = 
     open System.IO
 
 
@@ -1632,7 +1632,7 @@ let ``Test partial active patterns' exact ranges from uses of symbols`` () =
 
 //-----------------------------------------------------------------------------------------
 
-module Project6 = 
+module internal Project6 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -1686,7 +1686,7 @@ let ``Test project 6 all symbols`` () =
 
 //-----------------------------------------------------------------------------------------
 
-module Project7 = 
+module internal Project7 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -1748,7 +1748,7 @@ let ``Test project 7 all symbols`` () =
 
 
 //-----------------------------------------------------------------------------------------
-module Project8 = 
+module internal Project8 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -1833,7 +1833,7 @@ let ``Test project 8 all symbols`` () =
        (Some ((4, 14), (4, 17)), "file1", ((10, 9), (10, 12)))|]
 
 //-----------------------------------------------------------------------------------------
-module Project9 = 
+module internal Project9 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -1911,7 +1911,7 @@ let ``Test project 9 all symbols`` () =
 //-----------------------------------------------------------------------------------------
 // see https://github.com/fsharp/FSharp.Compiler.Service/issues/95
 
-module Project10 = 
+module internal Project10 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -1994,7 +1994,7 @@ let ``Test Project10 all symbols`` () =
 //-----------------------------------------------------------------------------------------
 // see https://github.com/fsharp/FSharp.Compiler.Service/issues/92
 
-module Project11 = 
+module internal Project11 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -2067,7 +2067,7 @@ let ``Test Project11 all symbols`` () =
 //-----------------------------------------------------------------------------------------
 // see https://github.com/fsharp/FSharp.Compiler.Service/issues/92
 
-module Project12 = 
+module internal Project12 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -2136,7 +2136,7 @@ let ``Test Project12 all symbols`` () =
 //-----------------------------------------------------------------------------------------
 // Test fetching information about some external types (e.g. System.Object, System.DateTime)
 
-module Project13 = 
+module internal Project13 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -2288,7 +2288,7 @@ let ``Test Project13 all symbols`` () =
 //-----------------------------------------------------------------------------------------
 // Misc - structs
 
-module Project14 = 
+module internal Project14 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -2357,7 +2357,7 @@ let ``Test Project14 all symbols`` () =
 //-----------------------------------------------------------------------------------------
 // Misc - union patterns
 
-module Project15 = 
+module internal Project15 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -2417,7 +2417,7 @@ let ``Test Project15 all symbols`` () =
 //-----------------------------------------------------------------------------------------
 // Misc - signature files
 
-module Project16 = 
+module internal Project16 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -2691,7 +2691,7 @@ let ``Test Project16 sym locations`` () =
 //-----------------------------------------------------------------------------------------
 // Misc - namespace symbols
 
-module Project17 = 
+module internal Project17 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -2791,7 +2791,7 @@ let ``Test Project17 all symbols`` () =
 //-----------------------------------------------------------------------------------------
 // Misc - generic type definnitions
 
-module Project18 = 
+module internal Project18 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -2842,7 +2842,7 @@ let ``Test Project18 all symbols`` () =
 //-----------------------------------------------------------------------------------------
 // Misc - enums
 
-module Project19 = 
+module internal Project19 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -2921,7 +2921,7 @@ let ``Test Project19 all symbols`` () =
 //-----------------------------------------------------------------------------------------
 // Misc - https://github.com/fsharp/FSharp.Compiler.Service/issues/109
 
-module Project20 = 
+module internal Project20 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -2974,7 +2974,7 @@ let ``Test Project20 all symbols`` () =
 //-----------------------------------------------------------------------------------------
 // Misc - https://github.com/fsharp/FSharp.Compiler.Service/issues/137
 
-module Project21 = 
+module internal Project21 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -3053,7 +3053,7 @@ let ``Test Project21 all symbols`` () =
 //-----------------------------------------------------------------------------------------
 // Misc - namespace symbols
 
-module Project22 = 
+module internal Project22 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -3193,7 +3193,7 @@ let ``Test Project22 IList properties`` () =
 //-----------------------------------------------------------------------------------------
 // Misc - properties
 
-module Project23 = 
+module internal Project23 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -3326,7 +3326,7 @@ let ``Test Project23 extension properties' getters/setters should refer to the c
           ("System.Int32", "Impl.Getter", ["member"; "prop"; "extmem"]) ]
 
 // Misc - property symbols
-module Project24 = 
+module internal Project24 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -3628,7 +3628,7 @@ let ``Test symbol uses of properties with both getters and setters`` () =
 #if NO_CHECK_USE_OF_FSHARP_DATA_DLL
 #endif
 // Misc - type provider symbols
-module Project25 = 
+module internal Project25 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -3769,7 +3769,7 @@ let ``Test symbol uses of fully-qualified records`` () =
     usesOfGetSampleSymbol |> shouldEqual [|("file1", ((7, 5), (7, 11))); ("file1", ((8, 10), (8, 16)))|]
 
 
-module Project26 = 
+module internal Project26 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -3857,7 +3857,7 @@ let ``Test Project26 parameter symbols`` () =
             ("M2", None, "type Microsoft.FSharp.Core.unit", "");
             ("M3", None, "type Microsoft.FSharp.Core.unit", "")])
 
-module Project27 = 
+module internal Project27 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -3903,7 +3903,7 @@ let ``Test project27 all symbols in signature`` () =
              ("member .ctor", ["member"; "ctor"]);
              ("member AbstractMethod", ["member"; "overridemem"])]
 
-module Project28 = 
+module internal Project28 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -4006,7 +4006,7 @@ let ``Test project28 all symbols in signature`` () =
               ("FSharpMemberOrFunctionOrValue", "Test", "M:M.Use.Test``1(``0)");
               ("FSharpGenericParameter", "?", "")|]
 #endif
-module Project29 = 
+module internal Project29 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -4063,7 +4063,7 @@ let ``Test project29 event symbols`` () =
            ("remove_PropertyChanged", None, "unit")])
 
 
-module Project30 = 
+module internal Project30 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -4124,7 +4124,7 @@ let ``Test project30 Format attributes`` () =
               [("""[<Obsolete ("hello")>]""", 
                 """[<System.Obsolete ("hello")>]""")])
 
-module Project31 = 
+module internal Project31 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -4242,7 +4242,7 @@ let ``Test project31 Format C# method attributes`` () =
 #endif
                     ])
 
-module Project32 = 
+module internal Project32 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -4315,7 +4315,7 @@ let ``Test Project32 should be able to find impl symbols`` () =
        [("sig1", ((4, 4), (4, 8)), ["val"]); 
         ("file1", ((3, 4), (3, 8)), ["val"])]
 
-module Project33 = 
+module internal Project33 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -4361,7 +4361,7 @@ let ``Test Project33 extension methods`` () =
             [("SetValue", ["member"; "extmem"]); 
              ("GetValue", ["member"; "extmem"])]
 
-module Project34 = 
+module internal Project34 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -4423,7 +4423,7 @@ let ``Test project34 should report correct accessibility for System.Data.Listene
 
 //------------------------------------------------------
 
-module Project35 = 
+module internal Project35 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -4501,7 +4501,7 @@ let ``Test project35 CurriedParameterGroups should be available for nested funct
 
 //------------------------------------------------------
 
-module Project35b = 
+module internal Project35b = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fsx")
@@ -4520,7 +4520,7 @@ module Project35b =
     let args2 = Array.append args [| "-r:notexist.dll" |]
     let options = checker.GetProjectOptionsFromCommandLineArgs (projPath, args2)
 #else    
-    let internal options =  checker.GetProjectOptionsFromScript(fileName1, fileSource1) |> Async.RunSynchronously |> fst
+    let options =  checker.GetProjectOptionsFromScript(fileName1, fileSource1) |> Async.RunSynchronously |> fst
 #endif
 
 [<Test>]
@@ -4555,7 +4555,7 @@ let ``Test project35b Dependency files for check of project`` () =
 
 //------------------------------------------------------
 
-module Project36 =
+module internal Project36 =
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -4653,7 +4653,7 @@ let ``Test project36 FSharpMemberOrFunctionOrValue.LiteralValue`` () =
     let notLit = project36Module.MembersFunctionsAndValues.[1]
     shouldEqual true notLit.LiteralValue.IsNone
 
-module Project37 = 
+module internal Project37 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -4756,7 +4756,7 @@ let ``Test project37 typeof and arrays in attribute constructor arguments`` () =
 //-----------------------------------------------------------
 
 
-module Project38 =
+module internal Project38 =
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -4854,7 +4854,7 @@ let ``Test project38 abstract slot information`` () =
 
 //--------------------------------------------
 
-module Project39 = 
+module internal Project39 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -4935,7 +4935,7 @@ let ``Test project39 all symbols`` () =
 
 //--------------------------------------------
 
-module Project40 = 
+module internal Project40 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -4999,7 +4999,7 @@ let ``Test Project40 all symbols`` () =
            ("g", ((13, 4), (13, 5)), ["val"]); ("M", ((2, 7), (2, 8)), ["module"])]
 
 
-module ProjectBig = 
+module internal ProjectBig = 
     open System.IO
 
     let fileNamesI = [ for i in 1 .. 10 -> (i, Path.ChangeExtension(Path.GetTempFileName(), ".fs")) ]
@@ -5086,7 +5086,7 @@ let ``add files with same name from different folders`` () =
             printfn "ERROR: %s" err.Message
     shouldEqual 0 errors.Length
 
-module ProjectStructUnions = 
+module internal ProjectStructUnions = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")

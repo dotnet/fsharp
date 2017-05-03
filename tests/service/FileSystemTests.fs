@@ -4,7 +4,7 @@
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
-module internal Tests.Service.FileSystemTests
+module Tests.Service.FileSystemTests
 #endif
 
 
@@ -22,7 +22,7 @@ open FSharp.Compiler.Service.Tests.Common
 let fileName1 = @"c:\mycode\test1.fs" // note, the path doesn' exist
 let fileName2 = @"c:\mycode\test2.fs" // note, the path doesn' exist
 
-type MyFileSystem(defaultFileSystem:IFileSystem) = 
+type internal MyFileSystem(defaultFileSystem:IFileSystem) = 
     let file1 = """
 module File1
 

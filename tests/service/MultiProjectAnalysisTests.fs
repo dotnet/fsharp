@@ -5,7 +5,7 @@
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
-module internal Tests.Service.MultiProjectAnalysisTests
+module Tests.Service.MultiProjectAnalysisTests
 #endif
 
 open Microsoft.FSharp.Compiler
@@ -22,13 +22,13 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests.Common
 
 let numProjectsForStressTest = 100
-let checker = FSharpChecker.Create(projectCacheSize=numProjectsForStressTest + 10)
+let internal checker = FSharpChecker.Create(projectCacheSize=numProjectsForStressTest + 10)
 
 /// Extract range info 
-let tups (m:Range.range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
+let internal tups (m:Range.range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
 
 
-module Project1A = 
+module internal Project1A = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -36,7 +36,7 @@ module Project1A =
     let dllName = Path.ChangeExtension(baseName, ".dll")
     let projFileName = Path.ChangeExtension(baseName, ".fsproj")
     let fileSource1 = """
-module Project1A
+module internal Project1A
 
 type C() = 
     static member M(arg1: int, arg2: int, ?arg3 : int) = arg1 + arg2 + defaultArg arg3 4
@@ -57,7 +57,7 @@ let x2 = C.M(arg1 = 3, arg2 = 4, ?arg3 = Some 5)
 
 
 //-----------------------------------------------------------------------------------------
-module Project1B = 
+module internal Project1B = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -65,7 +65,7 @@ module Project1B =
     let dllName = Path.ChangeExtension(baseName, ".dll")
     let projFileName = Path.ChangeExtension(baseName, ".fsproj")
     let fileSource1 = """
-module Project1B
+module internal Project1B
 
 type A = B of xxx: int * yyy : int
 let b = B(xxx=1, yyy=2)
@@ -85,7 +85,7 @@ let x =
 
 
 // A project referencing two sub-projects
-module MultiProject1 = 
+module internal MultiProject1 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -94,7 +94,7 @@ module MultiProject1 =
     let projFileName = Path.ChangeExtension(baseName, ".fsproj")
     let fileSource1 = """
 
-module MultiProject1
+module internal MultiProject1
 
 open Project1A
 open Project1B
@@ -322,14 +322,14 @@ let ``Test ManyProjectsStressTest all symbols`` () =
 
 //-----------------------------------------------------------------------------------------
 
-module MultiProjectDirty1 = 
+module internal MultiProjectDirty1 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
     let baseName = Path.GetTempFileName()
     let dllName = Path.ChangeExtension(baseName, ".dll")
     let projFileName = Path.ChangeExtension(baseName, ".fsproj")
-    let content = """module Project1
+    let content = """module internal Project1
 
 let x = "F#"
 """                   
@@ -344,7 +344,7 @@ let x = "F#"
         let args = mkProjectCommandLineArgs (dllName, fileNames)
         checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
-module MultiProjectDirty2 = 
+module internal MultiProjectDirty2 = 
     open System.IO
 
 
@@ -353,7 +353,7 @@ module MultiProjectDirty2 =
     let dllName = Path.ChangeExtension(baseName, ".dll")
     let projFileName = Path.ChangeExtension(baseName, ".fsproj")
     
-    let content = """module Project2
+    let content = """module internal Project2
 
 open Project1
 
@@ -540,7 +540,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 //------------------------------------------------------------------
 
 
-module Project2A = 
+module internal Project2A = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -551,7 +551,7 @@ module Project2A =
     let dllName = Path.ChangeExtension(baseName1, ".dll")
     let projFileName = Path.ChangeExtension(baseName1, ".fsproj")
     let fileSource1 = """
-module Project2A
+module internal Project2A
 
 [<assembly:System.Runtime.CompilerServices.InternalsVisibleTo(""" + "\"" + dllShortName + "\"" + """)>]
 do()
@@ -570,7 +570,7 @@ type C() =
 
 //Project2A.fileSource1
 // A project referencing Project2A
-module Project2B = 
+module internal Project2B = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -578,7 +578,7 @@ module Project2B =
     let projFileName = Path.ChangeExtension(Project2A.baseName2, ".fsproj")
     let fileSource1 = """
 
-module Project2B
+module internal Project2B
 
 let v = Project2A.C().InternalMember // access an internal symbol
     """
@@ -595,7 +595,7 @@ let v = Project2A.C().InternalMember // access an internal symbol
 
 //Project2A.fileSource1
 // A project referencing Project2A but without access to the internals of A
-module Project2C = 
+module internal Project2C = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -603,7 +603,7 @@ module Project2C =
     let projFileName = Path.ChangeExtension(Project2A.baseName3, ".fsproj")
     let fileSource1 = """
 
-module Project2C
+module internal Project2C
 
 let v = Project2A.C().InternalMember // access an internal symbol
     """
@@ -657,7 +657,7 @@ let ``Test multi project 2 all symbols`` () =
  
 //------------------------------------------------------------------------------------
 
-module Project3A = 
+module internal Project3A = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -665,7 +665,7 @@ module Project3A =
     let dllName = Path.ChangeExtension(baseName, ".dll")
     let projFileName = Path.ChangeExtension(baseName, ".fsproj")
     let fileSource1 = """
-module Project3A
+module internal Project3A
 
 ///A parameterized active pattern of divisibility
 let (|DivisibleBy|_|) by n = 
@@ -681,7 +681,7 @@ let (|DivisibleBy|_|) by n =
 
 
 // A project referencing a sub-project
-module MultiProject3 = 
+module internal MultiProject3 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -689,7 +689,7 @@ module MultiProject3 =
     let dllName = Path.ChangeExtension(baseName, ".dll")
     let projFileName = Path.ChangeExtension(baseName, ".fsproj")
     let fileSource1 = """
-module MultiProject3
+module internal MultiProject3
 
 open Project3A
 

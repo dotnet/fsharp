@@ -18,6 +18,7 @@ open System.IO
 open System.Text
 open System.Threading
 open System.Reflection
+open System.Runtime.CompilerServices
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
@@ -52,19 +53,10 @@ open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.StructuredFormat
 
-//----------------------------------------------------------------------------
-// Hardbinding dependencies should we NGEN fsi.exe
-//----------------------------------------------------------------------------
-
 #if FX_RESHAPED_REFLECTION
 open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
 
-open System.Runtime.CompilerServices
-#if !FX_NO_DEFAULT_DEPENDENCY_TYPE
-[<Dependency("FSharp.Compiler",LoadHint.Always)>] do ()
-[<Dependency("FSharp.Core",LoadHint.Always)>] do ()
-#endif
 
 //----------------------------------------------------------------------------
 // For the FSI as a service methods...
