@@ -53,12 +53,14 @@ let mkUnderscoreRecdField m = LongIdentWithDots([ident("_", m)], []), false
 let mkRecdField lidwd = lidwd, true
 
 let mkSynDoBinding (vis,strict,expr,m) = 
-    if Option.isSome vis then errorR(Error(FSComp.SR.parsDoCannotHaveVisibilityDeclarations(),m));
-    Binding (None,
-             (if strict then DoBinding else StandaloneExpression),
-             false,false,[],PreXmlDoc.Empty,SynInfo.emptySynValData,
-             (if strict then SynPat.Const(SynConst.Unit,m) else SynPat.Wild m),
-             None,expr,m,NoSequencePointAtDoBinding)
+    match vis with
+	| Some vis -> errorR(Error(FSComp.SR.parsDoCannotHaveVisibilityDeclarations vis,m))
+    | None ->
+		Binding (None,
+                 (if strict then DoBinding else StandaloneExpression),
+                 false,false,[],PreXmlDoc.Empty,SynInfo.emptySynValData,
+                 (if strict then SynPat.Const(SynConst.Unit,m) else SynPat.Wild m),
+                 None,expr,m,NoSequencePointAtDoBinding)
 
 let mkSynDoDecl (e: SynExpr) = 
     let spExpr = if IsControlFlowExpression e then NoSequencePointAtDoBinding else SequencePointAtBinding e.Range in
