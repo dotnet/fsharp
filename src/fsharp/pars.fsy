@@ -2378,13 +2378,9 @@ defnBindings:
         BindingSetPreAttrs(mLetKwd,isRec,isUse,
             (fun attrs vis -> 
                 // apply the builder
-                let binds = localBindingsBuilder attrs vis mLetKwd
-                if isRec then [],binds else
-                match binds with
-                | []
-                | [_] -> ()
-                | _ -> reportParseErrorAt mLetKwd (FSComp.SR.parsLetAndForNonRecBindings())
-                [],binds), 
+                let binds = localBindingsBuilder attrs vis mLetKwd 
+                if not isRec && List.hasLengthGreaterThen binds then 
+                      reportParseErrorAt mLetKwd (FSComp.SR.parsLetAndForNonRecBindings())), 
             bindingSetRange) }
 
   | cPrototype

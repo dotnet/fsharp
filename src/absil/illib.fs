@@ -23,6 +23,11 @@ let (>>>&) (x:int32) (n:int32) = int32 (uint32 x >>> n)
 let notlazy v = Lazy<_>.CreateFromValue v
 
 let inline isNil l = List.isEmpty l
+let inline hasLengthGreaterThen l =
+    match l with 
+    | [] 
+    | [_] -> false 
+    | _ -> true
 let inline isNonNull x = not (isNull x)
 let inline nonNull msg x = if isNull x then failwith ("null: " ^ msg) else x
 let (===) x y = LanguagePrimitives.PhysicalEquality x y
