@@ -144,16 +144,16 @@
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fsiAnyCpu\FsiAnyCPU.fsproj">
+    <ProjectReference Include="..\..\..\src\fsharp\fsiAnyCpu\FsiAnyCPU.fsproj">
       <Project>{8B3E283D-B5FE-4055-9D80-7E3A32F3967B}</Project>
-      <Name>fsiAnyCpu</Name>
+      <Name>FsiAnyCPU</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fsi\Fsi.fsproj">
+    <ProjectReference Include="..\..\..\src\fsharp\fsi\Fsi.fsproj">
       <Project>{D0E98C0D-490B-4C61-9329-0862F6E87645}</Project>
-      <Name>fsi</Name>
+      <Name>Fsi</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <Private>True</Private>
