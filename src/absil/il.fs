@@ -561,8 +561,7 @@ type ILTypeRef =
     member x.ApproxId = x.hashCode
 
     member x.AsBoxedType (tspec:ILTypeSpec) = 
-        match List.length tspec.tspecInst with 
-        | 0 -> 
+        if isNil tspec.tspecInst then
             let v = x.asBoxedType
             match box v with 
             | null -> 
@@ -570,7 +569,8 @@ type ILTypeRef =
                x.asBoxedType <- r
                r
             | _ -> v
-        | _ -> ILType.Boxed tspec
+        else 
+            ILType.Boxed tspec
 
     override x.GetHashCode() = x.hashCode
     override x.Equals(yobj) = 
