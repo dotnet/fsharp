@@ -2924,7 +2924,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
               member __.EventLoopInvoke(f : unit -> 'T) =  callInstanceMethod1 (getInstanceProperty fsiObj "EventLoop") [|typeof<'T>|] "Invoke" f
               member __.EventLoopScheduleRestart() = callInstanceMethod0 (getInstanceProperty fsiObj "EventLoop") [||] "ScheduleRestart"
               member __.UseFsiAuxLib = useFsiAuxLib
-              member __.GetOptionalConsoleReadLine() = None }
+              member __.GetOptionalConsoleReadLine(_probe) = None }
 
 
 //-------------------------------------------------------------------------------
