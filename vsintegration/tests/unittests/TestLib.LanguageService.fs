@@ -17,7 +17,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 #nowarn "52" // The value has been copied to ensure the original is not mutated
 
 [<AutoOpen>]
-module Globals = 
+module internal Globals = 
     let checker = FSharpChecker.Create()
 
 //open Internal.Utilities
