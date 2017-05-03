@@ -54,9 +54,9 @@ let mkRecdField lidwd = lidwd, true
 
 let mkSynDoBinding (vis,strict,expr,m) = 
     match vis with
-	| Some vis -> errorR(Error(FSComp.SR.parsDoCannotHaveVisibilityDeclarations vis,m))
+    | Some vis -> errorR(Error(FSComp.SR.parsDoCannotHaveVisibilityDeclarations (vis.ToString()),m))
     | None ->
-		Binding (None,
+        Binding (None,
                  (if strict then DoBinding else StandaloneExpression),
                  false,false,[],PreXmlDoc.Empty,SynInfo.emptySynValData,
                  (if strict then SynPat.Const(SynConst.Unit,m) else SynPat.Wild m),
@@ -548,9 +548,11 @@ interactiveDefns:
 /* An expression as part of one interaction in F# Interactive */
 interactiveExpr:
   | opt_attributes opt_declVisibility declExpr
-      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(),rhs parseState 3))
-        let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] in 
-        attrDecls @ [ mkSynDoDecl($3)] }
+      { match $2 with
+      | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()),rhs parseState 3))
+      | _ ->
+            let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] in 
+            attrDecls @ [ mkSynDoDecl($3)] }
 
 
 /* A #directive interaction in F# Interactive */
@@ -1133,19 +1135,25 @@ moduleDefnsOrExprPossiblyEmpty:
 /* A naked expression is only allowed at the start of a module/file, or straight after a topSeparators */
 moduleDefnsOrExpr:
   | opt_attributes opt_declVisibility declExpr topSeparators moduleDefnsOrExpr 
-      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(),rhs parseState 3))
-        let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
-        attrDecls @ mkSynDoDecl ($3) :: $5 }
+      { match $2 with
+        | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()),rhs parseState 3))
+        | _ ->
+            let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
+            attrDecls @ mkSynDoDecl ($3) :: $5 }
 
   | opt_attributes opt_declVisibility declExpr topSeparators
-      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(),rhs parseState 3))
-        let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
-        attrDecls @ [ mkSynDoDecl($3) ] }
+      { match $2 with
+        | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()),rhs parseState 3))
+        | _ ->
+            let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
+            attrDecls @ [ mkSynDoDecl($3) ] }
 
   | opt_attributes opt_declVisibility declExpr
-      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(),rhs parseState 3))
-        let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
-        attrDecls @ [ mkSynDoDecl($3) ] }
+      { match $2 with
+        | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()),rhs parseState 3))
+        | _ ->
+            let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
+            attrDecls @ [ mkSynDoDecl($3) ] }
 
   | moduleDefns 
       { $1 } 
