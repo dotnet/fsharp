@@ -2486,6 +2486,8 @@ let OpenILBinary(filename,optimizeForMemory,openBinariesInMemory,ilGlobalsOpt, p
               System.Reflection.Assembly.ReflectionOnlyLoadFrom(filename).Location
             with e -> filename
           else
+#else
+            ignore shadowCopyReferences
 #endif
             filename
         ILBinaryReader.OpenILModuleReader location opts
