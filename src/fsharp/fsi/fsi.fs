@@ -273,20 +273,20 @@ type FsiEvaluationSessionHostConfig () =
     /// A "console" gets used if 
     ///     --readline- is specified (the default on Windows + .NET); and 
     ///     not --fsi-server (which should always be combined with --readline-); and 
-    ///     OptionalConsoleReadLine() returns a Some
+    ///     GetOptionalConsoleReadLine() returns a Some
     ///
     /// "Peekahead" occurs if --peekahead- is not specified (i.e. it is the default):
     ///     - If a console is being used then 
     ///         - a prompt is printed early 
     ///         - a background thread is created 
-    ///         - the OptionalConsoleReadLine() callback is used to read the first line
+    ///         - the GetOptionalConsoleReadLine() callback is used to read the first line
     ///     - Otherwise call inReader.Peek()
     ///
     /// Further lines are read as follows:
-    ///     - If a console is being used then use OptionalConsoleReadLine()
+    ///     - If a console is being used then use GetOptionalConsoleReadLine()
     ///     - Otherwise use inReader.ReadLine()
 
-    abstract OptionalConsoleReadLine : (unit -> string) option 
+    abstract GetOptionalConsoleReadLine : probeToSeeIfConsoleWorks: bool -> (unit -> string) option 
 
     /// The evaluation session calls this at an appropriate point in the startup phase if the --fsi-server parameter was given
     abstract StartServer : fsiServerName:string -> unit
@@ -636,6 +636,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
     let mutable fsiLCID = None
 
     // internal options  
+    let mutable probeToSeeIfConsoleWorks         = true 
     let mutable peekAheadOnConsoleToPermitTyping = true   
 
     let isInteractiveServer() = fsiServerName <> ""  
@@ -701,10 +702,14 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
        PrivateOptions(
         [
          // Private options, related to diagnostics around console probing 
+         CompilerOption("probeconsole","", OptionSwitch (fun flag -> probeToSeeIfConsoleWorks <- flag=OptionSwitch.On), None, None); // "Probe to see if Console looks functional");
+
          CompilerOption("peekahead","", OptionSwitch (fun flag -> peekAheadOnConsoleToPermitTyping <- flag=OptionSwitch.On), None, None); // "Probe to see if Console looks functional");
 
+#if COMPILER_SERVICE
          // Disables interaction (to be used by libraries embedding FSI only!)
          CompilerOption("noninteractive","", OptionUnit (fun () -> interact <-  false), None, None);     
+#endif
 
         ])
       ]
@@ -809,6 +814,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
     member __.FsiServerOutputCodePage = fsiServerOutputCodePage
     member __.FsiLCID with get() = fsiLCID and set v = fsiLCID <- v
     member __.IsInteractiveServer = isInteractiveServer()
+    member __.ProbeToSeeIfConsoleWorks = probeToSeeIfConsoleWorks
     member __.EnableConsoleKeyProcessing = enableConsoleKeyProcessing
 
     member __.Interact = interact
@@ -896,7 +902,7 @@ type internal FsiConsoleInput(fsi: FsiEvaluationSessionHostConfig, fsiOptions: F
         // The "console.fs" code does a limited form of "TAB-completion".
         // Currently, it turns on if it looks like we have a console.
         if fsiOptions.EnableConsoleKeyProcessing then
-            fsi.OptionalConsoleReadLine
+            fsi.GetOptionalConsoleReadLine(fsiOptions.ProbeToSeeIfConsoleWorks)
         else
             None
 
@@ -2918,7 +2924,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
               member __.EventLoopInvoke(f : unit -> 'T) =  callInstanceMethod1 (getInstanceProperty fsiObj "EventLoop") [|typeof<'T>|] "Invoke" f
               member __.EventLoopScheduleRestart() = callInstanceMethod0 (getInstanceProperty fsiObj "EventLoop") [||] "ScheduleRestart"
               member __.UseFsiAuxLib = useFsiAuxLib
-              member __.OptionalConsoleReadLine = None }
+              member __.GetOptionalConsoleReadLine() = None }
 
 
 //-------------------------------------------------------------------------------

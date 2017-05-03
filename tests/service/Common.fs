@@ -1,4 +1,4 @@
-module FSharp.Compiler.Service.Tests.Common
+module internal FSharp.Compiler.Service.Tests.Common
 
 open System.IO
 open System.Collections.Generic

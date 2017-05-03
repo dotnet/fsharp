@@ -15,7 +15,6 @@ open System.IO
 open System.Collections.Generic
 open System.Text
 open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Interactive.Shell
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open FSharp.Compiler.Service.Tests.Common

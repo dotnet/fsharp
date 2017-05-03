@@ -33,6 +33,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open UnitTests.TestLib.LanguageService
 
 let filePath = "C:\\test.fs"
 

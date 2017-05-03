@@ -146,8 +146,9 @@ let evaluateSession() =
 
     try
         let console = new Microsoft.FSharp.Compiler.Interactive.ReadLineConsole()
-        let getConsoleReadLine () = 
-            let probeToSeeIfConsoleWorks =
+        let getConsoleReadLine (probeToSeeIfConsoleWorks) = 
+            let consoleIsOperational =
+              if probeToSeeIfConsoleWorks then 
                 //if progress then fprintfn outWriter "probing to see if console works..."
                 try
                     // Probe to see if the console looks functional on this version of .NET
@@ -158,7 +159,8 @@ let evaluateSession() =
                 with _ -> 
                     //if progress then fprintfn outWriter "probe failed, we have no console..."
                     false 
-            if probeToSeeIfConsoleWorks then 
+              else true
+            if consoleIsOperational then 
                 Some (fun () -> console.ReadLine())
             else
                 None
@@ -187,7 +189,7 @@ let evaluateSession() =
 //        let fsiConfig0 = FsiEvaluationSession.GetDefaultConfiguration()
 //#endif        
 
-        // Update the configuration to include 'StartServer' and 'OptionalConsoleReadLine'
+        // Update the configuration to include 'StartServer' and 'GetOptionalConsoleReadLine()'
         let rec fsiConfig = 
             { new FsiEvaluationSessionHostConfig () with 
                 member __.FormatProvider = fsiConfig0.FormatProvider
@@ -209,7 +211,7 @@ let evaluateSession() =
                 member __.StartServer(fsiServerName) = StartServer fsiSession fsiServerName
                 
                 // Connect the configuration through to the 'fsi' Event loop
-                member __.OptionalConsoleReadLine = getConsoleReadLine() }
+                member __.GetOptionalConsoleReadLine(probe) = getConsoleReadLine(probe) }
 
         and fsiSession = FsiEvaluationSession.Create (fsiConfig, argv, Console.In, Console.Out, Console.Error)
 

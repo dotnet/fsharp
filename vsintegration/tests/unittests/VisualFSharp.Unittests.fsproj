@@ -77,6 +77,18 @@
     <Compile Include="..\..\..\tests\service\MultiProjectAnalysisTests.fs">
       <Link>MultiProjectAnalysisTests.fs</Link>
     </Compile>
+    <Compile Include="..\..\..\tests\service\PerfTests.fs">
+      <Link>PerfTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tests\service\InteractiveCheckerTests.fs">
+      <Link>InteractiveCheckerTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tests\service\ExprTests.fs">
+      <Link>ExprTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tests\service\CSharpProjectAnalysis.fs">
+      <Link>CSharpProjectAnalysis.fs</Link>
+    </Compile>
     <Compile Include="..\..\..\tests\service\ProjectOptionsTests.fs">
       <Link>ProjectOptionsTests.fs</Link>
     </Compile>
@@ -368,6 +380,11 @@
     <ProjectReference Include="..\..\src\FSharp.Editor\FSharp.Editor.fsproj">
       <Name>FSharp.Editor</Name>
       <Project>{65e0e82a-eace-4787-8994-888674c2fe87}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\tests\service\data\CSharp_Analysis\CSharp_Analysis.csproj">
+      <Name>CSharp_Analysis</Name>
+      <Project>{887630a3-4b1d-40ea-b8b3-2d842e9c40db}</Project>
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
