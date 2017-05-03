@@ -67,8 +67,8 @@ module private UnusedOpens =
                 [ yield ent.Namespace
                   yield Some ent.AccessPath
                   yield getAutoOpenAccessPath ent
-                  //for path in ent.AllCompilationPaths do
-                   // yield Some path 
+                  for path in ent.AllCompilationPaths do
+                    yield Some path 
                 ]
         | None -> []
 
@@ -160,6 +160,7 @@ type internal UnusedOpensDiagnosticAnalyzer() =
 
     static member GetUnusedOpenRanges(document: Document, options, checker: FSharpChecker) =
         asyncMaybe {
+            do! Option.guard Settings.CodeFixes.UnusedOpens
             let! sourceText = document.GetTextAsync()
             let! _, parsedInput, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true)
             let! symbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync

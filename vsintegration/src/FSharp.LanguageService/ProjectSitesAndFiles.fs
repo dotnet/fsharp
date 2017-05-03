@@ -34,6 +34,7 @@ type private ProjectSiteOfScriptFile(filename:string, checkOptions : FSharpProje
         override this.ProjectGuid = ""
         override this.LoadTime = checkOptions.LoadTime
         override this.ProjectProvider = None
+        override this.AssemblyReferences() = [||]
 
     interface IHaveCheckOptions with
         override this.OriginalCheckOptions() = checkOptions
@@ -68,6 +69,7 @@ type private ProjectSiteOfSingleFile(sourceFile) =
         override this.ProjectGuid = ""
         override this.LoadTime = new DateTime(2000,1,1)  // any constant time is fine, orphan files do not interact with reloading based on update time
         override this.ProjectProvider = None
+        override this.AssemblyReferences() = [||]
     
 /// Information about projects, open files and other active artifacts in visual studio.
 /// Keeps track of the relationship between IVsTextLines buffers, IFSharpSource objects, IProjectSite objects and FSharpProjectOptions

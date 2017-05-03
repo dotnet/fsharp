@@ -166,6 +166,13 @@
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <Private>True</Private>
     </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.UIResources\FSharp.UIResources.csproj">
+      <Project>{c4586a06-1402-48bc-8e35-a1b8642f895b}</Project>
+      <Name>FSharp.UIResources</Name>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.LanguageService.Base\FSharp.LanguageService.Base.csproj">
       <Project>{1C5C163C-37EA-4A3C-8CCC-0D34B74BF8EF}</Project>
       <Name>FSharp.LanguageService.Base</Name>
@@ -312,6 +319,17 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <Private>True</Private>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Newtonsoft.Json.10.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <!-- Microsoft.CodeAnalysis.Features requires 1.2.1 but the rest of F# uses 1.2.0 -->
+    <!-- If we don't get the version right here the wrong version is copied during the build  -->
+    <Reference Include="System.Collections.Immutable, Version=1.2.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.1.2.0\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.tools.targets" />
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
