@@ -24,10 +24,16 @@ let notlazy v = Lazy<_>.CreateFromValue v
 
 let inline isNil l = List.isEmpty l
 
-/// Returns true if the list has 0 or 1 element. Otherwise false.
+/// Returns true if the list has less than 2 elements. Otherwise false.
 let inline isNilOrSingleton l =
     match l with
     | [] 
+    | [_] -> true
+    | _ -> false
+
+/// Returns true if the list contains exactly 1 element. Otherwise false.
+let inline isSingleton l =
+    match l with
     | [_] -> true
     | _ -> false
 
