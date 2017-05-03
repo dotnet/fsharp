@@ -378,12 +378,12 @@ module Structure =
             | SynExpr.Paren (e,_,_,_) ->
                 parseExpr e
             | SynExpr.Record (recCtor,recCopy,recordFields,r) ->
-                if recCtor.IsSome then
-                    let (_,ctorArgs,_,_,_) = recCtor.Value
-                    parseExpr ctorArgs
-                if recCopy.IsSome then
-                    let (e,_) = recCopy.Value
-                    parseExpr e
+                match recCtor with
+                | Some (_,ctorArgs,_,_,_) -> parseExpr ctorArgs
+                | _ -> ()
+                match recCopy with
+                | Some (e,_) -> parseExpr e
+                | _ -> ()
                 recordFields |> Seq.choose (fun (_,e,_) -> e) |> Seq.iter parseExpr
                 // exclude the opening `{` and closing `}` of the record from collapsing
                 rcheck Scope.Record Collapse.Same r <| Range.modBoth 1 1 r
