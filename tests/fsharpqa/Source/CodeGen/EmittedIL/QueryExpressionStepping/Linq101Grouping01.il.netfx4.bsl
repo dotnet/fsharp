@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.81.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -31,27 +31,27 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 00 01 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.Linq101Grouping01
 {
-  // Offset: 0x00000000 Length: 0x00000407
+  // Offset: 0x00000000 Length: 0x0000040B
 }
 .mresource public FSharpOptimizationData.Linq101Grouping01
 {
   // Offset: 0x00000410 Length: 0x00000129
 }
 .module Linq101Grouping01.exe
-// MVID: {5775B6EF-FB79-E5BF-A745-0383EFB67557}
+// MVID: {590846DB-FB79-E5BF-A745-0383DB460859}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00D50000
+// Image base: 0x01110000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -86,11 +86,11 @@
       .maxstack  6
       .locals init ([0] int32 n)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 14,14 : 9,28 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Grouping01.fs'
+      .line 14,14 : 9,28 'C:\\src\\manofstick\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\QueryExpressionStepping\\Linq101Grouping01.fs'
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
-      .line 15,15 : 9,29
+      .line 15,15 : 9,29 ''
       IL_0003:  ldarg.0
       IL_0004:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Grouping01/numberGroups@14::builder@
       IL_0009:  ldloc.0
@@ -121,7 +121,7 @@
     {
       // Code size       3 (0x3)
       .maxstack  8
-      .line 15,15 : 20,21
+      .line 15,15 : 20,21 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ret
@@ -149,7 +149,7 @@
     {
       // Code size       5 (0x5)
       .maxstack  8
-      .line 15,15 : 23,28
+      .line 15,15 : 23,28 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ldc.i4.5
@@ -184,7 +184,7 @@
       // Code size       18 (0x12)
       .maxstack  6
       .locals init ([0] class [System.Core]System.Linq.IGrouping`2<int32,int32> g)
-      .line 15,15 : 35,36
+      .line 15,15 : 35,36 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
@@ -218,7 +218,7 @@
     {
       // Code size       19 (0x13)
       .maxstack  8
-      .line 16,16 : 17,35
+      .line 16,16 : 17,35 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  callvirt   instance !0 class [System.Core]System.Linq.IGrouping`2<int32,int32>::get_Key()
@@ -256,11 +256,11 @@
       // Code size       18 (0x12)
       .maxstack  6
       .locals init ([0] string w)
-      .line 24,24 : 9,26
+      .line 24,24 : 9,26 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
-      .line 25,25 : 9,29
+      .line 25,25 : 9,29 ''
       IL_0003:  ldarg.0
       IL_0004:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Grouping01/wordGroups@24::builder@
       IL_0009:  ldloc.0
@@ -291,7 +291,7 @@
     {
       // Code size       3 (0x3)
       .maxstack  8
-      .line 25,25 : 20,21
+      .line 25,25 : 20,21 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ret
@@ -319,7 +319,7 @@
     {
       // Code size       9 (0x9)
       .maxstack  8
-      .line 25,25 : 24,25
+      .line 25,25 : 24,25 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ldc.i4.0
@@ -354,7 +354,7 @@
       // Code size       18 (0x12)
       .maxstack  6
       .locals init ([0] class [System.Core]System.Linq.IGrouping`2<char,string> g)
-      .line 25,25 : 35,36
+      .line 25,25 : 35,36 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
@@ -388,7 +388,7 @@
     {
       // Code size       19 (0x13)
       .maxstack  8
-      .line 26,26 : 17,35
+      .line 26,26 : 17,35 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  callvirt   instance !0 class [System.Core]System.Linq.IGrouping`2<char,string>::get_Key()
@@ -426,11 +426,11 @@
       // Code size       18 (0x12)
       .maxstack  6
       .locals init ([0] class [Utils]Utils/Product p)
-      .line 34,34 : 9,29
+      .line 34,34 : 9,29 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
-      .line 35,35 : 9,32
+      .line 35,35 : 9,32 ''
       IL_0003:  ldarg.0
       IL_0004:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Grouping01/orderGroups@34::builder@
       IL_0009:  ldloc.0
@@ -461,7 +461,7 @@
     {
       // Code size       3 (0x3)
       .maxstack  8
-      .line 35,35 : 20,21
+      .line 35,35 : 20,21 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ret
@@ -489,7 +489,7 @@
     {
       // Code size       10 (0xa)
       .maxstack  8
-      .line 35,35 : 22,32
+      .line 35,35 : 22,32 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  tail.
@@ -524,7 +524,7 @@
       // Code size       18 (0x12)
       .maxstack  6
       .locals init ([0] class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product> g)
-      .line 35,35 : 38,39
+      .line 35,35 : 38,39 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
@@ -558,7 +558,7 @@
     {
       // Code size       19 (0x13)
       .maxstack  8
-      .line 36,36 : 17,35
+      .line 36,36 : 17,35 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  callvirt   instance !0 class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>::get_Key()
@@ -596,11 +596,11 @@
       // Code size       18 (0x12)
       .maxstack  6
       .locals init ([0] class [Utils]Utils/Order o)
-      .line 47,47 : 17,37
+      .line 47,47 : 17,37 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
-      .line 48,48 : 17,48
+      .line 48,48 : 17,48 ''
       IL_0003:  ldarg.0
       IL_0004:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Grouping01/yearGroups@47::builder@
       IL_0009:  ldloc.0
@@ -631,7 +631,7 @@
     {
       // Code size       3 (0x3)
       .maxstack  8
-      .line 48,48 : 28,29
+      .line 48,48 : 28,29 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ret
@@ -660,7 +660,7 @@
       // Code size       16 (0x10)
       .maxstack  5
       .locals init ([0] valuetype [mscorlib]System.DateTime V_0)
-      .line 48,48 : 31,47
+      .line 48,48 : 31,47 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  callvirt   instance valuetype [mscorlib]System.DateTime [Utils]Utils/Order::get_OrderDate()
@@ -697,11 +697,11 @@
       // Code size       18 (0x12)
       .maxstack  6
       .locals init ([0] class [Utils]Utils/Order o)
-      .line 51,51 : 25,39
+      .line 51,51 : 25,39 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
-      .line 52,52 : 25,57
+      .line 52,52 : 25,57 ''
       IL_0003:  ldarg.0
       IL_0004:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Grouping01/monthGroups@51::builder@
       IL_0009:  ldloc.0
@@ -732,7 +732,7 @@
     {
       // Code size       3 (0x3)
       .maxstack  8
-      .line 52,52 : 36,37
+      .line 52,52 : 36,37 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ret
@@ -761,7 +761,7 @@
       // Code size       16 (0x10)
       .maxstack  5
       .locals init ([0] valuetype [mscorlib]System.DateTime V_0)
-      .line 52,52 : 39,56
+      .line 52,52 : 39,56 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  callvirt   instance valuetype [mscorlib]System.DateTime [Utils]Utils/Order::get_OrderDate()
@@ -798,7 +798,7 @@
       // Code size       18 (0x12)
       .maxstack  6
       .locals init ([0] class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order> mg)
-      .line 52,52 : 63,65
+      .line 52,52 : 63,65 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
@@ -832,7 +832,7 @@
     {
       // Code size       19 (0x13)
       .maxstack  8
-      .line 53,53 : 33,53
+      .line 53,53 : 33,53 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  callvirt   instance !0 class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order>::get_Key()
@@ -867,12 +867,12 @@
     .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order>,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>>>,object> 
             Invoke(class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order> _arg3) cil managed
     {
-      // Code size       99 (0x63)
+      // Code size       94 (0x5e)
       .maxstack  10
       .locals init ([0] class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order> yg,
                [1] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>> monthGroups,
                [2] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@)
-      .line 48,48 : 54,56
+      .line 48,48 : 54,56 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
@@ -884,36 +884,35 @@
       IL_000c:  ldloc.2
       IL_000d:  ldloc.2
       IL_000e:  ldloc.0
-      IL_000f:  unbox.any  class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Order>
-      IL_0014:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Order>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-      IL_0019:  ldloc.2
-      IL_001a:  newobj     instance void Linq101Grouping01/monthGroups@51::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-      IL_001f:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Order,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Order,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+      IL_000f:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Order>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+      IL_0014:  ldloc.2
+      IL_0015:  newobj     instance void Linq101Grouping01/monthGroups@51::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+      IL_001a:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Order,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Order,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                   class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-      IL_0024:  newobj     instance void Linq101Grouping01/'monthGroups@52-1'::.ctor()
-      IL_0029:  newobj     instance void Linq101Grouping01/'monthGroups@52-2'::.ctor()
-      IL_002e:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<!!1,!!2>,!!3> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupValBy<class [Utils]Utils/Order,int32,class [Utils]Utils/Order,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!3>,
+      IL_001f:  newobj     instance void Linq101Grouping01/'monthGroups@52-1'::.ctor()
+      IL_0024:  newobj     instance void Linq101Grouping01/'monthGroups@52-2'::.ctor()
+      IL_0029:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<!!1,!!2>,!!3> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupValBy<class [Utils]Utils/Order,int32,class [Utils]Utils/Order,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!3>,
                                                                                                                                                                                                                                                                                                                         class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>,
                                                                                                                                                                                                                                                                                                                         class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>)
-      IL_0033:  ldloc.2
-      IL_0034:  newobj     instance void Linq101Grouping01/'monthGroups@52-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-      IL_0039:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable,class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+      IL_002e:  ldloc.2
+      IL_002f:  newobj     instance void Linq101Grouping01/'monthGroups@52-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+      IL_0034:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable,class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                       class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-      IL_003e:  newobj     instance void Linq101Grouping01/'monthGroups@53-4'::.ctor()
-      IL_0043:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+      IL_0039:  newobj     instance void Linq101Grouping01/'monthGroups@53-4'::.ctor()
+      IL_003e:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                         class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-      IL_0048:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-      IL_004d:  stloc.1
-      .line 55,55 : 17,55
-      IL_004e:  ldarg.0
-      IL_004f:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Grouping01/'yearGroups@48-3'::builder@
-      IL_0054:  ldloc.0
-      IL_0055:  ldloc.1
-      IL_0056:  newobj     instance void class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order>,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>>>::.ctor(!0,
+      IL_0043:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+      IL_0048:  stloc.1
+      .line 55,55 : 17,55 ''
+      IL_0049:  ldarg.0
+      IL_004a:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Grouping01/'yearGroups@48-3'::builder@
+      IL_004f:  ldloc.0
+      IL_0050:  ldloc.1
+      IL_0051:  newobj     instance void class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order>,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>>>::.ctor(!0,
                                                                                                                                                                                                                                                                                       !1)
-      IL_005b:  tail.
-      IL_005d:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Yield<class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order>,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>>>,object>(!!0)
-      IL_0062:  ret
+      IL_0056:  tail.
+      IL_0058:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Yield<class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order>,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>>>,object>(!!0)
+      IL_005d:  ret
     } // end of method 'yearGroups@48-3'::Invoke
 
   } // end of class 'yearGroups@48-3'
@@ -940,7 +939,7 @@
       .maxstack  6
       .locals init ([0] class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order> yg,
                [1] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>> monthGroups)
-      .line 55,55 : 25,54
+      .line 55,55 : 25,54 ''
       IL_0000:  ldarg.1
       IL_0001:  call       instance !0 class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order>,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>>>::get_Item1()
       IL_0006:  stloc.0
@@ -981,16 +980,16 @@
     .method public strict virtual instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>>>,object> 
             Invoke(class [Utils]Utils/Customer _arg1) cil managed
     {
-      // Code size       104 (0x68)
+      // Code size       99 (0x63)
       .maxstack  10
       .locals init ([0] class [Utils]Utils/Customer c,
                [1] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>> yearGroups,
                [2] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@)
-      .line 44,44 : 9,30
+      .line 44,44 : 9,30 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  stloc.0
-      .line 57,57 : 9,53
+      .line 57,57 : 9,53 ''
       IL_0003:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
       IL_0008:  stloc.2
       IL_0009:  ldloc.2
@@ -1000,36 +999,35 @@
       IL_000d:  ldloc.2
       IL_000e:  ldloc.0
       IL_000f:  callvirt   instance class [Utils]Utils/Order[] [Utils]Utils/Customer::get_Orders()
-      IL_0014:  unbox.any  class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Order>
-      IL_0019:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Order>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-      IL_001e:  ldloc.2
-      IL_001f:  newobj     instance void Linq101Grouping01/yearGroups@47::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-      IL_0024:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Order,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Order,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+      IL_0014:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Order>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+      IL_0019:  ldloc.2
+      IL_001a:  newobj     instance void Linq101Grouping01/yearGroups@47::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+      IL_001f:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Order,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Order,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                   class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-      IL_0029:  newobj     instance void Linq101Grouping01/'yearGroups@48-1'::.ctor()
-      IL_002e:  newobj     instance void Linq101Grouping01/'yearGroups@48-2'::.ctor()
-      IL_0033:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<!!1,!!2>,!!3> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupValBy<class [Utils]Utils/Order,int32,class [Utils]Utils/Order,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!3>,
+      IL_0024:  newobj     instance void Linq101Grouping01/'yearGroups@48-1'::.ctor()
+      IL_0029:  newobj     instance void Linq101Grouping01/'yearGroups@48-2'::.ctor()
+      IL_002e:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<!!1,!!2>,!!3> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupValBy<class [Utils]Utils/Order,int32,class [Utils]Utils/Order,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!3>,
                                                                                                                                                                                                                                                                                                                         class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>,
                                                                                                                                                                                                                                                                                                                         class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>)
-      IL_0038:  ldloc.2
-      IL_0039:  newobj     instance void Linq101Grouping01/'yearGroups@48-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-      IL_003e:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order>,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>>>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+      IL_0033:  ldloc.2
+      IL_0034:  newobj     instance void Linq101Grouping01/'yearGroups@48-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+      IL_0039:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order>,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>>>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-      IL_0043:  newobj     instance void Linq101Grouping01/'yearGroups@55-4'::.ctor()
-      IL_0048:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order>,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>>>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+      IL_003e:  newobj     instance void Linq101Grouping01/'yearGroups@55-4'::.ctor()
+      IL_0043:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order>,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>>>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-      IL_004d:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-      IL_0052:  stloc.1
-      .line 57,57 : 9,53
-      IL_0053:  ldarg.0
-      IL_0054:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Grouping01/customerOrderGroups@44::builder@
-      IL_0059:  ldloc.0
-      IL_005a:  ldloc.1
-      IL_005b:  newobj     instance void class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>>>::.ctor(!0,
+      IL_0048:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+      IL_004d:  stloc.1
+      .line 57,57 : 9,53 ''
+      IL_004e:  ldarg.0
+      IL_004f:  ldfld      class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder Linq101Grouping01/customerOrderGroups@44::builder@
+      IL_0054:  ldloc.0
+      IL_0055:  ldloc.1
+      IL_0056:  newobj     instance void class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>>>::.ctor(!0,
                                                                                                                                                                                                                                                                                !1)
-      IL_0060:  tail.
-      IL_0062:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Yield<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>>>,object>(!!0)
-      IL_0067:  ret
+      IL_005b:  tail.
+      IL_005d:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Yield<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>>>,object>(!!0)
+      IL_0062:  ret
     } // end of method customerOrderGroups@44::Invoke
 
   } // end of class customerOrderGroups@44
@@ -1056,7 +1054,7 @@
       .maxstack  6
       .locals init ([0] class [Utils]Utils/Customer c,
                [1] class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>> yearGroups)
-      .line 57,57 : 17,52
+      .line 57,57 : 17,52 ''
       IL_0000:  ldarg.1
       IL_0001:  call       instance !0 class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>>>::get_Item1()
       IL_0006:  stloc.0
@@ -1089,7 +1087,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Grouping01>'.$Linq101Grouping01::'numbers@10-1'
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Grouping01>'.$Linq101Grouping01::'numbers@10-3'
     IL_0005:  ret
   } // end of method Linq101Grouping01::get_numbers
 
@@ -1107,7 +1105,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Grouping01>'.$Linq101Grouping01::words@20
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Grouping01>'.$Linq101Grouping01::'words@20-2'
     IL_0005:  ret
   } // end of method Linq101Grouping01::get_words
 
@@ -1125,7 +1123,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101Grouping01>'.$Linq101Grouping01::'products@30-2'
+    IL_0000:  ldsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101Grouping01>'.$Linq101Grouping01::'products@30-4'
     IL_0005:  ret
   } // end of method Linq101Grouping01::get_products
 
@@ -1217,15 +1215,15 @@
 {
   .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> digits@7
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'numbers@10-1'
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> 'numbers@10-3'
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly class [mscorlib]System.Tuple`2<int32,int32[]>[] numberGroups@12
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> words@20
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> 'words@20-2'
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly class [mscorlib]System.Tuple`2<char,string[]>[] wordGroups@22
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> 'products@30-2'
+  .field static assembly class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> 'products@30-4'
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product[]>[] orderGroups@32
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -1240,7 +1238,7 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       649 (0x289)
+    // Code size       629 (0x275)
     .maxstack  13
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> digits,
              [1] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> numbers,
@@ -1255,7 +1253,7 @@
              [10] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_10,
              [11] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_11,
              [12] class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder V_12)
-    .line 7,7 : 1,96
+    .line 7,7 : 1,96 ''
     IL_0000:  nop
     IL_0001:  ldstr      "zero"
     IL_0006:  ldstr      "one"
@@ -1291,7 +1289,7 @@
     IL_006a:  dup
     IL_006b:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Grouping01>'.$Linq101Grouping01::digits@7
     IL_0070:  stloc.0
-    .line 10,10 : 1,47
+    .line 10,10 : 1,47 ''
     IL_0071:  ldc.i4.5
     IL_0072:  ldc.i4.4
     IL_0073:  ldc.i4.1
@@ -1324,9 +1322,9 @@
     IL_00ae:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
     IL_00b3:  dup
-    IL_00b4:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Grouping01>'.$Linq101Grouping01::'numbers@10-1'
+    IL_00b4:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$Linq101Grouping01>'.$Linq101Grouping01::'numbers@10-3'
     IL_00b9:  stloc.1
-    .line 12,17 : 1,21
+    .line 12,17 : 1,21 ''
     IL_00ba:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
     IL_00bf:  stloc.s    builder@
     IL_00c1:  ldloc.s    builder@
@@ -1335,37 +1333,38 @@
     IL_00c7:  ldloc.s    builder@
     IL_00c9:  ldloc.s    builder@
     IL_00cb:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> Linq101Grouping01::get_numbers()
-    IL_00d0:  unbox.any  class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>
-    IL_00d5:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_00da:  ldloc.s    builder@
-    IL_00dc:  newobj     instance void Linq101Grouping01/numberGroups@14::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-    IL_00e1:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<int32,class [mscorlib]System.Collections.IEnumerable,int32,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_00d0:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_00d5:  ldloc.s    builder@
+    IL_00d7:  newobj     instance void Linq101Grouping01/numberGroups@14::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_00dc:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<int32,class [mscorlib]System.Collections.IEnumerable,int32,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                           class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_00e6:  newobj     instance void Linq101Grouping01/'numberGroups@15-1'::.ctor()
-    IL_00eb:  newobj     instance void Linq101Grouping01/'numberGroups@15-2'::.ctor()
-    IL_00f0:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<!!1,!!2>,!!3> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupValBy<int32,int32,int32,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!3>,
+    IL_00e1:  newobj     instance void Linq101Grouping01/'numberGroups@15-1'::.ctor()
+    IL_00e6:  newobj     instance void Linq101Grouping01/'numberGroups@15-2'::.ctor()
+    IL_00eb:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<!!1,!!2>,!!3> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupValBy<int32,int32,int32,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!3>,
                                                                                                                                                                                                                                                                                 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>,
                                                                                                                                                                                                                                                                                 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>)
-    IL_00f5:  ldloc.s    builder@
-    IL_00f7:  newobj     instance void Linq101Grouping01/'numberGroups@15-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-    IL_00fc:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [System.Core]System.Linq.IGrouping`2<int32,int32>,class [mscorlib]System.Collections.IEnumerable,class [System.Core]System.Linq.IGrouping`2<int32,int32>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_00f0:  ldloc.s    builder@
+    IL_00f2:  newobj     instance void Linq101Grouping01/'numberGroups@15-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_00f7:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [System.Core]System.Linq.IGrouping`2<int32,int32>,class [mscorlib]System.Collections.IEnumerable,class [System.Core]System.Linq.IGrouping`2<int32,int32>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                               class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_0101:  newobj     instance void Linq101Grouping01/'numberGroups@16-4'::.ctor()
-    IL_0106:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [System.Core]System.Linq.IGrouping`2<int32,int32>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<int32,int32[]>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_00fc:  newobj     instance void Linq101Grouping01/'numberGroups@16-4'::.ctor()
+    IL_0101:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [System.Core]System.Linq.IGrouping`2<int32,int32>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<int32,int32[]>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-    IL_010b:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<int32,int32[]>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-    IL_0110:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`2<int32,int32[]>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_0115:  dup
-    IL_0116:  stsfld     class [mscorlib]System.Tuple`2<int32,int32[]>[] '<StartupCode$Linq101Grouping01>'.$Linq101Grouping01::numberGroups@12
-    IL_011b:  stloc.2
-    .line 20,20 : 1,80
-    IL_011c:  ldstr      "blueberry"
-    IL_0121:  ldstr      "chimpanzee"
-    IL_0126:  ldstr      "abacus"
-    IL_012b:  ldstr      "banana"
-    IL_0130:  ldstr      "apple"
-    IL_0135:  ldstr      "cheese"
-    IL_013a:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::get_Empty()
+    IL_0106:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<int32,int32[]>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_010b:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`2<int32,int32[]>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_0110:  dup
+    IL_0111:  stsfld     class [mscorlib]System.Tuple`2<int32,int32[]>[] '<StartupCode$Linq101Grouping01>'.$Linq101Grouping01::numberGroups@12
+    IL_0116:  stloc.2
+    .line 20,20 : 1,80 ''
+    IL_0117:  ldstr      "blueberry"
+    IL_011c:  ldstr      "chimpanzee"
+    IL_0121:  ldstr      "abacus"
+    IL_0126:  ldstr      "banana"
+    IL_012b:  ldstr      "apple"
+    IL_0130:  ldstr      "cheese"
+    IL_0135:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::get_Empty()
+    IL_013a:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::Cons(!0,
+                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
     IL_013f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::Cons(!0,
                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
     IL_0144:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::Cons(!0,
@@ -1376,107 +1375,102 @@
                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
     IL_0153:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::Cons(!0,
                                                                                                                                                                      class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-    IL_0158:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string>::Cons(!0,
-                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-    IL_015d:  dup
-    IL_015e:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Grouping01>'.$Linq101Grouping01::words@20
-    IL_0163:  stloc.3
-    .line 22,27 : 1,21
-    IL_0164:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_0169:  stloc.s    V_10
-    IL_016b:  ldloc.s    V_10
-    IL_016d:  ldloc.s    V_10
-    IL_016f:  ldloc.s    V_10
-    IL_0171:  ldloc.s    V_10
-    IL_0173:  ldloc.s    V_10
-    IL_0175:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101Grouping01::get_words()
-    IL_017a:  unbox.any  class [mscorlib]System.Collections.Generic.IEnumerable`1<string>
-    IL_017f:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<string>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_0184:  ldloc.s    V_10
-    IL_0186:  newobj     instance void Linq101Grouping01/wordGroups@24::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-    IL_018b:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<string,class [mscorlib]System.Collections.IEnumerable,string,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_0158:  dup
+    IL_0159:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> '<StartupCode$Linq101Grouping01>'.$Linq101Grouping01::'words@20-2'
+    IL_015e:  stloc.3
+    .line 22,27 : 1,21 ''
+    IL_015f:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_0164:  stloc.s    V_10
+    IL_0166:  ldloc.s    V_10
+    IL_0168:  ldloc.s    V_10
+    IL_016a:  ldloc.s    V_10
+    IL_016c:  ldloc.s    V_10
+    IL_016e:  ldloc.s    V_10
+    IL_0170:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<string> Linq101Grouping01::get_words()
+    IL_0175:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<string>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_017a:  ldloc.s    V_10
+    IL_017c:  newobj     instance void Linq101Grouping01/wordGroups@24::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_0181:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<string,class [mscorlib]System.Collections.IEnumerable,string,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                             class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_0190:  newobj     instance void Linq101Grouping01/'wordGroups@25-1'::.ctor()
-    IL_0195:  newobj     instance void Linq101Grouping01/'wordGroups@25-2'::.ctor()
-    IL_019a:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<!!1,!!2>,!!3> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupValBy<string,char,string,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!3>,
+    IL_0186:  newobj     instance void Linq101Grouping01/'wordGroups@25-1'::.ctor()
+    IL_018b:  newobj     instance void Linq101Grouping01/'wordGroups@25-2'::.ctor()
+    IL_0190:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<!!1,!!2>,!!3> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupValBy<string,char,string,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!3>,
                                                                                                                                                                                                                                                                                  class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>,
                                                                                                                                                                                                                                                                                  class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>)
-    IL_019f:  ldloc.s    V_10
-    IL_01a1:  newobj     instance void Linq101Grouping01/'wordGroups@25-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-    IL_01a6:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [System.Core]System.Linq.IGrouping`2<char,string>,class [mscorlib]System.Collections.IEnumerable,class [System.Core]System.Linq.IGrouping`2<char,string>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_0195:  ldloc.s    V_10
+    IL_0197:  newobj     instance void Linq101Grouping01/'wordGroups@25-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_019c:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [System.Core]System.Linq.IGrouping`2<char,string>,class [mscorlib]System.Collections.IEnumerable,class [System.Core]System.Linq.IGrouping`2<char,string>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                               class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_01ab:  newobj     instance void Linq101Grouping01/'wordGroups@26-4'::.ctor()
-    IL_01b0:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [System.Core]System.Linq.IGrouping`2<char,string>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<char,string[]>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_01a1:  newobj     instance void Linq101Grouping01/'wordGroups@26-4'::.ctor()
+    IL_01a6:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [System.Core]System.Linq.IGrouping`2<char,string>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<char,string[]>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-    IL_01b5:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<char,string[]>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-    IL_01ba:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`2<char,string[]>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_01bf:  dup
-    IL_01c0:  stsfld     class [mscorlib]System.Tuple`2<char,string[]>[] '<StartupCode$Linq101Grouping01>'.$Linq101Grouping01::wordGroups@22
-    IL_01c5:  stloc.s    wordGroups
-    .line 30,30 : 1,32
-    IL_01c7:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> [Utils]Utils::getProductList()
-    IL_01cc:  dup
-    IL_01cd:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101Grouping01>'.$Linq101Grouping01::'products@30-2'
-    IL_01d2:  stloc.s    products
-    .line 32,37 : 1,21
-    IL_01d4:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_01d9:  stloc.s    V_11
-    IL_01db:  ldloc.s    V_11
-    IL_01dd:  ldloc.s    V_11
-    IL_01df:  ldloc.s    V_11
-    IL_01e1:  ldloc.s    V_11
-    IL_01e3:  ldloc.s    V_11
-    IL_01e5:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Grouping01::get_products()
-    IL_01ea:  unbox.any  class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>
-    IL_01ef:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_01f4:  ldloc.s    V_11
-    IL_01f6:  newobj     instance void Linq101Grouping01/orderGroups@34::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-    IL_01fb:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_01ab:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<char,string[]>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_01b0:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`2<char,string[]>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_01b5:  dup
+    IL_01b6:  stsfld     class [mscorlib]System.Tuple`2<char,string[]>[] '<StartupCode$Linq101Grouping01>'.$Linq101Grouping01::wordGroups@22
+    IL_01bb:  stloc.s    wordGroups
+    .line 30,30 : 1,32 ''
+    IL_01bd:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> [Utils]Utils::getProductList()
+    IL_01c2:  dup
+    IL_01c3:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> '<StartupCode$Linq101Grouping01>'.$Linq101Grouping01::'products@30-4'
+    IL_01c8:  stloc.s    products
+    .line 32,37 : 1,21 ''
+    IL_01ca:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_01cf:  stloc.s    V_11
+    IL_01d1:  ldloc.s    V_11
+    IL_01d3:  ldloc.s    V_11
+    IL_01d5:  ldloc.s    V_11
+    IL_01d7:  ldloc.s    V_11
+    IL_01d9:  ldloc.s    V_11
+    IL_01db:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Product> Linq101Grouping01::get_products()
+    IL_01e0:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Product>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_01e5:  ldloc.s    V_11
+    IL_01e7:  newobj     instance void Linq101Grouping01/orderGroups@34::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_01ec:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable,class [Utils]Utils/Product,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_0200:  newobj     instance void Linq101Grouping01/'orderGroups@35-1'::.ctor()
-    IL_0205:  newobj     instance void Linq101Grouping01/'orderGroups@35-2'::.ctor()
-    IL_020a:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<!!1,!!2>,!!3> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupValBy<class [Utils]Utils/Product,string,class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!3>,
+    IL_01f1:  newobj     instance void Linq101Grouping01/'orderGroups@35-1'::.ctor()
+    IL_01f6:  newobj     instance void Linq101Grouping01/'orderGroups@35-2'::.ctor()
+    IL_01fb:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<!!1,!!2>,!!3> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::GroupValBy<class [Utils]Utils/Product,string,class [Utils]Utils/Product,class [mscorlib]System.Collections.IEnumerable>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!3>,
                                                                                                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>,
                                                                                                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!1>)
-    IL_020f:  ldloc.s    V_11
-    IL_0211:  newobj     instance void Linq101Grouping01/'orderGroups@35-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-    IL_0216:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_0200:  ldloc.s    V_11
+    IL_0202:  newobj     instance void Linq101Grouping01/'orderGroups@35-3'::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_0207:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable,class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                           class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_021b:  newobj     instance void Linq101Grouping01/'orderGroups@36-4'::.ctor()
-    IL_0220:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product[]>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_020c:  newobj     instance void Linq101Grouping01/'orderGroups@36-4'::.ctor()
+    IL_0211:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product[]>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                             class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-    IL_0225:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product[]>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-    IL_022a:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product[]>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_022f:  dup
-    IL_0230:  stsfld     class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product[]>[] '<StartupCode$Linq101Grouping01>'.$Linq101Grouping01::orderGroups@32
-    IL_0235:  stloc.s    orderGroups
-    .line 40,40 : 1,34
-    IL_0237:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> [Utils]Utils::getCustomerList()
-    IL_023c:  dup
-    IL_023d:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> '<StartupCode$Linq101Grouping01>'.$Linq101Grouping01::customers@40
-    IL_0242:  stloc.s    customers
-    .line 42,58 : 1,21
-    IL_0244:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
-    IL_0249:  stloc.s    V_12
-    IL_024b:  ldloc.s    V_12
-    IL_024d:  ldloc.s    V_12
-    IL_024f:  ldloc.s    V_12
-    IL_0251:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> Linq101Grouping01::get_customers()
-    IL_0256:  unbox.any  class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Customer>
-    IL_025b:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Customer>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_0260:  ldloc.s    V_12
-    IL_0262:  newobj     instance void Linq101Grouping01/customerOrderGroups@44::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
-    IL_0267:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Customer,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>>>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_0216:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product[]>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_021b:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product[]>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_0220:  dup
+    IL_0221:  stsfld     class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product[]>[] '<StartupCode$Linq101Grouping01>'.$Linq101Grouping01::orderGroups@32
+    IL_0226:  stloc.s    orderGroups
+    .line 40,40 : 1,34 ''
+    IL_0228:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> [Utils]Utils::getCustomerList()
+    IL_022d:  dup
+    IL_022e:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> '<StartupCode$Linq101Grouping01>'.$Linq101Grouping01::customers@40
+    IL_0233:  stloc.s    customers
+    .line 42,58 : 1,21 ''
+    IL_0235:  call       class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::get_query()
+    IL_023a:  stloc.s    V_12
+    IL_023c:  ldloc.s    V_12
+    IL_023e:  ldloc.s    V_12
+    IL_0240:  ldloc.s    V_12
+    IL_0242:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [Utils]Utils/Customer> Linq101Grouping01::get_customers()
+    IL_0247:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,class [mscorlib]System.Collections.IEnumerable> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Source<class [Utils]Utils/Customer>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_024c:  ldloc.s    V_12
+    IL_024e:  newobj     instance void Linq101Grouping01/customerOrderGroups@44::.ctor(class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder)
+    IL_0253:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::For<class [Utils]Utils/Customer,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>>>,object>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                                                                                                          class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!3>>)
-    IL_026c:  newobj     instance void Linq101Grouping01/'customerOrderGroups@57-1'::.ctor()
-    IL_0271:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>>>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>[]>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
+    IL_0258:  newobj     instance void Linq101Grouping01/'customerOrderGroups@57-1'::.ctor()
+    IL_025d:  callvirt   instance class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!2,!!1> [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder::Select<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>>>,class [mscorlib]System.Collections.IEnumerable,class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>[]>>(class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<!!0,!!1>,
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,!!2>)
-    IL_0276:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>[]>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
-    IL_027b:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>[]>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_0280:  dup
-    IL_0281:  stsfld     class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>[]>[] '<StartupCode$Linq101Grouping01>'.$Linq101Grouping01::customerOrderGroups@42
-    IL_0286:  stloc.s    customerOrderGroups
-    IL_0288:  ret
+    IL_0262:  callvirt   instance class [mscorlib]System.Collections.Generic.IEnumerable`1<!0> class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>[]>,class [mscorlib]System.Collections.IEnumerable>::get_Source()
+    IL_0267:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ToArray<class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>[]>>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
+    IL_026c:  dup
+    IL_026d:  stsfld     class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>[]>[] '<StartupCode$Linq101Grouping01>'.$Linq101Grouping01::customerOrderGroups@42
+    IL_0272:  stloc.s    customerOrderGroups
+    IL_0274:  ret
   } // end of method $Linq101Grouping01::main@
 
 } // end of class '<StartupCode$Linq101Grouping01>'.$Linq101Grouping01

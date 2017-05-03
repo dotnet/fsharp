@@ -105,9 +105,14 @@ module internal RoslynHelpers =
         ImmutableArray.Create<DiagnosticDescriptor>(dummyDescriptor)
 
     let ConvertError(error: FSharpErrorInfo, location: Location) =
+        // Normalize the error message into the same format that we will receive it from the compiler.
+        // This ensures that IntelliSense and Compiler errors in the 'Error List' are de-duplicated.
+        // (i.e the same error does not appear twice, where the only difference is the line endings.)
+        let normalizedMessage = error.Message |> ErrorLogger.NormalizeErrorString |> ErrorLogger.NewlineifyErrorString
+
         let id = "FS" + error.ErrorNumber.ToString("0000")
         let emptyString = LocalizableString.op_Implicit("")
-        let description = LocalizableString.op_Implicit(error.Message)
+        let description = LocalizableString.op_Implicit(normalizedMessage)
         let severity = if error.Severity = FSharpErrorSeverity.Error then DiagnosticSeverity.Error else DiagnosticSeverity.Warning
         let customTags = 
             match error.ErrorNumber with

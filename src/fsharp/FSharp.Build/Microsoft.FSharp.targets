@@ -66,7 +66,7 @@ this file.
 
     <PropertyGroup>
         <UsingXBuild>false</UsingXBuild>
-        <UsingXBuild Condition="$(MSBuildExtensionsPath32.Contains('xbuild'))">true</UsingXBuild>
+        <UsingXBuild Condition="'$(MSBuildAssemblyVersion)' == ''">true</UsingXBuild>
     </PropertyGroup>
 
     <Target

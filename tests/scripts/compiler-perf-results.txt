@@ -86,6 +86,7 @@ https://github.com/jack-pappas/visualfsharp.git issue-1094             48355a3b7
 https://github.com/jack-pappas/visualfsharp.git issue-1094             10c60c53d869e03be86b7815837cf6fd73c3095b 221dd7eecf53a5392e7717afd7f243caee27f1f9 190.71 11.49                27.04                44.84                60.02                51.68               
 https://github.com/jack-pappas/visualfsharp.git issue-1094             10c60c53d869e03be86b7815837cf6fd73c3095b 221dd7eecf53a5392e7717afd7f243caee27f1f9 205.25 11.72                30.10                47.13                62.38                52.00               
 https://github.com/jack-pappas/visualfsharp.git issue-1094             10c60c53d869e03be86b7815837cf6fd73c3095b d2e4570c47de0dbfb85223971ab8f1a7740182c7 205.08 12.01                30.39                46.96                62.60                53.26               
+https://github.com/jack-pappas/visualfsharp.git issue-1094             48355a3b7367925b138e069feef44aa96b3405fe 427318deda16d340e9e61db6af220fee6e81bb78 208.73 11.61                31.79                48.23                64.07                52.25               
 
 https://github.com/manofstick/visualfsharp.git manofstick-iseq-part2   5726129105103640130e31d6002179144a346939 b24e92b5dd375b5209a47db9af9d490a78e6f884 181.97 10.27                27.58                44.91                59.12                51.85               
 https://github.com/manofstick/visualfsharp.git manofstick-iseq-part2   5726129105103640130e31d6002179144a346939 427318deda16d340e9e61db6af220fee6e81bb78 189.10 11.17                32.16                46.88                54.04                50.18               
@@ -96,7 +97,6 @@ https://github.com/manofstick/visualfsharp.git manofstick-iseq-part2   9870c563f
 
 https://github.com/dsyme/visualfsharp.git acv1                         bfea9e06a9cc36f12a0818313ff30bc0569b3083 b24e92b5dd375b5209a47db9af9d490a78e6f884 201.75 10.75                28.57                42.86                56.34                52.50               
 https://github.com/dsyme/visualfsharp.git acv1                         bfea9e06a9cc36f12a0818313ff30bc0569b3083 427318deda16d340e9e61db6af220fee6e81bb78 195.71 10.90                31.71                45.70                54.00                49.29               
-https://github.com/dsyme/visualfsharp.git acv1                         bfea9e06a9cc36f12a0818313ff30bc0569b3083 427318deda16d340e9e61db6af220fee6e81bb78 198.93 10.63                28.34                44.70                55.87                50.11               
 https://github.com/dsyme/visualfsharp.git acv1                         bfea9e06a9cc36f12a0818313ff30bc0569b3083 221dd7eecf53a5392e7717afd7f243caee27f1f9 187.94 10.41                27.10                45.64                59.54                50.11               
 https://github.com/dsyme/visualfsharp.git acv1                         e37c1a96f3a3069ef37fb4325eeb09385e419cb6 221dd7eecf53a5392e7717afd7f243caee27f1f9 208.41 11.27                29.50                46.96                63.70                53.26               
 https://github.com/dsyme/visualfsharp.git acv1                         e37c1a96f3a3069ef37fb4325eeb09385e419cb6 d2e4570c47de0dbfb85223971ab8f1a7740182c7 221.65 11.26                30.01                47.00                62.40                51.17               
@@ -104,3 +104,4 @@ https://github.com/dsyme/visualfsharp.git acv1                         e37c1a96f
 
 https://github.com/manofstick/visualfsharp.git all-your-collections-are-belong-to-us f82aac764e8c52fafe1044618292aa3524b9fe2f 221dd7eecf53a5392e7717afd7f243caee27f1f9 226.24 11.66                35.81                49.91                66.98                52.55               
 https://github.com/manofstick/visualfsharp.git all-your-collections-are-belong-to-us f82aac764e8c52fafe1044618292aa3524b9fe2f 221dd7eecf53a5392e7717afd7f243caee27f1f9 218.95 11.35                38.69                53.11                74.24                53.67               
+

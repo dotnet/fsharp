@@ -18,6 +18,7 @@ using VsCommands = Microsoft.VisualStudio.VSConstants.VSStd97CmdID;
 using VsCommands2K = Microsoft.VisualStudio.VSConstants.VSStd2KCmdID;
 using System.Diagnostics.CodeAnalysis;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
@@ -93,19 +94,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             string newPath = Path.Combine(new DirectoryInfo(this.Url).Parent.FullName, label);
 
-            // Verify that No Directory/file already exists with the new name among current children
+            // Verify that No Directory/file already exists with the new name among siblings
             for (HierarchyNode n = Parent.FirstChild; n != null; n = n.NextSibling)
             {
                 if (n != this && String.Compare(n.Caption, label, StringComparison.OrdinalIgnoreCase) == 0)
                 {
-                    return ShowFileOrFolderAlreadExistsErrorMessage(newPath);
+                    return ShowErrorMessage(SR.FileOrFolderAlreadyExists, newPath);
                 }
-            }
-
-            // Verify that No Directory/file already exists with the new name on disk
-            if (Directory.Exists(newPath) || FSLib.Shim.FileSystem.SafeExists(newPath))
-            {
-                return ShowFileOrFolderAlreadExistsErrorMessage(newPath);
             }
 
             try
@@ -380,7 +375,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 if (Directory.Exists(newPath))
                 {
-                    ShowFileOrFolderAlreadExistsErrorMessage(newPath);
+                    ShowErrorMessage(SR.FileOrFolderAlreadyExists, newPath);
+                    return;
                 }
 
                 Directory.Move(this.Url, newPath);
@@ -389,12 +385,34 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         private void RenameFolder(string newName)
         {
-            // Do the rename (note that we only do the physical rename if the leaf name changed)
             string newPath = Path.Combine(this.Parent.VirtualNodeName, newName);
+            string newFullPath = Path.Combine(this.ProjectMgr.ProjectFolder, newPath);
+
+            // Only do the physical rename if the leaf name changed
             if (String.Compare(Path.GetFileName(VirtualNodeName), newName, StringComparison.Ordinal) != 0)
             {
-                this.RenameDirectory(Path.Combine(this.ProjectMgr.ProjectFolder, newPath));
+                // Verify that no directory/file already exists with the new name on disk.
+                // If it does, just subsume that name if our directory is empty.
+                if (Directory.Exists(newFullPath) || FSLib.Shim.FileSystem.SafeExists(newFullPath))
+                {
+                    // We can't delete our old directory as it is not empty
+                    if (Directory.EnumerateFileSystemEntries(this.Url).Any())
+                    {
+                        ShowErrorMessage(SR.FolderCannotBeRenamed, newPath);
+                        return;
+                    }
+
+                    // Try to delete the old (empty) directory.
+                    // Note that we don't want to delete recursively in case a file was added between
+                    // when we checked and when we went to delete (potential race condition).
+                    Directory.Delete(this.Url, false);
+                }
+                else
+                {
+                    this.RenameDirectory(newFullPath);
+                }
             }
+
             this.VirtualNodeName = newPath;
 
             this.ItemNode.Rename(VirtualNodeName);
@@ -422,13 +440,15 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Show error message if not in automation mode, otherwise throw exception
         /// </summary>
-        /// <param name="newPath">path of file or folder already existing on disk</param>
+        /// <param name="parameter">Parameter for resource string format</param>
         /// <returns>S_OK</returns>
-        private int ShowFileOrFolderAlreadExistsErrorMessage(string newPath)
+        private int ShowErrorMessage(string resourceName, string parameter)
         {
-            //A file or folder with the name '{0}' already exists on disk at this location. Please choose another name.
-            //If this file or folder does not appear in the Solution Explorer, then it is not currently part of your project. To view files which exist on disk, but are not in the project, select Show All Files from the Project menu.
-            string errorMessage = (String.Format(CultureInfo.CurrentCulture, SR.GetString(SR.FileOrFolderAlreadyExists, CultureInfo.CurrentUICulture), newPath));
+            // Most likely the cause of:
+            // A file or folder with the name '{0}' already exists on disk at this location. Please choose another name.
+            // -or-
+            // This folder cannot be renamed to '{0}' as it already exists on disk.
+            string errorMessage = String.Format(CultureInfo.CurrentCulture, SR.GetStringWithCR(resourceName), parameter);
             if (!Utilities.IsInAutomationFunction(this.ProjectMgr.Site))
             {
                 string title = null;

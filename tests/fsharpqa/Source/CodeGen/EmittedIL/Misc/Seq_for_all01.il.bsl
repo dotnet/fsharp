@@ -134,13 +134,12 @@
     IL_0007:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
     IL_000c:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-    IL_0011:  unbox.any  class [mscorlib]System.Collections.Generic.IEnumerable`1<int32>
-    IL_0016:  call       bool [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ForAll<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>,
+    IL_0011:  call       bool [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ForAll<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>,
                                                                                                  class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_001b:  dup
-    IL_001c:  stsfld     bool '<StartupCode$Seq_for_all01>'.$Seq_for_all01::q@4
-    IL_0021:  stloc.0
-    IL_0022:  ret
+    IL_0016:  dup
+    IL_0017:  stsfld     bool '<StartupCode$Seq_for_all01>'.$Seq_for_all01::q@4
+    IL_001c:  stloc.0
+    IL_001d:  ret
   } // end of method $Seq_for_all01::main@
 
 } // end of class '<StartupCode$Seq_for_all01>'.$Seq_for_all01

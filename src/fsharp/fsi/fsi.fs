@@ -449,10 +449,11 @@ type internal FsiValuePrinter(fsi: FsiEvaluationSessionHostConfig, g: TcGlobals,
                     let lay = valuePrinter.PrintValue (FsiValuePrinterMode.PrintExpr, opts, obj, objTy)
                     if isEmptyL lay then None else Some lay // suppress empty layout 
         let denv = { denv with suppressMutableKeyword = true } // suppress 'mutable' in 'val mutable it = ...'
-        let fullL = if Option.isNone rhsL || isEmptyL rhsL.Value then
-                      NicePrint.layoutValOrMember denv vref (* the rhs was suppressed by the printer, so no value to print *)
-                    else
-                      (NicePrint.layoutValOrMember denv vref ++ wordL (TaggedTextOps.tagText "=")) --- rhsL.Value
+        let fullL = 
+            if Option.isNone rhsL || isEmptyL rhsL.Value then
+                NicePrint.prettyLayoutOfValOrMemberNoInst denv vref (* the rhs was suppressed by the printer, so no value to print *)
+            else
+                (NicePrint.prettyLayoutOfValOrMemberNoInst denv vref ++ wordL (TaggedTextOps.tagText "=")) --- rhsL.Value
 
         Utilities.colorPrintL outWriter opts fullL
 
@@ -1609,6 +1610,15 @@ module internal MagicAssemblyResolution =
                let assemblyReferenceTextDll = (simpleAssemName + ".dll") 
                let assemblyReferenceTextExe = (simpleAssemName + ".exe") 
                let overallSearchResult =           
+
+                   // OK, try to resolve as an existing DLL in the resolved reference set.  This does unification by assembly name
+                   // once an assembly has been referenced.
+                   let searchResult = tcImports.TryFindExistingFullyQualifiedPathBySimpleAssemblyName (ctok, simpleAssemName)
+
+                   match searchResult with
+                   | Some r -> OkResult ([], Choice1Of2 r)
+                   | _ -> 
+
                    // OK, try to resolve as a .dll
                    let searchResult = tcImports.TryResolveAssemblyReference (ctok, AssemblyReference (m, assemblyReferenceTextDll, None), ResolveAssemblyReferenceMode.Speculative)
 
@@ -1645,7 +1655,7 @@ module internal MagicAssemblyResolution =
 #endif
                    
                    // As a last resort, try to find the reference without an extension
-                   match tcImports.TryFindExistingFullyQualifiedPathFromAssemblyRef(ctok, ILAssemblyRef.Create(simpleAssemName,None,None,false,None,None)) with
+                   match tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef(ctok, ILAssemblyRef.Create(simpleAssemName,None,None,false,None,None)) with
                    | Some(resolvedPath) -> 
                        OkResult([],Choice1Of2 resolvedPath)
                    | None -> 
@@ -2609,7 +2619,7 @@ type internal FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:st
         | Some assembly -> Some (Choice2Of2 assembly)
         | None -> 
 #endif
-        match tcImports.TryFindExistingFullyQualifiedPathFromAssemblyRef (ctok, aref) with
+        match tcImports.TryFindExistingFullyQualifiedPathByExactAssemblyRef (ctok, aref) with
         | Some resolvedPath -> Some (Choice1Of2 resolvedPath)
         | None -> None
           

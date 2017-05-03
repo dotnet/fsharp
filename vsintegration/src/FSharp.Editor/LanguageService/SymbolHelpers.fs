@@ -11,7 +11,7 @@ open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open Symbols 
+open Microsoft.VisualStudio.FSharp.Editor.Symbols 
 
 
 module internal SymbolHelpers =
@@ -43,8 +43,16 @@ module internal SymbolHelpers =
                     |> Async.Parallel
                     |> Async.map Array.concat
             
+            let declarationLength = 
+                symbol.DeclarationLocation
+                |> Option.map (fun m -> m.EndColumn - m.StartColumn)
+
             return
-                (symbolUses 
+                (symbolUses
+                 |> Seq.filter (fun su -> 
+                     match declarationLength with
+                     | Some declLength -> su.RangeAlternate.EndColumn - su.RangeAlternate.StartColumn = declLength
+                     | None -> true)
                  |> Seq.collect (fun symbolUse -> 
                       solution.GetDocumentIdsWithFilePath(symbolUse.FileName) |> Seq.map (fun id -> id, symbolUse))
                  |> Seq.groupBy fst

@@ -660,14 +660,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Overridden method. The method updates the build dependency list before removing the node from the hierarchy.
         /// </summary>
-        public override void Remove(bool removeFromStorage)
+        public override void Remove(bool removeFromStorage, bool promptSave = true)
         {
             if (this.ProjectMgr == null || !this.canRemoveReference)
             {
                 return;
             }
             this.ProjectMgr.RemoveBuildDependency(this.buildDependency);
-            base.Remove(removeFromStorage);
+            base.Remove(removeFromStorage, promptSave);
             
             // current reference is removed - delete associated error from list
             CleanProjectReferenceErrorState();

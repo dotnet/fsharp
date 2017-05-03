@@ -467,10 +467,21 @@ if [ "$BUILD_PHASE" = '1' ]; then
     { printeval "$cmd"; } || failwith "'$cmd' failed"
 fi
 
+build_status "Main part of build finished, completing parts of build needed for Mono setup"
+
+if [ "$BUILD_NET40" = '1' ]; then
+    { printeval "./autogen.sh --prefix=/usr"; } || failwith "./autogen.sh failed"
+
+    { printeval "make"; } || failwith "make failed"
+fi
+
 build_status "Done with build, starting update/prepare"
 
 if [ "$BUILD_NET40" = '1' ]; then
-    echo "TODO: Call update.sh"
+
+    { printeval "sudo make install"; } || failwith "sudo make install failed"
+
+# WINDOWS:
 #    src/update.sh $BUILD_CONFIG
 #    rc=$?;
 #    if [ $rc -ne 0 ]; then

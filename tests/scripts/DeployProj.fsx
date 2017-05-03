@@ -21,8 +21,6 @@ try
         let FSharpCoreDir = getDirectoryName FSharpCore
         [ FSharpCoreDir ++ "fsc.exe"
           FSharpCoreDir ++ "FSharp.Compiler.dll"
-          FSharpCoreDir ++ "FSharp.Core.sigdata"
-          FSharpCoreDir ++ "FSharp.Core.optdata"
           FSharpCoreDir ++ "default.win32manifest"
           FSharpCoreDir ++ "fsi.exe"
           FSharpCoreDir ++ "FSharp.Compiler.Interactive.Settings.dll" ]

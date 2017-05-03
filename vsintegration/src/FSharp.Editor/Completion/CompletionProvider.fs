@@ -55,7 +55,7 @@ type internal FSharpCompletionProvider
     static let noCommitOnSpaceRules = 
         CompletionItemRules.Default.WithCommitCharacterRule(CharacterSetModificationRule.Create(CharacterSetModificationKind.Remove, ' ', '.', '<', '>', '(', ')', '!'))
     
-    static let getRules() = if IntelliSenseSettings.ShowAfterCharIsTyped then noCommitOnSpaceRules else CompletionItemRules.Default
+    static let getRules() = if Settings.IntelliSense.ShowAfterCharIsTyped then noCommitOnSpaceRules else CompletionItemRules.Default
 
     static let mruItems = Dictionary<(* Item.FullName *) string, (* hints *) int>()
     
@@ -80,7 +80,7 @@ type internal FSharpCompletionProvider
             else
                 let documentId, filePath, defines = getInfo()
                 CompletionUtils.shouldProvideCompletion(documentId, filePath, defines, sourceText, triggerPosition) &&
-                (IntelliSenseSettings.ShowAfterCharIsTyped && CompletionUtils.isStartingNewWord(sourceText, triggerPosition))
+                (Settings.IntelliSense.ShowAfterCharIsTyped && CompletionUtils.isStartingNewWord(sourceText, triggerPosition))
 
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, 
                                              textVersionHash: int, getAllSymbols: unit -> AssemblySymbol list) = 
@@ -215,7 +215,10 @@ type internal FSharpCompletionProvider
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
             let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken)
             let! _, _, fileCheckResults = checkerProvider.Checker.ParseAndCheckDocument(document, options, true)
-            let getAllSymbols() = assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies(fileCheckResults)
+            let getAllSymbols() =
+                if Settings.IntelliSense.ShowAllSymbols
+                then assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies(fileCheckResults)
+                else []
             let! results = 
                 FSharpCompletionProvider.ProvideCompletionsAsyncAux(checkerProvider.Checker, sourceText, context.Position, options, 
                                                                     document.FilePath, textVersion.GetHashCode(), getAllSymbols)
@@ -270,7 +273,12 @@ type internal FSharpCompletionProvider
                     let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                     let! parsedInput = checkerProvider.Checker.ParseDocument(document, options)
                     let fullNameIdents = fullName |> Option.map (fun x -> x.Split '.') |> Option.defaultValue [||]
-                    let! ctx = ParsedInput.tryFindNearestPointToInsertOpenDeclaration line.LineNumber parsedInput fullNameIdents
+                    
+                    let insertionPoint = 
+                        if Settings.CodeFixes.AlwaysPlaceOpensAtTopLevel then OpenStatementInsertionPoint.TopLevel
+                        else OpenStatementInsertionPoint.Nearest
+
+                    let! ctx = ParsedInput.tryFindNearestPointToInsertOpenDeclaration line.LineNumber parsedInput fullNameIdents insertionPoint
                     let finalSourceText, changedSpanStartPos = OpenDeclarationHelper.insertOpenDeclaration textWithItemCommitted ctx ns
                     let fullChangingSpan = TextSpan.FromBounds(changedSpanStartPos, item.Span.End)
                     let changedSpan = TextSpan.FromBounds(changedSpanStartPos, item.Span.End + (finalSourceText.Length - sourceText.Length))

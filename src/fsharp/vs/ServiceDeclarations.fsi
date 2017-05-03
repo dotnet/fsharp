@@ -23,12 +23,26 @@ open Microsoft.FSharp.Compiler.Tastops
 type internal FSharpXmlDoc =
     /// No documentation is available
     | None
+
     /// The text for documentation 
     | Text of string
+
     /// Indicates that the text for the documentation can be found in a .xml documentation file, using the given signature key
     | XmlDocFileSignature of (*File:*) string * (*Signature:*)string
 
 type internal Layout = Internal.Utilities.StructuredFormat.Layout
+
+/// A single data tip display element
+[<RequireQualifiedAccess>]
+type FSharpToolTipElementData<'T> = 
+    { MainDescription:  'T 
+      XmlDoc: FSharpXmlDoc
+      /// typar insantiation text, to go after xml
+      TypeMapping: 'T list
+      /// Extra text, goes at the end
+      Remarks: 'T option
+      /// Parameter name
+      ParamName : string option }
 
 /// A single tool tip display element
 //
@@ -36,14 +50,13 @@ type internal Layout = Internal.Utilities.StructuredFormat.Layout
 [<RequireQualifiedAccess>]
 type internal FSharpToolTipElement<'T> = 
     | None
-    /// A single type, method, etc with comment.
-    | Single of (* text *) 'T * FSharpXmlDoc
-    /// A single parameter, with the parameter name.
-    | SingleParameter of (* text *) 'T * FSharpXmlDoc * string
-    /// For example, a method overload group.
-    | Group of ((* text *) 'T * FSharpXmlDoc) list
+
+    /// A single type, method, etc with comment. May represent a method overload group.
+    | Group of FSharpToolTipElementData<'T> list
+
     /// An error occurred formatting this element
     | CompositionError of string
+    static member Single : 'T * FSharpXmlDoc * ?typeMapping: 'T list * ?paramName: string * ?remarks : 'T  -> FSharpToolTipElement<'T>
 
 /// A single data tip display element with where text is expressed as string
 type FSharpToolTipElement = FSharpToolTipElement<string>
@@ -125,12 +138,13 @@ type UnresolvedSymbol =
       Namespace: string[] }
 
 type internal CompletionItem =
-    { Item: Item
+    { ItemWithInst: ItemWithInst
       Kind: CompletionItemKind
       IsOwnMember: bool
       MinorPriority: int
       Type: TyconRef option 
       Unresolved: UnresolvedSymbol option }
+    member Item : Item
 
 [<Sealed>]
 /// Represents a set of declarations in F# source code, with information attached ready for display by an editor.
@@ -147,6 +161,73 @@ type internal FSharpDeclarationListInfo =
     static member internal Error : message:string -> FSharpDeclarationListInfo
     static member Empty : FSharpDeclarationListInfo
 
+/// Represents one parameter for one method (or other item) in a group. 
+[<Sealed>]
+type internal FSharpMethodGroupItemParameter = 
+
+    /// The name of the parameter.
+    member ParameterName: string
+
+    /// A key that can be used for sorting the parameters, used to help sort overloads.
+    member CanonicalTypeTextForSorting: string
+
+    /// The structured representation for the parameter including its name, its type and visual indicators of other
+    /// information such as whether it is optional.
+    member StructuredDisplay: Layout
+
+    /// The text to display for the parameter including its name, its type and visual indicators of other
+    /// information such as whether it is optional.
+    member Display: string
+
+    /// Is the parameter optional
+    member IsOptional: bool
+
+/// Represents one method (or other item) in a method group. The item may represent either a method or 
+/// a single, non-overloaded item such as union case or a named function value.
+[<Sealed>]
+type internal FSharpMethodGroupItem = 
+
+    /// The documentation for the item
+    member XmlDoc : FSharpXmlDoc
+
+    /// The structured description representation for the method (or other item)
+    member StructuredDescription : FSharpStructuredToolTipText
+
+    /// The formatted description text for the method (or other item)
+    member Description : FSharpToolTipText
+
+    /// The The structured description representation for the method (or other item)
+    member StructuredReturnTypeText: Layout
+
+    /// The formatted type text for the method (or other item)
+    member ReturnTypeText: string
+
+    /// The parameters of the method in the overload set
+    member Parameters: FSharpMethodGroupItemParameter[]
+
+    /// Does the method support an arguments list?  This is always true except for static type instantiations like TP<42,"foo">.
+    member HasParameters: bool
+
+    /// Does the method support a params list arg?
+    member HasParamArrayArg: bool
+
+    /// Does the type name or method support a static arguments list, like TP<42,"foo"> or conn.CreateCommand<42, "foo">(arg1, arg2)?
+    member StaticParameters: FSharpMethodGroupItemParameter[]
+
+/// Represents a group of methods (or other items) returned by GetMethods.  
+[<Sealed>]
+type internal FSharpMethodGroup = 
+
+    internal new : string * FSharpMethodGroupItem[] -> FSharpMethodGroup
+
+    /// The shared name of the methods (or other items) in the group
+    member MethodName: string
+
+    /// The methods (or other items) in the group
+    member Methods: FSharpMethodGroupItem[] 
+
+    static member internal Create : InfoReader * range * DisplayEnv * ItemWithInst list -> FSharpMethodGroup
+
 // implementation details used by other code in the compiler    
 module internal ItemDescriptionsImpl = 
     val isFunction : TcGlobals -> TType -> bool
@@ -162,26 +243,22 @@ module internal ItemDescriptionsImpl =
     val GetXmlDocSigOfProp : InfoReader -> range -> PropInfo -> (string option * string) option
     val GetXmlDocSigOfEvent : InfoReader -> range -> EventInfo -> (string option * string) option
     val GetXmlCommentForItem : InfoReader -> range -> Item -> FSharpXmlDoc
-    val FormatStructuredDescriptionOfItem : bool -> InfoReader -> range -> DisplayEnv -> Item -> FSharpToolTipElement<Layout>
-    val FormatDescriptionOfItem : bool -> InfoReader -> range -> DisplayEnv -> Item -> FSharpToolTipElement<string>
-    val FormatStructuredReturnTypeOfItem  : InfoReader -> range -> DisplayEnv -> Item -> Layout
-    val FormatReturnTypeOfItem  : InfoReader -> range -> DisplayEnv -> Item -> string
-    val RemoveDuplicateItems : TcGlobals -> Item list -> Item list
-    val RemoveDuplicateItemsWithType : TcGlobals -> (Item * TType option) list -> (Item * TType option) list
-    val RemoveExplicitlySuppressed : TcGlobals -> Item list -> Item list
+    val FormatStructuredDescriptionOfItem : isDecl:bool -> InfoReader -> range -> DisplayEnv -> ItemWithInst -> FSharpStructuredToolTipElement
+    val RemoveDuplicateItems : TcGlobals -> ItemWithInst list -> ItemWithInst list
+    val RemoveExplicitlySuppressed : TcGlobals -> ItemWithInst list -> ItemWithInst list
     val RemoveDuplicateCompletionItems : TcGlobals -> CompletionItem list -> CompletionItem list
     val RemoveExplicitlySuppressedCompletionItems : TcGlobals -> CompletionItem list -> CompletionItem list
-    val RemoveExplicitlySuppressedItemsWithType : TcGlobals -> (Item * TType option) list -> (Item * TType option) list
-    val GetF1Keyword : Item -> string option
+    val GetF1Keyword : TcGlobals -> Item -> string option
     val rangeOfItem : TcGlobals -> bool option -> Item -> range option
     val fileNameOfItem : TcGlobals -> string option -> range -> Item -> string
     val FullNameOfItem : TcGlobals -> Item -> string
     val ccuOfItem : TcGlobals -> Item -> CcuThunk option
     val mutable ToolTipFault : string option
-    val FormatStructuredDescriptionOfItem : isDecl:bool -> InfoReader -> range -> DisplayEnv -> Item -> FSharpStructuredToolTipElement
     val GlyphOfItem : DisplayEnv * Item -> FSharpGlyph
     val IsAttribute : InfoReader -> Item -> bool
     val IsExplicitlySuppressed : TcGlobals -> Item -> bool
+    val FlattenItems : TcGlobals -> range -> Item -> Item list
+    val (|ItemIsProvidedType|_|) : TcGlobals -> Item -> TyconRef option
 
 module EnvMisc2 =
     val maxMembers : int

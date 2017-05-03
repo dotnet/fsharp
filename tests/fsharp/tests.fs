@@ -499,6 +499,10 @@ module CoreTests =
                 
 
 
+    // Debug with 
+    //     ..\..\..\..\debug\net40\bin\fsi.exe --nologo < test.fsx >a.out 2>a.err
+    // then 
+    ///    windiff z.output.test.default.stdout.bsl a.out
     let printing flag diffFileOut expectedFileOut diffFileErr expectedFileErr = 
        let cfg = testConfig "core/printing"
 
@@ -1012,6 +1016,16 @@ module CoreTests =
         fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
    
         peverifyWithArgs cfg "/nologo /MD" "test.exe"
+                
+    [<Test>]
+    let fsi_load () = 
+        let cfg = testConfig "core/fsi-load"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
+
+        testOkFile.CheckExists()
                 
     [<Test>]
     let queriesLeafExpressionConvert () = 

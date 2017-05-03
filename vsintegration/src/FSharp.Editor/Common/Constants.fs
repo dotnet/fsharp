@@ -23,10 +23,6 @@ module internal FSharpConstants =
     let editorFactoryGuidString = "4EB7CCB7-4336-4FFD-B12B-396E9FD079A9"
     
     [<Literal>]
-    /// "9B164E40-C3A2-4363-9BC5-EB4039DEF653"
-    let svsSettingsPersistenceManagerGuidString = "9B164E40-C3A2-4363-9BC5-EB4039DEF653"
-    
-    [<Literal>]
     /// "F#"
     let FSharpLanguageName = "F#"
     
@@ -52,3 +48,23 @@ module internal FSharpProviderConstants =
     [<Literal>]
     /// "Session Capturing Quick Info Source Provider"
     let SessionCapturingProvider = "Session Capturing Quick Info Source Provider"
+
+
+[<RequireQualifiedAccess>]
+module internal Guids =
+    
+    [<Literal>]
+    /// "9B164E40-C3A2-4363-9BC5-EB4039DEF653"
+    let svsSettingsPersistenceManagerIdString = "9B164E40-C3A2-4363-9BC5-EB4039DEF653"
+
+    [<Literal>]
+    /// "9b3c6b8a-754a-461d-9ebe-de1a682d57c1"
+    let intelliSenseOptionPageIdString = "9b3c6b8a-754a-461d-9ebe-de1a682d57c1"
+
+    [<Literal>]
+    /// "1e2b3290-4d67-41ff-a876-6f41f868e28f"
+    let quickInfoOptionPageIdString = "1e2b3290-4d67-41ff-a876-6f41f868e28f"
+
+    [<Literal>]
+    /// "9A66EB6A-DE52-4169-BC26-36FBD4312FD7"
+    let codeFixesOptionPageIdString = "9A66EB6A-DE52-4169-BC26-36FBD4312FD7"

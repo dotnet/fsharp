@@ -12,9 +12,8 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Structure
 
 open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.VisualStudio.FSharp.Editor.Structure
+open Microsoft.FSharp.Compiler.SourceCodeServices.Structure
 
 module internal BlockStructure =
     let scopeToBlockType = function

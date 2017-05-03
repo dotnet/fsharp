@@ -1,5 +1,6 @@
 // #Warnings
-//<Expects status="Error" id="FS0039">The record label 'Field1' is not defined. Maybe you want one of the following: MyRecord.Field1$</Expects>
+//<Expects status="Error" id="FS0039">The record label 'Field1' is not defined.</Expects>
+//<Expects>Maybe you want one of the following:\s+MyRecord.Field1</Expects>
 
 [<RequireQualifiedAccess>]
 type MyRecord = {

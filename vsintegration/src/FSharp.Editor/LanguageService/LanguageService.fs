@@ -10,6 +10,7 @@ open System.Collections.Generic
 open System.ComponentModel.Composition
 open System.Runtime.InteropServices
 open System.IO
+open System.Diagnostics
 
 open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.SourceCodeServices
@@ -30,11 +31,6 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.ComponentModelHost
-
-// Workaround to access non-public settings persistence type.
-// GetService( ) with this will work as long as the GUID matches the real type.
-[<Guid(FSharpConstants.svsSettingsPersistenceManagerGuidString)>]
-type internal SVsSettingsPersistenceManager = class end
 
 // Exposes FSharpChecker as MEF export
 [<Export(typeof<FSharpCheckerProvider>); Composition.Shared>]
@@ -195,6 +191,9 @@ type internal FSharpCheckerWorkspaceServiceFactory
 
 type
     [<Guid(FSharpConstants.packageGuidString)>]
+    [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.IntelliSenseOptionPage>, "F#", null, "IntelliSense", "6008")>]
+    [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.QuickInfoOptionPage>, "F#", null, "QuickInfo", "6009")>]
+    [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.CodeFixesOptionPage>, "F#", null, "Code Fixes", "6010")>]
     [<ProvideLanguageService(languageService = typeof<FSharpLanguageService>,
                              strLanguageName = FSharpConstants.FSharpLanguageName,
                              languageResourceID = 100,
@@ -213,7 +212,12 @@ type
                              ShowDropDownOptions = true)>]
     internal FSharpPackage() =
     inherit AbstractPackage<FSharpPackage, FSharpLanguageService>()
-    
+
+    override this.Initialize() =
+        base.Initialize()
+        //initialize settings
+        this.ComponentModel.GetService<SettingsPersistence.ISettings>() |> ignore
+
     override this.RoslynLanguageName = FSharpConstants.FSharpLanguageName
 
     override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
@@ -300,10 +304,9 @@ and
         let hashSetIgnoreCase x = new HashSet<string>(x, StringComparer.OrdinalIgnoreCase)
         let updatedFiles = site.SourceFilesOnDisk() |> hashSetIgnoreCase
         let workspaceFiles = project.GetCurrentDocuments() |> Seq.map(fun file -> file.FilePath) |> hashSetIgnoreCase
-
-        // If syncing project upon some reference changes, we don't have a mechanism to recognize which references have been added/removed.
-        // Hence, the current solution is to force update current project options.
+        
         let mutable updated = forceUpdate
+
         for file in updatedFiles do
             if not(workspaceFiles.Contains(file)) then
                 projectContext.AddSourceFile(file)
@@ -312,6 +315,16 @@ and
             if not(updatedFiles.Contains(file)) then
                 projectContext.RemoveSourceFile(file)
                 updated <- true
+        
+        let updatedRefs = site.AssemblyReferences() |> hashSetIgnoreCase
+        let workspaceRefs = project.GetCurrentMetadataReferences() |> Seq.map(fun ref -> ref.FilePath) |> hashSetIgnoreCase
+
+        for ref in updatedRefs do
+            if not(workspaceRefs.Contains(ref)) then
+                projectContext.AddMetadataReference(ref, MetadataReferenceProperties.Assembly)
+        for ref in workspaceRefs do
+            if not(updatedRefs.Contains(ref)) then
+                projectContext.RemoveMetadataReference(ref)
 
         // update the cached options
         if updated then
@@ -329,9 +342,19 @@ and
                 let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
                 let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
                 
+                let hierarchy =
+                    site.ProjectProvider
+                    |> Option.map (fun p -> p :?> IVsHierarchy)
+                    |> Option.toObj
+                
+                // Roslyn is expecting site to be an IVsHierarchy.
+                // It just so happens that the object that implements IProvideProjectSite is also
+                // an IVsHierarchy. This assertion is to ensure that the assumption holds true.
+                Debug.Assert(hierarchy <> null, "About to CreateProjectContext with a non-hierarchy site")
+
                 let projectContext = 
                     projectContextFactory.CreateProjectContext(
-                        FSharpConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectGuid, siteProvider, null, errorReporter)
+                        FSharpConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectGuid, hierarchy, null, errorReporter)
 
                 let project = projectContext :?> AbstractProject
 
