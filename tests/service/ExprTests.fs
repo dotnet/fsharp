@@ -1,8 +1,8 @@
 ﻿
 #if INTERACTIVE
-#r "../../bin/v4.5/FSharp.Compiler.Service.dll"
-#r "../../bin/v4.5/FSharp.Compiler.Service.ProjectCracker.dll"
-#r "../../packages/NUnit/lib/nunit.framework.dll"
+#r "../../Debug/net40/bin/FSharp.Compiler.Service.dll"
+#r "../../Debug/net40/bin/FSharp.Compiler.Service.ProjectCracker.dll"
+#r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else

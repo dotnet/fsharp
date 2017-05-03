@@ -538,11 +538,8 @@ module internal ExtensionTyping =
 
             let staticParams = 
                 match provider with 
-#if COMPILER_SERVICE_ASSUMES_FSHARP_CORE_4_3_0_0
-#else
                 | :? ITypeProvider2 as itp2 -> 
                     itp2.GetStaticParametersForMethod(x)  
-#endif
                 | _ -> 
                     // To allow a type provider to depend only on FSharp.Core 4.3.0.0, it can alternatively implement an appropriate method called GetStaticParametersForMethod
                     let meth = provider.GetType().GetMethod( "GetStaticParametersForMethod", bindingFlags, null, [| typeof<System.Reflection.MethodBase> |], null)  
@@ -559,11 +556,8 @@ module internal ExtensionTyping =
 
             let mb = 
                 match provider with 
-#if COMPILER_SERVICE_ASSUMES_FSHARP_CORE_4_3_0_0
-#else
                 | :? ITypeProvider2 as itp2 -> 
                     itp2.ApplyStaticArgumentsForMethod(x, fullNameAfterArguments, staticArgs)  
-#endif
                 | _ -> 
                     // To allow a type provider to depend only on FSharp.Core 4.3.0.0, it can alternatively implement a method called GetStaticParametersForMethod
                     let meth = provider.GetType().GetMethod( "ApplyStaticArgumentsForMethod", bindingFlags, null, [| typeof<System.Reflection.MethodBase>; typeof<string>; typeof<obj[]> |], null)  

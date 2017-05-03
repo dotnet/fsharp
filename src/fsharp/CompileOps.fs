@@ -4180,7 +4180,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                  { resolutionFolder       = tcConfig.implicitIncludeDir
                    outputFile             = tcConfig.outputFile
                    showResolutionMessages = tcConfig.showExtensionTypeMessages 
-                   referencedAssemblies   = [| for r in tcImports.AllAssemblyResolutions() -> r.resolvedPath |] |> Seq.distinct |> Seq.toArray
+                   referencedAssemblies   = Array.distinct [| for r in tcImports.AllAssemblyResolutions() -> r.resolvedPath |]
                    temporaryFolder        = FileSystem.GetTempPathShim() }
 
             // The type provider should not hold strong references to disposed
@@ -4527,12 +4527,6 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         | Some assemblyResolution -> 
             ResultD [assemblyResolution]
         | None ->
-#if NO_MSBUILD_REFERENCE_RESOLUTION
-           try 
-               ResultD [tcConfig.ResolveLibWithDirectories assemblyReference]
-           with e -> 
-               ErrorD(e)
-#else                      
             // Next try to lookup up by the exact full resolved path.
             match resolutions.TryFindByResolvedPath assemblyReference.Text with 
             | Some assemblyResolution -> 
@@ -4565,7 +4559,6 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                         // the empty list and we convert the failure into an AssemblyNotResolved here.
                         ErrorD(AssemblyNotResolved(assemblyReference.Text,assemblyReference.Range))
                         
-#endif
      
 
     member tcImports.ResolveAssemblyReference(ctok, assemblyReference, mode) : AssemblyResolution list = 

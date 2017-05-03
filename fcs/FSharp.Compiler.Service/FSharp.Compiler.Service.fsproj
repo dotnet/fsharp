@@ -16,12 +16,9 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <TargetFrameworkVersion Condition=" '$(TargetFrameworkVersion)' == '' ">v4.5</TargetFrameworkVersion>
     <BaseAddress>0x06800000</BaseAddress>
-    <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
     <Tailcalls>true</Tailcalls>
-    <OtherFlags>$(OtherFlags) --times</OtherFlags>
     <NoWarn>$(NoWarn);69;65;54;61;75</NoWarn>
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>$(FSharpSourcesRoot)\..\..\bin\$(TargetFrameworkVersion)</OutputPath>
     <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
     <DefineConstants>$(DefineConstants);EXTENSIONTYPING</DefineConstants>
     <DefineConstants>$(DefineConstants);CROSS_PLATFORM_COMPILER</DefineConstants>
@@ -33,6 +30,7 @@
     <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
     <TargetFrameworkProfile />
     <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
+    <OtherFlags>$(OtherFlags) --times</OtherFlags>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(FSharpSourcesRoot)\assemblyinfo\assemblyinfo.FSharp.Compiler.Service.dll.fs">

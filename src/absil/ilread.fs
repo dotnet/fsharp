@@ -3979,7 +3979,7 @@ let OpenILModuleReaderAfterReadingAllBytes infile opts =
             opts.ilGlobals.primaryAssemblyName,
             opts.pdbPath.IsSome), true
         with e -> 
-            System.Diagnostics.Debug.Assert(false, "Failed to compute key in OpenILModuleReaderAfterReadingAllBytes cache. Falling back to uncached.") 
+            System.Diagnostics.Debug.Assert(false, sprintf "Failed to compute key in OpenILModuleReaderAfterReadingAllBytes cache for '%s'. Falling back to uncached." infile) 
             ("",System.DateTime.Now,"",false), false
     let cacheResult = 
         if not succeeded then None // Fall back to uncached.

@@ -186,7 +186,9 @@ type PhasedDiagnostic =
     { Exception:exn; Phase:BuildPhase }
     /// Construct a phased error
     static member Create(exn:exn,phase:BuildPhase) : PhasedDiagnostic =
-        //System.Diagnostics.Debug.Assert(phase<>BuildPhase.DefaultPhase, sprintf "Compile error seen with no phase to attribute it to.%A %s %s" phase exn.Message exn.StackTrace )        
+#if !COMPILER_SERVICE  // TODO: renable this assert in the compiler service
+        System.Diagnostics.Debug.Assert(phase<>BuildPhase.DefaultPhase, sprintf "Compile error seen with no phase to attribute it to.%A %s %s" phase exn.Message exn.StackTrace )        
+#endif
         {Exception = exn; Phase=phase}
     member this.DebugDisplay() =
         sprintf "%s: %s" (this.Subcategory()) this.Exception.Message
@@ -265,8 +267,14 @@ let DiscardErrorsLogger =
 
 let AssertFalseErrorLogger =
     { new ErrorLogger("AssertFalseErrorLogger") with 
+#if COMPILER_SERVICE  // TODO: renable these asserts in the compiler service
             member x.DiagnosticSink(phasedError,isError) = (* assert false; *) ()
-            member x.ErrorCount = (* assert false; *) 0 }
+            member x.ErrorCount = (* assert false; *) 0 
+#else
+            member x.DiagnosticSink(phasedError,isError) = assert false; ()
+            member x.ErrorCount = assert false; 0 
+#endif
+    }
 
 type CapturingErrorLogger(nm) = 
     inherit ErrorLogger(nm) 
@@ -295,7 +303,11 @@ type internal CompileThreadStatic =
     static member BuildPhase
         with get() = 
             match box CompileThreadStatic.buildPhase with
+#if COMPILER_SERVICE  // TODO: renable these asserts in the compiler service
             | null -> (* assert false; *) BuildPhase.DefaultPhase
+#else
+            | null -> assert false; BuildPhase.DefaultPhase
+#endif
             | _ -> CompileThreadStatic.buildPhase
         and set v = CompileThreadStatic.buildPhase <- v
             
