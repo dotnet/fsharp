@@ -254,8 +254,10 @@ let map6Of6 f (a1,a2,a3,a4,a5,a6) = (a1,a2,a3,a4,a5,f a6)
 let foldPair (f1,f2)    acc (a1,a2)         = f2 (f1 acc a1) a2
 let fold1Of2 f1    acc (a1,_a2)         = f1 acc a1
 let foldTriple (f1,f2,f3) acc (a1,a2,a3)      = f3 (f2 (f1 acc a1) a2) a3
+let foldQuadruple (f1,f2,f3,f4) acc (a1,a2,a3,a4)      = f4 (f3 (f2 (f1 acc a1) a2) a3) a4
 let mapPair (f1,f2)    (a1,a2)     = (f1 a1, f2 a2)
 let mapTriple (f1,f2,f3) (a1,a2,a3)  = (f1 a1, f2 a2, f3 a3)
+let mapQuadruple (f1,f2,f3,f4) (a1,a2,a3,a4)  = (f1 a1, f2 a2, f3 a3, f4 a4)
 let fmap2Of2 f z (a1,a2)       = let z,a2 = f z a2 in z,(a1,a2)
 
 module List = 
@@ -391,7 +393,7 @@ let inline cacheOptRef cache f =
 // It is related to recursive class loading in multi-assembly NGEN scenarios. The bug has been fixed but
 // not yet deployed.
 // The bug manifests itself as an ExecutionEngine failure or fast-fail process exit which comes
-// and goes depending on whether components are NGEN'd or not, e.g. 'ngen install FSharp.COmpiler.dll'
+// and goes depending on whether components are NGEN'd or not, e.g. 'ngen install FSharp.Compiler.dll'
 // One workaround for the bug is to break NGEN loading and fixups into smaller fragments. Roughly speaking, the NGEN
 // loading process works by doing delayed fixups of references in NGEN code. This happens on a per-method basis.
 // e.g. one manifestation is that a 'print' before calling a method like LexFilter.create gets

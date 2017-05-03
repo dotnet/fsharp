@@ -38,7 +38,7 @@ type internal FSharpParseFileResults =
     /// Get the errors and warnings for the parse
     member Errors : FSharpErrorInfo[]
 
-    /// Indicates if any errors occured during the parse
+    /// Indicates if any errors occurred during the parse
     member ParseHadErrors : bool
 
     internal new : errors : FSharpErrorInfo[] * input : Ast.ParsedInput option * parseHadErrors : bool * dependencyFiles : string list -> FSharpParseFileResults
@@ -54,16 +54,19 @@ module internal SourceFile =
 
 type internal CompletionPath = string list * string option // plid * residue
 
+[<RequireQualifiedAccess>]
 type internal InheritanceContext = 
     | Class
     | Interface
     | Unknown
 
+[<RequireQualifiedAccess>]
 type internal RecordContext =
     | CopyOnUpdate of range * CompletionPath // range
     | Constructor of string // typename
     | New of CompletionPath
 
+[<RequireQualifiedAccess>]
 type internal CompletionContext = 
     // completion context cannot be determined due to errors
     | Invalid
@@ -80,6 +83,7 @@ type internal CompletionContext =
 
 type internal ModuleKind = { IsAutoOpen: bool; HasModuleSuffix: bool }
 
+[<RequireQualifiedAccess>]
 type internal EntityKind =
     | Attribute
     | Type

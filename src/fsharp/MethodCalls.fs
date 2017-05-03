@@ -123,7 +123,7 @@ type CallerNamedArg<'T> =
 // 3. Two ways to pass a value where a byref is expected. The first (default) 
 // is to use a reference cell, and the interior address is taken automatically 
 // The second is an explicit use of the "address-of" operator "&e". Here we detect the second case, 
-// and record the presence of the sytnax "&e" in the pre-inferred actual type for the method argument. 
+// and record the presence of the syntax "&e" in the pre-inferred actual type for the method argument. 
 // The function AdjustCalledArgType detects this and refuses to apply the default byref-to-ref transformation. 
 //
 // The function AdjustCalledArgType also adjusts for optional arguments. 
@@ -168,7 +168,7 @@ let AdjustCalledArgType (infoReader:InfoReader) isConstraint (calledArg: CalledA
             else calledArgTy
 
         // Adjust the called argument type to take into account whether the caller's argument is M(?arg=Some(3)) or M(arg=1) 
-        // If the called method argument is optional with type Option<T>, then the caller may provide a T, unless their argument is propogating-optional (i.e. isOptCallerArg) 
+        // If the called method argument is optional with type Option<T>, then the caller may provide a T, unless their argument is propagating-optional (i.e. isOptCallerArg) 
         let calledArgTy = 
             match calledArg.OptArgInfo with 
             | NotOptional                    -> calledArgTy
@@ -360,29 +360,45 @@ type CalledMeth<'T>
     member x.amap = infoReader.amap
 
       /// the method we're attempting to call 
-    member x.Method=minfo
+    member x.Method = minfo
+
       /// the instantiation of the method we're attempting to call 
-    member x.CalledTyArgs=calledTyArgs
+    member x.CalledTyArgs = calledTyArgs
+
+      /// the instantiation of the method we're attempting to call 
+    member x.CalledTyparInst = 
+        let tps = minfo.FormalMethodTypars 
+        if tps.Length = calledTyArgs.Length then mkTyparInst tps calledTyArgs else []
+
       /// the formal instantiation of the method we're attempting to call 
-    member x.CallerTyArgs=callerTyArgs
+    member x.CallerTyArgs = callerTyArgs
+
       /// The types of the actual object arguments, if any
-    member x.CallerObjArgTys=callerObjArgTys
+    member x.CallerObjArgTys = callerObjArgTys
+
       /// The argument analysis for each set of curried arguments
-    member x.ArgSets=argSets
+    member x.ArgSets = argSets
+
       /// return type
-    member x.ReturnType=methodRetTy
+    member x.ReturnType = methodRetTy
+
       /// named setters
-    member x.AssignedItemSetters=assignedNamedProps
+    member x.AssignedItemSetters = assignedNamedProps
+
       /// the property related to the method we're attempting to call, if any  
-    member x.AssociatedPropertyInfo=pinfoOpt
+    member x.AssociatedPropertyInfo = pinfoOpt
+
       /// unassigned args
-    member x.UnassignedNamedArgs=unassignedNamedItems
+    member x.UnassignedNamedArgs = unassignedNamedItems
+
       /// args assigned to specify values for attribute fields and properties (these are not necessarily "property sets")
-    member x.AttributeAssignedNamedArgs=attributeAssignedNamedItems
+    member x.AttributeAssignedNamedArgs = attributeAssignedNamedItems
+
       /// unnamed called optional args: pass defaults for these
-    member x.UnnamedCalledOptArgs=unnamedCalledOptArgs
+    member x.UnnamedCalledOptArgs = unnamedCalledOptArgs
+
       /// unnamed called out args: return these as part of the return tuple
-    member x.UnnamedCalledOutArgs=unnamedCalledOutArgs
+    member x.UnnamedCalledOutArgs = unnamedCalledOutArgs
 
     static member GetMethod (x:CalledMeth<'T>) = x.Method
 

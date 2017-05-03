@@ -51,12 +51,11 @@ type internal FSharpCompletionProvider
     
     let xmlMemberIndexService = serviceProvider.GetService(typeof<IVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
-    static let attributeSuffixLength = "Attribute".Length
     
     static let noCommitOnSpaceRules = 
         CompletionItemRules.Default.WithCommitCharacterRule(CharacterSetModificationRule.Create(CharacterSetModificationKind.Remove, ' ', '.', '<', '>', '(', ')', '!'))
     
-    static let getRules() = if IntelliSenseSettings.ShowAfterCharIsTyped then noCommitOnSpaceRules else CompletionItemRules.Default
+    static let getRules() = if Settings.IntelliSense.ShowAfterCharIsTyped then noCommitOnSpaceRules else CompletionItemRules.Default
 
     static let mruItems = Dictionary<(* Item.FullName *) string, (* hints *) int>()
     
@@ -81,19 +80,19 @@ type internal FSharpCompletionProvider
             else
                 let documentId, filePath, defines = getInfo()
                 CompletionUtils.shouldProvideCompletion(documentId, filePath, defines, sourceText, triggerPosition) &&
-                (IntelliSenseSettings.ShowAfterCharIsTyped && CompletionUtils.isStartingNewWord(sourceText, triggerPosition))
+                (Settings.IntelliSense.ShowAfterCharIsTyped && CompletionUtils.isStartingNewWord(sourceText, triggerPosition))
 
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, 
                                              textVersionHash: int, getAllSymbols: unit -> AssemblySymbol list) = 
         asyncMaybe {
-            let! parseResults, parsedInput, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)
+            let! parseResults, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)
 
+            //#if DEBUG
             //Logging.Logging.logInfof "AST:\n%+A" parsedInput
+            //#endif
 
             let textLines = sourceText.Lines
             let caretLinePos = textLines.GetLinePosition(caretPosition)
-            let entityKind = UntypedParseImpl.GetEntityKind(Pos.fromZ caretLinePos.Line caretLinePos.Character, parsedInput)
-            
             let caretLine = textLines.GetLineFromPosition(caretPosition)
             let fcsCaretLineNumber = Line.fromZ caretLinePos.Line  // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
             let caretLineColumn = caretLinePos.Character
@@ -138,13 +137,10 @@ type internal FSharpCompletionProvider
             let maxHints = if mruItems.Values.Count = 0 then 0 else Seq.max mruItems.Values
 
             sortedDeclItems |> Array.iteri (fun number declItem ->
-                let glyph = CommonRoslynHelpers.FSharpGlyphToRoslynGlyph (declItem.Glyph, declItem.Accessibility)
+                let glyph = Tokenizer.FSharpGlyphToRoslynGlyph (declItem.Glyph, declItem.Accessibility)
                 let name =
-                    match entityKind, declItem.NamespaceToOpen with
-                    | Some EntityKind.Attribute, _ when declItem.IsAttribute && declItem.Name.EndsWith "Attribute"  ->
-                        declItem.Name.[0..declItem.Name.Length - attributeSuffixLength - 1]
-                    | _, Some namespaceToOpen ->
-                        sprintf "%s (open %s)" declItem.Name namespaceToOpen
+                    match declItem.NamespaceToOpen with
+                    | Some namespaceToOpen -> sprintf "%s (open %s)" declItem.Name namespaceToOpen
                     | _ -> declItem.Name
                 
                 let filterText =
@@ -192,7 +188,7 @@ type internal FSharpCompletionProvider
                 declarationItemsCache.Add(completionItem.DisplayText, declItem)
                 results.Add(completionItem))
 
-            if results.Count > 0 && not declarations.IsForType && not declarations.IsError then
+            if results.Count > 0 && not declarations.IsForType && not declarations.IsError && List.isEmpty qualifyingNames then
                 let lineStr = textLines.[caretLinePos.Line].ToString()
                 match UntypedParseImpl.TryGetCompletionContext(Pos.fromZ caretLinePos.Line caretLinePos.Character, Some parseResults, lineStr) with
                 | None -> results.AddRange(keywordCompletionItems)
@@ -219,12 +215,15 @@ type internal FSharpCompletionProvider
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
             let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken)
             let! _, _, fileCheckResults = checkerProvider.Checker.ParseAndCheckDocument(document, options, true)
-            let getAllSymbols() = assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies(fileCheckResults)
+            let getAllSymbols() =
+                if Settings.IntelliSense.ShowAllSymbols
+                then assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies(fileCheckResults)
+                else []
             let! results = 
                 FSharpCompletionProvider.ProvideCompletionsAsyncAux(checkerProvider.Checker, sourceText, context.Position, options, 
                                                                     document.FilePath, textVersion.GetHashCode(), getAllSymbols)
             context.AddItems(results)
-        } |> Async.Ignore |> CommonRoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
+        } |> Async.Ignore |> RoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
         
     override this.GetDescriptionAsync(_: Document, completionItem: Completion.CompletionItem, cancellationToken: CancellationToken): Task<CompletionDescription> =
         async {
@@ -232,13 +231,13 @@ type internal FSharpCompletionProvider
             if exists then
                 let! description = declarationItem.StructuredDescriptionTextAsync
                 let documentation = List()
-                let collector = CommonRoslynHelpers.CollectTaggedText documentation
+                let collector = RoslynHelpers.CollectTaggedText documentation
                 // mix main description and xmldoc by using one collector
                 XmlDocumentation.BuildDataTipText(documentationBuilder, collector, collector, description) 
                 return CompletionDescription.Create(documentation.ToImmutableArray())
             else
                 return CompletionDescription.Empty
-        } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+        } |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
     override this.GetChangeAsync(document, item, _, cancellationToken) : Task<CompletionChange> =
         async {
@@ -274,7 +273,12 @@ type internal FSharpCompletionProvider
                     let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                     let! parsedInput = checkerProvider.Checker.ParseDocument(document, options)
                     let fullNameIdents = fullName |> Option.map (fun x -> x.Split '.') |> Option.defaultValue [||]
-                    let! ctx = ParsedInput.tryFindNearestPointToInsertOpenDeclaration line.LineNumber parsedInput fullNameIdents
+                    
+                    let insertionPoint = 
+                        if Settings.CodeFixes.AlwaysPlaceOpensAtTopLevel then OpenStatementInsertionPoint.TopLevel
+                        else OpenStatementInsertionPoint.Nearest
+
+                    let! ctx = ParsedInput.tryFindNearestPointToInsertOpenDeclaration line.LineNumber parsedInput fullNameIdents insertionPoint
                     let finalSourceText, changedSpanStartPos = OpenDeclarationHelper.insertOpenDeclaration textWithItemCommitted ctx ns
                     let fullChangingSpan = TextSpan.FromBounds(changedSpanStartPos, item.Span.End)
                     let changedSpan = TextSpan.FromBounds(changedSpanStartPos, item.Span.End + (finalSourceText.Length - sourceText.Length))
@@ -283,4 +287,4 @@ type internal FSharpCompletionProvider
                 }
                 |> Async.map (Option.defaultValue (CompletionChange.Create(TextChange(item.Span, nameInCode))))
 
-        } |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+        } |> RoslynHelpers.StartAsyncAsTask cancellationToken

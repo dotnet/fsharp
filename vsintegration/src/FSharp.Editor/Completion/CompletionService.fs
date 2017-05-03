@@ -36,12 +36,12 @@ type internal FSharpCompletionService
             .WithDismissIfLastCharacterDeleted(true)
             .WithDefaultEnterKeyRule(EnterKeyRule.Never)
 
-    override this.Language = FSharpCommonConstants.FSharpLanguageName
+    override this.Language = FSharpConstants.FSharpLanguageName
     override this.GetBuiltInProviders() = builtInProviders
     override this.GetRules() = completionRules
 
 [<Shared>]
-[<ExportLanguageServiceFactory(typeof<CompletionService>, FSharpCommonConstants.FSharpLanguageName)>]
+[<ExportLanguageServiceFactory(typeof<CompletionService>, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpCompletionServiceFactory 
     [<ImportingConstructor>] 
     (

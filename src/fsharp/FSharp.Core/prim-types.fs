@@ -645,7 +645,7 @@ namespace Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.BasicInlinedOperations
 
     //-------------------------------------------------------------------------
-    // The main aim here is to bootsrap the definition of structural hashing 
+    // The main aim here is to bootstrap the definition of structural hashing 
     // and comparison.  Calls to these form part of the auto-generated 
     // code for each new datatype.
 
@@ -741,7 +741,7 @@ namespace Microsoft.FSharp.Core
                // Compute an on-demand per-instantiation static field
                static let info = getTypeInfo typeof<'T>
 
-               // Publish the results of that compuation
+               // Publish the results of that computation
                static member TypeInfo = info
                          
 
@@ -900,7 +900,7 @@ namespace Microsoft.FSharp.Core
         module HashCompare = 
         
             //-------------------------------------------------------------------------
-            // LangaugePrimitives.HashCompare: Physical Equality
+            // LanguagePrimitives.HashCompare: Physical Equality
             //------------------------------------------------------------------------- 
 
             // NOTE: compiler/optimizer is aware of this function and optimizes calls to it in many situations
@@ -923,7 +923,7 @@ namespace Microsoft.FSharp.Core
 
 
             //-------------------------------------------------------------------------
-            // LangaugePrimitives.HashCompare: Comparison
+            // LanguagePrimitives.HashCompare: Comparison
             //
             // Bi-modal generic comparison helper implementation.
             //
@@ -1380,7 +1380,7 @@ namespace Microsoft.FSharp.Core
 
 
             //-------------------------------------------------------------------------
-            // LangaugePrimitives.HashCompare: EQUALITY
+            // LanguagePrimitives.HashCompare: EQUALITY
             //------------------------------------------------------------------------- 
 
 
@@ -1774,7 +1774,7 @@ namespace Microsoft.FSharp.Core
 
 
             //-------------------------------------------------------------------------
-            // LangaugePrimitives.HashCompare: HASHING.  
+            // LanguagePrimitives.HashCompare: HASHING.  
             //------------------------------------------------------------------------- 
 
 
@@ -5173,7 +5173,7 @@ namespace Microsoft.FSharp.Core
                 // << will be < or > depending on direction.
                 // Assumes n << m and zero << step (i.e. it's a "proper" range).
                 //--------
-                // NOTE: "inline" so << becomes direct operation (should be IL comparision operation)
+                // NOTE: "inline" so << becomes direct operation (should be IL comparison operation)
                 inherit BaseRangeEnumerator<'T>()
                 let mutable z : 'State = n
                 override obj.DoReset() = z <- n
@@ -6294,7 +6294,7 @@ namespace System
             match funcOrException with 
             | null -> value 
             | _ -> 
-                // Enter the lock in case another thread is in the process of evaluting the result
+                // Enter the lock in case another thread is in the process of evaluating the result
                 System.Threading.Monitor.Enter(x);
                 try 
                     match funcOrException with 

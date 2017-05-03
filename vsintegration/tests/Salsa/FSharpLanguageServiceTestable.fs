@@ -25,7 +25,7 @@ type internal FSharpLanguageServiceTestable() as this =
     let mutable artifacts : ProjectSitesAndFiles option = None
     let mutable serviceProvider : System.IServiceProvider option = None
     let mutable preferences : LanguagePreferences option = None
-    let mutable documentationBuilder : IDocumentationBuilder option = None
+    let mutable documentationBuilder : Microsoft.VisualStudio.FSharp.LanguageService.IDocumentationBuilder option = None
     let mutable sourceFactory : (IVsTextLines -> IFSharpSource) option = None
     let mutable dirtyForTypeCheckFiles : Set<string> = Set.empty
     let mutable isInitialized = false
@@ -147,9 +147,9 @@ type internal FSharpLanguageServiceTestable() as this =
             match hier with 
             | :? IProvideProjectSite as siteProvider ->
                 let site = siteProvider.GetProjectSite()
-                site.AdviseProjectSiteChanges(FSharpCommonConstants.FSharpLanguageServiceCallbackName, 
+                site.AdviseProjectSiteChanges(FSharpConstants.FSharpLanguageServiceCallbackName, 
                                               new AdviseProjectSiteChanges(fun () -> this.OnProjectSettingsChanged(site))) 
-                site.AdviseProjectSiteCleaned(FSharpCommonConstants.FSharpLanguageServiceCallbackName, 
+                site.AdviseProjectSiteCleaned(FSharpConstants.FSharpLanguageServiceCallbackName, 
                                               new AdviseProjectSiteChanges(fun () -> this.OnProjectCleaned(site))) 
             | _ -> 
                 // This can happen when the file is in a solution folder or in, say, a C# project.

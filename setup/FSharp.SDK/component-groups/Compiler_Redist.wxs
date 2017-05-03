@@ -43,8 +43,18 @@
         <File Id="Compiler_Redist_FSharp.Core.dll" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.dll" KeyPath="yes">
           <NetFx:NativeImage Id="Compiler_Redist_FSharp.Core.Native.dll" Priority="0" Dependencies="no" Platform="all" AssemblyApplication="Compiler_Redist_fsc.exe" />
         </File>
+        <!-- NOTE: The optdata and sigdata files are now integrated as resources for more recent FSharp.Core.dll's. -->
+        <!-- However old versions of FSharp.Core still need these files. For consistency we also continue to produce the files -->
+        <!-- for FSharp.Core 4.4.1.0, and include them in the redist. -->
+        <!-- -->
+        <!-- We should continue to produce the files for FSharp.Core 4.4.2.0 and beyond, for inclusion in the FSharp.Core -->
+        <!-- nuget package. We should do this for as long as it is possible that old F# compilers (VS2010-VS2017) will end up referring to newer -->
+        <!-- versions of the FSharp.Core package (which can happen automatically on package upgrade).  However for FSharp.Core 4.4.2.0 -->
+        <!-- beyond the files will not be needed in the redist, which is only ever installed on machines alongside a recent -->
+        <!-- F# compiler -->
         <File Id="FSharp_Core_Sigdata_File" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.sigdata" />
         <File Id="FSharp_Core_Optdata_File" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.optdata" />
+        <File Id="FSharp_Core_Xml_File" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.xml" />
       </Component>
 
       <Component Id="Compiler_Redist_FSharp.Build.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Build.dll, $(var.LocaleCode)))">
