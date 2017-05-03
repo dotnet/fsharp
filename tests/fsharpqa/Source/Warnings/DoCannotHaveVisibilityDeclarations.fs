@@ -1,6 +1,6 @@
 // #Warnings
 //<Expects status="Error" id="FS0531">Accessibility</Expects>
-//<Expects status="Error" id="FS0512">Accessibility modifiers are not permitted on 'do' bindings, but 'private' was given.</Expects>
+//<Expects status="Error" id="FS0512">Accessibility modifiers are not permitted on 'do' bindings, but 'Private' was given.</Expects>
 
 type X() =
     do ()
