@@ -5,7 +5,7 @@
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
-module Tests.Service.MultiProjectAnalysisTests
+module internal Tests.Service.MultiProjectAnalysisTests
 #endif
 
 open Microsoft.FSharp.Compiler

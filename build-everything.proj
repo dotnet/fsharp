@@ -72,6 +72,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TEST_VS_IDEUNIT_SUITE)'=='1'" >
+    <ProjectsWithNet40 Include="tests/service/data/TestTP/TestTP.fsproj" />
     <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-unittests-build.proj"/>
   </ItemGroup>
 

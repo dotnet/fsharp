@@ -94,7 +94,7 @@ type public FsiEvaluationSessionHostConfig =
     /// <para> </para>
     ///</summary>
 
-    abstract OptionalConsoleReadLine : (unit -> string) option 
+    abstract GetOptionalConsoleReadLine : probeToSeeIfConsoleWorks: bool -> (unit -> string) option 
 
     /// The evaluation session calls this at an appropriate point in the startup phase if the --fsi-server parameter was given
     abstract StartServer : fsiServerName:string -> unit

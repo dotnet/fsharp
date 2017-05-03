@@ -4,7 +4,7 @@
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
-module FSharp.Compiler.Service.Tests.PerfTests
+module internal FSharp.Compiler.Service.Tests.PerfTests
 #endif
 
 

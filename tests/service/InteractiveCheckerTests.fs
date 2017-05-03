@@ -5,7 +5,7 @@
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
-module FSharp.Compiler.Service.Tests.InteractiveChecker
+module internal FSharp.Compiler.Service.Tests.InteractiveChecker
 #endif
 
 open NUnit.Framework

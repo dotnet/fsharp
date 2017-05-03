@@ -6,7 +6,7 @@
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
-module FSharp.Compiler.Service.Tests.CSharpProjectAnalysis
+module internal FSharp.Compiler.Service.Tests.CSharpProjectAnalysis
 #endif
 
 

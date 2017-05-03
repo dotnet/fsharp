@@ -4,7 +4,7 @@
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
-module Tests.Service.FileSystemTests
+module internal Tests.Service.FileSystemTests
 #endif
 
 

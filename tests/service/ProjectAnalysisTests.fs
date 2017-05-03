@@ -4,7 +4,7 @@
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
-module Tests.Service.ProjectAnalysisTests
+module internal Tests.Service.ProjectAnalysisTests
 #endif
 
 let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e ->  false
