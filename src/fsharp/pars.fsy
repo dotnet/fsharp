@@ -1706,7 +1706,10 @@ memberCore:
                    let memFlags = memFlagsBuilder memberKind
 
                    let valSynInfo = 
-                       let adjustValueArg valueArg = if List.length valueArg = 1 then valueArg else SynInfo.unnamedTopArg
+                       let adjustValueArg valueArg = 
+                           match valueArg with
+                           | [_] -> valueArg
+                           | _ -> SynInfo.unnamedTopArg
 
                        match memberKind, valSynInfo, memFlags.IsInstance with 
                        | MemberKind.PropertyGet,SynValInfo ([],_ret),         false
@@ -2375,9 +2378,12 @@ defnBindings:
         BindingSetPreAttrs(mLetKwd,isRec,isUse,
             (fun attrs vis -> 
                 // apply the builder
-                let binds = localBindingsBuilder attrs vis mLetKwd 
-                if not isRec && List.length binds > 1 then 
-                      reportParseErrorAt mLetKwd (FSComp.SR.parsLetAndForNonRecBindings()) 
+                let binds = localBindingsBuilder attrs vis mLetKwd
+                if isRec then [],binds else
+                match binds with
+                | []
+                | [_] -> ()
+                | _ -> reportParseErrorAt mLetKwd (FSComp.SR.parsLetAndForNonRecBindings())
                 [],binds), 
             bindingSetRange) }
 
@@ -2416,8 +2422,11 @@ hardwhiteLetBindings:
         BindingSetPreAttrs(mLetKwd,isRec,isUse,
           (fun attrs vis -> 
             let binds = localBindingsBuilder attrs vis mLetKwd 
-            if not isRec && List.length binds > 1 then 
-                    reportParseErrorAt mLetKwd (FSComp.SR.parsLetAndForNonRecBindings()) 
+            if isRec then [],binds else
+            match binds with
+            | []
+            | [_] -> ()
+            | _ -> reportParseErrorAt mLetKwd (FSComp.SR.parsLetAndForNonRecBindings())
             [],binds),
           bindingSetRange), (unionRanges mLetKwd bindingSetRange) }
 
