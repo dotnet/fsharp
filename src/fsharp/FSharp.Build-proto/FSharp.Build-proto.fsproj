@@ -46,6 +46,12 @@
       <Pattern1>{BuildSuffix}</Pattern1>
       <Replacement1>-proto</Replacement1>
     </CopyAndSubstituteText>
+    <CopyAndSubstituteText Include="..\FSharp.Build\Microsoft.NET.Sdk.FSharp.props">
+      <Link>Microsoft.NET.Sdk.FSharp-proto.props</Link>
+      <TargetFilename>Microsoft.NET.Sdk.FSharp-proto.props</TargetFilename>
+      <Pattern1>{BuildSuffix}</Pattern1>
+      <Replacement1>-proto</Replacement1>
+    </CopyAndSubstituteText>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />

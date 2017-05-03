@@ -33,5 +33,6 @@
         <file src="FSharp.Build.dll"     target="lib/netstandard1.6" />
         <file src="Microsoft.FSharp.targets" target="content/any/netstandard1.6" />
         <file src="Microsoft.Portable.FSharp.targets" target="content/any/netstandard1.6" />
+        <file src="Microsoft.NET.Sdk.FSharp.props" target="content/any/netstandard1.6" />
     </files>
 </package>
