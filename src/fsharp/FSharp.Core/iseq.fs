@@ -102,13 +102,6 @@ namespace Microsoft.FSharp.Collections
             // ineffictive **
             let inline avoid boolean = match boolean with true -> true | false -> false
 
-        module internal Upcast =
-            // The f# compiler outputs unnecessary unbox.any calls in upcasts. If this functionality
-            // is fixed with the compiler then these functions can be removed.
-            let inline seq<'T,'seq when 'seq :> ISeq<'T> and 'seq : not struct> (t:'seq) : ISeq<'T> = (# "" t : ISeq<'T> #)
-            let inline enumerableNonGeneric<'enumerable when 'enumerable :> IEnumerable and 'enumerable : not struct> (t:'enumerable) : IEnumerable = (# "" t : IEnumerable #)
-            let inline outOfBand<'outOfBand when 'outOfBand :> IOutOfBand and 'outOfBand : not struct> (t:'outOfBand) : IOutOfBand = (# "" t : IOutOfBand #)
-
         let inline valueComparer<'T when 'T : equality> ()=
             let c = HashIdentity.Structural<'T>
             { new IEqualityComparer<Value<'T>> with
@@ -119,7 +112,7 @@ namespace Microsoft.FSharp.Collections
         let empty<'T> = Microsoft.FSharp.Collections.SeqComposition.Core.EmptyEnumerable<'T>.Instance
 
         [<CompiledName("Singleton")>]
-        let singleton x = Upcast.seq (new SingletonEnumerable<_>(x))
+        let singleton<'T> (x:'T) : ISeq<'T> = upcast (new SingletonEnumerable<_>(x))
 
         /// wraps a ResizeArray in the ISeq framework. Care must be taken that the underlying ResizeArray
         /// is not modified whilst it can be accessed as the ISeq, so check on version is performed.
@@ -128,16 +121,16 @@ namespace Microsoft.FSharp.Collections
         /// performed in this case. If you want this funcitonality, then use the ofSeq function instead.
         [<CompiledName "OfResizeArrayUnchecked">]
         let ofResizeArrayUnchecked (source:ResizeArray<'T>) : ISeq<'T> =
-            Upcast.seq (ThinResizeArrayEnumerable<'T> source)
+            upcast (ThinResizeArrayEnumerable<'T> source)
 
         [<CompiledName "OfArray">]
         let ofArray (source:array<'T>) : ISeq<'T> =
             checkNonNull "source" source
-            Upcast.seq (ThinArrayEnumerable<'T> source)
+            upcast (ThinArrayEnumerable<'T> source)
 
         [<CompiledName "OfList">]
         let ofList (source:list<'T>) : ISeq<'T> =
-            Upcast.seq source
+            upcast source
 
         [<CompiledName "OfSeq">]
         let ofSeq (source:seq<'T>) : ISeq<'T> =
@@ -145,7 +138,7 @@ namespace Microsoft.FSharp.Collections
             | :? ISeq<'T>  as seq   -> seq
             | :? array<'T> as array -> ofArray array
             | null                  -> nullArg "source"
-            | _                     -> Upcast.seq (ThinEnumerable<'T> source)
+            | _                     -> upcast (ThinEnumerable<'T> source)
 
         [<CompiledName "Average">]
         let inline average (source:ISeq<'T>) =
@@ -187,7 +180,7 @@ namespace Microsoft.FSharp.Collections
                             this.Result <- value
                         else
                             this.State._2 <- true
-                            (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
+                            (this :> IOutOfBand).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ =
@@ -213,7 +206,7 @@ namespace Microsoft.FSharp.Collections
                         if this.State.MoveNext() then
                             this.Result <- folder this.Result value this.State.Current
                         else
-                            (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
+                            (this :> IOutOfBand).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ = ()
@@ -221,17 +214,17 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Unfold">]
         let unfold (generator:'State->option<'T * 'State>) (state:'State) : ISeq<'T> =
-            Upcast.seq (new UnfoldEnumerable<'T,'T,'State>(generator, state, IdentityFactory.Instance, 1))
+            upcast (new UnfoldEnumerable<'T,'T,'State>(generator, state, IdentityFactory.Instance, 1))
 
         [<CompiledName "InitializeInfinite">]
         let initInfinite<'T> (f:int->'T) : ISeq<'T> =
-            Upcast.seq (new InitEnumerableDecider<'T>(Nullable (), f, 1))
+            upcast (new InitEnumerableDecider<'T>(Nullable (), f, 1))
 
         [<CompiledName "Initialize">]
         let init<'T> (count:int) (f:int->'T) : ISeq<'T> =
             if count < 0 then invalidArgInputMustBeNonNegative "count" count
             elif count = 0 then empty else
-            Upcast.seq (new InitEnumerableDecider<'T>(Nullable count, f, 1))
+            upcast (new InitEnumerableDecider<'T>(Nullable count, f, 1))
 
         [<CompiledName "Iterate">]
         let inline iter f (source:ISeq<'T>) =
@@ -249,7 +242,7 @@ namespace Microsoft.FSharp.Collections
                         if this.State.MoveNext() then
                             f value this.State.Current
                         else
-                            (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
+                            (this :> IOutOfBand).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ = ()
@@ -265,7 +258,7 @@ namespace Microsoft.FSharp.Collections
                             this.State._1 <- this.State._1 + 1
                             Unchecked.defaultof<_>
                         else
-                            (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
+                            (this :> IOutOfBand).StopFurtherProcessing pipeIdx
                             Unchecked.defaultof<_>
                     override this.OnComplete _ = () 
                     override this.OnDispose () = this.State._2.Dispose () })
@@ -276,7 +269,7 @@ namespace Microsoft.FSharp.Collections
                 { new Folder<'T, Option<'T>> (None) with
                     override this.ProcessNext value =
                         this.Result <- Some value
-                        (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
+                        (this :> IOutOfBand).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "Head">]
@@ -310,7 +303,7 @@ namespace Microsoft.FSharp.Collections
                     override this.ProcessNext value =
                         if f value then
                             this.Result <- true
-                            (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
+                            (this :> IOutOfBand).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "Exists2">]
@@ -321,9 +314,9 @@ namespace Microsoft.FSharp.Collections
                         if this.State.MoveNext() then
                             if predicate value this.State.Current then
                                 this.Result <- true
-                                (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
+                                (this :> IOutOfBand).StopFurtherProcessing pipeIdx
                         else
-                            (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
+                            (this :> IOutOfBand).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ = ()
@@ -336,7 +329,7 @@ namespace Microsoft.FSharp.Collections
                     override this.ProcessNext value =
                         if element = value then
                             this.Result <- true
-                            (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
+                            (this :> IOutOfBand).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "ForAll">]
@@ -346,7 +339,7 @@ namespace Microsoft.FSharp.Collections
                     override this.ProcessNext value =
                         if not (predicate value) then
                             this.Result <- false
-                            (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
+                            (this :> IOutOfBand).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "ForAll2">]
@@ -357,9 +350,9 @@ namespace Microsoft.FSharp.Collections
                         if this.State.MoveNext() then
                             if not (predicate value this.State.Current) then
                                 this.Result <- false
-                                (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
+                                (this :> IOutOfBand).StopFurtherProcessing pipeIdx
                         else
-                            (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
+                            (this :> IOutOfBand).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *)
 
                     override this.OnComplete _ = ()
@@ -447,12 +440,12 @@ namespace Microsoft.FSharp.Collections
                     override this.ProcessNext value =
                         if not (this.State.MoveNext()) then
                             this.Result <- 1
-                            (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
+                            (this :> IOutOfBand).StopFurtherProcessing pipeIdx
                         else
                             let c = f value this.State.Current
                             if c <> 0 then
                                 this.Result <- c
-                                (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
+                                (this :> IOutOfBand).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *)
                     override this.OnComplete _ =
                         if this.Result = 0 && this.State.MoveNext() then
@@ -597,7 +590,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Concat")>]
         let concat (sources:ISeq<#ISeq<'T>>) : ISeq<'T> =
-            Upcast.seq (ThinConcatEnumerable (sources, id))
+            upcast (ThinConcatEnumerable (sources, id))
 
         [<CompiledName "Scan">]
         let inline scan (folder:'State->'T->'State) (initialState:'State) (source:ISeq<'T>) :ISeq<'State> =
@@ -788,7 +781,7 @@ namespace Microsoft.FSharp.Collections
                         match f value with
                         | (Some _) as some ->
                             this.Result <- some
-                            (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
+                            (this :> IOutOfBand).StopFurtherProcessing pipeIdx
                         | None -> ()
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
@@ -799,7 +792,7 @@ namespace Microsoft.FSharp.Collections
                     override this.ProcessNext value =
                         if f value then
                             this.Result <- Some value
-                            (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
+                            (this :> IOutOfBand).StopFurtherProcessing pipeIdx
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
 
         [<CompiledName "TryFindIndex">]
@@ -810,7 +803,7 @@ namespace Microsoft.FSharp.Collections
                     override this.ProcessNext value =
                         if predicate value then
                             this.Result <- Some this.State
-                            (Upcast.outOfBand this).StopFurtherProcessing pipeIdx
+                            (this :> IOutOfBand).StopFurtherProcessing pipeIdx
                         else
                             this.State <- this.State + 1
                         Unchecked.defaultof<_> (* return value unused in Fold context *) })
@@ -874,11 +867,11 @@ namespace Microsoft.FSharp.Collections
         let append (source1:ISeq<'T>) (source2: ISeq<'T>) : ISeq<'T> =
             match source1 with
             | :? EnumerableBase<'T> as s -> s.Append source2
-            | _ -> Upcast.seq (new AppendEnumerable<_>([source2; source1]))
+            | _ -> upcast (new AppendEnumerable<_>([source2; source1]))
 
         [<CompiledName "Delay">]
-        let delay (delayed:unit->ISeq<'T>) =
-            Upcast.seq (DelayedEnumerable (delayed, 1))
+        let delay (delayed:unit->ISeq<'T>) : ISeq<'T> =
+            upcast (DelayedEnumerable (delayed, 1))
 
         module internal GroupBy =
             let inline private impl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (source:ISeq<'T>) =
@@ -1094,7 +1087,7 @@ namespace Microsoft.FSharp.Collections
                         else
                             None)
 
-            let cached = Upcast.seq (new UnfoldEnumerable<'T,'T,int>(unfolding, 0, IdentityFactory.Instance, 1))
+            let cached : ISeq<'T> = upcast (new UnfoldEnumerable<'T,'T,int>(unfolding, 0, IdentityFactory.Instance, 1))
 
             interface System.IDisposable with
                 member __.Dispose() =
@@ -1111,7 +1104,7 @@ namespace Microsoft.FSharp.Collections
                 member __.GetEnumerator() = cached.GetEnumerator()
 
             interface System.Collections.IEnumerable with
-                member __.GetEnumerator() = (Upcast.enumerableNonGeneric cached).GetEnumerator()
+                member __.GetEnumerator() = (cached:>IEnumerable).GetEnumerator()
 
             interface ISeq<'T> with
                 member __.PushTransform next = cached.PushTransform next
@@ -1121,7 +1114,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Cache")>]
         let cache (source:ISeq<'T>) : ISeq<'T> =
-            Upcast.seq (new CachedSeq<_> (source))
+            upcast (new CachedSeq<_> (source))
 
         [<CompiledName("Collect")>]
         let collect f sources = map f sources |> concat
@@ -1140,9 +1133,9 @@ namespace Microsoft.FSharp.Collections
             | _ -> Microsoft.FSharp.Primitives.Basics.List.ofISeq source
 
         [<CompiledName("Replicate")>]
-        let replicate count x =
+        let replicate<'T> count (x:'T) : ISeq<'T> =
             if count < 0 then raise (ArgumentOutOfRangeException "count")
-            Upcast.seq (new InitEnumerable<'T,'T>(Nullable count, (fun _ -> x), IdentityFactory.Instance, 1))
+            upcast (new InitEnumerable<'T,'T>(Nullable count, (fun _ -> x), IdentityFactory.Instance, 1))
 
         [<CompiledName("IsEmpty")>]
         let isEmpty (source : ISeq<'T>)  =

@@ -3531,16 +3531,6 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         abstract member PushTransform<'U> : TransformFactory<'T,'U> -> ISeq<'U>
         abstract member Fold<'Result> : f:(PipeIdx->Folder<'T,'Result>) -> 'Result
 
-    module internal Upcast =
-        // The f# compiler outputs unnecessary unbox.any calls in upcasts. If this functionality
-        // is fixed with the compiler then these functions can be removed.
-        let inline seq<'T,'seq when 'seq :> ISeq<'T> and 'seq : not struct> (t:'seq) : ISeq<'T> = (# "" t : ISeq<'T> #)
-        let inline enumerable<'T,'enumerable when 'enumerable :> IEnumerable<'T> and 'enumerable : not struct> (t:'enumerable) : IEnumerable<'T> = (# "" t : IEnumerable<'T> #)
-        let inline enumerableNonGeneric<'enumerable when 'enumerable :> IEnumerable and 'enumerable : not struct> (t:'enumerable) : IEnumerable = (# "" t : IEnumerable #)
-        let inline enumerator<'T,'enumerator when 'enumerator :> IEnumerator<'T> and 'enumerator : not struct> (t:'enumerator) : IEnumerator<'T> = (# "" t : IEnumerator<'T> #)
-        let inline enumeratorNonGeneric<'enumerator when 'enumerator :> IEnumerator and 'enumerator : not struct> (t:'enumerator) : IEnumerator = (# "" t : IEnumerator #)
-        let inline outOfBand<'outOfBand when 'outOfBand :> IOutOfBand and 'outOfBand : not struct> (t:'outOfBand) : IOutOfBand = (# "" t : IOutOfBand #)
-
 namespace Microsoft.FSharp.Collections
 
     //-------------------------------------------------------------------------
@@ -3756,7 +3746,7 @@ namespace Microsoft.FSharp.Collections
                     activity.ChainDispose ()
 
             interface System.Collections.IEnumerator with
-                member this.Current : obj = box ((Upcast.enumerator this)).Current
+                member this.Current : obj = box (this :> IEnumerator<'U>).Current
                 member __.MoveNext () =
                     result.SeqState <- 0(*InProcess*)
                     moveNext list
@@ -3772,23 +3762,21 @@ namespace Microsoft.FSharp.Collections
         type ListEnumerable<'T,'U>(alist:list<'T>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
             interface System.Collections.IEnumerable with
                 member this.GetEnumerator () : System.Collections.IEnumerator =
-                    let genericEnumerable = Upcast.enumerable this
-                    let genericEnumerator = genericEnumerable.GetEnumerator ()
-                    Upcast.enumeratorNonGeneric genericEnumerator
+                    upcast (this :> IEnumerable<'U>).GetEnumerator ()
 
             interface System.Collections.Generic.IEnumerable<'U> with
                 member this.GetEnumerator () : System.Collections.Generic.IEnumerator<'U> =
                     let result = Result<'U> ()
-                    let activity = transformFactory.Compose (Upcast.outOfBand result) pipeIdx result
-                    Upcast.enumerator (new ListEnumerator<'T,'U>(alist, activity, result))
+                    let activity = transformFactory.Compose (result :> IOutOfBand) pipeIdx result
+                    upcast (new ListEnumerator<'T,'U>(alist, activity, result))
 
             interface ISeq<'U> with
                 member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
-                    Upcast.seq (new ListEnumerable<'T,'V>(alist, ComposedFactory.Combine transformFactory next, pipeIdx+1))
+                    upcast (new ListEnumerable<'T,'V>(alist, ComposedFactory.Combine transformFactory next, pipeIdx+1))
 
                 member this.Fold<'Result> (createFolder:PipeIdx->Folder<'U,'Result>) =
                     let result = createFolder (pipeIdx+1)
-                    let consumer = transformFactory.Compose (Upcast.outOfBand result) pipeIdx result
+                    let consumer = transformFactory.Compose (result :> IOutOfBand) pipeIdx result
                     try
                         let mutable lst = alist
                         while
@@ -3855,7 +3843,7 @@ namespace Microsoft.FSharp.Collections
 
         interface ISeq<'T> with
             member this.PushTransform<'U> (next:TransformFactory<'T,'U>) =
-                Upcast.seq (new ListSeqImplementation.ListEnumerable<'T,'U>(this, next, 1))
+                upcast (new ListSeqImplementation.ListEnumerable<'T,'U>(this, next, 1))
 
             member this.Fold<'Result> (createFolder:PipeIdx->Folder<'T,'Result>) =
                 let result = createFolder 1
@@ -3909,16 +3897,6 @@ namespace Microsoft.FSharp.Core
 
     [<CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1046:DoNotOverloadOperatorEqualsOnReferenceTypes")>]
     module Operators = 
-
-        // The f# compiler outputs unnecessary unbox.any calls in upcasts. If this functionality
-        // is fixed with the compiler then these functions can be removed.
-        module Upcast =
-            let inline seq<'T,'seq when 'seq :> ISeq<'T> and 'seq : not struct> (t:'seq) : ISeq<'T> = (# "" t : ISeq<'T> #)
-            let inline enumerable<'T,'enumerable when 'enumerable :> IEnumerable<'T> and 'enumerable : not struct> (t:'enumerable) : IEnumerable<'T> = (# "" t : IEnumerable<'T> #)
-            let inline enumerableNonGeneric<'enumerable when 'enumerable :> System.Collections.IEnumerable and 'enumerable : not struct> (t:'enumerable) : System.Collections.IEnumerable = (# "" t : System.Collections.IEnumerable #)
-            let inline enumerator<'T,'enumerator when 'enumerator :> IEnumerator<'T> and 'enumerator : not struct> (t:'enumerator) : IEnumerator<'T> = (# "" t : IEnumerator<'T> #)
-            let inline enumeratorNonGeneric<'enumerator when 'enumerator :> System.Collections.IEnumerator and 'enumerator : not struct> (t:'enumerator) : System.Collections.IEnumerator = (# "" t : System.Collections.IEnumerator #)
-            let inline outOfBand<'outOfBand when 'outOfBand :> IOutOfBand and 'outOfBand : not struct> (t:'outOfBand) : IOutOfBand = (# "" t : IOutOfBand #)
 
 #if MULTI_DIMENSIONAL_EXTENSION_PROPERTIES
         type ``[,]``<'T> with 
@@ -5353,7 +5331,7 @@ namespace Microsoft.FSharp.Core
                         false
 
                 interface IEnumerator with
-                    member this.Current : obj = box ((Upcast.enumerator this)).Current
+                    member this.Current : obj = box (this :> IEnumerator<'U>).Current
                     member __.Reset () : unit = source.Reset ()
                     member __.MoveNext () =
                         state <- Mode.Running
@@ -5383,16 +5361,16 @@ namespace Microsoft.FSharp.Core
                 interface IEnumerable<'U> with
                     member __.GetEnumerator () =
                         let folder = SetResultToInput<'U>()
-                        Upcast.enumerator (new SeqSourceEnumerator<'T,'U>(source.GetEnumerator (), current.Compose (Upcast.outOfBand folder) pipeIdx folder, folder))
+                        upcast (new SeqSourceEnumerator<'T,'U>(source.GetEnumerator (), current.Compose (folder :> IOutOfBand) pipeIdx folder, folder))
 
                 interface IEnumerable with
                     member __.GetEnumerator () =
                         let folder = SetResultToInput<'U>()
-                        Upcast.enumeratorNonGeneric (new SeqSourceEnumerator<'T,'U>(source.GetEnumerator (), current.Compose (Upcast.outOfBand folder) pipeIdx folder, folder))
+                        upcast (new SeqSourceEnumerator<'T,'U>(source.GetEnumerator (), current.Compose (folder :> IOutOfBand) pipeIdx folder, folder))
 
                 interface ISeq<'U> with
                     member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
-                        Upcast.seq (new SeqSourceEnumerable<'T,'V>(source, ComposedFactory.Combine current next, pipeIdx+1))
+                        upcast (new SeqSourceEnumerable<'T,'V>(source, ComposedFactory.Combine current next, pipeIdx+1))
 
                     member this.Fold<'Result> (f:PipeIdx->Folder<'U,'Result>) =
                         source.Fold f current pipeIdx
@@ -5402,11 +5380,11 @@ namespace Microsoft.FSharp.Core
                     member __.GetEnumerator () = source.GetEnumerator ()
 
                 interface IEnumerable with
-                    member __.GetEnumerator () = Upcast.enumeratorNonGeneric (source.GetEnumerator ())
+                    member __.GetEnumerator () = upcast (source.GetEnumerator ())
 
                 interface ISeq<'U> with
                     member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
-                        Upcast.seq (new SeqSourceEnumerable<'U,'V>(source, next, 1))
+                        upcast (new SeqSourceEnumerable<'U,'V>(source, next, 1))
 
                     member this.Fold<'Result> (f:PipeIdx->Folder<'U,'Result>) =
                         source.Fold f IdentityFactory.Instance 1
@@ -5626,7 +5604,7 @@ namespace Microsoft.FSharp.Core
                         member __.GetEnumerator () = singleStepRangeEnumerator ()
                         member __.Fold<'Result,'Output> (createFolder:PipeIdx->Folder<'Output,'Result>) (transformFactory:TransformFactory<'T,'Output>) pipeIdx : 'Result =
                             let result = createFolder (pipeIdx+1)
-                            let consumer = transformFactory.Compose (Upcast.outOfBand result) pipeIdx result
+                            let consumer = transformFactory.Compose (result :> IOutOfBand) pipeIdx result
                             try
                                 let mutable i : 'T = n
                                 while result.HaltedIdx = 0 && i <= m do
@@ -5638,7 +5616,7 @@ namespace Microsoft.FSharp.Core
                             finally
                                 consumer.ChainDispose () }
 
-                    Upcast.enumerable (SeqSourceEnumerableThin<'T> source)
+                    upcast (SeqSourceEnumerableThin<'T> source)
 
             // For RangeStepGeneric, zero and add are functions representing the static resolution of GenericZero and (+)
             // for the particular static type. 
