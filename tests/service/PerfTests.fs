@@ -4,7 +4,7 @@
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
-module internal FSharp.Compiler.Service.Tests.PerfTests
+module FSharp.Compiler.Service.Tests.PerfTests
 #endif
 
 
@@ -20,7 +20,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests.Common
 
 // Create an interactive checker instance 
-let checker = FSharpChecker.Create()
+let internal checker = FSharpChecker.Create()
 
 module internal Project1 = 
     open System.IO

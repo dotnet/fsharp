@@ -6,7 +6,7 @@
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
-module internal FSharp.Compiler.Service.Tests.ExprTests
+module FSharp.Compiler.Service.Tests.ExprTests
 #endif
 
 
@@ -21,11 +21,11 @@ open FSharp.Compiler.Service
 open FSharp.Compiler.Service.Tests.Common
 
 // Create an interactive checker instance 
-let checker = FSharpChecker.Create(keepAssemblyContents=true)
+let internal checker = FSharpChecker.Create(keepAssemblyContents=true)
 
 
 [<AutoOpen>]
-module Utils = 
+module internal Utils = 
     let rec printExpr low (e:FSharpExpr) = 
         match e with 
         | BasicPatterns.AddressOf(e1) -> "&"+printExpr 0 e1

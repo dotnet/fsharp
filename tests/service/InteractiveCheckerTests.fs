@@ -5,7 +5,7 @@
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
-module internal FSharp.Compiler.Service.Tests.InteractiveChecker
+module FSharp.Compiler.Service.Tests.InteractiveChecker
 #endif
 
 open NUnit.Framework
@@ -15,14 +15,14 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests.Common
 
-let longIdentToString (longIdent: Ast.LongIdent) =
+let internal longIdentToString (longIdent: Ast.LongIdent) =
     String.Join(".", longIdent |> List.map (fun ident -> ident.ToString()))
-let longIdentWithDotsToString (Ast.LongIdentWithDots (longIdent, _)) = longIdentToString longIdent
+let internal longIdentWithDotsToString (Ast.LongIdentWithDots (longIdent, _)) = longIdentToString longIdent
 
-let posToTuple (pos: Range.pos) = (pos.Line, pos.Column)
-let rangeToTuple (range: Range.range) = (posToTuple range.Start, posToTuple range.End)
+let internal posToTuple (pos: Range.pos) = (pos.Line, pos.Column)
+let internal rangeToTuple (range: Range.range) = (posToTuple range.Start, posToTuple range.End)
 
-let identsAndRanges (input: Ast.ParsedInput) =
+let internal identsAndRanges (input: Ast.ParsedInput) =
     let identAndRange ident (range: Range.range) =
         (ident, rangeToTuple range)
     let extractFromComponentInfo (componentInfo: Ast.SynComponentInfo) =
@@ -53,7 +53,7 @@ let identsAndRanges (input: Ast.ParsedInput) =
          modulesOrNamespaces |> List.collect extractFromModuleOrNamespace
     | Ast.ParsedInput.SigFile _ -> []
 
-let parseAndExtractRanges code =
+let internal parseAndExtractRanges code =
     let file = "Test"
     let result = parseSourceCode (file, code)
     match result with

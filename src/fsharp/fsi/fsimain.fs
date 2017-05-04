@@ -110,6 +110,14 @@ let WinFormsEventLoop(lcid : int option) =
                 !mainFormInvokeResultHolder |> Option.get
 
          member x.ScheduleRestart()  =   restart := true; Application.Exit()  }
+
+let internal TrySetUnhandledExceptionMode() =  
+    let i = ref 0 // stop inlining 
+    try 
+      Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException) 
+    with _ -> 
+      decr i;()
+
 #endif
 
 let StartServer (fsiSession : FsiEvaluationSession) (fsiServerName) = 
@@ -134,13 +142,6 @@ let StartServer (fsiSession : FsiEvaluationSession) (fsiServerName) =
 //----------------------------------------------------------------------------
 // GUI runCodeOnMainThread
 //----------------------------------------------------------------------------
-
-let internal TrySetUnhandledExceptionMode() =  
-    let i = ref 0 // stop inlining 
-    try 
-      Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException) 
-    with _ -> 
-      decr i;()
 
 let evaluateSession() = 
     let argv = System.Environment.GetCommandLineArgs()
