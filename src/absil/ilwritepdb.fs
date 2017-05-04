@@ -260,12 +260,9 @@ let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sou
 
     let documentIndex =
         let includeSource file =
-            let isInList =
-                if isNil embedSourceList then false
-                else
-                    embedSourceList |> List.tryFind(fun f -> String.Compare(file, f, StringComparison.OrdinalIgnoreCase ) = 0) |> Option.isSome
+            let isInList = embedSourceList |> List.exists (fun f -> String.Compare(file, f, StringComparison.OrdinalIgnoreCase ) = 0)
 
-            if not embedAllSource && not isInList || not (File.Exists(file)) then
+            if not embedAllSource && not isInList || not (File.Exists file) then
                 None
             else
                 let stream = File.OpenRead(file)
