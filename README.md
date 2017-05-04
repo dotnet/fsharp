@@ -1,6 +1,6 @@
 # The Combined F# Language, Library, and Tools Repository
 
-You are invited to to help produce future releases of the F# language compiler, library, and tools.
+You are invited to help producing future releases of the F# language compiler, library, and tools.
 
 * [Contributing](#contributing)
 * [Using](#using)
