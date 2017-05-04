@@ -181,7 +181,7 @@ type internal FSharpLanguageServiceBackgroundRequests
                 // Now that we have the parseResults, we can SetDependencyFiles().
                 // 
                 // If the set of dependencies changes, the file needs to be re-checked
-                let anyDependenciesChanged = source.SetDependencyFiles( (* parseResults.DependencyFiles *) [] )
+                let anyDependenciesChanged = source.SetDependencyFiles(parseResults.DependencyFiles)
                 if anyDependenciesChanged then
                     req.ResultClearsDirtinessOfFile <- false
                     // Furthermore, if the project is out-of-date behave just as if we were notified dependency files changed.  

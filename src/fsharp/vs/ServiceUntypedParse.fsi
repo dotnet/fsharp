@@ -36,6 +36,9 @@ type internal FSharpParseFileResults =
     /// Return the inner-most range associated with a possible breakpoint location
     member ValidateBreakpointLocation : pos:pos -> range option
 
+    /// When these files change then the build is invalid
+    member DependencyFiles : string list
+
     /// Get the errors and warnings for the parse
     member Errors : FSharpErrorInfo[]
 

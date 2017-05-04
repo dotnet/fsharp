@@ -1721,7 +1721,8 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
           yield "System.Web.Services"
           yield "System.Windows.Forms"
           yield "System.Numerics" 
-      else
+#if COMPILER_SERVICE_DLL
+     else
           yield Path.Combine(Path.GetDirectoryName(typeof<System.Object>.Assembly.Location),"mscorlib.dll"); // mscorlib
           yield typeof<System.Console>.Assembly.Location; // System.Console
           yield typeof<System.ComponentModel.DefaultValueAttribute>.Assembly.Location; // System.Runtime
@@ -1733,6 +1734,7 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
           yield typeof<System.Numerics.BigInteger>.Assembly.Location; // System.Runtime.Numerics
           yield typeof<System.Threading.Tasks.TaskExtensions>.Assembly.Location; // System.Threading.Tasks
           yield typeof<Microsoft.FSharp.Core.MeasureAttribute>.Assembly.Location; // FSharp.Core
+#endif
     ]
 
 
