@@ -36,6 +36,7 @@ type Check =
                 else
                     printfn "%s" msg
                     Assert.Fail("The correct callstack was not reported to watson.")
+            | (Microsoft.FSharp.Compiler.ErrorLogger.ReportedError (Some (Microsoft.FSharp.Compiler.ErrorLogger.InternalError (msg, range) as e)))
             | (Microsoft.FSharp.Compiler.ErrorLogger.InternalError (msg, range) as e) -> 
                 printfn "InternalError Exception: %s, range = %A, stack = %s" msg range (e.ToString())
                 Assert.Fail("An InternalError exception occurred.")
