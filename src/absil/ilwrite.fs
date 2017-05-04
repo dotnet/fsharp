@@ -3712,7 +3712,7 @@ let writeBinaryAndReportMappings (outfile,
           let pdbOpt =
             match portablePDB with
             | true  -> 
-                let (uncompressedLength, contentId, stream) as pdbStream = generatePortablePdb embedAllSource embedSourceList sourceLink showTimes pdbData 
+                let (uncompressedLength, contentId, stream) as pdbStream = generatePortablePdb embedAllSource embedSourceList sourceLink showTimes pdbData deterministic
                 if embeddedPDB then Some (compressPortablePdbStream uncompressedLength contentId stream)
                 else Some (pdbStream)
             | _ -> None
