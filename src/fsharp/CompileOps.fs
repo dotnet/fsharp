@@ -1621,6 +1621,7 @@ let OutputDiagnosticContext prefix fileLineFn os err =
 
 let GetFSharpCoreLibraryName () = "FSharp.Core"
 
+type internal TypeInThisAssembly = class end
 let GetFSharpCoreReferenceUsedByCompiler(useSimpleResolution) = 
   // On Mono, there is no good reference resolution
   if useSimpleResolution then 
@@ -1637,7 +1638,11 @@ let GetFSharpCoreReferenceUsedByCompiler(useSimpleResolution) =
     if File.Exists(fscCoreLocation) then fscCoreLocation
     else failwithf "Internal error: Could not find %s" fscCoreLocation
 #else
-    // check if FSharp.Core can be found from the hosting environment
+#if COMPILER_SERVICE_DLL
+    // The component:
+    //    FSharp.Compiler.Service.dll
+    // assumes for the version of FSharp.Core running in the hosting environment when processing
+    // scripts and out-of-project files.
     let foundReference =
         match System.Reflection.Assembly.GetEntryAssembly() with
         | null -> None
@@ -1651,8 +1656,30 @@ let GetFSharpCoreReferenceUsedByCompiler(useSimpleResolution) =
     match foundReference with
     | Some fsharpCore -> fsharpCore
     | None ->                        
-        // FSharp.Compiler.Service for F# 4.0 defaults to FSharp.Core 4.4.0.0 if no FSharp.Core is referenced statically by the host process.
-        "FSharp.Core, Version=4.4.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+#endif
+    // All of these:
+    //    Visual F# fsc.exe
+    //    Visual F# IDE Tools FSharp.LanguageService.Compiler.dll 
+    //    FSharp.Compiler.Tools nuget package fsc.exe
+    //    Mono /usr/lib/mono/fsharp/fsc.exe
+    //
+    // assume a reference to the latest .NET Framework FSharp.Core with which those tools are built, e.g.
+    //      "FSharp.Core, Version=4.4.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+    // This is always known to ship as part of an installation of any delivery of the F# Compiler.
+    // This reference gets resolved either using the compiler tools directory itself, or using the 
+    // AssemblyFoldersEx key on Windows, or the /usr/lib/mono/4.5/FSharp.Core.dll on Mono
+    // It doesn't get resolved to the GAC.
+    //
+    // In pretty much all these cases we could probably look directly in the folder where the relevant tool is located.
+    // Even in the case of FSharp.LanguageService.Compiler.dll this component is installed into
+    //     ...Program Files (x86)\Microsoft Visual Studio\2017\Professional\Common7\IDE\CommonExtensions\Microsoft\FSharp
+    // However that DLL can also be in the GAC
+    //
+    typeof<TypeInThisAssembly>.Assembly.GetReferencedAssemblies()
+    |> Array.pick (fun name ->
+        if name.Name = fsCoreName then Some(name.ToString())
+        else None
+    )
 #endif
 let GetFsiLibraryName () = "FSharp.Compiler.Interactive.Settings"  
 
