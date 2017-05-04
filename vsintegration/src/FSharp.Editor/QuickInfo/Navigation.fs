@@ -1,7 +1,8 @@
 ﻿namespace Microsoft.VisualStudio.FSharp.Editor
 
-open Microsoft.CodeAnalysis
 open System
+
+open Microsoft.CodeAnalysis
 
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler

@@ -16,7 +16,6 @@ open Microsoft.VisualStudio.Language.Intellisense
 open Microsoft.VisualStudio.Utilities
 open Microsoft.VisualStudio.PlatformUI
 
-open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler
 
 open Internal.Utilities.StructuredFormat
@@ -113,9 +112,9 @@ type internal QuickInfoViewProvider
         let glyphContent = SymbolGlyphDeferredContent(glyph, glyphService)
         QuickInfoDisplayDeferredContent
             (glyphContent, null, 
-             mainDescription=navigableText description, 
-             documentation=navigableText documentation,
-             typeParameterMap=navigableText typeParameterMap, 
-             anonymousTypes= empty, 
-             usageText=navigableText usage, 
-             exceptionText=navigableText exceptions)
+             mainDescription = navigableText description, 
+             documentation = navigableText documentation,
+             typeParameterMap = navigableText typeParameterMap, 
+             anonymousTypes = empty, 
+             usageText = navigableText usage, 
+             exceptionText = navigableText exceptions)
