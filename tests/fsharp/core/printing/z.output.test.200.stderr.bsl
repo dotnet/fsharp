@@ -268,6 +268,7 @@ stdin(619,21): warning FS1172: Infix operator member '**' has no arguments. Expe
 
 stdin(624,17): warning FS0864: This new member hides the abstract member 'System.Object.ToString() : string'. Rename the member or use 'override' instead.
 
+
       member this.M() = "string"
   ----------------^
 
@@ -317,4 +318,3 @@ stdin(839,6): error FS1210: Active pattern '|A|B|' has a result type containing 
   -----^^^^^
 
 stdin(845,6): error FS1209: Active pattern '|A|B|' is not a function
-

@@ -530,6 +530,7 @@ type internal FsiStdinSyphon(errorWriter: TextWriter) =
                 writeViaBufferWithEnvironmentNewLines errorWriter (OutputDiagnosticContext "  " syphon.GetLine) err; 
                 writeViaBufferWithEnvironmentNewLines errorWriter (OutputDiagnostic (tcConfig.implicitIncludeDir,tcConfig.showFullPaths,tcConfig.flatErrors,tcConfig.errorStyle,isError))  err;
                 errorWriter.WriteLine()
+                errorWriter.WriteLine()
                 errorWriter.Flush()))
 
 
@@ -574,7 +575,9 @@ type internal ErrorLoggerThatStopsOnFirstError(tcConfigB:TcConfigBuilder, fsiStd
                 fsiConsoleOutput.Error.WriteLine()
                 writeViaBufferWithEnvironmentNewLines fsiConsoleOutput.Error (OutputDiagnosticContext "  " fsiStdinSyphon.GetLine) err
                 writeViaBufferWithEnvironmentNewLines fsiConsoleOutput.Error (OutputDiagnostic (tcConfigB.implicitIncludeDir,tcConfigB.showFullPaths,tcConfigB.flatErrors,tcConfigB.errorStyle,isError)) err
-                fsiConsoleOutput.Error.WriteLine("\n"))
+                fsiConsoleOutput.Error.WriteLine()
+                fsiConsoleOutput.Error.WriteLine()
+                fsiConsoleOutput.Error.Flush())
 
     override x.ErrorCount = errorCount
 
