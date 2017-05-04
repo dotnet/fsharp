@@ -143,8 +143,7 @@ let StartServer (fsiSession : FsiEvaluationSession) (fsiServerName) =
 // GUI runCodeOnMainThread
 //----------------------------------------------------------------------------
 
-let evaluateSession() = 
-    let argv = System.Environment.GetCommandLineArgs()
+let evaluateSession(argv: string[]) = 
 #if DEBUG  
     if argv |> Array.exists  (fun x -> x = "/pause" || x = "--pause") then 
         Console.WriteLine("Press any key to continue...")
@@ -158,6 +157,8 @@ let evaluateSession() =
     if argv |> Array.exists (fun x -> x.Contains "fsi-server") then
         Console.InputEncoding <- System.Text.Encoding.UTF8 
         Console.OutputEncoding <- System.Text.Encoding.UTF8
+#else
+    ignore argv
 #endif
 
     try
@@ -285,7 +286,7 @@ let MainMain argv =
         let helper = AppDomain.CreateDomain("FSI_Domain", null, setupInformation)
         helper.ExecuteAssemblyByName(Assembly.GetExecutingAssembly().GetName()) 
     else 
-        evaluateSession()
+        evaluateSession(argv)
 #else
-    evaluateSession()
+    evaluateSession(argv)
 #endif

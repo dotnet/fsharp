@@ -22,7 +22,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler.Service.Tests.Common
 
-let getProjectReferences (content, dllFiles, libDirs, otherFlags) = 
+let internal getProjectReferences (content, dllFiles, libDirs, otherFlags) = 
     let otherFlags = defaultArg otherFlags []
     let libDirs = defaultArg libDirs []
     let base1 = Path.GetTempFileName()
