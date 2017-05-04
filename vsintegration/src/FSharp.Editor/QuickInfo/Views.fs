@@ -14,6 +14,7 @@ open Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.QuickInfo
 
 open Microsoft.VisualStudio.Language.Intellisense
 open Microsoft.VisualStudio.Utilities
+open Microsoft.VisualStudio.PlatformUI
 
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler
@@ -71,10 +72,10 @@ type internal QuickInfoViewProvider
             navigation.NavigateTo range
             SessionHandling.currentSession |> Option.iter ( fun session -> session.Dismiss() )
 
-        let createTooltip text =
-            let t = ToolTip(Content = text)
+        let secondaryToolTip range =
+            let t = ToolTip(Content = navigation.RelativePath range)
             DependencyObjectExtensions.SetDefaultTextProperties(t, formatMap.Value)
-            let color = Microsoft.VisualStudio.PlatformUI.VSColorTheme.GetThemedColor(Microsoft.VisualStudio.PlatformUI.EnvironmentColors.ToolTipBrushKey)
+            let color = VSColorTheme.GetThemedColor(EnvironmentColors.ToolTipBrushKey)
             t.Background <- Media.SolidColorBrush(Media.Color.FromRgb(color.R, color.G, color.B))
             t
 
@@ -85,7 +86,7 @@ type internal QuickInfoViewProvider
                     let inl =
                         match taggedText with
                         | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->                        
-                            let h = Documents.Hyperlink(run, ToolTip = createTooltip nav.Range.FileName)
+                            let h = Documents.Hyperlink(run, ToolTip = secondaryToolTip nav.Range)
                             h.Click.Add <| navigateAndDismiss nav.Range
                             h :> Documents.Inline
                         | _ -> run :> _
