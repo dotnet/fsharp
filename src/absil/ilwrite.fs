@@ -3874,10 +3874,11 @@ let writeBinaryAndReportMappings (outfile,
               // Update MVID guid in metadata
               Array.blit final 0 metadata guidStart 16
 
-              // Use last 4 bytes for timestamp
-              writeBytes os [| final.[16] ||| 128uy ; final.[17]; final.[18]; final.[19] |] // High bit set, to stop tool chains becoming confused
-              // Update pdbData with new guid
-              { pdbData with ModuleID = final.[0..15] }
+              // Use last 4 bytes for timestamp - High bit set, to stop tool chains becoming confused
+              let timestamp = int final.[16] ||| (int final.[17] <<< 8) ||| (int final.[18] <<< 16) ||| (int (final.[19] ||| 128uy) <<< 24) 
+              writeInt32 os timestamp
+              // Update pdbData with new guid and timestamp.  // TOOD: this may need to be moved earlier, or MVID in pdb also fixed up (but difficult if compressed)
+              { pdbData with ModuleID = final.[0..15] ; Timestamp = timestamp }
             else
               writeInt32 os timestamp   // date since 1970
               pdbData
