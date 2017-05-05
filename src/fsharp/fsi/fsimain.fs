@@ -1,6 +1,14 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 
+// This file provides the actual entry point for fsi.exe.
+//
+// Configure the F# Interactive Session to 
+//    1. use a WinForms event loop (introduces a System.Windows.Forms.dll dependency)
+//    2. provide a remoting connection for the use of editor-hosted sessions (introduces a System.Remoting dependency)
+//    3. connect the configuration to the global state programmer-settable settings in FSharp.Compiler.Interactive.Settings.dll 
+//    4. implement shadow copy of references
+
 module internal Sample.Microsoft.FSharp.Compiler.Interactive.Main
 
 open System
@@ -13,10 +21,11 @@ open System.Runtime.CompilerServices
 open System.Windows.Forms
 #endif
 
+open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Interactive.Shell
 open Microsoft.FSharp.Compiler.Interactive
-open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.Interactive.Shell.Settings
 
 #if FX_RESHAPED_REFLECTION
 open Microsoft.FSharp.Core.ReflectionAdapters
@@ -62,12 +71,14 @@ type internal DummyForm() =
     override x.Finalize() = ()
     
 /// This is the event loop implementation for winforms
-let WinFormsEventLoop(lcid : int option) = 
+type WinFormsEventLoop() = 
     let mainForm = new DummyForm() 
-    do mainForm.DoCreateHandle();
+    do mainForm.DoCreateHandle()
+    let mutable lcid = None
     // Set the default thread exception handler
     let restart = ref false
-    { new Microsoft.FSharp.Compiler.Interactive.Shell.Settings.IEventLoop with
+    member __.LCID with get () = lcid and set v = lcid <- v
+    interface IEventLoop with
          member x.Run() =  
              restart := false
              Application.Run()
@@ -109,7 +120,7 @@ let WinFormsEventLoop(lcid : int option) =
                 //if !progress then fprintfn outWriter "RunCodeOnWinFormsMainThread: Got completion signal, res = %b" (Option.isSome !mainFormInvokeResultHolder)
                 !mainFormInvokeResultHolder |> Option.get
 
-         member x.ScheduleRestart()  =   restart := true; Application.Exit()  }
+         member x.ScheduleRestart()  =   restart := true; Application.Exit()  
 
 let internal TrySetUnhandledExceptionMode() =  
     let i = ref 0 // stop inlining 
@@ -183,7 +194,7 @@ let evaluateSession(argv: string[]) =
                 None
         
 //#if USE_FSharp_Compiler_Interactive_Settings
-        let fsiObj = 
+        let fsiObjOpt = 
             let defaultFSharpBinariesDir =
 #if FX_RESHAPED_REFLECTION
                 System.AppContext.BaseDirectory
@@ -194,19 +205,31 @@ let evaluateSession(argv: string[]) =
             let fsiAssemblyPath = Path.Combine(defaultFSharpBinariesDir,"FSharp.Compiler.Interactive.Settings.dll")
             let fsiAssembly = Assembly.LoadFrom(fsiAssemblyPath)
             if isNull fsiAssembly then 
-                failwith "failed to load FSharp.Compiler.Interactive.Settings.dll, which was expected to be next to fsi.exe/fsiAnyCPU.exe"
-                //FsiEvaluationSession.GetDefaultConfiguration()
+                None
             else
                 let fsiTy = fsiAssembly.GetType("Microsoft.FSharp.Compiler.Interactive.Settings")
                 if isNull fsiAssembly then failwith "failed to find type Microsoft.FSharp.Compiler.Interactive.Settings in FSharp.Compiler.Interactive.Settings.dll"
-                callStaticMethod fsiTy "get_fsi" [  ]
+                Some (callStaticMethod fsiTy "get_fsi" [  ])
  
-        let fsiConfig0 = FsiEvaluationSession.GetDefaultConfiguration(fsiObj, true)
-//#else
-//        let fsiConfig0 = FsiEvaluationSession.GetDefaultConfiguration()
-//#endif        
+        let fsiConfig0 = 
+            match fsiObjOpt with 
+            | None -> FsiEvaluationSession.GetDefaultConfiguration()
+            | Some fsiObj -> FsiEvaluationSession.GetDefaultConfiguration(fsiObj, true)
 
-        // Update the configuration to include 'StartServer' and 'GetOptionalConsoleReadLine()'
+//fsiSession.LCID
+#if !FX_NO_WINFORMS
+        let fsiWinFormsLoop = 
+          lazy
+            try Some (WinFormsEventLoop())
+            with e ->
+                printfn "Your system doesn't seem to support WinForms correctly. You will"
+                printfn "need to set fsi.EventLoop use GUI windows from F# Interactive."
+                printfn "You can set different event loops for MonoMac, Gtk#, WinForms and other"
+                printfn "UI toolkits. Drop the --gui argument if no event loop is required."
+                None
+#endif
+
+        // Update the configuration to include 'StartServer', WinFormsEventLoop and 'GetOptionalConsoleReadLine()'
         let rec fsiConfig = 
             { new FsiEvaluationSessionHostConfig () with 
                 member __.FormatProvider = fsiConfig0.FormatProvider
@@ -220,9 +243,28 @@ let evaluateSession(argv: string[]) =
                 member __.PrintWidth = fsiConfig0.PrintWidth
                 member __.PrintLength = fsiConfig0.PrintLength
                 member __.ReportUserCommandLineArgs args = fsiConfig0.ReportUserCommandLineArgs args
-                member __.EventLoopRun() = fsiConfig0.EventLoopRun()
-                member __.EventLoopInvoke(f) = fsiConfig0.EventLoopInvoke(f)
-                member __.EventLoopScheduleRestart() = fsiConfig0.EventLoopScheduleRestart()
+                member __.EventLoopRun() = 
+#if !FX_NO_WINFORMS
+                    match fsiWinFormsLoop.Value with 
+                    | Some l -> (l :> IEventLoop).Run()
+                    | _ -> 
+#endif
+                    fsiConfig0.EventLoopRun()
+                member __.EventLoopInvoke(f) = 
+#if !FX_NO_WINFORMS
+                    match fsiWinFormsLoop.Value with 
+                    | Some l -> (l :> IEventLoop).Invoke(f)
+                    | _ -> 
+#endif
+                    fsiConfig0.EventLoopInvoke(f)
+                member __.EventLoopScheduleRestart() = 
+#if !FX_NO_WINFORMS
+                    match fsiWinFormsLoop.Value with 
+                    | Some l -> (l :> IEventLoop).ScheduleRestart()
+                    | _ -> 
+#endif
+                    fsiConfig0.EventLoopScheduleRestart()
+
                 member __.UseFsiAuxLib = fsiConfig0.UseFsiAuxLib
 
                 member __.StartServer(fsiServerName) = StartServer fsiSession fsiServerName
@@ -232,7 +274,7 @@ let evaluateSession(argv: string[]) =
 
         and fsiSession = FsiEvaluationSession.Create (fsiConfig, argv, Console.In, Console.Out, Console.Error)
 
-#if !FX_NO_WINFORMS
+
         if fsiSession.IsGui then 
             try 
                 Application.EnableVisualStyles() 
@@ -248,16 +290,8 @@ let evaluateSession(argv: string[]) =
                     TrySetUnhandledExceptionMode() 
                 with _ -> 
                     ()
-            
-#if USE_WINFORMS_EVENT_LOOP
-            try fsi.EventLoop <-  WinFormsEventLoop(fsiSession.LCID)
-            with e ->
-                printfn "Your system doesn't seem to support WinForms correctly. You will"
-                printfn "need to set fsi.EventLoop use GUI windows from F# Interactive."
-                printfn "You can set different event loops for MonoMac, Gtk#, WinForms and other"
-                printfn "UI toolkits. Drop the --gui argument if no event loop is required."
-#endif
-#endif
+
+            match fsiWinFormsLoop.Value with Some l -> l.LCID <- fsiSession.LCID | None -> ()
 
 
         console.SetCompletionFunction(fun (s1,s2) -> fsiSession.GetCompletions (match s1 with | Some s -> s + "." + s2 | None -> s2))

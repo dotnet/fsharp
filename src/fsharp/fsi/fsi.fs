@@ -2931,7 +2931,8 @@ module Settings =
         abstract Invoke : (unit -> 'T) -> 'T 
         abstract ScheduleRestart : unit -> unit
     
-#if COMPILER_SERVICE // FSharp.Compiler.Service.dll avoids a hard dependency on FSharp.Compiler.Interave.Settings.dll by providing an optional reimplementation of the functionality in FSharp.Compiler.Service.dll itself
+    // fsi.fs in FSHarp.Compiler.Sevice.dll avoids a hard dependency on FSharp.Compiler.Interactive.Settings.dll 
+    // by providing an optional reimplementation of the functionality
 
     // An implementation of IEventLoop suitable for the command-line console
     [<AutoSerializable(false)>]
@@ -2949,12 +2950,12 @@ module Settings =
         let mutable restart = false
         interface IEventLoop with 
              member x.Run() =  
-                 running <- true;
+                 running <- true
                  let rec run() = 
                      match waitSignal2 runSignal exitSignal with 
                      | 0 -> 
                          queue |> List.iter (fun f -> result <- try Some(f()) with _ -> None); 
-                         setSignal doneSignal;
+                         setSignal doneSignal
                          run()
                      | 1 -> 
                          running <- false;
@@ -2962,19 +2963,19 @@ module Settings =
                      | _ -> run()
                  run();
              member x.Invoke(f : unit -> 'T) : 'T  = 
-                 queue <- [f >> box];
-                 setSignal runSignal;
+                 queue <- [f >> box]
+                 setSignal runSignal
                  waitSignal doneSignal
                  result.Value |> unbox
              member x.ScheduleRestart() = 
                  if running then 
-                     restart <- true;
+                     restart <- true
                      setSignal exitSignal
         interface System.IDisposable with 
              member x.Dispose() =
-                 runSignal.Dispose();
-                 exitSignal.Dispose();
-                 doneSignal.Dispose();
+                 runSignal.Dispose()
+                 exitSignal.Dispose()
+                 doneSignal.Dispose()
                      
 
 
@@ -2994,26 +2995,26 @@ module Settings =
         let mutable showProperties = true
         let mutable addedPrinters = []
 
-        member self.FloatingPointFormat with get() = fpfmt and set v = fpfmt <- v
-        member self.FormatProvider with get() = fp and set v = fp <- v
-        member self.PrintWidth  with get() = printWidth and set v = printWidth <- v
-        member self.PrintDepth  with get() = printDepth and set v = printDepth <- v
-        member self.PrintLength  with get() = printLength and set v = printLength <- v
-        member self.PrintSize  with get() = printSize and set v = printSize <- v
-        member self.ShowDeclarationValues with get() = showDeclarationValues and set v = showDeclarationValues <- v
-        member self.ShowProperties  with get() = showProperties and set v = showProperties <- v
-        member self.ShowIEnumerable with get() = showIEnumerable and set v = showIEnumerable <- v
-        member self.ShowIDictionary with get() = showIDictionary and set v = showIDictionary <- v
-        member self.AddedPrinters with get() = addedPrinters and set v = addedPrinters <- v
-        member self.CommandLineArgs with get() = args  and set v  = args <- v
-        member self.AddPrinter(printer : 'T -> string) =
+        member __.FloatingPointFormat with get() = fpfmt and set v = fpfmt <- v
+        member __.FormatProvider with get() = fp and set v = fp <- v
+        member __.PrintWidth  with get() = printWidth and set v = printWidth <- v
+        member __.PrintDepth  with get() = printDepth and set v = printDepth <- v
+        member __.PrintLength  with get() = printLength and set v = printLength <- v
+        member __.PrintSize  with get() = printSize and set v = printSize <- v
+        member __.ShowDeclarationValues with get() = showDeclarationValues and set v = showDeclarationValues <- v
+        member __.ShowProperties  with get() = showProperties and set v = showProperties <- v
+        member __.ShowIEnumerable with get() = showIEnumerable and set v = showIEnumerable <- v
+        member __.ShowIDictionary with get() = showIDictionary and set v = showIDictionary <- v
+        member __.AddedPrinters with get() = addedPrinters and set v = addedPrinters <- v
+        member __.CommandLineArgs with get() = args  and set v  = args <- v
+        member __.AddPrinter(printer : 'T -> string) =
           addedPrinters <- Choice1Of2 (typeof<'T>, (fun (x:obj) -> printer (unbox x))) :: addedPrinters
 
-        member self.EventLoop
+        member __.EventLoop
            with get () = evLoop
            and set (x:IEventLoop)  = evLoop.ScheduleRestart(); evLoop <- x
 
-        member self.AddPrintTransformer(printer : 'T -> obj) =
+        member __.AddPrintTransformer(printer : 'T -> obj) =
           addedPrinters <- Choice2Of2 (typeof<'T>, (fun (x:obj) -> printer (unbox x))) :: addedPrinters
     
     let fsi = InteractiveSettings()
@@ -3021,7 +3022,6 @@ module Settings =
 type FsiEvaluationSession with 
     static member GetDefaultConfiguration() = 
         FsiEvaluationSession.GetDefaultConfiguration(Settings.fsi, false)
-#endif
 
 /// Defines a read-only input stream used to feed content to the hosted F# Interactive dynamic compiler.
 [<AllowNullLiteral>]

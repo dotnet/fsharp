@@ -260,11 +260,9 @@ type FsiEvaluationSession =
     /// FSharp.Compiler.Interactive.Settings.dll  is referenced by default.
     static member GetDefaultConfiguration: fsiObj: obj -> FsiEvaluationSessionHostConfig
 
-#if COMPILER_SERVICE // FSharp.Compiler.Service.dll avoids a hard dependency on FSharp.Compiler.Interave.Settings.dll by providing an optional reimplementation of the functionality in FSharp.Compiler.Service.dll itself
     /// Get a configuration that uses a private inbuilt implementation of the 'fsi' object and does not
     /// implicitly reference FSharp.Compiler.Interactive.Settings.dll. 
     static member GetDefaultConfiguration: unit -> FsiEvaluationSessionHostConfig
-#endif
 
 
 /// A default implementation of the 'fsi' object, used by GetDefaultConfiguration()
