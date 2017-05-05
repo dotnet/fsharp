@@ -285,7 +285,7 @@ let IteratedAdjustArityOfLambda g amap topValInfo e =
     let tps,ctorThisValOpt,baseValOpt,vsl,body,bodyty = destTopLambda g amap topValInfo (e, tyOfExpr g e)
     let arities = topValInfo.AritiesOfArgs
     if arities.Length <> vsl.Length then 
-        errorR(InternalError(sprintf "IteratedAdjustArityOfLambda, List.length arities = %d, List.length vsl = %d" (List.length arities) (List.length vsl), body.Range))
+        errorR(InternalError(sprintf "IteratedAdjustArityOfLambda, List.length arities = %d, List.length vsl = %d" arities.Length vsl.Length, body.Range))
     let vsl,body = IteratedAdjustArityOfLambdaBody g arities vsl body
     tps,ctorThisValOpt,baseValOpt,vsl,body,bodyty
 

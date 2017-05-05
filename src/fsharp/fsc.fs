@@ -247,7 +247,7 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, setProcessThreadLocals,
     ParseCompilerOptions (collect, GetCoreFscCompilerOptions tcConfigB, List.tail (PostProcessCompilerArgs abbrevArgs argv))
 
     if not (tcConfigB.portablePDB || tcConfigB.embeddedPDB) then
-        if tcConfigB.embedAllSource || (tcConfigB.embedSourceList |> List.length <> 0) then
+        if tcConfigB.embedAllSource || (tcConfigB.embedSourceList |> isNil |> not) then
             error(Error(FSComp.SR.optsEmbeddedSourceRequirePortablePDBs(), rangeCmdArgs))
         if not (String.IsNullOrEmpty(tcConfigB.sourceLink)) then
             error(Error(FSComp.SR.optsSourceLinkRequirePortablePDBs(), rangeCmdArgs))

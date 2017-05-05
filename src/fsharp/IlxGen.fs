@@ -4383,7 +4383,7 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
         | DecisionTreeTest.ArrayLength _
         | DecisionTreeTest.IsNull 
         | DecisionTreeTest.Const(Const.Zero) -> 
-            if List.length cases <> 1 || Option.isNone defaultTargetOpt then failwith "internal error: GenDecisionTreeSwitch: DecisionTreeTest.IsInst/isnull/query"
+            if not (isSingleton cases) || Option.isNone defaultTargetOpt then failwith "internal error: GenDecisionTreeSwitch: DecisionTreeTest.IsInst/isnull/query"
             let bi = 
               match firstDiscrim with 
               | DecisionTreeTest.Const(Const.Zero) ->
@@ -6808,7 +6808,7 @@ and GenExnDef cenv mgbuf eenv m (exnc:Tycon) =
 
 
 let CodegenAssembly cenv eenv mgbuf fileImpls = 
-    if List.length fileImpls > 0 then 
+    if not (isNil fileImpls) then 
       let a,b = List.frontAndBack fileImpls
       let eenv = List.fold (GenTopImpl cenv mgbuf None) eenv a
       let _eenv = GenTopImpl cenv mgbuf cenv.opts.mainMethodInfo eenv b

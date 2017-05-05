@@ -1468,7 +1468,7 @@ module private TastDefinitionPrinting =
     let breakTypeDefnEqn repr =
         match repr with 
         | TFSharpObjectRepr _ -> true
-        | TUnionRepr r    -> r.CasesTable.UnionCasesAsList.Length > 1
+        | TUnionRepr r -> not (isNilOrSingleton r.CasesTable.UnionCasesAsList)
         | TRecdRepr _ -> true
         | TAsmRepr _ 
         | TILObjectRepr _  

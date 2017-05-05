@@ -701,7 +701,7 @@ let UnifyRefTupleType contextInfo cenv denv m ty ps =
     let ptys = 
         if isRefTupleTy cenv.g ty then 
             let ptys = destRefTupleTy cenv.g ty
-            if (List.length ps) = (List.length ptys) then ptys 
+            if List.length ps = List.length ptys then ptys 
             else NewInferenceTypes ps
         else NewInferenceTypes ps
 
@@ -719,7 +719,7 @@ let UnifyStructTupleType contextInfo cenv denv m ty ps =
     let ptys = 
         if isStructTupleTy cenv.g ty then 
             let ptys = destStructTupleTy cenv.g ty
-            if (List.length ps) = (List.length ptys) then ptys 
+            if List.length ps = List.length ptys then ptys 
             else NewInferenceTypes ps
         else NewInferenceTypes ps
     AddCxTypeEqualsType contextInfo denv cenv.css m ty (TType_tuple (tupInfoStruct, ptys))
@@ -2026,8 +2026,9 @@ let TcUnionCaseOrExnField cenv (env: TcEnv) ty1 m c n funcs =
       | (Item.UnionCase _ | Item.ExnCase _) as item ->
         ApplyUnionCaseOrExn funcs m cenv env ty1 item
       | _ -> error(Error(FSComp.SR.tcUnknownUnion(),m))
-    if n >= List.length argtys then 
-      error (UnionCaseWrongNumberOfArgs(env.DisplayEnv,List.length argtys,n,m))
+    let argstysLength = List.length argtys
+    if n >= argstysLength then
+      error (UnionCaseWrongNumberOfArgs(env.DisplayEnv,argstysLength,n,m))
     let ty2 = List.item n argtys
     mkf,ty2
 
@@ -5562,7 +5563,7 @@ and TcExprThen cenv overallTy env tpenv synExpr delayed =
             PropagateThenTcDelayed cenv overallTy env tpenv synExpr.Range (MakeApplicableExprNoFlex cenv expr) exprty ExprAtomicFlag.NonAtomic delayed
 
 and TcExprs cenv env m tpenv flexes argtys args = 
-    if (List.length args  <> List.length argtys) then error(Error(FSComp.SR.tcExpressionCountMisMatch((List.length argtys), (List.length args)),m))
+    if List.length args <> List.length argtys then error(Error(FSComp.SR.tcExpressionCountMisMatch((List.length argtys), (List.length args)),m))
     (tpenv, List.zip3 flexes argtys args) ||> List.mapFold (fun tpenv (flex,ty,e) -> 
          TcExprFlex cenv flex ty env tpenv e)
 
@@ -9948,7 +9949,7 @@ and TcMethodArg  cenv env  (lambdaPropagationInfo,tpenv) (lambdaPropagationInfoF
                         if lambdaVarNum < numLambdaVars then
                             let col = [ for row in prefixOfLambdaArgsForEachOverload -> row.[lambdaVarNum] ]
                             // Check if all the rows give the same argument type
-                            if col |> ListSet.setify (typeEquiv cenv.g) |> List.length |> ((=) 1) then 
+                            if col |> ListSet.setify (typeEquiv cenv.g) |> isSingleton then 
                                 let calledLambdaArgTy = col.[0]
                                 // Force the caller to be a function type. 
                                 match UnifyFunctionTypeUndoIfFailed cenv env.DisplayEnv mArg callerLambdaTy with 
@@ -10786,7 +10787,7 @@ and ApplyAbstractSlotInference (cenv:cenv) (envinner:TcEnv) (bindingTy,m,synTypa
 
                  | slots -> 
                      match dispatchSlotsArityMatch with 
-                     | meths when meths |> makeUniqueBySig |> List.length = 1 -> meths
+                     | meths when meths |> makeUniqueBySig |> isSingleton -> meths
                      | [] -> 
                          let details =
                              slots
@@ -14182,8 +14183,8 @@ module TcExceptionDeclarations =
               match ResolveExprLongIdent cenv.tcSink cenv.nameResolver m ad env.eNameResEnv TypeNameResolutionInfo.Default longId with
               | Item.ExnCase exnc, [] -> 
                   CheckTyconAccessible cenv.amap m env.eAccessRights exnc |> ignore
-                  if List.length args' <> 0 then 
-                    errorR (Error(FSComp.SR.tcExceptionAbbreviationsShouldNotHaveArgumentList(),m))
+                  if not (isNil args') then 
+                      errorR (Error(FSComp.SR.tcExceptionAbbreviationsShouldNotHaveArgumentList(),m))
                   TExnAbbrevRepr exnc
               | Item.CtorGroup(_,meths) , [] -> 
                   // REVIEW: check this really is an exception type 
