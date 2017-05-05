@@ -17,10 +17,10 @@ this file.
 
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-    <UsingTask TaskName="Fsc" AssemblyFile="FSharp.Build{BuildSuffix}.dll"/>
-    <UsingTask TaskName="CreateFSharpManifestResourceName" AssemblyFile="FSharp.Build{BuildSuffix}.dll"/>
+    <UsingTask TaskName="Fsc" AssemblyFile="FSharp.Build.dll"/>
+    <UsingTask TaskName="CreateFSharpManifestResourceName" AssemblyFile="FSharp.Build.dll"/>
 
-  <PropertyGroup>
+    <PropertyGroup>
         <ImportByWildcardBeforeMicrosoftFSharpTargets Condition="'$(ImportByWildcardBeforeMicrosoftFSharpTargets)' == ''">true</ImportByWildcardBeforeMicrosoftFSharpTargets>
         <ImportByWildcardAfterMicrosoftFSharpTargets Condition="'$(ImportByWildcardAfterMicrosoftFSharpTargets)' == ''">true</ImportByWildcardAfterMicrosoftFSharpTargets>
     </PropertyGroup>
@@ -270,8 +270,19 @@ this file.
 
     </Target>
 
-
-    <Import Project="$(MSBuildBinPath)\Microsoft.Common.targets"/>
+    <Choose>
+        <When  Condition=" '$(IsCrossTargetingBuild)' == 'true' ">
+          <PropertyGroup>
+             <FSharpCommonTargets>$(MSBuildBinPath)\Microsoft.Common.CurrentVersion.targets</FSharpCommonTargets>
+          </PropertyGroup>
+        </When>
+        <Otherwise>
+          <PropertyGroup>
+             <FSharpCommonTargets>$(MSBuildBinPath)\Microsoft.Common.targets</FSharpCommonTargets>
+          </PropertyGroup>
+        </Otherwise>
+    </Choose>
+    <Import Project="$(FSharpCommonTargets)" />
 
     <!--
             ============================================================
