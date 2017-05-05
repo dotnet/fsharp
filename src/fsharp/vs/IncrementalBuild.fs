@@ -953,7 +953,6 @@ module internal IncrementalBuild =
             Demultiplex taskname (fun _ctok x -> cancellable.Return x) input
                   
     let VectorInput(node:Vector<'T>, values: 'T list) = (node.Name, values.Length, List.map box values)
-    let ScalaInput(node:Scalar<'T>, value: 'T) = (node.Name, box value)
     
     /// Declare build outputs and bind them to real values.
     type BuildDescriptionScope() =
@@ -1502,6 +1501,8 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
 
     // END OF BUILD DESCRIPTION
     // ---------------------------------------------------------------------------------------------            
+
+    do IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBECreated)
 
     let buildInputs = [ BuildInput.VectorInput (fileNamesNode, sourceFiles)
                         BuildInput.VectorInput (referencedAssembliesNode, nonFrameworkAssemblyInputs) ]

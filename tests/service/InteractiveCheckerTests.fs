@@ -91,4 +91,4 @@ let input3 =
 
 [<Test>]
 let ``Test ranges - global namespace`` () =
-    parseAndExtractRanges input3 |> should equal [("", ((4, 4), (5, 4))); ("Sample", ((4, 9), (4, 15)))]
+    parseAndExtractRanges input3 |> shouldEqual [("", ((4, 4), (6, 0))); ("Sample", ((4, 9), (4, 15)))]

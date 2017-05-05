@@ -3705,7 +3705,7 @@ let ``Test Project25 symbol uses of type-provided members`` () =
             ("TypeProviderTests.Record.Field", "file1", ((8, 17), (8, 22)), ["field"]);
             ("TypeProviderTests.r", "file1", ((8, 4), (8, 5)), ["val"]);
             ("FSharp.Data.XmlProvider", "file1", ((10, 8), (10, 19)),
-             ["class"; "provided"; "erased"]);
+             ["class"]);
             ("FSharp.Data.XmlProvider<...>", "file1", ((10, 8), (10, 68)),
              ["class"; "provided"; "staticinst"; "erased"]);
             ("FSharp.Data.XmlProvider<...>.GetSample", "file1", ((10, 8), (10, 78)),

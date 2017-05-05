@@ -884,7 +884,7 @@ type UsingMSBuild()  =
         let info = info.Value
         AssertEqual("f1", info.GetName(0))
         // note about (5,0): service.fs adds three lines of empty text to the end of every file, so it reports the location of 'end of file' as first the char, 3 lines past the last line of the file
-        AssertEqual([|(2,10);(2,12);(2,13);(5,0)|], info.GetNoteworthyParamInfoLocations())
+        AssertEqual([|(2,10);(2,12);(2,13);(3,0)|], info.GetNoteworthyParamInfoLocations())
 
     [<Test>]
     member this.``LocationOfParams.AfterQuicklyTyping.CallConstructor``() =        
