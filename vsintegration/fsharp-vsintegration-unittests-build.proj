@@ -8,7 +8,7 @@
     <ProjectFiles Include="tests\Salsa\VisualFSharp.Salsa.fsproj"/>
     <ProjectFiles Include="tests\unittests\VisualFSharp.Unittests.fsproj"/>
     <ProjectFiles Include="..\tests\service\data\TestTP\TestTP.fsproj" />
-    <ProjectFiles Include="..\tests\service\data\TestTP\CSharp_Analysis\CSharp_Analysis.csproj" />
+    <ProjectFiles Include="..\tests\service\data\CSharp_Analysis\CSharp_Analysis.csproj" />
     <ProjectFiles Include="tests\unittests\MockTypeProviders\DefinitionLocationAttribute\DefinitionLocationAttribute.csproj" />
     <ProjectFiles Include="tests\unittests\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist\DefinitionLocationAttributeFileDoesnotExist.csproj" />
     <ProjectFiles Include="tests\unittests\MockTypeProviders\DefinitionLocationAttributeLineDoesnotExist\DefinitionLocationAttributeLineDoesnotExist.csproj" />
