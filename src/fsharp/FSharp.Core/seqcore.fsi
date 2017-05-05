@@ -75,6 +75,11 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         abstract member Length : unit -> int
         interface ISeq<'T>
 
+    [<AbstractClass>]
+    type SeqFactoryBase<'T,'U> =
+        inherit EnumerableBase<'U>
+        new : TransformFactory<'T,'U> * PipeIdx -> SeqFactoryBase<'T,'U>
+
     [<Class>]
     type internal IdentityFactory<'T> =
         inherit TransformFactory<'T,'T> 
@@ -113,7 +118,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         interface ISeq<'T>
 
     type internal UnfoldEnumerable<'T,'U,'GeneratorState> =
-        inherit EnumerableBase<'U>
+        inherit SeqFactoryBase<'T,'U>
         new : ('GeneratorState->option<'T*'GeneratorState>)*'GeneratorState*TransformFactory<'T,'U>*PipeIdx -> UnfoldEnumerable<'T,'U,'GeneratorState>
         interface ISeq<'U>
 
@@ -128,7 +133,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         interface ISeq<'T>
 
     type internal InitEnumerable<'T,'U> =
-        inherit EnumerableBase<'U>
+        inherit SeqFactoryBase<'T,'U>
         new : Nullable<int> * (int->'T) * TransformFactory<'T,'U> * PipeIdx -> InitEnumerable<'T,'U>
         interface ISeq<'U>
 
