@@ -3522,13 +3522,12 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         override this.ChainComplete _ = ()
         override this.ChainDispose () = ()
 
-    [<AbstractClass>]
-    type TransformFactory<'T,'U> () =
+    type ITransformFactory<'T,'U> =
         abstract Compose<'V> : IOutOfBand -> PipeIdx -> Activity<'U,'V> -> Activity<'T,'V>
 
     type ISeq<'T> =
         inherit IEnumerable<'T>
-        abstract member PushTransform<'U> : TransformFactory<'T,'U> -> ISeq<'U>
+        abstract member PushTransform<'U> : ITransformFactory<'T,'U> -> ISeq<'U>
         abstract member Fold<'Result> : f:(PipeIdx->Folder<'T,'Result>) -> 'Result
 
 namespace Microsoft.FSharp.Collections
@@ -3707,13 +3706,12 @@ namespace Microsoft.FSharp.Collections
             loop n l
 
     module ListSeqImplementation =
-        type ComposedFactory<'T,'U,'V> private (first:TransformFactory<'T,'U>, second:TransformFactory<'U,'V>) =
-            inherit TransformFactory<'T,'V>()
+        type ComposedFactory<'T,'U,'V> private (first:ITransformFactory<'T,'U>, second:ITransformFactory<'U,'V>) =
+            interface ITransformFactory<'T,'V> with
+                member this.Compose<'W> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Activity<'V,'W>) : Activity<'T,'W> =
+                    first.Compose outOfBand (pipeIdx-1) (second.Compose outOfBand pipeIdx next)
 
-            override this.Compose<'W> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Activity<'V,'W>) : Activity<'T,'W> =
-                first.Compose outOfBand (pipeIdx-1) (second.Compose outOfBand pipeIdx next)
-
-            static member Combine (first:TransformFactory<'T,'U>) (second:TransformFactory<'U,'V>) : TransformFactory<'T,'V> =
+            static member Combine (first:ITransformFactory<'T,'U>) (second:ITransformFactory<'U,'V>) : ITransformFactory<'T,'V> =
                 upcast ComposedFactory(first, second)
 
         type Result<'T>() =
@@ -3759,7 +3757,7 @@ namespace Microsoft.FSharp.Collections
                     elif result.SeqState = 1(*NotStarted*) then PrivateListHelpers.notStarted()
                     else PrivateListHelpers.alreadyFinished()
                         
-        type ListEnumerable<'T,'U>(alist:list<'T>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
+        type ListEnumerable<'T,'U>(alist:list<'T>, transformFactory:ITransformFactory<'T,'U>, pipeIdx:PipeIdx) =
             interface System.Collections.IEnumerable with
                 member this.GetEnumerator () : System.Collections.IEnumerator =
                     upcast (this :> IEnumerable<'U>).GetEnumerator ()
@@ -3771,7 +3769,7 @@ namespace Microsoft.FSharp.Collections
                     upcast (new ListEnumerator<'T,'U>(alist, activity, result))
 
             interface ISeq<'U> with
-                member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
+                member __.PushTransform (next:ITransformFactory<'U,'V>) : ISeq<'V> =
                     upcast (new ListEnumerable<'T,'V>(alist, ComposedFactory.Combine transformFactory next, pipeIdx+1))
 
                 member this.Fold<'Result> (createFolder:PipeIdx->Folder<'U,'Result>) =
@@ -3842,7 +3840,7 @@ namespace Microsoft.FSharp.Collections
                 PrivateListHelpers.sliceTake (j-i) (PrivateListHelpers.sliceSkip i l)
 
         interface ISeq<'T> with
-            member this.PushTransform<'U> (next:TransformFactory<'T,'U>) =
+            member this.PushTransform<'U> (next:ITransformFactory<'T,'U>) =
                 upcast (new ListSeqImplementation.ListEnumerable<'T,'U>(this, next, 1))
 
             member this.Fold<'Result> (createFolder:PipeIdx->Folder<'T,'Result>) =
@@ -5295,20 +5293,19 @@ namespace Microsoft.FSharp.Core
                 | Running = 1
                 | Finished = 2
 
-            type ComposedFactory<'T,'U,'V> private (first:TransformFactory<'T,'U>, second:TransformFactory<'U,'V>) =
-                inherit TransformFactory<'T,'V>()
+            type ComposedFactory<'T,'U,'V> private (first:ITransformFactory<'T,'U>, second:ITransformFactory<'U,'V>) =
+                interface ITransformFactory<'T,'V> with
+                    member this.Compose<'W> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Activity<'V,'W>) : Activity<'T,'W> =
+                        first.Compose outOfBand (pipeIdx-1) (second.Compose outOfBand pipeIdx next)
 
-                override this.Compose<'W> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Activity<'V,'W>) : Activity<'T,'W> =
-                    first.Compose outOfBand (pipeIdx-1) (second.Compose outOfBand pipeIdx next)
-
-                static member Combine (first:TransformFactory<'T,'U>) (second:TransformFactory<'U,'V>) : TransformFactory<'T,'V> =
+                static member Combine (first:ITransformFactory<'T,'U>) (second:ITransformFactory<'U,'V>) : ITransformFactory<'T,'V> =
                     upcast ComposedFactory(first, second)
 
             type IdentityFactory<'T> private () =
-                inherit TransformFactory<'T,'T> ()
-                static let singleton : TransformFactory<'T,'T> = upcast (IdentityFactory<'T>())
-                override __.Compose<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Activity<'T,'V>) : Activity<'T,'V> = next
+                static let singleton : ITransformFactory<'T,'T> = upcast (IdentityFactory<'T>())
                 static member Instance = singleton
+                interface ITransformFactory<'T,'T> with
+                    member __.Compose<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Activity<'T,'V>) : Activity<'T,'V> = next
 
             type SetResultToInput<'T>() =
                 inherit Folder<'T,'T>(Unchecked.defaultof<'T>)
@@ -5355,9 +5352,9 @@ namespace Microsoft.FSharp.Core
 
             type ISeqSource<'T> =
                 abstract member GetEnumerator : unit -> IEnumerator<'T>
-                abstract member Fold<'Result,'U> : f:(PipeIdx->Folder<'U,'Result>) -> TransformFactory<'T,'U> -> PipeIdx -> 'Result
+                abstract member Fold<'Result,'U> : f:(PipeIdx->Folder<'U,'Result>) -> ITransformFactory<'T,'U> -> PipeIdx -> 'Result
 
-            type SeqSourceEnumerable<'T,'U>(source:ISeqSource<'T>, current:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
+            type SeqSourceEnumerable<'T,'U>(source:ISeqSource<'T>, current:ITransformFactory<'T,'U>, pipeIdx:PipeIdx) =
                 interface IEnumerable<'U> with
                     member __.GetEnumerator () =
                         let folder = SetResultToInput<'U>()
@@ -5369,7 +5366,7 @@ namespace Microsoft.FSharp.Core
                         upcast (new SeqSourceEnumerator<'T,'U>(source.GetEnumerator (), current.Compose (folder :> IOutOfBand) pipeIdx folder, folder))
 
                 interface ISeq<'U> with
-                    member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
+                    member __.PushTransform (next:ITransformFactory<'U,'V>) : ISeq<'V> =
                         upcast (new SeqSourceEnumerable<'T,'V>(source, ComposedFactory.Combine current next, pipeIdx+1))
 
                     member this.Fold<'Result> (f:PipeIdx->Folder<'U,'Result>) =
@@ -5383,7 +5380,7 @@ namespace Microsoft.FSharp.Core
                     member __.GetEnumerator () = upcast (source.GetEnumerator ())
 
                 interface ISeq<'U> with
-                    member __.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
+                    member __.PushTransform (next:ITransformFactory<'U,'V>) : ISeq<'V> =
                         upcast (new SeqSourceEnumerable<'U,'V>(source, next, 1))
 
                     member this.Fold<'Result> (f:PipeIdx->Folder<'U,'Result>) =
@@ -5602,7 +5599,7 @@ namespace Microsoft.FSharp.Core
 
                     let source = { new ISeqSource<'T> with
                         member __.GetEnumerator () = singleStepRangeEnumerator ()
-                        member __.Fold<'Result,'Output> (createFolder:PipeIdx->Folder<'Output,'Result>) (transformFactory:TransformFactory<'T,'Output>) pipeIdx : 'Result =
+                        member __.Fold<'Result,'Output> (createFolder:PipeIdx->Folder<'Output,'Result>) (transformFactory:ITransformFactory<'T,'Output>) pipeIdx : 'Result =
                             let result = createFolder (pipeIdx+1)
                             let consumer = transformFactory.Compose (result :> IOutOfBand) pipeIdx result
                             try

@@ -163,18 +163,17 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         let inline forceCapture<'a,'b> (f:'a->'b) : 'a->'b = (# "" f : 'a->'b #)
 
     type IdentityFactory<'T> private () =
-        inherit TransformFactory<'T,'T> ()
-        static let singleton : TransformFactory<'T,'T> = upcast (IdentityFactory<'T>())
-        override __.Compose<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Activity<'T,'V>) : Activity<'T,'V> = next
+        static let singleton : ITransformFactory<'T,'T> = upcast (IdentityFactory<'T>())
         static member Instance = singleton
+        interface ITransformFactory<'T,'T> with
+            member __.Compose<'V> (_outOfBand:IOutOfBand) (_pipeIdx:PipeIdx) (next:Activity<'T,'V>) : Activity<'T,'V> = next
 
-    type ComposedFactory<'T,'U,'V> private (first:TransformFactory<'T,'U>, second:TransformFactory<'U,'V>) =
-        inherit TransformFactory<'T,'V>()
+    type ComposedFactory<'T,'U,'V> private (first:ITransformFactory<'T,'U>, second:ITransformFactory<'U,'V>) =
+        interface ITransformFactory<'T,'V> with
+            member this.Compose<'W> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Activity<'V,'W>) : Activity<'T,'W> =
+                first.Compose outOfBand (pipeIdx-1) (second.Compose outOfBand pipeIdx next)
 
-        override this.Compose<'W> (outOfBand:IOutOfBand) (pipeIdx:PipeIdx) (next:Activity<'V,'W>) : Activity<'T,'W> =
-            first.Compose outOfBand (pipeIdx-1) (second.Compose outOfBand pipeIdx next)
-
-        static member Combine (first:TransformFactory<'T,'U>) (second:TransformFactory<'U,'V>) : TransformFactory<'T,'V> =
+        static member Combine (first:ITransformFactory<'T,'U>) (second:ITransformFactory<'U,'V>) : ITransformFactory<'T,'V> =
             upcast ComposedFactory(first, second)
 
     type ISkipable =
@@ -328,7 +327,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
             member __.PushTransform _ = derivedClassShouldImplement ()
             member __.Fold _ = derivedClassShouldImplement ()
 
-    and [<AbstractClass>] SeqFactoryBase<'T,'U>(transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
+    and [<AbstractClass>] SeqFactoryBase<'T,'U>(transformFactory:ITransformFactory<'T,'U>, pipeIdx:PipeIdx) =
         inherit EnumerableBase<'U>()
 
         member __.CreateActivityPipeline<'Result> (folder:Folder<'U,'Result>) : Activity<'T,'U> =
@@ -343,7 +342,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
 
         member __.PipeIdx = pipeIdx
 
-    and VanillaEnumerable<'T,'U>(enumerable:IEnumerable<'T>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
+    and VanillaEnumerable<'T,'U>(enumerable:IEnumerable<'T>, transformFactory:ITransformFactory<'T,'U>, pipeIdx:PipeIdx) =
         inherit SeqFactoryBase<'T,'U>(transformFactory, pipeIdx)
 
         interface IEnumerable<'U> with
@@ -352,7 +351,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                 upcast (new VanillaEnumerator<'T,'U>(enumerable.GetEnumerator(), this.CreateActivityPipeline result, result))
 
         interface ISeq<'U> with
-            member this.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
+            member this.PushTransform (next:ITransformFactory<'U,'V>) : ISeq<'V> =
                 upcast (new VanillaEnumerable<'T,'V>(enumerable, this.Compose next, this.PipeIdx+1))
 
             member this.Fold<'Result> (createFolder:PipeIdx->Folder<'U,'Result>) =
@@ -401,7 +400,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         override this.ChainDispose () =
             consumer.ChainDispose ()
 
-    and ConcatEnumerable<'T,'U,'Collection when 'Collection :> ISeq<'T>> (sources:ISeq<'Collection>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
+    and ConcatEnumerable<'T,'U,'Collection when 'Collection :> ISeq<'T>> (sources:ISeq<'Collection>, transformFactory:ITransformFactory<'T,'U>, pipeIdx:PipeIdx) =
         inherit SeqFactoryBase<'T,'U>(transformFactory, pipeIdx)
 
         interface IEnumerable<'U> with
@@ -410,7 +409,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                 upcast (new ConcatEnumerator<'T,'U,'Collection>(sources, this.CreateActivityPipeline result, result))
 
         interface ISeq<'U> with
-            member this.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
+            member this.PushTransform (next:ITransformFactory<'U,'V>) : ISeq<'V> =
                 upcast (new ConcatEnumerable<'T,'V,'Collection>(sources, this.Compose next, this.PipeIdx+1))
 
             member this.Fold<'Result> (createFolder:PipeIdx->Folder<'U,'Result>) =
@@ -439,7 +438,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                 upcast (new ConcatEnumerator<'T,'T,'Collection> (preEnumerate sources, result, result))
 
         interface ISeq<'T> with
-            member this.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
+            member this.PushTransform (next:ITransformFactory<'T,'U>) : ISeq<'U> =
                 upcast (ConcatEnumerable<'T,'V,'Collection>(preEnumerate sources, next, 1))
 
             member this.Fold<'Result> (createFolder:PipeIdx->Folder<'T,'Result>) =
@@ -473,7 +472,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
             member __.GetEnumerator () = enumerable.GetEnumerator ()
 
         interface ISeq<'T> with
-            member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
+            member __.PushTransform (next:ITransformFactory<'T,'U>) : ISeq<'U> =
                 upcast (new VanillaEnumerable<'T,'U>(enumerable, next, 1))
 
             member this.Fold<'Result> (createFolder:PipeIdx->Folder<'T,'Result>) =
@@ -500,7 +499,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
             member this.GetEnumerator () : IEnumerator<'T> = (delayed()).GetEnumerator ()
 
         interface ISeq<'T> with
-            member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
+            member __.PushTransform (next:ITransformFactory<'T,'U>) : ISeq<'U> =
                 upcast (new DelayedEnumerable<'U>((fun () -> (delayed()).PushTransform next), pipeIdx+1))
 
             member __.Fold<'Result> (f:PipeIdx->Folder<'T,'Result>) =
@@ -520,7 +519,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         override this.Append source = source
 
         interface ISeq<'T> with
-            member this.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
+            member this.PushTransform (next:ITransformFactory<'T,'U>) : ISeq<'U> =
                 upcast (VanillaEnumerable<'T,'V>(this, next, 1))
 
             member this.Fold<'Result> (createFolder:PipeIdx->Folder<'T,'Result>) =
@@ -553,7 +552,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                 result.SeqState <- SeqProcessNextStates.InProcess
                 moveNext ()
 
-    type ArrayEnumerable<'T,'U>(array:array<'T>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
+    type ArrayEnumerable<'T,'U>(array:array<'T>, transformFactory:ITransformFactory<'T,'U>, pipeIdx:PipeIdx) =
         inherit SeqFactoryBase<'T,'U>(transformFactory, pipeIdx)
 
         interface IEnumerable<'U> with
@@ -562,7 +561,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                 upcast (new ArrayEnumerator<'T,'U>(array, this.CreateActivityPipeline result, result))
 
         interface ISeq<'U> with
-            member this.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
+            member this.PushTransform (next:ITransformFactory<'U,'V>) : ISeq<'V> =
                 upcast (new ArrayEnumerable<'T,'V>(array, this.Compose next, this.PipeIdx+1))
 
             member this.Fold<'Result> (createFolder:PipeIdx->Folder<'U,'Result>) =
@@ -588,7 +587,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
             member __.GetEnumerator () = (array:>IEnumerable<'T>).GetEnumerator ()
 
         interface ISeq<'T> with
-            member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
+            member __.PushTransform (next:ITransformFactory<'T,'U>) : ISeq<'U> =
                 upcast (new ArrayEnumerable<'T,'U>(array, next, 1))
 
             member this.Fold<'Result> (createFolder:PipeIdx->Folder<'T,'Result>) =
@@ -614,7 +613,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
             member this.GetEnumerator () = (new Singleton<'T>(item)) :> IEnumerator<'T>
 
         interface ISeq<'T> with
-            member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
+            member __.PushTransform (next:ITransformFactory<'T,'U>) : ISeq<'U> =
                 upcast (new ArrayEnumerable<'T,'U>([|item|], next, 1))
 
             member this.Fold<'Result> (createFolder:PipeIdx->Folder<'T,'Result>) =
@@ -650,7 +649,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                 result.SeqState <- SeqProcessNextStates.InProcess
                 moveNext ()
 
-    type ResizeArrayEnumerable<'T,'U>(resizeArray:ResizeArray<'T>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
+    type ResizeArrayEnumerable<'T,'U>(resizeArray:ResizeArray<'T>, transformFactory:ITransformFactory<'T,'U>, pipeIdx:PipeIdx) =
         inherit SeqFactoryBase<'T,'U>(transformFactory, pipeIdx)
 
         interface IEnumerable<'U> with
@@ -659,7 +658,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                 upcast (new ResizeArrayEnumerator<'T,'U>(resizeArray, this.CreateActivityPipeline result, result))
 
         interface ISeq<'U> with
-            member this.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
+            member this.PushTransform (next:ITransformFactory<'U,'V>) : ISeq<'V> =
                 upcast (new ResizeArrayEnumerable<'T,'V>(resizeArray, this.Compose next, this.PipeIdx+1))
 
             member this.Fold<'Result> (createFolder:PipeIdx->Folder<'U,'Result>) =
@@ -685,7 +684,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
             member __.GetEnumerator () = (resizeArray :> IEnumerable<'T>).GetEnumerator ()
 
         interface ISeq<'T> with
-            member __.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
+            member __.PushTransform (next:ITransformFactory<'T,'U>) : ISeq<'U> =
                 upcast (new ResizeArrayEnumerable<'T,'U>(resizeArray, next, 1))
 
             member this.Fold<'Result> (createFolder:PipeIdx->Folder<'T,'Result>) =
@@ -725,7 +724,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                 result.SeqState <- SeqProcessNextStates.InProcess
                 moveNext ()
 
-    type UnfoldEnumerable<'T,'U,'GeneratorState>(generator:'GeneratorState->option<'T*'GeneratorState>, state:'GeneratorState, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
+    type UnfoldEnumerable<'T,'U,'GeneratorState>(generator:'GeneratorState->option<'T*'GeneratorState>, state:'GeneratorState, transformFactory:ITransformFactory<'T,'U>, pipeIdx:PipeIdx) =
         inherit SeqFactoryBase<'T,'U>(transformFactory, pipeIdx)
 
         interface IEnumerable<'U> with
@@ -734,7 +733,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                 upcast (new UnfoldEnumerator<'T,'U,'GeneratorState>(generator, state, this.CreateActivityPipeline result, result))
 
         interface ISeq<'U> with
-            member this.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
+            member this.PushTransform (next:ITransformFactory<'U,'V>) : ISeq<'V> =
                 upcast (new UnfoldEnumerable<'T,'V,'GeneratorState>(generator, state, this.Compose next, this.PipeIdx+1))
 
             member this.Fold<'Result> (createFolder:PipeIdx->Folder<'U,'Result>) =
@@ -805,7 +804,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                 result.SeqState <- SeqProcessNextStates.InProcess
                 moveNext ()
 
-    type InitEnumerable<'T,'U>(count:Nullable<int>, f:int->'T, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
+    type InitEnumerable<'T,'U>(count:Nullable<int>, f:int->'T, transformFactory:ITransformFactory<'T,'U>, pipeIdx:PipeIdx) =
         inherit SeqFactoryBase<'T,'U>(transformFactory, pipeIdx)
 
         interface IEnumerable<'U> with
@@ -814,7 +813,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                 upcast (new InitEnumerator<'T,'U>(count, f, this.CreateActivityPipeline result, result))
 
         interface ISeq<'U> with
-            member this.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
+            member this.PushTransform (next:ITransformFactory<'U,'V>) : ISeq<'V> =
                 upcast (new InitEnumerable<'T,'V>(count, f, this.Compose next, this.PipeIdx+1))
 
             member this.Fold<'Result> (createFolder:PipeIdx->Folder<'U,'Result>) =
@@ -933,7 +932,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                 upto (if count.HasValue then Some (count.Value-1) else None) f
 
         interface ISeq<'T> with
-            member this.PushTransform (next:TransformFactory<'T,'U>) : ISeq<'U> =
+            member this.PushTransform (next:ITransformFactory<'T,'U>) : ISeq<'U> =
                 upcast (InitEnumerable<'T,'V>(count, f, next, pipeIdx+1))
 
             member this.Fold<'Result> (createFolder:PipeIdx->Folder<'T,'Result>) =
@@ -1224,7 +1223,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
             member x.Reset() = raise <| new System.NotSupportedException()
 
         interface ISeq<'T> with
-            member this.PushTransform<'U> (next:TransformFactory<'T,'U>) : ISeq<'U> =
+            member this.PushTransform<'U> (next:ITransformFactory<'T,'U>) : ISeq<'U> =
                 upcast (new GeneratedSequenceBaseEnumerable<'T,'U>(this, next, 1))
 
             member this.Fold<'Result> (createFolder:PipeIdx->Folder<'T,'Result>) =
@@ -1256,7 +1255,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
                     count <- count + 1
             count
 
-    and GeneratedSequenceBaseEnumerable<'T,'U>(generatedSequence:GeneratedSequenceBase<'T>, transformFactory:TransformFactory<'T,'U>, pipeIdx:PipeIdx) =
+    and GeneratedSequenceBaseEnumerable<'T,'U>(generatedSequence:GeneratedSequenceBase<'T>, transformFactory:ITransformFactory<'T,'U>, pipeIdx:PipeIdx) =
         inherit SeqFactoryBase<'T,'U>(transformFactory, pipeIdx)
 
         interface IEnumerable<'U> with
@@ -1265,7 +1264,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
                 upcast (new VanillaEnumerator<'T,'U>(generatedSequence.GetFreshEnumerator(), this.CreateActivityPipeline result, result))
 
         interface ISeq<'U> with
-            member this.PushTransform (next:TransformFactory<'U,'V>) : ISeq<'V> =
+            member this.PushTransform (next:ITransformFactory<'U,'V>) : ISeq<'V> =
                 upcast (new GeneratedSequenceBaseEnumerable<'T,'V>(generatedSequence, this.Compose next, this.PipeIdx+1))
 
             member this.Fold<'Result> (createFolder:PipeIdx->Folder<'U,'Result>) =

@@ -78,12 +78,12 @@ namespace Microsoft.FSharp.Collections.SeqComposition
     [<AbstractClass>]
     type SeqFactoryBase<'T,'U> =
         inherit EnumerableBase<'U>
-        new : TransformFactory<'T,'U> * PipeIdx -> SeqFactoryBase<'T,'U>
+        new : ITransformFactory<'T,'U> * PipeIdx -> SeqFactoryBase<'T,'U>
 
     [<Class>]
     type internal IdentityFactory<'T> =
-        inherit TransformFactory<'T,'T> 
-        static member Instance : TransformFactory<'T,'T> 
+        interface ITransformFactory<'T,'T> 
+        static member Instance : ITransformFactory<'T,'T> 
 
     type internal ISkipable =
         // Seq.init(Infinite)? lazily uses Current. The only ISeq component that can do that is Skip
@@ -119,7 +119,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
 
     type internal UnfoldEnumerable<'T,'U,'GeneratorState> =
         inherit SeqFactoryBase<'T,'U>
-        new : ('GeneratorState->option<'T*'GeneratorState>)*'GeneratorState*TransformFactory<'T,'U>*PipeIdx -> UnfoldEnumerable<'T,'U,'GeneratorState>
+        new : ('GeneratorState->option<'T*'GeneratorState>)*'GeneratorState*ITransformFactory<'T,'U>*PipeIdx -> UnfoldEnumerable<'T,'U,'GeneratorState>
         interface ISeq<'U>
 
     type internal InitEnumerableDecider<'T> =
@@ -134,7 +134,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
 
     type internal InitEnumerable<'T,'U> =
         inherit SeqFactoryBase<'T,'U>
-        new : Nullable<int> * (int->'T) * TransformFactory<'T,'U> * PipeIdx -> InitEnumerable<'T,'U>
+        new : Nullable<int> * (int->'T) * ITransformFactory<'T,'U> * PipeIdx -> InitEnumerable<'T,'U>
         interface ISeq<'U>
 
     type internal DelayedEnumerable<'T> =

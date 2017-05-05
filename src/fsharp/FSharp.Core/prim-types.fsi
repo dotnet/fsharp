@@ -1833,19 +1833,17 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         override ChainComplete : PipeIdx -> unit
         override ChainDispose : unit -> unit
 
-    /// TransformFactory provides composition of Activities. Its intended to have a specialization
+    /// ITransformFactory provides composition of Activities. Its intended to have a specialization
     /// for each type of ISeq Activity. ISeq's PushTransform method is used to build a stack
     /// of Actvities that will be composed.
-    [<AbstractClass>]
-    type TransformFactory<'T,'U> =
-        new : unit -> TransformFactory<'T,'U>
+    type ITransformFactory<'T,'U> =
         abstract member Compose : IOutOfBand -> PipeIdx -> Activity<'U,'V> -> Activity<'T,'V>
 
     /// ISeq<'T> is an extension to seq<'T> that provides the avilty to compose Activities
     /// as well as Fold the current Activity pipeline.
     type ISeq<'T> =
         inherit System.Collections.Generic.IEnumerable<'T>
-        abstract member PushTransform : TransformFactory<'T,'U> -> ISeq<'U>
+        abstract member PushTransform : ITransformFactory<'T,'U> -> ISeq<'U>
         abstract member Fold<'Result> : f:(PipeIdx->Folder<'T,'Result>) -> 'Result
 
 namespace Microsoft.FSharp.Collections
