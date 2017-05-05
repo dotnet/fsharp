@@ -758,26 +758,3 @@ module Keywords =
     let NormalizeIdentifierBackticks s = NormalizeIdentifierBackticks s
     let KeywordsWithDescription = keywordsWithDescription
 
-[<System.Obsolete("This type has been renamed to FSharpSourceTokenizer")>]
-type SourceTokenizer = FSharpSourceTokenizer
-
-[<System.Obsolete("This type has been renamed to FSharpLineTokenizer")>]
-type LineTokenizer = FSharpLineTokenizer
-
-[<System.Obsolete("This type has been renamed to FSharpTokenInfo")>]
-type TokenInformation = FSharpTokenInfo
-
-[<System.Obsolete("This type has been renamed to FSharpTokenTriggerClass")>]
-type TriggerClass = FSharpTokenTriggerClass
-
-[<System.Obsolete("This type has been renamed to FSharpTokenCharKind")>]
-type TokenCharKind = FSharpTokenCharKind
-
-[<System.Obsolete("This type has been renamed to FSharpTokenColorKind")>]
-type TokenColorKind = FSharpTokenColorKind
-
-[<System.Obsolete("This type has been renamed to FSharpTokenizerColorState")>]
-type ColorState = FSharpTokenizerColorState
-
-[<System.Obsolete("This type has been renamed to FSharpTokenizerLexState")>]
-type LexState = FSharpTokenizerLexState

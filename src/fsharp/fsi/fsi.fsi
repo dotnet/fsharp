@@ -327,7 +327,6 @@ module Settings =
     /// which can be used as an alternative implementation of the interactiev settings if passed as a parameter
     /// to GetDefaultConfiguration(fsiObj).
     val fsi : InteractiveSettings
-#endif
 
 /// Defines a read-only input stream used to feed content to the hosted F# Interactive dynamic compiler.
 [<AllowNullLiteral>]
@@ -344,3 +343,4 @@ type CompilerOutputStream  =
     new : unit -> CompilerOutputStream
 
     member Read : unit -> string
+#endif

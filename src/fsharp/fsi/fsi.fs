@@ -614,8 +614,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
        // Mono on Win32 doesn't implement correct console processing
        not (runningOnMono && System.Environment.OSVersion.Platform = System.PlatformID.Win32NT) 
 #endif
-// In the cross-platform edition of F#, 'gui' support is currently off by default
-    let mutable gui        = not runningOnMono // override via "--gui", on by default
+    let mutable gui        = not runningOnMono // override via "--gui", on by default except when on Mono
 #if DEBUG
     let mutable showILCode = false // show modul il code 
 #endif

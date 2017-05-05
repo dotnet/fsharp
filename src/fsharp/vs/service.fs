@@ -2727,8 +2727,6 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
     member ic.TryGetRecentCheckResultsForFile(filename: string, options:FSharpProjectOptions, ?source) =
         backgroundCompiler.TryGetRecentCheckResultsForFile(filename,options,source)
 
-    member ic.TryGetRecentTypeCheckResultsForFile(filename, options, ?source) = ic.TryGetRecentCheckResultsForFile(filename,options,?source=source)
-
     member ic.Compile(argv: string[]) =
       backgroundCompiler.Reactor.EnqueueAndAwaitOpAsync ("Compile", fun ctok -> 
        cancellable {
@@ -2893,9 +2891,6 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
           UnresolvedReferences = None
           OriginalLoadReferences=[]
           ExtraProjectInfo=extraProjectInfo }
-
-    member ic.GetProjectOptionsFromProjectFile(_ : string, ?_a : (string * string) list, ?_b : System.DateTime) : FSharpProjectOptions =
-        failwithf "This method has been removed."
 
     /// Begin background parsing the given project.
     member ic.StartBackgroundCompile(options) = backgroundCompiler.CheckProjectInBackground(options) 
