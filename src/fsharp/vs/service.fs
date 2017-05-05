@@ -2844,11 +2844,6 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
     member ic.InvalidateConfiguration(options: FSharpProjectOptions) =
         backgroundCompiler.InvalidateConfiguration options
 
-    /// This function is called when the configuration is known to have changed for reasons not encoded in the ProjectOptions.
-    /// For example, dependent references may have been deleted or created.
-    member ic.NotifyDependencyChanged(options: FSharpProjectOptions) =
-        backgroundCompiler.InvalidateConfiguration options
-
     /// This function is called when a project has been cleaned, and thus type providers should be refreshed.
     member ic.NotifyProjectCleaned(options: FSharpProjectOptions) =
         backgroundCompiler.NotifyProjectCleaned options

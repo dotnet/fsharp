@@ -36,7 +36,7 @@ module internal Project1A =
     let dllName = Path.ChangeExtension(baseName, ".dll")
     let projFileName = Path.ChangeExtension(baseName, ".fsproj")
     let fileSource1 = """
-module internal Project1A
+module Project1A
 
 type C() = 
     static member M(arg1: int, arg2: int, ?arg3 : int) = arg1 + arg2 + defaultArg arg3 4
@@ -65,7 +65,7 @@ module internal Project1B =
     let dllName = Path.ChangeExtension(baseName, ".dll")
     let projFileName = Path.ChangeExtension(baseName, ".fsproj")
     let fileSource1 = """
-module internal Project1B
+module Project1B
 
 type A = B of xxx: int * yyy : int
 let b = B(xxx=1, yyy=2)
@@ -94,7 +94,7 @@ module internal MultiProject1 =
     let projFileName = Path.ChangeExtension(baseName, ".fsproj")
     let fileSource1 = """
 
-module internal MultiProject1
+module MultiProject1
 
 open Project1A
 open Project1B
@@ -335,7 +335,7 @@ module internal MultiProjectDirty1 =
     let baseName = Path.GetTempFileName()
     let dllName = Path.ChangeExtension(baseName, ".dll")
     let projFileName = Path.ChangeExtension(baseName, ".fsproj")
-    let content = """module internal Project1
+    let content = """module Project1
 
 let x = "F#"
 """                   
@@ -359,7 +359,7 @@ module internal MultiProjectDirty2 =
     let dllName = Path.ChangeExtension(baseName, ".dll")
     let projFileName = Path.ChangeExtension(baseName, ".fsproj")
     
-    let content = """module internal Project2
+    let content = """module Project2
 
 open Project1
 
@@ -557,7 +557,7 @@ module internal Project2A =
     let dllName = Path.ChangeExtension(baseName1, ".dll")
     let projFileName = Path.ChangeExtension(baseName1, ".fsproj")
     let fileSource1 = """
-module internal Project2A
+module Project2A
 
 [<assembly:System.Runtime.CompilerServices.InternalsVisibleTo(""" + "\"" + dllShortName + "\"" + """)>]
 do()
@@ -584,7 +584,7 @@ module internal Project2B =
     let projFileName = Path.ChangeExtension(Project2A.baseName2, ".fsproj")
     let fileSource1 = """
 
-module internal Project2B
+module Project2B
 
 let v = Project2A.C().InternalMember // access an internal symbol
     """
@@ -609,7 +609,7 @@ module internal Project2C =
     let projFileName = Path.ChangeExtension(Project2A.baseName3, ".fsproj")
     let fileSource1 = """
 
-module internal Project2C
+module Project2C
 
 let v = Project2A.C().InternalMember // access an internal symbol
     """
@@ -674,7 +674,7 @@ module internal Project3A =
     let dllName = Path.ChangeExtension(baseName, ".dll")
     let projFileName = Path.ChangeExtension(baseName, ".fsproj")
     let fileSource1 = """
-module internal Project3A
+module Project3A
 
 ///A parameterized active pattern of divisibility
 let (|DivisibleBy|_|) by n = 
@@ -698,7 +698,7 @@ module internal MultiProject3 =
     let dllName = Path.ChangeExtension(baseName, ".dll")
     let projFileName = Path.ChangeExtension(baseName, ".fsproj")
     let fileSource1 = """
-module internal MultiProject3
+module MultiProject3
 
 open Project3A
 

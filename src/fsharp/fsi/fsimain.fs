@@ -122,6 +122,7 @@ type WinFormsEventLoop() =
 
          member x.ScheduleRestart()  =   restart := true; Application.Exit()  
 
+/// Try to set the unhandled exception mode of System.Windows.Forms
 let internal TrySetUnhandledExceptionMode() =  
     let i = ref 0 // stop inlining 
     try 
@@ -131,6 +132,7 @@ let internal TrySetUnhandledExceptionMode() =
 
 #endif
 
+/// Starts the remoting server to handle interrupt reuests from a host tool.
 let StartServer (fsiSession : FsiEvaluationSession) (fsiServerName) = 
 #if FSI_SERVER
     let server =
@@ -173,7 +175,10 @@ let evaluateSession(argv: string[]) =
 #endif
 
     try
+        // Create the console reader
         let console = new Microsoft.FSharp.Compiler.Interactive.ReadLineConsole()
+
+        // Define the function we pass to the FsiEvaluationSession
         let getConsoleReadLine (probeToSeeIfConsoleWorks) = 
             let consoleIsOperational =
               if probeToSeeIfConsoleWorks then 
@@ -218,6 +223,7 @@ let evaluateSession(argv: string[]) =
 
 //fsiSession.LCID
 #if !FX_NO_WINFORMS
+        // Create the WinForms event loop
         let fsiWinFormsLoop = 
           lazy
             try Some (WinFormsEventLoop())
@@ -272,9 +278,12 @@ let evaluateSession(argv: string[]) =
                 // Connect the configuration through to the 'fsi' Event loop
                 member __.GetOptionalConsoleReadLine(probe) = getConsoleReadLine(probe) }
 
+        // Create the console
         and fsiSession = FsiEvaluationSession.Create (fsiConfig, argv, Console.In, Console.Out, Console.Error)
 
 
+#if !FX_NO_WINFORMS
+        // Configure some remaining parameters of the GUI support
         if fsiSession.IsGui then 
             try 
                 Application.EnableVisualStyles() 
@@ -291,12 +300,15 @@ let evaluateSession(argv: string[]) =
                 with _ -> 
                     ()
 
-            match fsiWinFormsLoop.Value with Some l -> l.LCID <- fsiSession.LCID | None -> ()
+            fsiWinFormsLoop.Value |> Option.iter (fun l -> l.LCID <- fsiSession.LCID)
+#endif
 
-
+        // Setup the completion function for intellisense in the console
         console.SetCompletionFunction(fun (s1,s2) -> fsiSession.GetCompletions (match s1 with | Some s -> s + "." + s2 | None -> s2))
         
+        // Start the session
         fsiSession.Run() 
+
     with e -> printf "Exception by fsi.exe:\n%+A\n" e
 
     0

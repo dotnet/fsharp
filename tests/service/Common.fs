@@ -69,7 +69,7 @@ let sysLib nm =
 #if !FX_ATLEAST_PORTABLE
     if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then // file references only valid on Windows 
         let programFilesx86Folder = System.Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")
-        programFilesx86Folder + @"\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\" + nm + ".dll"
+        programFilesx86Folder + @"\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6.1\" + nm + ".dll"
     else
 #endif
 #if FX_NO_RUNTIMEENVIRONMENT
@@ -84,9 +84,12 @@ let sysLib nm =
 module Helpers = 
     open System
     type DummyType = A | B
-    let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri(typeof<DummyType>.Assembly.CodeBase).LocalPath), p)
+    let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri(typeof<Microsoft.FSharp.Compiler.SourceCodeServices.FSharpChecker>.Assembly.CodeBase).LocalPath), p)
 
 let fsCoreDefaultReference() = 
+    PathRelativeToTestAssembly "FSharp.Core.dll"
+
+(*
 #if !FX_ATLEAST_PORTABLE
      if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then // file references only valid on Windows 
         let programFilesx86Folder = System.Environment.GetEnvironmentVariable("PROGRAMFILES(X86)")
@@ -94,6 +97,7 @@ let fsCoreDefaultReference() =
      else 
 #endif
         sysLib "FSharp.Core"
+*)
 
 let mkProjectCommandLineArgs (dllName, fileNames) = 
   let args = 

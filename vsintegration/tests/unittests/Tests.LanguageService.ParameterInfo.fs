@@ -906,7 +906,7 @@ type UsingMSBuild()  =
         let info = info.Value
         AssertEqual("Foo", info.GetName(0))
         // note about (4,0): service.fs adds three lines of empty text to the end of every file, so it reports the location of 'end of file' as first the char, 3 lines past the last line of the file
-        AssertEqual([|(1,14);(1,17);(1,18);(4,0)|], info.GetNoteworthyParamInfoLocations())
+        AssertEqual([|(1,14);(1,17);(1,18);(2,0)|], info.GetNoteworthyParamInfoLocations())
 
 
 (*
@@ -970,9 +970,9 @@ We really need to rewrite some code paths here to use the real parse tree rather
             r.ToString(), locs)
         let testLines = testLinesAndLocs |> List.map fst
         let expectedLocs = testLinesAndLocs |> List.map snd |> List.collect id |> List.toArray 
-        // note: service.fs adds three lines of empty text to the end of every file, so it reports the location of 'end of file' as first the char, 3 lines past the last line of the file
+        // note: service.fs adds a new line character to the end of every file, so it reports the location of 'end of file' as first the char, 3 lines past the last line of the file
         let expectedLocs = if defaultArg markAtEOF false then 
-                                Array.append expectedLocs [| (testLines.Length-1)+3, 0 |] 
+                                Array.append expectedLocs [| (testLines.Length-1)+1, 0 |] 
                            else 
                                 expectedLocs
         let cursorPrefix = cursorPrefix.Replace("^","")
