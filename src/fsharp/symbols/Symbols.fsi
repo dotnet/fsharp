@@ -339,7 +339,7 @@ and [<Class>] internal FSharpEntity =
 #if COMPILER_PUBLIC_API
 and [<Class>] FSharpDelegateSignature =
 #else
-and [<Class>] FSharpDelegateSignature =
+and [<Class>] internal FSharpDelegateSignature =
 #endif
     /// Get the argument types of the delegate signature
     member DelegateArguments : IList<string option * FSharpType>

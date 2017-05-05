@@ -121,6 +121,9 @@ let ``Test multi project 1 whole project errors`` () =
 
     let wholeProjectResults = checker.ParseAndCheckProject(MultiProject1.options) |> Async.RunSynchronously
 
+    for e in wholeProjectResults.Errors do 
+        printfn "multi project 1 error: <<<%s>>>" e.Message
+
     wholeProjectResults .Errors.Length |> shouldEqual 0
     wholeProjectResults.ProjectContext.GetReferencedAssemblies().Length |> shouldEqual 6
 
@@ -253,6 +256,9 @@ let ``Test ManyProjectsStressTest whole project errors`` () =
     let checker = ManyProjectsStressTest.makeCheckerForStressTest true
     let wholeProjectResults = checker.ParseAndCheckProject(ManyProjectsStressTest.jointProject.Options) |> Async.RunSynchronously
     let wholeProjectResults = checker.ParseAndCheckProject(ManyProjectsStressTest.jointProject.Options) |> Async.RunSynchronously
+
+    for e in wholeProjectResults.Errors do 
+        printfn "ManyProjectsStressTest error: <<<%s>>>" e.Message
 
     wholeProjectResults .Errors.Length |> shouldEqual 0
     wholeProjectResults.ProjectContext.GetReferencedAssemblies().Length |> shouldEqual (ManyProjectsStressTest.numProjectsForStressTest + 4)
@@ -622,6 +628,9 @@ let v = Project2A.C().InternalMember // access an internal symbol
 let ``Test multi project2 errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project2B.options) |> Async.RunSynchronously
+    for e in wholeProjectResults.Errors do 
+        printfn "multi project2 error: <<<%s>>>" e.Message
+
     wholeProjectResults .Errors.Length |> shouldEqual 0
 
 
@@ -714,6 +723,8 @@ let fizzBuzz = function
 let ``Test multi project 3 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(MultiProject3.options) |> Async.RunSynchronously
+    for e in wholeProjectResults.Errors do 
+        printfn "multi project 3 error: <<<%s>>>" e.Message
 
     wholeProjectResults.Errors.Length |> shouldEqual 0
 

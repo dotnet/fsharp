@@ -3652,7 +3652,7 @@ let _ = XmlProvider<"<root><value>1</value><value>3</value></root>">.GetSample()
     let fileNames = [fileName1]
     let args = 
         [| yield! mkProjectCommandLineArgs (dllName, fileNames) 
-           yield "-r:" + Path.Combine(__SOURCE_DIRECTORY__, "FSharp.Data.dll")
+           yield @"-r:" + Path.Combine(__SOURCE_DIRECTORY__, Path.Combine("data", "FSharp.Data.dll"))
            yield @"-r:" + sysLib "System.Xml.Linq" |]
     let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
@@ -3672,7 +3672,7 @@ let ``Test Project25 whole project errors`` () =
 #else
 [<Test>]
 #endif
-let ``Test symbol uses of type-provided members`` () = 
+let ``Test Project25 symbol uses of type-provided members`` () = 
     let wholeProjectResults = checker.ParseAndCheckProject(Project25.options) |> Async.RunSynchronously
     let backgroundParseResults1, backgroundTypedParse1 = 
         checker.GetBackgroundCheckResultsForFileInProject(Project25.fileName1, Project25.options) 

@@ -1331,6 +1331,8 @@ module internal Parser =
           // Initialize the error handler 
           let errHandler = new ErrorHandler(reportErrors, mainInputFileName, tcConfig, source)
 
+          // Adding this new-line character at the end of the source seems odd but is required for some unit tests
+          let source = if source.Length = 0 || not (source.[source.Length - 1] = '\n') then source + "\n" else source 
           let lexbuf = UnicodeLexing.StringAsLexbuf source
 
           // Collector for parens matching
