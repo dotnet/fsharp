@@ -290,7 +290,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "Except">]
         let inline except (itemsToExclude: seq<'T>) (source:ISeq<'T>) : ISeq<'T> when 'T:equality =
             checkNonNull "itemsToExclude" itemsToExclude
-            source.PushTransform { new TransformFactory<'T,'T>() with
+            source.PushTransform { new ITransformFactory<'T,'T> with
                 override __.Compose _ _ next =
                     upcast { new Transform<'T,'V,Lazy<HashSet<'T>>>(next,lazy(HashSet<'T>(itemsToExclude,HashIdentity.Structural<'T>))) with
                         override this.ProcessNext (input:'T) : bool =
@@ -360,7 +360,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Filter">]
         let inline filter<'T> (f:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
-            source.PushTransform { new TransformFactory<'T,'T>() with
+            source.PushTransform { new ITransformFactory<'T,'T> with
                 override __.Compose _ _ next =
                     upcast { new Transform<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
                         override __.ProcessNext input =
@@ -369,7 +369,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Map">]
         let inline map<'T,'U> (f:'T->'U) (source:ISeq<'T>) : ISeq<'U> =
-            source.PushTransform { new TransformFactory<'T,'U>() with
+            source.PushTransform { new ITransformFactory<'T,'U> with
                 override __.Compose _ _ next =
                     upcast { new Transform<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
                         override __.ProcessNext input =
@@ -377,7 +377,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "MapIndexed">]
         let inline mapi f (source:ISeq<_>) =
-            source.PushTransform { new TransformFactory<'T,'U>() with
+            source.PushTransform { new ITransformFactory<'T,'U> with
                 override __.Compose _ _ next =
                     upcast { new Transform<'T,'V,int>(next, -1) with
                         override this.ProcessNext (input:'T) : bool =
@@ -386,7 +386,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Map2">]
         let inline map2<'T,'U,'V> (map:'T->'U->'V) (source1:ISeq<'T>) (source2:ISeq<'U>) : ISeq<'V> =
-            source1.PushTransform { new TransformFactory<'T,'V>() with
+            source1.PushTransform { new ITransformFactory<'T,'V> with
                 override __.Compose outOfBand pipeIdx (next:Activity<'V,'W>) =
                     upcast { new TransformWithPostProcessing<'T,'W, IEnumerator<'U>>(next, (source2.GetEnumerator ())) with
                         override this.ProcessNext input =
@@ -400,7 +400,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "MapIndexed2">]
         let inline mapi2<'T,'U,'V> (map:int->'T->'U->'V) (source1:ISeq<'T>) (source2:ISeq<'U>) : ISeq<'V> =
-            source1.PushTransform { new TransformFactory<'T,'V>() with
+            source1.PushTransform { new ITransformFactory<'T,'V> with
                 override __.Compose<'W> outOfBand pipeIdx next =
                     upcast { new TransformWithPostProcessing<'T,'W, Values<int,IEnumerator<'U>>>(next, Values<_,_>(-1,source2.GetEnumerator ())) with
                         override this.ProcessNext t =
@@ -417,7 +417,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Map3">]
         let inline map3<'T,'U,'V,'W>(map:'T->'U->'V->'W) (source1:ISeq<'T>) (source2:ISeq<'U>) (source3:ISeq<'V>) : ISeq<'W> =
-            source1.PushTransform { new TransformFactory<'T,'W>() with
+            source1.PushTransform { new ITransformFactory<'T,'W> with
                 override __.Compose<'X> outOfBand pipeIdx next =
                     upcast { new TransformWithPostProcessing<'T,'X,Values<IEnumerator<'U>,IEnumerator<'V>>>(next,Values<_,_>(source2.GetEnumerator(),source3.GetEnumerator())) with
                         override this.ProcessNext t =
@@ -454,7 +454,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Choose">]
         let inline choose (f:'T->option<'U>) (source:ISeq<'T>) : ISeq<'U> =
-            source.PushTransform { new TransformFactory<'T,'U>() with
+            source.PushTransform { new ITransformFactory<'T,'U> with
                 override __.Compose _ _ next =
                     upcast { new Transform<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
                         override __.ProcessNext input =
@@ -464,7 +464,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Distinct">]
         let inline distinct (source:ISeq<'T>) : ISeq<'T> when 'T:equality =
-            source.PushTransform { new TransformFactory<'T,'T>() with
+            source.PushTransform { new ITransformFactory<'T,'T> with
                 override __.Compose _ _ next =
                     upcast { new Transform<'T,'V,HashSet<'T>>(next,HashSet HashIdentity.Structural) with
                         override this.ProcessNext (input:'T) : bool =
@@ -472,7 +472,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "DistinctBy">]
         let inline distinctBy (keyf:'T->'Key) (source:ISeq<'T>) :ISeq<'T>  when 'Key:equality =
-            source.PushTransform { new TransformFactory<'T,'T>() with
+            source.PushTransform { new ITransformFactory<'T,'T> with
                 override __.Compose _ _ next =
                     upcast { new Transform<'T,'V,HashSet<'Key>> (next,HashSet HashIdentity.Structural) with
                         override this.ProcessNext (input:'T) : bool =
@@ -556,7 +556,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Pairwise">]
         let pairwise (source:ISeq<'T>) : ISeq<'T*'T> =
-            source.PushTransform { new TransformFactory<'T,'T * 'T>() with
+            source.PushTransform { new ITransformFactory<'T,'T*'T> with
                 override __.Compose _ _ next =
                     upcast { new Transform<'T,'U,Values<bool,'T>>(next, Values<bool,'T>(true, Unchecked.defaultof<'T>)) with
                             // member this.isFirst   = this.State._1
@@ -596,7 +596,7 @@ namespace Microsoft.FSharp.Collections
         let inline scan (folder:'State->'T->'State) (initialState:'State) (source:ISeq<'T>) :ISeq<'State> =
             let head = singleton initialState
             let tail = 
-                source.PushTransform { new TransformFactory<'T,'State>() with
+                source.PushTransform { new ITransformFactory<'T,'State> with
                     override __.Compose _ _ next =
                         upcast { new Transform<'T,'V,'State>(next, initialState) with
                             override this.ProcessNext (input:'T) : bool =
@@ -606,7 +606,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Skip">]
         let skip (skipCount:int) (source:ISeq<'T>) : ISeq<'T> =
-            source.PushTransform { new TransformFactory<'T,'T>() with
+            source.PushTransform { new ITransformFactory<'T,'T> with
                 override __.Compose _ _ next =
                     let mutable this = Unchecked.defaultof<TransformWithPostProcessing<'T,'U,int>>
                     let skipper = 
@@ -638,7 +638,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "SkipWhile">]
         let inline skipWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
-            source.PushTransform { new TransformFactory<'T,'T>() with
+            source.PushTransform { new ITransformFactory<'T,'T> with
                 override __.Compose _ _ next =
                     upcast { new Transform<'T,'V,bool>(next,true) with
                         // member this.skip = this.State
@@ -673,7 +673,7 @@ namespace Microsoft.FSharp.Collections
             if takeCount < 0 then invalidArgInputMustBeNonNegative "count" takeCount
             elif takeCount = 0 then empty
             else
-                source.PushTransform { new TransformFactory<'T,'T>() with
+                source.PushTransform { new ITransformFactory<'T,'T> with
                     member __.Compose outOfBand pipelineIdx next =
                         if takeCount = 0 then
                             outOfBand.StopFurtherProcessing pipelineIdx
@@ -699,7 +699,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "TakeWhile">]
         let inline takeWhile (predicate:'T->bool) (source:ISeq<'T>) : ISeq<'T> =
-            source.PushTransform { new TransformFactory<'T,'T>() with
+            source.PushTransform { new ITransformFactory<'T,'T> with
                 member __.Compose outOfBand pipeIdx next =
                     upcast { new Transform<'T,'V,NoValue>(next,Unchecked.defaultof<NoValue>) with
                         override __.ProcessNext (input:'T) : bool =
@@ -711,7 +711,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Tail">]
         let tail (source:ISeq<'T>) : ISeq<'T> =
-            source.PushTransform { new TransformFactory<'T,'T>() with
+            source.PushTransform { new ITransformFactory<'T,'T> with
                 member __.Compose _ _ next =
                     upcast { new TransformWithPostProcessing<'T,'V,bool>(next,true) with
                         // member this.isFirst = this.State
@@ -728,7 +728,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName "Truncate">]
         let truncate (truncateCount:int) (source:ISeq<'T>) : ISeq<'T> =
-            source.PushTransform { new TransformFactory<'T,'T>() with
+            source.PushTransform { new ITransformFactory<'T,'T> with
                 member __.Compose outOfBand pipeIdx next =
                     upcast { new Transform<'T,'U,int>(next,(*count*)0) with
                         // member this.count = this.State
@@ -749,7 +749,7 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName "TryItem">]
         let tryItem index (source:ISeq<'T>) =
             if index < 0 then None else
-                source.PushTransform { new TransformFactory<'T,'T>() with
+                source.PushTransform { new ITransformFactory<'T,'T> with
                     override __.Compose _ _ next =
                         let mutable this = Unchecked.defaultof<Transform<'T,'U,int>>
                         let skipper = 
@@ -835,7 +835,7 @@ namespace Microsoft.FSharp.Collections
             if windowSize <= 0 then
                 invalidArgFmt "windowSize" "{0}\nwindowSize = {1}" [|SR.GetString SR.inputMustBePositive; windowSize|]
 
-            source.PushTransform { new TransformFactory<'T,'T[]>() with
+            source.PushTransform { new ITransformFactory<'T,'T[]> with
                 member __.Compose outOfBand pipeIdx next =
                     upcast {
                         new Transform<'T,'U,Values<'T[],int,int>>(next,Values<'T[],int,int>(Array.zeroCreateUnchecked windowSize, 0, windowSize-1)) with
@@ -1158,7 +1158,7 @@ namespace Microsoft.FSharp.Collections
             if chunkSize <= 0 then invalidArgFmt "chunkSize" "{0}\nchunkSize = {1}"
                                     [|SR.GetString SR.inputMustBePositive; chunkSize|]
 
-            source.PushTransform { new TransformFactory<'T,'T[]>() with
+            source.PushTransform { new ITransformFactory<'T,'T[]> with
                 member __.Compose outOfBand pipeIdx next =
                     upcast {
                         new TransformWithPostProcessing<'T,'U,Values<'T[],int>>(next,Values<'T[],int>(Array.zeroCreateUnchecked chunkSize, 0)) with

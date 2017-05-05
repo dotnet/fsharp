@@ -39,7 +39,7 @@ namespace Microsoft.FSharp.Collections
 
         /// An activity that transforms the input from 'T to 'U, using 'State. It's intended usage
         /// is as a base class for an object expression that will be created 
-        /// in the TransformFactory's Compose function.
+        /// in the ITransformFactory's Compose function.
         [<AbstractClass>]
         type Transform<'T,'U,'State> =
             inherit Activity<'T,'U>
@@ -51,7 +51,7 @@ namespace Microsoft.FSharp.Collections
         /// and performs some post processing on the pipeline, either in the case of the stream
         /// ending sucessfully or when disposed. It's intended usage
         /// is as a base class for an object expression that will be created 
-        /// in the TransformFactory's Compose function.
+        /// in the ITransformFactory's Compose function.
         [<AbstractClass>]
         type TransformWithPostProcessing<'T,'U,'State> =
             inherit Transform<'T,'U,'State>
