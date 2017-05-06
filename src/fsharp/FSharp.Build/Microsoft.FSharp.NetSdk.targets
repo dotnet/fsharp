@@ -2,7 +2,7 @@
 
 <!--
 ***********************************************************************************************
-Microsoft.NET.Sdk.FSharp.targets
+Microsoft.FSharp.NetSdk.targets
 
 WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and have
           created a backup copy.  Incorrect changes to this file will make it
@@ -22,10 +22,6 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <DefineCommonItemSchemas Condition=" '$(DefineCommonItemSchemas)' == '' ">true</DefineCommonItemSchemas>
     <DefineCommonReferenceSchemas Condition=" '$(DefineCommonReferenceSchemas)' == '' ">true</DefineCommonReferenceSchemas>
     <DefineCommonCapabilities Condition=" '$(DefineCommonCapabilities)' == '' ">true</DefineCommonCapabilities>
-  </PropertyGroup>
-
-  <PropertyGroup Condition=" '$(IsCrossTargetingBuild)' == 'true' ">
-    <ImportByWildcardAfterMicrosoftCommonTargets>false</ImportByWildcardAfterMicrosoftCommonTargets>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -53,12 +49,38 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 
   <Import Condition=" Exists('$(FSharpDesignTimeTargetsPath)')" Project="$(FSharpDesignTimeTargetsPath) " />
   <Import Project="Microsoft.FSharp.targets" />
-  <Import Condition=" '$(IsCrossTargetingBuild)' == 'true' " Project="$(MSBuildToolsPath)\Microsoft.Common.CrossTargeting.targets" />
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.targets\ImportAfter\*" Condition=" '$(IsCrossTargetingBuild)' == 'true' and Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.targets\ImportAfter') "/>
 
   <PropertyGroup Condition="'$(PackProjectInputFile)' == ''">
     <PackProjectInputFile>$(MSBuildProjectFullPath)</PackProjectInputFile>
   </PropertyGroup>    
+
+  <!-- Always reference ValueTuple -->
+  <ItemGroup Condition = " '$(DisableValueTupleReference)' == '' ">
+    <PackageReference Include="System.ValueTuple" Version="4.3.0" />
+  </ItemGroup>
+
+  <!--
+    Always reference FSharp.core for coreclr builds
+    FSharpCorePackageIdentity = Name of package to reference      (Default = Microsoft.FSharp.Core.netcore)
+    FSharpCorePackageVersion  = Version of package to reference   (Default = TargetFramework = netcoreapp1.0-1.1 netstandard1.0-1.6 then '1.0.0-*')
+                                                                  (Default = TargetFramework = netcoreapp2.0 netstandard2.0         then '1.0.0-*')
+  -->
+  <PropertyGroup Condition=" '$(FSharpCorePackageIdentity)' == ''">
+    <FSharpCorePackageIdentity>Microsoft.FSharp.Core.netcore</FSharpCorePackageIdentity>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(FSharpCorePackageVersion)' == ''">
+    <FSharpCorePackageVersion Condition = "$(TargetFramework.StartsWith(netcoreapp1.)) or $(TargetFramework.StartsWith(netstandard1.))">1.0.0-*</FSharpCorePackageVersion>
+    <FSharpCorePackageVersion Condition = "$(TargetFramework.StartsWith(netcoreapp2.)) or $(TargetFramework.StartsWith(netstandard2.))">1.0.0-*</FSharpCorePackageVersion>
+  </PropertyGroup>    
+
+  <ItemGroup Condition = " '$(DisableAutoFSharpCoreReference)'  != 'true' ">
+    <PackageReference Include="$(FSharpCorePackageIdentity)" Version="$(FSharpCorePackageVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Condition = " '$(DisableValueTupleReference)'  != 'true' ">
+    <PackageReference Include="System.ValueTuple" Version="4.3.0" />
+  </ItemGroup>
 
   <!-- If we haven't already referenced FSharp.Core do it using the specified TargetFSharpCoreVersion. -->
   <Target Name="AddDefaultReferences" BeforeTargets="Compile" AfterTargets="ResolveReferences">
@@ -69,6 +91,18 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <!--- Add it for Desktop Apps -->
     <ItemGroup  Condition=" '$(IsFSharpCoreReferenced)' != 'true' and '$(TargetName)' != 'FSharp.Core' and '$(TargetFrameworkIdentifier)' == '.NETFramework' and '$(TargetFSharpCoreVersion)' != '' ">
       <ReferencePath Include="$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\$(TargetFSharpCoreVersion)\FSharp.Core.dll" />
+    </ItemGroup>
+  </Target>
+
+  <!-- If we haven't already referenced System.ValueTuple just do it. -->
+  <Target Name="AddValueTupleReferences" BeforeTargets="ResolveReferences">
+    <PropertyGroup>
+      <IsValueTupleReferenced Condition=" '%(PackageReference.Identity)' == 'System.ValueTuple' ">true</IsValueTupleReferenced>
+    </PropertyGroup>
+
+    <!--- Add it for Desktop Apps -->
+    <ItemGroup  Condition=" '$(IsValueTupleReferenced)' != 'true' ">
+      <PackageReference Include="System.ValueTuple" Version="4.3.0" />
     </ItemGroup>
   </Target>
 
