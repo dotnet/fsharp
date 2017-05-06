@@ -102,20 +102,32 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         new : list<ISeq<'T>> -> AppendEnumerable<'T>
         override Append : ISeq<'T> -> ISeq<'T>
 
+    type internal ResizeArrayEnumerable<'T,'U> = 
+        inherit SeqFactoryBase<'T,'U>
+        new : ResizeArray<'T> * ITransformFactory<'T,'U> * PipeIdx -> ResizeArrayEnumerable<'T,'U>
+        interface ISeq<'U>
+
     type internal ThinResizeArrayEnumerable<'T> =
-        inherit EnumerableBase<'T>
+        inherit ResizeArrayEnumerable<'T,'T>
         new : ResizeArray<'T> -> ThinResizeArrayEnumerable<'T>
-        interface ISeq<'T>
+
+    type internal ArrayEnumerable<'T,'U> =
+        inherit SeqFactoryBase<'T,'U>
+        new : array<'T> * ITransformFactory<'T,'U> * PipeIdx -> ArrayEnumerable<'T,'U>
+        interface ISeq<'U>
 
     type internal ThinArrayEnumerable<'T> =
-        inherit EnumerableBase<'T>
+        inherit ArrayEnumerable<'T, 'T>
         new : array<'T> -> ThinArrayEnumerable<'T>
-        interface ISeq<'T>
+
+    type internal VanillaEnumerable<'T,'U> =
+        inherit SeqFactoryBase<'T,'U>
+        new : IEnumerable<'T> * ITransformFactory<'T,'U> * PipeIdx -> VanillaEnumerable<'T,'U>
+        interface ISeq<'U>
 
     type internal ThinEnumerable<'T> =
-        inherit EnumerableBase<'T>
+        inherit VanillaEnumerable<'T,'T>
         new : IEnumerable<'T> -> ThinEnumerable<'T>
-        interface ISeq<'T>
 
     type internal UnfoldEnumerable<'T,'U,'GeneratorState> =
         inherit SeqFactoryBase<'T,'U>
