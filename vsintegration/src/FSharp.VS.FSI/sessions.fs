@@ -275,10 +275,12 @@ type FsiSession() =
         let inputWriter = new StreamWriter(cmdProcess.StandardInput.BaseStream, new UTF8Encoding(encoderShouldEmitUTF8Identifier=false), AutoFlush = false)
         MailboxProcessor<string>.Start(fun inbox -> 
             async { 
-                while true do 
+                try 
+                  while not cmdProcess.HasExited do 
                     let! textToWrite = inbox.Receive() 
                     inputWriter.WriteLine(textToWrite) 
                     inputWriter.Flush()
+                with _ -> () // if writing or flushing fails then just give up on this F# Interactive session
             })
 
     do cmdProcess.EnableRaisingEvents <- true
