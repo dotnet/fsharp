@@ -49,4 +49,8 @@ namespace Microsoft.FSharp.Collections
         // inline justification: allows inlining of hash functions 
         val inline FromFunctions<'T> : hasher:('T -> int) -> equality:('T -> 'T -> bool) -> IEqualityComparer<'T> 
 
-    
+    [<Struct; NoComparison; NoEquality>]
+    type internal StructBox<'T when 'T : equality> = 
+        new : value:'T -> StructBox<'T>
+        member Value : 'T
+        static member Comparer : IEqualityComparer<StructBox<'T>>

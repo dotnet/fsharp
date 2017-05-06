@@ -48,3 +48,12 @@ namespace Microsoft.FSharp.Collections
             { new IComparer<'T> with
                   member __.Compare(x,y) = comparer.Invoke(x,y) } 
 
+    [<Struct; NoComparison; NoEquality>]
+    type internal StructBox<'T when 'T:equality>(value:'T) =
+        member x.Value = value
+        static member Comparer =
+            let gcomparer = HashIdentity.Structural<'T>
+            { new IEqualityComparer<StructBox<'T>> with
+                    member __.GetHashCode(v) = gcomparer.GetHashCode(v.Value)
+                    member __.Equals(v1,v2) = gcomparer.Equals(v1.Value,v2.Value) }
+
