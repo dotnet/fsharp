@@ -160,12 +160,6 @@ namespace Microsoft.FSharp.Core.CompilerServices
     /// <summary>A group of functions used as part of the compiled representation of F# sequence expressions.</summary>
     module RuntimeHelpers = 
 
-        [<Struct; NoComparison; NoEquality>]
-        type internal StructBox<'T when 'T : equality> = 
-            new : value:'T -> StructBox<'T>
-            member Value : 'T
-            static member Comparer : IEqualityComparer<StructBox<'T>>
-
         val internal mkConcatSeq : sources:(seq<#seq<'T>>) -> seq<'T>
 
         /// <summary>The F# compiler emits calls to this function to 

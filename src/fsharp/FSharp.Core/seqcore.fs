@@ -964,16 +964,6 @@ namespace Microsoft.FSharp.Core.CompilerServices
     open Microsoft.FSharp.Collections.SeqComposition.Core
 
     module RuntimeHelpers =
-
-        [<Struct; NoComparison; NoEquality>]
-        type internal StructBox<'T when 'T:equality>(value:'T) =
-            member x.Value = value
-            static member Comparer =
-                let gcomparer = HashIdentity.Structural<'T>
-                { new IEqualityComparer<StructBox<'T>> with
-                       member __.GetHashCode(v) = gcomparer.GetHashCode(v.Value)
-                       member __.Equals(v1,v2) = gcomparer.Equals(v1.Value,v2.Value) }
-
         let Generate openf compute closef =
             mkSeq (fun () -> IEnumerator.generateWhileSome openf compute closef)
 
