@@ -26,46 +26,24 @@
       <Choose>
         <When Condition="'$(ProjectLanguage)' == 'FSharp'">
           <Choose>
-            <!-- In the open source "Mono" build we always sign the binaries with the public test.snk, apart from FSharp.Core -->
-            <When Condition="('$(MonoPackaging)' == 'true') AND ('$(AssemblyName)'!='FSharp.Core') AND ('$(AssemblyName)'!='FSharp.Core.Unittests')" >
-              <PropertyGroup>
-                <OtherFlags>$(OtherFlags) --keyfile:"$(FSharpSourcesRoot)\fsharp\test.snk"</OtherFlags>
-                <DefineConstants>STRONG_NAME_FSHARP_COMPILER_WITH_TEST_KEY;$(DefineConstants)</DefineConstants>
-                <StrongNames>true</StrongNames>
-                <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
-                <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
-              </PropertyGroup>
-            </When>
-            <When Condition="'$(AssemblyName)' == 'FSharp.Core' or '$(AssemblyName)' == 'FSharp.Build' or '$(AssemblyName)' == 'FSharp.Compiler' or '$(AssemblyName)' == 'FSharp.Compiler.Interactive.Settings' or '$(AssemblyName)' == 'FSharp.Compiler.Server.Shared' or '$(AssemblyName)' == 'fsc' or '$(AssemblyName)' == 'fsi' or '$(AssemblyName)' == 'fsiAnyCpu' or '$(AssemblyName)' == 'FSharp.Compiler.Unittests' or '$(AssemblyName)' == 'HostedCompilerServer' or '$(AssemblyName)' == 'ILComparer'" >
-              <PropertyGroup Condition="'$(AssemblyName)' == 'FSharp.Core' and ('$(TargetFramework)' == 'portable47' or '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259' or '$(TargetFramework)' == 'coreclr')">
-                 <IsPortableProfile>true</IsPortableProfile>
-              </PropertyGroup>
-              <PropertyGroup>
-                <OtherFlags Condition="'$(TargetFramework)' == 'coreclr' or $(BUILD_PUBLICSIGN) != '1'">$(OtherFlags) --delaysign+</OtherFlags>
-                <OtherFlags Condition="'$(TargetFramework)' != 'coreclr' and $(BUILD_PUBLICSIGN) == '1'">$(OtherFlags)  --publicsign+</OtherFlags>
-                <OtherFlags>$(OtherFlags) --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
-                <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
-                <StrongNames>true</StrongNames>
-                <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
-                <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
-              </PropertyGroup>
-            </When>
-            <When Condition="'$(AssemblyName)' == 'FSharp.LanguageService' or '$(AssemblyName)' == 'FSharp.LanguageService.Compiler' or '$(AssemblyName)' == 'FSharp.Editor' or '$(AssemblyName)' == 'FSharp.VS.FSI' or '$(AssemblyName)' == 'FSharp.ProjectSystem.FSharp'">
-              <PropertyGroup>
-                <OtherFlags Condition="'$(TargetFramework)' == 'coreclr' or $(BUILD_PUBLICSIGN) != '1'">$(OtherFlags) --delaysign+</OtherFlags>
-                <OtherFlags Condition="'$(TargetFramework)' != 'coreclr' and $(BUILD_PUBLICSIGN) == '1'">$(OtherFlags)  --publicsign+</OtherFlags>
-                <OtherFlags>$(OtherFlags) --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
-                <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
-                <StrongNames>true</StrongNames>
-                <MicroBuildAssemblyVersion>15.4.1.0</MicroBuildAssemblyVersion>
-                <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
-              </PropertyGroup>
-            </When>
             <!-- do not strong-name the runtime unit tests, as they have non-strong-named dependencies -->
             <When Condition="'$(UnitTestAssembly)' == 'true'">
               <PropertyGroup>
-                <SkipSigning>true</SkipSigning><!-- Skip using the ,net toolset to generate signing . -->
+                <StrongNames>false</StrongNames>
+                <!-- No strong names -->
+                <SkipSigning>true</SkipSigning>
+                <!-- Skip using the ,net toolset to generate signing . -->
                 <UseOpenSourceSign>false</UseOpenSourceSign>
+                <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
+                <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
+              </PropertyGroup>
+            </When>
+            <!-- In the open source "Mono" build we always fully sign the binaries with the public test.snk, apart from FSharp.Core, which gets the MSFT key -->
+            <When Condition="'$(MonoPackaging)' == 'true' AND '$(AssemblyName)'!='FSharp.Core'" >
+              <PropertyGroup>
+                <OtherFlags>$(OtherFlags) --keyfile:"$(FSharpSourcesRoot)\fsharp\test.snk"</OtherFlags>
+                <DefineConstants>STRONG_NAME_FSHARP_COMPILER_WITH_TEST_KEY;$(DefineConstants)</DefineConstants>
+                <StrongNames Condition="'$(StrongNames)' == ''">true</StrongNames>
                 <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
                 <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
               </PropertyGroup>
@@ -76,19 +54,22 @@
                 <OtherFlags Condition="'$(TargetFramework)' != 'coreclr' and $(BUILD_PUBLICSIGN) == '1'">$(OtherFlags)  --publicsign+</OtherFlags>
                 <OtherFlags>$(OtherFlags) --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
                 <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
-                <StrongNames>true</StrongNames>
+                <StrongNames Condition="'$(StrongNames)' == ''">true</StrongNames>
                 <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
+                <!-- certain delivered F# VS assemblies use a specific MicroBuildAssemblyVersion, otherwise use FSCoreVersion -->
+                <MicroBuildAssemblyVersion Condition="'$(AssemblyName)' == 'FSharp.LanguageService' or '$(AssemblyName)' == 'FSharp.LanguageService.Compiler' or '$(AssemblyName)' == 'FSharp.Editor' or '$(AssemblyName)' == 'FSharp.VS.FSI' or '$(AssemblyName)' == 'FSharp.ProjectSystem.FSharp'">15.4.1.0</MicroBuildAssemblyVersion>
                 <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
               </PropertyGroup>
             </Otherwise>
           </Choose>
         </When>
         <Otherwise>
+          <!-- Not F# code -->
           <PropertyGroup>
             <SignAssembly>true</SignAssembly>
             <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\fsharp\msft.pubkey</AssemblyOriginatorKeyFile>
             <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
-            <StrongNames>true</StrongNames>
+            <StrongNames  Condition="'$(StrongNames)' == ''">true</StrongNames>
             <DelaySign>true</DelaySign>
             <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
             <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>

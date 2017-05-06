@@ -69,7 +69,9 @@ let input =
 
 [<Test>]
 let ``Test ranges - namespace`` () =
-    parseAndExtractRanges input |> should equal [("N", ((4, 4), (5, 4))); ("Sample", ((4, 9), (4, 15)))]
+    let res = parseAndExtractRanges input 
+    printfn "Test ranges - namespace, res = %A" res
+    res |> shouldEqual [("N", ((4, 4), (5, 4))); ("Sample", ((4, 9), (5, 0)))]
 
 let input2 =
     """
@@ -80,7 +82,9 @@ let input2 =
     
 [<Test>]
 let ``Test ranges - module`` () =
-    parseAndExtractRanges input2 |> should equal [("M", ((2, 4), (4, 26))); ("Sample", ((4, 9), (4, 15)))]
+    let res = parseAndExtractRanges input2
+    printfn "Test ranges - module, res = %A" res
+    res |> shouldEqual [("M", ((2, 4), (4, 26))); ("Sample", ((4, 9), (4, 15)))]
 
 let input3 =
     """
@@ -91,4 +95,6 @@ let input3 =
 
 [<Test>]
 let ``Test ranges - global namespace`` () =
-    parseAndExtractRanges input3 |> shouldEqual [("", ((4, 4), (6, 0))); ("Sample", ((4, 9), (4, 15)))]
+    let res = parseAndExtractRanges input3 
+    printfn "Test ranges - global namespace, res = %A" res
+    res |> shouldEqual [("", ((4, 4), (6, 0))); ("Sample", ((4, 9), (4, 15)))]
