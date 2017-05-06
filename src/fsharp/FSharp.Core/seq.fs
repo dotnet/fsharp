@@ -749,18 +749,19 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("GroupBy")>]
         let groupBy (keyf:'T->'Key) (seq:seq<'T>) =
-            let grouped = 
+            delay (fun () ->
+                let grouped = 
 #if FX_RESHAPED_REFLECTION
-                if (typeof<'Key>).GetTypeInfo().IsValueType
+                    if (typeof<'Key>).GetTypeInfo().IsValueType
 #else
-                if typeof<'Key>.IsValueType
+                    if typeof<'Key>.IsValueType
 #endif
-                    then seq |> toISeq |> ISeq.GroupBy.byVal keyf
-                    else seq |> toISeq |> ISeq.GroupBy.byRef keyf
+                        then seq |> toISeq |> ISeq.GroupBy.byVal keyf
+                        else seq |> toISeq |> ISeq.GroupBy.byRef keyf
 
-            grouped
-            |> ISeq.map (fun (key,value) -> key, Upcast.enumerable value)
-            |> Upcast.enumerable
+                grouped
+                |> ISeq.map (fun (key,value) -> key, Upcast.enumerable value)
+                |> Upcast.enumerable)
 
         [<CompiledName("Distinct")>]
         let distinct source =
