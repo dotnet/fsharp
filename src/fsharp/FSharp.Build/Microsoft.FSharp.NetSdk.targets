@@ -72,7 +72,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   <PropertyGroup Condition=" '$(FSharpCorePackageVersion)' == ''">
     <FSharpCorePackageVersion Condition = "$(TargetFramework.StartsWith(netcoreapp1.)) or $(TargetFramework.StartsWith(netstandard1.))">1.0.0-*</FSharpCorePackageVersion>
     <FSharpCorePackageVersion Condition = "$(TargetFramework.StartsWith(netcoreapp2.)) or $(TargetFramework.StartsWith(netstandard2.))">1.0.0-*</FSharpCorePackageVersion>
-  </PropertyGroup>    
+  </PropertyGroup>
 
   <ItemGroup Condition = " '$(DisableAutoFSharpCoreReference)'  != 'true' ">
     <PackageReference Include="$(FSharpCorePackageIdentity)" Version="$(FSharpCorePackageVersion)" />

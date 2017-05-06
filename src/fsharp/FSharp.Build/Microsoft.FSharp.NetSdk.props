@@ -13,7 +13,8 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>                <!--- Do not glob F# source files -->
+    <DefaultProjectTypeGuid Condition=" '$(DefaultProjectTypeGuid)' == '' ">{F2A71F9B-5D33-465A-A702-920D77279786}</DefaultProjectTypeGuid>         <!-- F# project type -->
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(MSBuildRuntimeType)' == 'core' ">
