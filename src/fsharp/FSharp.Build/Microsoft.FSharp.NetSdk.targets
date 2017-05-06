@@ -1,0 +1,75 @@
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+
+<!--
+***********************************************************************************************
+Microsoft.NET.Sdk.FSharp.targets
+
+WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and have
+          created a backup copy.  Incorrect changes to this file will make it
+          impossible to load or build your projects from the command-line or the IDE.
+
+***********************************************************************************************
+-->
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(IsCrossTargetingBuild)' == 'true' ">
+    <AlwaysUseNumericalSuffixInItemNames>true</AlwaysUseNumericalSuffixInItemNames>
+    <DefineCommonItemSchemas Condition=" '$(DefineCommonItemSchemas)' == '' ">true</DefineCommonItemSchemas>
+    <DefineCommonReferenceSchemas Condition=" '$(DefineCommonReferenceSchemas)' == '' ">true</DefineCommonReferenceSchemas>
+    <DefineCommonCapabilities Condition=" '$(DefineCommonCapabilities)' == '' ">true</DefineCommonCapabilities>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(IsCrossTargetingBuild)' == 'true' ">
+    <ImportByWildcardAfterMicrosoftCommonTargets>false</ImportByWildcardAfterMicrosoftCommonTargets>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetProfile Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' " >mscorlib</TargetProfile>
+    <TargetProfile Condition=" '$(TargetFrameworkIdentifier)' != '.NETFramework' " >netcore</TargetProfile>
+    <OtherFlags>$(OtherFlags) --simpleresolution --nocopyfsharpcore</OtherFlags>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(_DebugSymbolsProduced)' == 'true' and '$(PdbFile)' != ''">
+    <_DebugSymbolsIntermediatePathTemporary Include="$(PdbFile)"/>
+    <!-- Add any missing .pdb extension, as the compiler does -->
+    <_DebugSymbolsIntermediatePath Include="@(_DebugSymbolsIntermediatePathTemporary->'%(RootDir)%(Directory)%(Filename).pdb')"/>
+  </ItemGroup>
+
+  <!-- Locate and add mscorlib, unless NoStdLib is set -->
+  <ItemGroup>
+    <_ExplicitReference Include="$(FrameworkPathOverride)\mscorlib.dll" Condition=" '$(NoStdLib)' != 'true' " />
+  </ItemGroup>
+
+  <!-- Import design time targets for Roslyn Project System. These are only available if Visual Studio is installed. -->
+  <!-- Import design time targets before the common targets, which import targets from Nuget. -->
+  <PropertyGroup>
+    <FSharpDesignTimeTargetsPath Condition="'$(FSharpDesignTimeTargetsPath)'==''">$(MSBuildExtensionsPath)\Microsoft\VisualStudio\Managed\Microsoft.FSharp.DesignTime.targets</FSharpDesignTimeTargetsPath>
+  </PropertyGroup>
+
+  <Import Condition=" Exists('$(FSharpDesignTimeTargetsPath)')" Project="$(FSharpDesignTimeTargetsPath) " />
+  <Import Project="Microsoft.FSharp.targets" />
+  <Import Condition=" '$(IsCrossTargetingBuild)' == 'true' " Project="$(MSBuildToolsPath)\Microsoft.Common.CrossTargeting.targets" />
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.targets\ImportAfter\*" Condition=" '$(IsCrossTargetingBuild)' == 'true' and Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.targets\ImportAfter') "/>
+
+  <PropertyGroup Condition="'$(PackProjectInputFile)' == ''">
+    <PackProjectInputFile>$(MSBuildProjectFullPath)</PackProjectInputFile>
+  </PropertyGroup>    
+
+  <!-- If we haven't already referenced FSharp.Core do it using the specified TargetFSharpCoreVersion. -->
+  <Target Name="AddDefaultReferences" BeforeTargets="Compile" AfterTargets="ResolveReferences">
+    <PropertyGroup>
+        <IsFSharpCoreReferenced Condition=" '%(ReferencePath.Filename)' == 'FSharp.Core' ">true</IsFSharpCoreReferenced>
+    </PropertyGroup>
+    
+    <!--- Add it for Desktop Apps -->
+    <ItemGroup  Condition=" '$(IsFSharpCoreReferenced)' != 'true' and '$(TargetName)' != 'FSharp.Core' and '$(TargetFrameworkIdentifier)' == '.NETFramework' and '$(TargetFSharpCoreVersion)' != '' ">
+      <ReferencePath Include="$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\$(TargetFSharpCoreVersion)\FSharp.Core.dll" />
+    </ItemGroup>
+  </Target>
+
+</Project>

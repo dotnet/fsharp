@@ -59,6 +59,11 @@
       <Pattern1>{BuildSuffix}</Pattern1>
       <Replacement1></Replacement1>
     </CopyAndSubstituteText>
+    <CopyAndSubstituteText Include="Microsoft.FSharp.NetSdk.props">
+        <TargetFilename>Microsoft.FSharp.NetSdk.props</TargetFilename>
+        <Pattern1>{BuildSuffix}</Pattern1>
+        <Replacement1></Replacement1>
+    </CopyAndSubstituteText>
     <CopyAndSubstituteText Include="Microsoft.NET.Sdk.FSharp.props">
         <TargetFilename>Microsoft.NET.Sdk.FSharp.props</TargetFilename>
         <Pattern1>{BuildSuffix}</Pattern1>

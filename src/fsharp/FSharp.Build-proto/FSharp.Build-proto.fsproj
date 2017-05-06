@@ -46,9 +46,15 @@
       <Pattern1>{BuildSuffix}</Pattern1>
       <Replacement1>-proto</Replacement1>
     </CopyAndSubstituteText>
-    <CopyAndSubstituteText Include="..\FSharp.Build\Microsoft.NET.Sdk.FSharp.props">
-      <Link>Microsoft.NET.Sdk.FSharp-proto.props</Link>
-      <TargetFilename>Microsoft.NET.Sdk.FSharp-proto.props</TargetFilename>
+    <CopyAndSubstituteText Include="..\FSharp.Build\Microsoft.FSharp.NetSdk.props">
+      <Link>Microsoft.FSharp.NetSdk-proto.props</Link>
+      <TargetFilename>Microsoft.FSharp.NetSdk-proto.props</TargetFilename>
+      <Pattern1>{BuildSuffix}</Pattern1>
+      <Replacement1>-proto</Replacement1>
+    </CopyAndSubstituteText>
+    <CopyAndSubstituteText Include="..\FSharp.Build\Microsoft.FSharp.NetSdk.targets">
+      <Link>Microsoft.FSharp.NetSdk-proto.targets</Link>
+      <TargetFilename>Microsoft.FSharp.NetSdk-proto.targets</TargetFilename>
       <Pattern1>{BuildSuffix}</Pattern1>
       <Replacement1>-proto</Replacement1>
     </CopyAndSubstituteText>
