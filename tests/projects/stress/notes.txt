@@ -1,0 +1,24 @@
+* Triangular dependency order for 100 projects (~5000 references) slow for F#, quick for C#
+* A/B references for 50/100 projects (~5000) slow for F#, quick for C#
+
+dense not compiled: 1:38
+dense compiled: 1:35
+denseCSharp not compiled: 14s
+denseCSharp compiled: 14s (but instantaneous open)
+
+shallow not compiled: 1:54
+shallow compiled: 1:37
+shallowCSharp not compiled: 19s
+shallowCSharp compiled: 15s (but instantaneous open)
+
+denseBin not compiled: 26s
+denseBin compiled: 26s
+denseBinCSharp not compiled: 11s
+denseBinCSharp compiled: 7s
+
+(correcting binary references)
+
+denseBin not compiled: 42s
+denseBin compiled: 18s
+denseBinCSharp not compiled: 18s
+denseBinCSharp compiled: 10s (but instantaneous open)
