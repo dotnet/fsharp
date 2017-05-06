@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{D0D983B6-4838-4816-960A-4C549B88BDC2}</ProjectGuid>
+    <ProjectGuid>{6A6E45C6-881A-4DCC-B644-B129D51F3E8F}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>CSharpTest9</RootNamespace>
@@ -45,35 +45,35 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CSharpTest1\CSharpTest1.csproj">
-      <Project>{439bf631-7390-421d-b2b9-2d7920deda8a}</Project>
+      <Project>{e51567bb-9246-484e-be6d-8f1c2783c5ab}</Project>
       <Name>CSharpTest1</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest2\CSharpTest2.csproj">
-      <Project>{6c0aee05-109b-44c0-b18f-ee40d18ba26e}</Project>
+      <Project>{bd791790-9460-45e4-b4e6-0206157fcb66}</Project>
       <Name>CSharpTest2</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest3\CSharpTest3.csproj">
-      <Project>{12709f5f-33aa-4379-9251-f1eb36ebec25}</Project>
+      <Project>{134e5cd1-d133-403d-9649-ee4b504dd35b}</Project>
       <Name>CSharpTest3</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest4\CSharpTest4.csproj">
-      <Project>{4353df96-d1e1-4ace-96b7-38ebbe6d2305}</Project>
+      <Project>{5ee8f409-23c8-45fc-b48f-b63a64d276fd}</Project>
       <Name>CSharpTest4</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest5\CSharpTest5.csproj">
-      <Project>{d4967584-e442-49ab-9017-5d7fd5a22578}</Project>
+      <Project>{63641417-47ad-472d-a2c6-3095c789e85e}</Project>
       <Name>CSharpTest5</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest6\CSharpTest6.csproj">
-      <Project>{93aa3019-1d03-4c58-8721-3b99f7f913e8}</Project>
+      <Project>{93409c7c-12ea-4742-af61-73cfd853e705}</Project>
       <Name>CSharpTest6</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest7\CSharpTest7.csproj">
-      <Project>{585c9fde-a9a6-486c-b5f1-ad3803aaf2dd}</Project>
+      <Project>{6c3d5425-b727-4399-a837-55ee4b3efd00}</Project>
       <Name>CSharpTest7</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest8\CSharpTest8.csproj">
-      <Project>{71129085-ca03-49a6-8c2e-5198313f22cd}</Project>
+      <Project>{a69eb7ce-606e-4735-b570-68366e80db4a}</Project>
       <Name>CSharpTest8</Name>
     </ProjectReference>
   </ItemGroup>

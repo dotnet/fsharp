@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>76392297-a6aa-4a0b-8e4b-e0ae2273a33c</ProjectGuid>
+    <ProjectGuid>9f2607c0-dce5-4a02-8d88-da11d08a6fe1</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>FSharpTest1</RootNamespace>
     <AssemblyName>FSharpTest1</AssemblyName>
@@ -44,7 +44,7 @@
 
   </ItemGroup>
   <ItemGroup>
-
+    <Compile Include="FSharpTest1.fs" />
   </ItemGroup>
   <ItemGroup>
 

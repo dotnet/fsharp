@@ -64,7 +64,7 @@ module Solution =
             solution.Projects |> Seq.collect printPlatforms |> String.concat "\n"
 
         let text =
-            File.ReadAllText(@"Templates\sln.template")
+            File.ReadAllText(Path.Combine(__SOURCE_DIRECTORY__,@"Templates\sln.template"))
                 .Replace("[PROJECTS]", projects)
                 .Replace("[PLATFORMS]", platforms)
 
@@ -79,6 +79,11 @@ module FSharpProject =
             let printFileReference = sprintf "    <Compile Include=\"%s\" />"
             project.Files |> List.map printFileReference |> String.concat "\n"
 
+        for f in project.Files do 
+            let filePath = Path.Combine(Path.GetDirectoryName(path),f)
+            let fileContents = sprintf "module %s\n\nlet x = 1" (Path.GetFileNameWithoutExtension(f))
+            safeWrite filePath fileContents
+
         let references =
             let printProjectReference (r : ProjectRef) =
                 sprintf "    <ProjectReference Include=\"%s\">\n      <Name>%s</Name>\n      <Project>%s</Project>\n      <Private>True</Private>\n    </ProjectReference>"
@@ -91,7 +96,7 @@ module FSharpProject =
             project.BinaryReferences |> List.map printBinaryReference |> String.concat "\n"
 
         let text =
-            File.ReadAllText(@"Templates\fsproj.template")
+            File.ReadAllText(Path.Combine(__SOURCE_DIRECTORY__,@"Templates\fsproj.template"))
                 .Replace("[NAME]", project.Name)
                 .Replace("[GUID]", project.Guid.ToString ())
                 .Replace("[FILES]", files)
@@ -121,7 +126,7 @@ module CSharpProject =
             project.BinaryReferences |> List.map printBinaryReference |> String.concat "\n"
 
         let text =
-            File.ReadAllText(@"Templates\csproj.template")
+            File.ReadAllText(Path.Combine(__SOURCE_DIRECTORY__,@"Templates\csproj.template"))
                 .Replace("[NAME]", project.Name)
                 .Replace("[GUID]", project.Guid |> printGuidU)
                 .Replace("[FILES]", files)

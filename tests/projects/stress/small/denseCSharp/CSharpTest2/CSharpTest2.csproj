@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{6C0AEE05-109B-44C0-B18F-EE40D18BA26E}</ProjectGuid>
+    <ProjectGuid>{BD791790-9460-45E4-B4E6-0206157FCB66}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>CSharpTest2</RootNamespace>
@@ -45,7 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CSharpTest1\CSharpTest1.csproj">
-      <Project>{439bf631-7390-421d-b2b9-2d7920deda8a}</Project>
+      <Project>{e51567bb-9246-484e-be6d-8f1c2783c5ab}</Project>
       <Name>CSharpTest1</Name>
     </ProjectReference>
   </ItemGroup>
