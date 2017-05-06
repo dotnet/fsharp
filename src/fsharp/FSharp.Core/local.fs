@@ -1219,3 +1219,24 @@ module internal Array =
                 res.[i] <- subUnchecked !startIndex minChunkSize array
                 startIndex := !startIndex + minChunkSize
             res
+
+    let ofSeq (source : seq<'T>)  =
+        match source with
+        | :? ('T[]) as res -> (res.Clone() :?> 'T[])
+        | :? ('T list) as res -> List.toArray res
+        | :? ICollection<'T> as res ->
+            // Directly create an array and copy ourselves.
+            // This avoids an extra copy if using ResizeArray in fallback below.
+            let arr = zeroCreateUnchecked res.Count
+            res.CopyTo(arr, 0)
+            arr
+        | _ ->
+            let res = ResizeArray source
+            res.ToArray()
+
+    let toSeq (source : array<'T>) : seq<'T> =
+        { new IEnumerable<'T> with
+              member this.GetEnumerator(): Collections.IEnumerator = 
+                  (source:>System.Collections.IEnumerable).GetEnumerator ()
+              member this.GetEnumerator(): IEnumerator<'T> = 
+                  (source:>IEnumerable<'T>).GetEnumerator () }

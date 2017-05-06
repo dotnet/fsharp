@@ -7,7 +7,6 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core.LanguagePrimitives
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Collections
-    open Microsoft.FSharp.Core.CompilerServices
     open System.Collections.Generic
 #if FX_RESHAPED_REFLECTION
     open System.Reflection
@@ -59,7 +58,7 @@ namespace Microsoft.FSharp.Collections
         let countByValueType (projection:'T->'Key) (list:'T list) = countByImpl HashIdentity.Structural<'Key> projection id list
 
         // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
-        let countByRefType   (projection:'T->'Key) (list:'T list) = countByImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun t -> RuntimeHelpers.StructBox (projection t)) (fun sb -> sb.Value) list
+        let countByRefType   (projection:'T->'Key) (list:'T list) = countByImpl StructBox<'Key>.Comparer (fun t -> StructBox (projection t)) (fun sb -> sb.Value) list
 
         [<CompiledName("CountBy")>]
         let countBy (projection:'T->'Key) (list:'T list) =
@@ -432,7 +431,7 @@ namespace Microsoft.FSharp.Collections
         let groupByValueType (keyf:'T->'Key) (list:'T list) = groupByImpl HashIdentity.Structural<'Key> keyf id list
 
         // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
-        let groupByRefType   (keyf:'T->'Key) (list:'T list) = groupByImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun t -> RuntimeHelpers.StructBox (keyf t)) (fun sb -> sb.Value) list
+        let groupByRefType   (keyf:'T->'Key) (list:'T list) = groupByImpl StructBox<'Key>.Comparer (fun t -> StructBox (keyf t)) (fun sb -> sb.Value) list
 
         [<CompiledName("GroupBy")>]
         let groupBy (keyf:'T->'Key) (list:'T list) =
@@ -522,10 +521,10 @@ namespace Microsoft.FSharp.Collections
             sortWith compareDescending xs
 
         [<CompiledName("OfSeq")>]
-        let ofSeq source = Seq.toList source
+        let ofSeq<'T> (source:seq<'T>) : list<'T> = Microsoft.FSharp.Primitives.Basics.List.ofSeq source
 
         [<CompiledName("ToSeq")>]
-        let toSeq list = Seq.ofList list
+        let toSeq<'T> (list:list<'T>) : seq<'T> = (list :> seq<'T>)
 
         [<CompiledName("FindIndex")>]
         let findIndex f list = 

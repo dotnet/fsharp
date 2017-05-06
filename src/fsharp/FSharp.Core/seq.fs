@@ -1068,7 +1068,7 @@ namespace Microsoft.FSharp.Collections
         let groupByValueType (keyf:'T->'Key) (seq:seq<'T>) = seq |> groupByImpl HashIdentity.Structural<'Key> keyf id
 
         // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
-        let groupByRefType   (keyf:'T->'Key) (seq:seq<'T>) = seq |> groupByImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun t -> RuntimeHelpers.StructBox (keyf t)) (fun sb -> sb.Value)
+        let groupByRefType   (keyf:'T->'Key) (seq:seq<'T>) = seq |> groupByImpl StructBox<'Key>.Comparer (fun t -> StructBox (keyf t)) (fun sb -> sb.Value)
 
         [<CompiledName("GroupBy")>]
         let groupBy (keyf:'T->'Key) (seq:seq<'T>) =
@@ -1151,7 +1151,7 @@ namespace Microsoft.FSharp.Collections
         let countByValueType (keyf:'T->'Key) (seq:seq<'T>) = seq |> countByImpl HashIdentity.Structural<'Key> keyf id
 
         // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
-        let countByRefType   (keyf:'T->'Key) (seq:seq<'T>) = seq |> countByImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun t -> RuntimeHelpers.StructBox (keyf t)) (fun sb -> sb.Value)
+        let countByRefType   (keyf:'T->'Key) (seq:seq<'T>) = seq |> countByImpl StructBox<'Key>.Comparer (fun t -> StructBox (keyf t)) (fun sb -> sb.Value)
 
         [<CompiledName("CountBy")>]
         let countBy (keyf:'T->'Key) (source:seq<'T>) =
