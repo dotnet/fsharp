@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>06424fac-498f-41b8-9bdc-fa178c771482</ProjectGuid>
+    <ProjectGuid>93fec374-ea8e-416c-9f99-8a73f5a676b8</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>FSharpTest7</RootNamespace>
     <AssemblyName>FSharpTest7</AssemblyName>
@@ -44,37 +44,37 @@
 
   </ItemGroup>
   <ItemGroup>
-
+    <Compile Include="FSharpTest7.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FSharpTest1\FSharpTest1.fsproj">
       <Name>FSharpTest1</Name>
-      <Project>{76392297-a6aa-4a0b-8e4b-e0ae2273a33c}</Project>
+      <Project>{9f2607c0-dce5-4a02-8d88-da11d08a6fe1}</Project>
       <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="..\FSharpTest2\FSharpTest2.fsproj">
       <Name>FSharpTest2</Name>
-      <Project>{a8dc249e-958b-48fe-b1d4-2cc1f6c5686d}</Project>
+      <Project>{66b2a9fe-4882-4e91-8e68-4a35c4e535df}</Project>
       <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="..\FSharpTest3\FSharpTest3.fsproj">
       <Name>FSharpTest3</Name>
-      <Project>{60198767-6598-45c8-a9f1-2c37521d01cc}</Project>
+      <Project>{bfc7ac6d-c87d-40cf-930e-750f8a97bdbc}</Project>
       <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="..\FSharpTest4\FSharpTest4.fsproj">
       <Name>FSharpTest4</Name>
-      <Project>{a57c742c-e6ab-4e07-8971-a51dd9241a71}</Project>
+      <Project>{b5712afd-93ab-44c9-8643-5aadd37373f4}</Project>
       <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="..\FSharpTest5\FSharpTest5.fsproj">
       <Name>FSharpTest5</Name>
-      <Project>{fd01b957-c0bc-43de-8370-b5a5aa99a0e3}</Project>
+      <Project>{25a90205-46af-426d-b424-cba3f52ac895}</Project>
       <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="..\FSharpTest6\FSharpTest6.fsproj">
       <Name>FSharpTest6</Name>
-      <Project>{a765898e-8c8d-476b-8f97-51631e0a95d7}</Project>
+      <Project>{6edc5ac6-c0af-4a69-8493-e7c0dbf79f56}</Project>
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>

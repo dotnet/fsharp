@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>35cefd06-c799-4aff-9561-fa056cfcc124</ProjectGuid>
+    <ProjectGuid>2c06a6b6-9096-4242-b92f-f067d1c807c4</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>FSharpTest3</RootNamespace>
     <AssemblyName>FSharpTest3</AssemblyName>
@@ -44,17 +44,17 @@
 
   </ItemGroup>
   <ItemGroup>
-
+    <Compile Include="FSharpTest3.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FSharpTest1\FSharpTest1.fsproj">
       <Name>FSharpTest1</Name>
-      <Project>{e765192f-1621-4972-a9a0-4a2054c02fa4}</Project>
+      <Project>{468a930f-413b-47fe-b4df-87d31d62e6c3}</Project>
       <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="..\FSharpTest2\FSharpTest2.fsproj">
       <Name>FSharpTest2</Name>
-      <Project>{291bc2de-7605-41e6-a500-e280adca35a6}</Project>
+      <Project>{ca72c972-525c-4174-b444-a11f2c345a00}</Project>
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>

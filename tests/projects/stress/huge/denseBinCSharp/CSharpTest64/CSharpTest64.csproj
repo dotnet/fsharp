@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{554CF24E-AD8C-4455-AF02-AE745B275448}</ProjectGuid>
+    <ProjectGuid>{FE277111-6F2E-4BF7-8CB0-DF744BEA73D8}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>CSharpTest64</RootNamespace>

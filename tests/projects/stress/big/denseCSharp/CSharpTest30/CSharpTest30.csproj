@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{19145B1A-8779-4A57-92D8-231D2233BC0C}</ProjectGuid>
+    <ProjectGuid>{CD60745D-20F3-466B-8DFE-0C8CD3CE1120}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>CSharpTest30</RootNamespace>
@@ -45,119 +45,119 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CSharpTest1\CSharpTest1.csproj">
-      <Project>{686515f6-a2cd-4058-9522-468fde014613}</Project>
+      <Project>{36436cb1-e611-4567-8bd1-11027019291b}</Project>
       <Name>CSharpTest1</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest2\CSharpTest2.csproj">
-      <Project>{42df1cea-7af7-4bf4-ae76-d6d79e5418bd}</Project>
+      <Project>{686dcb8a-ac16-4f3e-9a40-66e107e38f94}</Project>
       <Name>CSharpTest2</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest3\CSharpTest3.csproj">
-      <Project>{fafbcf61-2a0e-46a5-8f9c-e8538cc4f703}</Project>
+      <Project>{0b48846b-657a-483f-9edd-22c10c598487}</Project>
       <Name>CSharpTest3</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest4\CSharpTest4.csproj">
-      <Project>{363132e3-f72b-41ee-8ecf-c19ca545e19e}</Project>
+      <Project>{011ce3a9-5dfd-4620-b3e4-c31bf3079a62}</Project>
       <Name>CSharpTest4</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest5\CSharpTest5.csproj">
-      <Project>{e489e81d-d381-4e0e-b589-788d72c1bc49}</Project>
+      <Project>{bf246047-0ece-4679-b32a-a624ec7f0bb9}</Project>
       <Name>CSharpTest5</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest6\CSharpTest6.csproj">
-      <Project>{78e44b7a-604c-4b50-ac9e-73cfe57493b8}</Project>
+      <Project>{01d1a2f4-4085-44a9-9765-9cac80458322}</Project>
       <Name>CSharpTest6</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest7\CSharpTest7.csproj">
-      <Project>{97adaede-d935-4d41-bb92-ee6d78995df1}</Project>
+      <Project>{41c4669c-c71d-4065-b5c9-0117483ca66e}</Project>
       <Name>CSharpTest7</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest8\CSharpTest8.csproj">
-      <Project>{36f5b4b4-070b-466d-b8b5-803971639a5a}</Project>
+      <Project>{fff0f4f8-10cd-42e7-8324-bbb4bad9a75f}</Project>
       <Name>CSharpTest8</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest9\CSharpTest9.csproj">
-      <Project>{20550c4d-890a-46cb-8860-f254e43a1e4a}</Project>
+      <Project>{c43b4d7a-546f-4219-a706-483987bc4546}</Project>
       <Name>CSharpTest9</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest10\CSharpTest10.csproj">
-      <Project>{31477f06-5eac-4dcf-bd66-e1b850b9ca48}</Project>
+      <Project>{01752b43-8c79-4144-928b-67ba72860b40}</Project>
       <Name>CSharpTest10</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest11\CSharpTest11.csproj">
-      <Project>{e129f8c4-ef5b-4970-a2a7-680505881c83}</Project>
+      <Project>{bfae6d68-6115-43b9-b6c9-c34df7dc84e7}</Project>
       <Name>CSharpTest11</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest12\CSharpTest12.csproj">
-      <Project>{e875c054-b626-4de5-991d-adbc4eeb0935}</Project>
+      <Project>{f26d16e2-9725-4b4f-9437-67834506d773}</Project>
       <Name>CSharpTest12</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest13\CSharpTest13.csproj">
-      <Project>{81e0d6eb-70ba-49a1-a09f-b9f8dc0339d4}</Project>
+      <Project>{c3a74222-4d1d-42d7-934d-2943dac965cf}</Project>
       <Name>CSharpTest13</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest14\CSharpTest14.csproj">
-      <Project>{4cba2c90-6b35-458b-8efa-92b1f8c96d2a}</Project>
+      <Project>{c9681fca-cc32-44a8-8481-5c887cdb82bf}</Project>
       <Name>CSharpTest14</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest15\CSharpTest15.csproj">
-      <Project>{e960a661-ed1a-4b6c-bcd0-b9039b750ac4}</Project>
+      <Project>{63e55bf4-09ea-440c-ab76-8c7af58da267}</Project>
       <Name>CSharpTest15</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest16\CSharpTest16.csproj">
-      <Project>{becdd535-e822-4bfd-9c19-ff965e3035f3}</Project>
+      <Project>{7566d698-9ef2-45b7-ac6f-a58513280d16}</Project>
       <Name>CSharpTest16</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest17\CSharpTest17.csproj">
-      <Project>{9fbd6cfa-1990-4efd-9a85-e9c4641ab1af}</Project>
+      <Project>{f16604e6-2585-4c9b-b378-27904698df79}</Project>
       <Name>CSharpTest17</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest18\CSharpTest18.csproj">
-      <Project>{b671f0db-3780-495f-bc41-166879132fbf}</Project>
+      <Project>{f566d2fc-4f92-4626-98cc-80cb67a55829}</Project>
       <Name>CSharpTest18</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest19\CSharpTest19.csproj">
-      <Project>{e3288239-047d-475f-aa81-1be34b4d6197}</Project>
+      <Project>{864b8922-6b0e-426a-bb3a-64b03567f181}</Project>
       <Name>CSharpTest19</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest20\CSharpTest20.csproj">
-      <Project>{6c6f4d69-b32e-4a5c-8bdc-4f36135a26fd}</Project>
+      <Project>{3363f9c4-18cb-46e6-8e97-8318dc0944af}</Project>
       <Name>CSharpTest20</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest21\CSharpTest21.csproj">
-      <Project>{27c8f1d4-64e8-46c1-9a75-40a2b05c9488}</Project>
+      <Project>{98e82292-46ed-4157-afbe-e806b8a89190}</Project>
       <Name>CSharpTest21</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest22\CSharpTest22.csproj">
-      <Project>{0c7ada65-b064-4863-8e48-b01ad04b8273}</Project>
+      <Project>{289d0068-582e-47b9-aad6-380690ab1fd8}</Project>
       <Name>CSharpTest22</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest23\CSharpTest23.csproj">
-      <Project>{af02c4c5-950c-4e93-8239-66b80bc2ba24}</Project>
+      <Project>{08dd560a-88e6-4fa3-bec9-f56966751851}</Project>
       <Name>CSharpTest23</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest24\CSharpTest24.csproj">
-      <Project>{17b2b843-70a4-4e0b-a988-8648e8957c81}</Project>
+      <Project>{34243edc-630b-4ec1-932f-24fa9d3b00aa}</Project>
       <Name>CSharpTest24</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest25\CSharpTest25.csproj">
-      <Project>{2d00e96a-4437-45e2-bbc8-e6113ee32b07}</Project>
+      <Project>{494a07c6-a3ff-4746-9826-dcf63fee4d80}</Project>
       <Name>CSharpTest25</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest26\CSharpTest26.csproj">
-      <Project>{45beaa27-5bff-40f1-be78-81a655bb1174}</Project>
+      <Project>{56e87fbc-20a3-4f8b-89ed-e379efeef599}</Project>
       <Name>CSharpTest26</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest27\CSharpTest27.csproj">
-      <Project>{418efc9c-9dd7-43eb-97bf-da63076a697a}</Project>
+      <Project>{2cce349e-dc8c-4043-a510-642f89c5cd8f}</Project>
       <Name>CSharpTest27</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest28\CSharpTest28.csproj">
-      <Project>{4f208b00-35bc-4795-a935-0dee6c527353}</Project>
+      <Project>{726bf0a3-0663-430c-a6bb-b598919c5938}</Project>
       <Name>CSharpTest28</Name>
     </ProjectReference>
     <ProjectReference Include="..\CSharpTest29\CSharpTest29.csproj">
-      <Project>{2a6566eb-c3ee-4faf-bef2-d02f8200df72}</Project>
+      <Project>{f60866ca-fb54-413d-9abf-db0f498c5e92}</Project>
       <Name>CSharpTest29</Name>
     </ProjectReference>
   </ItemGroup>

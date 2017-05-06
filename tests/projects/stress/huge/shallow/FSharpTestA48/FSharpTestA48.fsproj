@@ -5,7 +5,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>26fddf58-bd36-4177-bd32-8d4f3711e5d5</ProjectGuid>
+    <ProjectGuid>e3d740cf-1a8c-4ecd-9d5f-089f4327ed9f</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>FSharpTestA48</RootNamespace>
     <AssemblyName>FSharpTestA48</AssemblyName>
