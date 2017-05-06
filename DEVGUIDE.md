@@ -142,7 +142,7 @@ To test your changes locally _without_ overwriting your default installed F# too
 project as the startup project.  When you hit F5 a new instance of Visual Studio will be started in the `FSharpDev` hive with your
 changes, but the root (default) hive will remain untouched.
 
-### [Optional] Rapid deployment of incremental changes to Visual F# IDE Tools components
+#### [Optional] Rapid deployment of incremental changes to Visual F# IDE Tools components
 
 For the brave, you can rapidly deploy incrementally updated versions of Visual F# IDE Tool components such as ``FSHarp.Editor.dll`` by copying them directly into the extension directory in your user AppData folder:
 
@@ -179,7 +179,7 @@ For **Release**:
 - [Windows 10 SDK](https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk)
 
 
-### Notes on the Windows .NET Framework build
+#### Notes on the Windows .NET Framework build
 
 1. The `update.cmd` script adds required strong name validation skips, and NGens the compiler and libraries. This requires admin privileges.
 1. The compiler binaries produced are "private" and strong-named signed with a test key.
@@ -190,7 +190,7 @@ For **Release**:
  - We use the proto compiler to compile the source for `FSharp.Core.dll` in this distribution.
  - We use the proto compiler to compile the source for `FSharp.Compiler.dll`, `fsc.exe`, `fsi.exe`, and other binaries found in this distribution.
 
-### Configuring proxy server
+#### Configuring proxy server
 
 If you are behind a proxy server, NuGet client tool must be configured to use it:
 
@@ -200,7 +200,7 @@ If you are behind a proxy server, NuGet client tool must be configured to use it
 
 Where you should set proper proxy address, user name and password.
 
-## Resources
+#### Resources
 
 The primary technical guide to the core compiler code is [The F# Compiler Technical Guide](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html).  Please read and contribute to that guide.
 
