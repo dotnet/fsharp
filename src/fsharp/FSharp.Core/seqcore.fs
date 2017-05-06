@@ -453,7 +453,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
 
     /// ThinEnumerable is used when the IEnumerable provided to ofSeq is neither an array or a list
     type ThinEnumerable<'T>(enumerable:IEnumerable<'T>) =
-        inherit EnumerableBase<'T>()
+        inherit VanillaEnumerable<'T,'T>(enumerable, IdentityFactory.Instance, 0)
 
         override __.Length () =
             match enumerable with
@@ -467,25 +467,6 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                 while e.MoveNext () do
                     count <- count + 1
                 count
-
-        interface IEnumerable<'T> with
-            member __.GetEnumerator () = enumerable.GetEnumerator ()
-
-        interface ISeq<'T> with
-            member __.PushTransform (next:ITransformFactory<'T,'U>) : ISeq<'U> =
-                upcast (new VanillaEnumerable<'T,'U>(enumerable, next, 1))
-
-            member this.Fold<'Result> (createFolder:PipeIdx->Folder<'T,'Result>) =
-                let result = createFolder 1
-                try
-                    use enumerator = enumerable.GetEnumerator ()
-                    while result.HaltedIdx = 0 && enumerator.MoveNext () do
-                        result.ProcessNext enumerator.Current |> ignore
-
-                    result.ChainComplete result.HaltedIdx
-                finally
-                    result.ChainDispose ()
-                result.Result
 
     type DelayedEnumerable<'T>(delayed:unit->ISeq<'T>, pipeIdx:PipeIdx) =
         inherit EnumerableBase<'T>()
@@ -579,30 +560,9 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                 result.Result
 
     type ThinArrayEnumerable<'T>(array:array<'T>) =
-        inherit EnumerableBase<'T>()
+        inherit ArrayEnumerable<'T,'T>(array, IdentityFactory.Instance, 0)
 
         override __.Length () = array.Length
-
-        interface IEnumerable<'T> with
-            member __.GetEnumerator () = (array:>IEnumerable<'T>).GetEnumerator ()
-
-        interface ISeq<'T> with
-            member __.PushTransform (next:ITransformFactory<'T,'U>) : ISeq<'U> =
-                upcast (new ArrayEnumerable<'T,'U>(array, next, 1))
-
-            member this.Fold<'Result> (createFolder:PipeIdx->Folder<'T,'Result>) =
-                let result = createFolder 1
-                try
-                    let array = array
-                    let mutable idx = 0
-                    while result.HaltedIdx = 0 && idx < array.Length do
-                        result.ProcessNext array.[idx] |> ignore
-                        idx <- idx + 1
-
-                    result.ChainComplete result.HaltedIdx
-                finally
-                    result.ChainDispose ()
-                result.Result
 
     type SingletonEnumerable<'T>(item:'T) =
         inherit EnumerableBase<'T>()
@@ -676,30 +636,9 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                 result.Result
 
     type ThinResizeArrayEnumerable<'T>(resizeArray:ResizeArray<'T>) =
-        inherit EnumerableBase<'T>()
+        inherit ResizeArrayEnumerable<'T,'T>(resizeArray, IdentityFactory.Instance, 0)
 
         override __.Length () = resizeArray.Count
-
-        interface IEnumerable<'T> with
-            member __.GetEnumerator () = (resizeArray :> IEnumerable<'T>).GetEnumerator ()
-
-        interface ISeq<'T> with
-            member __.PushTransform (next:ITransformFactory<'T,'U>) : ISeq<'U> =
-                upcast (new ResizeArrayEnumerable<'T,'U>(resizeArray, next, 1))
-
-            member this.Fold<'Result> (createFolder:PipeIdx->Folder<'T,'Result>) =
-                let result = createFolder 1
-                try
-                    let array = resizeArray
-                    let mutable idx = 0
-                    while result.HaltedIdx = 0 && idx < array.Count do
-                        result.ProcessNext array.[idx] |> ignore
-                        idx <- idx + 1
-
-                    result.ChainComplete result.HaltedIdx
-                finally
-                    result.ChainDispose ()
-                result.Result
 
     type UnfoldEnumerator<'T,'U,'State>(generator:'State->option<'T*'State>, state:'State, activity:Activity<'T,'U>, result:Result<'U>) =
         inherit EnumeratorBase<'U>(result, activity)
