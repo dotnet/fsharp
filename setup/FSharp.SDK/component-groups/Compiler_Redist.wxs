@@ -119,11 +119,11 @@
       </Component>
 
       <Component Id="Compiler_Redist_Microsoft.FSharp.NetSdk.props" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.FSharp.NetSdk.props, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_Microsoft.Microsoft.FSharp.NetSdk.props" Source="$(var.BinariesDir)\net40\bin\Microsoft.Microsoft.FSharp.NetSdk.props" />
+        <File Id="Compiler_Redist_Microsoft.FSharp.NetSdk.props" Source="$(var.BinariesDir)\net40\bin\Microsoft.FSharp.NetSdk.props" />
       </Component>
 
       <Component Id="Compiler_Redist_Microsoft.FSharp.NetSdk.targets" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.FSharp.NetSdk.targets, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_Microsoft.Microsoft.FSharp.NetSdk.targets" Source="$(var.BinariesDir)\net40\bin\Microsoft.Microsoft.FSharp.NetSdk.targets" />
+        <File Id="Compiler_Redist_Microsoft.FSharp.NetSdk.targets" Source="$(var.BinariesDir)\net40\bin\Microsoft.FSharp.NetSdk.targets" />
       </Component>
 
       <Component Id="Compiler_Redist_SupportedRuntimes.xml" Guid="$(fsharp.guid(Compiler_Redist_SupportedRuntimes.xml, $(var.LocaleCode)))">
