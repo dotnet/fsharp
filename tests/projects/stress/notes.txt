@@ -1,5 +1,42 @@
-* Triangular dependency order for 100 projects (~5000 references) slow for F#, quick for C#
-* A/B references for 50/100 projects (~5000) slow for F#, quick for C#
+* Triangular dependency order for N projects (~N*N/2 references) slow for F#, quick for C#
+* A/B references for N projects (~N*N/2) slow for F#, quick for C#
+
+N=2:
+devenv tests\projects\stress\tinsy\shallow\Shallow.sln
+devenv tests\projects\stress\tinsy\dense\Dense.sln
+devenv tests\projects\stress\tinsy\denseBin\DenseBin.sln
+
+N=4:
+devenv tests\projects\stress\tiny\shallow\Shallow.sln
+devenv tests\projects\stress\tiny\dense\Dense.sln
+devenv tests\projects\stress\tiny\denseBin\DenseBin.sln
+
+N=10:
+devenv tests\projects\stress\small\shallow\Shallow.sln
+devenv tests\projects\stress\small\dense\Dense.sln
+devenv tests\projects\stress\small\denseBin\DenseBin.sln
+
+N=20:
+devenv tests\projects\stress\medium\shallow\Shallow.sln
+devenv tests\projects\stress\medium\dense\Dense.sln
+devenv tests\projects\stress\medium\denseBin\DenseBin.sln
+
+N=30;
+devenv tests\projects\stress\big\shallow\Shallow.sln
+devenv tests\projects\stress\big\dense\Dense.sln
+devenv tests\projects\stress\big\denseBin\DenseBin.sln
+
+N=100:
+devenv tests\projects\stress\huge\shallow\Shallow.sln
+devenv tests\projects\stress\huge\dense\Dense.sln
+devenv tests\projects\stress\huge\denseBin\DenseBin.sln
+
+and the C# equivalents e.g.
+
+devenv tests\projects\stress\huge\shallowCSharp\ShallowCSharp.sln
+devenv tests\projects\stress\huge\denseCSharp\DenseCSharp.sln
+devenv tests\projects\stress\huge\denseBinCSharp\DenseBinCSharp.sln
+
 
 dense not compiled: 1:38
 dense compiled: 1:35
