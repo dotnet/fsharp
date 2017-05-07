@@ -3342,7 +3342,7 @@ module DebugPrint = begin
             | argtys -> (prefixL ^^ nmL ^^ wordL(tagText "of")) --- layoutUnionCaseArgTypes argtys
 
         let layoutUnionCases ucases =
-            let prefixL = if List.length ucases > 1 then wordL(tagText "|") else emptyL
+            let prefixL = if not (isNilOrSingleton ucases) then wordL(tagText "|") else emptyL
             List.map (ucaseL prefixL) ucases
             
         let layoutRecdField (fld:RecdField) =
@@ -7457,7 +7457,7 @@ let mkChoiceTy (g:TcGlobals) m tinst =
      match List.length tinst with 
      | 0 -> g.unit_ty
      | 1 -> List.head tinst
-     | _ -> mkAppTy (mkChoiceTyconRef g m (List.length tinst)) tinst
+     | length -> mkAppTy (mkChoiceTyconRef g m length) tinst
 
 let mkChoiceCaseRef g m n i = 
      mkUnionCaseRef (mkChoiceTyconRef g m n) ("Choice"+string (i+1)+"Of"+string n)
@@ -8004,7 +8004,7 @@ let rec mkCompiledTuple g isStruct (argtys,args,m) =
     elif n < maxTuple then (mkCompiledTupleTyconRef g isStruct n, argtys, args, m)
     else
         let argtysA,argtysB = List.splitAfter goodTupleFields argtys
-        let argsA,argsB = List.splitAfter (goodTupleFields) args
+        let argsA,argsB = List.splitAfter goodTupleFields args
         let ty8, v8 = 
             match argtysB,argsB with 
             | [ty8],[arg8] -> 
