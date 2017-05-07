@@ -4,7 +4,6 @@
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
     <ProjectLanguage>FSharp</ProjectLanguage>
-    <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>

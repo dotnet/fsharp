@@ -3,10 +3,11 @@
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\..\src</FSharpSourcesRoot>
+    <UseVsMicroBuildAssemblyVersion>true</UseVsMicroBuildAssemblyVersion>
     <ProjectLanguage>FSharp</ProjectLanguage>
-    <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <ImportVSSDKTargets>true</ImportVSSDKTargets>
+    <UseVsMicroBuildAssemblyVersion>true</UseVsMicroBuildAssemblyVersion>
     <CreateVsixContainer>false</CreateVsixContainer>
     <DeployExtension>false</DeployExtension>
     <UseCodebase>true</UseCodebase>
@@ -26,7 +27,6 @@
     <TargetType>LIBRARY</TargetType>
     <Tailcalls Condition="'$(CodeCoverage)' != ''">false</Tailcalls>
     <OtherFlags>$(OtherFlags) --warnon:1182 --subsystemversion:6.00</OtherFlags>
-    <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />

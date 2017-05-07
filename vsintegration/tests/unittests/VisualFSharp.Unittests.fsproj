@@ -4,7 +4,6 @@
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\..\src</FSharpSourcesRoot>
     <ProjectLanguage>FSharp</ProjectLanguage>
-    <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
     <Name>VisualFSharp.Unittests</Name>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
@@ -18,7 +17,6 @@
     <NoWarn>58;75</NoWarn>
     <PlatformTarget>x86</PlatformTarget>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
-    <UnitTestAssembly>true</UnitTestAssembly>
     <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <DefineConstants>NO_PROJECTCRACKER;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
@@ -382,11 +380,6 @@
     <ProjectReference Include="..\..\src\FSharp.Editor\FSharp.Editor.fsproj">
       <Name>FSharp.Editor</Name>
       <Project>{65e0e82a-eace-4787-8994-888674c2fe87}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\tests\service\data\CSharp_Analysis\CSharp_Analysis.csproj">
-      <Name>CSharp_Analysis</Name>
-      <Project>{887630a3-4b1d-40ea-b8b3-2d842e9c40db}</Project>
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>

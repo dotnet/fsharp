@@ -62,7 +62,7 @@ let internal getProjectReferences (content, dllFiles, libDirs, otherFlags) =
 
 [<Test>]
 let ``Test that csharp references are recognized as such`` () = 
-    let csharpAssembly = typeof<CSharpClass>.Assembly.Location
+    let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
     let _, table = getProjectReferences("""module M""", [csharpAssembly], None, None)
     let ass = table.["CSharp_Analysis"]
     let search = ass.Contents.Entities |> Seq.tryFind (fun e -> e.DisplayName = "CSharpClass") 
@@ -97,7 +97,7 @@ let ``Test that csharp references are recognized as such`` () =
 
 [<Test>]
 let ``Test that symbols of csharp inner classes/enums are reported`` () = 
-    let csharpAssembly = typeof<CSharpClass>.Assembly.Location
+    let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
     let content = """
 module NestedEnumClass
 open FSharp.Compiler.Service.Tests
