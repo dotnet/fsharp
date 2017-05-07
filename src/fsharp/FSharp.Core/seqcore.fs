@@ -310,9 +310,11 @@ namespace Microsoft.FSharp.Collections.SeqComposition
 
         abstract member Append : ISeq<'T> -> ISeq<'T>
         abstract member Length : unit -> int
+        abstract member GetRaw : unit -> seq<'T>
 
         default this.Append source = upcast (AppendEnumerable [source; this])
         default this.Length () = length this
+        default this.GetRaw () = upcast this
 
         interface IEnumerable with
             member this.GetEnumerator () : IEnumerator =
@@ -476,6 +478,11 @@ namespace Microsoft.FSharp.Collections.SeqComposition
             | :? EnumerableBase<'T> as s -> s.Length ()
             | s -> length s
 
+        override __.GetRaw () = 
+            match delayed() with
+            | :? EnumerableBase<'T> as s -> s.GetRaw ()
+            | s -> upcast s
+
         interface IEnumerable<'T> with
             member this.GetEnumerator () : IEnumerator<'T> = (delayed()).GetEnumerator ()
 
@@ -563,6 +570,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         inherit ArrayEnumerable<'T,'T>(array, IdentityFactory.Instance, 0)
 
         override __.Length () = array.Length
+        override __.GetRaw () = upcast array
 
     type SingletonEnumerable<'T>(item:'T) =
         inherit EnumerableBase<'T>()
