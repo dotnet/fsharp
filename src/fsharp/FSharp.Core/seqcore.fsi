@@ -69,7 +69,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
     type NoValue = struct end
 
     [<AbstractClass>]
-    type EnumerableBase<'T> =
+    type internal EnumerableBase<'T> =
         new : unit -> EnumerableBase<'T>
         abstract member Append : ISeq<'T> -> ISeq<'T>
         abstract member Length : unit -> int
@@ -77,7 +77,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         interface ISeq<'T>
 
     [<AbstractClass>]
-    type SeqFactoryBase<'T,'U> =
+    type internal SeqFactoryBase<'T,'U> =
         inherit EnumerableBase<'U>
         new : ITransformFactory<'T,'U> * PipeIdx -> SeqFactoryBase<'T,'U>
 
