@@ -54,6 +54,14 @@ namespace Microsoft.FSharp.Collections
         let inline toISeq3 (source3:seq<'T>) : ISeq<'T> = checkNonNull "source3" source3; ISeq.ofSeq source3
         let inline toISeqs (sources:seq<'T>) : ISeq<'T> = checkNonNull "sources" sources; ISeq.ofSeq sources
 
+        let getRaw (source:ISeq<_>) =
+            match source with
+            | :? Core.EnumerableBase<'T> as s -> s.GetRaw ()
+            | _ -> upcast source
+
+        let rawOrOriginal (raw:seq<_>) (original:ISeq<_>) =
+            if obj.ReferenceEquals (raw, original) then original else toISeq raw
+
         let mkDelayedSeq (f: unit -> IEnumerable<'T>) = mkSeq (fun () -> f().GetEnumerator())
 
         [<CompiledName("Delay")>]
@@ -76,7 +84,11 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Iterate")>]
         let iter f (source : seq<'T>) =
-            ISeq.iter f (toISeq source)
+            let original = toISeq source
+            match getRaw original with
+            | :? array<'T> as arr -> Array.iter f arr
+            | :? list<'T> as lst -> List.iter f lst
+            | raw -> ISeq.iter f (rawOrOriginal raw original)
 
         [<CompiledName("Item")>]
         let item i (source : seq<'T>) =
@@ -87,19 +99,33 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("TryItem")>]
         let tryItem i (source : seq<'T>) =
-            ISeq.tryItem i (toISeq source)
+            let original = toISeq source
+            match getRaw original with
+            | :? array<'T> as arr -> Array.tryItem i arr
+            | :? list<'T> as lst -> List.tryItem i lst
+            | raw -> ISeq.tryItem i (rawOrOriginal raw original)
 
         [<CompiledName("Get")>]
-        let nth i (source : seq<'T>) = item i source
+        let nth i (source : seq<'T>) =
+            item i source
 
         [<CompiledName("IterateIndexed")>]
         let iteri f (source : seq<'T>) =
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
-            ISeq.iteri (fun idx a -> f.Invoke (idx,a)) (toISeq source)
+            let original = toISeq source
+            match getRaw original with
+            | :? array<'T> as arr -> Array.iteri f arr
+            | :? list<'T> as lst -> List.iteri f lst
+            | raw -> 
+                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
+                ISeq.iteri (fun idx a -> f.Invoke (idx,a)) (rawOrOriginal raw original)
 
         [<CompiledName("Exists")>]
         let exists f (source : seq<'T>) =
-            ISeq.exists f (toISeq source)
+            let original = toISeq source
+            match getRaw original with
+            | :? array<'T> as arr -> Array.exists f arr
+            | :? list<'T> as lst -> List.exists f lst
+            | raw -> ISeq.exists f (rawOrOriginal raw original)
 
         [<CompiledName("Contains")>]
         let inline contains element (source : seq<'T>) =
@@ -107,7 +133,11 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("ForAll")>]
         let forall f (source : seq<'T>) =
-            ISeq.forall f (toISeq source)
+            let original = toISeq source
+            match getRaw original with
+            | :? array<'T> as arr -> Array.forall f arr
+            | :? list<'T> as lst -> List.forall f lst
+            | raw -> ISeq.forall f (rawOrOriginal raw original)
 
         [<CompiledName("Iterate2")>]
         let iter2 f (source1 : seq<_>) (source2 : seq<_>)    =
@@ -170,19 +200,35 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("TryPick")>]
         let tryPick f (source : seq<'T>)  =
-            ISeq.tryPick f (toISeq source)
+            let original = toISeq source
+            match getRaw original with
+            | :? array<'T> as arr -> Array.tryPick f arr
+            | :? list<'T> as lst -> List.tryPick f lst
+            | raw -> ISeq.tryPick f (rawOrOriginal raw original)
 
         [<CompiledName("Pick")>]
         let pick f source  =
-            ISeq.pick f (toISeq source)
+            let original = toISeq source
+            match getRaw original with
+            | :? array<'T> as arr -> Array.pick f arr
+            | :? list<'T> as lst -> List.pick f lst
+            | raw -> ISeq.pick f (rawOrOriginal raw original)
 
         [<CompiledName("TryFind")>]
         let tryFind f (source : seq<'T>)  =
-            ISeq.tryFind f (toISeq source)
+            let original = toISeq source
+            match getRaw original with
+            | :? array<'T> as arr -> Array.tryFind f arr
+            | :? list<'T> as lst -> List.tryFind f lst
+            | raw -> ISeq.tryFind f (rawOrOriginal raw original)
 
         [<CompiledName("Find")>]
         let find f source =
-            ISeq.find f (toISeq source)
+            let original = toISeq source
+            match getRaw original with
+            | :? array<'T> as arr -> Array.find f arr
+            | :? list<'T> as lst -> List.find f lst
+            | raw -> ISeq.find f (rawOrOriginal raw original)
 
         [<CompiledName("Take")>]
         let take count (source : seq<'T>)    =
@@ -209,8 +255,13 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Fold")>]
         let fold<'T,'State> f (x:'State) (source : seq<'T>)  =
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
-            ISeq.fold (fun acc item -> f.Invoke (acc, item)) x (toISeq source)
+            let original = toISeq source
+            match getRaw original with
+            | :? array<'T> as arr -> Array.fold f x arr
+            | :? list<'T> as lst -> List.fold f x lst
+            | raw ->
+                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
+                ISeq.fold (fun acc item -> f.Invoke (acc, item)) x (rawOrOriginal raw original)
 
         [<CompiledName("Fold2")>]
         let fold2<'T1,'T2,'State> f (state:'State) (source1: seq<'T1>) (source2: seq<'T2>) =
@@ -219,8 +270,13 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Reduce")>]
         let reduce f (source : seq<'T>)  =
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
-            ISeq.reduce (fun acc item -> f.Invoke (acc, item)) (toISeq source)
+            let original = toISeq source
+            match getRaw original with
+            | :? array<'T> as arr -> Array.reduce f arr
+            | :? list<'T> as lst -> List.reduce f lst
+            | raw ->
+                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
+                ISeq.reduce (fun acc item -> f.Invoke (acc, item)) (rawOrOriginal raw original)
 
         [<CompiledName("Replicate")>]
         let replicate count x =
@@ -439,11 +495,19 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Head")>]
         let head (source : seq<_>) =
-            ISeq.head (toISeq source)
+            let original = toISeq source
+            match getRaw original with
+            | :? array<'T> as arr -> Array.head arr
+            | :? list<'T> as lst -> List.head lst
+            | raw -> ISeq.head (rawOrOriginal raw original)
 
         [<CompiledName("TryHead")>]
         let tryHead (source : seq<_>) =
-            ISeq.tryHead (toISeq source)
+            let original = toISeq source
+            match getRaw original with
+            | :? array<'T> as arr -> Array.tryHead arr
+            | :? list<'T> as lst -> List.tryHead lst
+            | raw -> ISeq.tryHead (rawOrOriginal raw original)
 
         [<CompiledName("Tail")>]
         let tail (source: seq<'T>) =
@@ -451,15 +515,27 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Last")>]
         let last (source : seq<_>) =
-            ISeq.last (toISeq source)
+            let original = toISeq source
+            match getRaw original with
+            | :? array<'T> as arr -> Array.last arr
+            | :? list<'T> as lst -> List.last lst
+            | raw -> ISeq.last (rawOrOriginal raw original)
 
         [<CompiledName("TryLast")>]
         let tryLast (source : seq<_>) =
-            ISeq.tryLast (toISeq source)
+            let original = toISeq source
+            match getRaw original with
+            | :? array<'T> as arr -> Array.tryLast arr
+            | :? list<'T> as lst -> List.tryLast lst
+            | raw -> ISeq.tryLast (rawOrOriginal raw original)
 
         [<CompiledName("ExactlyOne")>]
         let exactlyOne (source : seq<_>) =
-            ISeq.exactlyOne (toISeq source)
+            let original = toISeq source
+            match getRaw original with
+            | :? array<'T> as arr -> Array.exactlyOne arr
+            | :? list<'T> as lst -> List.exactlyOne lst
+            | raw -> ISeq.exactlyOne (rawOrOriginal raw original)
 
         [<CompiledName("Reverse")>]
         let rev source =
