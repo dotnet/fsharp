@@ -71,7 +71,7 @@ let input =
 let ``Test ranges - namespace`` () =
     let res = parseAndExtractRanges input 
     printfn "Test ranges - namespace, res = %A" res
-    res |> shouldEqual [("N", ((4, 4), (5, 4))); ("Sample", ((4, 9), (4, 15)))]
+    res |> shouldEqual [("N", ((4, 4), (6, 0))); ("Sample", ((4, 9), (4, 15)))]
 
 let input2 =
     """
