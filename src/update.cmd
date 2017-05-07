@@ -93,7 +93,7 @@ if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
     %SN64% -q -Vr VisualFSharp.Unittests,b03f5f7f11d50a3a
     %SN64% -q -Vr VisualFSharp.Salsa,b03f5f7f11d50a3a
     %SN64% -q -Vr FSharp.Compiler.Unittests,b03f5f7f11d50a3a
-		%SN32% -q -Vr Microsoft.VisualStudio.Shell.UI.Internal,b03f5f7f11d50a3a
+    %SN64% -q -Vr Microsoft.VisualStudio.Shell.UI.Internal,b03f5f7f11d50a3a
 )
 
 if /i "%1" == "signonly" goto :eof

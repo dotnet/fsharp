@@ -55,6 +55,8 @@ copy /y "%BINDIR%\fsiAnyCpu.exe" "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\fsiAnyCpu.exe.config" "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\Microsoft.FSharp.targets" "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\Microsoft.Portable.FSharp.targets" "%COMPILERSDKPATH%"
+copy /y "%BINDIR%\Microsoft.FSharp.NetSdk.props" "%COMPILERSDKPATH%"
+copy /y "%BINDIR%\Microsoft.FSharp.NetSdk.targets" "%COMPILERSDKPATH%"
 copy /y "%TOPDIR%\vsintegration\src\SupportedRuntimes\SupportedRuntimes.xml" "%COMPILERSDKPATH%"
 
 set COMPILERMAINASSEMBLIESPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.%FSHARPVERSION%.0

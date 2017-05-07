@@ -17,10 +17,14 @@ this file.
 
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
+    <PropertyGroup>
+        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    </PropertyGroup>
+
     <UsingTask TaskName="Fsc" AssemblyFile="FSharp.Build{BuildSuffix}.dll"/>
     <UsingTask TaskName="CreateFSharpManifestResourceName" AssemblyFile="FSharp.Build{BuildSuffix}.dll"/>
 
-  <PropertyGroup>
+    <PropertyGroup>
         <ImportByWildcardBeforeMicrosoftFSharpTargets Condition="'$(ImportByWildcardBeforeMicrosoftFSharpTargets)' == ''">true</ImportByWildcardBeforeMicrosoftFSharpTargets>
         <ImportByWildcardAfterMicrosoftFSharpTargets Condition="'$(ImportByWildcardAfterMicrosoftFSharpTargets)' == ''">true</ImportByWildcardAfterMicrosoftFSharpTargets>
     </PropertyGroup>
@@ -28,7 +32,6 @@ this file.
     <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\$(MSBuildThisFile)\ImportBefore\*" Condition="'$(ImportByWildcardBeforeMicrosoftFSharpTargets)' == 'true' and exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\$(MSBuildThisFile)\ImportBefore')"/>
 
     <PropertyGroup>
-        <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
         <DefaultLanguageSourceExtension>.fs</DefaultLanguageSourceExtension>
         <Language>F#</Language>
         <TargetRuntime>Managed</TargetRuntime>
@@ -270,8 +273,19 @@ this file.
 
     </Target>
 
-
-    <Import Project="$(MSBuildBinPath)\Microsoft.Common.targets"/>
+    <Choose>
+        <When  Condition=" '$(IsCrossTargetingBuild)' == 'true' ">
+          <PropertyGroup>
+             <FSharpCommonTargets>$(MSBuildBinPath)\Microsoft.Common.CurrentVersion.targets</FSharpCommonTargets>
+          </PropertyGroup>
+        </When>
+        <Otherwise>
+          <PropertyGroup>
+             <FSharpCommonTargets>$(MSBuildBinPath)\Microsoft.Common.targets</FSharpCommonTargets>
+          </PropertyGroup>
+        </Otherwise>
+    </Choose>
+    <Import Project="$(FSharpCommonTargets)" />
 
     <!--
             ============================================================
