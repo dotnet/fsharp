@@ -13,11 +13,6 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
 
-    module Upcast =
-        // The f# compiler outputs unnecessary unbox.any calls in upcasts. If this functionality
-        // is fixed with the compiler then these functions can be removed.
-        let inline enumerable (t:#IEnumerable<'T>) : IEnumerable<'T> = (# "" t : IEnumerable<'T> #)
-
     module Internal =
      module IEnumerator =
       open Microsoft.FSharp.Collections.IEnumerator
@@ -66,18 +61,18 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Unfold")>]
         let unfold f x =
-            ISeq.unfold f x |> Upcast.enumerable
+            ISeq.unfold f x :> seq<_>
 
         [<CompiledName("Empty")>]
         let empty<'T> = (EmptyEnumerable :> seq<'T>)
 
         [<CompiledName("InitializeInfinite")>]
         let initInfinite f =
-            ISeq.initInfinite f |> Upcast.enumerable
+            ISeq.initInfinite f :> seq<_>
 
         [<CompiledName("Initialize")>]
         let init count f =
-            ISeq.init count f |> Upcast.enumerable
+            ISeq.init count f :> seq<_>
 
         [<CompiledName("Iterate")>]
         let iter f (source : seq<'T>) =
@@ -126,52 +121,52 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Filter")>]
         let filter f source      =
-            ISeq.filter f (toISeq source) |> Upcast.enumerable
+            ISeq.filter f (toISeq source) :> seq<_>
 
         [<CompiledName("Where")>]
         let where f source      = filter f source
 
         [<CompiledName("Map")>]
         let map    f source      =
-            ISeq.map f (toISeq source) |> Upcast.enumerable
+            ISeq.map f (toISeq source) :> seq<_>
 
         [<CompiledName("MapIndexed")>]
         let mapi f source      =
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
-            ISeq.mapi (fun idx a ->f.Invoke(idx,a)) (toISeq source) |> Upcast.enumerable
+            ISeq.mapi (fun idx a ->f.Invoke(idx,a)) (toISeq source) :> seq<_>
 
         [<CompiledName("MapIndexed2")>]
         let mapi2 f source1 source2 =
             let f = OptimizedClosures.FSharpFunc<int,'T,'U,'V>.Adapt f
-            ISeq.mapi2 (fun idx a b -> f.Invoke (idx,a,b)) (source1 |> toISeq1) (source2 |> toISeq2) |> Upcast.enumerable
+            ISeq.mapi2 (fun idx a b -> f.Invoke (idx,a,b)) (source1 |> toISeq1) (source2 |> toISeq2) :> seq<_>
 
         [<CompiledName("Map2")>]
         let map2 f source1 source2 =
-            ISeq.map2 f (source1 |> toISeq1) (source2 |> toISeq2) |> Upcast.enumerable
+            ISeq.map2 f (source1 |> toISeq1) (source2 |> toISeq2) :> seq<_>
 
         [<CompiledName("Map3")>]
         let map3 f source1 source2 source3 =
-            ISeq.map3 f (source1 |> toISeq1) (source2 |> toISeq2) (source3 |> toISeq3) |> Upcast.enumerable
+            ISeq.map3 f (source1 |> toISeq1) (source2 |> toISeq2) (source3 |> toISeq3) :> seq<_>
 
         [<CompiledName("Choose")>]
         let choose f source      =
-            ISeq.choose f (toISeq source) |> Upcast.enumerable
+            ISeq.choose f (toISeq source) :> seq<_>
 
         [<CompiledName("Indexed")>]
         let indexed source =
-            ISeq.indexed (toISeq source) |> Upcast.enumerable
+            ISeq.indexed (toISeq source) :> seq<_>
 
         [<CompiledName("Zip")>]
         let zip source1 source2  =
-            ISeq.zip (source1 |> toISeq1) (source2 |> toISeq2) |> Upcast.enumerable
+            ISeq.zip (source1 |> toISeq1) (source2 |> toISeq2) :> seq<_>
 
         [<CompiledName("Zip3")>]
         let zip3 source1 source2  source3 =
-            ISeq.zip3 (source1 |> toISeq1) (source2 |> toISeq2) (source3 |> toISeq3) |> Upcast.enumerable
+            ISeq.zip3 (source1 |> toISeq1) (source2 |> toISeq2) (source3 |> toISeq3) :> seq<_>
 
         [<CompiledName("Cast")>]
         let cast (source: IEnumerable) =
-            source |> ISeq.cast |> Upcast.enumerable
+            source |> ISeq.cast :> seq<_>
 
         [<CompiledName("TryPick")>]
         let tryPick f (source : seq<'T>)  =
@@ -191,7 +186,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Take")>]
         let take count (source : seq<'T>)    =
-            ISeq.take count (toISeq source) |> Upcast.enumerable
+            ISeq.take count (toISeq source) :> seq<_>
 
         [<CompiledName("IsEmpty")>]
         let isEmpty (source : seq<'T>)  =
@@ -206,7 +201,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Concat")>]
         let concat sources =
-            sources |> toISeqs |> ISeq.map toISeq |> ISeq.concat |> Upcast.enumerable
+            sources |> toISeqs |> ISeq.map toISeq |> ISeq.concat :> seq<_>
 
         [<CompiledName("Length")>]
         let length (source : seq<'T>)    =
@@ -229,11 +224,11 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Replicate")>]
         let replicate count x =
-            ISeq.replicate count x |> Upcast.enumerable
+            ISeq.replicate count x :> seq<_>
 
         [<CompiledName("Append")>]
         let append (source1: seq<'T>) (source2: seq<'T>) =
-            ISeq.append (source1 |> toISeq1) (source2 |> toISeq2) |> Upcast.enumerable
+            ISeq.append (source1 |> toISeq1) (source2 |> toISeq2) :> seq<_>
 
         [<CompiledName("Collect")>]
         let collect f sources = map f sources |> concat
@@ -245,7 +240,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("OfList")>]
         let ofList (source : 'T list) =
-            ISeq.ofList source |> Upcast.enumerable
+            ISeq.ofList source :> seq<_>
 
         [<CompiledName("ToList")>]
         let toList (source : seq<'T>) =
@@ -253,7 +248,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("OfArray")>]
         let ofArray (source : 'T array) =
-            ISeq.ofArray source |> Upcast.enumerable
+            ISeq.ofArray source :> seq<_>
 
         [<CompiledName("ToArray")>]
         let toArray (source : seq<'T>)  =
@@ -273,19 +268,19 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Singleton")>]
         let singleton x =
-            ISeq.singleton x |> Upcast.enumerable
+            ISeq.singleton x :> seq<_>
 
         [<CompiledName("Truncate")>]
         let truncate n (source: seq<'T>) =
-            ISeq.truncate n (toISeq source) |> Upcast.enumerable
+            ISeq.truncate n (toISeq source) :> seq<_>
 
         [<CompiledName("Pairwise")>]
         let pairwise (source: seq<'T>) =
-            ISeq.pairwise (toISeq source) |> Upcast.enumerable
+            ISeq.pairwise (toISeq source) :> seq<_>
 
         [<CompiledName("Scan")>]
         let scan<'T,'State> f (z:'State) (source : seq<'T>) =
-            ISeq.scan f z (toISeq source) |> Upcast.enumerable
+            ISeq.scan f z (toISeq source) :> seq<_>
 
         [<CompiledName("TryFindBack")>]
         let tryFindBack f (source : seq<'T>) =
@@ -297,7 +292,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("ScanBack")>]
         let scanBack<'T,'State> f (source : seq<'T>) (acc:'State) =
-            ISeq.scanBack f (toISeq source) acc |> Upcast.enumerable
+            ISeq.scanBack f (toISeq source) acc :> seq<_>
 
         [<CompiledName("FindIndex")>]
         let findIndex p (source:seq<_>) =
@@ -318,15 +313,15 @@ namespace Microsoft.FSharp.Collections
         // windowed : int -> seq<'T> -> seq<'T[]>
         [<CompiledName("Windowed")>]
         let windowed windowSize (source: seq<_>) =
-            ISeq.windowed windowSize (toISeq source) |> Upcast.enumerable
+            ISeq.windowed windowSize (toISeq source) :> seq<_>
 
         [<CompiledName("Cache")>]
         let cache (source : seq<'T>) =
-            ISeq.cache (toISeq source) |> Upcast.enumerable
+            ISeq.cache (toISeq source) :> seq<_>
 
         [<CompiledName("AllPairs")>]
         let allPairs source1 source2 =
-            ISeq.allPairs (source1 |> toISeq1) (source2 |> toISeq2) |> Upcast.enumerable
+            ISeq.allPairs (source1 |> toISeq1) (source2 |> toISeq2) :> seq<_>
 
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly"); CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1707:IdentifiersShouldNotContainUnderscores"); CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
         [<CompiledName("ReadOnly")>]
@@ -347,36 +342,36 @@ namespace Microsoft.FSharp.Collections
                         else seq |> toISeq |> ISeq.GroupBy.byRef keyf
 
                 grouped
-                |> ISeq.map (fun (key,value) -> key, Upcast.enumerable value)
-                |> Upcast.enumerable)
+                |> ISeq.map (fun (key,value) -> key, value :> seq<_>)
+                :> seq<_>)
 
         [<CompiledName("Distinct")>]
         let distinct source =
-            ISeq.distinct (toISeq source) |> Upcast.enumerable
+            ISeq.distinct (toISeq source) :> seq<_>
 
         [<CompiledName("DistinctBy")>]
         let distinctBy keyf source =
-            ISeq.distinctBy keyf (toISeq source) |> Upcast.enumerable
+            ISeq.distinctBy keyf (toISeq source) :> seq<_>
 
         [<CompiledName("SortBy")>]
         let sortBy keyf source =
-            ISeq.sortBy keyf (toISeq source) |> Upcast.enumerable
+            ISeq.sortBy keyf (toISeq source) :> seq<_>
 
         [<CompiledName("Sort")>]
         let sort source =
-            ISeq.sort (toISeq source) |> Upcast.enumerable
+            ISeq.sort (toISeq source) :> seq<_>
 
         [<CompiledName("SortWith")>]
         let sortWith f source =
-            ISeq.sortWith f (toISeq source) |> Upcast.enumerable
+            ISeq.sortWith f (toISeq source) :> seq<_>
 
         [<CompiledName("SortByDescending")>]
         let inline sortByDescending keyf source =
-            ISeq.sortByDescending keyf (toISeq source) |> Upcast.enumerable
+            ISeq.sortByDescending keyf (toISeq source) :> seq<_>
 
         [<CompiledName("SortDescending")>]
         let inline sortDescending source =
-            ISeq.sortDescending (toISeq source) |> Upcast.enumerable
+            ISeq.sortDescending (toISeq source) :> seq<_>
 
         [<CompiledName("CountBy")>]
         let countBy (keyf:'T->'Key) (source:seq<'T>) =
@@ -385,8 +380,8 @@ namespace Microsoft.FSharp.Collections
 #else
             if typeof<'Key>.IsValueType
 #endif
-                then ISeq.CountBy.byVal keyf (toISeq source) |> Upcast.enumerable
-                else ISeq.CountBy.byRef keyf (toISeq source) |> Upcast.enumerable
+                then ISeq.CountBy.byVal keyf (toISeq source) :> seq<_>
+                else ISeq.CountBy.byRef keyf (toISeq source) :> seq<_>
 
         [<CompiledName("Sum")>]
         let inline sum (source: seq< ^a>) : ^a =
@@ -422,15 +417,15 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("TakeWhile")>]
         let takeWhile p (source: seq<_>) =
-            ISeq.takeWhile p (toISeq source) |> Upcast.enumerable
+            ISeq.takeWhile p (toISeq source) :> seq<_>
 
         [<CompiledName("Skip")>]
         let skip count (source: seq<_>) =
-            ISeq.skip count (toISeq source) |> Upcast.enumerable
+            ISeq.skip count (toISeq source) :> seq<_>
 
         [<CompiledName("SkipWhile")>]
         let skipWhile p (source: seq<_>) =
-            ISeq.skipWhile p (toISeq source) |> Upcast.enumerable
+            ISeq.skipWhile p (toISeq source) :> seq<_>
 
         [<CompiledName("ForAll2")>]
         let forall2 p (source1: seq<_>) (source2: seq<_>) =
@@ -452,7 +447,7 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Tail")>]
         let tail (source: seq<'T>) =
-            ISeq.tail (toISeq source) |> Upcast.enumerable
+            ISeq.tail (toISeq source) :> seq<_>
 
         [<CompiledName("Last")>]
         let last (source : seq<_>) =
@@ -468,28 +463,28 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Reverse")>]
         let rev source =
-            ISeq.rev (toISeq source) |> Upcast.enumerable
+            ISeq.rev (toISeq source) :> seq<_>
 
         [<CompiledName("Permute")>]
         let permute f (source : seq<_>) =
-            ISeq.permute f (toISeq source) |> Upcast.enumerable
+            ISeq.permute f (toISeq source) :> seq<_>
 
         [<CompiledName("MapFold")>]
         let mapFold<'T,'State,'Result> (f: 'State -> 'T -> 'Result * 'State) acc source =
-            ISeq.mapFold f acc (toISeq source) |> fun (iseq, state) -> Upcast.enumerable iseq, state
+            ISeq.mapFold f acc (toISeq source) |> fun (iseq, state) -> iseq :> seq<_>, state
 
         [<CompiledName("MapFoldBack")>]
         let mapFoldBack<'T,'State,'Result> (f: 'T -> 'State -> 'Result * 'State) source acc =
-            ISeq.mapFoldBack f (toISeq source) acc |> fun (iseq, state) -> Upcast.enumerable iseq, state
+            ISeq.mapFoldBack f (toISeq source) acc |> fun (iseq, state) -> iseq :> seq<_>, state
 
         [<CompiledName("Except")>]
         let except (itemsToExclude: seq<'T>) (source: seq<'T>) =
-            ISeq.except itemsToExclude (toISeq source) |> Upcast.enumerable
+            ISeq.except itemsToExclude (toISeq source) :> seq<_>
 
         [<CompiledName("ChunkBySize")>]
         let chunkBySize chunkSize (source : seq<_>) =
-            ISeq.chunkBySize chunkSize (toISeq source) |> Upcast.enumerable
+            ISeq.chunkBySize chunkSize (toISeq source) :> seq<_>
 
         [<CompiledName("SplitInto")>]
         let splitInto count source =
-            ISeq.splitInto count (toISeq source) |> Upcast.enumerable
+            ISeq.splitInto count (toISeq source) :> seq<_>
