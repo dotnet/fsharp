@@ -73,6 +73,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         new : unit -> EnumerableBase<'T>
         abstract member Append : ISeq<'T> -> ISeq<'T>
         abstract member Length : unit -> int
+        abstract member GetRaw : unit -> seq<'T>
         interface ISeq<'T>
 
     [<AbstractClass>]
