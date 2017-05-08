@@ -5,7 +5,10 @@ module internal Microsoft.VisualStudio.FSharp.Interactive.Session
 open Microsoft.FSharp.Compiler
 open System
 open System.IO
+open System.Text
 open System.Diagnostics
+open System.Runtime.Remoting
+open System.Runtime.Remoting.Lifetime
 open System.Windows.Forms
 open Internal.Utilities
 
@@ -72,8 +75,6 @@ module SessionsProperties =
 // Later: Tidy up.
 exception SessionError of string
 
-type 'a sink = 'a -> unit
-
 /// Buffer messages up into a list of messages.
 /// Allow upto timeMS to pass.
 let bufferEvent timeMS (w : #IObservable<_>) =
@@ -116,50 +117,24 @@ let bufferEvent timeMS (w : #IObservable<_>) =
         | Some batch -> bufferedW (List.ofSeq batch)
 
     let timer = new System.Windows.Forms.Timer() 
-    timer.Interval <- timeMS;
-    timer.Tick.Add(fun _ -> timer.Stop(); processBatch(); timer.Start());
-    timer.Start();
-    w.Add(addToBuffer);
+    timer.Interval <- timeMS
+    timer.Tick.Add(fun _ -> timer.Stop(); processBatch(); timer.Start())
+    timer.Start()
+    w.Add(addToBuffer)
     flushBuffer,bufferedE
-
-let (-->>) (src:'a IEvent) (dest: ('a -> unit) ) = src.Add(fun msg -> dest(msg))
-
 
 // Sessions...
 
-type Settings = 
-    { startupFlags : string }
-
-let settings = ref { startupFlags = "" }
-  
-type Session =
-    /// return: was the interrupt sent ok? 
-    abstract Interrupt       : unit -> bool 
-    abstract Input           : string sink 
-    abstract Output          : IObservable<string> 
-    abstract Error           : IObservable<string> 
-    abstract Exited          : IObservable<EventArgs> 
-    abstract Alive           : bool
-    abstract ProcessID       : int
-    abstract ProcessArgs     : string
-    abstract Kill            : unit -> unit
-#if FSI_SERVER_INTELLISENSE
-    abstract Completions     : string -> string[]
-    abstract GetDeclarations : string * string[] -> (string * string * string * int)[]
-#endif
-
-// REVIEW: should this throw a MessageBox on exception? or ignore?  
-let catchAll (ie: IEvent<_,_>) : IEvent<_> = 
-    let w,e = let e = new Event<_>() in e.Trigger, e.Publish
-    ie.Add(fun x -> try w(x) with err -> ignore(System.Windows.Forms.MessageBox.Show(err.ToString())); ());
-    e
+let catchAll trigger x = 
+    try trigger x  
+    with err -> System.Windows.Forms.MessageBox.Show(err.ToString()) |> ignore
 
 let fsiExeName () = 
     if SessionsProperties.useAnyCpuVersion then "fsiAnyCpu.exe" else "fsi.exe"
 
 // Use the VS-extension-installed development path if available, relative to the location of this assembly
 let determineFsiRelativePath1 () =
-    let thisAssemblyDirectory = typeof<Session>.Assembly.Location |> Path.GetDirectoryName
+    let thisAssemblyDirectory = typeof<EventWrapper>.Assembly.Location |> Path.GetDirectoryName
     Path.Combine(thisAssemblyDirectory,fsiExeName() )
 
 // This path is relative to the location of "FSharp.Compiler.Interactive.Settings.dll"
@@ -186,10 +161,10 @@ let determineFsiPath () =
     // Otherwise give up
     raise (SessionError (VFSIstrings.SR.couldNotFindFsiExe fsiRegistryPath))
 
-let readLinesAsync (reader: System.IO.StreamReader) trigger =
-    let buffer = System.Text.StringBuilder(1024)
+let readLinesAsync (reader: StreamReader) trigger =
+    let buffer = StringBuilder(1024)
     let byteBuffer = Array.zeroCreate 128
-    let encoding = System.Text.Encoding.UTF8
+    let encoding = Encoding.UTF8
     let decoder = encoding.GetDecoder()
     let async0 = async.Return 0
     let charBuffer = 
@@ -239,7 +214,7 @@ let fsiStartInfo channelName =
     // Fix: pin down the input/output encodings precisely (force I/O to use UTF8 regardless).
     // Send codepage preferences to the FSI.
     // We also need to send fsi.exe the locale of the VS process
-    let inCP,outCP = System.Text.Encoding.UTF8.CodePage,System.Text.Encoding.UTF8.CodePage
+    let inCP,outCP = Encoding.UTF8.CodePage,Encoding.UTF8.CodePage
 
     let addBoolOption name value args = sprintf "%s --%s%s" args name (if value then "+" else "-")
     let addStringOption name value args = sprintf "%s --%s:%O" args name value
@@ -250,8 +225,7 @@ let fsiStartInfo channelName =
         |> addStringOption "fsi-server-input-codepage" inCP
         |> addStringOption "fsi-server-lcid" System.Threading.Thread.CurrentThread.CurrentUICulture.LCID
         |> addStringOption "fsi-server" channelName
-        |> (+) <| sprintf " %s" (!settings).startupFlags
-        |> (+) <| sprintf " %s" SessionsProperties.fsiArgs
+        |> (fun s -> s +  sprintf " %s" SessionsProperties.fsiArgs)
         |> addBoolOption "shadowcopyreferences" SessionsProperties.fsiShadowCopy
         |> (fun args -> if SessionsProperties.fsiDebugMode then
                             // for best debug experience, need optimizations OFF and debug info ON
@@ -260,256 +234,216 @@ let fsiStartInfo channelName =
                         else args)
 
     procInfo.Arguments <- procArgs
-    procInfo.CreateNoWindow <- true;
-    procInfo.UseShellExecute <- false;
+    procInfo.CreateNoWindow <- true
+    procInfo.UseShellExecute <- false
+    procInfo.RedirectStandardError <- true
+    procInfo.RedirectStandardInput <- true
+    procInfo.RedirectStandardOutput <- true
+    procInfo.StandardOutputEncoding <- Encoding.UTF8
+    procInfo.StandardErrorEncoding <- Encoding.UTF8
+    let tmpPath = Path.GetTempPath()
+    if Directory.Exists(tmpPath) then
+        procInfo.WorkingDirectory <- tmpPath
     procInfo
 
-let fsiProcess (procInfo:ProcessStartInfo) =
-    procInfo.RedirectStandardError <- true;
-    procInfo.RedirectStandardInput <- true;
-    procInfo.RedirectStandardOutput <- true;
-    procInfo.StandardOutputEncoding <- System.Text.Encoding.UTF8;
-    procInfo.StandardErrorEncoding <- System.Text.Encoding.UTF8;
-    let tmpPath = System.IO.Path.GetTempPath()
-    if System.IO.Directory.Exists(tmpPath) then
-        procInfo.WorkingDirectory <- tmpPath
-    else
-        () // oh well, just use the current directory, probably e.g. Common7\IDE under Visual Studio
-    let cmdProcess = new Process()
-    cmdProcess.StartInfo <- procInfo;
-
-    let inW ,inE  = let e = new Event<_>() in e.Trigger, e.Publish
-    let outW,outE = let e = new Event<_>() in e.Trigger, e.Publish
-    let errW,errE = let e = new Event<_>() in e.Trigger, e.Publish
-    let exitE = (cmdProcess.Exited |> Observable.map (fun x -> x)) // this gives the event the F# "standard" event type IEvent<'a> rather than IEvent<_,_>
-
-    let stdOutNewLine = Event<_>()
-    let stdErrNewLine = Event<_>()
-
-    // add subscribers prior to hooking to events to avoid data loss if event is emitted before the subscription
-    stdOutNewLine.Publish |> catchAll |> Observable.add(fun data -> 
-        //System.Windows.Forms.MessageBox.Show (sprintf "OutputDataRecieved '%s'\n" data.Data) |> ignore
-        outW(data)
-        );
-    stdErrNewLine.Publish |> catchAll |> Observable.add (fun data -> errW(data))
-
-    let _ = cmdProcess.Start()
-    // hook up stdout\stderr data events
-    readLinesAsync cmdProcess.StandardOutput stdOutNewLine.Trigger
-    readLinesAsync cmdProcess.StandardError  stdErrNewLine.Trigger
-
-    // wire up input 
-    // Fix 982: Force input to be written in UTF8 regardless of the apparent encoding.
-    let inputWriter = new System.IO.StreamWriter(cmdProcess.StandardInput.BaseStream, new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier=false))
-    inputWriter.AutoFlush <- false;
-
-    let send str = 
-        inputWriter.WriteLine(str:string); 
-        inputWriter.Flush()
-    inE.Add(send);
-
-    // wire up exited 
-    cmdProcess.EnableRaisingEvents <- true;
-
-    // RESULT: 
-    cmdProcess,inW,outW,outE,errE,exitE
-
-let killProcess outW (proc:Process) =
-    let verboseSession = false
-    try 
-        if verboseSession then outW ("Kill process " + proc.Id.ToString())
-        proc.Kill();()
-        if verboseSession then proc.Exited.Add(fun _ -> outW (proc.Id.ToString()))
-    with e -> 
-        outW (VFSIstrings.SR.killingProcessRaisedException (e.ToString()))
 
 let nonNull = function null -> false | (s:string) -> true
 
-open System.Runtime.Remoting
-open System.Runtime.Remoting.Lifetime
-let leaseStatus myService =
-#if DEBUG    
-    if false then
-        let myLease = RemotingServices.GetLifetimeService(myService) :?> ILease
-        match myLease with 
-        | null -> printf "Cannot get lease.\n"
-        | _ -> 
-          ignore (System.Windows.Forms.MessageBox.Show
-                    (sprintf "Initial lease time is %s\n"  (myLease.InitialLeaseTime  .ToString()) +
-                     sprintf "Current lease time is %s\n"  (myLease.CurrentLeaseTime  .ToString()) +
-                     sprintf "Renew on call time is %s\n"  (myLease.RenewOnCallTime   .ToString()) +
-                     sprintf "Sponsorship timeout is %s\n" (myLease.SponsorshipTimeout.ToString()) +
-                     sprintf "Current lease state is %s\n" (myLease.CurrentState      .ToString())))
-#endif
-    ()
+/// Represents an active F# Interactive process to which Visual Studio is connected via stdin/stdout/stderr and a remoting channel
+type FsiSession() = 
+    let randomSalt = System.Random()
+    let channelName = 
+        let pid  = System.Diagnostics.Process.GetCurrentProcess().Id
+        let tick = System.Environment.TickCount
+        let salt = randomSalt.Next()
+        sprintf "FSIChannel_%d_%d_%d" pid tick salt
 
-let randomSalt = System.Random() (* note: Random() uses TickCount() for the Random(seed) *)
-let createSessionProcess () =
-    let channelName = let pid  = System.Diagnostics.Process.GetCurrentProcess().Id
-                      let tick = System.Environment.TickCount
-                      let salt = randomSalt.Next()
-                      sprintf "FSIChannel_%d_%d_%d" pid tick salt
     let procInfo = fsiStartInfo channelName
-    let proc,inW,outW,outE,errE,exitedE = fsiProcess procInfo        
+    let cmdProcess = new Process(StartInfo=procInfo)
+    let fsiOutput = Event<_>()
+    let fsiError = Event<_>()
+
+    do cmdProcess.Start() |> ignore
+
+    // hook up stdout\stderr data events
+    do readLinesAsync cmdProcess.StandardOutput (catchAll fsiOutput.Trigger)
+    do readLinesAsync cmdProcess.StandardError  (catchAll fsiError.Trigger)
+
+    let inputQueue = 
+        // Write the input asynchronously, freeing up the IDE thread to contrinue doing work
+        // Fix 982: Force input to be written in UTF8 regardless of the apparent encoding.
+        let inputWriter = new StreamWriter(cmdProcess.StandardInput.BaseStream, new UTF8Encoding(encoderShouldEmitUTF8Identifier=false), AutoFlush = false)
+        MailboxProcessor<string>.Start(fun inbox -> 
+            async { 
+                try 
+                  while not cmdProcess.HasExited do 
+                    let! textToWrite = inbox.Receive() 
+                    inputWriter.WriteLine(textToWrite) 
+                    inputWriter.Flush()
+                with _ -> () // if writing or flushing fails then just give up on this F# Interactive session
+            })
+
+    do cmdProcess.EnableRaisingEvents <- true
+
     let client   = 
         try Microsoft.FSharp.Compiler.Server.Shared.FSharpInteractiveServer.StartClient(channelName)
         with e -> raise (SessionError (VFSIstrings.SR.exceptionRaisedWhenCreatingRemotingClient(e.ToString())))
 
-    let interruptTimeoutMS   = 1000 (* timeout in miliseconds *)
-    let completionsTimeoutMS = 3000 (* timeout in miliseconds.
-                                       This timeout is to catch any issue with remoting becoming unresponsive.
-                                       On it's duration,
-                                       it is better from user POV to wait a few seconds and see,
-                                       than to abort an intelisense request that would return,
-                                       since an abort request has no useful information at all.
-                                       2 seconds seems to slow. (which was surprising, maybe
-                                       the tcEnv were still being computed).
-                                    *)
+    /// interrupt timeout in miliseconds 
+    let interruptTimeoutMS   = 1000 
 
-    let interrupt() =
-       leaseStatus client
+#if FSI_SERVER_INTELLISENSE
+
+    // timeout in miliseconds.
+    // This timeout is to catch any issue with remoting becoming unresponsive.
+    // On it's duration, it is better from user POV to wait a few seconds and see,
+    // than to abort an intelisense request that would return,
+    // since an abort request has no useful information at all.
+    // 2 seconds seems to slow. (which was surprising, maybe
+    // the tcEnv were still being computed).
+    let completionsTimeoutMS = 3000
+       
+#endif
+
+    let checkLeaseStatus myService =
+        if false then
+            let myLease = RemotingServices.GetLifetimeService(myService) :?> ILease
+            match myLease with 
+            | null -> printf "Cannot get lease.\n"
+            | _ -> 
+              ignore (System.Windows.Forms.MessageBox.Show
+                        (sprintf "Initial lease time is %s\n"  (myLease.InitialLeaseTime  .ToString()) +
+                         sprintf "Current lease time is %s\n"  (myLease.CurrentLeaseTime  .ToString()) +
+                         sprintf "Renew on call time is %s\n"  (myLease.RenewOnCallTime   .ToString()) +
+                         sprintf "Sponsorship timeout is %s\n" (myLease.SponsorshipTimeout.ToString()) +
+                         sprintf "Current lease state is %s\n" (myLease.CurrentState      .ToString())))
+
+
+    // Create session object 
+    member x.Interrupt() = 
+       checkLeaseStatus client
        match timeoutApp "VFSI interrupt" interruptTimeoutMS (fun () -> client.Interrupt()) () with
        | Some () -> true
        | None    -> false
 
+    member x.SendInput (str: string) = inputQueue.Post(str)
+
+    member x.Output      = Observable.filter nonNull fsiOutput.Publish
+
+    member x.Error       = Observable.filter nonNull fsiError.Publish
+
+    member x.Exited      = (cmdProcess.Exited |> Observable.map id)
+
+    member x.Alive       = not cmdProcess.HasExited
+
+    member x.ProcessID   = cmdProcess.Id
+
+    member x.ProcessArgs = procInfo.Arguments
+
+    member x.Kill()         = 
+        let verboseSession = false
+        try 
+            if verboseSession then fsiOutput.Trigger ("Kill process " + cmdProcess.Id.ToString())
+            cmdProcess.Kill()
+            if verboseSession then cmdProcess.Exited.Add(fun _ -> fsiOutput.Trigger (cmdProcess.Id.ToString()))
+        with e -> 
+            fsiOutput.Trigger (VFSIstrings.SR.killingProcessRaisedException (e.ToString()))
+
 #if FSI_SERVER_INTELLISENSE
-    let completions(s) =
-       leaseStatus client
+    member x.Completions(s:string) = 
+       checkLeaseStatus client
        match timeoutApp "VFSI completions" completionsTimeoutMS (fun () -> client.Completions(s)) () with
        | Some names -> names
        | None       -> [| |]
-       
-    let getDeclarations(s:string,plid:string[]) =
-       leaseStatus client       
+
+    member x.GetDeclarations(s: string, plid: string[]) = 
+       checkLeaseStatus client       
        match timeoutApp "VFSI intelisense" completionsTimeoutMS (fun () -> client.GetDeclarations(s,plid)) () with
        | Some results -> results
        | None         -> [| |]
 #endif
 
-    // Create session object 
-    { new Session with 
-        member x.Interrupt() = interrupt()
-        member x.Input       = inW
-        member x.Output      = Observable.filter nonNull outE
-        member x.Error       = Observable.filter nonNull errE
-        member x.Exited      = exitedE      
-        member x.Alive       = not proc.HasExited
-        member x.ProcessID   = proc.Id
-        member x.ProcessArgs = procInfo.Arguments
-        member x.Kill()         = killProcess outW proc
-#if FSI_SERVER_INTELLISENSE
-        member x.Completions(s) = completions(s:string)
-        member x.GetDeclarations(s,plid) = getDeclarations(s,plid)
-#endif
-        }
-
 //-------------------------------------------------------------------------
 // sessions
 //-------------------------------------------------------------------------
 
-type Sessions =
-    inherit Session
-    abstract Restart    : unit -> unit
-
-let createSessions () =
+/// Represents a container for all the active F# Interactive sessions
+/// Currently there is either 0 or 1 
+type FsiSessions() =
     // state: the most recent (if any) session object
-    let sessionR = ref None : Session option ref
-    let isCurrentSession session = !sessionR = Some session
+    let mutable sessionR : FsiSession option  = None 
+
+    let isCurrentSession session = 
+        (sessionR = Some session)
     
-    let inW ,inE        = let e = new Event<string>() in e.Trigger, e.Publish 
-    let outW,outE       = let e = new Event<string>() in e.Trigger, e.Publish 
-    let errW,errE       = let e = new Event<string>() in e.Trigger, e.Publish 
-    let exitedW,exitedE = let e = new Event<EventArgs>() in e.Trigger, e.Publish 
-    (* Wire up input, if there is a session, send it the input *)    
-    inE.Add(fun s -> match !sessionR with Some session -> session.Input s | None -> ());
+    let fsiOut = Event<string>()
+    let fsiError = Event<string>()
+    let fsiExited = Event<EventArgs>()
   
     let kill() =
-      match !sessionR with
-        | None         -> ()
-        | Some session -> sessionR := None; session.Kill() // clearing sessionR before kill() means session.Exited is ignored below
+      sessionR |> Option.iter (fun session -> 
+          sessionR <- None
+          // clearing sessionR before kill() means session.Exited is ignored below
+          session.Kill())
      
     let restart() =
-        kill();
+        kill()
         try 
-            let session = createSessionProcess()
-            sessionR := Some session          
+            let session = FsiSession()
+            sessionR <- Some session          
             // All response callbacks are guarded by checks that "session" is still THE ACTIVE session.
-            session.Output.Add(fun s -> if isCurrentSession session then outW s);
-            session.Error .Add(fun s -> if isCurrentSession session then errW s);
-            session.Exited.Add(fun x -> if isCurrentSession session then (sessionR := None; exitedW x));
+            session.Output.Add(fun s -> if isCurrentSession session then fsiOut.Trigger s)
+            session.Error.Add(fun s -> if isCurrentSession session then fsiError.Trigger s)
+            session.Exited.Add(fun x -> if isCurrentSession session then (sessionR <- None; fsiExited.Trigger x))
         with
-            SessionError text -> errW text
+            SessionError text -> fsiError.Trigger text
+   
+    member x.Interrupt()    = 
+        sessionR |> Option.forall (fun session -> session.Interrupt())
 
-    let alive() =
-        match !sessionR with
-        | None -> false
-        | Some session -> session.Alive
+    member x.SendInput s    = 
+        sessionR |> Option.iter (fun session -> session.SendInput s)
 
-    let processId() =
-        match !sessionR with
+    member x.Output         = fsiOut.Publish
+
+    member x.Error          = fsiError.Publish
+
+    member x.Alive          = 
+        sessionR |> Option.exists (fun session -> session.Alive)
+
+    member x.ProcessID      = 
+        match sessionR with
         | None -> -1 (* -1 assumed to never be a valid process ID *)
         | Some session -> session.ProcessID
 
-    let processArgs() =
-        match !sessionR with
+    member x.ProcessArgs    = 
+        match sessionR with
         | None -> ""
         | Some session -> session.ProcessArgs
-      
-    let interrupt() =
-        match !sessionR with
-        | None -> true
-        | Some session -> session.Interrupt()
+
+    member x.Kill()         = kill()
+    member x.Restart()      = restart()
+    member x.Exited         = fsiExited.Publish
 
 #if FSI_SERVER_INTELLISENSE
-    let completions s =
-        match !sessionR with
+    member x.Completions(s) = 
+        match sessionR with
         | None -> [| |]
         | Some session -> session.Completions(s)
-   
-    let getDeclarations s plid =
-        match !sessionR with
+
+    member x.GetDeclarations(s,plid) = 
+        match sessionR with
         | None -> [| |]
         | Some session -> session.GetDeclarations(s,plid)
-#endif
-   
-    { new Sessions with 
-        member x.Interrupt()    = interrupt()
-        member x.Input          = inW
-        member x.Output         = upcast outE
-        member x.Error          = upcast errE
-        member x.Alive          = alive()
-        member x.ProcessID      = processId()
-        member x.ProcessArgs    = processArgs()
-        member x.Kill()         = kill()
-        member x.Restart()      = restart()
-        member x.Exited         = upcast exitedE
-#if FSI_SERVER_INTELLISENSE
-        member x.Completions(s) = completions s
-        member x.GetDeclarations(s,plid) = getDeclarations s plid
-#endif
-    }
 
-#if FSI_SERVER_INTELLISENSE
+    member x.GetDeclarationInfos (str:string) = 
+        // RPC to the session to get the completions based on the latest state.                        
+        let plid = Microsoft.VisualStudio.FSharp.Interactive.QuickParse.GetPartialLongName(str,str.Length-1) // Subtract one to convert to zero-relative            
+        let project = function (name,None) -> [name] | (name,Some residue) -> [name;residue]
+        let plid = plid |> List.collect project |> List.toArray
+        // diagnostics.Log(sprintf "RPC GetDeclarations with str =[[%s]]" str)
+        // diagnostics.Log(sprintf "RPC GetDeclarations with plid=[[%s]]" (String.concat "." plid))
+        let declInfos = x.GetDeclarations(str,plid)        
+        declInfos
 
-let getDeclarationInfos (sessions:Sessions) (str:string) = 
-    // RPC to the session to get the completions based on the latest state.                        
-    let plid = Microsoft.VisualStudio.FSharp.Interactive.QuickParse.GetPartialLongName(str,str.Length-1) // Subtract one to convert to zero-relative            
-    let project = function (name,None) -> [name] | (name,Some residue) -> [name;residue]
-    let plid = plid |> List.collect project |> List.toArray
-    // diagnostics.Log(sprintf "RPC GetDeclarations with str =[[%s]]" str)
-    // diagnostics.Log(sprintf "RPC GetDeclarations with plid=[[%s]]" (String.concat "." plid))
-    let declInfos = sessions.GetDeclarations(str,plid)        
-    declInfos
-
-(*
-Saving some test fragments.
-System.Console.OutputEncoding <- System.Text.Encoding.GetEncoding(437)
-let xs = [ "zh-TW" , "全域" ; "zh-CN" , "全局" ; "ja-JP" , "全体" ; "ko-KR" , "전역" ; ]
-let x = "β";; x;;
-System.Windows.Forms.MessageBox.Show("β");;
-System.Windows.Forms.MessageBox.Show("±")
-System.Windows.Forms.MessageBox.Show("©")
-System.Console.WriteLine("±")
-System.Console.WriteLine("©")
-*)
 #endif
