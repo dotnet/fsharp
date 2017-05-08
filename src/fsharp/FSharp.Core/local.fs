@@ -1166,3 +1166,13 @@ module internal Array =
                   (source:>System.Collections.IEnumerable).GetEnumerator ()
               member this.GetEnumerator(): IEnumerator<'T> = 
                   (source:>IEnumerable<'T>).GetEnumerator () }
+
+module internal ISeq =
+    open Microsoft.FSharp.Collections.SeqComposition
+
+    let length (source:ISeq<_>) =
+        source.Fold (fun _ ->
+            { new Folder<'T,int>(0) with
+                override this.ProcessNext v =
+                    this.Result <- this.Result + 1
+                    Unchecked.defaultof<_> (* return value unused in Fold context *) })

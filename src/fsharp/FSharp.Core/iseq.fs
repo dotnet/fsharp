@@ -952,7 +952,7 @@ namespace Microsoft.FSharp.Collections
             match source with
             | :? EnumerableBase<'T> as s -> s.Length ()
             | :? list<'T> as l -> l.Length
-            | _ -> length source
+            | _ -> Microsoft.FSharp.Primitives.Basics.ISeq.length source
 
         [<CompiledName("ToArray")>]
         let toArray (source:ISeq<'T>)  =

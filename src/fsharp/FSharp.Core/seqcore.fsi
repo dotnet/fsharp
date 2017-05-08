@@ -91,8 +91,6 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         // and it can only do it at the start of a sequence
         abstract CanSkip : unit -> bool
 
-    val internal length : ISeq<'T> -> int
-
     type internal ThinConcatEnumerable<'T, 'Sources, 'Collection when 'Collection :> ISeq<'T>> =
         inherit EnumerableBase<'T>
         new : 'Sources * ('Sources->ISeq<'Collection>) -> ThinConcatEnumerable<'T, 'Sources, 'Collection>
