@@ -307,7 +307,7 @@ type internal CodeLensTagger
             asyncMaybe {
                 //if firstTimeChecked then
                     do! Async.SwitchToContext uiContext |> liftAsync
-                    do! Async.Sleep(10) |> liftAsync
+                    do! Async.Sleep(5) |> liftAsync
                     let! view = view
                     let! layer = codeLensLayer
                     if nonVisibleLineNumbers.Count > 0 || newVisibleLineNumbers.Count > 0 || updated then
@@ -346,46 +346,29 @@ type internal CodeLensTagger
                                 visibleAdornments.TryRemove(key, &temp) |> ignore)
                         updated <- false
 
-                    do! Async.Sleep(450) |> liftAsync
-                    // We need a new snapshot, it could be already outdated
-                    let buffer = view.TextBuffer.CurrentSnapshot
+                    do! Async.Sleep(495) |> liftAsync
 
-                    let customStart = 
-                        let correctedStart = 
-                            let s = Set.minElement visibleLineNumbers
-                            if s < 0 then 0 else s
-                        buffer.GetLineFromLineNumber(correctedStart)
-
-                    let customEnd = 
-                        let correctedEnd = 
-                            let s = Set.maxElement visibleLineNumbers
-                            if s > buffer.LineCount - 1 then buffer.LineCount - 1
-                            else s
-                        buffer.GetLineFromLineNumber(correctedEnd)
-
-                    let customVisibleSpan =
+                    let visibleSpan =
                         let first, last = 
-                            view.TextViewLines.GetTextViewLineContainingBufferPosition(customStart.Start), 
-                            view.TextViewLines.GetTextViewLineContainingBufferPosition(customEnd.Start)
+                            view.TextViewLines.FirstVisibleLine, 
+                            view.TextViewLines.LastVisibleLine
                         SnapshotSpan(first.Start, last.End)
-                    let customVisibleLines = view.TextViewLines.GetTextViewLinesIntersectingSpan customVisibleSpan
+                    let customVisibleLines = view.TextViewLines.GetTextViewLinesIntersectingSpan visibleSpan
                     let isLineVisible (line:ITextViewLine) = line.IsValid &&  not(codeLensUIElementCache.ContainsKey(line.Extent.GetText()))
                     let linesToProcess = customVisibleLines |> Seq.filter isLineVisible
 
                     for line in linesToProcess do
-                        if line.IsValid then
-                            //logInfof "Processing line with content %A." (line.Extent.GetText())
-                            try
-                                if not (Seq.isEmpty (line.GetAdornmentTags this)) then
-                                    let da = DoubleAnimation(From = Nullable 0., To = Nullable 0.5, Duration = Duration(TimeSpan.FromSeconds 0.4))
-                                    let! res = createCodeLensUIElementByLine line |> liftAsync
-                                    match res with
-                                    | Some textBox ->
-                                        layer.AddAdornment(AdornmentPositioningBehavior.ViewportRelative, Nullable(), 
-                                            this, textBox, AdornmentRemovedCallback(fun _ _ -> logMsg "Adornment removed" )) |> ignore
-                                        textBox.BeginAnimation(UIElement.OpacityProperty, da)
-                                    | None -> ()
-                            with e -> logExceptionWithContext (e, "LayoutChanged, processing new visible lines")
+                        try
+                            if not (Seq.isEmpty (line.GetAdornmentTags this)) then
+                                let da = DoubleAnimation(From = Nullable 0., To = Nullable 0.5, Duration = Duration(TimeSpan.FromSeconds 0.4))
+                                let! res = createCodeLensUIElementByLine line |> liftAsync
+                                match res with
+                                | Some textBox ->
+                                    layer.AddAdornment(AdornmentPositioningBehavior.ViewportRelative, Nullable(), 
+                                        this, textBox, AdornmentRemovedCallback(fun _ _ -> logMsg "Adornment removed" )) |> ignore
+                                    textBox.BeginAnimation(UIElement.OpacityProperty, da)
+                                | None -> ()
+                        with e -> logExceptionWithContext (e, "LayoutChanged, processing new visible lines")
             }
             |> Async.Ignore
         recentFirstVsblLineNmbr <- firstVisibleLineNumber
