@@ -1241,6 +1241,15 @@ module internal Array =
             res.CopyTo(arr, 0)
             arr
         | :? ISeq<'T> as s -> ofISeq s
+#if !FSCORE_PORTABLE_OLD
+        | :? IReadOnlyCollection<'T> as col ->
+            let res = zeroCreateUnchecked col.Count : 'T[]
+            let mutable idx = 0
+            for x in source do
+                res.[idx] <- x
+                idx <- idx + 1
+            res
+#endif
         | _ ->
             let res = ResizeArray source
             res.ToArray()
