@@ -45,6 +45,7 @@ let internal options = {
     OriginalLoadReferences = []
     UnresolvedReferences = None
     ExtraProjectInfo = None
+    Stamp = None
 }
 
 let VerifyCompletionList(fileContents: string, marker: string, expected: string list, unexpected: string list) =

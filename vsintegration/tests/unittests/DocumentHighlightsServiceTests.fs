@@ -47,6 +47,7 @@ let internal options = {
     UnresolvedReferences = None
     OriginalLoadReferences = []
     ExtraProjectInfo = None
+    Stamp = None
 }
 
 let private getSpans (sourceText: SourceText) (caretPosition: int) =

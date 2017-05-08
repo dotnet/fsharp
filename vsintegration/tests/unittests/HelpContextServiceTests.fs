@@ -30,6 +30,7 @@ type HelpContextServiceTests() =
         UnresolvedReferences = None
         ExtraProjectInfo = None
         OriginalLoadReferences = []
+        Stamp = None
     }
 
     let markers (source:string) = 

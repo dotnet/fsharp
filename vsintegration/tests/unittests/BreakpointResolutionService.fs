@@ -31,6 +31,7 @@ type BreakpointResolutionServiceTests()  =
         OriginalLoadReferences = []
         UnresolvedReferences = None
         ExtraProjectInfo = None
+        Stamp = None
     }
     let code = "
 // This is a comment
