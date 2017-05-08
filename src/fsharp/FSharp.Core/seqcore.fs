@@ -296,13 +296,6 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                 finally
                     activity.ChainDispose ()
 
-    let length (source:ISeq<_>) =
-        source.Fold (fun _ ->
-            { new Folder<'T,int>(0) with
-                override this.ProcessNext v =
-                    this.Result <- this.Result + 1
-                    Unchecked.defaultof<_> (* return value unused in Fold context *) })
-
     [<AbstractClass>]
     type EnumerableBase<'T> () =
         let derivedClassShouldImplement () =
@@ -313,7 +306,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         abstract member GetRaw : unit -> seq<'T>
 
         default this.Append source = upcast (AppendEnumerable [source; this])
-        default this.Length () = length this
+        default this.Length () = Microsoft.FSharp.Primitives.Basics.ISeq.length this
         default this.GetRaw () = upcast this
 
         interface IEnumerable with
@@ -476,7 +469,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         override __.Length () =
             match delayed() with
             | :? EnumerableBase<'T> as s -> s.Length ()
-            | s -> length s
+            | s -> Microsoft.FSharp.Primitives.Basics.ISeq.length s
 
         override __.GetRaw () = 
             match delayed() with

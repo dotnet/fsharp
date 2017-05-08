@@ -88,3 +88,6 @@ module internal Array =
     val stableSortInPlace: array:'T[] -> unit when 'T : comparison 
     val ofSeq : seq<'T> -> array<'T>
     val toSeq : array<'T> -> seq<'T>
+
+module internal ISeq =
+    val length : ISeq<'T> -> int
