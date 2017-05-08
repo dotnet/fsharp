@@ -3343,13 +3343,8 @@ module DebugPrint = begin
             | argtys -> (prefixL ^^ nmL ^^ wordL(tagText "of")) --- layoutUnionCaseArgTypes argtys
 
         let layoutUnionCases ucases =
-<<<<<<< HEAD
-            let prefixL = if not (isNilOrSingleton ucases) then wordL(tagText "|") else emptyL
-            List.map (ucaseL prefixL) ucases
-=======
-            let prefixL = if Seq.length ucases > 1 then wordL(tagText "|") else emptyL
+            let prefixL = if not (isNilOrSingleton' ucases) then wordL(tagText "|") else emptyL
             Seq.map (ucaseL prefixL) ucases
->>>>>>> UnionCasesAsList to UnionCasesAsSeq
             
         let layoutRecdField (fld:RecdField) =
             let lhs = wordL (tagText fld.Name)

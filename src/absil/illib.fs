@@ -31,6 +31,8 @@ let inline isNilOrSingleton l =
     | [_] -> true
     | _ -> false
 
+let inline isNilOrSingleton' l = l |> Seq.truncate 2 |> Seq.length < 2
+
 /// Returns true if the list contains exactly 1 element. Otherwise false.
 let inline isSingleton l =
     match l with
