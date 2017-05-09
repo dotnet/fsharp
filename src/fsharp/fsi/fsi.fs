@@ -2467,23 +2467,8 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     //----------------------------------------------------------------------------
 
     let currentDirectory = Directory.GetCurrentDirectory()
-    let defaultFSharpBinariesDir =
-#if FX_RESHAPED_REFLECTION
-         System.AppContext.BaseDirectory
-#else
-        System.AppDomain.CurrentDomain.BaseDirectory
-#endif
-        
-    // When used as part of FCS we cannot assume the current process is fsi.exe
-    // So we try to fallback to the default compiler dir.
-    let defaultFSharpBinariesDir = 
-        let safeExists f = (try File.Exists(f) with _ -> false)
-        let containsRequiredFiles =
-            [ "FSharp.Core.dll"; "FSharp.Core.sigdata"; "FSharp.Core.optdata" ]
-            |> Seq.map (fun file -> Path.Combine(defaultFSharpBinariesDir, file))
-            |> Seq.forall safeExists
-        if containsRequiredFiles then defaultFSharpBinariesDir 
-        else Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None).Value
+
+    let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(FSharpEnvironment.tryCurrentDomain()).Value
 
 #if COMPILER_SERVICE && !COMPILER_SERVICE_DLL_VISUAL_STUDIO
     let referenceResolver = SimulatedMSBuildReferenceResolver.GetBestAvailableResolver(msbuildEnabled)

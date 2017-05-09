@@ -439,24 +439,28 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
 
     member x.DeclaredInterfaces = 
         if isUnresolved() then makeReadOnlyCollection [] else
-        [ for ty in GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes cenv.g cenv.amap range0 (generalizedTyconRef entity) do 
-             yield FSharpType(cenv,  ty) ]
+        ErrorLogger.protectAssemblyExploration [] (fun () -> 
+            [ for ty in GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes cenv.g cenv.amap range0 (generalizedTyconRef entity) do 
+                 yield FSharpType(cenv,  ty) ])
         |> makeReadOnlyCollection
 
     member x.AllInterfaces = 
         if isUnresolved() then makeReadOnlyCollection [] else
-        [ for ty in AllInterfacesOfType  cenv.g cenv.amap range0 AllowMultiIntfInstantiations.Yes (generalizedTyconRef entity) do 
-             yield FSharpType(cenv,  ty) ]
+        ErrorLogger.protectAssemblyExploration [] (fun () -> 
+            [ for ty in AllInterfacesOfType  cenv.g cenv.amap range0 AllowMultiIntfInstantiations.Yes (generalizedTyconRef entity) do 
+                 yield FSharpType(cenv,  ty) ])
         |> makeReadOnlyCollection
     
     member x.IsAttributeType =
         if isUnresolved() then false else
         let ty = generalizedTyconRef entity
+        ErrorLogger.protectAssemblyExploration false <| fun () -> 
         Infos.ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap range0 ty cenv.g.tcref_System_Attribute
         
     member x.IsDisposableType =
         if isUnresolved() then false else
         let ty = generalizedTyconRef entity
+        ErrorLogger.protectAssemblyExploration false <| fun () -> 
         Infos.ExistsHeadTypeInEntireHierarchy cenv.g cenv.amap range0 ty cenv.g.tcref_System_IDisposable
 
     member x.BaseType = 
