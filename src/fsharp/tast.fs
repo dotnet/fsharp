@@ -2420,6 +2420,11 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
         match x.ActualParent  with 
         | Parent tcref -> tcref
         | ParentNone -> error(InternalError("TopValActualParent: does not have a parent",x.Range))
+
+    member x.HasTopValActualParent = 
+        match x.ActualParent  with 
+        | Parent _ -> true
+        | ParentNone -> false
             
     /// Get the apparent parent entity for a member
     member x.MemberApparentParent : TyconRef = 
@@ -3368,6 +3373,9 @@ and
     /// value will appear in compiled code. For extension members this is the module where the extension member
     /// is declared.
     member x.TopValActualParent         = x.Deref.TopValActualParent
+
+    // Can be false for members after error recovery
+    member x.HasTopValActualParent         = x.Deref.HasTopValActualParent
 
     /// Get the apparent parent entity for a member
     member x.MemberApparentParent       = x.Deref.MemberApparentParent
