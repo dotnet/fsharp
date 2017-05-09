@@ -36,6 +36,15 @@
                 <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
               </PropertyGroup>
             </When>
+            <!-- Some unit test assemblies must not have strong names since they reference other assemblies that don't have strong names -->
+            <!-- These unit test assemblies can't use InternalsVisibleTo into assemblies with strong names. -->
+            <When Condition="'$(StrongNames)' == 'false'" >
+              <PropertyGroup>
+                <DefineConstants>NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
+                <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
+                <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
+              </PropertyGroup>
+            </When>
             <!-- In the Microsoft build we just delay-sign everything with the MSFT key -->
             <!-- We have to do unit test DLLs well because they can see the internals of other strong-named DLLs -->
             <Otherwise>
