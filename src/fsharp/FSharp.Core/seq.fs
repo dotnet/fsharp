@@ -13,6 +13,11 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
 
+    module Upcast =
+        // The f# compiler outputs unnecessary unbox.any calls in upcasts. If this functionality
+        // is fixed with the compiler then these functions can be removed.
+        let inline enumerable (t:#IEnumerable<'T>) : IEnumerable<'T> = (# "" t : IEnumerable<'T> #)
+
     module Internal =
      module IEnumerator =
       open Microsoft.FSharp.Collections.IEnumerator
@@ -442,21 +447,9 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Primitives.Basics
 
-    [<Sealed>]
-    type CachedSeq<'T>(cleanup,res:seq<'T>) =
-        interface System.IDisposable with
-            member x.Dispose() = cleanup()
-        interface System.Collections.Generic.IEnumerable<'T> with
-            member x.GetEnumerator() = res.GetEnumerator()
-        interface System.Collections.IEnumerable with
-            member x.GetEnumerator() = (res :> System.Collections.IEnumerable).GetEnumerator()
-        member obj.Clear() = cleanup()
-
-
     [<RequireQualifiedAccess>]
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
     module Seq =
-
 #if FX_NO_ICLONEABLE
         open Microsoft.FSharp.Core.ICloneableExtensions
 #else
@@ -464,6 +457,13 @@ namespace Microsoft.FSharp.Collections
 
         open Microsoft.FSharp.Collections.Internal
         open Microsoft.FSharp.Collections.IEnumerator
+
+        // these helpers are just to consolidate the null checking
+        let inline toISeq  (source:seq<'T>)  : ISeq.Core.ISeq<'T> = checkNonNull "source" source;   ISeq.ofSeq source
+        let inline toISeq1 (source1:seq<'T>) : ISeq.Core.ISeq<'T> = checkNonNull "source1" source1; ISeq.ofSeq source1
+        let inline toISeq2 (source2:seq<'T>) : ISeq.Core.ISeq<'T> = checkNonNull "source2" source2; ISeq.ofSeq source2
+        let inline toISeq3 (source3:seq<'T>) : ISeq.Core.ISeq<'T> = checkNonNull "source3" source3; ISeq.ofSeq source3
+        let inline toISeqs (sources:seq<'T>) : ISeq.Core.ISeq<'T> = checkNonNull "sources" sources; ISeq.ofSeq sources
 
         let mkDelayedSeq (f: unit -> IEnumerable<'T>) = mkSeq (fun () -> f().GetEnumerator())
         let mkUnfoldSeq f x = mkSeq (fun () -> IEnumerator.unfold f x)
@@ -473,25 +473,23 @@ namespace Microsoft.FSharp.Collections
         let delay generator = mkDelayedSeq generator
 
         [<CompiledName("Unfold")>]
-        let unfold generator state = mkUnfoldSeq generator state
+        let unfold f x =
+            ISeq.unfold f x |> Upcast.enumerable
 
         [<CompiledName("Empty")>]
         let empty<'T> = (EmptyEnumerable :> seq<'T>)
 
         [<CompiledName("InitializeInfinite")>]
-        let initInfinite initializer = mkSeq (fun () -> IEnumerator.upto None initializer)
+        let initInfinite f =
+            ISeq.initInfinite f |> Upcast.enumerable
 
         [<CompiledName("Initialize")>]
-        let init count initializer =
-            if count < 0 then invalidArgInputMustBeNonNegative "count" count
-            mkSeq (fun () -> IEnumerator.upto (Some (count-1)) initializer)
+        let init count f =
+            ISeq.init count f |> Upcast.enumerable
 
         [<CompiledName("Iterate")>]
-        let iter action (source : seq<'T>) =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            while e.MoveNext() do
-                action e.Current
+        let iter f (source : seq<'T>) =
+            ISeq.iter f (toISeq source)
 
         [<CompiledName("Item")>]
         let item index (source : seq<'T>) =
@@ -501,191 +499,107 @@ namespace Microsoft.FSharp.Collections
             IEnumerator.nth index e
 
         [<CompiledName("TryItem")>]
-        let tryItem index (source : seq<'T>) =
-            checkNonNull "source" source
-            if index < 0 then None else
-            use e = source.GetEnumerator()
-            IEnumerator.tryItem index e
+        let tryItem i (source : seq<'T>) =
+            ISeq.tryItem i (toISeq source)
 
         [<CompiledName("Get")>]
         let nth index (source : seq<'T>) = item index source
 
         [<CompiledName("IterateIndexed")>]
-        let iteri action (source : seq<'T>) =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(action)
-            let mutable i = 0
-            while e.MoveNext() do
-                f.Invoke(i, e.Current)
-                i <- i + 1
+        let iteri f (source : seq<'T>) =
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
+            ISeq.iteri (fun idx a -> f.Invoke (idx,a)) (toISeq source)
 
         [<CompiledName("Exists")>]
-        let exists predicate (source : seq<'T>) =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            let mutable state = false
-            while (not state && e.MoveNext()) do
-                state <- predicate e.Current
-            state
+        let exists f (source : seq<'T>) =
+            ISeq.exists f (toISeq source)
 
         [<CompiledName("Contains")>]
-        let inline contains value (source : seq<'T>) =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            let mutable state = false
-            while (not state && e.MoveNext()) do
-                state <- value = e.Current
-            state
+        let inline contains element (source : seq<'T>) =
+            ISeq.contains element (toISeq source)
 
         [<CompiledName("ForAll")>]
-        let forall predicate (source : seq<'T>) =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            let mutable state = true
-            while (state && e.MoveNext()) do
-                state <- predicate e.Current
-            state
+        let forall f (source : seq<'T>) =
+            ISeq.forall f (toISeq source)
 
         [<CompiledName("Iterate2")>]
-        let iter2 action (source1 : seq<_>) (source2 : seq<_>)    =
-            checkNonNull "source1" source1
-            checkNonNull "source2" source2
-            use e1 = source1.GetEnumerator()
-            use e2 = source2.GetEnumerator()
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(action)
-            while (e1.MoveNext() && e2.MoveNext()) do
-                f.Invoke(e1.Current, e2.Current)
+        let iter2 f (source1 : seq<_>) (source2 : seq<_>)    =
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
+            ISeq.iter2 (fun a b -> f.Invoke(a,b)) (source1 |> toISeq1) (source2 |> toISeq2)
 
         [<CompiledName("IterateIndexed2")>]
-        let iteri2 action (source1 : seq<_>) (source2 : seq<_>) =
-            checkNonNull "source1" source1
-            checkNonNull "source2" source2
-            use e1 = source1.GetEnumerator()
-            use e2 = source2.GetEnumerator()
-            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(action)
-            let mutable i = 0
-            while (e1.MoveNext() && e2.MoveNext()) do
-                f.Invoke(i, e1.Current, e2.Current)
-                i <- i + 1
-
-        // Build an IEnumerable by wrapping/transforming iterators as they get generated.
-        let revamp f (ie : seq<_>) = mkSeq (fun () -> f (ie.GetEnumerator()))
-        let revamp2 f (ie1 : seq<_>) (source2 : seq<_>) =
-            mkSeq (fun () -> f (ie1.GetEnumerator()) (source2.GetEnumerator()))
-        let revamp3 f (ie1 : seq<_>) (source2 : seq<_>) (source3 : seq<_>) =
-            mkSeq (fun () -> f (ie1.GetEnumerator()) (source2.GetEnumerator()) (source3.GetEnumerator()))
+        let iteri2 f (source1 : seq<_>) (source2 : seq<_>) =
+            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt f
+            ISeq.iteri2 (fun idx a b -> f.Invoke(idx,a,b)) (source1 |> toISeq1) (source2 |> toISeq2)
 
         [<CompiledName("Filter")>]
-        let filter predicate source      =
-            checkNonNull "source" source
-            revamp  (IEnumerator.filter predicate) source
+        let filter f source      =
+            ISeq.filter f (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("Where")>]
         let where predicate source = filter predicate source
 
         [<CompiledName("Map")>]
-        let map mapping source      =
-            checkNonNull "source" source
-            revamp  (IEnumerator.map    mapping) source
+        let map    f source      =
+            ISeq.map f (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("MapIndexed")>]
-        let mapi mapping source      =
-            checkNonNull "source" source
-            revamp  (IEnumerator.mapi   mapping) source
+        let mapi f source      =
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
+            ISeq.mapi (fun idx a ->f.Invoke(idx,a)) (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("MapIndexed2")>]
-        let mapi2 mapping source1 source2 =
-            checkNonNull "source1" source1
-            checkNonNull "source2" source2
-            revamp2 (IEnumerator.mapi2    mapping) source1 source2
+        let mapi2 f source1 source2 =
+            let f = OptimizedClosures.FSharpFunc<int,'T,'U,'V>.Adapt f
+            ISeq.mapi2 (fun idx a b -> f.Invoke (idx,a,b)) (source1 |> toISeq1) (source2 |> toISeq2) |> Upcast.enumerable
 
         [<CompiledName("Map2")>]
-        let map2 mapping source1 source2 =
-            checkNonNull "source1" source1
-            checkNonNull "source2" source2
-            revamp2 (IEnumerator.map2    mapping) source1 source2
+        let map2 f source1 source2 =
+            ISeq.map2 f (source1 |> toISeq1) (source2 |> toISeq2) |> Upcast.enumerable
 
         [<CompiledName("Map3")>]
-        let map3 mapping source1 source2 source3 =
-            checkNonNull "source1" source1
-            checkNonNull "source2" source2
-            checkNonNull "source3" source3
-            revamp3 (IEnumerator.map3    mapping) source1 source2 source3
+        let map3 f source1 source2 source3 =
+            ISeq.map3 f (source1 |> toISeq1) (source2 |> toISeq2) (source3 |> toISeq3) |> Upcast.enumerable
 
         [<CompiledName("Choose")>]
-        let choose chooser source      =
-            checkNonNull "source" source
-            revamp  (IEnumerator.choose chooser) source
+        let choose f source      =
+            ISeq.choose f (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("Indexed")>]
         let indexed source =
-            checkNonNull "source" source
-            mapi (fun i x -> i,x) source
+            ISeq.indexed (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("Zip")>]
         let zip source1 source2  =
-            checkNonNull "source1" source1
-            checkNonNull "source2" source2
-            map2 (fun x y -> x,y) source1 source2
+            ISeq.zip (source1 |> toISeq1) (source2 |> toISeq2) |> Upcast.enumerable
 
         [<CompiledName("Zip3")>]
         let zip3 source1 source2  source3 =
-            checkNonNull "source1" source1
-            checkNonNull "source2" source2
-            checkNonNull "source3" source3
-            map2 (fun x (y,z) -> x,y,z) source1 (zip source2 source3)
+            ISeq.zip3 (source1 |> toISeq1) (source2 |> toISeq2) (source3 |> toISeq3) |> Upcast.enumerable
 
         [<CompiledName("Cast")>]
         let cast (source: IEnumerable) =
-            checkNonNull "source" source
-            mkSeq (fun () -> IEnumerator.cast (source.GetEnumerator()))
+            source |> ISeq.cast |> Upcast.enumerable
 
         [<CompiledName("TryPick")>]
-        let tryPick chooser (source : seq<'T>)  =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            let mutable res = None
-            while (Option.isNone res && e.MoveNext()) do
-                res <-  chooser e.Current
-            res
+        let tryPick f (source : seq<'T>)  =
+            ISeq.tryPick f (toISeq source)
 
         [<CompiledName("Pick")>]
-        let pick chooser source  =
-            checkNonNull "source" source
-            match tryPick chooser source with
-            | None -> indexNotFound()
-            | Some x -> x
+        let pick f source  =
+            ISeq.pick f (toISeq source)
 
         [<CompiledName("TryFind")>]
-        let tryFind predicate (source : seq<'T>)  =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            let mutable res = None
-            while (Option.isNone res && e.MoveNext()) do
-                let c = e.Current
-                if predicate c then res <- Some(c)
-            res
+        let tryFind f (source : seq<'T>)  =
+            ISeq.tryFind f (toISeq source)
 
         [<CompiledName("Find")>]
-        let find predicate source =
-            checkNonNull "source" source
-            match tryFind predicate source with
-            | None -> indexNotFound()
-            | Some x -> x
+        let find f source =
+            ISeq.find f (toISeq source)
 
         [<CompiledName("Take")>]
         let take count (source : seq<'T>)    =
-            checkNonNull "source" source
-            if count < 0 then invalidArgInputMustBeNonNegative "count" count
-            (* Note: don't create or dispose any IEnumerable if n = 0 *)
-            if count = 0 then empty else
-            seq { use e = source.GetEnumerator()
-                  for x in 0 .. count - 1 do
-                      if not (e.MoveNext()) then
-                          invalidOpFmt "tried to take {0} {1} past the end of the seq"
-                            [|SR.GetString SR.notEnoughElements; x; (if x=1 then "element" else "elements")|]
-                      yield e.Current }
+            ISeq.take count (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("IsEmpty")>]
         let isEmpty (source : seq<'T>)  =
@@ -698,335 +612,133 @@ namespace Microsoft.FSharp.Collections
                 use ie = source.GetEnumerator()
                 not (ie.MoveNext())
 
-
         [<CompiledName("Concat")>]
         let concat sources =
-            checkNonNull "sources" sources
-            RuntimeHelpers.mkConcatSeq sources
+            sources |> toISeqs |> ISeq.map toISeq |> ISeq.concat |> Upcast.enumerable
 
         [<CompiledName("Length")>]
         let length (source : seq<'T>)    =
-            checkNonNull "source" source
-            match source with
-            | :? ('T[]) as a -> a.Length
-            | :? ('T list) as a -> a.Length
-            | :? ICollection<'T> as a -> a.Count
-            | _ ->
-                use e = source.GetEnumerator()
-                let mutable state = 0
-                while e.MoveNext() do
-                    state <-  state + 1
-                state
+            ISeq.length (toISeq source)
 
         [<CompiledName("Fold")>]
-        let fold<'T,'State> folder (state:'State) (source : seq<'T>)  =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(folder)
-            let mutable state = state
-            while e.MoveNext() do
-                state <- f.Invoke(state, e.Current)
-            state
+        let fold<'T,'State> f (x:'State) (source : seq<'T>)  =
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
+            ISeq.fold (fun acc item -> f.Invoke (acc, item)) x (toISeq source)
 
         [<CompiledName("Fold2")>]
-        let fold2<'T1,'T2,'State> folder (state:'State) (source1: seq<'T1>) (source2: seq<'T2>) =
-            checkNonNull "source1" source1
-            checkNonNull "source2" source2
-
-            use e1 = source1.GetEnumerator()
-            use e2 = source2.GetEnumerator()
-
-            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(folder)
-
-            let mutable state = state
-            while e1.MoveNext() && e2.MoveNext() do
-                state <- f.Invoke(state, e1.Current, e2.Current)
-
-            state
+        let fold2<'T1,'T2,'State> f (state:'State) (source1: seq<'T1>) (source2: seq<'T2>) =
+            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt f
+            ISeq.fold2 (fun acc item1 item2 -> f.Invoke (acc, item1, item2)) state (source1 |> toISeq1) (source2 |> toISeq2)
 
         [<CompiledName("Reduce")>]
-        let reduce reduction (source : seq<'T>)  =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            if not (e.MoveNext()) then invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(reduction)
-            let mutable state = e.Current
-            while e.MoveNext() do
-                state <- f.Invoke(state, e.Current)
-            state
+        let reduce f (source : seq<'T>)  =
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
+            ISeq.reduce (fun acc item -> f.Invoke (acc, item)) (toISeq source)
 
         let fromGenerator f = mkSeq(fun () -> Generator.EnumerateFromGenerator (f()))
         let toGenerator (ie : seq<_>) = Generator.GenerateFromEnumerator (ie.GetEnumerator())
 
         [<CompiledName("Replicate")>]
-        let replicate count initial =
-            System.Linq.Enumerable.Repeat(initial,count)
+        let replicate count x =
+            ISeq.replicate count x |> Upcast.enumerable
 
         [<CompiledName("Append")>]
         let append (source1: seq<'T>) (source2: seq<'T>) =
-            checkNonNull "source1" source1
-            checkNonNull "source2" source2
-            fromGenerator(fun () -> Generator.bindG (toGenerator source1) (fun () -> toGenerator source2))
-
+            ISeq.append (source1 |> toISeq1) (source2 |> toISeq2) |> Upcast.enumerable
 
         [<CompiledName("Collect")>]
         let collect mapping source = map mapping source |> concat
 
         [<CompiledName("CompareWith")>]
-        let compareWith (comparer:'T -> 'T -> int) (source1 : seq<'T>) (source2: seq<'T>) =
-            checkNonNull "source1" source1
-            checkNonNull "source2" source2
-            use e1 = source1.GetEnumerator()
-            use e2 = source2.GetEnumerator()
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(comparer)
-            let rec go () =
-                let e1ok = e1.MoveNext()
-                let e2ok = e2.MoveNext()
-                let c = if e1ok = e2ok then 0 else if e1ok then 1 else -1
-                if c <> 0 then c else
-                if not e1ok || not e2ok then 0
-                else
-                    let c = f.Invoke(e1.Current, e2.Current)
-                    if c <> 0 then c else
-                    go ()
-            go()
+        let compareWith (f:'T -> 'T -> int) (source1 : seq<'T>) (source2: seq<'T>) =
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
+            ISeq.compareWith (fun a b -> f.Invoke(a,b)) (source1 |> toISeq1) (source2 |> toISeq2)
 
         [<CompiledName("OfList")>]
         let ofList (source : 'T list) =
-            (source :> seq<'T>)
+            ISeq.ofList source |> Upcast.enumerable
 
         [<CompiledName("ToList")>]
         let toList (source : seq<'T>) =
-            checkNonNull "source" source
-            Microsoft.FSharp.Primitives.Basics.List.ofSeq source
+            ISeq.toList (toISeq source)
 
         // Create a new object to ensure underlying array may not be mutated by a backdoor cast
         [<CompiledName("OfArray")>]
         let ofArray (source : 'T array) =
-            checkNonNull "source" source
-            mkSeq (fun () -> IEnumerator.ofArray source)
+            ISeq.ofArray source |> Upcast.enumerable
 
         [<CompiledName("ToArray")>]
         let toArray (source : seq<'T>)  =
-            checkNonNull "source" source
-            match source with
-            | :? ('T[]) as res -> (res.Clone() :?> 'T[])
-            | :? ('T list) as res -> List.toArray res
-            | :? ICollection<'T> as res ->
-                // Directly create an array and copy ourselves.
-                // This avoids an extra copy if using ResizeArray in fallback below.
-                let arr = Array.zeroCreateUnchecked res.Count
-                res.CopyTo(arr, 0)
-                arr
-            | _ ->
-                let res = ResizeArray<_>(source)
-                res.ToArray()
-
-        let foldArraySubRight (f:OptimizedClosures.FSharpFunc<'T,_,_>) (arr: 'T[]) start fin acc =
-            let mutable state = acc
-            for i = fin downto start do
-                state <- f.Invoke(arr.[i], state)
-            state
+            ISeq.toArray (toISeq source)
 
         [<CompiledName("FoldBack")>]
-        let foldBack<'T,'State> folder (source : seq<'T>) (state:'State) =
-            checkNonNull "source" source
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(folder)
-            let arr = toArray source
-            let len = arr.Length
-            foldArraySubRight f arr 0 (len - 1) state
+        let foldBack<'T,'State> f (source : seq<'T>) (x:'State) =
+            ISeq.foldBack f (toISeq source) x
 
         [<CompiledName("FoldBack2")>]
-        let foldBack2<'T1,'T2,'State> folder (source1 : seq<'T1>) (source2 : seq<'T2>) (state:'State) =
-            let zipped = zip source1 source2
-            foldBack ((<||) folder) zipped state
+        let foldBack2<'T1,'T2,'State> f (source1 : seq<'T1>) (source2 : seq<'T2>) (x:'State) =
+            ISeq.foldBack2 f (toISeq1 source1) (toISeq2 source2) x
 
         [<CompiledName("ReduceBack")>]
-        let reduceBack reduction (source : seq<'T>) =
-            checkNonNull "source" source
-            let arr = toArray source
-            match arr.Length with
-            | 0 -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-            | len ->
-                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(reduction)
-                foldArraySubRight f arr 0 (len - 2) arr.[len - 1]
+        let reduceBack f (source : seq<'T>) =
+            ISeq.reduceBack f (toISeq source)
 
         [<CompiledName("Singleton")>]
-        let singleton value = mkSeq (fun () -> IEnumerator.Singleton value)
-
+        let singleton x =
+            ISeq.singleton x |> Upcast.enumerable
 
         [<CompiledName("Truncate")>]
-        let truncate count (source: seq<'T>) =
-            checkNonNull "source" source
-            seq { let i = ref 0
-                  use ie = source.GetEnumerator()
-                  while !i < count && ie.MoveNext() do
-                     i := !i + 1
-                     yield ie.Current }
+        let truncate n (source: seq<'T>) =
+            ISeq.truncate n (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("Pairwise")>]
         let pairwise (source: seq<'T>) =
-            checkNonNull "source" source
-            seq { use ie = source.GetEnumerator()
-                  if ie.MoveNext() then
-                      let iref = ref ie.Current
-                      while ie.MoveNext() do
-                          let j = ie.Current
-                          yield (!iref, j)
-                          iref := j }
+            ISeq.pairwise (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("Scan")>]
-        let scan<'T,'State> folder (state:'State) (source : seq<'T>) =
-            checkNonNull "source" source
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(folder)
-            seq { let zref = ref state
-                  yield !zref
-                  use ie = source.GetEnumerator()
-                  while ie.MoveNext() do
-                      zref := f.Invoke(!zref, ie.Current)
-                      yield !zref }
+        let scan<'T,'State> f (z:'State) (source : seq<'T>) =
+            ISeq.scan f z (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("TryFindBack")>]
-        let tryFindBack predicate (source : seq<'T>) =
-            checkNonNull "source" source
-            source |> toArray |> Array.tryFindBack predicate
+        let tryFindBack f (source : seq<'T>) =
+            ISeq.tryFindBack f (toISeq source)
 
         [<CompiledName("FindBack")>]
-        let findBack predicate source =
-            checkNonNull "source" source
-            source |> toArray |> Array.findBack predicate
+        let findBack f source =
+            ISeq.findBack f (toISeq source)
 
         [<CompiledName("ScanBack")>]
-        let scanBack<'T,'State> folder (source : seq<'T>) (state:'State) =
-            checkNonNull "source" source
-            mkDelayedSeq(fun () ->
-                let arr = source |> toArray
-                let res = Array.scanSubRight folder arr 0 (arr.Length - 1) state
-                res :> seq<_>)
+        let scanBack<'T,'State> f (source : seq<'T>) (acc:'State) =
+            ISeq.scanBack f (toISeq source) acc |> Upcast.enumerable
 
         [<CompiledName("FindIndex")>]
-        let findIndex predicate (source:seq<_>) =
-            checkNonNull "source" source
-            use ie = source.GetEnumerator()
-            let rec loop i =
-                if ie.MoveNext() then
-                    if predicate ie.Current then
-                        i
-                    else loop (i+1)
-                else
-                    indexNotFound()
-            loop 0
+        let findIndex p (source:seq<_>) =
+            ISeq.findIndex p (toISeq source)
 
         [<CompiledName("TryFindIndex")>]
-        let tryFindIndex predicate (source:seq<_>) =
-            checkNonNull "source" source
-            use ie = source.GetEnumerator()
-            let rec loop i =
-                if ie.MoveNext() then
-                    if predicate ie.Current then
-                        Some i
-                    else loop (i+1)
-                else
-                    None
-            loop 0
+        let tryFindIndex p (source:seq<_>) =
+            ISeq.tryFindIndex p (toISeq source)
 
         [<CompiledName("TryFindIndexBack")>]
-        let tryFindIndexBack predicate (source : seq<'T>) =
-            checkNonNull "source" source
-            source |> toArray |> Array.tryFindIndexBack predicate
+        let tryFindIndexBack f (source : seq<'T>) =
+            ISeq.tryFindIndexBack f (toISeq source)
 
         [<CompiledName("FindIndexBack")>]
-        let findIndexBack predicate source =
-            checkNonNull "source" source
-            source |> toArray |> Array.findIndexBack predicate
+        let findIndexBack f source =
+            ISeq.findIndexBack f (toISeq source)
 
         // windowed : int -> seq<'T> -> seq<'T[]>
         [<CompiledName("Windowed")>]
         let windowed windowSize (source: seq<_>) =
-            checkNonNull "source" source
-            if windowSize <= 0 then invalidArgFmt "windowSize" "{0}\nwindowSize = {1}"
-                                        [|SR.GetString SR.inputMustBePositive; windowSize|]
-            seq {
-                let arr = Array.zeroCreateUnchecked windowSize
-                let r = ref (windowSize - 1)
-                let i = ref 0
-                use e = source.GetEnumerator()
-                while e.MoveNext() do
-                    arr.[!i] <- e.Current
-                    i := (!i + 1) % windowSize
-                    if !r = 0 then
-                        if windowSize < 32 then
-                            yield Array.init windowSize (fun j -> arr.[(!i+j) % windowSize])
-                        else
-                            let result = Array.zeroCreateUnchecked windowSize
-                            Array.Copy(arr, !i, result, 0, windowSize - !i)
-                            Array.Copy(arr, 0, result, windowSize - !i, !i)
-                            yield result
-                    else r := (!r - 1)
-            }
+            ISeq.windowed windowSize (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("Cache")>]
         let cache (source : seq<'T>) =
-            checkNonNull "source" source
-            // Wrap a seq to ensure that it is enumerated just once and only as far as is necessary.
-            //
-            // This code is required to be thread safe.
-            // The necessary calls should be called at most once (include .MoveNext() = false).
-            // The enumerator should be disposed (and dropped) when no longer required.
-            //------
-            // The state is (prefix,enumerator) with invariants:
-            //   * the prefix followed by elts from the enumerator are the initial sequence.
-            //   * the prefix contains only as many elements as the longest enumeration so far.
-            let prefix      = ResizeArray<_>()
-            let enumeratorR = ref None : IEnumerator<'T> option option ref // nested options rather than new type...
-                               // None          = Unstarted.
-                               // Some(Some e)  = Started.
-                               // Some None     = Finished.
-            let oneStepTo i =
-              // If possible, step the enumeration to prefix length i (at most one step).
-              // Be speculative, since this could have already happened via another thread.
-              if not (i < prefix.Count) then // is a step still required?
-                  // If not yet started, start it (create enumerator).
-                  match !enumeratorR with
-                  | None -> enumeratorR := Some (Some (source.GetEnumerator()))
-                  | Some _ -> ()
-                  match (!enumeratorR).Value with
-                  | Some enumerator -> if enumerator.MoveNext() then
-                                          prefix.Add(enumerator.Current)
-                                       else
-                                          enumerator.Dispose()     // Move failed, dispose enumerator,
-                                          enumeratorR := Some None // drop it and record finished.
-                  | None -> ()
-            let result =
-                unfold (fun i ->
-                              // i being the next position to be returned
-                              // A lock is needed over the reads to prefix.Count since the list may be being resized
-                              // NOTE: we could change to a reader/writer lock here
-                              lock enumeratorR (fun () ->
-                                  if i < prefix.Count then
-                                    Some (prefix.[i],i+1)
-                                  else
-                                    oneStepTo i
-                                    if i < prefix.Count then
-                                      Some (prefix.[i],i+1)
-                                    else
-                                      None)) 0
-            let cleanup() =
-               lock enumeratorR (fun () ->
-                   prefix.Clear()
-                   begin match !enumeratorR with
-                   | Some (Some e) -> IEnumerator.dispose e
-                   | _ -> ()
-                   end
-                   enumeratorR := None)
-            (new CachedSeq<_>(cleanup, result) :> seq<_>)
+            ISeq.cache (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("AllPairs")>]
         let allPairs source1 source2 =
-            checkNonNull "source1" source1
-            checkNonNull "source2" source2
-            let cached = cache source2
-            source1 |> collect (fun x -> cached |> map (fun y -> x,y))
+            ISeq.allPairs (source1 |> toISeq1) (source2 |> toISeq2) |> Upcast.enumerable
 
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly"); CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1707:IdentifiersShouldNotContainUnderscores"); CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
         [<CompiledName("ReadOnly")>]
@@ -1034,207 +746,82 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "source" source
             mkSeq (fun () -> source.GetEnumerator())
 
-        let inline groupByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (seq:seq<'T>) =
-            checkNonNull "seq" seq
-
-            let dict = Dictionary<_,ResizeArray<_>> comparer
-
-            // Previously this was 1, but I think this is rather stingy, considering that we are already paying
-            // for at least a key, the ResizeArray reference, which includes an array reference, an Entry in the
-            // Dictionary, plus any empty space in the Dictionary of unfilled hash buckets.
-            let minimumBucketSize = 4
-
-            // Build the groupings
-            seq |> iter (fun v ->
-                let safeKey = keyf v
-                let mutable prev = Unchecked.defaultof<_>
-                match dict.TryGetValue (safeKey, &prev) with
-                | true -> prev.Add v
-                | false ->
-                    let prev = ResizeArray ()
-                    dict.[safeKey] <- prev
-                    prev.Add v)
-
-            // Trim the size of each result group, don't trim very small buckets, as excessive work, and garbage for
-            // minimal gain
-            dict |> iter (fun group -> if group.Value.Count > minimumBucketSize then group.Value.TrimExcess())
-
-            // Return the sequence-of-sequences. Don't reveal the
-            // internal collections: just reveal them as sequences
-            dict |> map (fun group -> (getKey group.Key, readonly group.Value))
-
-        // We avoid wrapping a StructBox, because under 64 JIT we get some "hard" tailcalls which affect performance
-        let groupByValueType (keyf:'T->'Key) (seq:seq<'T>) = seq |> groupByImpl HashIdentity.Structural<'Key> keyf id
-
-        // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
-        let groupByRefType   (keyf:'T->'Key) (seq:seq<'T>) = seq |> groupByImpl StructBox<'Key>.Comparer (fun t -> StructBox (keyf t)) (fun sb -> sb.Value)
-
         [<CompiledName("GroupBy")>]
-        let groupBy (projection:'T->'Key) (source:seq<'T>) =
+        let groupBy (keyf:'T->'Key) (seq:seq<'T>) =
+            let grouped = 
 #if FX_RESHAPED_REFLECTION
-            if (typeof<'Key>).GetTypeInfo().IsValueType
+                if (typeof<'Key>).GetTypeInfo().IsValueType
 #else
-            if typeof<'Key>.IsValueType
+                if typeof<'Key>.IsValueType
 #endif
-                then mkDelayedSeq (fun () -> groupByValueType projection source)
-                else mkDelayedSeq (fun () -> groupByRefType   projection source)
+                    then seq |> toISeq |> ISeq.GroupBy.byVal keyf
+                    else seq |> toISeq |> ISeq.GroupBy.byRef keyf
+
+            grouped
+            |> ISeq.map (fun (key,value) -> key, Upcast.enumerable value)
+            |> Upcast.enumerable
 
         [<CompiledName("Distinct")>]
         let distinct source =
-            checkNonNull "source" source
-            seq { let hashSet = HashSet<'T>(HashIdentity.Structural<'T>)
-                  for v in source do
-                      if hashSet.Add(v) then
-                          yield v }
+            ISeq.distinct (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("DistinctBy")>]
-        let distinctBy projection source =
-            checkNonNull "source" source
-            seq { let hashSet = HashSet<_>(HashIdentity.Structural<_>)
-                  for v in source do
-                    if hashSet.Add(projection v) then
-                        yield v }
+        let distinctBy keyf source =
+            ISeq.distinctBy keyf (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("SortBy")>]
-        let sortBy projection source =
-            checkNonNull "source" source
-            mkDelayedSeq (fun () ->
-                let array = source |> toArray
-                Array.stableSortInPlaceBy projection array
-                array :> seq<_>)
+        let sortBy keyf source =
+            ISeq.sortBy keyf (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("Sort")>]
         let sort source =
-            checkNonNull "source" source
-            mkDelayedSeq (fun () ->
-                let array = source |> toArray
-                Array.stableSortInPlace array
-                array :> seq<_>)
+            ISeq.sort (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("SortWith")>]
-        let sortWith comparer source =
-            checkNonNull "source" source
-            mkDelayedSeq (fun () ->
-                let array = source |> toArray
-                Array.stableSortInPlaceWith comparer array
-                array :> seq<_>)
+        let sortWith f source =
+            ISeq.sortWith f (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("SortByDescending")>]
-        let inline sortByDescending projection source =
-            checkNonNull "source" source
-            let inline compareDescending a b = compare (projection b) (projection a)
-            sortWith compareDescending source
+        let inline sortByDescending keyf source =
+            ISeq.sortByDescending keyf (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("SortDescending")>]
         let inline sortDescending source =
-            checkNonNull "source" source
-            let inline compareDescending a b = compare b a
-            sortWith compareDescending source
-
-        let inline countByImpl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (source:seq<'T>) =
-            checkNonNull "source" source
-
-            let dict = Dictionary comparer
-
-            // Build the groupings
-            source |> iter (fun v ->
-                let safeKey = keyf v
-                let mutable prev = Unchecked.defaultof<_>
-                if dict.TryGetValue(safeKey, &prev)
-                    then dict.[safeKey] <- prev + 1
-                    else dict.[safeKey] <- 1)
-
-            dict |> map (fun group -> (getKey group.Key, group.Value))
-
-        // We avoid wrapping a StructBox, because under 64 JIT we get some "hard" tailcalls which affect performance
-        let countByValueType (keyf:'T->'Key) (seq:seq<'T>) = seq |> countByImpl HashIdentity.Structural<'Key> keyf id
-
-        // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
-        let countByRefType   (keyf:'T->'Key) (seq:seq<'T>) = seq |> countByImpl StructBox<'Key>.Comparer (fun t -> StructBox (keyf t)) (fun sb -> sb.Value)
+            ISeq.sortDescending (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("CountBy")>]
-        let countBy (projection:'T->'Key) (source:seq<'T>) =
-            checkNonNull "source" source
-
+        let countBy (keyf:'T->'Key) (source:seq<'T>) =
 #if FX_RESHAPED_REFLECTION
             if (typeof<'Key>).GetTypeInfo().IsValueType
 #else
             if typeof<'Key>.IsValueType
 #endif
-                then mkDelayedSeq (fun () -> countByValueType projection source)
-                else mkDelayedSeq (fun () -> countByRefType   projection source)
+                then ISeq.CountBy.byVal keyf (toISeq source) |> Upcast.enumerable
+                else ISeq.CountBy.byRef keyf (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("Sum")>]
         let inline sum (source: seq< ^a>) : ^a =
-            use e = source.GetEnumerator()
-            let mutable acc = LanguagePrimitives.GenericZero< ^a>
-            while e.MoveNext() do
-                acc <- Checked.(+) acc e.Current
-            acc
+            ISeq.sum (toISeq source)
 
         [<CompiledName("SumBy")>]
-        let inline sumBy (projection : 'T -> ^U) (source: seq<'T>) : ^U =
-            use e = source.GetEnumerator()
-            let mutable acc = LanguagePrimitives.GenericZero< ^U>
-            while e.MoveNext() do
-                acc <- Checked.(+) acc (projection e.Current)
-            acc
+        let inline sumBy (f : 'T -> ^U) (source: seq<'T>) : ^U =
+            ISeq.sumBy f (toISeq source)
 
         [<CompiledName("Average")>]
         let inline average (source: seq< ^a>) : ^a =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            let mutable acc = LanguagePrimitives.GenericZero< ^a>
-            let mutable count = 0
-            while e.MoveNext() do
-                acc <- Checked.(+) acc e.Current
-                count <- count + 1
-            if count = 0 then
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-            LanguagePrimitives.DivideByInt< ^a> acc count
+            ISeq.average (toISeq source)
 
         [<CompiledName("AverageBy")>]
-        let inline averageBy (projection : 'T -> ^U) (source: seq< 'T >) : ^U =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            let mutable acc = LanguagePrimitives.GenericZero< ^U>
-            let mutable count = 0
-            while e.MoveNext() do
-                acc <- Checked.(+) acc (projection e.Current)
-                count <- count + 1
-            if count = 0 then
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-            LanguagePrimitives.DivideByInt< ^U> acc count
+        let inline averageBy (f : 'T -> ^U) (source: seq< 'T >) : ^U =
+            ISeq.averageBy f (toISeq source)
 
         [<CompiledName("Min")>]
         let inline min (source: seq<_>) =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            if not (e.MoveNext()) then
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-            let mutable acc = e.Current
-            while e.MoveNext() do
-                let curr = e.Current
-                if curr < acc then
-                    acc <- curr
-            acc
+            ISeq.min (toISeq source)
 
         [<CompiledName("MinBy")>]
-        let inline minBy (projection : 'T -> 'U) (source: seq<'T>) : 'T =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            if not (e.MoveNext()) then
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-            let first = e.Current
-            let mutable acc = projection first
-            let mutable accv = first
-            while e.MoveNext() do
-                let currv = e.Current
-                let curr = projection currv
-                if curr < acc then
-                    acc <- curr
-                    accv <- currv
-            accv
+        let inline minBy (f : 'T -> 'U) (source: seq<'T>) : 'T =
+            ISeq.minBy f (toISeq source)
 
 (*
         [<CompiledName("MinValueBy")>]
@@ -1255,33 +842,11 @@ namespace Microsoft.FSharp.Collections
 *)
         [<CompiledName("Max")>]
         let inline max (source: seq<_>) =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            if not (e.MoveNext()) then
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-            let mutable acc = e.Current
-            while e.MoveNext() do
-                let curr = e.Current
-                if curr > acc then
-                    acc <- curr
-            acc
+            ISeq.max (toISeq source)
 
         [<CompiledName("MaxBy")>]
-        let inline maxBy (projection : 'T -> 'U) (source: seq<'T>) : 'T =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            if not (e.MoveNext()) then
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-            let first = e.Current
-            let mutable acc = projection first
-            let mutable accv = first
-            while e.MoveNext() do
-                let currv = e.Current
-                let curr = projection currv
-                if curr > acc then
-                    acc <- curr
-                    accv <- currv
-            accv
+        let inline maxBy (f : 'T -> 'U) (source: seq<'T>) : 'T =
+            ISeq.maxBy f (toISeq source)
 
 
 (*
@@ -1302,183 +867,75 @@ namespace Microsoft.FSharp.Collections
 
 *)
         [<CompiledName("TakeWhile")>]
-        let takeWhile predicate (source: seq<_>) =
-            checkNonNull "source" source
-            seq { use e = source.GetEnumerator()
-                  let latest = ref Unchecked.defaultof<_>
-                  while e.MoveNext() && (latest := e.Current; predicate !latest) do
-                      yield !latest }
+        let takeWhile p (source: seq<_>) =
+            ISeq.takeWhile p (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("Skip")>]
         let skip count (source: seq<_>) =
-            checkNonNull "source" source
-            seq { use e = source.GetEnumerator()
-                  for x in 1 .. count do
-                      if not (e.MoveNext()) then
-                        invalidOpFmt "tried to skip {0} {1} past the end of the seq"
-                          [|SR.GetString SR.notEnoughElements; x; (if x=1 then "element" else "elements")|]
-                  while e.MoveNext() do
-                      yield e.Current }
+            ISeq.skip count (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("SkipWhile")>]
-        let skipWhile predicate (source: seq<_>) =
-            checkNonNull "source" source
-            seq { use e = source.GetEnumerator()
-                  let latest = ref (Unchecked.defaultof<_>)
-                  let ok = ref false
-                  while e.MoveNext() do
-                      if (latest := e.Current; (!ok || not (predicate !latest))) then
-                          ok := true
-                          yield !latest }
+        let skipWhile p (source: seq<_>) =
+            ISeq.skipWhile p (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("ForAll2")>]
-        let forall2 predicate (source1: seq<_>) (source2: seq<_>) =
-            checkNonNull "source1" source1
-            checkNonNull "source2" source2
-            use e1 = source1.GetEnumerator()
-            use e2 = source2.GetEnumerator()
-            let p = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(predicate)
-            let mutable ok = true
-            while (ok && e1.MoveNext() && e2.MoveNext()) do
-                ok <- p.Invoke(e1.Current, e2.Current)
-            ok
+        let forall2 p (source1: seq<_>) (source2: seq<_>) =
+            let p = OptimizedClosures.FSharpFunc<_,_,_>.Adapt p
+            ISeq.forall2 (fun a b -> p.Invoke(a,b)) (source1 |> toISeq1) (source2 |> toISeq2)
 
         [<CompiledName("Exists2")>]
-        let exists2 predicate (source1: seq<_>) (source2: seq<_>) =
-            checkNonNull "source1" source1
-            checkNonNull "source2" source2
-            use e1 = source1.GetEnumerator()
-            use e2 = source2.GetEnumerator()
-            let p = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(predicate)
-            let mutable ok = false
-            while (not ok && e1.MoveNext() && e2.MoveNext()) do
-                ok <- p.Invoke(e1.Current, e2.Current)
-            ok
+        let exists2 p (source1: seq<_>) (source2: seq<_>) =
+            let p = OptimizedClosures.FSharpFunc<_,_,_>.Adapt p
+            ISeq.exists2 (fun a b -> p.Invoke(a,b)) (source1 |> toISeq1) (source2 |> toISeq2)
 
         [<CompiledName("Head")>]
         let head (source : seq<_>) =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            if (e.MoveNext()) then e.Current
-            else invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            ISeq.head (toISeq source)
 
         [<CompiledName("TryHead")>]
         let tryHead (source : seq<_>) =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            if (e.MoveNext()) then Some e.Current
-            else None
+            ISeq.tryHead (toISeq source)
 
         [<CompiledName("Tail")>]
         let tail (source: seq<'T>) =
-            checkNonNull "source" source
-            seq { use e = source.GetEnumerator()
-                  if not (e.MoveNext()) then
-                      invalidArg "source" (SR.GetString(SR.notEnoughElements))
-                  while e.MoveNext() do
-                      yield e.Current }
+            ISeq.tail (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("Last")>]
         let last (source : seq<_>) =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            if e.MoveNext() then
-                let mutable res = e.Current
-                while (e.MoveNext()) do res <- e.Current
-                res
-            else
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            ISeq.last (toISeq source)
 
         [<CompiledName("TryLast")>]
         let tryLast (source : seq<_>) =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            if e.MoveNext() then
-                let mutable res = e.Current
-                while (e.MoveNext()) do res <- e.Current
-                Some res
-            else
-                None
+            ISeq.tryLast (toISeq source)
 
         [<CompiledName("ExactlyOne")>]
         let exactlyOne (source : seq<_>) =
-            checkNonNull "source" source
-            use e = source.GetEnumerator()
-            if e.MoveNext() then
-                let v = e.Current
-                if e.MoveNext() then
-                    invalidArg "source" (SR.GetString(SR.inputSequenceTooLong))
-                else
-                    v
-            else
-                invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
+            ISeq.exactlyOne (toISeq source)
 
         [<CompiledName("Reverse")>]
         let rev source =
-            checkNonNull "source" source
-            mkDelayedSeq (fun () ->
-                let array = source |> toArray
-                Array.Reverse array
-                array :> seq<_>)
+            ISeq.rev (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("Permute")>]
-        let permute indexMap (source : seq<_>) =
-            checkNonNull "source" source
-            mkDelayedSeq (fun () ->
-                source |> toArray |> Array.permute indexMap :> seq<_>)
+        let permute f (source : seq<_>) =
+            ISeq.permute f (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("MapFold")>]
-        let mapFold<'T,'State,'Result> (mapping: 'State -> 'T -> 'Result * 'State) state source =
-            checkNonNull "source" source
-            let arr,state = source |> toArray |> Array.mapFold mapping state
-            readonly arr, state
+        let mapFold<'T,'State,'Result> (f: 'State -> 'T -> 'Result * 'State) acc source =
+            ISeq.mapFold f acc (toISeq source) |> fun (iseq, state) -> Upcast.enumerable iseq, state
 
         [<CompiledName("MapFoldBack")>]
-        let mapFoldBack<'T,'State,'Result> (mapping: 'T -> 'State -> 'Result * 'State) source state =
-            checkNonNull "source" source
-            let array = source |> toArray
-            let arr,state = Array.mapFoldBack mapping array state
-            readonly arr, state
+        let mapFoldBack<'T,'State,'Result> (f: 'T -> 'State -> 'Result * 'State) source acc =
+            ISeq.mapFoldBack f (toISeq source) acc |> fun (iseq, state) -> Upcast.enumerable iseq, state
 
         [<CompiledName("Except")>]
         let except (itemsToExclude: seq<'T>) (source: seq<'T>) =
-            checkNonNull "itemsToExclude" itemsToExclude
-            checkNonNull "source" source
-
-            seq {
-                use e = source.GetEnumerator()
-                if e.MoveNext() then
-                    let cached = HashSet(itemsToExclude, HashIdentity.Structural)
-                    let next = e.Current
-                    if (cached.Add next) then yield next
-                    while e.MoveNext() do
-                        let next = e.Current
-                        if (cached.Add next) then yield next }
+            ISeq.except itemsToExclude (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("ChunkBySize")>]
         let chunkBySize chunkSize (source : seq<_>) =
-            checkNonNull "source" source
-            if chunkSize <= 0 then invalidArgFmt "chunkSize" "{0}\nchunkSize = {1}"
-                                    [|SR.GetString SR.inputMustBePositive; chunkSize|]
-            seq { use e = source.GetEnumerator()
-                  let nextChunk() =
-                      let res = Array.zeroCreateUnchecked chunkSize
-                      res.[0] <- e.Current
-                      let i = ref 1
-                      while !i < chunkSize && e.MoveNext() do
-                          res.[!i] <- e.Current
-                          i := !i + 1
-                      if !i = chunkSize then
-                          res
-                      else
-                          res |> Array.subUnchecked 0 !i
-                  while e.MoveNext() do
-                      yield nextChunk() }
+            ISeq.chunkBySize chunkSize (toISeq source) |> Upcast.enumerable
 
         [<CompiledName("SplitInto")>]
         let splitInto count source =
-            checkNonNull "source" source
-            if count <= 0 then invalidArgFmt "count" "{0}\ncount = {1}"
-                                [|SR.GetString SR.inputMustBePositive; count|]
-            mkDelayedSeq (fun () ->
-                source |> toArray |> Array.splitInto count :> seq<_>)
+            ISeq.splitInto count (toISeq source) |> Upcast.enumerable
