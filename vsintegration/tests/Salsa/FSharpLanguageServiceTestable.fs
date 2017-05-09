@@ -126,7 +126,7 @@ type internal FSharpLanguageServiceTestable() as this =
 
     /// Respond to project being cleaned/rebuilt (any live type providers in the project should be refreshed)
     member this.OnProjectCleaned(projectSite:IProjectSite) = 
-        let checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite((fun _ -> None), projectSite, "" ,None, serviceProvider.Value)
+        let checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite((fun _ -> None), projectSite, "" ,None, serviceProvider.Value, false)
         this.FSharpChecker.NotifyProjectCleaned(checkOptions) |> Async.RunSynchronously
 
     member this.OnActiveViewChanged(textView) =
@@ -168,7 +168,7 @@ type internal FSharpLanguageServiceTestable() as this =
     interface IDependencyFileChangeNotify with
         member this.DependencyFileCreated projectSite = 
             // Invalidate the configuration if we notice any add for any DependencyFiles 
-            let checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite((fun _ -> None), projectSite, "", None, this.ServiceProvider)
+            let checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite((fun _ -> None), projectSite, "", None, this.ServiceProvider, false)
             this.FSharpChecker.InvalidateConfiguration(checkOptions)
 
         member this.DependencyFileChanged (filename) = 

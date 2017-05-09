@@ -82,7 +82,7 @@ type internal FSharpLanguageServiceBackgroundRequests
                     // This portion is executed on the UI thread.
                     let rdt = getServiceProvider().RunningDocumentTable
                     let projectSite = getProjectSitesAndFiles().FindOwningProject(rdt,fileName)
-                    let checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite((fun _ -> None), projectSite, fileName, None, getServiceProvider())                            
+                    let checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite((fun _ -> None), projectSite, fileName, None, getServiceProvider(), false)                            
                     let projectFileName = projectSite.ProjectFileName()
                     let data = 
                         {   ProjectSite = projectSite

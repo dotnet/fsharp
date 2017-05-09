@@ -122,7 +122,7 @@ type internal ProjectSitesAndFiles() =
                 | _ -> None)
         | None -> Seq.empty
                     
-    static let rec referencedProjectsOf (tryGetOptionsForReferencedProject, projectSite:IProjectSite, fileName, extraProjectInfo, serviceProvider:System.IServiceProvider) =
+    static let rec referencedProjectsOf (tryGetOptionsForReferencedProject, projectSite:IProjectSite, fileName, extraProjectInfo, serviceProvider:System.IServiceProvider, useUniqueStamp) =
         referencedProvideProjectSites (projectSite, serviceProvider)
         |> Seq.choose (fun (p, ps) ->            
             fullOutputAssemblyPath p
@@ -131,24 +131,24 @@ type internal ProjectSitesAndFiles() =
                     // Lookup may not succeed if the project has not been established yet
                     // In this case we go and compute the options recursively.
                     match tryGetOptionsForReferencedProject p.FileName with 
-                    | None -> getProjectOptionsForProjectSite (tryGetOptionsForReferencedProject, ps.GetProjectSite(), fileName, extraProjectInfo, serviceProvider)
+                    | None -> getProjectOptionsForProjectSite (tryGetOptionsForReferencedProject, ps.GetProjectSite(), fileName, extraProjectInfo, serviceProvider, useUniqueStamp)
                     | Some options -> options
                 path, referencedProjectOptions)
             )
         |> Seq.toArray
 
-    and getProjectOptionsForProjectSite(tryGetOptionsForReferencedProject, projectSite:IProjectSite, fileName, extraProjectInfo, serviceProvider) =            
+    and getProjectOptionsForProjectSite(tryGetOptionsForReferencedProject, projectSite:IProjectSite, fileName, extraProjectInfo, serviceProvider, useUniqueStamp) =            
         {ProjectFileName = projectSite.ProjectFileName()
          ProjectFileNames = projectSite.SourceFilesOnDisk()
          OtherOptions = projectSite.CompilerFlags()
-         ReferencedProjects = referencedProjectsOf(tryGetOptionsForReferencedProject, projectSite, fileName, extraProjectInfo, serviceProvider)
+         ReferencedProjects = referencedProjectsOf(tryGetOptionsForReferencedProject, projectSite, fileName, extraProjectInfo, serviceProvider, useUniqueStamp)
          IsIncompleteTypeCheckEnvironment = projectSite.IsIncompleteTypeCheckEnvironment
          UseScriptResolutionRules = SourceFile.MustBeSingleFileProject fileName
          LoadTime = projectSite.LoadTime
          UnresolvedReferences = None
          OriginalLoadReferences = []
          ExtraProjectInfo=extraProjectInfo 
-         Stamp = (stamp <- stamp + 1L; Some stamp) }   
+         Stamp = (if useUniqueStamp then (stamp <- stamp + 1L; Some stamp) else None) }   
 
     /// Construct a project site for a single file. May be a single file project (for scripts) or an orphan project site (for everything else).
     static member ProjectSiteOfSingleFile(filename:string) : IProjectSite = 
@@ -233,11 +233,11 @@ type internal ProjectSitesAndFiles() =
         |> Seq.toArray
 
     /// Create project options for this project site.
-    static member GetProjectOptionsForProjectSite(tryGetOptionsForReferencedProject, projectSite:IProjectSite,filename,extraProjectInfo,serviceProvider:System.IServiceProvider) =
+    static member GetProjectOptionsForProjectSite(tryGetOptionsForReferencedProject, projectSite:IProjectSite,filename,extraProjectInfo,serviceProvider:System.IServiceProvider, useUniqueStamp) =
         match projectSite with
         | :? IHaveCheckOptions as hco -> hco.OriginalCheckOptions()
         | _ ->             
-            getProjectOptionsForProjectSite(tryGetOptionsForReferencedProject, projectSite, filename, extraProjectInfo, serviceProvider)
+            getProjectOptionsForProjectSite(tryGetOptionsForReferencedProject, projectSite, filename, extraProjectInfo, serviceProvider, useUniqueStamp)
          
     /// Create project site for these project options
     static member CreateProjectSiteForScript (filename, checkOptions) = ProjectSiteOfScriptFile (filename, checkOptions) :> IProjectSite

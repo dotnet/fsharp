@@ -97,17 +97,17 @@ type internal ProjectInfoManager
             let optionsStamp = None // TODO: can we use a unique stamp?
             let! options, _diagnostics = checkerProvider.Checker.GetProjectOptionsFromScript(fileName, fileContents, loadTime, [| |], ?extraProjectInfo=extraProjectInfo, ?optionsStamp=optionsStamp) 
             let site = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, options)
-            return ProjectSitesAndFiles.GetProjectOptionsForProjectSite(tryGetOptionsForReferencedProject,site,fileName,options.ExtraProjectInfo,serviceProvider)
+            return ProjectSitesAndFiles.GetProjectOptionsForProjectSite(tryGetOptionsForReferencedProject,site,fileName,options.ExtraProjectInfo,serviceProvider, true)
         else
             let site = ProjectSitesAndFiles.ProjectSiteOfSingleFile(fileName)
-            return ProjectSitesAndFiles.GetProjectOptionsForProjectSite(tryGetOptionsForReferencedProject,site,fileName,extraProjectInfo,serviceProvider)
+            return ProjectSitesAndFiles.GetProjectOptionsForProjectSite(tryGetOptionsForReferencedProject,site,fileName,extraProjectInfo,serviceProvider, true)
       }
 
     /// Update the info for a project in the project table
     member this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId: ProjectId, site: IProjectSite, workspace: Workspace) =
         let extraProjectInfo = Some(box workspace)
         let tryGetOptionsForReferencedProject f = f |> tryGetOrCreateProjectId |> Option.bind this.TryGetOptionsForProject
-        let options = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(tryGetOptionsForReferencedProject, site, site.ProjectFileName(), extraProjectInfo, serviceProvider)
+        let options = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(tryGetOptionsForReferencedProject, site, site.ProjectFileName(), extraProjectInfo, serviceProvider, true)
         checkerProvider.Checker.InvalidateConfiguration(options)
         projectTable.[projectId] <- options
 
