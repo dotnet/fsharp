@@ -303,7 +303,7 @@ and
     member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, forceUpdate) =
         let hashSetIgnoreCase x = new HashSet<string>(x, StringComparer.OrdinalIgnoreCase)
         let updatedFiles = site.SourceFilesOnDisk() |> hashSetIgnoreCase
-        let workspaceFiles = project.GetCurrentDocuments() |> Seq.map(fun file -> file.FilePath) |> hashSetIgnoreCase
+        let workspaceFiles = project.GetCurrentDocuments() |> Seq.map (fun file -> file.FilePath) |> hashSetIgnoreCase
         
         let mutable updated = forceUpdate
 
@@ -311,17 +311,19 @@ and
             if not(workspaceFiles.Contains(file)) then
                 projectContext.AddSourceFile(file)
                 updated <- true
+        
         for file in workspaceFiles do
             if not(updatedFiles.Contains(file)) then
                 projectContext.RemoveSourceFile(file)
                 updated <- true
         
-        let updatedRefs = site.AssemblyReferences() |> hashSetIgnoreCase
+        let updatedRefs = site.AssemblyReferences() |> Seq.filter File.Exists |> hashSetIgnoreCase
         let workspaceRefs = project.GetCurrentMetadataReferences() |> Seq.map(fun ref -> ref.FilePath) |> hashSetIgnoreCase
 
         for ref in updatedRefs do
             if not(workspaceRefs.Contains(ref)) then
                 projectContext.AddMetadataReference(ref, MetadataReferenceProperties.Assembly)
+        
         for ref in workspaceRefs do
             if not(updatedRefs.Contains(ref)) then
                 projectContext.RemoveMetadataReference(ref)
