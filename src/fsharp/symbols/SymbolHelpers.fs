@@ -1268,7 +1268,6 @@ module internal SymbolHelpers =
 
 #endif
 
-
     /// Get the "F1 Keyword" associated with an item, for looking up documentatio help indexes on the web
     let rec GetF1Keyword g item = 
 
