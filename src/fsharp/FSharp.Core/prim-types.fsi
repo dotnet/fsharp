@@ -100,7 +100,6 @@ namespace Microsoft.FSharp.Core
     module ICloneableExtensions =
         type System.Array with
             member Clone : unit -> System.Array            
-#else
 #endif    
        
        
@@ -1353,7 +1352,6 @@ namespace System
         member Item6 : 'T6 with get
         member Item7 : 'T7 with get
         member Rest  : 'TRest with get
-#else
 #endif
 
 namespace Microsoft.FSharp.Core
@@ -1383,8 +1381,10 @@ namespace Microsoft.FSharp.Core
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpChoice`2")>]
     type Choice<'T1,'T2> = 
+
       /// <summary>Choice 1 of 2 choices</summary>
       | Choice1Of2 of 'T1 
+
       /// <summary>Choice 2 of 2 choices</summary>
       | Choice2Of2 of 'T2
     
@@ -1392,10 +1392,13 @@ namespace Microsoft.FSharp.Core
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpChoice`3")>]
     type Choice<'T1,'T2,'T3> = 
+
       /// <summary>Choice 1 of 3 choices</summary>
       | Choice1Of3 of 'T1 
+
       /// <summary>Choice 2 of 3 choices</summary>
       | Choice2Of3 of 'T2
+
       /// <summary>Choice 3 of 3 choices</summary>
       | Choice3Of3 of 'T3
     
@@ -1403,12 +1406,16 @@ namespace Microsoft.FSharp.Core
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpChoice`4")>]
     type Choice<'T1,'T2,'T3,'T4> = 
+
       /// <summary>Choice 1 of 4 choices</summary>
       | Choice1Of4 of 'T1 
+
       /// <summary>Choice 2 of 4 choices</summary>
       | Choice2Of4 of 'T2
+
       /// <summary>Choice 3 of 4 choices</summary>
       | Choice3Of4 of 'T3
+
       /// <summary>Choice 4 of 4 choices</summary>
       | Choice4Of4 of 'T4
     
@@ -1416,14 +1423,19 @@ namespace Microsoft.FSharp.Core
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpChoice`5")>]
     type Choice<'T1,'T2,'T3,'T4,'T5> = 
+
       /// <summary>Choice 1 of 5 choices</summary>
       | Choice1Of5 of 'T1 
+
       /// <summary>Choice 2 of 5 choices</summary>
       | Choice2Of5 of 'T2
+
       /// <summary>Choice 3 of 5 choices</summary>
       | Choice3Of5 of 'T3
+
       /// <summary>Choice 4 of 5 choices</summary>
       | Choice4Of5 of 'T4
+
       /// <summary>Choice 5 of 5 choices</summary>
       | Choice5Of5 of 'T5
     
@@ -1431,16 +1443,22 @@ namespace Microsoft.FSharp.Core
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpChoice`6")>]
     type Choice<'T1,'T2,'T3,'T4,'T5,'T6> = 
+
       /// <summary>Choice 1 of 6 choices</summary>
       | Choice1Of6 of 'T1 
+
       /// <summary>Choice 2 of 6 choices</summary>
       | Choice2Of6 of 'T2
+
       /// <summary>Choice 3 of 6 choices</summary>
       | Choice3Of6 of 'T3
+
       /// <summary>Choice 4 of 6 choices</summary>
       | Choice4Of6 of 'T4
+
       /// <summary>Choice 5 of 6 choices</summary>
       | Choice5Of6 of 'T5
+
       /// <summary>Choice 6 of 6 choices</summary>
       | Choice6Of6 of 'T6
     
@@ -1479,9 +1497,11 @@ namespace Microsoft.FSharp.Core
     /// by compiled F# code.</summary>
     [<AbstractClass>]
     type FSharpTypeFunc =
+
         /// <summary>Specialize the type function at a given type</summary>
         /// <returns>The specialized type.</returns>
         abstract Specialize<'T> : unit -> obj
+
         /// <summary>Construct an instance of an F# first class type function value </summary>
         /// <returns>FSharpTypeFunc</returns>
         new : unit -> FSharpTypeFunc
@@ -1490,15 +1510,24 @@ namespace Microsoft.FSharp.Core
     /// typically used directly, though may be used from other CLI languages.</summary>
     [<AbstractClass>]
     type FSharpFunc<'T,'U> = 
+
         /// <summary>Invoke an F# first class function value with one argument</summary>
         /// <param name="func"></param>
         /// <returns>'U</returns>
         abstract member Invoke : func:'T -> 'U
+
+        /// <summary>Convert an F# first class function value to a value of type <c>System.Func</c></summary>
+        /// <param name="func">The input function.</param>
+        /// <returns>A System.Func of the appropriate type.</returns>
+        static member ToFunc : func:('T -> 'U) -> System.Func<'T,'U>
+
 #if !FX_NO_CONVERTER
+
         /// <summary>Convert an F# first class function value to a value of type <c>System.Converter</c></summary>
         /// <param name="func">The input function.</param>
         /// <returns>A System.Converter of the function type.</returns>
         static member op_Implicit : func:('T -> 'U) -> System.Converter<'T,'U>
+
         /// <summary>Convert an value of type <c>System.Converter</c> to a F# first class function value </summary>
         /// <param name="converter">The input System.Converter.</param>
         /// <returns>An F# function of the same type.</returns>
@@ -1508,11 +1537,14 @@ namespace Microsoft.FSharp.Core
         /// <param name="func">The input function.</param>
         /// <returns>System.Converter&lt;'T,'U&gt;</returns>
         static member ToConverter : func:('T -> 'U) -> System.Converter<'T,'U>
+
         /// <summary>Convert an value of type <c>System.Converter</c> to a F# first class function value </summary>
         /// <param name="converter">The input System.Converter.</param>
         /// <returns>An F# function of the same type.</returns>
+        [<Obsolete("Please use FSharpConverter.ToFSharpFunc(...)")>]
         static member FromConverter : converter:System.Converter<'T,'U> -> ('T -> 'U)
 #endif
+
         /// <summary>Invoke an F# first class function value with five curried arguments. In some cases this
         /// will result in a more efficient application than applying the arguments successively.</summary>
         /// <param name="func">The input function.</param>
@@ -1523,6 +1555,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="arg5">The fifth arg.</param>
         /// <returns>The function result.</returns>
         static member InvokeFast : func: FSharpFunc<'T,('U -> 'V -> 'W -> 'X -> 'Y)> * arg1:'T * arg2:'U * arg3:'V * arg4:'W * arg5:'X -> 'Y
+
         /// <summary>Invoke an F# first class function value with four curried arguments. In some cases this
         /// will result in a more efficient application than applying the arguments successively.</summary>
         /// <param name="func">The input function.</param>
@@ -1532,6 +1565,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="arg4">The fourth arg.</param>
         /// <returns>The function result.</returns>
         static member InvokeFast : func: FSharpFunc<'T,('U -> 'V -> 'W -> 'X)> * arg1:'T * arg2:'U * arg3:'V * arg4:'W -> 'X
+
         /// <summary>Invoke an F# first class function value with three curried arguments. In some cases this
         /// will result in a more efficient application than applying the arguments successively.</summary>
         /// <param name="func">The input function.</param>
@@ -1540,6 +1574,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="arg3">The third arg.</param>
         /// <returns>The function result.</returns>
         static member InvokeFast : func: FSharpFunc<'T,('U -> 'V -> 'W)> * arg1:'T * arg2:'U * arg3:'V -> 'W
+
         /// <summary>Invoke an F# first class function value with two curried arguments. In some cases this
         /// will result in a more efficient application than applying the arguments successively.</summary>
         /// <param name="func">The input function.</param>
@@ -1557,35 +1592,74 @@ namespace Microsoft.FSharp.Core
     /// <summary>Helper functions for converting F# first class function values to and from CLI representations
     /// of functions using delegates.</summary>
     type FuncConvert = 
+
         /// <summary>Convert the given Action delegate object to an F# function value</summary>
         /// <param name="action">The input action.</param>
         /// <returns>The F# function.</returns>
-        static member  ToFSharpFunc       : action:Action<'T>            -> ('T -> unit)
+        static member  inline ToFSharpFunc       : action:Action<'T>            -> ('T -> unit)
+
 #if !FX_NO_CONVERTER
-        /// <summary>Convert the given Converter delegate object to an F# function value</summary>
-        /// <param name="converter">The input Converter.</param>
+        /// <summary>Convert the given Func delegate object to an F# function value</summary>
+        /// <param name="converter">The input Func.</param>
         /// <returns>The F# function.</returns>
-        static member  ToFSharpFunc       : converter:Converter<'T,'U>          -> ('T -> 'U)
+        [<Obsolete("Please use the FuncConvert.ToFSharpFunc(Func<...>) overload of this method")>]
+        static member  inline ToFSharpFunc       : converter:Converter<'T,'U>          -> ('T -> 'U)
 #endif
+
+        /// <summary>Convert the given Func delegate object to an F# function value</summary>
+        /// <param name="converter">The input Func.</param>
+        /// <returns>The F# function.</returns>
+        static member  inline ToFSharpFunc       : converter:Func<'T,'U>          -> ('T -> 'U)
+
+        /// <summary>Convert the given Func delegate object to an F# function value</summary>
+        /// <param name="converter">The input Func.</param>
+        /// <returns>The F# function.</returns>
+        static member  inline ToFSharpFunc       : converter:Func<'T1,'T2,'U>          -> ('T1 * 'T2 -> 'U)
+
+        /// <summary>Convert the given Func delegate object to an F# function value</summary>
+        /// <param name="converter">The input Func.</param>
+        /// <returns>The F# function.</returns>
+        static member  inline ToFSharpFunc       : converter:Func<'T1,'T2,'T3,'U>          -> ('T1 * 'T2 * 'T3 -> 'U)
+
+        /// <summary>Convert the given Func delegate object to an F# function value</summary>
+        /// <param name="converter">The input Func.</param>
+        /// <returns>The F# function.</returns>
+        static member  inline ToFSharpFunc       : converter:Func<'T1,'T2,'T3,'T4,'U>          -> ('T1 * 'T2 * 'T3 * 'T4 -> 'U)
+
+        /// <summary>Convert the given Func delegate object to an F# function value</summary>
+        /// <param name="converter">The input Func.</param>
+        /// <returns>The F# function.</returns>
+        static member  inline ToFSharpFunc       : converter:Func<'T1,'T2,'T3,'T4,'T5,'U>          -> ('T1 * 'T2 * 'T3 * 'T4 * 'T5 -> 'U)
+
+        /// <summary>Convert the given Func delegate object to an F# function value</summary>
+        /// <param name="converter">The input Func.</param>
+        /// <returns>The F# function.</returns>
+        static member  inline ToFSharpFunc       : converter:Func<'T1,'T2,'T3,'T4,'T5,'T6,'U>          -> ('T1 * 'T2 * 'T3 * 'T4 * 'T5 * 'T6 -> 'U)
+
+        /// <summary>Convert the given Func delegate object to an F# function value</summary>
+        /// <param name="converter">The input Func.</param>
+        /// <returns>The F# function.</returns>
+        static member  inline ToFSharpFunc       : converter:Func<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'U>          -> ('T1 * 'T2 * 'T3 * 'T4 * 'T5 * 'T6 * 'T7 -> 'U)
+
         /// <summary>A utility function to convert function values from tupled to curried form</summary>
         /// <param name="func">The input tupled function.</param>
         /// <returns>The output curried function.</returns>
-        static member FuncFromTupled : func:('T1 * 'T2 -> 'U) -> ('T1 -> 'T2 -> 'U)
+        static member inline FuncFromTupled : func:('T1 * 'T2 -> 'U) -> ('T1 -> 'T2 -> 'U)
         
         /// <summary>A utility function to convert function values from tupled to curried form</summary>
         /// <param name="func">The input tupled function.</param>
         /// <returns>The output curried function.</returns>
-        static member FuncFromTupled : func:('T1 * 'T2 * 'T3 -> 'U) -> ('T1 -> 'T2 -> 'T3 -> 'U)
+        static member inline FuncFromTupled : func:('T1 * 'T2 * 'T3 -> 'U) -> ('T1 -> 'T2 -> 'T3 -> 'U)
         
         /// <summary>A utility function to convert function values from tupled to curried form</summary>
         /// <param name="func">The input tupled function.</param>
         /// <returns>The output curried function.</returns>
-        static member FuncFromTupled : func:('T1 * 'T2 * 'T3 * 'T4 -> 'U) -> ('T1 -> 'T2 -> 'T3 -> 'T4 -> 'U)
+        static member inline FuncFromTupled : func:('T1 * 'T2 * 'T3 * 'T4 -> 'U) -> ('T1 -> 'T2 -> 'T3 -> 'T4 -> 'U)
         
         /// <summary>A utility function to convert function values from tupled to curried form</summary>
         /// <param name="func">The input tupled function.</param>
         /// <returns>The output curried function.</returns>
-        static member FuncFromTupled : func:('T1 * 'T2 * 'T3 * 'T4 * 'T5 -> 'U) -> ('T1 -> 'T2 -> 'T3 -> 'T4 -> 'T5 -> 'U)
+        static member inline FuncFromTupled : func:('T1 * 'T2 * 'T3 * 'T4 * 'T5 -> 'U) -> ('T1 -> 'T2 -> 'T3 -> 'T4 -> 'T5 -> 'U)
 
     /// <summary>An implementation module used to hold some private implementations of function
     /// value invocation.</summary>
@@ -1597,16 +1671,19 @@ namespace Microsoft.FSharp.Core
         [<AbstractClass>]
         type FSharpFunc<'T1,'T2,'U> = 
             inherit  FSharpFunc<'T1,('T2 -> 'U)>
+
             /// <summary>Invoke the optimized function value with two curried arguments </summary>
             /// <param name="arg1">The first arg.</param>
             /// <param name="arg2">The second arg.</param>
             /// <returns>The function result.</returns>
             abstract member Invoke : arg1:'T1 * arg2:'T2 -> 'U
+
             /// <summary>Adapt an F# first class function value to be an optimized function value that can 
             /// accept two curried arguments without intervening execution. </summary>
             /// <param name="func">The input function.</param>
             /// <returns>The adapted function.</returns>
             static member Adapt : func:('T1 -> 'T2 -> 'U) -> FSharpFunc<'T1,'T2,'U>
+
             /// <summary>Construct an optimized function value that can accept two curried 
             /// arguments without intervening execution.</summary>
             /// <returns>The optimized function.</returns>
@@ -1617,7 +1694,9 @@ namespace Microsoft.FSharp.Core
         /// typically used directly from either F# code or from other CLI languages.</summary>
         [<AbstractClass>]
         type FSharpFunc<'T1,'T2,'T3,'U> = 
+
             inherit  FSharpFunc<'T1,('T2 -> 'T3 -> 'U)>
+
             /// <summary>Invoke an F# first class function value that accepts three curried arguments 
             /// without intervening execution</summary>
             /// <param name="arg1">The first arg.</param>
@@ -1625,11 +1704,13 @@ namespace Microsoft.FSharp.Core
             /// <param name="arg3">The third arg.</param>
             /// <returns>The function result.</returns>
             abstract member Invoke : arg1:'T1 * arg2:'T2 * arg3:'T3 -> 'U
+
             /// <summary>Adapt an F# first class function value to be an optimized function value that can 
             /// accept three curried arguments without intervening execution. </summary>
             /// <param name="func">The input function.</param>
             /// <returns>The adapted function.</returns>
             static member Adapt : func:('T1 -> 'T2 -> 'T3 -> 'U) -> FSharpFunc<'T1,'T2,'T3,'U>
+
             /// <summary>Construct an optimized function value that can accept three curried 
             /// arguments without intervening execution.</summary>
             /// <returns>The optimized function.</returns>
@@ -1641,6 +1722,7 @@ namespace Microsoft.FSharp.Core
         [<AbstractClass>]
         type FSharpFunc<'T1,'T2,'T3,'T4,'U> = 
             inherit  FSharpFunc<'T1,('T2 -> 'T3 -> 'T4 -> 'U)>
+
             /// <summary>Invoke an F# first class function value that accepts four curried arguments 
             /// without intervening execution</summary>
             /// <param name="arg1">The first arg.</param>
@@ -1649,11 +1731,13 @@ namespace Microsoft.FSharp.Core
             /// <param name="arg4">The fourth arg.</param>
             /// <returns>The function result.</returns>
             abstract member Invoke : arg1:'T1 * arg2:'T2 * arg3:'T3 * arg4:'T4 -> 'U
+
             /// <summary>Adapt an F# first class function value to be an optimized function value that can 
             /// accept four curried arguments without intervening execution. </summary>
             /// <param name="func">The input function.</param>
             /// <returns>The optimized function.</returns>
             static member Adapt : func:('T1 -> 'T2 -> 'T3 -> 'T4 -> 'U) -> FSharpFunc<'T1,'T2,'T3,'T4,'U>
+
             /// <summary>Construct an optimized function value that can accept four curried 
             /// arguments without intervening execution.</summary>
             /// <returns>The optimized function.</returns>
@@ -1665,6 +1749,7 @@ namespace Microsoft.FSharp.Core
         [<AbstractClass>]
         type FSharpFunc<'T1,'T2,'T3,'T4,'T5,'U> = 
             inherit  FSharpFunc<'T1,('T2 -> 'T3 -> 'T4 -> 'T5 -> 'U)>
+
             /// <summary>Invoke an F# first class function value that accepts five curried arguments 
             /// without intervening execution</summary>
             /// <param name="arg1">The first arg.</param>
@@ -1674,11 +1759,13 @@ namespace Microsoft.FSharp.Core
             /// <param name="arg5">The fifth arg.</param>
             /// <returns>The function result.</returns>
             abstract member Invoke : arg1:'T1 * arg2:'T2 * arg3:'T3 * arg4:'T4 * arg5:'T5 -> 'U
+
             /// <summary>Adapt an F# first class function value to be an optimized function value that can 
             /// accept five curried arguments without intervening execution. </summary>
             /// <param name="func">The input function.</param>
             /// <returns>The optimized function.</returns>
             static member Adapt : func:('T1 -> 'T2 -> 'T3 -> 'T4 -> 'T5 -> 'U) -> FSharpFunc<'T1,'T2,'T3,'T4,'T5,'U>
+
             /// <summary>Construct an optimized function value that can accept five curried 
             /// arguments without intervening execution.</summary>
             /// <returns>The optimized function.</returns>
@@ -1860,33 +1947,6 @@ namespace Microsoft.FSharp.Core
     [<AutoOpen>]
     module Operators = 
 
-        // Arithmetic operators. These operators are overloaded and can be used
-        // on any pair of types that satisfies the constraint, e.g. the
-        // '+' function can be used on any type that supports the "op_Addition" 
-        // constraint. This includes all CLI types that support the op_Addition 
-        // operator. The standard integral and floating point types support 
-        // constraints as follows:
-        //   - The built-in integral types are:
-        //          sbyte, byte, int16, uint16, int32, unit32, 
-        //          int64, uint64, nativeint, unativeint
-        //
-        //   - The built-in floating point types are:
-        //          float, float32
-        //
-        //   - The built-in numeric types are these combined
-        //
-        //    All built-in numeric types support:
-        //        'ty.(+)   : (ty,ty) -> ty
-        //        'ty.(-)   : (ty,ty) -> ty
-        //        'ty.( * ) : (ty,ty) -> ty
-        //        'ty.(/)   : (ty,ty) -> ty
-        //        'ty.(%)   : (ty,ty) -> ty
-        //        'ty.(~+)  : (ty)    -> ty
-        //
-        //    All signed numeric types support:
-        //        'ty.(~-)  : (ty)    -> ty
-        
-        
         /// <summary>Overloaded unary negation.</summary>
         /// <param name="n">The value to negate.</param>
         /// <returns>The result of the operation.</returns>
@@ -2015,12 +2075,14 @@ namespace Microsoft.FSharp.Core
         /// <param name="func">The function.</param>
         /// <returns>The function result.</returns>
         val inline (|>): arg:'T1 -> func:('T1 -> 'U) -> 'U
+
         /// <summary>Apply a function to two values, the values being a pair on the left, the function on the right</summary>
         /// <param name="arg1">The first argument.</param>
         /// <param name="arg2">The second argument.</param>
         /// <param name="func">The function.</param>
         /// <returns>The function result.</returns>
         val inline (||>): arg1:'T1 * arg2:'T2 -> func:('T1 -> 'T2 -> 'U) -> 'U
+
         /// <summary>Apply a function to three values, the values being a triple on the left, the function on the right</summary>
         /// <param name="arg1">The first argument.</param>
         /// <param name="arg2">The second argument.</param>
@@ -3320,11 +3382,12 @@ namespace System
     [<Class>]
     [<AllowNullLiteral>]
     type Lazy<'T> =
+
         /// <summary>Is true if the value is ready to be accessed.</summary>
         member IsValueCreated : bool 
+
         /// <summary>The value contained in the Lazy.</summary>
         member Value : 'T 
-#else
 #endif
 
 
@@ -3335,6 +3398,7 @@ namespace Microsoft.FSharp.Control
     [<AutoOpen>]
     module LazyExtensions =
         type System.Lazy<'T> with
+
             /// <summary>Creates a lazy computation that evaluates to the result of the given function when forced.</summary>
             /// <param name="creator">The function to provide the value when needed.</param>
             /// <returns>The created Lazy object.</returns>
@@ -3403,11 +3467,13 @@ namespace Microsoft.FSharp.Control
     /// tagged with the CLIEventAttribute. In this case the F# compiler generates appropriate 
     /// CLI metadata to make the member appear to other CLI languages as a CLI event.</remarks>
     type IDelegateEvent<'Delegate when 'Delegate :> System.Delegate > =
+
         /// <summary>Connect a handler delegate object to the event. A handler can
         /// be later removed using RemoveHandler. The listener will
         /// be invoked when the event is fired.</summary>
         /// <param name="handler">A delegate to be invoked when the event is fired.</param>
         abstract AddHandler: handler:'Delegate -> unit
+
         /// <summary>Remove a listener delegate from an event listener store.</summary>
         /// <param name="handler">The delegate to be removed from the event listener store.</param>
         abstract RemoveHandler: handler:'Delegate -> unit 

@@ -3357,18 +3357,24 @@ namespace Microsoft.FSharp.Core
 
 
     type FSharpFunc<'T,'Res> with
-#if FX_NO_CONVERTER
+
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
         static member op_Implicit(f : System.Func<_,_>) : ('T -> 'Res) =  (fun t -> f.Invoke(t))
+
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
         static member op_Implicit( f : ('T -> 'Res) ) =  new System.Func<'T,'Res>(f)
-#else    
+
+        static member ToFunc( f : ('T -> 'Res) ) =  new System.Func<'T,'Res>(f)
+
+#if !FX_NO_CONVERTER
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
         static member op_Implicit(f : System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> f.Invoke(t))
+
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
         static member op_Implicit( f : ('T -> 'Res) ) =  new System.Converter<'T,'Res>(f)
 
         static member FromConverter(f : System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> f.Invoke(t))
+
         static member ToConverter( f : ('T -> 'Res) ) =  new System.Converter<'T,'Res>(f)
 #endif
         static member InvokeFast(f:FSharpFunc<_,_>,(t:'T),(u:'Res))       = OptimizedClosures.invokeFast2(f,t,u) 
@@ -3379,16 +3385,22 @@ namespace Microsoft.FSharp.Core
     [<AbstractClass>]
     [<Sealed>]
     type FuncConvert = 
-        static member  ToFSharpFunc( f : Action<_>) = (fun t -> f.Invoke(t))
-#if FX_NO_CONVERTER
-        static member  ToFSharpFunc( f : System.Func<_, _>) = (fun t -> f.Invoke(t))
-#else        
-        static member  ToFSharpFunc( f : Converter<_,_>) = (fun t -> f.Invoke(t))
+        static member  inline ToFSharpFunc( f : Action<_>) = (fun t -> f.Invoke(t))
+        static member  inline ToFSharpFunc( f : System.Func<_, _>) = (fun t -> f.Invoke(t))
+        static member  inline ToFSharpFunc( f : System.Func<_, _, _>) = (fun (t1,t2) -> f.Invoke(t1,t2))
+        static member  inline ToFSharpFunc( f : System.Func<_, _, _, _>) = (fun (t1,t2,t3) -> f.Invoke(t1,t2,t3))
+        static member  inline ToFSharpFunc( f : System.Func<_, _, _, _, _>) = (fun (t1,t2,t3,t4) -> f.Invoke(t1,t2,t3,t4))
+        static member  inline ToFSharpFunc( f : System.Func<_, _, _, _, _, _>) = (fun (t1,t2,t3,t4,t5) -> f.Invoke(t1,t2,t3,t4,t5))
+        static member  inline ToFSharpFunc( f : System.Func<_, _, _, _, _, _, _>) = (fun (t1,t2,t3,t4,t5,t6) -> f.Invoke(t1,t2,t3,t4,t5,t6))
+        static member  inline ToFSharpFunc( f : System.Func<_, _, _, _, _, _, _, _>) = (fun (t1,t2,t3,t4,t5,t6,t7) -> f.Invoke(t1,t2,t3,t4,t5,t6,t7))
+
+#if !FX_NO_CONVERTER
+        static member  inline ToFSharpFunc( f : Converter<_,_>) = (fun t -> f.Invoke(t))
 #endif        
-        static member FuncFromTupled (f:'T1 * 'T2 -> 'Res) = (fun a b -> f (a, b))
-        static member FuncFromTupled (f:'T1 * 'T2 * 'T3 -> 'Res) = (fun a b c -> f (a, b, c))
-        static member FuncFromTupled (f:'T1 * 'T2 * 'T3 * 'T4 -> 'Res) = (fun a b c d -> f (a, b, c, d))
-        static member FuncFromTupled (f:'T1 * 'T2 * 'T3 * 'T4 * 'T5 -> 'Res) = (fun a b c d e-> f (a, b, c, d, e))
+        static member inline FuncFromTupled (f:'T1 * 'T2 -> 'Res) = (fun a b -> f (a, b))
+        static member inline FuncFromTupled (f:'T1 * 'T2 * 'T3 -> 'Res) = (fun a b c -> f (a, b, c))
+        static member inline FuncFromTupled (f:'T1 * 'T2 * 'T3 * 'T4 -> 'Res) = (fun a b c d -> f (a, b, c, d))
+        static member inline FuncFromTupled (f:'T1 * 'T2 * 'T3 * 'T4 * 'T5 -> 'Res) = (fun a b c d e-> f (a, b, c, d, e))
 
 
 
