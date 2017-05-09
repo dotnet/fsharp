@@ -15,7 +15,6 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <ReferenceVsAssemblies>true</ReferenceVsAssemblies>
     <OutputType>Library</OutputType>
-    <UnitTestAssembly>true</UnitTestAssembly>
     <AssemblyName>FSharp.Core.Unittests</AssemblyName>
     <!-- Prevent compiler from inlining calls to FSharp.Core to improve code coverage accuracy -->
     <Optimize>false</Optimize>

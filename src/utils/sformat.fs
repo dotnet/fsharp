@@ -53,11 +53,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #endif
 
     [<StructuralEquality; NoComparison>]
-#if COMPILER
-    type internal LayoutTag =
-#else
     type LayoutTag =
-#endif
         | ActivePatternCase
         | ActivePatternResult
         | Alias
@@ -92,19 +88,11 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         | UnknownType
         | UnknownEntity
 
-#if COMPILER
-    type internal TaggedText =
-#else
     type TaggedText =
-#endif
         abstract Tag: LayoutTag
         abstract Text: string
-    
-#if COMPILER
-    type internal TaggedTextWriter =
-#else
+
     type TaggedTextWriter =
-#endif
         abstract Write: t: TaggedText -> unit
         abstract WriteLine: unit -> unit
 
@@ -112,11 +100,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     ///  - unbreakable, or
     ///  - breakable, and if broken the second block has a given indentation.
     [<StructuralEquality; NoComparison>]
-#if COMPILER
-    type internal Joint =
-#else
     type Joint =
-#endif
      | Unbreakable
      | Breakable of int
      | Broken of int
@@ -126,43 +110,23 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     ///
     /// If either juxt flag is true, then no space between words.
     [<NoEquality; NoComparison>]
-#if COMPILER
-    type internal Layout =
-#else
     type Layout =
-#endif
      | ObjLeaf of bool * obj * bool
      | Leaf of bool * TaggedText * bool
      | Node of bool * layout * bool * layout * bool * joint
      | Attr of string * (string * string) list * layout
 
-#if COMPILER
-    and internal layout = Layout
-#else
     and layout = Layout
-#endif
 
-#if COMPILER
-    and internal joint = Joint
-#else
     and joint = Joint
-#endif
 
     [<NoEquality; NoComparison>]
-#if COMPILER
-    type internal IEnvironment = 
-#else
     type IEnvironment = 
-#endif
         abstract GetLayout : obj -> layout
         abstract MaxColumns : int
         abstract MaxRows : int
 
-#if COMPILER 
-    module internal TaggedTextOps =
-#else
     module TaggedTextOps =
-#endif
         let tag tag text = 
           { new TaggedText with 
             member x.Tag = tag
@@ -248,11 +212,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             let arrow = tagPunctuation "->"
             let questionMark = tagPunctuation "?"
      
-#if COMPILER
-    module internal LayoutOps = 
-#else
     module LayoutOps = 
-#endif
         open TaggedTextOps
 
         let rec juxtLeft = function
@@ -353,11 +313,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
           
     /// These are a typical set of options used to control structured formatting.
     [<NoEquality; NoComparison>]
-#if COMPILER
-    type internal FormatOptions =
-#else
     type FormatOptions =
-#endif
         { FloatingPointFormat: string;
           AttributeProcessor: (string -> (string * string) list -> bool -> unit);
 #if RUNTIME
@@ -404,11 +360,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 
 
 
-#if COMPILER
-    module internal ReflectUtils = 
-#else
     module ReflectUtils = 
-#endif
         open System
         open System.Reflection
 
@@ -536,11 +488,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                 | _ -> 
                   GetValueInfoOfObject bindingFlags (obj) 
 
-#if COMPILER
-    module internal Display = 
-#else
     module Display = 
-#endif
 
         open ReflectUtils
         open LayoutOps

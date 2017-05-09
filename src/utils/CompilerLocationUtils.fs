@@ -137,9 +137,15 @@ module internal FSharpEnvironment =
                 null)
 
     let is32Bit = IntPtr.Size = 4
+    
+    let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e-> false
 
     let tryRegKey(subKey:string) = 
 
+        //if we are runing on mono simply return None
+        // GetDefaultRegistryStringValueViaDotNet will result in an access denied by default, 
+        // and Get32BitRegistryStringValueViaPInvoke will fail due to Advapi32.dll not existing
+        if runningOnMono then None else
         if is32Bit then
             let s = GetDefaultRegistryStringValueViaDotNet(subKey)
             // If we got here AND we're on a 32-bit OS then we can validate that Get32BitRegistryStringValueViaPInvoke(...) works
@@ -189,6 +195,7 @@ module internal FSharpEnvironment =
     //     - default location of fsc.exe in FSharp.Compiler.CodeDom.dll
     //     - default F# binaries directory in (project system) Project.fs
     let BinFolderOfDefaultFSharpCompiler(probePoint:string option) = 
+        ignore probePoint
 #if FX_NO_WIN_REGISTRY
         ignore probePoint
 #if FX_NO_APP_DOMAINS
@@ -218,19 +225,10 @@ module internal FSharpEnvironment =
                 // Property pages (ApplicationPropPage.vb)
 
                 let key20 = @"Software\Microsoft\.NETFramework\AssemblyFolders\Microsoft.FSharp-" + FSharpTeamVersionNumber 
-#if VS_VERSION_DEV12
-                let key40 = @"Software\Microsoft\FSharp\3.1\Runtime\v4.0"
-#endif
-#if VS_VERSION_DEV14
-                let key40 = @"Software\Microsoft\FSharp\4.0\Runtime\v4.0"
-#endif
-#if VS_VERSION_DEV15
-                let key40 = @"Software\Microsoft\FSharp\4.1\Runtime\v4.0"
-#endif
-                let key1,key2 = 
-                    match FSharpCoreLibRunningVersion with 
-                    | None -> key20,key40 
-                    | Some v -> if v.Length > 1 && v.[0] <= '3' then key20,key40 else key40,key20
+                let key40a = @"Software\Microsoft\FSharp\4.0\Runtime\v4.0"
+                let key40b = @"Software\Microsoft\FSharp\3.1\Runtime\v4.0"
+                let key40c = @"Software\Microsoft\FSharp\2.0\Runtime\v4.0"
+                let key1,key2,key3,key4 = key40a, key40b, key40c, key20
                 
                 let result = tryRegKey key1
                 match result with 
@@ -240,6 +238,23 @@ module internal FSharpEnvironment =
                     match result with 
                     | Some _ ->  result 
                     | None ->
+                      let result =  tryRegKey key3
+                      match result with 
+                      | Some _ ->  result 
+                      | None ->
+                        let result =  tryRegKey key4
+                        match result with 
+                        | Some _ ->  result 
+                        | None ->
+                
+                        // On Unix we let you set FSHARP_COMPILER_BIN. I've rarely seen this used and its not documented in the install instructions.
+                        let result = 
+                            let var = System.Environment.GetEnvironmentVariable("FSHARP_COMPILER_BIN")
+                            if String.IsNullOrEmpty(var) then None
+                            else Some(var)
+                        match result with 
+                        | Some _ -> result
+                        | None -> 
                         // For the prototype compiler, we can just use the current domain
                         tryCurrentDomain()
         with e -> 
@@ -266,8 +281,6 @@ module internal FSharpEnvironment =
             | _ -> regkey.GetValue("Release", 0) :?> int |> (fun s -> s >= 0x50000)) // 0x50000 implies 4.5.0
       with _ -> false
  
-    let runningOnMono = (Type.GetType("Mono.Runtime") <> null)
-  
     // Check if the framework version 4.5 or above is installed
     let IsNetFx45OrAboveInstalled =
         IsNetFx45OrAboveInstalledAt @"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Client" ||

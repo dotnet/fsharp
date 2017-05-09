@@ -1183,8 +1183,8 @@ let pdbReadOpen (moduleName:string) (path:string) :  PdbReader =
         with _ ->  
             { symReader = null } 
 #else 
-        let symbolBinder = new System.Diagnostics.SymbolStore.SymBinder() 
-        { symReader = symbolBinder.GetReader(importerPtr, moduleName, path) } 
+        let symbolBinder = new System.Diagnostics.SymbolStore.SymBinder()
+        { symReader = symbolBinder.GetReader(importerPtr, moduleName, path) }
 #endif
     finally
         // Marshal.GetComInterfaceForObject adds an extra ref for importerPtr

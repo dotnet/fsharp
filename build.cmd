@@ -22,7 +22,7 @@ echo           ^<proto^|protofx^>
 echo           ^<ci^|ci_part1^|ci_part2^|ci_part3^|ci_part4^|microbuild^>
 echo           ^<debug^|release^>
 echo           ^<diag^|publicsign^>
-echo           ^<test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-pcl-coreunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
+echo           ^<test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-pcl-coreunit^|test-net40-ideunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
 echo           ^<include tag^>
 echo           ^<init^>
 echo.
@@ -305,6 +305,13 @@ if /i "%ARG%" == "test-net40-fsharpqa" (
 if /i "%ARG%" == "test-compiler-unit" (
     set BUILD_NET40=1
     set TEST_NET40_COMPILERUNIT_SUITE=1
+)
+
+if /i "%ARG%" == "test-net40-ideunit" (
+    set BUILD_NET40=1
+    set BUILD_VS=1
+    set BUILD_PORTABLE=1
+    set TEST_VS_IDEUNIT_SUITE=1
 )
 
 if /i "%ARG%" == "test-net40-coreunit" (

@@ -4,7 +4,6 @@
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\..\src</FSharpSourcesRoot>
     <ProjectLanguage>FSharp</ProjectLanguage>
-    <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
     <Name>VisualFSharp.Unittests</Name>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
@@ -18,6 +17,7 @@
     <NoWarn>58;75</NoWarn>
     <PlatformTarget>x86</PlatformTarget>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <DefineConstants>NO_PROJECTCRACKER;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
@@ -76,6 +76,18 @@
     </Compile>
     <Compile Include="..\..\..\tests\service\MultiProjectAnalysisTests.fs">
       <Link>MultiProjectAnalysisTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tests\service\PerfTests.fs">
+      <Link>PerfTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tests\service\InteractiveCheckerTests.fs">
+      <Link>InteractiveCheckerTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tests\service\ExprTests.fs">
+      <Link>ExprTests.fs</Link>
+    </Compile>
+    <Compile Include="..\..\..\tests\service\CSharpProjectAnalysis.fs">
+      <Link>CSharpProjectAnalysis.fs</Link>
     </Compile>
     <Compile Include="..\..\..\tests\service\ProjectOptionsTests.fs">
       <Link>ProjectOptionsTests.fs</Link>

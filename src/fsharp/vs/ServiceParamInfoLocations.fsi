@@ -11,7 +11,11 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 
 [<Sealed>]
+#if COMPILER_PUBLIC_API
+type FSharpNoteworthyParamInfoLocations =
+#else
 type internal FSharpNoteworthyParamInfoLocations =
+#endif
     member LongId : string list
     member LongIdStartLocation : pos
     member LongIdEndLocation : pos

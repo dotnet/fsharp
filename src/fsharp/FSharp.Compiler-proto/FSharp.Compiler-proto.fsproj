@@ -14,8 +14,6 @@
     <DefineConstants>BUILDING_PROTO;$(DefineConstants)</DefineConstants>
     <DefineConstants>BUILDING_WITH_LKG;$(DefineConstants)</DefineConstants>
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
-    <DefineConstants>INCLUDE_METADATA_READER;$(DefineConstants)</DefineConstants>
-    <DefineConstants>INCLUDE_METADATA_WRITER;$(DefineConstants)</DefineConstants>
     <NoWarn>$(NoWarn);35;44;62;9;60;86;47;1203</NoWarn>
     <BuildWith>LKG</BuildWith>
     <AllowCrossTargeting>true</AllowCrossTargeting>
