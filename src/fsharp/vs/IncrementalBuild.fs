@@ -23,6 +23,7 @@ open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.TypeChecker
 open Microsoft.FSharp.Compiler.Tast 
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.SourceCodeServices
 open Internal.Utilities
 open Internal.Utilities.Collections
 
@@ -860,7 +861,7 @@ module internal IncrementalBuild =
             | None->None
 
     /// Given an input value, find the corresponding slot.        
-    let TryGetSlotByInput<'T>(node:Vector<'T>,input:'T,build:PartialBuild,equals:'T->'T->bool): int option = 
+    let TryGetSlotByInput<'T>(node:Vector<'T>,build:PartialBuild,found:'T->bool): int option = 
         let expr = GetExprByName(build,node)
         let id = expr.Id
         match build.Results.TryFind id with 
@@ -872,7 +873,7 @@ module internal IncrementalBuild =
                 match result with
                 | Available(o,_,_) ->
                     let o = o :?> 'T
-                    if equals o input then Some slot else acc
+                    if found o then Some slot else acc
                 | _ -> acc
             let slotOption = rv.FoldLeft MatchNames None
             slotOption 
@@ -951,6 +952,8 @@ module internal IncrementalBuild =
         let AsScalar (taskname:string) (input:Vector<'I>): Scalar<'I array> = 
             Demultiplex taskname (fun _ctok x -> cancellable.Return x) input
                   
+    let VectorInput(node:Vector<'T>, values: 'T list) = (node.Name, values.Length, List.map box values)
+    
     /// Declare build outputs and bind them to real values.
     type BuildDescriptionScope() =
         let mutable outputs = []
@@ -964,100 +967,6 @@ module internal IncrementalBuild =
         member b.GetInitialPartialBuild(inputs:BuildInput list) =
             ToBound(ToBuild outputs,inputs)   
 
-
-[<RequireQualifiedAccess>]
-type FSharpErrorSeverity = 
-    | Warning 
-    | Error
-
-type FSharpErrorInfo(fileName, s:pos, e:pos, severity: FSharpErrorSeverity, message: string, subcategory: string, errorNum: int) = 
-    member __.StartLine = Line.toZ s.Line
-    member __.StartLineAlternate = s.Line
-    member __.EndLine = Line.toZ e.Line
-    member __.EndLineAlternate = e.Line
-    member __.StartColumn = s.Column
-    member __.EndColumn = e.Column
-    member __.Severity = severity
-    member __.Message = message
-    member __.Subcategory = subcategory
-    member __.FileName = fileName
-    member __.ErrorNumber = errorNum
-    member __.WithStart(newStart) = FSharpErrorInfo(fileName, newStart, e, severity, message, subcategory, errorNum)
-    member __.WithEnd(newEnd) = FSharpErrorInfo(fileName, s, newEnd, severity, message, subcategory, errorNum)
-    override __.ToString()= sprintf "%s (%d,%d)-(%d,%d) %s %s %s" fileName (int s.Line) (s.Column + 1) (int e.Line) (e.Column + 1) subcategory (if severity=FSharpErrorSeverity.Warning then "warning" else "error")  message
-            
-    /// Decompose a warning or error into parts: position, severity, message, error number
-    static member (*internal*) CreateFromException(exn, isError, trim:bool, fallbackRange:range) = 
-        let m = match GetRangeOfDiagnostic exn with Some m -> m | None -> fallbackRange 
-        let e = if trim then m.Start else m.End
-        let msg = bufs (fun buf -> OutputPhasedDiagnostic buf exn false)
-        let errorNum = GetDiagnosticNumber exn
-        FSharpErrorInfo(m.FileName, m.Start, e, (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning), msg, exn.Subcategory(), errorNum)
-        
-    /// Decompose a warning or error into parts: position, severity, message, error number
-    static member internal CreateFromExceptionAndAdjustEof(exn, isError, trim:bool, fallbackRange:range, (linesCount:int, lastLength:int)) = 
-        let r = FSharpErrorInfo.CreateFromException(exn,isError,trim,fallbackRange)
-                
-        // Adjust to make sure that errors reported at Eof are shown at the linesCount        
-        let startline, schange = min (r.StartLineAlternate, false) (linesCount, true)
-        let endline,   echange = min (r.EndLineAlternate, false)   (linesCount, true)
-        
-        if not (schange || echange) then r
-        else
-            let r = if schange then r.WithStart(mkPos startline lastLength) else r
-            if echange then r.WithEnd(mkPos  endline (1 + lastLength)) else r
-
-    
-/// Use to reset error and warning handlers            
-[<Sealed>]
-type ErrorScope()  = 
-    let mutable errors = [] 
-    static let mutable mostRecentError = None
-    let unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
-    let unwindEL =        
-        PushErrorLoggerPhaseUntilUnwind (fun _oldLogger -> 
-            { new ErrorLogger("ErrorScope") with 
-                member x.DiagnosticSink(exn, isError) = 
-                      let err = FSharpErrorInfo.CreateFromException(exn,isError,false,range.Zero)
-                      errors <- err :: errors
-                      if isError then 
-                          mostRecentError <- Some err
-                member x.ErrorCount = errors.Length })
-        
-    member x.Errors = errors |> List.filter (fun error -> error.Severity = FSharpErrorSeverity.Error)
-    member x.Warnings = errors |> List.filter (fun error -> error.Severity = FSharpErrorSeverity.Warning)
-    member x.Diagnostics = errors
-    member x.TryGetFirstErrorText() =
-        match x.Errors with 
-        | error :: _ -> Some error.Message
-        | [] -> None
-    
-    interface IDisposable with
-          member d.Dispose() = 
-              unwindEL.Dispose() (* unwind pushes when ErrorScope disposes *)
-              unwindBP.Dispose()
-
-    static member MostRecentError = mostRecentError
-    
-    static member Protect<'a> (m:range) (f:unit->'a) (err:string->'a): 'a = 
-        use errorScope = new ErrorScope()
-        let res = 
-            try 
-                Some (f())
-            with e -> errorRecovery e m; None
-        match res with 
-        | Some res ->res
-        | None -> 
-            match errorScope.TryGetFirstErrorText() with 
-            | Some text -> err text
-            | None -> err ""
-
-    static member ProtectWithDefault m f dflt = 
-        ErrorScope.Protect m f (fun _ -> dflt)
-
-    static member ProtectAndDiscard m f = 
-        ErrorScope.Protect m f (fun _ -> ())
-      
 
         
 
@@ -1118,6 +1027,7 @@ type TypeCheckAccumulator =
       tcSymbolUses: TcSymbolUses list
       topAttribs:TopAttribs option
       typedImplFiles:TypedImplFile list
+      tcDependencyFiles: string list
       tcErrors:(PhasedDiagnostic * FSharpErrorSeverity) list } // errors=true, warnings=false
 
       
@@ -1165,38 +1075,6 @@ type FrameworkImportsCache(keepStrongly) =
         return tcGlobals,frameworkTcImports,nonFrameworkResolutions,unresolved
       }
 
-/// An error logger that capture errors, filtering them according to warning levels etc.
-type internal CompilationErrorLogger (debugName:string, tcConfig:TcConfig) = 
-    inherit ErrorLogger("CompilationErrorLogger("+debugName+")")
-            
-    let mutable errorCount = 0
-    let diagnostics = new ResizeArray<_>()
-
-    override x.DiagnosticSink(exn, isError) = 
-        if isError || ReportWarningAsError (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn, tcConfig.specificWarnAsError, tcConfig.specificWarnAsWarn, tcConfig.globalWarnAsError) exn then
-            diagnostics.Add(exn, isError)
-            errorCount <- errorCount + 1
-        else if ReportWarning (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn) exn then 
-            diagnostics.Add(exn, isError)
-
-    override x.ErrorCount = errorCount
-
-    member x.GetErrors() = 
-        [ for (e,isError) in diagnostics -> e, (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning) ]
-
-
-/// This represents the global state established as each task function runs as part of the build.
-///
-/// Use to reset error and warning handlers.
-type CompilationGlobalsScope(errorLogger:ErrorLogger, phase: BuildPhase) = 
-    let unwindEL = PushErrorLoggerPhaseUntilUnwind(fun _ -> errorLogger)
-    let unwindBP = PushThreadBuildPhaseUntilUnwind phase
-    // Return the disposable object that cleans up
-    interface IDisposable with
-        member d.Dispose() =
-            unwindBP.Dispose()         
-            unwindEL.Dispose()
-                            
 
 //------------------------------------------------------------------------------------
 // Rules for reactive building.
@@ -1215,6 +1093,7 @@ type PartialCheckResults =
       Errors: (PhasedDiagnostic * FSharpErrorSeverity) list 
       TcResolutions: TcResolutions list 
       TcSymbolUses: TcSymbolUses list 
+      TcDependencyFiles: string list 
       TopAttribs: TopAttribs option
       TimeStamp: System.DateTime }
 
@@ -1227,6 +1106,7 @@ type PartialCheckResults =
           Errors = tcAcc.tcErrors
           TcResolutions = tcAcc.tcResolutions
           TcSymbolUses = tcAcc.tcSymbolUses
+          TcDependencyFiles = tcAcc.tcDependencyFiles
           TopAttribs = tcAcc.topAttribs
           TimeStamp = timestamp }
 
@@ -1298,6 +1178,21 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
         ((sourceFiles,flags) ||> List.map2 (fun (m,nm) flag -> (m,nm,(flag, isExe))))
 
     let defaultTimeStamp = DateTime.Now
+
+    let basicDependencies = 
+        [ for (UnresolvedAssemblyReference(referenceText, _))  in unresolvedReferences do
+            // Exclude things that are definitely not a file name
+            if not(FileSystem.IsInvalidPathShim(referenceText)) then 
+                let file = if FileSystem.IsPathRootedShim(referenceText) then referenceText else Path.Combine(projectDirectory,referenceText) 
+                yield file 
+
+          for r in nonFrameworkResolutions do 
+                yield  r.resolvedPath  ]
+
+    let allDependencies =
+        [ yield! basicDependencies
+          for (_,f,_) in sourceFiles do
+                yield f ]
 
     // The IncrementalBuilder needs to hold up to one item that needs to be disposed, which is the tcImports for the incremental
     // build. 
@@ -1423,6 +1318,7 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
               tcSymbolUses=[]
               topAttribs=None
               typedImplFiles=[]
+              tcDependencyFiles=basicDependencies
               tcErrors = loadClosureErrors @ errorLogger.GetErrors() }   
         return tcAcc }
                 
@@ -1468,7 +1364,8 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
                                        typedImplFiles=typedImplFiles
                                        tcResolutions=tcAcc.tcResolutions @ [tcResolutions]
                                        tcSymbolUses=tcAcc.tcSymbolUses @ [tcSymbolUses]
-                                       tcErrors = tcAcc.tcErrors @ parseErrors @ capturingErrorLogger.GetErrors() } 
+                                       tcErrors = tcAcc.tcErrors @ parseErrors @ capturingErrorLogger.GetErrors() 
+                                       tcDependencyFiles = filename :: tcAcc.tcDependencyFiles } 
                 }
                     
             // Run part of the Eventually<_> computation until a timeout is reached. If not complete, 
@@ -1605,27 +1502,13 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
     // END OF BUILD DESCRIPTION
     // ---------------------------------------------------------------------------------------------            
 
-
-    let fileDependencies = 
-        [ for (UnresolvedAssemblyReference(referenceText, _))  in unresolvedReferences do
-            // Exclude things that are definitely not a file name
-            if not(FileSystem.IsInvalidPathShim(referenceText)) then 
-                let file = if FileSystem.IsPathRootedShim(referenceText) then referenceText else Path.Combine(projectDirectory,referenceText) 
-                yield file 
-
-          for r in nonFrameworkResolutions do 
-                yield  r.resolvedPath 
-
-          for (_,f,_) in sourceFiles do
-                yield f 
-        ]
-
     do IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBECreated)
+
     let buildInputs = [ BuildInput.VectorInput (fileNamesNode, sourceFiles)
                         BuildInput.VectorInput (referencedAssembliesNode, nonFrameworkAssemblyInputs) ]
 
     // This is the initial representation of progress through the build, i.e. we have made no progress.
-    let mutable partialBuild = buildDescription.GetInitialPartialBuild buildInputs
+    let mutable partialBuild = buildDescription.GetInitialPartialBuild (buildInputs)
 
     let SavePartialBuild (ctok: CompilationThreadToken) b = 
         RequireCompilationThread ctok // modifying state
@@ -1636,13 +1519,13 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
 
     member this.IncrementUsageCount() = 
         assertNotDisposed() 
-        referenceCount  <- referenceCount  + 1
+        System.Threading.Interlocked.Increment(&referenceCount) |> ignore
         { new System.IDisposable with member x.Dispose() = this.DecrementUsageCount() }
 
     member this.DecrementUsageCount() = 
         assertNotDisposed()
-        referenceCount  <- referenceCount  - 1
-        if referenceCount = 0 then 
+        let currentValue =  System.Threading.Interlocked.Decrement(&referenceCount)
+        if currentValue = 0 then 
                 disposed <- true
                 disposeCleanupItem()
 
@@ -1654,7 +1537,8 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
     member __.FileChecked = fileChecked.Publish
     member __.ProjectChecked = projectChecked.Publish
     member __.ImportedCcusInvalidated = importsInvalidated.Publish
-    member __.Dependencies = fileDependencies 
+    member __.AllDependenciesDeprecated = allDependencies 
+
 #if EXTENSIONTYPING
     member __.ThereAreLiveTypeProviders = 
         let liveTPs =
@@ -1749,18 +1633,18 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
         
     member __.GetSlotOfFileName(filename:string) =
         // Get the slot of the given file and force it to build.
-        let CompareFileNames (_,f1,_) (_,f2,_) = 
+        let CompareFileNames (_,f2,_) = 
             let result = 
-                   System.String.Compare(f1,f2,StringComparison.CurrentCultureIgnoreCase)=0
-                || System.String.Compare(FileSystem.GetFullPathShim(f1),FileSystem.GetFullPathShim(f2),StringComparison.CurrentCultureIgnoreCase)=0
+                   String.Compare(filename,f2,StringComparison.CurrentCultureIgnoreCase)=0
+                || String.Compare(FileSystem.GetFullPathShim(filename),FileSystem.GetFullPathShim(f2),StringComparison.CurrentCultureIgnoreCase)=0
             result
-        match TryGetSlotByInput(fileNamesNode,(rangeStartup,filename,(false,false)),partialBuild,CompareFileNames) with
+        match TryGetSlotByInput(fileNamesNode,partialBuild,CompareFileNames) with
         | Some slot -> slot
         | None -> failwith (sprintf "The file '%s' was not part of the project. Did you call InvalidateConfiguration when the list of files in the project changed?" filename)
         
     member __.GetSlotsCount () =
         let expr = GetExprByName(partialBuild,fileNamesNode)
-        match partialBuild.Results.TryFind (expr.Id) with
+        match partialBuild.Results.TryFind(expr.Id) with
         | Some (VectorResult vr) -> vr.Size
         | _ -> failwith "Failed to find sizes"
       
@@ -1830,7 +1714,9 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
                     define::tcConfigB.conditionalCompilationDefines
 
                 tcConfigB.projectReferences <- projectReferences
-
+#if COMPILER_SERVICE_DLL && NETSTANDARD1_6
+                tcConfigB.useSimpleResolution <- true // turn off msbuild resolution
+#endif
                 // Apply command-line arguments and collect more source files if they are in the arguments
                 let sourceFilesNew = 
                     try
@@ -1920,3 +1806,4 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
         | None -> { new System.IDisposable with member __.Dispose() = () }
 
     member builder.IsBeingKeptAliveApartFromCacheEntry = (referenceCount >= 2)
+

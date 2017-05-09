@@ -17,6 +17,8 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 
+open UnitTests.TestLib.LanguageService
+
 [<TestFixture>][<Category "Roslyn Services">]
 type DocumentDiagnosticAnalyzerTests()  =
     let filePath = "C:\\test.fs"
@@ -38,8 +40,8 @@ type DocumentDiagnosticAnalyzerTests()  =
 
     let getDiagnostics (fileContents: string) = 
         async {
-            let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(FSharpChecker.Instance, filePath, SourceText.From(fileContents), 0, options, DiagnosticsType.Syntax) 
-            let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(FSharpChecker.Instance, filePath, SourceText.From(fileContents), 0, options, DiagnosticsType.Semantic) 
+            let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(checker, filePath, SourceText.From(fileContents), 0, options, DiagnosticsType.Syntax) 
+            let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(checker, filePath, SourceText.From(fileContents), 0, options, DiagnosticsType.Semantic) 
             return syntacticDiagnostics.AddRange(semanticDiagnostics)
         } |> Async.RunSynchronously
 

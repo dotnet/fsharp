@@ -28,6 +28,7 @@ open NUnit.Framework
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open UnitTests.TestLib.LanguageService
 
 let filePath = "C:\\test.fs"
 
@@ -144,8 +145,8 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
                 } 
 
             let triggerChar = if marker = "," then Some ',' elif marker = "(" then Some '(' elif marker = "<" then Some '<' else None
-            let triggered = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(FSharpChecker.Instance, documentationProvider, SourceText.From(fileContents), caretPosition, options, triggerChar, filePath, 0) |> Async.RunSynchronously
-            FSharpChecker.Instance.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+            let triggered = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(checker, documentationProvider, SourceText.From(fileContents), caretPosition, options, triggerChar, filePath, 0) |> Async.RunSynchronously
+            checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             let actual = 
                 match triggered with 
                 | None -> None

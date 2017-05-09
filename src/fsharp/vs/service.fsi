@@ -7,9 +7,14 @@
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 open System
+open System.IO
 open System.Collections.Generic
 
+open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler 
+open Microsoft.FSharp.Compiler.Ast
+open Microsoft.FSharp.Compiler.Driver
+open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.NameResolution
@@ -26,7 +31,11 @@ open Microsoft.FSharp.Compiler.Tastops
 
 /// Represents the reason why the GetDeclarationLocation operation failed.
 [<RequireQualifiedAccess>]
+#if COMPILER_PUBLIC_API
+type FSharpFindDeclFailureReason = 
+#else
 type internal FSharpFindDeclFailureReason = 
+#endif
 
     /// Generic reason: no particular information about error
     | Unknown
@@ -42,7 +51,11 @@ type internal FSharpFindDeclFailureReason =
 
 /// Represents the result of the GetDeclarationLocation operation.
 [<RequireQualifiedAccess>]
+#if COMPILER_PUBLIC_API
+type FSharpFindDeclResult = 
+#else
 type internal FSharpFindDeclResult = 
+#endif
     /// Indicates a declaration location was not found, with an additional reason
     | DeclNotFound of FSharpFindDeclFailureReason
     /// Indicates a declaration location was found
@@ -50,52 +63,24 @@ type internal FSharpFindDeclResult =
      
 /// Represents the checking context implied by the ProjectOptions 
 [<Sealed>]
+#if COMPILER_PUBLIC_API
+type FSharpProjectContext =
+#else
 type internal FSharpProjectContext =
+#endif
     /// Get the resolution and full contents of the assemblies referenced by the project options
     member GetReferencedAssemblies : unit -> FSharpAssembly list
 
     /// Get the accessibility rights for this project context w.r.t. InternalsVisibleTo attributes granting access to other assemblies
     member AccessibilityRights : FSharpAccessibilityRights
 
-/// Represents the use of an F# symbol from F# source code
-[<Sealed>]
-type internal FSharpSymbolUse = 
-    // For internal use only
-    internal new : g:TcGlobals * denv: Tastops.DisplayEnv * symbol:FSharpSymbol * itemOcc:ItemOccurence * range: range -> FSharpSymbolUse
-
-    /// The symbol referenced
-    member Symbol : FSharpSymbol 
-
-    /// The display context active at the point where the symbol is used. Can be passed to FSharpType.Format
-    /// and other methods to format items in a way that is suitable for a specific source code location.
-    member DisplayContext : FSharpDisplayContext
-
-    /// Indicates if the reference is a definition for the symbol, either in a signature or implementation
-    member IsFromDefinition : bool
-
-    /// Indicates if the reference is in a pattern
-    member IsFromPattern : bool
-
-    /// Indicates if the reference is in a syntactic type
-    member IsFromType : bool
-
-    /// Indicates if the reference is in an attribute
-    member IsFromAttribute : bool
-
-    /// Indicates if the reference is via the member being implemented in a class or object expression
-    member IsFromDispatchSlotImplementation : bool
-
-    /// Indicates if the reference is either a builder or a custom operation in a computation expression
-    member IsFromComputationExpression : bool
-
-    /// The file name the reference occurs in 
-    member FileName: string 
-
-    /// The range of text representing the reference to the symbol
-    member RangeAlternate: range
 
 [<RequireQualifiedAccess>]
+#if COMPILER_PUBLIC_API
+type SemanticClassificationType =
+#else
 type internal SemanticClassificationType =
+#endif
     | ReferenceType
     | ValueType
     | UnionCase
@@ -114,7 +99,11 @@ type internal SemanticClassificationType =
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
+#if COMPILER_PUBLIC_API
+type FSharpCheckFileResults =
+#else
 type internal FSharpCheckFileResults =
+#endif
     /// The errors returned by parsing a source file.
     member Errors : FSharpErrorInfo[]
 
@@ -128,6 +117,11 @@ type internal FSharpCheckFileResults =
     /// an unrecoverable error in earlier checking/parsing/resolution steps.
     member HasFullTypeCheckInfo: bool
 
+    /// Indicates the set of files which must be watched to accurately track changes that affect these results,
+    /// Clients interested in reacting to updates to these files should watch these files and take actions as described
+    /// in the documentation for compiler service.
+    member DependencyFiles : string list
+
     /// <summary>Get the items for a declaration list</summary>
     ///
     /// <param name="ParsedFileResultsOpt">
@@ -136,7 +130,7 @@ type internal FSharpCheckFileResults =
     ///    'record field' locations and r.h.s. of 'range' operator a..b
     /// </param>
     /// <param name="line">The line number where the completion is happening</param>
-    /// <param name="colAtEndOfNamesAndResidue">The column number (1-based) at the end of the 'names' text </param>
+    /// <param name="colAtEndOfNamesAndResidue">The column number at the end of the 'names' text </param>
     /// <param name="qualifyingNames">The long identifier to the left of the '.'</param>
     /// <param name="partialName">The residue of a partial long identifier to the right of the '.'</param>
     /// <param name="lineStr">The residue of a partial long identifier to the right of the '.'</param>
@@ -160,7 +154,7 @@ type internal FSharpCheckFileResults =
     ///    'record field' locations and r.h.s. of 'range' operator a..b
     /// </param>
     /// <param name="line">The line number where the completion is happening</param>
-    /// <param name="colAtEndOfNamesAndResidue">The column number (1-based) at the end of the 'names' text </param>
+    /// <param name="colAtEndOfNamesAndResidue">The column number at the end of the 'names' text </param>
     /// <param name="qualifyingNames">The long identifier to the left of the '.'</param>
     /// <param name="partialName">The residue of a partial long identifier to the right of the '.'</param>
     /// <param name="lineStr">The residue of a partial long identifier to the right of the '.'</param>
@@ -240,7 +234,11 @@ type internal FSharpCheckFileResults =
     member GetSemanticClassification : range option -> (range * SemanticClassificationType)[]
 
     /// <summary>Get the locations of format specifiers</summary>
+    [<System.Obsolete("This member has been replaced by GetFormatSpecifierLocationsAndArity, which returns both range and arity of specifiers")>]
     member GetFormatSpecifierLocations : unit -> range[]
+
+    /// <summary>Get the locations of and number of arguments associated with format specifiers</summary>
+    member GetFormatSpecifierLocationsAndArity : unit -> (range*int)[]
 
     /// Get all textual usages of all symbols throughout the file
     member GetAllUsesOfAllSymbolsInFile : unit -> Async<FSharpSymbolUse[]>
@@ -248,19 +246,27 @@ type internal FSharpCheckFileResults =
     /// Get the textual usages that resolved to the given symbol throughout the file
     member GetUsesOfSymbolInFile : symbol:FSharpSymbol -> Async<FSharpSymbolUse[]>
 
+    member internal GetVisibleNamespacesAndModulesAtPoint : pos -> Async<Tast.ModuleOrNamespaceRef[]>
+
     /// Determines if a long ident is resolvable at a specific point.
-    member IsRelativeNameResolvable: cursorPos : pos * plid : string list * item: Item -> Async<bool>
+    member internal IsRelativeNameResolvable: cursorPos : pos * plid : string list * item: Item -> Async<bool>
+
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
+#if COMPILER_PUBLIC_API
+type FSharpCheckProjectResults =
+#else
 type internal FSharpCheckProjectResults =
+#endif
+
     /// The errors returned by processing the project
     member Errors : FSharpErrorInfo[]
 
     /// Get a view of the overall signature of the assembly. Only valid to use if HasCriticalErrors is false.
     member AssemblySignature : FSharpAssemblySignature
 
-    // /// Get a view of the overall contents of the assembly. Only valid to use if HasCriticalErrors is false.
-    // member AssemblyContents : FSharpAssemblyContents
+    /// Get a view of the overall contents of the assembly. Only valid to use if HasCriticalErrors is false.
+    member AssemblyContents : FSharpAssemblyContents
 
     /// Get the resolution of the ProjectOptions 
     member ProjectContext : FSharpProjectContext
@@ -274,12 +280,24 @@ type internal FSharpCheckProjectResults =
     /// Indicates if critical errors existed in the project options
     member HasCriticalErrors : bool 
 
+    /// Indicates the set of files which must be watched to accurately track changes that affect these results,
+    /// Clients interested in reacting to updates to these files should watch these files and take actions as described
+    /// in the documentation for compiler service.
+    member DependencyFiles : string list
 
 /// <summary>Unused in this API</summary>
+#if COMPILER_PUBLIC_API
+type UnresolvedReferencesSet 
+#else
 type internal UnresolvedReferencesSet 
+#endif
 
 /// <summary>A set of information describing a project or script build configuration.</summary>
+#if COMPILER_PUBLIC_API
+type FSharpProjectOptions = 
+#else
 type internal FSharpProjectOptions = 
+#endif
     { 
       // Note that this may not reduce to just the project directory, because there may be two projects in the same directory.
       ProjectFileName: string
@@ -313,16 +331,23 @@ type internal FSharpProjectOptions =
       Stamp: int64 option
     }
          
-          
 /// The result of calling TypeCheckResult including the possibility of abort and background compiler not caught up.
 [<RequireQualifiedAccess>]
+#if COMPILER_PUBLIC_API
+type FSharpCheckFileAnswer =
+#else
 type internal FSharpCheckFileAnswer =
+#endif
     | Aborted // because cancellation caused an abandonment of the operation
     | Succeeded of FSharpCheckFileResults    
 
 [<Sealed; AutoSerializable(false)>]      
 /// Used to parse and check F# source code.
+#if COMPILER_PUBLIC_API
+type FSharpChecker =
+#else
 type internal FSharpChecker =
+#endif
     /// <summary>
     /// Create an instance of an FSharpChecker.  
     /// </summary>
@@ -330,7 +355,8 @@ type internal FSharpChecker =
     /// <param name="projectCacheSize">The optional size of the project checking cache.</param>
     /// <param name="keepAssemblyContents">Keep the checked contents of projects.</param>
     /// <param name="keepAllBackgroundResolutions">If false, do not keep full intermediate checking results from background checking suitable for returning from GetBackgroundCheckResultsForFileInProject. This reduces memory usage.</param>
-    static member Create : ?projectCacheSize: int * ?keepAssemblyContents: bool * ?keepAllBackgroundResolutions: bool -> FSharpChecker
+    /// <param name="msbuildEnabled">If false, no dependency on MSBuild v12 is assumed. If true, at attempt is made to load MSBuild for reference resolution in scripts</param>
+    static member Create : ?projectCacheSize: int * ?keepAssemblyContents: bool * ?keepAllBackgroundResolutions: bool * ?msbuildEnabled: bool -> FSharpChecker
 
     /// <summary>
     ///   Parse a source code file, returning information about brace matching in the file.
@@ -385,8 +411,7 @@ type internal FSharpChecker =
     ///    Note: all files except the one being checked are read from the FileSystem API
     /// </para>
     /// <para>
-    ///   Return FSharpCheckFileAnswer.Aborted if a parse tree was not available or if the check
-    ////  was abandoned due to some checkpoint during type checking.
+    ///   Return FSharpCheckFileAnswer.Aborted if a parse tree was not available.
     /// </para>
     /// </summary>
     ///
@@ -411,8 +436,7 @@ type internal FSharpChecker =
     ///    Note: all files except the one being checked are read from the FileSystem API
     /// </para>
     /// <para>
-    ///   Return FSharpCheckFileAnswer.Aborted if a parse tree was not available or if the check
-    ////  was abandoned due to some checkpoint during type checking.
+    ///   Return FSharpCheckFileAnswer.Aborted if a parse tree was not available.
     /// </para>
     /// </summary>
     ///
@@ -454,7 +478,7 @@ type internal FSharpChecker =
     /// <param name="loadedTimeStamp">Indicates when the script was loaded into the editing environment,
     /// so that an 'unload' and 'reload' action will cause the script to be considered as a new project,
     /// so that references are re-resolved.</param>
-    member GetProjectOptionsFromScript : filename: string * source: string * ?loadedTimeStamp: DateTime * ?otherFlags: string[] * ?useFsiAuxLib: bool * ?extraProjectInfo: obj * ?optionsStamp: int64 -> Async<FSharpProjectOptions * FSharpErrorInfo list>
+    member GetProjectOptionsFromScript : filename: string * source: string * ?loadedTimeStamp: DateTime * ?otherFlags: string[] * ?useFsiAuxLib: bool * ?assumeDotNetFramework: bool * ?extraProjectInfo: obj * ?optionsStamp: int64 -> Async<FSharpProjectOptions * FSharpErrorInfo list>
 
     /// <summary>
     /// <para>Get the FSharpProjectOptions implied by a set of command line arguments.</para>
@@ -485,6 +509,29 @@ type internal FSharpChecker =
     /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
     member GetBackgroundCheckResultsForFileInProject : filename : string * options : FSharpProjectOptions -> Async<FSharpParseFileResults * FSharpCheckFileResults>
 
+    /// Compile using the given flags.  Source files names are resolved via the FileSystem API. 
+    /// The output file must be given by a -o flag. 
+    /// The first argument is ignored and can just be "fsc.exe".
+    member Compile: argv:string [] -> Async<FSharpErrorInfo [] * int>
+    
+    /// TypeCheck and compile provided AST
+    member Compile: ast:ParsedInput list * assemblyName:string * outFile:string * dependencies:string list * ?pdbFile:string * ?executable:bool * ?noframework:bool -> Async<FSharpErrorInfo [] * int>
+
+    /// Compiles to a dynamic assembly using the given flags.  
+    ///
+    /// The first argument is ignored and can just be "fsc.exe".
+    ///
+    /// Any source files names are resolved via the FileSystem API. An output file name must be given by a -o flag, but this will not
+    /// be written - instead a dynamic assembly will be created and loaded.
+    ///
+    /// If the 'execute' parameter is given the entry points for the code are executed and 
+    /// the given TextWriters are used for the stdout and stderr streams respectively. In this 
+    /// case, a global setting is modified during the execution.
+    member CompileToDynamicAssembly: otherFlags:string [] * execute:(TextWriter * TextWriter) option -> Async<FSharpErrorInfo [] * int * System.Reflection.Assembly option>
+
+    /// TypeCheck and compile provided AST
+    member CompileToDynamicAssembly: ast:ParsedInput list * assemblyName:string * dependencies:string list * execute:(TextWriter * TextWriter) option * ?debug:bool * ?noframework:bool -> Async<FSharpErrorInfo [] * int * System.Reflection.Assembly option>
+       
     /// <summary>
     /// Try to get type check results for a file. This looks up the results of recent type checks of the
     /// same file, regardless of contents. The version tag specified in the original check of the file is returned.
@@ -504,9 +551,6 @@ type internal FSharpChecker =
     /// For example, dependent references may have been deleted or created.
     member InvalidateConfiguration: options: FSharpProjectOptions -> unit    
 
-    /// Begin background parsing the given project.
-    member StartBackgroundCompile: options: FSharpProjectOptions -> unit
-
     /// Set the project to be checked in the background.  Overrides any previous call to <c>CheckProjectInBackground</c>
     member CheckProjectInBackground: options: FSharpProjectOptions -> unit
 
@@ -517,7 +561,7 @@ type internal FSharpChecker =
     /// Block until the background compile finishes.
     //[<Obsolete("Explicitly waiting for background compilation is not recommended and the functionality to allow this may be rearchitected in future release.  If you use this functionality please add an issue on http://github.com/fsharp/FSharp.Compiler.Service describing how you use it and ignore this warning.")>]
     member WaitForBackgroundCompile : unit -> unit
-    
+   
     /// Report a statistic for testability
     static member GlobalForegroundParseCountStatistic : int
 
@@ -551,6 +595,12 @@ type internal FSharpChecker =
     /// The event will be raised on a background thread.
     member FileChecked : IEvent<string * obj option>
     
+    /// Raised after the maxMB memory threshold limit is reached
+    member MaxMemoryReached : IEvent<unit>
+
+    /// A maximum number of megabytes of allocated memory. If the figure reported by <c>System.GC.GetTotalMemory(false)</c> goes over this limit, the FSharpChecker object will attempt to free memory and reduce cache sizes to a minimum.</param>
+    member MaxMemory : int with get, set
+    
     /// Get or set a flag which controls if background work is started implicitly. 
     ///
     /// If true, calls to CheckFileInProject implicitly start a background check of that project, replacing
@@ -569,21 +619,41 @@ type internal FSharpChecker =
     // For internal use only 
     member internal ReactorOps : IReactorOperations
 
-    // One shared global singleton for use by multiple add-ins
+    [<Obsolete("Please create an instance of FSharpChecker using FSharpChecker.Create")>]
     static member Instance : FSharpChecker
     member internal FrameworkImportsCache : FrameworkImportsCache
+    member internal ReferenceResolver : ReferenceResolver.Resolver
+
+    /// Tokenize a single line, returning token information and a tokenization state represented by an integer
+    member TokenizeLine: line:string * state:int64 -> FSharpTokenInfo [] * int64
+
+    /// Tokenize an entire file, line by line
+    member TokenizeFile: source:string -> FSharpTokenInfo [] []
+
 
 
 // An object to typecheck source in a given typechecking environment.
 // Used internally to provide intellisense over F# Interactive.
 type internal FsiInteractiveChecker =
-    internal new : ops: IReactorOperations * tcConfig: TcConfig * tcGlobals: TcGlobals * tcImports: TcImports * tcState: TcState * loadClosure: LoadClosure option ->  FsiInteractiveChecker 
+    internal new : ReferenceResolver.Resolver * ops: IReactorOperations * tcConfig: TcConfig * tcGlobals: TcGlobals * tcImports: TcImports * tcState: TcState ->  FsiInteractiveChecker 
     member internal ParseAndCheckInteraction : CompilationThreadToken * source:string -> Async<FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults>
-    static member internal CreateErrorInfos : tcConfig: TcConfig * allErrors:bool * mainInputFileName : string * seq<ErrorLogger.PhasedDiagnostic * FSharpErrorSeverity> -> FSharpErrorInfo[]
+
+/// Information about the compilation environment
+#if COMPILER_PUBLIC_API
+type [<Class>] CompilerEnvironment =
+#else
+type [<Class>] internal CompilerEnvironment =
+#endif
+    /// The default location of FSharp.Core.dll and fsc.exe based on the version of fsc.exe that is running
+    static member BinFolderOfDefaultFSharpCompiler : string option -> string option
 
 /// Information about the compilation environment 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]   
+#if COMPILER_PUBLIC_API
+module CompilerEnvironment =
+#else
 module internal CompilerEnvironment =
+#endif
     /// These are the names of assemblies that should be referenced for .fs or .fsi files that
     /// are not associated with a project.
     val DefaultReferencesForOrphanSources : assumeDotNetFramework: bool -> string list
@@ -593,13 +663,23 @@ module internal CompilerEnvironment =
     val IsCheckerSupportedSubcategory : string -> bool
 
 /// Information about the debugging environment
+#if COMPILER_PUBLIC_API
+module DebuggerEnvironment =
+#else
 module internal DebuggerEnvironment =
+#endif
     /// Return the language ID, which is the expression evaluator id that the
     /// debugger will use.
     val GetLanguageID : unit -> Guid
+    
 
 /// A set of helpers related to naming of identifiers
+#if COMPILER_PUBLIC_API
+module PrettyNaming =
+#else
 module internal PrettyNaming =
+#endif
+
     val IsIdentifierPartCharacter     : char -> bool
     val IsLongIdentifierPartCharacter : char -> bool
     val IsOperatorName                : string -> bool

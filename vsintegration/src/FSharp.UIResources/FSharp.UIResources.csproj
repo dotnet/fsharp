@@ -4,7 +4,6 @@
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\..\src</FSharpSourcesRoot>
     <ProjectLanguage>CSharp</ProjectLanguage>
-    <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
     <MicroBuildAssemblyVersion>15.4.1.0</MicroBuildAssemblyVersion>
     <MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
   </PropertyGroup>
@@ -22,7 +21,6 @@
     <UseVsVersion>true</UseVsVersion>
     <DefineConstants>$(DefineConstants)</DefineConstants>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
-    <DefineConstants>$(DefineConstants);FSHARP_CORE_4_5</DefineConstants>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <ItemGroup>
