@@ -1919,6 +1919,9 @@ type IsResultObsolete =
 
 [<AutoOpen>]
 module Helpers = 
+
+    // Look for DLLs in the location of the service DLL first.
+    let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(Some(typeof<FSharpCheckFileAnswer>.Assembly.Location)).Value
     
     /// Determine whether two (fileName,options) keys are identical w.r.t. affect on checking
     let AreSameForChecking2((fileName1: string, options1: FSharpProjectOptions), (fileName2, o2)) =
@@ -2064,6 +2067,7 @@ type FileVersion = int
 type ParseCacheLockToken() = interface LockToken
 type ScriptClosureCacheToken() = interface LockToken
 
+
 // There is only one instance of this type, held in FSharpChecker
 type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions) as self =
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.backgroundCompiler.reactor: The one and only Reactor
@@ -2072,6 +2076,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
     let fileParsed = Event<string * obj option>()
     let fileChecked = Event<string * obj option>()
     let projectChecked = Event<string * obj option>()
+
 
     let mutable implicitlyStartBackgroundWork = true
     let reactorOps = 
@@ -2109,7 +2114,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
         let loadClosure = scriptClosureCacheLock.AcquireLock (fun ltok -> scriptClosureCache.TryGet (ltok, options))
         let! builderOpt, diagnostics = 
             IncrementalBuilder.TryCreateBackgroundBuilderForProjectOptions
-                  (ctok, referenceResolver, frameworkTcImportsCache, loadClosure, Array.toList options.ProjectFileNames, 
+                  (ctok, referenceResolver, defaultFSharpBinariesDir, frameworkTcImportsCache, loadClosure, Array.toList options.ProjectFileNames, 
                    Array.toList options.OtherOptions, projectReferences, options.ProjectDirectory, 
                    options.UseScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions, maxTimeShareMilliseconds)
 
@@ -2558,7 +2563,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             let applyCompilerOptions tcConfigB  = 
                 let fsiCompilerOptions = CompileOptions.GetCoreFsiCompilerOptions tcConfigB 
                 CompileOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, Array.toList otherFlags)
-            let loadClosure = LoadClosure.ComputeClosureOfSourceText(ctok, referenceResolver,filename, source, CodeContext.Editing, useSimpleResolution, useFsiAuxLib, new Lexhelp.LexResourceManager(), applyCompilerOptions, assumeDotNetFramework)
+            let loadClosure = LoadClosure.ComputeClosureOfSourceText(ctok, referenceResolver, defaultFSharpBinariesDir, filename, source, CodeContext.Editing, useSimpleResolution, useFsiAuxLib, new Lexhelp.LexResourceManager(), applyCompilerOptions, assumeDotNetFramework)
             let otherFlags = 
                 [| yield "--noframework"; yield "--warn:3"; 
                    yield! otherFlags 
@@ -2590,7 +2595,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             | None -> ()
             | Some (_oldBuilder, _, _) ->
                     // We do not need to decrement here - the onDiscard function is called each time an entry is pushed out of the build cache,
-                    // including by SetAlternate.
+                    // including by incrementalBuildersCache.Set.
                     let builderB, errorsB, decrementB = CreateOneIncrementalBuilder (ctok, options) |> Cancellable.runWithoutCancellation
                     incrementalBuildersCache.Set(ctok, options, (builderB, errorsB, decrementB))
             if implicitlyStartBackgroundWork then 
@@ -2975,7 +2980,7 @@ type FsiInteractiveChecker(referenceResolver, reactorOps: IReactorOperations, tc
                 let fsiCompilerOptions = CompileOptions.GetCoreFsiCompilerOptions tcConfigB 
                 CompileOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, [ ])
 
-            let loadClosure = LoadClosure.ComputeClosureOfSourceText(ctok, referenceResolver, mainInputFileName, source, CodeContext.Editing, tcConfig.useSimpleResolution, tcConfig.useFsiAuxLib, new Lexhelp.LexResourceManager(), applyCompilerOptions, assumeDotNetFramework)
+            let loadClosure = LoadClosure.ComputeClosureOfSourceText(ctok, referenceResolver, defaultFSharpBinariesDir, mainInputFileName, source, CodeContext.Editing, tcConfig.useSimpleResolution, tcConfig.useFsiAuxLib, new Lexhelp.LexResourceManager(), applyCompilerOptions, assumeDotNetFramework)
             let! tcErrors, tcFileResult = 
                 Parser.TypeCheckOneFile(parseResults,source,mainInputFileName,"project",tcConfig,tcGlobals,tcImports,  tcState,
                                         Some loadClosure,backgroundDiagnostics,reactorOps,(fun () -> true),None)
@@ -2996,8 +3001,8 @@ type FsiInteractiveChecker(referenceResolver, reactorOps: IReactorOperations, tc
 //
 
 type CompilerEnvironment =
-  static member BinFolderOfDefaultFSharpCompiler ?probePoint =
-      Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler probePoint
+  static member BinFolderOfDefaultFSharpCompiler(?probePoint) =
+      FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(probePoint)
 
 /// Information about the compilation environment
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]

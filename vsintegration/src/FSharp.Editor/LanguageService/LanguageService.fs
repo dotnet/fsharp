@@ -331,10 +331,12 @@ and
         for ref in updatedRefs do
             if not(workspaceRefs.Contains(ref)) then
                 projectContext.AddMetadataReference(ref, MetadataReferenceProperties.Assembly)
-        
+                updated <- true
+
         for ref in workspaceRefs do
             if not(updatedRefs.Contains(ref)) then
                 projectContext.RemoveMetadataReference(ref)
+                updated <- true
 
         // update the cached options
         if updated then

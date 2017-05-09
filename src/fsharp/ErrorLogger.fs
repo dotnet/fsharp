@@ -184,14 +184,17 @@ module BuildPhaseSubcategory =
 [<System.Diagnostics.DebuggerDisplay("{DebugDisplay()}")>]
 type PhasedDiagnostic = 
     { Exception:exn; Phase:BuildPhase }
+
     /// Construct a phased error
     static member Create(exn:exn,phase:BuildPhase) : PhasedDiagnostic =
 #if !COMPILER_SERVICE  // TODO: renable this assert in the compiler service
         System.Diagnostics.Debug.Assert(phase<>BuildPhase.DefaultPhase, sprintf "Compile error seen with no phase to attribute it to.%A %s %s" phase exn.Message exn.StackTrace )        
 #endif
         {Exception = exn; Phase=phase}
+
     member this.DebugDisplay() =
         sprintf "%s: %s" (this.Subcategory()) this.Exception.Message
+
     /// This is the textual subcategory to display in error and warning messages (shows only under --vserrors):
     ///
     ///     file1.fs(72): subcategory warning FS0072: This is a warning message
@@ -209,6 +212,7 @@ type PhasedDiagnostic =
         | IlGen -> BuildPhaseSubcategory.IlGen
         | Output -> BuildPhaseSubcategory.Output
         | Interactive -> BuildPhaseSubcategory.Interactive
+
     /// Return true if the textual phase given is from the compile part of the build process.
     /// This set needs to be equal to the set of subcategories that the language service can produce. 
     static member IsSubcategoryOfCompile(subcategory:string) =
@@ -236,6 +240,7 @@ type PhasedDiagnostic =
             // if it came from the build and not the language service.
             false
     /// Return true if this phase is one that's known to be part of the 'compile'. This is the initial phase of the entire compilation that
+
     /// the language service knows about.                
     member pe.IsPhaseInCompile() = 
         let isPhaseInCompile = 
@@ -358,6 +363,11 @@ module ErrorLoggerExtensions =
     type ErrorLogger with  
 
         member x.ErrorR  exn = 
+            match exn with 
+            | InternalError (s,_) 
+            | Failure s  as exn -> System.Diagnostics.Debug.Assert(false,sprintf "Unexpected exception raised in compiler: %s\n%s" s (exn.ToString()))
+            | _ -> ()
+
             match exn with 
             | StopProcessing 
             | ReportedError _ -> raise exn 

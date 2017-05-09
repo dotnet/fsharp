@@ -494,7 +494,7 @@ module internal Misc =
                             else
                             Some (args.[1], args.[1])
                         )
-                        |> Seq.nth (n - 1)
+                        |> Seq.item (n - 1)
 
                     let adaptMethod = getFastFuncType args resultType
                     let adapted = E.Call(adaptMethod, [loop applicable])
