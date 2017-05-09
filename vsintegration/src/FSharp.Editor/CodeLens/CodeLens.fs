@@ -61,7 +61,7 @@ type internal CodeLensTagger
     let mutable codeLensLayer: IAdornmentLayer option = None
     let mutable recentFirstVsblLineNmbr, recentLastVsblLineNmbr = 0, 0
     let mutable updated = false
-    
+
     let layoutTagToFormatting (layoutTag: LayoutTag) =
         layoutTag
         |> RoslynHelpers.roslynTag
@@ -82,7 +82,7 @@ type internal CodeLensTagger
             logInfof "Getting uses of all symbols!"
             let! symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
             let textSnapshot = view.TextSnapshot.TextBuffer.CurrentSnapshot
-            logInfof "Updating code lens due to buffer edit!"
+            logInfof "Updating due to buffer edit!"
             // Clear existing data and cache flags
             let newCodeLensResults = ConcurrentDictionary()
             let newUIElementCache = ConcurrentDictionary()
@@ -108,9 +108,6 @@ type internal CodeLensTagger
                             let taggedText = ResizeArray()
                             Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
                             let navigation = QuickInfoNavigation(gotoDefinitionService, document, func.DeclarationLocation)
-                            
-                            //currentVisibleLineNumbers.TryRemove(lineNumber, &()) |> ignore
-
                             let line = textSnapshot.GetLineFromLineNumber(lineNumber)
                             // This is only used with a cached async so flag the data as ready to use
                             codeLensResults.[lineStr] <- { codeLensResults.[lineStr] with Computed = true }
@@ -145,7 +142,7 @@ type internal CodeLensTagger
                                       Computed = false }
                     | _ -> ()
             
-            let toRemove = 
+            let unusedUIElements = 
                     let current = Set newUIElementCache.Keys
                     let last = Set codeLensUIElementCache.Keys
                     Set.difference last current
@@ -153,7 +150,7 @@ type internal CodeLensTagger
             do! Async.SwitchToContext uiContext |> liftAsync
            
             let! layer = codeLensLayer
-            toRemove |> Set.iter(fun key -> layer.RemoveAdornment(codeLensUIElementCache.[key]))
+            unusedUIElements |> Set.iter(fun key -> layer.RemoveAdornment(codeLensUIElementCache.[key]))
             codeLensUIElementCache <- newUIElementCache
             updated <- true
             tagsChanged.Trigger(self, SnapshotSpanEventArgs(SnapshotSpan(view.TextViewLines.FirstVisibleLine.Start, view.TextViewLines.LastVisibleLine.End)))
@@ -173,56 +170,57 @@ type internal CodeLensTagger
               | e -> logErrorf "Code Lens startup failed with: %A" e
                      numberOfFails <- numberOfFails + 1
        } |> Async.Start
+
+    let layoutUIElementOnLine (view:IWpfTextView) (line:SnapshotSpan) (ui:UIElement) =
+        // Get the real offset so that the code lens are placed respectively to their content
+        let offset =
+            [0..line.Length - 1] |> Seq.tryFind (fun i -> not (Char.IsWhiteSpace (line.Start.Add(i).GetChar())))
+            |> Option.defaultValue 0
+        let realStart = line.Start.Add(offset)
+        // Get the geometry which respects the changed height due to the SpaceAdornmentTag
+        let geometry = 
+            view.TextViewLines.GetCharacterBounds(realStart)
+        if (ui.GetValue(Canvas.LeftProperty) :?> float) < geometry.Left then
+                Canvas.SetLeft(ui, geometry.Left)
+        Canvas.SetTop(ui, geometry.Top)
     
-    /// Creates the code lens ui elements for the specified line
-    /// TODO, add caching to the UI elements
+    /// Creates the code lens ui elements for the specified text view line
     let createCodeLensUIElementByLine (line: ITextViewLine) =
-        let text = line.Extent.GetText()
+        let text = line.Extent.GetText() // Get our unique identifier (the content of the line)
         asyncMaybe {
             let! view = view
-            // Get the real offset so that the code lens are placed correctly
-            let offset = 
-                [0..line.Length - 1] |> Seq.tryFind (fun i -> not (Char.IsWhiteSpace (line.Start.Add(i).GetChar())))
-                |> Option.defaultValue 0
-
-            let realStart = line.Start.Add(offset)
-            let span = SnapshotSpan(line.Snapshot, Span.FromBounds(int realStart, int line.End))
-            let geometry = view.TextViewLines.GetMarkerGeometry(span)
-            let! lens = codeLensResults.TryFind(text) // Check whether this line has code lens
-            if lens.Computed && codeLensUIElementCache.ContainsKey(text) then
-                // Use existing UI element which is proved to be safe to use
+            let! lens = codeLensResults.TryFind(text) // Check whether this line has code lens, if not return None
+            match lens.Computed, codeLensUIElementCache.ContainsKey(text) with
+            // The line is already computed and has an existing UI element which is proved to be safe to use
+            | true, true -> 
                 let textBox = codeLensUIElementCache.[text]
-                Canvas.SetLeft(textBox, geometry.Bounds.Left)
-                Canvas.SetTop(textBox, geometry.Bounds.Top - 15.)
+                layoutUIElementOnLine view line.Extent textBox
                 return Some textBox
-            else if not lens.Computed then
+            // The line isn't computed yet so start the computation and return None (we won't stop the UI thread further!)
+            | false, true ->
                 lens.TaggedText |> Async.Ignore |> RoslynHelpers.StartAsyncSafe CancellationToken.None
                 let unusedElement = null
                 if codeLensUIElementCache.TryGetValue(text, &unusedElement) && not(isNull(unusedElement)) then
                     return Some unusedElement
                 else
                     return None
-            else
-                // No delay because it's already computed
+            // The line is already computed but the UI element hasn't been created yet
+            | _, _ ->
                 let! taggedText, navigation = lens.TaggedText
-                
                 let textBox = new TextBlock(Width = view.ViewportWidth, Background = Brushes.Transparent, Opacity = 0.5, TextTrimming = TextTrimming.WordEllipsis)
                 DependencyObjectExtensions.SetDefaultTextProperties(textBox, formatMap.Value)
-                
                 for text in taggedText do
                     let run = Documents.Run text.Text
                     DependencyObjectExtensions.SetTextProperties (run, layoutTagToFormatting text.Tag)
                     let inl =
                         match text with
-                        | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->                        
+                        | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->
                             let h = Documents.Hyperlink(run, ToolTip = nav.Range.FileName)
                             h.Click.Add (fun _ -> navigation.NavigateTo nav.Range)
                             h :> Documents.Inline
                         | _ -> run :> _
                     textBox.Inlines.Add inl
-
-                Canvas.SetLeft(textBox, geometry.Bounds.Left)
-                Canvas.SetTop(textBox, geometry.Bounds.Top - 15.)
+                layoutUIElementOnLine view line.Extent textBox
                 textBox.Opacity <- 0.5
                 return Some textBox
         } |> Async.map (fun ui ->
@@ -234,7 +232,6 @@ type internal CodeLensTagger
                    let unusedElement = null
                    codeLensUIElementCache.TryRemove(text, &unusedElement) |> ignore
                    None)
-
     do buffer.Changed.AddHandler(fun _ e -> (self.BufferChanged e))
 
     member __.BufferChanged ___ =
@@ -251,6 +248,7 @@ type internal CodeLensTagger
 
     member val MaxCacheOfNonVisibleLines = 20 with get, set
 
+    // Process the layout changed event from the ITextView
     member this.LayoutChanged (__) =
         let uiContext = SynchronizationContext.Current
         let recentVisibleLineNumbers = Set [recentFirstVsblLineNmbr .. recentLastVsblLineNmbr]
@@ -267,8 +265,7 @@ type internal CodeLensTagger
         let visibleLineNumbers = Set [firstVisibleLineNumber .. lastVisibleLineNumber]
         let nonVisibleLineNumbers = Set.difference recentVisibleLineNumbers visibleLineNumbers
         let newVisibleLineNumbers = Set.difference visibleLineNumbers recentVisibleLineNumbers
-        // Remove lines which aren't visible anymore
-        // for removedLine in nonVisibleLineNumbers do alreadySeenLines.TryRemove(removedLine, &()) |> ignore
+        
         if nonVisibleLineNumbers.Count > 0 || newVisibleLineNumbers.Count > 0 then
             let buffer = buffer.CurrentSnapshot
             let view = view.Value
@@ -281,103 +278,79 @@ type internal CodeLensTagger
                         ui.Visibility <- Visibility.Collapsed
                         let mutable temp = null
                         visibleAdornments.TryRemove(text, &temp) |> ignore
-                        //logMsgf "Setting adornment of line %A to hidden." lineNumber
-                        ()
             for lineNumber in newVisibleLineNumbers do
                 let line = buffer.GetLineFromLineNumber(lineNumber)
                 let mutable ui = null
                 let text = line.Extent.GetText()
                 if(codeLensUIElementCache.TryGetValue(text, &ui)) then
                     ui.Visibility <- Visibility.Visible
-                    let offset = 
-                        [0..line.Length - 1] |> Seq.tryFind (fun i -> not (Char.IsWhiteSpace (line.Start.Add(i).GetChar())))
-                        |> Option.defaultValue 0
-
-                    let realStart = line.Start.Add(offset)
-                    let geometry = view.TextViewLines.GetCharacterBounds(realStart)
-                    if (ui.GetValue(Canvas.LeftProperty) :?> float) < geometry.Left then
-                        Canvas.SetLeft(ui, geometry.Left)
-                    Canvas.SetTop(ui, geometry.Top)
+                    layoutUIElementOnLine view line.Extent ui
                     visibleAdornments.TryAdd(text, ui) |> ignore
-                    //logMsgf "Setting adornment of line %A to visible." lineNumber
-                    ()
-        
-
-        let asyncHandleLayoutChanged = 
-            asyncMaybe {
-                //if firstTimeChecked then
-                    do! Async.SwitchToContext uiContext |> liftAsync
-                    do! Async.Sleep(5) |> liftAsync
-                    let! view = view
-                    let! layer = codeLensLayer
-                    if nonVisibleLineNumbers.Count > 0 || newVisibleLineNumbers.Count > 0 || updated then
-                        let buffer = buffer.CurrentSnapshot
-                        let linesContent = 
-                             Set[for lineNumber in visibleLineNumbers do
-                                    let line = buffer.GetLineFromLineNumber(lineNumber)
-                                    let mutable ui = null
-                                    let text = line.Extent.GetText()
-                                    if(codeLensUIElementCache.TryGetValue(text, &ui)) then
-                                        ui.Visibility <- Visibility.Visible
-                                        let offset = 
-                                            [0..line.Length - 1] |> Seq.tryFind (fun i -> not (Char.IsWhiteSpace (line.Start.Add(i).GetChar())))
-                                            |> Option.defaultValue 0
-
-                                        let realStart = line.Start.Add(offset)
-                                        let geometry = view.TextViewLines.GetCharacterBounds(realStart)
-                                        if (ui.GetValue(Canvas.LeftProperty) :?> float) < geometry.Left then
-                                            Canvas.SetLeft(ui, geometry.Left)
-                                        Canvas.SetTop(ui, geometry.Top)
-                                        logMsgf "left offset: %A, graphical offset: %A" offset geometry.Left
-                                        ()
-                                    yield text ]
-                        let toMap dictionary = 
-                            (dictionary :> seq<_>)
-                            |> Seq.map (|KeyValue|)
-                            |> Map.ofSeq
-                        let wrongAdornments = 
-                            visibleAdornments |> toMap 
-                            |> Map.filter(fun key _ -> not(linesContent.Contains(key)))
-                        wrongAdornments 
-                        |> Map.iter 
-                            (fun key value -> 
-                                value.Visibility <- Visibility.Collapsed
-                                let mutable temp = null
-                                visibleAdornments.TryRemove(key, &temp) |> ignore)
-                        updated <- false
-
-                    do! Async.Sleep(495) |> liftAsync
-
-                    let visibleSpan =
-                        let first, last = 
-                            view.TextViewLines.FirstVisibleLine, 
-                            view.TextViewLines.LastVisibleLine
-                        SnapshotSpan(first.Start, last.End)
-                    let customVisibleLines = view.TextViewLines.GetTextViewLinesIntersectingSpan visibleSpan
-                    let isLineVisible (line:ITextViewLine) = line.IsValid &&  not(codeLensUIElementCache.ContainsKey(line.Extent.GetText()))
-                    let linesToProcess = customVisibleLines |> Seq.filter isLineVisible
-
-                    for line in linesToProcess do
-                        try
-                            if not (Seq.isEmpty (line.GetAdornmentTags this)) then
-                                let da = DoubleAnimation(From = Nullable 0., To = Nullable 0.5, Duration = Duration(TimeSpan.FromSeconds 0.4))
-                                let! res = createCodeLensUIElementByLine line |> liftAsync
-                                match res with
-                                | Some textBox ->
-                                    layer.AddAdornment(AdornmentPositioningBehavior.ViewportRelative, Nullable(), 
-                                        this, textBox, AdornmentRemovedCallback(fun _ _ -> logMsg "Adornment removed" )) |> ignore
-                                    textBox.BeginAnimation(UIElement.OpacityProperty, da)
-                                | None -> ()
-                        with e -> logExceptionWithContext (e, "LayoutChanged, processing new visible lines")
-            }
-            |> Async.Ignore
+        // Save the new first and last visible lines for tracking
         recentFirstVsblLineNmbr <- firstVisibleLineNumber
         recentLastVsblLineNmbr <- lastVisibleLineNumber
-        // We can cancel existing stuff because we the algorithm supports abort without any losing any data
+        // We can cancel existing stuff because the algorithm supports abortion without any data loss
         layoutChangedCts.Cancel()
         layoutChangedCts.Dispose()
         layoutChangedCts <- new CancellationTokenSource()
-        asyncHandleLayoutChanged |> RoslynHelpers.StartAsyncSafe layoutChangedCts.Token
+
+        asyncMaybe {
+            do! Async.SwitchToContext uiContext |> liftAsync
+            do! Async.Sleep(5) |> liftAsync
+            let! view = view
+            let! layer = codeLensLayer
+            if nonVisibleLineNumbers.Count > 0 || newVisibleLineNumbers.Count > 0 || updated then
+                let buffer = buffer.CurrentSnapshot
+                let linesContent = 
+                        Set[for lineNumber in visibleLineNumbers do
+                            let line = buffer.GetLineFromLineNumber(lineNumber)
+                            let mutable ui = null
+                            let text = line.Extent.GetText()
+                            if(codeLensUIElementCache.TryGetValue(text, &ui)) then
+                                ui.Visibility <- Visibility.Visible
+                                layoutUIElementOnLine view line.Extent ui
+                                ()
+                            yield text ]
+                let toMap dictionary = 
+                    (dictionary :> seq<_>)
+                    |> Seq.map (|KeyValue|)
+                    |> Map.ofSeq
+                let wrongAdornments = 
+                    visibleAdornments |> toMap 
+                    |> Map.filter(fun key _ -> not(linesContent.Contains(key)))
+                wrongAdornments 
+                |> Map.iter 
+                    (fun key value -> 
+                        value.Visibility <- Visibility.Collapsed
+                        let mutable temp = null
+                        visibleAdornments.TryRemove(key, &temp) |> ignore)
+                updated <- false
+
+            do! Async.Sleep(495) |> liftAsync
+
+            let visibleSpan =
+                let first, last = 
+                    view.TextViewLines.FirstVisibleLine, 
+                    view.TextViewLines.LastVisibleLine
+                SnapshotSpan(first.Start, last.End)
+            let customVisibleLines = view.TextViewLines.GetTextViewLinesIntersectingSpan visibleSpan
+            let isLineVisible (line:ITextViewLine) = line.IsValid &&  not(codeLensUIElementCache.ContainsKey(line.Extent.GetText()))
+            let linesToProcess = customVisibleLines |> Seq.filter isLineVisible
+
+            for line in linesToProcess do
+                try
+                    if not (Seq.isEmpty (line.GetAdornmentTags this)) then
+                        let da = DoubleAnimation(From = Nullable 0., To = Nullable 0.5, Duration = Duration(TimeSpan.FromSeconds 0.4))
+                        let! res = createCodeLensUIElementByLine line |> liftAsync
+                        match res with
+                        | Some textBox ->
+                            layer.AddAdornment(AdornmentPositioningBehavior.ViewportRelative, Nullable(), 
+                                this, textBox, AdornmentRemovedCallback(fun _ _ -> ())) |> ignore
+                            textBox.BeginAnimation(UIElement.OpacityProperty, da)
+                        | None -> ()
+                with e -> logExceptionWithContext (e, "LayoutChanged, processing new visible lines")
+        }
+        |> Async.Ignore |> RoslynHelpers.StartAsyncSafe layoutChangedCts.Token
     
     member __.Tags = ConcurrentDictionary()
 
@@ -396,9 +369,6 @@ type internal CodeLensTagger
                     if codeLensResults.ContainsKey(line.GetText()) then
                         yield TagSpan(tagSpan, CodeLensTag(0., 12., 0., 0., 0., PositionAffinity.Predecessor, this, this)) :> ITagSpan<CodeLensTag>
             }
-
-
-
 
 [<Export(typeof<IWpfTextViewCreationListener>)>]
 [<Export(typeof<ITaggerProvider>)>]
@@ -442,10 +412,6 @@ type internal CodeLensProvider
     [<Export(typeof<AdornmentLayerDefinition>); Name("CodeLens");
       Order(Before = PredefinedAdornmentLayers.Text);
       TextViewRole(PredefinedTextViewRoles.Document)>]
-
-
-
-
 
     member val CodeLensAdornmentLayerDefinition : AdornmentLayerDefinition = null with get, set
 
