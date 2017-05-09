@@ -13,7 +13,7 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.CodeFixes
 open Microsoft.CodeAnalysis.CodeActions
 
-//[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = PredefinedCodeFixProviderNames.SimplifyNames); Shared>]
+[<ExportCodeFixProvider(FSharpConstants.FSharpLanguageName, Name = PredefinedCodeFixProviderNames.SimplifyNames); Shared>]
 type internal FSharpSimplifyNameCodeFixProvider() =
     inherit CodeFixProvider()
     let fixableDiagnosticId = IDEDiagnosticIds.SimplifyNamesDiagnosticId

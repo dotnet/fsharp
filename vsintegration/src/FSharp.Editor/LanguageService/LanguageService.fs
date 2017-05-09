@@ -314,6 +314,7 @@ and
             if not(workspaceFiles.Contains(file)) then
                 projectContext.AddSourceFile(file)
                 updated <- true
+
         for file in workspaceFiles do
             if not(updatedFiles.Contains(file)) then
                 projectContext.RemoveSourceFile(file)
@@ -325,9 +326,12 @@ and
         for ref in updatedRefs do
             if not(workspaceRefs.Contains(ref)) then
                 projectContext.AddMetadataReference(ref, MetadataReferenceProperties.Assembly)
+                updated <- true
+
         for ref in workspaceRefs do
             if not(updatedRefs.Contains(ref)) then
                 projectContext.RemoveMetadataReference(ref)
+                updated <- true
 
         // update the cached options
         if updated then

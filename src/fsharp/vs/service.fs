@@ -2595,7 +2595,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             | None -> ()
             | Some (_oldBuilder, _, _) ->
                     // We do not need to decrement here - the onDiscard function is called each time an entry is pushed out of the build cache,
-                    // including by SetAlternate.
+                    // including by incrementalBuildersCache.Set.
                     let builderB, errorsB, decrementB = CreateOneIncrementalBuilder (ctok, options) |> Cancellable.runWithoutCancellation
                     incrementalBuildersCache.Set(ctok, options, (builderB, errorsB, decrementB))
             if implicitlyStartBackgroundWork then 
