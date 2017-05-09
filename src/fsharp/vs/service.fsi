@@ -324,6 +324,11 @@ type internal FSharpProjectOptions =
       OriginalLoadReferences: (range * string) list
       /// Extra information passed back on event trigger
       ExtraProjectInfo : obj option
+
+      /// An optional stamp to uniquely identify this set of options
+      /// If two sets of options both have stamps, then they are considered equal
+      /// if and only if the stamps are equal
+      Stamp: int64 option
     }
          
 /// The result of calling TypeCheckResult including the possibility of abort and background compiler not caught up.
@@ -473,7 +478,7 @@ type internal FSharpChecker =
     /// <param name="loadedTimeStamp">Indicates when the script was loaded into the editing environment,
     /// so that an 'unload' and 'reload' action will cause the script to be considered as a new project,
     /// so that references are re-resolved.</param>
-    member GetProjectOptionsFromScript : filename: string * source: string * ?loadedTimeStamp: DateTime * ?otherFlags: string[] * ?useFsiAuxLib: bool * ?assumeDotNetFramework: bool * ?extraProjectInfo: obj -> Async<FSharpProjectOptions * FSharpErrorInfo list>
+    member GetProjectOptionsFromScript : filename: string * source: string * ?loadedTimeStamp: DateTime * ?otherFlags: string[] * ?useFsiAuxLib: bool * ?assumeDotNetFramework: bool * ?extraProjectInfo: obj * ?optionsStamp: int64 -> Async<FSharpProjectOptions * FSharpErrorInfo list>
 
     /// <summary>
     /// <para>Get the FSharpProjectOptions implied by a set of command line arguments.</para>

@@ -1591,6 +1591,7 @@ type FSharpProjectOptions =
       UnresolvedReferences : UnresolvedReferencesSet option
       OriginalLoadReferences: (range * string) list
       ExtraProjectInfo : obj option
+      Stamp : int64 option
     }
     member x.ProjectOptions = x.OtherOptions
     /// Whether the two parse options refer to the same project.
@@ -1599,12 +1600,18 @@ type FSharpProjectOptions =
 
     /// Compare two options sets with respect to the parts of the options that are important to parsing.
     static member AreSameForParsing(options1,options2) =
+        match options1.Stamp, options2.Stamp with 
+        | Some x, Some y -> (x = y)
+        | _ -> 
         options1.ProjectFileName = options2.ProjectFileName &&
         options1.OtherOptions = options2.OtherOptions &&
         options1.UnresolvedReferences = options2.UnresolvedReferences
 
     /// Compare two options sets with respect to the parts of the options that are important to building.
     static member AreSameForChecking(options1,options2) =
+        match options1.Stamp, options2.Stamp with 
+        | Some x, Some y -> (x = y)
+        | _ -> 
         options1.ProjectFileName = options2.ProjectFileName &&
         options1.ProjectFileNames = options2.ProjectFileNames &&
         options1.OtherOptions = options2.OtherOptions &&
@@ -2532,7 +2539,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
     member bc.ParseAndCheckProject(options) =
         reactor.EnqueueAndAwaitOpAsync("ParseAndCheckProject " + options.ProjectFileName, fun ctok -> bc.ParseAndCheckProjectImpl(options, ctok))
 
-    member bc.GetProjectOptionsFromScript(filename, source, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?assumeDotNetFramework, ?extraProjectInfo: obj) = 
+    member bc.GetProjectOptionsFromScript(filename, source, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?assumeDotNetFramework, ?extraProjectInfo: obj, ?optionsStamp: int64) = 
         reactor.EnqueueAndAwaitOpAsync ("GetProjectOptionsFromScript " + filename, fun ctok -> 
           cancellable {
             use errors = new ErrorScope()
@@ -2570,6 +2577,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                     UnresolvedReferences = Some (UnresolvedReferencesSet(loadClosure.UnresolvedReferences))
                     OriginalLoadReferences = loadClosure.OriginalLoadReferences
                     ExtraProjectInfo=extraProjectInfo
+                    Stamp = optionsStamp
                 }
             scriptClosureCacheLock.AcquireLock (fun ltok -> scriptClosureCache.Set(ltok, options, loadClosure)) // Save the full load closure for later correlation.
             return options, errors.Diagnostics
@@ -2873,8 +2881,8 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
         backgroundCompiler.KeepProjectAlive(options)
 
     /// For a given script file, get the ProjectOptions implied by the #load closure
-    member ic.GetProjectOptionsFromScript(filename, source, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?assumeDotNetFramework, ?extraProjectInfo: obj) = 
-        backgroundCompiler.GetProjectOptionsFromScript(filename,source,?loadedTimeStamp=loadedTimeStamp, ?otherFlags=otherFlags, ?useFsiAuxLib=useFsiAuxLib, ?assumeDotNetFramework=assumeDotNetFramework, ?extraProjectInfo=extraProjectInfo)
+    member ic.GetProjectOptionsFromScript(filename, source, ?loadedTimeStamp, ?otherFlags, ?useFsiAuxLib, ?assumeDotNetFramework, ?extraProjectInfo: obj, ?optionsStamp: int64) = 
+        backgroundCompiler.GetProjectOptionsFromScript(filename,source,?loadedTimeStamp=loadedTimeStamp, ?otherFlags=otherFlags, ?useFsiAuxLib=useFsiAuxLib, ?assumeDotNetFramework=assumeDotNetFramework, ?extraProjectInfo=extraProjectInfo, ?optionsStamp=optionsStamp)
         
     member ic.GetProjectOptionsFromCommandLineArgs(projectFileName, argv, ?loadedTimeStamp, ?extraProjectInfo: obj) = 
         let loadedTimeStamp = defaultArg loadedTimeStamp DateTime.MaxValue // Not 'now', we don't want to force reloading
@@ -2887,7 +2895,8 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
           LoadTime = loadedTimeStamp
           UnresolvedReferences = None
           OriginalLoadReferences=[]
-          ExtraProjectInfo=extraProjectInfo }
+          ExtraProjectInfo=extraProjectInfo
+          Stamp = None }
 
     /// Begin background parsing the given project.
     member ic.StartBackgroundCompile(options) = backgroundCompiler.CheckProjectInBackground(options) 

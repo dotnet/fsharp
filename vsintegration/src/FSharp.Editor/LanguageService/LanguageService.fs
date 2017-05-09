@@ -90,21 +90,24 @@ type internal ProjectInfoManager
         projectTable.TryRemove(projectId) |> ignore
         
     /// Get the exact options for a single-file script
-    member this.ComputeSingleFileOptions (fileName, loadTime, fileContents, workspace: Workspace) = async {
+    member this.ComputeSingleFileOptions (tryGetOrCreateProjectId, fileName, loadTime, fileContents, workspace: Workspace) = async {
         let extraProjectInfo = Some(box workspace)
+        let tryGetOptionsForReferencedProject f = f |> tryGetOrCreateProjectId |> Option.bind this.TryGetOptionsForProject
         if SourceFile.MustBeSingleFileProject(fileName) then 
-            let! options, _diagnostics = checkerProvider.Checker.GetProjectOptionsFromScript(fileName, fileContents, loadTime, [| |], ?extraProjectInfo=extraProjectInfo) 
+            let optionsStamp = None // TODO: can we use a unique stamp?
+            let! options, _diagnostics = checkerProvider.Checker.GetProjectOptionsFromScript(fileName, fileContents, loadTime, [| |], ?extraProjectInfo=extraProjectInfo, ?optionsStamp=optionsStamp) 
             let site = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, options)
-            return ProjectSitesAndFiles.GetProjectOptionsForProjectSite(site,fileName,options.ExtraProjectInfo,serviceProvider)
+            return ProjectSitesAndFiles.GetProjectOptionsForProjectSite(tryGetOptionsForReferencedProject,site,fileName,options.ExtraProjectInfo,serviceProvider, true)
         else
             let site = ProjectSitesAndFiles.ProjectSiteOfSingleFile(fileName)
-            return ProjectSitesAndFiles.GetProjectOptionsForProjectSite(site,fileName,extraProjectInfo,serviceProvider)
+            return ProjectSitesAndFiles.GetProjectOptionsForProjectSite(tryGetOptionsForReferencedProject,site,fileName,extraProjectInfo,serviceProvider, true)
       }
 
     /// Update the info for a project in the project table
-    member this.UpdateProjectInfo(projectId: ProjectId, site: IProjectSite, workspace: Workspace) =
+    member this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId: ProjectId, site: IProjectSite, workspace: Workspace) =
         let extraProjectInfo = Some(box workspace)
-        let options = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(site, site.ProjectFileName(), extraProjectInfo, serviceProvider)
+        let tryGetOptionsForReferencedProject f = f |> tryGetOrCreateProjectId |> Option.bind this.TryGetOptionsForProject
+        let options = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(tryGetOptionsForReferencedProject, site, site.ProjectFileName(), extraProjectInfo, serviceProvider, true)
         checkerProvider.Checker.InvalidateConfiguration(options)
         projectTable.[projectId] <- options
 
@@ -138,7 +141,7 @@ type internal ProjectInfoManager
             let fileName = document.FilePath
             let! cancellationToken = Async.CancellationToken
             let! sourceText = document.GetTextAsync(cancellationToken)
-            let! options = this.ComputeSingleFileOptions (fileName, loadTime, sourceText.ToString(), document.Project.Solution.Workspace)
+            let! options = this.ComputeSingleFileOptions ((fun _ -> None), fileName, loadTime, sourceText.ToString(), document.Project.Solution.Workspace)
             singleFileProjectTable.[projectId] <- (loadTime, options)
             return Some options
           with ex -> 
@@ -300,7 +303,7 @@ and
         theme.SetColors()
         
     /// Sync the information for the project 
-    member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, forceUpdate) =
+    member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, workspace, forceUpdate) =
         let hashSetIgnoreCase x = new HashSet<string>(x, StringComparer.OrdinalIgnoreCase)
         let updatedFiles = site.SourceFilesOnDisk() |> hashSetIgnoreCase
         let workspaceFiles = project.GetCurrentDocuments() |> Seq.map(fun file -> file.FilePath) |> hashSetIgnoreCase
@@ -328,7 +331,7 @@ and
 
         // update the cached options
         if updated then
-            projectInfoManager.UpdateProjectInfo(project.Id, site, project.Workspace)
+            projectInfoManager.UpdateProjectInfo(this.GetProjectIdForReferencedProject workspace, project.Id, site, project.Workspace)
 
     member this.SetupProjectFile(siteProvider: IProvideProjectSite, workspace: VisualStudioWorkspaceImpl) =
         let  rec setup (site: IProjectSite) =
@@ -338,7 +341,7 @@ and
             let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
 
             if isNull (workspace.ProjectTracker.GetProject projectId) then
-                projectInfoManager.UpdateProjectInfo(projectId, site, workspace)
+                projectInfoManager.UpdateProjectInfo(this.GetProjectIdForReferencedProject workspace, projectId, site, workspace)
                 let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
                 let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
                 
@@ -358,9 +361,9 @@ and
 
                 let project = projectContext :?> AbstractProject
 
-                this.SyncProject(project, projectContext, site, forceUpdate=false)
+                this.SyncProject(project, projectContext, site, workspace, forceUpdate=false)
                 site.AdviseProjectSiteChanges(FSharpConstants.FSharpLanguageServiceCallbackName, 
-                                              AdviseProjectSiteChanges(fun () -> this.SyncProject(project, projectContext, site, forceUpdate=true)))
+                                              AdviseProjectSiteChanges(fun () -> this.SyncProject(project, projectContext, site, workspace, forceUpdate=true)))
                 site.AdviseProjectSiteClosed(FSharpConstants.FSharpLanguageServiceCallbackName, 
                                              AdviseProjectSiteChanges(fun () -> 
                                                 projectInfoManager.ClearProjectInfo(project.Id)
@@ -371,10 +374,14 @@ and
             projectId
         setup (siteProvider.GetProjectSite()) |> ignore
 
+    member this.GetProjectIdForReferencedProject (workspace: VisualStudioWorkspaceImpl) (projectFileName: string) =
+        let projectDisplayName = projectDisplayNameOf projectFileName
+        Some (workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName))
+
     member this.SetupStandAloneFile(fileName: string, fileContents: string, workspace: VisualStudioWorkspaceImpl, hier: IVsHierarchy) =
 
         let loadTime = DateTime.Now
-        let options = projectInfoManager.ComputeSingleFileOptions (fileName, loadTime, fileContents, workspace) |> Async.RunSynchronously
+        let options = projectInfoManager.ComputeSingleFileOptions (this.GetProjectIdForReferencedProject workspace, fileName, loadTime, fileContents, workspace) |> Async.RunSynchronously
 
         let projectFileName = fileName
         let projectDisplayName = projectDisplayNameOf projectFileName
