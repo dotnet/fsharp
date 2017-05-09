@@ -373,6 +373,7 @@ let instTyparConstraints tpinst x = if isNil tpinst then x else remapTyparConstr
 let instSlotSig tpinst ss = remapSlotSig (fun _ -> []) (mkInstRemap tpinst) ss
 let copySlotSig ss = remapSlotSig (fun _ -> []) Remap.Empty ss
 
+
 let mkTyparToTyparRenaming tpsOrig tps = 
     let tinst = generalizeTypars tps
     mkTyparInst tpsOrig tinst,tinst
@@ -2300,8 +2301,8 @@ module PrettyTypes =
                           
         choose tps (0,0) []
 
-    let PrettifyTypes g foldTys mapTys tys = 
-        let ftps = foldTys (accFreeInTypeLeftToRight g true false) emptyFreeTyparsLeftToRight tys
+    let PrettifyThings g foldTys mapTys things = 
+        let ftps = foldTys (accFreeInTypeLeftToRight g true false) emptyFreeTyparsLeftToRight things
         let ftps = List.rev ftps
         let rec computeKeep (keep: Typars) change (tps: Typars) = 
             match tps with 
@@ -2325,23 +2326,78 @@ module PrettyTypes =
             match t with
             | TType_forall (_,tau) -> tau
             | _ -> t
-        let tys = mapTys getTauStayTau tys
+        let tauThings = mapTys getTauStayTau things
                         
-        let prettyTypars = mapTys (instType renaming) tys
+        let prettyThings = mapTys (instType renaming) tauThings
         // niceTypars |> List.iter (fun tp -> dprintf "nice typar: %d\n" (stamp_of_typar tp)); *
         let tpconstraints  = niceTypars |> List.collect (fun tpnice -> List.map (fun tpc -> tpnice,tpc) tpnice.Constraints)
 
-        renaming,
-        prettyTypars,
-        tpconstraints
+        prettyThings, tpconstraints
 
-    let PrettifyTypes1   g x = PrettifyTypes g (fun f -> f) (fun f -> f) x
-    let PrettifyTypes2   g x = PrettifyTypes g (fun f -> foldPair (f,f)) (fun f -> mapPair (f,f)) x
-    let PrettifyTypesN   g x = PrettifyTypes g List.fold List.map   x
-    let PrettifyTypesNN   g x = PrettifyTypes g (fun f -> List.fold (List.fold f)) List.mapSquared   x
-    let PrettifyTypesNN1   g x = PrettifyTypes g (fun f -> foldPair (List.fold (List.fold f),f)) (fun f -> mapPair (List.mapSquared f,f)) x
-    let PrettifyTypesN1  g (x:UncurriedArgInfos * TType) = PrettifyTypes g (fun f -> foldPair (List.fold (fold1Of2  f), f)) (fun f -> mapPair (List.map (map1Of2  f),f)) x
-    let PrettifyTypesNM1 g (x:TType list * CurriedArgInfos * TType) = PrettifyTypes g (fun f -> foldTriple (List.fold f, List.fold (List.fold (fold1Of2 f)),f)) (fun f -> mapTriple (List.map f, List.mapSquared (map1Of2  f), f)) x
+    let PrettifyType g x = PrettifyThings g id id x
+    let PrettifyTypePair g x = PrettifyThings g (fun f -> foldPair (f,f)) (fun f -> mapPair (f,f)) x
+    let PrettifyTypes g x = PrettifyThings g List.fold List.map   x
+    let PrettifyCurriedTypes g x = PrettifyThings g (fun f -> List.fold (List.fold f)) List.mapSquared   x
+    let PrettifyCurriedSigTypes g x = PrettifyThings g (fun f -> foldPair (List.fold (List.fold f),f)) (fun f -> mapPair (List.mapSquared f,f)) x
+
+    // Badly formed code may instantiate rigid declared typars to types.
+    // Hence we double check here that the thing is really a type variable
+    let safeDestAnyParTy orig g ty = match tryAnyParTy g ty with None -> orig | Some x -> x
+    let tee f x = f x x
+
+    let foldUnurriedArgInfos f z (x: UncurriedArgInfos) = List.fold (fold1Of2 f) z x
+    let mapUnurriedArgInfos f (x: UncurriedArgInfos) = List.map (map1Of2 f) x
+
+    let foldTypar f z (x: Typar) = foldOn mkTyparTy f z x
+    let mapTypar g f (x: Typar) : Typar = (mkTyparTy >> f >> safeDestAnyParTy x g) x
+
+    let foldTypars f z (x: Typars) =  List.fold (foldTypar f) z x
+    let mapTypars g f (x: Typars) : Typars = List.map (mapTypar g f) x
+
+    let foldTyparInst f z (x: TyparInst) =  List.fold (foldPair (foldTypar f, f)) z x
+    let mapTyparInst g f (x: TyparInst) : TyparInst = List.map (mapPair (mapTypar g f, f)) x
+
+    let PrettifyInstAndTyparsAndType g x = 
+        PrettifyThings g 
+            (fun f -> foldTriple (foldTyparInst f, foldTypars f, f)) 
+            (fun f-> mapTriple (mapTyparInst g f, mapTypars g f, f)) 
+            x
+
+    let PrettifyInstAndUncurriedSig  g (x: TyparInst * UncurriedArgInfos * TType) = 
+        PrettifyThings g 
+            (fun f -> foldTriple (foldTyparInst f, foldUnurriedArgInfos f, f)) 
+            (fun f -> mapTriple (mapTyparInst g f, List.map (map1Of2  f),f))
+            x
+
+    let PrettifyInstAndCurriedSig g (x: TyparInst * TTypes * CurriedArgInfos * TType) = 
+        PrettifyThings g 
+            (fun f -> foldQuadruple (foldTyparInst f, List.fold f, List.fold (List.fold (fold1Of2 f)),f)) 
+            (fun f -> mapQuadruple (mapTyparInst g f, List.map f, List.mapSquared (map1Of2 f), f))
+            x
+
+    let PrettifyInstAndSig g x = 
+        PrettifyThings g 
+            (fun f -> foldTriple (foldTyparInst f, List.fold f, f))
+            (fun f -> mapTriple (mapTyparInst g f, List.map f, f) )
+            x
+
+    let PrettifyInstAndTypes g x = 
+        PrettifyThings g 
+            (fun f -> foldPair (foldTyparInst f, List.fold f)) 
+            (fun f -> mapPair (mapTyparInst g f, List.map f))
+            x
+ 
+    let PrettifyInstAndType g x = 
+        PrettifyThings g 
+            (fun f -> foldPair (foldTyparInst f, f)) 
+            (fun f -> mapPair (mapTyparInst g f, f))
+            x
+ 
+    let PrettifyInst g x = 
+        PrettifyThings g 
+            (fun f -> foldTyparInst f) 
+            (fun f -> mapTyparInst g f)
+            x
  
 module SimplifyTypes =
 
@@ -3286,7 +3342,7 @@ module DebugPrint = begin
             | argtys -> (prefixL ^^ nmL ^^ wordL(tagText "of")) --- layoutUnionCaseArgTypes argtys
 
         let layoutUnionCases ucases =
-            let prefixL = if List.length ucases > 1 then wordL(tagText "|") else emptyL
+            let prefixL = if not (isNilOrSingleton ucases) then wordL(tagText "|") else emptyL
             List.map (ucaseL prefixL) ucases
             
         let layoutRecdField (fld:RecdField) =
@@ -7401,7 +7457,7 @@ let mkChoiceTy (g:TcGlobals) m tinst =
      match List.length tinst with 
      | 0 -> g.unit_ty
      | 1 -> List.head tinst
-     | _ -> mkAppTy (mkChoiceTyconRef g m (List.length tinst)) tinst
+     | length -> mkAppTy (mkChoiceTyconRef g m length) tinst
 
 let mkChoiceCaseRef g m n i = 
      mkUnionCaseRef (mkChoiceTyconRef g m n) ("Choice"+string (i+1)+"Of"+string n)
@@ -7948,7 +8004,7 @@ let rec mkCompiledTuple g isStruct (argtys,args,m) =
     elif n < maxTuple then (mkCompiledTupleTyconRef g isStruct n, argtys, args, m)
     else
         let argtysA,argtysB = List.splitAfter goodTupleFields argtys
-        let argsA,argsB = List.splitAfter (goodTupleFields) args
+        let argsA,argsB = List.splitAfter goodTupleFields args
         let ty8, v8 = 
             match argtysB,argsB with 
             | [ty8],[arg8] -> 
@@ -8138,11 +8194,9 @@ let DetectAndOptimizeForExpression g option expr =
 // Used to remove Expr.Link for inner expressions in pattern matches
 let (|InnerExprPat|) expr = stripExpr expr
 
-//-------------------------------------------------------------------------
-// One of the transformations performed by the compiler
-// is to eliminate variables of static type "unit".  These are
-// utility functions related to this.
-//------------------------------------------------------------------------- 
+/// One of the transformations performed by the compiler
+/// is to eliminate variables of static type "unit".  These is a
+/// utility function related to this.
 
 let BindUnitVars g (mvs:Val list, paramInfos:ArgReprInfo list, body) = 
     match mvs,paramInfos with 

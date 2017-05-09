@@ -46,21 +46,25 @@ module internal SourceFileImpl =
            
 type CompletionPath = string list * string option // plid * residue
 
+[<RequireQualifiedAccess>]
 type InheritanceOrigin = 
     | Class
     | Interface
     | Unknown
 
+[<RequireQualifiedAccess>]
 type InheritanceContext = 
     | Class
     | Interface
     | Unknown
 
+[<RequireQualifiedAccess>]
 type RecordContext =
     | CopyOnUpdate of range * CompletionPath // range of copy-expr + current field
     | Constructor of string // typename
     | New of CompletionPath
 
+[<RequireQualifiedAccess>]
 type CompletionContext = 
     // completion context cannot be determined due to errors
     | Invalid
@@ -391,6 +395,7 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
 
 type ModuleKind = { IsAutoOpen: bool; HasModuleSuffix: bool }
 
+[<RequireQualifiedAccess>]
 type EntityKind =
     | Attribute
     | Type
@@ -994,7 +999,7 @@ module UntypedParseImpl =
 
         let GetCompletionContextForInheritSynMember ((ComponentInfo(synAttributes, _, _, _,_, _, _, _)), typeDefnKind : SynTypeDefnKind, completionPath) = 
             
-            let success k = Some (Inherit (k, completionPath))
+            let success k = Some (CompletionContext.Inherit (k, completionPath))
 
             // if kind is specified - take it
             // if kind is non-specified 
@@ -1003,22 +1008,22 @@ module UntypedParseImpl =
             match typeDefnKind with
             | TyconClass -> 
                 match synAttributes with
-                | Class | Unknown -> success Class
+                | Class | Unknown -> success InheritanceContext.Class
                 | _ -> Some CompletionContext.Invalid // non-matching attributes
             | TyconInterface -> 
                 match synAttributes with
-                | Interface | Unknown -> success Interface
+                | Interface | Unknown -> success InheritanceContext.Interface
                 | _ -> Some CompletionContext.Invalid // non-matching attributes
             | TyconStruct -> 
                 // display nothing for structs
                 Some CompletionContext.Invalid
             | TyconUnspecified ->
                 match synAttributes with
-                | Class -> success Class
-                | Interface -> success Interface
+                | Class -> success InheritanceContext.Class
+                | Interface -> success InheritanceContext.Interface
                 | Unknown -> 
                     // user do not specify kind explicitly or via attributes
-                    success Unknown
+                    success InheritanceContext.Unknown
                 | _ -> 
                     // unable to uniquely detect kind from the attributes - return invalid context
                     Some CompletionContext.Invalid
@@ -1074,16 +1079,16 @@ module UntypedParseImpl =
             | (SynExpr.New (_, SynType.App(SynType.LongIdent typeName, _, _, _, mGreaterThan, _, _), arg, _)) -> 
                 // new A<_>()
                 Some (endOfClosingTokenOrLastIdent mGreaterThan typeName, findSetters arg)
-            | (SynExpr.App (ExprAtomicFlag.Atomic, false, SynExpr.Ident id, arg, _)) -> 
+            | (SynExpr.App (_, false, SynExpr.Ident id, arg, _)) -> 
                 // A()
                 Some (id.idRange.End, findSetters arg)
-            | (SynExpr.App (ExprAtomicFlag.Atomic, false, SynExpr.TypeApp(SynExpr.Ident id, _, _, _, mGreaterThan, _, _), arg, _)) -> 
+            | (SynExpr.App (_, false, SynExpr.TypeApp(SynExpr.Ident id, _, _, _, mGreaterThan, _, _), arg, _)) -> 
                 // A<_>()
                 Some (endOfClosingTokenOrIdent mGreaterThan id , findSetters arg)
-            | (SynExpr.App (ExprAtomicFlag.Atomic, false, SynExpr.LongIdent(_, lid, _, _), arg, _)) -> 
+            | (SynExpr.App (_, false, SynExpr.LongIdent(_, lid, _, _), arg, _)) -> 
                 // A.B()
                 Some (endOfLastIdent lid, findSetters arg)
-            | (SynExpr.App (ExprAtomicFlag.Atomic, false, SynExpr.TypeApp(SynExpr.LongIdent(_, lid, _, _), _, _, _, mGreaterThan, _, _), arg, _)) -> 
+            | (SynExpr.App (_, false, SynExpr.TypeApp(SynExpr.LongIdent(_, lid, _, _), _, _, _, mGreaterThan, _, _), arg, _)) -> 
                 // A.B<_>()
                 Some (endOfClosingTokenOrLastIdent mGreaterThan lid, findSetters arg)
             | _ -> None
@@ -1120,40 +1125,41 @@ module UntypedParseImpl =
         let walker = 
             { 
                 new AstTraversal.AstVisitorBase<_>() with
-                    member this.VisitExpr(path, traverseSynExpr, defaultTraverse, expr) = 
+                    member __.VisitExpr(path, _, defaultTraverse, expr) = 
+
                         if isInRhsOfRangeOp path then
                             match defaultTraverse expr with
-                            | None -> Some (CompletionContext.RangeOperator) // nothing was found - report that we were in the context of range operator
+                            | None -> Some CompletionContext.RangeOperator // nothing was found - report that we were in the context of range operator
                             | x -> x // ok, we found something - return it
                         else
-                        match expr with
-                        // new A($)
-                        | SynExpr.Const(SynConst.Unit, m) when rangeContainsPos m pos ->
-                            match path with
-                            | TS.Expr(NewObjectOrMethodCall args)::_ -> 
-                                Some (CompletionContext.ParameterList args)
-                            | _ -> 
-                                defaultTraverse expr
-                        // new (... A$)
-                        | SynExpr.Ident id when id.idRange.End = pos ->
-                            match path with
-                            | PartOfParameterList None args -> 
-                                Some (CompletionContext.ParameterList args)
-                            | _ -> 
-                                defaultTraverse expr
-                        // new (A$ = 1)
-                        // new (A = 1,$)
-                        | Setter id when id.idRange.End = pos || rangeBeforePos expr.Range pos ->
-                            let precedingArgument = if id.idRange.End = pos then None else Some expr
-                            match path with
-                            | PartOfParameterList precedingArgument args-> 
-                                Some (CompletionContext.ParameterList args)
-                            | _ -> 
-                                defaultTraverse expr
-                        
-                        | _ -> defaultTraverse expr
+                            match expr with
+                            // new A($)
+                            | SynExpr.Const(SynConst.Unit, m) when rangeContainsPos m pos ->
+                                match path with
+                                | TS.Expr(NewObjectOrMethodCall args)::_ -> 
+                                    Some (CompletionContext.ParameterList args)
+                                | _ -> 
+                                    defaultTraverse expr
+                            // new (... A$)
+                            | SynExpr.Ident id when id.idRange.End = pos ->
+                                match path with
+                                | PartOfParameterList None args -> 
+                                    Some (CompletionContext.ParameterList args)
+                                | _ -> 
+                                    defaultTraverse expr
+                            // new (A$ = 1)
+                            // new (A = 1,$)
+                            | Setter id when id.idRange.End = pos || rangeBeforePos expr.Range pos ->
+                                let precedingArgument = if id.idRange.End = pos then None else Some expr
+                                match path with
+                                | PartOfParameterList precedingArgument args-> 
+                                    Some (CompletionContext.ParameterList args)
+                                | _ -> 
+                                    defaultTraverse expr
+                            
+                            | _ -> defaultTraverse expr
 
-                    member this.VisitRecordField(path, copyOpt, field) = 
+                    member __.VisitRecordField(path, copyOpt, field) = 
                         let contextFromTreePath completionPath = 
                             // detect records usage in constructor
                             match path with
@@ -1177,7 +1183,7 @@ module UntypedParseImpl =
                                 | None -> contextFromTreePath ([], None)
                             Some (CompletionContext.RecordField recordContext)
                                 
-                    member this.VisitInheritSynMemberDefn(componentInfo, typeDefnKind, synType, _members, _range) = 
+                    member __.VisitInheritSynMemberDefn(componentInfo, typeDefnKind, synType, _members, _range) = 
                         match synType with
                         | SynType.LongIdent lidwd ->                                 
                             match parseLid lidwd with
@@ -1185,7 +1191,7 @@ module UntypedParseImpl =
                             | None -> Some (CompletionContext.Invalid) // A $ .B -> no completion list
                         | _ -> None 
                         
-                    member this.VisitBinding(defaultTraverse, (Binding(headPat = headPat) as synBinding)) = 
+                    member __.VisitBinding(defaultTraverse, (Binding(headPat = headPat) as synBinding)) = 
                     
                         let visitParam = function
                             | SynPat.Named (range = range) when rangeContainsPos range pos -> 
@@ -1215,11 +1221,11 @@ module UntypedParseImpl =
                             | _ -> defaultTraverse synBinding
                         | _ -> defaultTraverse synBinding 
                     
-                    member this.VisitHashDirective(range) = 
+                    member __.VisitHashDirective(range) = 
                         if rangeContainsPos range pos then Some CompletionContext.Invalid 
                         else None 
                         
-                    member this.VisitModuleOrNamespace(SynModuleOrNamespace(longId = idents)) =
+                    member __.VisitModuleOrNamespace(SynModuleOrNamespace(longId = idents)) =
                         match List.tryLast idents with
                         | Some lastIdent when pos.Line = lastIdent.idRange.EndLine ->
                             let stringBetweenModuleNameAndPos = lineStr.[lastIdent.idRange.EndColumn..pos.Column - 1]
@@ -1228,16 +1234,16 @@ module UntypedParseImpl =
                             else None
                         | _ -> None 
 
-                    member this.VisitComponentInfo(ComponentInfo(range = range)) = 
+                    member __.VisitComponentInfo(ComponentInfo(range = range)) = 
                         if rangeContainsPos range pos then Some CompletionContext.Invalid
                         else None
 
-                    member this.VisitLetOrUse(bindings, range) =
+                    member __.VisitLetOrUse(bindings, range) =
                         match bindings with
                         | [] when range.StartLine = pos.Line -> Some CompletionContext.Invalid
                         | _ -> None
 
-                    member this.VisitSimplePats(pats) =
+                    member __.VisitSimplePats(pats) =
                         pats |> List.tryPick (fun pat ->
                             match pat with
                             | SynSimplePat.Id(range = range)
@@ -1245,7 +1251,7 @@ module UntypedParseImpl =
                                 Some CompletionContext.Invalid
                             | _ -> None)
 
-                    member this.VisitModuleDecl(defaultTraverse, decl) =
+                    member __.VisitModuleDecl(defaultTraverse, decl) =
                         match decl with
                         | SynModuleDecl.Open(_, m) -> 
                             // in theory, this means we're "in an open"

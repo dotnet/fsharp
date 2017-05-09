@@ -67,355 +67,6 @@ module EnvMisc =
 
 
 //----------------------------------------------------------------------------
-// Methods
-//--------------------------------------------------------------------------
-
-[<Sealed>]
-type FSharpMethodGroupItemParameter(name: string, canonicalTypeTextForSorting: string, display: Layout, isOptional: bool) = 
-    member __.ParameterName = name
-    member __.CanonicalTypeTextForSorting = canonicalTypeTextForSorting
-    member __.StructuredDisplay = display
-    member __.Display = showL display
-    member __.IsOptional = isOptional
-
-/// Format parameters for Intellisense completion
-module internal Params = 
-    let printCanonicalizedTypeName g (denv:DisplayEnv) tau =
-        // get rid of F# abbreviations and such
-        let strippedType = stripTyEqnsWrtErasure EraseAll g tau
-        // pretend no namespaces are open
-        let denv = denv.SetOpenPaths([])
-        // now printing will see a .NET-like canonical representation, that is good for sorting overloads into a reasonable order (see bug 94520)
-        NicePrint.stringOfTy denv strippedType
-
-    let ParamOfRecdField g denv f =
-        FSharpMethodGroupItemParameter(
-          name = f.rfield_id.idText,
-          canonicalTypeTextForSorting = printCanonicalizedTypeName g denv f.rfield_type,
-          display = NicePrint.prettyLayoutOfTy denv f.rfield_type,
-          isOptional=false)
-    
-    let ParamOfUnionCaseField g denv isGenerated (i : int) f = 
-        let initial = ParamOfRecdField g denv f
-        let display = if isGenerated i f then initial.StructuredDisplay else NicePrint.layoutOfParamData denv (ParamData(false, false, NotOptional, NoCallerInfo, Some f.rfield_id, ReflectedArgInfo.None, f.rfield_type)) 
-        FSharpMethodGroupItemParameter(
-          name=initial.ParameterName, 
-          canonicalTypeTextForSorting=initial.CanonicalTypeTextForSorting, 
-          display=display,
-          isOptional=false)
-
-    let ParamOfParamData g denv (ParamData(_isParamArrayArg, _isOutArg, optArgInfo, _callerInfoInfo, nmOpt, _reflArgInfo, pty) as paramData) =
-        FSharpMethodGroupItemParameter(
-          name = (match nmOpt with None -> "" | Some pn -> pn.idText),
-          canonicalTypeTextForSorting = printCanonicalizedTypeName g denv pty,
-          display = NicePrint.layoutOfParamData denv paramData,
-          isOptional=optArgInfo.IsOptional)
-
-    // TODO this code is similar to NicePrint.fs:formatParamDataToBuffer, refactor or figure out why different?
-    let ParamsOfParamDatas g denv (paramDatas:ParamData list) rty = 
-        let paramInfo,paramTypes = 
-            paramDatas 
-            |> List.map (fun (ParamData(isParamArrayArg, _isOutArg, optArgInfo, _callerInfoInfo, nmOpt, _reflArgInfo, pty)) -> 
-                let isOptArg = optArgInfo.IsOptional
-                match nmOpt, isOptArg, tryDestOptionTy denv.g pty with 
-                // Layout an optional argument 
-                | Some id, true, ptyOpt -> 
-                    let nm = id.idText
-                    // detect parameter type, if ptyOpt is None - this is .NET style optional argument
-                    let pty = defaultArg ptyOpt pty
-                    (nm, isOptArg, SepL.questionMark ^^ (wordL (TaggedTextOps.tagParameter nm))),  pty
-                // Layout an unnamed argument 
-                | None, _,_ -> 
-                    ("", isOptArg, emptyL), pty
-                // Layout a named argument 
-                | Some id,_,_ -> 
-                    let nm = id.idText
-                    let prefix = 
-                        if isParamArrayArg then
-                            NicePrint.PrintUtilities.layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute ^^
-                            wordL (TaggedTextOps.tagParameter nm) ^^
-                            RightL.colon
-                            //sprintf "%s %s: " (NicePrint.PrintUtilities.layoutBuiltinAttribute denv denv.g.attrib_ParamArrayAttribute |> showL) nm 
-                        else 
-                            wordL (TaggedTextOps.tagParameter nm) ^^
-                            RightL.colon
-                            //sprintf "%s: " nm
-                    (nm,isOptArg, prefix),pty)
-            |> List.unzip
-        let paramTypeAndRetLs,_ = NicePrint.layoutPrettifiedTypes denv (paramTypes@[rty])
-        let paramTypeLs,_ = List.frontAndBack  paramTypeAndRetLs
-        (paramInfo,paramTypes,paramTypeLs) |||> List.map3 (fun (nm,isOptArg,paramPrefix) tau tyL -> 
-            FSharpMethodGroupItemParameter(
-              name = nm,
-              canonicalTypeTextForSorting = printCanonicalizedTypeName g denv tau,
-              display = paramPrefix ^^ tyL,
-              isOptional=isOptArg
-            ))
-
-    let ParamsOfTypes g denv args rtau = 
-        let ptausL, _ = NicePrint.layoutPrettifiedTypes denv (args@[rtau]) 
-        let argsL,_ = List.frontAndBack ptausL 
-        let mkParam (tau,tyL) =
-            FSharpMethodGroupItemParameter(
-              name = "",
-              canonicalTypeTextForSorting = printCanonicalizedTypeName g denv tau,
-              display =  tyL,
-              isOptional=false
-            )
-        (args,argsL) ||> List.zip |> List.map mkParam
-
-#if EXTENSIONTYPING
-
-    let (|ItemIsProvidedType|_|) g item =
-        match item with
-        | Item.Types(_name,tys) ->
-            match tys with
-            | [AppTy g (tyconRef,_typeInst)] ->
-                if tyconRef.IsProvidedErasedTycon || tyconRef.IsProvidedGeneratedTycon then
-                    Some tyconRef
-                else
-                    None
-            | _ -> None
-        | _ -> None
-
-    let (|ItemIsProvidedTypeWithStaticArguments|_|) m g item =
-        match item with
-        | Item.Types(_name,tys) ->
-            match tys with
-            | [AppTy g (tyconRef,_typeInst)] ->
-                if tyconRef.IsProvidedErasedTycon || tyconRef.IsProvidedGeneratedTycon then
-                    let typeBeforeArguments = 
-                        match tyconRef.TypeReprInfo with 
-                        | TProvidedTypeExtensionPoint info -> info.ProvidedType
-                        | _ -> failwith "unreachable"
-                    let staticParameters = typeBeforeArguments.PApplyWithProvider((fun (typeBeforeArguments,provider) -> typeBeforeArguments.GetStaticParameters(provider)), range=m) 
-                    let staticParameters = staticParameters.PApplyArray(id, "GetStaticParameters",m)
-                    Some staticParameters
-                else
-                    None
-            | _ -> None
-        | _ -> None
-
-
-    let (|ItemIsProvidedMethodWithStaticArguments|_|) item =
-        match item with
-        // Prefer the static parameters from the uninstantiated method info
-        | Item.MethodGroup(_,_,Some minfo) ->
-            match minfo.ProvidedStaticParameterInfo  with 
-            | Some (_,staticParameters) -> Some staticParameters
-            | _ -> None
-        | Item.MethodGroup(_,[minfo],_) ->
-            match minfo.ProvidedStaticParameterInfo  with 
-            | Some (_,staticParameters) -> Some staticParameters
-            | _ -> None
-        | _ -> None
-
-    let (|ItemIsWithStaticArguments|_|) m g item =
-        match item with
-        | ItemIsProvidedTypeWithStaticArguments m g staticParameters -> Some staticParameters
-        | ItemIsProvidedMethodWithStaticArguments staticParameters -> Some staticParameters
-        | _ -> None
-#endif
-
-    let StaticParamsOfItem (infoReader:InfoReader) m denv d = 
-        let amap = infoReader.amap
-        let g = infoReader.g
-        match d with
-#if EXTENSIONTYPING
-        | ItemIsWithStaticArguments m g staticParameters ->
-            staticParameters 
-                |> Array.map (fun sp -> 
-                    let typ = Import.ImportProvidedType amap m (sp.PApply((fun x -> x.ParameterType),m))
-                    let spKind = NicePrint.prettyLayoutOfTy denv typ
-                    let spName = sp.PUntaint((fun sp -> sp.Name), m)
-                    let spOpt = sp.PUntaint((fun sp -> sp.IsOptional), m)
-                    FSharpMethodGroupItemParameter(
-                      name = spName,
-                      canonicalTypeTextForSorting = showL spKind,
-                      display = (if spOpt then SepL.questionMark else emptyL) ^^ wordL (TaggedTextOps.tagParameter spName) ^^ RightL.colon ^^ spKind,
-                      //display = sprintf "%s%s: %s" (if spOpt then "?" else "") spName spKind,
-                      isOptional=spOpt))
-#endif
-        | _ -> [| |]
-
-    let rec ParamsOfItem (infoReader:InfoReader) m denv d = 
-        let amap = infoReader.amap
-        let g = infoReader.g
-        match d with
-        | Item.Value vref -> 
-            let getParamsOfTypes() = 
-                let _, tau = vref.TypeScheme
-                match tryDestFunTy denv.g tau with
-                | Some(arg,rtau) ->
-                    let args = tryDestRefTupleTy denv.g arg 
-                    ParamsOfTypes g denv args rtau
-                | None -> []
-            match vref.ValReprInfo with
-            | None -> 
-                // ValReprInfo = None i.e. in let bindings defined in types or in local functions
-                // in this case use old approach and return only information about types
-                getParamsOfTypes ()
-            | Some valRefInfo ->
-                // ValReprInfo will exist for top-level syntactic functions
-                // per spec: binding is considered to define a syntactic function if it is either a function or its immediate right-hand-side is a anonymous function
-                let (_, argInfos,  returnTy, _) = GetTopValTypeInFSharpForm  g valRefInfo vref.Type m
-                match argInfos with
-                | [] -> 
-                    // handles cases like 'let foo = List.map'
-                    getParamsOfTypes() 
-                | argInfo::_ ->
-                    // result 'paramDatas' collection corresponds to the first argument of curried function
-                    // i.e. let func (a : int) (b : int) = a + b
-                    // paramDatas will contain information about a and returnTy will be: int -> int
-                    // This is good enough as we don't provide ways to display info for the second curried argument
-                    let paramDatas = 
-                        argInfo
-                        |> List.map ParamNameAndType.FromArgInfo
-                        |> List.map (fun (ParamNameAndType(nmOpt, pty)) -> ParamData(false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None, pty))
-                    ParamsOfParamDatas g denv paramDatas returnTy
-        | Item.UnionCase(ucr,_)   -> 
-            match ucr.UnionCase.RecdFields with
-            | [f] -> [ParamOfUnionCaseField g denv NicePrint.isGeneratedUnionCaseField -1 f]
-            | fs -> fs |> List.mapi (ParamOfUnionCaseField g denv NicePrint.isGeneratedUnionCaseField)
-        | Item.ActivePatternCase(apref)   -> 
-            let v = apref.ActivePatternVal 
-            let _,tau = v.TypeScheme
-            let args, _ = stripFunTy denv.g tau 
-            ParamsOfTypes g denv args tau
-        | Item.ExnCase(ecref)     -> 
-            ecref |> recdFieldsOfExnDefRef |> List.mapi (ParamOfUnionCaseField g denv NicePrint.isGeneratedExceptionField) 
-        | Item.Property(_,pinfo :: _) -> 
-            let paramDatas = pinfo.GetParamDatas(amap,m)
-            let rty = pinfo.GetPropertyType(amap,m) 
-            ParamsOfParamDatas g denv paramDatas rty
-        | Item.CtorGroup(_,(minfo :: _)) 
-        | Item.MethodGroup(_,(minfo :: _),_) -> 
-            let paramDatas = minfo.GetParamDatas(amap, m, minfo.FormalMethodInst) |> List.head
-            let rty = minfo.GetFSharpReturnTy(amap, m, minfo.FormalMethodInst)
-            ParamsOfParamDatas g denv paramDatas rty
-        | Item.CustomBuilder (_,vref) -> ParamsOfItem infoReader m denv (Item.Value vref)
-        | Item.TypeVar _ -> []
-
-        | Item.CustomOperation (_,usageText, Some minfo) -> 
-            match usageText() with 
-            | None -> 
-                let argNamesAndTys = ItemDescriptionsImpl.ParamNameAndTypesOfUnaryCustomOperation g minfo 
-                let _, argTys, _ = PrettyTypes.PrettifyTypesN g (argNamesAndTys |> List.map (fun (ParamNameAndType(_,ty)) -> ty))
-                let paramDatas = (argNamesAndTys, argTys) ||> List.map2 (fun (ParamNameAndType(nmOpt, _)) argTy -> ParamData(false, false, NotOptional, NoCallerInfo, nmOpt, ReflectedArgInfo.None,argTy))
-                let rty = minfo.GetFSharpReturnTy(amap, m, minfo.FormalMethodInst)
-                ParamsOfParamDatas g denv paramDatas rty
-            | Some _ -> 
-                [] // no parameter data available for binary operators like 'zip', 'join' and 'groupJoin' since they use bespoke syntax 
-
-        | Item.FakeInterfaceCtor _ -> []
-        | Item.DelegateCtor delty -> 
-            let (SigOfFunctionForDelegate(_, _, _, fty)) = GetSigOfFunctionForDelegate infoReader delty m AccessibleFromSomeFSharpCode
-            ParamsOfParamDatas g denv [ParamData(false, false, NotOptional, NoCallerInfo, None, ReflectedArgInfo.None, fty)] delty
-        |  _ -> []
-
-
-/// A single method for Intellisense completion
-[<Sealed; NoEquality; NoComparison>]
-// Note: instances of this type do not hold any references to any compiler resources.
-type FSharpMethodGroupItem(description: FSharpToolTipText<Layout>, xmlDoc: FSharpXmlDoc, typeText: Layout, parameters: FSharpMethodGroupItemParameter[], hasParameters: bool, hasParamArrayArg: bool, staticParameters: FSharpMethodGroupItemParameter[]) = 
-    member __.StructuredDescription = description
-    member __.Description = Tooltips.ToFSharpToolTipText description
-    member __.XmlDoc = xmlDoc
-    member __.StructuredTypeText = typeText
-    member __.TypeText = showL typeText
-    member __.Parameters = parameters
-    member __.HasParameters = hasParameters
-    member __.HasParamArrayArg = hasParamArrayArg
-    // Does the type name or method support a static arguments list, like TP<42,"foo"> or conn.CreateCommand<42, "foo">(arg1, arg2)?
-    member __.StaticParameters = staticParameters
-
-
-/// A table of methods for Intellisense completion
-//
-// Note: this type does not hold any strong references to any compiler resources, nor does evaluating any of the properties execute any
-// code on the compiler thread.  
-[<Sealed>]
-type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] ) = 
-    // BUG 413009 : [ParameterInfo] takes about 3 seconds to move from one overload parameter to another
-    // cache allows to avoid recomputing parameterinfo for the same item
-#if !FX_NO_WEAKTABLE
-    static let methodOverloadsCache = System.Runtime.CompilerServices.ConditionalWeakTable()
-#endif
-
-    let methods = 
-        unsortedMethods 
-        // Methods with zero arguments show up here as taking a single argument of type 'unit'.  Patch them now to appear as having zero arguments.
-        |> Array.map (fun meth -> 
-            let parms = meth.Parameters
-            if parms.Length = 1 && parms.[0].CanonicalTypeTextForSorting="Microsoft.FSharp.Core.Unit" then 
-                FSharpMethodGroupItem(meth.StructuredDescription, meth.XmlDoc, meth.StructuredTypeText, [||], true, meth.HasParamArrayArg, meth.StaticParameters) 
-            else 
-                meth)
-        // Fix the order of methods, to be stable for unit testing.
-        |> Array.sortBy (fun meth -> 
-            let parms = meth.Parameters
-            parms.Length, (parms |> Array.map (fun p -> p.CanonicalTypeTextForSorting)))
-    member x.MethodName = name
-    member x.Methods = methods
-
-    static member Create(infoReader:InfoReader,m,denv,items:Item list) = 
-        let g = infoReader.g
-        if isNil items then new FSharpMethodGroup("", [| |]) else
-        let name = items.Head.DisplayName 
-        let getOverloadsForItem item =
-#if !FX_NO_WEAKTABLE
-            match methodOverloadsCache.TryGetValue item with
-            | true, overloads -> overloads
-            | false, _ ->
-#endif
-                let items =
-                    match item with 
-                    | Item.CtorGroup(nm,cinfos) -> List.map (fun minfo -> Item.CtorGroup(nm,[minfo])) cinfos 
-                    | Item.FakeInterfaceCtor _
-                    | Item.DelegateCtor _ -> [item]
-                    | Item.NewDef _ 
-                    | Item.ILField _ -> []
-                    | Item.Event _ -> []
-                    | Item.RecdField(rfinfo) -> 
-                        if isFunction g rfinfo.FieldType then [item] else []
-                    | Item.Value v -> 
-                        if isFunction g v.Type then [item] else []
-                    | Item.UnionCase(ucr,_) -> 
-                        if not ucr.UnionCase.IsNullary then [item] else []
-                    | Item.ExnCase(ecr) -> 
-                        if isNil (recdFieldsOfExnDefRef ecr) then [] else [item]
-                    | Item.Property(_,pinfos) -> 
-                        let pinfo = List.head pinfos 
-                        if pinfo.IsIndexer then [item] else []
-#if EXTENSIONTYPING
-                    | Params.ItemIsWithStaticArguments m g _ -> [item] // we pretend that provided-types-with-static-args are method-like in order to get ParamInfo for them
-#endif
-                    | Item.MethodGroup(nm,minfos,orig) -> minfos |> List.map (fun minfo -> Item.MethodGroup(nm,[minfo],orig)) 
-                    | Item.CustomOperation(_name, _helpText, _minfo) -> [item]
-                    | Item.TypeVar _ -> []
-                    | Item.CustomBuilder _ -> []
-                    | _ -> []
-
-                let methods = 
-                    items |> Array.ofList |> Array.map (fun item -> 
-                        FSharpMethodGroupItem(
-                          description = FSharpToolTipText [FormatStructuredDescriptionOfItem true infoReader m denv item],
-                          typeText = FormatStructuredReturnTypeOfItem infoReader m denv item,
-                          xmlDoc = GetXmlCommentForItem infoReader m item,
-                          parameters = (Params.ParamsOfItem infoReader m denv item |> Array.ofList),
-                          hasParameters = (match item with Params.ItemIsProvidedTypeWithStaticArguments m g _ -> false | _ -> true),
-                          hasParamArrayArg = (match item with Item.CtorGroup(_,[meth]) | Item.MethodGroup(_,[meth],_) -> meth.HasParamArrayArg(infoReader.amap, m, meth.FormalMethodInst) | _ -> false),
-                          staticParameters = Params.StaticParamsOfItem infoReader m denv item
-                        ))
-#if !FX_NO_WEAKTABLE
-                methodOverloadsCache.Add(item, methods)
-#endif
-                methods
-        let methods = [| for item in items do yield! getOverloadsForItem item |]
-
-        new FSharpMethodGroup(name, methods)
-
-//----------------------------------------------------------------------------
 // Scopes. 
 //--------------------------------------------------------------------------
 
@@ -442,7 +93,7 @@ type FSharpFindDeclResult =
 [<RequireQualifiedAccess>]
 [<NoEquality; NoComparison>]
 type internal NameResResult = 
-    | Members of (Item list * DisplayEnv * range)
+    | Members of (ItemWithInst list * DisplayEnv * range)
     | Cancel of DisplayEnv * range
     | Empty
     | TypecheckStaleAndTextChanged
@@ -458,7 +109,7 @@ type GetPreciseCompletionListFromExprTypingsResult =
     | NoneBecauseTypecheckIsStaleAndTextChanged
     | NoneBecauseThereWereTypeErrors
     | None
-    | Some of (Item list * DisplayEnv * range) * TType
+    | Some of (ItemWithInst list * DisplayEnv * range) * TType
 
 type Names = string list 
 
@@ -516,8 +167,8 @@ type TypeCheckInfo
            thisCcu: CcuThunk,
            tcImports: TcImports,
            tcAccessRights: AccessorDomain,
-           projectFileName: string ,
-           mainInputFileName: string ,
+           projectFileName: string,
+           mainInputFileName: string,
            sResolutions: TcResolutions,
            sSymbolUses: TcSymbolUses,
            // This is a name resolution environment to use if no better match can be found.
@@ -603,12 +254,12 @@ type TypeCheckInfo
     /// noisy. Filter a few things out.
     ///
     /// e.g. prefer types to constructors for FSharpToolTipText 
-    let FilterItemsForCtors filterCtors items =
-        let items = items |> List.filter (function (Item.CtorGroup _) when filterCtors = ResolveTypeNamesToTypeRefs -> false | _ -> true) 
+    let FilterItemsForCtors filterCtors (items: ItemWithInst list) =
+        let items = items |> List.filter (fun item -> match item.Item with (Item.CtorGroup _) when filterCtors = ResolveTypeNamesToTypeRefs -> false | _ -> true) 
         items
         
     // Filter items to show only valid & return Some if there are any
-    let ReturnItemsOfType items g denv (m:range) filterCtors hasTextChangedSinceLastTypecheck f =
+    let ReturnItemsOfType (items: ItemWithInst list) g denv (m:range) filterCtors hasTextChangedSinceLastTypecheck =
         let items = 
             items 
             |> RemoveDuplicateItems g
@@ -619,7 +270,7 @@ type TypeCheckInfo
             if hasTextChangedSinceLastTypecheck(textSnapshotInfo, m) then
                 NameResResult.TypecheckStaleAndTextChanged // typecheck is stale, wait for second-chance IntelliSense to bring up right result
             else
-                f(items, denv, m) 
+                NameResResult.Members (items, denv, m) 
         else NameResResult.Empty
 
     let GetCapturedNameResolutions endOfNamesPos resolveOverloads =
@@ -640,15 +291,16 @@ type TypeCheckInfo
         let endOfNamesPos = mkPos line colAtEndOfNames
 
         // Logic below expects the list to be in reverse order of resolution
-        let items = GetCapturedNameResolutions endOfNamesPos resolveOverloads |> ResizeArray.toList |> List.rev
+        let cnrs = GetCapturedNameResolutions endOfNamesPos resolveOverloads |> ResizeArray.toList |> List.rev
 
-        match items, membersByResidue with 
+        match cnrs, membersByResidue with 
         
         // If we're looking for members using a residue, we'd expect only
         // a single item (pick the first one) and we need the residue (which may be "")
-        | CNR(_,Item.Types(_,(typ::_)),_,denv,nenv,ad,m)::_, Some _ -> 
+        | CNR(_,Item.Types(_,(typ::_)), _, denv, nenv, ad, m)::_, Some _ -> 
             let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)) m ad true typ 
-            ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck NameResResult.Members 
+            let items = List.map ItemWithNoInst items
+            ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck 
         
         // Value reference from the name resolution. Primarily to disallow "let x.$ = 1"
         // In most of the cases, value references can be obtained from expression typings or from environment,
@@ -680,16 +332,19 @@ type TypeCheckInfo
                 | _ -> ad
 
               let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)) m ad false ty
-              ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck NameResResult.Members
+              let items = List.map ItemWithNoInst items
+              ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck
         
         // No residue, so the items are the full resolution of the name
-        | CNR(_,_,_,denv,_,_,m) :: _, None -> 
-            let items = items |> List.map (fun (CNR(_,item,_,_,_,_,_)) -> item) 
-                              // "into" is special magic syntax, not an identifier or a library call.  It is part of capturedNameResolutions as an 
-                              // implementation detail of syntax coloring, but we should not report name resolution results for it, to prevent spurious QuickInfo.
-                              |> List.filter (function Item.CustomOperation(CustomOperations.Into,_,_) -> false | _ -> true) 
-            ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck NameResResult.Members
-        | _ , _ -> NameResResult.Empty
+        | CNR(_, _, _, denv, _, _, m) :: _, None -> 
+            let items = 
+                cnrs 
+                |> List.map (fun cnr -> cnr.ItemWithInst)
+                // "into" is special magic syntax, not an identifier or a library call.  It is part of capturedNameResolutions as an 
+                // implementation detail of syntax coloring, but we should not report name resolution results for it, to prevent spurious QuickInfo.
+                |> List.filter (fun item -> match item.Item with Item.CustomOperation(CustomOperations.Into,_,_) -> false | _ -> true) 
+            ReturnItemsOfType items g denv m filterCtors hasTextChangedSinceLastTypecheck
+        | _, _ -> NameResResult.Empty
     
     let TryGetTypeFromNameResolution(line, colAtEndOfNames, membersByResidue, resolveOverloads) = 
         let endOfNamesPos = mkPos line colAtEndOfNames
@@ -700,7 +355,7 @@ type TypeCheckInfo
         | CNR(_, Item.Value(vref), occurence,_,_,_,_)::_, Some _ ->
             if (occurence = ItemOccurence.Binding || occurence = ItemOccurence.Pattern) then None
             else Some (StripSelfRefCell(g, vref.BaseOrThisInfo, vref.TauType))
-        | _ , _ -> None
+        | _, _ -> None
 
     let CollectParameters (methods: MethInfo list) amap m: Item list = 
         methods
@@ -718,11 +373,12 @@ type TypeCheckInfo
         let cnrs = GetCapturedNameResolutions endOfExprPos ResolveOverloads.No |> ResizeArray.toList |> List.rev
         let result =
             match cnrs with
-            | CNR(_, Item.CtorGroup(_, ((ctor::_) as ctors)), _, denv, nenv, ad, m)::_ ->
+            | CNR(_, Item.CtorGroup(_, ((ctor::_) as ctors)), _, denv, nenv, ad, m) ::_ ->
                 let props = ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false ctor.EnclosingType
                 let parameters = CollectParameters ctors amap m
-                Some (denv, m, props @ parameters)
-            | CNR(_, Item.MethodGroup(_, methods, _), _, denv, nenv, ad, m)::_ ->
+                let items = props @ parameters
+                Some (denv, m, items)
+            | CNR(_, Item.MethodGroup(_, methods, _), _, denv, nenv, ad, m) ::_ ->
                 let props = 
                     methods
                     |> List.collect (fun meth ->
@@ -730,14 +386,16 @@ type TypeCheckInfo
                         ResolveCompletionsInType ncenv nenv ResolveCompletionTargets.SettablePropertiesAndFields m ad false retTy
                     )
                 let parameters = CollectParameters methods amap m
-                Some (denv, m, props @ parameters)
+                let items = props @ parameters
+                Some (denv, m, items)
             | _ -> 
                 None
         match result with
         | None -> 
             NameResResult.Empty
-        | Some (denv, m, result) -> 
-            ReturnItemsOfType result g denv m TypeNameResolutionFlag.ResolveTypeNamesToTypeRefs hasTextChangedSinceLastTypecheck NameResResult.Members
+        | Some (denv, m, items) -> 
+            let items = List.map ItemWithNoInst items
+            ReturnItemsOfType items g denv m TypeNameResolutionFlag.ResolveTypeNamesToTypeRefs hasTextChangedSinceLastTypecheck
     
     /// finds captured typing for the given position
     let GetExprTypingForPosition(endOfExprPos) = 
@@ -818,6 +476,7 @@ type TypeCheckInfo
             | Some bestQual ->
                 let (_,typ,denv,nenv,ad,m) = bestQual 
                 let items = ResolveCompletionsInType ncenv nenv (ResolveCompletionTargets.All(ConstraintSolver.IsApplicableMethApprox g amap m)) m ad false typ 
+                let items = items |> List.map ItemWithNoInst
                 let items = items |> RemoveDuplicateItems g
                 let items = items |> RemoveExplicitlySuppressed g
                 let items = items |> FilterItemsForCtors filterCtors 
@@ -827,25 +486,27 @@ type TypeCheckInfo
                 else GetPreciseCompletionListFromExprTypingsResult.None
 
     /// Find items in the best naming environment.
-    let GetEnvironmentLookupResolutions(nenv, ad, m, plid, filterCtors, showObsolete) : Item list * DisplayEnv * range = 
+    let GetEnvironmentLookupResolutions(nenv, ad, m, plid, filterCtors, showObsolete) = 
         let items = NameResolution.ResolvePartialLongIdent ncenv nenv (ConstraintSolver.IsApplicableMethApprox g amap m) m ad plid showObsolete
+        let items = items |> List.map ItemWithNoInst
         let items = items |> RemoveDuplicateItems g 
         let items = items |> RemoveExplicitlySuppressed g
         let items = items |> FilterItemsForCtors filterCtors 
         (items, nenv.DisplayEnv, m)
 
     /// Find items in the best naming environment.
-    let GetEnvironmentLookupResolutionsAtPosition(cursorPos, plid, filterCtors, showObsolete) : Item list * DisplayEnv * range = 
+    let GetEnvironmentLookupResolutionsAtPosition(cursorPos, plid, filterCtors, showObsolete) = 
         let (nenv,ad),m = GetBestEnvForPos cursorPos
         GetEnvironmentLookupResolutions(nenv, ad, m, plid, filterCtors, showObsolete)
 
     /// Find record fields in the best naming environment.
-    let GetClassOrRecordFieldsEnvironmentLookupResolutions(cursorPos, plid, (_residue : string option)) : Item list * DisplayEnv * range = 
+    let GetClassOrRecordFieldsEnvironmentLookupResolutions(cursorPos, plid) = 
         let (nenv, ad),m = GetBestEnvForPos cursorPos
         let items = NameResolution.ResolvePartialLongIdentToClassOrRecdFields ncenv nenv m ad plid false
+        let items = items |> List.map ItemWithNoInst
         let items = items |> RemoveDuplicateItems g 
         let items = items |> RemoveExplicitlySuppressed g
-        items, nenv.DisplayEnv,m 
+        items, nenv.DisplayEnv, m 
 
     /// Resolve a location and/or text to items.
     //   Three techniques are used
@@ -906,9 +567,9 @@ type TypeCheckInfo
             p <- p - 1
         if p >= 0 then Some p else None
     
-    let CompletionItem (ty: TyconRef option) (unresolvedEntity: AssemblySymbol option) (item: Item) =
+    let CompletionItem (ty: TyconRef option) (unresolvedEntity: AssemblySymbol option) (item: ItemWithInst) =
         let kind = 
-            match item with
+            match item.Item with
             | Item.MethodGroup (_, minfo :: _, _) -> CompletionItemKind.Method minfo.IsExtensionMember
             | Item.RecdField _
             | Item.Property _ -> CompletionItemKind.Property
@@ -931,15 +592,16 @@ type TypeCheckInfo
                 { DisplayName = displayName
                   Namespace = ns })
 
-        { Item = item
+        { ItemWithInst = item
           MinorPriority = 0
           Kind = kind
           IsOwnMember = false
           Type = ty 
           Unresolved = unresolved }
 
-    let DefaultCompletionItem = CompletionItem None None
+    let DefaultCompletionItem item = CompletionItem None None item
     
+    let getItem (x: ItemWithInst) = x.Item
     let GetDeclaredItems (parseResultsOpt: FSharpParseFileResults option, lineStr: string, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, line, loc, 
                           filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, isInRangeOperator, allSymbols: unit -> AssemblySymbol list) =
  
@@ -1011,7 +673,7 @@ type TypeCheckInfo
             match nameResItems with            
             | NameResResult.TypecheckStaleAndTextChanged -> None // second-chance intellisense will try again
             | NameResResult.Cancel(denv,m) -> Some([], denv, m)
-            | NameResResult.Members(FilterRelevantItems id exactMatchResidueOpt (items, denv, m)) -> 
+            | NameResResult.Members(FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m)) -> 
                 // lookup based on name resolution results successful
                 Some (items |> List.map (CompletionItem (getType()) None), denv, m)
             | _ ->
@@ -1041,7 +703,7 @@ type TypeCheckInfo
                             GetPreciseCompletionListFromExprTypingsResult.None, false
                 
                     match qualItems,thereIsADotInvolved with            
-                    | GetPreciseCompletionListFromExprTypingsResult.Some(FilterRelevantItems id exactMatchResidueOpt (items, denv, m), ty), _
+                    | GetPreciseCompletionListFromExprTypingsResult.Some(FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m), ty), _
                             // Initially we only use the expression typings when looking up, e.g. (expr).Nam or (expr).Name1.Nam
                             // These come through as an empty plid and residue "". Otherwise we try an environment lookup
                             // and then return to the qualItems. This is because the expression typings are a little inaccurate, primarily because
@@ -1075,12 +737,12 @@ type TypeCheckInfo
                            
                            // If we have nonempty items from environment that were resolved from a type, then use them... 
                            // (that's better than the next case - here we'd return 'int' as a type)
-                           | _, FilterRelevantItems id exactMatchResidueOpt (items, denv, m), _ when not (isNil items) ->
+                           | _, FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m), _ when not (isNil items) ->
                                // lookup based on name and environment successful
                                Some(items |> List.map (CompletionItem (getType()) None), denv, m)
                            
                            // Try again with the qualItems
-                           | _, _, GetPreciseCompletionListFromExprTypingsResult.Some(FilterRelevantItems id exactMatchResidueOpt (items, denv, m), ty) ->
+                           | _, _, GetPreciseCompletionListFromExprTypingsResult.Some(FilterRelevantItems getItem exactMatchResidueOpt (items, denv, m), ty) ->
                                Some(items |> List.map (CompletionItem (tryDestAppTy g ty) None), denv, m)
                            
                            | _ -> None
@@ -1104,7 +766,7 @@ type TypeCheckInfo
                                    Some(
                                        entities 
                                        |> List.map(fun entity ->
-                                            CompletionItem (getType()) (Some entity) entity.Symbol.Item), denv, m)
+                                            CompletionItem (getType()) (Some entity) (ItemWithNoInst entity.Symbol.Item)), denv, m)
                                | _ -> None
                            | _ -> None // do not return unresolved items after dot
 
@@ -1115,7 +777,7 @@ type TypeCheckInfo
                        | None, None -> None
 
 
-    let toCompletionItems (items: Item list, denv: DisplayEnv, m: range) : CompletionItem list * DisplayEnv * range =
+    let toCompletionItems (items: ItemWithInst list, denv: DisplayEnv, m: range ) =
         items |> List.map DefaultCompletionItem, denv, m
 
     /// Get the auto-complete items at a particular location.
@@ -1142,41 +804,43 @@ type TypeCheckInfo
             // Completion at 'inherit C(...)"
             | Some (CompletionContext.Inherit(InheritanceContext.Class, (plid, _))) ->
                 GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false)
-                |> FilterRelevantItemsBy id None GetBaseClassCandidates
+                |> FilterRelevantItemsBy getItem None (getItem >> GetBaseClassCandidates)
                 |> Option.map toCompletionItems
-            
+             
             // Completion at 'interface ..."
             | Some (CompletionContext.Inherit(InheritanceContext.Interface, (plid, _))) ->
                 GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false)
-                |> FilterRelevantItemsBy id None GetInterfaceCandidates
+                |> FilterRelevantItemsBy getItem None (getItem >> GetInterfaceCandidates)
                 |> Option.map toCompletionItems
             
             // Completion at 'implement ..."
             | Some (CompletionContext.Inherit(InheritanceContext.Unknown, (plid, _))) ->
                 GetEnvironmentLookupResolutionsAtPosition(mkPos line loc, plid, filterCtors, false) 
-                |> FilterRelevantItemsBy id None (fun t -> GetBaseClassCandidates t || GetInterfaceCandidates t)
+                |> FilterRelevantItemsBy getItem None (getItem >> (fun t -> GetBaseClassCandidates t || GetInterfaceCandidates t))
                 |> Option.map toCompletionItems
             
             // Completion at ' { XXX = ... } "
-            | Some(CompletionContext.RecordField(RecordContext.New(plid, residue))) ->
+            | Some(CompletionContext.RecordField(RecordContext.New(plid, _))) ->
                 // { x. } can be either record construction or computation expression. Try to get all visible record fields first
-                match GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid, residue) |> toCompletionItems with
+                match GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid) |> toCompletionItems with
                 | [],_,_ -> 
                     // no record fields found, return completion list as if we were outside any computation expression
                     GetDeclaredItems (parseResultsOpt, lineStr, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, line, loc, filterCtors,resolveOverloads, hasTextChangedSinceLastTypecheck, false, fun() -> [])
                 | result -> Some(result)
             
             // Completion at ' { XXX = ... with ... } "
-            | Some(CompletionContext.RecordField(RecordContext.CopyOnUpdate(r, (plid, residue)))) -> 
+            | Some(CompletionContext.RecordField(RecordContext.CopyOnUpdate(r, (plid, _)))) -> 
                 match GetRecdFieldsForExpr(r) with
                 | None -> 
-                    Some (GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid, residue))
+                    Some (GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, plid))
                     |> Option.map toCompletionItems
-                | x -> x |> Option.map toCompletionItems
+                | Some (items, denv, m) -> 
+                    Some (List.map ItemWithNoInst items, denv, m) 
+                    |> Option.map toCompletionItems
             
             // Completion at ' { XXX = ... with ... } "
             | Some(CompletionContext.RecordField(RecordContext.Constructor(typeName))) ->
-                Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, [typeName], None))
+                Some(GetClassOrRecordFieldsEnvironmentLookupResolutions(mkPos line loc, [typeName]))
                 |> Option.map toCompletionItems
             
             // Completion at ' SomeMethod( ... ) ' with named arguments 
@@ -1193,9 +857,9 @@ type TypeCheckInfo
                         items 
                         |> RemoveDuplicateItems g
                         |> RemoveExplicitlySuppressed g
-                        |> List.filter (fun m -> not (fields.Contains m.DisplayName))
-                        |> List.map (fun x -> 
-                            { Item = x
+                        |> List.filter (fun item -> not (fields.Contains item.Item.DisplayName))
+                        |> List.map (fun item -> 
+                            { ItemWithInst = item
                               Kind = CompletionItemKind.Argument
                               MinorPriority = 0
                               IsOwnMember = false
@@ -1234,7 +898,7 @@ type TypeCheckInfo
         | Item.Types _ | Item.ModuleOrNamespaces _ -> true
         | _ -> false
 
-    member x.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) : bool =
+    member __.IsRelativeNameResolvable(cursorPos: pos, plid: string list, item: Item) : bool =
     /// Determines if a long ident is resolvable at a specific point.
         ErrorScope.Protect
             Range.range0
@@ -1248,7 +912,7 @@ type TypeCheckInfo
         //items |> List.exists (ItemsAreEffectivelyEqual g item)
 
     /// Get the auto-complete items at a location
-    member x.GetDeclarations (ctok, parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, getAllSymbols, hasTextChangedSinceLastTypecheck) =
+    member __.GetDeclarations (ctok, parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, getAllSymbols, hasTextChangedSinceLastTypecheck) =
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
         ErrorScope.Protect Range.range0 
             (fun () -> 
@@ -1266,7 +930,7 @@ type TypeCheckInfo
             (fun msg -> FSharpDeclarationListInfo.Error msg)
 
     /// Get the symbols for auto-complete items at a location
-    member x.GetDeclarationListSymbols (ctok, parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, hasTextChangedSinceLastTypecheck) =
+    member __.GetDeclarationListSymbols (ctok, parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, hasTextChangedSinceLastTypecheck) =
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
         ErrorScope.Protect Range.range0 
             (fun () -> 
@@ -1332,7 +996,7 @@ type TypeCheckInfo
             (fun _msg -> [])
             
     /// Get the "reference resolution" tooltip for at a location
-    member scope.GetReferenceResolutionStructuredToolTipText(ctok, line,col) = 
+    member __.GetReferenceResolutionStructuredToolTipText(ctok, line,col) = 
 
         RequireCompilationThread ctok // the operations in this method need the reactor thread but the reasons why are not yet grounded
 
@@ -1357,7 +1021,7 @@ type TypeCheckInfo
             | resolved::_ // Take the first seen
             | [resolved] -> 
                 let tip = wordL (TaggedTextOps.tagStringLiteral((resolved.prepareToolTip ()).TrimEnd([|'\n'|])))
-                FSharpStructuredToolTipText.FSharpToolTipText [FSharpStructuredToolTipElement.Single(tip ,FSharpXmlDoc.None)]
+                FSharpStructuredToolTipText.FSharpToolTipText [FSharpStructuredToolTipElement.Single(tip, FSharpXmlDoc.None)]
 
             | [] -> FSharpStructuredToolTipText.FSharpToolTipText []
                                     
@@ -1366,14 +1030,14 @@ type TypeCheckInfo
             (fun err -> FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError err])
 
     // GetToolTipText: return the "pop up" (or "Quick Info") text given a certain context.
-    member x.GetStructuredToolTipText(ctok, line, lineStr, colAtEndOfNames, names) = 
+    member __.GetStructuredToolTipText(ctok, line, lineStr, colAtEndOfNames, names) = 
         let Compute() = 
             ErrorScope.Protect Range.range0 
                 (fun () -> 
                     match GetDeclItemsForNamesAtPosition(ctok, None,Some(names),None,line,lineStr,colAtEndOfNames,ResolveTypeNamesToCtors,ResolveOverloads.Yes,(fun() -> []),fun _ -> false) with
                     | None -> FSharpToolTipText []
                     | Some(items, denv, _, m) ->
-                         FSharpToolTipText(items |> List.map (fun x -> FormatStructuredDescriptionOfItem false infoReader m denv x.Item)))
+                         FSharpToolTipText(items |> List.map (fun x -> FormatStructuredDescriptionOfItem false infoReader m denv x.ItemWithInst)))
                 (fun err -> FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError err])
                
         // See devdiv bug 646520 for rationale behind truncating and caching these quick infos (they can be big!)
@@ -1390,7 +1054,7 @@ type TypeCheckInfo
         x.GetStructuredToolTipText(ctok, line, lineStr, colAtEndOfNames, names)
         |> Tooltips.ToFSharpToolTipText
 
-    member x.GetF1Keyword (ctok, line, lineStr, colAtEndOfNames, names) : string option =
+    member __.GetF1Keyword (ctok, line, lineStr, colAtEndOfNames, names) : string option =
        ErrorScope.Protect Range.range0
             (fun () ->
                 match GetDeclItemsForNamesAtPosition(ctok, None, Some names, None, line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors, ResolveOverloads.No,(fun() -> []), fun _ -> false) with // F1 Keywords do not distinguish between overloads
@@ -1399,7 +1063,7 @@ type TypeCheckInfo
                     match items with
                     | [] -> None
                     | [item] ->
-                        GetF1Keyword item.Item                       
+                        GetF1Keyword g item.Item                       
                     | _ ->
                         // handle new Type()
                         let allTypes, constr, typ =
@@ -1413,52 +1077,27 @@ type TypeCheckInfo
                                 (true,None,None) items
                         match allTypes, constr, typ with
                         |   true, Some (Item.CtorGroup(_, _) as item), _    
-                                -> GetF1Keyword item                        
+                                -> GetF1Keyword g item                        
                         |   true, _, Some typ
-                                -> GetF1Keyword typ
+                                -> GetF1Keyword g typ
                         |   _ -> None
             )    
             (fun _ -> None)
 
-    member scope.GetMethods (ctok, line, lineStr, colAtEndOfNames, namesOpt) =
+    member __.GetMethods (ctok, line, lineStr, colAtEndOfNames, namesOpt) =
         ErrorScope.Protect Range.range0 
             (fun () -> 
                 match GetDeclItemsForNamesAtPosition(ctok, None,namesOpt,None,line,lineStr,colAtEndOfNames,ResolveTypeNamesToCtors,ResolveOverloads.No,(fun() -> []),fun _ -> false) with
                 | None -> FSharpMethodGroup("",[| |])
-                | Some (items, denv,_, m) -> FSharpMethodGroup.Create(infoReader,m,denv,items |> List.map (fun x -> x.Item)))
+                | Some (items, denv, _, m) -> FSharpMethodGroup.Create(infoReader, m, denv, items |> List.map (fun x -> x.ItemWithInst)))
             (fun msg -> 
                 FSharpMethodGroup(msg,[| |]))
 
-    member scope.GetMethodsAsSymbols (ctok, line, lineStr, colAtEndOfNames, names) =
+    member __.GetMethodsAsSymbols (ctok, line, lineStr, colAtEndOfNames, names) =
         match GetDeclItemsForNamesAtPosition (ctok, None,Some(names), None, line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors, ResolveOverloads.No,(fun() -> []),fun _ -> false) with
         | None | Some ([],_,_,_) -> None
         | Some (items, denv, _, m) ->
-            let allItems =
-                items
-                |> List.collect (fun item ->
-                    match item.Item with 
-                    | Item.MethodGroup(nm,minfos,orig) -> minfos |> List.map (fun minfo -> Item.MethodGroup(nm,[minfo],orig))  
-                    | Item.CtorGroup(nm,cinfos) -> cinfos |> List.map (fun minfo -> Item.CtorGroup(nm,[minfo])) 
-                    | Item.FakeInterfaceCtor _
-                    | Item.DelegateCtor _ -> [item.Item]
-                    | Item.NewDef _ 
-                    | Item.ILField _ -> []
-                    | Item.Event _ -> []
-                    | Item.RecdField(rfinfo) -> if isFunction g rfinfo.FieldType then [item.Item] else []
-                    | Item.Value v -> if isFunction g v.Type then [item.Item] else []
-                    | Item.UnionCase(ucr,_) -> if not ucr.UnionCase.IsNullary then [item.Item] else []
-                    | Item.ExnCase(ecr) -> if isNil (recdFieldsOfExnDefRef ecr) then [] else [item.Item]
-                    | Item.Property(_,pinfos) -> 
-                        let pinfo = List.head pinfos 
-                        if pinfo.IsIndexer then [item.Item] else []
-#if EXTENSIONTYPING
-                    | Params.ItemIsWithStaticArguments m g _ -> [item.Item] // we pretend that provided-types-with-static-args are method-like in order to get ParamInfo for them
-#endif
-                    | Item.CustomOperation(_name, _helpText, _minfo) -> [item.Item]
-                    | Item.TypeVar _ -> []
-                    | Item.CustomBuilder _ -> []
-                    | _ -> [] )
-
+            let allItems = items |> List.collect (fun item -> ItemDescriptionsImpl.FlattenItems g m item.Item)
             let symbols = allItems |> List.map (fun item -> FSharpSymbol.Create(g, thisCcu, tcImports, item))
             Some (symbols, denv, m)
 
@@ -1466,7 +1105,7 @@ type TypeCheckInfo
           match GetDeclItemsForNamesAtPosition (ctok, None,Some(names), None, line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,ResolveOverloads.Yes,(fun() -> []), fun _ -> false) with
           | None
           | Some ([], _, _, _) -> FSharpFindDeclResult.DeclNotFound FSharpFindDeclFailureReason.Unknown
-          | Some (item :: _ , _, _, _) -> 
+          | Some (item :: _, _, _, _) -> 
 
               // For IL-based entities, switch to a different item. This is because
               // rangeOfItem, ccuOfItem don't work on IL methods or fields.
@@ -1484,7 +1123,7 @@ type TypeCheckInfo
               let fail defaultReason = 
                   match item with            
 #if EXTENSIONTYPING
-                  | Params.ItemIsProvidedType g (tcref) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.ProvidedType(tcref.DisplayName))
+                  | ItemDescriptionsImpl.ItemIsProvidedType g (tcref) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.ProvidedType(tcref.DisplayName))
                   | Item.CtorGroup(name, ProvidedMeth(_)::_)
                   | Item.MethodGroup(name, ProvidedMeth(_)::_, _)
                   | Item.Property(name, ProvidedProp(_)::_) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.ProvidedMember(name))
@@ -1507,24 +1146,24 @@ type TypeCheckInfo
     member scope.GetSymbolUseAtLocation (ctok, line, lineStr, colAtEndOfNames, names) =
         match GetDeclItemsForNamesAtPosition (ctok, None,Some(names), None, line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors, ResolveOverloads.Yes,(fun() -> []), fun _ -> false) with
         | None | Some ([], _, _, _) -> None
-        | Some (item :: _ , denv, _, m) -> 
+        | Some (item :: _, denv, _, m) -> 
             let symbol = FSharpSymbol.Create(g, thisCcu, tcImports, item.Item)
             Some (symbol, denv, m)
 
     member scope.PartialAssemblySignature() = FSharpAssemblySignature(g, thisCcu, tcImports, None, ccuSig)
 
-    member scope.AccessRights =  tcAccessRights
+    member __.AccessRights =  tcAccessRights
 
-    member scope.GetReferencedAssemblies() = 
+    member __.GetReferencedAssemblies() = 
         [ for x in tcImports.GetImportedAssemblies() do 
                 yield FSharpAssembly(g, tcImports, x.FSharpViewOfMetadata) ]
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
-    member scope.GetFormatSpecifierLocations() = 
+    member __.GetFormatSpecifierLocations() = 
          sSymbolUses.GetFormatSpecifierLocations() 
 
     // Not, this does not have to be a SyncOp, it can be called from any thread
-    member scope.GetSemanticClassification(range: range option) : (range * SemanticClassificationType) [] =
+    member __.GetSemanticClassification(range: range option) : (range * SemanticClassificationType) [] =
         let (|LegitTypeOccurence|_|) = function
             | ItemOccurence.UseInType
             | ItemOccurence.UseInAttribute
@@ -1533,7 +1172,7 @@ type TypeCheckInfo
             | ItemOccurence.Pattern _ -> Some()
             | _ -> None
 
-        let inline (|OptionalArgumentAttribute|_|) ttype =
+        let (|OptionalArgumentAttribute|_|) ttype =
             match ttype with
             | TType.TType_app(tref, _) when tref.Stamp = g.attrib_OptionalArgumentAttribute.TyconRef.Stamp -> Some()
             | _ -> None
@@ -1593,7 +1232,7 @@ type TypeCheckInfo
                Some (m, SemanticClassificationType.Function)
             | CNR(_, Item.RecdField EnumCaseFieldInfo, _, _, _, _, m) ->
                 Some (m, SemanticClassificationType.Enumeration)
-            | CNR(_, Item.MethodGroup(_, _, _), _, _, _, _, m) ->
+            | CNR(_, Item.MethodGroup _, _, _, _, _, m) ->
                 Some (m, SemanticClassificationType.Function)
             // custom builders, custom operations get colored as keywords
             | CNR(_, (Item.CustomBuilder _ | Item.CustomOperation _), ItemOccurence.Use, _, _, _, m) ->
@@ -1628,12 +1267,12 @@ type TypeCheckInfo
         |> Seq.toArray
         |> Array.append (sSymbolUses.GetFormatSpecifierLocations() |> Array.map (fun m -> m, SemanticClassificationType.Printf))
 
-    member x.ScopeResolutions = sResolutions
-    member x.ScopeSymbolUses = sSymbolUses
-    member x.TcGlobals = g
-    member x.TcImports = tcImports
-    member x.CcuSig = ccuSig
-    member x.ThisCcu = thisCcu
+    member __.ScopeResolutions = sResolutions
+    member __.ScopeSymbolUses = sSymbolUses
+    member __.TcGlobals = g
+    member __.TcImports = tcImports
+    member __.CcuSig = ccuSig
+    member __.ThisCcu = thisCcu
 
     /// Find the most precise display context for the given line and column.
     member x.GetBestDisplayEnvForPos cursorPos  = GetBestEnvForPos cursorPos
@@ -2145,7 +1784,7 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
         match details with
         | None -> 
             return dflt
-        | Some (_ , Some builder, _) when not builder.IsAlive -> 
+        | Some (_, Some builder, _) when not builder.IsAlive -> 
             System.Diagnostics.Debug.Assert(false,"unexpected dead builder") 
             return dflt
         | Some (scope, builderOpt, reactor) -> 
@@ -2160,7 +1799,7 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
         match details with
         | None -> 
             dflt()
-        | Some (_ , Some builder, _) when not builder.IsAlive -> 
+        | Some (_, Some builder, _) when not builder.IsAlive -> 
             System.Diagnostics.Debug.Assert(false,"unexpected dead builder") 
             dflt()
         | Some (scope, builderOpt, ops) -> 

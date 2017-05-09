@@ -1,0 +1,26 @@
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<!--
+***********************************************************************************************
+Microsoft.FSharp.NetSdk.props
+
+WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and have
+          created a backup copy.  Incorrect changes to this file will make it
+          impossible to load or build your projects from the command-line or the IDE.
+
+***********************************************************************************************
+-->
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>                <!--- Do not glob F# source files -->
+    <DefaultProjectTypeGuid Condition=" '$(DefaultProjectTypeGuid)' == '' ">{F2A71F9B-5D33-465A-A702-920D77279786}</DefaultProjectTypeGuid>         <!-- F# project type -->
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(MSBuildRuntimeType)' == 'core' ">
+    <FscToolPath Condition="'$(FscToolPath)' == ''">$(MSBuildThisFileDirectory)</FscToolPath>
+    <FscToolExe Condition="'$(OS)' != 'Unix' and '$(FscToolExe)' == ''">RunFsc.cmd</FscToolExe>
+    <FscToolExe Condition="'$(OS)' == 'Unix' and '$(FscToolExe)' == ''">RunFsc.sh</FscToolExe>
+  </PropertyGroup>
+
+</Project>

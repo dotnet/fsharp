@@ -53,7 +53,9 @@ let mkUnderscoreRecdField m = LongIdentWithDots([ident("_", m)], []), false
 let mkRecdField lidwd = lidwd, true
 
 let mkSynDoBinding (vis,strict,expr,m) = 
-    if Option.isSome vis then errorR(Error(FSComp.SR.parsDoCannotHaveVisibilityDeclarations(),m));
+    match vis with
+    | Some vis -> errorR(Error(FSComp.SR.parsDoCannotHaveVisibilityDeclarations (vis.ToString()),m))
+    | None -> ()
     Binding (None,
              (if strict then DoBinding else StandaloneExpression),
              false,false,[],PreXmlDoc.Empty,SynInfo.emptySynValData,
@@ -546,7 +548,9 @@ interactiveDefns:
 /* An expression as part of one interaction in F# Interactive */
 interactiveExpr:
   | opt_attributes opt_declVisibility declExpr
-      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(),rhs parseState 3))
+      { match $2 with
+        | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()),rhs parseState 3))
+        | _ -> ()
         let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] in 
         attrDecls @ [ mkSynDoDecl($3)] }
 
@@ -730,14 +734,15 @@ moduleSpfn:
       { if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2))
         let isRec, path, xml, vis = $3 
         if isRec then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidUseOfRec())
-        if List.length path <> 1 then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName())
-        if List.length $1 <> 0   then raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviation())
-        if Option.isSome vis then raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreVisibilityOnModuleAbbreviationAlwaysPrivate())
-        SynModuleSigDecl.ModuleAbbrev(List.head path,$5,rhs2 parseState 3 5) } 
+        if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName())
+        if not (isNil $1) then raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviation())
+        match vis with
+        | Some vis -> raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreVisibilityOnModuleAbbreviationAlwaysPrivate(vis.ToString()))
+        | _ -> SynModuleSigDecl.ModuleAbbrev(List.head path,$5,rhs2 parseState 3 5) } 
 
   | opt_attributes opt_declVisibility  moduleIntro colonOrEquals moduleSpecBlock
       { let isRec, path, xml, vis = $3 
-        if List.length path <> 1 then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleDefnMustBeSimpleName())
+        if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleDefnMustBeSimpleName())
         if isRec then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidUseOfRec())
         let info = ComponentInfo($1,[],[],path,xml,false,vis,rhs parseState 3)
         if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2))
@@ -1131,17 +1136,23 @@ moduleDefnsOrExprPossiblyEmpty:
 /* A naked expression is only allowed at the start of a module/file, or straight after a topSeparators */
 moduleDefnsOrExpr:
   | opt_attributes opt_declVisibility declExpr topSeparators moduleDefnsOrExpr 
-      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(),rhs parseState 3))
+      { match $2 with
+        | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()),rhs parseState 3))
+        | _ -> ()
         let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
         attrDecls @ mkSynDoDecl ($3) :: $5 }
 
   | opt_attributes opt_declVisibility declExpr topSeparators
-      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(),rhs parseState 3))
+      { match $2 with
+        | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()),rhs parseState 3))
+        | _ -> ()
         let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
         attrDecls @ [ mkSynDoDecl($3) ] }
 
   | opt_attributes opt_declVisibility declExpr
-      { if Option.isSome $2 then errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(),rhs parseState 3))
+      { match $2 with
+        | Some vis -> errorR(Error(FSComp.SR.parsUnexpectedVisibilityDeclaration(vis.ToString()),rhs parseState 3))
+        | _ -> ()
         let attrDecls = if not (isNil $1) then [ SynModuleDecl.Attributes ($1, rangeOfNonNilAttrs $1) ] else [] 
         attrDecls @ [ mkSynDoDecl($3) ] }
 
@@ -1227,12 +1238,14 @@ moduleDefn:
         | Choice1Of2 eqn -> 
             if Option.isSome $2 then errorR(Error(FSComp.SR.parsVisibilityDeclarationsShouldComePriorToIdentifier(),rhs parseState 2))
             if isRec then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsInvalidUseOfRec())
-            if List.length path <> 1 then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName())
-            if List.length $1 <> 0   then raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviation())
-            if Option.isSome vis then raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviationAlwaysPrivate())
+            if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName())
+            if not (isNil $1) then raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviation())
+            match vis with
+            | Some vis -> raiseParseErrorAt (rhs parseState 1) (FSComp.SR.parsIgnoreAttributesOnModuleAbbreviationAlwaysPrivate(vis.ToString()))
+            | _ -> ()
             [ SynModuleDecl.ModuleAbbrev(List.head path,eqn,(rhs parseState 3, eqn) ||> unionRangeWithListBy (fun id -> id.idRange) ) ]
         | Choice2Of2 def -> 
-            if List.length path <> 1 then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName())
+            if not (isSingleton path) then raiseParseErrorAt (rhs parseState 3) (FSComp.SR.parsModuleAbbreviationMustBeSimpleName())
             let info = ComponentInfo(attribs,[],[],path,xml,false,vis,rhs parseState 3)
             [ SynModuleDecl.NestedModule(info, isRec, def, false,(rhs2 parseState 3 4, def) ||> unionRangeWithListBy (fun d -> d.Range) ) ] }
 
@@ -1693,7 +1706,10 @@ memberCore:
                    let memFlags = memFlagsBuilder memberKind
 
                    let valSynInfo = 
-                       let adjustValueArg valueArg = if List.length valueArg = 1 then valueArg else SynInfo.unnamedTopArg
+                       let adjustValueArg valueArg = 
+                           match valueArg with
+                           | [_] -> valueArg
+                           | _ -> SynInfo.unnamedTopArg
 
                        match memberKind, valSynInfo, memFlags.IsInstance with 
                        | MemberKind.PropertyGet,SynValInfo ([],_ret),         false
@@ -2362,9 +2378,9 @@ defnBindings:
         BindingSetPreAttrs(mLetKwd,isRec,isUse,
             (fun attrs vis -> 
                 // apply the builder
-                let binds = localBindingsBuilder attrs vis mLetKwd 
-                if not isRec && List.length binds > 1 then 
-                      reportParseErrorAt mLetKwd (FSComp.SR.parsLetAndForNonRecBindings()) 
+                let binds = localBindingsBuilder attrs vis mLetKwd
+                if not isRec && not (isNilOrSingleton binds) then 
+                      reportParseErrorAt mLetKwd (FSComp.SR.parsLetAndForNonRecBindings())
                 [],binds), 
             bindingSetRange) }
 
@@ -2401,10 +2417,10 @@ hardwhiteLetBindings:
 
         // the first binding swallow any attributes prior to the 'let' 
         BindingSetPreAttrs(mLetKwd,isRec,isUse,
-          (fun attrs vis -> 
-            let binds = localBindingsBuilder attrs vis mLetKwd 
-            if not isRec && List.length binds > 1 then 
-                    reportParseErrorAt mLetKwd (FSComp.SR.parsLetAndForNonRecBindings()) 
+          (fun attrs vis ->
+            let binds = localBindingsBuilder attrs vis mLetKwd
+            if not isRec && not (isNilOrSingleton binds) then
+                reportParseErrorAt mLetKwd (FSComp.SR.parsLetAndForNonRecBindings())
             [],binds),
           bindingSetRange), (unionRanges mLetKwd bindingSetRange) }
 
@@ -2810,7 +2826,7 @@ atomicPattern:
       { SynPat.OptionalVal($2,lhs parseState) } 
   | atomicPatternLongIdent %prec prec_atompat_pathop 
       { let vis,lidwd = $1 
-        if List.length lidwd.Lid > 1 || (let c = (List.head lidwd.Lid).idText.[0] in Char.IsUpper(c) && not (Char.IsLower c)) 
+        if not (isNilOrSingleton lidwd.Lid) || (let c = (List.head lidwd.Lid).idText.[0] in Char.IsUpper(c) && not (Char.IsLower c)) 
         then mkSynPatMaybeVar lidwd vis (lhs parseState)
         else mkSynPatVar vis (List.head lidwd.Lid) }
   | constant 

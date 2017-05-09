@@ -86,7 +86,7 @@
     <Compile Include="CodeFix\AddOpenCodeFixProvider.fs" />
     <Compile Include="CodeFix\ProposeUppercaseLabel.fs" />
     <Compile Include="CodeFix\ReplaceWithSuggestion.fs" />
-    <Compile Include="CodeFix\PrefixUnusedValueWithUnderscore.fs" />
+    <Compile Include="CodeFix\RenameUnusedValue.fs" />
     <Compile Include="CodeFix\ImplementInterfaceCodeFixProvider.fs" />
     <Compile Include="CodeFix\SimplifyName.fs" />
     <Compile Include="CodeFix\RemoveUnusedOpens.fs" />

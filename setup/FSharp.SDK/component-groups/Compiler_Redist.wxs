@@ -15,6 +15,8 @@
       <ComponentRef Id="Compiler_Redist_FSharp.Compiler.Server.Shared.dll" />
       <ComponentRef Id="Compiler_Redist_Microsoft.FSharp.targets" />
       <ComponentRef Id="Compiler_Redist_Microsoft.Portable.FSharp.targets" />
+      <ComponentRef Id="Compiler_Redist_Microsoft.FSharp.NetSdk.props" />
+      <ComponentRef Id="Compiler_Redist_Microsoft.FSharp.NetSdk.targets" />
       <ComponentRef Id="Compiler_Redist_SupportedRuntimes.xml" />
       <ComponentRef Id="Compiler_Redist_RegistryKeys_CompilerLocation" />
 
@@ -54,6 +56,7 @@
         <!-- F# compiler -->
         <File Id="FSharp_Core_Sigdata_File" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.sigdata" />
         <File Id="FSharp_Core_Optdata_File" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.optdata" />
+        <File Id="FSharp_Core_Xml_File" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.xml" />
       </Component>
 
       <Component Id="Compiler_Redist_FSharp.Build.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Build.dll, $(var.LocaleCode)))">
@@ -115,6 +118,14 @@
         <File Id="Compiler_Redist_Microsoft.Portable.FSharp.targets" Source="$(var.BinariesDir)\net40\bin\Microsoft.Portable.FSharp.targets" />
       </Component>
 
+      <Component Id="Compiler_Redist_Microsoft.FSharp.NetSdk.props" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.FSharp.NetSdk.props, $(var.LocaleCode)))">
+        <File Id="Compiler_Redist_Microsoft.FSharp.NetSdk.props" Source="$(var.BinariesDir)\net40\bin\Microsoft.FSharp.NetSdk.props" />
+      </Component>
+
+      <Component Id="Compiler_Redist_Microsoft.FSharp.NetSdk.targets" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.FSharp.NetSdk.targets, $(var.LocaleCode)))">
+        <File Id="Compiler_Redist_Microsoft.FSharp.NetSdk.targets" Source="$(var.BinariesDir)\net40\bin\Microsoft.FSharp.NetSdk.targets" />
+      </Component>
+
       <Component Id="Compiler_Redist_SupportedRuntimes.xml" Guid="$(fsharp.guid(Compiler_Redist_SupportedRuntimes.xml, $(var.LocaleCode)))">
         <File Id="Compiler_Redist_SupportedRuntimes.xml" Source="$(var.FSharpTreeRoot)\vsintegration\src\SupportedRuntimes\SupportedRuntimes.xml" />
       </Component>
@@ -125,8 +136,10 @@
           <RegistryValue Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]" Type="string" />
         </RegistryKey>
         <RegistryKey Root="HKLM" Key="Software\Microsoft\VisualStudio\15.0\MSBuild\SafeImports" ForceCreateOnInstall="yes" ForceDeleteOnUninstall="yes">
-         <RegistryValue Name="Microsoft.FSharp.Targets" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]Microsoft.FSharp.Targets" Type="string" />
+          <RegistryValue Name="Microsoft.FSharp.Targets" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]Microsoft.FSharp.Targets" Type="string" />
           <RegistryValue Name="Microsoft.Portable.FSharp.Targets" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]Microsoft.Portable.FSharp.Targets" Type="string" />
+          <RegistryValue Name="Microsoft.FSharp.NetSdk.props" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]Microsoft.FSharp.NetSdk.props" Type="string" />
+          <RegistryValue Name="Microsoft.FSharp.NetSdk.targets" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]Microsoft.FSharpNetSdk.targets" Type="string" />
         </RegistryKey>
         <RegistryKey Root="HKLM" Key="Software\Microsoft\VisualStudio\15.0\Setup\F#" ForceCreateOnInstall="yes" ForceDeleteOnUninstall="yes">
           <RegistryValue Name="ProductDir" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]" Type="string" />

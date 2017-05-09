@@ -14,8 +14,8 @@ open Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.QuickInfo
 
 open Microsoft.VisualStudio.Language.Intellisense
 open Microsoft.VisualStudio.Utilities
+open Microsoft.VisualStudio.PlatformUI
 
-open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler
 
 open Internal.Utilities.StructuredFormat
@@ -44,9 +44,7 @@ type internal QuickInfoViewProvider
         glyphService: IGlyphService
     ) =
 
-    do Application.ResourceAssembly <- typeof<Microsoft.VisualStudio.FSharp.UIResources.Strings>.Assembly
-
-    let styles = ResourceDictionary(Source = Uri("HyperlinkStyles.xaml", UriKind.Relative))
+    let styles = ResourceDictionary(Source = Uri(@"/FSharp.UIResources;component/HyperlinkStyles.xaml", UriKind.Relative))
 
     let getStyle() : Style =
         let key =
@@ -67,11 +65,18 @@ type internal QuickInfoViewProvider
         |> typeMap.Value.GetClassificationType
         |> formatMap.Value.GetTextProperties
     
-    let formatText (navigation: QuickInfoNavigation) (content: Layout.TaggedText seq) : IDeferredQuickInfoContent =
+    let formatText (navigation: QuickInfoNavigation) (content: seq<Layout.TaggedText>) : IDeferredQuickInfoContent =
 
         let navigateAndDismiss range _ =
             navigation.NavigateTo range
             SessionHandling.currentSession |> Option.iter ( fun session -> session.Dismiss() )
+
+        let secondaryToolTip range =
+            let t = ToolTip(Content = navigation.RelativePath range)
+            DependencyObjectExtensions.SetDefaultTextProperties(t, formatMap.Value)
+            let color = VSColorTheme.GetThemedColor(EnvironmentColors.ToolTipBrushKey)
+            t.Background <- Media.SolidColorBrush(Media.Color.FromRgb(color.R, color.G, color.B))
+            t
 
         let inlines = 
             seq { 
@@ -80,7 +85,7 @@ type internal QuickInfoViewProvider
                     let inl =
                         match taggedText with
                         | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->                        
-                            let h = Documents.Hyperlink(run, ToolTip = nav.Range.FileName)
+                            let h = Documents.Hyperlink(run, ToolTip = secondaryToolTip nav.Range)
                             h.Click.Add <| navigateAndDismiss nav.Range
                             h :> Documents.Inline
                         | _ -> run :> _
@@ -102,10 +107,14 @@ type internal QuickInfoViewProvider
         { new IDeferredQuickInfoContent with 
             member x.Create() = TextBlock(Visibility = Visibility.Collapsed) :> FrameworkElement }
 
-    let createDeferredContent (symbolGlyph, mainDescription, documentation) =
-        QuickInfoDisplayDeferredContent(symbolGlyph, null, mainDescription, documentation, empty, empty, empty, empty)
-
-    member __.ProvideContent(glyph: Glyph, description: TaggedText seq, documentation: TaggedText seq, navigation: QuickInfoNavigation) =
-        let navigableText = formatText navigation
+    member __.ProvideContent(glyph: Glyph, description, documentation, typeParameterMap, usage, exceptions, navigation: QuickInfoNavigation) =
+        let navigableText x = formatText navigation x
         let glyphContent = SymbolGlyphDeferredContent(glyph, glyphService)
-        createDeferredContent(glyphContent, navigableText description, navigableText documentation)
+        QuickInfoDisplayDeferredContent
+            (glyphContent, null, 
+             mainDescription = navigableText description, 
+             documentation = navigableText documentation,
+             typeParameterMap = navigableText typeParameterMap, 
+             anonymousTypes = empty, 
+             usageText = navigableText usage, 
+             exceptionText = navigableText exceptions)

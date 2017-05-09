@@ -2363,9 +2363,10 @@ and ResolveOverloading
                     
 
                 let bestMethods =
-                    applicableMeths |> List.choose (fun candidate -> 
-                        if applicableMeths |> List.forall (fun other -> 
-                             p13 candidate === p13 other || // REVIEW: change this needless use of pointer equality to be an index comparison
+                    let indexedApplicableMeths = applicableMeths |> List.indexed
+                    indexedApplicableMeths |> List.choose (fun (i,candidate) -> 
+                        if indexedApplicableMeths |> List.forall (fun (j,other) -> 
+                             i = j ||
                              let res = better candidate other
                              //eprintfn "\n-------\nCandidate: %s\nOther: %s\nResult: %d\n" (NicePrint.stringOfMethInfo amap m denv (fst candidate).Method) (NicePrint.stringOfMethInfo amap m denv (fst other).Method) res
                              res > 0) then 

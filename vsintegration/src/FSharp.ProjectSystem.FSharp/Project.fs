@@ -1995,7 +1995,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     (cmd = (uint32)VSProjectConstants.MoveUpCmd.ID) then
 
                     result <- result ||| QueryStatusResult.SUPPORTED
-                    if FSharpFileNode.CanMoveUp(x) then
+                    if noBuildInProgress && root.GetSelectedNodes().Count < 2 && FSharpFileNode.CanMoveUp(x) then
                         result <- result ||| QueryStatusResult.ENABLED
                     VSConstants.S_OK
 
@@ -2003,7 +2003,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     (cmd = (uint32)VSProjectConstants.MoveDownCmd.ID) then
 
                     result <- result ||| QueryStatusResult.SUPPORTED
-                    if FSharpFileNode.CanMoveDown(x) then
+                    if noBuildInProgress && root.GetSelectedNodes().Count < 2 && FSharpFileNode.CanMoveDown(x) then
                         result <- result ||| QueryStatusResult.ENABLED
                     VSConstants.S_OK
 
@@ -2822,4 +2822,5 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             inherit SelectionListener(serviceProvider)
 
             override x.OnElementValueChanged(_elementid, _varValueOld, _varValueNew) = VSConstants.S_OK
+
 

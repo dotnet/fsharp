@@ -33,18 +33,20 @@
                 <dependency id="System.Threading.Tasks.Parallel" version="4.0.1" />
                 <dependency id="System.Threading.Thread" version="4.0.0" />
                 <dependency id="System.Threading.ThreadPool" version="4.0.10" />
-                <dependency id="System.ValueTuple" version="4.0.0-rc3-24212-01" />
+                <dependency id="System.ValueTuple" version="4.3.0" />
                 <dependency id="Microsoft.DiaSymReader.PortablePdb" version="1.1.0" />
                 <dependency id="Microsoft.DiaSymReader" version="1.0.8" />
             </group>
         </dependencies>
     </metadata>
     <files>
-        <file src="fsc.exe"                 target="lib/netstandard1.6" />
-        <file src="FSharp.Compiler.dll"     target="lib/netstandard1.6" />
-        <file src="default.win32manifest"   target="runtimes/any/native/" />
-        <file src="FSharp.Build.dll"        target="lib/netstandard1.6" />
-        <file src="Microsoft.FSharp.targets" target="runtimes/any/native/" />
+        <file src="fsc.exe"                           target="lib/netstandard1.6" />
+        <file src="FSharp.Compiler.dll"               target="lib/netstandard1.6" />
+        <file src="default.win32manifest"             target="runtimes/any/native/" />
+        <file src="FSharp.Build.dll"                  target="lib/netstandard1.6" />
+        <file src="Microsoft.FSharp.targets"          target="runtimes/any/native/" />
         <file src="Microsoft.Portable.FSharp.targets" target="runtimes/any/native/" />
+        <file src="Microsoft.FSharp.NetSdk.targets"   target="runtimes/any/native/" />
+        <file src="Microsoft.FSharp.NetSdk.props"     target="runtimes/any/native/" />
     </files>
 </package>

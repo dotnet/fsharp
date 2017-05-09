@@ -67,8 +67,8 @@ module private UnusedOpens =
                 [ yield ent.Namespace
                   yield Some ent.AccessPath
                   yield getAutoOpenAccessPath ent
-                  //for path in ent.AllCompilationPaths do
-                   // yield Some path 
+                  for path in ent.AllCompilationPaths do
+                    yield Some path 
                 ]
         | None -> []
 
