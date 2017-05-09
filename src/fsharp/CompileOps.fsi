@@ -30,7 +30,7 @@ open Microsoft.FSharp.Compiler.ExtensionTyping
 
 #if DEBUG
 
-#if COMPILED_AS_LANGUAGE_SERVICE_DLL
+#if COMPILER_SERVICE
 module internal CompilerService =
 #else
 module internal FullCompiler =
@@ -91,7 +91,7 @@ val GetDiagnosticNumber : PhasedDiagnostic -> int
 val SplitRelatedDiagnostics : PhasedDiagnostic -> PhasedDiagnostic * PhasedDiagnostic list
 
 /// Output an error to a buffer
-val OutputPhasedDiagnostic : StringBuilder -> PhasedDiagnostic -> isError: bool -> unit
+val OutputPhasedDiagnostic : StringBuilder -> PhasedDiagnostic -> flattenErrors: bool -> unit
 
 /// Output an error or warning to a buffer
 val OutputDiagnostic : implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle *  isError:bool -> StringBuilder -> PhasedDiagnostic -> unit
@@ -539,9 +539,7 @@ type TcConfig =
     member sqmNumOfSourceFiles : int
     member sqmSessionStartedTime : int64
     member copyFSharpCore : bool
-#if FSI_SHADOW_COPY_REFERENCES
     member shadowCopyReferences : bool
-#endif
     static member Create : TcConfigBuilder * validate: bool -> TcConfig
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,

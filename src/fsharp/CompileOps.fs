@@ -58,20 +58,14 @@ open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
 
 #if DEBUG
-
-#if COMPILED_AS_LANGUAGE_SERVICE_DLL
+[<AutoOpen>]
+#if COMPILER_SERVICE
 module internal CompilerService =
 #else
 module internal FullCompiler =
 #endif
     let showAssertForUnexpectedException = ref true
-#if COMPILED_AS_LANGUAGE_SERVICE_DLL
-open CompilerService
-#else
-open FullCompiler
-#endif
-
-#endif
+#endif // DEBUG
 
 //----------------------------------------------------------------------------
 // Some Globals
@@ -1639,12 +1633,48 @@ let GetFSharpCoreReferenceUsedByCompiler(useSimpleResolution) =
     // So use the FSharp.Core.dll from alongside the fsc compiler.
     // This can also be used for the out of gac work on DEV15
     let fscCoreLocation = 
-        let fscLocation = typeof<TypeInThisAssembly>.Assembly.Location
+        let fscLocation = typeof<Microsoft.FSharp.Core.MeasureAttribute>.Assembly.Location
         Path.Combine(Path.GetDirectoryName(fscLocation), fsCoreName + ".dll")
     if File.Exists(fscCoreLocation) then fscCoreLocation
-    else failwithf "Internal error: Could not find %s" fsCoreName
+    else failwithf "Internal error: Could not find %s" fscCoreLocation
 #else
-    // TODO:  Remove this when we do out of GAC for DEV 15 because above code will work everywhere.
+#if COMPILER_SERVICE_DLL
+    // The component:
+    //    FSharp.Compiler.Service.dll
+    // assumes for the version of FSharp.Core running in the hosting environment when processing
+    // scripts and out-of-project files.
+    let foundReference =
+        match System.Reflection.Assembly.GetEntryAssembly() with
+        | null -> None
+        | entryAssembly ->
+            entryAssembly.GetReferencedAssemblies()
+            |> Array.tryPick (fun name ->
+                if name.Name = fsCoreName then Some(name.ToString())
+                else None)
+
+    // if not we use the referenced FSharp.Core from this project
+    match foundReference with
+    | Some fsharpCore -> fsharpCore
+    | None ->                        
+#endif
+    // All of these:
+    //    Visual F# fsc.exe
+    //    Visual F# IDE Tools FSharp.LanguageService.Compiler.dll 
+    //    FSharp.Compiler.Tools nuget package fsc.exe
+    //    Mono /usr/lib/mono/fsharp/fsc.exe
+    //
+    // assume a reference to the latest .NET Framework FSharp.Core with which those tools are built, e.g.
+    //      "FSharp.Core, Version=4.4.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+    // This is always known to ship as part of an installation of any delivery of the F# Compiler.
+    // This reference gets resolved either using the compiler tools directory itself, or using the 
+    // AssemblyFoldersEx key on Windows, or the /usr/lib/mono/4.5/FSharp.Core.dll on Mono
+    // It doesn't get resolved to the GAC.
+    //
+    // In pretty much all these cases we could probably look directly in the folder where the relevant tool is located.
+    // Even in the case of FSharp.LanguageService.Compiler.dll this component is installed into
+    //     ...Program Files (x86)\Microsoft Visual Studio\2017\Professional\Common7\IDE\CommonExtensions\Microsoft\FSharp
+    // However that DLL can also be in the GAC
+    //
     typeof<TypeInThisAssembly>.Assembly.GetReferencedAssemblies()
     |> Array.pick (fun name ->
         if name.Name = fsCoreName then Some(name.ToString())
@@ -1683,13 +1713,30 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
           yield "System.Collections" // System.Collections.Generic.List<T>
           yield "System.Runtime.Numerics" // BigInteger
           yield "System.Threading"  // OperationCanceledException
+#if !COMPILER_SERVICE_DLL // avoid a default reference to System.ValueTuple.dll when compiling with FSharp.Compiler.Service.dll. This is an inconsistency that is still to be ironed out.
           yield "System.ValueTuple"
+#endif
 
           yield "System.Web"
           yield "System.Web.Services"
           yield "System.Windows.Forms"
           yield "System.Numerics" 
-     ]
+#if COMPILER_SERVICE_DLL
+     else
+          yield Path.Combine(Path.GetDirectoryName(typeof<System.Object>.Assembly.Location),"mscorlib.dll"); // mscorlib
+          yield typeof<System.Console>.Assembly.Location; // System.Console
+          yield typeof<System.ComponentModel.DefaultValueAttribute>.Assembly.Location; // System.Runtime
+          yield typeof<System.ComponentModel.PropertyChangedEventArgs>.Assembly.Location; // System.ObjectModel             
+          yield typeof<System.IO.BufferedStream>.Assembly.Location; // System.IO
+          yield typeof<System.Linq.Enumerable>.Assembly.Location; // System.Linq
+          //yield typeof<System.Xml.Linq.XDocument>.Assembly.Location; // System.Xml.Linq
+          yield typeof<System.Net.WebRequest>.Assembly.Location; // System.Net.Requests
+          yield typeof<System.Numerics.BigInteger>.Assembly.Location; // System.Runtime.Numerics
+          yield typeof<System.Threading.Tasks.TaskExtensions>.Assembly.Location; // System.Threading.Tasks
+          yield typeof<Microsoft.FSharp.Core.MeasureAttribute>.Assembly.Location; // FSharp.Core
+#endif
+    ]
+
 
 // A set of assemblies to always consider to be system assemblies.  A common set of these can be used a shared 
 // resources between projects in the compiler services.  Also all assembles where well-known system types exist
@@ -1698,7 +1745,7 @@ let SystemAssemblies () =
    HashSet
     [ yield "mscorlib"
       yield "System.Runtime"
-      yield "FSharp.Core"
+      yield GetFSharpCoreLibraryName() 
       yield "System"
       yield "System.Xml" 
       yield "System.Runtime.Remoting"
@@ -1804,8 +1851,14 @@ let SystemAssemblies () =
 // REVIEW: it isn't clear if there is any negative effect
 // of leaving an assembly off this list.
 let BasicReferencesForScriptLoadClosure(useSimpleResolution, useFsiAuxLib, assumeDotNetFramework) = 
-    [ if assumeDotNetFramework then 
+    [
+     if assumeDotNetFramework then 
+         
+#if COMPILER_SERVICE_DLL && NETSTANDARD1_6
+         yield Path.Combine(Path.GetDirectoryName(typeof<System.Object>.Assembly.Location),"mscorlib.dll"); // mscorlib
+#else
          yield "mscorlib"
+#endif
          yield GetFSharpCoreReferenceUsedByCompiler(useSimpleResolution) ] @ // Need to resolve these explicitly so they will be found in the reference assemblies directory which is where the .xml files are.
     DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) @ 
     [ if useFsiAuxLib then yield GetFsiLibraryName () ]
@@ -2135,7 +2188,6 @@ type TcConfigBuilder =
 
       /// pause between passes? 
       mutable pause : bool
-      
       /// whenever possible, emit callvirt instead of call
       mutable alwaysCallVirt : bool
 
@@ -2168,7 +2220,12 @@ type TcConfigBuilder =
         System.Diagnostics.Debug.Assert(FileSystem.IsPathRootedShim(implicitIncludeDir), sprintf "implicitIncludeDir should be absolute: '%s'" implicitIncludeDir)
         if (String.IsNullOrEmpty(defaultFSharpBinariesDir)) then 
             failwith "Expected a valid defaultFSharpBinariesDir"
-        { primaryAssembly = PrimaryAssembly.Mscorlib // default value, can be overridden using the command line switch
+        { 
+#if COMPILER_SERVICE_DLL && NETSTANDARD1_6
+          primaryAssembly = PrimaryAssembly.DotNetCore // defaut value, can be overridden using the command line switch
+#else
+          primaryAssembly = PrimaryAssembly.Mscorlib // defaut value, can be overridden using the command line switch
+#endif          
           light = None
           noFeedback=false
           stackReserveSize=None
@@ -2303,7 +2360,11 @@ type TcConfigBuilder =
           sqmSessionStartedTime = System.DateTime.Now.Ticks
           emitDebugInfoInQuotations = false
           exename = None
+#if COMPILER_SERVICE_DLL // FSharp.Compiler.Service doesn't copy FSharp.Core.dll implicitly
+          copyFSharpCore = false
+#else
           copyFSharpCore = true
+#endif
           shadowCopyReferences = false
         }
 
@@ -2446,7 +2507,7 @@ let OpenILBinary(filename,optimizeForMemory,openBinariesInMemory,ilGlobalsOpt, p
           ILBinaryReader.OpenILModuleReaderAfterReadingAllBytes filename opts
       else
         let location =
-#if FSI_SHADOW_COPY_REFERENCES
+#if !FX_RESHAPED_REFLECTION_CORECLR // shadow copy not supported
           // In order to use memory mapped files on the shadow copied version of the Assembly, we `preload the assembly
           // We swallow all exceptions so that we do not change the exception contract of this API
           if shadowCopyReferences then 
@@ -2455,7 +2516,7 @@ let OpenILBinary(filename,optimizeForMemory,openBinariesInMemory,ilGlobalsOpt, p
             with e -> filename
           else
 #else
-            ignore shadowCopyReferences 
+            ignore shadowCopyReferences
 #endif
             filename
         ILBinaryReader.OpenILModuleReader location opts
@@ -2509,7 +2570,6 @@ type AssemblyResolution =
             this.ilAssemblyRef := Some(assRef)
             return assRef
       }
-
 
 //----------------------------------------------------------------------------
 // Names to match up refs and defs for assemblies and modules
@@ -4922,6 +4982,9 @@ module private ScriptPreprocessClosure =
             | CodeContext.Compilation | CodeContext.Evaluation -> ReferenceResolver.RuntimeLike
 #endif
         tcConfigB.framework <- false 
+        tcConfigB.useSimpleResolution <- useSimpleResolution
+        // Indicates that there are some references not in BasicReferencesForScriptLoadClosure which should
+        // be added conditionally once the relevant version of mscorlib.dll has been detected.
         tcConfigB.implicitlyResolveAssemblies <- false
         TcConfig.Create(tcConfigB,validate=true)
         

@@ -1550,8 +1550,8 @@ module internal Salsa =
             member ops.CleanUp vs = VsImpl(vs).CleanUp()
             member ops.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients vs = VsImpl(vs).ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             member ops.AutoCompleteMemberDataTipsThrowsScope message = 
-                ItemDescriptionsImpl.ToolTipFault <- Some message
-                { new System.IDisposable with member x.Dispose() = ItemDescriptionsImpl.ToolTipFault <- None }
+                SymbolHelpers.ToolTipFault <- Some message
+                { new System.IDisposable with member x.Dispose() = SymbolHelpers.ToolTipFault <- None }
             member ops.OutOfConeFilesAreAddedAsLinks = false                
             member ops.SupportsOutputWindowPane = false
             member ops.CleanInvisibleProject vs = VsImpl(vs).CleanInvisibleProject()
