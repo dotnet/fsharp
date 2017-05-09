@@ -28,6 +28,7 @@ type BraceMatchingServiceTests()  =
         OriginalLoadReferences = []
         UnresolvedReferences = None
         ExtraProjectInfo = None
+        Stamp = None
     }
 
     member private this.VerifyNoBraceMatch(fileContents: string, marker: string) =
