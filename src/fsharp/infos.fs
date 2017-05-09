@@ -874,7 +874,7 @@ type MethInfo =
     member x.DeclaringEntityRef   = 
         match x with 
         | ILMeth(_,ilminfo,_) when x.IsExtensionMember  -> ilminfo.DeclaringTyconRef
-        | FSMeth(_,_,vref,_) when x.IsExtensionMember -> vref.TopValActualParent
+        | FSMeth(_,_,vref,_) when x.IsExtensionMember && vref.HasTopValActualParent -> vref.TopValActualParent
         | _ -> tcrefOfAppTy x.TcGlobals x.EnclosingType 
 
     /// Get the information about provided static parameters, if any 

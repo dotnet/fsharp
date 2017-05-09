@@ -508,7 +508,7 @@ module internal SymbolHelpers =
     let GetXmlDocSigOfScopedValRef g (tcref:TyconRef) (vref:ValRef) = 
         let ccuFileName = libFileOfEntityRef tcref
         let v = vref.Deref
-        if v.XmlDocSig = "" then
+        if v.XmlDocSig = "" && v.HasTopValActualParent then
             v.XmlDocSig <- XmlDocSigOfVal g (buildAccessPath vref.TopValActualParent.CompilationPathOpt) v
         Some (ccuFileName, v.XmlDocSig)                
 
@@ -559,7 +559,7 @@ module internal SymbolHelpers =
         if not vref.IsLocalRef then
             let ccuFileName = vref.nlr.Ccu.FileName
             let v = vref.Deref
-            if v.XmlDocSig = "" then
+            if v.XmlDocSig = "" && v.HasTopValActualParent then
                 v.XmlDocSig <- XmlDocSigOfVal g vref.TopValActualParent.CompiledRepresentationForNamedType.Name v
             Some (ccuFileName, v.XmlDocSig)
         else 
@@ -1294,7 +1294,7 @@ module internal SymbolHelpers =
         match item with
         | Item.Value vref | Item.CustomBuilder (_,vref) -> 
             let v = vref.Deref
-            if v.IsModuleBinding then
+            if v.IsModuleBinding && v.HasTopValActualParent then
                 let tyconRef = v.TopValActualParent
                 let paramsString =
                     match v.Typars with

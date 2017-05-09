@@ -7126,7 +7126,7 @@ let XmlDocSigOfVal g path (v:Val) =
           | MemberKind.PropertyGetSet 
           | MemberKind.PropertySet
           | MemberKind.PropertyGet -> "P:",v.PropertyName
-        let path = prependPath path v.TopValActualParent.CompiledName
+        let path = if v.HasTopValActualParent then prependPath path v.TopValActualParent.CompiledName else path
         let parentTypars,methTypars = 
           match PartitionValTypars g v with
           | Some(_,memberParentTypars,memberMethodTypars,_,_) -> memberParentTypars,memberMethodTypars
