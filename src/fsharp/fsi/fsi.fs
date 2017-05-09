@@ -2479,7 +2479,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     let defaultFSharpBinariesDir = 
         let safeExists f = (try File.Exists(f) with _ -> false)
         let containsRequiredFiles =
-            [ "FSharp.Core.dll"; "FSharp.Core.sigdata"; "FSharp.Core.optdata" ]
+            [ "FSharp.Core.dll" ]
             |> Seq.map (fun file -> Path.Combine(defaultFSharpBinariesDir, file))
             |> Seq.forall safeExists
         if containsRequiredFiles then defaultFSharpBinariesDir 

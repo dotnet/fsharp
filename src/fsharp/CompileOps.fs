@@ -1282,7 +1282,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
 #if DEBUG
           Printf.bprintf os "\nStack Trace\n%s\n" (exn.ToString())
           if !showAssertForUnexpectedException then 
-              System.Diagnostics.Debug.Assert(false,sprintf "Bug seen in compiler: %s" (exn.ToString()))
+              System.Diagnostics.Debug.Assert(false,sprintf "Unexpected exception seen in compiler: %s\n%s" s (exn.ToString()))
 #endif
       | FullAbstraction(s,_) -> os.Append(FullAbstractionE().Format s) |> ignore
       | WrappedError (exn,_) -> OutputExceptionR os exn
@@ -1413,7 +1413,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
 #if DEBUG
           Printf.bprintf os "\nStack Trace\n%s\n" (e.ToString())
           if !showAssertForUnexpectedException then 
-              System.Diagnostics.Debug.Assert(false,sprintf "Bug seen in compiler: %s" (e.ToString()))
+              System.Diagnostics.Debug.Assert(false,sprintf "Unknown exception seen in compiler: %s" (e.ToString()))
 #endif
     OutputExceptionR os (err.Exception)
 
@@ -1627,8 +1627,8 @@ let GetFSharpCoreReferenceUsedByCompiler(useSimpleResolution) =
   if useSimpleResolution then 
     GetFSharpCoreLibraryName()+".dll"
   else
-    let fsCoreName = GetFSharpCoreLibraryName()
 #if FX_RESHAPED_REFLECTION
+    let fsCoreName = GetFSharpCoreLibraryName()
     // RESHAPED_REFLECTION does not have Assembly.GetReferencedAssemblies()
     // So use the FSharp.Core.dll from alongside the fsc compiler.
     // This can also be used for the out of gac work on DEV15
@@ -1643,6 +1643,7 @@ let GetFSharpCoreReferenceUsedByCompiler(useSimpleResolution) =
     //    FSharp.Compiler.Service.dll
     // assumes for the version of FSharp.Core running in the hosting environment when processing
     // scripts and out-of-project files.
+    let fsCoreName = GetFSharpCoreLibraryName()
     let foundReference =
         match System.Reflection.Assembly.GetEntryAssembly() with
         | null -> None
@@ -1663,23 +1664,8 @@ let GetFSharpCoreReferenceUsedByCompiler(useSimpleResolution) =
     //    FSharp.Compiler.Tools nuget package fsc.exe
     //    Mono /usr/lib/mono/fsharp/fsc.exe
     //
-    // assume a reference to the latest .NET Framework FSharp.Core with which those tools are built, e.g.
-    //      "FSharp.Core, Version=4.4.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
-    // This is always known to ship as part of an installation of any delivery of the F# Compiler.
-    // This reference gets resolved either using the compiler tools directory itself, or using the 
-    // AssemblyFoldersEx key on Windows, or the /usr/lib/mono/4.5/FSharp.Core.dll on Mono
-    // It doesn't get resolved to the GAC.
-    //
-    // In pretty much all these cases we could probably look directly in the folder where the relevant tool is located.
-    // Even in the case of FSharp.LanguageService.Compiler.dll this component is installed into
-    //     ...Program Files (x86)\Microsoft Visual Studio\2017\Professional\Common7\IDE\CommonExtensions\Microsoft\FSharp
-    // However that DLL can also be in the GAC
-    //
-    typeof<TypeInThisAssembly>.Assembly.GetReferencedAssemblies()
-    |> Array.pick (fun name ->
-        if name.Name = fsCoreName then Some(name.ToString())
-        else None
-    )
+    // assume a reference to the latest .NET Framework FSharp.Core with which those tools are built.
+    typeof<list<int>>.Assembly.Location
 #endif
 let GetFsiLibraryName () = "FSharp.Compiler.Interactive.Settings"  
 

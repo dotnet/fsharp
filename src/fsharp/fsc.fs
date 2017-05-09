@@ -86,15 +86,12 @@ type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameFo
 
         errors <- errors + 1
 
-        match err.Exception with 
-        | InternalError _ 
-        | Failure _ 
-        | :? KeyNotFoundException -> 
-            match tcConfigB.simulateException with
-            | Some _ -> () // Don't show an assert for simulateException case so that unittests can run without an assert dialog.                     
-            | None -> Debug.Assert(false, sprintf "Bug seen in compiler: %s" (err.ToString()))
-        | _ -> 
-            ()
+        match err.Exception, tcConfigB.simulateException with 
+        | InternalError (msg, _), None 
+        | Failure msg, None -> Debug.Assert(false, sprintf "Bug in compiler: %s\n%s" msg (err.Exception.ToString()))
+        | :? KeyNotFoundException, None -> Debug.Assert(false, sprintf "Lookup exception in compiler: %s" (err.Exception.ToString()))
+        | _ ->  ()
+
       elif ReportWarning (tcConfigB.globalWarnLevel, tcConfigB.specificWarnOff, tcConfigB.specificWarnOn) err then
           x.HandleIssue(tcConfigB, err, isError)
     
@@ -435,9 +432,6 @@ let DefaultFSharpBinariesDir =
     let exeName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppDomain.CurrentDomain.FriendlyName)  
     Filename.directoryName exeName
 #endif
-
-let outpath outfile extn =
-  String.concat "." (["out"; Filename.chopExtension (Filename.fileNameOfPath outfile); extn])
 
 //----------------------------------------------------------------------------
 // GenerateInterfaceData, EncodeInterfaceData
@@ -1858,8 +1852,7 @@ let main1(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
 // set up typecheck for given AST without parsing any command line parameters
 let main1OfAst (ctok, referenceResolver, openBinariesInMemory, assemblyName, target, outfile, pdbFile, dllReferences, noframework, exiter, errorLoggerProvider: ErrorLoggerProvider, inputs : ParsedInput list) =
 
-    let defaultFSharpBinariesDir = Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None).Value
-    let tcConfigB = TcConfigBuilder.CreateNew(referenceResolver, defaultFSharpBinariesDir, (*optimizeForMemory*) false, Directory.GetCurrentDirectory(), isInteractive=false, isInvalidationSupported=false)
+    let tcConfigB = TcConfigBuilder.CreateNew(referenceResolver, DefaultFSharpBinariesDir, (*optimizeForMemory*) false, Directory.GetCurrentDirectory(), isInteractive=false, isInvalidationSupported=false)
     tcConfigB.openBinariesInMemory <- openBinariesInMemory
     tcConfigB.framework <- not noframework 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
