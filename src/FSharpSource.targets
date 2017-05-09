@@ -26,21 +26,20 @@
       <Choose>
         <When Condition="'$(ProjectLanguage)' == 'FSharp'">
           <Choose>
+            <!-- Some unit test assemblies must not have strong names since they reference other assemblies that don't have strong names -->
+            <!-- These unit test assemblies can't use InternalsVisibleTo into assemblies with strong names. -->
+            <When Condition="'$(StrongNames)' == 'false'" >
+              <PropertyGroup>
+                <SkipSigning>true</SkipSigning>
+                <UseOpenSourceSign>false</UseOpenSourceSign>
+              </PropertyGroup>
+            </When>
             <!-- In the open source "Mono" build we always fully sign the binaries with the public test.snk, apart from FSharp.Core, which gets the MSFT key -->
             <When Condition="'$(MonoPackaging)' == 'true' AND '$(AssemblyName)'!='FSharp.Core'" >
               <PropertyGroup>
                 <OtherFlags>$(OtherFlags) --keyfile:"$(FSharpSourcesRoot)\fsharp\test.snk"</OtherFlags>
                 <DefineConstants>STRONG_NAME_FSHARP_COMPILER_WITH_TEST_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
-                <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
-                <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
-              </PropertyGroup>
-            </When>
-            <!-- Some unit test assemblies must not have strong names since they reference other assemblies that don't have strong names -->
-            <!-- These unit test assemblies can't use InternalsVisibleTo into assemblies with strong names. -->
-            <When Condition="'$(StrongNames)' == 'false'" >
-              <PropertyGroup>
-                <DefineConstants>NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
                 <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
                 <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
               </PropertyGroup>
@@ -79,7 +78,6 @@
     <Otherwise>
       <PropertyGroup Condition="'$(StrongNames)' != 'true'">
         <!-- For the proto build we don't use strong names. -->
-        <DefineConstants>NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
         <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
         <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
       </PropertyGroup>
