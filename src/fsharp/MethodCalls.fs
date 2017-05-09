@@ -144,7 +144,7 @@ let AdjustCalledArgType (infoReader:InfoReader) isConstraint (calledArg: CalledA
         // If the called method argument is a delegate type, then the caller may provide a function 
         let calledArgTy = 
             let adjustDelegateTy calledTy =
-                let (SigOfFunctionForDelegate(_,delArgTys,_,fty)) = GetSigOfFunctionForDelegate infoReader calledTy m  AccessibleFromSomeFSharpCode
+                let (SigOfFunctionForDelegate(_,delArgTys,_,fty)) = GetSigOfFunctionForDelegate infoReader calledTy m  AccessibleFromSomewhere
                 let delArgTys = if isNil delArgTys then [g.unit_ty] else delArgTys
                 if (fst (stripFunTy g callerArgTy)).Length = delArgTys.Length
                 then fty 
@@ -492,7 +492,7 @@ let ExamineArgumentForLambdaPropagation (infoReader:InfoReader) (arg: AssignedCa
             NoInfo   // not a function type on the called side - no information
     else CalledArgMatchesType(adjustedCalledArgTy)  // not a lambda on the caller side - push information from caller to called
 
-let ExamineMethodForLambdaPropagation(x:CalledMeth<SynExpr>) =
+let ExamineMethodForLambdaPropagation (x:CalledMeth<SynExpr>) =
     let unnamedInfo = x.AssignedUnnamedArgs |> List.mapSquared (ExamineArgumentForLambdaPropagation x.infoReader)
     let namedInfo = x.AssignedNamedArgs |> List.mapSquared (fun arg -> (arg.NamedArgIdOpt.Value, ExamineArgumentForLambdaPropagation x.infoReader arg))
     if unnamedInfo |> List.existsSquared (function CallerLambdaHasArgTypes _ -> true | _ -> false) || 

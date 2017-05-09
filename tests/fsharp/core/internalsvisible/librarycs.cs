@@ -29,3 +29,8 @@ namespace LibraryCS
         public int Public;
     }
 }
+namespace Repro
+{
+    internal delegate string D(int x);
+    internal class C { public C(D d) { } }
+}
