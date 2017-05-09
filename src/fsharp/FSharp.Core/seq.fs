@@ -446,6 +446,7 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Primitives.Basics
+    open Microsoft.FSharp.Collections.SeqComposition
 
     [<RequireQualifiedAccess>]
     [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -459,11 +460,11 @@ namespace Microsoft.FSharp.Collections
         open Microsoft.FSharp.Collections.IEnumerator
 
         // these helpers are just to consolidate the null checking
-        let inline toISeq  (source:seq<'T>)  : ISeq.Core.ISeq<'T> = checkNonNull "source" source;   ISeq.ofSeq source
-        let inline toISeq1 (source1:seq<'T>) : ISeq.Core.ISeq<'T> = checkNonNull "source1" source1; ISeq.ofSeq source1
-        let inline toISeq2 (source2:seq<'T>) : ISeq.Core.ISeq<'T> = checkNonNull "source2" source2; ISeq.ofSeq source2
-        let inline toISeq3 (source3:seq<'T>) : ISeq.Core.ISeq<'T> = checkNonNull "source3" source3; ISeq.ofSeq source3
-        let inline toISeqs (sources:seq<'T>) : ISeq.Core.ISeq<'T> = checkNonNull "sources" sources; ISeq.ofSeq sources
+        let inline toISeq  (source:seq<'T>)  : ISeq<'T> = checkNonNull "source" source;   ISeq.ofSeq source
+        let inline toISeq1 (source1:seq<'T>) : ISeq<'T> = checkNonNull "source1" source1; ISeq.ofSeq source1
+        let inline toISeq2 (source2:seq<'T>) : ISeq<'T> = checkNonNull "source2" source2; ISeq.ofSeq source2
+        let inline toISeq3 (source3:seq<'T>) : ISeq<'T> = checkNonNull "source3" source3; ISeq.ofSeq source3
+        let inline toISeqs (sources:seq<'T>) : ISeq<'T> = checkNonNull "sources" sources; ISeq.ofSeq sources
 
         let mkDelayedSeq (f: unit -> IEnumerable<'T>) = mkSeq (fun () -> f().GetEnumerator())
         let mkUnfoldSeq f x = mkSeq (fun () -> IEnumerator.unfold f x)
