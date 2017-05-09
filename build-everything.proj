@@ -3,8 +3,11 @@
 
   <!-- +++++++++++++++++++++++ Project selection for building +++++++++++++++++++++++++++++++ -->
 
-  <ItemGroup Condition="'$(BUILD_NET40)'=='1'">
+  <ItemGroup Condition="'$(BUILD_NET40_FSHARP_CORE)'=='1'">
     <ProjectsWithNet40 Include="src/fsharp/FSharp.Core/FSharp.Core.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(BUILD_NET40)'=='1'">
     <ProjectsWithNet40 Include="src/fsharp/FSharp.Build/FSharp.Build.fsproj" />
     <ProjectsWithNet40 Include="src/fsharp/FSharp.Compiler/FSharp.Compiler.fsproj" />
     <ProjectsWithNet40 Include="src/fsharp/FSharp.Compiler.Server.Shared/FSharp.Compiler.Server.Shared.fsproj"/>

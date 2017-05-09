@@ -26,6 +26,16 @@
       <Choose>
         <When Condition="'$(ProjectLanguage)' == 'FSharp'">
           <Choose>
+            <!-- Some unit test assemblies must not have strong names since they reference other assemblies that don't have strong names -->
+            <!-- These unit test assemblies can't use InternalsVisibleTo into assemblies with strong names. -->
+            <When Condition="'$(StrongNames)' == 'false'" >
+              <PropertyGroup>
+                <SkipSigning>true</SkipSigning>
+                <UseOpenSourceSign>false</UseOpenSourceSign>
+                <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
+                <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
+              </PropertyGroup>
+            </When>
             <!-- In the open source "Mono" build we always fully sign the binaries with the public test.snk, apart from FSharp.Core, which gets the MSFT key -->
             <When Condition="'$(MonoPackaging)' == 'true' AND '$(AssemblyName)'!='FSharp.Core'" >
               <PropertyGroup>

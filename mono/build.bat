@@ -21,6 +21,7 @@ if not exist %_ngenexe% echo Note: Could not find ngen.exe.
 %_ngenexe% install packages\FSharp.Compiler.Tools.4.0.1.21\tools\fsc.exe
 
 set BUILD_NET40=1
+set BUILD_NET40_FSHARP_CORE=1
 set BUILD_PORTABLE=1
 set TEST_NET40_COREUNIT_SUITE=1
 set TEST_PORTABLE_COREUNIT_SUITE=1
