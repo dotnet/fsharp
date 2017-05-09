@@ -32,6 +32,8 @@
               <PropertyGroup>
                 <SkipSigning>true</SkipSigning>
                 <UseOpenSourceSign>false</UseOpenSourceSign>
+                <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
+                <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
               </PropertyGroup>
             </When>
             <!-- In the open source "Mono" build we always fully sign the binaries with the public test.snk, apart from FSharp.Core, which gets the MSFT key -->
@@ -78,6 +80,7 @@
     <Otherwise>
       <PropertyGroup Condition="'$(StrongNames)' != 'true'">
         <!-- For the proto build we don't use strong names. -->
+        <DefineConstants>NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
         <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
         <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
       </PropertyGroup>
