@@ -261,6 +261,9 @@ and
             project.Disconnect()
         | _ -> ()
 
+    let invalidPathChars = set (Path.GetInvalidPathChars())
+    let isPathWellFormed (path: string) = not (String.IsNullOrWhiteSpace path) && path |> Seq.forall (fun c -> not (Set.contains c invalidPathChars))
+
     override this.Initialize() =
         base.Initialize()
 
@@ -301,9 +304,11 @@ and
         
     /// Sync the information for the project 
     member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, forceUpdate) =
-        let hashSetIgnoreCase x = new HashSet<string>(x, StringComparer.OrdinalIgnoreCase)
-        let updatedFiles = site.SourceFilesOnDisk() |> hashSetIgnoreCase
-        let workspaceFiles = project.GetCurrentDocuments() |> Seq.map (fun file -> file.FilePath) |> hashSetIgnoreCase
+        let wellFormedFilePathSetIgnoreCase (paths: seq<string>) =
+            HashSet(paths |> Seq.filter isPathWellFormed, StringComparer.OrdinalIgnoreCase)
+
+        let updatedFiles = site.SourceFilesOnDisk() |> wellFormedFilePathSetIgnoreCase
+        let workspaceFiles = project.GetCurrentDocuments() |> Seq.map (fun file -> file.FilePath) |> wellFormedFilePathSetIgnoreCase
         
         let mutable updated = forceUpdate
 
@@ -317,8 +322,8 @@ and
                 projectContext.RemoveSourceFile(file)
                 updated <- true
         
-        let updatedRefs = site.AssemblyReferences() |> Seq.filter File.Exists |> hashSetIgnoreCase
-        let workspaceRefs = project.GetCurrentMetadataReferences() |> Seq.map(fun ref -> ref.FilePath) |> hashSetIgnoreCase
+        let updatedRefs = site.AssemblyReferences() |> wellFormedFilePathSetIgnoreCase
+        let workspaceRefs = project.GetCurrentMetadataReferences() |> Seq.map (fun ref -> ref.FilePath) |> wellFormedFilePathSetIgnoreCase
 
         for ref in updatedRefs do
             if not(workspaceRefs.Contains(ref)) then
