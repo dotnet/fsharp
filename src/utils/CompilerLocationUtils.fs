@@ -215,7 +215,7 @@ module internal FSharpEnvironment =
             let safeExists f = (try File.Exists(f) with _ -> false)
             // Look in the probePoint if given, e.g. look for a compiler alongside of FSharp.Build.dll
             match probePoint with 
-            | Some p when safeExists (Path.Combine(p,"FShrp.Core.dll")) -> Some p 
+            | Some p when safeExists (Path.Combine(p,"FSharp.Core.dll")) -> Some p 
             | _ -> 
                 
             // On windows the location of the compiler is via a registry key
