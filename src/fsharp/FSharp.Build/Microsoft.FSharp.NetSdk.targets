@@ -57,17 +57,17 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 
   <!--
     Always reference FSharp.core for coreclr builds
-    FSharpCorePackageIdentity = Name of package to reference      (Default = Microsoft.FSharp.Core.netcore)
-    FSharpCorePackageVersion  = Version of package to reference   (Default = TargetFramework = netcoreapp1.0-1.1 netstandard1.0-1.6 then '1.0.0-*')
-                                                                  (Default = TargetFramework = netcoreapp2.0 netstandard2.0         then '1.0.0-*')
+    TargetFSharpCorePackageIdentity = Name of package to reference      (Default = Microsoft.FSharp.Core.netcore)
+    TargetFSharpCorePackageVersion  = Version of package to reference   (Default = TargetFramework = netcoreapp1.0-1.1 netstandard1.0-1.6 then '1.0.0-*')
+                                                                        (Default = TargetFramework = netcoreapp2.0 netstandard2.0         then '1.0.0-*')
   -->
-  <PropertyGroup Condition=" '$(FSharpCorePackageVersion)' == '' ">
-    <FSharpCorePackageVersion Condition=" $(TargetFramework.StartsWith(netcoreapp1.)) or $(TargetFramework.StartsWith(netstandard1.)) ">1.0.0-*</FSharpCorePackageVersion>
-    <FSharpCorePackageVersion Condition=" $(TargetFramework.StartsWith(netcoreapp2.)) or $(TargetFramework.StartsWith(netstandard2.)) ">1.0.0-*</FSharpCorePackageVersion>
+  <PropertyGroup Condition=" '$(TargetFSharpCorePackageVersion)' == '' ">
+    <TargetFSharpCorePackageVersion Condition=" $(TargetFramework.StartsWith(netcoreapp1.)) or $(TargetFramework.StartsWith(netstandard1.)) ">1.0.0-*</TargetFSharpCorePackageVersion>
+    <TargetFSharpCorePackageVersion Condition=" $(TargetFramework.StartsWith(netcoreapp2.)) or $(TargetFramework.StartsWith(netstandard2.)) ">1.0.0-*</TargetFSharpCorePackageVersion>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(FSharpCorePackageIdentity)' == '' ">
-    <FSharpCorePackageIdentity Condition=" '$(TargetFrameworkIdentifier)' != '.NETFramework' " >Microsoft.FSharp.Core.netcore</FSharpCorePackageIdentity>
+  <PropertyGroup Condition=" '$(TargetFSharpCorePackageIdentity)' == '' ">
+    <TargetFSharpCorePackageIdentity Condition=" '$(TargetFrameworkIdentifier)' != '.NETFramework' " >Microsoft.FSharp.Core.netcore</TargetFSharpCorePackageIdentity>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(TargetFSharpCoreVersion)' == '' ">
@@ -75,13 +75,18 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <TargetFSharpCoreVersion Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' ">4.4.1.0</TargetFSharpCoreVersion>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(DisableAutoValueTupleReference)' != 'true' ">
+    <FrameworkNeedsValueTupleReference Condition=" $(TargetFramework.StartsWith(netcoreapp1.)) or $(TargetFramework.StartsWith(netstandard1.)) ">true</FrameworkNeedsValueTupleReference>
+    <FrameworkNeedsValueTupleReference Condition=" '$(TargetFramework)' == 'net40' or '$(TargetFramework)' == 'net45' or '$(TargetFramework)' == 'net46' or '$(TargetFramework)' == 'net61' or '$(TargetFramework)' == 'net462' or '$(TargetFramework)' == 'net47' ">true</FrameworkNeedsValueTupleReference>
+  </PropertyGroup>
+
   <ItemGroup  Condition=" '$(TargetFramework)' != '' ">
-    <PackageReference Include="System.ValueTuple" Version="4.3.0"                                   Condition=" '$(DisableAutoValueTupleReference)' != 'true' "/>
-    <PackageReference Include="$(FSharpCorePackageIdentity)" Version="$(FSharpCorePackageVersion)"  Condition=" '$(DisableAutoFSharpCoreReference)' != 'true' "/>
+    <PackageReference Include="System.ValueTuple" Version="4.*"                                                 Condition=" '$(DisableAutoValueTupleReference)' != 'true' and '$(FrameworkNeedsValueTupleReference)' == 'true' "/>
+    <PackageReference Include="$(TargetFSharpCorePackageIdentity)" Version="$(TargetFSharpCorePackageVersion)"  Condition=" '$(DisableAutoFSharpCoreReference)' != 'true' "/>
   </ItemGroup>
 
   <!-- If we haven't already referenced FSharp.Core do it using the specified TargetFSharpCoreVersion. -->
-  <Target Condition=" '$(DisableAutoFSharpCoreReference)'  != 'true' and '$(TargetFramework)' != '' and '$(TargetName)' != 'FSharp.Core' "
+  <Target Condition=" '$(DisableAutoFSharpCoreReference)'  != 'true' and '$(TargetFramework)' != '' and '$(TargetName)' != 'FSharp.Core' and '$(TargetFrameworkIdentifier)' == '.NETFramework' "
           Name="AddDefaultReferences" 
           BeforeTargets="Compile" 
           AfterTargets="ResolveReferences">
