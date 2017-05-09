@@ -68,8 +68,8 @@ let GetImmediateIntrinsicMethInfosOfType (optFilter,ad) g amap m typ =
 #endif
         | ILTypeMetadata (TILObjectReprData(_,_,tdef)) -> 
             let mdefs = tdef.Methods
-            let mdefs = (match optFilter with None -> mdefs.AsList | Some nm -> mdefs.FindByName nm)
-            mdefs |> List.map (fun mdef -> MethInfo.CreateILMeth(amap, m, typ, mdef)) 
+            let mdefs = (match optFilter with None -> mdefs.AsSeq | Some nm -> mdefs.FindByName nm)
+            mdefs |> Seq.map (fun mdef -> MethInfo.CreateILMeth(amap, m, typ, mdef)) |> Seq.toList
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
             match tryDestAppTy g typ with
             | None -> []
@@ -428,8 +428,9 @@ let GetIntrinsicConstructorInfosOfType (infoReader:InfoReader) m ty =
         | ILTypeMetadata _ -> 
             let tinfo = ILTypeInfo.FromType g ty
             tinfo.RawMetadata.Methods.FindByName ".ctor" 
-            |> List.filter (fun md -> match md.mdKind with MethodKind.Ctor -> true | _ -> false) 
-            |> List.map (fun mdef -> MethInfo.CreateILMeth (amap, m, ty, mdef)) 
+            |> Seq.filter (fun md -> match md.mdKind with MethodKind.Ctor -> true | _ -> false) 
+            |> Seq.map (fun mdef -> MethInfo.CreateILMeth (amap, m, ty, mdef)) 
+            |> Seq.toList
 
         | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
             let tcref = tcrefOfAppTy g ty
@@ -479,7 +480,7 @@ type private IndexedList<'T>(itemLists: 'T list list, itemsByName: NameMultiMap<
         // Have we already seen an item with the same name and that is in the same equivalence class?
         // If so, ignore this one. Note we can check against the original incoming 'ilist' because we are assuming that
         // none the elements of 'itemsToAdd' are equivalent. 
-        itemsToAdd |> List.filter (fun item -> List.forall (keepTest item) (x.ItemsWithName(nmf item)))
+        itemsToAdd |> List.filter (fun item -> Seq.forall (keepTest item) (x.ItemsWithName(nmf item)))
 
 /// Add all the items to the IndexedList, preferring the ones in the super-types. This is used to hide methods
 /// in super classes and/or hide overrides of methods in subclasses.
@@ -515,7 +516,7 @@ let private FilterItemsInSuperTypesBasedOnItemsInSubTypes nmf keepTest itemLists
     loop itemLists IndexedList.Empty
 
 let private ExcludeItemsInSuperTypesBasedOnEquivTestWithItemsInSubTypes nmf equivTest itemLists = 
-    FilterItemsInSuperTypesBasedOnItemsInSubTypes nmf (fun item1 items -> not (items |> List.exists (fun item2 -> equivTest item1 item2))) itemLists 
+    FilterItemsInSuperTypesBasedOnItemsInSubTypes nmf (fun item1 items -> not (items |> Seq.exists (fun item2 -> equivTest item1 item2))) itemLists 
 
 /// Filter the overrides of methods or properties, either keeping the overrides or keeping the dispatch slots.
 let private FilterOverrides findFlag (isVirt:'a->bool,isNewSlot,isDefiniteOverride,isFinal,equivSigs,nmf:'a->string) items = 
@@ -533,7 +534,7 @@ let private FilterOverrides findFlag (isVirt:'a->bool,isNewSlot,isDefiniteOverri
         
         |> List.map (fun items -> 
             let definiteOverrides = items |> List.filter isDefiniteOverride 
-            items |> List.filter (fun item -> (isDefiniteOverride item || not (List.exists (equivVirts item) definiteOverrides))))
+            items |> List.filter (fun item -> (isDefiniteOverride item || not (Seq.exists (equivVirts item) definiteOverrides))))
        
         // only keep virtuals that are not signature-equivalent to virtuals in subtypes
         |> ExcludeItemsInSuperTypesBasedOnEquivTestWithItemsInSubTypes nmf equivVirts 
@@ -576,8 +577,8 @@ let private FilterOverrides findFlag (isVirt:'a->bool,isNewSlot,isDefiniteOverri
 
           |> FilterItemsInSuperTypesBasedOnItemsInSubTypes nmf (fun item1 superTypeItems -> 
                   not (isNewSlot item1 && 
-                       superTypeItems |> List.exists (equivNewSlots item1) &&
-                       superTypeItems |> List.exists (fun item2 -> isDefiniteOverride item1 && equivVirts item1 item2))) 
+                       superTypeItems |> Seq.exists (equivNewSlots item1) &&
+                       superTypeItems |> Seq.exists (fun item2 -> isDefiniteOverride item1 && equivVirts item1 item2))) 
 
     
 /// Filter the overrides of methods, either keeping the overrides or keeping the dispatch slots.
@@ -686,7 +687,7 @@ let TryDestStandardDelegateTyp (infoReader:InfoReader) m ad delTy =
     let g = infoReader.g
     let (SigOfFunctionForDelegate(_,compiledViewOfDelArgTys,delRetTy,_)) = GetSigOfFunctionForDelegate infoReader delTy m ad
     match compiledViewOfDelArgTys with 
-    | senderTy :: argTys when (isObjTy g senderTy) && not (List.exists (isByrefTy g) argTys)  -> Some(mkRefTupledTy g argTys,delRetTy)
+    | senderTy :: argTys when (isObjTy g senderTy) && not (Seq.exists (isByrefTy g) argTys)  -> Some(mkRefTupledTy g argTys,delRetTy)
     | _ -> None
 
 

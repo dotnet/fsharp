@@ -323,7 +323,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         let aboveListL = function
           | []    -> emptyL
           | [x]   -> x
-          | x::ys -> List.fold (fun pre y -> pre @@ y) x ys
+          | x::ys -> Seq.fold (fun pre y -> pre @@ y) x ys
 
         let optionL xL = function
           | None   -> wordL (tagUnionCase "None")
@@ -1091,7 +1091,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                                 member env.GetLayout(y) = objL (depthLim-1) Precedence.BracketIfTuple (y, y.GetType()) 
                                                 member env.MaxColumns = opts.PrintLength
                                                 member env.MaxRows = opts.PrintLength }
-                                opts.PrintIntercepts |> List.tryPick (fun intercept -> intercept env x)
+                                opts.PrintIntercepts |> Seq.tryPick (fun intercept -> intercept env x)
 #endif
 #endif
                         let res = 
@@ -1231,7 +1231,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                     | :? System.Collections.IEnumerable as ie ->
                          let showContent = 
                             // do not display content of IQueryable since its execution may take significant time
-                            opts.ShowIEnumerable && (ie.GetType().GetInterfaces() |> Array.exists(fun ty -> ty.FullName = "System.Linq.IQueryable") |> not)
+                            opts.ShowIEnumerable && (ie.GetType().GetInterfaces() |> Seq.exists(fun ty -> ty.FullName = "System.Linq.IQueryable") |> not)
 
                          if showContent then
                            let word = "seq"

@@ -320,7 +320,7 @@ let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sou
 
     let mutable lastLocalVariableHandle = Unchecked.defaultof<LocalVariableHandle>
     metadata.SetCapacity(TableIndex.MethodDebugInformation, info.Methods.Length)
-    info.Methods |> Array.iter (fun minfo ->
+    info.Methods |> Seq.iter (fun minfo ->
         let docHandle, sequencePointBlob =
             let sps =
                 match minfo.SequencePoints with
@@ -524,11 +524,11 @@ let writePdbInfo showTimes f fpdb info cvChunk =
                     | Some xsR -> xsR := sp :: !xsR; res
                     | None     -> Map.add k (ref [sp]) res
 
-                let res = Array.fold add res sps
+                let res = Seq.fold add res sps
                 let res = Map.toList res  // ordering may not be stable 
                 List.map (fun (_,x) -> Array.ofList !x) res
 
-              spsets |> List.iter (fun spset -> 
+              spsets |> Seq.iter (fun spset -> 
                   if spset.Length > 0 then 
                     Array.sortInPlaceWith SequencePoint.orderByOffset spset
                     let sps = 
@@ -548,8 +548,8 @@ let writePdbInfo showTimes f fpdb info cvChunk =
                           | Some p -> sco.StartOffset <> p.StartOffset || sco.EndOffset <> p.EndOffset
                           | None -> true
                       if nested then pdbOpenScope !pdbw sco.StartOffset
-                      sco.Locals |> Array.iter (fun v -> pdbDefineLocalVariable !pdbw v.Name v.Signature v.Index)
-                      sco.Children |> Array.iter (writePdbScope (if nested then Some sco else parent))
+                      sco.Locals |> Seq.iter (fun v -> pdbDefineLocalVariable !pdbw v.Name v.Signature v.Index)
+                      sco.Children |> Seq.iter (writePdbScope (if nested then Some sco else parent))
                       if nested then pdbCloseScope !pdbw sco.EndOffset
 
               writePdbScope None minfo.RootScope 
@@ -594,7 +594,7 @@ let (?) this memb (args:'Args) : 'R =
     
     // Get methods and perform overload resolution
     let methods = this.GetType().GetMethods()
-    let bestMatch = methods |> Array.tryFind (fun mi -> mi.Name = memb && mi.GetParameters().Length = args.Length)
+    let bestMatch = methods |> Seq.tryFind (fun mi -> mi.Name = memb && mi.GetParameters().Length = args.Length)
     match bestMatch with
     | Some(mi) -> unbox(mi.Invoke(this, args))        
     | None -> error(Error(FSComp.SR.ilwriteMDBMemberMissing(memb), rangeCmdArgs))

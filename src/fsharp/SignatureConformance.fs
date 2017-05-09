@@ -104,7 +104,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                     | None ->
 
                     // Look for an attribute in the signature that has the same type. If so, give a warning
-                    let existsSimilarAttrib = sigAttribs |> List.exists (attribsHaveSameTycon implAttrib)
+                    let existsSimilarAttrib = sigAttribs |> Seq.exists (attribsHaveSameTycon implAttrib)
 
                     if existsSimilarAttrib then 
                         let (Attrib(implTcref,_,_,_,_,_,implRange)) = implAttrib
@@ -136,17 +136,17 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                   implTypar.SetCompilerGenerated false 
 
                   // Check the constraints in the implementation are present in the signature
-                  implTypar.Constraints |> List.forall (fun implTyparCx -> 
+                  implTypar.Constraints |> Seq.forall (fun implTyparCx -> 
                       match implTyparCx with 
                       // defaults can be dropped in the signature 
                       | TyparConstraint.DefaultsTo(_,_acty,_) -> true
                       | _ -> 
-                          if not (List.exists  (typarConstraintsAEquiv g aenv implTyparCx) sigTypar.Constraints)
+                          if not (Seq.exists  (typarConstraintsAEquiv g aenv implTyparCx) sigTypar.Constraints)
                           then (errorR(Error(FSComp.SR.typrelSigImplNotCompatibleConstraintsDiffer(sigTypar.Name, Layout.showL(NicePrint.layoutTyparConstraint denv (implTypar,implTyparCx))),m)); false)
                           else  true) &&
 
                   // Check the constraints in the signature are present in the implementation
-                  sigTypar.Constraints |> List.forall (fun sigTyparCx -> 
+                  sigTypar.Constraints |> Seq.forall (fun sigTyparCx -> 
                       match sigTyparCx with 
                       // defaults can be present in the signature and not in the implementation  because they are erased
                       | TyparConstraint.DefaultsTo(_,_acty,_) -> true
@@ -154,7 +154,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                       | TyparConstraint.SupportsComparison _ -> true
                       | TyparConstraint.SupportsEquality _ -> true
                       | _ -> 
-                          if not (List.exists  (fun implTyparCx -> typarConstraintsAEquiv g aenv implTyparCx sigTyparCx) implTypar.Constraints) then
+                          if not (Seq.exists  (fun implTyparCx -> typarConstraintsAEquiv g aenv implTyparCx sigTyparCx) implTypar.Constraints) then
                               (errorR(Error(FSComp.SR.typrelSigImplNotCompatibleConstraintsDifferRemove(sigTypar.Name, Layout.showL(NicePrint.layoutTyparConstraint denv (sigTypar,sigTyparCx))),m)); false)
                           else  
                               true) &&
@@ -192,9 +192,9 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                 let fintfs     = flatten fintfs 
               
                 let unimpl = ListSet.subtract (fun fity aity -> typeAEquiv g aenv aity fity) fintfs aintfs
-                (unimpl |> List.forall (fun ity -> errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleMissingInterface(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName, NicePrint.minimalStringOfType denv ity),m)); false)) &&
+                (unimpl |> Seq.forall (fun ity -> errorR (Error (FSComp.SR.DefinitionsInSigAndImplNotCompatibleMissingInterface(implTycon.TypeOrMeasureKind.ToString(),implTycon.DisplayName, NicePrint.minimalStringOfType denv ity),m)); false)) &&
                 let hidden = ListSet.subtract (typeAEquiv g aenv) aintfsUser fintfs
-                hidden |> List.iter (fun ity -> (if implTycon.IsFSharpInterfaceTycon then error else warning) (InterfaceNotRevealed(denv,ity,implTycon.Range)))
+                hidden |> Seq.iter (fun ity -> (if implTycon.IsFSharpInterfaceTycon then error else warning) (InterfaceNotRevealed(denv,ity,implTycon.Range)))
 
                 let aNull = IsUnionTypeWithNullAsTrueValue g implTycon
                 let fNull = IsUnionTypeWithNullAsTrueValue g sigTycon
@@ -468,12 +468,12 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
             | (TMeasureableRepr _), TNoRepr -> 
                 (errorR (Error(FSComp.SR.DefinitionsInSigAndImplNotCompatibleTypeIsHidden(implTycon.TypeOrMeasureKind.ToString(), implTycon.DisplayName),m)); false)
             | (TUnionRepr r1), (TUnionRepr r2) -> 
-                let ucases1 = r1.UnionCasesAsList
-                let ucases2 = r2.UnionCasesAsList
-                if ucases1.Length <> ucases2.Length then
-                  let names (l: UnionCase list) = l |> List.map (fun c -> c.Id.idText)
+                let ucases1 = r1.UnionCasesAsSeq
+                let ucases2 = r2.UnionCasesAsSeq
+                if Seq.length ucases1 <> Seq.length ucases2 then
+                  let names (l: UnionCase seq) = l |> Seq.map (fun c -> c.Id.idText)
                   reportNiceError "union case" (names ucases1) (names ucases2) 
-                else List.forall2 (checkUnionCase aenv) ucases1 ucases2
+                else Seq.forall2 (checkUnionCase aenv) ucases1 ucases2
             | (TRecdRepr implFields), (TRecdRepr sigFields) -> 
                 checkRecordFields m aenv implTycon implFields sigFields
             | (TFSharpObjectRepr r1), (TFSharpObjectRepr r2) -> 
@@ -576,7 +576,7 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                              // for each formal requirement, try to find a precisely matching actual requirement
                              let matchingPairs = 
                                  fvs |> List.choose (fun fv -> 
-                                     match avs |> List.tryFind (fun av -> 
+                                     match avs |> Seq.tryFind (fun av -> 
                                                          let res = valLinkageAEquiv g aenv av fv
                                                          //if res then printfn "%s" (bufs (fun buf -> Printf.bprintf buf "YES MATCH: fv '%a', av '%a'" (NicePrint.outputQualifiedValOrMember denv) fv (NicePrint.outputQualifiedValOrMember denv) av))
                                                          //else printfn "%s" (bufs (fun buf -> Printf.bprintf buf "NO MATCH: fv '%a', av '%a'" (NicePrint.outputQualifiedValOrMember denv) fv (NicePrint.outputQualifiedValOrMember denv) av))  
@@ -585,13 +585,13 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                                       | Some av -> Some(fv,av))
                              
                              // Check the ones with matching linkage
-                             let allPairsOk = matchingPairs |> List.map (fun (fv,av) -> checkVal implModRef aenv av fv) |> List.forall id
+                             let allPairsOk = matchingPairs |> List.map (fun (fv,av) -> checkVal implModRef aenv av fv) |> Seq.forall id
                              let someNotOk = matchingPairs.Length < fvs.Length
                              // Report an error for those that don't. Try pairing up by enclosing-type/name
                              if someNotOk then 
                                  let noMatches,partialMatchingPairs = 
                                      fvs |> List.splitChoose (fun fv -> 
-                                         match avs |> List.tryFind (fun av -> valuesPartiallyMatch av fv) with 
+                                         match avs |> Seq.tryFind (fun av -> valuesPartiallyMatch av fv) with 
                                           | None -> Choice1Of2 fv
                                           | Some av -> Choice2Of2(fv,av))
                                  for (fv,av) in partialMatchingPairs do

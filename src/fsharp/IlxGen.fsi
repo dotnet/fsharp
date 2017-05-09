@@ -62,11 +62,11 @@ type public IlxAssemblyGenerator =
     new : Import.ImportMap * TcGlobals * ConstraintSolver.TcValF * CcuThunk -> IlxAssemblyGenerator 
     
     /// Register a set of referenced assemblies with the ILX code generator
-    member AddExternalCcus : CcuThunk list -> unit
+    member AddExternalCcus : CcuThunk seq -> unit
 
     /// Register a fragment of the current assembly with the ILX code generator. If 'isIncrementalFragment' is true then the input
     /// is assumed to be a fragment 'typed' into FSI.EXE, otherwise the input is assumed to be the result of a '#load'
-    member AddIncrementalLocalAssemblyFragment : isIncrementalFragment: bool * fragName:string * typedImplFiles: TypedImplFile list -> unit
+    member AddIncrementalLocalAssemblyFragment : isIncrementalFragment: bool * fragName:string * typedImplFiles: TypedImplFile seq -> unit
 
     /// Generate ILX code for an assembly fragment
     member GenerateCode : IlxGenOptions * TypedAssemblyAfterOptimization * Attribs * Attribs -> IlxGenResults

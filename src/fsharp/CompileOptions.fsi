@@ -53,7 +53,7 @@ and  CompilerOptionBlock =
     | PrivateOptions of CompilerOption list
 
 val PrintCompilerOptionBlocks : CompilerOptionBlock list -> unit  // for printing usage
-val DumpCompilerOptionBlocks  : CompilerOptionBlock list -> unit  // for QA
+val DumpCompilerOptionBlocks  : CompilerOptionBlock seq -> unit  // for QA
 val FilterCompilerOptionBlock : (CompilerOption -> bool) -> CompilerOptionBlock -> CompilerOptionBlock
 
 /// Parse and process a set of compiler options

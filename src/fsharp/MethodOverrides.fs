@@ -233,7 +233,7 @@ module DispatchSlotChecking =
         
         let ttpinst = 
             // check we can reverse - in some error recovery situations we can't 
-            if mtpinst |> List.exists (snd >> isTyparTy g >> not) then ttpinst 
+            if mtpinst |> Seq.exists (snd >> isTyparTy g >> not) then ttpinst 
             else ComposeTyparInsts ttpinst (ReverseTyparRenaming g mtpinst)
 
         // Compare under the composed substitutions 
@@ -251,7 +251,7 @@ module DispatchSlotChecking =
     let DispatchSlotIsAlreadyImplemented g amap m availPriorOverridesKeyed (dispatchSlot: MethInfo) =
         availPriorOverridesKeyed 
             |> NameMultiMap.find  dispatchSlot.LogicalName  
-            |> List.exists (OverrideImplementsDispatchSlot g amap m dispatchSlot)
+            |> Seq.exists (OverrideImplementsDispatchSlot g amap m dispatchSlot)
 
 
     /// Check all dispatch slots are implemented by some override.
@@ -272,7 +272,7 @@ module DispatchSlotChecking =
         let availPriorOverridesKeyed = availPriorOverrides |> NameMultiMap.initBy (fun ov -> ov.LogicalName)
         let overridesKeyed = overrides |> NameMultiMap.initBy (fun ov -> ov.LogicalName)
         
-        dispatchSlots |> List.iter (fun (RequiredSlot(dispatchSlot,isOptional)) -> 
+        dispatchSlots |> Seq.iter (fun (RequiredSlot(dispatchSlot,isOptional)) -> 
           
             match NameMultiMap.find dispatchSlot.LogicalName overridesKeyed 
                     |> List.filter (OverrideImplementsDispatchSlot g amap m dispatchSlot)  with
@@ -327,7 +327,7 @@ module DispatchSlotChecking =
                             errorR(Error(FSComp.SR.typrelOverloadNotFound(FormatMethInfoSig g amap m denv dispatchSlot, FormatMethInfoSig g amap m denv dispatchSlot),overrideBy.Range))
 
                     | [ overrideBy ] -> 
-                        if dispatchSlots |> List.exists (fun (RequiredSlot(dispatchSlot,_)) -> OverrideImplementsDispatchSlot g amap m dispatchSlot overrideBy) then
+                        if dispatchSlots |> Seq.exists (fun (RequiredSlot(dispatchSlot,_)) -> OverrideImplementsDispatchSlot g amap m dispatchSlot overrideBy) then
                             noimpl()
                         else
                             // Error will be reported below in CheckOverridesAreAllUsedOnce 
@@ -425,7 +425,7 @@ module DispatchSlotChecking =
         let reqdTyInfos = 
             intfSets |> List.map (fun (i,reqdTy,impliedTys,m) -> 
                 let reduced = 
-                    (impliedTys,intfSets) ||> List.fold (fun acc (j,jty,impliedTys2,m) -> 
+                    (impliedTys,intfSets) ||> Seq.fold (fun acc (j,jty,impliedTys2,m) -> 
                          if i <> j && TypeFeasiblySubsumesType 0 g amap m jty CanCoerce reqdTy 
                          then ListSet.subtract (TypesFeasiblyEquiv 0 g amap m) acc impliedTys2
                          else acc ) 
@@ -444,7 +444,7 @@ module DispatchSlotChecking =
             for (j,_,_,impliedTys2) in reqdTyInfos do
                 if i > j then  
                     let overlap = ListSet.intersect (TypesFeasiblyEquiv 0 g amap reqdTyRange) impliedTys impliedTys2
-                    overlap |> List.iter (fun overlappingTy -> 
+                    overlap |> Seq.iter (fun overlappingTy -> 
                         if not (isNil (GetImmediateIntrinsicMethInfosOfType (None,AccessibleFromSomewhere) g amap reqdTyRange overlappingTy |> List.filter (fun minfo -> minfo.IsVirtual))) then
                             errorR(Error(FSComp.SR.typrelNeedExplicitImplementation(NicePrint.minimalStringOfType denv (List.head overlap)),reqdTyRange)))
 
@@ -462,7 +462,7 @@ module DispatchSlotChecking =
             // Is a member an abstract slot of one of the implied interface types?
             let isImpliedInterfaceType ty =
                 isImpliedInterfaceTable.ContainsKey (tcrefOfAppTy g ty) &&
-                impliedTys |> List.exists (TypesFeasiblyEquiv 0 g amap reqdTyRange ty)
+                impliedTys |> Seq.exists (TypesFeasiblyEquiv 0 g amap reqdTyRange ty)
 
             //let isSlotImpl (minfo:MethInfo) = 
             //    not minfo.IsAbstract && minfo.IsVirtual 
@@ -564,7 +564,7 @@ module DispatchSlotChecking =
                 // Are we looking at the implementation of the class hierarchy? If so include all the override members
                 not (isInterfaceTy g reqdTy)
            | ss -> 
-                 ss |> List.forall (fun ss -> 
+                 ss |> Seq.forall (fun ss -> 
                      let ty = ss.ImplementedType
                      if isInterfaceTy g ty then 
                          // Is this a method impl listed under the reqdTy?
@@ -605,7 +605,7 @@ module DispatchSlotChecking =
 
         // Now record the full slotsigs of the abstract members implemented by each override.
         // This is used to generate IL MethodImpls in the code generator.
-        allImmediateMembersThatMightImplementDispatchSlots |> List.iter (fun overrideBy -> 
+        allImmediateMembersThatMightImplementDispatchSlots |> Seq.iter (fun overrideBy -> 
 
             let isFakeEventProperty = overrideBy.IsFSharpEventProperty(g)
             let overriden = 

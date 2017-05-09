@@ -22,6 +22,7 @@ namespace Microsoft.FSharp.Primitives.Basics
 
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
+open Microsoft.FSharp.Collections.SeqComposition
 
 module internal List =
     val allPairs : 'T1 list -> 'T2 list -> ('T1 * 'T2) list
@@ -61,6 +62,7 @@ module internal List =
     val take : int -> 'T list -> 'T list
     val takeWhile : ('T -> bool) -> 'T list -> 'T list
     val toArray : 'T list -> 'T[]
+    val ofISeq : ISeq<'T> -> 'T List
     val inline ofSeq : seq<'T> -> 'T List
     val splitAt : int -> 'T list -> ('T list * 'T list)
     val truncate : int -> 'T list -> 'T list
@@ -68,35 +70,21 @@ module internal List =
 module internal Array =
     // The input parameter should be checked by callers if necessary
     val inline zeroCreateUnchecked : int -> 'T[]
-
     val inline init : int -> (int -> 'T) -> 'T[]
-
     val splitInto : int -> 'T[] -> 'T[][]
-
     val findBack: predicate:('T -> bool) -> array:'T[] -> 'T
-
     val tryFindBack: predicate:('T -> bool) -> array:'T[] -> 'T option
-
     val findIndexBack: predicate:('T -> bool) -> array:'T[] -> int
-
     val tryFindIndexBack: predicate:('T -> bool) -> array:'T[] -> int option
-
     val mapFold : ('State -> 'T -> 'U * 'State) -> 'State -> 'T[] -> 'U[] * 'State
-
     val mapFoldBack : ('T -> 'State -> 'U * 'State) -> 'T[] -> 'State -> 'U[] * 'State
-
     val permute : indexMap:(int -> int) -> 'T[] -> 'T[]
-    
     val scanSubRight: f:('T -> 'State -> 'State) -> array:'T[] -> start:int -> fin:int -> initState:'State -> 'State[]
-
     val inline subUnchecked : int -> int -> 'T[] -> 'T[]
-
     val unstableSortInPlaceBy: projection:('T -> 'Key) -> array:'T[] -> unit when 'Key : comparison 
-
     val unstableSortInPlace: array:'T[] -> unit when 'T : comparison 
-
     val stableSortInPlaceBy: projection:('T -> 'Key) -> array:'T[] -> unit when 'Key : comparison 
-
     val stableSortInPlaceWith: comparer:('T -> 'T -> int) -> array:'T[] -> unit
-
     val stableSortInPlace: array:'T[] -> unit when 'T : comparison 
+    val ofSeq : seq<'T> -> array<'T>
+    val toSeq : array<'T> -> seq<'T>

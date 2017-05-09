@@ -442,7 +442,7 @@ let rec MeasureVarExponent tp unt =
 let ListMeasureVarOccs unt =
     let rec gather acc unt =  
         match stripUnitEqnsFromMeasure unt with
-        | Measure.Var tp -> if List.exists (typarEq tp) acc then acc else tp::acc
+        | Measure.Var tp -> if Seq.exists (typarEq tp) acc then acc else tp::acc
         | Measure.Prod(unt1,unt2) -> gather (gather acc unt1) unt2
         | Measure.RationalPower(unt',_) -> gather acc unt'
         | Measure.Inv unt' -> gather acc unt'
@@ -454,7 +454,7 @@ let ListMeasureVarOccsWithNonZeroExponents untexpr =
     let rec gather acc unt =  
         match stripUnitEqnsFromMeasure unt with
         | Measure.Var tp -> 
-            if List.exists (fun (tp', _) -> typarEq tp tp') acc then acc 
+            if Seq.exists (fun (tp', _) -> typarEq tp tp') acc then acc 
             else 
                 let e = MeasureVarExponent tp untexpr
                 if e = ZeroRational then acc else (tp,e)::acc
@@ -469,7 +469,7 @@ let ListMeasureConOccsWithNonZeroExponents g eraseAbbrevs untexpr =
     let rec gather acc unt =  
         match (if eraseAbbrevs then stripUnitEqnsFromMeasure unt else stripUnitEqns unt) with
         | Measure.Con c -> 
-            if List.exists (fun (c', _) -> tyconRefEq g c c') acc then acc else 
+            if Seq.exists (fun (c', _) -> tyconRefEq g c c') acc then acc else 
             let e = MeasureExprConExponent g eraseAbbrevs c untexpr
             if e = ZeroRational then acc else (c,e)::acc
         | Measure.Prod(unt1,unt2) -> gather (gather acc unt1) unt2
@@ -483,7 +483,7 @@ let ListMeasureConOccsWithNonZeroExponents g eraseAbbrevs untexpr =
 let ListMeasureConOccsAfterRemapping g r unt =
     let rec gather acc unt =  
         match stripUnitEqnsFromMeasure unt with
-        | Measure.Con c -> if List.exists (tyconRefEq g (r c)) acc then acc else r c::acc
+        | Measure.Con c -> if Seq.exists (tyconRefEq g (r c)) acc then acc else r c::acc
         | Measure.Prod(unt1,unt2) -> gather (gather acc unt1) unt2
         | Measure.RationalPower(unt',_) -> gather acc unt'
         | Measure.Inv unt' -> gather acc unt'
@@ -650,7 +650,7 @@ let rec stripTyEqnsA g canShortcut ty =
         | Some abbrevTy -> 
             stripTyEqnsA g canShortcut (applyTyconAbbrev abbrevTy tycon tinst)
         | None -> 
-            if tycon.IsMeasureableReprTycon && List.forall (isDimensionless g) tinst then
+            if tycon.IsMeasureableReprTycon && Seq.forall (isDimensionless g) tinst then
                 stripTyEqnsA g canShortcut (reduceTyconMeasureableOrProvided g tycon tinst)
             else 
                 ty
@@ -900,9 +900,9 @@ and measureAEquiv g aenv un1 un2 =
     let cons1 = ListMeasureConOccsAfterRemapping g remapTyconRef un1
     let cons2 = ListMeasureConOccsAfterRemapping g remapTyconRef un2 
  
-    List.forall (fun v -> MeasureVarExponent v un1 = MeasureVarExponent (trans v) un2) vars1 &&
-    List.forall (fun v -> MeasureVarExponent v un1 = MeasureVarExponent v un2) vars2 &&
-    List.forall (fun c -> MeasureConExponentAfterRemapping g remapTyconRef c un1 = MeasureConExponentAfterRemapping g remapTyconRef c un2) (cons1@cons2)  
+    Seq.forall (fun v -> MeasureVarExponent v un1 = MeasureVarExponent (trans v) un2) vars1 &&
+    Seq.forall (fun v -> MeasureVarExponent v un1 = MeasureVarExponent v un2) vars2 &&
+    Seq.forall (fun c -> MeasureConExponentAfterRemapping g remapTyconRef c un1 = MeasureConExponentAfterRemapping g remapTyconRef c un2) (List.append cons1 cons2)  
 
 
 and typesAEquivAux erasureFlag g aenv l1 l2 = List.lengthsEqAndForall2 (typeAEquivAux erasureFlag g aenv) l1 l2
@@ -1393,7 +1393,7 @@ let applyForallTy g ty tyargs =
     instType (mkTyparInst tps tyargs) tau
 
 let reduceIteratedFunTy g ty args = 
-    List.fold (fun ty _ -> 
+    Seq.fold (fun ty _ -> 
         if not (isFunTy g ty) then failwith "reduceIteratedFunTy"
         snd (destFunTy g ty)) ty args
 
@@ -1472,7 +1472,7 @@ let IsCompiledAsStaticPropertyWithField g (v:Val) =
 
 let isArrayTyconRef (g:TcGlobals) tcr =
     g.il_arr_tcr_map
-    |> Array.exists (tyconRefEq g tcr)
+    |> Seq.exists (tyconRefEq g tcr)
 
 let rankOfArrayTyconRef (g:TcGlobals) tcr =
     match g.il_arr_tcr_map |> Array.tryFindIndex (tyconRefEq g tcr) with
@@ -1674,7 +1674,7 @@ let rec isUnmanagedTy g ty =
                 true
             elif tycon.IsStructOrEnumTycon then
                 match tycon.TyparsNoRange with
-                | [] -> tycon.AllInstanceFieldsAsList |> List.forall (fun r -> isUnmanagedTy g r.rfield_type) 
+                | [] -> tycon.AllInstanceFieldsAsList |> Seq.forall (fun r -> isUnmanagedTy g r.rfield_type) 
                 | _ -> false // generic structs are never 
             else false
     | None ->
@@ -1719,7 +1719,7 @@ let MemberIsExplicitImpl g (membInfo:ValMemberInfo) =
    membInfo.MemberFlags.IsOverrideOrExplicitImpl &&
    match membInfo.ImplementedSlotSigs with 
    | [] -> false
-   | slotsigs -> slotsigs |> List.forall (fun slotsig -> isInterfaceTy g slotsig.ImplementedType)
+   | slotsigs -> slotsigs |> Seq.forall (fun slotsig -> isInterfaceTy g slotsig.ImplementedType)
 
 let ValIsExplicitImpl g (v:Val) = 
     match v.MemberInfo with 
@@ -1975,10 +1975,10 @@ let unionFreeTyparsLeftToRight fvs1 fvs2 = ListSet.unionFavourRight typarEq fvs1
 let rec boundTyparsLeftToRight g cxFlag thruFlag  acc tps = 
     // Bound type vars form a recursively-referential set due to constraints, e.g.  A : I<B>, B : I<A> 
     // So collect up free vars in all constraints first, then bind all variables 
-    List.fold (fun acc (tp:Typar) -> accFreeInTyparConstraintsLeftToRight g cxFlag thruFlag acc tp.Constraints) tps acc
+    Seq.fold (fun acc (tp:Typar) -> accFreeInTyparConstraintsLeftToRight g cxFlag thruFlag acc tp.Constraints) tps acc
 
 and accFreeInTyparConstraintsLeftToRight g cxFlag thruFlag acc cxs =
-    List.fold (accFreeInTyparConstraintLeftToRight g cxFlag thruFlag) acc cxs 
+    Seq.fold (accFreeInTyparConstraintLeftToRight g cxFlag thruFlag) acc cxs 
 
 and accFreeInTyparConstraintLeftToRight g cxFlag thruFlag acc tpc =
     match tpc with 
@@ -2232,6 +2232,7 @@ let prefixOfRigidTypar (typar:Typar) =
 //---------------------------------------------------------------------------
 
 type TyparConstraintsWithTypars = (Typar * TyparConstraint) list
+type TyparConstraintsWithTyparz = (Typar * TyparConstraint) seq
 
 module PrettyTypes =
     let newPrettyTypar (tp:Typar) nm = 
@@ -2308,14 +2309,14 @@ module PrettyTypes =
             match tps with 
             | [] -> List.rev keep, List.rev change 
             | tp :: rest -> 
-                if not (NeedsPrettyTyparName tp) && (not (keep |> List.exists (fun tp2 -> tp.Name = tp2.Name)))  then
+                if not (NeedsPrettyTyparName tp) && (not (keep |> Seq.exists (fun tp2 -> tp.Name = tp2.Name)))  then
                     computeKeep (tp :: keep) change rest
                 else 
                     computeKeep keep (tp :: change) rest
         let keep,change = computeKeep [] [] ftps
         
-        // change |> List.iter (fun tp -> dprintf "change typar: %s %s %d\n" tp.Name (tp.DisplayName) (stamp_of_typar tp));  
-        // keep |> List.iter (fun tp -> dprintf "keep typar: %s %s %d\n" tp.Name (tp.DisplayName) (stamp_of_typar tp));  
+        // change |> Seq.iter (fun tp -> dprintf "change typar: %s %s %d\n" tp.Name (tp.DisplayName) (stamp_of_typar tp));  
+        // keep |> Seq.iter (fun tp -> dprintf "keep typar: %s %s %d\n" tp.Name (tp.DisplayName) (stamp_of_typar tp));  
         let alreadyInUse = keep |> List.map (fun x -> x.Name)
         let names = PrettyTyparNames (fun x -> List.memq x change) alreadyInUse ftps
 
@@ -2407,9 +2408,9 @@ module SimplifyTypes =
         let z = f z typ
         match typ with
         | TType_forall (_,body) -> foldTypeButNotConstraints f z body
-        | TType_app (_,tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_ucase (_,tinst) -> List.fold (foldTypeButNotConstraints f) z tinst
-        | TType_tuple (_,typs) -> List.fold (foldTypeButNotConstraints f) z typs
+        | TType_app (_,tinst) -> Seq.fold (foldTypeButNotConstraints f) z tinst
+        | TType_ucase (_,tinst) -> Seq.fold (foldTypeButNotConstraints f) z tinst
+        | TType_tuple (_,typs) -> Seq.fold (foldTypeButNotConstraints f) z typs
         | TType_fun (s,t)         -> foldTypeButNotConstraints f (foldTypeButNotConstraints f z s) t
         | TType_var _            -> z
         | TType_measure _          -> z
@@ -2425,7 +2426,7 @@ module SimplifyTypes =
     let emptyTyparCounts = Zmap.empty typarOrder
 
     // print multiple fragments of the same type using consistent naming and formatting 
-    let accTyparCountsMulti acc l = List.fold accTyparCounts acc l
+    let accTyparCountsMulti acc l = Seq.fold accTyparCounts acc l
 
     type TypeSimplificationInfo =
         { singletons         : Typar Zset
@@ -2439,7 +2440,7 @@ module SimplifyTypes =
 
     let categorizeConstraints simplify m cxs =
         let singletons = if simplify then Zmap.chooseL (fun tp n -> if n = 1 then Some tp else None) m else []
-        let singletons = Zset.addList singletons (Zset.empty typarOrder)
+        let singletons = Zset.addSeq singletons (Zset.empty typarOrder)
         // Here, singletons are typars that occur once in the type.
         // However, they may also occur in a type constraint.
         // If they do, they are really multiple occurrence - so we should remove them.
@@ -2493,7 +2494,7 @@ type DisplayEnv =
 
     member x.SetOpenPaths(paths) = 
         { x with 
-             openTopPathsSorted = (lazy (paths |> List.sortWith (fun p1 p2 -> -(compare p1 p2))))
+             openTopPathsSorted = (lazy (paths |> Seq.sortWith (fun p1 p2 -> -(compare p1 p2)) |> Seq.toList))
              openTopPathsRaw = paths 
         }
 
@@ -2684,7 +2685,7 @@ let trimPathByDisplayEnv denv path =
             else Some("")
         else None
 
-    match List.tryPick findOpenedNamespace (denv.openTopPathsSorted.Force()) with
+    match Seq.tryPick findOpenedNamespace (denv.openTopPathsSorted.Force()) with
     | Some s -> s
     | None ->  if isNil path then "" else textOfPath path + "."
 
@@ -2711,31 +2712,31 @@ let isILAttrib (tref:ILTypeRef) (attr: ILAttribute) =
 // These linear iterations cost us a fair bit when there are lots of attributes
 // on imported types. However this is fairly rare and can also be solved by caching the
 // results of attribute lookups in the TAST
-let HasILAttribute tref (attrs: ILAttributes) = List.exists (isILAttrib tref) attrs.AsList
+let HasILAttribute tref (attrs: ILAttributes) = Seq.exists (isILAttrib tref) attrs.AsSeq
 
-let HasILAttributeByName tname (attrs: ILAttributes) = List.exists (isILAttribByName ([],tname)) attrs.AsList
+let HasILAttributeByName tname (attrs: ILAttributes) = Seq.exists (isILAttribByName ([],tname)) attrs.AsSeq
 
 let TryDecodeILAttribute (g:TcGlobals) tref (attrs: ILAttributes) = 
-    attrs.AsList |> List.tryPick(fun x -> if isILAttrib tref x then Some(decodeILAttribData g.ilg x)  else None)
+    attrs.AsSeq |> Seq.tryPick(fun x -> if isILAttrib tref x then Some(decodeILAttribData g.ilg x)  else None)
 
 // This one is done by name to ensure the compiler doesn't take a dependency on dereferencing a type that only exists in .NET 3.5
 let ILThingHasExtensionAttribute (attrs : ILAttributes) = 
-    attrs.AsList 
-    |> List.exists (fun attr -> 
+    attrs.AsSeq 
+    |> Seq.exists (fun attr -> 
         attr.Method.EnclosingType.TypeSpec.Name = "System.Runtime.CompilerServices.ExtensionAttribute")
     
 // F# view of attributes (these get converted to AbsIL attributes in ilxgen) 
 let IsMatchingFSharpAttribute g (AttribInfo(_,tcref)) (Attrib(tcref2,_,_,_,_,_,_)) = tyconRefEq g tcref  tcref2
-let HasFSharpAttribute g tref attrs = List.exists (IsMatchingFSharpAttribute g tref) attrs
-let findAttrib g tref attrs = List.find (IsMatchingFSharpAttribute g tref) attrs
-let TryFindFSharpAttribute g tref attrs = List.tryFind (IsMatchingFSharpAttribute g tref) attrs
-let TryFindFSharpAttributeOpt g tref attrs = match tref with None -> None | Some tref -> List.tryFind (IsMatchingFSharpAttribute g tref) attrs
+let HasFSharpAttribute g tref attrs = Seq.exists (IsMatchingFSharpAttribute g tref) attrs
+let findAttrib g tref attrs = Seq.find (IsMatchingFSharpAttribute g tref) attrs
+let TryFindFSharpAttribute g tref attrs = Seq.tryFind (IsMatchingFSharpAttribute g tref) attrs
+let TryFindFSharpAttributeOpt g tref attrs = match tref with None -> None | Some tref -> Seq.tryFind (IsMatchingFSharpAttribute g tref) attrs
 
-let HasFSharpAttributeOpt g trefOpt attrs = match trefOpt with Some tref -> List.exists (IsMatchingFSharpAttribute g tref) attrs | _ -> false
+let HasFSharpAttributeOpt g trefOpt attrs = match trefOpt with Some tref -> Seq.exists (IsMatchingFSharpAttribute g tref) attrs | _ -> false
 let IsMatchingFSharpAttributeOpt g attrOpt (Attrib(tcref2,_,_,_,_,_,_)) = match attrOpt with Some ((AttribInfo(_,tcref))) -> tyconRefEq g tcref  tcref2 | _ -> false
 
 let (|ExtractAttribNamedArg|_|) nm args = 
-    args |> List.tryPick (function (AttribNamedArg(nm2,_,_,v)) when nm = nm2 -> Some v | _ -> None) 
+    args |> Seq.tryPick (function (AttribNamedArg(nm2,_,_,v)) when nm = nm2 -> Some v | _ -> None) 
 
 let (|AttribInt32Arg|_|) = function AttribExpr(_,Expr.Const (Const.Int32(n),_,_)) -> Some(n) | _ -> None
 let (|AttribInt16Arg|_|) = function AttribExpr(_,Expr.Const (Const.Int16(n),_,_)) -> Some(n) | _ -> None
@@ -2809,9 +2810,9 @@ let TryFindTyconRefBoolAttribute g m attribSpec tcref  =
 
 let TryFindAttributeUsageAttribute g m tcref  =
     TryBindTyconRefAttribute g m g.attrib_AttributeUsageAttribute tcref 
-                (fun (_,named)             -> named |> List.tryPick (function ("AllowMultiple",_,_,ILAttribElem.Bool res) -> Some res | _ -> None))
-                (fun (Attrib(_,_,_,named,_,_,_)) -> named |> List.tryPick (function AttribNamedArg("AllowMultiple",_,_,AttribBoolArg(res) ) -> Some res | _ -> None))
-                (fun (_,named)             -> named |> List.tryPick (function ("AllowMultiple", Some ((:? bool as res) : obj)) -> Some res | _ -> None))
+                (fun (_,named)             -> named |> Seq.tryPick (function ("AllowMultiple",_,_,ILAttribElem.Bool res) -> Some res | _ -> None))
+                (fun (Attrib(_,_,_,named,_,_,_)) -> named |> Seq.tryPick (function AttribNamedArg("AllowMultiple",_,_,AttribBoolArg(res) ) -> Some res | _ -> None))
+                (fun (_,named)             -> named |> Seq.tryPick (function ("AllowMultiple", Some ((:? bool as res) : obj)) -> Some res | _ -> None))
 
 
 /// Try to find a specific attribute on a type definition, where the attribute accepts a string argument.
@@ -3071,8 +3072,8 @@ module DebugPrint = begin
           (match !global_g with
            | None -> wordL (tagText "<no global g>")
            | Some g -> 
-             let sortVars (vs:(Typar * Rational) list) = vs |> List.sortBy (fun (v,_) -> v.DisplayName) 
-             let sortCons (cs:(TyconRef * Rational) list) = cs |> List.sortBy (fun (c,_) -> c.DisplayName) 
+             let sortVars (vs:(Typar * Rational) list) = vs |> Seq.sortBy (fun (v,_) -> v.DisplayName) |> Seq.toList
+             let sortCons (cs:(TyconRef * Rational) list) = cs |> Seq.sortBy (fun (c,_) -> c.DisplayName) |> Seq.toList
              let negvs,posvs = ListMeasureVarOccsWithNonZeroExponents         unt |> sortVars |> List.partition (fun (_,e) -> SignRational e < 0)
              let negcs,poscs = ListMeasureConOccsWithNonZeroExponents g false unt |> sortCons |> List.partition (fun (_,e) -> SignRational e < 0)
              let unparL (uv:Typar) = wordL (tagText ("'" ^  uv.DisplayName))
@@ -3342,8 +3343,8 @@ module DebugPrint = begin
             | argtys -> (prefixL ^^ nmL ^^ wordL(tagText "of")) --- layoutUnionCaseArgTypes argtys
 
         let layoutUnionCases ucases =
-            let prefixL = if not (isNilOrSingleton ucases) then wordL(tagText "|") else emptyL
-            List.map (ucaseL prefixL) ucases
+            let prefixL = if not (isNilOrSingleton' ucases) then wordL(tagText "|") else emptyL
+            Seq.map (ucaseL prefixL) ucases
             
         let layoutRecdField (fld:RecdField) =
             let lhs = wordL (tagText fld.Name)
@@ -3382,7 +3383,7 @@ module DebugPrint = begin
                     let alldecls = inherits @ vsprs @ vals
                     let emptyMeasure = match tycon.TypeOrMeasureKind with TyparKind.Measure -> isNil alldecls | _ -> false
                     if emptyMeasure then emptyL else (wordL (tagText start) @@-- aboveListL alldecls) @@ wordL(tagText "end")
-            | TUnionRepr _        -> tycon.UnionCasesAsList |> layoutUnionCases |> aboveListL 
+            | TUnionRepr _        -> tycon.UnionCasesAsSeq |> layoutUnionCases |> Seq.toList |> aboveListL 
             | TAsmRepr _                      -> wordL(tagText "(# ... #)")
             | TMeasureableRepr ty             -> typeL ty
             | TILObjectRepr (TILObjectReprData(_,_,td)) -> wordL (tagText td.Name)
@@ -3727,7 +3728,7 @@ let accEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi,mhi) =
                                 let rfref = tcref.MakeNestedRecdFieldRef rfield
                                 { mhi with mhiRecdFields =  Zset.add rfref mhi.mhiRecdFields })
                         entity.AllFieldsArray
-                |> List.foldBack  (fun (ucase:UnionCase) mhi ->
+                |> Seq.foldBack  (fun (ucase:UnionCase) mhi ->
                             match sigtycon.GetUnionCaseByName ucase.DisplayName with 
                             | Some _  -> 
                                 // The constructor is in the signature. Hence it is not hidden. 
@@ -3736,7 +3737,7 @@ let accEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi,mhi) =
                                 // The constructor is not in the signature. Hence it is regarded as hidden. 
                                 let ucref = tcref.MakeNestedUnionCaseRef ucase
                                 { mhi with mhiUnionCases =  Zset.add ucref mhi.mhiUnionCases })
-                        (entity.UnionCasesAsList)  
+                        (entity.UnionCasesAsSeq)  
         (mrpi,mhi) 
 
 let accSubEntityRemap (msigty:ModuleOrNamespaceType) (entity:Entity) (mrpi,mhi) =
@@ -3761,7 +3762,7 @@ let accValRemap g aenv (msigty:ModuleOrNamespaceType) (implVal:Val) (mrpi,mhi) =
     let sigValOpt = 
         msigty.AllValsAndMembersByPartialLinkageKey 
           |> MultiMap.find implVal.LinkagePartialKey 
-          |> List.tryFind (fun sigVal -> valLinkageAEquiv g aenv implVal sigVal)
+          |> Seq.tryFind (fun sigVal -> valLinkageAEquiv g aenv implVal sigVal)
           
     let vref = mkLocalValRef implVal
     match sigValOpt with 
@@ -3878,14 +3879,14 @@ let accTyconHidingInfoAtAssemblyBoundary (tycon:Tycon) mhi =
                        { mhi with mhiRecdFields = Zset.add rfref mhi.mhiRecdFields } 
                    else mhi)
                tycon.AllFieldsArray  
-        |> List.foldBack  
+        |> Seq.foldBack  
                (fun (ucase:UnionCase) mhi ->
                    if not (canAccessFromEverywhere ucase.Accessibility) then 
                        let tcref = mkLocalTyconRef tycon
                        let ucref = tcref.MakeNestedUnionCaseRef ucase
                        { mhi with mhiUnionCases = Zset.add ucref mhi.mhiUnionCases } 
                    else mhi)
-               (tycon.UnionCasesAsList)   
+               (tycon.UnionCasesAsSeq)   
 
 // Collect up the values hidden at the assembly boundary. This is used by IsHiddenVal to 
 // determine if something is considered hidden. This is used in turn to eliminate optimization
@@ -4695,7 +4696,7 @@ and fixupValData g compgen tmenv (v2:Val) =
 and copyAndRemapAndBindVals g compgen tmenv vs = 
     let vs2 = vs |> List.map (copyVal compgen)
     let tmenvinner = bindLocalVals vs vs2 tmenv
-    vs2 |> List.iter (fixupValData g compgen tmenvinner)
+    vs2 |> Seq.iter (fixupValData g compgen tmenvinner)
     vs2, tmenvinner
 
 and copyAndRemapAndBindVal g compgen tmenv v = 
@@ -4920,7 +4921,7 @@ and remapUnionCase g tmenv (x:UnionCase) =
           FieldTable = x.FieldTable |> remapRecdFields g tmenv;
           ReturnType     = x.ReturnType     |> remapType tmenv;
           Attribs = x.Attribs |> remapAttribs g tmenv; } 
-and remapUnionCases g tmenv (x:TyconUnionData) = x.UnionCasesAsList |> List.map (remapUnionCase g tmenv)|> MakeUnionCases 
+and remapUnionCases g tmenv (x:TyconUnionData) = x.UnionCasesAsSeq |> Seq.map (remapUnionCase g tmenv)|> MakeUnionCases 
 
 and remapFsObjData g tmenv x = 
     { x with 
@@ -5224,14 +5225,14 @@ and remarkBind m (TBind(v,repr,_)) =
 //--------------------------------------------------------------------------
 
 let isRecdOrStructFieldAllocObservable (f:RecdField) = not f.IsStatic && f.IsMutable
-let isUnionCaseAllocObservable (uc:UnionCase) = uc.FieldTable.FieldsByIndex |> Array.exists isRecdOrStructFieldAllocObservable
+let isUnionCaseAllocObservable (uc:UnionCase) = uc.FieldTable.FieldsByIndex |> Seq.exists isRecdOrStructFieldAllocObservable
 let isUnionCaseRefAllocObservable (uc:UnionCaseRef) = uc.UnionCase |> isUnionCaseAllocObservable
   
 let isRecdOrUnionOrStructTyconAllocObservable (_g:TcGlobals) (tycon:Tycon) =
     if tycon.IsUnionTycon then 
-        tycon.UnionCasesArray |> Array.exists isUnionCaseAllocObservable
+        tycon.UnionCasesArray |> Seq.exists isUnionCaseAllocObservable
     elif tycon.IsRecordTycon || tycon.IsStructOrEnumTycon then 
-        tycon.AllFieldsArray |> Array.exists isRecdOrStructFieldAllocObservable
+        tycon.AllFieldsArray |> Seq.exists isRecdOrStructFieldAllocObservable
     else
         false
 
@@ -5317,7 +5318,7 @@ let rec tyOfExpr g e =
         | TOp.ExnConstr _ -> g.exn_ty
         | TOp.Bytes _ -> mkByteArrayTy g
         | TOp.UInt16s _ -> mkArrayType g g.uint16_ty
-        | TOp.TupleFieldGet(_,i) -> List.item i tinst
+        | TOp.TupleFieldGet(_,i) -> Seq.item i tinst
         | TOp.Tuple tupInfo -> mkAnyTupledTy g tupInfo tinst
         | (TOp.For _ | TOp.While _) -> g.unit_ty
         | TOp.Array -> (match tinst with [ty] -> mkArrayType g ty | _ -> failwith "bad TOp.Array node")
@@ -5452,7 +5453,7 @@ let rec targetOfSuccessDecisionTree tree =
 let rec decisionTreeHasNonTrivialBindings tree =
     match tree with 
     | TDSwitch (_,edges,dflt,_) -> 
-        edges |> List.exists (fun c -> decisionTreeHasNonTrivialBindings c.CaseTree) || 
+        edges |> Seq.exists (fun c -> decisionTreeHasNonTrivialBindings c.CaseTree) || 
         dflt |> Option.exists decisionTreeHasNonTrivialBindings 
     | TDSuccess _ -> false
     | TDBind (_,t) -> Option.isNone (targetOfSuccessDecisionTree t)
@@ -5487,7 +5488,7 @@ let foldLinearBindingTargetsOfMatch tree (targets: _[]) =
         let isLinearTarget bs = match bs with [_] -> true | _ -> false
         let isLinearTgtIdx i = isLinearTarget branchesToTargets.[i] 
         let getLinearTgtIdx i = branchesToTargets.[i].Head
-        let hasLinearTgtIdx = branchesToTargets |> Array.exists isLinearTarget
+        let hasLinearTgtIdx = branchesToTargets |> Seq.exists isLinearTarget
 
         if not hasLinearTgtIdx then 
 
@@ -5748,7 +5749,7 @@ let rec IterateRecursiveFixups g (selfv : Val option) rvs ((access : Expr),set) 
   match exprToFix with 
   | Expr.Const _ -> ()
   | Expr.Op (TOp.Tuple tupInfo,argtys,args,m) when not (evalTupInfoIsStruct tupInfo) ->
-      args |> List.iteri (fun n -> 
+      args |> Seq.iteri (fun n -> 
           IterateRecursiveFixups g None rvs 
             (mkTupleFieldGet g (tupInfo,access,argtys,n,m), 
             (fun e -> 
@@ -5757,7 +5758,7 @@ let rec IterateRecursiveFixups g (selfv : Val option) rvs ((access : Expr),set) 
               e)))
 
   | Expr.Op (TOp.UnionCase (c),tinst,args,m) ->
-      args |> List.iteri (fun n -> 
+      args |> Seq.iteri (fun n -> 
           IterateRecursiveFixups g None rvs 
             (mkUnionCaseFieldGetUnprovenViaExprAddr (access,c,tinst,n,m), 
              (fun e -> 
@@ -5834,7 +5835,7 @@ let ExprFolder0 =
 /// To collect ids etc some additional folding needed, over formals etc.
 type ExprFolders<'State> (folders : _ ExprFolder) =
     let mutable exprFClosure = Unchecked.defaultof<_> // prevent reallocation of closure
-    let rec exprsF z xs = List.fold exprFClosure z xs
+    let rec exprsF z xs = Seq.fold exprFClosure z xs
     and exprF (z: 'State) x =
         match folders.exprIntercept exprFClosure z x with // fold this node, then recurse 
         | Some z -> z // intercepted 
@@ -5864,7 +5865,7 @@ type ExprFolders<'State> (folders : _ ExprFolder) =
 
             | Expr.Match (_spBind,_exprm,dtree,targets,_m,_ty)                 -> 
                 let z = dtreeF z dtree
-                let z = Array.fold targetF z targets
+                let z = Seq.fold targetF z targets
                 z
             | Expr.Quote(e,{contents=Some(_typeDefs,_argTypes,argExprs,_)},_,_,_)  -> 
                 let z = exprF z e
@@ -5875,8 +5876,8 @@ type ExprFolders<'State> (folders : _ ExprFolder) =
 
             | Expr.Obj (_n,_typ,_basev,basecall,overrides,iimpls,_m)    -> 
                 let z = exprF z basecall
-                let z = List.fold tmethodF z overrides
-                let z = List.fold (foldOn snd (List.fold tmethodF)) z iimpls
+                let z = Seq.fold tmethodF z overrides
+                let z = Seq.fold (foldOn snd (Seq.fold tmethodF)) z iimpls
                 z
 
             | Expr.StaticOptimization (_tcs,csx,x,_) -> exprsF z [csx;x]
@@ -5887,7 +5888,7 @@ type ExprFolders<'State> (folders : _ ExprFolder) =
 
     and valBindsF dtree z binds =
         let z = folders.recBindingsIntercept z binds
-        List.fold (bindF dtree) z binds 
+        Seq.fold (bindF dtree) z binds 
 
     and bindF dtree z (bind:Binding) =
         let z = folders.valBindingSiteIntercept z (dtree,bind.Var)
@@ -5902,7 +5903,7 @@ type ExprFolders<'State> (folders : _ ExprFolder) =
         | TDSuccess (args,_)            -> exprsF z args
         | TDSwitch (test,dcases,dflt,_) -> 
             let z = exprF z test
-            let z = List.fold dcaseF z dcases
+            let z = Seq.fold dcaseF z dcases
             let z = Option.fold dtreeF z dflt
             z
 
@@ -5931,11 +5932,11 @@ type ExprFolders<'State> (folders : _ ExprFolder) =
         match x with
         | TMDefRec(_,_,mbinds,_) -> 
             (* REVIEW: also iterate the abstract slot vspecs hidden in the _vslots field in the tycons *)
-            let z = List.fold mbindF z mbinds
+            let z = Seq.fold mbindF z mbinds
             z
         | TMDefLet(bind,_) -> valBindF false z bind
         | TMDefDo(e,_) -> exprF z e
-        | TMDefs defs -> List.fold mdefF z defs 
+        | TMDefs defs -> Seq.fold mdefF z defs 
         | TMAbstract x -> mexprF z x
 
     and mbindF z x = 
@@ -6054,7 +6055,7 @@ let liftAllBefore sigma =
             if existsR 0 (i' - 1) (fun j' -> invSigma.[j'] > i)  then 
                     yield i ]
 
-    if lifted.IsEmpty then 0 else List.max lifted + 1
+    if lifted.IsEmpty then 0 else Seq.max lifted + 1
 
 
 ///  Put record field assignments in order.
@@ -6720,7 +6721,7 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
                 List.chop (min suppliedArgs.Length curriedNiceNames.Length) suppliedArgs
 
             /// The relevant range for any expressions and applications includes the arguments 
-            let appm = (m,suppliedArgs) ||> List.fold (fun m e -> unionRanges m (e.Range)) 
+            let appm = (m,suppliedArgs) ||> Seq.fold (fun m e -> unionRanges m (e.Range)) 
 
             // See if we have 'enough' suppliedArgs. If not, we have to build some lambdas, and,
             // we have to 'let' bind all arguments that we consume, e.g.
@@ -6983,7 +6984,7 @@ let LinearizeTopMatchAux g parent  (spBind,m,tree,targets,m2,ty) =
     let isThrowingTarget = function TTarget(_,x,_) -> isThrow x
     if 1 + List.count isThrowingTarget targetsL = targetsL.Length then
         (* Have failing targets and ONE successful one, so linearize *)
-        let (TTarget (vs,rhs,spTarget)) = Option.get (List.tryFind (isThrowingTarget >> not) targetsL)
+        let (TTarget (vs,rhs,spTarget)) = Option.get (Seq.tryFind (isThrowingTarget >> not) targetsL)
         (* note - old code here used copy value to generate locals - this was not right *)
         let fvs      = vs |> List.map (fun v -> fst(mkLocal v.Range v.LogicalName v.Type)) (* fresh *)
         let vtys     = vs |> List.map (fun v -> v.Type) 
@@ -7147,7 +7148,7 @@ let XmlDocSigOfVal g path (v:Val) =
   let genArity = if arity=0 then "" else sprintf "``%d" arity
   prefix + prependPath path name + genArity + args
   
-let BuildXmlDocSig prefix paths =  prefix + List.fold prependPath "" paths
+let BuildXmlDocSig prefix paths =  prefix + Seq.fold prependPath "" paths
 
 let XmlDocSigOfUnionCase = BuildXmlDocSig "T:" // Would like to use "U:", but ParseMemberSignature only accepts C# signatures
 
@@ -7155,7 +7156,7 @@ let XmlDocSigOfField     = BuildXmlDocSig "F:"
 
 let XmlDocSigOfProperty  = BuildXmlDocSig "P:"
 
-let XmlDocSigOfTycon     = BuildXmlDocSig "T:"
+let XmlDocSigOfTycon  (x:seq<_>)   = BuildXmlDocSig "T:" x
 
 let XmlDocSigOfSubModul  = BuildXmlDocSig "T:"
 
@@ -7186,7 +7187,7 @@ let CanHaveUseNullAsTrueValueAttribute (_g:TcGlobals) (tycon:Tycon) =
    let ucs = tycon.UnionCasesArray
    (ucs.Length = 0 ||
      (ucs |> Array.existsOne (fun uc -> uc.IsNullary) &&
-      ucs |> Array.exists (fun uc -> not uc.IsNullary))))
+      ucs |> Seq.exists (fun uc -> not uc.IsNullary))))
 
 // WARNING: this must match optimizeAlternativeToNull in ilx/cu_erase.fs
 let IsUnionTypeWithNullAsTrueValue (g:TcGlobals) (tycon:Tycon) =
@@ -7195,7 +7196,7 @@ let IsUnionTypeWithNullAsTrueValue (g:TcGlobals) (tycon:Tycon) =
    (ucs.Length = 0 ||
      (TyconHasUseNullAsTrueValueAttribute g tycon &&
       ucs |> Array.existsOne (fun uc -> uc.IsNullary) &&
-      ucs |> Array.exists (fun uc -> not uc.IsNullary))))
+      ucs |> Seq.exists (fun uc -> not uc.IsNullary))))
 
 let TyconCompilesInstanceMembersAsStatic g tycon = IsUnionTypeWithNullAsTrueValue g tycon
 let TcrefCompilesInstanceMembersAsStatic g (tcref: TyconRef) = TyconCompilesInstanceMembersAsStatic g tcref.Deref
@@ -7243,9 +7244,9 @@ let rec TypeHasDefaultValue g m ty =
                   // We can ignore fields with the DefaultValue(false) attribute 
                   |> List.filter (fun fld -> not (TryFindFSharpBoolAttribute g g.attrib_DefaultValueAttribute fld.FieldAttribs = Some(false)))
 
-            flds |> List.forall (actualTyOfRecdField (mkTyconRefInst tcref tinst) >> TypeHasDefaultValue g m)
+            flds |> Seq.forall (actualTyOfRecdField (mkTyconRefInst tcref tinst) >> TypeHasDefaultValue g m)
          elif isStructTupleTy g ty then 
-            destStructTupleTy g ty |> List.forall (TypeHasDefaultValue g m)
+            destStructTupleTy g ty |> Seq.forall (TypeHasDefaultValue g m)
          else
             // All struct types defined in other .NET languages have a DefaultValue regardless of their
             // instantiation
@@ -7440,7 +7441,7 @@ type ActivePatternElemRef with
         | Some apinfo -> 
             let nms = apinfo.ActiveTags
             if n < 0 || n >= List.length nms  then error(InternalError("name_of_apref: index out of range for active pattern reference", vref.Range));
-            List.item n nms
+            Seq.item n nms
 
 let mkChoiceTyconRef (g:TcGlobals) m n = 
      match n with 
@@ -7480,7 +7481,7 @@ type PrettyNaming.ActivePatternInfo with
 // not by their argument types.
 let doesActivePatternHaveFreeTypars g (v:ValRef) =
     let vty  = v.TauType
-    let vtps = v.Typars |> Zset.ofList typarOrder
+    let vtps = v.Typars |> Zset.ofSeq typarOrder
     if not (isFunTy g v.TauType) then
         errorR(Error(FSComp.SR.activePatternIdentIsNotFunctionTyped(v.LogicalName),v.Range))
     let argtys,resty  = stripFunTy g vty
@@ -7755,19 +7756,19 @@ let isCompiledConstraint cx =
 // Used to turn off TLR and method splitting
 let IsGenericValWithGenericContraints g (v:Val) = 
     isForallTy g v.Type && 
-    v.Type |> destForallTy g |> fst |> List.exists (fun tp -> List.exists isCompiledConstraint tp.Constraints)
+    v.Type |> destForallTy g |> fst |> Seq.exists (fun tp -> Seq.exists isCompiledConstraint tp.Constraints)
 
 // Does a type support a given interface? 
 type Entity with 
     member tycon.HasInterface g ty = 
-        tycon.TypeContents.tcaug_interfaces |> List.exists (fun (x,_,_) -> typeEquiv g ty x)  
+        tycon.TypeContents.tcaug_interfaces |> Seq.exists (fun (x,_,_) -> typeEquiv g ty x)  
 
     // Does a type have an override matching the given name and argument types? 
     // Used to detect the presence of 'Equals' and 'GetHashCode' in type checking 
     member tycon.HasOverride g nm argtys = 
         tycon.TypeContents.tcaug_adhoc 
         |> NameMultiMap.find nm
-        |> List.exists (fun vref -> 
+        |> Seq.exists (fun vref -> 
                           match vref.MemberInfo with 
                           | None -> false 
                           | Some membInfo -> 
@@ -7779,7 +7780,7 @@ type Entity with
     member tycon.HasMember g nm argtys = 
         tycon.TypeContents.tcaug_adhoc 
         |> NameMultiMap.find nm
-        |> List.exists (fun vref -> 
+        |> Seq.exists (fun vref -> 
                           match vref.MemberInfo with 
                           | None -> false 
                           | _ -> let argInfos = ArgInfosOfMember g vref 
@@ -7833,7 +7834,7 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
                    (not (typeEquiv g (tyOfExpr g arg1) g.string_ty)  && not (typeEquiv g (tyOfExpr g arg1) g.decimal_ty) )
                 -> checkExpr vrefs arg1 && checkExpr vrefs arg2 
         | Expr.Val(vref,_,_) -> vref.Deref.IsCompiledAsStaticPropertyWithoutField || vrefs.Contains vref.Stamp
-        | Expr.Match(_,_,dtree,targets,_,_) -> checkDecisionTree vrefs dtree && targets |> Array.forall (checkDecisionTreeTarget vrefs)
+        | Expr.Match(_,_,dtree,targets,_,_) -> checkDecisionTree vrefs dtree && targets |> Seq.forall (checkDecisionTreeTarget vrefs)
         | Expr.Let(b,e,_,_) -> checkExpr vrefs b.Expr && checkExpr (vrefs.Add b.Var.Stamp) e
         // Detect standard constants 
         | Expr.TyChoose (_,b,_) -> checkExpr vrefs b
@@ -7847,13 +7848,13 @@ let IsSimpleSyntacticConstantExpr g inputExpr =
 
     and checkDecisionTree vrefs x = 
         match x with 
-        | TDSuccess (es,_n) -> es |> List.forall (checkExpr vrefs)
-        | TDSwitch (e,cases,dflt,_m) -> checkExpr vrefs e && cases |> List.forall (checkDecisionTreeCase vrefs) && dflt |> Option.forall (checkDecisionTree vrefs)
+        | TDSuccess (es,_n) -> es |> Seq.forall (checkExpr vrefs)
+        | TDSwitch (e,cases,dflt,_m) -> checkExpr vrefs e && cases |> Seq.forall (checkDecisionTreeCase vrefs) && dflt |> Option.forall (checkDecisionTree vrefs)
         | TDBind (bind,body) -> checkExpr vrefs bind.Expr && checkDecisionTree (vrefs.Add bind.Var.Stamp) body
     and checkDecisionTreeCase vrefs (TCase(discrim,dtree)) = 
        (match discrim with DecisionTreeTest.Const _c -> true | _ -> false) && checkDecisionTree vrefs dtree
     and checkDecisionTreeTarget vrefs (TTarget(vs,e,_)) = 
-       let vrefs = ((vrefs, vs) ||> List.fold (fun s v -> s.Add v.Stamp)) 
+       let vrefs = ((vrefs, vs) ||> Seq.fold (fun s v -> s.Add v.Stamp)) 
        checkExpr vrefs e
 
     checkExpr Set.empty inputExpr    

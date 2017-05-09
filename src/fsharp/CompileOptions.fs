@@ -128,7 +128,7 @@ let PrintCompilerOption (CompilerOption(_s,_tag,_spec,_,help) as compilerOption)
           printf  " %s" word
           column + 1 + word.Length
     let words = match help with None -> [| |] | Some s -> s.Split [| ' ' |]
-    let _finalColumn = Array.fold printWord flagWidth words
+    let _finalColumn = Seq.fold printWord flagWidth words
     printfn "" (* newline *)
 
 let PrintPublicOptions (heading,opts) =
@@ -136,7 +136,7 @@ let PrintPublicOptions (heading,opts) =
     printfn ""
     printfn ""      
     printfn "\t\t%s" heading
-    List.iter PrintCompilerOption opts
+    Seq.iter PrintCompilerOption opts
 
 let PrintCompilerOptionBlocks blocks =
   let equals x y = x=y
@@ -148,7 +148,7 @@ let PrintCompilerOptionBlocks blocks =
       let headingOptions = List.filter (fst >> equals heading) publicBlocks |> List.collect snd
       PrintPublicOptions (heading,headingOptions)
       Set.add heading doneHeadings
-  List.fold consider Set.empty publicBlocks |> ignore<Set<string>>
+  Seq.fold consider Set.empty publicBlocks |> ignore<Set<string>>
 
 (* For QA *)
 let dumpCompilerOption prefix (CompilerOption(str, _, spec, _, _)) =
@@ -170,9 +170,9 @@ let dumpCompilerOption prefix (CompilerOption(str, _, spec, _, _)) =
       | OptionGeneral          _ -> printf "OptionGeneral"
     printf "\n"
 let dumpCompilerOptionBlock = function
-  | PublicOptions (heading,opts) -> List.iter (dumpCompilerOption heading)     opts
-  | PrivateOptions opts          -> List.iter (dumpCompilerOption "NoSection") opts
-let DumpCompilerOptionBlocks blocks = List.iter dumpCompilerOptionBlock blocks
+  | PublicOptions (heading,opts) -> Seq.iter (dumpCompilerOption heading)     opts
+  | PrivateOptions opts          -> Seq.iter (dumpCompilerOption "NoSection") opts
+let DumpCompilerOptionBlocks blocks = Seq.iter dumpCompilerOptionBlock blocks
 
 let isSlashOpt (opt:string) = 
     opt.[0] = '/' && (opt.Length = 1 || not (opt.[1..].Contains "/"))
@@ -336,33 +336,33 @@ let ParseCompilerOptions (collectOtherArgument : string -> unit, blocks: Compile
               t
           | (CompilerOption(s, _, OptionRest f, d, _) :: _) when optToken = s -> 
               reportDeprecatedOption d
-              List.iter f t; []
+              Seq.iter f t; []
           | (CompilerOption(s, _, OptionIntList f, d, _) as compilerOption :: _) when optToken = s ->
               reportDeprecatedOption d
               let al = getOptionArgList compilerOption argString
               if al <> [] then
-                  List.iter (fun i -> f (try int32 i with _ -> errorR(Error(FSComp.SR.buildArgInvalidInt(i),rangeCmdArgs)); 0)) al ;
+                  Seq.iter (fun i -> f (try int32 i with _ -> errorR(Error(FSComp.SR.buildArgInvalidInt(i),rangeCmdArgs)); 0)) al ;
               t
           | (CompilerOption(s, _, OptionIntListSwitch f, d, _) as compilerOption :: _) when getSwitchOpt(optToken) = s -> 
               reportDeprecatedOption d
               let al = getOptionArgList compilerOption argString
               if al <> [] then
                   let switch = getSwitch(opt)
-                  List.iter (fun i -> f (try int32 i with _ -> errorR(Error(FSComp.SR.buildArgInvalidInt(i),rangeCmdArgs)); 0) switch) al  
+                  Seq.iter (fun i -> f (try int32 i with _ -> errorR(Error(FSComp.SR.buildArgInvalidInt(i),rangeCmdArgs)); 0) switch) al  
               t
               // here
           | (CompilerOption(s, _, OptionStringList f, d, _) as compilerOption :: _) when optToken = s -> 
               reportDeprecatedOption d
               let al = getOptionArgList compilerOption argString
               if al <> [] then
-                  List.iter f (getOptionArgList compilerOption argString)
+                  Seq.iter f (getOptionArgList compilerOption argString)
               t
           | (CompilerOption(s, _, OptionStringListSwitch f, d, _) as compilerOption :: _) when getSwitchOpt(optToken) = s -> 
               reportDeprecatedOption d
               let al = getOptionArgList compilerOption argString
               if al <> [] then
                   let switch = getSwitch(opt)
-                  List.iter (fun s -> f s switch) (getOptionArgList compilerOption argString)
+                  Seq.iter (fun s -> f s switch) (getOptionArgList compilerOption argString)
               t
           | (CompilerOption(_, _, OptionGeneral (pred,exec), d, _) :: _) when pred args -> 
               reportDeprecatedOption d
@@ -525,8 +525,8 @@ let PrintOptionInfo (tcConfigB:TcConfigBuilder) =
     printfn "  resolutionEnvironment  : %+A" tcConfigB.resolutionEnvironment
     printfn "  product  . . . . . . . : %+A" tcConfigB.productNameForBannerText
     printfn "  copyFSharpCore . . . . : %+A" tcConfigB.copyFSharpCore
-    tcConfigB.includes |> List.sort
-                       |> List.iter (printfn "  include  . . . . . . . : %A")
+    tcConfigB.includes |> Seq.sort
+                       |> Seq.iter (printfn "  include  . . . . . . . : %A")
 
 // OptionBlock: Input files
 //-------------------------
@@ -1217,7 +1217,7 @@ let AddExternalCcuToOpimizationEnv tcGlobals optEnv (ccuinfo: ImportedAssembly) 
 let GetInitialOptimizationEnv (tcImports:TcImports, tcGlobals:TcGlobals) =
     let ccuinfos = tcImports.GetImportedAssemblies()
     let optEnv = Optimizer.IncrementalOptimizationEnv.Empty
-    let optEnv = List.fold (AddExternalCcuToOpimizationEnv tcGlobals) optEnv ccuinfos 
+    let optEnv = Seq.fold (AddExternalCcuToOpimizationEnv tcGlobals) optEnv ccuinfos 
     optEnv
    
 let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importMap, isIncrementalFragment, optEnv, ccu:CcuThunk, implFiles) =

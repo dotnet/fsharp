@@ -140,7 +140,7 @@ namespace Internal.Utilities.Collections.Tagged
         /// with any maps built from this map.
         static member Empty: 'ComparerTag -> Map<'Key,'Value,'ComparerTag>
 
-        static member FromList : 'ComparerTag * ('Key * 'Value) list -> Map<'Key,'Value,'ComparerTag>
+        static member FromList : 'ComparerTag * ('Key * 'Value) seq -> Map<'Key,'Value,'ComparerTag>
 
         /// Build a map that contains the bindings of the given <c>IEnumerable</c>
         /// and where comparison of elements is based on the given comparison function.

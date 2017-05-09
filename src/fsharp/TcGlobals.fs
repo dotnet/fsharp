@@ -323,7 +323,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let makeIntrinsicValRef (enclosingEntity, logicalName, memberParentName, compiledNameOpt, typars, (argtys, rty))  =
       let ty = tryMkForallTy typars (mkIteratedFunTy (List.map mkSmallRefTupledTy argtys) rty)
       let isMember = Option.isSome memberParentName
-      let argCount = if isMember then List.sum (List.map List.length argtys) else 0
+      let argCount = if isMember then Seq.sum (List.map List.length argtys) else 0
       let linkageType = if isMember then Some ty else None
       let key = ValLinkageFullKey({ MemberParentMangledName=memberParentName; MemberIsOverride=false; LogicalName=logicalName; TotalArgCount= argCount }, linkageType)
       let vref = IntrinsicValRef(enclosingEntity, logicalName, isMember, ty, key)
@@ -651,7 +651,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
            generatedAttribsCache <- res
            res
        | res -> res
-    mkILCustomAttrs (attrs.AsList @ attribs)
+    mkILCustomAttrs (Seq.append attrs.AsSeq attribs)
 
   let addMethodGeneratedAttrs (mdef:ILMethodDef)   = {mdef with CustomAttrs   = addGeneratedAttrs mdef.CustomAttrs}
   let addPropertyGeneratedAttrs (pdef:ILPropertyDef) = {pdef with CustomAttrs = addGeneratedAttrs pdef.CustomAttrs}
@@ -671,7 +671,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
           res
       | Some res -> res
 
-  let addNeverAttrs (attrs: ILAttributes) = mkILCustomAttrs (attrs.AsList @ [mkDebuggerBrowsableNeverAttribute()])
+  let addNeverAttrs (attrs: ILAttributes) = mkILCustomAttrs (Seq.append attrs.AsSeq (Seq.singleton (mkDebuggerBrowsableNeverAttribute())))
   let addPropertyNeverAttrs (pdef:ILPropertyDef) = {pdef with CustomAttrs = addNeverAttrs pdef.CustomAttrs}
   let addFieldNeverAttrs (fdef:ILFieldDef) = {fdef with CustomAttrs = addNeverAttrs fdef.CustomAttrs}
   let mkDebuggerTypeProxyAttribute (ty : ILType) = mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerTypeProxyAttribute,  [ilg.typ_Type], [ILAttribElem.TypeRef (Some ty.TypeRef)], [])
@@ -707,7 +707,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
 
         let entries2 =
             [| 
-              "FSharpFunc`2" ,       v_fastFunc_tcr      , (fun tinst -> mkFunTy (List.item 0 tinst) (List.item 1 tinst))
+              "FSharpFunc`2" ,       v_fastFunc_tcr      , (fun tinst -> mkFunTy (Seq.item 0 tinst) (Seq.item 1 tinst))
               "Tuple`2"      ,       v_ref_tuple2_tcr    , decodeTupleTy tupInfoRef
               "Tuple`3"      ,       v_ref_tuple3_tcr    , decodeTupleTy tupInfoRef
               "Tuple`4"      ,       v_ref_tuple4_tcr    , decodeTupleTy tupInfoRef

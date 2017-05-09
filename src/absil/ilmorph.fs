@@ -152,7 +152,7 @@ let cattr_typ2typ ilg f c =
 
 
 let cattrs_typ2typ ilg f (cs: ILAttributes) =
-    mkILCustomAttrs (List.map (cattr_typ2typ ilg f) cs.AsList)
+    mkILCustomAttrs (Seq.map (cattr_typ2typ ilg f) cs.AsSeq)
 
 let fdef_typ2typ ilg ftype (fd: ILFieldDef) = 
     {fd with Type=ftype fd.Type; 
@@ -203,7 +203,7 @@ let morphILTypesInILInstr ((factualty,fformalty)) i =
 let return_typ2typ ilg f (r:ILReturn) = {r with Type=f r.Type; CustomAttrs=cattrs_typ2typ ilg f r.CustomAttrs}
 let param_typ2typ ilg f (p: ILParameter) = {p with Type=f p.Type; CustomAttrs=cattrs_typ2typ ilg f p.CustomAttrs}
 
-let morphILMethodDefs f (m:ILMethodDefs) = mkILMethods (List.map f m.AsList)
+let morphILMethodDefs f (m:ILMethodDefs) = mkILMethods (Seq.map f m.AsSeq)
 let fdefs_fdef2fdef f (m:ILFieldDefs) = mkILFields (List.map f m.AsList)
 
 (* use this when the conversion produces just one type... *)

@@ -836,7 +836,7 @@ type Entity =
         | None -> [| |] 
 
     /// Get the union cases for a type, if any, as a list
-    member x.UnionCasesAsList = x.UnionCasesArray |> Array.toList
+    member x.UnionCasesAsSeq = x.UnionCasesArray |> Seq.ofArray
 
     /// Get a union case of a type by name
     member x.GetUnionCaseByName n =
@@ -1363,7 +1363,7 @@ and
         if n >= 0 && n < x.CasesByIndex.Length then x.CasesByIndex.[n] 
         else invalidArg "n" "GetUnionCaseByIndex"
 
-    member x.UnionCasesAsList = x.CasesByIndex |> Array.toList
+    member x.UnionCasesAsSeq = x.CasesByIndex |> Seq.ofArray
 
 and 
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1373,7 +1373,7 @@ and
       /// The ILX data structure representing the discriminated union. 
       CompiledRepresentation: IlxUnionRef cache 
     }
-    member x.UnionCasesAsList = x.CasesTable.CasesByIndex |> Array.toList
+    member x.UnionCasesAsSeq = x.CasesTable.CasesByIndex |> Seq.ofArray
 
 and 
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -1679,7 +1679,7 @@ and
       member mtyp.TryLinkVal(ccu:CcuThunk,key:ValLinkageFullKey) = 
           mtyp.AllValsAndMembersByPartialLinkageKey
             |> MultiMap.find key.PartialKey
-            |> List.tryFind (fun v -> match key.TypeForLinkage with 
+            |> Seq.tryFind (fun v -> match key.TypeForLinkage with 
                                       | None -> true
                                       | Some keyTy -> ccu.MemberSignatureEquality(keyTy,v.Type))
             |> ValueOption.ofOption
@@ -3050,7 +3050,7 @@ and
     member x.UnionCasesArray           = x.Deref.UnionCasesArray
 
     /// Get the union cases for a type, if any, as a list
-    member x.UnionCasesAsList          = x.Deref.UnionCasesAsList
+    member x.UnionCasesAsSeq          = x.Deref.UnionCasesAsSeq
 
     /// Get a union case of a type by name
     member x.GetUnionCaseByName n      = x.Deref.GetUnionCaseByName n
@@ -3148,7 +3148,7 @@ and
     /// Indicates if we have pre-determined that a type definition has a self-referential constructor using 'as x'
     member x.HasSelfReferentialConstructor = x.Deref.HasSelfReferentialConstructor
 
-    member x.UnionCasesAsRefList         = x.UnionCasesAsList         |> List.map x.MakeNestedUnionCaseRef
+    member x.UnionCasesAsRefList         = x.UnionCasesAsSeq         |> Seq.map x.MakeNestedUnionCaseRef |> Seq.toList
 
     member x.TrueInstanceFieldsAsRefList = x.TrueInstanceFieldsAsList |> List.map x.MakeNestedRecdFieldRef
 
@@ -3951,7 +3951,7 @@ and ValReprInfo  =
     /// Get the total number of arguments 
     member x.TotalArgCount = 
         let (ValReprInfo(_,args,_)) = x in 
-        // This is List.sumBy List.length args
+        // This is Seq.sumBy List.length args
         // We write this by hand as it can be a performance bottleneck in LinkagePartialKey
         let rec loop (args:ArgReprInfo list list) acc = 
             match args with 
@@ -4807,15 +4807,15 @@ let inline canAccessCompPathFrom (CompPath(scoref1,cpath1)) (CompPath(scoref2,cp
     (scoref1 = scoref2)
 
 let canAccessFromOneOf cpaths cpathTest =
-    cpaths |> List.exists (fun cpath -> canAccessCompPathFrom cpath cpathTest) 
+    cpaths |> Seq.exists (fun cpath -> canAccessCompPathFrom cpath cpathTest) 
 
 let canAccessFrom (TAccess x) cpath = 
-    x |> List.forall (fun cpath1 -> canAccessCompPathFrom cpath1 cpath)
+    x |> Seq.forall (fun cpath1 -> canAccessCompPathFrom cpath1 cpath)
 
 let canAccessFromEverywhere (TAccess x) = x.IsEmpty
 let canAccessFromSomewhere (TAccess _) = true
 let isLessAccessible (TAccess aa) (TAccess bb)  = 
-    not (aa |> List.forall(fun a -> bb |> List.exists (fun b -> canAccessCompPathFrom a b)))
+    not (aa |> Seq.forall(fun a -> bb |> Seq.exists (fun b -> canAccessCompPathFrom a b)))
 
 /// Given (newPath,oldPath) replace oldPath by newPath in the TAccess.
 let accessSubstPaths (newPath,oldPath) (TAccess paths) =
@@ -4836,13 +4836,14 @@ let combineAccess (TAccess a1) (TAccess a2) = TAccess(a1@a2)
 let NewFreeVarsCache() = newCache ()
 
 let MakeUnionCasesTable ucs : TyconUnionCases = 
-    { CasesByIndex = Array.ofList ucs 
-      CasesByName = NameMap.ofKeyedList (fun uc -> uc.DisplayName) ucs }
+    let casesByIndex = Seq.toArray ucs 
+    { CasesByIndex = casesByIndex
+      CasesByName = casesByIndex |> NameMap.ofKeyedList (fun uc -> uc.DisplayName) }
                                                                   
 let MakeRecdFieldsTable ucs : TyconRecdFields = 
-    { FieldsByIndex = Array.ofList ucs 
-      FieldsByName = ucs  |> NameMap.ofKeyedList (fun rfld -> rfld.Name) }
-                                                                  
+    let fieldsByIndex = Seq.toArray ucs 
+    { FieldsByIndex = fieldsByIndex 
+      FieldsByName = fieldsByIndex|> NameMap.ofKeyedList (fun rfld -> rfld.Name) }
 
 let MakeUnionCases ucs : TyconUnionData = 
     { CasesTable=MakeUnionCasesTable ucs 
@@ -5069,7 +5070,7 @@ let CombineCcuContentFragments m l =
     
     and CombineModuleOrNamespaceTypeList path m l = 
         match l with
-        | h :: t -> List.fold (CombineModuleOrNamespaceTypes path m) h t
+        | h :: t -> Seq.fold (CombineModuleOrNamespaceTypes path m) h t
         | _ -> failwith "CombineModuleOrNamespaceTypeList"
 
     CombineModuleOrNamespaceTypeList [] m l

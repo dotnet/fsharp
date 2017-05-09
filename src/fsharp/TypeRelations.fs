@@ -71,7 +71,7 @@ let rec TypeDefinitelySubsumesTypeNoCoercion ndeep g amap m ty1 ty2 =
 
            (isInterfaceTy g ty1 &&
             ty2 |> GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m 
-                |> List.exists (TypeDefinitelySubsumesTypeNoCoercion (ndeep+1) g amap m ty1))))
+                |> Seq.exists (TypeDefinitelySubsumesTypeNoCoercion (ndeep+1) g amap m ty1))))
 
 
 
@@ -129,7 +129,7 @@ let rec TypeFeasiblySubsumesType ndeep g amap m ty1 canCoerce ty2 =
          | Some ty -> TypeFeasiblySubsumesType (ndeep+1) g amap m ty1 NoCoerce ty
          end ||
          ty2 |> GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m 
-             |> List.exists (TypeFeasiblySubsumesType (ndeep+1) g amap m ty1 NoCoerce))
+             |> Seq.exists (TypeFeasiblySubsumesType (ndeep+1) g amap m ty1 NoCoerce))
                    
 
 /// Choose solutions for Expr.TyChoose type "hidden" variables introduced
@@ -145,7 +145,7 @@ let ChooseTyparSolutionAndRange (g: TcGlobals) amap (tp:Typar) =
              | TyparKind.Type -> g.obj_ty 
              | TyparKind.Measure -> TType_measure Measure.One
          // Loop through the constraints computing the lub
-         ((initial,m), tp.Constraints) ||> List.fold (fun (maxSoFar,_) tpc -> 
+         ((initial,m), tp.Constraints) ||> Seq.fold (fun (maxSoFar,_) tpc -> 
              let join m x = 
                  if TypeFeasiblySubsumesType 0 g amap m x CanCoerce maxSoFar then maxSoFar
                  elif TypeFeasiblySubsumesType 0 g amap m maxSoFar CanCoerce x then x
@@ -295,6 +295,6 @@ let IteratedAdjustArityOfLambda g amap topValInfo e =
 let FindUniqueFeasibleSupertype g amap m ty1 ty2 =  
     if not (isAppTy g ty2) then None else
     let supertypes = Option.toList (GetSuperTypeOfType g amap m ty2) @ (GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty2)
-    supertypes |> List.tryFind (TypeFeasiblySubsumesType 0 g amap m ty1 NoCoerce) 
+    supertypes |> Seq.tryFind (TypeFeasiblySubsumesType 0 g amap m ty1 NoCoerce) 
     
 

@@ -91,7 +91,7 @@ module Pair =
 type NameSet =  Zset<string>
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module NameSet =
-    let ofList l : NameSet = List.foldBack Zset.add l (Zset.empty String.order)
+    let ofList l : NameSet = Seq.foldBack Zset.add l (Zset.empty String.order)
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module NameMap = 
@@ -178,7 +178,7 @@ module ListAssoc =
 //------------------------------------------------------------------------
 
 module ListSet = 
-    let inline contains f x l = List.exists (f x) l
+    let inline contains f x l = Seq.exists (f x) l
 
     (* NOTE: O(n)! *)
     let insert f x l = if contains f x l then l else x::l
@@ -208,9 +208,9 @@ module ListSet =
       | (h::t) -> subtract f (remove (fun y2 y1 ->  f y1 y2) h l1) t
       | [] -> l1
 
-    let isSubsetOf f l1 l2 = List.forall (fun x1 -> contains f x1 l2) l1
+    let isSubsetOf f l1 l2 = Seq.forall (fun x1 -> contains f x1 l2) l1
     (* nb. preserve orders here: f must be applied to elements of l1 then elements of l2*)
-    let isSupersetOf f l1 l2 = List.forall (fun x2 -> contains (fun y2 y1 ->  f y1 y2) x2 l1) l2
+    let isSupersetOf f l1 l2 = Seq.forall (fun x2 -> contains (fun y2 y1 ->  f y1 y2) x2 l1) l2
     let equals f l1 l2 = isSubsetOf f l1 l2 && isSupersetOf f l1 l2
 
     let unionFavourLeft f l1 l2 = 
@@ -262,7 +262,7 @@ let fmap2Of2 f z (a1,a2)       = let z,a2 = f z a2 in z,(a1,a2)
 
 module List = 
     let noRepeats xOrder xs =
-        let s = Zset.addList   xs (Zset.empty xOrder) // build set 
+        let s = Zset.addSeq   xs (Zset.empty xOrder) // build set 
         Zset.elements s          // get elements... no repeats
 
 //---------------------------------------------------------------------------
@@ -282,7 +282,7 @@ module Zmap =
 //------------------------------------------------------------------------- 
 
 module Zset =
-    let ofList order xs = Zset.addList   xs (Zset.empty order)
+    let ofSeq order xs = Zset.addSeq   xs (Zset.empty order)
 
     // CLEANUP NOTE: move to Zset?
     let rec fixpoint f (s as s0) =
@@ -341,9 +341,9 @@ type Graph<'Data, 'Id when 'Id : comparison and 'Id : equality>
 
     member g.IterateCycles f = 
         let rec trace path node = 
-            if List.exists (nodeIdentity >> (=) node.nodeId) path then f (List.rev path)
-            else List.iter (trace (node.nodeData::path)) node.nodeNeighbours
-        List.iter (fun node -> trace [] node) nodes 
+            if Seq.exists (nodeIdentity >> (=) node.nodeId) path then f (List.rev path)
+            else Seq.iter (trace (node.nodeData::path)) node.nodeNeighbours
+        Seq.iter (fun node -> trace [] node) nodes 
 
 //---------------------------------------------------------------------------
 // In some cases we play games where we use 'null' as a more efficient representation
@@ -487,7 +487,7 @@ module internal AsyncUtil =
                     else
                         postOrQueue c
             |   _ ->
-                    grabbedConts |> List.iter postOrQueue
+                    grabbedConts |> Seq.iter postOrQueue
 
         /// Get the reified result.
         member private x.AsyncPrimitiveResult =

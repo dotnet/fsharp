@@ -101,7 +101,7 @@ type QuotationTranslationEnv =
         { env with tyvs = env.tyvs.Add(v.Stamp,idx ) }
 
     member env.BindTypars vs = 
-        (env, vs) ||> List.fold (fun env v -> env.BindTypar v) // fold left-to-right because indexes are left-to-right 
+        (env, vs) ||> Seq.fold (fun env v -> env.BindTypar v) // fold left-to-right because indexes are left-to-right 
 
 let BindFormalTypars (env:QuotationTranslationEnv)  vs = 
     { env with tyvs=Map.empty}.BindTypars vs 
@@ -117,8 +117,8 @@ let BindSubstVal env v e =
     { env with substVals = env.substVals.Add v e  }
 
 
-let BindVals env vs = List.fold BindVal env vs // fold left-to-right because indexes are left-to-right 
-let BindFlatVals env vs = List.fold BindVal env vs // fold left-to-right because indexes are left-to-right 
+let BindVals env vs = Seq.fold BindVal env vs // fold left-to-right because indexes are left-to-right 
+let BindFlatVals env vs = Seq.fold BindVal env vs // fold left-to-right because indexes are left-to-right 
 
 exception InvalidQuotedTerm of exn
 exception IgnoringPartOfQuotedTermWarning of string * Range.range
@@ -226,7 +226,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         | None -> ()
         cenv.exprSplices.Add((x0, m))
         let hole = QP.mkHole(ConvType cenv env m ty,idx)
-        (hole, rest) ||> List.fold (fun fR arg -> QP.mkApp (fR,ConvExpr cenv env arg))
+        (hole, rest) ||> Seq.fold (fun fR arg -> QP.mkApp (fR,ConvExpr cenv env arg))
 
     | ModuleValueOrMemberUse cenv.g (vref,vFlags,_f,_fty,tyargs,curriedArgs) 
         when not (isSplice cenv.g vref) ->
@@ -331,7 +331,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
                                 QP.mkSequential(argQ, subCall)
                 |   _ -> subCall
 
-            List.fold (fun fR arg -> QP.mkApp (fR,ConvExpr cenv env arg)) callR laterArgs
+            Seq.fold (fun fR arg -> QP.mkApp (fR,ConvExpr cenv env arg)) callR laterArgs
 
 
     // Blast type application nodes and expression application nodes apart so values are left with just their type arguments 
@@ -346,7 +346,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
     // Simple applications 
     | Expr.App(f,_fty,tyargs,args,m) -> 
         if not (List.isEmpty tyargs) then wfail(Error(FSComp.SR.crefQuotationsCantContainGenericExprs(), m))
-        List.fold (fun fR arg -> QP.mkApp (fR,ConvExpr cenv env arg)) (ConvExpr cenv env f) args
+        Seq.fold (fun fR arg -> QP.mkApp (fR,ConvExpr cenv env arg)) (ConvExpr cenv env f) args
     
     // REVIEW: what is the quotation view of literals accessing enumerations? Currently they show up as integers. 
     | Expr.Const(c,m,ty) -> 

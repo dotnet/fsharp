@@ -233,8 +233,8 @@ module GlobalUsageAnalysis =
     /// Log the definition of a recursive binding
     let logRecBindings z binds =
         let vs = valsOfBinds binds
-        {z with RecursiveBindings = (z.RecursiveBindings,vs) ||> List.fold (fun mubinds v -> Zmap.add v (true,vs) mubinds)
-                Defns    = (z.Defns,binds) ||> List.fold (fun eqns bind -> Zmap.add bind.Var bind.Expr eqns)  } 
+        {z with RecursiveBindings = (z.RecursiveBindings,vs) ||> Seq.fold (fun mubinds v -> Zmap.add v (true,vs) mubinds)
+                Defns    = (z.Defns,binds) ||> Seq.fold (fun eqns bind -> Zmap.add bind.Var bind.Expr eqns)  } 
 
     /// Work locally under a lambda of some kind
     let foldUnderLambda f z x =
@@ -280,7 +280,7 @@ module GlobalUsageAnalysis =
                     //      collect from args (have intercepted this node) 
                     let collect z f = logUse f (context,tys,args) z
                     let z = foldLocalVal collect z fOrig
-                    let z = List.fold exprF z args
+                    let z = Seq.fold exprF z args
                     Some z
                   | _ ->
                      // NO: app but function is not val 
@@ -546,7 +546,7 @@ let decideFormalSuggestedCP g z tys vss =
         | None       -> UnknownTS (* formal has no usage info, it is unused *)
         | Some sites -> 
             let trim ts (accessors,_inst,_args) = trimTsByAccess accessors ts
-            List.fold trim ts sites
+            Seq.fold trim ts sites
 
     let trimTsByFormal z ts vss = 
         match vss with 

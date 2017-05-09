@@ -39,7 +39,7 @@ module internal Zmap =
     val chooseL  : ('Key -> 'T -> 'U option) -> Zmap<'Key,'T> -> 'U list
 
     val toList   : Zmap<'Key,'T> -> ('Key * 'T) list
-    val ofList   : IComparer<'Key> -> ('Key * 'T) list -> Zmap<'Key,'T>
+    val ofList   : IComparer<'Key> -> ('Key * 'T) seq -> Zmap<'Key,'T>
 
     val keys     : Zmap<'Key,'T> -> 'Key list
     val values   : Zmap<'Key,'T> -> 'T   list

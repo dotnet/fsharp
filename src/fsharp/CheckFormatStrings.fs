@@ -82,7 +82,7 @@ let parseFormatStringInternal (m:range) (g: TcGlobals) (source: string option) f
     let rec parseLoop acc (i, relLine, relCol) = 
        if i >= len then
            let argtys =
-               if acc |> List.forall (fun (p, _) -> p = None) then // without positional specifiers
+               if acc |> Seq.forall (fun (p, _) -> p = None) then // without positional specifiers
                    acc |> List.map snd |> List.rev
                else  
                    failwithf "%s" <| FSComp.SR.forPositionalSpecifiersNotPermitted()

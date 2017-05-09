@@ -276,7 +276,7 @@ type CapturingErrorLogger(nm) =
     member x.CommitDelayedDiagnostics(errorLogger:ErrorLogger) = 
         // Eagerly grab all the errors and warnings from the mutable collection
         let errors = diagnostics.ToArray()
-        errors |> Array.iter errorLogger.DiagnosticSink
+        errors |> Seq.iter errorLogger.DiagnosticSink
 
 
 /// Type holds thread-static globals for use by the compile.
@@ -485,7 +485,7 @@ type ImperativeOperationResult = OperationResult<unit>
 let ReportWarnings warns = 
     match warns with 
     | [] -> () // shortcut in common case
-    | _ -> List.iter warning warns
+    | _ -> Seq.iter warning warns
 
 let CommitOperationResult res = 
     match res with 
@@ -564,7 +564,7 @@ let TryD f g =
     | res -> res
 
 let rec RepeatWhileD ndeep body = body ndeep ++ (fun x -> if x then RepeatWhileD (ndeep+1) body else CompleteD) 
-let AtLeastOneD f l = MapD f l ++ (fun res -> ResultD (List.exists id res))
+let AtLeastOneD f l = MapD f l ++ (fun res -> ResultD (Seq.exists id res))
 
 
 // Code below is for --flaterrors flag that is only used by the IDE

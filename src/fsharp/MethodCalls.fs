@@ -243,7 +243,7 @@ type CalledMeth<'T>
             let unnamedCalledArgs = 
                 fullCalledArgs |> List.filter (fun calledArg -> 
                     match calledArg.NameOpt with 
-                    | Some nm -> namedCallerArgs |> List.forall (fun (CallerNamedArg(nm2,_e)) -> nm.idText <> nm2.idText)   
+                    | Some nm -> namedCallerArgs |> Seq.forall (fun (CallerNamedArg(nm2,_e)) -> nm.idText <> nm2.idText)   
                     | None -> true)
 
             // See if any of them are 'out' arguments being returned as part of a return tuple 
@@ -253,10 +253,10 @@ type CalledMeth<'T>
                     let unnamedCalledArgsTrimmed,unnamedCalledOptOrOutArgs = List.chop nUnnamedCallerArgs unnamedCalledArgs
                     
                     // Check if all optional/out arguments are byref-out args
-                    if unnamedCalledOptOrOutArgs |> List.forall (fun x -> x.IsOutArg && isByrefTy g x.CalledArgumentType) then 
+                    if unnamedCalledOptOrOutArgs |> Seq.forall (fun x -> x.IsOutArg && isByrefTy g x.CalledArgumentType) then 
                         unnamedCalledArgsTrimmed,[],unnamedCalledOptOrOutArgs 
                     // Check if all optional/out arguments are optional args
-                    elif unnamedCalledOptOrOutArgs |> List.forall (fun x -> x.OptArgInfo.IsOptional) then 
+                    elif unnamedCalledOptOrOutArgs |> Seq.forall (fun x -> x.OptArgInfo.IsOptional) then 
                         unnamedCalledArgsTrimmed,unnamedCalledOptOrOutArgs,[]
                     // Otherwise drop them on the floor
                     else
@@ -281,14 +281,14 @@ type CalledMeth<'T>
                 fullCalledArgs |> List.choose (fun calledArg ->
                     match calledArg.NameOpt with 
                     | Some nm -> 
-                        namedCallerArgs |> List.tryPick (fun (CallerNamedArg(nm2,callerArg)) -> 
+                        namedCallerArgs |> Seq.tryPick (fun (CallerNamedArg(nm2,callerArg)) -> 
                             if nm.idText = nm2.idText then Some { NamedArgIdOpt = Some nm2; CallerArg=callerArg; CalledArg=calledArg } 
                             else None) 
                     | _ -> None)
 
             let unassignedNamedItem = 
                 namedCallerArgs |> List.filter (fun (CallerNamedArg(nm,_e)) -> 
-                    fullCalledArgs |> List.forall (fun calledArg -> 
+                    fullCalledArgs |> Seq.forall (fun calledArg -> 
                         match calledArg.NameOpt with 
                         | Some nm2 -> nm.idText <> nm2.idText
                         | None -> true))
@@ -406,9 +406,9 @@ type CalledMeth<'T>
 
     member x.HasOptArgs             = not (isNil x.UnnamedCalledOptArgs)
     member x.HasOutArgs             = not (isNil x.UnnamedCalledOutArgs)
-    member x.UsesParamArrayConversion = x.ArgSets |> List.exists (fun argSet -> argSet.ParamArrayCalledArgOpt.IsSome)
-    member x.ParamArrayCalledArgOpt = x.ArgSets |> List.tryPick (fun argSet -> argSet.ParamArrayCalledArgOpt)
-    member x.ParamArrayCallerArgs = x.ArgSets |> List.tryPick (fun argSet -> if Option.isSome argSet.ParamArrayCalledArgOpt then Some argSet.ParamArrayCallerArgs else None )
+    member x.UsesParamArrayConversion = x.ArgSets |> Seq.exists (fun argSet -> argSet.ParamArrayCalledArgOpt.IsSome)
+    member x.ParamArrayCalledArgOpt = x.ArgSets |> Seq.tryPick (fun argSet -> argSet.ParamArrayCalledArgOpt)
+    member x.ParamArrayCallerArgs = x.ArgSets |> Seq.tryPick (fun argSet -> if Option.isSome argSet.ParamArrayCalledArgOpt then Some argSet.ParamArrayCallerArgs else None )
     member x.ParamArrayElementType = 
         assert (x.UsesParamArrayConversion)
         x.ParamArrayCalledArgOpt.Value.CalledArgumentType |> destArrayTy x.amap.g 
@@ -421,7 +421,7 @@ type CalledMeth<'T>
 
     member x.HasCorrectArity =
       (x.NumCalledTyArgs = x.NumCallerTyArgs)  &&
-      x.ArgSets |> List.forall (fun argSet -> argSet.NumUnnamedCalledArgs = argSet.NumUnnamedCallerArgs) 
+      x.ArgSets |> Seq.forall (fun argSet -> argSet.NumUnnamedCalledArgs = argSet.NumUnnamedCallerArgs) 
 
     member x.HasCorrectGenericArity =
       (x.NumCalledTyArgs = x.NumCallerTyArgs)  
@@ -448,9 +448,9 @@ type CalledMeth<'T>
        x.ArgSets |> List.map (fun argSet -> argSet.AssignedNamedArgs)
 
     member x.AllUnnamedCalledArgs = x.ArgSets |> List.collect (fun x -> x.UnnamedCalledArgs)
-    member x.TotalNumUnnamedCalledArgs = x.ArgSets |> List.sumBy (fun x -> x.NumUnnamedCalledArgs)
-    member x.TotalNumUnnamedCallerArgs = x.ArgSets |> List.sumBy (fun x -> x.NumUnnamedCallerArgs)
-    member x.TotalNumAssignedNamedArgs = x.ArgSets |> List.sumBy (fun x -> x.NumAssignedNamedArgs)
+    member x.TotalNumUnnamedCalledArgs = x.ArgSets |> Seq.sumBy (fun x -> x.NumUnnamedCalledArgs)
+    member x.TotalNumUnnamedCallerArgs = x.ArgSets |> Seq.sumBy (fun x -> x.NumUnnamedCallerArgs)
+    member x.TotalNumAssignedNamedArgs = x.ArgSets |> Seq.sumBy (fun x -> x.NumAssignedNamedArgs)
 
 let NamesOfCalledArgs (calledArgs: CalledArg list) = 
     calledArgs |> List.choose (fun x -> x.NameOpt) 
@@ -495,8 +495,8 @@ let ExamineArgumentForLambdaPropagation (infoReader:InfoReader) (arg: AssignedCa
 let ExamineMethodForLambdaPropagation(x:CalledMeth<SynExpr>) =
     let unnamedInfo = x.AssignedUnnamedArgs |> List.mapSquared (ExamineArgumentForLambdaPropagation x.infoReader)
     let namedInfo = x.AssignedNamedArgs |> List.mapSquared (fun arg -> (arg.NamedArgIdOpt.Value, ExamineArgumentForLambdaPropagation x.infoReader arg))
-    if unnamedInfo |> List.existsSquared (function CallerLambdaHasArgTypes _ -> true | _ -> false) || 
-       namedInfo |> List.existsSquared (function (_,CallerLambdaHasArgTypes _) -> true | _ -> false) then 
+    if unnamedInfo |> Seq.existsSquared (function CallerLambdaHasArgTypes _ -> true | _ -> false) || 
+       namedInfo |> Seq.existsSquared (function (_,CallerLambdaHasArgTypes _) -> true | _ -> false) then 
         Some (unnamedInfo, namedInfo)
     else
         None
@@ -801,7 +801,7 @@ let BuildNewDelegateExpr (eventInfoOpt:EventInfo option, g, amap, delegateTy, in
         match lambdaContents with 
         | None -> 
         
-            if List.exists (isByrefTy g) delArgTys then
+            if Seq.exists (isByrefTy g) delArgTys then
                     error(Error(FSComp.SR.tcFunctionRequiresExplicitLambda(List.length delArgTys),m)) 
 
             let delArgVals = delArgTys |> List.map (fun argty -> fst (mkCompGenLocal m "delegateArg" argty)) 
@@ -1065,7 +1065,7 @@ module ProvidedMethodCalls =
                 let vs = boundVars.PApplyArray(id, "GetInvokerExpresson",m) |> Array.toList 
                 let vsT = List.map addVar vs
                 let delegateBodyExprT = exprToExpr delegateBodyExpr
-                List.iter removeVar vs
+                Seq.iter removeVar vs
                 let lambdaExpr = mkLambdas m [] vsT (delegateBodyExprT, tyOfExpr g delegateBodyExprT)
                 let lambdaExprTy = tyOfExpr g lambdaExpr
                 let infoReader = InfoReader(g, amap)

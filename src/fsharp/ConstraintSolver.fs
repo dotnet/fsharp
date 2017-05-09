@@ -213,7 +213,7 @@ let rec occursCheck g un ty =
     match stripTyEqns g ty with 
     | TType_ucase(_,l)
     | TType_app (_,l) 
-    | TType_tuple (_,l) -> List.exists (occursCheck g un) l
+    | TType_tuple (_,l) -> Seq.exists (occursCheck g un) l
     | TType_fun (d,r) -> occursCheck g un d || occursCheck g un r
     | TType_var r   ->  typarEq un r 
     | TType_forall (_,tau) -> occursCheck g un tau
@@ -308,7 +308,7 @@ type Trace =
     
     static member New () =  { actions = [] }
 
-    member t.Undo () = List.iter (fun (_, a) -> a ()) t.actions
+    member t.Undo () = Seq.iter (fun (_, a) -> a ()) t.actions
     member t.Push f undo = t.actions <- (f, undo) :: t.actions
 
 type OptionalTrace = 
@@ -325,8 +325,8 @@ type OptionalTrace =
     member t.AddFromReplay source =
         source.actions |> List.rev |>
             match t with        
-            | WithTrace trace -> List.iter (fun (action, undo) -> trace.Push action undo; action())
-            | NoTrace         -> List.iter (fun (action, _   ) -> action())
+            | WithTrace trace -> Seq.iter (fun (action, undo) -> trace.Push action undo; action())
+            | NoTrace         -> Seq.iter (fun (action, _   ) -> action())
 
     member t.CollectThenUndoOrCommit predicate f =
         let newTrace = Trace.New()
@@ -1031,7 +1031,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
 
       | _,_,false,("op_Addition" | "op_Subtraction" | "op_Modulus"),[argty1;argty2] 
           when // Ignore any explicit +/- overloads from any basic integral types
-               (minfos |> List.forall (fun minfo -> isIntegerTy g minfo.EnclosingType ) &&
+               (minfos |> Seq.forall (fun minfo -> isIntegerTy g minfo.EnclosingType ) &&
                 (   (IsNumericOrIntegralEnumType g argty1 || (nm = "op_Addition" && (isCharTy g argty1 || isStringTy g argty1))) && (permitWeakResolution || not (isTyparTy g argty2))
                  || (IsNumericOrIntegralEnumType g argty2 || (nm = "op_Addition" && (isCharTy g argty2 || isStringTy g argty2))) && (permitWeakResolution || not (isTyparTy g argty1)))) ->
           SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace argty2 argty1 ++ (fun () -> 
@@ -1040,7 +1040,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
 
       | _,_,false,("op_LessThan" | "op_LessThanOrEqual" | "op_GreaterThan" | "op_GreaterThanOrEqual" | "op_Equality" | "op_Inequality" ),[argty1;argty2] 
           when // Ignore any explicit overloads from any basic integral types
-               (minfos |> List.forall (fun minfo -> isIntegerTy g minfo.EnclosingType ) &&
+               (minfos |> Seq.forall (fun minfo -> isIntegerTy g minfo.EnclosingType ) &&
                 (   (IsRelationalType g argty1 && (permitWeakResolution || not (isTyparTy g argty2)))
                  || (IsRelationalType g argty2 && (permitWeakResolution || not (isTyparTy g argty1))))) ->
           SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace argty2 argty1 ++ (fun () -> 
@@ -1226,10 +1226,10 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
 
           // Now check if there are no feasible solutions at all
           match minfos, recdPropSearch with 
-          | [], None when not (tys |> List.exists (isAnyParTy g)) ->
-              if tys |> List.exists (isFunTy g) then 
+          | [], None when not (tys |> Seq.exists (isAnyParTy g)) ->
+              if tys |> Seq.exists (isFunTy g) then 
                   ErrorD (ConstraintSolverError(FSComp.SR.csExpectTypeWithOperatorButGivenFunction(DecompileOpName nm),m,m2)) 
-              elif tys |> List.exists (isAnyTupleTy g) then 
+              elif tys |> Seq.exists (isAnyTupleTy g) then 
                   ErrorD (ConstraintSolverError(FSComp.SR.csExpectTypeWithOperatorButGivenTuple(DecompileOpName nm),m,m2)) 
               else
                   match nm, argtys with 
@@ -1435,7 +1435,7 @@ and SolveRelevantMemberConstraintsForTypar (csenv:ConstraintSolverEnv) ndeep per
     let cxs = cxst.FindAll tpn
     if isNil cxs then ResultD false else
     
-    trace.Exec (fun () -> cxs |> List.iter (fun _ -> cxst.Remove tpn)) (fun () -> cxs |> List.iter (fun cx -> cxst.Add(tpn,cx)))
+    trace.Exec (fun () -> cxs |> Seq.iter (fun _ -> cxst.Remove tpn)) (fun () -> cxs |> Seq.iter (fun cx -> cxst.Add(tpn,cx)))
     assert (isNil (cxst.FindAll tpn)) 
 
     cxs 
@@ -1455,13 +1455,13 @@ and AddMemberConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace traitInfo sup
     // associate the constraint with each type variable in the free variables of the constraint.
     // This will mean the constraint gets resolved whenever one of these free variables gets solved.
     frees 
-    |> List.iter (fun tp -> 
+    |> Seq.iter (fun tp -> 
         let tpn = tp.Stamp
 
         let cxs = cxst.FindAll tpn
 
         // check the constraint is not already listed for this type variable
-        if not (cxs |> List.exists (fun (traitInfo2,_) -> traitsAEquiv g aenv traitInfo traitInfo2)) then 
+        if not (cxs |> Seq.exists (fun (traitInfo2,_) -> traitsAEquiv g aenv traitInfo traitInfo2)) then 
             trace.Exec (fun () -> csenv.SolverState.ExtraCxs.Add (tpn,(traitInfo,m2))) (fun () -> csenv.SolverState.ExtraCxs.Remove tpn)
     )
 
@@ -1593,7 +1593,7 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
         enforceMutualConsistency 0 allCxs 
     end ++ (fun ()  ->
     
-    let impliedByExistingConstraints = existingConstraints |> List.exists (fun tpc2 -> implies tpc2 newConstraint) 
+    let impliedByExistingConstraints = existingConstraints |> Seq.exists (fun tpc2 -> implies tpc2 newConstraint) 
     
     if impliedByExistingConstraints then 
         CompleteD
@@ -1622,7 +1622,7 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
                   match cxs with 
                   | [] -> acc
                   | cx :: rest -> 
-                      eliminateRedundant rest (if List.exists (fun cx2 -> implies cx2 cx) acc then acc else (cx::acc))
+                      eliminateRedundant rest (if Seq.exists (fun cx2 -> implies cx2 cx) acc then acc else (cx::acc))
                   
               eliminateRedundant allCxs []
               
@@ -1805,7 +1805,7 @@ and SolveTypChoice (csenv:ConstraintSolverEnv) ndeep m2 trace ty tys =
     | Some destTypar ->
         AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.SimpleChoice(tys,m)) 
     | None ->
-        if List.exists (typeEquivAux Erasure.EraseMeasures g ty) tys then CompleteD
+        if Seq.exists (typeEquivAux Erasure.EraseMeasures g ty) tys then CompleteD
         else ErrorD (ConstraintSolverError(FSComp.SR.csTypeNotCompatibleBecauseOfPrintf((NicePrint.minimalStringOfType denv ty), (String.concat "," (List.map (NicePrint.prettyStringOfTy denv) tys))),m,m2))
 
 
@@ -1834,7 +1834,7 @@ and SolveTypRequiresDefaultConstructor (csenv:ConstraintSolverEnv) ndeep m2 trac
             CompleteD
         else
             if GetIntrinsicConstructorInfosOfType csenv.InfoReader m ty 
-               |> List.exists (fun x -> IsMethInfoAccessible amap m AccessibleFromEverywhere x && x.IsNullary)
+               |> Seq.exists (fun x -> IsMethInfoAccessible amap m AccessibleFromEverywhere x && x.IsNullary)
             then 
                 match tryDestAppTy g ty with
                 | Some tcref when HasFSharpAttribute g g.attrib_AbstractClassAttribute tcref.Attribs ->
@@ -2068,9 +2068,9 @@ and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNam
                 if minfo.IsConstructor then
                     let couldBeNameArgs =
                         cmeth.ArgSets
-                        |> List.exists (fun argSet ->
+                        |> Seq.exists (fun argSet ->
                             argSet.UnnamedCallerArgs 
-                            |> List.exists (fun c -> isSequential c.Expr))
+                            |> Seq.exists (fun c -> isSequential c.Expr))
 
                     if couldBeNameArgs then
                         Error (FSComp.SR.csCtorSignatureMismatchArityProp(methodName, nReqd, nActual, signature), m)
@@ -2098,7 +2098,7 @@ and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNam
                     Error (FSComp.SR.csMemberSignatureMismatchArityNamed(methodName, (nReqd+nReqdNamed), nActual, nReqdNamed, signature), m)
 
     // One or more accessible, all the same arity, none correct 
-    | ((cmeth :: cmeths2),_),_,_,_,_ when not cmeth.HasCorrectArity && cmeths2 |> List.forall (fun cmeth2 -> cmeth.TotalNumUnnamedCalledArgs = cmeth2.TotalNumUnnamedCalledArgs) -> 
+    | ((cmeth :: cmeths2),_),_,_,_,_ when not cmeth.HasCorrectArity && cmeths2 |> Seq.forall (fun cmeth2 -> cmeth.TotalNumUnnamedCalledArgs = cmeth2.TotalNumUnnamedCalledArgs) -> 
         Error (FSComp.SR.csMemberNotAccessible(methodName, nUnnamedCallerArgs, methodName, cmeth.TotalNumUnnamedCalledArgs),m)
     // Many methods, all with incorrect number of generic arguments
     | _,_,_,([],(cmeth :: _)),_ -> 
@@ -2107,7 +2107,7 @@ and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNam
     // Many methods of different arities, all incorrect 
     | _,_,([],(cmeth :: _)),_,_ -> 
         let minfo = cmeth.Method
-        Error (FSComp.SR.csMemberOverloadArityMismatch(methodName, cmeth.TotalNumUnnamedCallerArgs, (List.sum minfo.NumArgs)),m)
+        Error (FSComp.SR.csMemberOverloadArityMismatch(methodName, cmeth.TotalNumUnnamedCallerArgs, (Seq.sum minfo.NumArgs)),m)
     | _ -> 
         let msg = 
             if nNamedCallerArgs = 0 then 
@@ -2168,7 +2168,7 @@ and ResolveOverloading
           // - Always take the return type into account for
           //      -- op_Explicit, op_Implicit
           //      -- candidate method sets that potentially use tupling of unfilled out args
-          let alwaysCheckReturn = isOpConversion || candidates |> List.exists (fun cmeth -> cmeth.HasOutArgs)
+          let alwaysCheckReturn = isOpConversion || candidates |> Seq.exists (fun cmeth -> cmeth.HasOutArgs)
 
           // Exact match rule.
           //
@@ -2329,10 +2329,10 @@ and ResolveOverloading
                                     []) @
                                ((candidate.AllUnnamedCalledArgs, other.AllUnnamedCalledArgs) ||> List.map2 compareArg) 
                            // "all args are at least as good, and one argument is actually better"
-                           if cs |> List.forall (fun x -> x >= 0) && cs |> List.exists (fun x -> x > 0) then 
+                           if cs |> Seq.forall (fun x -> x >= 0) && cs |> Seq.exists (fun x -> x > 0) then 
                                1
                            // "all args are at least as bad, and one argument is actually worse"
-                           elif cs |> List.forall (fun x -> x <= 0) && cs |> List.exists (fun x -> x < 0) then 
+                           elif cs |> Seq.forall (fun x -> x <= 0) && cs |> Seq.exists (fun x -> x < 0) then 
                                -1
                            // "argument lists are incomparable"
                            else
@@ -2389,8 +2389,9 @@ and ResolveOverloading
                             | m -> m |> List.map (fun (x,_,_) -> x)
 
                         methods
-                        |> List.map (fun cmeth -> NicePrint.stringOfMethInfo amap m denv cmeth.Method)
-                        |> List.sort
+                        |> Seq.map (fun cmeth -> NicePrint.stringOfMethInfo amap m denv cmeth.Method)
+                        |> Seq.sort
+                        |> Seq.toList
                     let msg = FSComp.SR.csMethodIsOverloaded methodName
                     let msg = 
                         match methodNames with
@@ -2480,11 +2481,11 @@ let UnifyUniqueOverloading
 let EliminateConstraintsForGeneralizedTypars csenv (trace:OptionalTrace) (generalizedTypars: Typars) =
     // Remove the global constraints where this type variable appears in the support of the constraint 
     generalizedTypars 
-    |> List.iter (fun tp -> 
+    |> Seq.iter (fun tp -> 
         let tpn = tp.Stamp
         let cxst = csenv.SolverState.ExtraCxs
         let cxs = cxst.FindAll tpn
-        cxs |> List.iter (fun cx -> trace.Exec (fun () -> cxst.Remove tpn) (fun () -> (csenv.SolverState.ExtraCxs.Add (tpn,cx))))
+        cxs |> Seq.iter (fun cx -> trace.Exec (fun () -> cxst.Remove tpn) (fun () -> (csenv.SolverState.ExtraCxs.Add (tpn,cx))))
     )
 
 

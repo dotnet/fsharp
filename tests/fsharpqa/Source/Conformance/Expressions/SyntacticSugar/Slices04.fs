@@ -148,18 +148,18 @@ if f.LastLB2 <> None      then exit 1
 if f.LastUB2 <> None      then exit 1
 
 let _ = f.[['a'; 'b'], *]
-if f.LastI1  <> Seq.ofList ['a'; 'b'] then exit 1
+if Seq.toList f.LastI1 <> ['a'; 'b'] then exit 1
 if f.LastLB2 <> None      then exit 1
 if f.LastUB2 <> None      then exit 1
 
 f.[['t'; 'g'], *] <- [['f']]
-if f.LastI1  <> Seq.ofList ['t'; 'g'] then exit 1
+if Seq.toList f.LastI1 <> ['t'; 'g'] then exit 1
 if f.LastLB2 <> None      then exit 1
 if f.LastUB2 <> None      then exit 1
 if f.LastV2D <> [['f']]   then exit 1
 
 let _ = f.[*, ['c'; 'd']]
-if f.LastI2  <> Seq.ofList ['c'; 'd'] then exit 1
+if Seq.toList f.LastI2 <> ['c'; 'd'] then exit 1
 if f.LastLB1 <> None      then exit 1
 if f.LastUB1 <> None      then exit 1
 

@@ -178,7 +178,7 @@ let rec ImportILType (env:ImportMap) m tinst typ =
          // All custom modifiers are ignored
          ImportILType env m tinst ty
     | ILType.TypeVar u16 -> 
-         try List.item (int u16) tinst
+         try Seq.item (int u16) tinst
          with _ -> 
               error(Error(FSComp.SR.impNotEnoughTypeParamsInScopeWhileImporting(),m))
 
@@ -188,7 +188,7 @@ let rec CanImportILType (env:ImportMap) m typ =
     | ILType.Array(_bounds,ty) -> CanImportILType env m ty
     | ILType.Boxed  tspec | ILType.Value tspec ->
         CanImportILTypeRef env m tspec.TypeRef 
-        && tspec.GenericArgs |> List.forall (CanImportILType env m) 
+        && tspec.GenericArgs |> Seq.forall (CanImportILType env m) 
     | ILType.Byref ty -> CanImportILType env m ty
     | ILType.Ptr ty  -> CanImportILType env m ty
     | ILType.FunctionPointer _ -> true
@@ -331,7 +331,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env:ImportMap) (m:range) (mbase: Tain
                         declaringType
                 let methods = declaringGenericTypeDefn.PApplyArray((fun x -> x.GetMethods()),"GetMethods",m) 
                 let metadataToken = minfo.PUntaint((fun minfo -> minfo.MetadataToken),m)
-                let found = methods |> Array.tryFind (fun x -> x.PUntaint((fun x -> x.MetadataToken),m) = metadataToken) 
+                let found = methods |> Seq.tryFind (fun x -> x.PUntaint((fun x -> x.MetadataToken),m) = metadataToken) 
                 match found with
                 |   Some found -> found.Coerce(m)
                 |   None -> 
@@ -352,7 +352,7 @@ let ImportProvidedMethodBaseAsILMethodRef (env:ImportMap) (m:range) (mbase: Tain
                         [ for p in cinfo.PApplyArray((fun x -> x.GetParameters()), "GetParameters",m) do
                             yield ImportProvidedType env m (p.PApply((fun p -> p.ParameterType),m)) ]
                     let actualGenericArgs = argsOfAppTy env.g (ImportProvidedType env m declaringType)
-                    ctors |> Array.tryFind (fun ctor -> 
+                    ctors |> Seq.tryFind (fun ctor -> 
                        let formalParameterTypesAfterInstantiation = 
                            [ for p in ctor.PApplyArray((fun x -> x.GetParameters()), "GetParameters",m) do
                                 let ilFormalTy = ImportProvidedTypeAsILType env m (p.PApply((fun p -> p.ParameterType),m))

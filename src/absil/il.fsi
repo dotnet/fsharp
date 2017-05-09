@@ -850,7 +850,7 @@ type ILAttribute =
 
 [<NoEquality; NoComparison; Sealed>]
 type ILAttributes =
-    member AsList : ILAttribute list
+    member AsSeq : ILAttribute seq
 
 /// Method parameters and return values.
 
@@ -1092,8 +1092,8 @@ type ILMethodDef =
 type ILMethodDefs =
     interface IEnumerable<ILMethodDef>
     member AsArray : ILMethodDef[]
-    member AsList : ILMethodDef list
-    member FindByName : string -> ILMethodDef list
+    member AsSeq : ILMethodDef seq
+    member FindByName : string -> ILMethodDef seq
 
 /// Field definitions.
 [<NoComparison; NoEquality>]
@@ -1239,7 +1239,7 @@ type ILTypeDefKind =
 type ILTypeDefs =
     interface IEnumerable<ILTypeDef>
     member AsArray : ILTypeDef[]
-    member AsList : ILTypeDef list
+    member AsSeq : ILTypeDef seq
 
     /// Get some information about the type defs, but do not force the read of the type defs themselves.
     member AsArrayOfLazyTypeDefs : (string list * string * ILAttributes * Lazy<ILTypeDef>) array
@@ -1732,7 +1732,7 @@ val mkCtorMethSpecForDelegate: ILGlobals -> ILType * bool -> ILMethodSpec
 val mkILTypeForGlobalFunctions: ILScopeRef -> ILType
 
 /// Making tables of custom attributes, etc.
-val mkILCustomAttrs: ILAttribute list -> ILAttributes
+val mkILCustomAttrs: ILAttribute seq -> ILAttributes
 val mkILCustomAttrsFromArray: ILAttribute[] -> ILAttributes
 val mkILComputedCustomAttrs: (unit -> ILAttribute[]) -> ILAttributes
 val emptyILCustomAttrs: ILAttributes
@@ -1752,7 +1752,7 @@ val mkILProperties: ILPropertyDef list -> ILPropertyDefs
 val mkILPropertiesLazy: Lazy<ILPropertyDef list> -> ILPropertyDefs
 val emptyILProperties: ILPropertyDefs
 
-val mkILMethods: ILMethodDef list -> ILMethodDefs
+val mkILMethods: ILMethodDef seq -> ILMethodDefs
 val mkILMethodsFromArray: ILMethodDef[] -> ILMethodDefs
 val mkILMethodsComputed: (unit -> ILMethodDef[]) -> ILMethodDefs
 val emptyILMethods: ILMethodDefs
@@ -1765,7 +1765,7 @@ val mkILMethodImpls: ILMethodImplDef list -> ILMethodImplDefs
 val mkILMethodImplsLazy: Lazy<ILMethodImplDef list> -> ILMethodImplDefs
 val emptyILMethodImpls: ILMethodImplDefs
 
-val mkILTypeDefs: ILTypeDef list -> ILTypeDefs
+val mkILTypeDefs: ILTypeDef seq -> ILTypeDefs
 val mkILTypeDefsFromArray: ILTypeDef[] -> ILTypeDefs
 val emptyILTypeDefs: ILTypeDefs
 

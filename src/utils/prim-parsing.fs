@@ -448,7 +448,7 @@ module internal Implementation =
                                  for tag in 0 .. tables.numTerminals-1 do  
                                     if not (explicit.Contains(tag)) then 
                                          yield tag ] in
-                        //let activeRules = stateStack |> List.iter (fun state -> 
+                        //let activeRules = stateStack |> Seq.iter (fun state -> 
                         let errorContext = new ParseErrorContext<'tok>(stateStack,parseState, reduceTokens,currentToken,reducibleProductions, shiftableTokens, "syntax error")
                         tables.parseError(errorContext);
                         popStackUntilErrorShifted(None);

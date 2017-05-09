@@ -8,7 +8,6 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core.Operators
-    open Microsoft.FSharp.Core.CompilerServices
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
 #if FX_RESHAPED_REFLECTION
     open System.Reflection
@@ -100,12 +99,22 @@ namespace Microsoft.FSharp.Collections
                 j <- j + len
             res               
 
+        [<CompiledName("ToSeq")>]
+        let toSeq array = 
+            checkNonNull "array" array
+            Microsoft.FSharp.Primitives.Basics.Array.toSeq array
+
+        [<CompiledName("OfSeq")>]
+        let ofSeq source = 
+            checkNonNull "source" source
+            Microsoft.FSharp.Primitives.Basics.Array.ofSeq source
+
         [<CompiledName("Concat")>]
         let concat (arrays: seq<'T[]>) = 
             checkNonNull "arrays" arrays
             match arrays with 
             | :? ('T[][]) as ts -> ts |> concatArrays // avoid a clone, since we only read the array
-            | _ -> arrays |> Seq.toArray |> concatArrays
+            | _ -> arrays |> ofSeq |> concatArrays
             
         [<CompiledName("Replicate")>]
         let replicate count x = 
@@ -185,7 +194,7 @@ namespace Microsoft.FSharp.Collections
         let countByValueType (projection:'T->'Key) (array:'T[]) = countByImpl HashIdentity.Structural<'Key> projection id array
 
         // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
-        let countByRefType   (projection:'T->'Key) (array:'T[]) = countByImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun t -> RuntimeHelpers.StructBox (projection t)) (fun sb -> sb.Value) array
+        let countByRefType   (projection:'T->'Key) (array:'T[]) = countByImpl StructBox<'Key>.Comparer (fun t -> StructBox (projection t)) (fun sb -> sb.Value) array
 
         [<CompiledName("CountBy")>]
         let countBy (projection:'T->'Key) (array:'T[]) =
@@ -435,7 +444,7 @@ namespace Microsoft.FSharp.Collections
         let groupByValueType (keyf:'T->'Key) (array:'T[]) = groupByImpl HashIdentity.Structural<'Key> keyf id array
 
         // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
-        let groupByRefType   (keyf:'T->'Key) (array:'T[]) = groupByImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun t -> RuntimeHelpers.StructBox (keyf t)) (fun sb -> sb.Value) array
+        let groupByRefType   (keyf:'T->'Key) (array:'T[]) = groupByImpl StructBox<'Key>.Comparer (fun t -> StructBox (keyf t)) (fun sb -> sb.Value) array
 
         [<CompiledName("GroupBy")>]
         let groupBy (keyf:'T->'Key) (array:'T[]) =
@@ -1053,16 +1062,6 @@ namespace Microsoft.FSharp.Collections
             checkNonNull "array" array
             let inline compareDescending a b = compare b a
             sortWith compareDescending array
-
-        [<CompiledName("ToSeq")>]
-        let toSeq array = 
-            checkNonNull "array" array
-            Seq.ofArray array
-
-        [<CompiledName("OfSeq")>]
-        let ofSeq source = 
-            checkNonNull "source" source
-            Seq.toArray source
 
         [<CompiledName("FindIndex")>]
         let findIndex f (array : _[]) = 

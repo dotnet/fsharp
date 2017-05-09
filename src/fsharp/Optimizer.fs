@@ -362,7 +362,7 @@ type IncrementalOptimizationEnv =
 let rec IsPartialExprVal x = (* IsPartialExprVal can not rebuild to an expr *)
     match x with
     | UnknownValue -> true
-    | TupleValue args | RecdValue (_,args) | UnionCaseValue (_,args) -> Array.exists IsPartialExprVal args
+    | TupleValue args | RecdValue (_,args) | UnionCaseValue (_,args) -> Seq.exists IsPartialExprVal args
     | ConstValue _ | CurriedLambdaValue _ | ConstExprValue _ -> false
     | ValValue (_,a) 
     | SizeValue(_,a) -> IsPartialExprVal a
@@ -497,7 +497,7 @@ let BindTypeVarsToUnknown (tps:Typar list) env =
     (tps,nms) ||> List.iter2 (fun tp nm -> 
             if PrettyTypes.NeedsPrettyTyparName tp  then 
                 tp.typar_id <- ident (nm,tp.Range))      
-    List.fold (fun sofar arg -> BindTypeVar arg UnknownTypeValue sofar) env tps 
+    Seq.fold (fun sofar arg -> BindTypeVar arg UnknownTypeValue sofar) env tps 
 
 let BindCcu (ccu:Tast.CcuThunk) mval env (_g:TcGlobals) = 
     { env with globalModuleInfos=env.globalModuleInfos.Add(ccu.AssemblyName,mval)  }
@@ -938,15 +938,15 @@ let mkAssemblyCodeValueInfo g instrs argvals tys =
 
 let [<Literal>] localVarSize = 1
 
-let inline AddTotalSizes l = l |> List.sumBy (fun x -> x.TotalSize) 
-let inline AddFunctionSizes l = l |> List.sumBy (fun x -> x.FunctionSize) 
+let inline AddTotalSizes l = l |> Seq.sumBy (fun x -> x.TotalSize) 
+let inline AddFunctionSizes l = l |> Seq.sumBy (fun x -> x.FunctionSize) 
 
 //-------------------------------------------------------------------------
 // opt list/array combinators - zipping (_,_) return type
 //------------------------------------------------------------------------- 
-let inline OrEffects l = List.exists (fun x -> x.HasEffect) l
+let inline OrEffects l = Seq.exists (fun x -> x.HasEffect) l
 
-let inline OrTailcalls l = List.exists (fun x -> x.MightMakeCriticalTailcall) l
+let inline OrTailcalls l = Seq.exists (fun x -> x.MightMakeCriticalTailcall) l
         
 let OptimizeList f l = l |> List.map f |> List.unzip 
 
@@ -1013,12 +1013,12 @@ let AbstractLazyModulInfoByHiding isAssemblyBoundary mhi =
         | TupleValue vinfos         -> 
             TupleValue (Array.map abstractExprInfo vinfos)
         | RecdValue (tcref,vinfos)  -> 
-            if hiddenTyconRepr tcref.Deref || Array.exists (tcref.MakeNestedRecdFieldRef >> hiddenRecdField) tcref.AllFieldsArray
+            if hiddenTyconRepr tcref.Deref || Seq.exists (tcref.MakeNestedRecdFieldRef >> hiddenRecdField) tcref.AllFieldsArray
             then UnknownValue 
             else RecdValue (tcref,Array.map abstractExprInfo vinfos)
         | UnionCaseValue(ucref,vinfos) -> 
             let tcref = ucref.TyconRef
-            if hiddenTyconRepr ucref.Tycon || tcref.UnionCasesArray |> Array.exists (tcref.MakeNestedUnionCaseRef >> hiddenUnionCase) 
+            if hiddenTyconRepr ucref.Tycon || tcref.UnionCasesArray |> Seq.exists (tcref.MakeNestedUnionCaseRef >> hiddenUnionCase) 
             then UnknownValue 
             else UnionCaseValue (ucref,Array.map abstractExprInfo vinfos)
         | SizeValue(_vdepth,vinfo)   -> MakeSizedValueInfo (abstractExprInfo vinfo)
@@ -1069,10 +1069,10 @@ let AbstractExprInfoByVars (boundVars:Val list,boundTyVars) ivalue =
           match ivalue with 
           // Check for escaping value. Revert to old info if possible  
           | ValValue (VRefLocal v2,detail) when  
-            (not (isNil boundVars) && List.exists (valEq v2) boundVars) || 
+            (not (isNil boundVars) && Seq.exists (valEq v2) boundVars) || 
             (not (isNil boundTyVars) &&
              let ftyvs = freeInVal CollectTypars v2
-             List.exists (Zset.memberOf ftyvs.FreeTypars) boundTyVars) -> 
+             Seq.exists (Zset.memberOf ftyvs.FreeTypars) boundTyVars) -> 
 
              // hiding value when used in expression 
               abstractExprInfo detail
@@ -1084,8 +1084,8 @@ let AbstractExprInfoByVars (boundVars:Val list,boundTyVars) ivalue =
           // Check for escape in lambda 
           | CurriedLambdaValue (_,_,_,expr,_) | ConstExprValue(_,expr)  when 
             (let fvs = freeInExpr (if isNil boundTyVars then CollectLocals else CollectTyparsAndLocals) expr
-             (not (isNil boundVars) && List.exists (Zset.memberOf fvs.FreeLocals) boundVars) ||
-             (not (isNil boundTyVars) && List.exists (Zset.memberOf fvs.FreeTyvars.FreeTypars) boundTyVars) ||
+             (not (isNil boundVars) && Seq.exists (Zset.memberOf fvs.FreeLocals) boundVars) ||
+             (not (isNil boundTyVars) && Seq.exists (Zset.memberOf fvs.FreeTyvars.FreeTypars) boundTyVars) ||
              (fvs.UsesMethodLocalConstructs )) ->
               
               // Trimming lambda
@@ -1095,7 +1095,7 @@ let AbstractExprInfoByVars (boundVars:Val list,boundTyVars) ivalue =
           | ConstValue(_,ty) when 
             (not (isNil boundTyVars) && 
              (let ftyvs = freeInType CollectTypars ty
-              List.exists (Zset.memberOf ftyvs.FreeTypars) boundTyVars)) ->
+              Seq.exists (Zset.memberOf ftyvs.FreeTypars) boundTyVars)) ->
               UnknownValue
 
           // Otherwise check all sub-values 
@@ -1227,7 +1227,7 @@ let IlAssemblyCodeInstrHasEffect i =
     | I_ldstr _ | I_ldtoken _  -> false
     | _ -> true
   
-let IlAssemblyCodeHasEffect instrs = List.exists IlAssemblyCodeInstrHasEffect instrs
+let IlAssemblyCodeHasEffect instrs = Seq.exists IlAssemblyCodeInstrHasEffect instrs
 
 //-------------------------------------------------------------------------
 // Effects
@@ -1255,8 +1255,8 @@ let rec ExprHasEffect g expr =
     | Expr.Let(bind,body,_,_) -> BindingHasEffect g bind || ExprHasEffect g body
     // REVIEW: could add Expr.Obj on an interface type - these are similar to records of lambda expressions 
     | _ -> true
-and ExprsHaveEffect g exprs = List.exists (ExprHasEffect g) exprs
-and BindingsHaveEffect g binds = List.exists (BindingHasEffect g) binds
+and ExprsHaveEffect g exprs = Seq.exists (ExprHasEffect g) exprs
+and BindingsHaveEffect g binds = Seq.exists (BindingHasEffect g) binds
 and BindingHasEffect g bind = bind.Expr |> ExprHasEffect g
 and OpHasEffect g op = 
     match op with 
@@ -1406,7 +1406,7 @@ let ExpandStructuralBindingRaw cenv expr =
         when (isRefTupleExpr rhs &&
               CanExpandStructuralBinding v) ->
           let args   = tryDestRefTupleExpr rhs
-          if List.forall ExprIsValue args then
+          if Seq.forall ExprIsValue args then
               expr (* avoid re-expanding when recursion hits original binding *)
           else
               let argTys = destRefTupleTy cenv.g v.Type
@@ -1580,7 +1580,7 @@ let rec tryRewriteToSeqCombinators g (e: Expr) =
     // match --> match
     | Expr.Match (spBind,exprm,pt,targets,m,_ty) ->
         let targets = targets |> Array.map (fun (TTarget(vs,e,spTarget)) -> match tryRewriteToSeqCombinators g e with None -> None | Some e -> Some(TTarget(vs,e,spTarget)))
-        if targets |> Array.forall Option.isSome then 
+        if targets |> Seq.forall Option.isSome then 
             let targets = targets |> Array.map Option.get
             let ty = targets |> Array.pick (fun (TTarget(_,e,_)) -> Some(tyOfExpr g e))
             Some (Expr.Match (spBind,exprm,pt,targets,m,ty))
@@ -2025,7 +2025,7 @@ and OptimizeLetRec cenv env (binds,bodyExpr,m) =
     // Eliminate any unused bindings, as in let case 
     let binds'',bindinfos = 
         let fvs0 = freeInExpr CollectLocals bodyExpr' 
-        let fvs = List.fold (fun acc x -> unionFreeVars acc (fst x |> freeInBindingRhs CollectLocals)) fvs0 binds'
+        let fvs = Seq.fold (fun acc x -> unionFreeVars acc (fst x |> freeInBindingRhs CollectLocals)) fvs0 binds'
         SplitValuesByIsUsedOrHasEffect cenv (fun () -> fvs.FreeLocals) binds'
     // Trim out any optimization info that involves escaping values 
     let evalue' = AbstractExprInfoByVars (vs,[]) einfo.Info 
@@ -2503,7 +2503,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list,args: Expr list,m) =
         // Don't inline recursively! 
         not (Zset.contains lambdaId env.dontInline) &&
         (// Check the number of argument groups is enough to saturate the lambdas of the target. 
-         (if tyargs |> List.exists (fun t -> match t with TType_measure _ -> false | _ -> true) then 1 else 0) + args.Length = arities &&
+         (if tyargs |> Seq.exists (fun t -> match t with TType_measure _ -> false | _ -> true) then 1 else 0) + args.Length = arities &&
           (// Enough args
            (if size > cenv.settings.lambdaInlineThreshold + args.Length then
               // Not inlining lambda near, size too big
@@ -2539,7 +2539,7 @@ and TryInlineApplication cenv env finfo (tyargs: TType list,args: Expr list,m) =
         let isSecureMethod =
           match finfo.Info with
           |  ValValue(vref,_) ->
-                vref.Attribs |> List.exists (fun a -> (IsSecurityAttribute cenv.g cenv.amap cenv.casApplied a m) || (IsSecurityCriticalAttribute cenv.g a))
+                vref.Attribs |> Seq.exists (fun a -> (IsSecurityAttribute cenv.g cenv.amap cenv.casApplied a m) || (IsSecurityCriticalAttribute cenv.g a))
           | _ -> false                              
 
         if isSecureMethod then None else
@@ -2901,7 +2901,7 @@ and OptimizeSwitch cenv env (e,cases,dflt,m) =
     let cases,dflt = 
         if cenv.settings.EliminateSwitch() && not einfo.HasEffect then
             // Attempt to find a definite success, i.e. the first case where there is definite success
-            match (List.tryFind (function (TCase(d2,_)) when TryOptimizeDecisionTreeTest cenv d2 einfo.Info  = Some(true) -> true | _ -> false) cases) with 
+            match (Seq.tryFind (function (TCase(d2,_)) when TryOptimizeDecisionTreeTest cenv d2 einfo.Info  = Some(true) -> true | _ -> false) cases) with 
             | Some(TCase(_,case)) -> [],Some(case)
             | _ -> 
                 // Filter definite failures
@@ -3051,7 +3051,7 @@ and OptimizeModuleExpr cenv env x =
                     // Check the thing is not compiled as a static field or property, since reflected definitions and other reflective stuff might need it
                     not (IsCompiledAsStaticProperty cenv.g bind.Var))
 
-            let deadSet = Zset.addList (dead |> List.map (fun (bind,_) -> bind.Var)) (Zset.empty valOrder)
+            let deadSet = Zset.addSeq (dead |> Seq.map (fun (bind,_) -> bind.Var)) (Zset.empty valOrder)
 
             // Eliminate dead private bindings from a module type by mutation. Note that the optimizer doesn't
             // actually copy the entire term - it copies the expression portions of the term and leaves the 
@@ -3067,7 +3067,7 @@ and OptimizeModuleExpr cenv env x =
                     new ModuleOrNamespaceType(kind=mtyp.ModuleOrNamespaceKind, 
                                               vals= (mtyp.AllValsAndMembers |> QueueList.filter (Zset.memberOf deadSet >> not)),
                                               entities= mtyp.AllEntities)
-                mtyp.ModuleAndNamespaceDefinitions |> List.iter elimModSpec
+                mtyp.ModuleAndNamespaceDefinitions |> Seq.iter elimModSpec
                 mty
             and elimModSpec (mspec:ModuleOrNamespace) = 
                 let mtyp = elimModTy mspec.ModuleOrNamespaceType 

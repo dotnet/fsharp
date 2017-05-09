@@ -486,7 +486,7 @@ val NormalizeDeclaredTyparsForEquiRecursiveInference : TcGlobals -> Typars -> Ty
 // Compute the return type after an application
 //------------------------------------------------------------------------- 
  
-val applyTys : TcGlobals -> TType -> TType list * 'T list -> TType
+val applyTys : TcGlobals -> TType -> TType list * 'T seq -> TType
 
 //-------------------------------------------------------------------------
 // Compute free variables in types
@@ -607,6 +607,7 @@ val GetMemberCallInfo : TcGlobals -> ValRef * ValUseFlag -> int * bool * bool * 
 //------------------------------------------------------------------------- 
  
 type TyparConstraintsWithTypars = (Typar * TyparConstraint) list
+type TyparConstraintsWithTyparz = (Typar * TyparConstraint) seq
 
 
 module PrettyTypes =
@@ -689,7 +690,7 @@ module SimplifyTypes =
           inplaceConstraints :  Zmap<Typar,TType>;
           postfixConstraints : TyparConstraintsWithTypars; }
     val typeSimplificationInfo0 : TypeSimplificationInfo
-    val CollectInfo : bool -> TType list -> TyparConstraintsWithTypars -> TypeSimplificationInfo
+    val CollectInfo : bool -> TType seq -> TyparConstraintsWithTypars -> TypeSimplificationInfo
 
 //-------------------------------------------------------------------------
 // 
@@ -1049,12 +1050,12 @@ val (|ByrefTy|_|)   : TcGlobals -> TType -> TType option
 val IsUnionTypeWithNullAsTrueValue: TcGlobals -> Tycon -> bool
 val TyconHasUseNullAsTrueValueAttribute : TcGlobals -> Tycon -> bool
 val CanHaveUseNullAsTrueValueAttribute : TcGlobals -> Tycon -> bool
-val MemberIsCompiledAsInstance : TcGlobals -> TyconRef -> bool -> ValMemberInfo -> Attribs -> bool
+val MemberIsCompiledAsInstance : TcGlobals -> TyconRef -> bool -> ValMemberInfo -> seq<Attrib> -> bool
 val ValSpecIsCompiledAsInstance : TcGlobals -> Val -> bool
 val ValRefIsCompiledAsInstanceMember : TcGlobals -> ValRef -> bool
-val ModuleNameIsMangled : TcGlobals -> Attribs -> bool
+val ModuleNameIsMangled : TcGlobals -> seq<Attrib> -> bool
 
-val CompileAsEvent : TcGlobals -> Attribs -> bool
+val CompileAsEvent : TcGlobals -> seq<Attrib> -> bool
 
 val TypeNullIsExtraValue : TcGlobals -> range -> TType -> bool
 val TypeNullIsTrueValue : TcGlobals -> TType -> bool
@@ -1259,14 +1260,14 @@ val TryFindILAttributeOpt : BuiltinAttribInfo option -> ILAttributes -> bool
 
 val IsMatchingFSharpAttribute      : TcGlobals -> BuiltinAttribInfo -> Attrib -> bool
 val IsMatchingFSharpAttributeOpt   : TcGlobals -> BuiltinAttribInfo option -> Attrib -> bool
-val HasFSharpAttribute             : TcGlobals -> BuiltinAttribInfo -> Attribs -> bool
-val HasFSharpAttributeOpt          : TcGlobals -> BuiltinAttribInfo option -> Attribs -> bool
-val TryFindFSharpAttribute         : TcGlobals -> BuiltinAttribInfo -> Attribs -> Attrib option
-val TryFindFSharpAttributeOpt      : TcGlobals -> BuiltinAttribInfo option -> Attribs -> Attrib option
-val TryFindFSharpBoolAttribute     : TcGlobals -> BuiltinAttribInfo -> Attribs -> bool option
-val TryFindFSharpBoolAttributeAssumeFalse : TcGlobals -> BuiltinAttribInfo -> Attribs -> bool option
-val TryFindFSharpStringAttribute   : TcGlobals -> BuiltinAttribInfo -> Attribs -> string option
-val TryFindFSharpInt32Attribute    : TcGlobals -> BuiltinAttribInfo -> Attribs -> int32 option
+val HasFSharpAttribute             : TcGlobals -> BuiltinAttribInfo -> seq<Attrib> -> bool
+val HasFSharpAttributeOpt          : TcGlobals -> BuiltinAttribInfo option -> seq<Attrib> -> bool
+val TryFindFSharpAttribute         : TcGlobals -> BuiltinAttribInfo -> seq<Attrib> -> Attrib option
+val TryFindFSharpAttributeOpt      : TcGlobals -> BuiltinAttribInfo option -> seq<Attrib> -> Attrib option
+val TryFindFSharpBoolAttribute     : TcGlobals -> BuiltinAttribInfo -> seq<Attrib> -> bool option
+val TryFindFSharpBoolAttributeAssumeFalse : TcGlobals -> BuiltinAttribInfo -> seq<Attrib> -> bool option
+val TryFindFSharpStringAttribute   : TcGlobals -> BuiltinAttribInfo -> seq<Attrib> -> string option
+val TryFindFSharpInt32Attribute    : TcGlobals -> BuiltinAttribInfo -> seq<Attrib> -> int32 option
 
 /// Try to find a specific attribute on a type definition, where the attribute accepts a string argument.
 ///
@@ -1349,11 +1350,11 @@ val buildAccessPath : CompilationPath option -> string
 
 val XmlDocArgsEnc : TcGlobals -> Typars * Typars -> TType list -> string
 val XmlDocSigOfVal : TcGlobals -> string -> Val -> string
-val XmlDocSigOfUnionCase : (string list -> string)
-val XmlDocSigOfField : (string list -> string)
-val XmlDocSigOfProperty : (string list -> string)
-val XmlDocSigOfTycon : (string list -> string)
-val XmlDocSigOfSubModul : (string list -> string)
+val XmlDocSigOfUnionCase : (string seq -> string)
+val XmlDocSigOfField : (string seq -> string)
+val XmlDocSigOfProperty : (string seq -> string)
+val XmlDocSigOfTycon : (string seq -> string)
+val XmlDocSigOfSubModul : (string seq -> string)
 val XmlDocSigOfEntity : EntityRef -> string
 
 //---------------------------------------------------------------------------
@@ -1427,7 +1428,7 @@ val IsSimpleSyntacticConstantExpr: TcGlobals -> Expr -> bool
 
 val (|ConstToILFieldInit|_|): Const -> ILFieldInit option
 
-val (|ExtractAttribNamedArg|_|) : string -> AttribNamedArg list -> AttribExpr option 
+val (|ExtractAttribNamedArg|_|) : string -> seq<AttribNamedArg> -> AttribExpr option 
 val (|AttribInt32Arg|_|) : AttribExpr -> int32 option
 val (|AttribInt16Arg|_|) : AttribExpr -> int16 option
 val (|AttribBoolArg|_|) : AttribExpr -> bool option

@@ -612,8 +612,8 @@ let fillInstrs () =
             | I_invalid_instr -> ()
             | _ -> dprintn ("warning: duplicate decode entries for "+string i)
             oneByteInstrTable.[i] <- f 
-    List.iter addInstr (instrs())
-    List.iter (fun (x,mk) -> addInstr (x,I_none_instr (noPrefixes mk))) (noArgInstrs.Force())
+    Seq.iter addInstr (instrs())
+    Seq.iter (fun (x,mk) -> addInstr (x,I_none_instr (noPrefixes mk))) (noArgInstrs.Force())
     oneByteInstrs := Some oneByteInstrTable
     twoByteInstrs := Some twoByteInstrTable
 
@@ -1506,9 +1506,9 @@ let dataEndPoints ctxtH =
                 @ (if ctxt.strongnameAddr = 0x0 then [] else [("managed strongname",ctxt.strongnameAddr) ])
                 @ (if ctxt.vtableFixupsAddr = 0x0 then [] else [("managed vtable_fixups",ctxt.vtableFixupsAddr) ])
                 @ methodRVAs)))
-           |> List.distinct
-           |> List.sort 
-      
+           |> Seq.distinct
+           |> Seq.sort
+           |> Seq.toList
 
 let rec rvaToData ctxt nm rva = 
     if rva = 0x0 then failwith "rva is zero"
@@ -1810,7 +1810,7 @@ and seekReadGenericParamsUncached ctxtH (GenericParamsIdx(numtypars,a,b)) =
                        HasReferenceTypeConstraint= (flags &&& 0x0004) <> 0
                        HasNotNullableValueTypeConstraint= (flags &&& 0x0008) <> 0
                        HasDefaultConstructorConstraint=(flags &&& 0x0010) <> 0 }))
-    pars |> List.sortBy fst |> List.map snd 
+    pars |> Seq.sortBy fst |> Seq.map snd |> Seq.toList
 
 and seekReadGenericParamConstraintsUncached ctxt numtypars gpidx =
     seekReadIndexedRows 
@@ -2035,8 +2035,8 @@ and sigptrGetTy ctxt numtypars bytes sigptr =
         let lobounds, sigptr = sigptrFold sigptrGetZInt32 numLoBounded bytes sigptr
         let shape = 
             let dim i =
-              (if i <  numLoBounded then Some (List.item i lobounds) else None),
-              (if i <  numSized then Some (List.item i sizes) else None)
+              (if i <  numLoBounded then Some (Seq.item i lobounds) else None),
+              (if i <  numSized then Some (Seq.item i sizes) else None)
             ILArrayShape (Array.toList (Array.init rank dim))
         mkILArrTy (typ, shape), sigptr
         
@@ -3045,7 +3045,7 @@ and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,numtypars) rva =
              let sehClauses = 
                 let sehMap = Dictionary<_,_>(clauses.Length, HashIdentity.Structural) 
         
-                List.iter
+                Seq.iter
                   (fun (kind,st1,sz1,st2,sz2,extra) ->
                     let tryStart = rawToLabel st1
                     let tryFinish = rawToLabel (st1 + sz1)
@@ -3257,7 +3257,7 @@ let getPdbReader opts infile =
               let pdbdocs = pdbReaderGetDocuments pdbr
   
               let tab = new Dictionary<_,_>(Array.length pdbdocs)
-              pdbdocs |> Array.iter  (fun pdbdoc -> 
+              pdbdocs |> Seq.iter  (fun pdbdoc -> 
                   let url = pdbDocumentGetURL pdbdoc
                   tab.[url] <-
                       ILSourceDocument.Create(language=Some (pdbDocumentGetLanguage pdbdoc),
@@ -3689,7 +3689,7 @@ let rec genOpenBinaryReader infile is opts =
       codedBigness 2 TableNames.TypeRef
       
     let rowKindSize (RowKind kinds) = 
-      kinds |> List.sumBy (fun x -> 
+      kinds |> Seq.sumBy (fun x -> 
             match x with 
             | UShort -> 2
             | ULong -> 4

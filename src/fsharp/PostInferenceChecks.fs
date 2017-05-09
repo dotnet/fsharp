@@ -157,7 +157,7 @@ let BindTypars g env (tps:Typar list) =
     (tps,nms) ||> List.iter2 (fun tp nm -> 
             if PrettyTypes.NeedsPrettyTyparName tp  then 
                 tp.typar_id <- ident (nm,tp.Range))      
-    List.fold BindTypar env tps 
+    Seq.fold BindTypar env tps 
 
 /// Set the set of vals which are arguments in the active lambda. We are allowed to return 
 /// byref arguments as byref returns.
@@ -198,7 +198,7 @@ let BindVal cenv env (v:Val) =
         | _ -> 
             warning (Error(FSComp.SR.chkUnusedValue v.DisplayName, v.Range))
 
-let BindVals cenv env vs = List.iter (BindVal cenv env) vs
+let BindVals cenv env vs = Seq.iter (BindVal cenv env) vs
 
 //--------------------------------------------------------------------------
 // approx walk of type
@@ -214,7 +214,7 @@ let rec CheckTypeDeep ((visitTyp,visitTyconRefOpt,visitAppTyOpt,visitTraitSoluti
     // rather than solely in types. 
     match typ with 
     | TType_var tp  when tp.Solution.IsSome  -> 
-        tp.Constraints |> List.iter (fun cx -> 
+        tp.Constraints |> Seq.iter (fun cx -> 
             match cx with 
             | TyparConstraint.MayResolveMember((TTrait(_,_,_,_,_,soln)),_) -> 
                  match visitTraitSolutionOpt, !soln with 
@@ -230,7 +230,7 @@ let rec CheckTypeDeep ((visitTyp,visitTyconRefOpt,visitAppTyOpt,visitTraitSoluti
     | TType_forall (tps,body) -> 
         let env = BindTypars g env tps
         CheckTypeDeep f g env body           
-        tps |> List.iter (fun tp -> tp.Constraints |> List.iter (CheckTypeConstraintDeep f g env))
+        tps |> Seq.iter (fun tp -> tp.Constraints |> Seq.iter (CheckTypeConstraintDeep f g env))
 
     | TType_measure _          -> ()
     | TType_app (tcref,tinst) -> 
@@ -252,7 +252,7 @@ let rec CheckTypeDeep ((visitTyp,visitTyconRefOpt,visitAppTyOpt,visitTraitSoluti
               | Some visitTypar -> 
                     visitTypar (env,tp)
 
-and CheckTypesDeep f g env tys = List.iter (CheckTypeDeep f g env) tys
+and CheckTypesDeep f g env tys = Seq.iter (CheckTypeDeep f g env) tys
 
 and CheckTypeConstraintDeep f g env x =
      match x with 
@@ -314,7 +314,7 @@ let CheckEscapes cenv allowProtected m syntacticArgs body = (* m is a range suit
         if not allowProtected && frees.UsesMethodLocalConstructs  then
             errorR(Error(FSComp.SR.chkProtectedOrBaseCalled(), m))
         elif Zset.exists cantBeFree fvs then 
-            let v =  List.find cantBeFree (Zset.elements fvs) 
+            let v =  Seq.find cantBeFree (Zset.elements fvs) 
             (* byref error before mutable error (byrefs are mutable...). *)
             if (isByrefLikeTy cenv.g v.Type) then
                 // Inner functions are not guaranteed to compile to method with a predictable arity (number of arguments). 
@@ -339,7 +339,7 @@ let AccessInternalsVisibleToAsInternal thisCompPath internalsVisibleToPaths acce
   // Each internalsVisibleToPath is a compPath for the internals of some assembly.
   // Replace those by the compPath for the internals of this assembly.
   // This makes those internals visible here, but still internal. Bug://3737
-  (access,internalsVisibleToPaths) ||> List.fold (fun access internalsVisibleToPath -> 
+  (access,internalsVisibleToPaths) ||> Seq.fold (fun access internalsVisibleToPath -> 
       accessSubstPaths (thisCompPath,internalsVisibleToPath) access)
     
 
@@ -426,10 +426,10 @@ let CheckTypeNoByrefs (cenv:cenv) env m ty = CheckType false cenv env m ty
 let CheckTypePermitByrefs (cenv:cenv) env m ty = CheckType true cenv env m ty
 
 let CheckTypeInstNoByrefs cenv env m tyargs =
-    tyargs |> List.iter (CheckTypeNoByrefs cenv env m)
+    tyargs |> Seq.iter (CheckTypeNoByrefs cenv env m)
 
 let CheckTypeInstPermitByrefs cenv env m tyargs =
-    tyargs |> List.iter (CheckType true cenv env m)
+    tyargs |> Seq.iter (CheckType true cenv env m)
 
     
 //--------------------------------------------------------------------------
@@ -490,8 +490,8 @@ let CheckMultipleInterfaceInstantiations cenv interfaces m =
     let keyf ty = assert isAppTy cenv.g ty; (tcrefOfAppTy cenv.g ty).Stamp
     let table = interfaces |> MultiMap.initBy keyf
     let firstInterfaceWithMultipleGenericInstantiations = 
-        interfaces |> List.tryPick (fun typ1 -> 
-            table |> MultiMap.find (keyf typ1) |> List.tryPick (fun typ2 -> 
+        interfaces |> Seq.tryPick (fun typ1 -> 
+            table |> MultiMap.find (keyf typ1) |> Seq.tryPick (fun typ2 -> 
                    if // same nominal type
                        tyconRefEq cenv.g (tcrefOfAppTy cenv.g typ1) (tcrefOfAppTy cenv.g typ2) &&
                        // different instantiations
@@ -710,7 +710,7 @@ and CheckExpr (cenv:cenv) (env:env) expr (context:ByrefContext) =
     | Expr.StaticOptimization (constraints,e2,e3,m) -> 
         CheckExprNoByrefs cenv env e2
         CheckExprNoByrefs cenv env e3
-        constraints |> List.iter (function
+        constraints |> Seq.iter (function
             | TTyconEqualsTycon(ty1,ty2) -> 
                 CheckTypeNoByrefs cenv env m ty1
                 CheckTypeNoByrefs cenv env m ty2
@@ -721,7 +721,7 @@ and CheckExpr (cenv:cenv) (env:env) expr (context:ByrefContext) =
         failwith "Unexpected reclink"
 
 and CheckMethods cenv env baseValOpt l = 
-    l |> List.iter (CheckMethod cenv env baseValOpt) 
+    l |> Seq.iter (CheckMethod cenv env baseValOpt) 
 
 and CheckMethod cenv env baseValOpt (TObjExprMethod(_,attribs,tps,vs,body,m)) = 
     let env = BindTypars cenv.g env tps 
@@ -732,7 +732,7 @@ and CheckMethod cenv env baseValOpt (TObjExprMethod(_,attribs,tps,vs,body,m)) =
     CheckExprPermitByref cenv env body
 
 and CheckInterfaceImpls cenv env baseValOpt l = 
-    l |> List.iter (CheckInterfaceImpl cenv env baseValOpt)
+    l |> Seq.iter (CheckInterfaceImpl cenv env baseValOpt)
     
 and CheckInterfaceImpl cenv env baseValOpt (_ty,overrides) = 
     CheckMethods cenv env baseValOpt overrides 
@@ -740,7 +740,7 @@ and CheckInterfaceImpl cenv env baseValOpt (_ty,overrides) =
 and CheckExprOp cenv env (op,tyargs,args,m) context =
     let limitedCheck() = 
         if env.limited then errorR(Error(FSComp.SR.chkObjCtorsCantUseExceptionHandling(), m))
-    List.iter (CheckTypePermitByrefs cenv env m) tyargs
+    Seq.iter (CheckTypePermitByrefs cenv env m) tyargs
     (* Special cases *)
     match op,tyargs,args with 
     // Handle these as special cases since mutables are allowed inside their bodies 
@@ -943,10 +943,10 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
             | true, firstArg::_ -> firstArg.SetHasBeenReferenced()
             | _ -> ()
             // any byRef arguments are considered used, as they may be 'out's
-            restArgs |> List.iter (fun arg -> if isByrefTy cenv.g arg.Type then arg.SetHasBeenReferenced())
+            restArgs |> Seq.iter (fun arg -> if isByrefTy cenv.g arg.Type then arg.SetHasBeenReferenced())
 
-        syntacticArgs |> List.iter (CheckValSpec cenv env)
-        syntacticArgs |> List.iter (BindVal cenv env)
+        syntacticArgs |> Seq.iter (CheckValSpec cenv env)
+        syntacticArgs |> Seq.iter (BindVal cenv env)
 
         // Trigger a test hook
         match memInfo with 
@@ -978,7 +978,7 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
                     errorR(Error(FSComp.SR.chkReturnTypeNoByref(), m)))
 
             for tp in tps do 
-                if tp.Constraints |> List.sumBy (function TyparConstraint.CoercesTo(ty,_) when isClassTy cenv.g ty -> 1 | _ -> 0) > 1 then 
+                if tp.Constraints |> Seq.sumBy (function TyparConstraint.CoercesTo(ty,_) when isClassTy cenv.g ty -> 1 | _ -> 0) > 1 then 
                     errorR(Error(FSComp.SR.chkTyparMultipleClassConstraints(), m))
                 
     // This path is for expression bindings that are not actually lambdas
@@ -996,16 +996,16 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
 and CheckExprs cenv env exprs contexts =
     let contexts = Array.ofList contexts 
     let argArity i = if i < contexts.Length then contexts.[i] else NoByrefs 
-    exprs |> List.iteri (fun i exp -> CheckExpr cenv env exp (argArity i)) 
+    exprs |> Seq.iteri (fun i exp -> CheckExpr cenv env exp (argArity i)) 
 
 and CheckExprsNoByrefs cenv env exprs = 
-    exprs |> List.iter (CheckExprNoByrefs cenv env) 
+    exprs |> Seq.iter (CheckExprNoByrefs cenv env) 
 
 and CheckExprsPermitByrefs cenv env exprs = 
-    exprs |> List.iter (CheckExprPermitByref cenv env)
+    exprs |> Seq.iter (CheckExprPermitByref cenv env)
 
 and CheckExprsPermitByrefReturns cenv env exprs = 
-    exprs |> List.iter (CheckExprPermitByrefReturn cenv env)
+    exprs |> Seq.iter (CheckExprPermitByrefReturn cenv env)
 
 and CheckExprPermitByref cenv env expr = 
     CheckExpr cenv env expr (PermitByref false)
@@ -1014,11 +1014,11 @@ and CheckExprPermitByrefReturn cenv env expr =
     CheckExpr cenv env expr (PermitByref true)
 
 and CheckDecisionTreeTargets cenv env targets context = 
-    targets |> Array.iter (CheckDecisionTreeTarget cenv env context) 
+    targets |> Seq.iter (CheckDecisionTreeTarget cenv env context) 
 
 and CheckDecisionTreeTarget cenv env context (TTarget(vs,e,_)) = 
     BindVals cenv env vs 
-    vs |> List.iter (CheckValSpec cenv env)
+    vs |> Seq.iter (CheckValSpec cenv env)
     CheckExpr cenv env e context 
 
 and CheckDecisionTree cenv env x =
@@ -1029,7 +1029,7 @@ and CheckDecisionTree cenv env x =
 
 and CheckDecisionTreeSwitch cenv env (e,cases,dflt,m) =
     CheckExprPermitByref cenv env e // can be byref for struct union switch
-    cases |> List.iter (fun (TCase(discrim,e)) -> CheckDecisionTreeTest cenv env m discrim; CheckDecisionTree cenv env e) 
+    cases |> Seq.iter (fun (TCase(discrim,e)) -> CheckDecisionTreeTest cenv env m discrim; CheckDecisionTree cenv env e) 
     dflt |> Option.iter (CheckDecisionTree cenv env) 
 
 and CheckDecisionTreeTest cenv env m discrim =
@@ -1042,8 +1042,8 @@ and CheckDecisionTreeTest cenv env m discrim =
     | DecisionTreeTest.ActivePatternCase (exp,_,_,_,_)     -> CheckExprNoByrefs cenv env exp
 
 and CheckAttrib cenv env (Attrib(_,_,args,props,_,_,_)) = 
-    props |> List.iter (fun (AttribNamedArg(_,_,_,expr)) -> CheckAttribExpr cenv env expr)
-    args |> List.iter (CheckAttribExpr cenv env)
+    props |> Seq.iter (fun (AttribNamedArg(_,_,_,expr)) -> CheckAttribExpr cenv env expr)
+    args |> Seq.iter (CheckAttribExpr cenv env)
 
 and CheckAttribExpr cenv env (AttribExpr(expr,vexpr)) = 
     CheckExprNoByrefs cenv env expr
@@ -1077,7 +1077,7 @@ and CheckAttribArgExpr cenv env expr =
                 errorR (Error (FSComp.SR.tastNotAConstantExpression(), m))
                 
     | Expr.Op(TOp.Array,[_elemTy],args,_m) -> 
-        List.iter (CheckAttribArgExpr cenv env) args
+        Seq.iter (CheckAttribArgExpr cenv env) args
     | TypeOfExpr cenv.g _ -> 
         ()
     | TypeDefOfExpr cenv.g _ -> 
@@ -1101,21 +1101,21 @@ and CheckAttribs cenv env (attribs: Attribs) =
     let duplicates = 
         tcrefs
         |> Seq.groupBy (fun (tcref,_) -> tcref.Stamp) 
-        |> Seq.map (fun (_,elems) -> List.last (List.ofSeq elems), Seq.length elems) 
+        |> Seq.map (fun (_,elems) -> Seq.last elems, Seq.length elems) 
         |> Seq.filter (fun (_,count) -> count > 1) 
         |> Seq.map fst 
-        |> Seq.toList
         // Filter for allowMultiple = false
-        |> List.filter (fun (tcref,m) -> TryFindAttributeUsageAttribute cenv.g m tcref <> Some(true))
+        |> Seq.filter (fun (tcref,m) -> TryFindAttributeUsageAttribute cenv.g m tcref <> Some(true))
+        |> Seq.toList
 
     if cenv.reportErrors then 
        for (tcref,m) in duplicates do
           errorR(Error(FSComp.SR.chkAttrHasAllowMultiFalse(tcref.DisplayName), m))
     
-    attribs |> List.iter (CheckAttrib cenv env) 
+    attribs |> Seq.iter (CheckAttrib cenv env) 
 
 and CheckValInfo cenv env (ValReprInfo(_,args,ret)) =
-    args |> List.iterSquared (CheckArgInfo cenv env)
+    args |> Seq.iterSquared (CheckArgInfo cenv env)
     ret |> CheckArgInfo cenv env
 
 and CheckArgInfo cenv env (argInfo : ArgReprInfo)  = 
@@ -1234,7 +1234,7 @@ and CheckBinding cenv env alwaysCheckNoReraise (TBind(v,bindRhs,_) as bind) =
 
     CheckLambdas isTop v.MemberInfo cenv env v.MustInline topValInfo alwaysCheckNoReraise bindRhs v.Range v.Type
 
-and CheckBindings cenv env xs = List.iter (CheckBinding cenv env false) xs
+and CheckBindings cenv env xs = Seq.iter (CheckBinding cenv env false) xs
 
 // Top binds introduce expression, check they are reraise free.
 let CheckModuleBinding cenv env (TBind(v,e,_) as bind) =
@@ -1304,7 +1304,7 @@ let CheckModuleBinding cenv env (TBind(v,e,_) as bind) =
                             let hasNoArgs = 
                                 match v.ValReprInfo with 
                                 | None -> false 
-                                | Some arity -> List.sum arity.AritiesOfArgs - v.NumObjArgs <= 0 && arity.NumTypars = 0
+                                | Some arity -> Seq.sum arity.AritiesOfArgs - v.NumObjArgs <= 0 && arity.NumTypars = 0
 
                             //  In unions user cannot define properties that clash with generated ones 
                             if tcref.UnionCasesArray.Length = 1 && hasNoArgs then 
@@ -1336,7 +1336,7 @@ let CheckModuleBinding cenv env (TBind(v,e,_) as bind) =
 
             // Check if an F# extension member clashes
             if v.IsExtensionMember then 
-                tcref.ModuleOrNamespaceType.AllValsAndMembersByLogicalNameUncached.[v.LogicalName] |> List.iter (fun v2 -> 
+                tcref.ModuleOrNamespaceType.AllValsAndMembersByLogicalNameUncached.[v.LogicalName] |> Seq.iter (fun v2 -> 
                     if v2.IsExtensionMember && not (valEq v v2) && v.CompiledName = v2.CompiledName then
                         let minfo1 =  FSMeth(cenv.g, generalizedTyconRef tcref, mkLocalValRef v, Some 0UL)
                         let minfo2 =  FSMeth(cenv.g, generalizedTyconRef tcref, mkLocalValRef v2, Some 0UL)
@@ -1362,7 +1362,7 @@ let CheckModuleBinding cenv env (TBind(v,e,_) as bind) =
 
     CheckBinding cenv env true bind
 
-let CheckModuleBindings cenv env binds = List.iter (CheckModuleBinding cenv env) binds
+let CheckModuleBindings cenv env binds = Seq.iter (CheckModuleBinding cenv env) binds
 
 //--------------------------------------------------------------------------
 // check tycons
@@ -1454,26 +1454,26 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                 && (minfo.IsInstance = minfo2.IsInstance)
                 && MethInfosEquivWrtUniqueness erasureFlag m minfo minfo2
 
-            if others |> List.exists (checkForDup EraseAll) then 
-                if others |> List.exists (checkForDup EraseNone) then 
+            if others |> Seq.exists (checkForDup EraseAll) then 
+                if others |> Seq.exists (checkForDup EraseNone) then 
                     errorR(Error(FSComp.SR.chkDuplicateMethod(nm),m))
                 else
                     errorR(Error(FSComp.SR.chkDuplicateMethodWithSuffix(nm),m))
 
             let numCurriedArgSets = minfo.NumArgs.Length
 
-            if numCurriedArgSets > 1 && others |> List.exists (fun minfo2 -> not (IsAbstractDefaultPair2 minfo minfo2)) then 
+            if numCurriedArgSets > 1 && others |> Seq.exists (fun minfo2 -> not (IsAbstractDefaultPair2 minfo minfo2)) then 
                 errorR(Error(FSComp.SR.chkDuplicateMethodCurried nm,m))
 
             if numCurriedArgSets > 1 && 
                (minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst) 
-                |> List.existsSquared (fun (ParamData(isParamArrayArg, isOutArg, optArgInfo, callerInfoInfo, _, reflArgInfo, ty)) -> 
+                |> Seq.existsSquared (fun (ParamData(isParamArrayArg, isOutArg, optArgInfo, callerInfoInfo, _, reflArgInfo, ty)) -> 
                     isParamArrayArg || isOutArg || reflArgInfo.AutoQuote || optArgInfo.IsOptional || callerInfoInfo <> NoCallerInfo || isByrefTy cenv.g ty)) then 
                 errorR(Error(FSComp.SR.chkCurriedMethodsCantHaveOutParams(), m))
 
             if numCurriedArgSets = 1 then
                 minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst) 
-                |> List.iterSquared (fun (ParamData(_, _, optArgInfo, callerInfoInfo, _, _, ty)) ->
+                |> Seq.iterSquared (fun (ParamData(_, _, optArgInfo, callerInfoInfo, _, _, ty)) ->
                     match (optArgInfo, callerInfoInfo) with
                     | _, NoCallerInfo -> ()
                     | NotOptional, _ -> errorR(Error(FSComp.SR.tcCallerInfoNotOptional(callerInfoInfo.ToString()),m))
@@ -1516,8 +1516,8 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                  not (IsAbstractDefaultPair pinfo pinfo2 || IsAbstractDefaultPair pinfo2 pinfo)
                  && PropInfosEquivByNameAndPartialSig erasureFlag cenv.g cenv.amap m pinfo pinfo2 (* partial ignores return type *)
 
-            if others |> List.exists (checkForDup EraseAll) then
-                if others |> List.exists (checkForDup EraseNone) then 
+            if others |> Seq.exists (checkForDup EraseAll) then
+                if others |> Seq.exists (checkForDup EraseNone) then 
                     errorR(Error(FSComp.SR.chkDuplicateProperty(nm) ,m))
                 else
                     errorR(Error(FSComp.SR.chkDuplicatePropertyWithSuffix(nm) ,m))
@@ -1530,7 +1530,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                   setterArgs.Length <> getterArgs.Length)
                 || 
                  (let nargs = pinfo.GetParamTypes(cenv.amap,m).Length
-                  others |> List.exists (fun pinfo2 -> (isNil(pinfo2.GetParamTypes(cenv.amap,m))) <> (nargs = 0)))) then 
+                  others |> Seq.exists (fun pinfo2 -> (isNil(pinfo2.GetParamTypes(cenv.amap,m))) <> (nargs = 0)))) then 
                   
                   errorR(Error(FSComp.SR.chkPropertySameNameIndexer(nm),m))
 
@@ -1556,11 +1556,11 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                     let m = (match minfo.ArbitraryValRef with None -> m | Some vref -> vref.DefinitionRange)
                     let parentMethsOfSameName = getHash hashOfAllVirtualMethsInParent nm 
                     let checkForDup erasureFlag (minfo2:MethInfo) = minfo2.IsDispatchSlot && MethInfosEquivByNameAndSig erasureFlag true cenv.g cenv.amap m minfo minfo2
-                    match parentMethsOfSameName |> List.tryFind (checkForDup EraseAll) with
+                    match parentMethsOfSameName |> Seq.tryFind (checkForDup EraseAll) with
                     | None -> ()
                     | Some minfo ->
                         let mtext = NicePrint.stringOfMethInfo cenv.amap m cenv.denv minfo
-                        if parentMethsOfSameName |> List.exists (checkForDup EraseNone) then 
+                        if parentMethsOfSameName |> Seq.exists (checkForDup EraseNone) then 
                             warning(Error(FSComp.SR.tcNewMemberHidesAbstractMember(mtext),m))
                         else
                             warning(Error(FSComp.SR.tcNewMemberHidesAbstractMemberWithSuffix(mtext),m))
@@ -1573,36 +1573,36 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                     let checkForDup erasureFlag minfo2 = MethInfosEquivByNameAndSig erasureFlag true cenv.g cenv.amap m minfo minfo2
                     //if minfo.NumArgs.Length > 1 then 
                     //    warning(Error(sprintf "Abstract methods taking curried arguments Duplicate method. The method '%s' has curried arguments but has the same name as another method in this type. Methods with curried arguments may not be overloaded" nm,(match minfo.ArbitraryValRef with None -> m | Some vref -> vref.DefinitionRange)))
-                    if parentMethsOfSameName |> List.exists (checkForDup EraseAll) then
-                        if parentMethsOfSameName |> List.exists (checkForDup EraseNone) then 
+                    if parentMethsOfSameName |> Seq.exists (checkForDup EraseAll) then
+                        if parentMethsOfSameName |> Seq.exists (checkForDup EraseNone) then 
                             errorR(Error(FSComp.SR.chkDuplicateMethodInheritedType(nm),m))
                         else
                             errorR(Error(FSComp.SR.chkDuplicateMethodInheritedTypeWithSuffix(nm),m))
     // Considers TFSharpObjectRepr, TRecdRepr and TUnionRepr. 
     // [Review] are all cases covered: TILObjectRepr,TAsmRepr. [Yes - these are FSharp.Core.dll only]
-    tycon.AllFieldsArray |> Array.iter (CheckRecdField false cenv env tycon)
+    tycon.AllFieldsArray |> Seq.iter (CheckRecdField false cenv env tycon)
     
     // Abstract slots can have byref arguments and returns
-    abstractSlotValsOfTycons [tycon] |> List.iter (typeOfVal >> CheckTypePermitByrefs cenv env m) 
+    abstractSlotValsOfTycons [tycon] |> Seq.iter (typeOfVal >> CheckTypePermitByrefs cenv env m) 
 
     // Interface slots can have byref arguments and returns
-    tycon.ImmediateInterfaceTypesOfFSharpTycon |> List.iter (CheckTypePermitByrefs cenv env m)   
+    tycon.ImmediateInterfaceTypesOfFSharpTycon |> Seq.iter (CheckTypePermitByrefs cenv env m)   
 
     superOfTycon cenv.g tycon |> CheckTypeNoByrefs cenv env m                             
 
     if tycon.IsUnionTycon then                             
-        tycon.UnionCasesAsList |> List.iter (fun uc ->
+        tycon.UnionCasesAsSeq |> Seq.iter (fun uc ->
             CheckAttribs cenv env uc.Attribs 
-            uc.RecdFields |> List.iter (CheckRecdField true cenv env tycon))
+            uc.RecdFields |> Seq.iter (CheckRecdField true cenv env tycon))
 
     // Access checks
     let access =  AdjustAccess (IsHiddenTycon env.sigToImplRemapInfo tycon) (fun () -> tycon.CompilationPath) tycon.Accessibility
     let visitType ty = CheckTypeForAccess cenv env (fun () -> tycon.DisplayNameWithStaticParametersAndUnderscoreTypars) access tycon.Range ty    
-    abstractSlotValsOfTycons [tycon] |> List.iter (typeOfVal >> visitType) 
+    abstractSlotValsOfTycons [tycon] |> Seq.iter (typeOfVal >> visitType) 
     superOfTycon cenv.g tycon |> visitType
 
     // We do not have to check access of interface implementations. See FSharp 1.0 5042
-    //implements_of_tycon cenv.g tycon |> List.iter visitType
+    //implements_of_tycon cenv.g tycon |> Seq.iter visitType
     if tycon.IsFSharpDelegateTycon then 
         match tycon.TypeReprInfo with 
         | TFSharpObjectRepr r ->
@@ -1611,7 +1611,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                 //ss.ClassTypars 
                 //ss.MethodTypars 
                 ss.FormalReturnType |> Option.iter visitType
-                ss.FormalParams |> List.iterSquared (fun (TSlotParam(_,ty,_,_,_,_)) -> visitType ty)
+                ss.FormalParams |> Seq.iterSquared (fun (TSlotParam(_,ty,_,_,_,_)) -> visitType ty)
             | _ -> ()
         | _ -> ()
 
@@ -1621,7 +1621,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
             |> List.filter (isInterfaceTy cenv.g)
             
     if tycon.IsFSharpInterfaceTycon then 
-        List.iter visitType interfaces // Check inherited interface is as accessible
+        Seq.iter visitType interfaces // Check inherited interface is as accessible
  
     if cenv.reportErrors then 
         if not tycon.IsTypeAbbrev then 
@@ -1650,7 +1650,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
              CheckForByrefLikeType cenv env typ (fun () -> errorR(Error(FSComp.SR.chkNoByrefInTypeAbbrev(), tycon.Range)))
 
 let CheckEntityDefns cenv env tycons = 
-    tycons |> List.iter (CheckEntityDefn cenv env) 
+    tycons |> Seq.iter (CheckEntityDefn cenv env) 
 
 //--------------------------------------------------------------------------
 // check modules
@@ -1664,7 +1664,7 @@ let rec CheckModuleExpr cenv env x =
        CheckDefnInModule cenv env def
     
 and CheckDefnsInModule cenv env x = 
-    x |> List.iter (CheckDefnInModule cenv env)
+    x |> Seq.iter (CheckDefnInModule cenv env)
 
 and CheckNothingAfterEntryPoint cenv m =
     if cenv.entryPointGiven && cenv.reportErrors then 
@@ -1676,7 +1676,7 @@ and CheckDefnInModule cenv env x =
         CheckNothingAfterEntryPoint cenv m
         if isRec then BindVals cenv env (allValsOfModDef x |> Seq.toList)
         CheckEntityDefns cenv env tycons
-        List.iter (CheckModuleSpec cenv env) mspecs
+        Seq.iter (CheckModuleSpec cenv env) mspecs
     | TMDefLet(bind,m)  -> 
         CheckNothingAfterEntryPoint cenv m
         CheckModuleBinding cenv env bind 

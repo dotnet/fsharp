@@ -61,7 +61,7 @@ type NameResolver(g:TcGlobals,
 
 /// Get references to all the union cases in the type definition
 let UnionCaseRefsInTycon (modref: ModuleOrNamespaceRef) (tycon:Tycon) = 
-    tycon.UnionCasesAsList |> List.map (mkModuleUnionCaseRef modref tycon)
+    tycon.UnionCasesAsSeq |> Seq.map (mkModuleUnionCaseRef modref tycon) |> Seq.toList
 
 /// Get references to all the union cases defined in the module
 let UnionCaseRefsInModuleOrNamespace (modref:ModuleOrNamespaceRef) = 
@@ -218,11 +218,11 @@ type Item =
     | UnqualifiedType of TyconRef list
 
     static member MakeMethGroup (nm,minfos:MethInfo list) = 
-        let minfos = minfos |> List.sortBy (fun minfo -> minfo.NumArgs |> List.sum)
+        let minfos = minfos |> Seq.sortBy (fun minfo -> minfo.NumArgs |> Seq.sum) |> Seq.toList
         Item.MethodGroup (nm,minfos,None)
 
     static member MakeCtorGroup (nm,minfos:MethInfo list) = 
-        let minfos = minfos |> List.sortBy (fun minfo -> minfo.NumArgs |> List.sum)
+        let minfos = minfos |> Seq.sortBy (fun minfo -> minfo.NumArgs |> Seq.sum) |> Seq.toList
         Item.CtorGroup (nm,minfos)
 
     member d.DisplayName =
@@ -556,8 +556,8 @@ let AddValRefsToNameEnvWithPriority bulkAddMode pri nenv (vrefs: ValRef []) =
     if vrefs.Length = 0 then nenv else
     { nenv with 
         eUnqualifiedItems = AddValRefsToItems bulkAddMode nenv.eUnqualifiedItems vrefs
-        eIndexedExtensionMembers = (nenv.eIndexedExtensionMembers,vrefs) ||> Array.fold (AddValRefToExtensionMembers pri)
-        ePatItems = (nenv.ePatItems,vrefs) ||> Array.fold AddValRefsToActivePatternsNameEnv }
+        eIndexedExtensionMembers = (nenv.eIndexedExtensionMembers,vrefs) ||> Seq.fold (AddValRefToExtensionMembers pri)
+        ePatItems = (nenv.ePatItems,vrefs) ||> Seq.fold AddValRefsToActivePatternsNameEnv }
 
 /// Add a single F# value to the environment.
 let AddValRefToNameEnv nenv (vref:ValRef) = 
@@ -595,7 +595,7 @@ let AddTyconsByDemangledNameAndArity (bulkAddMode: BulkAdd) (tcrefs: TyconRef[])
 
     match bulkAddMode with
     | BulkAdd.Yes -> tab.AddAndMarkAsCollapsible entries
-    | BulkAdd.No -> (tab,entries) ||> Array.fold (fun tab (KeyValue(k,v)) -> tab.Add(k,v))
+    | BulkAdd.No -> (tab,entries) ||> Seq.fold (fun tab (KeyValue(k,v)) -> tab.Add(k,v))
 
 /// Add type definitions to the sub-table of the environment indexed by access name 
 let AddTyconByAccessNames bulkAddMode (tcrefs:TyconRef[]) (tab: LayeredMultiMap<string,_>) =
@@ -606,14 +606,14 @@ let AddTyconByAccessNames bulkAddMode (tcrefs:TyconRef[]) (tab: LayeredMultiMap<
 
     match bulkAddMode with
     | BulkAdd.Yes -> tab.AddAndMarkAsCollapsible entries
-    | BulkAdd.No -> (tab,entries) ||> Array.fold (fun tab (KeyValue(k,v)) -> tab.Add (k,v))
+    | BulkAdd.No -> (tab,entries) ||> Seq.fold (fun tab (KeyValue(k,v)) -> tab.Add (k,v))
 
 /// Add a record field to the corresponding sub-table of the name resolution environment 
 let AddRecdField (rfref:RecdFieldRef) tab = NameMultiMap.add rfref.FieldName rfref tab
 
 /// Add a set of union cases to the corresponding sub-table of the environment 
 let AddUnionCases1 (tab:Map<_,_>) (ucrefs:UnionCaseRef list) = 
-    (tab, ucrefs) ||> List.fold (fun acc ucref -> 
+    (tab, ucrefs) ||> Seq.fold (fun acc ucref -> 
         let item = Item.UnionCase(GeneralizeUnionCaseRef ucref,false)
         acc.Add (ucref.CaseName, item))
 
@@ -628,7 +628,7 @@ let AddUnionCases2 bulkAddMode (eUnqualifiedItems: LayeredMap<_,_>) (ucrefs :Uni
         eUnqualifiedItems.AddAndMarkAsCollapsible items
 
     | BulkAdd.No -> 
-        (eUnqualifiedItems,ucrefs) ||> List.fold (fun acc ucref -> 
+        (eUnqualifiedItems,ucrefs) ||> Seq.fold (fun acc ucref -> 
             let item = Item.UnionCase(GeneralizeUnionCaseRef ucref,false)
             acc.Add (ucref.CaseName, item))
 
@@ -636,12 +636,12 @@ let AddUnionCases2 bulkAddMode (eUnqualifiedItems: LayeredMap<_,_>) (ucrefs :Uni
 let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g:TcGlobals) amap m  nenv (tcref:TyconRef) = 
 
     let isIL = tcref.IsILTycon
-    let ucrefs = if isIL then [] else tcref.UnionCasesAsList |> List.map tcref.MakeNestedUnionCaseRef 
+    let ucrefs = if isIL then [] else tcref.UnionCasesAsSeq |> Seq.map tcref.MakeNestedUnionCaseRef |> Seq.toList
     let flds =  if isIL then [| |] else tcref.AllFieldsArray
 
     let eIndexedExtensionMembers, eUnindexedExtensionMembers = 
         let ilStyleExtensionMeths = GetCSharpStyleIndexedExtensionMembersForTyconRef amap m  tcref 
-        ((nenv.eIndexedExtensionMembers,nenv.eUnindexedExtensionMembers),ilStyleExtensionMeths) ||> List.fold (fun (tab1,tab2) extMemInfo -> 
+        ((nenv.eIndexedExtensionMembers,nenv.eUnindexedExtensionMembers),ilStyleExtensionMeths) ||> Seq.fold (fun (tab1,tab2) extMemInfo -> 
             match extMemInfo with 
             | Choice1Of2 (tcref,extMemInfo) -> tab1.Add (tcref, extMemInfo), tab2
             | Choice2Of2 extMemInfo -> tab1, extMemInfo :: tab2)  
@@ -651,7 +651,7 @@ let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g:TcGlobals) 
         if isILOrRequiredQualifiedAccess || not tcref.IsRecordTycon || flds.Length = 0 then 
             nenv.eFieldLabels 
         else 
-            (nenv.eFieldLabels,flds) ||> Array.fold (fun acc f -> 
+            (nenv.eFieldLabels,flds) ||> Seq.fold (fun acc f -> 
                    if f.IsStatic || f.IsCompilerGenerated then acc 
                    else AddRecdField (tcref.MakeNestedRecdFieldRef f) acc)
     
@@ -705,7 +705,7 @@ let TryFindPatternByName name {ePatItems = patternMap} =
 /// Add a set of type definitions to the name resolution environment 
 let AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap m root nenv tcrefs =
     if isNil tcrefs then nenv else
-    let env = List.fold (AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m) nenv tcrefs
+    let env = Seq.fold (AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m) nenv tcrefs
     // Add most of the contents of the tycons en-masse, then flatten the tables if we're opening a module or namespace
     let tcrefs = Array.ofList tcrefs
     { env with
@@ -776,7 +776,7 @@ let rec AddModuleOrNamespaceRefsToNameEnv g amap m root ad nenv (modrefs: Module
               else 
                   nenv.eFullyQualifiedModulesAndNamespaces } 
     let nenv = 
-        (nenv,modrefs) ||> List.fold (fun nenv modref ->  
+        (nenv,modrefs) ||> Seq.fold (fun nenv modref ->  
             if modref.IsModule && TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute modref.Attribs = Some true then
                 AddModuleOrNamespaceContentsToNameEnv g amap ad m false nenv modref 
             else
@@ -1392,7 +1392,7 @@ let ItemsAreEffectivelyEqual g orig other =
         | _ -> false
 
     | Item.ModuleOrNamespaces modrefs1, Item.ModuleOrNamespaces modrefs2 ->
-        modrefs1 |> List.exists (fun modref1 -> modrefs2 |> List.exists (fun r -> tyconRefDefnEq g modref1 r || fullDisplayTextOfModRef modref1 = fullDisplayTextOfModRef r))
+        modrefs1 |> Seq.exists (fun modref1 -> modrefs2 |> Seq.exists (fun r -> tyconRefDefnEq g modref1 r || fullDisplayTextOfModRef modref1 = fullDisplayTextOfModRef r))
 
     | _ -> false
 
@@ -1560,7 +1560,7 @@ type ResultTyparChecker = ResultTyparChecker of (unit -> bool)
 let CheckAllTyparsInferrable amap m item = 
     match item with
     | Item.Property(_,pinfos) -> 
-        pinfos |> List.forall (fun pinfo -> 
+        pinfos |> Seq.forall (fun pinfo -> 
             pinfo.IsExtensionMember ||
             let freeInDeclaringType = freeInType CollectTyparsNoCaching pinfo.EnclosingType
             let freeInArgsAndRetType = 
@@ -1570,7 +1570,7 @@ let CheckAllTyparsInferrable amap m item =
             free.IsEmpty)
 
     | Item.MethodGroup(_,minfos,_) -> 
-        minfos |> List.forall (fun minfo -> 
+        minfos |> Seq.forall (fun minfo -> 
             minfo.IsExtensionMember ||
             let fminst = minfo.FormalMethodInst
             let freeInDeclaringType = freeInType CollectTyparsNoCaching minfo.EnclosingType
@@ -1665,9 +1665,10 @@ let CheckForTypeLegitimacyAndMultipleGenericTypeAmbiguities
     let tcrefs = 
         tcrefs 
         // remove later duplicates (if we've opened the same module more than once)
-        |> List.distinctBy (fun (_,tcref) -> tcref.Stamp) 
-        // List.sortBy is a STABLE sort (the order matters!)
-        |> List.sortBy (fun (_,tcref) -> tcref.Typars(m).Length)
+        |> Seq.distinctBy (fun (_,tcref) -> tcref.Stamp) 
+        // Seq.sortBy is a STABLE sort (the order matters!)
+        |> Seq.sortBy (fun (_,tcref) -> tcref.Typars(m).Length)
+        |> Seq.toList
 
     let tcrefs = 
         match tcrefs with 
@@ -1797,7 +1798,7 @@ let private ResolveObjectConstructorPrim (ncenv:NameResolver) edenv resInfo m ad
             success (resInfo, Item.FakeInterfaceCtor typ)
         else 
             let defaultStructCtorInfo = 
-                if (not (ctorInfos |> List.exists (fun x -> x.IsNullary)) &&
+                if (not (ctorInfos |> Seq.exists (fun x -> x.IsNullary)) &&
                     isStructTy g typ && 
                     not (isRecdTy g typ) && 
                     not (isUnionTy g typ)) 
@@ -1986,7 +1987,7 @@ let GetRecordLabelsForType g nenv typ =
         nenv.eFieldLabels
         |> Seq.filter (fun kv -> 
             kv.Value 
-            |> List.exists (fun r -> r.TyconRef.DisplayName = typeName))
+            |> Seq.exists (fun r -> r.TyconRef.DisplayName = typeName))
         |> Seq.map (fun kv -> kv.Key)
         |> Set.ofSeq
     else
@@ -2383,7 +2384,7 @@ let rec ResolveExprLongIdentPrim sink (ncenv:NameResolver) fullyQualified m ad n
                                           if not hasRequireQualifiedAccessAttribute then 
                                               None
                                           else
-                                              if e.Value.IsUnionTycon && e.Value.UnionCasesArray |> Array.exists (fun c -> c.DisplayName = id.idText) then
+                                              if e.Value.IsUnionTycon && e.Value.UnionCasesArray |> Seq.exists (fun c -> c.DisplayName = id.idText) then
                                                   Some e.Value
                                               else
                                                   None)
@@ -2972,22 +2973,22 @@ let SuggestLabelsOfRelatedRecords g (nenv:NameResolutionEnv) (id:Ident) (allFiel
                 NameMap.domainL nenv.eFieldLabels |> Set.ofList |> Set.remove "contents"
             else
                 let possibleRecords =
-                    [for fld in givenFields do
-                        match Map.tryFind fld nenv.eFieldLabels with
-                        | None -> ()
-                        | Some recordTypes -> yield! (recordTypes |> List.map (fun r -> r.TyconRef.DisplayName, fld)) ]
-                    |> List.groupBy fst
-                    |> List.map (fun (r,fields) -> r, fields |> List.map snd |> Set.ofList)
-                    |> List.filter (fun (_,fields) -> Set.isSubset givenFields fields)
-                    |> List.map fst
-                    |> Set.ofList
+                    seq {for fld in givenFields do
+                            match Map.tryFind fld nenv.eFieldLabels with
+                            | None -> ()
+                            | Some recordTypes -> yield! (recordTypes |> List.map (fun r -> r.TyconRef.DisplayName, fld))}
+                    |> Seq.groupBy fst
+                    |> Seq.map (fun (r,fields) -> r, fields |> Seq.map snd |> Set.ofSeq)
+                    |> Seq.filter (fun (_,fields) -> Set.isSubset givenFields fields)
+                    |> Seq.map fst
+                    |> Set.ofSeq
 
                 let labelsOfPossibleRecords =
                     nenv.eFieldLabels
                     |> Seq.filter (fun kv -> 
                         kv.Value 
                         |> List.map (fun r -> r.TyconRef.DisplayName)
-                        |> List.exists possibleRecords.Contains)
+                        |> Seq.exists possibleRecords.Contains)
                     |> Seq.map (fun kv -> kv.Key)
                     |> Set.ofSeq
 
@@ -3207,7 +3208,7 @@ let ResolveLongIdentAsExprAndComputeRange (sink:TcResultsSink) (ncenv:NameResolv
         match lid with
         | [] | [_] -> false
         | head :: ids ->
-            ids |> List.forall (fun id -> id.idRange = head.idRange)
+            ids |> Seq.forall (fun id -> id.idRange = head.idRange)
 
     let callSink (refinedItem, tpinst) =
         if not isFakeIdents then
@@ -3244,8 +3245,8 @@ let ResolveLongIdentAsExprAndComputeRange (sink:TcResultsSink) (ncenv:NameResolv
 
 let (|NonOverridable|_|) namedItem =
     match namedItem with
-    |   Item.MethodGroup(_,minfos,_) when minfos |> List.exists(fun minfo -> minfo.IsVirtual || minfo.IsAbstract) -> None
-    |   Item.Property(_,pinfos) when pinfos |> List.exists(fun pinfo -> pinfo.IsVirtualProperty) -> None
+    |   Item.MethodGroup(_,minfos,_) when minfos |> Seq.exists(fun minfo -> minfo.IsVirtual || minfo.IsAbstract) -> None
+    |   Item.Property(_,pinfos) when pinfos |> Seq.exists(fun pinfo -> pinfo.IsVirtualProperty) -> None
     |   _ -> Some ()
 
 
@@ -3442,26 +3443,31 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
 
     // Exclude get_ and set_ methods accessed by properties 
     let pinfoMethNames = 
-      (pinfosIncludingUnseen 
-       |> List.filter (fun pinfo -> pinfo.HasGetter)
-       |> List.map (fun pinfo -> pinfo.GetterMethod.LogicalName))
-      @
-      (pinfosIncludingUnseen 
-       |> List.filter (fun pinfo -> pinfo.HasSetter)
-       |> List.map (fun pinfo -> pinfo.SetterMethod.LogicalName))
-    
+      let getters =
+        pinfosIncludingUnseen 
+        |> Seq.filter (fun pinfo -> pinfo.HasGetter)
+        |> Seq.map (fun pinfo -> pinfo.GetterMethod.LogicalName)
+      
+      let setters = 
+        pinfosIncludingUnseen 
+        |> Seq.filter (fun pinfo -> pinfo.HasSetter)
+        |> Seq.map (fun pinfo -> pinfo.SetterMethod.LogicalName)
+
+      Seq.append getters setters
+
     let einfoMethNames = 
         if completionTargets.ResolveAll then
-            [ for einfo in einfos do 
-                let delegateType = einfo.GetDelegateType(amap,m)
-                let (SigOfFunctionForDelegate(invokeMethInfo,_,_,_)) = GetSigOfFunctionForDelegate ncenv.InfoReader delegateType m ad 
-                // Only events with void return types are suppressed in intellisense.
-                if slotSigHasVoidReturnTy (invokeMethInfo.GetSlotSig(amap, m)) then 
-                  yield einfo.GetAddMethod().DisplayName
-                  yield einfo.GetRemoveMethod().DisplayName ]
-        else []
+            seq {
+                for einfo in einfos do 
+                    let delegateType = einfo.GetDelegateType(amap,m)
+                    let (SigOfFunctionForDelegate(invokeMethInfo,_,_,_)) = GetSigOfFunctionForDelegate ncenv.InfoReader delegateType m ad 
+                    // Only events with void return types are suppressed in intellisense.
+                    if slotSigHasVoidReturnTy (invokeMethInfo.GetSlotSig(amap, m)) then 
+                      yield einfo.GetAddMethod().DisplayName
+                      yield einfo.GetRemoveMethod().DisplayName }
+        else Seq.empty
 
-    let suppressedMethNames = Zset.ofList String.order (pinfoMethNames @ einfoMethNames)
+    let suppressedMethNames = Zset.ofSeq String.order (Seq.append pinfoMethNames einfoMethNames)
 
     let pinfos = 
         pinfosIncludingUnseen
@@ -3552,7 +3558,7 @@ let ResolveCompletionsInType (ncenv: NameResolver) nenv (completionTargets: Reso
                 if methsWithStaticParams.IsEmpty then minfos
                 else minfos |> List.filter (fun minfo -> 
                         let nm = minfo.LogicalName
-                        not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWith(m))))
+                        not (nm.Contains "," && methsWithStaticParams |> Seq.exists (fun m -> nm.StartsWith(m))))
 #endif
 
             minfos 
@@ -3787,7 +3793,7 @@ let TryToResolveLongIdentAsType (ncenv: NameResolver) (nenv: NameResolutionEnv) 
         if isItemVal then typ
         else
             LookupTypeNameInEnvNoArity OpenQualified id nenv
-            |> List.fold (fun resTyp tcref ->
+            |> Seq.fold (fun resTyp tcref ->
                 // type.lookup : lookup a static something in a type 
                 let tcref = ResolveNestedTypeThroughAbbreviation ncenv tcref m
                 let typ = FreshenTycon ncenv m tcref
@@ -3974,25 +3980,25 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
         // empty plid - return namespaces\modules\record types\accessible fields
        let iltyconNames =
           nenv.TyconsByAccessNames(fullyQualified).Values
-          |> List.choose (fun tyconRef -> if tyconRef.IsILTycon then Some tyconRef.DisplayName else None)
-          |> Set.ofList
+          |> Seq.choose (fun tyconRef -> if tyconRef.IsILTycon then Some tyconRef.DisplayName else None)
+          |> Set.ofSeq
 
        let mods = 
            nenv.ModulesAndNamespaces(fullyQualified)
            |> NameMultiMap.range 
-           |> List.filter (fun x -> 
+           |> Seq.filter (fun x -> 
                 let demangledName = x.DemangledModuleOrNamespaceName
                 IsInterestingModuleName demangledName && notFakeContainerModule iltyconNames demangledName)
-           |> List.filter (EntityRefContainsSomethingAccessible ncenv m ad)
-           |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
-           |> List.map ItemForModuleOrNamespaceRef
+           |> Seq.filter (EntityRefContainsSomethingAccessible ncenv m ad)
+           |> Seq.filter (IsTyconUnseen ad g ncenv.amap m >> not)
+           |> Seq.map ItemForModuleOrNamespaceRef
 
        let recdTyCons = 
            nenv.TyconsByDemangledNameAndArity(fullyQualified).Values
-           |> List.filter (fun tcref -> not (tcref.LogicalName.Contains(",")))
-           |> List.filter (fun tcref -> tcref.IsRecordTycon) 
-           |> List.filter (IsTyconUnseen ad g ncenv.amap m >> not)
-           |> List.map (ItemOfTyconRef ncenv m)
+           |> Seq.filter (fun tcref -> not (tcref.LogicalName.Contains(",")))
+           |> Seq.filter (fun tcref -> tcref.IsRecordTycon) 
+           |> Seq.filter (IsTyconUnseen ad g ncenv.amap m >> not)
+           |> Seq.map (ItemOfTyconRef ncenv m)
 
        let recdFields = 
            nenv.eFieldLabels
@@ -4000,9 +4006,8 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
            |> Seq.map (fun fref -> 
                 let typeInsts = fref.TyconRef.TyparsNoRange |> List.map (fun tyar -> tyar.AsType)
                 Item.RecdField(RecdFieldInfo(typeInsts, fref)))
-           |> List.ofSeq
 
-       mods @ recdTyCons @ recdFields
+       Seq.concat [mods; recdTyCons; recdFields] |> Seq.toList
 
     | id::rest -> 
         // Get results
@@ -4072,31 +4077,36 @@ let private ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad stat
                     IsPropInfoAccessible g amap m ad x)
         
             // Exclude get_ and set_ methods accessed by properties 
-            let pinfoMethNames = 
-              (pinfosIncludingUnseen 
-               |> List.filter (fun pinfo -> pinfo.HasGetter)
-               |> List.map (fun pinfo -> pinfo.GetterMethod.LogicalName))
-              @
-              (pinfosIncludingUnseen 
-               |> List.filter (fun pinfo -> pinfo.HasSetter)
-               |> List.map (fun pinfo -> pinfo.SetterMethod.LogicalName))
+            let pinfoMethNames =
+                let getters = 
+                    pinfosIncludingUnseen 
+                    |> Seq.filter (fun pinfo -> pinfo.HasGetter)
+                    |> Seq.map (fun pinfo -> pinfo.GetterMethod.LogicalName)
+
+                let setters =
+                    pinfosIncludingUnseen 
+                    |> Seq.filter (fun pinfo -> pinfo.HasSetter)
+                    |> Seq.map (fun pinfo -> pinfo.SetterMethod.LogicalName)
+
+                Seq.append getters setters
             
             let einfoMethNames = 
                 let einfos = 
                     ncenv.InfoReader.GetEventInfosOfType(None,ad,m,typ)
-                    |> List.filter (fun x -> 
+                    |> Seq.filter (fun x -> 
                         IsStandardEventInfo ncenv.InfoReader m ad x &&
                         x.IsStatic = statics)
                 
-                [ for einfo in einfos do 
-                    let delegateType = einfo.GetDelegateType(amap, m)
-                    let (SigOfFunctionForDelegate(invokeMethInfo,_,_,_)) = GetSigOfFunctionForDelegate ncenv.InfoReader delegateType m ad 
-                    // Only events with void return types are suppressed in intellisense.
-                    if slotSigHasVoidReturnTy (invokeMethInfo.GetSlotSig(amap, m)) then 
-                      yield einfo.GetAddMethod().DisplayName
-                      yield einfo.GetRemoveMethod().DisplayName ]
+                seq {
+                    for einfo in einfos do 
+                        let delegateType = einfo.GetDelegateType(amap, m)
+                        let (SigOfFunctionForDelegate(invokeMethInfo,_,_,_)) = GetSigOfFunctionForDelegate ncenv.InfoReader delegateType m ad 
+                        // Only events with void return types are suppressed in intellisense.
+                        if slotSigHasVoidReturnTy (invokeMethInfo.GetSlotSig(amap, m)) then 
+                          yield einfo.GetAddMethod().DisplayName
+                          yield einfo.GetRemoveMethod().DisplayName }
         
-            let suppressedMethNames = Zset.ofList String.order (pinfoMethNames @ einfoMethNames)
+            let suppressedMethNames = Zset.ofSeq String.order (Seq.append pinfoMethNames einfoMethNames)
         
             let pinfos = 
                 pinfosIncludingUnseen
@@ -4180,7 +4190,7 @@ let private ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad stat
                         if methsWithStaticParams.IsEmpty then minfos
                         else minfos |> List.filter (fun minfo -> 
                                 let nm = minfo.LogicalName
-                                not (nm.Contains "," && methsWithStaticParams |> List.exists (fun m -> nm.StartsWith(m))))
+                                not (nm.Contains "," && methsWithStaticParams |> Seq.exists (fun m -> nm.StartsWith(m))))
         #endif
         
                     minfos 

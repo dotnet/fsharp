@@ -49,7 +49,7 @@ module internal PrintUtilities =
         match ls with
         | []      -> emptyL
         | [x]     -> x
-        | x :: xs -> List.fold (^^) x xs 
+        | x :: xs -> Seq.fold (^^) x xs 
 
     let suppressInheritanceAndInterfacesForTyInSimplifiedDisplays g amap m ty = 
         isEnumTy g ty || isDelegateTy g ty || ExistsHeadTypeInEntireHierarchy g amap m ty g.exn_tcr || ExistsHeadTypeInEntireHierarchy g amap m ty g.tcref_System_Attribute 
@@ -189,7 +189,7 @@ module private PrintIL =
         | ILType.Ptr t
         | ILType.Byref t            -> layoutILType denv ilTyparSubst t
         | ILType.FunctionPointer t  -> layoutILCallingSignature denv ilTyparSubst None t
-        | ILType.TypeVar n          -> List.item (int n) ilTyparSubst
+        | ILType.TypeVar n          -> Seq.item (int n) ilTyparSubst
         | ILType.Modified (_, _, t) -> layoutILType denv ilTyparSubst t // Just recurse through them to the contained ILType
 
     /// Layout a function pointer signature using type-only-F#-style. No argument names are printed.
@@ -453,9 +453,10 @@ module private PrintIL =
 
             let memberBlockLs (fieldDefs:ILFieldDefs, methodDefs:ILMethodDefs, propertyDefs:ILPropertyDefs, eventDefs:ILEventDefs) =
                 let ctors  =
-                    methodDefs.AsList
-                    |> List.filter isPublicILCtor 
-                    |> List.sortBy (fun md -> md.Parameters.Length)
+                    methodDefs.AsSeq
+                    |> Seq.filter isPublicILCtor 
+                    |> Seq.sortBy (fun md -> md.Parameters.Length)
+                    |> Seq.toList
                     |> shrinkOverloads (layoutILMethodDef denv ilTyparSubst typeDef.Name) (fun _ xL -> xL) 
 
                 let fields = 
@@ -474,31 +475,33 @@ module private PrintIL =
                     |> List.map (layoutILEventDef denv ilTyparSubst)
 
                 let meths = 
-                    methodDefs.AsList
-                    |> List.filter isPublicILMethod 
-                    |> List.filter isNotSpecialName 
-                    |> List.map (fun md -> (md.Name, md.Parameters.Length), md)
+                    methodDefs.AsSeq
+                    |> Seq.filter isPublicILMethod 
+                    |> Seq.filter isNotSpecialName 
+                    |> Seq.map (fun md -> (md.Name, md.Parameters.Length), md)
                     // collect into overload groups
-                    |> List.groupBy (fst >> fst)
-                    |> List.collect (fun (_,group) -> group |> List.sortBy fst |> shrinkOverloads (snd >> layoutILMethodDef denv ilTyparSubst typeDef.Name) (fun x xL -> (fst x,xL)))
+                    |> Seq.groupBy (fst >> fst)
+                    |> Seq.collect (fun (_,group) -> group |> Seq.sortBy fst |> Seq.toList |> shrinkOverloads (snd >> layoutILMethodDef denv ilTyparSubst typeDef.Name) (fun x xL -> (fst x,xL)))
+                    |> Seq.toList
 
                 let members = 
                     (props @ meths) 
-                    |> List.sortBy fst 
-                    |> List.map snd // (properties and members) are sorted by name/arity 
+                    |> Seq.sortBy fst 
+                    |> Seq.map snd // (properties and members) are sorted by name/arity 
+                    |> Seq.toList
 
 
                 ctors @ fields @ members @ events
 
             let bodyStatic   = 
                 memberBlockLs (typeDef.Fields.AsList |> List.filter (fun fd -> fd.IsStatic)                 |> mkILFields,
-                                typeDef.Methods.AsList |> List.filter (fun md -> md.IsStatic)                |> mkILMethods,
+                                typeDef.Methods.AsSeq |> Seq.filter (fun md -> md.IsStatic)                |> mkILMethods,
                                 typeDef.Properties.AsList |> List.filter (fun pd -> isStaticILProperty pd)     |> mkILProperties,
                                 typeDef.Events.AsList |> List.filter (fun ed -> isStaticILEvent ed)            |> mkILEvents)
 
             let bodyInstance = 
                 memberBlockLs (typeDef.Fields.AsList |> List.filter (fun fd -> not(fd.IsStatic))                |> mkILFields,
-                                typeDef.Methods.AsList |> List.filter (fun md -> not(md.IsStatic))               |> mkILMethods,
+                                typeDef.Methods.AsSeq |> Seq.filter (fun md -> not(md.IsStatic))               |> mkILMethods,
                                 typeDef.Properties.AsList |> List.filter (fun pd -> not(isStaticILProperty pd))    |> mkILProperties,
                                 typeDef.Events.AsList |> List.filter (fun ed -> not(isStaticILEvent ed))           |> mkILEvents )
   
@@ -508,10 +511,11 @@ module private PrintIL =
             let body = applyMaxMembers denv.maxMembers body
   
             let types  = 
-                typeDef.NestedTypes.AsList
-                |> List.filter isPublicILTypeDef
-                |> List.sortBy(fun t -> adjustILName t.Name)   
-                |> List.map (layoutILNestedClassDef denv)
+                typeDef.NestedTypes.AsSeq
+                |> Seq.filter isPublicILTypeDef
+                |> Seq.sortBy(fun t -> adjustILName t.Name)   
+                |> Seq.map (layoutILNestedClassDef denv)
+                |> Seq.toList
   
             let post   = WordL.keywordEnd
             renderL pre (baseT @ body @ types ) post
@@ -527,7 +531,7 @@ module private PrintIL =
 
         | ILTypeDefKind.Delegate  -> 
             let rhs = 
-                match typeDef.Methods.AsList |> List.filter (fun m -> m.Name = "Invoke") with // the delegate delegates to the type of `Invoke`
+                match typeDef.Methods.AsSeq |> Seq.filter (fun m -> m.Name = "Invoke") |> Seq.toList with // the delegate delegates to the type of `Invoke`
                 | m :: _ -> layoutILCallingSignature denv ilTyparSubst None m.CallingSignature
                 | _      -> comment "`Invoke` method could not be found"
             WordL.keywordDelegate ^^ WordL.keywordOf ^^ rhs
@@ -587,7 +591,7 @@ module private PrintTypes =
         let (|Public|Internal|Private|) (TAccess p) = 
             match p with 
             | [] -> Public 
-            | _ when List.forall isInternalCompPath p  -> Internal 
+            | _ when Seq.forall isInternalCompPath p  -> Internal 
             | _ -> Private
         match denv.contextAccessibility,accessibility with
         | Public,Internal  -> WordL.keywordInternal ++ itemL    // print modifier, since more specific than context
@@ -888,8 +892,8 @@ module private PrintTypes =
 
     /// Layout a unit expression 
     and private layoutMeasure denv unt =
-        let sortVars vs = vs |> List.sortBy (fun (v:Typar,_) -> v.DisplayName) 
-        let sortCons cs = cs |> List.sortBy (fun (c:TyconRef,_) -> c.DisplayName) 
+        let sortVars vs = vs |> Seq.sortBy (fun (v:Typar,_) -> v.DisplayName) |> Seq.toList
+        let sortCons cs = cs |> Seq.sortBy (fun (c:TyconRef,_) -> c.DisplayName) |> Seq.toList
         let negvs,posvs = ListMeasureVarOccsWithNonZeroExponents              unt |> sortVars |> List.partition (fun (_,e) -> SignRational e < 0)
         let negcs,poscs = ListMeasureConOccsWithNonZeroExponents denv.g false unt |> sortCons |> List.partition (fun (_,e) -> SignRational e < 0)
         let unparL uv = layoutTyparRef denv uv
@@ -923,7 +927,7 @@ module private PrintTypes =
         match stripTyparEqns typ with 
 
         // Layout a type application 
-        | TType_app (tc,args) when tc.IsMeasureableReprTycon && List.forall (isDimensionless denv.g) args ->
+        | TType_app (tc,args) when tc.IsMeasureableReprTycon && Seq.forall (isDimensionless denv.g) args ->
           layoutTypeWithInfoAndPrec denv env prec (reduceTyconRefMeasureableOrProvided denv.g tc args)
 
         | TType_app (tc,args) -> 
@@ -1461,14 +1465,14 @@ module private TastDefinitionPrinting =
 
     let layoutUnionCases denv  ucases =
         let prefixL = WordL.bar // See bug://2964 - always prefix in case preceded by accessibility modifier
-        List.map (layoutUnionCase denv prefixL) ucases
+        Seq.map (layoutUnionCase denv prefixL) ucases
 
     /// When to force a break? "type tyname = <HERE> repn"
     /// When repn is class or datatype constructors (not single one).
     let breakTypeDefnEqn repr =
         match repr with 
         | TFSharpObjectRepr _ -> true
-        | TUnionRepr r -> not (isNilOrSingleton r.CasesTable.UnionCasesAsList)
+        | TUnionRepr r -> not (isNilOrSingleton' r.CasesTable.UnionCasesAsSeq)
         | TRecdRepr _ -> true
         | TAsmRepr _ 
         | TILObjectRepr _  
@@ -1526,7 +1530,7 @@ module private TastDefinitionPrinting =
             (not v.IsConstructor, 
               not v.IsInstance,  // instance first
               v.DisplayName,            // sort by name 
-              List.sum v.NumArgs ,  // sort by #curried
+              Seq.sum v.NumArgs ,  // sort by #curried
               v.NumArgs.Length)  // sort by arity 
 
         let shouldShow (valRef : ValRef option) =
@@ -1548,7 +1552,8 @@ module private TastDefinitionPrinting =
             if suppressInheritanceAndInterfacesForTyInSimplifiedDisplays g amap m ty then 
                 []
             else 
-                GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty |> List.map (fun ity -> wordL (tagKeyword (if isInterfaceTy g ty then "inherit" else "interface")) --- layoutType denv ity)
+                GetImmediateInterfacesOfType SkipUnrefInterfaces.Yes g amap m ty
+                |> List.map (fun ity -> wordL (tagKeyword (if isInterfaceTy g ty then "inherit" else "interface")) --- layoutType denv ity)
 
         let props = 
             GetIntrinsicPropInfosOfType infoReader (None,ad,AllowMultiIntfInstantiations.Yes)  PreferOverrides m ty
@@ -1560,12 +1565,12 @@ module private TastDefinitionPrinting =
 
         let impliedNames = 
             try 
-                Set.ofList [ for p in props do 
-                                if p.HasGetter then yield p.GetterMethod.DisplayName
-                                if p.HasSetter then yield p.SetterMethod.DisplayName  
-                             for e in events do 
-                                yield e.GetAddMethod().DisplayName 
-                                yield e.GetRemoveMethod().DisplayName ]
+                Set.ofSeq (seq { for p in props do 
+                                    if p.HasGetter then yield p.GetterMethod.DisplayName
+                                    if p.HasSetter then yield p.SetterMethod.DisplayName  
+                                 for e in events do 
+                                    yield e.GetAddMethod().DisplayName 
+                                    yield e.GetRemoveMethod().DisplayName })
             with _ -> Set.empty
 
         let ctorLs    = 
@@ -1574,34 +1579,33 @@ module private TastDefinitionPrinting =
 
         let methLs    = 
             meths 
-            |> List.filter (fun md -> not (impliedNames.Contains md.DisplayName))
-            |> List.groupBy (fun md -> md.DisplayName)
-            |> List.collect (fun (_,group) -> shrinkOverloads (InfoMemberPrinting.layoutMethInfoFSharpStyle amap m denv) (fun x xL -> (sortKey x, xL)) group)
+            |> Seq.filter (fun md -> not (impliedNames.Contains md.DisplayName))
+            |> Seq.groupBy (fun md -> md.DisplayName)
+            |> Seq.collect (fun (_,group) -> shrinkOverloads (InfoMemberPrinting.layoutMethInfoFSharpStyle amap m denv) (fun x xL -> (sortKey x, xL)) (group |> Seq.toList))
 
         let fieldLs = 
             infoReader.GetILFieldInfosOfType (None,ad,m,ty) 
-            |> List.map (fun x -> (true,x.IsStatic,x.FieldName,0,0),layoutILFieldInfo denv amap m x)
-
+            |> Seq.map (fun x -> (true,x.IsStatic,x.FieldName,0,0),layoutILFieldInfo denv amap m x)
     
         let propLs = 
             props
-            |> List.map (fun x -> (true,x.IsStatic,x.PropertyName,0,0),layoutPropInfo denv amap m x)
+            |> Seq.map (fun x -> (true,x.IsStatic,x.PropertyName,0,0),layoutPropInfo denv amap m x)
 
         let eventLs = 
             events
-            |> List.map (fun x -> (true,x.IsStatic,x.EventName,0,0), layoutEventInfo denv amap m x)
+            |> Seq.map (fun x -> (true,x.IsStatic,x.EventName,0,0), layoutEventInfo denv amap m x)
 
-        let membLs = (methLs @ fieldLs @ propLs @ eventLs) |> List.sortBy fst  |> List.map snd
+        let membLs =
+            Seq.concat [methLs; fieldLs; propLs; eventLs] |> Seq.sortBy fst |> Seq.map snd |> Seq.toList
 
         let nestedTypeLs  = 
           match tcref.TypeReprInfo with 
           | TProvidedTypeExtensionPoint info ->
-                [ 
-                    for nestedType in info.ProvidedType.PApplyArray((fun sty -> sty.GetNestedTypes()), "GetNestedTypes", m) do 
-                        yield nestedType.PUntaint((fun t -> t.IsClass, t.Name), m)
-                ] 
-                |> List.sortBy snd
-                |> List.map (fun (isClass, t) -> WordL.keywordNested ^^ WordL.keywordType ^^ wordL ((if isClass then tagClass else tagStruct) t))
+                info.ProvidedType.PApplyArray((fun sty -> sty.GetNestedTypes()), "GetNestedTypes", m)
+                |> Seq.map (fun nestedType -> nestedType.PUntaint((fun t -> t.IsClass, t.Name), m))
+                |> Seq.sortBy snd
+                |> Seq.map (fun (isClass, t) -> WordL.keywordNested ^^ WordL.keywordType ^^ wordL ((if isClass then tagClass else tagStruct) t))
+                |> Seq.toList
           | _ -> 
               []
 
@@ -1657,9 +1661,9 @@ module private TastDefinitionPrinting =
       let memberImplementLs,memberCtorLs,memberInstanceLs,memberStaticLs = 
           let adhoc = 
               tycon.MembersOfFSharpTyconSorted
-              |> List.filter (fun v -> not v.IsDispatchSlot) 
-              |> List.filter (fun v -> not v.Deref.IsClassConstructor) 
-              |> List.filter (fun v -> 
+              |> Seq.filter (fun v -> not v.IsDispatchSlot) 
+              |> Seq.filter (fun v -> not v.Deref.IsClassConstructor) 
+              |> Seq.filter (fun v -> 
                                   match v.MemberInfo.Value.ImplementedSlotSigs with 
                                   | TSlotSig(_,oty,_,_,_,_) :: _ -> 
                                       // Don't print overrides in HTML docs
@@ -1667,15 +1671,15 @@ module private TastDefinitionPrinting =
                                       // Don't print individual methods forming interface implementations - these are currently never exported 
                                       not (isInterfaceTy denv.g oty)
                                   | [] -> true)
-              |> List.filter (fun v -> denv.showObsoleteMembers || not (CheckFSharpAttributesForObsolete denv.g v.Attribs))
-              |> List.filter (fun v -> denv.showHiddenMembers || not (CheckFSharpAttributesForHidden denv.g v.Attribs))
+              |> Seq.filter (fun v -> denv.showObsoleteMembers || not (CheckFSharpAttributesForObsolete denv.g v.Attribs))
+              |> Seq.filter (fun v -> denv.showHiddenMembers || not (CheckFSharpAttributesForHidden denv.g v.Attribs))
           // sort 
           let sortKey (v:ValRef) = (not v.IsConstructor,    // constructors before others 
                                     v.Id.idText,            // sort by name 
                                     (if v.IsCompiledAsTopLevel then v.ValReprInfo.Value.NumCurriedArgs else 0),  // sort by #curried
                                     (if v.IsCompiledAsTopLevel then v.ValReprInfo.Value.AritiesOfArgs  else [])  // sort by arity 
                                     )            
-          let adhoc = adhoc |> List.sortBy sortKey
+          let adhoc = adhoc |> Seq.sortBy sortKey |> Seq.toList
           let iimpls = 
               match tycon.TypeReprInfo with 
               | TFSharpObjectRepr r when (match r.fsobjmodel_kind with TTyconInterface -> true | _ -> false) -> []
@@ -1765,7 +1769,7 @@ module private TastDefinitionPrinting =
                                   let declsL = match start with Some s -> (wordL s @@-- declsL) @@ wordL (tagKeyword  "end") | None -> declsL
                                   Some declsL
                   | TUnionRepr _        -> 
-                      let layoutUnionCases = tycon.UnionCasesAsList |> layoutUnionCases denv |> applyMaxMembers denv.maxMembers |> aboveListL
+                      let layoutUnionCases = tycon.UnionCasesAsSeq |> layoutUnionCases denv |> Seq.toList |> applyMaxMembers denv.maxMembers |> aboveListL
                       Some (addMembersAsWithEnd (addReprAccessL layoutUnionCases))
                   | TAsmRepr _                      -> 
                       Some (wordL (tagText "(# \"<Common IL Type Omitted>\" #)"))
@@ -1834,10 +1838,10 @@ module private InferredSigPrinting =
         let rec isConcreteNamespace x = 
             match x with 
             | TMDefRec(_,tycons,mbinds,_) -> 
-                not (isNil tycons) || (mbinds |> List.exists (function ModuleOrNamespaceBinding.Binding _ -> true | ModuleOrNamespaceBinding.Module(x,_) -> not x.IsNamespace))
+                not (isNil tycons) || (mbinds |> Seq.exists (function ModuleOrNamespaceBinding.Binding _ -> true | ModuleOrNamespaceBinding.Module(x,_) -> not x.IsNamespace))
             | TMDefLet _  -> true
             | TMDefDo _  -> true
-            | TMDefs defs -> defs |> List.exists isConcreteNamespace 
+            | TMDefs defs -> defs |> Seq.exists isConcreteNamespace 
             | TMAbstract(ModuleOrNamespaceExprWithSig(_,def,_)) -> isConcreteNamespace def
 
         let rec imexprLP denv  (ModuleOrNamespaceExprWithSig(_,def,_)) = imdefL denv def
@@ -1882,7 +1886,7 @@ module private InferredSigPrinting =
                 let denv  = denv.AddAccessibility mspec.Accessibility 
                 let basic = imdefL denv def
                 // Check if its an outer module or a nested module
-                if (outerPath |> List.forall (fun (_,istype) -> istype = Namespace) ) then 
+                if (outerPath |> Seq.forall (fun (_,istype) -> istype = Namespace) ) then 
                     // OK, this is an outer module
                     if showHeader then 
                         // OK, we're not in F# Interactive

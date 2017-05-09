@@ -107,8 +107,8 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value : not struct>(keepStro
                 k,handle )
         ignore tok // Updating refs requires tok
         refs <- newdata
-        discard1 |> List.iter (snd >> strongDiscard)
-        discard2 |> List.iter (snd >> snd >> strongDiscard)
+        discard1 |> Seq.iter (snd >> strongDiscard)
+        discard2 |> Seq.iter (snd >> snd >> strongDiscard)
         
     member al.TryPeekKeyValue(tok, key) = 
         // Returns the original key value as well since it may be different depending on equality test.
@@ -225,5 +225,5 @@ type internal List =
     /// Return each distinct item in the list using reference equality.
     static member referenceDistinct( l : 'T list) : 'T list when 'T : not struct =
         let set = System.Collections.Generic.Dictionary<'T,bool>(HashIdentity.Reference)
-        l |> List.iter(fun i->set.Add(i,true))
+        l |> Seq.iter(fun i->set.Add(i,true))
         set |> Seq.map(fun kv->kv.Key) |> List.ofSeq

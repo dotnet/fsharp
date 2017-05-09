@@ -244,8 +244,9 @@ let RefuteDiscrimSet g m path discrims =
              (* Choose the first ucref based on ordering of names *)
              let others = 
                  tcref.UnionCasesAsRefList 
-                 |> List.filter (fun ucref -> not (List.exists (g.unionCaseRefEq ucref) ucrefs)) 
-                 |> List.sortBy (fun ucref -> ucref.CaseName)
+                 |> Seq.filter (fun ucref -> not (Seq.exists (g.unionCaseRefEq ucref) ucrefs)) 
+                 |> Seq.sortBy (fun ucref -> ucref.CaseName)
+                 |> Seq.toList
              match others with 
              | [] -> raise CannotRefute
              | ucref2 :: _ -> 
@@ -311,9 +312,9 @@ let ShowCounterExample g denv m refuted =
           | [] -> raise CannotRefute
           | h :: t -> 
               if verbose then dprintf "h = %s\n" (Layout.showL (exprL h))
-              List.fold (CombineRefutations g) h t
+              Seq.fold (CombineRefutations g) h t
       let text = Layout.showL (NicePrint.dataExprL denv counterExample)
-      let failingWhenClause = refuted |> List.exists (function RefutedWhenClause -> true | _ -> false)
+      let failingWhenClause = refuted |> Seq.exists (function RefutedWhenClause -> true | _ -> false)
       Some(text,failingWhenClause)
       
     with 
@@ -560,7 +561,7 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
             | (Const.UInt32 i1),(Const.UInt32 i2) -> compare i1 i2
             | (Const.Char c1),(Const.Char c2) -> compare c1 c2
             | _ -> failwith "illtyped term during pattern compilation" 
-        let edges' = List.sortWith edgeCompare edges
+        let edges' = Seq.sortWith edgeCompare edges
         let rec compactify curr edges = 
             match curr,edges with 
             | None,[] -> []
@@ -585,8 +586,8 @@ let rec BuildSwitch inpExprOpt g expr edges dflt m =
                 |       _ ->  (List.rev (prev::moreprev)) :: compactify None edges
 
             | _ -> failwith "internal error: compactify"
-        let edgeGroups = compactify None edges'
-        (edgeGroups, dflt) ||> List.foldBack (fun edgeGroup sofar ->  TDSwitch(expr,edgeGroup,Some sofar,m))
+        let edgeGroups = compactify None (edges' |> Seq.toList)
+        (edgeGroups, dflt) ||> Seq.foldBack (fun edgeGroup sofar ->  TDSwitch(expr,edgeGroup,Some sofar,m))
 
     // For a total pattern match, run the active pattern, bind the result and 
     // recursively build a switch in the choice type 
@@ -633,7 +634,7 @@ let rec isPatternPartial p =
     | TPat_disjs (ps,_) | TPat_conjs(ps,_) 
     | TPat_tuple (_,ps,_,_) | TPat_exnconstr(_,ps,_) 
     | TPat_array (ps,_,_) | TPat_unioncase (_,_,ps,_)
-    | TPat_recd (_,_,ps,_) -> List.exists isPatternPartial ps
+    | TPat_recd (_,_,ps,_) -> Seq.exists isPatternPartial ps
     | TPat_range _ -> false
     | TPat_null _ -> false
     | TPat_isinst _ -> false
@@ -680,7 +681,7 @@ let CompilePatternBasic
     // Note the input expression has already been evaluated and saved into a variable.
     // Hence no need for a new sequence point.
     let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding,exprm)
-    clausesL |> List.iteri (fun _i c -> mbuilder.AddTarget c.Target |> ignore) 
+    clausesL |> Seq.iteri (fun _i c -> mbuilder.AddTarget c.Target |> ignore) 
     
     // Add the incomplete or rethrow match clause on demand, printing a 
     // warning if necessary (only if it is ever exercised) 
@@ -933,7 +934,7 @@ let CompilePatternBasic
 
         ([],simulSetOfEdgeDiscrims) ||> List.collectFold (fun taken (EdgeDiscrim(i',discrim,m)) -> 
              // Check to see if we've already collected the edge for this case, in which case skip it. 
-             if List.exists (isDiscrimSubsumedBy g amap m discrim) taken  then 
+             if Seq.exists (isDiscrimSubsumedBy g amap m discrim) taken  then 
                  // Skip this edge: it is refuted 
                  ([],taken) 
              else 
@@ -1003,7 +1004,7 @@ let CompilePatternBasic
             isMemOfActives path active' &&
             let p = lookupActive path active' |> snd
             match getDiscrimOfPattern p with 
-            | Some(discrim) -> List.exists (isDiscrimSubsumedBy g amap exprm discrim) simulSetOfDiscrims 
+            | Some(discrim) -> Seq.exists (isDiscrimSubsumedBy g amap exprm discrim) simulSetOfDiscrims 
             | None -> false
 
         match simulSetOfDiscrims with 
@@ -1232,7 +1233,7 @@ let CompilePatternBasic
     if warnOnUnused then 
         let used = HashSet<_>(accTargetsOfDecisionTree dtree [],HashIdentity.Structural)
 
-        clausesL |> List.iteri (fun i c ->  
+        clausesL |> Seq.iteri (fun i c ->  
             if not (used.Contains i) then warning (RuleNeverMatched c.Range)) 
 
     dtree,targets
@@ -1242,7 +1243,7 @@ let isPartialOrWhenClause (c:TypedMatchClause) = isPatternPartial c.Pattern || c
 
 let rec CompilePattern  g denv amap exprm matchm warnOnUnused actionOnFailure (topv,topgtvs) (clausesL: TypedMatchClause list) inputTy resultTy =
   match clausesL with 
-  | _ when List.exists isPartialOrWhenClause clausesL ->
+  | _ when Seq.exists isPartialOrWhenClause clausesL ->
         // Partial clauses cause major code explosion if treated naively 
         // Hence treat any pattern matches with any partial clauses clause-by-clause 
         

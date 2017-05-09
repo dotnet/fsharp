@@ -162,10 +162,18 @@ let splitTypeNameRight nm =
 /// This is used to store event, property and field maps.
 type LazyOrderedMultiMap<'Key,'Data when 'Key : equality>(keyf : 'Data -> 'Key, lazyItems : Lazy<'Data list>) = 
 
-    let quickMap= 
-        lazyItems |> lazyMap (fun entries -> 
-            let t = new Dictionary<_,_>(entries.Length, HashIdentity.Structural)
-            do entries |> List.iter (fun y -> let key = keyf y in t.[key] <- y :: (if t.ContainsKey(key) then t.[key] else [])) 
+    let quickMap = 
+        lazyItems
+        |> lazyMap (fun entries -> 
+            let t = Dictionary (entries.Length, HashIdentity.Structural)
+
+            entries
+            |> Seq.iter (fun y ->
+                let key = keyf y
+                t.[key] <-
+                    match t.TryGetValue key with
+                    | true, existing -> y :: existing
+                    | false, _ -> [y]) 
             t)
 
     member self.Entries() = lazyItems.Force()
@@ -174,7 +182,12 @@ type LazyOrderedMultiMap<'Key,'Data when 'Key : equality>(keyf : 'Data -> 'Key, 
     
     member self.Filter(f) = new LazyOrderedMultiMap<'Key,'Data>(keyf, lazyItems |> lazyMap (List.filter f))
 
-    member self.Item with get(x) = let t = quickMap.Force() in if t.ContainsKey x then t.[x] else []
+    member self.Item
+        with get(x) =
+            let t = quickMap.Force()
+            match t.TryGetValue x with
+            | true, item -> item
+            | false, _ -> []
 
 
 //---------------------------------------------------------------------
@@ -841,7 +854,7 @@ type ILAttribute =
 type ILAttributes(f: unit -> ILAttribute[]) = 
    let mutable array = InlineDelayInit<_>(f)
    member x.AsArray = array.Value
-   member x.AsList = x.AsArray |> Array.toList
+   member x.AsSeq = x.AsArray |> Seq.ofArray
 
 type ILCodeLabel = int
 
@@ -1428,9 +1441,9 @@ type ILMethodDefs(f : (unit -> ILMethodDef[])) =
         member x.GetEnumerator() = (array.Value :> IEnumerable<ILMethodDef>).GetEnumerator()
 
     member x.AsArray = array.Value
-    member x.AsList = array.Value|> Array.toList
-    member x.FindByName nm  =  if dict.Value.ContainsKey nm then dict.Value.[nm] else []
-    member x.FindByNameAndArity (nm,arity) = x.FindByName nm |> List.filter (fun x -> List.length x.Parameters = arity)
+    member x.AsSeq = array.Value|> Seq.ofArray
+    member x.FindByName nm  =  if dict.Value.ContainsKey nm then Seq.ofList dict.Value.[nm] else Seq.ofList []
+    member x.FindByNameAndArity (nm,arity) = x.FindByName nm |> Seq.filter (fun x -> List.length x.Parameters = arity)
 
 [<NoComparison; NoEquality>]
 type ILEventDef =
@@ -1588,7 +1601,7 @@ and [<Sealed>] ILTypeDefs(f : unit -> (string list * string * ILAttributes * Laz
             t)
 
     member x.AsArray = [| for (_,_,_,ltd) in array.Value -> ltd.Force() |]
-    member x.AsList = x.AsArray |> Array.toList
+    member x.AsSeq = array.Value |> Seq.map (fun (_,_,_,ltd) -> ltd.Value) |> Seq.toArray |> Seq.ofArray
 
     interface IEnumerable with 
         member x.GetEnumerator() = ((x :> IEnumerable<ILTypeDef>).GetEnumerator() :> IEnumerator)
@@ -1854,7 +1867,7 @@ let mkILFieldSpecInTy (typ:ILType,nm,fty) =
 let emptyILCustomAttrs = ILAttributes (fun () -> [| |])
 
 let mkILCustomAttrsFromArray (l: ILAttribute[]) = if l.Length = 0 then emptyILCustomAttrs else ILAttributes (fun () -> l)
-let mkILCustomAttrs l = l |> List.toArray |> mkILCustomAttrsFromArray
+let mkILCustomAttrs l = l |> Seq.toArray |> mkILCustomAttrsFromArray
 let mkILComputedCustomAttrs f = ILAttributes f
 
 let andTailness x y = 
@@ -1935,7 +1948,7 @@ let getName (ltd: Lazy<ILTypeDef>) =
 
 let addILTypeDef td (tdefs: ILTypeDefs) = ILTypeDefs (fun () -> [| yield getName (notlazy td); yield! tdefs.AsArrayOfLazyTypeDefs |])
 let mkILTypeDefsFromArray l =  ILTypeDefs (fun () -> Array.map (notlazy >> getName) l)
-let mkILTypeDefs l =  mkILTypeDefsFromArray (Array.ofList l)
+let mkILTypeDefs l =  mkILTypeDefsFromArray (Seq.toArray l)
 let mkILTypeDefsComputed f = ILTypeDefs f
 let emptyILTypeDefs = mkILTypeDefsFromArray [| |]
 
@@ -1944,7 +1957,7 @@ let emptyILTypeDefs = mkILTypeDefsFromArray [| |]
 // -------------------------------------------------------------------- 
 
 let mkILMethodsFromArray xs =  ILMethodDefs (fun () -> xs)
-let mkILMethods xs =  xs |> Array.ofList |> mkILMethodsFromArray
+let mkILMethods xs =  xs |> Seq.toArray |> mkILMethodsFromArray
 let mkILMethodsComputed f =  ILMethodDefs f
 let emptyILMethods = mkILMethodsFromArray [| |]
 
@@ -2227,7 +2240,7 @@ and instILTypeAux numFree (inst:ILGenericArgs) typ =
         if v - numFree >= top then 
             ILType.TypeVar (uint16 (v - top)) 
         else 
-            List.item (v - numFree) inst
+            Seq.item (v - numFree) inst
     | x -> x
     
 and instILGenericArgsAux numFree inst i = List.map (instILTypeAux numFree inst) i
@@ -2512,7 +2525,7 @@ let prependInstrsToMethod new_code md  =
 let cdef_cctorCode2CodeOrCreate tag f cd = 
     let mdefs = cd.Methods
     let cctor = 
-        match mdefs.FindByName ".cctor" with 
+        match mdefs.FindByName ".cctor" |> Seq.toList with 
         | [mdef] -> mdef
         | [] -> mkILClassCtor (mkMethodBody (false,[],1,nonBranchingInstrsToCode [ ],tag))
         | _ -> failwith "bad method table: more than one .cctor found"
@@ -2708,7 +2721,7 @@ let mkILSimpleClass (ilg: ILGlobals) (nm, access, methods, fields, nestedTypes, 
 let mkILTypeDefForGlobalFunctions ilg (methods,fields) = mkILSimpleClass ilg (typeNameForGlobalFunctions, ILTypeDefAccess.Public, methods, fields, emptyILTypeDefs, emptyILProperties, emptyILEvents, emptyILCustomAttrs,ILTypeInit.BeforeField)
 
 let destTypeDefsWithGlobalFunctionsFirst ilg (tdefs: ILTypeDefs) = 
-  let l = tdefs.AsList
+  let l = tdefs.AsSeq |> Seq.toList
   let top,nontop = l |> List.partition (fun td -> td.Name = typeNameForGlobalFunctions)
   let top2 = if isNil top then [ mkILTypeDefForGlobalFunctions ilg (emptyILMethods, emptyILFields) ] else top
   top2@nontop
@@ -3459,7 +3472,7 @@ and refs_of_inst s i = refs_of_typs s i
 and refs_of_tspec s (x:ILTypeSpec) = refs_of_tref s x.TypeRef;  refs_of_inst s x.GenericArgs
 and refs_of_callsig s csig  = refs_of_typs s csig.ArgTypes; refs_of_typ s csig.ReturnType
 and refs_of_genparam s x = refs_of_typs s x.Constraints
-and refs_of_genparams s b = List.iter (refs_of_genparam s) b
+and refs_of_genparams s b = Seq.iter (refs_of_genparam s) b
     
 and refs_of_dloc s ts = refs_of_tref s ts
    
@@ -3479,7 +3492,7 @@ and refs_of_fspec s x =
     refs_of_fref s x.FieldRef;
     refs_of_typ s x.EnclosingType
 
-and refs_of_typs s l = List.iter (refs_of_typ s) l
+and refs_of_typs s l = Seq.iter (refs_of_typ s) l
   
 and refs_of_token s x = 
     match x with
@@ -3489,7 +3502,7 @@ and refs_of_token s x =
 
 and refs_of_custom_attr s x = refs_of_mspec s x.Method
     
-and refs_of_custom_attrs s (cas : ILAttributes) = List.iter (refs_of_custom_attr s) cas.AsList
+and refs_of_custom_attrs s (cas : ILAttributes) = Seq.iter (refs_of_custom_attr s) cas.AsSeq
 and refs_of_varargs s tyso = Option.iter (refs_of_typs s) tyso 
 and refs_of_instr s x = 
     match x with
@@ -3526,13 +3539,13 @@ and refs_of_instr s x =
       
   
 and refs_of_il_code s (c: ILCode)  = 
-    c.Instrs |> Array.iter (refs_of_instr s) 
-    c.Exceptions |> List.iter (fun e -> e.Clause |> (function 
+    c.Instrs |> Seq.iter (refs_of_instr s) 
+    c.Exceptions |> Seq.iter (fun e -> e.Clause |> (function 
         | ILExceptionClause.TypeCatch (ilty, _) -> refs_of_typ s ilty
         | _ -> ()))
 
 and refs_of_ilmbody s (il: ILMethodBody) = 
-    List.iter (refs_of_local s) il.Locals
+    Seq.iter (refs_of_local s) il.Locals
     refs_of_il_code s il.Code 
     
 and refs_of_local s loc = refs_of_typ s loc.Type
@@ -3544,7 +3557,7 @@ and refs_of_mbody s x =
     | _ -> ()
 
 and refs_of_mdef s md = 
-    List.iter (refs_of_param s) md.Parameters;
+    Seq.iter (refs_of_param s) md.Parameters;
     refs_of_return s md.Return;
     refs_of_mbody s  md.mdBody.Contents;
     refs_of_custom_attrs s  md.CustomAttrs;
@@ -3559,10 +3572,10 @@ and refs_of_event_def s (ed: ILEventDef) =
     refs_of_mref  s ed.AddMethod ;
     refs_of_mref  s ed.RemoveMethod;
     Option.iter (refs_of_mref s) ed.FireMethod ;
-    List.iter (refs_of_mref s)  ed.OtherMethods ;
+    Seq.iter (refs_of_mref s)  ed.OtherMethods ;
     refs_of_custom_attrs  s ed.CustomAttrs
     
-and refs_of_events s (x: ILEventDefs) =  List.iter (refs_of_event_def s) x.AsList
+and refs_of_events s (x: ILEventDefs) =  Seq.iter (refs_of_event_def s) x.AsList
     
 and refs_of_property_def s pd = 
     Option.iter (refs_of_mref s)  pd.SetMethod ;
@@ -3571,15 +3584,15 @@ and refs_of_property_def s pd =
     refs_of_typs  s pd.Args ;
     refs_of_custom_attrs  s pd.CustomAttrs
     
-and refs_of_properties s (x: ILPropertyDefs) = List.iter (refs_of_property_def s) x.AsList
+and refs_of_properties s (x: ILPropertyDefs) = Seq.iter (refs_of_property_def s) x.AsList
     
 and refs_of_fdef s fd = 
     refs_of_typ  s fd.Type;
     refs_of_custom_attrs  s fd.CustomAttrs
 
-and refs_of_fields s fields = List.iter (refs_of_fdef s) fields
+and refs_of_fields s fields = Seq.iter (refs_of_fdef s) fields
     
-and refs_of_method_impls s mimpls =  List.iter (refs_of_method_impl s) mimpls
+and refs_of_method_impls s mimpls =  Seq.iter (refs_of_method_impl s) mimpls
     
 and refs_of_method_impl s m = 
     refs_of_ospec s m.Overrides;
@@ -3606,7 +3619,7 @@ and refs_of_types s (types: ILTypeDefs) = Seq.iter  (refs_of_tdef s) types
 and refs_of_exported_type s (c: ILExportedTypeOrForwarder) = 
     refs_of_custom_attrs s c.CustomAttrs
     
-and refs_of_exported_types s (tab: ILExportedTypesAndForwarders) = List.iter (refs_of_exported_type s) tab.AsList
+and refs_of_exported_types s (tab: ILExportedTypesAndForwarders) = Seq.iter (refs_of_exported_type s) tab.AsList
     
 and refs_of_resource_where s x = 
     match x with 
@@ -3618,7 +3631,7 @@ and refs_of_resource s x =
     refs_of_resource_where s x.Location;
     refs_of_custom_attrs s x.CustomAttrs
     
-and refs_of_resources s (tab: ILResources) = List.iter (refs_of_resource s) tab.AsList
+and refs_of_resources s (tab: ILResources) = Seq.iter (refs_of_resource s) tab.AsList
     
 and refs_of_modul s m = 
     refs_of_types s m.TypeDefs;
@@ -3687,14 +3700,14 @@ let resolveILMethodRefWithRescope r td (mref:ILMethodRef) =
     let nargs = args.Length
     let nm = mref.Name
     let possibles = td.Methods.FindByNameAndArity (nm,nargs)
-    if isNil possibles then failwith ("no method named " + nm + " found in type " + td.Name)
+    if Seq.isEmpty possibles then failwith ("no method named " + nm + " found in type " + td.Name)
     match 
-      possibles |> List.filter (fun md -> 
+      possibles |> Seq.filter (fun md -> 
           mref.CallingConv = md.CallingConv &&
           // REVIEW: this uses equality on ILType.  For CMOD_OPTIONAL this is not going to be correct
           (md.Parameters,mref.ArgTypes) ||> List.lengthsEqAndForall2 (fun p1 p2 -> r p1.Type = p2) &&
           // REVIEW: this uses equality on ILType.  For CMOD_OPTIONAL this is not going to be correct 
-          r md.Return.Type = mref.ReturnType) with 
+          r md.Return.Type = mref.ReturnType) |> Seq.toList with 
     | [] -> failwith ("no method named "+nm+" with appropriate argument types found in type "+td.Name)
     | [mdef] ->  mdef
     | _ -> failwith ("multiple methods named "+nm+" appear with identical argument types in type "+td.Name)

@@ -678,9 +678,9 @@ let GetTypeNameAsElemPair cenv n =
 
 let rec GenTypeDefPass1 enc cenv (td:ILTypeDef) = 
   ignore (cenv.typeDefs.AddUniqueEntry "type index" (fun (TdKey (_,n)) -> n) (TdKey (enc,td.Name)))
-  GenTypeDefsPass1 (enc@[td.Name]) cenv td.NestedTypes.AsList
+  GenTypeDefsPass1 (enc@[td.Name]) cenv td.NestedTypes.AsSeq
 
-and GenTypeDefsPass1 enc cenv tds = List.iter (GenTypeDefPass1 enc cenv) tds
+and GenTypeDefsPass1 enc cenv (tds:seq<_>) = Seq.iter (GenTypeDefPass1 enc cenv) tds
 
 //=====================================================================
 // Pass 2 - allocate indexes for methods and fields and write rows for types 
@@ -802,9 +802,9 @@ let EmitArrayShape (bb: ByteBuffer) (ILArrayShape shape) =
     let lobounded = List.filter (function (Some _,_) -> true | _ -> false) shape
     bb.EmitZ32 shape.Length
     bb.EmitZ32 sized.Length
-    sized |> List.iter (function (_,Some sz) -> bb.EmitZ32 sz | _ -> failwith "?")
+    sized |> Seq.iter (function (_,Some sz) -> bb.EmitZ32 sz | _ -> failwith "?")
     bb.EmitZ32 lobounded.Length
-    lobounded |> List.iter (function (Some low,_) -> bb.EmitZ32 low | _ -> failwith "?") 
+    lobounded |> Seq.iter (function (Some low,_) -> bb.EmitZ32 low | _ -> failwith "?") 
         
 let hasthisToByte hasthis =
      match hasthis with 
@@ -923,20 +923,20 @@ and EmitCallsig cenv env bb (callconv,args:ILTypes,ret,varargs:ILVarArgs,genarit
     if genarity > 0 then bb.EmitZ32 genarity
     bb.EmitZ32 ((args.Length + (match varargs with None -> 0 | Some l -> l.Length)))
     EmitType cenv env bb ret
-    args |> List.iter (EmitType cenv env bb)
+    args |> Seq.iter (EmitType cenv env bb)
     match varargs with 
      | None -> ()// no extra arg = no sentinel 
      | Some tys -> 
          if isNil tys then () // no extra arg = no sentinel 
          else 
             bb.EmitByte et_SENTINEL
-            List.iter (EmitType cenv env bb) tys
+            Seq.iter (EmitType cenv env bb) tys
 
 and GetCallsigAsBytes cenv env x = emitBytesViaBuffer (fun bb -> EmitCallsig cenv env bb x)
 
 // REVIEW: write into an accumuating buffer
 and EmitTypes cenv env bb (inst: ILTypes) = 
-    inst |> List.iter (EmitType cenv env bb) 
+    inst |> Seq.iter (EmitType cenv env bb) 
 
 let GetTypeAsMemberRefParent cenv env ty =
     match GetTypeAsTypeDefOrRef cenv env ty with 
@@ -1218,17 +1218,17 @@ and GenTypeDefPass2 pidx enc cenv (td:ILTypeDef) =
       // Now generate or assign index numbers for tables referenced by the maps. 
       // Don't yet generate contents of these tables - leave that to pass3, as 
       // code may need to embed these entries. 
-      td.Implements |> List.iter (GenImplementsPass2 cenv env tidx)
-      props |> List.iter (GenPropertyDefPass2 cenv tidx)
-      events |> List.iter (GenEventDefPass2 cenv tidx)
-      td.Fields.AsList |> List.iter (GenFieldDefPass2 cenv tidx)
+      td.Implements |> Seq.iter (GenImplementsPass2 cenv env tidx)
+      props |> Seq.iter (GenPropertyDefPass2 cenv tidx)
+      events |> Seq.iter (GenEventDefPass2 cenv tidx)
+      td.Fields.AsList |> Seq.iter (GenFieldDefPass2 cenv tidx)
       td.Methods |> Seq.iter (GenMethodDefPass2 cenv tidx)
-      td.NestedTypes.AsList |> GenTypeDefsPass2 tidx (enc@[td.Name]) cenv
+      td.NestedTypes.AsSeq |> GenTypeDefsPass2 tidx (enc@[td.Name]) cenv
    with e ->
      failwith ("Error in pass2 for type "+td.Name+", error: "+e.Message)
 
 and GenTypeDefsPass2 pidx enc cenv tds =
-    List.iter (GenTypeDefPass2 pidx enc cenv) tds
+    Seq.iter (GenTypeDefPass2 pidx enc cenv) tds
 
 //=====================================================================
 // Pass 3 - write details of methods, fields, IL code, custom attrs etc.
@@ -1323,7 +1323,7 @@ let rec GetMethodSpecInfoAsMethodSpecIdx cenv env (nm,typ,cc,args,ret,varargs,mi
         emitBytesViaBuffer (fun bb -> 
             bb.EmitByte e_IMAGE_CEE_CS_CALLCONV_GENERICINST
             bb.EmitZ32 minst.Length
-            minst |> List.iter (EmitType cenv env bb))
+            minst |> Seq.iter (EmitType cenv env bb))
     FindOrAddSharedRow cenv TableNames.MethodSpec 
       (SharedRow 
           [| MethodDefOrRef (mdorTag,mdorRow)
@@ -1420,7 +1420,7 @@ and GenCustomAttrPass3Or4 cenv hca attr =
     AddUnsharedRow cenv TableNames.CustomAttribute (GetCustomAttrRow cenv hca attr) |> ignore
 
 and GenCustomAttrsPass3Or4 cenv hca (attrs: ILAttributes) = 
-    attrs.AsList |> List.iter (GenCustomAttrPass3Or4 cenv hca) 
+    attrs.AsSeq |> Seq.iter (GenCustomAttrPass3Or4 cenv hca) 
 
 // -------------------------------------------------------------------- 
 // ILPermissionSet --> DeclSecurity rows
@@ -1436,7 +1436,7 @@ and GenSecurityDeclPass3 cenv hds attr =
     AddUnsharedRow cenv TableNames.Permission (GetSecurityDeclRow cenv hds attr) |> ignore
 
 and GenSecurityDeclsPass3 cenv hds attrs = 
-    List.iter (GenSecurityDeclPass3 cenv hds) attrs 
+    Seq.iter (GenSecurityDeclPass3 cenv hds) attrs 
 
 // -------------------------------------------------------------------- 
 // ILFieldSpec --> FieldRef  or ILFieldDef row
@@ -1500,7 +1500,7 @@ let GetCallsigAsStandAloneSigIdx cenv env info =
 let EmitLocalSig cenv env (bb: ByteBuffer) (locals: ILLocals) = 
     bb.EmitByte e_IMAGE_CEE_CS_CALLCONV_LOCAL_SIG
     bb.EmitZ32 locals.Length
-    locals |> List.iter (EmitLocalInfo cenv env bb)
+    locals |> Seq.iter (EmitLocalInfo cenv env bb)
 
 let GetLocalSigAsBlobHeapIdx cenv env locals = 
     GetBytesAsBlobIdx cenv (emitBytesViaBuffer (fun bb -> EmitLocalSig cenv env bb locals))
@@ -1579,7 +1579,7 @@ type CodeBuffer =
         codebuf.EmitByte 0x11 // for the instruction 
         (if fst i = i_switch then 
           codebuf.EmitInt32 tgs.Length)
-        List.iter (fun _ -> codebuf.EmitInt32 0xdeadbbbb) tgs
+        Seq.iter (fun _ -> codebuf.EmitInt32 0xdeadbbbb) tgs
 
     member codebuf.RecordReqdBrFixup i tg = codebuf.RecordReqdBrFixups i [tg]
     member codebuf.RecordAvailBrFixup tg = 
@@ -1604,7 +1604,7 @@ module Codebuf =
         go 0 (Array.length arr)
 
     let applyBrFixups (origCode :byte[]) origExnClauses origReqdStringFixups (origAvailBrFixups: Dictionary<ILCodeLabel,int>) origReqdBrFixups origSeqPoints origScopes = 
-      let orderedOrigReqdBrFixups = origReqdBrFixups |> List.sortBy (fun (_,fixuploc,_) -> fixuploc)
+      let orderedOrigReqdBrFixups = origReqdBrFixups |> Seq.sortBy (fun (_,fixuploc,_) -> fixuploc) |> Seq.toList
 
       let newCode = ByteBuffer.Create origCode.Length
 
@@ -1684,7 +1684,7 @@ module Codebuf =
                   newWhere := !newWhere + i_length
                   if !newWhere <> newCode.Position then dprintn "mismatch between newWhere and newCode"
 
-                  tgs |> List.iter (fun tg ->
+                  tgs |> Seq.iter (fun tg ->
                         let origFixupLoc = !origWhere
                         checkFixup32 origCode origFixupLoc 0xdeadbbbb
                         
@@ -1740,7 +1740,7 @@ module Codebuf =
         List.map remap origScopes
       
       // Now apply the adjusted fixups in the new code 
-      newReqdBrFixups |> List.iter (fun (newFixupLoc,endOfInstr,tg, small) ->
+      newReqdBrFixups |> Seq.iter (fun (newFixupLoc,endOfInstr,tg, small) ->
             if not (newAvailBrFixups.ContainsKey tg) then 
               failwith ("target "+formatCodeLabel tg+" not found in new fixups")
             try 
@@ -1776,7 +1776,7 @@ module Codebuf =
 
     let encodingsForNoArgInstrs = Dictionary<_,_>(300, HashIdentity.Structural)
     let _ = 
-      List.iter 
+      Seq.iter 
         (fun (x,mk) -> encodingsForNoArgInstrs.[mk] <- x)
         (noArgInstrs.Force())
     let encodingsOfNoArgInstr si = encodingsForNoArgInstrs.[si]
@@ -2122,18 +2122,18 @@ module Codebuf =
                 let yes, others = roots |> List.partition (fun (r,_) -> contains r x)
                 (x, yes |> List.collect (fun (r,ch) -> r :: ch)) :: others
     
-        ([], vs) ||> List.fold addToRoot
+        ([], vs) ||> Seq.fold addToRoot
 
     let rec makeSEHTree cenv env (pc2pos: int[]) (lab2pc : Dictionary<ILCodeLabel, int>) (exs : ILExceptionSpec list) = 
 
         let clause_inside_lrange cl lr =
-          List.forall (fun lr1 -> lrange_inside_lrange lab2pc lr1 lr) (lranges_of_clause cl) 
+          Seq.forall (fun lr1 -> lrange_inside_lrange lab2pc lr1 lr) (lranges_of_clause cl) 
 
         let tryspec_inside_lrange (tryspec1: ILExceptionSpec) lr =
           (lrange_inside_lrange lab2pc tryspec1.Range lr && clause_inside_lrange tryspec1.Clause lr) 
 
         let tryspec_inside_clause tryspec1 cl =
-          List.exists (fun lr -> tryspec_inside_lrange tryspec1 lr) (lranges_of_clause cl) 
+          Seq.exists (fun lr -> tryspec_inside_lrange tryspec1 lr) (lranges_of_clause cl) 
 
         let tryspec_inside_tryspec tryspec1 (tryspec2: ILExceptionSpec) =
           tryspec_inside_lrange tryspec1 tryspec2.Range ||
@@ -2176,7 +2176,7 @@ module Codebuf =
 
     // Emit the SEH tree 
     let rec emitExceptionHandlerTree (codebuf: CodeBuffer) (Node (x,childSEH)) = 
-        List.iter (emitExceptionHandlerTree codebuf) childSEH // internal first 
+        Seq.iter (emitExceptionHandlerTree codebuf) childSEH // internal first 
         x |> Option.iter codebuf.EmitExceptionClause 
 
     let emitCode cenv localSigs (codebuf: CodeBuffer) env (code: ILCode) = 
@@ -2201,7 +2201,7 @@ module Codebuf =
 
         // Build the exceptions and locals information, ready to emit
         let SEHTree = makeSEHTree cenv env pc2pos code.Labels code.Exceptions
-        List.iter (emitExceptionHandlerTree codebuf) SEHTree
+        Seq.iter (emitExceptionHandlerTree codebuf) SEHTree
 
         // Build the locals information, ready to emit
         let localsTree = makeLocalsTree cenv localSigs pc2pos code.Labels code.Locals
@@ -2288,7 +2288,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
             let smallSize = (seh.Length * 12 + 4)
             let canUseSmall = 
               smallSize <= 0xFF &&
-              seh |> List.forall (fun (st1,sz1,st2,sz2,_) -> 
+              seh |> Seq.forall (fun (st1,sz1,st2,sz2,_) -> 
                   st1 <= 0xFFFF && st2 <= 0xFFFF && sz1 <= 0xFF && sz2 <= 0xFF) 
             
             let kindAsInt32 k = 
@@ -2308,7 +2308,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
                 methbuf.EmitByte (b0 smallSize) 
                 methbuf.EmitByte 0x00uy 
                 methbuf.EmitByte 0x00uy
-                seh |> List.iter (fun (st1,sz1,st2,sz2,kind) -> 
+                seh |> Seq.iter (fun (st1,sz1,st2,sz2,kind) -> 
                     let k32 = kindAsInt32 kind
                     methbuf.EmitInt32AsUInt16 k32 
                     methbuf.EmitInt32AsUInt16 st1 
@@ -2322,7 +2322,7 @@ let GenILMethodBody mname cenv env (il: ILMethodBody) =
                 methbuf.EmitByte (b0 bigSize)
                 methbuf.EmitByte (b1 bigSize)
                 methbuf.EmitByte (b2 bigSize)
-                seh |> List.iter (fun (st1,sz1,st2,sz2,kind) -> 
+                seh |> Seq.iter (fun (st1,sz1,st2,sz2,kind) -> 
                     let k32 = kindAsInt32 kind
                     methbuf.EmitInt32 k32
                     methbuf.EmitInt32 st1
@@ -2441,7 +2441,7 @@ and GenGenericParamPass3 cenv env idx owner gp =
 and GenGenericParamPass4 cenv env idx owner gp = 
     let gpidx = FindOrAddSharedRow cenv TableNames.GenericParam (GetGenericParamAsGenericParamRow cenv env idx owner gp)
     GenCustomAttrsPass3Or4 cenv (hca_GenericParam, gpidx) gp.CustomAttrs
-    gp.Constraints |> List.iter (GenGenericParamConstraintPass4 cenv env gpidx) 
+    gp.Constraints |> Seq.iter (GenGenericParamConstraintPass4 cenv env gpidx) 
 
 // -------------------------------------------------------------------- 
 // param and return --> Param Row
@@ -2490,7 +2490,7 @@ let GenReturnAsParamRow (returnv : ILReturn) =
            StringE 0 |]  
 
 let GenReturnPass3 cenv (returnv: ILReturn) = 
-    if Option.isSome returnv.Marshal || not (isNil returnv.CustomAttrs.AsList) then
+    if Option.isSome returnv.Marshal || not (Seq.isEmpty returnv.CustomAttrs.AsSeq) then
         let pidx = AddUnsharedRow cenv TableNames.Param (GenReturnAsParamRow returnv)
         GenCustomAttrsPass3Or4 cenv (hca_ParamDef,pidx) returnv.CustomAttrs
         match returnv.Marshal with 
@@ -2511,7 +2511,7 @@ let GetMethodDefSigAsBytes cenv env (mdef: ILMethodDef) =
       if mdef.GenericParams.Length > 0 then bb.EmitZ32 mdef.GenericParams.Length
       bb.EmitZ32 mdef.Parameters.Length
       EmitType cenv env bb mdef.Return.Type
-      mdef.ParameterTypes |> List.iter (EmitType cenv env bb))
+      mdef.ParameterTypes |> Seq.iter (EmitType cenv env bb))
 
 let GenMethodDefSigAsBlobIdx cenv env mdef = 
     GetBytesAsBlobIdx cenv (GetMethodDefSigAsBytes cenv env mdef)
@@ -2610,10 +2610,10 @@ let GenMethodDefPass3 cenv env (md:ILMethodDef) =
     let idx2 = AddUnsharedRow cenv TableNames.Method (GenMethodDefAsRow cenv env midx md)
     if midx <> idx2 then failwith "index of method def on pass 3 does not match index on pass 2"
     GenReturnPass3 cenv md.Return  
-    md.Parameters |> List.iteri (fun n param -> GenParamPass3 cenv env (n+1) param) 
+    md.Parameters |> Seq.iteri (fun n param -> GenParamPass3 cenv env (n+1) param) 
     md.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_MethodDef,midx) 
     md.SecurityDecls.AsList |> GenSecurityDeclsPass3 cenv (hds_MethodDef,midx)
-    md.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_MethodDef, midx) gp) 
+    md.GenericParams |> Seq.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_MethodDef, midx) gp) 
     match md.mdBody.Contents with 
     | MethodBody.PInvoke attr ->
         let flags = 
@@ -2653,7 +2653,7 @@ let GenMethodDefPass3 cenv env (md:ILMethodDef) =
 
 let GenMethodDefPass4 cenv env  md = 
     let midx = GetMethodDefIdx cenv md
-    List.iteri (fun n gp -> GenGenericParamPass4 cenv env n (tomd_MethodDef, midx) gp) md.GenericParams
+    Seq.iteri (fun n gp -> GenGenericParamPass4 cenv env n (tomd_MethodDef, midx) gp) md.GenericParams
 
 let GenPropertyMethodSemanticsPass3 cenv pidx kind mref =
     // REVIEW: why are we catching exceptions here?
@@ -2673,7 +2673,7 @@ and GetPropertySigAsBytes cenv env prop =
         bb.EmitByte b
         bb.EmitZ32 prop.Args.Length
         EmitType cenv env bb prop.Type
-        prop.Args |> List.iter (EmitType cenv env bb))
+        prop.Args |> Seq.iter (EmitType cenv env bb))
 
 and GetPropertyAsPropertyRow cenv env (prop:ILPropertyDef) = 
     let flags = 
@@ -2725,7 +2725,7 @@ and GenEventPass3 cenv env (md: ILEventDef) =
     md.AddMethod |> GenEventMethodSemanticsPass3 cenv eidx 0x0008  
     md.RemoveMethod |> GenEventMethodSemanticsPass3 cenv eidx 0x0010 
     Option.iter (GenEventMethodSemanticsPass3 cenv eidx 0x0020) md.FireMethod  
-    List.iter (GenEventMethodSemanticsPass3 cenv eidx 0x0004) md.OtherMethods
+    Seq.iter (GenEventMethodSemanticsPass3 cenv eidx 0x0004) md.OtherMethods
     GenCustomAttrsPass3Or4 cenv (hca_Event,eidx) md.CustomAttrs
 
 
@@ -2768,11 +2768,11 @@ let rec GenTypeDefPass3 enc cenv (td:ILTypeDef) =
    try
       let env = envForTypeDef td
       let tidx = GetIdxForTypeDef cenv (TdKey(enc,td.Name))
-      td.Properties.AsList |> List.iter (GenPropertyPass3 cenv env)
-      td.Events.AsList |> List.iter (GenEventPass3 cenv env)
-      td.Fields.AsList |> List.iter (GenFieldDefPass3 cenv env)
+      td.Properties.AsList |> Seq.iter (GenPropertyPass3 cenv env)
+      td.Events.AsList |> Seq.iter (GenEventPass3 cenv env)
+      td.Fields.AsList |> Seq.iter (GenFieldDefPass3 cenv env)
       td.Methods |> Seq.iter (GenMethodDefPass3 cenv env)
-      td.MethodImpls.AsList |> List.iter (GenMethodImplPass3 cenv env  td.GenericParams.Length tidx)
+      td.MethodImpls.AsList |> Seq.iter (GenMethodImplPass3 cenv env  td.GenericParams.Length tidx)
     // ClassLayout entry if needed 
       match td.Layout with 
       | ILTypeDefLayout.Auto -> ()
@@ -2786,15 +2786,15 @@ let rec GenTypeDefPass3 enc cenv (td:ILTypeDef) =
                        
       td.SecurityDecls.AsList |> GenSecurityDeclsPass3 cenv (hds_TypeDef,tidx)
       td.CustomAttrs |> GenCustomAttrsPass3Or4 cenv (hca_TypeDef,tidx)
-      td.GenericParams |> List.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_TypeDef,tidx) gp)  
-      td.NestedTypes.AsList |> GenTypeDefsPass3 (enc@[td.Name]) cenv
+      td.GenericParams |> Seq.iteri (fun n gp -> GenGenericParamPass3 cenv env n (tomd_TypeDef,tidx) gp)  
+      td.NestedTypes.AsSeq |> GenTypeDefsPass3 (enc@[td.Name]) cenv
    with e ->
       failwith  ("Error in pass3 for type "+td.Name+", error: "+e.Message)
       reraise()
       raise e
 
 and GenTypeDefsPass3 enc cenv tds =
-  List.iter (GenTypeDefPass3 enc cenv) tds
+  Seq.iter (GenTypeDefPass3 enc cenv) tds
 
 /// ILTypeDef --> generate generic params on ILMethodDef: ensures
 /// GenericParam table is built sorted by owner.
@@ -2804,15 +2804,15 @@ let rec GenTypeDefPass4 enc cenv (td:ILTypeDef) =
        let env = envForTypeDef td
        let tidx = GetIdxForTypeDef cenv (TdKey(enc,td.Name))
        td.Methods |> Seq.iter (GenMethodDefPass4 cenv env) 
-       List.iteri (fun n gp -> GenGenericParamPass4 cenv env n (tomd_TypeDef,tidx) gp) td.GenericParams 
-       GenTypeDefsPass4 (enc@[td.Name]) cenv td.NestedTypes.AsList
+       Seq.iteri (fun n gp -> GenGenericParamPass4 cenv env n (tomd_TypeDef,tidx) gp) td.GenericParams 
+       GenTypeDefsPass4 (enc@[td.Name]) cenv td.NestedTypes.AsSeq
    with e ->
        failwith ("Error in pass4 for type "+td.Name+", error: "+e.Message)
        reraise()
        raise e
 
 and GenTypeDefsPass4 enc cenv tds =
-    List.iter (GenTypeDefPass4 enc cenv) tds
+    Seq.iter (GenTypeDefPass4 enc cenv) tds
 
 
 let timestamp = absilWriteGetTimeStamp ()
@@ -2835,7 +2835,7 @@ let rec GenNestedExportedTypePass3 cenv cidx (ce: ILNestedExportedType) =
     GenNestedExportedTypesPass3 cenv nidx ce.Nested
 
 and GenNestedExportedTypesPass3 cenv nidx (nce: ILNestedExportedTypes) =
-    nce.AsList |> List.iter (GenNestedExportedTypePass3 cenv nidx)
+    nce.AsList |> Seq.iter (GenNestedExportedTypePass3 cenv nidx)
 
 and GenExportedTypePass3 cenv (ce: ILExportedTypeOrForwarder) = 
     let nselem,nelem = GetTypeNameAsElemPair cenv ce.Name
@@ -2854,7 +2854,7 @@ and GenExportedTypePass3 cenv (ce: ILExportedTypeOrForwarder) =
     GenNestedExportedTypesPass3 cenv cidx ce.Nested
 
 and GenExportedTypesPass3 cenv (ce: ILExportedTypesAndForwarders) = 
-    List.iter (GenExportedTypePass3 cenv) ce.AsList
+    Seq.iter (GenExportedTypePass3 cenv) ce.AsList
 
 // -------------------------------------------------------------------- 
 // manifest --> generate Assembly row
@@ -2926,15 +2926,14 @@ let SortTableRows tab (rows:GenericRow[]) =
     assert (TableRequiresSorting tab)
     let col = List.assoc tab sortedTableInfo
     rows 
-        // This needs to be a stable sort, so we use List.sortWith
-        |> Array.toList
-        |> List.sortWith (fun r1 r2 -> rowElemCompare r1.[col] r2.[col]) 
-        |> Array.ofList
+        // This needs to be a stable sort, so we use Seq.sortWith
+        |> Seq.sortWith (fun r1 r2 -> rowElemCompare r1.[col] r2.[col]) 
+        |> Seq.toArray
         //|> Array.map SharedRow
 
 let GenModule (cenv : cenv) (modul: ILModuleDef) = 
     let midx = AddUnsharedRow cenv TableNames.Module (GetModuleAsRow cenv modul)
-    List.iter (GenResourcePass3 cenv) modul.Resources.AsList 
+    Seq.iter (GenResourcePass3 cenv) modul.Resources.AsList 
     let tds = destTypeDefsWithGlobalFunctionsFirst cenv.ilg modul.TypeDefs
     reportTime cenv.showTimes "Module Generation Preparation"
     GenTypeDefsPass1 [] cenv tds
@@ -3063,7 +3062,7 @@ let chunk sz next = ({addr=next; size=sz},next + sz)
 let nochunk next = ({addr= 0x0;size= 0x0; } ,next)
 
 let count f arr = 
-    Array.fold (fun x y -> x + f y) 0x0 arr 
+    Seq.fold (fun x y -> x + f y) 0x0 arr 
 
 module FileSystemUtilites = 
     open System
@@ -3163,7 +3162,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
 
     // 64bit bitvector indicating which tables are in the metadata. 
     let (valid1,valid2),_ = 
-       (((0,0), 0), tables) ||> Array.fold (fun ((valid1,valid2) as valid,n) rows -> 
+       (((0,0), 0), tables) ||> Seq.fold (fun ((valid1,valid2) as valid,n) rows -> 
           let valid = 
               if  rows.Count = 0 then valid else
               ( (if n < 32 then  valid1 ||| (1 <<< n     ) else valid1),
@@ -3461,7 +3460,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
 
       reportTime showTimes "Write Metadata User Strings";
     // The GUID stream 
-      Array.iter mdbuf.EmitBytes guids;
+      Seq.iter mdbuf.EmitBytes guids;
       
     // The blob stream 
       mdbuf.EmitByte 0x00uy;
@@ -3791,7 +3790,7 @@ let writeBinaryAndReportMappings (outfile,
          // Now we know where the data section lies we can fix up the  
          // references into the data section from the metadata tables. 
           begin 
-            requiredDataFixups |> List.iter
+            requiredDataFixups |> Seq.iter
               (fun (metadataOffset32,(dataOffset,kind)) -> 
                 let metadataOffset =  metadataOffset32
                 if metadataOffset < 0 || metadataOffset >= metadata.Length - 4  then failwith "data RVA fixup: fixup located outside metadata";

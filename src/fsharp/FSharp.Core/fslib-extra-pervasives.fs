@@ -98,7 +98,7 @@ module ExtraTopLevelOperators =
     let dictValueType (l:seq<'Key*'T>) = dictImpl HashIdentity.Structural<'Key> id id l
 
     // Wrap a StructBox around all keys in case the key type is itself a type using null as a representation
-    let dictRefType   (l:seq<'Key*'T>) = dictImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun k -> RuntimeHelpers.StructBox k) (fun sb -> sb.Value) l
+    let dictRefType   (l:seq<'Key*'T>) = dictImpl StructBox<'Key>.Comparer (fun k -> StructBox k) (fun sb -> sb.Value) l
 
     [<CompiledName("CreateDictionary")>]
     let dict (l:seq<'Key*'T>) =

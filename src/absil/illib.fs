@@ -31,6 +31,8 @@ let inline isNilOrSingleton l =
     | [_] -> true
     | _ -> false
 
+let inline isNilOrSingleton' l = l |> Seq.truncate 2 |> Seq.length < 2
+
 /// Returns true if the list contains exactly 1 element. Otherwise false.
 let inline isSingleton l =
     match l with
@@ -270,7 +272,7 @@ module List =
     open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
 
-    let sortWithOrder (c: IComparer<'T>) elements = List.sortWith (Order.toFunction c) elements
+    let sortWithOrder (c: IComparer<'T>) elements = Seq.sortWith (Order.toFunction c) elements
     
     let splitAfter n l = 
         let rec split_after_acc n l1 l2 = if n <= 0 then List.rev l1,l2 else split_after_acc (n-1) ((List.head l2):: l1) (List.tail l2) 
@@ -459,7 +461,7 @@ module List =
 
     let rec until p l = match l with [] -> [] | h::t -> if p h then [] else h :: until p t 
 
-    let count pred xs = List.fold (fun n x -> if pred x then n+1 else n) 0 xs
+    let count pred xs = Seq.fold (fun n x -> if pred x then n+1 else n) 0 xs
 
     // WARNING: not tail-recursive 
     let mapHeadTail fhead ftail = function
@@ -474,14 +476,16 @@ module List =
     let collect2 f xs ys = List.concat (List.map2 f xs ys)
 
     let toArraySquared xss = xss |> List.map List.toArray |> List.toArray
-    let iterSquared f xss = xss |> List.iter (List.iter f)
     let collectSquared f xss = xss |> List.collect (List.collect f)
     let mapSquared f xss = xss |> List.map (List.map f)
     let mapFoldSquared f z xss = mapFold (mapFold f) z xss
-    let forallSquared f xss = xss |> List.forall (List.forall f)
     let mapiSquared f xss = xss |> List.mapi (fun i xs -> xs |> List.mapi (fun j x -> f i j x))
-    let existsSquared f xss = xss |> List.exists (fun xs -> xs |> List.exists (fun x -> f x))
     let mapiFoldSquared f z xss =  mapFoldSquared f z (xss |> mapiSquared (fun i j x -> (i,j,x)))
+
+module Seq =
+    let iterSquared f xss = xss |> Seq.iter (Seq.iter f)
+    let forallSquared f xss = xss |> Seq.forall (Seq.forall f)
+    let existsSquared f xss = xss |> Seq.exists (fun xs -> xs |> Seq.exists (fun x -> f x))
 
 [<Struct>]
 type ValueOption<'T> =
@@ -1089,7 +1093,7 @@ module NameMap =
     let foldBack f (m:NameMap<'T>) z = Map.foldBack f m z
     let forall f m = Map.foldBack (fun x y sofar -> sofar && f x y) m true
     let exists f m = Map.foldBack (fun x y sofar -> sofar || f x y) m false
-    let ofKeyedList f l = List.foldBack (fun x acc -> Map.add (f x) x acc) l Map.empty
+    let ofKeyedList f l = Seq.foldBack (fun x acc -> Map.add (f x) x acc) l Map.empty
     let ofList l : NameMap<'T> = Map.ofList l
     let ofSeq l : NameMap<'T> = Map.ofSeq l
     let toList (l: NameMap<'T>) = Map.toList l
@@ -1101,10 +1105,10 @@ module NameMap =
 
     /// Union entries by identical key, using the provided function to union sets of values
     let union unionf (ms: NameMap<_> seq) = 
-        seq { for m in ms do yield! m } 
-           |> Seq.groupBy (fun (KeyValue(k,_v)) -> k) 
-           |> Seq.map (fun (k,es) -> (k,unionf (Seq.map (fun (KeyValue(_k,v)) -> v) es))) 
-           |> Map.ofSeq
+        Seq.concat ms
+        |> Seq.groupBy (fun (KeyValue(k,_v)) -> k) 
+        |> Seq.map (fun (k,es) -> (k,unionf (Seq.map (fun (KeyValue(_k,v)) -> v) es))) 
+        |> Map.ofSeq
 
     /// For every entry in m2 find an entry in m1 and fold 
     let subfold2 errf f m1 m2 acc =
@@ -1147,7 +1151,7 @@ module NameMap =
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module NameMultiMap = 
-    let existsInRange f (m: NameMultiMap<'T>) = NameMap.exists (fun _ l -> List.exists f l) m
+    let existsInRange f (m: NameMultiMap<'T>) = NameMap.exists (fun _ l -> Seq.exists f l) m
     let find v (m: NameMultiMap<'T>) = match Map.tryFind v m with None -> [] | Some r -> r
     let add v x (m: NameMultiMap<'T>) = NameMap.add v (x :: find v m) m
     let range (m: NameMultiMap<'T>) = Map.foldBack (fun _ x sofar -> x @ sofar) m []
@@ -1161,7 +1165,7 @@ module NameMultiMap =
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module MultiMap = 
-    let existsInRange f (m: MultiMap<_,_>) = Map.exists (fun _ l -> List.exists f l) m
+    let existsInRange f (m: MultiMap<_,_>) = Map.exists (fun _ l -> Seq.exists f l) m
     let find v (m: MultiMap<_,_>) = match Map.tryFind v m with None -> [] | Some r -> r
     let add v x (m: MultiMap<_,_>) = Map.add v (x :: find v m) m
     let range (m: MultiMap<_,_>) = Map.foldBack (fun _ x sofar -> x @ sofar) m []
@@ -1180,7 +1184,7 @@ type Map<'Key,'Value when 'Key : comparison> with
         | Some r -> res <- r; true
 
     member x.Values = [ for (KeyValue(_,v)) in x -> v ]
-    member x.AddAndMarkAsCollapsible (kvs: _[])   = (x,kvs) ||> Array.fold (fun x (KeyValue(k,v)) -> x.Add(k,v))
+    member x.AddAndMarkAsCollapsible (kvs: _[])   = (x,kvs) ||> Seq.fold (fun x (KeyValue(k,v)) -> x.Add(k,v))
     member x.LinearTryModifyThenLaterFlatten (key, f: 'Value option -> 'Value) = x.Add (key, f (x.TryFind key))
     member x.MarkAsCollapsible ()  = x
 
@@ -1190,7 +1194,7 @@ type LayeredMultiMap<'Key,'Value when 'Key : equality and 'Key : comparison>(con
     member x.Add (k,v) = LayeredMultiMap(contents.Add(k,v :: x.[k]))
     member x.Item with get k = match contents.TryFind k with None -> [] | Some l -> l
     member x.AddAndMarkAsCollapsible (kvs: _[])  = 
-        let x = (x,kvs) ||> Array.fold (fun x (KeyValue(k,v)) -> x.Add(k,v))
+        let x = (x,kvs) ||> Seq.fold (fun x (KeyValue(k,v)) -> x.Add(k,v))
         x.MarkAsCollapsible()
     member x.MarkAsCollapsible() = LayeredMultiMap(contents.MarkAsCollapsible())
     member x.TryFind k = contents.TryFind k

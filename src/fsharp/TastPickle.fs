@@ -40,13 +40,13 @@ type PickledDataWithReferences<'rawData> =
       FixupThunks: list<CcuThunk> } 
 
     member x.Fixup loader =
-        x.FixupThunks |> List.iter (fun reqd -> reqd.Fixup(loader reqd.AssemblyName)) ;
+        x.FixupThunks |> Seq.iter (fun reqd -> reqd.Fixup(loader reqd.AssemblyName)) ;
         x.RawData
 
     /// Like Fixup but loader may return None, in which case there is no fixup.
     member x.OptionalFixup loader =
         x.FixupThunks 
-        |> List.iter(fun reqd->
+        |> Seq.iter(fun reqd->
             match loader reqd.AssemblyName with 
             | Some(loaded) -> reqd.Fixup(loaded)
             | None -> reqd.FixupOrphaned() );
@@ -1101,7 +1101,7 @@ let simple_instrs =
     ]
 
 let encode_table = Dictionary<_,_>(300, HashIdentity.Structural)
-let _ = List.iter (fun (icode,i) -> encode_table.[i] <- icode) simple_instrs
+let _ = Seq.iter (fun (icode,i) -> encode_table.[i] <- icode) simple_instrs
 let encode_instr si = encode_table.[si]
 let isNoArgInstr s = encode_table.ContainsKey s
 
@@ -1143,8 +1143,8 @@ let decoders =
 let decode_tab = 
     let tab = Array.init 256 (fun n -> (fun st -> ufailwith st ("no decoder for instruction "+string n)))
     let add_instr (icode,f) =  tab.[icode] <- f
-    List.iter add_instr decoders;
-    List.iter (fun (icode,mk) -> add_instr (icode,(fun _ -> mk))) simple_instrs;
+    Seq.iter add_instr decoders;
+    Seq.iter (fun (icode,mk) -> add_instr (icode,(fun _ -> mk))) simple_instrs;
     tab
 
 #if INCLUDE_METADATA_WRITER

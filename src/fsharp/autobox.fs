@@ -89,13 +89,13 @@ let DecideExpr cenv exprF z expr  =
             let z = Zset.union z (DecideEscapes syntacticArgs body)
             exprF z body
 
-        let CheckMethods z l = (z,l) ||> List.fold CheckMethod 
+        let CheckMethods z l = (z,l) ||> Seq.fold CheckMethod 
     
         let CheckInterfaceImpl z (_ty,overrides) = CheckMethods z overrides 
 
         let z = exprF z superInitCall
         let z = CheckMethods z overrides 
-        let z =  (z,iimpls) ||> List.fold CheckInterfaceImpl 
+        let z =  (z,iimpls) ||> Seq.fold CheckInterfaceImpl 
         Some z
 
     | Expr.Op (c,tyargs,args,_m) ->
@@ -109,7 +109,7 @@ let DecideBinding cenv z (TBind(v,expr,_m) as bind) =
     DecideLambda None cenv topValInfo expr v.Type z 
 
 /// Find all the mutable locals that escape a set of bindings
-let DecideBindings cenv z binds = (z,binds) ||> List.fold (DecideBinding cenv)
+let DecideBindings cenv z binds = (z,binds) ||> Seq.fold (DecideBinding cenv)
 
 /// Find all the mutable locals to promote to reference cells in an implementation file
 let DecideImplFile g amap implFile =

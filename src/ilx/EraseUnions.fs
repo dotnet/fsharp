@@ -67,7 +67,7 @@ type UnionReprDecisions<'Union,'Alt,'Type>
     static let TaggingThresholdFixedConstant = 4
 
     member repr.RepresentAllAlternativesAsConstantFieldsInRootClass cu = 
-        cu |> getAlternatives |> Array.forall isNullary
+        cu |> getAlternatives |> Seq.forall isNullary
 
     member repr.DiscriminationTechnique cu = 
         if isList cu then 
@@ -90,7 +90,7 @@ type UnionReprDecisions<'Union,'Alt,'Type>
         nullPermitted cu &&
         (repr.DiscriminationTechnique cu  = RuntimeTypes) && (* don't use null for tags, lists or single-case  *)
         Array.existsOne isNullary alts  &&
-        Array.exists (isNullary >> not) alts  &&
+        Seq.exists (isNullary >> not) alts  &&
         isNullary alt  (* is this the one? *)
 
     member repr.RepresentOneAlternativeAsNull cu = 
@@ -103,7 +103,7 @@ type UnionReprDecisions<'Union,'Alt,'Type>
         let alts = getAlternatives cu
         not (isStruct cu) &&
         not (isNullary alt) &&
-        (alts |> Array.forall (fun alt2 -> not (isNullary alt2) || repr.RepresentAlternativeAsNull (cu,alt2))) &&
+        (alts |> Seq.forall (fun alt2 -> not (isNullary alt2) || repr.RepresentAlternativeAsNull (cu,alt2))) &&
         // Check this is the one and only non-nullary constructor 
         Array.existsOne (isNullary >> not) alts
 
@@ -344,7 +344,7 @@ let convNewDataInstrInternal ilg cuspec cidx =
             | _ -> [], []
         let ctorFieldTys = alt.FieldTypes |> Array.toList
         let extraTys, extraInstrs = 
-            if cuspec.AlternativesArray.Length > 1 && cuspec.AlternativesArray |> Array.exists (fun d -> d.FieldDefs.Length > 0) then
+            if cuspec.AlternativesArray.Length > 1 && cuspec.AlternativesArray |> Seq.exists (fun d -> d.FieldDefs.Length > 0) then
                 extraTysAndInstrsForStructCtor ilg cidx
             else 
                 [], []
@@ -924,8 +924,8 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
     let baseMethsFromAlt = results |> List.collect (fun (a,_,_,_,_,_) -> a) 
     let basePropsFromAlt = results |> List.collect (fun (_,a,_,_,_,_) -> a) 
     let altUniqObjMeths  = results |> List.collect (fun (_,_,a,_,_,_) -> a) 
-    let altTypeDefs      = results |> List.collect (fun (_,_,_,a,_,_) -> a) 
-    let altDebugTypeDefs = results |> List.collect (fun (_,_,_,_,a,_) -> a) 
+    let altTypeDefs      = results |> Seq.collect (fun (_,_,_,a,_,_) -> a) 
+    let altDebugTypeDefs = results |> Seq.collect (fun (_,_,_,_,a,_) -> a) 
     let altNullaryFields = results |> List.collect (fun (_,_,_,_,_,a) -> a) 
        
     let tagFieldsInObject = 
@@ -949,7 +949,7 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
                 | Some typ -> Some typ.TypeSpec
 
             let extraParamsForCtor = 
-                if isStruct && cud.cudAlternatives.Length > 1 && cud.cudAlternatives |> Array.exists (fun d -> d.FieldDefs.Length > 0)  then 
+                if isStruct && cud.cudAlternatives.Length > 1 && cud.cudAlternatives |> Seq.exists (fun d -> d.FieldDefs.Length > 0)  then 
                     let extraTys, _extraInstrs = extraTysAndInstrsForStructCtor ilg cidx 
                     List.map mkILParamAnon extraTys 
                 else 
@@ -978,7 +978,7 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
     let ctorMeths =
         if (List.isEmpty selfFields && List.isEmpty tagFieldsInObject && not (List.isEmpty selfMeths))
             || isStruct
-            ||  cud.cudAlternatives |> Array.forall (fun alt -> repr.RepresentAlternativeAsFreshInstancesOfRootClass (info,alt))  then 
+            ||  cud.cudAlternatives |> Seq.forall (fun alt -> repr.RepresentAlternativeAsFreshInstancesOfRootClass (info,alt))  then 
 
             [] (* no need for a second ctor in these cases *)
 
@@ -1054,9 +1054,9 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
         tagMeths, tagProps, tagEnumFields
 
     // The class can be abstract if each alternative is represented by a derived type
-    let isAbstract = (altTypeDefs.Length = cud.cudAlternatives.Length)        
+    let isAbstract = (Seq.length altTypeDefs = cud.cudAlternatives.Length)        
 
-    let existingMeths = td.Methods.AsList 
+    let existingMeths = td.Methods.AsSeq |> Seq.toList 
     let existingProps = td.Properties.AsList
 
     let enumTypeDef = 
@@ -1092,9 +1092,9 @@ let mkClassUnionDef (addMethodGeneratedAttrs, addPropertyGeneratedAttrs, addProp
 
     let baseTypeDef = 
        { td with 
-          NestedTypes = mkILTypeDefs (Option.toList enumTypeDef @ altTypeDefs @ altDebugTypeDefs @ td.NestedTypes.AsList)
+          NestedTypes = mkILTypeDefs (Seq.concat [Option.toList enumTypeDef :> seq<_>; altTypeDefs; altDebugTypeDefs; td.NestedTypes.AsSeq])
           IsAbstract = isAbstract
-          IsSealed = altTypeDefs.IsEmpty
+          IsSealed = Seq.isEmpty altTypeDefs
           IsComInterop=false
           Extends= (match td.Extends with None -> Some ilg.typ_Object | _ -> td.Extends) 
           Methods= mkILMethods (ctorMeths @ baseMethsFromAlt @ selfMeths @ tagMeths @ altUniqObjMeths @ existingMeths)

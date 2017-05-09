@@ -381,16 +381,16 @@ let LowerSeqExpr g amap overallExpr =
             | None -> 
                 None
 
-        | Expr.Match (spBind,exprm,pt,targets,m,ty) when targets |> Array.forall (fun (TTarget(vs,_e,_spTarget)) -> isNil vs) ->
+        | Expr.Match (spBind,exprm,pt,targets,m,ty) when targets |> Seq.forall (fun (TTarget(vs,_e,_spTarget)) -> isNil vs) ->
             // lower all the targets. abandon if any fail to lower
             let tgl = targets |> Array.map (fun (TTarget(_vs,e,_spTarget)) -> Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel e) |> Array.toList
             // LIMITATION: non-trivial pattern matches involving or-patterns or active patterns where bindings can't be 
             // transferred to the r.h.s. are not yet compiled. 
-            if tgl |> List.forall Option.isSome then 
+            if tgl |> Seq.forall Option.isSome then 
                 let tgl = List.map Option.get tgl
                 let labs = tgl |> List.collect (fun res -> res.labels)
                 let stateVars = tgl |> List.collect (fun res -> res.stateVars)
-                let significantClose = tgl |> List.exists (fun res -> res.significantClose)
+                let significantClose = tgl |> Seq.exists (fun res -> res.significantClose)
                 Some { phase2 = (fun ctxt -> 
                             let gtgs,disposals,checkDisposes = 
                                 (Array.toList targets,tgl) 
