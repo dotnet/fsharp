@@ -208,6 +208,7 @@ type
                              DefaultToInsertSpaces = true,
                              CodeSense = true,
                              DefaultToNonHotURLs = true,
+                             RequestStockColors = true,
                              EnableCommenting = true,
                              CodeSenseDelay = 100,
                              ShowDropDownOptions = true)>]
