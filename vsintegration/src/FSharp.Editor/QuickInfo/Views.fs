@@ -14,8 +14,8 @@ open Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.QuickInfo
 
 open Microsoft.VisualStudio.Language.Intellisense
 open Microsoft.VisualStudio.Utilities
+open Microsoft.VisualStudio.PlatformUI
 
-open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler
 
 open Internal.Utilities.StructuredFormat
@@ -71,6 +71,13 @@ type internal QuickInfoViewProvider
             navigation.NavigateTo range
             SessionHandling.currentSession |> Option.iter ( fun session -> session.Dismiss() )
 
+        let secondaryToolTip range =
+            let t = ToolTip(Content = navigation.RelativePath range)
+            DependencyObjectExtensions.SetDefaultTextProperties(t, formatMap.Value)
+            let color = VSColorTheme.GetThemedColor(EnvironmentColors.ToolTipBrushKey)
+            t.Background <- Media.SolidColorBrush(Media.Color.FromRgb(color.R, color.G, color.B))
+            t
+
         let inlines = 
             seq { 
                 for taggedText in content do
@@ -78,7 +85,7 @@ type internal QuickInfoViewProvider
                     let inl =
                         match taggedText with
                         | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->                        
-                            let h = Documents.Hyperlink(run, ToolTip = nav.Range.FileName)
+                            let h = Documents.Hyperlink(run, ToolTip = secondaryToolTip nav.Range)
                             h.Click.Add <| navigateAndDismiss nav.Range
                             h :> Documents.Inline
                         | _ -> run :> _
@@ -105,9 +112,9 @@ type internal QuickInfoViewProvider
         let glyphContent = SymbolGlyphDeferredContent(glyph, glyphService)
         QuickInfoDisplayDeferredContent
             (glyphContent, null, 
-             mainDescription=navigableText description, 
-             documentation=navigableText documentation,
-             typeParameterMap=navigableText typeParameterMap, 
-             anonymousTypes= empty, 
-             usageText=navigableText usage, 
-             exceptionText=navigableText exceptions)
+             mainDescription = navigableText description, 
+             documentation = navigableText documentation,
+             typeParameterMap = navigableText typeParameterMap, 
+             anonymousTypes = empty, 
+             usageText = navigableText usage, 
+             exceptionText = navigableText exceptions)

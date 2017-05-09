@@ -874,7 +874,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             object otherTargetFrameworkMonikerObj;
 
-            hierarchy.GetProperty(VSConstants.VSITEMID_ROOT, (int)__VSHPROPID4.VSHPROPID_TargetFrameworkMoniker, out otherTargetFrameworkMonikerObj);
+            int hr = hierarchy.GetProperty(VSConstants.VSITEMID_ROOT, (int)__VSHPROPID4.VSHPROPID_TargetFrameworkMoniker, out otherTargetFrameworkMonikerObj);
+            if (!ErrorHandler.Succeeded(hr))
+                return null;
 
             string targetFrameworkMoniker = (string)otherTargetFrameworkMonikerObj;
             return new System.Runtime.Versioning.FrameworkName(targetFrameworkMoniker);

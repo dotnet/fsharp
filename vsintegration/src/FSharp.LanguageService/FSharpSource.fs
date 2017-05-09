@@ -330,7 +330,8 @@ type internal FSharpSource(service:LanguageService, textLines, colorizer, vsFile
                   LoadTime = new System.DateTime(2000,1,1)   // dummy data, just enough to get a parse
                   UnresolvedReferences = None
                   OriginalLoadReferences = []
-                  ExtraProjectInfo=None }
+                  ExtraProjectInfo=None 
+                  Stamp = None }
 
             ic.ParseFileInProject(fileName, source.GetText(), co) |> Async.RunSynchronously
 

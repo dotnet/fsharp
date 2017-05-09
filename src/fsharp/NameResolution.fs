@@ -1231,7 +1231,7 @@ type ITypecheckResultsSink =
     abstract NotifyEnvWithScope : range * NameResolutionEnv * AccessorDomain -> unit
     abstract NotifyExprHasType : pos * TType * Tastops.DisplayEnv * NameResolutionEnv * AccessorDomain * range -> unit
     abstract NotifyNameResolution : pos * Item * Item * TyparInst * ItemOccurence * Tastops.DisplayEnv * NameResolutionEnv * AccessorDomain * range * bool -> unit
-    abstract NotifyFormatSpecifierLocation : range -> unit
+    abstract NotifyFormatSpecifierLocation : range * int -> unit
     abstract CurrentSource : string option
 
 let (|ValRefOfProp|_|) (pi : PropInfo) = pi.ArbitraryValRef
@@ -1427,23 +1427,35 @@ type TcResolutions
 
 
 /// Represents container for all name resolutions that were met so far when typechecking some particular file
-type TcSymbolUses(g, capturedNameResolutions : ResizeArray<CapturedNameResolution>, formatSpecifierLocations: range[]) = 
+type TcSymbolUses(g, capturedNameResolutions : ResizeArray<CapturedNameResolution>, formatSpecifierLocations: (range * int)[]) = 
     
     // Make sure we only capture the information we really need to report symbol uses
-    let cnrs = [| for cnr in capturedNameResolutions  -> struct (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.Range) |]
+#if COMPILER_SERVICE_DLL // avoid a hard dependency on System.ValueTuple.dll from FSharp.Compiler.Service.dll
+    let cnrs = [| for cnr in capturedNameResolutions  -> (* struct *) (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.Range) |]
+#else
+    let cnrs = [| for cnr in capturedNameResolutions  ->    struct (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.Range) |]
+#endif
     let capturedNameResolutions = () 
     do ignore capturedNameResolutions // don't capture this!
 
     member this.GetUsesOfSymbol(item) = 
-        [| for (struct (cnrItem,occ,denv,m)) in cnrs do
+#if COMPILER_SERVICE_DLL // avoid a hard dependency on System.ValueTuple.dll from FSharp.Compiler.Service.dll
+        [| for ( (* struct *)  (cnrItem,occ,denv,m)) in cnrs do
+#else
+        [| for (    struct     (cnrItem,occ,denv,m)) in cnrs do
+#endif
                if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item cnrItem) then
                   yield occ, denv, m |]
 
     member this.GetAllUsesOfSymbols() = 
-        [| for (struct (cnrItem,occ,denv,m)) in cnrs do
+#if COMPILER_SERVICE_DLL // avoid a hard dependency on System.ValueTuple.dll from FSharp.Compiler.Service.dll
+        [| for ( (* struct *) (cnrItem,occ,denv,m)) in cnrs do
+#else
+        [| for (    struct    (cnrItem,occ,denv,m)) in cnrs do
+#endif
               yield (cnrItem, occ, denv, m) |]
 
-    member this.GetFormatSpecifierLocations() =  formatSpecifierLocations
+    member this.GetFormatSpecifierLocationsAndArity() =  formatSpecifierLocations
 
 
 /// An accumulator for the results being emitted into the tcSink.
@@ -1499,8 +1511,8 @@ type TcResultsSinkImpl(g, ?source: string) =
                     capturedNameResolutions.Add(CapturedNameResolution(endPos,item,tpinst,occurenceType,denv,nenv,ad,m)) 
                     capturedMethodGroupResolutions.Add(CapturedNameResolution(endPos,itemMethodGroup,[],occurenceType,denv,nenv,ad,m)) 
 
-        member sink.NotifyFormatSpecifierLocation(m) = 
-            capturedFormatSpecifierLocations.Add(m)
+        member sink.NotifyFormatSpecifierLocation(m, numArgs) = 
+            capturedFormatSpecifierLocations.Add((m, numArgs))
 
         member sink.CurrentSource = source
 
@@ -4440,3 +4452,17 @@ let rec private GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolution
 
 let IsItemResolvable (ncenv: NameResolver) (nenv: NameResolutionEnv) m ad plid (item: Item) : bool = 
     GetCompletionForItem ncenv nenv m ad plid item |> Seq.exists (ItemsAreEffectivelyEqual ncenv.g item)
+
+let GetVisibleNamespacesAndModulesAtPoint (ncenv: NameResolver) (nenv: NameResolutionEnv) m ad =
+    let ilTyconNames =
+        nenv.TyconsByAccessNames(FullyQualifiedFlag.OpenQualified).Values
+        |> List.choose (fun tyconRef -> if tyconRef.IsILTycon then Some tyconRef.DisplayName else None)
+        |> Set.ofList
+
+    nenv.ModulesAndNamespaces(FullyQualifiedFlag.OpenQualified)
+    |> NameMultiMap.range 
+    |> List.filter (fun x -> 
+         let demangledName = x.DemangledModuleOrNamespaceName
+         IsInterestingModuleName demangledName && notFakeContainerModule ilTyconNames demangledName
+         && EntityRefContainsSomethingAccessible ncenv m ad  x
+         && not (IsTyconUnseen ad ncenv.g ncenv.amap m x))
