@@ -2713,7 +2713,7 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
           UnresolvedReferences = None
           OriginalLoadReferences=[]
           ExtraProjectInfo=extraProjectInfo
-          Stamp = Some (newStamp()) }
+          Stamp = None }
 
     /// Begin background parsing the given project.
     member ic.StartBackgroundCompile(options) = backgroundCompiler.CheckProjectInBackground(options) 
