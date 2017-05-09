@@ -1,6 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
+#if COMPILER_PUBLIC_API
+module Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
+#else
 module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
+#endif
 #nowarn "1178" // The struct, record or union type 'internal_instr_extension' is not structurally comparable because the type
 
 
@@ -9,8 +13,6 @@ open System.Collections
 open System.Collections.Generic
 open System.Reflection
 open Internal.Utilities
-open Internal.Utilities.Collections
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 
 #if FX_RESHAPED_REFLECTION
 open Microsoft.FSharp.Core.ReflectionAdapters
@@ -52,7 +54,7 @@ let reportTime =
             let t = System.Diagnostics.Process.GetCurrentProcess().UserProcessorTime.TotalSeconds
             let prev = match !tPrev with None -> 0.0 | Some t -> t
             let first = match !tFirst with None -> (tFirst := Some t; t) | Some t -> t
-            dprintf "ilwrite: TIME %10.3f (total)   %10.3f (delta) - %s\n" (t - first) (t - prev) descr
+            printf "ilwrite: TIME %10.3f (total)   %10.3f (delta) - %s\n" (t - first) (t - prev) descr
             tPrev := Some t
 
 //-------------------------------------------------------------------------
@@ -263,8 +265,25 @@ module Option =
 
     let attempt (f: unit -> 'T) = try Some (f()) with _ -> None        
 
+    
+    let orElseWith f opt = 
+        match opt with 
+        | None -> f()
+        | x -> x
+
+    let orElse v opt = 
+        match opt with 
+        | None -> v
+        | x -> x
+
+    let defaultValue v opt = 
+        match opt with 
+        | None -> v
+        | Some x -> x
+
 module List = 
 
+    //let item n xs = List.nth xs n
 #if FX_RESHAPED_REFLECTION
     open PrimReflectionAdapters
     open Microsoft.FSharp.Core.ReflectionAdapters
@@ -1072,6 +1091,42 @@ module Tables =
                 res 
             else
                 res <- f x; t.[x] <- res;  res
+
+
+/// Interface that defines methods for comparing objects using partial equality relation
+type IPartialEqualityComparer<'T> = 
+    inherit IEqualityComparer<'T>
+    /// Can the specified object be tested for equality?
+    abstract InEqualityRelation : 'T -> bool
+
+module IPartialEqualityComparer = 
+    let On f (c: IPartialEqualityComparer<_>) = 
+          { new IPartialEqualityComparer<_> with 
+                member __.InEqualityRelation x = c.InEqualityRelation (f x)
+                member __.Equals(x, y) = c.Equals(f x, f y)
+                member __.GetHashCode x = c.GetHashCode(f x) }
+    
+
+
+    // Wrapper type for use by the 'partialDistinctBy' function
+    [<StructuralEquality; NoComparison>]
+    type private WrapType<'T> = Wrap of 'T
+    
+    // Like Seq.distinctBy but only filters out duplicates for some of the elements
+    let partialDistinctBy (per:IPartialEqualityComparer<'T>) seq =
+        let wper = 
+            { new IPartialEqualityComparer<WrapType<'T>> with
+                member __.InEqualityRelation (Wrap x) = per.InEqualityRelation (x)
+                member __.Equals(Wrap x, Wrap y) = per.Equals(x, y)
+                member __.GetHashCode (Wrap x) = per.GetHashCode(x) }
+        // Wrap a Wrap _ around all keys in case the key type is itself a type using null as a representation
+        let dict = Dictionary<WrapType<'T>,obj>(wper)
+        seq |> List.filter (fun v -> 
+            let key = Wrap(v)
+            if (per.InEqualityRelation(v)) then 
+                if dict.ContainsKey(key) then false else (dict.[key] <- null; true)
+            else true)
+
 
 //-------------------------------------------------------------------------
 // Library: Name maps

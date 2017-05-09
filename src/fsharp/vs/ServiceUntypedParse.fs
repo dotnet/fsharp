@@ -20,7 +20,7 @@ open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.Lib
 
 /// Methods for dealing with F# sources files.
-module internal SourceFile =
+module SourceFile =
     /// Source file extensions
     let private compilableExtensions = CompileOps.FSharpSigFileSuffixes @ CompileOps.FSharpImplFileSuffixes @ CompileOps.FSharpScriptFileSuffixes
     /// Single file projects extensions
@@ -34,7 +34,7 @@ module internal SourceFile =
         let ext = Path.GetExtension(file)
         singleFileProjectExtensions |> List.exists(fun e-> 0 = String.Compare(e,ext,StringComparison.OrdinalIgnoreCase))
 
-module internal SourceFileImpl =
+module SourceFileImpl =
     let IsInterfaceFile file =
         let ext = Path.GetExtension(file)
         0 = String.Compare(".fsi",ext,StringComparison.OrdinalIgnoreCase)
@@ -1189,6 +1189,7 @@ module UntypedParseImpl =
                             match parseLid lidwd with
                             | Some (completionPath) -> GetCompletionContextForInheritSynMember (componentInfo, typeDefnKind, completionPath)
                             | None -> Some (CompletionContext.Invalid) // A $ .B -> no completion list
+
                         | _ -> None 
                         
                     member __.VisitBinding(defaultTraverse, (Binding(headPat = headPat) as synBinding)) = 
@@ -1227,7 +1228,7 @@ module UntypedParseImpl =
                         
                     member __.VisitModuleOrNamespace(SynModuleOrNamespace(longId = idents)) =
                         match List.tryLast idents with
-                        | Some lastIdent when pos.Line = lastIdent.idRange.EndLine ->
+                        | Some lastIdent when pos.Line = lastIdent.idRange.EndLine && lastIdent.idRange.EndColumn >= 0 && pos.Column <= lineStr.Length ->
                             let stringBetweenModuleNameAndPos = lineStr.[lastIdent.idRange.EndColumn..pos.Column - 1]
                             if stringBetweenModuleNameAndPos |> Seq.forall (fun x -> x = ' ' || x = '.') then
                                 Some CompletionContext.Invalid
