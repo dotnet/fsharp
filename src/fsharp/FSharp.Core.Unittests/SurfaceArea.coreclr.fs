@@ -2015,6 +2015,7 @@ Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7]: System.String ToStri
 Microsoft.FSharp.Core.FSharpChoice`7[T1,T2,T3,T4,T5,T6,T7]: System.Type GetType()
 Microsoft.FSharp.Core.FSharpFunc`2[T,TResult]: Boolean Equals(System.Object)
 Microsoft.FSharp.Core.FSharpFunc`2[T,TResult]: Int32 GetHashCode()
+Microsoft.FSharp.Core.FSharpFunc`2[T,TResult]: System.Func`2[T,TResult] ToFunc(Microsoft.FSharp.Core.FSharpFunc`2[T,TResult])
 Microsoft.FSharp.Core.FSharpFunc`2[T,TResult]: System.String ToString()
 Microsoft.FSharp.Core.FSharpFunc`2[T,TResult]: System.Type GetType()
 Microsoft.FSharp.Core.FSharpFunc`2[T,TResult]: TResult Invoke(T)
