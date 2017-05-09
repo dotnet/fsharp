@@ -2073,6 +2073,8 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
     let fileChecked = Event<string * obj option>()
     let projectChecked = Event<string * obj option>()
 
+    let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None).Value
+
     let mutable implicitlyStartBackgroundWork = true
     let reactorOps = 
         { new IReactorOperations with 
@@ -2109,7 +2111,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
         let loadClosure = scriptClosureCacheLock.AcquireLock (fun ltok -> scriptClosureCache.TryGet (ltok, options))
         let! builderOpt, diagnostics = 
             IncrementalBuilder.TryCreateBackgroundBuilderForProjectOptions
-                  (ctok, referenceResolver, frameworkTcImportsCache, loadClosure, Array.toList options.ProjectFileNames, 
+                  (ctok, referenceResolver, defaultFSharpBinariesDir, frameworkTcImportsCache, loadClosure, Array.toList options.ProjectFileNames, 
                    Array.toList options.OtherOptions, projectReferences, options.ProjectDirectory, 
                    options.UseScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions, maxTimeShareMilliseconds)
 
@@ -2996,8 +2998,8 @@ type FsiInteractiveChecker(referenceResolver, reactorOps: IReactorOperations, tc
 //
 
 type CompilerEnvironment =
-  static member BinFolderOfDefaultFSharpCompiler ?probePoint =
-      Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler probePoint
+  static member BinFolderOfDefaultFSharpCompiler(?probePoint) =
+      FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(probePoint).Value
 
 /// Information about the compilation environment
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]

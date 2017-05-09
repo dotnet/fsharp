@@ -160,15 +160,16 @@ module internal FSharpEnvironment =
 #endif
 
     let internal tryCurrentDomain() =
+        let pathFromCurrentDomain = 
 #if FX_NO_APP_DOMAINS
-        None
+            System.AppContext.BaseDirectory
 #else
-        let pathFromCurrentDomain = System.AppDomain.CurrentDomain.BaseDirectory
+            System.AppDomain.CurrentDomain.BaseDirectory
+#endif
         if not(String.IsNullOrEmpty(pathFromCurrentDomain)) then 
             Some pathFromCurrentDomain
         else
             None
-#endif
 
 #if FX_NO_SYSTEM_CONFIGURATION
     let internal tryAppConfig (_appConfigKey:string) = None
@@ -214,7 +215,7 @@ module internal FSharpEnvironment =
             let safeExists f = (try File.Exists(f) with _ -> false)
             // Look in the probePoint if given, e.g. look for a compiler alongside of FSharp.Build.dll
             match probePoint with 
-            | Some p when safeExists (Path.Combine(p,"fsc.exe")) || safeExists (Path.Combine(p,"Fsc.exe")) -> Some p 
+            | Some p when safeExists (Path.Combine(p,"FShrp.Core.dll")) -> Some p 
             | _ -> 
                 
             // On windows the location of the compiler is via a registry key

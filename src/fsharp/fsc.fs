@@ -421,17 +421,7 @@ module XmlDocWriter =
         fprintfn os "</doc>"   
 
 
-//----------------------------------------------------------------------------
-// DefaultFSharpBinariesDir
-//----------------------------------------------------------------------------
-
-let DefaultFSharpBinariesDir = 
-#if FX_NO_APP_DOMAINS
-    System.AppContext.BaseDirectory
-#else
-    let exeName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppDomain.CurrentDomain.FriendlyName)  
-    Filename.directoryName exeName
-#endif
+let DefaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(FSharpEnvironment.tryCurrentDomain()).Value
 
 //----------------------------------------------------------------------------
 // GenerateInterfaceData, EncodeInterfaceData

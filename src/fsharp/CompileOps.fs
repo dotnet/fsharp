@@ -4947,12 +4947,11 @@ module private ScriptPreprocessClosure =
         ParseOneInputLexbuf (tcConfig,lexResourceManager,defines,lexbuf,filename,isLastCompiland,errorLogger) 
           
     /// Create a TcConfig for load closure starting from a single .fsx file
-    let CreateScriptSourceTcConfig (referenceResolver, filename:string, codeContext, useSimpleResolution, useFsiAuxLib, basicReferences, applyCommandLineArgs, assumeDotNetFramework) =  
+    let CreateScriptSourceTcConfig (referenceResolver, defaultFSharpBinariesDir, filename:string, codeContext, useSimpleResolution, useFsiAuxLib, basicReferences, applyCommandLineArgs, assumeDotNetFramework) =  
         let projectDir = Path.GetDirectoryName(filename)
         let isInteractive = (codeContext = CodeContext.Evaluation)
         let isInvalidationSupported = (codeContext = CodeContext.Editing)
-        // always use primary assembly = mscorlib for scripts
-        let tcConfigB = TcConfigBuilder.CreateNew(referenceResolver, Internal.Utilities.FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(None).Value, true (* optimize for memory *), projectDir, isInteractive, isInvalidationSupported) 
+        let tcConfigB = TcConfigBuilder.CreateNew(referenceResolver, defaultFSharpBinariesDir, true (* optimize for memory *), projectDir, isInteractive, isInvalidationSupported) 
         applyCommandLineArgs tcConfigB
         match basicReferences with 
         | None -> BasicReferencesForScriptLoadClosure(useSimpleResolution, useFsiAuxLib, assumeDotNetFramework) |> List.iter(fun f->tcConfigB.AddReferencedAssemblyByPath(range0,f)) // Add script references
@@ -5119,18 +5118,18 @@ module private ScriptPreprocessClosure =
         result
 
     /// Given source text, find the full load closure. Used from service.fs, when editing a script file
-    let GetFullClosureOfScriptSource(ctok, referenceResolver, filename, source, codeContext, useSimpleResolution,useFsiAuxLib, lexResourceManager:Lexhelp.LexResourceManager, applyCommmandLineArgs, assumeDotNetFramework) = 
+    let GetFullClosureOfScriptSource(ctok, referenceResolver, defaultFSharpBinariesDir, filename, source, codeContext, useSimpleResolution,useFsiAuxLib, lexResourceManager:Lexhelp.LexResourceManager, applyCommmandLineArgs, assumeDotNetFramework) = 
         // Resolve the basic references such as FSharp.Core.dll first, before processing any #I directives in the script
         //
         // This is tries to mimic the action of running the script in F# Interactive - the initial context for scripting is created
         // first, then #I and other directives are processed.
         let references0 = 
-            let tcConfig = CreateScriptSourceTcConfig(referenceResolver, filename, codeContext, useSimpleResolution, useFsiAuxLib, None, applyCommmandLineArgs, assumeDotNetFramework)
+            let tcConfig = CreateScriptSourceTcConfig(referenceResolver, defaultFSharpBinariesDir, filename, codeContext, useSimpleResolution, useFsiAuxLib, None, applyCommmandLineArgs, assumeDotNetFramework)
             let resolutions0,_unresolvedReferences = GetAssemblyResolutionInformation(ctok, tcConfig)
             let references0 =  resolutions0 |> List.map (fun r->r.originalReference.Range,r.resolvedPath) |> Seq.distinct |> List.ofSeq
             references0
 
-        let tcConfig = CreateScriptSourceTcConfig(referenceResolver, filename, codeContext, useSimpleResolution, useFsiAuxLib, Some references0, applyCommmandLineArgs, assumeDotNetFramework)
+        let tcConfig = CreateScriptSourceTcConfig(referenceResolver, defaultFSharpBinariesDir, filename, codeContext, useSimpleResolution, useFsiAuxLib, Some references0, applyCommmandLineArgs, assumeDotNetFramework)
 
         let closureSources = [ClosureSource(filename,range0,source,true)]
         let closureFiles,tcConfig = FindClosureFiles(closureSources, tcConfig, codeContext, lexResourceManager)
@@ -5146,9 +5145,9 @@ module private ScriptPreprocessClosure =
 
 type LoadClosure with
     // Used from service.fs, when editing a script file
-    static member ComputeClosureOfSourceText(ctok, referenceResolver, filename:string, source:string, codeContext, useSimpleResolution:bool, useFsiAuxLib, lexResourceManager:Lexhelp.LexResourceManager, applyCommmandLineArgs, assumeDotNetFramework) : LoadClosure = 
+    static member ComputeClosureOfSourceText(ctok, referenceResolver, defaultFSharpBinariesDir, filename:string, source:string, codeContext, useSimpleResolution:bool, useFsiAuxLib, lexResourceManager:Lexhelp.LexResourceManager, applyCommmandLineArgs, assumeDotNetFramework) : LoadClosure = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
-        ScriptPreprocessClosure.GetFullClosureOfScriptSource(ctok, referenceResolver, filename, source, codeContext, useSimpleResolution, useFsiAuxLib, lexResourceManager, applyCommmandLineArgs,assumeDotNetFramework)
+        ScriptPreprocessClosure.GetFullClosureOfScriptSource(ctok, referenceResolver, defaultFSharpBinariesDir, filename, source, codeContext, useSimpleResolution, useFsiAuxLib, lexResourceManager, applyCommmandLineArgs,assumeDotNetFramework)
 
     /// Used from fsi.fs and fsc.fs, for #load and command line.
     /// The resulting references are then added to a TcConfig.

@@ -645,7 +645,7 @@ type [<Class>] CompilerEnvironment =
 type [<Class>] internal CompilerEnvironment =
 #endif
     /// The default location of FSharp.Core.dll and fsc.exe based on the version of fsc.exe that is running
-    static member BinFolderOfDefaultFSharpCompiler : string option -> string option
+    static member BinFolderOfDefaultFSharpCompiler : ?probePoint: string -> string option
 
 /// Information about the compilation environment 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]   
