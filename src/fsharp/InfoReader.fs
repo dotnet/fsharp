@@ -414,6 +414,7 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
     
 /// Get the declared constructors of any F# type
 let GetIntrinsicConstructorInfosOfType (infoReader:InfoReader) m ty = 
+  protectAssemblyExploration [] (fun () -> 
     let g = infoReader.g
     let amap = infoReader.amap 
     if isAppTy g ty then
@@ -440,7 +441,8 @@ let GetIntrinsicConstructorInfosOfType (infoReader:InfoReader) m ty =
                 | _ -> None) 
             |> List.map (fun x -> FSMeth(g,ty,x,None)) 
     else []
-    
+  )    
+
 //-------------------------------------------------------------------------
 // Collecting methods and properties taking into account hiding rules in the hierarchy
 
