@@ -33,6 +33,7 @@ open Microsoft.VisualStudio.FSharp.Editor
 
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open UnitTests.TestLib.LanguageService
 
 let filePath = "C:\\test.fs"
 
@@ -47,11 +48,12 @@ let internal options = {
     UnresolvedReferences = None
     OriginalLoadReferences = []
     ExtraProjectInfo = None
+    Stamp = None
 }
 
 let private getSpans (sourceText: SourceText) (caretPosition: int) =
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-    FSharpDocumentHighlightsService.GetDocumentHighlights(FSharpChecker.Instance, documentId, sourceText, filePath, caretPosition, [], options, 0)
+    FSharpDocumentHighlightsService.GetDocumentHighlights(checker, documentId, sourceText, filePath, caretPosition, [], options, 0)
     |> Async.RunSynchronously
     |> Option.defaultValue [||]
 

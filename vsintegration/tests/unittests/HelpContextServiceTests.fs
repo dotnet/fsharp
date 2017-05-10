@@ -14,6 +14,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.LanguageService
 open UnitTests.TestLib.Utils
+open UnitTests.TestLib.LanguageService
 
 [<TestFixture>][<Category "Roslyn Services">]
 type HelpContextServiceTests() =
@@ -30,6 +31,7 @@ type HelpContextServiceTests() =
         UnresolvedReferences = None
         ExtraProjectInfo = None
         OriginalLoadReferences = []
+        Stamp = None
     }
 
     let markers (source:string) = 
@@ -55,12 +57,12 @@ type HelpContextServiceTests() =
 
         let res = [
           for marker in markers fileContents do
-            let span = TextSpan(marker, 0)
+            let span = Microsoft.CodeAnalysis.Text.TextSpan(marker, 0)
             let textLine = sourceText.Lines.GetLineFromPosition(marker)
             let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
             let tokens = Tokenizer.getColorizationData(documentId, sourceText, textLine.Span, Some "test.fs", [], CancellationToken.None)
 
-            yield FSharpHelpContextService.GetHelpTerm(FSharpChecker.Instance, sourceText, fileName,  newOptions, span, tokens, version)
+            yield FSharpHelpContextService.GetHelpTerm(checker, sourceText, fileName,  newOptions, span, tokens, version)
                   |> Async.RunSynchronously
         ]
         let equalLength = List.length expectedKeywords = List.length res

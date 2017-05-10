@@ -3967,20 +3967,26 @@ let OpenILModuleReader infile opts =
 
 // ++GLOBAL MUTABLE STATE (concurrency safe via locking)
 type ILModuleReaderCacheLockToken() = interface LockToken
-let ilModuleReaderCache = new AgedLookup<ILModuleReaderCacheLockToken, (string * System.DateTime), ILModuleReader>(0, areSame=(fun (x,y) -> x = y))
+let ilModuleReaderCache = new AgedLookup<ILModuleReaderCacheLockToken, (string * System.DateTime * ILScopeRef * bool), ILModuleReader>(0, areSame=(fun (x,y) -> x = y))
 let ilModuleReaderCacheLock = Lock()
 
 let OpenILModuleReaderAfterReadingAllBytes infile opts = 
     // Pseudo-normalize the paths.
     let key,succeeded = 
-        try (FileSystem.GetFullPathShim(infile), FileSystem.GetLastWriteTimeShim(infile)), true
+        try 
+           (FileSystem.GetFullPathShim(infile), 
+            FileSystem.GetLastWriteTimeShim(infile), 
+            opts.ilGlobals.primaryAssemblyScopeRef,
+            opts.pdbPath.IsSome), true
         with e -> 
-            System.Diagnostics.Debug.Assert(false, "Failed to compute key in OpenILModuleReaderAfterReadingAllBytes cache. Falling back to uncached.") 
-            ("",System.DateTime.Now), false
+            System.Diagnostics.Debug.Assert(false, sprintf "Failed to compute key in OpenILModuleReaderAfterReadingAllBytes cache for '%s'. Falling back to uncached." infile) 
+            ("",System.DateTime.Now,ILScopeRef.Local,false), false
+
     let cacheResult = 
         if not succeeded then None // Fall back to uncached.
         else if opts.pdbPath.IsSome then None // can't used a cached entry when reading PDBs, since it makes the returned object IDisposable
         else ilModuleReaderCacheLock.AcquireLock (fun ltok -> ilModuleReaderCache.TryGet(ltok, key))
+
     match cacheResult with 
     | Some(ilModuleReader) -> ilModuleReader
     | None -> 

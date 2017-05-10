@@ -1831,7 +1831,7 @@ let MakeAndPublishSimpleVals cenv env m names mergeNamesInOneNameresEnv =
                             if not m.IsSynthetic then
                                 nameResolutions.Add(pos, item, itemGroup, itemTyparInst, occurence, denv, nenv, ad, m, replacing)
                         member this.NotifyExprHasType(_, _, _, _, _, _) = assert false // no expr typings in MakeSimpleVals
-                        member this.NotifyFormatSpecifierLocation _ = ()
+                        member this.NotifyFormatSpecifierLocation(_, _) = ()
                         member this.CurrentSource = None } 
 
                 use _h = WithNewTypecheckResultsSink(sink, cenv.tcSink)
@@ -6679,8 +6679,8 @@ and TcConstStringExpr cenv overallTy env m tpenv s  =
         match cenv.tcSink.CurrentSink with 
         | None -> () 
         | Some sink  -> 
-            for specifierLocation in specifierLocations do
-                sink.NotifyFormatSpecifierLocation specifierLocation
+            for specifierLocation,numArgs in specifierLocations do
+                sink.NotifyFormatSpecifierLocation(specifierLocation, numArgs)
 
         UnifyTypes cenv env m aty aty'
         UnifyTypes cenv env m ety ety'
