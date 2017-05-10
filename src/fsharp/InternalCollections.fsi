@@ -44,21 +44,30 @@ namespace Internal.Utilities.Collections
     new : keepStrongly:int 
             * areSame:('Key * 'Key -> bool) 
             * ?isStillValid:('Key * 'Value -> bool)
-            * ?areSameForSubsumption:('Key * 'Key -> bool) 
+            * ?areSimilar:('Key * 'Key -> bool) 
             * ?requiredToKeep:('Value -> bool)
             * ?onDiscard:('Value -> unit)
             * ?keepMax:int
             -> MruCache<'Token,'Key,'Value>
+
     /// Clear out the cache.
     member Clear : 'Token -> unit
-    /// Get the value for the given key or <c>None</c> if not already available.
+
+    /// Get the similar (subsumable) value for the given key or <c>None</c> if not already available.
+    member TryGetAnySimilar : 'Token * key:'Key -> ('Key * 'Value) option
+
+    /// Get the value for the given key or <c>None</c> if not still valid.
     member TryGetAny : 'Token * key:'Key -> 'Value option
-    /// Get the value for the given key or None if not already available
+
+    /// Get the value for the given key or None, but only if entry is still valid
     member TryGet : 'Token * key:'Key -> 'Value option
+
     /// Remove the given value from the mru cache.
-    member Remove : 'Token * key:'Key -> unit
+    member RemoveAnySimilar : 'Token * key:'Key -> unit
+
     /// Set the given key. 
     member Set : 'Token * key:'Key * value:'Value -> unit
+
     /// Resize
     member Resize : 'Token * keepStrongly: int * ?keepMax : int -> unit
 

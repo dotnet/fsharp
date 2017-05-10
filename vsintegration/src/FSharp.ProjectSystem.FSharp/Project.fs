@@ -1362,9 +1362,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
             override x.ComputeSourcesAndFlags() =
 
-                if x.IsInBatchUpdate || box x.BuildProject = null then ()
-                else
-                if not(inMidstOfReloading) && not(VsBuildManagerAccessorExtensionMethods.IsInProgress(accessor)) then
+                if not x.IsInBatchUpdate && box x.BuildProject <> null && not inMidstOfReloading && not (VsBuildManagerAccessorExtensionMethods.IsInProgress(accessor)) then
 
                     use waitDialog =
                         {
@@ -1697,6 +1695,12 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         null : System.String
 
             let OnActiveProjectCfgChange(pIVsHierarchy) =
+                if pIVsHierarchy = null then 
+                    let _,currentConfigName = Utilities.TryGetActiveConfigurationAndPlatform(projNode.Site, projNode.ProjectIDGuid)
+                    MSBuildProject.SetGlobalProperty(projNode.BuildProject, ProjectFileConstants.Configuration, currentConfigName.ConfigName)
+                    MSBuildProject.SetGlobalProperty(projNode.BuildProject, ProjectFileConstants.Platform, currentConfigName.MSBuildPlatform)
+                    projNode.UpdateMSBuildState()
+
                 if GetCaption(pIVsHierarchy) = GetCaption(projNode.InteropSafeIVsHierarchy) && batchState <> BatchDone then
                     projNode.SetProjectFileDirty(projNode.IsProjectFileDirty)
                     projNode.ComputeSourcesAndFlags()

@@ -1562,7 +1562,7 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
             return true
       }
     
-    member builder.GetCheckResultsBeforeFileInProjectIfReady (filename): PartialCheckResults option  = 
+    member builder.GetCheckResultsBeforeFileInProjectEvenIfStale (filename): PartialCheckResults option  = 
         let slotOfFile = builder.GetSlotOfFileName filename
         let result = 
             match slotOfFile with
@@ -1676,7 +1676,7 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
 #endif
       }
 
-    member __.ProjectFileNames  = sourceFiles  |> List.map (fun (_,f,_) -> f)
+    member __.SourceFiles  = sourceFiles  |> List.map (fun (_,f,_) -> f)
 
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.

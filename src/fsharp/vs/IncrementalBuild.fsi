@@ -76,7 +76,7 @@ type internal IncrementalBuilder =
       member TcConfig : TcConfig
 
       /// The full set of source files including those from options
-      member ProjectFileNames : string list
+      member SourceFiles : string list
 
       /// Raised just before a file is type-checked, to invalidate the state of the file in VS and force VS to request a new direct typecheck of the file.
       /// The incremental builder also typechecks the file (error and intellisense results from the background builder are not
@@ -110,7 +110,7 @@ type internal IncrementalBuilder =
       /// This is a very quick operation.
       ///
       /// This is safe for use from non-compiler threads but the objects returned must in many cases be accessed only from the compiler thread.
-      member GetCheckResultsBeforeFileInProjectIfReady: filename:string -> PartialCheckResults option
+      member GetCheckResultsBeforeFileInProjectEvenIfStale: filename:string -> PartialCheckResults option
 
       /// Get the preceding typecheck state of a slot, but only if it is up-to-date w.r.t.
       /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available.
