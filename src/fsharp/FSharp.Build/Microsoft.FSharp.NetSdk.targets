@@ -17,7 +17,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(IsCrossTargetingBuild)' == 'true' ">
+  <PropertyGroup>
     <AlwaysUseNumericalSuffixInItemNames>true</AlwaysUseNumericalSuffixInItemNames>
     <DefineCommonItemSchemas Condition=" '$(DefineCommonItemSchemas)' == '' ">true</DefineCommonItemSchemas>
     <DefineCommonReferenceSchemas Condition=" '$(DefineCommonReferenceSchemas)' == '' ">true</DefineCommonReferenceSchemas>
@@ -29,14 +29,6 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <!-- Add any missing .pdb extension, as the compiler does -->
     <_DebugSymbolsIntermediatePath Include="@(_DebugSymbolsIntermediatePathTemporary->'%(RootDir)%(Directory)%(Filename).pdb')"/>
   </ItemGroup>
-
-
-  <!-- Import design time targets for Roslyn Project System. These are only available if Visual Studio is installed. -->
-  <!-- Import design time targets before the common targets, which import targets from Nuget. -->
-  <PropertyGroup>
-    <FSharpDesignTimeTargetsPath Condition="'$(FSharpDesignTimeTargetsPath)'==''">$(MSBuildExtensionsPath)\Microsoft\VisualStudio\Managed\Microsoft.FSharp.DesignTime.targets</FSharpDesignTimeTargetsPath>
-  </PropertyGroup>
-  <Import Condition=" Exists('$(FSharpDesignTimeTargetsPath)')" Project="$(FSharpDesignTimeTargetsPath) " />
 
   <!-- Locate and add mscorlib, unless NoStdLib is set -->
   <ItemGroup>
@@ -98,6 +90,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <!--- Add it for Desktop Apps -->
     <ItemGroup  Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' and '$(IsFSharpCoreReferenced)' != 'true' and '$(TargetFSharpCoreVersion)' != ''">
       <ReferencePath Include="$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\$(TargetFSharpCoreVersion)\FSharp.Core.dll" />
+      <ReferenceCopyLocalPaths Include="$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\$(TargetFSharpCoreVersion)\FSharp.Core.dll" />
     </ItemGroup>
 
   </Target>

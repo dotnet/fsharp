@@ -273,19 +273,7 @@ this file.
 
     </Target>
 
-    <Choose>
-        <When  Condition=" '$(IsCrossTargetingBuild)' == 'true' ">
-          <PropertyGroup>
-             <FSharpCommonTargets>$(MSBuildBinPath)\Microsoft.Common.CurrentVersion.targets</FSharpCommonTargets>
-          </PropertyGroup>
-        </When>
-        <Otherwise>
-          <PropertyGroup>
-             <FSharpCommonTargets>$(MSBuildBinPath)\Microsoft.Common.targets</FSharpCommonTargets>
-          </PropertyGroup>
-        </Otherwise>
-    </Choose>
-    <Import Project="$(FSharpCommonTargets)" />
+    <Import Project="$(MSBuildBinPath)\Microsoft.Common.targets" />
 
     <!--
             ============================================================
