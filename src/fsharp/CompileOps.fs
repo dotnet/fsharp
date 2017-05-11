@@ -2702,6 +2702,10 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
         | Some(fslibFilename) ->
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir fslibFilename
             try 
+                if validate && fslibReference.ProjectReference.IsNone then 
+                    use ilReader = OpenILBinary(filename,data.optimizeForMemory,data.openBinariesInMemory,None,None, data.shadowCopyReferences)
+                    checkFSharpBinaryCompatWithMscorlib filename ilReader.ILAssemblyRefs ilReader.ILModuleDef.ManifestOfAssembly.Version rangeStartup;
+                
                 let fslibRoot = Path.GetDirectoryName(FileSystem.GetFullPathShim(filename))
                 fslibRoot (* , sprintf "v%d.%d" v1 v2 *)
             with e -> 
