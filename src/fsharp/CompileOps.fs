@@ -2701,7 +2701,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
         match fslibExplicitFilenameOpt with
         | Some(fslibFilename) ->
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir fslibFilename
-            if validate && fslibReference.ProjectReference.IsNone then 
+            if (* validate && *) fslibReference.ProjectReference.IsNone then 
                 try 
                     use ilReader = OpenILBinary(filename,data.optimizeForMemory,data.openBinariesInMemory,None,None, data.shadowCopyReferences)
                     checkFSharpBinaryCompatWithMscorlib filename ilReader.ILAssemblyRefs ilReader.ILModuleDef.ManifestOfAssembly.Version rangeStartup;
