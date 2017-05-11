@@ -65,10 +65,6 @@ type internal PartialCheckResults =
 [<Class>]
 type internal IncrementalBuilder = 
 
-      /// Increment the usage count on the IncrementalBuilder by 1. This initial usage count is 0. The returns an IDisposable which will 
-      /// decrement the usage count on the entire build by 1 and dispose if it is no longer used by anyone.
-      member IncrementUsageCount : unit -> IDisposable
-     
       /// Check if the builder is not disposed
       member IsAlive : bool
 
@@ -153,7 +149,11 @@ type internal IncrementalBuilder =
 
       static member TryCreateBackgroundBuilderForProjectOptions : CompilationThreadToken * ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string list * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool * maxTimeShareMilliseconds: int64 -> Cancellable<IncrementalBuilder option * FSharpErrorInfo list>
 
-      static member KeepBuilderAlive : IncrementalBuilder option -> IDisposable
+      /// Increment the usage count on the IncrementalBuilder by 1. This initial usage count is 0 so immediately after creation 
+      /// a call to IncrementUsageCount should be made. The returns an IDisposable which will 
+      /// decrement the usage count and dispose if the usage count goes to zero
+      static member IncrementUsageCount : IncrementalBuilder option -> IDisposable
+
       member IsBeingKeptAliveApartFromCacheEntry : bool
 
 /// Generalized Incremental Builder. This is exposed only for unittesting purposes.
