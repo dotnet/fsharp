@@ -65,7 +65,7 @@ type internal QuickInfoViewProvider
         |> typeMap.Value.GetClassificationType
         |> formatMap.Value.GetTextProperties
     
-    let formatText (navigation: QuickInfoNavigation) (content: seq<Layout.TaggedText>) : IDeferredQuickInfoContent =
+    let formatText (navigation: QuickInfoNavigation) (content: seq<Layout.TaggedText>) =
 
         let navigateAndDismiss range _ =
             navigation.NavigateTo range
@@ -93,28 +93,32 @@ type internal QuickInfoViewProvider
                     yield inl
             }
 
-        let createTextLinks () =
-            let tb = TextBlock(TextWrapping = TextWrapping.Wrap, TextTrimming = TextTrimming.None)
-            DependencyObjectExtensions.SetDefaultTextProperties(tb, formatMap.Value)
-            tb.Inlines.AddRange inlines
-            if tb.Inlines.Count = 0 then tb.Visibility <- Visibility.Collapsed
-            tb.Resources.[typeof<Documents.Hyperlink>] <- getStyle()
-            tb :> FrameworkElement
-            
-        { new IDeferredQuickInfoContent with member x.Create() = createTextLinks() }
+        let tb = TextBlock(TextWrapping = TextWrapping.Wrap, TextTrimming = TextTrimming.None)
+        DependencyObjectExtensions.SetDefaultTextProperties(tb, formatMap.Value)
+        tb.Inlines.AddRange inlines
+        if tb.Inlines.Count = 0 then tb.Visibility <- Visibility.Collapsed
+        tb.Resources.[typeof<Documents.Hyperlink>] <- getStyle()
+        tb
 
-    let empty = 
-        { new IDeferredQuickInfoContent with 
-            member x.Create() = TextBlock(Visibility = Visibility.Collapsed) :> FrameworkElement }
+    let wrap (tb: TextBlock) =
+        let maxWidth = formatMap.Value.DefaultTextProperties.FontRenderingEmSize * 40.0
+        tb.MaxWidth <- maxWidth
+        tb.HorizontalAlignment <- HorizontalAlignment.Left
+        tb
+
+    let defer toTextBlock layout =           
+        { new IDeferredQuickInfoContent with member __.Create() = upcast toTextBlock layout }
 
     member __.ProvideContent(glyph: Glyph, description, documentation, typeParameterMap, usage, exceptions, navigation: QuickInfoNavigation) =
-        let navigableText x = formatText navigation x
+        let navigable = defer (formatText navigation)
+        let wrapped = defer (formatText navigation >> wrap)
+        let empty = defer (fun () -> TextBlock(Visibility = Visibility.Collapsed)) ()
         let glyphContent = SymbolGlyphDeferredContent(glyph, glyphService)
         QuickInfoDisplayDeferredContent
             (glyphContent, null, 
-             mainDescription = navigableText description, 
-             documentation = navigableText documentation,
-             typeParameterMap = navigableText typeParameterMap, 
+             mainDescription = navigable description, 
+             documentation = wrapped documentation,
+             typeParameterMap = navigable typeParameterMap, 
              anonymousTypes = empty, 
-             usageText = navigableText usage, 
-             exceptionText = navigableText exceptions)
+             usageText = navigable usage, 
+             exceptionText = navigable exceptions)
