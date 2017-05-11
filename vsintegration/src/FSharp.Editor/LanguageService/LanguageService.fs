@@ -421,6 +421,7 @@ and
                 site.AdviseProjectSiteClosed(FSharpConstants.FSharpLanguageServiceCallbackName, 
                                              AdviseProjectSiteChanges(fun () -> 
                                                 projectInfoManager.ClearInfoForProject(project.Id)
+                                                optionsAssociation.Remove(projectContext) |> ignore
                                                 project.Disconnect()))
                 for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
                     let referencedProjectId = setup referencedSite                    
