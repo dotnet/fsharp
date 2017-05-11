@@ -2420,6 +2420,11 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
         match x.ActualParent  with 
         | Parent tcref -> tcref
         | ParentNone -> error(InternalError("TopValActualParent: does not have a parent",x.Range))
+
+    member x.HasTopValActualParent = 
+        match x.ActualParent  with 
+        | Parent _ -> true
+        | ParentNone -> false
             
     /// Get the apparent parent entity for a member
     member x.MemberApparentParent : TyconRef = 
@@ -3369,6 +3374,9 @@ and
     /// is declared.
     member x.TopValActualParent         = x.Deref.TopValActualParent
 
+    // Can be false for members after error recovery
+    member x.HasTopValActualParent         = x.Deref.HasTopValActualParent
+
     /// Get the apparent parent entity for a member
     member x.MemberApparentParent       = x.Deref.MemberApparentParent
 
@@ -3723,20 +3731,27 @@ and CcuThunk =
 
     /// Fixup a CCU to have the given contents
     member x.Fixup(avail:CcuThunk) = 
+
         match box x.target with
-        | null -> 
-            assert (avail.AssemblyName = x.AssemblyName)
-            x.target <- 
-               (match box avail.target with
-                | null -> error(Failure("internal error: ccu thunk '"+avail.name+"' not fixed up!"))
-                | _ -> avail.target)
-        | _ -> errorR(Failure("internal error: the ccu thunk for assembly "+x.AssemblyName+" not delayed!"))
+        | null -> ()
+        | _ -> 
+#if COMPILER_SERVICE
+            // In the IDE we tolerate  a double-fixup of FSHarp.Core when editing the FSharp.Core project itself
+            if x.AssemblyName <>  "FSharp.Core" then 
+#endif
+                errorR(Failure("internal error: Fixup: the ccu thunk for assembly "+x.AssemblyName+" not delayed!"))
+
+        assert (avail.AssemblyName = x.AssemblyName)
+        x.target <- 
+            match box avail.target with
+            | null -> error(Failure("internal error: ccu thunk '"+avail.name+"' not fixed up!"))
+            | _ -> avail.target
         
     /// Fixup a CCU to record it as "orphaned", i.e. not available
     member x.FixupOrphaned() = 
         match box x.target with
         | null -> x.orphanfixup<-true
-        | _ -> errorR(Failure("internal error: the ccu thunk for assembly "+x.AssemblyName+" not delayed!"))
+        | _ -> errorR(Failure("internal error: FixupOrphaned: the ccu thunk for assembly "+x.AssemblyName+" not delayed!"))
             
     /// Try to resolve a path into the CCU by referencing the .NET/CLI type forwarder table of the CCU
     member ccu.TryForward(nlpath:string[],item:string) : EntityRef option  = 

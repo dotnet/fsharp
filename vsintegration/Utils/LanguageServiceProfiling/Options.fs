@@ -170,12 +170,12 @@ let FCS (repositoryDir: string) : Options =
              @"src\fsharp\vs\Reactor.fsi"
              @"src\fsharp\vs\Reactor.fs"
              @"src\fsharp\vs\ServiceConstants.fs"
-             @"src\fsharp\vs\ServiceDeclarations.fsi"
-             @"src\fsharp\vs\ServiceDeclarations.fs"
-             @"src\fsharp\vs\Symbols.fsi"
-             @"src\fsharp\vs\Symbols.fs"
-             @"src\fsharp\vs\Exprs.fsi"
-             @"src\fsharp\vs\Exprs.fs"
+             @"src\fsharp\symbols\SymbolHelpers.fsi"
+             @"src\fsharp\symbols\SymbolHelpers.fs"
+             @"src\fsharp\symbols\Symbols.fsi"
+             @"src\fsharp\symbols\Symbols.fs"
+             @"src\fsharp\symbols\Exprs.fsi"
+             @"src\fsharp\symbols\Exprs.fs"
              @"src\fsharp\vs\ServiceLexing.fsi"
              @"src\fsharp\vs\ServiceLexing.fs"
              @"src\fsharp\vs\ServiceParseTreeWalk.fs"
@@ -208,8 +208,8 @@ let FCS (repositoryDir: string) : Options =
             @"--define:FX_LCIDFROMCODEPAGE"; "--define:FX_RESX_RESOURCE_READER";
             @"--define:FX_RESIDENT_COMPILER"; "--define:SHADOW_COPY_REFERENCES";
             @"--define:EXTENSIONTYPING";
-            @"--define:COMPILER_SERVICE_ASSUMES_FSHARP_CORE_4_4_0_0";
-            @"--define:COMPILER_SERVICE"; "--define:NO_STRONG_NAMES"; "--define:TRACE";
+            @"--define:COMPILER_SERVICE_DLL_ASSUMES_FSHARP_CORE_4_4_0_0";
+            @"--define:COMPILER_SERVICE_DLL"; "--define:NO_STRONG_NAMES"; "--define:TRACE";
             @"--doc:..\..\..\bin\v4.5\FSharp.Compiler.Service.xml"; "--optimize-";
             @"--platform:anycpu";
             @"-r:" + (repositoryDir </> @"packages\Microsoft.DiaSymReader\lib\net20\Microsoft.DiaSymReader.dll");
@@ -283,7 +283,8 @@ let FCS (repositoryDir: string) : Options =
          LoadTime = DateTime.Now
          UnresolvedReferences = None;
          OriginalLoadReferences = []
-         ExtraProjectInfo = None }
+         ExtraProjectInfo = None 
+         Stamp = None }
       FilesToCheck = 
           files 
           |> Array.filter (fun s -> s.Contains "TypeChecker.fs" || 
@@ -403,7 +404,8 @@ let VFPT (repositoryDir: string) : Options =
          LoadTime = DateTime.Now
          UnresolvedReferences = None
          OriginalLoadReferences = []
-         ExtraProjectInfo = None }
+         ExtraProjectInfo = None 
+         Stamp = None }
       FilesToCheck = []
       FileToCheck = repositoryDir </> @"src\FSharp.Editing\CodeGeneration\RecordStubGenerator.fs"
       SymbolText = "option"
