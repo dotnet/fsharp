@@ -77,7 +77,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 
   <PropertyGroup Condition=" '$(DisableAutoValueTupleReference)' != 'true' ">
     <FrameworkNeedsValueTupleReference Condition=" $(TargetFramework.StartsWith(netcoreapp1.)) or $(TargetFramework.StartsWith(netstandard1.)) ">true</FrameworkNeedsValueTupleReference>
-    <FrameworkNeedsValueTupleReference Condition=" '$(TargetFramework)' == 'net40' or '$(TargetFramework)' == 'net45' or '$(TargetFramework)' == 'net46' or '$(TargetFramework)' == 'net61' or '$(TargetFramework)' == 'net462' or '$(TargetFramework)' == 'net47' ">true</FrameworkNeedsValueTupleReference>
+    <FrameworkNeedsValueTupleReference Condition=" '$(TargetFramework)' == 'net40' or '$(TargetFramework)' == 'net45' or '$(TargetFramework)' == 'net46' or '$(TargetFramework)' == 'net461' or '$(TargetFramework)' == 'net462' or '$(TargetFramework)' == 'net47' ">true</FrameworkNeedsValueTupleReference>
   </PropertyGroup>
 
   <ItemGroup  Condition=" '$(TargetFramework)' != '' ">
