@@ -8,6 +8,7 @@ open System
 open System.Collections.Concurrent
 open System.Collections.Generic
 open System.ComponentModel.Composition
+open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 open System.IO
 open System.Diagnostics
@@ -290,6 +291,8 @@ and
         let projectDisplayName = projectDisplayNameOf projectFileName
         Some (workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName))
 
+    let optionsAssociation = ConditionalWeakTable<IWorkspaceProjectContext, string[]>()
+
     override this.Initialize() =
         base.Initialize()
 
@@ -331,35 +334,54 @@ and
     /// Sync the information for the project 
     member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, workspace, forceUpdate) =
         let wellFormedFilePathSetIgnoreCase (paths: seq<string>) =
-            HashSet(paths |> Seq.filter isPathWellFormed, StringComparer.OrdinalIgnoreCase)
+            HashSet(paths |> Seq.filter isPathWellFormed |> Seq.map (fun s -> try System.IO.Path.GetFullPath(s) with _ -> s), StringComparer.OrdinalIgnoreCase)
 
         let updatedFiles = site.SourceFilesOnDisk() |> wellFormedFilePathSetIgnoreCase
-        let workspaceFiles = project.GetCurrentDocuments() |> Seq.map (fun file -> file.FilePath) |> wellFormedFilePathSetIgnoreCase
+        let originalFiles = project.GetCurrentDocuments() |> Seq.map (fun file -> file.FilePath) |> wellFormedFilePathSetIgnoreCase
         
         let mutable updated = forceUpdate
 
         for file in updatedFiles do
-            if not(workspaceFiles.Contains(file)) then
+            if not(originalFiles.Contains(file)) then
                 projectContext.AddSourceFile(file)
                 updated <- true
         
-        for file in workspaceFiles do
+        for file in originalFiles do
             if not(updatedFiles.Contains(file)) then
                 projectContext.RemoveSourceFile(file)
                 updated <- true
         
         let updatedRefs = site.AssemblyReferences() |> wellFormedFilePathSetIgnoreCase
-        let workspaceRefs = project.GetCurrentMetadataReferences() |> Seq.map (fun ref -> ref.FilePath) |> wellFormedFilePathSetIgnoreCase
+        let originalRefs = project.GetCurrentMetadataReferences() |> Seq.map (fun ref -> ref.FilePath) |> wellFormedFilePathSetIgnoreCase
 
         for ref in updatedRefs do
-            if not(workspaceRefs.Contains(ref)) then
+            if not(originalRefs.Contains(ref)) then
                 projectContext.AddMetadataReference(ref, MetadataReferenceProperties.Assembly)
                 updated <- true
 
-        for ref in workspaceRefs do
+        for ref in originalRefs do
             if not(updatedRefs.Contains(ref)) then
                 projectContext.RemoveMetadataReference(ref)
                 updated <- true
+
+        let ok,originalOptions = optionsAssociation.TryGetValue(projectContext)
+        let updatedOptions = site.CompilerFlags()
+        if not ok || originalOptions <> updatedOptions then 
+            let updatedFiles = site.SourceFilesOnDisk() |> wellFormedFilePathSetIgnoreCase
+
+            // OK, project options have changed, try to fake out Roslyn to convince it to reparse things
+            // Calling SetOptions fails because the CPS project system being used by the F# project system 
+            // imlpementation at the moment has no command line parser installed.
+            //projectContext.SetOptions(String.concat " " updatedOptions)
+            for file in updatedFiles do
+                projectContext.RemoveSourceFile(file)
+                projectContext.AddSourceFile(file)
+
+            // Record the last seen options as an associated value
+            if ok then optionsAssociation.Remove(projectContext) |> ignore
+            optionsAssociation.Add(projectContext, updatedOptions)
+
+            updated <- true
 
         // update the cached options
         if updated then
