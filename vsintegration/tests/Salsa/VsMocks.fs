@@ -1525,7 +1525,7 @@ module internal VsMocks =
                 member x.FindActiveProjectCfgName(_projectGuid,outCfgString) = 
                     // For now ignore the _projectGuid and just return the last notified configuration
                     match configDict |> Seq.tryHead with 
-                    | None -> err(__LINE__) |> ignore
+                    | None -> err(__LINE__) 
                     | Some (KeyValue(_,v)) -> 
                         outCfgString <- v
                         0
