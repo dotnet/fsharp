@@ -65,7 +65,7 @@ type internal FSharpCheckerProvider
 
     member this.Checker = checker.Value
 
-type Refreshable<'T> = 'T * (unit -> 'T)
+type Refreshable<'T> = 'T * (bool -> 'T)
 
 // Exposes project information as MEF component
 [<Export(typeof<ProjectInfoManager>); Composition.Shared>]
@@ -91,15 +91,14 @@ type internal ProjectInfoManager
         singleFileProjectTable.TryRemove(projectId) |> ignore
 
     member this.RefreshInfoForProjectsThatReferenceThisProject(projectId: ProjectId) =
-
         // Search the projectTable for things to refresh
         for KeyValue(otherProjectId, ((referencedProjectIds, _options), refresh)) in projectTable.ToArray() do
            for referencedProjectId in referencedProjectIds do
               if referencedProjectId = projectId then 
-                  projectTable.[otherProjectId] <- (refresh(), refresh)
+                  projectTable.[otherProjectId] <- (refresh true, refresh)
 
     member this.AddOrUpdateProject(projectId, refresh) =
-        projectTable.[projectId] <- (refresh(), refresh)
+        projectTable.[projectId] <- (refresh false, refresh)
         this.RefreshInfoForProjectsThatReferenceThisProject(projectId)
 
     member this.AddOrUpdateSingleFileProject(projectId, data) =
@@ -110,9 +109,13 @@ type internal ProjectInfoManager
         let extraProjectInfo = Some(box workspace)
         let tryGetOptionsForReferencedProject f = f |> tryGetOrCreateProjectId |> Option.bind this.TryGetOptionsForProject
         if SourceFile.MustBeSingleFileProject(fileName) then 
-            let optionsStamp = None // TODO: can we use a unique stamp?
+            // NOTE: we don't use a unique stamp for single files, instead comparing options structurally.
+            // This is because we repeatedly recompute the options.
+            let optionsStamp = None 
             let! options, _diagnostics = checkerProvider.Checker.GetProjectOptionsFromScript(fileName, fileContents, loadTime, [| |], ?extraProjectInfo=extraProjectInfo, ?optionsStamp=optionsStamp) 
-            let referencedProjectFileNames = [| |] // TODO: can we find the referenced project file names
+            // NOTE: we don't use FCS cross-project references from scripts to projects.  THe projects must have been
+            // compiled and #r will refer to files on disk
+            let referencedProjectFileNames = [| |] 
             let site = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, referencedProjectFileNames, options)
             return ProjectSitesAndFiles.GetProjectOptionsForProjectSite(tryGetOptionsForReferencedProject,site,fileName,options.ExtraProjectInfo,serviceProvider, true)
         else
@@ -122,12 +125,12 @@ type internal ProjectInfoManager
 
     /// Update the info for a project in the project table
     member this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId: ProjectId, site: IProjectSite, workspace: Workspace) =
-        this.AddOrUpdateProject(projectId, (fun () -> 
+        this.AddOrUpdateProject(projectId, (fun isRefresh -> 
             let extraProjectInfo = Some(box workspace)
             let tryGetOptionsForReferencedProject f = f |> tryGetOrCreateProjectId |> Option.bind this.TryGetOptionsForProject
             let referencedProjects, options = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(tryGetOptionsForReferencedProject, site, site.ProjectFileName(), extraProjectInfo, serviceProvider, true)
             let referencedProjectIds = referencedProjects |> Array.choose tryGetOrCreateProjectId
-            checkerProvider.Checker.InvalidateConfiguration(options)
+            checkerProvider.Checker.InvalidateConfiguration(options, startBackgroundWork = not isRefresh)
             referencedProjectIds, options))
 
     /// Get compilation defines relevant for syntax processing.  
@@ -160,7 +163,9 @@ type internal ProjectInfoManager
             let fileName = document.FilePath
             let! cancellationToken = Async.CancellationToken
             let! sourceText = document.GetTextAsync(cancellationToken)
-            let tryGetOrCreateProjectId _ = None // TODO: can we get proper project references for scripts
+            // NOTE: we don't use FCS cross-project references from scripts to projects.  The projects must have been
+            // compiled and #r will refer to files on disk.
+            let tryGetOrCreateProjectId _ = None 
             let! _referencedProjectFileNames, options = this.ComputeSingleFileOptions (tryGetOrCreateProjectId, fileName, loadTime, sourceText.ToString(), document.Project.Solution.Workspace)
             this.AddOrUpdateSingleFileProject(projectId, (loadTime, options))
             return Some options
@@ -303,6 +308,14 @@ and
             tryRemoveSingleFileProject args.Document.Project.Id 
             
         Events.SolutionEvents.OnAfterCloseSolution.Add <| fun _ ->
+            checkerProvider.Checker.StopBackgroundCompile()
+
+            // FUTURE: consider enbling some or all of these to flush all caches and stop all background builds. However the operations
+            // are asynchronous and we need to decide if we stop everything synchronously.
+
+            //checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+            //checkerProvider.Checker.InvalidateAll()
+
             singleFileProjects.Keys |> Seq.iter tryRemoveSingleFileProject
 
         let ctx = System.Threading.SynchronizationContext.Current

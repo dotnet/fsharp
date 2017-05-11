@@ -553,12 +553,11 @@ type internal FSharpChecker =
     member TryGetRecentCheckResultsForFile : filename: string * options:FSharpProjectOptions * ?source: string -> (FSharpParseFileResults * FSharpCheckFileResults * (*version*)int) option
 
     /// This function is called when the entire environment is known to have changed for reasons not encoded in the ProjectOptions of any project/compilation.
-    /// For example, the type provider approvals file may have changed.
     member InvalidateAll : unit -> unit    
         
     /// This function is called when the configuration is known to have changed for reasons not encoded in the ProjectOptions.
     /// For example, dependent references may have been deleted or created.
-    member InvalidateConfiguration: options: FSharpProjectOptions -> unit    
+    member InvalidateConfiguration: options: FSharpProjectOptions * ?startBackgroundCompile: bool  -> unit    
 
     /// Set the project to be checked in the background.  Overrides any previous call to <c>CheckProjectInBackground</c>
     member CheckProjectInBackground: options: FSharpProjectOptions -> unit

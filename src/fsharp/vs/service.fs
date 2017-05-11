@@ -1727,11 +1727,11 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
     // This may be None initially, or may be set to None when the object is disposed or finalized
     let mutable details = match scopeOptX with None -> None | Some scopeX -> Some (scopeX, builderX, reactorOpsX)
 
+    // Increment the usage count on the IncrementalBuilder. We want to keep the IncrementalBuilder and all associated
+    // resources and type providers alive for the duration of the lifetime of this object.
     let decrementer = 
         match details with 
         | Some (_,Some builder,_) -> 
-            // Increment the usage count on the IncrementalBuilder. We want to keep the IncrementalBuilder and all associated
-            // resources and type providers alive for the duration of the lifetime of this object.
             builder.IncrementUsageCount()
         | _ -> { new System.IDisposable with member x.Dispose() = () } 
 
@@ -1749,7 +1749,7 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
                    decrementer.Dispose())
            | _ -> () 
 
-    // Run an operation that needs to be run in the reactor thread
+    // Run an operation that needs to access a builder and be run in the reactor thread
     let reactorOp desc dflt f = 
       async {
         match details with
@@ -1759,7 +1759,7 @@ type FSharpCheckFileResults(errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo 
             System.Diagnostics.Debug.Assert(false,"unexpected dead builder") 
             return dflt
         | Some (scope, builderOpt, reactor) -> 
-            // Ensure the builder doesn't get released while running operations asynchronously. 
+            // Increment the usage count to ensure the builder doesn't get released while running operations asynchronously. 
             use _unwind = match builderOpt with Some builder -> builder.IncrementUsageCount() | None -> { new System.IDisposable with member __.Dispose() = () }
             let! res = reactor.EnqueueAndAwaitOpAsync(desc, fun ctok ->  f ctok scope |> cancellable.Return)
             return res
@@ -2417,7 +2417,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
     member bc.CheckFileInProject(parseResults: FSharpParseFileResults, filename, fileVersion, source, options, textSnapshotInfo) =
         let execWithReactorAsync action = reactor.EnqueueAndAwaitOpAsync("CheckFileInProject " + filename, action)
         async {
-            let! builderOpt,creationErrors,_ = execWithReactorAsync <| fun ctok -> getOrCreateBuilder (ctok, options) // Q: Whis it it ok to ignore creationErrors in the build cache? A: These errors will be appended into the typecheck results
+            let! builderOpt,creationErrors,_ = execWithReactorAsync <| fun ctok -> getOrCreateBuilder (ctok, options)
             use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
             match builderOpt with
             | None -> return FSharpCheckFileAnswer.Succeeded (MakeCheckFileResultsEmpty(creationErrors))
@@ -2438,7 +2438,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
     member bc.ParseAndCheckFileInProject(filename:string, fileVersion, source, options:FSharpProjectOptions,textSnapshotInfo) =
         let execWithReactorAsync action = reactor.EnqueueAndAwaitOpAsync("ParseAndCheckFileInProject " + filename, action)
         async {
-            let! builderOpt,creationErrors,_ = execWithReactorAsync <| fun ctok -> getOrCreateBuilder (ctok, options) // Q: Whis it it ok to ignore creationErrors in the build cache? A: These errors will be appended into the typecheck results
+            let! builderOpt,creationErrors,_ = execWithReactorAsync <| fun ctok -> getOrCreateBuilder (ctok, options)
             use _unwind = IncrementalBuilder.KeepBuilderAlive builderOpt
             match builderOpt with
             | None -> 
@@ -2588,7 +2588,8 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             return options, errors.Diagnostics
           })
             
-    member bc.InvalidateConfiguration(options : FSharpProjectOptions) =
+    member bc.InvalidateConfiguration(options : FSharpProjectOptions, ?startBackgroundCompile) =
+        let startBackgroundCompile = defaultArg startBackgroundCompile implicitlyStartBackgroundWork
         // This operation can't currently be cancelled nor awaited
         reactor.EnqueueOp("InvalidateConfiguration", fun ctok -> 
             // If there was a similar entry then re-establish an empty builder .  This is a somewhat arbitrary choice - it
@@ -2599,11 +2600,11 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
 
                 // We do not need to decrement here - the onDiscard function is called each time an entry is pushed out of the build cache,
                 // including by incrementalBuildersCache.Set.
-                let builderB, errorsB, decrementB = CreateOneIncrementalBuilder (ctok, options) |> Cancellable.runWithoutCancellation
-                incrementalBuildersCache.Set(ctok, options, (builderB, errorsB, decrementB))
+                let newBuilderInfo = CreateOneIncrementalBuilder (ctok, options) |> Cancellable.runWithoutCancellation
+                incrementalBuildersCache.Set(ctok, options, newBuilderInfo)
 
             // Start working on the project.  Also a somewhat arbitrary choice
-            if implicitlyStartBackgroundWork then 
+            if startBackgroundCompile then 
                bc.CheckProjectInBackground(options))
 
     member bc.NotifyProjectCleaned (options : FSharpProjectOptions) =
@@ -2617,8 +2618,8 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             | Some (_similarOptions, (_oldBuilder, _, _)) ->
                 // We do not need to decrement here - the onDiscard function is called each time an entry is pushed out of the build cache,
                 // including by incrementalBuildersCache.Set.
-                let! builderB, errorsB, decrementB = CreateOneIncrementalBuilder (ctok, options) 
-                incrementalBuildersCache.Set(ctok, options, (builderB, errorsB, decrementB))
+                let! newBuilderInfo = CreateOneIncrementalBuilder (ctok, options) 
+                incrementalBuildersCache.Set(ctok, options, newBuilderInfo)
           })
 
     member bc.CheckProjectInBackground (options) =
@@ -2848,9 +2849,6 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
         backgroundCompiler.DownsizeCaches() |> Async.RunSynchronously
         maxMemEvent.Trigger( () )
 
-    /// This function is called when the entire environment is known to have changed for reasons not encoded in the ProjectOptions of any project/compilation.
-    /// For example, the type provider approvals file may have changed.
-    //
     // This is for unit testing only
     member ic.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients() =
         backgroundCompiler.CompleteAllQueuedOps() // flush AsyncOp
@@ -2861,8 +2859,8 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
             
     /// This function is called when the configuration is known to have changed for reasons not encoded in the ProjectOptions.
     /// For example, dependent references may have been deleted or created.
-    member ic.InvalidateConfiguration(options: FSharpProjectOptions) =
-        backgroundCompiler.InvalidateConfiguration options
+    member ic.InvalidateConfiguration(options: FSharpProjectOptions, ?startBackgroundCompile) =
+        backgroundCompiler.InvalidateConfiguration(options,?startBackgroundCompile=startBackgroundCompile)
 
     /// This function is called when a project has been cleaned, and thus type providers should be refreshed.
     member ic.NotifyProjectCleaned(options: FSharpProjectOptions) =
