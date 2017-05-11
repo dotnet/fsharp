@@ -65,7 +65,7 @@ type internal QuickInfoViewProvider
         |> typeMap.Value.GetClassificationType
         |> formatMap.Value.GetTextProperties
     
-    let formatText (navigation: QuickInfoNavigation) (content: seq<Layout.TaggedText>) =
+    let formatText (navigation: QuickInfoNavigation) (content: #seq<Layout.TaggedText>) =
 
         let navigateAndDismiss range _ =
             navigation.NavigateTo range
@@ -78,31 +78,29 @@ type internal QuickInfoViewProvider
             t.Background <- Media.SolidColorBrush(Media.Color.FromRgb(color.R, color.G, color.B))
             t
 
-        let inlines = 
-            seq { 
-                for taggedText in content do
-                    let run = Documents.Run taggedText.Text
-                    let inl =
-                        match taggedText with
-                        | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->                        
-                            let h = Documents.Hyperlink(run, ToolTip = secondaryToolTip nav.Range)
-                            h.Click.Add <| navigateAndDismiss nav.Range
-                            h :> Documents.Inline
-                        | _ -> run :> _
-                    DependencyObjectExtensions.SetTextProperties (inl, layoutTagToFormatting taggedText.Tag)
-                    yield inl
-            }
+        let toInline (taggedText: Layout.TaggedText) =
+            let run = Documents.Run taggedText.Text
+            let inl =
+                match taggedText with
+                | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->                        
+                    let h = Documents.Hyperlink(run, ToolTip = secondaryToolTip nav.Range)
+                    h.Click.Add <| navigateAndDismiss nav.Range
+                    h :> Documents.Inline
+                | _ -> run :> _
+            DependencyObjectExtensions.SetTextProperties (inl, layoutTagToFormatting taggedText.Tag)
+            inl
 
         let tb = TextBlock(TextWrapping = TextWrapping.Wrap, TextTrimming = TextTrimming.None)
         DependencyObjectExtensions.SetDefaultTextProperties(tb, formatMap.Value)
-        tb.Inlines.AddRange inlines
+        tb.Inlines.AddRange(content |> Seq.map toInline)
         if tb.Inlines.Count = 0 then tb.Visibility <- Visibility.Collapsed
         tb.Resources.[typeof<Documents.Hyperlink>] <- getStyle()
         tb
 
     let wrap (tb: TextBlock) =
-        let maxWidth = formatMap.Value.DefaultTextProperties.FontRenderingEmSize * 40.0
+        let maxWidth = formatMap.Value.DefaultTextProperties.FontRenderingEmSize * 60.0
         tb.MaxWidth <- maxWidth
+        tb.TextAlignment <- TextAlignment.Justify
         tb.HorizontalAlignment <- HorizontalAlignment.Left
         tb
 
