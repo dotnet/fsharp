@@ -111,7 +111,7 @@
 
   } // end of class C
 
-  .class auto ansi serializable nested assembly beforefieldinit g@13
+  .class auto ansi serializable sealed nested assembly beforefieldinit g@13
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
   {
     .method assembly specialname rtspecialname 

@@ -422,7 +422,7 @@
 
   } // end of class first3Numbers@12
 
-  .class auto ansi serializable nested assembly beforefieldinit 'WAOrders@21-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'WAOrders@21-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Order,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -471,7 +471,7 @@
 
   } // end of class 'WAOrders@21-1'
 
-  .class auto ansi serializable nested assembly beforefieldinit WAOrders@20
+  .class auto ansi serializable sealed nested assembly beforefieldinit WAOrders@20
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Customer,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -521,7 +521,7 @@
 
   } // end of class WAOrders@20
 
-  .class auto ansi serializable nested assembly beforefieldinit 'WAOrders@22-2'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'WAOrders@22-2'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,bool>
   {
     .method assembly specialname rtspecialname 
@@ -561,7 +561,7 @@
 
   } // end of class 'WAOrders@22-2'
 
-  .class auto ansi serializable nested assembly beforefieldinit 'WAOrders@23-3'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'WAOrders@23-3'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>>
   {
     .method assembly specialname rtspecialname 
@@ -971,7 +971,7 @@
 
   } // end of class allButFirst4Numbers@29
 
-  .class auto ansi serializable nested assembly beforefieldinit 'WAOrders2@37-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'WAOrders2@37-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Order,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -1020,7 +1020,7 @@
 
   } // end of class 'WAOrders2@37-1'
 
-  .class auto ansi serializable nested assembly beforefieldinit WAOrders2@36
+  .class auto ansi serializable sealed nested assembly beforefieldinit WAOrders2@36
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Customer,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Collections.IEnumerable>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -1070,7 +1070,7 @@
 
   } // end of class WAOrders2@36
 
-  .class auto ansi serializable nested assembly beforefieldinit 'WAOrders2@38-2'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'WAOrders2@38-2'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,bool>
   {
     .method assembly specialname rtspecialname 
@@ -1110,7 +1110,7 @@
 
   } // end of class 'WAOrders2@38-2'
 
-  .class auto ansi serializable nested assembly beforefieldinit 'WAOrders2@39-3'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'WAOrders2@39-3'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [Utils]Utils/Order>,class [mscorlib]System.Tuple`3<string,int32,valuetype [mscorlib]System.DateTime>>
   {
     .method assembly specialname rtspecialname 
@@ -1520,7 +1520,7 @@
 
   } // end of class firstNumbersLessThan6@45
 
-  .class auto ansi serializable nested assembly beforefieldinit 'firstNumbersLessThan6@46-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'firstNumbersLessThan6@46-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>
   {
     .method assembly specialname rtspecialname 
@@ -1916,7 +1916,7 @@
 
   } // end of class allButFirst3Numbers@52
 
-  .class auto ansi serializable nested assembly beforefieldinit 'allButFirst3Numbers@53-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'allButFirst3Numbers@53-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>
   {
     .method assembly specialname rtspecialname 

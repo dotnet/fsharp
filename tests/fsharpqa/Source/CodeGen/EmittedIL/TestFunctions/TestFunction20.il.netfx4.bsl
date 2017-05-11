@@ -146,7 +146,7 @@
     } // end of property D::Y
   } // end of class D
 
-  .class auto ansi serializable nested assembly beforefieldinit 'TestFunction20@14-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'TestFunction20@14-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit> clo2
@@ -185,7 +185,7 @@
 
   } // end of class 'TestFunction20@14-1'
 
-  .class auto ansi serializable nested assembly beforefieldinit TestFunction20@14
+  .class auto ansi serializable sealed nested assembly beforefieldinit TestFunction20@14
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class TestFunction20/D,class [FSharp.Core]Microsoft.FSharp.Core.Unit>> clo1
