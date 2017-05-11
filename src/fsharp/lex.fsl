@@ -416,6 +416,14 @@ rule token args skip = parse
      { match unicodeGraphLong (lexemeTrimBoth lexbuf 3 1) with
        | SingleChar(c) -> CHAR (char c)
        | _ -> fail args lexbuf  (FSComp.SR.lexThisUnicodeOnlyInStringLiterals()) (CHAR (char 0)) }
+ | "(*IF-FSHARP"    
+     { if not skip then (COMMENT (LexCont.Token !args.ifdefStack)) else token args skip lexbuf }
+ | "(*F#"            
+     { if not skip then (COMMENT (LexCont.Token !args.ifdefStack)) else token args skip lexbuf }
+ | "ENDIF-FSHARP*)" 
+     { if not skip then (COMMENT (LexCont.Token !args.ifdefStack)) else token args skip lexbuf  }
+ | "F#*)"           
+     { if not skip then (COMMENT (LexCont.Token !args.ifdefStack)) else token args skip lexbuf }
 
  | "(*)"            
      { LPAREN_STAR_RPAREN }
@@ -423,6 +431,10 @@ rule token args skip = parse
  | "(*"
      { let m = lexbuf.LexemeRange 
        if not skip then (COMMENT (LexCont.Comment(!args.ifdefStack,1,m))) else comment (1,m,args) skip lexbuf }
+
+ | "(*IF-CAML*)" |  "(*IF-OCAML*)" 
+     { let m = lexbuf.LexemeRange 
+       if not skip then (COMMENT (LexCont.MLOnly(!args.ifdefStack,m))) else mlOnly m args skip lexbuf }
 
  | '"' 
      { let buf,fin,m = startString args lexbuf 
@@ -1038,3 +1050,24 @@ and tripleQuoteStringInComment n m args skip = parse
  | surrogateChar surrogateChar
  | _  
      { if not skip then (COMMENT (LexCont.TripleQuoteStringInComment(!args.ifdefStack,n,m))) else tripleQuoteStringInComment n m args skip lexbuf }
+     
+
+and mlOnly m args skip = parse
+ | "\""
+     { let buf = ByteBuffer.Create 100 
+       let m2 = lexbuf.LexemeRange 
+       let _ = string (buf,defaultStringFinisher,m2,args) skip lexbuf 
+       if not skip then (COMMENT (LexCont.MLOnly(!args.ifdefStack,m))) else mlOnly m args skip lexbuf }
+ | newline 
+     { newline lexbuf;  if not skip then (COMMENT (LexCont.MLOnly(!args.ifdefStack,m))) else mlOnly m args skip lexbuf }
+ | "(*ENDIF-CAML*)"  
+     {  if not skip then (COMMENT (LexCont.Token !args.ifdefStack)) else token args skip lexbuf }
+ | "(*ENDIF-OCAML*)" 
+     {  if not skip then (COMMENT (LexCont.Token !args.ifdefStack)) else token args skip lexbuf }
+ | [^ '(' '"' '\n' '\r' ]+  
+     { if not skip then (COMMENT (LexCont.MLOnly(!args.ifdefStack,m))) else mlOnly m args skip lexbuf }
+ | eof 
+     { EOF (LexCont.MLOnly(!args.ifdefStack,m)) }
+ | surrogateChar surrogateChar 
+ | _ 
+     {  if not skip then (COMMENT (LexCont.MLOnly(!args.ifdefStack,m))) else mlOnly m args skip lexbuf }
