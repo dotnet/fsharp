@@ -150,9 +150,9 @@ type internal IncrementalBuilder =
       static member TryCreateBackgroundBuilderForProjectOptions : CompilationThreadToken * ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string list * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool * maxTimeShareMilliseconds: int64 -> Cancellable<IncrementalBuilder option * FSharpErrorInfo list>
 
       /// Increment the usage count on the IncrementalBuilder by 1. This initial usage count is 0 so immediately after creation 
-      /// a call to IncrementUsageCount should be made. The returns an IDisposable which will 
+      /// a call to KeepBuilderAlive should be made. The returns an IDisposable which will 
       /// decrement the usage count and dispose if the usage count goes to zero
-      static member IncrementUsageCount : IncrementalBuilder option -> IDisposable
+      static member KeepBuilderAlive : IncrementalBuilder option -> IDisposable
 
       member IsBeingKeptAliveApartFromCacheEntry : bool
 

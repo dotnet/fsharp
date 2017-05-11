@@ -2701,15 +2701,15 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
         match fslibExplicitFilenameOpt with
         | Some(fslibFilename) ->
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir fslibFilename
-            try 
-                if validate && fslibReference.ProjectReference.IsNone then 
+            if validate && fslibReference.ProjectReference.IsNone then 
+                try 
                     use ilReader = OpenILBinary(filename,data.optimizeForMemory,data.openBinariesInMemory,None,None, data.shadowCopyReferences)
                     checkFSharpBinaryCompatWithMscorlib filename ilReader.ILAssemblyRefs ilReader.ILModuleDef.ManifestOfAssembly.Version rangeStartup;
+                with e -> 
+                    error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), rangeStartup))
                 
-                let fslibRoot = Path.GetDirectoryName(FileSystem.GetFullPathShim(filename))
-                fslibRoot
-            with e -> 
-                error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), rangeStartup))
+            let fslibRoot = Path.GetDirectoryName(FileSystem.GetFullPathShim(filename))
+            fslibRoot
         | _ ->
             data.defaultFSharpBinariesDir
 #endif

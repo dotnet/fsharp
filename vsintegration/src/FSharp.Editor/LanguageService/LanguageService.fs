@@ -130,7 +130,7 @@ type internal ProjectInfoManager
             let tryGetOptionsForReferencedProject f = f |> tryGetOrCreateProjectId |> Option.bind this.TryGetOptionsForProject
             let referencedProjects, options = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(tryGetOptionsForReferencedProject, site, site.ProjectFileName(), extraProjectInfo, serviceProvider, true)
             let referencedProjectIds = referencedProjects |> Array.choose tryGetOrCreateProjectId
-            checkerProvider.Checker.InvalidateConfiguration(options, startBackgroundWork = not isRefresh)
+            checkerProvider.Checker.InvalidateConfiguration(options, startBackgroundCompile = not isRefresh)
             referencedProjectIds, options))
 
     /// Get compilation defines relevant for syntax processing.  
@@ -308,7 +308,7 @@ and
             tryRemoveSingleFileProject args.Document.Project.Id 
             
         Events.SolutionEvents.OnAfterCloseSolution.Add <| fun _ ->
-            checkerProvider.Checker.StopBackgroundCompile()
+            //checkerProvider.Checker.StopBackgroundCompile()
 
             // FUTURE: consider enbling some or all of these to flush all caches and stop all background builds. However the operations
             // are asynchronous and we need to decide if we stop everything synchronously.
