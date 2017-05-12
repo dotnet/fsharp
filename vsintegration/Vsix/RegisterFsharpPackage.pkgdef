@@ -170,6 +170,7 @@
 [$RootKey$\Languages\Language Services\FSharpInteractive]
 "Package"="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}"
 "NotALanguage"="1"
+"RequestStockColors"=dword:00000001
 @="{35a5e6b8-4012-41fc-a652-2cdc56d74e9f}"
 
 [$RootKey$\FontAndColors\FSharpInteractive]
