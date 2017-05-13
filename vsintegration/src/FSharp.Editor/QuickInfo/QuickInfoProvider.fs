@@ -218,7 +218,10 @@ type internal FSharpQuickInfoProvider
                         |> Seq.map (fun x -> x.Text.Length)
                         |> Seq.max
 
-                    let seperator = TaggedTextOps.tag Text (String.replicate width "-")  
+                    // eyeballed formula to prevent the divider from wrapping
+                    let width = if width / 2 > 85 then 85 else width / 2
+
+                    let seperator = TaggedTextOps.tag Text (String.replicate width "⎯")  
                     let lineBreak = TaggedTextOps.tag LineBreak "\n"
 
                     // get whitespace nomalized documentation text
@@ -235,6 +238,7 @@ type internal FSharpQuickInfoProvider
                           | None, None -> ()
                           | None, Some _ -> yield! sigDocumentation
                           | Some _, None -> yield! targetDocumentation
+                          // TODO: handle case when one is substring of the other
                           | Some implText, Some sigText when implText.Equals (sigText, StringComparison.OrdinalIgnoreCase) -> 
                               yield! sigDocumentation
                           | Some _, Some _ -> 
