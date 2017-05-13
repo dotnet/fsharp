@@ -602,7 +602,7 @@ namespace Microsoft.FSharp.Collections
                             override this.ProcessNext (input:'T) : bool =
                                 this.State <- folder this.State input
                                 TailCall.avoid (next.ProcessNext this.State) } }
-            concat (ofSeq [| head ; tail |])
+            concat (ofList [ head ; tail ])
 
         [<CompiledName "Skip">]
         let skip (skipCount:int) (source:ISeq<'T>) : ISeq<'T> =

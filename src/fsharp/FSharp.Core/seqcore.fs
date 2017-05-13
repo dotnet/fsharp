@@ -600,7 +600,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
 
         interface ISeq<'T> with
             member __.PushTransform (next:ITransformFactory<'T,'U>) : ISeq<'U> =
-                upcast (new ArrayEnumerable<'T,'U>([|item|], next, 1))
+                ([item] :> ISeq<'T>).PushTransform next
 
             member this.Fold<'Result> (createFolder:PipeIdx->Folder<'T,'Result>) =
                 let result = createFolder 1
