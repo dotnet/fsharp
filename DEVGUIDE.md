@@ -15,6 +15,9 @@ Install
 - [.NET 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40779)
 - [MSBuild 12.0](http://www.microsoft.com/en-us/download/details.aspx?id=40760)
 
+> **Note:**
+> The path where the visualfsharp repository is on must not have spaces in it for a build to succeed.  For example, if you placed it on "C:\Users\My Name Here\visualfsharp", running `build.cmd` would fail because "My Name Here" has spaces in it.  Place visualfsharp somewhere on disk where there are no spaces in the path.
+
 On Windows you can build the F# compiler for .NET Framework as follows:
 
     build.cmd
