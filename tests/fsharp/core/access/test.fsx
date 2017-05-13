@@ -267,6 +267,7 @@ module RestrictedRecordsAndUnionsUsingPrivateAndInternalTypes =
 
     (*--------------------*)  
 
+report_failure ()
 
 #if TESTS_AS_APP
 let RUN() = !failures
