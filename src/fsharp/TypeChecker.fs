@@ -2337,22 +2337,21 @@ module GeneralizationHelpers =
 // ComputeInlineFlag 
 //-------------------------------------------------------------------------
 
-let ComputeInlineFlag memFlagsOption isInline isMutable m = 
-    let inlineFlag = 
-        // Mutable values may never be inlined 
-        // Constructors may never be inlined 
-        // Calls to virtual/abstract slots may never be inlined 
-        if isMutable || 
-           (match memFlagsOption with 
-            | None -> false
-            | Some x -> (x.MemberKind = MemberKind.Constructor) || x.IsDispatchSlot || x.IsOverrideOrExplicitImpl) 
-        then ValInline.Never 
-        elif isInline then ValInline.PseudoVal 
-        else ValInline.Optional
-    if isInline && (inlineFlag <> ValInline.PseudoVal) then 
-        errorR(Error(FSComp.SR.tcThisValueMayNotBeInlined(),m))
-    inlineFlag
-
+let ComputeInlineFlag memFlagsOption isInline isMutable = 
+    // Mutable values may never be inlined 
+    // Constructors may never be inlined 
+    // Calls to virtual/abstract slots may never be inlined 
+    if isMutable || 
+        (match memFlagsOption with 
+         | None -> false
+         | Some x -> x.MemberKind = MemberKind.Constructor || x.IsDispatchSlot || x.IsOverrideOrExplicitImpl) 
+    then 
+        ValInline.Never 
+    else
+        if isInline then 
+            ValInline.PseudoVal 
+        else 
+            ValInline.Optional
 
 //-------------------------------------------------------------------------
 // Binding normalization.
@@ -10203,7 +10202,7 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv overallTy safeThisValOpt 
         let valAttribs = TcAttrs attrTgt attrs
         let isVolatile = HasFSharpAttribute cenv.g cenv.g.attrib_VolatileFieldAttribute valAttribs
         
-        let inlineFlag = ComputeInlineFlag memberFlagsOpt isInline isMutable mBinding
+        let inlineFlag = ComputeInlineFlag memberFlagsOpt isInline isMutable
 
         let argAttribs = 
             spatsL |> List.map (SynInfo.InferSynArgInfoFromSimplePats >> List.map (SynInfo.AttribsOfArgData >> TcAttrs AttributeTargets.Parameter))
@@ -11102,7 +11101,7 @@ and AnalyzeAndMakeAndPublishRecursiveValue overridesOK isGeneratedEventVal cenv 
     let ty = NewInferenceType () 
         
         
-    let inlineFlag = ComputeInlineFlag memberFlagsOpt isInline isMutable mBinding
+    let inlineFlag = ComputeInlineFlag memberFlagsOpt isInline isMutable
     if isMutable then errorR(Error(FSComp.SR.tcOnlyRecordFieldsAndSimpleLetCanBeMutable(),mBinding))
 
 
@@ -11711,7 +11710,7 @@ let TcAndPublishValSpec (cenv, env, containerInfo: ContainerInfo, declKind, memF
 
             let (ValSpecResult (altActualParent, memberInfoOpt, id, enclosingDeclaredTypars, declaredTypars, ty, partialValReprInfo, declKind)) = valSpecResult
             
-            let inlineFlag = ComputeInlineFlag (memberInfoOpt |> Option.map (fun (ValMemberInfoTransient(memberInfo,_,_)) -> memberInfo.MemberFlags)) isInline mutableFlag m
+            let inlineFlag = ComputeInlineFlag (memberInfoOpt |> Option.map (fun (ValMemberInfoTransient(memberInfo,_,_)) -> memberInfo.MemberFlags)) isInline mutableFlag
             
             let freeInType = freeInTypeLeftToRight cenv.g false ty
 
