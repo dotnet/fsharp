@@ -24,7 +24,7 @@ Provide a description of any known workarounds.
 
 #### Related information 
 
-Provide any related information 
+Provide any related information
 
 * Operating system
 * Branch
