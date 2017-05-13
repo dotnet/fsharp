@@ -12752,14 +12752,14 @@ module IncrClassChecking =
                 //    (c) rely on the fact that there are no 'let' bindings prior to the inherits expr.
                 let inheritsExpr = 
                     match ctorInfo.InstanceCtorSafeThisValOpt with 
-                    | None -> 
-                        inheritsExpr
-                    | Some v -> 
+                    | Some v when v.BaseOrThisInfo <> CtorThisVal -> 
                         // Rewrite the expression to convert it to a load of a field if needed.
                         // We are allowed to load fields from our own object even though we haven't called
                         // the super class constructor yet.
                         let ldexpr = reps.FixupIncrClassExprPhase2C (Some(thisVal)) safeStaticInitInfo thisTyInst (exprForVal m v) 
                         mkInvisibleLet m v ldexpr inheritsExpr
+                    | _ -> 
+                        inheritsExpr
 
                 let spAtSuperInit = (if inheritsIsVisible then SequencePointsAtSeq else SuppressSequencePointOnExprOfSequential)
                 mkSequential spAtSuperInit m inheritsExpr ctorBody
