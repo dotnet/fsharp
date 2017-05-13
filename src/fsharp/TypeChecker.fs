@@ -9405,7 +9405,14 @@ and TcMethodApplication
                             [domainTy]
                     [argTys],returnTy
                         
-            let lambdaVarsAndExprs = curriedArgTys |> List.mapiSquared (fun i j ty -> mkCompGenLocal mMethExpr ("arg"+string i+string j) ty)
+            let lambdaVarsAndExprs = 
+                match curriedArgTys with
+                | [] -> []
+                | [[ty]] -> [[mkCompGenLocal mMethExpr "x" ty]]
+                | _ ->
+                    curriedArgTys 
+                    |> List.mapiSquared (fun i j ty -> mkCompGenLocal mMethExpr ("arg" + string i + string j) ty)
+
             let unnamedCurriedCallerArgs = lambdaVarsAndExprs |> List.mapSquared (fun (_,e) -> CallerArg(tyOfExpr cenv.g e,e.Range,false,e))
             let namedCurriedCallerArgs = lambdaVarsAndExprs |> List.map (fun _ -> [])
             let lambdaVars = List.mapSquared fst lambdaVarsAndExprs
