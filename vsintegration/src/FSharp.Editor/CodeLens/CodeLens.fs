@@ -28,6 +28,7 @@ open Microsoft.VisualStudio.Text.Tagging
 open System.Collections.Concurrent
 open System.Collections
 open System.Windows.Media.Animation
+open System.Globalization
 
 open Microsoft.VisualStudio.FSharp.Editor.Logging
 
@@ -61,6 +62,21 @@ type internal CodeLensTagger
     let mutable codeLensLayer: IAdornmentLayer option = None
     let mutable recentFirstVsblLineNmbr, recentLastVsblLineNmbr = 0, 0
     let mutable updated = false
+
+    let candidate = "abcdefghijklmnopqrstuvwxyz->ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    
+    let defaultTextBlock = new TextBlock(Background = Brushes.Transparent, Opacity = 0.5, TextTrimming = TextTrimming.WordEllipsis)
+    do DependencyObjectExtensions.SetDefaultTextProperties(defaultTextBlock, formatMap.Value)
+
+    let MeasureString candidate (textBox:TextBlock)=
+        let formattedText = 
+            FormattedText(candidate, CultureInfo.CurrentUICulture, FlowDirection.LeftToRight,
+                Typeface(textBox.FontFamily, textBox.FontStyle, textBox.FontWeight, textBox.FontStretch),
+                textBox.FontSize, Brushes.Black)
+        Size(formattedText.Width, formattedText.Height)
+
+    let MeasureTextBox textBox =
+        MeasureString candidate textBox
 
     let layoutTagToFormatting (layoutTag: LayoutTag) =
         layoutTag
@@ -367,7 +383,8 @@ type internal CodeLensTagger
                 for tagSpan in translatedSpans do
                     let line = buffer.CurrentSnapshot.GetLineFromPosition(tagSpan.Start.Position)
                     if codeLensResults.ContainsKey(line.GetText()) then
-                        yield TagSpan(tagSpan, CodeLensTag(0., 12., 0., 0., 0., PositionAffinity.Predecessor, this, this)) :> ITagSpan<CodeLensTag>
+                        let size = MeasureTextBox defaultTextBlock
+                        yield TagSpan(tagSpan, CodeLensTag(0., size.Height, 0., 0., 0., PositionAffinity.Predecessor, this, this)) :> ITagSpan<CodeLensTag>
             }
 
 [<Export(typeof<IWpfTextViewCreationListener>)>]
