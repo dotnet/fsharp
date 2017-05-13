@@ -208,17 +208,6 @@ type internal FSharpQuickInfoProvider
                     XmlDocumentation.BuildDataTipText(documentationBuilder, ignore, sigDocumentation.Add, ignore, ignore, ignore, sigTooltip.StructuredText)
                     XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, targetDocumentation.Add, typeParameterMap.Add, exceptions.Add, usage.Add, targetTooltip.StructuredText)
 
-                    let width = 
-                        mainDescription
-                        |> Seq.append targetDocumentation
-                        |> Seq.append exceptions
-                        |> Seq.append usage
-                        |> Seq.append sigDocumentation
-                        |> Seq.append typeParameterMap
-                        |> Seq.map (fun x -> x.Text.Length)
-                        |> Seq.max
-
-                    let seperator = TaggedTextOps.tag Text (String.replicate width "-")  
                     let lineBreak = TaggedTextOps.tag LineBreak "\n"
 
                     // get whitespace nomalized documentation text
@@ -239,8 +228,6 @@ type internal FSharpQuickInfoProvider
                               yield! sigDocumentation
                           | Some _, Some _ -> 
                               yield! sigDocumentation
-                              yield lineBreak
-                              yield seperator
                               yield lineBreak
                               yield! targetDocumentation ]
                     let glyph = Tokenizer.GetGlyphForSymbol(targetTooltip.Symbol, targetTooltip.SymbolKind)
