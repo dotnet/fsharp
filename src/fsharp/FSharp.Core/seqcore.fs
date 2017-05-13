@@ -186,15 +186,6 @@ namespace Microsoft.FSharp.Collections.SeqComposition
     | NotStarted = 1
     | Finished   = 2
 
-    type Result<'T>() =
-        inherit Folder<'T,'T>(Unchecked.defaultof<'T>)
-
-        member val SeqState = SeqProcessNextStates.NotStarted with get, set
-
-        override this.ProcessNext (input:'T) : bool =
-            this.Result <- input
-            true
-
     type EmptyEnumerator<'T>() =
         let current () = failwith "library implementation error: Current should never be called"
 
@@ -212,89 +203,6 @@ namespace Microsoft.FSharp.Collections.SeqComposition
     type EmptyEnumerators<'T>() =
         static let element : IEnumerator<'T> = upcast (new EmptyEnumerator<'T> ())
         static member Element = element
-
-    [<AbstractClass>]
-    type EnumeratorBase<'T>(result:Result<'T>, activity:Activity) =
-        interface IDisposable with
-            member __.Dispose () : unit =
-                activity.ChainDispose ()
-
-        interface IEnumerator with
-            member this.Current : obj = box (this :> IEnumerator<'T>).Current
-            member __.MoveNext () = failwith "library implementation error: derived class should implement (should be abstract)"
-            member __.Reset () : unit = noReset ()
-
-        interface IEnumerator<'T> with
-            member __.Current =
-                if result.SeqState = SeqProcessNextStates.InProcess then result.Result
-                else
-                    match result.SeqState with
-                    | SeqProcessNextStates.NotStarted -> notStarted()
-                    | SeqProcessNextStates.Finished -> alreadyFinished()
-                    | _ -> failwith "library implementation error: all states should have been handled"
-
-    type VanillaEnumerator<'T,'U>(source:IEnumerator<'T>, activity:Activity<'T,'U>, result:Result<'U>) =
-        inherit EnumeratorBase<'U>(result, activity)
-
-        let rec moveNext () =
-            if (result.HaltedIdx = 0) && source.MoveNext () then
-                if activity.ProcessNext source.Current then
-                    true
-                else
-                    moveNext ()
-            else
-                result.SeqState <- SeqProcessNextStates.Finished
-                activity.ChainComplete result.HaltedIdx
-                false
-
-        interface IEnumerator with
-            member __.MoveNext () =
-                result.SeqState <- SeqProcessNextStates.InProcess
-                moveNext ()
-
-        interface IDisposable with
-            member __.Dispose () =
-                try
-                    source.Dispose ()
-                finally
-                    activity.ChainDispose ()
-
-    type ConcatEnumerator<'T,'U,'Collection when 'Collection :> IEnumerable<'T>> (sources:IEnumerable<'Collection>, activity:Activity<'T,'U>, result:Result<'U>) =
-        inherit EnumeratorBase<'U>(result, activity)
-
-        let main = sources.GetEnumerator ()
-
-        let mutable active = EmptyEnumerators.Element
-
-        let rec moveNext () =
-            if result.HaltedIdx <> 0 then false
-            else
-                if active.MoveNext () then
-                    if activity.ProcessNext active.Current then
-                        true
-                    else
-                        moveNext ()
-                elif main.MoveNext () then
-                    active.Dispose ()
-                    active <- main.Current.GetEnumerator ()
-                    moveNext ()
-                else
-                    result.SeqState <- SeqProcessNextStates.Finished
-                    activity.ChainComplete result.HaltedIdx
-                    false
-
-        interface IEnumerator with
-            member __.MoveNext () =
-                result.SeqState <- SeqProcessNextStates.InProcess
-                moveNext ()
-
-        interface IDisposable with
-            member __.Dispose () =
-                try
-                    main.Dispose ()
-                    active.Dispose ()
-                finally
-                    activity.ChainDispose ()
 
     [<AbstractClass>]
     type EnumerableBase<'T> () =
@@ -336,14 +244,78 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         member __.Compose next = ComposedFactory.Combine transformFactory next
 
         member __.PipeIdx = pipeIdx
+    
+    and [<AbstractClass>] EnumeratorBase<'T>() =
+        inherit Folder<'T,'T>(Unchecked.defaultof<'T>)
+
+        member val SeqState = SeqProcessNextStates.NotStarted with get, set
+        abstract Activity : Activity
+
+        override this.ProcessNext (input:'T) : bool =
+            this.Result <- input
+            true
+
+        interface IDisposable with
+            member this.Dispose () : unit =
+                this.Activity.ChainDispose ()
+
+        interface IEnumerator with
+            member this.Current : obj = box (this :> IEnumerator<'T>).Current
+            member __.MoveNext () = failwith "library implementation error: derived class should implement (should be abstract)"
+            member __.Reset () : unit = noReset ()
+
+        interface IEnumerator<'T> with
+            member this.Current =
+                if this.SeqState = SeqProcessNextStates.InProcess then this.Result
+                else
+                    match this.SeqState with
+                    | SeqProcessNextStates.NotStarted -> notStarted()
+                    | SeqProcessNextStates.Finished -> alreadyFinished()
+                    | _ -> failwith "library implementation error: all states should have been handled"
+
+    and VanillaEnumerator<'T,'U> private (source:IEnumerator<'T>) =
+        inherit EnumeratorBase<'U>()
+
+        let mutable activity = Unchecked.defaultof<Activity<'T,'U>>
+
+        member __.FinaliseConstruct(activity':Activity<'T,'U>) =
+            activity <- activity'
+
+        override this.Activity = upcast activity
+
+        member private this.MoveNext () =
+            if this.HaltedIdx = 0 && source.MoveNext () then
+                if activity.ProcessNext source.Current then
+                    true
+                else
+                    this.MoveNext ()
+            else
+                this.SeqState <- SeqProcessNextStates.Finished
+                activity.ChainComplete this.HaltedIdx
+                false
+
+        interface IEnumerator with
+            member this.MoveNext () =
+                this.SeqState <- SeqProcessNextStates.InProcess
+                this.MoveNext ()
+
+        interface IDisposable with
+            member __.Dispose () =
+                try
+                    source.Dispose ()
+                finally
+                    activity.ChainDispose ()
+
+        static member Construct (source:IEnumerator<'T>) (factory:SeqFactoryBase<'T,'U>) : IEnumerator<'U> =
+            let enumerator = new VanillaEnumerator<'T,'U>(source)
+            enumerator.FinaliseConstruct (factory.CreateActivityPipeline enumerator)
+            upcast enumerator
 
     and VanillaEnumerable<'T,'U>(enumerable:IEnumerable<'T>, transformFactory:ITransformFactory<'T,'U>, pipeIdx:PipeIdx) =
         inherit SeqFactoryBase<'T,'U>(transformFactory, pipeIdx)
 
         interface IEnumerable<'U> with
-            member this.GetEnumerator () : IEnumerator<'U> =
-                let result = Result<'U> ()
-                upcast (new VanillaEnumerator<'T,'U>(enumerable.GetEnumerator(), this.CreateActivityPipeline result, result))
+            member this.GetEnumerator () = VanillaEnumerator<'T,'U>.Construct (enumerable.GetEnumerator()) this
 
         interface ISeq<'U> with
             member this.PushTransform (next:ITransformFactory<'U,'V>) : ISeq<'V> =
@@ -395,13 +367,58 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         override this.ChainDispose () =
             consumer.ChainDispose ()
 
+    and ConcatEnumerator<'T,'U,'Collection when 'Collection :> IEnumerable<'T>> private (sources:IEnumerable<'Collection>) =
+        inherit EnumeratorBase<'U>()
+
+        let main = sources.GetEnumerator ()
+        let mutable active = EmptyEnumerators.Element
+        let mutable activity = Unchecked.defaultof<Activity<'T,'U>>
+
+        override this.Activity = upcast activity
+
+        member __.FinaliseConstruct(activity':Activity<'T,'U>) =
+            activity <- activity'
+
+        member private this.MoveNext () =
+            if this.HaltedIdx <> 0 then false
+            else
+                if active.MoveNext () then
+                    if activity.ProcessNext active.Current then
+                        true
+                    else
+                        this.MoveNext ()
+                elif main.MoveNext () then
+                    active.Dispose ()
+                    active <- main.Current.GetEnumerator ()
+                    this.MoveNext ()
+                else
+                    this.SeqState <- SeqProcessNextStates.Finished
+                    activity.ChainComplete this.HaltedIdx
+                    false
+
+        interface IEnumerator with
+            member this.MoveNext () =
+                this.SeqState <- SeqProcessNextStates.InProcess
+                this.MoveNext ()
+
+        interface IDisposable with
+            member __.Dispose () =
+                try
+                    main.Dispose ()
+                    active.Dispose ()
+                finally
+                    activity.ChainDispose ()
+
+        static member Construct (sources:IEnumerable<'Collection>) (factory:SeqFactoryBase<'T,'U>) : IEnumerator<'U> =
+            let enumerator = new ConcatEnumerator<'T,'U,'Collection>(sources)
+            enumerator.FinaliseConstruct (factory.CreateActivityPipeline enumerator)
+            upcast enumerator
+
     and ConcatEnumerable<'T,'U,'Collection when 'Collection :> ISeq<'T>> (sources:ISeq<'Collection>, transformFactory:ITransformFactory<'T,'U>, pipeIdx:PipeIdx) =
         inherit SeqFactoryBase<'T,'U>(transformFactory, pipeIdx)
 
         interface IEnumerable<'U> with
-            member this.GetEnumerator () : IEnumerator<'U> =
-                let result = Result<'U> ()
-                upcast (new ConcatEnumerator<'T,'U,'Collection>(sources, this.CreateActivityPipeline result, result))
+            member this.GetEnumerator () = ConcatEnumerator<'T,'U,'Collection>.Construct sources this
 
         interface ISeq<'U> with
             member this.PushTransform (next:ITransformFactory<'U,'V>) : ISeq<'V> =
@@ -427,18 +444,17 @@ namespace Microsoft.FSharp.Collections.SeqComposition
     and ThinConcatEnumerable<'T, 'Sources, 'Collection when 'Collection :> ISeq<'T>> (sources:'Sources, preEnumerate:'Sources->ISeq<'Collection>) =
         inherit EnumerableBase<'T>()
 
+        member private __.Fatten : ISeq<'T> = upcast (ConcatEnumerable<'T,'T,'Collection>(preEnumerate sources, IdentityFactory.Instance, 1))
+
         interface IEnumerable<'T> with
-            member this.GetEnumerator () : IEnumerator<'T> =
-                let result = Result<'T> ()
-                upcast (new ConcatEnumerator<'T,'T,'Collection> (preEnumerate sources, result, result))
+            member this.GetEnumerator () = this.Fatten.GetEnumerator ()
 
         interface ISeq<'T> with
             member this.PushTransform (next:ITransformFactory<'T,'U>) : ISeq<'U> =
                 upcast (ConcatEnumerable<'T,'V,'Collection>(preEnumerate sources, next, 1))
 
             member this.Fold<'Result> (createFolder:PipeIdx->Folder<'T,'Result>) =
-                let fat : ISeq<'T> = upcast (ConcatEnumerable<'T,'T,'Collection>(preEnumerate sources, IdentityFactory.Instance, 1))
-                fat.Fold createFolder
+                this.Fatten.Fold createFolder
 
     and AppendEnumerable<'T> (sources:list<ISeq<'T>>) =
         inherit ThinConcatEnumerable<'T, list<ISeq<'T>>, ISeq<'T>>(sources, fun sources -> upcast (List.rev sources))
@@ -511,35 +527,44 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                     result.ChainDispose ()
                 result.Result
 
-    type ArrayEnumerator<'T,'U>(array:array<'T>, activity:Activity<'T,'U>, result:Result<'U>) =
-        inherit EnumeratorBase<'U>(result, activity)
+    type ArrayEnumerator<'T,'U> private (array:array<'T>) =
+        inherit EnumeratorBase<'U>()
 
         let mutable idx = 0
+        let mutable activity = Unchecked.defaultof<Activity<'T,'U>>
 
-        let rec moveNext () =
-            if (result.HaltedIdx = 0) && idx < array.Length then
+        member __.FinaliseConstruct(activity':Activity<'T,'U>) =
+            activity <- activity'
+
+        override this.Activity = upcast activity
+
+        member private this.MoveNext () =
+            if this.HaltedIdx = 0 && idx < array.Length then
                 idx <- idx+1
                 if activity.ProcessNext array.[idx-1] then
                     true
                 else
-                    moveNext ()
+                    this.MoveNext ()
             else
-                result.SeqState <- SeqProcessNextStates.Finished
-                activity.ChainComplete result.HaltedIdx
+                this.SeqState <- SeqProcessNextStates.Finished
+                activity.ChainComplete this.HaltedIdx
                 false
 
         interface IEnumerator with
-            member __.MoveNext () =
-                result.SeqState <- SeqProcessNextStates.InProcess
-                moveNext ()
+            member this.MoveNext () =
+                this.SeqState <- SeqProcessNextStates.InProcess
+                this.MoveNext ()
+
+        static member Construct (array:array<'T>) (factory:SeqFactoryBase<'T,'U>) : IEnumerator<'U> =
+            let enumerator = new ArrayEnumerator<'T,'U>(array)
+            enumerator.FinaliseConstruct (factory.CreateActivityPipeline enumerator)
+            upcast enumerator
 
     type ArrayEnumerable<'T,'U>(array:array<'T>, transformFactory:ITransformFactory<'T,'U>, pipeIdx:PipeIdx) =
         inherit SeqFactoryBase<'T,'U>(transformFactory, pipeIdx)
 
         interface IEnumerable<'U> with
-            member this.GetEnumerator () : IEnumerator<'U> =
-                let result = Result<'U> ()
-                upcast (new ArrayEnumerator<'T,'U>(array, this.CreateActivityPipeline result, result))
+            member this.GetEnumerator () = ArrayEnumerator<'T,'U>.Construct array this
 
         interface ISeq<'U> with
             member this.PushTransform (next:ITransformFactory<'U,'V>) : ISeq<'V> =
@@ -588,35 +613,44 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                     result.ChainDispose ()
                 result.Result
 
-    type ResizeArrayEnumerator<'T,'U>(array:ResizeArray<'T>, activity:Activity<'T,'U>, result:Result<'U>) =
-        inherit EnumeratorBase<'U>(result, activity)
+    type ResizeArrayEnumerator<'T,'U> private (array:ResizeArray<'T>) =
+        inherit EnumeratorBase<'U>()
 
         let mutable idx = 0
+        let mutable activity = Unchecked.defaultof<Activity<'T,'U>>
 
-        let rec moveNext () =
-            if (result.HaltedIdx = 0) && idx < array.Count then
+        member __.FinaliseConstruct(activity':Activity<'T,'U>) =
+            activity <- activity'
+
+        override this.Activity = upcast activity
+
+        member private this.MoveNext () =
+            if this.HaltedIdx = 0 && idx < array.Count then
                 idx <- idx+1
                 if activity.ProcessNext array.[idx-1] then
                     true
                 else
-                    moveNext ()
+                    this.MoveNext ()
             else
-                result.SeqState <- SeqProcessNextStates.Finished
-                activity.ChainComplete result.HaltedIdx
+                this.SeqState <- SeqProcessNextStates.Finished
+                activity.ChainComplete this.HaltedIdx
                 false
 
         interface IEnumerator with
-            member __.MoveNext () =
-                result.SeqState <- SeqProcessNextStates.InProcess
-                moveNext ()
+            member this.MoveNext () =
+                this.SeqState <- SeqProcessNextStates.InProcess
+                this.MoveNext ()
+
+        static member Construct (array:ResizeArray<'T>) (factory:SeqFactoryBase<'T,'U>) : IEnumerator<'U> =
+            let enumerator = new ResizeArrayEnumerator<'T,'U>(array)
+            enumerator.FinaliseConstruct (factory.CreateActivityPipeline enumerator)
+            upcast enumerator
 
     type ResizeArrayEnumerable<'T,'U>(resizeArray:ResizeArray<'T>, transformFactory:ITransformFactory<'T,'U>, pipeIdx:PipeIdx) =
         inherit SeqFactoryBase<'T,'U>(transformFactory, pipeIdx)
 
         interface IEnumerable<'U> with
-            member this.GetEnumerator () : IEnumerator<'U> =
-                let result = Result<'U> ()
-                upcast (new ResizeArrayEnumerator<'T,'U>(resizeArray, this.CreateActivityPipeline result, result))
+            member this.GetEnumerator () = ResizeArrayEnumerator<'T,'U>.Construct resizeArray this
 
         interface ISeq<'U> with
             member this.PushTransform (next:ITransformFactory<'U,'V>) : ISeq<'V> =
@@ -641,13 +675,20 @@ namespace Microsoft.FSharp.Collections.SeqComposition
 
         override __.Length () = resizeArray.Count
 
-    type UnfoldEnumerator<'T,'U,'State>(generator:'State->option<'T*'State>, state:'State, activity:Activity<'T,'U>, result:Result<'U>) =
-        inherit EnumeratorBase<'U>(result, activity)
+    type UnfoldEnumerator<'T,'U,'State> private (generator:'State->option<'T*'State>, state:'State) =
+        inherit EnumeratorBase<'U>()
 
         let mutable current = state
 
-        let rec moveNext () =
-            if result.HaltedIdx <> 0 then
+        let mutable activity = Unchecked.defaultof<Activity<'T,'U>>
+
+        member __.FinaliseConstruct(activity':Activity<'T,'U>) =
+            activity <- activity'
+
+        override this.Activity = upcast activity
+
+        member private this.MoveNext () =
+            if this.HaltedIdx <> 0 then
                 false
             else
                 match generator current with
@@ -656,21 +697,24 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                     if activity.ProcessNext item then
                         true
                     else
-                        moveNext ()
+                        this.MoveNext ()
                 | _ -> false
 
         interface IEnumerator with
-            member __.MoveNext () =
-                result.SeqState <- SeqProcessNextStates.InProcess
-                moveNext ()
+            member this.MoveNext () =
+                this.SeqState <- SeqProcessNextStates.InProcess
+                this.MoveNext ()
+
+        static member Construct (generator:'State->option<'T*'State>) (state:'State) (factory:SeqFactoryBase<'T,'U>) : IEnumerator<'U> =
+            let enumerator = new UnfoldEnumerator<'T,'U,'State>(generator, state)
+            enumerator.FinaliseConstruct (factory.CreateActivityPipeline enumerator)
+            upcast enumerator
 
     type UnfoldEnumerable<'T,'U,'GeneratorState>(generator:'GeneratorState->option<'T*'GeneratorState>, state:'GeneratorState, transformFactory:ITransformFactory<'T,'U>, pipeIdx:PipeIdx) =
         inherit SeqFactoryBase<'T,'U>(transformFactory, pipeIdx)
 
         interface IEnumerable<'U> with
-            member this.GetEnumerator () : IEnumerator<'U> =
-                let result = Result<'U> ()
-                upcast (new UnfoldEnumerator<'T,'U,'GeneratorState>(generator, state, this.CreateActivityPipeline result, result))
+            member this.GetEnumerator () = UnfoldEnumerator<'T,'U,'GeneratorState>.Construct generator state this
 
         interface ISeq<'U> with
             member this.PushTransform (next:ITransformFactory<'U,'V>) : ISeq<'V> =
@@ -703,13 +747,8 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         else
             System.Int32.MaxValue
 
-    type InitEnumerator<'T,'U>(count:Nullable<int>, f:int->'T, activity:Activity<'T,'U>, result:Result<'U>) =
-        inherit EnumeratorBase<'U>(result, activity)
-
-        let isSkipping =
-            match box activity with
-            | :? ISkipable as skip -> skip.CanSkip
-            | _ -> fun () -> false
+    type InitEnumerator<'T,'U>(count:Nullable<int>, f:int->'T) =
+        inherit EnumeratorBase<'U>()
 
         let terminatingIdx =
             getInitTerminatingIdx count
@@ -717,8 +756,22 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         let mutable maybeSkipping = true
         let mutable idx = -1
 
-        let rec moveNext () =
-            if result.HaltedIdx = 0 && idx < terminatingIdx then
+        let mutable activity = Unchecked.defaultof<Activity<'T,'U>>
+        let mutable isSkipping = Unchecked.defaultof<unit->bool>
+
+        member __.FinaliseConstruct(activity':Activity<'T,'U>) =
+            activity <- activity'
+
+            isSkipping <- 
+                match box activity with
+                | :? ISkipable as skip -> skip.CanSkip
+                | _ -> fun () -> false
+
+
+        override this.Activity = upcast activity
+
+        member private this.MoveNext () =
+            if this.HaltedIdx = 0 && idx < terminatingIdx then
                 idx <- idx + 1
 
                 if maybeSkipping then
@@ -727,30 +780,33 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                     maybeSkipping <- isSkipping ()
 
                 if maybeSkipping then
-                    moveNext ()
+                    this.MoveNext ()
                 elif activity.ProcessNext (f idx) then
                     true
                 else
-                    moveNext ()
-            elif result.HaltedIdx = 0 && idx = System.Int32.MaxValue then
+                    this.MoveNext ()
+            elif this.HaltedIdx = 0 && idx = System.Int32.MaxValue then
                 raise <| System.InvalidOperationException (SR.GetString(SR.enumerationPastIntMaxValue))
             else
-                result.SeqState <- SeqProcessNextStates.Finished
-                activity.ChainComplete result.HaltedIdx
+                this.SeqState <- SeqProcessNextStates.Finished
+                activity.ChainComplete this.HaltedIdx
                 false
 
         interface IEnumerator with
-            member __.MoveNext () =
-                result.SeqState <- SeqProcessNextStates.InProcess
-                moveNext ()
+            member this.MoveNext () =
+                this.SeqState <- SeqProcessNextStates.InProcess
+                this.MoveNext ()
+
+        static member Construct (count:Nullable<int>) (f:int->'T) (factory:SeqFactoryBase<'T,'U>) : IEnumerator<'U> =
+            let enumerator = new InitEnumerator<'T,'U>(count, f)
+            enumerator.FinaliseConstruct (factory.CreateActivityPipeline enumerator)
+            upcast enumerator
 
     type InitEnumerable<'T,'U>(count:Nullable<int>, f:int->'T, transformFactory:ITransformFactory<'T,'U>, pipeIdx:PipeIdx) =
         inherit SeqFactoryBase<'T,'U>(transformFactory, pipeIdx)
 
         interface IEnumerable<'U> with
-            member this.GetEnumerator () : IEnumerator<'U> =
-                let result = Result<'U> ()
-                upcast (new InitEnumerator<'T,'U>(count, f, this.CreateActivityPipeline result, result))
+            member this.GetEnumerator () = InitEnumerator<'T,'U>.Construct count f this
 
         interface ISeq<'U> with
             member this.PushTransform (next:ITransformFactory<'U,'V>) : ISeq<'V> =
@@ -1189,9 +1245,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         inherit SeqFactoryBase<'T,'U>(transformFactory, pipeIdx)
 
         interface IEnumerable<'U> with
-            member this.GetEnumerator () : IEnumerator<'U> =
-                let result = Result<'U> ()
-                upcast (new VanillaEnumerator<'T,'U>(generatedSequence.GetFreshEnumerator(), this.CreateActivityPipeline result, result))
+            member this.GetEnumerator () = VanillaEnumerator<'T,'U>.Construct (generatedSequence.GetFreshEnumerator()) this
 
         interface ISeq<'U> with
             member this.PushTransform (next:ITransformFactory<'U,'V>) : ISeq<'V> =
