@@ -1,0 +1,18 @@
+﻿<ui:DialogWindowVersioningWorkaround
+    x:Class="Microsoft.VisualStudioTools.OverwriteFileDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="clr-namespace:Microsoft.VisualStudioTools"
+        x:ClassModifier="internal"
+        ShowInTaskbar="False"
+        Title="Merge files or folders..." Height="179" Width="470" WindowStartupLocation="CenterOwner" ResizeMode="NoResize" SizeToContent="WidthAndHeight">
+    <StackPanel>
+        <TextBox x:Name="_message" Margin="10,10,10,10" Height="86" BorderThickness="0" TextWrapping="WrapWithOverflow" Background="{x:Null}" IsReadOnly="True"/>
+        <CheckBox x:Name="_allItems" Content="Do this for all items"  Margin="10,0,0,0" Height="15" />
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button x:Name="_yes" Content="_Yes" Margin="0,0,5,5" Click="YesClick" Height="20" Width="75" DockPanel.Dock="Right" />
+            <Button x:Name="_no" Content="_No" Margin="0,0,5,5" IsDefault="True" Click="NoClick" Height="20" Width="75" DockPanel.Dock="Right"/>
+            <Button x:Name="_cancel" Content="C_ancel" Margin="0,0,5,5" IsCancel="True" Click="CancelClick" Height="20" Width="75" DockPanel.Dock="Right"/>
+        </StackPanel>
+    </StackPanel>
+</ui:DialogWindowVersioningWorkaround>

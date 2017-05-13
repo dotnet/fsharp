@@ -1,0 +1,26 @@
+﻿<ui:DialogWindowVersioningWorkaround
+    x:Class="Microsoft.VisualStudioTools.Project.TaskProgressBar"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    xmlns:ui="clr-namespace:Microsoft.VisualStudioTools"
+    mc:Ignorable="d" 
+    Height="180" Width="550"
+    x:ClassModifier="internal"
+    WindowStartupLocation="CenterOwner"
+    ShowInTaskbar="False"
+    WindowStyle="None"
+    Background="{x:Static SystemColors.ControlBrush}"
+    TextOptions.TextFormattingMode="Display">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Name="_waitLabel" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <ProgressBar Grid.Row="1" Height="23" Name="_progress" HorizontalAlignment="Stretch" VerticalAlignment="Top" Value="1" />
+        <Button Grid.Row="2" IsCancel="True" Click="_cancelButton_Click" Width="86" Height="24">Cancel</Button>
+    </Grid>
+</ui:DialogWindowVersioningWorkaround>

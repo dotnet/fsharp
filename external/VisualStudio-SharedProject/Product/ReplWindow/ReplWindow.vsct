@@ -1,0 +1,325 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+    <!--  This is the file that defines the actual layout and type of the commands.
+        It is divided in different sections (e.g. command definition, command
+        placement, ...), with each defining a specific set of properties.
+        See the comment before each section for more details about how to
+        use it. -->
+
+    <!--  The VSCT compiler (the tool that translates this file into the binary 
+        format that VisualStudio will consume) has the ability to run a preprocessor 
+        on the vsct file; this preprocessor is (usually) the C++ preprocessor, so 
+        it is possible to define includes and macros with the same syntax used 
+        in C++ files. Using this ability of the compiler here, we include some files 
+        defining some of the constants that we will use inside the file. -->
+
+    <!--This is the file that defines the IDs for all the commands exposed by VisualStudio. -->
+    <Extern href="stdidcmd.h"/>
+
+    <!--This header contains the command ids for the menus provided by the shell. -->
+    <Extern href="vsshlids.h"/>
+
+
+    <KeyBindings>
+        <KeyBinding guid="guidReplWindowCmdSet" id="cmdidSmartExecute" key1="VK_RETURN" mod1="C" editor="guidReplWindow" />
+        <KeyBinding guid="guidReplWindowCmdSet" id="cmdidBreakRepl" key1="VK_CANCEL" mod1="C" editor="guidReplWindow" />
+        <KeyBinding guid="guidReplWindowCmdSet" id="cmdidReplHistoryNext"  key1="VK_DOWN" mod1="Alt" editor="guidReplWindow" />
+        <KeyBinding guid="guidReplWindowCmdSet" id="cmdidReplHistoryPrevious" key1="VK_UP" mod1="Alt" editor="guidReplWindow" />
+        <KeyBinding guid="guidReplWindowCmdSet" id="cmdidBreakLine" key1="VK_RETURN" mod1="S" editor="guidReplWindow" />
+        <KeyBinding guid="guidReplWindowCmdSet" id="comboIdReplScopes" key1="S" mod1="A" editor="guidReplWindow" />
+        <KeyBinding guid="guidReplWindowCmdSet" id="cmdidReplSearchHistoryNext" key1="VK_RIGHT" mod1="Alt" editor="guidReplWindow" />
+        <KeyBinding guid="guidReplWindowCmdSet" id="cmdidReplSearchHistoryPrevious" key1="VK_LEFT" mod1="Alt" editor="guidReplWindow" />
+
+    </KeyBindings>
+
+
+
+    <!--The Commands section is where we the commands, menus and menu groups are defined.
+      This section uses a Guid to identify the package that provides the command defined inside it. -->
+    <Commands package="guidReplWindowPkg">
+        <!-- Inside this section we have different sub-sections: one for the menus, another  
+    for the menu groups, one for the buttons (the actual commands), one for the combos 
+    and the last one for the bitmaps used. Each element is identified by a command id that  
+    is a unique pair of guid and numeric identifier; the guid part of the identifier is usually  
+    called "command set" and is used to group different command inside a logically related  
+    group; your package should define its own command set in order to avoid collisions  
+    with command ids defined by other packages. -->
+
+
+        <!-- In this section you can define new menu groups. A menu group is a container for 
+         other menus or buttons (commands); from a visual point of view you can see the 
+         group as the part of a menu contained between two lines. The parent of a group 
+         must be a menu. -->
+        <Groups>
+            <Group guid="guidReplWindowCmdSet" id="replToolbarGroup" priority="0x0000">
+                <Parent guid="guidReplWindowCmdSet" id="menuIdReplToolbar"/>
+            </Group>
+            <Group guid="guidReplWindowCmdSet" id="ConsoleMenuGroup" priority="0x100">
+                <Parent guid="guidReplWindowCmdSet" id="menuIdConsoleContextMenu"/>
+            </Group>
+            <Group guid="guidReplWindowCmdSet" id="ConsoleMenuEditGroup" priority="0x200">
+                <Parent guid="guidReplWindowCmdSet" id="menuIdConsoleContextMenu"/>
+            </Group>
+            <!-- Context menu, clear group -->
+            <Group guid="guidReplWindowCmdSet" id="ConsoleMenuClearGroup" priority="0x300">
+                <Parent guid="guidReplWindowCmdSet" id="menuIdConsoleContextMenu"/>
+            </Group>
+
+
+        </Groups>
+
+        <Menus>
+            <Menu guid="guidReplWindowCmdSet" id="menuIdConsoleContextMenu" priority="0x0000" type="Context">
+                <Parent guid="guidReplWindowCmdSet" id="0"/>
+                <Strings>
+                    <ButtonText>Interactive Console</ButtonText>
+                    <CommandName>Interactive Console</CommandName>
+                </Strings>
+            </Menu>
+
+            <Menu guid="guidReplWindowCmdSet" id="menuIdReplToolbar" priority="0x0000" type="ToolWindowToolbar">
+                <Parent guid="guidReplWindowCmdSet" id="0"/>
+                <CommandFlag>DefaultDocked</CommandFlag>
+                <CommandFlag>NoToolbarClose</CommandFlag>
+                <CommandFlag>AlwaysCreate</CommandFlag>
+                <CommandFlag>TextChanges</CommandFlag>
+                <Strings>
+                    <ButtonText>Interactive Window</ButtonText>
+                    <CommandName>Interactive Window</CommandName>
+                </Strings>
+            </Menu>
+        </Menus>
+
+        <!--Buttons section. -->
+        <!--This section defines the elements the user can interact with, like a menu command or a button 
+        or combo box in a toolbar. -->
+        <Buttons>
+            <!--To define a menu group you have to specify its ID, the parent menu and its display priority. 
+          The command is visible and enabled by default. If you need to change the visibility, status, etc, you can use
+          the CommandFlag node.
+          You can add more than one CommandFlag node e.g.:
+              <CommandFlag>DefaultInvisible</CommandFlag>
+              <CommandFlag>DynamicVisibility</CommandFlag>
+          If you do not want an image next to your command, remove the Icon node or set it to <Icon guid="guidOfficeIcon" id="msotcidNoIcon" /> -->
+
+            <Button guid="guidReplWindowCmdSet" id="cmdidBreakRepl" priority="0x0300" type="Button">
+              <Parent guid="guidReplWindowCmdSet" id="ConsoleMenuGroup"/>
+              <Icon guid="guidReplToolbarImages" id="bmpCancelEval" />
+              <CommandFlag>DynamicVisibility</CommandFlag>
+              <CommandFlag>DefaultInvisible</CommandFlag>
+              <Strings>
+                    <CommandName>cmdidBreakRepl</CommandName>
+                    <ButtonText>Cancel Execution</ButtonText>
+                </Strings>
+            </Button>
+
+            <Button guid="guidReplWindowCmdSet" id="cmdidResetRepl" priority="0x0300" type="Button">
+                <Parent guid="guidReplWindowCmdSet" id="ConsoleMenuGroup"/>
+                <Icon guid="guidReplToolbarImages" id="bmpResetSession" />
+                <CommandFlag>DynamicVisibility</CommandFlag>
+                <Strings>
+                    <CommandName>cmdIdResetRepl</CommandName>
+                    <ButtonText>Reset</ButtonText>
+                </Strings>
+            </Button>
+
+            <Button guid="guidReplWindowCmdSet" id="cmdidSmartExecute" priority="0x0300" type="Button">
+                <Parent guid="guidReplWindowCmdSet" id="ConsoleMenuGroup"/>
+                <CommandFlag>DynamicVisibility</CommandFlag>
+                <CommandFlag>DefaultInvisible</CommandFlag>
+                <Strings>
+                    <CommandName>cmdidSmartExecute</CommandName>
+                    <ButtonText>Execute or Paste Input</ButtonText>
+                </Strings>
+            </Button>
+
+            <Button guid="guidReplWindowCmdSet" id="cmdidReplHistoryPrevious" priority="0x0300" type="Button">
+                <Parent guid="guidReplWindowCmdSet" id="ConsoleMenuGroup"/>
+                <CommandFlag>DynamicVisibility</CommandFlag>
+                <CommandFlag>DefaultInvisible</CommandFlag>
+                <Strings>  
+                    <CommandName>cmdidReplHistoryPrevious</CommandName>
+                    <ButtonText>History Previous</ButtonText>
+                </Strings>
+            </Button>
+
+            <Button guid="guidReplWindowCmdSet" id="cmdidReplHistoryNext" priority="0x0300" type="Button">
+                <Parent guid="guidReplWindowCmdSet" id="ConsoleMenuGroup"/>
+                <CommandFlag>DynamicVisibility</CommandFlag>
+                <CommandFlag>DefaultInvisible</CommandFlag>
+                <Strings>
+                    <CommandName>cmdidReplHistoryNext</CommandName>
+                    <ButtonText>History Next</ButtonText>
+                </Strings>
+            </Button>
+
+          <Button guid="guidReplWindowCmdSet" id="cmdidReplSearchHistoryNext" priority="0x0300" type="Button">
+            <Parent guid="guidReplWindowCmdSet" id="ConsoleMenuGroup"/>
+            <CommandFlag>DynamicVisibility</CommandFlag>
+            <CommandFlag>DefaultInvisible</CommandFlag>
+            <Strings>
+              <CommandName>cmdidReplHistoryNext</CommandName>
+              <ButtonText>Search History Next</ButtonText>
+            </Strings>
+          </Button>
+
+          <Button guid="guidReplWindowCmdSet" id="cmdidReplSearchHistoryPrevious" priority="0x0300" type="Button">
+            <Parent guid="guidReplWindowCmdSet" id="ConsoleMenuGroup"/>
+            <CommandFlag>DynamicVisibility</CommandFlag>
+            <CommandFlag>DefaultInvisible</CommandFlag>
+            <Strings>
+              <CommandName>cmdidReplHistoryNext</CommandName>
+              <ButtonText>Search History Previous</ButtonText>
+            </Strings>
+          </Button>
+
+          
+          <Button guid="guidReplWindowCmdSet" id="cmdidReplClearScreen" priority="0x0300" type="Button">
+                <Parent guid="guidReplWindowCmdSet" id="ConsoleMenuClearGroup"/>
+                <Icon guid="guidReplToolbarImages" id="bmpClearScreen" />
+                <Strings>
+                    <CommandName>cmdidReplClearScreen</CommandName>
+                    <ButtonText>Clear Screen</ButtonText>
+                </Strings>
+            </Button>
+
+            <Button guid="guidReplWindowCmdSet" id="cmdidBreakLine" priority="0x0300" type="Button">
+                <Parent guid="guidReplWindowCmdSet" id="ConsoleMenuGroup"/>
+                <CommandFlag>DynamicVisibility</CommandFlag>
+                <CommandFlag>DefaultInvisible</CommandFlag>
+                <Strings>
+                    <CommandName>cmdidBreakLine</CommandName>
+                    <ButtonText>Break Line</ButtonText>
+                </Strings>
+            </Button>
+
+            <!-- Toolbar Buttons -->
+            <Button guid="guidReplWindowCmdSet" id="cmdidReplClearScreen" priority="0x0100" type="Button">
+                <Parent guid="guidReplWindowCmdSet" id="replToolbarGroup"/>
+                <Icon guid="guidReplToolbarImages" id="bmpClearScreen" />
+                <Strings>
+                    <CommandName>Clear Screen</CommandName>
+                    <ButtonText>Clear Screen</ButtonText>
+                </Strings>
+            </Button>
+
+            <Button guid="guidReplWindowCmdSet" id="cmdidResetRepl" priority="0x0200" type="Button">
+                <Parent guid="guidReplWindowCmdSet" id="replToolbarGroup"/>
+                <Icon guid="guidReplToolbarImages" id="bmpResetSession" />
+                <Strings>
+                    <CommandName>cmdIdResetRepl</CommandName>
+                    <ButtonText>Reset</ButtonText>
+                </Strings>
+            </Button>
+
+            <Button guid="guidReplWindowCmdSet" id="cmdidBreakRepl" priority="0x0300" type="Button">
+                <Parent guid="guidReplWindowCmdSet" id="replToolbarGroup"/>
+                <Icon guid="guidReplToolbarImages" id="bmpCancelEval" />
+                <Strings>
+                    <CommandName>cmdidBreakRepl</CommandName>
+                    <ButtonText>Cancel Execution</ButtonText>
+                </Strings>
+            </Button>
+        </Buttons>
+
+        <Combos>
+            <Combo guid="guidReplWindowCmdSet" id="comboIdReplScopes" priority="0x0400" type="DropDownCombo" defaultWidth="130" idCommandList="comboIdReplScopesGetList">
+                <Parent guid="guidReplWindowCmdSet" id="replToolbarGroup"/>
+                <CommandFlag>DynamicVisibility</CommandFlag>
+                <CommandFlag>DefaultInvisible</CommandFlag>
+                <CommandFlag>DefaultDisabled</CommandFlag>
+                <Strings>
+                    <ButtonText>Scopes: </ButtonText>
+                    <ToolTipText>Selects the current file scope that the interactive window is executing against.</ToolTipText>
+                    <CommandName>DropDown Combo</CommandName>
+                    <CanonicalName>DropDown Combo</CanonicalName>
+                </Strings>
+            </Combo>
+        </Combos>
+        <!--The bitmaps section is used to define the bitmaps that are used for the commands.-->
+        <Bitmaps>
+            <!--  The bitmap id is defined in a way that is a little bit different from the others: 
+            the declaration starts with a guid for the bitmap strip, then there is the resource id of the 
+            bitmap strip containing the bitmaps and then there are the numeric ids of the elements used 
+            inside a button definition. An important aspect of this declaration is that the element id 
+            must be the actual index (1-based) of the bitmap inside the bitmap strip. -->
+          <Bitmap guid="guidReplToolbarImages" href="..\Icons\Dev14.0\ReplToolBarImages.bmp" usedList="bmpCancelEval, bmpResetSession, bmpClearScreen"
+                  Condition="Defined(DEV14)"/>
+          <Bitmap guid="guidReplToolbarImages" href="..\Icons\Dev12.0\ReplToolBarImages.bmp" usedList="bmpCancelEval, bmpResetSession, bmpClearScreen"
+                  Condition="Defined(DEV12)"/>
+          <Bitmap guid="guidReplToolbarImages" href="..\Icons\Dev11.0\ReplToolBarImages.bmp" usedList="bmpCancelEval, bmpResetSession, bmpClearScreen"
+                  Condition="Defined(DEV11)"/>
+          <Bitmap guid="guidReplToolbarImages" href="..\Icons\Dev10.0\ReplToolBarImages.png" usedList="bmpCancelEval, bmpResetSession, bmpClearScreen"
+                  Condition="Defined(DEV10)"/>
+        </Bitmaps>
+
+    </Commands>
+
+    <UsedCommands>
+        <UsedCommand guid="guidVSStd97" id="cmdidCut"/>
+        <UsedCommand guid="guidVSStd97" id="cmdidCopy"/>
+        <UsedCommand guid="guidVSStd97" id="cmdidPaste"/>
+        <UsedCommand guid="guidVSStd97" id="cmdidClearPane"/>
+    </UsedCommands>
+
+    <CommandPlacements>
+
+        <!-- Cut/copy/paste group -->
+        <CommandPlacement guid="guidVSStd97" id="cmdidCut" priority="0x0100">
+            <Parent guid="guidReplWindowCmdSet" id="ConsoleMenuEditGroup"/>
+        </CommandPlacement>
+        <CommandPlacement guid="guidVSStd97" id="cmdidCopy" priority="0x0300">
+            <Parent guid="guidReplWindowCmdSet" id="ConsoleMenuEditGroup"/>
+        </CommandPlacement>
+        <CommandPlacement guid="guidVSStd97" id="cmdidPaste" priority="0x0500">
+            <Parent guid="guidReplWindowCmdSet" id="ConsoleMenuEditGroup"/>
+        </CommandPlacement>
+
+        <!-- Context menu, clear group -->
+        <CommandPlacement guid="guidVSStd97" id="cmdidClearPane" priority="0x0200">
+            <Parent guid="guidReplWindowCmdSet" id="ConsoleMenuClearGroup"/>
+        </CommandPlacement>
+    </CommandPlacements>
+
+    <Symbols>
+        <!-- This is the package guid. -->
+        <GuidSymbol name="guidReplWindowPkg" value="{ce8d8e55-ad29-423e-aca2-810d0b16cdc4}" />
+        <GuidSymbol name="guidReplWindow" value="{5adb6033-611f-4d39-a193-57a717115c0f}" />
+
+        <!-- This is the guid used to group the menu commands together -->
+        <GuidSymbol name="guidReplWindowCmdSet" value="{68cb76e6-98c5-464a-aba9-9f2db66fa0fd}">
+            <!-- Commandd -->
+            <IDSymbol name="cmdidSmartExecute" value="0x0103"/>
+            <IDSymbol name="cmdidBreakRepl" value="0x0104"/>
+            <IDSymbol name="cmdidResetRepl" value="0x0105"/>
+            <IDSymbol name="cmdidReplHistoryNext" value="0x0106"/>
+            <IDSymbol name="cmdidReplHistoryPrevious" value="0x0107"/>
+            <IDSymbol name="cmdidReplClearScreen" value="0x0108"/>
+            <IDSymbol name="cmdidBreakLine" value="0x0109"/>
+            <IDSymbol name="cmdidReplSearchHistoryNext" value="0x010A"/>
+            <IDSymbol name="cmdidReplSearchHistoryPrevious" value="0x010B"/>
+
+          <!-- Groups -->
+            <IDSymbol name="ConsoleMenuGroup" value="0x1050" />
+            <IDSymbol name="ConsoleMenuEditGroup" value="0x1051" />
+            <IDSymbol name="ConsoleMenuClearGroup" value="0x1052" />
+            <IDSymbol name="CodeFileGroup" value="0x1053" />
+            <IDSymbol name="replToolbarGroup" value="0x1054"/>
+
+            <!-- Menus -->
+            <IDSymbol name="menuIdReplToolbar" value="0x2000"/>
+            <IDSymbol name="menuIdConsoleContextMenu" value="0x2100" />
+
+            <!-- Combos -->
+            <IDSymbol name="comboIdReplScopes" value="0x3000"/>
+            <IDSymbol name="comboIdReplScopesGetList" value="0x3001"/>
+        </GuidSymbol>
+
+        <GuidSymbol name="guidReplToolbarImages" value="{BF5B77A1-4427-4958-9638-82C4029F1D0C}" >
+            <IDSymbol name="bmpCancelEval" value="0x01" />
+            <IDSymbol name="bmpResetSession" value="0x02" />
+            <IDSymbol name="bmpClearScreen" value="0x03" />
+        </GuidSymbol>
+    </Symbols>
+</CommandTable>

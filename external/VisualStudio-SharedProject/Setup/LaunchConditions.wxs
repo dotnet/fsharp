@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Fragment>
+    <!-- The install path properties are set if the path is available. -->
+    <Property Id="VSINSTALLPATH" Secure="yes">
+      <RegistrySearch Id="VSInstallDir" Root="HKLM" Key="Software\Microsoft\VisualStudio\$(var.VSTargetVersion)\Setup\VS" Name="ProductDir" Type="directory">
+        <DirectorySearch Id="VSInstallDir_Common7_IDE" Path="Common7\IDE" AssignToProperty="yes" Depth="1">
+          <FileSearch Id="VSInstallDir_Common7_IDE_msenv_dll" Name="msenv.dll"/>
+        </DirectorySearch>
+      </RegistrySearch>
+    </Property>
+    <!-- The executable path property is set if we can install into the
+       specific version that is available. 
+    -->
+    <Property Id="DEVENV_PATH" Secure="yes">
+      <DirectorySearch Id="DevEnvDir" Path="[VSINSTALLPATH]" Depth="1">
+        <FileSearch Name="devenv.exe" />
+      </DirectorySearch>
+    </Property>
+  </Fragment>
+  
+  <Fragment>
+    <Property Id="WDINSTALLPATH" Secure="yes">
+      <?ifdef IncludeWDExpress ?>
+      <RegistrySearch Id="WDInstallDir" Root="HKLM" Key="Software\Microsoft\WDExpress\$(var.VSTargetVersion)" Name="InstallDir" Type="directory" />
+      <?endif?>
+    </Property>
+    <!-- The executable path property is set if we can install into the
+       specific version that is available. 
+    -->
+    <Property Id="WDEXPRESS_PATH" Secure="yes">
+      <?ifdef IncludeWDExpress ?>
+      <DirectorySearch Id="WDExpressDir" Path="[WDINSTALLPATH]" Depth="1">
+        <FileSearch Name="WDExpress.exe" MinVersion="$(var.IncludeWDExpress)" />
+      </DirectorySearch>
+      <?endif?>
+    </Property>
+  </Fragment>
+  
+  <Fragment>
+    <Property Id="VWDINSTALLPATH" Secure="yes">
+      <?ifdef IncludeVWDExpress ?>
+      <RegistrySearch Id="VWDInstallDir" Root="HKLM" Key="Software\Microsoft\VWDExpress\$(var.VSTargetVersion)" Name="InstallDir" Type="directory" />
+      <?endif?>
+    </Property>
+    <!-- The executable path property is set if we can install into the
+       specific version that is available. 
+    -->
+    <Property Id="VWDEXPRESS_PATH" Secure="yes">
+      <?ifdef IncludeVWDExpress ?>
+      <DirectorySearch Id="VWDExpressDir" Path="[VWDINSTALLPATH]" Depth="1">
+        <FileSearch Name="VWDExpress.exe" MinVersion="$(var.IncludeVWDExpress)" />
+      </DirectorySearch>
+      <?endif?>
+    </Property>
+  </Fragment>
+
+  <Fragment>
+    <Property Id="VSLAUNCHER" >
+      <DirectorySearch Path="[ProgramFilesFolder]\Common Files\Microsoft Shared\MSEnv" Depth="4" Id="FindVSLauncher">
+        <FileSearch Name="VSLauncher.exe" />
+      </DirectorySearch>
+    </Property>
+  </Fragment>
+
+  <Fragment>
+    <Property Id="VS_PRERELEASE" Secure="yes">
+      <?if "$(var.VSTargetVersion)"="12.0" ?>
+      <DirectorySearch Id="VSDevEnvFilePathSearch" Path="[VSINSTALLPATH]">
+        <FileSearch Id="VSDevEnvFileVersionSearch" Name="devenv.exe" MinVersion="12.0.0.0" MaxVersion="12.0.21004.0"/>
+      </DirectorySearch>
+      <?endif ?>
+    </Property>
+  </Fragment>
+
+</Wix>

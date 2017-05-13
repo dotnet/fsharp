@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+      <_ReplWindowFilesLocation Condition="$(_ReplWindowFilesLocation) == ''">$(BuildRoot)\Common\Product\ReplWindow</_ReplWindowFilesLocation>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(_ReplWindowFilesLocation)\Guids.cs">
+      <Link>Guids.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\ReplMouseProcessor.cs">
+      <Link>ReplMouseProcessor.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\InlineReplAdornmentManager.cs">
+      <Link>Repl\InlineReplAdornmentManager.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\IReplCommand2.cs">
+      <Link>Repl\IReplCommand2.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\Margin\GlyphPrompts.cs">
+      <Link>Repl\GlyphPrompts.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\Margin\PromptMarginVisualManager.cs">
+      <Link>Repl\PromptMarginVisualManager.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\Margin\PromptMargin.cs">
+      <Link>Repl\PromptMargin.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\OutputBuffer.cs">
+      <Link>Repl\OutputBuffer.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\OutputColors.cs">
+      <Link>Repl\OutputColors.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\ReplOutputClassificationFormatDefinitions.cs">
+      <Link>Repl\ReplOutputClassificationFormatDefinitions.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\ReplOutputClassifier.cs">
+      <Link>Repl\ReplOutputClassifier.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\ReplOutputClassifierProvider.cs">
+      <Link>Repl\ReplOutputClassifierProvider.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\ReplOutputContentType.cs">
+      <Link>Repl\ReplOutputContentType.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\CustomTrackingSpan.cs">
+      <Link>Repl\CustomTrackingSpan.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\IContentTypeMetadata.cs">
+      <Link>Repl\IContentTypeMetadata.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\IReplWindowCreationListener.cs">
+      <Link>Repl\IReplWindowCreationListener.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\ReplInput.cs">
+      <Link>Repl\ReplInput.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\Commands\CancelExecutionCommand.cs">
+      <Link>Repl\CancelExecutionCommand.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\Commands\ClearScreenReplCommand.cs">
+      <Link>Repl\ClearScreenReplCommand.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\Commands\EchoReplCommand.cs">
+      <Link>Repl\EchoReplCommand.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\Commands\ResetReplCommand.cs">
+      <Link>Repl\ResetReplCommand.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\Commands\WaitReplCommand.cs">
+      <Link>Repl\WaitReplCommand.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\ReplAggregateClassifier.cs">
+      <Link>Repl\ReplAggregateClassifier.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\ReplAggregateClassifierProvider.cs">
+      <Link>Repl\ReplAggregateClassifierProvider.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\ReplConstants.cs">
+      <Link>Repl\ReplConstants.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\ExecutionResult.cs">
+      <Link>Repl\ExecutionResult.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\History.cs">
+      <Link>Repl\History.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\IMultipleScopeEvaluator.cs">
+      <Link>Repl\IMultipleScopeEvaluator.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\InlineReplAdornment.cs">
+      <Link>Repl\InlineReplAdornment.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\IReplCommand.cs">
+      <Link>Repl\IReplCommand.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\IReplEvaluator.cs">
+      <Link>Repl\IReplEvaluator.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\IReplEvaluatorProvider.cs">
+      <Link>Repl\IReplEvaluatorProvider.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\IReplWindow.cs">
+      <Link>Repl\IReplWindow.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\IReplWindowProvider.cs">
+      <Link>Repl\IReplWindowProvider.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\ReplContentType.cs">
+      <Link>Repl\ReplContentType.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\ReplOptions.cs">
+      <Link>Repl\ReplOptions.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\ReplRoleAttribute.cs">
+      <Link>Repl\ReplRoleAttribute.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\ReplWindow.cs">
+      <Link>Repl\ReplWindow.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\ReplWindowExtensions.cs">
+      <Link>Repl\ReplWindowExtensions.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\ReplWindowProvider.cs">
+      <Link>Repl\ReplWindowProvider.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\ResizingAdorner.cs">
+      <Link>Repl\ResizingAdorner.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\Repl\ZoomableInlineAdornment.cs">
+      <Link>Repl\ZoomableInlineAdornment.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\GlobalSuppressions.cs">
+      <Link>Repl\GlobalSuppressions.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\ReplWindowPackage.cs">
+      <Link>ReplWindowPackage.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+    <Compile Include="$(_ReplWindowFilesLocation)\PkgCmdID.cs">
+      <Link>PkgCmdID.cs</Link>
+      <Visible>true</Visible>
+    </Compile>
+  </ItemGroup>
+</Project>

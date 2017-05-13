@@ -1,0 +1,176 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\TestProjectBefore.settings" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{D092D54E-FF29-4D32-9AEE-4EF704C92F67}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>TestUtilities</RootNamespace>
+    <AssemblyName>TestUtilities</AssemblyName>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Platform)' == 'x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Accessibility" />
+    <Reference Include="Microsoft.Build, Version=$(MicrosoftBuildAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Microsoft.VisualStudio.ComponentModelHost, Version=$(VSTarget).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.VisualStudio.CoreUtility, Version=$(VSTarget).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.VisualStudio.Language.Intellisense, Version=$(VSTarget).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.VisualStudio.Language.StandardClassification, Version=$(VSTarget).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.VisualStudio.QualityTools.Common, Version=$(VSTarget).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.VisualStudio.QualityTools.ExecutionCommon, Version=$(VSTarget).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop, Version=7.1.40304.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.10.0, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="Microsoft.VisualStudio.Text.Data, Version=$(VSTarget).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.VisualStudio.Text.Logic, Version=$(VSTarget).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.VisualStudio.Text.UI, Version=$(VSTarget).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.VisualStudio.Text.UI.Wpf, Version=$(VSTarget).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.VisualStudio.TextManager.Interop, Version=7.1.40304.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Management.Automation, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+    </Reference>
+    <Reference Include="System.Runtime.Remoting" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Xml" />
+    <Reference Include="EnvDTE" />
+    <Reference Include="EnvDTE80" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="UIAutomationClient" />
+    <Reference Include="UIAutomationTypes" />
+    <Reference Include="WindowsBase" />
+  </ItemGroup>
+  <Choose>
+    <When Condition="'$(VSTarget)' == '10.0'">
+      <ItemGroup>
+        <Reference Include="Microsoft.VisualStudio.Settings, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=x86" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <Reference Include="Microsoft.VisualStudio.Settings.$(VSTarget), Version=$(VSTarget).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=x86" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
+  <ItemGroup>
+    <Reference Include="Microsoft.Office.Tools.v4.0.Framework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.VisualStudio.Tools.Applications.Runtime, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.VisualStudio.Shell.$(VSTarget)" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.$(VSTarget)" />
+    <Reference Include="Microsoft.VisualStudio.OLE.Interop" />
+    <Reference Include="Microsoft.VisualStudio.QualityTools.Vsip, Version=$(VSTarget).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AssertListener.cs" />
+    <Compile Include="FileUtils.cs" />
+    <Compile Include="IAddExistingItem.cs" />
+    <Compile Include="IAddNewItem.cs" />
+    <Compile Include="IEditor.cs" />
+    <Compile Include="IOverwriteFile.cs" />
+    <Compile Include="ITreeNode.cs" />
+    <Compile Include="IVisualStudioInstance.cs" />
+    <Compile Include="MessageBoxButton.cs" />
+    <Compile Include="Mocks\IClassificationTypeDefinitionMetadata.cs" />
+    <Compile Include="Mocks\MockClassificationTypeRegistryService.cs" />
+    <Compile Include="Mocks\MockTextViewModel.cs" />
+    <Compile Include="Mocks\MockVsShell.cs" />
+    <Compile Include="ProcessScope.cs" />
+    <Compile Include="SessionHolder.cs" />
+    <Compile Include="SharedProject\SymbolicLinkItem.cs" />
+    <Compile Include="VCCompiler.cs" />
+    <Compile Include="WebDownloadUtility.cs" />
+    <Compile Include="Classification.cs" />
+    <Compile Include="IWarningLogger.cs" />
+    <Compile Include="AssertUtil.cs">
+      <ExcludeFromStyleCop>true</ExcludeFromStyleCop>
+    </Compile>
+    <Compile Include="GlobalSuppressions.cs">
+      <ExcludeFromStyleCop>true</ExcludeFromStyleCop>
+    </Compile>
+    <Compile Include="Mocks\MockActivityLog.cs" />
+    <Compile Include="Mocks\MockBufferGraph.cs" />
+    <Compile Include="Mocks\MockClassificationType.cs" />
+    <Compile Include="Mocks\MockComponentModel.cs" />
+    <Compile Include="Mocks\MockContentType.cs" />
+    <Compile Include="Mocks\MockContentTypeRegistryService.cs" />
+    <Compile Include="Mocks\MockErrorProviderFactory.cs" />
+    <Compile Include="Mocks\MockGlyphService.cs" />
+    <Compile Include="Mocks\MockMappingPoint.cs" />
+    <Compile Include="Mocks\MockNormalizedTextChangeCollection.cs" />
+    <Compile Include="Mocks\MockServiceProvider.cs" />
+    <Compile Include="Mocks\MockSettingsManager.cs" />
+    <Compile Include="Mocks\MockSettingsStore.cs" />
+    <Compile Include="Mocks\MockTextBuffer.cs" />
+    <Compile Include="Mocks\MockTextCaret.cs" />
+    <Compile Include="Mocks\MockTextChange.cs" />
+    <Compile Include="Mocks\MockTextDocument.cs" />
+    <Compile Include="Mocks\MockTextEdit.cs" />
+    <Compile Include="Mocks\MockTextOptions.cs" />
+    <Compile Include="Mocks\MockTextSelection.cs" />
+    <Compile Include="Mocks\MockTextSnapshot.cs" />
+    <Compile Include="Mocks\MockTextSnapshotLine.cs" />
+    <Compile Include="Mocks\MockTextVersion.cs" />
+    <Compile Include="Mocks\MockTextView.cs" />
+    <Compile Include="Mocks\MockTrackingPoint.cs" />
+    <Compile Include="Mocks\MockTrackingSpan.cs" />
+    <Compile Include="$(BuildRoot)\Common\Product\SharedProject\CommonUtils.cs" />
+    <Compile Include="NativeMethods.cs">
+      <ExcludeFromStyleCop>true</ExcludeFromStyleCop>
+    </Compile>
+    <Compile Include="OutputReceiver.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs">
+      <ExcludeFromStyleCop>true</ExcludeFromStyleCop>
+    </Compile>
+    <Compile Include="SharedProject\CodeExtensionAttribute.cs" />
+    <Compile Include="SharedProject\CustomItem.cs" />
+    <Compile Include="SharedProject\CompileItem.cs" />
+    <Compile Include="SharedProject\ContentItem.cs" />
+    <Compile Include="SharedProject\FolderItem.cs" />
+    <Compile Include="SharedProject\ISolutionElement.cs" />
+    <Compile Include="SharedProject\ProjectContentGenerator.cs" />
+    <Compile Include="SharedProject\IProjectProcessor.cs" />
+    <Compile Include="SharedProject\IProjectProcessorMetadata.cs" />
+    <Compile Include="SharedProject\IProjectTypeDefinitionMetadata.cs" />
+    <Compile Include="SharedProject\ProjectContentGroup.cs" />
+    <Compile Include="SharedProject\ProjectDefinition.cs" />
+    <Compile Include="SharedProject\ProjectExtensionAttribute.cs" />
+    <Compile Include="SharedProject\ProjectProperty.cs" />
+    <Compile Include="SharedProject\ProjectType.cs" />
+    <Compile Include="SharedProject\ProjectTypeDefinition.cs" />
+    <Compile Include="SharedProject\ProjectTypeGuidAttribute.cs" />
+    <Compile Include="SharedProject\SampleCodeAttribute.cs" />
+    <Compile Include="SharedProject\SharedProjectTest.cs" />
+    <Compile Include="SharedProject\SolutionElementFlags.cs" />
+    <Compile Include="SharedProject\SolutionFile.cs" />
+    <Compile Include="SharedProject\StartupFileProjectProperty.cs" />
+    <Compile Include="SharedProject\SolutionFolder.cs" />
+    <Compile Include="SharedProject\ImportDefinition.cs" />
+    <Compile Include="SharedProject\TargetDefinition.cs" />
+    <Compile Include="AzureUtility.cs" />
+    <Compile Include="TestData.cs" />
+    <Compile Include="TestExtensions.cs" />
+    <Compile Include="TestMethod.cs" />
+    <Compile Include="WpfProxy.cs" />
+  </ItemGroup>
+  <Target Name="BeforeCompile">
+    <Exec Command="taskkill /f /im QTAgent32.exe" IgnoreExitCode="true" ContinueOnError="true" IgnoreStandardErrorWarningFormat="true" />
+  </Target>
+  <Import Project="..\TestProjectAfter.settings" />
+</Project>
