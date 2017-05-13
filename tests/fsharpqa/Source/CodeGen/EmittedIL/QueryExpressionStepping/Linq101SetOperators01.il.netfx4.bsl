@@ -422,7 +422,7 @@
 
   } // end of class 'uniqueFactors@13-1'
 
-  .class auto ansi serializable nested assembly beforefieldinit 'categoryNames@22-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'categoryNames@22-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>
   {
     .method assembly specialname rtspecialname 
@@ -808,7 +808,7 @@
 
   } // end of class categoryNames@23
 
-  .class auto ansi serializable nested assembly beforefieldinit 'productFirstChars@32-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'productFirstChars@32-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Product>>
   {
     .method assembly specialname rtspecialname 
@@ -1196,7 +1196,7 @@
 
   } // end of class productFirstChars@33
 
-  .class auto ansi serializable nested assembly beforefieldinit 'customerFirstChars@38-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'customerFirstChars@38-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Customer,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [Utils]Utils/Customer>>
   {
     .method assembly specialname rtspecialname 

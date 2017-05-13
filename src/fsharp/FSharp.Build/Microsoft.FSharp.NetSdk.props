@@ -12,15 +12,27 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
+   <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+  </PropertyGroup>
+
   <PropertyGroup>
-    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>                <!--- Do not glob F# source files -->
+    <DefineConstants>$(DefineConstants);TRACE</DefineConstants>
+    <WarningLevel Condition=" '$(WarningLevel)' == '' ">3</WarningLevel>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <EnableDefaultCompileItems Condition=" '$(EnableDefaultCompileItems)' == '' ">false</EnableDefaultCompileItems>                                <!--- Do not glob F# source files -->
     <DefaultProjectTypeGuid Condition=" '$(DefaultProjectTypeGuid)' == '' ">{F2A71F9B-5D33-465A-A702-920D77279786}</DefaultProjectTypeGuid>         <!-- F# project type -->
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(MSBuildRuntimeType)' == 'core' ">
-    <FscToolPath Condition="'$(FscToolPath)' == ''">$(MSBuildThisFileDirectory)</FscToolPath>
-    <FscToolExe Condition="'$(OS)' != 'Unix' and '$(FscToolExe)' == ''">RunFsc.cmd</FscToolExe>
-    <FscToolExe Condition="'$(OS)' == 'Unix' and '$(FscToolExe)' == ''">RunFsc.sh</FscToolExe>
+  <PropertyGroup Condition=" '$(OS)' != 'Unix' and Exists('$(MSBuildThisFileDirectory)\RunFsc.cmd')" >
+    <FscToolPath Condition=" '$(FscToolPath)' == '' ">$(MSBuildThisFileDirectory)</FscToolPath>
+    <FscToolExe Condition=" '$(FscToolExe)' == ''">RunFsc.cmd</FscToolExe>
   </PropertyGroup>
 
+  <PropertyGroup Condition=" '$(OS)' == 'Unix' and Exists('$(MSBuildThisFileDirectory)\RunFsc.sh')" >
+    <FscToolPath Condition=" '$(FscToolPath)' == '' ">$(MSBuildThisFileDirectory)</FscToolPath>
+    <FscToolExe Condition="'$(OS)' == 'Unix' and '$(FscToolExe)' == ''">RunFsc.sh</FscToolExe>
+  </PropertyGroup>
 </Project>

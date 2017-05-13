@@ -60,7 +60,7 @@
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto ansi serializable nested assembly beforefieldinit numberGroups@14
+  .class auto ansi serializable sealed nested assembly beforefieldinit numberGroups@14
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<int32,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -101,7 +101,7 @@
 
   } // end of class numberGroups@14
 
-  .class auto ansi serializable nested assembly beforefieldinit 'numberGroups@15-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'numberGroups@15-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
   {
     .method assembly specialname rtspecialname 
@@ -129,7 +129,7 @@
 
   } // end of class 'numberGroups@15-1'
 
-  .class auto ansi serializable nested assembly beforefieldinit 'numberGroups@15-2'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'numberGroups@15-2'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,int32>
   {
     .method assembly specialname rtspecialname 
@@ -159,7 +159,7 @@
 
   } // end of class 'numberGroups@15-2'
 
-  .class auto ansi serializable nested assembly beforefieldinit 'numberGroups@15-3'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'numberGroups@15-3'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [System.Core]System.Linq.IGrouping`2<int32,int32>,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<int32,int32>,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -198,7 +198,7 @@
 
   } // end of class 'numberGroups@15-3'
 
-  .class auto ansi serializable nested assembly beforefieldinit 'numberGroups@16-4'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'numberGroups@16-4'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [System.Core]System.Linq.IGrouping`2<int32,int32>,class [mscorlib]System.Tuple`2<int32,int32[]>>
   {
     .method assembly specialname rtspecialname 
@@ -231,7 +231,7 @@
 
   } // end of class 'numberGroups@16-4'
 
-  .class auto ansi serializable nested assembly beforefieldinit wordGroups@24
+  .class auto ansi serializable sealed nested assembly beforefieldinit wordGroups@24
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<string,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -271,7 +271,7 @@
 
   } // end of class wordGroups@24
 
-  .class auto ansi serializable nested assembly beforefieldinit 'wordGroups@25-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'wordGroups@25-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,string>
   {
     .method assembly specialname rtspecialname 
@@ -299,7 +299,7 @@
 
   } // end of class 'wordGroups@25-1'
 
-  .class auto ansi serializable nested assembly beforefieldinit 'wordGroups@25-2'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'wordGroups@25-2'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,char>
   {
     .method assembly specialname rtspecialname 
@@ -329,7 +329,7 @@
 
   } // end of class 'wordGroups@25-2'
 
-  .class auto ansi serializable nested assembly beforefieldinit 'wordGroups@25-3'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'wordGroups@25-3'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [System.Core]System.Linq.IGrouping`2<char,string>,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<char,string>,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -368,7 +368,7 @@
 
   } // end of class 'wordGroups@25-3'
 
-  .class auto ansi serializable nested assembly beforefieldinit 'wordGroups@26-4'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'wordGroups@26-4'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [System.Core]System.Linq.IGrouping`2<char,string>,class [mscorlib]System.Tuple`2<char,string[]>>
   {
     .method assembly specialname rtspecialname 
@@ -401,7 +401,7 @@
 
   } // end of class 'wordGroups@26-4'
 
-  .class auto ansi serializable nested assembly beforefieldinit orderGroups@34
+  .class auto ansi serializable sealed nested assembly beforefieldinit orderGroups@34
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Product,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -441,7 +441,7 @@
 
   } // end of class orderGroups@34
 
-  .class auto ansi serializable nested assembly beforefieldinit 'orderGroups@35-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'orderGroups@35-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,class [Utils]Utils/Product>
   {
     .method assembly specialname rtspecialname 
@@ -469,7 +469,7 @@
 
   } // end of class 'orderGroups@35-1'
 
-  .class auto ansi serializable nested assembly beforefieldinit 'orderGroups@35-2'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'orderGroups@35-2'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,string>
   {
     .method assembly specialname rtspecialname 
@@ -499,7 +499,7 @@
 
   } // end of class 'orderGroups@35-2'
 
-  .class auto ansi serializable nested assembly beforefieldinit 'orderGroups@35-3'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'orderGroups@35-3'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -538,7 +538,7 @@
 
   } // end of class 'orderGroups@35-3'
 
-  .class auto ansi serializable nested assembly beforefieldinit 'orderGroups@36-4'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'orderGroups@36-4'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [System.Core]System.Linq.IGrouping`2<string,class [Utils]Utils/Product>,class [mscorlib]System.Tuple`2<string,class [Utils]Utils/Product[]>>
   {
     .method assembly specialname rtspecialname 
@@ -571,7 +571,7 @@
 
   } // end of class 'orderGroups@36-4'
 
-  .class auto ansi serializable nested assembly beforefieldinit yearGroups@47
+  .class auto ansi serializable sealed nested assembly beforefieldinit yearGroups@47
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Order,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Order,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -611,7 +611,7 @@
 
   } // end of class yearGroups@47
 
-  .class auto ansi serializable nested assembly beforefieldinit 'yearGroups@48-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'yearGroups@48-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Order,class [Utils]Utils/Order>
   {
     .method assembly specialname rtspecialname 
@@ -639,7 +639,7 @@
 
   } // end of class 'yearGroups@48-1'
 
-  .class auto ansi serializable nested assembly beforefieldinit 'yearGroups@48-2'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'yearGroups@48-2'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Order,int32>
   {
     .method assembly specialname rtspecialname 
@@ -672,7 +672,7 @@
 
   } // end of class 'yearGroups@48-2'
 
-  .class auto ansi serializable nested assembly beforefieldinit monthGroups@51
+  .class auto ansi serializable sealed nested assembly beforefieldinit monthGroups@51
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Order,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [Utils]Utils/Order,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -712,7 +712,7 @@
 
   } // end of class monthGroups@51
 
-  .class auto ansi serializable nested assembly beforefieldinit 'monthGroups@52-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'monthGroups@52-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Order,class [Utils]Utils/Order>
   {
     .method assembly specialname rtspecialname 
@@ -740,7 +740,7 @@
 
   } // end of class 'monthGroups@52-1'
 
-  .class auto ansi serializable nested assembly beforefieldinit 'monthGroups@52-2'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'monthGroups@52-2'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Order,int32>
   {
     .method assembly specialname rtspecialname 
@@ -773,7 +773,7 @@
 
   } // end of class 'monthGroups@52-2'
 
-  .class auto ansi serializable nested assembly beforefieldinit 'monthGroups@52-3'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'monthGroups@52-3'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order>,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order>,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -812,7 +812,7 @@
 
   } // end of class 'monthGroups@52-3'
 
-  .class auto ansi serializable nested assembly beforefieldinit 'monthGroups@53-4'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'monthGroups@53-4'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order>,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>>
   {
     .method assembly specialname rtspecialname 
@@ -845,7 +845,7 @@
 
   } // end of class 'monthGroups@53-4'
 
-  .class auto ansi serializable nested assembly beforefieldinit 'yearGroups@48-3'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'yearGroups@48-3'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order>,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order>,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>>>,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -917,7 +917,7 @@
 
   } // end of class 'yearGroups@48-3'
 
-  .class auto ansi serializable nested assembly beforefieldinit 'yearGroups@55-4'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'yearGroups@55-4'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<class [System.Core]System.Linq.IGrouping`2<int32,class [Utils]Utils/Order>,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>>>,class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>>
   {
     .method assembly specialname rtspecialname 
@@ -958,7 +958,7 @@
 
   } // end of class 'yearGroups@55-4'
 
-  .class auto ansi serializable nested assembly beforefieldinit customerOrderGroups@44
+  .class auto ansi serializable sealed nested assembly beforefieldinit customerOrderGroups@44
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Customer,class [FSharp.Core]Microsoft.FSharp.Linq.QuerySource`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>>>,object>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Linq.QueryBuilder builder@
@@ -1032,7 +1032,7 @@
 
   } // end of class customerOrderGroups@44
 
-  .class auto ansi serializable nested assembly beforefieldinit 'customerOrderGroups@57-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'customerOrderGroups@57-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [mscorlib]System.Tuple`2<class [Utils]Utils/Customer,class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>>>,class [mscorlib]System.Tuple`2<string,class [mscorlib]System.Tuple`2<int32,class [mscorlib]System.Tuple`2<int32,class [Utils]Utils/Order[]>[]>[]>>
   {
     .method assembly specialname rtspecialname 
