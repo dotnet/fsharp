@@ -218,7 +218,8 @@ type internal FSharpQuickInfoProvider
                         |> Seq.map (fun x -> x.Text.Length)
                         |> Seq.max
 
-                    // eyeballed formula to prevent the divider from wrapping
+                    // eyeballed formula returning separator width in chars such as to prevent it from wrapping
+                    // will not be needed once we replace the ascii-art divider with a XAML element
                     let width = if width / 2 > 85 then 85 else width / 2
 
                     let seperator = TaggedTextOps.tag Text (String.replicate width "⎯")  
@@ -238,7 +239,6 @@ type internal FSharpQuickInfoProvider
                           | None, None -> ()
                           | None, Some _ -> yield! sigDocumentation
                           | Some _, None -> yield! targetDocumentation
-                          // TODO: handle case when one is substring of the other
                           | Some implText, Some sigText when implText.Equals (sigText, StringComparison.OrdinalIgnoreCase) -> 
                               yield! sigDocumentation
                           | Some _, Some _ -> 

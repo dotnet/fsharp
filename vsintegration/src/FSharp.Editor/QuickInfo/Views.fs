@@ -98,6 +98,8 @@ type internal QuickInfoViewProvider
         tb
 
     let wrap (tb: TextBlock) =
+        // Formula to make max width of the TextBlock proportional to the tooltip font size.
+        // We need it, because the ascii-art divider inserted into xml documentation is of variable length and could wrap otherwise
         let maxWidth = formatMap.Value.DefaultTextProperties.FontRenderingEmSize * 60.0
         tb.MaxWidth <- maxWidth
         tb.TextAlignment <- TextAlignment.Justify
