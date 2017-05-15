@@ -1037,7 +1037,7 @@ type FrameworkImportsCacheKey = (*resolvedpath*)string list * string * (*TargetF
 type FrameworkImportsCache(keepStrongly) = 
 
     // Mutable collection protected via CompilationThreadToken 
-    let frameworkTcImportsCache = AgedLookup<CompilationThreadToken, FrameworkImportsCacheKey,(TcGlobals * TcImports)>(keepStrongly, areSame=(fun (x,y) -> x = y)) 
+    let frameworkTcImportsCache = AgedLookup<CompilationThreadToken, FrameworkImportsCacheKey,(TcGlobals * TcImports)>(keepStrongly, areSimilar=(fun (x,y) -> x = y)) 
 
     member __.Downsize(ctok) = frameworkTcImportsCache.Resize(ctok, keepStrongly=0)
     member __.Clear(ctok) = frameworkTcImportsCache.Clear(ctok)

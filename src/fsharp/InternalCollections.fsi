@@ -4,10 +4,12 @@ namespace Internal.Utilities.Collections
   
   /// Simple aging lookup table. When a member is accessed it's
   /// moved to the top of the list and when there are too many elements
-  /// the least-recently-accessed element falls of the end.
+  /// the least-recently-accessed element falls of the end.  
+  ///
+  ///  - areSimilar: Keep at most once association for two similar keys (as given by areSimilar)
   type internal AgedLookup<'Token, 'Key, 'Value when 'Value : not struct> = 
     new : keepStrongly:int
-            * areSame:('Key * 'Key -> bool) 
+            * areSimilar:('Key * 'Key -> bool) 
             * ?requiredToKeep:('Value -> bool)
             * ?onStrongDiscard : ('Value -> unit) // this may only be set if keepTotal=keepStrongly, i.e. not weak entries
             * ?keepMax: int
@@ -40,6 +42,8 @@ namespace Internal.Utilities.Collections
   /// threads seeing different live sets of cached items, and may result in the onDiscard action
   /// being called multiple times. In practice this means the collection is only safe for concurrent
   /// access if there is no discard action to execute.
+  ///
+  ///  - areSimilar: Keep at most once association for two similar keys (as given by areSimilar)
   type internal MruCache<'Token, 'Key,'Value when 'Value : not struct> =
     new : keepStrongly:int 
             * areSame:('Key * 'Key -> bool) 
@@ -54,7 +58,7 @@ namespace Internal.Utilities.Collections
     member Clear : 'Token -> unit
 
     /// Get the similar (subsumable) value for the given key or <c>None</c> if not already available.
-    member TryGetAnySimilar : 'Token * key:'Key -> ('Key * 'Value) option
+    member ContainsSimilarKey : 'Token * key:'Key -> bool
 
     /// Get the value for the given key or <c>None</c> if not still valid.
     member TryGetAny : 'Token * key:'Key -> 'Value option

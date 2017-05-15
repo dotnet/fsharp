@@ -167,10 +167,10 @@ type internal MruCache<'Token, 'Key,'Value when 'Value : not struct>(keepStrongl
     /// Whether or not this result value is still valid.
     let isStillValid = defaultArg isStillValid (fun _ -> true)
         
-    member bc.TryGetAnySimilar(tok, key) = 
+    member bc.ContainsSimilarKey(tok, key) = 
         match cache.TryPeekKeyValue(tok, key) with
-        | Some(similarKey, value)-> Some(similarKey, value)
-        | None -> None
+        | Some(_similarKey, _value)-> true
+        | None -> false
        
     member bc.TryGetAny(tok, key) = 
         match cache.TryPeekKeyValue(tok, key) with

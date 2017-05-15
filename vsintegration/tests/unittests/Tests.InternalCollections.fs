@@ -92,7 +92,7 @@ type MruCache =
         let AreSameForSubsumption((s1,n1),(s2,n2)) = s1=s2
                 
         let discarded = ref [] 
-        let m = new MruCache<string*int,string>(compute=fst, areSame=(fun (x,y) -> x = y), areSimilar=AreSameForSubsumption, keepStrongly=2, keepMax=2, onDiscard=(fun s -> discarded := s :: !discarded))
+        let m = new MruCache<string*int,string>(compute=fst, areSimilar=(fun (x,y) -> x = y), areSimilar=AreSameForSubsumption, keepStrongly=2, keepMax=2, onDiscard=(fun s -> discarded := s :: !discarded))
         m.SetAlternate(("x",1),"Banana") // no discard
         printfn "discarded = %A" discarded.Value
         Assert.IsTrue(discarded.Value = [], "Check1")                                      

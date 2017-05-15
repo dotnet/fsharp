@@ -166,7 +166,7 @@ type TypeCheckInfo
     // Is not keyed on 'Names' collection because this is invariant for the current position in 
     // this unchanged file. Keyed on lineStr though to prevent a change to the currently line
     // being available against a stale scope.
-    let getToolTipTextCache = AgedLookup<CompilationThreadToken, int*int*string, FSharpToolTipText<Layout>>(getToolTipTextSize,areSame=(fun (x,y) -> x = y))
+    let getToolTipTextCache = AgedLookup<CompilationThreadToken, int*int*string, FSharpToolTipText<Layout>>(getToolTipTextSize,areSimilar=(fun (x,y) -> x = y))
     
     let amap = tcImports.GetImportMap()
     let infoReader = new InfoReader(g,amap)
@@ -2595,9 +2595,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
         reactor.EnqueueOp("InvalidateConfiguration", fun ctok -> 
             // If there was a similar entry then re-establish an empty builder .  This is a somewhat arbitrary choice - it
             // will have the effect of releasing memory associated with the previous builder, but costs some time.
-            match incrementalBuildersCache.TryGetAnySimilar (ctok, options) with
-            | None -> ()
-            | Some (_similarOptions, (_oldBuilder, _, _)) ->
+            if incrementalBuildersCache.ContainsSimilarKey (ctok, options) then
 
                 // We do not need to decrement here - the onDiscard function is called each time an entry is pushed out of the build cache,
                 // including by incrementalBuildersCache.Set.
@@ -2614,9 +2612,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             // If there was a similar entry (as there normally will have been) then re-establish an empty builder .  This 
             // is a somewhat arbitrary choice - it will have the effect of releasing memory associated with the previous 
             // builder, but costs some time.
-            match incrementalBuildersCache.TryGetAnySimilar (ctok, options) with
-            | None -> return ()
-            | Some (_similarOptions, (_oldBuilder, _, _)) ->
+            if incrementalBuildersCache.ContainsSimilarKey (ctok, options) then
                 // We do not need to decrement here - the onDiscard function is called each time an entry is pushed out of the build cache,
                 // including by incrementalBuildersCache.Set.
                 let! newBuilderInfo = CreateOneIncrementalBuilder (ctok, options) 
