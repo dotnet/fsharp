@@ -12,7 +12,7 @@
         <tags>$tags$</tags>
         <dependencies>
             <group>
-                <dependency id="System.ValueTuple" version="4.0.0-rc3-24212-01" />
+                <dependency id="System.ValueTuple" version="4.3.1" />
             </group>
         </dependencies>
     </metadata>
