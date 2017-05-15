@@ -312,22 +312,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     span.iEndIndex -= 1;
                 }
 
-                //// Add new document task to task list
-                //DocumentTask task = new DocumentTask(serviceProvider,
-                //    buffer, // May be null
-                //    // This seems weird. Why would warning status make this a 'compile error'? 
-                //    // The “code sense” errors produce red squiggles, whereas the “compile” errors produce blue squiggles.  (This is in line with C#’s pre-VS2008-SP1 behavior.)  Swapping these two gives us a look consistent with that of the language service.
-                //    isWarning ? MARKERTYPE.MARKER_COMPILE_ERROR : MARKERTYPE.MARKER_CODESENSE_ERROR, 
-                //    span,
-                //    file,
-                //    subcategory);
-
                 // Add error to task list
                 var taskText = Microsoft.FSharp.Compiler.ErrorLogger.NewlineifyErrorString(errorEvent.Message);
-                //task.ErrorCategory = isWarning ? Shell.TaskErrorCategory.Warning : Shell.TaskErrorCategory.Error;
-                //task.Category = Shell.TaskCategory.BuildCompile;
-                //task.HierarchyItem = hierarchy;
-                //task.Navigate += new EventHandler(NavigateTo);
 
                 if (errorReporter != null)
                 {
