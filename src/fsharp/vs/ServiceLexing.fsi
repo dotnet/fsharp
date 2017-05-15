@@ -29,6 +29,7 @@ type FSharpTokenizerColorState =
     | Comment = 5
     | StringInComment = 6
     | VerbatimStringInComment = 7
+    | CamlOnly = 8
     | VerbatimString = 9
     | SingleLineComment = 10
     | EndLineThenSkip = 11

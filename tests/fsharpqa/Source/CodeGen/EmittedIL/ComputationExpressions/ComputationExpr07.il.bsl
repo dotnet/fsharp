@@ -55,7 +55,7 @@
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto ansi serializable nested assembly beforefieldinit 'res7@9-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'res7@9-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [ComputationExprLibrary]Library.Eventually`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
   {
     .field public class [ComputationExprLibrary]Library.EventuallyBuilder builder@
@@ -110,7 +110,7 @@
 
   } // end of class 'res7@9-1'
 
-  .class auto ansi serializable nested assembly beforefieldinit 'res7@11-2'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'res7@11-2'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [ComputationExprLibrary]Library.Eventually`1<int32>>
   {
     .field public class [ComputationExprLibrary]Library.EventuallyBuilder builder@
@@ -153,7 +153,7 @@
 
   } // end of class 'res7@11-2'
 
-  .class auto ansi serializable nested assembly beforefieldinit res7@8
+  .class auto ansi serializable sealed nested assembly beforefieldinit res7@8
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [ComputationExprLibrary]Library.Eventually`1<int32>>
   {
     .field public class [ComputationExprLibrary]Library.EventuallyBuilder builder@
