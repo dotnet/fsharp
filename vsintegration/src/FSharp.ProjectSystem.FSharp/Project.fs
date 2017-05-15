@@ -1672,7 +1672,8 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     // "double CCW-wrapping" of the same object.
     type internal SolutionEventsListener(projNode) =
 
-            let mutable waitDialog : IDisposable option = None
+            static let mutable waitDialog : IDisposable option = None
+            static let mutable waitCount = 0
 
             // During batch active project configuration changes, make sure we only run CSAF once
             // per batch. Before this change, OnActiveProjectCfgChange was being called twice per
@@ -1694,22 +1695,10 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     else
                         null : System.String
 
-            let OnActiveProjectCfgChangeAndAllProjectsUpdated() =
-                if batchState <> BatchDone then
-                    projNode.SetProjectFileDirty(projNode.IsProjectFileDirty)
-                    projNode.ComputeSourcesAndFlags()
-                    
-                    if batchState = BatchWaiting then
-                        batchState <- BatchDone
-
             let UpdateConfig(pHierProj) =
-                // By default, the F# project system keeps its own internal Configuration and Platform in sync with the current active
-                // Configuration and Platform by listening for OnActiveProjectCfgChange events.  However there is one case where the
-                // active cfg changes without an event, and this is during 'Batch Build'.  So we listen for the start and end of 
-                // Batch Build, and manually update the project to the active cfg before/after to set/reset the config.
+                // Check we're referring to the current project
                 if GetCaption(pHierProj) = GetCaption(projNode.InteropSafeIVsHierarchy) then
-                    // This code matches what ProjectNode.SetConfiguration would do; that method cannot be called during a build, but at this
-                    // current moment in time, it is 'safe' to do this update.
+                    // This code matches what ProjectNode.SetConfiguration would do.
                     let _,currentConfigName = Utilities.TryGetActiveConfigurationAndPlatform(projNode.Site, projNode.ProjectIDGuid)
                     MSBuildProject.SetGlobalProperty(projNode.BuildProject, ProjectFileConstants.Configuration, currentConfigName.ConfigName)
                     MSBuildProject.SetGlobalProperty(projNode.BuildProject, ProjectFileConstants.Platform, currentConfigName.MSBuildPlatform)
@@ -1750,6 +1739,10 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             //
             // On individual project reload:
             // - OnActiveProjectCfgChange
+            //
+            // On batch build:
+            // - UpdateProjectCfg_Begin x 6 (twice for each project!)
+            // - UpdateProjectCfg_Done x 6 (twice for each project!)
             //
             // We never see these being called in the scenarios I've tested - if you know a sequence that triggers them please let us know
             // - IVsUpdateSolutionEvents2.OnActiveProjectCfgChange
@@ -1796,12 +1789,12 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     UpdateConfig(pHierProj)
                     VSConstants.S_OK
 
-                // NOTE: we don't see this being called in any known scenarios
+                // NOTE: this is called for batch build (Build --> Batch Build)
                 member x.UpdateProjectCfg_Begin(pHierProj, _pCfgProj, _pCfgSln, _dwAction, pfCancel) =
                     UpdateConfig(pHierProj)
                     VSConstants.S_OK
 
-                // NOTE: we don't see this being called in any known scenarios
+                // NOTE: this is called for batch build (Build --> Batch Build)
                 member x.UpdateProjectCfg_Done(pHierProj, _pCfgProj, _pCfgSln, _dwAction, _fSuccess, _fCancel) =
                     UpdateConfig(pHierProj)
                     VSConstants.S_OK
@@ -1813,41 +1806,48 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     // this will be called for each project, but wait dialogs cannot 'stack'
                     // i.e. if a wait dialog is already open, subsequent calls to StartWaitDialog
                     // will not override the current open dialog
-                    waitDialog <-
-                        {
-                            WaitCaption = FSharpSR.GetString FSharpSR.ProductName
-                            WaitMessage = FSharpSR.GetString FSharpSR.UpdatingSolutionConfiguration
-                            ProgressText = None
-                            StatusBmpAnim = null
-                            StatusBarText = None
-                            DelayToShowDialogSecs = 1
-                            IsCancelable = false
-                            ShowMarqueeProgress = true
-                        }
-                        |> WaitDialog.start projNode.Site
-                        |> Some
-
+                    if waitCount = 0 then 
+                        waitDialog <-
+                            {
+                                WaitCaption = FSharpSR.GetString FSharpSR.ProductName
+                                WaitMessage = FSharpSR.GetString FSharpSR.UpdatingSolutionConfiguration
+                                ProgressText = None
+                                StatusBmpAnim = null
+                                StatusBarText = None
+                                DelayToShowDialogSecs = 1
+                                IsCancelable = false
+                                ShowMarqueeProgress = true
+                            }
+                            |> WaitDialog.start projNode.Site
+                            |> Some
+                    waitCount <- waitCount + 1
                     VSConstants.S_OK
 
                 member x.OnAfterActiveSolutionCfgChange(_oldCfg, _newCfg) =
 
-                    match waitDialog with
-                    | Some x ->
-                        x.Dispose()
-                        waitDialog <- None
-                    | None -> ()
+                    try 
+                        Debug.Assert((batchState = NonBatch), "We expect the group of project config updates to be over by the time we update the flags") // We only update flags after all the batch updates are done
+                        projNode.SetProjectFileDirty(projNode.IsProjectFileDirty)
+                        projNode.ComputeSourcesAndFlags()
+                    with e -> 
+                        Debug.Assert(false, sprintf "unexpected exception in ComputeSourcesAndFlags: %s" (e.ToString()))
+
+                    waitCount <- max 0 (waitCount - 1)
+                    if waitCount = 0 then 
+                        match waitDialog with
+                        | Some x ->
+                            x.Dispose()
+                            waitDialog <- None
+                        | None -> ()
                     VSConstants.S_OK
               
             interface IVsUpdateSolutionEvents4 with
+
+                // Note, this use of the word "batch" is not the same as a "batch build" - it means "update a number of project configurations as a group"
                 member x.OnActiveProjectCfgChangeBatchBegin() =
                     batchState <- BatchWaiting
 
                 member x.OnActiveProjectCfgChangeBatchEnd() =
-                    try 
-                        OnActiveProjectCfgChangeAndAllProjectsUpdated()
-                    with e -> 
-                        Debug.Assert(false, sprintf "unexpected exception in ComputeSourcesAndFlags: %s" (e.ToString()))
-
                     batchState <- NonBatch
 
                 member x.UpdateSolution_BeginFirstUpdateAction() =
