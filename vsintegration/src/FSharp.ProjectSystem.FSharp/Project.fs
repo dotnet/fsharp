@@ -1674,11 +1674,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
             static let mutable waitDialog : IDisposable option = None
 
-            // During batch active project configuration changes, make sure we only run CSAF once
-            // per batch. Before this change, OnActiveProjectCfgChange was being called twice per
-            // batch per project.
-            let mutable batchState = NonBatch
-            
             // The CCW wrapper seems to prevent an object-identity test, so we determine whether
             // two IVsHierarchy objects are equal by comparing their captions.  (It's ok if this
             // occasionally yields false positives, as this just means we may do a little extra
@@ -1695,14 +1690,12 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         null 
 
             let UpdateConfig(pHierProj) =
-                if GetCaption(pHierProj) = GetCaption(projNode.InteropSafeIVsHierarchy) && batchState <> BatchDone then
+                if GetCaption(pHierProj) = GetCaption(projNode.InteropSafeIVsHierarchy) then
                     // This code matches what ProjectNode.SetConfiguration would do; that method cannot be called during a build, but at this
                     // current moment in time, it is 'safe' to do this update.
                     let _,currentConfigName = Utilities.TryGetActiveConfigurationAndPlatform(projNode.Site, projNode.ProjectIDGuid)
                     MSBuildProject.SetGlobalProperty(projNode.BuildProject, ProjectFileConstants.Configuration, currentConfigName.ConfigName)
                     MSBuildProject.SetGlobalProperty(projNode.BuildProject, ProjectFileConstants.Platform, currentConfigName.MSBuildPlatform)
-                    if batchState = BatchWaiting then
-                        batchState <- BatchDone
 
             // The following event sequences are observed in Visual Studio 2017, see https://github.com/Microsoft/visualfsharp/pull/3025#pullrequestreview-38005713
             //
@@ -1834,12 +1827,11 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
               
             interface IVsUpdateSolutionEvents4 with
                 member x.OnActiveProjectCfgChangeBatchBegin() =
-                    batchState <- BatchWaiting
+                    ()
 
                 member x.OnActiveProjectCfgChangeBatchEnd() =
                     projNode.UpdateMSBuildState()
                     projNode.SetProjectFileDirty(projNode.IsProjectFileDirty)
-                    batchState <- NonBatch
 
                 member x.UpdateSolution_BeginFirstUpdateAction() =
                     ()
