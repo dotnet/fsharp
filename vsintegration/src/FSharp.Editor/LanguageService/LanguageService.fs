@@ -372,6 +372,8 @@ and
                 let project = projectContext :?> AbstractProject
 
                 this.SyncProject(project, projectContext, site, workspace, forceUpdate=false)
+
+                site.BuildErrorReporter <- Some (errorReporter :> Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2)
                 site.AdviseProjectSiteChanges(FSharpConstants.FSharpLanguageServiceCallbackName, 
                                               AdviseProjectSiteChanges(fun () -> this.SyncProject(project, projectContext, site, workspace, forceUpdate=true)))
                 site.AdviseProjectSiteClosed(FSharpConstants.FSharpLanguageServiceCallbackName, 

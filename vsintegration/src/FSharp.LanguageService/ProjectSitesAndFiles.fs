@@ -24,8 +24,7 @@ type private ProjectSiteOfScriptFile(filename:string, checkOptions : FSharpProje
         override this.DescriptionOfProject() = sprintf "Script Closure at Root %s" filename
         override this.CompilerFlags() = checkOptions.OtherOptions
         override this.ProjectFileName() = checkOptions.ProjectFileName
-        override this.ErrorListTaskProvider() = None
-        override this.ErrorListTaskReporter() = None
+        override this.BuildErrorReporter with get() = None and set _v = ()
         override this.AdviseProjectSiteChanges(_,_) = ()
         override this.AdviseProjectSiteCleaned(_,_) = ()
         override this.AdviseProjectSiteClosed(_,_) = ()
@@ -59,8 +58,7 @@ type private ProjectSiteOfSingleFile(sourceFile) =
         override this.DescriptionOfProject() = "Orphan File Project"
         override this.CompilerFlags() = compilerFlags
         override this.ProjectFileName() = projectFileName                
-        override this.ErrorListTaskProvider() = None
-        override this.ErrorListTaskReporter() = None
+        override this.BuildErrorReporter with get() = None and set _v = ()
         override this.AdviseProjectSiteChanges(_,_) = ()
         override this.AdviseProjectSiteCleaned(_,_) = ()
         override this.AdviseProjectSiteClosed(_,_) = ()

@@ -491,9 +491,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         private ConfigProvider configProvider;
 
-        private Shell.TaskProvider taskProvider;
-
-        private TaskReporter taskReporter;
+        private IVsLanguageServiceBuildErrorReporter2 errorReporter;
 
         private Shell.ErrorListProvider projectErrorListProvider;
 
@@ -1078,25 +1076,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Gets the taskprovider.
-        /// </summary>
-        public Shell.TaskProvider TaskProvider
-        {
-            get
-            {
-                return this.taskProvider;
-            }
-        }
-
-        internal TaskReporter TaskReporter
-        {
-            get
-            {
-                return this.taskReporter;
-            }
-        }
-
-        /// <summary>
         /// Gets the project file name.
         /// </summary>
         public string FileName
@@ -1384,17 +1363,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             CCITracing.TraceCall();
             this.site = new ServiceProvider(site);
 
-            if (taskReporter != null)
-            {
-                taskReporter.Dispose();
-            }
-            if (taskProvider != null)
-            {
-                taskProvider.Dispose();
-            }
-            taskProvider = new Shell.TaskProvider ( this.site);
-            taskReporter = new TaskReporter ("Project System (ProjectNode.cs)");
-            taskReporter.TaskListProvider = new TaskListProvider(taskProvider);
+            errorReporter = null; //  new MakeAnErrorReporter();
             if (projectErrorListProvider != null)
             {
                 projectErrorListProvider.Dispose();
@@ -1575,22 +1544,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                             {
                                 this.projectEventsProvider.AfterProjectFileOpened -= this.OnAfterProjectOpen;
                             }
-                            if (this.taskReporter != null)
-                            {
-                                this.taskReporter.Dispose();
-                                this.taskReporter = null;                                
-                            }
                             if (projectErrorListProvider != null)
                             {
                                 projectErrorListProvider.Dispose();
                                 projectErrorListProvider = null;
-                            }
-                            if (this.taskProvider != null)
-                            {
-                                this.taskProvider.Tasks.Clear();
-                                this.taskProvider.Refresh();
-                                this.taskProvider.Dispose();
-                                this.taskProvider = null;
                             }
                             if (buildLogger != null)
                             {
@@ -3075,8 +3032,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 // Because we may be aggregated, we need to make sure to get the outer IVsHierarchy
                 // Create the logger
-                this.BuildLogger = new IDEBuildLogger(output, this.TaskProvider, this.InteropSafeIVsHierarchy);
-                this.buildLogger.TaskReporter = this.TaskReporter;
+                this.BuildLogger = new IDEBuildLogger(output, this.InteropSafeIVsHierarchy, errorReporter);
 
                 // To retrive the verbosity level, the build logger depends on the registry root 
                 // (otherwise it will used an hardcoded default)

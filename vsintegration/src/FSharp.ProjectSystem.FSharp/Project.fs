@@ -94,8 +94,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             member ips.AdviseProjectSiteChanges(callbackOwnerKey,callback) = inner.AdviseProjectSiteChanges(callbackOwnerKey, callback)
             member ips.AdviseProjectSiteCleaned(callbackOwnerKey,callback) = inner.AdviseProjectSiteCleaned(callbackOwnerKey, callback)
             member ips.AdviseProjectSiteClosed(callbackOwnerKey,callback) = inner.AdviseProjectSiteClosed(callbackOwnerKey, callback)
-            member ips.ErrorListTaskProvider() = inner.ErrorListTaskProvider()
-            member ips.ErrorListTaskReporter() = inner.ErrorListTaskReporter()
+            member ips.BuildErrorReporter with get() = inner.BuildErrorReporter and set v = inner.BuildErrorReporter <- v
             member ips.TargetFrameworkMoniker = inner.TargetFrameworkMoniker
             member ips.ProjectGuid = inner.ProjectGuid
             member ips.IsIncompleteTypeCheckEnvironment = false
@@ -382,18 +381,11 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 member this.GetMostRecentLines(n:int) : string[] =
                     GetToolWindowAsITestVFSI().GetMostRecentLines(n)
             
+            // Can we get rid of this now?
             interface IOleComponent with
-                override this.FContinueMessageLoop(_uReason:uint32, _pvLoopData:IntPtr, _pMsgPeeked:MSG[]) = 
-                    1
+                override this.FContinueMessageLoop(_uReason:uint32, _pvLoopData:IntPtr, _pMsgPeeked:MSG[]) = 1
 
-                override this.FDoIdle(grfidlef:uint32) =
-                    // see e.g "C:\Program Files\Microsoft Visual Studio 2008 SDK\VisualStudioIntegration\Common\IDL\olecm.idl" for details
-                    //Trace.Print("CurrentDirectoryDebug", (fun () -> sprintf "curdir='%s'\n" (System.IO.Directory.GetCurrentDirectory())))  // can be useful for watching how GetCurrentDirectory changes
-                    let periodic = (grfidlef &&& (uint32 _OLEIDLEF.oleidlefPeriodic)) <> 0u
-                    if periodic && not (isNull this.ComponentManager) && this.ComponentManager.FContinueIdle() <> 0 then
-                        TaskReporterIdleRegistration.DoIdle(this.ComponentManager)
-                    else
-                        0
+                override this.FDoIdle(_grfidlef:uint32) = 0
 
                 override this.FPreTranslateMessage(_pMsg) = 0
 
@@ -465,6 +457,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             
             
             let projectSite = new ProjectSiteOptionLifetime()
+            let mutable buildErrorReporter = None
             
             let sourcesAndFlagsNotifier = new Notifier()
             let cleanNotifier = new Notifier()
@@ -1362,11 +1355,9 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
             override x.ComputeSourcesAndFlags() =
 
-                if x.IsInBatchUpdate || box x.BuildProject = null then ()
-                else
-                if not(inMidstOfReloading) && not(VsBuildManagerAccessorExtensionMethods.IsInProgress(accessor)) then
+                if not x.IsInBatchUpdate && box x.BuildProject <> null && not inMidstOfReloading && not (VsBuildManagerAccessorExtensionMethods.IsInProgress(accessor)) then
 
-                    use waitDialog =
+                    use sourcesAndFlagsWaitDialog =
                         {
                             WaitCaption = FSharpSR.GetString FSharpSR.ProductName
                             WaitMessage = FSharpSR.GetString FSharpSR.ComputingSourcesAndFlags
@@ -1487,8 +1478,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         sprintf "Project System: flags(%A) sources:\n%A" flags sources
                     member ips.CompilerFlags() = x.GetCompileFlags()
                     member ips.ProjectFileName() = MSBuildProject.GetFullPath(x.BuildProject)
-                    member ips.ErrorListTaskProvider() = Some(x.TaskProvider)
-                    member ips.ErrorListTaskReporter() = Some(x.TaskReporter)
+                    member ips.BuildErrorReporter with get() = buildErrorReporter and set v = buildErrorReporter <- v
                     member this.AdviseProjectSiteChanges(callbackOwnerKey,callback) =
                         sourcesAndFlagsNotifier.Advise(callbackOwnerKey,callback)
                     member this.AdviseProjectSiteCleaned(callbackOwnerKey,callback) =
@@ -1519,9 +1509,8 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     |   None -> Array.create 0 "", Array.create 0 ""
                     |   Some(sources,flags) -> sources, flags
                 let caption = x.Caption
+                let mutable staticBuildErrorReporter = buildErrorReporter
                 let projFileName = MSBuildProject.GetFullPath(x.BuildProject)
-                let taskProvider = Some(x.TaskProvider)
-                let taskReporter = Some(x.TaskReporter)
                 let targetFrameworkMoniker = x.GetTargetFrameworkMoniker()
                 let creationTime = System.DateTime.Now 
                 let assemblyReferences =
@@ -1538,8 +1527,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     member ips.DescriptionOfProject() = caption
                     member ips.CompilerFlags() = flags
                     member ips.ProjectFileName() = projFileName
-                    member ips.ErrorListTaskProvider() = taskProvider
-                    member ips.ErrorListTaskReporter() = taskReporter
+                    member ips.BuildErrorReporter with get() = staticBuildErrorReporter and set v = staticBuildErrorReporter <- v
                     member this.AdviseProjectSiteChanges(_,_) = ()
                     member this.AdviseProjectSiteCleaned(_,_) = ()
                     member this.AdviseProjectSiteClosed(_,_) = ()
@@ -1674,114 +1662,167 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     // "double CCW-wrapping" of the same object.
     type internal SolutionEventsListener(projNode) =
 
-            let mutable waitDialog : IDisposable option = None
+            static let mutable waitDialog : IDisposable option = None
 
-            // During batch active project configuration changes, make sure we only run CSAF once
-            // per batch. Before this change, OnActiveProjectCfgChange was being called twice per
-            // batch per project.
-            let mutable batchState = NonBatch
-            
             // The CCW wrapper seems to prevent an object-identity test, so we determine whether
             // two IVsHierarchy objects are equal by comparing their captions.  (It's ok if this
             // occasionally yields false positives, as this just means we may do a little extra
             // background work.)
-            let GetCaption(hier : IVsHierarchy) =
+            let GetCaption(hier : IVsHierarchy) : string =
                 if hier = null then
-                    null : System.String
+                    null 
                 else
-                    let mutable o : obj = null
-                    let r = hier.GetProperty(VSConstants.VSITEMID_ROOT, int(__VSHPROPID.VSHPROPID_Caption), &o)
-                    if r = VSConstants.S_OK then
-                        o :?> System.String
+                    let mutable o = null
+                    let hr = hier.GetProperty(VSConstants.VSITEMID_ROOT, int(__VSHPROPID.VSHPROPID_Caption), &o)
+                    if hr = VSConstants.S_OK then
+                        o :?> string
                     else
-                        null : System.String
-
-            let OnActiveProjectCfgChange(pIVsHierarchy) =
-                if GetCaption(pIVsHierarchy) = GetCaption(projNode.InteropSafeIVsHierarchy) && batchState <> BatchDone then
-                    projNode.SetProjectFileDirty(projNode.IsProjectFileDirty)
-                    projNode.ComputeSourcesAndFlags()
-                    
-                    if batchState = BatchWaiting then
-                        batchState <- BatchDone
-                VSConstants.S_OK
+                        null 
 
             let UpdateConfig(pHierProj) =
-                // By default, the F# project system keeps its own internal Configuration and Platform in sync with the current active
-                // Configuration and Platform by listening for OnActiveProjectCfgChange events.  However there is one case where the
-                // active cfg changes without an event, and this is during 'Batch Build'.  So we listen for the start and end of 
-                // Batch Build, and manually update the project to the active cfg before/after to set/reset the config.
                 if GetCaption(pHierProj) = GetCaption(projNode.InteropSafeIVsHierarchy) then
                     // This code matches what ProjectNode.SetConfiguration would do; that method cannot be called during a build, but at this
                     // current moment in time, it is 'safe' to do this update.
                     let _,currentConfigName = Utilities.TryGetActiveConfigurationAndPlatform(projNode.Site, projNode.ProjectIDGuid)
                     MSBuildProject.SetGlobalProperty(projNode.BuildProject, ProjectFileConstants.Configuration, currentConfigName.ConfigName)
                     MSBuildProject.SetGlobalProperty(projNode.BuildProject, ProjectFileConstants.Platform, currentConfigName.MSBuildPlatform)
-                    projNode.UpdateMSBuildState()
+
+            // The following event sequences are observed in Visual Studio 2017, see https://github.com/Microsoft/visualfsharp/pull/3025#pullrequestreview-38005713
+            //
+            // Loading tests\projects\misc\TestProjectChanges.sln:
+            //
+            // - OnActiveProjectCfgChangeBatchBegin x 3 (one for each project)
+            // - IVsUpdateSolutionEvents.OnActiveProjectCfgChange(null) x 3
+            // - IVsUpdateSolutionEvents.OnActiveProjectCfgChange(not-null) x 6
+            // - OnActiveProjectCfgChangeBatchEnd x 3 
+            //
+            //   Then we get a "duplicate" set of Batch events
+            // 
+            // - OnActiveProjectCfgChangeBatchBegin x 3
+            // - OnActiveProjectCfgChangeBatchEnd x 3 
+            //
+            // Switching to "Release"
+            // - OnBeforeActiveSolutionCfgChange x 3
+            // - OnActiveProjectCfgChangeBatchBegin x 3
+            // - IVsUpdateSolutionEvents.OnActiveProjectCfgChange(null) x 3
+            // - IVsUpdateSolutionEvents.OnActiveProjectCfgChange(not-null) x 6
+            // - OnActiveProjectCfgChangeBatchEnd x 3 
+            // - OnAfterActiveSolutionCfgChange x 3 
+            //
+            // On prompted solution reload after a project file has been edited
+            // - OnActiveProjectCfgChangeBatchBegin x 3
+            // - IVsUpdateSolutionEvents.OnActiveProjectCfgChange(null) x 3
+            // - IVsUpdateSolutionEvents.OnActiveProjectCfgChange(not-null) x 6
+            // - OnActiveProjectCfgChangeBatchEnd x 3 
+            // 
+            // Then we get a "duplicate" set of Batch events
+            // 
+            // - OnActiveProjectCfgChangeBatchBegin x 3
+            // - OnActiveProjectCfgChangeBatchEnd x 3 
+            //
+            // On individual project reload:
+            // - OnActiveProjectCfgChange
+            //
+            // We never see these being called in the scenarios I've tested - if you know a sequence that triggers them please let us know
+            // - IVsUpdateSolutionEvents2.OnActiveProjectCfgChange
+            // - IVsUpdateSolutionEvents2.UpdateProjectCfg_Begin
+            // - IVsUpdateSolutionEvents2.UpdateProjectCfg_Done
+            //
+            // Placing the call to ComputeSourcesAndFlags in OnAfterActiveSolutionCfgChange appears to be 
+            // sufficient to ensure consistent update. Note that we can only call ComputeSourcesAndFlags 
+            // after UpdateMSBuildState has been called for each project.
+
 
             interface IVsUpdateSolutionEvents with
                 member x.UpdateSolution_Begin(pfCancelUpdate) =
                     VSConstants.S_OK
+
                 member x.UpdateSolution_Done(_fSucceeded, _fModified, _fCancelCommand) =
                     VSConstants.S_OK
+
                 member x.UpdateSolution_StartUpdate(pfCancelUpdate) =
                     VSConstants.S_OK
+
                 member x.UpdateSolution_Cancel() =
                     VSConstants.S_OK
-                member x.OnActiveProjectCfgChange(pIVsHierarchy) =
-                    OnActiveProjectCfgChange(pIVsHierarchy)
+
+                member x.OnActiveProjectCfgChange(pHierProj) =
+                    UpdateConfig(pHierProj)
+                    VSConstants.S_OK
 
             interface IVsUpdateSolutionEvents2 with
                 member x.UpdateSolution_Begin(pfCancelUpdate) =
                     VSConstants.S_OK
+
                 member x.UpdateSolution_Done(_fSucceeded, _fModified, _fCancelCommand) =
                     VSConstants.S_OK
+
                 member x.UpdateSolution_StartUpdate(pfCancelUpdate) =
                     VSConstants.S_OK
+
                 member x.UpdateSolution_Cancel() =
                     VSConstants.S_OK
-                member x.OnActiveProjectCfgChange(pIVsHierarchy) =
-                    OnActiveProjectCfgChange(pIVsHierarchy)
-                member x.UpdateProjectCfg_Begin(pHierProj, _pCfgProj, _pCfgSln, _dwAction, pfCancel) =
-                    UpdateConfig(pHierProj)
-                    VSConstants.S_OK
-                member x.UpdateProjectCfg_Done(pHierProj, _pCfgProj, _pCfgSln, _dwAction, _fSuccess, _fCancel) =
+
+                member x.OnActiveProjectCfgChange(pHierProj) =
                     UpdateConfig(pHierProj)
                     VSConstants.S_OK
 
+                // NOTE: we don't see this being called, at least in common scenarios
+                member x.UpdateProjectCfg_Begin(pHierProj, _pCfgProj, _pCfgSln, _dwAction, pfCancel) =
+                    UpdateConfig(pHierProj)
+                    VSConstants.S_OK
+
+                // NOTE: we don't see this being called, at least in common scenarios
+                member x.UpdateProjectCfg_Done(pHierProj, _pCfgProj, _pCfgSln, _dwAction, _fSuccess, _fCancel) =
+                    UpdateConfig(pHierProj)
+                    projNode.UpdateMSBuildState()
+                    projNode.SetProjectFileDirty(projNode.IsProjectFileDirty)
+                    projNode.ComputeSourcesAndFlags()
+                    VSConstants.S_OK
+
             interface IVsUpdateSolutionEvents3 with
+
                 member x.OnBeforeActiveSolutionCfgChange(_oldCfg, _newCfg) =
+
                     // this will be called for each project, but wait dialogs cannot 'stack'
                     // i.e. if a wait dialog is already open, subsequent calls to StartWaitDialog
                     // will not override the current open dialog
-                    waitDialog <-
-                        {
-                            WaitCaption = FSharpSR.GetString FSharpSR.ProductName
-                            WaitMessage = FSharpSR.GetString FSharpSR.UpdatingSolutionConfiguration
-                            ProgressText = None
-                            StatusBmpAnim = null
-                            StatusBarText = None
-                            DelayToShowDialogSecs = 1
-                            IsCancelable = false
-                            ShowMarqueeProgress = true
-                        }
-                        |> WaitDialog.start projNode.Site
-                        |> Some
+                    if waitDialog.IsNone  then 
+                        waitDialog <-
+                            {
+                                WaitCaption = FSharpSR.GetString FSharpSR.ProductName
+                                WaitMessage = FSharpSR.GetString FSharpSR.UpdatingSolutionConfiguration
+                                ProgressText = None
+                                StatusBmpAnim = null
+                                StatusBarText = None
+                                DelayToShowDialogSecs = 1
+                                IsCancelable = false
+                                ShowMarqueeProgress = true
+                            }
+                            |> WaitDialog.start projNode.Site
+                            |> Some
 
                     VSConstants.S_OK
 
                 member x.OnAfterActiveSolutionCfgChange(_oldCfg, _newCfg) =
+
+                    // We have updated the MSBuild state of each project.  Now we can call ComputeSourcesAndFlags
+                    projNode.ComputeSourcesAndFlags()
                     match waitDialog with
                     | Some x ->
                         x.Dispose()
                         waitDialog <- None
-                    | None -> ()
+                    | _ -> ()
                     VSConstants.S_OK
               
             interface IVsUpdateSolutionEvents4 with
                 member x.OnActiveProjectCfgChangeBatchBegin() =
-                    batchState <- BatchWaiting
+                    ()
+
                 member x.OnActiveProjectCfgChangeBatchEnd() =
-                    batchState <- NonBatch
+                    projNode.UpdateMSBuildState()
+                    projNode.SetProjectFileDirty(projNode.IsProjectFileDirty)
+
                 member x.UpdateSolution_BeginFirstUpdateAction() =
                     ()
                 member x.UpdateSolution_BeginUpdateAction(_dwAction) =

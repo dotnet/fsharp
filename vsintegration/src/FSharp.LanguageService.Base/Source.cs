@@ -112,8 +112,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         private LanguageService service;
         private IVsTextLines textLines;
         private Colorizer colorizer;
-        private Microsoft.VisualStudio.Shell.TaskProvider taskProvider;
-        private TaskReporter taskReporter;
         private CompletionSet completionSet;
         private TextSpan dirtySpan;
         private MethodData methodData;
@@ -215,9 +213,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         public AuthoringSink CreateAuthoringSink(BackgroundRequestReason reason, int line, int col)
         {
             int maxErrors = this.service.Preferences.MaxErrorMessages;
-            TaskReporter tr = this.GetTaskReporter();
-            if (null != tr)
-                tr.MaxErrors = (uint)maxErrors;
             return new AuthoringSink(reason, line, col, maxErrors);
         }
 
@@ -226,32 +221,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return new CompletionSet(this.service.GetImageList(), this);
         }
 
-
-        // Overriden in Source.fs, but it calls this base implementation
-        public virtual Microsoft.VisualStudio.Shell.TaskProvider GetTaskProvider()
-        {
-            if (this.taskProvider == null)
-            {
-                this.taskProvider = new Microsoft.VisualStudio.Shell.ErrorListProvider (service.Site); // task list
-                this.taskProvider.ProviderGuid = service.GetLanguageServiceGuid();
-				string name;
-				((IVsLanguageInfo)service).GetLanguageName(out name);
-				this.taskProvider.ProviderName = name;
-            }
-            return this.taskProvider;
-        }
-
-        // Overriden in Source.fs, but it calls this base implementation
-        internal virtual TaskReporter GetTaskReporter()
-        {
-            if (null == taskReporter)
-            {
-                string name = string.Format("Language service (Source.cs): {0}", this.GetFilePath());
-                taskReporter = new TaskReporter(name);
-                taskReporter.TaskListProvider = new TaskListProvider(GetTaskProvider());
-            }
-            return taskReporter;
-        }
 
         public LanguageService Service { get { return this.service; } }
 
@@ -368,65 +337,39 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                             {
                                 try
                                 {
-                                    // clear out any remaining tasks for this doc in the task list
-                                    // tp may not be the same as taskProvider
-
-                                    // REVIEW: This should be: if (null != this.taskReporter)
-                                    // Right now, MSBuild 4.0 can clear out build loggers responsibly, so this.taskReporter will always
-                                    // be null when we get to this point, so we'll need to create a new taskReporter to clear out the
-                                    // background tasks
-                                    TaskReporter tr = this.GetTaskReporter();  // may be our own TR or one from ProjectSite of this file
-                                    if (null != tr)
+                                    this.service = null;
+                                    if (this.colorizer != null)
                                     {
-                                        tr.ClearBackgroundTasksForFile(this.GetFilePath());
-                                        // Refresh the task list
-                                        tr.OutputTaskList();
-                                    }
-                                    if (null != this.taskReporter)      // dispose the one we own (do not dispose one shared by project site!)
-                                    {
-                                        this.taskReporter.Dispose();
-                                        this.taskReporter = null;
-                                        this.taskProvider = null;
+                                        // The colorizer is owned by the core text editor, so we don't close it, the core text editor
+                                        // does that for us when it is ready to do so.
+                                        //colorizer.CloseColorizer();
+                                        this.colorizer = null;
                                     }
                                 }
                                 finally
                                 {
+                                    this.colorState = null;
                                     try
                                     {
-                                        this.service = null;
-                                        if (this.colorizer != null)
+                                        if (this.expansionProvider != null)
                                         {
-                                            // The colorizer is owned by the core text editor, so we don't close it, the core text editor
-                                            // does that for us when it is ready to do so.
-                                            //colorizer.CloseColorizer();
-                                            this.colorizer = null;
+                                            this.expansionProvider.Dispose();
+                                            this.expansionProvider = null;
                                         }
+
                                     }
                                     finally
                                     {
-                                        this.colorState = null;
-                                        try
+                                        // Sometimes OnCloseSource is called when language service is changed, (for example
+                                        // when you save the file with a different file extension) in which case we cannot 
+                                        // null out the site because that will cause a crash inside msenv.dll.
+                                        //            if (this.textLines != null) {
+                                        //                ((IObjectWithSite)this.textLines).SetSite(null);
+                                        //            }
+                                        if (this.textLines != null)
                                         {
-                                            if (this.expansionProvider != null)
-                                            {
-                                                this.expansionProvider.Dispose();
-                                                this.expansionProvider = null;
-                                            }
-
-                                        }
-                                        finally
-                                        {
-                                            // Sometimes OnCloseSource is called when language service is changed, (for example
-                                            // when you save the file with a different file extension) in which case we cannot 
-                                            // null out the site because that will cause a crash inside msenv.dll.
-                                            //            if (this.textLines != null) {
-                                            //                ((IObjectWithSite)this.textLines).SetSite(null);
-                                            //            }
-                                            if (this.textLines != null)
-                                            {
-                                                this.textLines = null;
-                                                Marshal.Release(pUnkTextLines);
-                                            }
+                                            this.textLines = null;
+                                            Marshal.Release(pUnkTextLines);
                                         }
                                     }
                                 }
@@ -877,26 +820,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         /// Converts --flaterrors messages back to messages with embedded newlines
         public abstract string NewlineifyErrorString(string message);
 
-        // helper methods.
-        public DocumentTask CreateErrorTaskItem(TextSpan span, string filename, string subcategory, string message, Microsoft.VisualStudio.Shell.TaskPriority priority, Microsoft.VisualStudio.Shell.TaskCategory category, MARKERTYPE markerType, Microsoft.VisualStudio.Shell.TaskErrorCategory errorCategory)
-        {
-            // create task item
-
-            //TODO this src obj may not be the one matching filename.
-            //find the src for the filename only then call ValidSpan.
-            //Debug.Assert(TextSpanHelper.ValidSpan(this, span)); 
-
-            DocumentTask taskItem = new DocumentTask(this.service.Site, this.textLines, markerType, span, filename, subcategory);
-            taskItem.Priority = priority;
-            taskItem.Category = category;
-            taskItem.ErrorCategory = errorCategory;
-            message = NewlineifyErrorString(message);
-            taskItem.Text = message;
-            taskItem.IsTextEditable = false;
-            taskItem.IsCheckedEditable = false;
-            return taskItem;
-        }
-
 
         // return the type of new line to use that matches the one at the given line.
         public string GetNewLine(int line)
@@ -973,23 +896,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             var currentFilename = this.GetFilePath();
             if (this.originalFileName != currentFilename)
             {
-                TaskReporter tr = this.GetTaskReporter();
-                tr.ClearBackgroundTasksForFile(originalFileName);
-
-                // Refresh the task list
-                tr.OutputTaskList();
-
                 this.originalFileName = null;
-
-                if (this.taskProvider != null)
-                {
-                    this.taskProvider = null;
-                }
-                if (this.taskReporter != null)
-                {
-                    this.taskReporter.Dispose();
-                    this.taskReporter = null;
-                }
 
                 this.RecordChangeToView();
             }
@@ -1671,7 +1578,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                             this.service.RecentFullTypeCheckResults = req.ResultIntellisenseInfo;
                             this.service.RecentFullTypeCheckFile = req.FileName;
                         }
-                        ReportTasks(req.ResultSink.errors);
                     }
                     this.service.OnParseFileOrCheckFileComplete(req);
                 }
@@ -1738,103 +1644,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                 span.iEndIndex = 0;
             }
         }
-
-        public void ReportTasks(ArrayList errors)
-        {
-            Microsoft.VisualStudio.Shell.TaskProvider taskProvider = this.GetTaskProvider();
-            TaskReporter tr = this.GetTaskReporter();
-
-            if (null == taskProvider || null == tr)
-            {
-                Debug.Assert(false, "null task provider or task reporter - exiting ReportTasks");
-                return;
-            }
-
-            string fname = this.GetFilePath();
-
-            // Clear out this file's tasks
-            tr.ClearBackgroundTasksForFile(fname);
-
-            int errorMax = this.service.Preferences.MaxErrorMessages;
-            Microsoft.VisualStudio.Shell.RunningDocumentTable rdt = new Microsoft.VisualStudio.Shell.RunningDocumentTable(this.service.Site);
-            IVsHierarchy thisHeirarchy = rdt.GetHierarchyItem(fname);
-
-            // Here we merge errors lists to reduce flicker.  It is not a very intelligent merge
-            // but that is ok, the worst case is the task list flickers a bit.  But 99% of the time
-            // one error is added or removed as the user is typing, and this merge will reduce flicker
-            // in this case.
-            errors = GroupBySeverity(errors);
-            taskProvider.SuspendRefresh(); // batch updates.
-            Microsoft.VisualStudio.Shell.TaskErrorCategory mostSevere = Microsoft.VisualStudio.Shell.TaskErrorCategory.Message;
-
-            for (int i = 0, n = errors.Count; i < n; i++)
-            {
-                ErrorNode enode = (ErrorNode)errors[i];
-                string filename = enode.uri;
-                string subcategory = enode.subcategory;
-                bool thisFile = (!string.IsNullOrEmpty(filename) && NativeMethods.IsSamePath(fname, filename));
-
-                TextSpan span = enode.context;
-                Severity severity = enode.severity;
-                string message = enode.message;
-                if (message == null) continue;
-
-                message = NormalizeErrorString(message);
-
-                //normalize text span
-                if (thisFile)
-                {
-                    FixupMarkerSpan(ref span);
-                }
-                else
-                {
-                    TextSpanHelper.MakePositive(ref span);
-                }
-                //set options
-                Microsoft.VisualStudio.Shell.TaskPriority priority = Microsoft.VisualStudio.Shell.TaskPriority.Normal;
-                Microsoft.VisualStudio.Shell.TaskCategory category = Microsoft.VisualStudio.Shell.TaskCategory.BuildCompile;
-                MARKERTYPE markerType = MARKERTYPE.MARKER_CODESENSE_ERROR;
-                Microsoft.VisualStudio.Shell.TaskErrorCategory errorCategory = Microsoft.VisualStudio.Shell.TaskErrorCategory.Warning;
-
-                if (severity == Severity.Fatal || severity == Severity.Error)
-                {
-                    priority = Microsoft.VisualStudio.Shell.TaskPriority.High;
-                    errorCategory = Microsoft.VisualStudio.Shell.TaskErrorCategory.Error;
-                }
-                else if (severity == Severity.Hint)
-                {
-                    category = Microsoft.VisualStudio.Shell.TaskCategory.Comments;
-                    markerType = MARKERTYPE.MARKER_INVISIBLE;
-                    errorCategory = Microsoft.VisualStudio.Shell.TaskErrorCategory.Message;
-                }
-                else if (severity == Severity.Warning)
-                {
-                    markerType = MARKERTYPE.MARKER_COMPILE_ERROR;
-                    errorCategory = Microsoft.VisualStudio.Shell.TaskErrorCategory.Warning;
-                }
-                if (errorCategory < mostSevere)
-                {
-                    mostSevere = errorCategory;
-                }
-
-                IVsHierarchy hierarchy = thisHeirarchy;
-                if (!thisFile)
-                {
-                    // must be an error reference to another file.
-                    hierarchy = rdt.GetHierarchyItem(filename);
-                    markerType = MARKERTYPE.MARKER_OTHER_ERROR; // indicate to CreateErrorTaskItem
-                }
-
-                DocumentTask docTask = this.CreateErrorTaskItem(span, filename, subcategory, message, priority, category, markerType, errorCategory);
-                docTask.HierarchyItem = hierarchy;
-                tr.AddTask(docTask);
-
-            }
-
-            tr.OutputTaskList();
-            taskProvider.ResumeRefresh(); // batch updates.
-        }
-
         private static ArrayList GroupBySeverity(ArrayList errors)
         {
             // Sort the errors by severity so that if there's more than 'max' errors, then
@@ -1854,18 +1663,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                 }
             }
             return result;
-        }
-
-        public void RemoveTask(DocumentTask task)
-        {
-            for (int i = 0, n = this.taskProvider.Tasks.Count; i < n; i++)
-            {
-                Microsoft.VisualStudio.Shell.Task current = this.taskProvider.Tasks[i];
-                if (current == task)
-                {
-                    this.taskProvider.Tasks.RemoveAt(i); return;
-                }
-            }
         }
 
         private void RemoveHiddenRegions()

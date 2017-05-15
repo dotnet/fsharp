@@ -343,22 +343,6 @@ type internal FSharpSource(service:LanguageService, textLines, colorizer, vsFile
             info.LineStart <- "//"
             info
             
-        override source.GetTaskProvider() =
-            match iSource.ProjectSite with
-            | Some ps ->
-                match ps.ErrorListTaskProvider() with
-                | Some etp -> etp
-                | _ -> base.GetTaskProvider()
-            | _ -> base.GetTaskProvider()
-            
-        override source.GetTaskReporter() =
-            match iSource.ProjectSite with
-            | Some(ps) ->
-                match ps.ErrorListTaskReporter() with
-                | Some(etr) -> etr
-                | _ -> base.GetTaskReporter()
-            | _ -> base.GetTaskReporter()       
-
         member val FSharpIntelliSenseToAppearAdornment : FSharpIntelliSenseToAppearAdornment option = None with get, set
         member val CancellationTokenSource : CancellationTokenSource = null with get, set
 
