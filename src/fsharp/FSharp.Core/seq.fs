@@ -38,7 +38,6 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core.CompilerServices
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
-    open Microsoft.FSharp.Primitives.Basics
     open Microsoft.FSharp.Collections.SeqComposition
 
     [<RequireQualifiedAccess>]
