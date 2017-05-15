@@ -92,7 +92,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 			if (hierarchy == null)
 				throw new ArgumentNullException("hierarchy");
 
-            this.errorReporter = errorReporter;
+			this.errorReporter = errorReporter;
 			this.outputWindowPane = output;
 			this.hierarchy = hierarchy;
 			IOleServiceProvider site;

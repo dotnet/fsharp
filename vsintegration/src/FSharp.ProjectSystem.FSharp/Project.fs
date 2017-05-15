@@ -110,16 +110,28 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
     type internal ProjectSiteOptionLifetime() =
         let mutable state = ProjectSiteOptionLifetimeState.Opening
         let mutable projectSite : DynamicProjectSite option = None
+
         // This member is thread-safe
         member x.State = state
+
         // This member is thread-safe
         member x.GetProjectSite() =
             Debug.Assert(state <> ProjectSiteOptionLifetimeState.Opening, "ProjectSite is not available")
             projectSite.Value :> Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite
+
+        // This member is thread-safe
+        member x.TryGetProjectSite() =
+            match state, projectSite with 
+            | ProjectSiteOptionLifetimeState.Opening, _ 
+            | ProjectSiteOptionLifetimeState.Closed, _ -> None
+            | _, None ->  None
+            | _, Some x ->  Some(x :> Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite)
+
         member x.Open(site) =
             Debug.Assert((state = ProjectSiteOptionLifetimeState.Opening), "Called Open, but not in Opening state")
             state <- ProjectSiteOptionLifetimeState.Opened
             projectSite <- Some(new DynamicProjectSite(site))
+
         member x.Close(site) =
             Debug.Assert((state = ProjectSiteOptionLifetimeState.Opened || state = ProjectSiteOptionLifetimeState.Opening), "Called Close, but not in Opened or Opening state")
             state <- ProjectSiteOptionLifetimeState.Closed
@@ -1301,6 +1313,11 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 else 
                     null
                     
+            override x.GetBuildErrorReporter() = 
+                match projectSite.TryGetProjectSite() with
+                | None -> null
+                | Some site -> site.BuildErrorReporter |> Option.toObj 
+
             override x.Save(fileToBeSaved, remember, formatIndex) =
                 let r = base.Save(fileToBeSaved, remember, formatIndex)
                 x.ComputeSourcesAndFlags()

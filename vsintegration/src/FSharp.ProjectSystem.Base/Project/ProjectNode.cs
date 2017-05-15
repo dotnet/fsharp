@@ -491,8 +491,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         private ConfigProvider configProvider;
 
-        private IVsLanguageServiceBuildErrorReporter2 errorReporter;
-
         private Shell.ErrorListProvider projectErrorListProvider;
 
         private ExtensibilityEventsHelper myExtensibilityEventsHelper;
@@ -1363,7 +1361,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             CCITracing.TraceCall();
             this.site = new ServiceProvider(site);
 
-            errorReporter = null; //  new MakeAnErrorReporter();
             if (projectErrorListProvider != null)
             {
                 projectErrorListProvider.Dispose();
@@ -3032,7 +3029,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 // Because we may be aggregated, we need to make sure to get the outer IVsHierarchy
                 // Create the logger
-                this.BuildLogger = new IDEBuildLogger(output, this.InteropSafeIVsHierarchy, errorReporter);
+                this.BuildLogger = new IDEBuildLogger(output, this.InteropSafeIVsHierarchy, this.GetBuildErrorReporter());
 
                 // To retrive the verbosity level, the build logger depends on the registry root 
                 // (otherwise it will used an hardcoded default)
@@ -3085,6 +3082,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         public abstract void ComputeSourcesAndFlags();
+
+        public abstract IVsLanguageServiceBuildErrorReporter2 GetBuildErrorReporter();
 
         internal abstract int FixupAppConfigOnTargetFXChange(string newTargetFramework, string targetFSharpCoreVersion, bool autoGenerateBindingRedirects);
 
