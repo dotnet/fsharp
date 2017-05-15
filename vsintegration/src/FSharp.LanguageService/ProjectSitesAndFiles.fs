@@ -124,16 +124,16 @@ type internal ProjectSitesAndFiles() =
                     
     static let rec referencedProjectsOf (tryGetOptionsForReferencedProject, projectSite:IProjectSite, extraProjectInfo, serviceProvider:System.IServiceProvider, useUniqueStamp) =
         [| for (p,ps) in referencedProvideProjectSites (projectSite, serviceProvider) do
-               match fullOutputAssemblyPath p with 
-               | None -> ()
-               | Some path ->
-                    let referencedProjectOptions = 
-                        // Lookup may not succeed if the project has not been established yet
-                        // In this case we go and compute the options recursively.
-                        match tryGetOptionsForReferencedProject p.FileName with 
-                        | None -> getProjectOptionsForProjectSite (tryGetOptionsForReferencedProject, ps.GetProjectSite(), p.FileName, extraProjectInfo, serviceProvider, useUniqueStamp) |> snd
-                        | Some options -> options
-                    yield (p.FileName, (path, referencedProjectOptions)) |]
+              match fullOutputAssemblyPath p with 
+              | None -> ()
+              | Some path ->
+                  let referencedProjectOptions = 
+                      // Lookup may not succeed if the project has not been established yet
+                      // In this case we go and compute the options recursively.
+                      match tryGetOptionsForReferencedProject p.FileName with 
+                      | None -> getProjectOptionsForProjectSite (tryGetOptionsForReferencedProject, ps.GetProjectSite(), p.FileName, extraProjectInfo, serviceProvider, useUniqueStamp) |> snd
+                      | Some options -> options
+                  yield (p.FileName, (path, referencedProjectOptions)) |]
 
     and getProjectOptionsForProjectSite(tryGetOptionsForReferencedProject, projectSite:IProjectSite, fileName, extraProjectInfo, serviceProvider, useUniqueStamp) =            
         let referencedProjectFileNames, referencedProjectOptions = 

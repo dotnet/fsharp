@@ -65,6 +65,7 @@ type internal FSharpCheckerProvider
 
     member this.Checker = checker.Value
 
+/// A value and a function to recompute/refresh the value.  The function is passed a flag indicating if a refresh is happening.
 type Refreshable<'T> = 'T * (bool -> 'T)
 
 // Exposes project information as MEF component
@@ -381,11 +382,11 @@ and
         let ok,originalOptions = optionsAssociation.TryGetValue(projectContext)
         let updatedOptions = site.CompilerFlags()
         if not ok || originalOptions <> updatedOptions then 
-            let updatedFiles = site.SourceFilesOnDisk() |> wellFormedFilePathSetIgnoreCase
 
-            // OK, project options have changed, try to fake out Roslyn to convince it to reparse things
+            // OK, project options have changed, try to fake out Roslyn to convince it to reparse things.
             // Calling SetOptions fails because the CPS project system being used by the F# project system 
-            // imlpementation at the moment has no command line parser installed.
+            // imlpementation at the moment has no command line parser installed, so we remove/add all the files 
+            // instead.  A change of flags doesn't happen very often and the remove/add is fast in any case.
             //projectContext.SetOptions(String.concat " " updatedOptions)
             for file in updatedFiles do
                 projectContext.RemoveSourceFile(file)

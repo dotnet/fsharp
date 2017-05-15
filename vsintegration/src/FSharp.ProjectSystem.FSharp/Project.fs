@@ -1704,15 +1704,65 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     if batchState = BatchWaiting then
                         batchState <- BatchDone
 
+            // The following event sequences are observed in Visual Studio 2017, see https://github.com/Microsoft/visualfsharp/pull/3025#pullrequestreview-38005713
+            //
+            // Loading tests\projects\misc\TestProjectChanges.sln:
+            //
+            // - OnActiveProjectCfgChangeBatchBegin x 3 (one for each project)
+            // - IVsUpdateSolutionEvents.OnActiveProjectCfgChange(null) x 3
+            // - IVsUpdateSolutionEvents.OnActiveProjectCfgChange(not-null) x 6
+            // - OnActiveProjectCfgChangeBatchEnd x 3 
+            //
+            //   Then we get a "duplicate" set of Batch events
+            // 
+            // - OnActiveProjectCfgChangeBatchBegin x 3
+            // - OnActiveProjectCfgChangeBatchEnd x 3 
+            //
+            // Switching to "Release"
+            // - OnBeforeActiveSolutionCfgChange x 3
+            // - OnActiveProjectCfgChangeBatchBegin x 3
+            // - IVsUpdateSolutionEvents.OnActiveProjectCfgChange(null) x 3
+            // - IVsUpdateSolutionEvents.OnActiveProjectCfgChange(not-null) x 6
+            // - OnActiveProjectCfgChangeBatchEnd x 3 
+            // - OnAfterActiveSolutionCfgChange x 3 
+            //
+            // On prompted solution reload after a project file has been edited
+            // - OnActiveProjectCfgChangeBatchBegin x 3
+            // - IVsUpdateSolutionEvents.OnActiveProjectCfgChange(null) x 3
+            // - IVsUpdateSolutionEvents.OnActiveProjectCfgChange(not-null) x 6
+            // - OnActiveProjectCfgChangeBatchEnd x 3 
+            // 
+            // Then we get a "duplicate" set of Batch events
+            // 
+            // - OnActiveProjectCfgChangeBatchBegin x 3
+            // - OnActiveProjectCfgChangeBatchEnd x 3 
+            //
+            // On individual project reload:
+            // - OnActiveProjectCfgChange
+            //
+            // We never see these being called in the scenarios I've tested - if you know a sequence that triggers them please let us know
+            // - IVsUpdateSolutionEvents2.OnActiveProjectCfgChange
+            // - IVsUpdateSolutionEvents2.UpdateProjectCfg_Begin
+            // - IVsUpdateSolutionEvents2.UpdateProjectCfg_Done
+            //
+            // Placing the call to ComputeSourcesAndFlags in OnAfterActiveSolutionCfgChange appears to be 
+            // sufficient to ensure consistent update. Note that we can only call ComputeSourcesAndFlags 
+            // after UpdateMSBuildState has been called for each project.
+
+
             interface IVsUpdateSolutionEvents with
                 member x.UpdateSolution_Begin(pfCancelUpdate) =
                     VSConstants.S_OK
+
                 member x.UpdateSolution_Done(_fSucceeded, _fModified, _fCancelCommand) =
                     VSConstants.S_OK
+
                 member x.UpdateSolution_StartUpdate(pfCancelUpdate) =
                     VSConstants.S_OK
+
                 member x.UpdateSolution_Cancel() =
                     VSConstants.S_OK
+
                 member x.OnActiveProjectCfgChange(pHierProj) =
                     UpdateConfig(pHierProj)
                     VSConstants.S_OK
@@ -1720,21 +1770,28 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             interface IVsUpdateSolutionEvents2 with
                 member x.UpdateSolution_Begin(pfCancelUpdate) =
                     VSConstants.S_OK
+
                 member x.UpdateSolution_Done(_fSucceeded, _fModified, _fCancelCommand) =
                     VSConstants.S_OK
+
                 member x.UpdateSolution_StartUpdate(pfCancelUpdate) =
                     VSConstants.S_OK
+
                 member x.UpdateSolution_Cancel() =
                     VSConstants.S_OK
+
                 member x.OnActiveProjectCfgChange(pHierProj) =
                     UpdateConfig(pHierProj)
                     VSConstants.S_OK
+
+                // NOTE: we don't see this being called, at least in common scenarios
                 member x.UpdateProjectCfg_Begin(pHierProj, _pCfgProj, _pCfgSln, _dwAction, pfCancel) =
                     UpdateConfig(pHierProj)
                     VSConstants.S_OK
+
+                // NOTE: we don't see this being called, at least in common scenarios
                 member x.UpdateProjectCfg_Done(pHierProj, _pCfgProj, _pCfgSln, _dwAction, _fSuccess, _fCancel) =
                     UpdateConfig(pHierProj)
-                    // We wait until allproject configurations have been updated before updating our MSBuild state
                     projNode.UpdateMSBuildState()
                     projNode.SetProjectFileDirty(projNode.IsProjectFileDirty)
                     projNode.ComputeSourcesAndFlags()
@@ -1765,11 +1822,9 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     VSConstants.S_OK
 
                 member x.OnAfterActiveSolutionCfgChange(_oldCfg, _newCfg) =
-                    // We wait until allproject configurations have been updated before updating our MSBuild state
-                    projNode.UpdateMSBuildState()
-                    projNode.SetProjectFileDirty(projNode.IsProjectFileDirty)
-                    projNode.ComputeSourcesAndFlags()
 
+                    // We have updated the MSBuild state of each project.  Now we can call ComputeSourcesAndFlags
+                    projNode.ComputeSourcesAndFlags()
                     match waitDialog with
                     | Some x ->
                         x.Dispose()
@@ -1782,8 +1837,8 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     batchState <- BatchWaiting
 
                 member x.OnActiveProjectCfgChangeBatchEnd() =
+                    projNode.UpdateMSBuildState()
                     projNode.SetProjectFileDirty(projNode.IsProjectFileDirty)
-                    projNode.ComputeSourcesAndFlags()
                     batchState <- NonBatch
 
                 member x.UpdateSolution_BeginFirstUpdateAction() =
