@@ -168,7 +168,11 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         internal static T DoOnUIThread<T>(Func<T> callback)
         {
-            return Microsoft.VisualStudio.Shell.ThreadHelper.Generic.Invoke<T>(callback);
+            return  ThreadHelper.JoinableTaskFactory.Run<T>(async delegate
+                    {
+                        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(); 
+                        return callback();
+                    });
         }
 
         /// <summary>
@@ -178,7 +182,11 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         internal static void DoOnUIThread(Action callback)
         {
-            Microsoft.VisualStudio.Shell.ThreadHelper.Generic.Invoke(callback);
+            ThreadHelper.JoinableTaskFactory.Run(async delegate
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(); 
+                callback();
+            });
         }
     }
 
