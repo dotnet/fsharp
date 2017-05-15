@@ -479,6 +479,9 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                     count <- count + 1
                 count
 
+        interface IEnumerable<'T> with
+            member __.GetEnumerator () = enumerable.GetEnumerator ()
+
     type DelayedEnumerable<'T>(delayed:unit->ISeq<'T>, pipeIdx:PipeIdx) =
         inherit EnumerableBase<'T>()
 
@@ -589,6 +592,9 @@ namespace Microsoft.FSharp.Collections.SeqComposition
 
         override __.Length () = array.Length
         override __.GetRaw () = upcast array
+
+        interface IEnumerable<'T> with
+            member __.GetEnumerator () = (array:>IEnumerable<'T>).GetEnumerator ()
 
     type SingletonEnumerable<'T>(item:'T) =
         inherit EnumerableBase<'T>()

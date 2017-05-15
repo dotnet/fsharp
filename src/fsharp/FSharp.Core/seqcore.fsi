@@ -118,6 +118,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
     type internal ThinArrayEnumerable<'T> =
         inherit ArrayEnumerable<'T, 'T>
         new : array<'T> -> ThinArrayEnumerable<'T>
+        interface IEnumerable<'T>
 
     type internal VanillaEnumerable<'T,'U> =
         inherit SeqFactoryBase<'T,'U>
@@ -127,6 +128,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
     type internal ThinEnumerable<'T> =
         inherit VanillaEnumerable<'T,'T>
         new : IEnumerable<'T> -> ThinEnumerable<'T>
+        interface IEnumerable<'T>
 
     type internal UnfoldEnumerable<'T,'U,'GeneratorState> =
         inherit SeqFactoryBase<'T,'U>
