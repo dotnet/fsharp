@@ -43,69 +43,69 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         private string buildVerbosityRegistryRoot = LoggingConstants.DefaultVSRegistryRoot;
         // TODO: Re-enable this constants when we have a version that suppoerts getting the verbosity using automation.
 
-		private int currentIndent;
-		private IVsOutputWindowPane outputWindowPane;
-		private string errorString = SR.GetString(SR.Error, CultureInfo.CurrentUICulture);
-		private string warningString = SR.GetString(SR.Warning, CultureInfo.CurrentUICulture);
-		private bool isLogTaskDone;
-		private IVsHierarchy hierarchy;
-		private IServiceProvider serviceProvider;
+        private int currentIndent;
+        private IVsOutputWindowPane outputWindowPane;
+        private string errorString = SR.GetString(SR.Error, CultureInfo.CurrentUICulture);
+        private string warningString = SR.GetString(SR.Warning, CultureInfo.CurrentUICulture);
+        private bool isLogTaskDone;
+        private IVsHierarchy hierarchy;
+        private IServiceProvider serviceProvider;
         private IVsLanguageServiceBuildErrorReporter2 errorReporter;
         private bool haveCachedRegistry = false;
 
-		public string WarningString
-		{
-			get { return this.warningString; }
-			set { this.warningString = value; }
-		}
-		public string ErrorString
-		{
-			get { return this.errorString; }
-			set { this.errorString = value; }
-		}
-		public bool IsLogTaskDone
-		{
-			get { return this.isLogTaskDone; }
-			set { this.isLogTaskDone = value; }
-		}
-		/// <summary>
-		/// When building from within VS, setting this will
-		/// enable the logger to retrive the verbosity from
-		/// the correct registry hive.
-		/// </summary>
-		public string BuildVerbosityRegistryRoot
-		{
-			get { return buildVerbosityRegistryRoot; }
-			set { buildVerbosityRegistryRoot = value; }
-		}
-		/// <summary>
-		/// Set to null to avoid writing to the output window
-		/// </summary>
-		public IVsOutputWindowPane OutputWindowPane
-		{
-			get { return outputWindowPane; }
-			set { outputWindowPane = value; }
-		}
+        public string WarningString
+        {
+            get { return this.warningString; }
+            set { this.warningString = value; }
+        }
+        public string ErrorString
+        {
+            get { return this.errorString; }
+            set { this.errorString = value; }
+        }
+        public bool IsLogTaskDone
+        {
+            get { return this.isLogTaskDone; }
+            set { this.isLogTaskDone = value; }
+        }
+        /// <summary>
+        /// When building from within VS, setting this will
+        /// enable the logger to retrive the verbosity from
+        /// the correct registry hive.
+        /// </summary>
+        public string BuildVerbosityRegistryRoot
+        {
+            get { return buildVerbosityRegistryRoot; }
+            set { buildVerbosityRegistryRoot = value; }
+        }
+        /// <summary>
+        /// Set to null to avoid writing to the output window
+        /// </summary>
+        public IVsOutputWindowPane OutputWindowPane
+        {
+            get { return outputWindowPane; }
+            set { outputWindowPane = value; }
+        }
 
-		internal IDEBuildLogger(IVsOutputWindowPane output, IVsHierarchy hierarchy, IVsLanguageServiceBuildErrorReporter2 errorReporter)
-		{
-			if (hierarchy == null)
-				throw new ArgumentNullException("hierarchy");
+        internal IDEBuildLogger(IVsOutputWindowPane output, IVsHierarchy hierarchy, IVsLanguageServiceBuildErrorReporter2 errorReporter)
+        {
+            if (hierarchy == null)
+                throw new ArgumentNullException("hierarchy");
 
             this.errorReporter = errorReporter;
-			this.outputWindowPane = output;
-			this.hierarchy = hierarchy;
-			IOleServiceProvider site;
-			Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(hierarchy.GetSite(out site));
-			this.serviceProvider = new Shell.ServiceProvider (site);
-		}
+            this.outputWindowPane = output;
+            this.hierarchy = hierarchy;
+            IOleServiceProvider site;
+            Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(hierarchy.GetSite(out site));
+            this.serviceProvider = new Shell.ServiceProvider (site);
+        }
 
-		public override void Initialize(IEventSource eventSource)
-		{
-			if (null == eventSource)
-			{
-				throw new ArgumentNullException("eventSource");
-			}
+        public override void Initialize(IEventSource eventSource)
+        {
+            if (null == eventSource)
+            {
+                throw new ArgumentNullException("eventSource");
+            }
             // Note that the MSBuild logger thread does not have an exception handler, so
             // we swallow all exceptions (lest some random bad thing bring down the process).
             eventSource.BuildStarted += new BuildStartedEventHandler(BuildStartedHandler);
@@ -122,11 +122,11 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             eventSource.MessageRaised += new BuildMessageEventHandler(MessageHandler);
         }
 
-		/// <summary>
-		/// This is the delegate for error events.
-		/// </summary>
-		private void ErrorHandler(object sender, BuildErrorEventArgs errorEvent)
-		{
+        /// <summary>
+        /// This is the delegate for error events.
+        /// </summary>
+        private void ErrorHandler(object sender, BuildErrorEventArgs errorEvent)
+        {
             try
             {
                 AddToErrorList(
@@ -144,13 +144,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 Debug.Assert(false, "Problem adding error to error list: " + e.Message + " at " + e.TargetSite);
             }
-		}
+        }
 
-		/// <summary>
-		/// This is the delegate for warning events.
-		/// </summary>
-		private void WarningHandler(object sender, BuildWarningEventArgs errorEvent)
-		{
+        /// <summary>
+        /// This is the delegate for warning events.
+        /// </summary>
+        private void WarningHandler(object sender, BuildWarningEventArgs errorEvent)
+        {
             try
             {
                 AddToErrorList(
@@ -167,7 +167,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 Debug.Assert(false, "Problem adding warning to warning list: " + e.Message + " at " + e.TargetSite);
             }
-		}
+        }
         /// <summary>
         /// Private internal class for capturing full compiler error line/column span information
         /// </summary>
@@ -228,19 +228,19 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             });
         }
  
-		/// <summary>
-		/// Add the error/warning to the error list and potentially to the output window.
-		/// </summary>
-		private void AddToErrorList(
-			BuildEventArgs errorEvent,
+        /// <summary>
+        /// Add the error/warning to the error list and potentially to the output window.
+        /// </summary>
+        private void AddToErrorList(
+            BuildEventArgs errorEvent,
             string subcategory,
-			string errorCode,
-			string file,
-			int startLine,
-			int startColumn,
+            string errorCode,
+            string file,
+            int startLine,
+            int startColumn,
             int endLine,
             int endColumn)
-		{
+        {
             if (file == null)
                 file = String.Empty;
             
@@ -253,22 +253,22 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             span.iEndLine = endLine < startLine ? span.iStartLine : endLine;
             span.iEndIndex = (endColumn < startColumn) && (span.iStartLine == span.iEndLine) ? span.iStartIndex : endColumn;
 
-			if (OutputWindowPane != null
-				&& (this.Verbosity != LoggerVerbosity.Quiet || errorEvent is BuildErrorEventArgs))
-			{
-				// Format error and output it to the output window
-				string message = this.FormatMessage(errorEvent.Message);
+            if (OutputWindowPane != null
+                && (this.Verbosity != LoggerVerbosity.Quiet || errorEvent is BuildErrorEventArgs))
+            {
+                // Format error and output it to the output window
+                string message = this.FormatMessage(errorEvent.Message);
                 DefaultCompilerError e = new DefaultCompilerError(file,
                                                 span.iStartLine,
                                                 span.iStartIndex,
                                                 span.iEndLine,
                                                 span.iEndIndex,
                                                 errorCode,
-					                            message);
-				e.IsWarning = isWarning;
+                                                message);
+                e.IsWarning = isWarning;
 
-				Output(GetFormattedErrorMessage(e));
-			}
+                Output(GetFormattedErrorMessage(e));
+            }
 
             UIThread.Run(delegate()
             {
@@ -324,14 +324,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
 
             });
-		}
+        }
 
 
-		/// <summary>
-		/// This is the delegate for Message event types
-		/// </summary>		
-		private void MessageHandler(object sender, BuildMessageEventArgs messageEvent)
-		{
+        /// <summary>
+        /// This is the delegate for Message event types
+        /// </summary>		
+        private void MessageHandler(object sender, BuildMessageEventArgs messageEvent)
+        {
             try
             {
                 if (LogAtImportance(messageEvent.Importance))
@@ -344,14 +344,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 Debug.Assert(false, "Problem logging message event: " + e.Message + " at " + e.TargetSite);
                 // swallow the exception
             }
-		}
+        }
 
 
-		/// <summary>
-		/// This is the delegate for BuildStartedHandler events.
-		/// </summary>
-		private void BuildStartedHandler(object sender, BuildStartedEventArgs buildEvent)
-		{
+        /// <summary>
+        /// This is the delegate for BuildStartedHandler events.
+        /// </summary>
+        private void BuildStartedHandler(object sender, BuildStartedEventArgs buildEvent)
+        {
             try
             {
                 this.haveCachedRegistry = false;
@@ -374,15 +374,15 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     });
                 }
             }
-		}
+        }
 
-		/// <summary>
-		/// This is the delegate for BuildFinishedHandler events.
-		/// </summary>
-		/// <param name="sender"></param>
-		/// <param name="buildEvent"></param>
-		private void BuildFinishedHandler(object sender, BuildFinishedEventArgs buildEvent)
-		{
+        /// <summary>
+        /// This is the delegate for BuildFinishedHandler events.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="buildEvent"></param>
+        private void BuildFinishedHandler(object sender, BuildFinishedEventArgs buildEvent)
+        {
             try
             {
                 if (LogAtImportance(buildEvent.Succeeded ? MessageImportance.Low :
@@ -398,14 +398,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 Debug.Assert(false, "Problem logging buildfinished event: " + e.Message + " at " + e.TargetSite);
                 // swallow the exception
             }
-		}
+        }
 
 
-		/// <summary>
-		/// This is the delegate for ProjectStartedHandler events.
-		/// </summary>
-		private void ProjectStartedHandler(object sender, ProjectStartedEventArgs buildEvent)
-		{
+        /// <summary>
+        /// This is the delegate for ProjectStartedHandler events.
+        /// </summary>
+        private void ProjectStartedHandler(object sender, ProjectStartedEventArgs buildEvent)
+        {
             try
             {
                 if (LogAtImportance(MessageImportance.Low))
@@ -418,13 +418,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 Debug.Assert(false, "Problem logging projectstarted event: " + e.Message + " at " + e.TargetSite);
                 // swallow the exception
             }
-		}
+        }
 
-		/// <summary>
-		/// This is the delegate for ProjectFinishedHandler events.
-		/// </summary>
-		private void ProjectFinishedHandler(object sender, ProjectFinishedEventArgs buildEvent)
-		{
+        /// <summary>
+        /// This is the delegate for ProjectFinishedHandler events.
+        /// </summary>
+        private void ProjectFinishedHandler(object sender, ProjectFinishedEventArgs buildEvent)
+        {
             try
             {
                 if (LogAtImportance(buildEvent.Succeeded ? MessageImportance.Low
@@ -438,13 +438,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 Debug.Assert(false, "Problem logging projectfinished event: " + e.Message + " at " + e.TargetSite);
                 // swallow the exception
             }
-		}
+        }
 
-		/// <summary>
-		/// This is the delegate for TargetStartedHandler events.
-		/// </summary>
-		private void TargetStartedHandler(object sender, TargetStartedEventArgs buildEvent)
-		{
+        /// <summary>
+        /// This is the delegate for TargetStartedHandler events.
+        /// </summary>
+        private void TargetStartedHandler(object sender, TargetStartedEventArgs buildEvent)
+        {
             try
             {
                 if (LogAtImportance(MessageImportance.Normal))
@@ -461,14 +461,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 ++this.currentIndent;
             }
-		}
+        }
 
 
-		/// <summary>
-		/// This is the delegate for TargetFinishedHandler events.
-		/// </summary>
-		private void TargetFinishedHandler(object sender, TargetFinishedEventArgs buildEvent)
-		{
+        /// <summary>
+        /// This is the delegate for TargetFinishedHandler events.
+        /// </summary>
+        private void TargetFinishedHandler(object sender, TargetFinishedEventArgs buildEvent)
+        {
             try
             {
                 --this.currentIndent;
@@ -484,14 +484,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 Debug.Assert(false, "Problem logging targetfinished event: " + e.Message + " at " + e.TargetSite);
                 // swallow the exception
             }
-		}
+        }
 
 
-		/// <summary>
-		/// This is the delegate for TaskStartedHandler events.
-		/// </summary>
-		private void TaskStartedHandler(object sender, TaskStartedEventArgs buildEvent)
-		{
+        /// <summary>
+        /// This is the delegate for TaskStartedHandler events.
+        /// </summary>
+        private void TaskStartedHandler(object sender, TaskStartedEventArgs buildEvent)
+        {
             try
             {
                 if (LogAtImportance(MessageImportance.Normal))
@@ -508,14 +508,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 ++this.currentIndent;
             }
-		}
+        }
 
 
-		/// <summary>
-		/// This is the delegate for TaskFinishedHandler events.
-		/// </summary>
-		private void TaskFinishedHandler(object sender, TaskFinishedEventArgs buildEvent)
-		{
+        /// <summary>
+        /// This is the delegate for TaskFinishedHandler events.
+        /// </summary>
+        private void TaskFinishedHandler(object sender, TaskFinishedEventArgs buildEvent)
+        {
             try
             {
                 --this.currentIndent;
@@ -531,16 +531,16 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 Debug.Assert(false, "Problem logging taskfinished event: " + e.Message + " at " + e.TargetSite);
                 // swallow the exception
             }
-		}
+        }
 
 
-		/// <summary>
-		/// This is the delegate for CustomHandler events.
-		/// </summary>
-		/// <param name="sender"></param>
-		/// <param name="buildEvent"></param>
-		private void CustomHandler(object sender, CustomBuildEventArgs buildEvent)
-		{
+        /// <summary>
+        /// This is the delegate for CustomHandler events.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="buildEvent"></param>
+        private void CustomHandler(object sender, CustomBuildEventArgs buildEvent)
+        {
             try
             {
                 LogEvent(sender, buildEvent);
@@ -550,49 +550,49 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 Debug.Assert(false, "Problem logging custom event: " + e.Message + " at " + e.TargetSite);
                 // swallow the exception
             }
-		}
+        }
 
-		/// <summary>
-		/// This method takes a MessageImportance and returns true if messages
-		/// at importance i should be loggeed.  Otherwise return false.
-		/// </summary>
-		private bool LogAtImportance(MessageImportance importance)
-		{
-			// If importance is too low for current settings, ignore the event
-			bool logIt = false;
+        /// <summary>
+        /// This method takes a MessageImportance and returns true if messages
+        /// at importance i should be loggeed.  Otherwise return false.
+        /// </summary>
+        private bool LogAtImportance(MessageImportance importance)
+        {
+            // If importance is too low for current settings, ignore the event
+            bool logIt = false;
 
-			this.SetVerbosity();
+            this.SetVerbosity();
 
-			switch (this.Verbosity)
-			{
-				case LoggerVerbosity.Quiet:
-					logIt = false;
-					break;
-				case LoggerVerbosity.Minimal:
-					logIt = (importance == MessageImportance.High);
-					break;
-				case LoggerVerbosity.Normal:
-				// Falling through...
-				case LoggerVerbosity.Detailed:
-					logIt = (importance != MessageImportance.Low);
-					break;
-				case LoggerVerbosity.Diagnostic:
-					logIt = true;
-					break;
-				default:
-					Debug.Fail("Unknown Verbosity level. Ignoring will cause everything to be logged");
-					break;
-			}
+            switch (this.Verbosity)
+            {
+                case LoggerVerbosity.Quiet:
+                    logIt = false;
+                    break;
+                case LoggerVerbosity.Minimal:
+                    logIt = (importance == MessageImportance.High);
+                    break;
+                case LoggerVerbosity.Normal:
+                // Falling through...
+                case LoggerVerbosity.Detailed:
+                    logIt = (importance != MessageImportance.Low);
+                    break;
+                case LoggerVerbosity.Diagnostic:
+                    logIt = true;
+                    break;
+                default:
+                    Debug.Fail("Unknown Verbosity level. Ignoring will cause everything to be logged");
+                    break;
+            }
 
-			return logIt;
-		}
+            return logIt;
+        }
 
-		/// <summary>
-		/// This is the method that does the main work of logging an event
-		/// when one is sent to this logger.
-		/// </summary>
-		private void LogEvent(object sender, BuildEventArgs buildEvent)
-		{
+        /// <summary>
+        /// This is the method that does the main work of logging an event
+        /// when one is sent to this logger.
+        /// </summary>
+        private void LogEvent(object sender, BuildEventArgs buildEvent)
+        {
             try
             {
                 // Fill in the Message text
@@ -623,27 +623,27 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
                 throw;
             }
-		}
+        }
 
-		/// <summary>
-		/// This is called when the build complete.
-		/// </summary>
-		private void ShutdownLogger()
-		{
-		}
+        /// <summary>
+        /// This is called when the build complete.
+        /// </summary>
+        private void ShutdownLogger()
+        {
+        }
 
 
-		/// <summary>
-		/// Format error messages for the task list
-		/// </summary>
-		/// <param name="e"></param>
-		/// <returns></returns>
+        /// <summary>
+        /// Format error messages for the task list
+        /// </summary>
+        /// <param name="e"></param>
+        /// <returns></returns>
         private string GetFormattedErrorMessage(DefaultCompilerError e)
-		{
-			if (e == null) return String.Empty;
+        {
+            if (e == null) return String.Empty;
 
-			string errCode = (e.IsWarning) ? this.warningString : this.errorString;
-			StringBuilder fileRef = new StringBuilder();
+            string errCode = (e.IsWarning) ? this.warningString : this.errorString;
+            StringBuilder fileRef = new StringBuilder();
 
             // JAF:
             // Even if fsc.exe returns a canonical message with no file at all, MSBuild will set the file to the name 
@@ -660,29 +660,29 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             fileRef.AppendFormat(CultureInfo.CurrentUICulture, " {0} {1}: {2}", errCode, e.ErrorNumber, e.ErrorText);
             return fileRef.ToString();
-		}
+        }
 
-		/// <summary>
-		/// Formats the message that is to be output.
-		/// </summary>
-		/// <param name="message">The message string.</param>
-		/// <returns>The new message</returns>
-		private string FormatMessage(string message)
-		{
-			if (string.IsNullOrEmpty(message))
-			{
-				return Environment.NewLine;
-			}
+        /// <summary>
+        /// Formats the message that is to be output.
+        /// </summary>
+        /// <param name="message">The message string.</param>
+        /// <returns>The new message</returns>
+        private string FormatMessage(string message)
+        {
+            if (string.IsNullOrEmpty(message))
+            {
+                return Environment.NewLine;
+            }
 
-			StringBuilder sb = new StringBuilder(message.Length + Environment.NewLine.Length);
+            StringBuilder sb = new StringBuilder(message.Length + Environment.NewLine.Length);
 
-			sb.AppendLine(message);
-			return sb.ToString();
-		}
+            sb.AppendLine(message);
+            return sb.ToString();
+        }
 
-		/// <summary>
-		/// Sets the verbosity level.
-		/// </summary>
+        /// <summary>
+        /// Sets the verbosity level.
+        /// </summary>
         private void SetVerbosity()
         {
             // TODO: This should be replaced when we have a version that supports automation.
