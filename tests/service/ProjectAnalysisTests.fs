@@ -3267,9 +3267,9 @@ let ``Test Project23 property`` () =
         extensionProps
         |> Array.collect (fun f -> 
             [|  if f.HasGetterMethod then
-                    yield (f.EnclosingEntity.FullName, f.GetterMethod.CompiledName, f.GetterMethod.EnclosingEntity.FullName, attribsOfSymbol f)
+                    yield (f.EnclosingEntity.Value.FullName, f.GetterMethod.CompiledName, f.GetterMethod.EnclosingEntity.Value.FullName, attribsOfSymbol f)
                 if f.HasSetterMethod then
-                    yield (f.EnclosingEntity.FullName, f.SetterMethod.CompiledName, f.SetterMethod.EnclosingEntity.FullName, attribsOfSymbol f)
+                    yield (f.EnclosingEntity.Value.FullName, f.SetterMethod.CompiledName, f.SetterMethod.EnclosingEntity.Value.FullName, attribsOfSymbol f)
             |])
         |> Array.toList
 
@@ -3313,9 +3313,9 @@ let ``Test Project23 extension properties' getters/setters should refer to the c
         match x.Symbol with
         | :? FSharpMemberOrFunctionOrValue as f -> 
             if f.HasGetterMethod then
-                yield (f.EnclosingEntity.FullName, f.GetterMethod.EnclosingEntity.FullName, attribsOfSymbol f)
+                yield (f.EnclosingEntity.Value.FullName, f.GetterMethod.EnclosingEntity.Value.FullName, attribsOfSymbol f)
             if f.HasSetterMethod then
-                yield (f.EnclosingEntity.FullName, f.SetterMethod.EnclosingEntity.FullName, attribsOfSymbol f)
+                yield (f.EnclosingEntity.Value.FullName, f.SetterMethod.EnclosingEntity.Value.FullName, attribsOfSymbol f)
         | _ -> () 
         |])
     |> Array.toList

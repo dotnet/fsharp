@@ -118,16 +118,16 @@ type FSharpChecker with
                             if func.IsProperty then
                                 let fullNames =
                                     [|  if func.HasGetterMethod then
-                                            yield func.GetterMethod.EnclosingEntity.TryGetFullName()
+                                            yield func.GetterMethod.EnclosingEntity.Value.TryGetFullName()
                                         if func.HasSetterMethod then
-                                            yield func.SetterMethod.EnclosingEntity.TryGetFullName()
+                                            yield func.SetterMethod.EnclosingEntity.Value.TryGetFullName()
                                     |]
                                     |> Array.choose id
                                 match fullNames with
                                 | [||]  -> None 
                                 | _     -> Some fullNames
                             else 
-                                match func.EnclosingEntity with
+                                match func.EnclosingEntity.Value with
                                 // C# extension method
                                 | TypedAstPatterns.FSharpEntity TypedAstPatterns.Class ->
                                     let fullName = symbolUse.Symbol.FullName.Split '.'

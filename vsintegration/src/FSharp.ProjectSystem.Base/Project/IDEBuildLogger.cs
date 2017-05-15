@@ -87,7 +87,13 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 			set { outputWindowPane = value; }
 		}
 
-		internal IDEBuildLogger(IVsOutputWindowPane output, IVsHierarchy hierarchy, IVsLanguageServiceBuildErrorReporter2 errorReporter)
+        public IVsLanguageServiceBuildErrorReporter2 ErrorReporter
+        {
+            get { return errorReporter; }
+            set { errorReporter = value; }
+        }
+
+        internal IDEBuildLogger(IVsOutputWindowPane output, IVsHierarchy hierarchy, IVsLanguageServiceBuildErrorReporter2 errorReporter)
 		{
 			if (hierarchy == null)
 				throw new ArgumentNullException("hierarchy");
@@ -317,10 +323,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
                 if (errorReporter != null)
                 {
-                    UIThread.Run(delegate ()
-                    {
-                        errorReporter.ReportError2(taskText, errorCode, (VSTASKPRIORITY) priority, span.iStartLine, span.iStartIndex, span.iEndLine, span.iEndIndex, file);
-                    });
+                 //   errorReporter.ReportError2(taskText, errorCode, (VSTASKPRIORITY) priority, span.iStartLine, span.iStartIndex, span.iEndLine, span.iEndIndex, file);
                 }
 
             });

@@ -715,7 +715,7 @@ and [<Class>] internal FSharpMemberOrFunctionOrValue =
     member IsUnresolved : bool
 
     /// Get the enclosing entity for the definition
-    member EnclosingEntity : FSharpEntity
+    member EnclosingEntity : FSharpEntity option
     
     /// Get the declaration location of the member, function or value
     member DeclarationLocation: range

@@ -101,6 +101,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             member ips.LoadTime = inner.LoadTime 
             member ips.ProjectProvider = inner.ProjectProvider
             member ips.AssemblyReferences() = inner.AssemblyReferences()
+        override x.ToString() = inner.ProjectFileName()
 
     type internal ProjectSiteOptionLifetimeState =
         | Opening=1  // The project has been opened, but has not yet called Compile() to compute sources/flags
@@ -138,6 +139,11 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             match projectSite with
             |   Some ps -> ps.SetImplementation(site)
             |   None -> projectSite <- Some (new DynamicProjectSite(site))
+
+        override x.ToString() =
+            match projectSite with
+            |   Some ps -> ps.ToString()
+            |   None -> "None"
 
     type internal MyVSConstants =
         static member ExploreFolderInWindows = 1635u

@@ -38,6 +38,7 @@ type private ProjectSiteOfScriptFile(filename:string, checkOptions : FSharpProje
     interface IHaveCheckOptions with
         override this.OriginalCheckOptions() = checkOptions
         
+    override x.ToString() = sprintf "ProjectSiteOfScriptFile(%s)" filename
         
 /// An orphan file project is a .fs, .ml, .fsi, .mli that is not associated with a .fsproj.
 /// By design, these are never going to typecheck because there is no affiliated references.
@@ -68,6 +69,8 @@ type private ProjectSiteOfSingleFile(sourceFile) =
         override this.LoadTime = new DateTime(2000,1,1)  // any constant time is fine, orphan files do not interact with reloading based on update time
         override this.ProjectProvider = None
         override this.AssemblyReferences() = [||]
+        
+    override x.ToString() = sprintf "ProjectSiteOfSingleFile(%s)" sourceFile
     
 /// Information about projects, open files and other active artifacts in visual studio.
 /// Keeps track of the relationship between IVsTextLines buffers, IFSharpSource objects, IProjectSite objects and FSharpProjectOptions

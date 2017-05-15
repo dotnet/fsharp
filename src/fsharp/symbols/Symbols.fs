@@ -1342,13 +1342,13 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member __.EnclosingEntity = 
         checkIsResolved()
         match d with 
-        | E m -> FSharpEntity(cenv,  tcrefOfAppTy cenv.g m.EnclosingType)
-        | P m -> FSharpEntity(cenv,  tcrefOfAppTy cenv.g m.EnclosingType)
-        | M m | C m -> FSharpEntity(cenv,  m.DeclaringEntityRef)
+        | E m -> FSharpEntity(cenv,  tcrefOfAppTy cenv.g m.EnclosingType) |> Some
+        | P m -> FSharpEntity(cenv,  tcrefOfAppTy cenv.g m.EnclosingType) |> Some
+        | M m | C m -> FSharpEntity(cenv,  m.DeclaringEntityRef) |> Some
         | V v -> 
         match v.ActualParent with 
-        | ParentNone -> invalidOp "the value or member doesn't have an enclosing entity" 
-        | Parent p -> FSharpEntity(cenv,  p)
+        | ParentNone -> None
+        | Parent p -> FSharpEntity(cenv,  p) |> Some
 
     member __.IsCompilerGenerated = 
         if isUnresolved() then false else 
@@ -1757,7 +1757,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                 match e with 
                 | ILEvent (_,x) -> 
                     let ilAccess = AccessibilityLogic.GetILAccessOfILEventInfo x
-                    getApproxFSharpAccessibilityOfMember this.EnclosingEntity.Entity  ilAccess
+                    getApproxFSharpAccessibilityOfMember this.EnclosingEntity.Value.Entity  ilAccess
                 | _ -> taccessPublic
 
             FSharpAccessibility(access)
@@ -1768,7 +1768,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                 match p with 
                 | ILProp (_,x) -> 
                     let ilAccess = AccessibilityLogic.GetILAccessOfILPropInfo x
-                    getApproxFSharpAccessibilityOfMember this.EnclosingEntity.Entity  ilAccess
+                    getApproxFSharpAccessibilityOfMember this.EnclosingEntity.Value.Entity  ilAccess
                 | _ -> taccessPublic
 
             FSharpAccessibility(access)

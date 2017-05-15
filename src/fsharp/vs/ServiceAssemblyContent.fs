@@ -88,7 +88,7 @@ module Extensions =
         member x.TryGetFullCompiledOperatorNameIdents() : Idents option =
             // For operator ++ displayName is ( ++ ) compiledName is op_PlusPlus
             if isOperator x.DisplayName && x.DisplayName <> x.CompiledName then
-                Option.attempt (fun _ -> x.EnclosingEntity)
+                x.EnclosingEntity
                 |> Option.bind (fun e -> e.TryGetFullName())
                 |> Option.map (fun enclosingEntityFullName -> 
                      Array.append (enclosingEntityFullName.Split '.') [| x.CompiledName |])
