@@ -136,7 +136,7 @@ type internal FSharpFindUsagesService
                         | _ ->
                             for referenceDocSpan in referenceDocSpans do
                                 for definitionItem in definitionItems do
-                                    let referenceItem = SourceReferenceItem(definitionItem, referenceDocSpan)
+                                    let referenceItem = SourceReferenceItem(definitionItem, referenceDocSpan, true) // defaulting to `true` until we can officially determine if this usage is a write
                                     do! context.OnReferenceFoundAsync(referenceItem) |> Async.AwaitTask |> liftAsync
             
             ()
