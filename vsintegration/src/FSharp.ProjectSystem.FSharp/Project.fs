@@ -403,7 +403,14 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             interface IOleComponent with
                 override this.FContinueMessageLoop(_uReason:uint32, _pvLoopData:IntPtr, _pMsgPeeked:MSG[]) = 1
 
-                override this.FDoIdle(_grfidlef:uint32) = 0
+                override this.FDoIdle(grfidlef:uint32) =
+                    // see e.g "C:\Program Files\Microsoft Visual Studio 2008 SDK\VisualStudioIntegration\Common\IDL\olecm.idl" for details
+                    //Trace.Print("CurrentDirectoryDebug", (fun () -> sprintf "curdir='%s'\n" (System.IO.Directory.GetCurrentDirectory())))  // can be useful for watching how GetCurrentDirectory changes
+                    let periodic = (grfidlef &&& (uint32 _OLEIDLEF.oleidlefPeriodic)) <> 0u
+                    if periodic && not (isNull this.ComponentManager) && this.ComponentManager.FContinueIdle() <> 0 then
+                        0 //TaskReporterIdleRegistration.DoIdle(this.ComponentManager)
+                    else
+                        0
 
                 override this.FPreTranslateMessage(_pMsg) = 0
 
@@ -1378,9 +1385,11 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
             override x.ComputeSourcesAndFlags() =
 
-                if not x.IsInBatchUpdate && box x.BuildProject <> null && not inMidstOfReloading && not (VsBuildManagerAccessorExtensionMethods.IsInProgress(accessor)) then
+                if x.IsInBatchUpdate || box x.BuildProject = null then ()
+                else
+                if not(inMidstOfReloading) && not(VsBuildManagerAccessorExtensionMethods.IsInProgress(accessor)) then
 
-                    use sourcesAndFlagsWaitDialog =
+                    use waitDialog =
                         {
                             WaitCaption = FSharpSR.GetString FSharpSR.ProductName
                             WaitMessage = FSharpSR.GetString FSharpSR.ComputingSourcesAndFlags

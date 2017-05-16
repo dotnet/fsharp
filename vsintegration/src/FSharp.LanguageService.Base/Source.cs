@@ -335,44 +335,44 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                             }
                             finally
                             {
-                                try
-                                {
-                                    this.service = null;
-                                    if (this.colorizer != null)
-                                    {
-                                        // The colorizer is owned by the core text editor, so we don't close it, the core text editor
-                                        // does that for us when it is ready to do so.
-                                        //colorizer.CloseColorizer();
-                                        this.colorizer = null;
-                                    }
-                                }
-                                finally
-                                {
-                                    this.colorState = null;
                                     try
                                     {
-                                        if (this.expansionProvider != null)
+                                        this.service = null;
+                                        if (this.colorizer != null)
                                         {
-                                            this.expansionProvider.Dispose();
-                                            this.expansionProvider = null;
+                                            // The colorizer is owned by the core text editor, so we don't close it, the core text editor
+                                            // does that for us when it is ready to do so.
+                                            //colorizer.CloseColorizer();
+                                            this.colorizer = null;
                                         }
-
                                     }
                                     finally
                                     {
-                                        // Sometimes OnCloseSource is called when language service is changed, (for example
-                                        // when you save the file with a different file extension) in which case we cannot 
-                                        // null out the site because that will cause a crash inside msenv.dll.
-                                        //            if (this.textLines != null) {
-                                        //                ((IObjectWithSite)this.textLines).SetSite(null);
-                                        //            }
-                                        if (this.textLines != null)
+                                        this.colorState = null;
+                                        try
                                         {
-                                            this.textLines = null;
-                                            Marshal.Release(pUnkTextLines);
+                                            if (this.expansionProvider != null)
+                                            {
+                                                this.expansionProvider.Dispose();
+                                                this.expansionProvider = null;
+                                            }
+
+                                        }
+                                        finally
+                                        {
+                                            // Sometimes OnCloseSource is called when language service is changed, (for example
+                                            // when you save the file with a different file extension) in which case we cannot 
+                                            // null out the site because that will cause a crash inside msenv.dll.
+                                            //            if (this.textLines != null) {
+                                            //                ((IObjectWithSite)this.textLines).SetSite(null);
+                                            //            }
+                                            if (this.textLines != null)
+                                            {
+                                                this.textLines = null;
+                                                Marshal.Release(pUnkTextLines);
+                                            }
                                         }
                                     }
-                                }
                             }
                         }
                     }
