@@ -80,7 +80,7 @@ type Reactor() =
                         let span = time.Elapsed
                         //if span.TotalMilliseconds > 100.0 then 
                         let taken = span.TotalMilliseconds
-                        let msg = (if taken > 10000.0 then "BAD-OP: >10s " elif taken > 3000.0 then "BAD-OP: >3s " elif taken > 1000.0 then "BAD-OP: SLOW > 1s" elif taken > 500.0 then "BAD-OP: >0.5s" else "")
+                        let msg = (if taken > 10000.0 then "BAD-OP: >10s " elif taken > 3000.0 then "BAD-OP: >3s " elif taken > 1000.0 then "BAD-OP: > 1s " elif taken > 500.0 then "BAD-OP: >0.5s " else "")
                         Trace.TraceInformation("Reactor: {0}<-- {1}.{2}, took {3} ms", msg, userOpName, opName, span.TotalMilliseconds)
                         return! loop (bgOpOpt, onComplete, false)
                     | Some (WaitForBackgroundOpCompletion channel) -> 
@@ -106,7 +106,7 @@ type Reactor() =
                             time.Stop()
                             let taken = time.Elapsed.TotalMilliseconds
                             //if span.TotalMilliseconds > 100.0 then 
-                            let msg = (if taken > 10000.0 then "BAD-BG-SLICE: >10s " elif taken > 3000.0 then "BAD-BG-SLICE: >3s " elif taken > 1000.0 then "BAD-BG-SLICE: > 1s" else "")
+                            let msg = (if taken > 10000.0 then "BAD-BG-SLICE: >10s " elif taken > 3000.0 then "BAD-BG-SLICE: >3s " elif taken > 1000.0 then "BAD-BG-SLICE: > 1s " else "")
                             Trace.TraceInformation("Reactor: {0}<-- background step, took {1}ms", msg, taken)
                             return! loop ((if res then bgOpOpt else None), onComplete, true)
                         | None, None -> failwith "unreachable, should have used inbox.Receive"
