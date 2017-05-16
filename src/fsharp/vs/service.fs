@@ -2296,7 +2296,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
         )
 
     member bc.MatchBraces(filename:string, source, options, userOpName) =
-        reactor.EnqueueAndAwaitOpAsync(userOpName, "MatchBraces ", filename, fun ctok -> 
+        reactor.EnqueueAndAwaitOpAsync(userOpName, "MatchBraces", filename, fun ctok -> 
           cancellable {
             let! builderOpt,_,decrement = getOrCreateBuilderAndKeepAlive (ctok, options, userOpName)
             use _unwind = decrement
