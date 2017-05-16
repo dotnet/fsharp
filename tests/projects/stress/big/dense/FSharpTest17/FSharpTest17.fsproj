@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>9b7ffbf1-98e7-4d9e-87b6-1079368613f4</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>FSharpTest17</RootNamespace>
+    <AssemblyName>FSharpTest17</AssemblyName>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Name>FSharpTest17</Name>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <Tailcalls>false</Tailcalls>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <WarningLevel>3</WarningLevel>
+    <DocumentationFile>bin\Debug\FSharpTest17.XML</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <Tailcalls>true</Tailcalls>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <WarningLevel>3</WarningLevel>
+    <DocumentationFile>bin\Release\FSharpTest17.XML</DocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="mscorlib" />
+    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
+
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="FSharpTest17.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\FSharpTest1\FSharpTest1.fsproj">
+      <Name>FSharpTest1</Name>
+      <Project>{9f2607c0-dce5-4a02-8d88-da11d08a6fe1}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\FSharpTest2\FSharpTest2.fsproj">
+      <Name>FSharpTest2</Name>
+      <Project>{66b2a9fe-4882-4e91-8e68-4a35c4e535df}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\FSharpTest3\FSharpTest3.fsproj">
+      <Name>FSharpTest3</Name>
+      <Project>{bfc7ac6d-c87d-40cf-930e-750f8a97bdbc}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\FSharpTest4\FSharpTest4.fsproj">
+      <Name>FSharpTest4</Name>
+      <Project>{b5712afd-93ab-44c9-8643-5aadd37373f4}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\FSharpTest5\FSharpTest5.fsproj">
+      <Name>FSharpTest5</Name>
+      <Project>{25a90205-46af-426d-b424-cba3f52ac895}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\FSharpTest6\FSharpTest6.fsproj">
+      <Name>FSharpTest6</Name>
+      <Project>{6edc5ac6-c0af-4a69-8493-e7c0dbf79f56}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\FSharpTest7\FSharpTest7.fsproj">
+      <Name>FSharpTest7</Name>
+      <Project>{93fec374-ea8e-416c-9f99-8a73f5a676b8}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\FSharpTest8\FSharpTest8.fsproj">
+      <Name>FSharpTest8</Name>
+      <Project>{e3097b74-c2fa-4860-977b-e6efd2182bb8}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\FSharpTest9\FSharpTest9.fsproj">
+      <Name>FSharpTest9</Name>
+      <Project>{36fd3991-e5b3-4f31-aaab-100401c951e3}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\FSharpTest10\FSharpTest10.fsproj">
+      <Name>FSharpTest10</Name>
+      <Project>{bc02d65b-ca14-4d65-892c-447b5bbdbd7d}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\FSharpTest11\FSharpTest11.fsproj">
+      <Name>FSharpTest11</Name>
+      <Project>{427df0f5-192f-4559-b924-d66bc0552cd6}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\FSharpTest12\FSharpTest12.fsproj">
+      <Name>FSharpTest12</Name>
+      <Project>{7e7b23f8-43f0-477a-8c97-5c5e8c9073f5}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\FSharpTest13\FSharpTest13.fsproj">
+      <Name>FSharpTest13</Name>
+      <Project>{00616ea7-d8a9-4d62-b73b-efce54433ce5}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\FSharpTest14\FSharpTest14.fsproj">
+      <Name>FSharpTest14</Name>
+      <Project>{0128703c-6014-49b0-8242-e6741345486b}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\FSharpTest15\FSharpTest15.fsproj">
+      <Name>FSharpTest15</Name>
+      <Project>{52a1278c-544b-4aa5-a736-161719bfd059}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\FSharpTest16\FSharpTest16.fsproj">
+      <Name>FSharpTest16</Name>
+      <Project>{3b977782-0e8f-4281-9c10-499c4714de85}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
+  <PropertyGroup>
+    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
+  </PropertyGroup>
+  <Choose>
+    <When Condition="'$(VisualStudioVersion)' == '11.0'">
+      <PropertyGroup Condition="Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets')">
+        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup Condition="Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets')">
+        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets</FSharpTargetsPath>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+  <Import Project="$(FSharpTargetsPath)" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

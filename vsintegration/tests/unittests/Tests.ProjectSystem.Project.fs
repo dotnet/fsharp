@@ -47,7 +47,7 @@ type Project() =
         l.[0]     
 
     [<Test>]    
-    member public this.NoNewFolderOnProjectMenu() =
+    member public this.NewFolderOnProjectMenu() =
         printfn "starting..."
         let package = new FSharpProjectPackage()
         let project = new FSharpProjectNode(package)
@@ -59,8 +59,8 @@ type Project() =
         let x = project.QueryStatusOnNode(guidCmdGroup, uint32(cmdEnum), pCmdText, &result)
         printfn "and..."
         AssertEqual x VSConstants.S_OK
-        if (result &&& QueryStatusResult.INVISIBLE) = enum 0 then
-            Assert.Fail("Unexpected: New Folder was not invisible")
+        if (result &&& QueryStatusResult.ENABLED) <> QueryStatusResult.ENABLED then
+            Assert.Fail("Unexpected: New Folder was not enabled")
         ()    
 
     [<Test>]

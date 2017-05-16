@@ -2,28 +2,25 @@
 module Microsoft.VisualStudio.FSharp.Editor.Pervasive
 
 open System
+open System.IO
+open System.Threading.Tasks
 open System.Diagnostics
 
-[<RequireQualifiedAccess>]
-module String =   
-    open System.IO
 
-    let getLines (str: string) =
-        use reader = new StringReader(str)
-        [|  let mutable line = reader.ReadLine()
-            while not (isNull line) do
-                yield line
-                line <- reader.ReadLine()
-            if str.EndsWith("\n") then
-            // last trailing space not returned
-            // http://stackoverflow.com/questions/19365404/stringreader-omits-trailing-linebreak
-                yield String.Empty
-        |]
+/// Checks if the filePath ends with ".fsi"
+let isSignatureFile (filePath:string) = 
+    String.Equals (Path.GetExtension filePath, ".fsi", StringComparison.OrdinalIgnoreCase)
 
+/// Checks if the file paht ends with '.fsx' or '.fsscript'
+let isScriptFile (filePath:string) = 
+    let ext = Path.GetExtension filePath 
+    String.Equals (ext, ".fsx", StringComparison.OrdinalIgnoreCase) || String.Equals (ext, ".fsscript", StringComparison.OrdinalIgnoreCase)
 
-type System.IServiceProvider with
-    member x.GetService<'T>() = x.GetService(typeof<'T>) :?> 'T
-    member x.GetService<'S, 'T>() = x.GetService(typeof<'S>) :?> 'T
+/// Path combination operator
+let (</>) path1 path2 = Path.Combine (path1, path2) 
+
+type internal ISetThemeColors = abstract member SetColors: unit -> unit
+
 
 [<Sealed>]
 type MaybeBuilder () =
@@ -178,6 +175,8 @@ let inline liftAsync (computation : Async<'T>) : Async<'T option> =
         return Some a 
     }
 
+let liftTaskAsync task = task |> Async.AwaitTask |> liftAsync
+
 module Async =
     let map (f: 'T -> 'U) (a: Async<'T>) : Async<'U> =
         async {
@@ -198,6 +197,7 @@ module Async =
                     replyCh.Reply res 
             }
         async { return! agent.PostAndAsyncReply id }
+        
 
 type AsyncBuilder with
     member __.Bind(computation: System.Threading.Tasks.Task<'a>, binder: 'a -> Async<'b>): Async<'b> =
@@ -209,20 +209,3 @@ type AsyncBuilder with
     member __.ReturnFrom(computation: System.Threading.Tasks.Task<'a>): Async<'a> = Async.AwaitTask computation
 
 
-module Option =
-    let guard (x: bool) : Option<unit> =
-        if x then Some() else None
-
-module List =
-    let foldi (folder : 'State -> int -> 'T -> 'State) (state : 'State) (xs : 'T list) =
-        let mutable state = state
-        let mutable i = 0
-        for x in xs do
-            state <- folder state i x
-            i <- i + 1
-        state
-
-module Seq =
-    open System.Collections.Immutable
-
-    let toImmutableArray (xs: seq<'a>) : ImmutableArray<'a> = xs.ToImmutableArray()

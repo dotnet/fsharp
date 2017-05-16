@@ -73,9 +73,11 @@ type Reactor() =
                     | Some (Op (desc, ct, op, ccont)) -> 
                         if ct.IsCancellationRequested then ccont() else
                         Trace.TraceInformation("Reactor: --> {0}, remaining {1}, mem {2}, gc2 {3}", desc, inbox.CurrentQueueLength, GC.GetTotalMemory(false)/1000000L, GC.CollectionCount(2))
-                        let time = System.DateTime.Now
+                        let time = Stopwatch()
+                        time.Start()
                         op ctok
-                        let span = System.DateTime.Now - time
+                        time.Stop()
+                        let span = time.Elapsed
                         //if span.TotalMilliseconds > 100.0 then 
                         Trace.TraceInformation("Reactor: <-- {0}, remaining {1}, took {2}ms", desc, inbox.CurrentQueueLength, span.TotalMilliseconds)
                         return! loop (bgOpOpt, onComplete, false)
@@ -96,9 +98,11 @@ type Reactor() =
                         | _, Some onComplete -> onComplete.Reply()
                         | Some bgOp, None -> 
                             Trace.TraceInformation("Reactor: --> background step, remaining {0}, mem {1}, gc2 {2}", inbox.CurrentQueueLength, GC.GetTotalMemory(false)/1000000L, GC.CollectionCount(2))
-                            let time = System.DateTime.Now
+                            let time = Stopwatch()
+                            time.Start()
                             let res = bgOp ctok
-                            let span = System.DateTime.Now - time
+                            time.Stop()
+                            let span = time.Elapsed
                             //if span.TotalMilliseconds > 100.0 then 
                             Trace.TraceInformation("Reactor: <-- background step, remaining {0}, took {1}ms", inbox.CurrentQueueLength, span.TotalMilliseconds)
                             return! loop ((if res then Some bgOp else None), onComplete, true)
@@ -152,7 +156,7 @@ type Reactor() =
                         with e -> e |> AsyncUtil.AsyncException
 
                     resultCell.RegisterResult(result)),
-                    ccont=(fun () -> resultCell.RegisterResult (AsyncUtil.AsyncCanceled(OperationCanceledException())) )
+                    ccont=(fun () -> resultCell.RegisterResult (AsyncUtil.AsyncCanceled(OperationCanceledException(ct))) )
 
             )
             return! resultCell.AsyncResult 

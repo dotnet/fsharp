@@ -16,13 +16,15 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 
+open UnitTests.TestLib.LanguageService
+
 [<TestFixture>][<Category "Roslyn Services">]
 type BreakpointResolutionServiceTests()  =
 
     let fileName = "C:\\test.fs"
     let options: FSharpProjectOptions = { 
         ProjectFileName = "C:\\test.fsproj"
-        ProjectFileNames =  [| fileName |]
+        SourceFiles =  [| fileName |]
         ReferencedProjects = [| |]
         OtherOptions = [| |]
         IsIncompleteTypeCheckEnvironment = true
@@ -31,6 +33,7 @@ type BreakpointResolutionServiceTests()  =
         OriginalLoadReferences = []
         UnresolvedReferences = None
         ExtraProjectInfo = None
+        Stamp = None
     }
     let code = "
 // This is a comment
@@ -71,12 +74,12 @@ let main argv =
         
         let sourceText = SourceText.From(code)
         let searchSpan = TextSpan.FromBounds(searchPosition, searchPosition + searchToken.Length)
-        let actualResolutionOption = FSharpBreakpointResolutionService.GetBreakpointLocation(FSharpChecker.Instance, sourceText, fileName, searchSpan, options) |> Async.RunSynchronously
+        let actualResolutionOption = FSharpBreakpointResolutionService.GetBreakpointLocation(checker, sourceText, fileName, searchSpan, options) |> Async.RunSynchronously
         
         match actualResolutionOption with
         | None -> Assert.IsTrue(expectedResolution.IsNone, "BreakpointResolutionService failed to resolve breakpoint position")
         | Some(actualResolutionRange) ->
-            let actualResolution = sourceText.GetSubText(CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, actualResolutionRange)).ToString()
+            let actualResolution = sourceText.GetSubText(RoslynHelpers.FSharpRangeToTextSpan(sourceText, actualResolutionRange)).ToString()
             Assert.IsTrue(expectedResolution.IsSome, "BreakpointResolutionService resolved a breakpoint while it shouldn't at: {0}", actualResolution)
             Assert.AreEqual(expectedResolution.Value, actualResolution, "Expected and actual resolutions should match")
     

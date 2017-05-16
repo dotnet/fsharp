@@ -197,7 +197,7 @@ type internal FsiToolWindow() as this =
 
     // F# Interactive sessions
     let history  = HistoryBuffer()
-    let sessions = Session.createSessions()
+    let sessions = Session.FsiSessions()
     do  fsiLangService.Sessions <- sessions    
     let writeTextAndScroll (str:string) =
         if str <> null && textLines <> null then
@@ -295,13 +295,13 @@ type internal FsiToolWindow() as this =
 
     let executeTextNoHistory (text:string) =
         textStream.DirectWriteLine()
-        sessions.Input(text)
+        sessions.SendInput(text)
         setCursorAtEndOfBuffer()
         
     let executeText (text:string) =
         textStream.DirectWriteLine()
         history.Add(text)
-        sessions.Input(text)
+        sessions.SendInput(text)
         setCursorAtEndOfBuffer()
 
     let executeUserInput() = 
@@ -310,7 +310,7 @@ type internal FsiToolWindow() as this =
             textStream.ExtendReadOnlyMarker()
             textStream.DirectWriteLine()
             history.Add(text)
-            sessions.Input(text)
+            sessions.SendInput(text)
             setCursorAtEndOfBuffer()
 
     // NOTE: SupportWhen* functions are guard conditions for command handlers

@@ -226,3 +226,4 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Get")>]
         val get: array:'T[,] -> index1:int -> index2:int -> 'T
 
+

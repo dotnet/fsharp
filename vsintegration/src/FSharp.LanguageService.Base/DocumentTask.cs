@@ -189,7 +189,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
 #if DEBUG
     [System.Diagnostics.DebuggerDisplay("DocumentTask: {Text}")]
 #endif
-    public class DocumentTask : ErrorTask, IVsTextMarkerClient, IDisposable, IComparable<DocumentTask>, IVsProvideUserContext {
+    public class DocumentTask : Microsoft.VisualStudio.Shell.ErrorTask, IVsTextMarkerClient, IDisposable, IComparable<DocumentTask>, IVsProvideUserContext {
         // Since all taskitems support this field we define it generically. Can use put_Text to set it.
         IServiceProvider site;
         string fileName;
@@ -408,7 +408,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             }
         }
 
-        public IVsTextLineMarker TextLineMarker {
+         public IVsTextLineMarker TextLineMarker {
             get { return this.textLineMarker; }
         }
 
@@ -468,10 +468,10 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         void Clear();
 
         // Get the task at the specified index
-        Task GetTask(int i);
+        Microsoft.VisualStudio.Shell.Task GetTask(int i);
 
         // Add a task to the end of the task list
-        void Add(Task t);
+        void Add(Microsoft.VisualStudio.Shell.Task t);
 
         // Suspend task list refresh
         void SuspendRefresh();
@@ -484,9 +484,9 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
     };
 
     internal class TaskListProvider : ITaskListProvider {
-        private TaskProvider taskProvider;
+        private Microsoft.VisualStudio.Shell.TaskProvider taskProvider;
 
-        public TaskListProvider(TaskProvider taskProvider) {
+        public TaskListProvider(Microsoft.VisualStudio.Shell.TaskProvider taskProvider) {
             this.taskProvider = taskProvider;
         }
 
@@ -498,11 +498,11 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             this.taskProvider.Tasks.Clear();
         }
 
-        public Task GetTask(int i) {
+        public Microsoft.VisualStudio.Shell.Task GetTask(int i) {
             return this.taskProvider.Tasks[i];
         }
 
-        public void Add(Task t) {
+        public void Add(Microsoft.VisualStudio.Shell.Task t) {
             this.taskProvider.Tasks.Add(t);
         }
 

@@ -73,7 +73,7 @@ type internal FsiCommandFilter(serviceProvider: System.IServiceProvider) =
                 VSConstants.E_FAIL
 
 [<Export(typeof<IWpfTextViewCreationListener>)>]
-[<ContentType(FSharpCommonConstants.FSharpContentTypeName)>]
+[<ContentType(FSharpConstants.FSharpContentTypeName)>]
 [<TextViewRole(PredefinedTextViewRoles.PrimaryDocument)>]
 type internal FsiCommandFilterProvider [<ImportingConstructor>] 
     ([<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider,

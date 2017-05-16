@@ -134,7 +134,7 @@ type FSharpValueTests() =
         Assert.IsTrue(FSharpValue.Equals(singlecaseunion1,singlecaseunion1))
         Assert.IsFalse(FSharpValue.Equals(singlecaseunion1,singlecaseunion2))
         
-        // Dicsriminated Union
+        // Discriminated Union
         Assert.IsTrue(FSharpValue.Equals(discUniontypeA,discUniontypeA))
         Assert.IsFalse(FSharpValue.Equals(discUniontypeB,discUniontypeC))
       
@@ -190,7 +190,7 @@ type FSharpValueTests() =
         CheckThrowsArgumentException(fun () ->FSharpValue.GetRecordField(null,propertyinfo1)|> ignore)
         CheckThrowsArgumentException(fun () ->FSharpValue.GetRecordField( () ,propertyinfo1)|> ignore)
         
-        // inlalid value
+        // invalid value
         CheckThrowsArgumentException(fun () -> FSharpValue.GetRecordField("invalid",propertyinfo1) |> ignore)
         
         // invalid property info
@@ -213,7 +213,7 @@ type FSharpValueTests() =
         CheckThrowsArgumentException(fun () -> FSharpValue.GetRecordFields(null)|> ignore)
         CheckThrowsArgumentException(fun () -> FSharpValue.GetRecordFields( () )|> ignore)
         
-        // inlalid value
+        // invalid value
         CheckThrowsArgumentException(fun () -> FSharpValue.GetRecordFields("invalid") |> ignore)
         ()
     
@@ -230,7 +230,7 @@ type FSharpValueTests() =
         CheckThrowsArgumentException(fun () -> FSharpValue.GetTupleField(null, 3)|> ignore)
         CheckThrowsArgumentException(fun () -> FSharpValue.GetTupleField( () , 3)|> ignore)
         
-        // inlalid value
+        // invalid value
         CheckThrowsArgumentException(fun () -> FSharpValue.GetTupleField("Invalid",3)|> ignore)
         
         // index out of range
@@ -249,7 +249,7 @@ type FSharpValueTests() =
         CheckThrowsArgumentException(fun () -> FSharpValue.GetTupleFields(null)|> ignore)
         CheckThrowsArgumentException(fun () -> FSharpValue.GetTupleFields( () )|> ignore)
         
-        // inlalid value
+        // invalid value
         CheckThrowsArgumentException(fun () -> FSharpValue.GetTupleFields("Invalid")|> ignore)
         ()
         
@@ -299,7 +299,7 @@ type FSharpValueTests() =
         // null value
         CheckThrowsArgumentException(fun () ->FSharpValue.MakeRecord(null,null)|> ignore)
         
-        // inlalid value        
+        // invalid value        
         CheckThrowsArgumentException(fun () ->  FSharpValue.MakeRecord(typeof<GenericRecordType<string,int>>,[|box(1);box("invalid param");box("invalid param") |])|> ignore)
         ()
         
@@ -316,7 +316,7 @@ type FSharpValueTests() =
         // null value
         CheckThrowsArgumentNullException(fun () ->FSharpValue.MakeTuple(null,null)|> ignore)
         
-        // inlalid value
+        // invalid value
         CheckThrowsArgumentException(fun () -> FSharpValue.MakeTuple([|box"invalid param";box"invalid param"|],typeof<Tuple<int,string>>)  |> ignore)
         ()
         
@@ -349,7 +349,7 @@ type FSharpValueTests() =
         // null value
         CheckThrowsArgumentException(fun () ->FSharpValue.PreComputeRecordConstructor(null)|> ignore)
         
-        // inlalid value
+        // invalid value
         CheckThrowsArgumentException(fun () -> FSharpValue.PreComputeRecordConstructor(typeof<DiscUnionType<string>>) |> ignore)        
        
         ()
@@ -367,7 +367,7 @@ type FSharpValueTests() =
         // null value
         CheckThrowsArgumentException(fun () ->FSharpValue.PreComputeRecordConstructorInfo(null)|> ignore)
         
-        // inlalid value
+        // invalid value
         CheckThrowsArgumentException(fun () -> FSharpValue.PreComputeRecordConstructorInfo(typeof<DiscUnionType<string>>) |> ignore)        
         ()
         
@@ -398,7 +398,7 @@ type FSharpValueTests() =
         // null value
         CheckThrowsArgumentException(fun () ->FSharpValue.PreComputeRecordReader(null)|> ignore)
         
-        // inlalid value
+        // invalid value
         CheckThrowsArgumentException(fun () -> FSharpValue.PreComputeRecordReader(typeof<DiscUnionType<string>>) |> ignore)        
         ()
     
@@ -420,7 +420,7 @@ type FSharpValueTests() =
         // null value
         CheckThrowsArgumentException(fun () -> FSharpValue.PreComputeTupleConstructor(null)|> ignore)
         
-        // inlalid value
+        // invalid value
         CheckThrowsArgumentException(fun () -> FSharpValue.PreComputeTupleConstructor(typeof<DiscUnionType<string>>) |> ignore)        
         CheckThrowsArgumentException(fun () -> FSharpValue.PreComputeTupleConstructor(typeof<unit>) |> ignore)        
         
@@ -439,7 +439,7 @@ type FSharpValueTests() =
         // null value
         CheckThrowsArgumentException(fun () ->FSharpValue.PreComputeTupleConstructorInfo(null)|> ignore)
         
-        // inlalid value
+        // invalid value
         CheckThrowsArgumentException(fun () -> FSharpValue.PreComputeTupleConstructorInfo(typeof<RecordType>) |> ignore)        
         ()
         
@@ -458,7 +458,7 @@ type FSharpValueTests() =
         // null value
         CheckThrowsArgumentException(fun () ->FSharpValue.PreComputeTuplePropertyInfo(null,0)|> ignore)
         
-        // inlalid value
+        // invalid value
         CheckThrowsArgumentException(fun () -> FSharpValue.PreComputeTuplePropertyInfo(typeof<RecordType>,0) |> ignore)        
         ()
         
@@ -476,7 +476,7 @@ type FSharpValueTests() =
         // null value
         CheckThrowsArgumentException(fun () ->FSharpValue.PreComputeTupleReader(null)|> ignore)
         
-        // inlalid value
+        // invalid value
         CheckThrowsArgumentException(fun () -> FSharpValue.PreComputeTupleReader(typeof<RecordType>) |> ignore)        
         ()
         
@@ -541,7 +541,7 @@ type FSharpValueTests() =
          // null value
         CheckThrowsArgumentException(fun () ->FSharpValue.PreComputeUnionTagMemberInfo(null)|> ignore)
         
-        // inlalid value
+        // invalid value
         CheckThrowsArgumentException(fun () -> FSharpValue.PreComputeUnionTagMemberInfo(typeof<RecordType>) |> ignore)        
         ()
                    
@@ -559,7 +559,7 @@ type FSharpValueTests() =
          // null value
         CheckThrowsArgumentException(fun () ->FSharpValue.PreComputeUnionTagReader(null)|> ignore)
         
-        // inlalid value
+        // invalid value
         CheckThrowsArgumentException(fun () -> FSharpValue.PreComputeUnionTagReader(typeof<RecordType>) |> ignore)        
         ()
         
@@ -619,7 +619,7 @@ type FSharpTypeTests() =
         Assert.IsTrue(FSharpValue.Equals(singlecaseunion1,singlecaseunion1))
         Assert.IsFalse(FSharpValue.Equals(singlecaseunion1,singlecaseunion2))
         
-        // Dicsriminated Union
+        // Discriminated Union
         Assert.IsTrue(FSharpValue.Equals(discUniontypeA,discUniontypeA))
         Assert.IsFalse(FSharpValue.Equals(discUniontypeB,discUniontypeC))
       
@@ -681,7 +681,7 @@ type FSharpTypeTests() =
     [<Test>]
     member this.GetRecordFields() =    
                
-        // positve
+        // positive
         Assert.AreEqual(FSharpType.GetRecordFields(typeof<RecordType>),(typeof<RecordType>.GetProperties()))        
         Assert.AreEqual(FSharpType.GetRecordFields(typeof<GenericRecordType<int, string>>),(typeof<GenericRecordType<int, string>>.GetProperties()))
         
@@ -725,7 +725,7 @@ type FSharpTypeTests() =
          // null value
         CheckThrowsArgumentNullException(fun () ->FSharpType.GetUnionCases(null)|> ignore)
         
-        // inlalid value
+        // invalid value
         CheckThrowsArgumentException(fun () -> FSharpType.GetUnionCases(typeof<RecordType>) |> ignore)  
         
         ()
@@ -776,7 +776,7 @@ type FSharpTypeTests() =
         
         Assert.IsTrue(FSharpType.IsModule(moduleType)) //assemblyTypesPositive.[3] is Microsoft_FSharp_Reflection.FSharpModule which is module type
                
-        // Negtive Test 
+        // Negative Test 
         // FSharp Assembly
         let asmCore = getasm (typeof<Microsoft.FSharp.Collections.List<int>>)
         Assert.IsFalse(FSharpType.IsModule(asmCore.GetTypes().[0]))

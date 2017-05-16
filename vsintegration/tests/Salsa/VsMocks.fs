@@ -1522,7 +1522,14 @@ module internal VsMocks =
                 member x.AdviseUpdateSolutionEvents4(pIVsUpdateSolutionEvents, pdwCookie) =
                     pdwCookie <- add4 pIVsUpdateSolutionEvents
                 member x.AdviseUpdateSolutionEventsAsync(a,b) = err(__LINE__) |> ignore
-                member x.FindActiveProjectCfgName(a,b) = err(__LINE__)
+                member x.FindActiveProjectCfgName(_projectGuid,outCfgString) = 
+                    // For now ignore the _projectGuid and just return the last notified configuration
+                    match configDict |> Seq.tryHead with 
+                    | None -> err(__LINE__) 
+                    | Some (KeyValue(_,v)) -> 
+                        outCfgString <- v
+                        0
+
                 member x.UnadviseUpdateSolutionEventsAsync(a) = err(__LINE__) |> ignore
                 member x.UnadviseUpdateSolutionEvents4(dwCookie) =
                     remove4 dwCookie

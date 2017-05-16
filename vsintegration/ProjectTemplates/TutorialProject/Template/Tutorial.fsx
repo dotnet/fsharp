@@ -42,8 +42,8 @@
 open System
 
 
-/// Modules are the primary way to organize functions and values in F#. This module contains some
-/// basic values involving basic numeric values computed in a few different ways.
+/// A module is a grouping of F# code, such as values, types, and function values. 
+/// Grouping code in modules helps keep related code together and helps avoid name conflicts in your program.
 ///
 /// To learn more, see: https://docs.microsoft.com/en-us/dotnet/articles/fsharp/language-reference/modules
 module IntegersAndNumbers = 
@@ -67,6 +67,9 @@ module IntegersAndNumbers =
     // The next line prints a list that includes tuples, using '%A' for generic printing.
     printfn "The table of squares from 0 to 99 is:\n%A" sampleTableOfSquares
 
+    // This is a sample integer with a type annotation
+    let sampleInteger3: int = 1
+
 
 /// Values in F# are immutable by default.  They cannot be changed
 /// in the course of a program's execution unless explicitly marked as mutable.
@@ -88,7 +91,8 @@ module Immutability =
 
     // When mutating a value, use '<-' to assign a new value.
     //
-    // Note that '=' is not the same as this.  '=' is used to test equality.
+    // You could not use '=' here for this purpose since it is used for equality 
+    // or other contexts such as 'let' or 'module'
     otherNumber <- otherNumber + 1
 
     printfn "'otherNumber' changed to be %d" otherNumber
@@ -116,7 +120,7 @@ module BasicFunctions =
     let sampleFunction2 (x:int) = 2*x*x - x/5 + 3
 
     let result2 = sampleFunction2 (7 + 4)
-    printfn "The result of applying the 1st sample function to (7 + 4) is %d" result2
+    printfn "The result of applying the 2nd sample function to (7 + 4) is %d" result2
 
     /// Conditionals use if/then/elid/elif/else.
     ///
@@ -130,7 +134,7 @@ module BasicFunctions =
     let result3 = sampleFunction3 (6.5 + 4.5)
 
     // This line uses '%f' to print the result as a float.  As with '%d' above, this is type-safe.
-    printfn "The result of applying the 2nd sample function to (6.5 + 4.5) is %f" result3
+    printfn "The result of applying the 3rd sample function to (6.5 + 4.5) is %f" result3
 
 
 /// Booleans are fundamental data types in F#.  Here are some examples of Booleans and conditional logic.
@@ -201,6 +205,10 @@ module Tuples =
     let tuple2 = (1, "fred", 3.1415)
 
     printfn "tuple1: %A\ttuple2: %A" tuple1 tuple2
+    
+    /// A simple tuple of integers with a type annotation.
+    /// Type annotations for tuples use the * symbol to separate elements
+    let tuple3: int * int = (5, 9)
 
     /// Tuples are normally objects, but they can also be represented as structs.
     ///
@@ -330,7 +338,7 @@ module Lists =
     let daysList = 
         [ for month in 1 .. 12 do
               for day in 1 .. System.DateTime.DaysInMonth(2017, month) do 
-                  yield System.DateTime(2012, month, day) ]
+                  yield System.DateTime(2017, month, day) ]
 
     // Print the first 5 elements of 'daysList' using 'List.take'.
     printfn "The first 5 days of 2017 are: %A" (daysList |> List.take 5)
@@ -739,8 +747,6 @@ module PatternMatching =
                        | _ -> false) // '_' is a wildcard pattern that matches anything.
                                      // This handles the "or else" case.
 
-    open System
-
     /// You can also use the shorthand function construct for pattern matching, 
     /// which is useful when you're writing functions which make use of Partial Application.
     let private parseHelper f = f >> function
@@ -966,7 +972,7 @@ module Events =
 
     // Next, add handler to the event.
     simpleEvent.Publish.Add(
-        fun x -> printfn "this is handler was added with Publish.Add: %d" x)
+        fun x -> printfn "this handler was added with Publish.Add: %d" x)
 
     // Next, trigger the event.
     simpleEvent.Trigger(5)
@@ -976,7 +982,7 @@ module Events =
 
     // Next, add a handler for this new event.
     eventForDelegateType.Publish.AddHandler(
-        EventHandler(fun _ _ -> printfn "this is handler was added with Publish.AddHandler"))
+        EventHandler(fun _ _ -> printfn "this handler was added with Publish.AddHandler"))
 
     // Next, trigger this event (note that sender argument should be set).
     eventForDelegateType.Trigger(null, EventArgs.Empty)

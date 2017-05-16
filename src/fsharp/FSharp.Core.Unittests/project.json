@@ -9,9 +9,9 @@
     "nunit": "3.5.0",
     "nunitlite": "3.5.0",
     "FSharp.Core.netcore": "1.0.0-rc-*",
-    "System.ValueTuple": "4.0.0-rc3-24212-01",
+    "System.ValueTuple": "4.3.0",
     "FsCheck": "2.6.2",
-    "Microsoft.FSharp.TupleSample": "1.0.0-alpha-161112",
+    "Microsoft.FSharp.TupleSample": "1.0.0-alpha-161112"
   },
   "runtimes": {
     "win7-x86": {},
@@ -24,7 +24,7 @@
       "dependencies": {
         "Microsoft.NETCore.App": {
           "type": "platform",
-          "version": "1.0.1"
+          "version": "1.1.0"
         }
       },
       "imports": [ "netstandard1.1", "netstandard1.6", "portable-net45+win8+wp8+wpa81" ]

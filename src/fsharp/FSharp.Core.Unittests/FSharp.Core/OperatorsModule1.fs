@@ -901,7 +901,7 @@ type OperatorsModule1() =
         let result = inf > System.Double.MaxValue
         Assert.IsTrue(result)
         
-        // arithmatic operation
+        // arithmetic operation
         let result = infinity + 3.0
         Assert.AreEqual(result,infinity)
         let result = infinity - 3.0
@@ -923,7 +923,7 @@ type OperatorsModule1() =
         let result = inf > System.Single.MaxValue
         Assert.IsTrue(result)
         
-        // arithmatic operation
+        // arithmetic operation
         let result = infinityf + 3.0f
         Assert.AreEqual(result,infinity)
         let result = infinityf - 3.0f

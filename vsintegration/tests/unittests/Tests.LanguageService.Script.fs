@@ -1199,8 +1199,8 @@ type UsingMSBuild() as this =
         AssertArrayContainsPartialMatchOf(fas.OtherOptions, "System.Runtime.Remoting.dll")
         AssertArrayContainsPartialMatchOf(fas.OtherOptions, "System.Transactions.dll")
         AssertArrayContainsPartialMatchOf(fas.OtherOptions, "FSharp.Compiler.Interactive.Settings.dll")
-        Assert.AreEqual(Path.Combine(projectFolder,"File1.fsx"), fas.ProjectFileNames.[0])
-        Assert.AreEqual(1, fas.ProjectFileNames.Length)
+        Assert.AreEqual(Path.Combine(projectFolder,"File1.fsx"), fas.SourceFiles.[0])
+        Assert.AreEqual(1, fas.SourceFiles.Length)
 
 
     /// FEATURE: #reference against a strong name should work.
@@ -1556,21 +1556,6 @@ type UsingMSBuild() as this =
               "#load \"" // Unclosed
               "#load \"Hello There\""]
             ) 
-        
-    //regression test for bug 2530
-    [<Test>]
-    [<Category("fsx moved from tao test")>]
-    member public this.``Fsx.IntellisenseForFSI``() =
-        let code = 
-                                      ["module Script"
-                                       "fsi(*MarkerFSI*)" 
-                                       ]
-        let (_, script1) = createSingleFileFsxFromLines code
-        TakeCoffeeBreak(this.VS)
-        let marker = "(*MarkerFSI*)"
-        let list = ["FormatProvider";"CommandLineArgs"]
-        let completions = DotCompletionAtStartOfMarker script1 marker
-        AssertCompListContainsAll(completions, list)
 
     [<Test>]
     [<Category("TypeProvider")>]

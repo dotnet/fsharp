@@ -20,6 +20,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public static readonly CommandID AddNewItemAbove = new CommandID(guidFSharpProjectCmdSet, 0x3005);
         public static readonly CommandID AddExistingItemAbove = new CommandID(guidFSharpProjectCmdSet, 0x3006);
         public static readonly CommandID MoveDownCmd = new CommandID(guidFSharpProjectCmdSet, 0x3007);
+        public static readonly CommandID NewFolderAbove = new CommandID(guidFSharpProjectCmdSet, 0x3008);
+        public static readonly CommandID NewFolderBelow = new CommandID(guidFSharpProjectCmdSet, 0x3009);
 
         public static readonly CommandID FSharpSendThisReferenceToInteractiveCmd = new CommandID(guidFSharpProjectCmdSet, 0x5004);
         public static readonly CommandID FSharpSendReferencesToInteractiveCmd = new CommandID(guidFSharpProjectCmdSet, 0x5005);

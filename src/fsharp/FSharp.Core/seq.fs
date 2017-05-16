@@ -570,7 +570,7 @@ namespace Microsoft.FSharp.Collections
                 f.Invoke(i, e1.Current, e2.Current)
                 i <- i + 1
 
-        // Build an IEnumerble by wrapping/transforming iterators as they get generated.
+        // Build an IEnumerable by wrapping/transforming iterators as they get generated.
         let revamp f (ie : seq<_>) = mkSeq (fun () -> f (ie.GetEnumerator()))
         let revamp2 f (ie1 : seq<_>) (source2 : seq<_>) =
             mkSeq (fun () -> f (ie1.GetEnumerator()) (source2.GetEnumerator()))

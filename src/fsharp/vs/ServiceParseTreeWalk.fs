@@ -13,7 +13,11 @@ open Microsoft.FSharp.Compiler.Ast
  
 
 /// A range of utility functions to assist with traversing an AST
+#if COMPILER_PUBLIC_API
+module AstTraversal =
+#else
 module internal AstTraversal =
+#endif
     // treat ranges as though they are half-open: [,)
     let rangeContainsPosLeftEdgeInclusive (m1:range) p =
         if posEq m1.Start m1.End then
@@ -143,7 +147,7 @@ module internal AstTraversal =
 
     /// traverse an implementation file walking all the way down to SynExpr or TypeAbbrev at a particular location
     ///
-    let (*internal*) Traverse(pos:pos, parseTree, visitor:AstVisitorBase<'T>) =
+    let Traverse(pos:pos, parseTree, visitor:AstVisitorBase<'T>) =
         let pick x = pick pos x
         let rec traverseSynModuleDecl path (decl:SynModuleDecl) =
             let pick = pick decl.Range

@@ -438,7 +438,7 @@ let sitesCPs sites = List.map siteCP sites
 type TransformedFormal =
   // Indicates that
   //    - the actual arg in this position is unchanged
-  //    - also menas that we keep the original formal arg
+  //    - also means that we keep the original formal arg
   | SameArg                          
 
   // Indicates 

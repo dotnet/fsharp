@@ -71,7 +71,7 @@ type internal FSharpMethodListForAMethodTip(documentationBuilder: IDocumentation
         buf.ToString()
         )
             
-    override x.GetType(methodIndex) = safe methodIndex "" (fun m -> m.TypeText)
+    override x.GetReturnTypeText(methodIndex) = safe methodIndex "" (fun m -> m.ReturnTypeText)
 
     override x.GetParameterCount(methodIndex) =  safe methodIndex 0 (fun m -> getParameters(m).Length)
             
@@ -527,7 +527,7 @@ type internal FSharpIntellisenseInfo
                                 let oldTextSnapshot = oldTextSnapshotInfo :?> ITextSnapshot
                                 hasTextChangedSinceLastTypecheck (textSnapshot, oldTextSnapshot, Range.Range.toZ range)
 
-                            let! decls = typedResults.GetDeclarationListInfo(untypedParseInfoOpt, Range.Line.fromZ line, col, lineText, fst plid, snd plid, detectTextChange) 
+                            let! decls = typedResults.GetDeclarationListInfo(untypedParseInfoOpt, Range.Line.fromZ line, col, lineText, fst plid, snd plid, (fun() -> []), detectTextChange) 
                             return (new FSharpDeclarations(documentationBuilder, decls.Items, reason) :> Declarations) 
                     else
                         // no TypeCheckInfo in ParseResult.

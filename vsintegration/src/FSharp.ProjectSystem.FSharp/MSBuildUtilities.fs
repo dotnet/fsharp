@@ -25,7 +25,11 @@ type internal MSBuildUtilities() =
 
     static let GetItemType(item : ProjectItemElement) =
         item.ItemType
-        
+
+    /// Normalize path directory separator characters to the OS defacto
+    static let NormalizePath(path : string) =
+        path.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar)
+    
     // Gets the <... Include="path"> path for this item, except if the item is a link, then
     // gets the <Link>path</Link> value instead.
     // In other words, gets the location that will be displayed in the solution explorer.
@@ -35,6 +39,7 @@ type internal MSBuildUtilities() =
             item.EvaluatedInclude
         else
             strPath
+
     static let GetUnescapedUnevaluatedInclude(item : ProjectItemElement) =
         let mutable foundLink = None
         for m in item.Metadata do
@@ -45,17 +50,16 @@ type internal MSBuildUtilities() =
             match foundLink with
             | None -> item.Include
             | Some(link) -> link
-        ProjectCollection.Unescape(escaped)
+        ProjectCollection.Unescape(escaped) |> NormalizePath
 
     static let MattersForOrdering(bi : ProjectItemElement) =
         not (bi.ItemType = ProjectFileConstants.ProjectReference || bi.ItemType = ProjectFileConstants.Reference)
 
     // if 'path' is as in <... Include="path">, determine the relative path of the folder that contains this
     static let ComputeFolder(path : string, projectUrl : Url) =
-        Path.GetDirectoryName(PackageUtilities.MakeRelativeIfRooted(path, projectUrl)) + "\\"
+        Path.GetDirectoryName(PackageUtilities.MakeRelativeIfRooted(path, projectUrl)) + Path.DirectorySeparatorChar.ToString()
 
-    static let FolderComparer = StringComparer.OrdinalIgnoreCase 
-    static let FilenameComparer = StringComparer.OrdinalIgnoreCase 
+    static let FolderComparer = StringComparer.OrdinalIgnoreCase
 
     static let Same(x : ProjectItemElement, y : ProjectItemElement) =
         Object.ReferenceEquals(x,y)
@@ -191,13 +195,7 @@ type internal MSBuildUtilities() =
             match priorGroupWithAtLeastOneItemThatMattersForOrdering with
             | Some(g) -> EnsureProperFolderLogic msbuildProject g projectNode throwIfCannotRender
             | None -> msbuildProject.Xml.AddItemGroup()
-
-    static let CheckItemType(item, buildItemName) =
-        // It checks if this node item has the same BuildActionType as returned by DefaultBuildAction(), which only can see the file name.
-        // Additionally, return true when a node item has "None" as "default" build action to avoid "compile" or "publish". 
-        let itemType = GetItemType(item)
-        itemType = "None" || itemType = buildItemName
-
+            
     static member ThrowIfNotValidAndRearrangeIfNecessary (projectNode : ProjectNode) =
         EnsureValid projectNode.BuildProject projectNode true |> ignore
         
@@ -205,67 +203,40 @@ type internal MSBuildUtilities() =
         // TODO wildcards?
         big.RemoveChild(item)
         big.InsertBeforeChild(item, itemToMoveAbove)
-
-    /// Move <... Include='relativeFileName'> to above nodeToMoveAbove (from solution-explorer point-of-view)
-    static member MoveFileAbove(relativeFileName : string, nodeToMoveAbove : HierarchyNode, projectNode : ProjectNode) =  
-        let msbuildProject = projectNode.BuildProject
-        let buildItemName = projectNode.DefaultBuildAction(relativeFileName)
-        let big = EnsureValid msbuildProject projectNode true
-        let mutable itemToMove = None
-        for bi in EnumerateItems(big) do
-            if CheckItemType(bi, buildItemName) && 0=FilenameComparer.Compare(GetUnescapedUnevaluatedInclude(bi), relativeFileName) then
-                itemToMove <- Some(bi)
-        Debug.Assert(itemToMove.IsSome, "did not find item")
-        let itemToMoveAbove = nodeToMoveAbove.ItemNode.Item 
-        Debug.Assert(itemToMoveAbove <> null, "nodeToMoveAbove was unexpectedly virtual")  // add new/existing item above only works on files, not folders
-        MSBuildUtilities.MoveFileAboveHelper(itemToMove.Value, itemToMoveAbove.Xml, big, projectNode)
-
+        
     static member private MoveFileBelowHelper(item : ProjectItemElement, itemToMoveBelow : ProjectItemElement, big : ProjectItemGroupElement, _projectNode : ProjectNode) =  
         // TODO wildcards?
         big.RemoveChild(item)
         big.InsertAfterChild(item, itemToMoveBelow)
-
-    static member MoveFileBelowCore(relativeFileName : string, itemToMoveBelow : ProjectItemElement, projectNode : ProjectNode, throwIfCannotRender) =  
+        
+    /// Move a file node to its correct place in the build project.
+    /// Its correct place is defined by where it sits in the hierarchy relative
+    /// to other files.
+    static member SyncWithHierarchy(fileNode : FileNode) =
+        let projectNode = fileNode.ProjectMgr
         let msbuildProject = projectNode.BuildProject
-        let buildItemName = projectNode.DefaultBuildAction(relativeFileName)
-        let big = EnsureValid msbuildProject projectNode throwIfCannotRender
-        let mutable itemToMove = None
-        for bi in EnumerateItems(big) do
-            if CheckItemType(bi, buildItemName) && 0=FilenameComparer.Compare(GetUnescapedUnevaluatedInclude(bi), relativeFileName) then
-                itemToMove <- Some(bi)
-        Debug.Assert(itemToMove.IsSome, "did not find item")
-        Debug.Assert(itemToMoveBelow <> null, "nodeToMoveBelow was unexpectedly virtual")  // add new/existing item below only works on files, not folders
-        MSBuildUtilities.MoveFileBelowHelper(itemToMove.Value, itemToMoveBelow, big, projectNode)
-
-    /// Move <... Include='relativeFileName'> to below nodeToMoveBelow (from solution-explorer point-of-view)
-    static member MoveFileBelow(relativeFileName : string, nodeToMoveBelow : HierarchyNode, projectNode : ProjectNode) =  
-        let itemToMoveBelow = nodeToMoveBelow.ItemNode.Item 
-        MSBuildUtilities.MoveFileBelowCore(relativeFileName, itemToMoveBelow.Xml, projectNode, true)
-
-    /// Move <... Include='relativeFileName'> to the bottom of the list of items, except if this item has a subfolder that already exists, move it
-    /// to the bottom of that subforlder, rather than the very bottom.
-    static member MoveFileToBottomOfGroup(relativeFileName : string, projectNode : ProjectNode) =  
-        let dir = Path.GetDirectoryName(relativeFileName) + "\\"
-        let mutable lastItemInDir = null
-        let msbuildProject = projectNode.BuildProject
-        let buildItemName = projectNode.DefaultBuildAction(relativeFileName)
         let big = EnsureValid msbuildProject projectNode false
-        let mutable itemToMove = None
-        for bi in EnumerateItems(big) do
-            if CheckItemType(bi, buildItemName) && 0=FilenameComparer.Compare(GetUnescapedUnevaluatedInclude(bi), relativeFileName) then
-                itemToMove <- Some(bi)
-            else
-                // under else, as we don't want to try to move under _ourself_, only under _another_ existing item in same dir
-                if GetUnescapedUnevaluatedInclude(bi).StartsWith(dir, System.StringComparison.OrdinalIgnoreCase) then
-                    lastItemInDir <- bi
-        Debug.Assert(itemToMove.IsSome, "did not find item")
-        if lastItemInDir <> null then
-            MSBuildUtilities.MoveFileBelowCore(relativeFileName, lastItemInDir, projectNode, false)
-        else
-            big.RemoveChild(itemToMove.Value)
-            big.AppendChild(itemToMove.Value)
-
-
+        
+        let itemToMove = fileNode.ItemNode.Item.Xml
+        big.RemoveChild itemToMove
+            
+        let precedingFile =
+            projectNode.AllDescendants
+            |> Seq.choose (function :? FileNode as fileNode -> Some fileNode | _ -> None)
+            |> Seq.takeWhile ((<>) fileNode)
+            |> Seq.tryLast
+            
+        match precedingFile with
+        | None ->
+            // if there is no preceding file, it must be because we're
+            // the first file in the hierarchy - so put us first
+            big.PrependChild itemToMove
+        | Some precedingFile ->
+            big.InsertAfterChild (itemToMove, precedingFile.ItemNode.Item.Xml)
+        
+        // The project file should now be in a valid state
+        MSBuildUtilities.ThrowIfNotValidAndRearrangeIfNecessary projectNode
+        
     /// Given a HierarchyNode, compute the last BuildItem if we want to move something after it
     static member private FindLast(toMoveAfter : HierarchyNode, projectNode : ProjectNode) =
         match toMoveAfter with
@@ -334,8 +305,6 @@ type internal MSBuildUtilities() =
                 index := !index + 1]
         if !itemToMoveBeforeIndex = -1 then
             Debug.Assert(false, sprintf "did not find item to move before <%s Include=\"%s\">" (GetItemType itemToMoveBefore) (GetUnescapedUnevaluatedInclude itemToMoveBefore))
-        if itemsToMove.IsEmpty then
-            Debug.Assert(false, sprintf "did not find any item to move (anything in folder %s)" folderToBeMoved)
         for (item,i) in itemsToMove do
             Debug.Assert(i <> 0, "item is already at top")
             Debug.Assert(!itemToMoveBeforeIndex < i, "not moving up")
@@ -363,8 +332,6 @@ type internal MSBuildUtilities() =
                 index := !index + 1]
         if !itemToMoveAfterIndex = -1 then
             Debug.Assert(false, sprintf "did not find item to move after <%s Include=\"%s\">" (GetItemType itemToMoveAfter) (GetUnescapedUnevaluatedInclude itemToMoveAfter))
-        if itemsToMove.IsEmpty then
-            Debug.Assert(false, sprintf "did not find any item to move (anything in folder %s)" folderToBeMoved)
         for (item,i) in List.rev itemsToMove do
             Debug.Assert(i <> !index - 1, "item is already at bottom")
             Debug.Assert(!itemToMoveAfterIndex > i, "not moving down")

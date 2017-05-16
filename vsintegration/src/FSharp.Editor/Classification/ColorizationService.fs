@@ -14,7 +14,7 @@ open Microsoft.CodeAnalysis.Text
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
-[<ExportLanguageService(typeof<IEditorClassificationService>, FSharpCommonConstants.FSharpLanguageName)>]
+[<ExportLanguageService(typeof<IEditorClassificationService>, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpColorizationService
     [<ImportingConstructor>]
     (
@@ -30,8 +30,8 @@ type internal FSharpColorizationService
             async {
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
                 let! sourceText = document.GetTextAsync(cancellationToken)
-                result.AddRange(CommonHelpers.getColorizationData(document.Id, sourceText, textSpan, Some(document.FilePath), defines, cancellationToken))
-            } |> CommonRoslynHelpers.StartAsyncUnitAsTask cancellationToken
+                result.AddRange(Tokenizer.getColorizationData(document.Id, sourceText, textSpan, Some(document.FilePath), defines, cancellationToken))
+            } |> RoslynHelpers.StartAsyncUnitAsTask cancellationToken
 
         member this.AddSemanticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
             asyncMaybe {
@@ -39,14 +39,14 @@ type internal FSharpColorizationService
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! _, _, checkResults = checkerProvider.Checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = false) 
                 // it's crucial to not return duplicated or overlapping `ClassifiedSpan`s because Find Usages service crashes.
-                let targetRange = CommonRoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
+                let targetRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
                 let colorizationData = checkResults.GetSemanticClassification (Some targetRange) |> Array.distinctBy fst
                 
                 for (range, classificationType) in colorizationData do
-                    let span = CommonHelpers.fixupSpan(sourceText, CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
+                    let span = Tokenizer.fixupSpan(sourceText, RoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
                     result.Add(ClassifiedSpan(span, FSharpClassificationTypes.getClassificationTypeName(classificationType)))
             } 
-            |> Async.Ignore |> CommonRoslynHelpers.StartAsyncUnitAsTask cancellationToken
+            |> Async.Ignore |> RoslynHelpers.StartAsyncUnitAsTask cancellationToken
 
         // Do not perform classification if we don't have project options (#defines matter)
         member this.AdjustStaleClassification(_: SourceText, classifiedSpan: ClassifiedSpan) : ClassifiedSpan = classifiedSpan

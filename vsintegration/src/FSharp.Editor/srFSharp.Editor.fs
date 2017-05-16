@@ -20,6 +20,7 @@ module SR =
     let AddNewKeyword = lazy ( GetString "AddNewKeyword" )                                   // "Add 'new' keyword"
     let PrefixValueNameWithUnderscore = lazy ( GetString "PrefixValueNameWithUnderscore" )   // "Prefix value name with underscore"
     let RenameValueToUnderscore = lazy ( GetString "RenameValueToUnderscore" )               // "Rename value to '_'"
+    let RenameValueToDoubleUnderscore = lazy ( GetString "RenameValueToDoubleUnderscore" )               // "Rename value to '__'"
     let ImplementInterface = lazy ( GetString "ImplementInterface" ) 
     let ImplementInterfaceWithoutTypeAnnotation = lazy ( GetString "ImplementInterfaceWithoutTypeAnnotation" ) 
     let SimplifyName = lazy ( GetString "SimplifyName")
@@ -29,16 +30,19 @@ module SR =
     let FSharpPrintfFormatClassificationType = lazy (GetString "FSharpPrintfFormatClassificationType")
     let FSharpPropertiesClassificationType = lazy (GetString "FSharpPropertiesClassificationType")
     let FSharpDisposablesClassificationType = lazy (GetString "FSharpDisposablesClassificationType")
+    let TheValueIsUnused = lazy (GetString "TheValueIsUnused")
     let RemoveUnusedOpens = lazy (GetString "RemoveUnusedOpens")
     let UnusedOpens = lazy (GetString "UnusedOpens")
+    let AddProjectReference = lazy (GetString "AddProjectReference")
+    let AddAssemblyReference = lazy (GetString "AddAssemblyReference")
+    let NavigatingTo = lazy (GetString "NavigatingTo")
+    let CannotDetermineSymbol = lazy (GetString "CannotDetermineSymbol")
+    let CannotNavigateUnknown = lazy (GetString "CannotNavigateUnknown")
+    let LocatingSymbol = lazy (GetString "LocatingSymbol")
+    let NavigateToFailed = lazy (GetString "NavigateToFailed")
+    let ExceptionsLabel = lazy (GetString "ExceptionsHeader")
+    let GenericParametersLabel = lazy (GetString "GenericParametersHeader")
     
-    [<Literal>]
-    let IntelliSensePropertyPageMiscCategory = "IntelliSensePropertyPageMiscCategory"
-    [<Literal>]
-    let IntelliSensePropertyPageShowAfterCharIsTyped = "IntelliSensePropertyPageShowAfterCharIsTyped"
-    [<Literal>]
-    let IntelliSensePropertyPageShowAfterCharIsTypedDescr = "IntelliSensePropertyPageShowAfterCharIsTypedDescr"
-
     //--------------------------------------------------------------------------------------
     // Attributes used to mark up editable properties 
     

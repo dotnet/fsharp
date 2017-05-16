@@ -33,12 +33,13 @@ open Microsoft.VisualStudio.FSharp.Editor
 
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open UnitTests.TestLib.LanguageService
 
 let filePath = "C:\\test.fs"
 
 let internal options = { 
     ProjectFileName = "C:\\test.fsproj"
-    ProjectFileNames =  [| filePath |]
+    SourceFiles =  [| filePath |]
     ReferencedProjects = [| |]
     OtherOptions = [| |]
     IsIncompleteTypeCheckEnvironment = true
@@ -47,18 +48,19 @@ let internal options = {
     UnresolvedReferences = None
     OriginalLoadReferences = []
     ExtraProjectInfo = None
+    Stamp = None
 }
 
 let private getSpans (sourceText: SourceText) (caretPosition: int) =
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-    FSharpDocumentHighlightsService.GetDocumentHighlights(FSharpChecker.Instance, documentId, sourceText, filePath, caretPosition, [], options, 0)
+    FSharpDocumentHighlightsService.GetDocumentHighlights(checker, documentId, sourceText, filePath, caretPosition, [], options, 0)
     |> Async.RunSynchronously
     |> Option.defaultValue [||]
 
 let private span sourceText isDefinition (startLine, startCol) (endLine, endCol) =
     let range = Range.mkRange filePath (Range.mkPos startLine startCol) (Range.mkPos endLine endCol)
     { IsDefinition = isDefinition
-      TextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, range) }
+      TextSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range) }
 
 [<Test>]
 let ShouldHighlightAllSimpleLocalSymbolReferences() =

@@ -54,7 +54,7 @@ let main argv =
 
         let sourceText = SourceText.From(code)
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let tokens = CommonHelpers.getColorizationData(documentId, sourceText, TextSpan.FromBounds(0, sourceText.Length), Some(fileName), defines, CancellationToken.None)
+        let tokens = Tokenizer.getColorizationData(documentId, sourceText, TextSpan.FromBounds(0, sourceText.Length), Some(fileName), defines, CancellationToken.None)
         let actualDataTipSpanOption = FSharpLanguageDebugInfoService.GetDataTipInformation(sourceText, searchPosition, tokens)
         
         match actualDataTipSpanOption with
