@@ -130,7 +130,7 @@ let main argv =
                 let! fileResults = checkFile fileVersion
                 match fileResults with
                 | Some fileResults ->
-                    let! symbolUse = fileResults.GetSymbolUseAtLocation(options.SymbolPos.Line, options.SymbolPos.Column, getLine(options.SymbolPos.Line),[options.SymbolText], userOpName=userOpName)
+                    let! symbolUse = fileResults.GetSymbolUseAtLocation(options.SymbolPos.Line, options.SymbolPos.Column, getLine(options.SymbolPos.Line),[options.SymbolText])
                     match symbolUse with
                     | Some symbolUse ->
                         eprintfn "Found symbol %s" symbolUse.Symbol.FullName

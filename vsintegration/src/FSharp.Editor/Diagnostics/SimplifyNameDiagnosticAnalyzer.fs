@@ -47,6 +47,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) =
         asyncMaybe {
+            do! Async.Sleep DefaultTuning.SimplifyNameInitialDelay |> liftAsync 
             do! Option.guard Settings.CodeFixes.SimplifyName
             let! options = getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document)
             let! textVersion = document.GetTextVersionAsync(cancellationToken)
@@ -56,7 +57,6 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                 match cache.TryGetValue document.Id with
                 | true, (oldTextVersionHash, diagnostics) when oldTextVersionHash = textVersionHash -> return diagnostics
                 | _ ->
-                    do! Async.Sleep 1000 |> liftAsync // sleep a while before beginning work, very often cancelled before we start
                     let! sourceText = document.GetTextAsync()
                     let checker = getChecker document
                     let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true, userOpName=userOpName)
@@ -86,7 +86,6 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                             let getNecessaryPlid (plid: string list) : Async<string list> =
                                 let rec loop (rest: string list) (current: string list) =
                                     async {
-                                        do! Async.Sleep 10 // be less intrusive, give other work priority most of the time
                                         match rest with
                                         | [] -> return current
                                         | headIdent :: restPlid ->
@@ -96,6 +95,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                                     }
                                 loop (List.rev plid) []
                                
+                            do! Async.Sleep DefaultTuning.SimplifyNameEachItemDelay |> liftAsync // be less intrusive, give other work priority most of the time
                             let! necessaryPlid = getNecessaryPlid plid |> liftAsync
                                 
                             match necessaryPlid with

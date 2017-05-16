@@ -170,7 +170,7 @@ type internal UnusedOpensDiagnosticAnalyzer() =
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) =
         asyncMaybe {
-            do! Async.Sleep 1000 |> liftAsync // sleep a while before beginning work, very often cancelled before we start
+            do! Async.Sleep DefaultTuning.UnusedOpensAnalyzerInitialDelay |> liftAsync // be less intrusive, give other work priority most of the time
             let! options = getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document)
             let! sourceText = document.GetTextAsync()
             let checker = getChecker document
