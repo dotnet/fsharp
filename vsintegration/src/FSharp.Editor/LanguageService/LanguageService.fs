@@ -40,9 +40,13 @@ type internal FSharpCheckerProvider
     (
         analyzerService: IDiagnosticAnalyzerService
     ) =
+
+    // Enabling this would mean that if devenv.exe goes above 2.3GB we do a one-off downsize of the F# Compiler Service caches
+    //let maxMemory = 2300 
+
     let checker = 
         lazy
-            let checker = FSharpChecker.Create(projectCacheSize = 200, keepAllBackgroundResolutions = false)
+            let checker = FSharpChecker.Create(projectCacheSize = 200, keepAllBackgroundResolutions = false (* , MaxMemory = 2300 *))
 
             // This is one half of the bridge between the F# background builder and the Roslyn analysis engine.
             // When the F# background builder refreshes the background semantic build context for a file,
@@ -125,13 +129,13 @@ type internal ProjectInfoManager
       }
 
     /// Update the info for a project in the project table
-    member this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId: ProjectId, site: IProjectSite, workspace: Workspace) =
+    member this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId: ProjectId, site: IProjectSite, workspace: Workspace, userOpName) =
         this.AddOrUpdateProject(projectId, (fun isRefresh -> 
             let extraProjectInfo = Some(box workspace)
             let tryGetOptionsForReferencedProject f = f |> tryGetOrCreateProjectId |> Option.bind this.TryGetOptionsForProject
             let referencedProjects, options = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(tryGetOptionsForReferencedProject, site, site.ProjectFileName(), extraProjectInfo, serviceProvider, true)
             let referencedProjectIds = referencedProjects |> Array.choose tryGetOrCreateProjectId
-            checkerProvider.Checker.InvalidateConfiguration(options, startBackgroundCompile = not isRefresh)
+            checkerProvider.Checker.InvalidateConfiguration(options, startBackgroundCompileIfAlreadySeen = not isRefresh, userOpName= userOpName + ".UpdateProjectInfo")
             referencedProjectIds, options))
 
     /// Get compilation defines relevant for syntax processing.  
@@ -331,7 +335,7 @@ and
                         while true do
                             let! siteProvider = inbox.Receive()
                             do! Async.SwitchToContext ctx
-                            this.SetupProjectFile(siteProvider, this.Workspace) }
+                            this.SetupProjectFile(siteProvider, this.Workspace, "SetupProjectsAfterSolutionOpen") }
 
                 use _ = Events.SolutionEvents.OnAfterOpenProject |> Observable.subscribe ( fun args ->
                     match args.Hierarchy with
@@ -347,7 +351,7 @@ and
         theme.SetColors()
         
     /// Sync the information for the project 
-    member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, workspace, forceUpdate) =
+    member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, workspace, forceUpdate, userOpName) =
         let wellFormedFilePathSetIgnoreCase (paths: seq<string>) =
             HashSet(paths |> Seq.filter isPathWellFormed |> Seq.map (fun s -> try System.IO.Path.GetFullPath(s) with _ -> s), StringComparer.OrdinalIgnoreCase)
 
@@ -400,9 +404,10 @@ and
 
         // update the cached options
         if updated then
-            projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, project.Id, site, project.Workspace)
+            projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, project.Id, site, project.Workspace, userOpName + ".SyncProject")
 
-    member this.SetupProjectFile(siteProvider: IProvideProjectSite, workspace: VisualStudioWorkspaceImpl) =
+    member this.SetupProjectFile(siteProvider: IProvideProjectSite, workspace: VisualStudioWorkspaceImpl, userOpName) =
+        let userOpName = userOpName + ".SetupProjectFile"
         let  rec setup (site: IProjectSite) =
             let projectGuid = Guid(site.ProjectGuid)
             let projectFileName = site.ProjectFileName()
@@ -410,7 +415,7 @@ and
             let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
 
             if isNull (workspace.ProjectTracker.GetProject projectId) then
-                projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, projectId, site, workspace)
+                projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, projectId, site, workspace, userOpName)
                 let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
                 let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
                 
@@ -430,9 +435,9 @@ and
 
                 let project = projectContext :?> AbstractProject
 
-                this.SyncProject(project, projectContext, site, workspace, forceUpdate=false)
+                this.SyncProject(project, projectContext, site, workspace, forceUpdate=false, userOpName=userOpName)
                 site.AdviseProjectSiteChanges(FSharpConstants.FSharpLanguageServiceCallbackName, 
-                                              AdviseProjectSiteChanges(fun () -> this.SyncProject(project, projectContext, site, workspace, forceUpdate=true)))
+                                              AdviseProjectSiteChanges(fun () -> this.SyncProject(project, projectContext, site, workspace, forceUpdate=true, userOpName="AdviseProjectSiteChanges."+userOpName)))
                 site.AdviseProjectSiteClosed(FSharpConstants.FSharpLanguageServiceCallbackName, 
                                              AdviseProjectSiteChanges(fun () -> 
                                                 projectInfoManager.ClearInfoForProject(project.Id)
@@ -485,7 +490,7 @@ and
             | Some (hier, _) ->
                 match hier with
                 | :? IProvideProjectSite as siteProvider when not (IsScript(filename)) -> 
-                    this.SetupProjectFile(siteProvider, this.Workspace)
+                    this.SetupProjectFile(siteProvider, this.Workspace, "SetupNewTextView")
                 | _ -> 
                     let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
                     this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)

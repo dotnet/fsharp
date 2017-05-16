@@ -26,6 +26,8 @@ type internal FSharpAddOpenCodeFixProvider
         assemblyContentProvider: AssemblyContentProvider
     ) =
     inherit CodeFixProvider()
+
+    static let userOpName = "FSharpAddOpenCodeFixProvider"
     let fixableDiagnosticIds = ["FS0039"; "FS0043"]
 
     let checker = checkerProvider.Checker
@@ -94,7 +96,7 @@ type internal FSharpAddOpenCodeFixProvider
             let document = context.Document
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            let! _, parsedInput, checkResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true, sourceText = sourceText)
+            let! _, parsedInput, checkResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true, sourceText = sourceText, userOpName = userOpName)
             let line = sourceText.Lines.GetLineFromPosition(context.Span.End)
             let linePos = sourceText.Lines.GetLinePosition(context.Span.End)
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
@@ -102,7 +104,7 @@ type internal FSharpAddOpenCodeFixProvider
             let! symbol = 
                 asyncMaybe {
                     let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, context.Span.End, document.FilePath, defines, SymbolLookupKind.Greedy, false)
-                    return! checkResults.GetSymbolUseAtLocation(Line.fromZ linePos.Line, lexerSymbol.Ident.idRange.EndColumn, line.ToString(), lexerSymbol.FullIsland)
+                    return! checkResults.GetSymbolUseAtLocation(Line.fromZ linePos.Line, lexerSymbol.Ident.idRange.EndColumn, line.ToString(), lexerSymbol.FullIsland, userOpName=userOpName)
                 } |> liftAsync
 
             do! Option.guard symbol.IsNone
