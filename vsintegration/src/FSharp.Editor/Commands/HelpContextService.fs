@@ -14,7 +14,7 @@ open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.FSharp.Compiler.Range
 
 [<Shared>]
-[<ExportLanguageService(typeof<IHelpContextService>, FSharpCommonConstants.FSharpLanguageName)>]
+[<ExportLanguageService(typeof<IHelpContextService>, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpHelpContextService 
     [<ImportingConstructor>]
     (
@@ -93,8 +93,8 @@ type internal FSharpHelpContextService
         }
 
     interface IHelpContextService with
-        member this.Language = FSharpCommonConstants.FSharpLanguageLongName
-        member this.Product = FSharpCommonConstants.FSharpLanguageLongName
+        member this.Language = FSharpConstants.FSharpLanguageLongName
+        member this.Product = FSharpConstants.FSharpLanguageLongName
 
         member this.GetHelpTermAsync(document, textSpan, cancellationToken) = 
             asyncMaybe {
@@ -103,11 +103,11 @@ type internal FSharpHelpContextService
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
                 let textLine = sourceText.Lines.GetLineFromPosition(textSpan.Start)
-                let tokens = CommonHelpers.getColorizationData(document.Id, sourceText, textLine.Span, Some document.Name, defines, cancellationToken)
+                let tokens = Tokenizer.getColorizationData(document.Id, sourceText, textLine.Span, Some document.Name, defines, cancellationToken)
                 return! FSharpHelpContextService.GetHelpTerm(checkerProvider.Checker, sourceText, document.FilePath, options, textSpan, tokens, textVersion.GetHashCode())
             } 
             |> Async.map (Option.defaultValue "")
-            |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+            |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
         member this.FormatSymbol(_symbol) = Unchecked.defaultof<_>
         

@@ -13,6 +13,7 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Driver
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.CompileOps
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 
 /// build issue location
 type internal Location =
@@ -55,13 +56,16 @@ type internal CompilationOutput =
 type internal InProcCompiler(referenceResolver) = 
     member this.Compile(argv) = 
 
+        // Explanation: Compilation happens on whichever thread calls this function.
+        let ctok = AssumeCompilationThreadWithoutEvidence ()
+
         let loggerProvider = InProcErrorLoggerProvider()
         let exitCode = ref 0
         let exiter = 
             { new Exiter with
                  member this.Exit n = exitCode := n; raise StopProcessing }
         try 
-            typecheckAndCompile(argv, referenceResolver, false, exiter, loggerProvider.Provider)
+            typecheckAndCompile(ctok, argv, referenceResolver, false, false, exiter, loggerProvider.Provider, None, None)
         with 
             | StopProcessing -> ()
             | ReportedError _  | WrappedError(ReportedError _,_)  ->
@@ -84,7 +88,7 @@ type internal FscCompiler() =
             EndLine = 0
         }
 
-    /// converts short and long issue types to the same CompilationIssue reprsentation
+    /// converts short and long issue types to the same CompilationIssue representation
     let convert issue : CompilationIssue = 
         match issue with
         | Diagnostic.Short(isError, text) -> 

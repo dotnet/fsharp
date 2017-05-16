@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{6E11E03D-733E-4A7A-BEDE-5890F085FE69}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>CSharpTestB4</RootNamespace>
+    <AssemblyName>CSharpTestB4</AssemblyName>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+
+  </ItemGroup>
+  <ItemGroup>
+
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CSharpTestA1\CSharpTestA1.csproj">
+      <Project>{197a786f-31f2-4fa4-a36a-cb87a4c44709}</Project>
+      <Name>CSharpTestA1</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CSharpTestA2\CSharpTestA2.csproj">
+      <Project>{8e90aca2-fa3a-429f-8bad-7a740b35b437}</Project>
+      <Name>CSharpTestA2</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CSharpTestA3\CSharpTestA3.csproj">
+      <Project>{8d91a55e-854c-4f68-9f0e-cee021b2e887}</Project>
+      <Name>CSharpTestA3</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CSharpTestA4\CSharpTestA4.csproj">
+      <Project>{0428d250-834e-4cb3-9c8f-2807c4d82879}</Project>
+      <Name>CSharpTestA4</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CSharpTestA5\CSharpTestA5.csproj">
+      <Project>{752fa106-a084-4003-9ff4-e9b5ff335c6c}</Project>
+      <Name>CSharpTestA5</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CSharpTestA6\CSharpTestA6.csproj">
+      <Project>{2c4da1d8-70c6-4b1f-9a0b-84b2a1c8ce46}</Project>
+      <Name>CSharpTestA6</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CSharpTestA7\CSharpTestA7.csproj">
+      <Project>{ddeb2731-01fe-4748-8205-98f3b6b40e21}</Project>
+      <Name>CSharpTestA7</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CSharpTestA8\CSharpTestA8.csproj">
+      <Project>{952b0352-7075-4604-8b8f-90ac7dfc1430}</Project>
+      <Name>CSharpTestA8</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CSharpTestA9\CSharpTestA9.csproj">
+      <Project>{65f5981e-a4a6-4e7c-b55d-54aef11385fc}</Project>
+      <Name>CSharpTestA9</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CSharpTestA10\CSharpTestA10.csproj">
+      <Project>{26f14b33-5cf2-4e67-9161-27c6832bd8e2}</Project>
+      <Name>CSharpTestA10</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CSharpTestA11\CSharpTestA11.csproj">
+      <Project>{cc547c8b-091d-4050-acd6-b1a015c2256e}</Project>
+      <Name>CSharpTestA11</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CSharpTestA12\CSharpTestA12.csproj">
+      <Project>{579bdade-d16d-44e2-b4de-20e07e3f7d57}</Project>
+      <Name>CSharpTestA12</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CSharpTestA13\CSharpTestA13.csproj">
+      <Project>{a483ff12-8de1-47c8-9042-1287949ba12a}</Project>
+      <Name>CSharpTestA13</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CSharpTestA14\CSharpTestA14.csproj">
+      <Project>{65ecbbc2-c1a7-4a1c-b12b-65e25dcc5ff4}</Project>
+      <Name>CSharpTestA14</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CSharpTestA15\CSharpTestA15.csproj">
+      <Project>{fb21d5fa-961f-414f-b1fd-6be37f33c979}</Project>
+      <Name>CSharpTestA15</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

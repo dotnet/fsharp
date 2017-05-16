@@ -6,6 +6,8 @@ package name=Microsoft.FSharp.Dependencies
 folder "InstallDir:MSBuild\Microsoft\VisualStudio\v15.0\FSharp"
   file "Microsoft.FSharp.targets" source="$(BinariesFolder)\setup\resources\Microsoft.FSharp.Shim.targets"
   file "Microsoft.Portable.FSharp.targets" source="$(BinariesFolder)\setup\resources\Microsoft.Portable.FSharp.Shim.targets"
+  file "Microsoft.FSharp.NetSdk.targets" source="$(BinariesFolder)\setup\resources\Microsoft.FSharp.NetSdk.Shim.targets"
+  file "Microsoft.FSharp.NetSdk.props" source="$(BinariesFolder)\setup\resources\Microsoft.FSharp.NetSdk.Shim.props"
 
 folder "InstallDir:Common7\IDE\PublicAssemblies"
   file source="$(BinariesFolder)\net40\bin\FSharp.Core.dll" vs.file.ngen=yes

@@ -1547,8 +1547,8 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
         | _ -> CompleteD
 
     // See when one constraint implies implies another. 
-    // 'a :> ty1  implies 'a :> 'ty2 if the head type name of ty2 (say T2) occursCheck anywhere in the heirarchy of ty1 
-    // If it does occcur, e.g. at instantiation T2<inst2>, then the check above will have enforced that 
+    // 'a :> ty1  implies 'a :> 'ty2 if the head type name of ty2 (say T2) occursCheck anywhere in the hierarchy of ty1 
+    // If it does occur, e.g. at instantiation T2<inst2>, then the check above will have enforced that 
     // T2<inst2> = ty2 
     let implies tpc1 tpc2 = 
         match tpc1,tpc2 with           
@@ -2363,9 +2363,10 @@ and ResolveOverloading
                     
 
                 let bestMethods =
-                    applicableMeths |> List.choose (fun candidate -> 
-                        if applicableMeths |> List.forall (fun other -> 
-                             candidate === other || // REVIEW: change this needless use of pointer equality to be an index comparison
+                    let indexedApplicableMeths = applicableMeths |> List.indexed
+                    indexedApplicableMeths |> List.choose (fun (i,candidate) -> 
+                        if indexedApplicableMeths |> List.forall (fun (j,other) -> 
+                             i = j ||
                              let res = better candidate other
                              //eprintfn "\n-------\nCandidate: %s\nOther: %s\nResult: %d\n" (NicePrint.stringOfMethInfo amap m denv (fst candidate).Method) (NicePrint.stringOfMethInfo amap m denv (fst other).Method) res
                              res > 0) then 

@@ -12,8 +12,6 @@
     <AssemblyName>FSharp.Compiler</AssemblyName>
     <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
-    <DefineConstants>INCLUDE_METADATA_READER;$(DefineConstants)</DefineConstants>
-    <DefineConstants>INCLUDE_METADATA_WRITER;$(DefineConstants)</DefineConstants>
     <NoWarn>$(NoWarn);62;9</NoWarn>
     <ProjectGuid>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</ProjectGuid>
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -493,6 +491,8 @@
     <Compile Include="..\IlxGen.fs">
       <Link>CodeGen\IlxGen.fs</Link>
     </Compile>
+
+    <!-- FSharp.Compiler.dll includes the core of the F# Compiler fsc.exe implementation -->
     <Compile Include="..\CompileOps.fsi">
       <Link>Driver\CompileOps.fsi</Link>
     </Compile>
@@ -511,12 +511,52 @@
     <Compile Include="..\fsc.fs">
       <Link>Driver\fsc.fs</Link>
     </Compile>
+
+    <!-- FSharp.Compiler.dll includes the symbol API. -->
+    <!-- Required because some of fsi.fs and its API is written in terms of symbols -->
+    <Compile Include="..\symbols\SymbolHelpers.fsi">
+      <Link>Symbols/SymbolHelpers.fsi</Link>
+    </Compile>
+    <Compile Include="..\symbols\SymbolHelpers.fs">
+      <Link>Symbols/SymbolHelpers.fs</Link>
+    </Compile>
+    <Compile Include="..\symbols\Symbols.fsi">
+      <Link>Symbols/Symbols.fsi</Link>
+    </Compile>
+    <Compile Include="..\symbols\Symbols.fs">
+      <Link>Symbols/Symbols.fs</Link>
+    </Compile>
+    <Compile Include="..\symbols\Exprs.fsi">
+      <Link>Symbols/Exprs.fsi</Link>
+    </Compile>
+    <Compile Include="..\symbols\Exprs.fs">
+      <Link>Symbols/Exprs.fs</Link>
+    </Compile>
+
+    <!-- FSharp.Compiler.dll includes MSBuildReferenceResolver as it is the default reference resolver for fsc.exe and fsi.exe -->
     <Compile Include="..\MSBuildReferenceResolver.fs">
       <Link>MSBuildReferenceResolver.fs</Link>
     </Compile>
+
+    <!-- FSharp.Compiler.dll includes the core of the F# Interactive fsi.exe implementation -->
+    <FsSrGen Include="..\fsi\FSIstrings.txt">
+      <Link>FSIstrings.txt</Link>
+    </FsSrGen>
+    <Compile Include="..\fsi\console.fs">
+      <Link>InteractiveSession\console.fs</Link>
+    </Compile>
+    <Compile Include="..\fsi\fsi.fsi">
+      <Link>InteractiveSession\fsi.fsi</Link>
+    </Compile>
+    <Compile Include="..\fsi\fsi.fs">
+      <Link>InteractiveSession\fsi.fs</Link>
+    </Compile>
+
     <Compile Include="InternalsVisibleTo.fs" Condition="'$(TargetFramework)' != 'coreclr'">
       <Link>InternalsVisibleTo.fs</Link>
     </Compile>
+
+    <!-- FSharp.Compiler.dll includes an old API for testing the compiler and gathering diagnostics in-memory -->
     <Compile Include="..\LegacyHostedCompilerForTesting.fs">
       <Link>LegacyHostedCompilerForTesting.fs</Link>
     </Compile>
@@ -535,10 +575,10 @@
       <HintPath>..\..\..\packages\Microsoft.DiaSymReader.PortablePdb.1.1.0\lib\portable-net45+win8\Microsoft.DiaSymReader.PortablePdb.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.DiaSymReader">
-      <HintPath>..\..\..\packages\Microsoft.DiaSymReader.1.0.8\lib\portable-net45+win8\Microsoft.DiaSymReader.dll</HintPath>
+      <HintPath>..\..\..\packages\Microsoft.DiaSymReader.1.1.0\lib\portable-net45+win8\Microsoft.DiaSymReader.dll</HintPath>
     </Reference>
     <Reference Include="System.Reflection.Metadata">
-      <HintPath>..\..\..\packages\System.Reflection.Metadata.1.4.1-beta-24227-04\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath>
+      <HintPath>..\..\..\packages\System.Reflection.Metadata.1.4.2\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath>
     </Reference>
     <Reference Include="System.Collections.Immutable">
       <HintPath>..\..\..\packages\System.Collections.Immutable.1.2.0\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>

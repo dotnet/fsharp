@@ -14,6 +14,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.VisualStudio.FSharp.LanguageService
 open UnitTests.TestLib.Utils
+open UnitTests.TestLib.LanguageService
 
 [<TestFixture>][<Category "Roslyn Services">]
 type HelpContextServiceTests() =
@@ -21,7 +22,7 @@ type HelpContextServiceTests() =
     let fileName = "C:\\test.fs"
     let options: FSharpProjectOptions = { 
         ProjectFileName = "C:\\test.fsproj"
-        ProjectFileNames =  [| fileName |]
+        SourceFiles =  [| fileName |]
         ReferencedProjects = [| |]
         OtherOptions = [| |]
         IsIncompleteTypeCheckEnvironment = true
@@ -30,6 +31,7 @@ type HelpContextServiceTests() =
         UnresolvedReferences = None
         ExtraProjectInfo = None
         OriginalLoadReferences = []
+        Stamp = None
     }
 
     let markers (source:string) = 
@@ -55,12 +57,12 @@ type HelpContextServiceTests() =
 
         let res = [
           for marker in markers fileContents do
-            let span = TextSpan(marker, 0)
+            let span = Microsoft.CodeAnalysis.Text.TextSpan(marker, 0)
             let textLine = sourceText.Lines.GetLineFromPosition(marker)
             let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-            let tokens = CommonHelpers.getColorizationData(documentId, sourceText, textLine.Span, Some "test.fs", [], CancellationToken.None)
+            let tokens = Tokenizer.getColorizationData(documentId, sourceText, textLine.Span, Some "test.fs", [], CancellationToken.None)
 
-            yield FSharpHelpContextService.GetHelpTerm(FSharpChecker.Instance, sourceText, fileName,  newOptions, span, tokens, version)
+            yield FSharpHelpContextService.GetHelpTerm(checker, sourceText, fileName,  newOptions, span, tokens, version)
                   |> Async.RunSynchronously
         ]
         let equalLength = List.length expectedKeywords = List.length res
@@ -340,31 +342,57 @@ type HelpContextServiceTests() =
     [<Test>]
     member public this.``Regression.NewInstance.854367`` () =
         let file =
-            [   "let q1 = new System.Runtime.Remoting.Type$Entry()"
+            [   "let q : System.Runtime.Remoting.TypeE$ntry = null" ]
+        let keywords = 
+            [   Some "System.Runtime.Remoting.TypeEntry" ]
+        this.TestF1Keywords(keywords, file)
+
+    [<Test>]
+    member public this.``Regression.NewInstance.854367.2`` () =
+        let file =
+            [   "let q1 = new System.Runtime.Remoting.Type$Entry()" // this consutrctor exists but is not accessible (it is protected), but the help entry still goes to the type
             ]
         let keywords = 
-            [   Some "System.Runtime.Remoting.TypeEntry"
-            ]
+            [   Some "System.Runtime.Remoting.TypeEntry" ]
         this.TestF1Keywords(keywords, file)
 
 
     [<Test>]
-    member public this.``Classes`` () =
+    member public this.``Classes.WebClient`` () =
         let file =
-            [   "let q : System.Runtime.Remoting.TypeE$ntry = null"
-                "let q1 = new System.Runtime.Remoting.Type$Entry()"
-                "let w : System.Net.Web$Client = new System.Net.Web$Client()"
-                "let x : System.Collections.Generic.L$ist<int> = null"
-                "let z : Resi$zeArray<int> = null" 
-             ]
+            [   "let w : System.Net.Web$Client = new System.Net.Web$Client()" ]
         let keywords = 
-            [   Some "System.Runtime.Remoting.TypeEntry"
-                Some "System.Runtime.Remoting.TypeEntry"
-                Some "System.Net.WebClient"
+            [   Some "System.Net.WebClient"
                 Some "System.Net.WebClient.#ctor"
-                Some "System.Collections.Generic.List`1"
-                Some "System.Collections.Generic.List`1"
              ]
+        this.TestF1Keywords(keywords, file)
+
+
+    [<Test>]
+    member public this.``Classes.Object`` () =
+        let file =
+            [   "let w : System.Ob$ject = new System.Obj$ect()" ]
+        let keywords = 
+            [   Some "System.Object"
+                Some "System.Object.#ctor"
+             ]
+        this.TestF1Keywords(keywords, file)
+
+
+    [<Test>]
+    member public this.``Classes.Generic`` () =
+        let file =
+            [   "let x : System.Collections.Generic.L$ist<int> = null" ]
+        let keywords = 
+            [   Some "System.Collections.Generic.List`1" ]
+        this.TestF1Keywords(keywords, file)
+
+    [<Test>]
+    member public this.``Classes.Abbrev`` () =
+        let file =
+            [   "let z : Resi$zeArray<int> = null" ]
+        let keywords = 
+            [   Some "System.Collections.Generic.List`1" ]
         this.TestF1Keywords(keywords, file)
 
     [<Test>]
