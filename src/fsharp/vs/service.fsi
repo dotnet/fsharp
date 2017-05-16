@@ -301,27 +301,36 @@ type internal FSharpProjectOptions =
     { 
       // Note that this may not reduce to just the project directory, because there may be two projects in the same directory.
       ProjectFileName: string
+
       /// The files in the project
-      ProjectFileNames: string[]
+      SourceFiles: string[]
+
       /// Additional command line argument options for the project. These can include additional files and references.
       OtherOptions: string[]
+
       /// The command line arguments for the other projects referenced by this project, indexed by the
       /// exact text used in the "-r:" reference in FSharpProjectOptions.
       ReferencedProjects: (string * FSharpProjectOptions)[]
+
       /// When true, the typechecking environment is known a priori to be incomplete, for
       /// example when a .fs file is opened outside of a project. In this case, the number of error 
       /// messages reported is reduced.
       IsIncompleteTypeCheckEnvironment : bool
+
       /// When true, use the reference resolution rules for scripts rather than the rules for compiler.
       UseScriptResolutionRules : bool
+
       /// Timestamp of project/script load, used to differentiate between different instances of a project load.
       /// This ensures that a complete reload of the project or script type checking
       /// context occurs on project or script unload/reload.
       LoadTime : DateTime
+
       /// Unused in this API and should be 'None' when used as user-specified input
       UnresolvedReferences : UnresolvedReferencesSet option
+
       /// Unused in this API and should be '[]' when used as user-specified input
       OriginalLoadReferences: (range * string) list
+
       /// Extra information passed back on event trigger
       ExtraProjectInfo : obj option
 
@@ -401,7 +410,7 @@ type internal FSharpChecker =
     ///     can be used to marginally increase accuracy of intellisense results in some situations.
     /// </param>
     ///
-    member CheckFileInProjectIfReady : parsed: FSharpParseFileResults * filename: string * fileversion: int * source: string * options: FSharpProjectOptions * ?textSnapshotInfo: obj -> Async<FSharpCheckFileAnswer option>
+    member CheckFileInProjectAllowingStaleCachedResults : parsed: FSharpParseFileResults * filename: string * fileversion: int * source: string * options: FSharpProjectOptions * ?textSnapshotInfo: obj -> Async<FSharpCheckFileAnswer option>
 
     /// <summary>
     /// <para>
@@ -544,12 +553,11 @@ type internal FSharpChecker =
     member TryGetRecentCheckResultsForFile : filename: string * options:FSharpProjectOptions * ?source: string -> (FSharpParseFileResults * FSharpCheckFileResults * (*version*)int) option
 
     /// This function is called when the entire environment is known to have changed for reasons not encoded in the ProjectOptions of any project/compilation.
-    /// For example, the type provider approvals file may have changed.
     member InvalidateAll : unit -> unit    
         
     /// This function is called when the configuration is known to have changed for reasons not encoded in the ProjectOptions.
     /// For example, dependent references may have been deleted or created.
-    member InvalidateConfiguration: options: FSharpProjectOptions -> unit    
+    member InvalidateConfiguration: options: FSharpProjectOptions * ?startBackgroundCompile: bool  -> unit    
 
     /// Set the project to be checked in the background.  Overrides any previous call to <c>CheckProjectInBackground</c>
     member CheckProjectInBackground: options: FSharpProjectOptions -> unit
@@ -629,8 +637,7 @@ type internal FSharpChecker =
 
     /// Tokenize an entire file, line by line
     member TokenizeFile: source:string -> FSharpTokenInfo [] []
-
-
+    
 
 // An object to typecheck source in a given typechecking environment.
 // Used internally to provide intellisense over F# Interactive.

@@ -1037,7 +1037,7 @@ type FrameworkImportsCacheKey = (*resolvedpath*)string list * string * (*TargetF
 type FrameworkImportsCache(keepStrongly) = 
 
     // Mutable collection protected via CompilationThreadToken 
-    let frameworkTcImportsCache = AgedLookup<CompilationThreadToken, FrameworkImportsCacheKey,(TcGlobals * TcImports)>(keepStrongly, areSame=(fun (x,y) -> x = y)) 
+    let frameworkTcImportsCache = AgedLookup<CompilationThreadToken, FrameworkImportsCacheKey,(TcGlobals * TcImports)>(keepStrongly, areSimilar=(fun (x,y) -> x = y)) 
 
     member __.Downsize(ctok) = frameworkTcImportsCache.Resize(ctok, keepStrongly=0)
     member __.Clear(ctok) = frameworkTcImportsCache.Clear(ctok)
@@ -1562,7 +1562,7 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
             return true
       }
     
-    member builder.GetCheckResultsBeforeFileInProjectIfReady (filename): PartialCheckResults option  = 
+    member builder.GetCheckResultsBeforeFileInProjectEvenIfStale (filename): PartialCheckResults option  = 
         let slotOfFile = builder.GetSlotOfFileName filename
         let result = 
             match slotOfFile with
@@ -1676,7 +1676,7 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
 #endif
       }
 
-    member __.ProjectFileNames  = sourceFiles  |> List.map (fun (_,f,_) -> f)
+    member __.SourceFiles  = sourceFiles  |> List.map (fun (_,f,_) -> f)
 
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.

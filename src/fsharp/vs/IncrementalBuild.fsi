@@ -65,10 +65,6 @@ type internal PartialCheckResults =
 [<Class>]
 type internal IncrementalBuilder = 
 
-      /// Increment the usage count on the IncrementalBuilder by 1. This initial usage count is 0. The returns an IDisposable which will 
-      /// decrement the usage count on the entire build by 1 and dispose if it is no longer used by anyone.
-      member IncrementUsageCount : unit -> IDisposable
-     
       /// Check if the builder is not disposed
       member IsAlive : bool
 
@@ -76,7 +72,7 @@ type internal IncrementalBuilder =
       member TcConfig : TcConfig
 
       /// The full set of source files including those from options
-      member ProjectFileNames : string list
+      member SourceFiles : string list
 
       /// Raised just before a file is type-checked, to invalidate the state of the file in VS and force VS to request a new direct typecheck of the file.
       /// The incremental builder also typechecks the file (error and intellisense results from the background builder are not
@@ -110,7 +106,7 @@ type internal IncrementalBuilder =
       /// This is a very quick operation.
       ///
       /// This is safe for use from non-compiler threads but the objects returned must in many cases be accessed only from the compiler thread.
-      member GetCheckResultsBeforeFileInProjectIfReady: filename:string -> PartialCheckResults option
+      member GetCheckResultsBeforeFileInProjectEvenIfStale: filename:string -> PartialCheckResults option
 
       /// Get the preceding typecheck state of a slot, but only if it is up-to-date w.r.t.
       /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available.
@@ -153,7 +149,11 @@ type internal IncrementalBuilder =
 
       static member TryCreateBackgroundBuilderForProjectOptions : CompilationThreadToken * ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string list * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool * maxTimeShareMilliseconds: int64 -> Cancellable<IncrementalBuilder option * FSharpErrorInfo list>
 
+      /// Increment the usage count on the IncrementalBuilder by 1. This initial usage count is 0 so immediately after creation 
+      /// a call to KeepBuilderAlive should be made. The returns an IDisposable which will 
+      /// decrement the usage count and dispose if the usage count goes to zero
       static member KeepBuilderAlive : IncrementalBuilder option -> IDisposable
+
       member IsBeingKeptAliveApartFromCacheEntry : bool
 
 /// Generalized Incremental Builder. This is exposed only for unittesting purposes.
