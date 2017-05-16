@@ -323,7 +323,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
                 if (errorReporter != null)
                 {
-                 //   errorReporter.ReportError2(taskText, errorCode, (VSTASKPRIORITY) priority, span.iStartLine, span.iStartIndex, span.iEndLine, span.iEndIndex, file);
+                    errorReporter.ReportError2(taskText, errorCode, (VSTASKPRIORITY) priority, span.iStartLine, span.iStartIndex, span.iEndLine, span.iEndIndex, file);
                 }
 
             });
