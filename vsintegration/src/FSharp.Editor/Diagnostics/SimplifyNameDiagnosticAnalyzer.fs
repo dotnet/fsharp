@@ -26,6 +26,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
     let getChecker (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
     let getPlidLength (plid: string list) = (plid |> List.sumBy String.length) + plid.Length
     static let cache = ConditionalWeakTable<DocumentId, TextVersionHash * ImmutableArray<Diagnostic>>()
+    // Make sure only one document is being analyzed at a time, to be nice
     static let guard = new SemaphoreSlim(1)
 
     static let Descriptor = 
@@ -54,6 +55,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                 match cache.TryGetValue document.Id with
                 | true, (oldTextVersionHash, diagnostics) when oldTextVersionHash = textVersionHash -> return diagnostics
                 | _ ->
+                    do! Async.Sleep 1000 |> liftAsync // sleep a while before beginning work, very often cancelled before we start
                     let! sourceText = document.GetTextAsync()
                     let checker = getChecker document
                     let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true)
@@ -83,6 +85,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                             let getNecessaryPlid (plid: string list) : Async<string list> =
                                 let rec loop (rest: string list) (current: string list) =
                                     async {
+                                        do! Async.Sleep 10 // be less intrusive, give other work priority most of the time
                                         match rest with
                                         | [] -> return current
                                         | headIdent :: restPlid ->

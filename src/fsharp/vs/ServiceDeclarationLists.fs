@@ -484,7 +484,7 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: strin
         match info with
         | Choice1Of2 (items: CompletionItem list, infoReader, m, denv, reactor:IReactorOperations, checkAlive) -> 
             // reactor causes the lambda to execute on the background compiler thread, through the Reactor
-            reactor.EnqueueAndAwaitOpAsync ("StructuredDescriptionTextAsync", fun ctok -> 
+            reactor.EnqueueAndAwaitOpAsync ("StructuredDescriptionTextAsync", name, fun ctok -> 
                 RequireCompilationThread ctok
                 // This is where we do some work which may touch TAST data structures owned by the IncrementalBuilder - infoReader, item etc. 
                 // It is written to be robust to a disposal of an IncrementalBuilder, in which case it will just return the empty string. 
