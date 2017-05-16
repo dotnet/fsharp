@@ -10,10 +10,10 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 type internal IReactorOperations = 
 
     /// Put the operation in the queue, and return an async handle to its result. 
-    abstract EnqueueAndAwaitOpAsync : opName: string * descFilename: string * action: (CompilationThreadToken -> Cancellable<'T>) -> Async<'T>
+    abstract EnqueueAndAwaitOpAsync : userOpName:string * opName:string * opArg:string * action: (CompilationThreadToken -> Cancellable<'T>) -> Async<'T>
 
     /// Enqueue an operation and return immediately. 
-    abstract EnqueueOp: opName: string * descFilename: string * action: (CompilationThreadToken -> unit) -> unit
+    abstract EnqueueOp: userOpName:string * opName:string * opArg:string * action: (CompilationThreadToken -> unit) -> unit
 
 /// Reactor is intended for long-running but interruptible operations, interleaved
 /// with one-off asynchronous operations. 
@@ -35,13 +35,13 @@ type internal Reactor =
     member CompleteAllQueuedOps : unit -> unit
 
     /// Enqueue an uncancellable operation and return immediately. 
-    member EnqueueOp : opName: string * opArg: string * op:(CompilationThreadToken -> unit) -> unit
+    member EnqueueOp : userOpName:string * opName: string * opArg: string * op:(CompilationThreadToken -> unit) -> unit
 
     /// For debug purposes
     member CurrentQueueLength : int
 
     /// Put the operation in the queue, and return an async handle to its result. 
-    member EnqueueAndAwaitOpAsync : opName: string * opArg: string * (CompilationThreadToken -> Cancellable<'T>) -> Async<'T>
+    member EnqueueAndAwaitOpAsync : userOpName:string * opName:string * opArg:string * (CompilationThreadToken -> Cancellable<'T>) -> Async<'T>
 
     /// The timespan in milliseconds before background work begins after the operations queue is empty
     member PauseBeforeBackgroundWork : int with get, set

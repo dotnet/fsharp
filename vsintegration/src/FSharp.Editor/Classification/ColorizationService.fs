@@ -21,6 +21,7 @@ type internal FSharpColorizationService
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: ProjectInfoManager
     ) =
+    static let userOpName = "FSharpColorizationService"
 
     interface IEditorClassificationService with
         // Do not perform classification if we don't have project options (#defines matter)
@@ -37,7 +38,7 @@ type internal FSharpColorizationService
             asyncMaybe {
                 let! options = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)
-                let! _, _, checkResults = checkerProvider.Checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = false) 
+                let! _, _, checkResults = checkerProvider.Checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = false, userOpName=userOpName) 
                 // it's crucial to not return duplicated or overlapping `ClassifiedSpan`s because Find Usages service crashes.
                 let targetRange = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, textSpan, sourceText)
                 let colorizationData = checkResults.GetSemanticClassification (Some targetRange) |> Array.distinctBy fst

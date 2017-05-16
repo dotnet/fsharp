@@ -143,8 +143,8 @@ type internal FSharpCheckFileResults =
     ///    callback to the client to check if the text has changed. If it has, then give up
     ///    and assume that we're going to repeat the operation later on.
     /// </param>
-
-    member GetDeclarationListInfo : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * colAtEndOfPartialName: int * lineText:string * qualifyingNames: string list * partialName: string * getAllSymbols: (unit -> AssemblySymbol list) * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) -> Async<FSharpDeclarationListInfo>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member GetDeclarationListInfo : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * colAtEndOfPartialName: int * lineText:string * qualifyingNames: string list * partialName: string * getAllSymbols: (unit -> AssemblySymbol list) * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) * ?userOpName: string -> Async<FSharpDeclarationListInfo>
 
     /// <summary>Get the items for a declaration list in FSharpSymbol format</summary>
     ///
@@ -167,7 +167,8 @@ type internal FSharpCheckFileResults =
     ///    callback to the client to check if the text has changed. If it has, then give up
     ///    and assume that we're going to repeat the operation later on.
     /// </param>
-    member GetDeclarationListSymbols : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * colAtEndOfPartialName: int * lineText:string * qualifyingNames: string list * partialName: string * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) -> Async<FSharpSymbolUse list list>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member GetDeclarationListSymbols : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * colAtEndOfPartialName: int * lineText:string * qualifyingNames: string list * partialName: string * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) * ?userOpName: string -> Async<FSharpSymbolUse list list>
 
 
     /// <summary>Compute a formatted tooltip for the given location</summary>
@@ -177,7 +178,8 @@ type internal FSharpCheckFileResults =
     /// <param name="lineText">The text of the line where the information is being requested.</param>
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
     /// <param name="tokenTag">Used to discriminate between 'identifiers', 'strings' and others. For strings, an attempt is made to give a tooltip for a #r "..." location. Use a value from FSharpTokenInfo.Tag, or FSharpTokenTag.Identifier, unless you have other information available.</param>
-    member GetStructuredToolTipTextAlternate : line:int * colAtEndOfNames:int * lineText:string * names:string list * tokenTag:int -> Async<FSharpStructuredToolTipText>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member GetStructuredToolTipTextAlternate : line:int * colAtEndOfNames:int * lineText:string * names:string list * tokenTag:int * ?userOpName: string -> Async<FSharpStructuredToolTipText>
 
     /// <summary>Compute a formatted tooltip for the given location</summary>
     ///
@@ -186,7 +188,8 @@ type internal FSharpCheckFileResults =
     /// <param name="lineText">The text of the line where the information is being requested.</param>
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
     /// <param name="tokenTag">Used to discriminate between 'identifiers', 'strings' and others. For strings, an attempt is made to give a tooltip for a #r "..." location. Use a value from FSharpTokenInfo.Tag, or FSharpTokenTag.Identifier, unless you have other information available.</param>
-    member GetToolTipTextAlternate : line:int * colAtEndOfNames:int * lineText:string * names:string list * tokenTag:int -> Async<FSharpToolTipText>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member GetToolTipTextAlternate : line:int * colAtEndOfNames:int * lineText:string * names:string list * tokenTag:int * ?userOpName: string -> Async<FSharpToolTipText>
 
     /// <summary>Compute the Visual Studio F1-help key identifier for the given location, based on name resolution results</summary>
     ///
@@ -194,7 +197,8 @@ type internal FSharpCheckFileResults =
     /// <param name="colAtEndOfNames">The column number at the end of the identifiers where the information is being requested.</param>
     /// <param name="lineText">The text of the line where the information is being requested.</param>
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
-    member GetF1KeywordAlternate                   : line:int * colAtEndOfNames:int * lineText:string * names:string list -> Async<string option>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member GetF1KeywordAlternate                   : line:int * colAtEndOfNames:int * lineText:string * names:string list * ?userOpName: string -> Async<string option>
 
 
     /// <summary>Compute a set of method overloads to show in a dialog relevant to the given code location.</summary>
@@ -203,14 +207,16 @@ type internal FSharpCheckFileResults =
     /// <param name="colAtEndOfNames">The column number at the end of the identifiers where the information is being requested.</param>
     /// <param name="lineText">The text of the line where the information is being requested.</param>
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
-    member GetMethodsAlternate              : line:int * colAtEndOfNames:int * lineText:string * names:string list option -> Async<FSharpMethodGroup>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member GetMethodsAlternate              : line:int * colAtEndOfNames:int * lineText:string * names:string list option * ?userOpName: string -> Async<FSharpMethodGroup>
 
     /// <summary>Compute a set of method overloads to show in a dialog relevant to the given code location.  The resulting method overloads are returned as symbols.</summary>
     /// <param name="line">The line number where the information is being requested.</param>
     /// <param name="colAtEndOfNames">The column number at the end of the identifiers where the information is being requested.</param>
     /// <param name="lineText">The text of the line where the information is being requested.</param>
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
-    member GetMethodsAsSymbols : line:int * colAtEndOfNames:int * lineText:string * names:string list -> Async<FSharpSymbolUse list option>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member GetMethodsAsSymbols : line:int * colAtEndOfNames:int * lineText:string * names:string list * ?userOpName: string -> Async<FSharpSymbolUse list option>
 
     /// <summary>Resolve the names at the given location to the declaration location of the corresponding construct.</summary>
     ///
@@ -219,7 +225,8 @@ type internal FSharpCheckFileResults =
     /// <param name="lineText">The text of the line where the information is being requested.</param>
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
     /// <param name="preferFlag">If not given, then get the location of the symbol. If false, then prefer the location of the corresponding symbol in the implementation of the file (rather than the signature if present). If true, prefer the location of the corresponding symbol in the signature of the file (rather than the implementation).</param>
-    member GetDeclarationLocationAlternate         : line:int * colAtEndOfNames:int * lineText:string * names:string list * ?preferFlag:bool -> Async<FSharpFindDeclResult>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member GetDeclarationLocationAlternate : line:int * colAtEndOfNames:int * lineText:string * names:string list * ?preferFlag:bool * ?userOpName: string -> Async<FSharpFindDeclResult>
 
 
     /// <summary>Resolve the names at the given location to a use of symbol.</summary>
@@ -228,7 +235,8 @@ type internal FSharpCheckFileResults =
     /// <param name="colAtEndOfNames">The column number at the end of the identifiers where the information is being requested.</param>
     /// <param name="lineText">The text of the line where the information is being requested.</param>
     /// <param name="names">The identifiers at the location where the information is being requested.</param>
-    member GetSymbolUseAtLocation  : line:int * colAtEndOfNames:int * lineText:string * names:string list -> Async<FSharpSymbolUse option>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member GetSymbolUseAtLocation  : line:int * colAtEndOfNames:int * lineText:string * names:string list * ?userOpName: string -> Async<FSharpSymbolUse option>
 
     /// <summary>Get any extra colorization info that is available after the typecheck</summary>
     member GetSemanticClassification : range option -> (range * SemanticClassificationType)[]
@@ -241,7 +249,7 @@ type internal FSharpCheckFileResults =
     member GetFormatSpecifierLocationsAndArity : unit -> (range*int)[]
 
     /// Get all textual usages of all symbols throughout the file
-    member GetAllUsesOfAllSymbolsInFile : unit -> Async<FSharpSymbolUse[]>
+    member GetAllUsesOfAllSymbolsInFile :  unit -> Async<FSharpSymbolUse[]>
 
     /// Get the textual usages that resolved to the given symbol throughout the file
     member GetUsesOfSymbolInFile : symbol:FSharpSymbol -> Async<FSharpSymbolUse[]>
@@ -249,7 +257,8 @@ type internal FSharpCheckFileResults =
     member internal GetVisibleNamespacesAndModulesAtPoint : pos -> Async<Tast.ModuleOrNamespaceRef[]>
 
     /// Determines if a long ident is resolvable at a specific point.
-    member internal IsRelativeNameResolvable: cursorPos : pos * plid : string list * item: Item -> Async<bool>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member internal IsRelativeNameResolvable: cursorPos : pos * plid : string list * item: Item * ?userOpName: string -> Async<bool>
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
@@ -260,30 +269,30 @@ type internal FSharpCheckProjectResults =
 #endif
 
     /// The errors returned by processing the project
-    member Errors : FSharpErrorInfo[]
+    member Errors: FSharpErrorInfo[]
 
     /// Get a view of the overall signature of the assembly. Only valid to use if HasCriticalErrors is false.
-    member AssemblySignature : FSharpAssemblySignature
+    member AssemblySignature: FSharpAssemblySignature
 
     /// Get a view of the overall contents of the assembly. Only valid to use if HasCriticalErrors is false.
-    member AssemblyContents : FSharpAssemblyContents
+    member AssemblyContents: FSharpAssemblyContents
 
     /// Get the resolution of the ProjectOptions 
-    member ProjectContext : FSharpProjectContext
+    member ProjectContext: FSharpProjectContext
 
     /// Get the textual usages that resolved to the given symbol throughout the project
-    member GetUsesOfSymbol : symbol:FSharpSymbol -> Async<FSharpSymbolUse[]>
+    member GetUsesOfSymbol: symbol:FSharpSymbol -> Async<FSharpSymbolUse[]>
 
     /// Get all textual usages of all symbols throughout the project
-    member GetAllUsesOfAllSymbols : unit -> Async<FSharpSymbolUse[]>
+    member GetAllUsesOfAllSymbols: unit -> Async<FSharpSymbolUse[]>
 
     /// Indicates if critical errors existed in the project options
-    member HasCriticalErrors : bool 
+    member HasCriticalErrors: bool 
 
     /// Indicates the set of files which must be watched to accurately track changes that affect these results,
     /// Clients interested in reacting to updates to these files should watch these files and take actions as described
     /// in the documentation for compiler service.
-    member DependencyFiles : string list
+    member DependencyFiles: string list
 
 /// <summary>Unused in this API</summary>
 #if COMPILER_PUBLIC_API
@@ -375,7 +384,8 @@ type internal FSharpChecker =
     /// <param name="filename">The filename for the file, used to help caching of results.</param>
     /// <param name="source">The full source for the file.</param>
     /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
-    member MatchBracesAlternate : filename : string * source: string * options: FSharpProjectOptions -> Async<(range * range)[]>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member MatchBracesAlternate : filename : string * source: string * options: FSharpProjectOptions * ?userOpName: string -> Async<(range * range)[]>
 
     /// <summary>
     /// <para>Parse a source code file, returning a handle that can be used for obtaining navigation bar information
@@ -386,7 +396,8 @@ type internal FSharpChecker =
     /// <param name="filename">The filename for the file.</param>
     /// <param name="source">The full source for the file.</param>
     /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
-    member ParseFileInProject : filename: string * source: string * options: FSharpProjectOptions -> Async<FSharpParseFileResults>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member ParseFileInProject : filename: string * source: string * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpParseFileResults>
 
     /// <summary>
     /// <para>Check a source code file, returning a handle to the results of the parse including
@@ -409,8 +420,8 @@ type internal FSharpChecker =
     ///     an approximate intellisense resolution is inaccurate because a range of text has changed. This 
     ///     can be used to marginally increase accuracy of intellisense results in some situations.
     /// </param>
-    ///
-    member CheckFileInProjectAllowingStaleCachedResults : parsed: FSharpParseFileResults * filename: string * fileversion: int * source: string * options: FSharpProjectOptions * ?textSnapshotInfo: obj -> Async<FSharpCheckFileAnswer option>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member CheckFileInProjectAllowingStaleCachedResults : parsed: FSharpParseFileResults * filename: string * fileversion: int * source: string * options: FSharpProjectOptions * ?textSnapshotInfo: obj * ?userOpName: string -> Async<FSharpCheckFileAnswer option>
 
     /// <summary>
     /// <para>
@@ -434,8 +445,8 @@ type internal FSharpChecker =
     ///     an approximate intellisense resolution is inaccurate because a range of text has changed. This 
     ///     can be used to marginally increase accuracy of intellisense results in some situations.
     /// </param>
-    ///
-    member CheckFileInProject : parsed: FSharpParseFileResults * filename: string * fileversion: int * source: string * options: FSharpProjectOptions * ?textSnapshotInfo: obj -> Async<FSharpCheckFileAnswer>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member CheckFileInProject : parsed: FSharpParseFileResults * filename: string * fileversion: int * source: string * options: FSharpProjectOptions * ?textSnapshotInfo: obj * ?userOpName: string -> Async<FSharpCheckFileAnswer>
 
     /// <summary>
     /// <para>
@@ -458,8 +469,8 @@ type internal FSharpChecker =
     ///     an approximate intellisense resolution is inaccurate because a range of text has changed. This 
     ///     can be used to marginally increase accuracy of intellisense results in some situations.
     /// </param>
-    ///
-    member ParseAndCheckFileInProject : filename: string * fileversion: int * source: string * options: FSharpProjectOptions * ?textSnapshotInfo: obj -> Async<FSharpParseFileResults * FSharpCheckFileAnswer>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member ParseAndCheckFileInProject : filename: string * fileversion: int * source: string * options: FSharpProjectOptions * ?textSnapshotInfo: obj * ?userOpName: string -> Async<FSharpParseFileResults * FSharpCheckFileAnswer>
 
     /// <summary>
     /// <para>Parse and typecheck all files in a project.</para>
@@ -467,14 +478,16 @@ type internal FSharpChecker =
     /// </summary>
     ///
     /// <param name="options">The options for the project or script.</param>
-    member ParseAndCheckProject : options: FSharpProjectOptions -> Async<FSharpCheckProjectResults>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member ParseAndCheckProject : options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpCheckProjectResults>
 
     /// <summary>
     /// <para>Create resources for the project and keep the project alive until the returned object is disposed.</para>
     /// </summary>
     ///
     /// <param name="options">The options for the project or script.</param>
-    member KeepProjectAlive : options: FSharpProjectOptions -> Async<IDisposable>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member KeepProjectAlive : options: FSharpProjectOptions * ?userOpName: string -> Async<IDisposable>
 
     /// <summary>
     /// <para>For a given script file, get the FSharpProjectOptions implied by the #load closure.</para>
@@ -487,7 +500,8 @@ type internal FSharpChecker =
     /// <param name="loadedTimeStamp">Indicates when the script was loaded into the editing environment,
     /// so that an 'unload' and 'reload' action will cause the script to be considered as a new project,
     /// so that references are re-resolved.</param>
-    member GetProjectOptionsFromScript : filename: string * source: string * ?loadedTimeStamp: DateTime * ?otherFlags: string[] * ?useFsiAuxLib: bool * ?assumeDotNetFramework: bool * ?extraProjectInfo: obj * ?optionsStamp: int64 -> Async<FSharpProjectOptions * FSharpErrorInfo list>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member GetProjectOptionsFromScript : filename: string * source: string * ?loadedTimeStamp: DateTime * ?otherFlags: string[] * ?useFsiAuxLib: bool * ?assumeDotNetFramework: bool * ?extraProjectInfo: obj * ?optionsStamp: int64 * ?userOpName: string -> Async<FSharpProjectOptions * FSharpErrorInfo list>
 
     /// <summary>
     /// <para>Get the FSharpProjectOptions implied by a set of command line arguments.</para>
@@ -507,7 +521,8 @@ type internal FSharpChecker =
     ///
     /// <param name="filename">The filename for the file.</param>
     /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
-    member GetBackgroundParseResultsForFileInProject : filename : string * options : FSharpProjectOptions -> Async<FSharpParseFileResults>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member GetBackgroundParseResultsForFileInProject : filename : string * options : FSharpProjectOptions * ?userOpName: string -> Async<FSharpParseFileResults>
 
     /// <summary>
     /// <para>Like ParseFileInProject, but uses the existing results from the background builder.</para>
@@ -516,16 +531,24 @@ type internal FSharpChecker =
     ///
     /// <param name="filename">The filename for the file.</param>
     /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
-    member GetBackgroundCheckResultsForFileInProject : filename : string * options : FSharpProjectOptions -> Async<FSharpParseFileResults * FSharpCheckFileResults>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member GetBackgroundCheckResultsForFileInProject : filename : string * options : FSharpProjectOptions * ?userOpName: string -> Async<FSharpParseFileResults * FSharpCheckFileResults>
 
+    /// <summary>
     /// Compile using the given flags.  Source files names are resolved via the FileSystem API. 
     /// The output file must be given by a -o flag. 
     /// The first argument is ignored and can just be "fsc.exe".
-    member Compile: argv:string [] -> Async<FSharpErrorInfo [] * int>
+    /// </summary>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member Compile: argv:string[] * ?userOpName: string -> Async<FSharpErrorInfo [] * int>
     
+    /// <summary>
     /// TypeCheck and compile provided AST
-    member Compile: ast:ParsedInput list * assemblyName:string * outFile:string * dependencies:string list * ?pdbFile:string * ?executable:bool * ?noframework:bool -> Async<FSharpErrorInfo [] * int>
+    /// </summary>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member Compile: ast:ParsedInput list * assemblyName:string * outFile:string * dependencies:string list * ?pdbFile:string * ?executable:bool * ?noframework:bool * ?userOpName: string -> Async<FSharpErrorInfo [] * int>
 
+    /// <summary>
     /// Compiles to a dynamic assembly using the given flags.  
     ///
     /// The first argument is ignored and can just be "fsc.exe".
@@ -536,10 +559,15 @@ type internal FSharpChecker =
     /// If the 'execute' parameter is given the entry points for the code are executed and 
     /// the given TextWriters are used for the stdout and stderr streams respectively. In this 
     /// case, a global setting is modified during the execution.
-    member CompileToDynamicAssembly: otherFlags:string [] * execute:(TextWriter * TextWriter) option -> Async<FSharpErrorInfo [] * int * System.Reflection.Assembly option>
+    /// </summary>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member CompileToDynamicAssembly: otherFlags:string [] * execute:(TextWriter * TextWriter) option * ?userOpName: string -> Async<FSharpErrorInfo [] * int * System.Reflection.Assembly option>
 
+    /// <summary>
     /// TypeCheck and compile provided AST
-    member CompileToDynamicAssembly: ast:ParsedInput list * assemblyName:string * dependencies:string list * execute:(TextWriter * TextWriter) option * ?debug:bool * ?noframework:bool -> Async<FSharpErrorInfo [] * int * System.Reflection.Assembly option>
+    /// </summary>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member CompileToDynamicAssembly: ast:ParsedInput list * assemblyName:string * dependencies:string list * execute:(TextWriter * TextWriter) option * ?debug:bool * ?noframework:bool  * ?userOpName: string -> Async<FSharpErrorInfo [] * int * System.Reflection.Assembly option>
        
     /// <summary>
     /// Try to get type check results for a file. This looks up the results of recent type checks of the
@@ -550,21 +578,23 @@ type internal FSharpChecker =
     /// <param name="filename">The filename for the file.</param>
     /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
     /// <param name="source">Optionally, specify source that must match the previous parse precisely.</param>
-    member TryGetRecentCheckResultsForFile : filename: string * options:FSharpProjectOptions * ?source: string -> (FSharpParseFileResults * FSharpCheckFileResults * (*version*)int) option
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member TryGetRecentCheckResultsForFile : filename: string * options:FSharpProjectOptions * ?source: string * ?userOpName: string -> (FSharpParseFileResults * FSharpCheckFileResults * (*version*)int) option
 
     /// This function is called when the entire environment is known to have changed for reasons not encoded in the ProjectOptions of any project/compilation.
     member InvalidateAll : unit -> unit    
         
     /// This function is called when the configuration is known to have changed for reasons not encoded in the ProjectOptions.
     /// For example, dependent references may have been deleted or created.
-    member InvalidateConfiguration: options: FSharpProjectOptions * ?startBackgroundCompile: bool  -> unit    
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member InvalidateConfiguration: options: FSharpProjectOptions * ?startBackgroundCompile: bool * ?userOpName: string -> unit    
 
     /// Set the project to be checked in the background.  Overrides any previous call to <c>CheckProjectInBackground</c>
-    member CheckProjectInBackground: options: FSharpProjectOptions -> unit
+    member CheckProjectInBackground: options: FSharpProjectOptions  * ?userOpName: string -> unit
 
     /// Stop the background compile.
     //[<Obsolete("Explicitly stopping background compilation is not recommended and the functionality to allow this may be rearchitected in future release.  If you use this functionality please add an issue on http://github.com/fsharp/FSharp.Compiler.Service describing how you use it and ignore this warning.")>]
-    member StopBackgroundCompile : unit -> unit
+    member StopBackgroundCompile :  unit -> unit
 
     /// Block until the background compile finishes.
     //[<Obsolete("Explicitly waiting for background compilation is not recommended and the functionality to allow this may be rearchitected in future release.  If you use this functionality please add an issue on http://github.com/fsharp/FSharp.Compiler.Service describing how you use it and ignore this warning.")>]
@@ -584,8 +614,11 @@ type internal FSharpChecker =
     /// may be in progress - such an operation is not counted in the queue length.
     member CurrentQueueLength : int
 
+    /// <summary>
     /// This function is called when a project has been cleaned/rebuilt, and thus any live type providers should be refreshed.
-    member NotifyProjectCleaned: options: FSharpProjectOptions -> Async<unit>
+    /// </summary>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member NotifyProjectCleaned: options: FSharpProjectOptions * ?userOpName: string -> Async<unit>
     
     /// Notify the host that the logical type checking context for a file has now been updated internally
     /// and that the file has become eligible to be re-typechecked for errors.
@@ -643,7 +676,9 @@ type internal FSharpChecker =
 // Used internally to provide intellisense over F# Interactive.
 type internal FsiInteractiveChecker =
     internal new : ReferenceResolver.Resolver * ops: IReactorOperations * tcConfig: TcConfig * tcGlobals: TcGlobals * tcImports: TcImports * tcState: TcState ->  FsiInteractiveChecker 
-    member internal ParseAndCheckInteraction : CompilationThreadToken * source:string -> Async<FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults>
+
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member internal ParseAndCheckInteraction : CompilationThreadToken * source:string * ?userOpName: string -> Async<FSharpParseFileResults * FSharpCheckFileResults * FSharpCheckProjectResults>
 
 /// Information about the compilation environment
 #if COMPILER_PUBLIC_API

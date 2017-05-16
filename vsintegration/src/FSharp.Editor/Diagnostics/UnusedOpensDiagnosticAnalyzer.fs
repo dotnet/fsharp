@@ -145,6 +145,7 @@ type internal UnusedOpensDiagnosticAnalyzer() =
     let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().ProjectInfoManager
     let getChecker (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
 
+    static let userOpName = "UnusedOpensAnalyzer"
     static let Descriptor = 
         DiagnosticDescriptor(
             id = IDEDiagnosticIds.RemoveUnnecessaryImportsDiagnosticId, 
@@ -162,7 +163,7 @@ type internal UnusedOpensDiagnosticAnalyzer() =
         asyncMaybe {
             do! Option.guard Settings.CodeFixes.UnusedOpens
             let! sourceText = document.GetTextAsync()
-            let! _, parsedInput, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true)
+            let! _, parsedInput, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true, userOpName = userOpName)
             let! symbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
             return UnusedOpens.getUnusedOpens sourceText parsedInput symbolUses
         } 

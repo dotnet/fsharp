@@ -82,6 +82,8 @@ type internal InlineRenameInfo
         checkFileResults: FSharpCheckFileResults
     ) =
 
+    static let userOpName = "InlineRename"
+
     let getDocumentText (document: Document) cancellationToken =
         match document.TryGetText() with
         | true, text -> text
@@ -92,7 +94,7 @@ type internal InlineRenameInfo
         Tokenizer.fixupSpan(sourceText, span)
 
     let symbolUses = 
-        SymbolHelpers.getSymbolUsesInSolution(symbolUse.Symbol, declLoc, checkFileResults, projectInfoManager, checker, document.Project.Solution)
+        SymbolHelpers.getSymbolUsesInSolution(symbolUse.Symbol, declLoc, checkFileResults, projectInfoManager, checker, document.Project.Solution, userOpName)
         |> Async.cache
 
     interface IInlineRenameInfo with
@@ -144,6 +146,7 @@ type internal InlineRenameService
         [<ImportMany>] _refactorNotifyServices: seq<IRefactorNotifyService>
     ) =
 
+    static let userOpName = "InlineRename"
     static member GetInlineRenameInfo(checker: FSharpChecker, projectInfoManager: ProjectInfoManager, document: Document, sourceText: SourceText, position: int, 
                                       defines: string list, options: FSharpProjectOptions) : Async<IInlineRenameInfo option> = 
         asyncMaybe {
@@ -151,7 +154,7 @@ type internal InlineRenameService
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true, userOpName = userOpName)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.Text.ToString(), symbol.FullIsland)
             let! declLoc = symbolUse.GetDeclarationLocation(document)
             return InlineRenameInfo(checker, projectInfoManager, document, sourceText, symbol, symbolUse, declLoc, checkFileResults) :> IInlineRenameInfo

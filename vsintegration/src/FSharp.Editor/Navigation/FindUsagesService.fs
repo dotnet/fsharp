@@ -23,6 +23,8 @@ type internal FSharpFindUsagesService
         projectInfoManager: ProjectInfoManager
     ) =
     
+    static let userOpName = "FindUsages"
+
     // File can be included in more than one project, hence single `range` may results with multiple `Document`s.
     let rangeToDocumentSpans (solution: Solution, range: range, cancellationToken: CancellationToken) =
         async {
@@ -44,12 +46,12 @@ type internal FSharpFindUsagesService
                 return spans |> Array.choose id |> Array.toList
         }
 
-    let findReferencedSymbolsAsync(document: Document, position: int, context: IFindUsagesContext, allReferences: bool) : Async<unit> =
+    let findReferencedSymbolsAsync(document: Document, position: int, context: IFindUsagesContext, allReferences: bool, userOpName: string) : Async<unit> =
         asyncMaybe {
             let! sourceText = document.GetTextAsync(context.CancellationToken)
             let checker = checkerProvider.Checker
             let! options = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true, userOpName = userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition(position).ToString()
             let lineNumber = sourceText.Lines.GetLinePosition(position).Line + 1
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.FilePath, options.OtherOptions |> Seq.toList)
@@ -110,7 +112,7 @@ type internal FSharpFindUsagesService
                             |> Seq.map (fun project ->
                                 asyncMaybe {
                                     let! options = projectInfoManager.TryGetOptionsForProject(project.Id)
-                                    let! projectCheckResults = checker.ParseAndCheckProject(options) |> liftAsync
+                                    let! projectCheckResults = checker.ParseAndCheckProject(options, userOpName = userOpName) |> liftAsync
                                     return! projectCheckResults.GetUsesOfSymbol(symbolUse.Symbol) |> liftAsync
                                 } |> Async.map (Option.defaultValue [||]))
                             |> Async.Parallel
@@ -141,9 +143,9 @@ type internal FSharpFindUsagesService
 
     interface IFindUsagesService with
         member __.FindReferencesAsync(document, position, context) =
-            findReferencedSymbolsAsync(document, position, context, true)
+            findReferencedSymbolsAsync(document, position, context, true, userOpName)
             |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
         member __.FindImplementationsAsync(document, position, context) =
-            findReferencedSymbolsAsync(document, position, context, false)
+            findReferencedSymbolsAsync(document, position, context, false, userOpName)
             |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
  

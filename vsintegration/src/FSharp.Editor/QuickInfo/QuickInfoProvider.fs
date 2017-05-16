@@ -29,6 +29,8 @@ type private TooltipInfo =
 
 module private FSharpQuickInfo =
 
+    let userOpName = "QuickInfo"
+
     // when a construct has been declared in a signature file the documentation comments that are
     // written in that file are the ones that go into the generated xml when the project is compiled
     // therefore we should include these doccoms in our design time tooltips
@@ -55,7 +57,7 @@ module private FSharpQuickInfo =
             let! extProjectOptions = projectInfoManager.TryGetOptionsForProject extDocId.ProjectId
             let extDefines = CompilerEnvironment.GetCompilationDefinesForEditing (extDocument.FilePath, List.ofSeq extProjectOptions.OtherOptions)
             let! extLexerSymbol = Tokenizer.getSymbolAtPosition(extDocId, extSourceText, extSpan.Start, declRange.FileName, extDefines, SymbolLookupKind.Greedy, true)
-            let! _, _, extCheckFileResults = checker.ParseAndCheckDocument(extDocument,extProjectOptions,allowStaleResults=true,sourceText=extSourceText)
+            let! _, _, extCheckFileResults = checker.ParseAndCheckDocument(extDocument, extProjectOptions, allowStaleResults=true, sourceText=extSourceText, userOpName = userOpName)
             
             let! extTooltipText = 
                 extCheckFileResults.GetStructuredToolTipTextAlternate
@@ -91,7 +93,7 @@ module private FSharpQuickInfo =
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.FilePath, projectOptions.OtherOptions |> Seq.toList)
             let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, true)
             let idRange = lexerSymbol.Ident.idRange  
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, allowStaleResults = true, sourceText=sourceText)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, allowStaleResults = true, sourceText=sourceText, userOpName = userOpName)
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()        
@@ -171,7 +173,7 @@ type internal FSharpQuickInfoProvider
 
     static member ProvideQuickInfo(checker: FSharpChecker, documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, options: FSharpProjectOptions, textVersionHash: int) =
         asyncMaybe {
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument (filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument (filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true, userOpName = FSharpQuickInfo.userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing (filePath, options.OtherOptions |> Seq.toList)

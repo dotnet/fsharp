@@ -22,6 +22,7 @@ type private TextVersionHash = int
 type internal SimplifyNameDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
     
+    static let userOpName = "SimplifyNameDiagnosticAnalyzer"
     let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().ProjectInfoManager
     let getChecker (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
     let getPlidLength (plid: string list) = (plid |> List.sumBy String.length) + plid.Length
@@ -58,7 +59,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                     do! Async.Sleep 1000 |> liftAsync // sleep a while before beginning work, very often cancelled before we start
                     let! sourceText = document.GetTextAsync()
                     let checker = getChecker document
-                    let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true)
+                    let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true, userOpName=userOpName)
                     let! symbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
                     let mutable result = ResizeArray()
                     let symbolUses =
@@ -89,7 +90,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                                         match rest with
                                         | [] -> return current
                                         | headIdent :: restPlid ->
-                                            let! res = checkResults.IsRelativeNameResolvable(posAtStartOfName, current, symbolUse.Symbol.Item) 
+                                            let! res = checkResults.IsRelativeNameResolvable(posAtStartOfName, current, symbolUse.Symbol.Item, userOpName=userOpName) 
                                             if res then return current
                                             else return! loop restPlid (headIdent :: current)
                                     }

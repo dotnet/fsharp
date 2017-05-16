@@ -15,9 +15,10 @@ type internal FSharpBraceMatchingService
         projectInfoManager: ProjectInfoManager
     ) =
 
+    static let userOpName = "BraceMatching"
     static member GetBraceMatchingResult(checker: FSharpChecker, sourceText, fileName, options, position: int) = 
         async {
-            let! matchedBraces = checker.MatchBracesAlternate(fileName, sourceText.ToString(), options)
+            let! matchedBraces = checker.MatchBracesAlternate(fileName, sourceText.ToString(), options, userOpName = userOpName)
             let isPositionInRange range = RoslynHelpers.FSharpRangeToTextSpan(sourceText, range).Contains(position)
             return matchedBraces |> Array.tryFind(fun (left, right) -> isPositionInRange left || isPositionInRange right)
         }

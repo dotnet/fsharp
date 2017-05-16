@@ -24,7 +24,9 @@ type internal FSharpRenameUnusedValueCodeFixProvider
     ) =
     
     inherit CodeFixProvider()
+    static let userOpName = "RenameUnusedValueCodeFix"
     let fixableDiagnosticIds = ["FS1182"]
+    let checker = checkerProvider.Checker
         
     let createCodeFix (context: CodeFixContext, symbolName: string, titleFormat: string, textChange: TextChange) =
         let title = String.Format(titleFormat, symbolName)
@@ -52,7 +54,7 @@ type internal FSharpRenameUnusedValueCodeFixProvider
             // where backtickes are replaced with parens.
             if not (PrettyNaming.IsOperatorOrBacktickedName ident) && not (ident.StartsWith "``") then
                 let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
-                let! _, _, checkResults = checkerProvider.Checker.ParseAndCheckDocument(document, options, allowStaleResults = true, sourceText = sourceText)
+                let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true, sourceText = sourceText, userOpName=userOpName)
                 let m = RoslynHelpers.TextSpanToFSharpRange(document.FilePath, context.Span, sourceText)
                 let defines = CompilerEnvironment.GetCompilationDefinesForEditing (document.FilePath, options.OtherOptions |> Seq.toList)
                 let! lexerSymbol = Tokenizer.getSymbolAtPosition (document.Id, sourceText, context.Span.Start, document.FilePath, defines, SymbolLookupKind.Greedy, false)
