@@ -21,7 +21,7 @@ type internal FSharpColorizationService
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: ProjectInfoManager
     ) =
-    static let userOpName = "FSharpColorizationService"
+    static let userOpName = "SemanticColorization"
 
     interface IEditorClassificationService with
         // Do not perform classification if we don't have project options (#defines matter)
@@ -36,6 +36,7 @@ type internal FSharpColorizationService
 
         member this.AddSemanticClassificationsAsync(document: Document, textSpan: TextSpan, result: List<ClassifiedSpan>, cancellationToken: CancellationToken) =
             asyncMaybe {
+                do! Async.Sleep 500 |> liftAsync // sleep a while before doing semantic colorization to get out of the way of typing - longer than Roslyn normally waits because this is a more expensive operation for F#
                 let! options = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! _, _, checkResults = checkerProvider.Checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = false, userOpName=userOpName) 

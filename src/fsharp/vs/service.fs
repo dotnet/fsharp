@@ -2263,7 +2263,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             match cachedResults with 
             | Some (parseResults, _checkResults,_,_) ->  return parseResults
             | _ -> 
-            Trace.TraceInformation("Reactor: operation {0}.{1} ({2})", userOpName, "ParseFileInProject.CacheMiss", filename)
+            Trace.TraceInformation("Reactor: {0}.{1} ({2})", userOpName, "ParseFileInProject.CacheMiss", filename)
             foregroundParseCount <- foregroundParseCount + 1
             let! builderOpt,creationErrors,decrement = getOrCreateBuilderAndKeepAlive (ctok, options, userOpName)
             use _unwind = decrement
@@ -2404,6 +2404,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                 | None -> return None
                 | Some (_, _, Some x) -> return Some x
                 | Some (builder, creationErrors, None) ->
+                    Trace.TraceInformation("Reactor: {0}.{1} ({2})", userOpName, "CheckFileInProjectAllowingStaleCachedResults.CacheMiss", filename)
                     let! tcPrior = 
                         execWithReactorAsync <| fun ctok -> 
                             DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
@@ -2432,6 +2433,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                 match cachedResults with
                 | Some (_, checkResults) -> return FSharpCheckFileAnswer.Succeeded checkResults
                 | _ ->
+                    Trace.TraceInformation("Reactor: {0}.{1} ({2})", userOpName, "CheckFileInProject.CacheMiss", filename)
                     let! tcPrior = execWithReactorAsync <| fun ctok -> builder.GetCheckResultsBeforeFileInProject (ctok, filename)
                     let! checkAnswer = bc.CheckOneFile(parseResults, source, filename, options, textSnapshotInfo, fileVersion, builder, tcPrior, creationErrors, userOpName)
                     bc.ImplicitlyStartCheckProjectInBackground(options, userOpName)
@@ -2455,6 +2457,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                 match cachedResults with 
                 | Some (parseResults, checkResults) -> return parseResults, FSharpCheckFileAnswer.Succeeded checkResults
                 | _ ->
+                    Trace.TraceInformation("Reactor: {0}.{1} ({2})", userOpName, "ParseAndCheckFileInProject.CacheMiss", filename)
                     // todo this blocks the Reactor queue until all files up to the current are type checked. It's OK while editing the file,
                     // but results with non cooperative blocking when a firts file from a project opened.
                     let! tcPrior = execWithReactorAsync <| fun ctok -> builder.GetCheckResultsBeforeFileInProject (ctok, filename) 

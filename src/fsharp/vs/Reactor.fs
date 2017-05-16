@@ -79,7 +79,8 @@ type Reactor() =
                         time.Stop()
                         let span = time.Elapsed
                         //if span.TotalMilliseconds > 100.0 then 
-                        Trace.TraceInformation("Reactor: <-- {0}.{1}, took {2} ms", userOpName, opName, span.TotalMilliseconds)
+                        let taken = span.TotalMilliseconds
+                        Trace.TraceInformation("Reactor: <-- {0}.{1}, took {2} ms {3}", userOpName, opName, span.TotalMilliseconds, (if taken > 10000.0 then "CATASTROPHIC" elif taken > 3000.0 then "AGONIZING" elif taken > 1000.0 then "SLOW" elif taken > 500.0 then "SPLUTTER" else ""))
                         return! loop (bgOpOpt, onComplete, false)
                     | Some (WaitForBackgroundOpCompletion channel) -> 
                         Trace.TraceInformation("Reactor: --> wait for background, remaining {0}", inbox.CurrentQueueLength)
