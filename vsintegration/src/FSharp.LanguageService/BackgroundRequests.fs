@@ -115,7 +115,7 @@ type internal FSharpLanguageServiceBackgroundRequests
             // Do brace matching if required
             if req.ResultSink.BraceMatching then  
                 // Record brace-matching
-                let braceMatches = interactiveChecker.MatchBracesAlternate(req.FileName,req.Text,checkOptions) |> Async.RunSynchronously
+                let braceMatches = interactiveChecker.MatchBraces(req.FileName,req.Text,checkOptions) |> Async.RunSynchronously
                     
                 let mutable pri = 0
                 for (b1,b2) in braceMatches do

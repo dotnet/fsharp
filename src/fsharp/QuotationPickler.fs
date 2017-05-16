@@ -1,19 +1,11 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-//-------------------------------------------------------------------------
-// Expression and Type Specifications.  These are what we save
-//------------------------------------------------------------------------- 
-
-
 module internal Microsoft.FSharp.Compiler.QuotationPickler
 
 
 open System.Text
-open Internal.Utilities
 open Internal.Utilities.Collections
-open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Lib
 
