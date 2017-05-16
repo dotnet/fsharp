@@ -71,7 +71,8 @@ type internal FSharpLanguageServiceBackgroundRequests
                             let timestamp = if source=null then System.DateTime(2000,1,1) else source.OpenedTime // source is null in unit tests
                             let checker = getInteractiveChecker()
                             let checkOptions, _diagnostics = checker.GetProjectOptionsFromScript(fileName, sourceText, timestamp, [| |]) |> Async.RunSynchronously
-                            let projectSite = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, checkOptions)
+                            let referencedProjectFileNames = [| |]
+                            let projectSite = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, referencedProjectFileNames, checkOptions)
                             { ProjectSite = projectSite
                               CheckOptions = checkOptions 
                               ProjectFileName = projectSite.ProjectFileName()
@@ -82,7 +83,7 @@ type internal FSharpLanguageServiceBackgroundRequests
                     // This portion is executed on the UI thread.
                     let rdt = getServiceProvider().RunningDocumentTable
                     let projectSite = getProjectSitesAndFiles().FindOwningProject(rdt,fileName)
-                    let checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite((fun _ -> None), projectSite, fileName, None, getServiceProvider(), false)                            
+                    let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite((fun _ -> None), projectSite, fileName, None, getServiceProvider(), false)                            
                     let projectFileName = projectSite.ProjectFileName()
                     let data = 
                         {   ProjectSite = projectSite
@@ -168,7 +169,7 @@ type internal FSharpLanguageServiceBackgroundRequests
 
                         // Type-checking
                         let typedResults,aborted = 
-                            match interactiveChecker.CheckFileInProjectIfReady(parseResults,req.FileName,req.Timestamp,req.Text,checkOptions,req.Snapshot) |> Async.RunSynchronously with 
+                            match interactiveChecker.CheckFileInProjectAllowingStaleCachedResults(parseResults,req.FileName,req.Timestamp,req.Text,checkOptions,req.Snapshot) |> Async.RunSynchronously with 
                             | None -> None,false
                             | Some FSharpCheckFileAnswer.Aborted -> 
                                 // isResultObsolete returned true during the type check.
