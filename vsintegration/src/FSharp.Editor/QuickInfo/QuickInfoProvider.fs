@@ -60,15 +60,15 @@ module private FSharpQuickInfo =
             let! _, _, extCheckFileResults = checker.ParseAndCheckDocument(extDocument, extProjectOptions, allowStaleResults=true, sourceText=extSourceText, userOpName = userOpName)
             
             let! extTooltipText = 
-                extCheckFileResults.GetStructuredToolTipTextAlternate
-                    (declRange.StartLine, extLexerSymbol.Ident.idRange.EndColumn, extLineText, extLexerSymbol.FullIsland, FSharpTokenTag.IDENT) |> liftAsync
+                extCheckFileResults.GetStructuredToolTipText
+                    (declRange.StartLine, extLexerSymbol.Ident.idRange.EndColumn, extLineText, extLexerSymbol.FullIsland, FSharpTokenTag.IDENT, userOpName=userOpName) |> liftAsync
             
             match extTooltipText with
             | FSharpToolTipText [] 
             | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
             | extTooltipText  -> 
                 let! extSymbolUse =
-                    extCheckFileResults.GetSymbolUseAtLocation(declRange.StartLine, extLexerSymbol.Ident.idRange.EndColumn, extLineText, extLexerSymbol.FullIsland)
+                    extCheckFileResults.GetSymbolUseAtLocation(declRange.StartLine, extLexerSymbol.Ident.idRange.EndColumn, extLineText, extLexerSymbol.FullIsland, userOpName=userOpName)
                 
                 return { StructuredText = extTooltipText
                          Span = RoslynHelpers.FSharpRangeToTextSpan (extSourceText, extLexerSymbol.Range)
@@ -97,14 +97,14 @@ module private FSharpQuickInfo =
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()        
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland, userOpName=userOpName)
             
             /// Gets the tooltip information for the orignal target
             let getTargetSymbolTooltip () = 
                 asyncMaybe {
                     let! targetTooltip = 
-                        checkFileResults.GetStructuredToolTipTextAlternate
-                            (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland, FSharpTokenTag.IDENT) |> liftAsync
+                        checkFileResults.GetStructuredToolTipText
+                            (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland, FSharpTokenTag.IDENT, userOpName=userOpName) |> liftAsync
                     
                     match targetTooltip with
                     | FSharpToolTipText [] 
@@ -123,9 +123,7 @@ module private FSharpQuickInfo =
                 return symbolUse, None, Some targetTooltipInfo
             else
                 // find the declaration location of the target symbol, with a preference for signature files
-                let! findSigDeclarationResult = 
-                    checkFileResults.GetDeclarationLocationAlternate
-                        (idRange.StartLine, idRange.EndColumn, lineText, lexerSymbol.FullIsland, preferFlag=true) |> liftAsync
+                let! findSigDeclarationResult = checkFileResults.GetDeclarationLocation (idRange.StartLine, idRange.EndColumn, lineText, lexerSymbol.FullIsland, preferFlag=true, userOpName=userOpName) |> liftAsync
                     
                 // it is necessary to retrieve the backup tooltip info because this acquires
                 // the textSpan designating where we want the tooltip to appear.
@@ -141,9 +139,7 @@ module private FSharpQuickInfo =
                             // is not the corresponding module implementation file for that signature,
                             // the doccoms from the signature will overwrite any doccoms that might be 
                             // present on the definition/implementation
-                            let! findImplDefinitionResult = 
-                                checkFileResults.GetDeclarationLocationAlternate
-                                    (idRange.StartLine, idRange.EndColumn, lineText, lexerSymbol.FullIsland, preferFlag=false) |> liftAsync   
+                            let! findImplDefinitionResult = checkFileResults.GetDeclarationLocation (idRange.StartLine, idRange.EndColumn, lineText, lexerSymbol.FullIsland, preferFlag=false, userOpName=userOpName) |> liftAsync   
                             
                             match findImplDefinitionResult  with 
                             | FSharpFindDeclResult.DeclNotFound _ -> return symbolUse, Some sigTooltipInfo, None
@@ -178,12 +174,12 @@ type internal FSharpQuickInfoProvider
             let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing (filePath, options.OtherOptions |> Seq.toList)
             let! symbol = Tokenizer.getSymbolAtPosition (documentId, sourceText, position, filePath, defines, SymbolLookupKind.Precise, true)
-            let! res = checkFileResults.GetStructuredToolTipTextAlternate (textLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, FSharpTokenTag.IDENT) |> liftAsync
+            let! res = checkFileResults.GetStructuredToolTipText (textLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, FSharpTokenTag.IDENT, userOpName=FSharpQuickInfo.userOpName) |> liftAsync
             match res with
             | FSharpToolTipText [] 
             | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
             | _ -> 
-                let! symbolUse = checkFileResults.GetSymbolUseAtLocation (textLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland)
+                let! symbolUse = checkFileResults.GetSymbolUseAtLocation (textLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, userOpName=FSharpQuickInfo.userOpName)
                 return res, RoslynHelpers.FSharpRangeToTextSpan (sourceText, symbol.Range), symbolUse.Symbol, symbol.Kind
         }
     

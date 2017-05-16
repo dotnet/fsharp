@@ -84,7 +84,7 @@ type internal FSharpHelpContextService
                         let! (s,colAtEndOfNames, _) = QuickParse.GetCompleteIdentifierIsland false lineText col
                         if check.HasFullTypeCheckInfo then 
                             let qualId = PrettyNaming.GetLongNameFromString s
-                            return! check.GetF1KeywordAlternate(Line.fromZ line, colAtEndOfNames, lineText, qualId)
+                            return! check.GetF1Keyword(Line.fromZ line, colAtEndOfNames, lineText, qualId)
                         else 
                             return! None
                     with e ->

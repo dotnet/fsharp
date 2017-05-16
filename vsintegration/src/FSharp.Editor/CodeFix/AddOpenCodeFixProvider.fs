@@ -104,7 +104,7 @@ type internal FSharpAddOpenCodeFixProvider
             let! symbol = 
                 asyncMaybe {
                     let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, context.Span.End, document.FilePath, defines, SymbolLookupKind.Greedy, false)
-                    return! checkResults.GetSymbolUseAtLocation(Line.fromZ linePos.Line, lexerSymbol.Ident.idRange.EndColumn, line.ToString(), lexerSymbol.FullIsland)
+                    return! checkResults.GetSymbolUseAtLocation(Line.fromZ linePos.Line, lexerSymbol.Ident.idRange.EndColumn, line.ToString(), lexerSymbol.FullIsland, userOpName=userOpName)
                 } |> liftAsync
 
             do! Option.guard symbol.IsNone

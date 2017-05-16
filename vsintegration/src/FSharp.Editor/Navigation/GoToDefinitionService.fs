@@ -68,7 +68,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: Project
             
             let! _, _, checkFileResults = checker.ParseAndCheckDocument (originDocument,projectOptions,allowStaleResults=true,sourceText=sourceText, userOpName = userOpName)
             let idRange = lexerSymbol.Ident.idRange
-            let! fsSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland)
+            let! fsSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland, userOpName=userOpName)
             let symbol = fsSymbolUse.Symbol
             // if the tooltip was spawned in an implementation file and we have a range targeting
             // a signature file, try to find the corresponding implementation file and target the
@@ -221,12 +221,8 @@ type internal FSharpGoToDefinitionService
             let! lexerSymbol = Tokenizer.getSymbolAtPosition (originDocument.Id, sourceText, position,originDocument.FilePath, defines, SymbolLookupKind.Greedy, false)
             let idRange = lexerSymbol.Ident.idRange
 
-            let! declarations = 
-                checkFileResults.GetDeclarationLocationAlternate 
-                    (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, preferSignature)
-                    |> liftAsync
-            let! targetSymbolUse = 
-                checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland)
+            let! declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, preferSignature, userOpName=userOpName) |> liftAsync
+            let! targetSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland, userOpName=userOpName)
 
             match declarations with
             | FSharpFindDeclResult.DeclFound targetRange -> 
@@ -248,10 +244,7 @@ type internal FSharpGoToDefinitionService
                         let navItem = FSharpNavigableItem (implDocument, implTextSpan)
                         return navItem
                     else // jump from implementation to the corresponding signature
-                        let! declarations = 
-                            checkFileResults.GetDeclarationLocationAlternate 
-                                (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, true) 
-                                |> liftAsync
+                        let! declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, true, userOpName=userOpName) |> liftAsync
                         match declarations with
                         | FSharpFindDeclResult.DeclFound targetRange -> 
                             let! sigDocument = originDocument.Project.Solution.TryGetDocumentFromPath targetRange.FileName

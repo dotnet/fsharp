@@ -99,6 +99,7 @@ type internal UnusedDeclarationsAnalyzer() =
 
     override __.AnalyzeSemanticsAsync(document, cancellationToken) =
         asyncMaybe {
+            do! Async.Sleep 1000 |> liftAsync // sleep a while before beginning work, very often cancelled before we start
             match getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document) with
             | Some options ->
                 let! sourceText = document.GetTextAsync()

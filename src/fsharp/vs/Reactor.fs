@@ -45,7 +45,7 @@ type Reactor() =
 
         // Async workflow which receives messages and dispatches to worker functions.
         let rec loop (bgOpOpt, onComplete, bg) = 
-            async { Trace.TraceInformation("Reactor: receiving..., remaining {0}, mem {1}, gc2 {2}", inbox.CurrentQueueLength, GC.GetTotalMemory(false)/1000000L, GC.CollectionCount(2))
+            async { //Trace.TraceInformation("Reactor: receiving..., remaining {0}", inbox.CurrentQueueLength)
 
                     // Explanation: The reactor thread acts as the compilation thread in hosted scenarios
                     let ctok = AssumeCompilationThreadWithoutEvidence()
@@ -68,21 +68,21 @@ type Reactor() =
 #endif
                     match msg with
                     | Some (SetBackgroundOp bgOpOpt) -> 
-                        Trace.TraceInformation("Reactor: --> set background op, remaining {0}, mem {1}, gc2 {2}", inbox.CurrentQueueLength, GC.GetTotalMemory(false)/1000000L, GC.CollectionCount(2))
+                        //Trace.TraceInformation("Reactor: --> set background op, remaining {0}", inbox.CurrentQueueLength)
                         return! loop (bgOpOpt, onComplete, false)
                     | Some (Op (userOpName, opName, opArg, ct, op, ccont)) -> 
                         if ct.IsCancellationRequested then ccont() else
-                        Trace.TraceInformation("Reactor: --> {0}.{1} ({2}), remaining {3}, mem {4}, gc2 {5}", userOpName, opName, opArg, inbox.CurrentQueueLength, GC.GetTotalMemory(false)/1000000L, GC.CollectionCount(2))
+                        Trace.TraceInformation("Reactor: --> {0}.{1} ({2}), remaining {3}", userOpName, opName, opArg, inbox.CurrentQueueLength)
                         let time = Stopwatch()
                         time.Start()
                         op ctok
                         time.Stop()
                         let span = time.Elapsed
                         //if span.TotalMilliseconds > 100.0 then 
-                        Trace.TraceInformation("Reactor: <-- {0}.{1} ({2}), remaining {3}, took {4}ms", userOpName, opName, opArg, inbox.CurrentQueueLength, span.TotalMilliseconds)
+                        Trace.TraceInformation("Reactor: <-- {0}.{1}, took {2} ms", userOpName, opName, span.TotalMilliseconds)
                         return! loop (bgOpOpt, onComplete, false)
                     | Some (WaitForBackgroundOpCompletion channel) -> 
-                        Trace.TraceInformation("Reactor: --> wait for background (debug only), remaining {0}, mem {1}, gc2 {2}", inbox.CurrentQueueLength, GC.GetTotalMemory(false)/1000000L, GC.CollectionCount(2))
+                        Trace.TraceInformation("Reactor: --> wait for background, remaining {0}", inbox.CurrentQueueLength)
                         match bgOpOpt with 
                         | None -> ()
                         | Some bgOp -> 
@@ -91,20 +91,20 @@ type Reactor() =
                         channel.Reply(())
                         return! loop (None, onComplete, false)
                     | Some (CompleteAllQueuedOps channel) -> 
-                        Trace.TraceInformation("Reactor: --> stop background work and complete all queued ops, remaining {0}, mem {1}, gc2 {2}", inbox.CurrentQueueLength, GC.GetTotalMemory(false)/1000000L, GC.CollectionCount(2))
+                        Trace.TraceInformation("Reactor: --> stop background work and complete all queued ops, remaining {0}", inbox.CurrentQueueLength)
                         return! loop (None, Some channel, false)
                     | None -> 
                         match bgOpOpt, onComplete with 
                         | _, Some onComplete -> onComplete.Reply()
                         | Some bgOp, None -> 
-                            Trace.TraceInformation("Reactor: --> background step, remaining {0}, mem {1}, gc2 {2}", inbox.CurrentQueueLength, GC.GetTotalMemory(false)/1000000L, GC.CollectionCount(2))
+                            Trace.TraceInformation("Reactor: --> background step", inbox.CurrentQueueLength)
                             let time = Stopwatch()
                             time.Start()
                             let res = bgOp ctok
                             time.Stop()
                             let span = time.Elapsed
                             //if span.TotalMilliseconds > 100.0 then 
-                            Trace.TraceInformation("Reactor: <-- background step, remaining {0}, took {1}ms", inbox.CurrentQueueLength, span.TotalMilliseconds)
+                            Trace.TraceInformation("Reactor: <-- background step, took {0}ms", span.TotalMilliseconds)
                             return! loop ((if res then Some bgOp else None), onComplete, true)
                         | None, None -> failwith "unreachable, should have used inbox.Receive"
                     }

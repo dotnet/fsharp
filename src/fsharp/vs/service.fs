@@ -6,10 +6,11 @@
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
 open System
-open System.IO
-open System.Text
 open System.Collections.Generic
 open System.Collections.Concurrent
+open System.Diagnostics
+open System.IO
+open System.Text
 
 open Microsoft.FSharp.Core.Printf
 open Microsoft.FSharp.Compiler 
@@ -941,8 +942,6 @@ type TypeCheckInfo
                     // Remove all duplicates. We've put the types first, so this removes the DelegateCtor and DefaultStructCtor's.
                     let items = items |> RemoveDuplicateCompletionItems g
 
-                    if verbose then dprintf "service.ml: mkDecls: %d found groups after filtering\n" (List.length items); 
-
                     // Group by display name
                     let items = items |> List.groupBy (fun d -> d.Item.DisplayName) 
 
@@ -1028,11 +1027,6 @@ type TypeCheckInfo
              let res = Compute()
              getToolTipTextCache.Put(ctok, key,res)
              res
-
-    // GetToolTipText: return the "pop up" (or "Quick Info") text given a certain context.
-    member x.GetToolTipText ctok line lineStr colAtEndOfNames names = 
-        x.GetStructuredToolTipText(ctok, line, lineStr, colAtEndOfNames, names)
-        |> Tooltips.ToFSharpToolTipText
 
     member __.GetF1Keyword (ctok, line, lineStr, colAtEndOfNames, names) : string option =
        ErrorScope.Protect Range.range0
@@ -1787,34 +1781,34 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
         reactorOp userOpName "GetDeclarationListSymbols" List.empty (fun ctok scope -> scope.GetDeclarationListSymbols(ctok, parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, hasTextChangedSinceLastTypecheck))
 
     /// Resolve the names at the given location to give a data tip 
-    member info.GetStructuredToolTipTextAlternate(line, colAtEndOfNames, lineStr, names, tokenTag, ?userOpName: string) = 
+    member info.GetStructuredToolTipText(line, colAtEndOfNames, lineStr, names, tokenTag, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
         let dflt = FSharpToolTipText []
         match tokenTagToTokenId tokenTag with 
         | TOKEN_IDENT -> 
-            reactorOp userOpName "GetToolTipText" dflt (fun ctok scope -> scope.GetStructuredToolTipText(ctok, line, lineStr, colAtEndOfNames, names))
+            reactorOp userOpName "GetStructuredToolTipText" dflt (fun ctok scope -> scope.GetStructuredToolTipText(ctok, line, lineStr, colAtEndOfNames, names))
         | TOKEN_STRING | TOKEN_STRING_TEXT -> 
             reactorOp userOpName "GetReferenceResolutionToolTipText" dflt (fun ctok scope -> scope.GetReferenceResolutionStructuredToolTipText(ctok, line, colAtEndOfNames) )
         | _ -> 
             async.Return dflt
 
-    member info.GetToolTipTextAlternate(line, colAtEndOfNames, lineStr, names, tokenTag, userOpName) = 
-        info.GetStructuredToolTipTextAlternate(line, colAtEndOfNames, lineStr, names, tokenTag, ?userOpName=userOpName)
+    member info.GetToolTipText(line, colAtEndOfNames, lineStr, names, tokenTag, userOpName) = 
+        info.GetStructuredToolTipText(line, colAtEndOfNames, lineStr, names, tokenTag, ?userOpName=userOpName)
         |> Tooltips.Map Tooltips.ToFSharpToolTipText
 
-    member info.GetF1KeywordAlternate (line, colAtEndOfNames, lineStr, names, ?userOpName: string) =
+    member info.GetF1Keyword (line, colAtEndOfNames, lineStr, names, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
         reactorOp userOpName "GetF1Keyword" None (fun ctok scope -> 
             scope.GetF1Keyword (ctok, line, lineStr, colAtEndOfNames, names))
 
     // Resolve the names at the given location to a set of methods
-    member info.GetMethodsAlternate(line, colAtEndOfNames, lineStr, names, ?userOpName: string) =
+    member info.GetMethods(line, colAtEndOfNames, lineStr, names, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
         let dflt = FSharpMethodGroup("",[| |])
         reactorOp userOpName "GetMethods" dflt (fun ctok scope -> 
             scope.GetMethods (ctok, line, lineStr, colAtEndOfNames, names))
             
-    member info.GetDeclarationLocationAlternate (line, colAtEndOfNames, lineStr, names, ?preferFlag, ?userOpName: string) = 
+    member info.GetDeclarationLocation (line, colAtEndOfNames, lineStr, names, ?preferFlag, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
         let dflt = FSharpFindDeclResult.DeclNotFound FSharpFindDeclFailureReason.Unknown
         reactorOp userOpName "GetDeclarationLocation" dflt (fun ctok scope -> 
@@ -1833,9 +1827,9 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
             |> Option.map (fun (symbols,denv,m) ->
                 symbols |> List.map (fun sym -> FSharpSymbolUse(scope.TcGlobals,denv,sym,ItemOccurence.Use,m))))
 
-    member info.GetSymbolAtLocationAlternate (line, colAtEndOfNames, lineStr, names, ?userOpName: string) = 
+    member info.GetSymbolAtLocation (line, colAtEndOfNames, lineStr, names, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
-        reactorOp userOpName "GetSymbolUseAtLocation" None (fun ctok scope -> 
+        reactorOp userOpName "GetSymbolAtLocation" None (fun ctok scope -> 
             scope.GetSymbolUseAtLocation (ctok, line, lineStr, colAtEndOfNames, names)
             |> Option.map (fun (sym,_,_) -> sym))
 
@@ -2259,7 +2253,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
         match cachedResults with 
         | Some (parseResults, _checkResults,_,_) ->  async.Return parseResults
         | _ -> 
-        reactor.EnqueueAndAwaitOpAsync(userOpName, "ParseFileInProject.CacheMiss", filename, fun ctok -> 
+        reactor.EnqueueAndAwaitOpAsync(userOpName, "ParseFileInProject", filename, fun ctok -> 
          cancellable {
             // Try the caches again - it may have been filled by the time this operation runs
             match parseCacheLock.AcquireLock (fun ctok -> parseFileInProjectCache.TryGet (ctok, (filename, source, options))) with 
@@ -2269,6 +2263,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             match cachedResults with 
             | Some (parseResults, _checkResults,_,_) ->  return parseResults
             | _ -> 
+            Trace.TraceInformation("Reactor: operation {0}.{1} ({2})", userOpName, "ParseFileInProject.CacheMiss", filename)
             foregroundParseCount <- foregroundParseCount + 1
             let! builderOpt,creationErrors,decrement = getOrCreateBuilderAndKeepAlive (ctok, options, userOpName)
             use _unwind = decrement
@@ -2727,7 +2722,7 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
 
     member ic.ReferenceResolver = referenceResolver
 
-    member ic.MatchBracesAlternate(filename, source, options, ?userOpName: string) =
+    member ic.MatchBraces(filename, source, options, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
         async { 
             match braceMatchCache.TryGet (AssumeAnyCallerThreadWithoutEvidence(), (filename, source, options)) with 
@@ -2849,14 +2844,15 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
     member ic.ClearCaches(?userOpName) =
         ic.ClearCachesAsync(?userOpName=userOpName) |> Async.Start // this cache clearance is not synchronous, it will happen when the background op gets run
 
-    member ic.CheckMaxMemoryReached(?userOpName: string) =
+    member ic.CheckMaxMemoryReached() =
       if not maxMemoryReached && System.GC.GetTotalMemory(false) > int64 maxMB * 1024L * 1024L then 
+        Trace.WriteLine("!!!!!!!! MAX MEMORY REACHED, DOWNSIZING F# COMPILER CACHES !!!!!!!!!!!!!!!")
         // If the maxMB limit is reached, drastic action is taken
         //   - reduce strong cache sizes to a minimum
-        let userOpName = defaultArg userOpName "Unknown"
+        let userOpName = "MaxMemoryReached"
         backgroundCompiler.CompleteAllQueuedOps()
         maxMemoryReached <- true
-        braceMatchCache.Resize(AssumeAnyCallerThreadWithoutEvidence(), keepStrongly=1)
+        braceMatchCache.Resize(AssumeAnyCallerThreadWithoutEvidence(), keepStrongly=10)
         backgroundCompiler.DownsizeCaches(userOpName) |> Async.RunSynchronously
         maxMemEvent.Trigger( () )
 
