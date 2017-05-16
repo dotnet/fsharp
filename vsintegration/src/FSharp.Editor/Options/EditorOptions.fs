@@ -9,7 +9,7 @@ open OptionsUIHelpers
 
 
 module DefaultTuning = 
-    let SemanticColorizationInitialDelay = 500 (* milliseconds *)
+    let SemanticColorizationInitialDelay = 0 (* milliseconds *)
     let UnusedDeclarationsAnalyzerInitialDelay = 1000 (* milliseconds *)
     let UnusedOpensAnalyzerInitialDelay = 2000 (* milliseconds *)
     let SimplifyNameInitialDelay = 2000 (* milliseconds *)

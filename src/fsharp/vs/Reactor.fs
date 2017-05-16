@@ -19,7 +19,7 @@ type internal IReactorOperations =
 [<NoEquality; NoComparison>]
 type internal ReactorCommands = 
     /// Kick off a build.
-    | SetBackgroundOp of (CompilationThreadToken -> bool)  option
+    | SetBackgroundOp of ( (* userOpName: *) string * (* opName: *) string * (* opArg: *) string * (CompilationThreadToken -> bool)) option
     /// Do some work not synchronized in the mailbox.
     | Op of userOpName: string * opName: string * opArg: string * CancellationToken * (CompilationThreadToken -> unit) * (unit -> unit)
     /// Finish the background building
@@ -80,13 +80,14 @@ type Reactor() =
                         let span = time.Elapsed
                         //if span.TotalMilliseconds > 100.0 then 
                         let taken = span.TotalMilliseconds
-                        Trace.TraceInformation("Reactor: <-- {0}.{1}, took {2} ms {3}", userOpName, opName, span.TotalMilliseconds, (if taken > 10000.0 then "CATASTROPHIC" elif taken > 3000.0 then "AGONIZING" elif taken > 1000.0 then "SLOW" elif taken > 500.0 then "SPLUTTER" else ""))
+                        let msg = (if taken > 10000.0 then "BAD-OP: >10s " elif taken > 3000.0 then "BAD-OP: >3s " elif taken > 1000.0 then "BAD-OP: SLOW > 1s" elif taken > 500.0 then "BAD-OP: >0.5s" else "")
+                        Trace.TraceInformation("Reactor: {0}<-- {1}.{2}, took {3} ms", msg, userOpName, opName, span.TotalMilliseconds)
                         return! loop (bgOpOpt, onComplete, false)
                     | Some (WaitForBackgroundOpCompletion channel) -> 
-                        Trace.TraceInformation("Reactor: --> wait for background, remaining {0}", inbox.CurrentQueueLength)
                         match bgOpOpt with 
                         | None -> ()
-                        | Some bgOp -> 
+                        | Some (bgUserOpName, bgOpName, bgOpArg, bgOp) -> 
+                            Trace.TraceInformation("Reactor: --> wait for background {0}.{1} ({2}), remaining {3}", bgUserOpName, bgOpName, bgOpArg, inbox.CurrentQueueLength)
                             while bgOp ctok do 
                                 ()
                         channel.Reply(())
@@ -97,16 +98,17 @@ type Reactor() =
                     | None -> 
                         match bgOpOpt, onComplete with 
                         | _, Some onComplete -> onComplete.Reply()
-                        | Some bgOp, None -> 
-                            Trace.TraceInformation("Reactor: --> background step", inbox.CurrentQueueLength)
+                        | Some  (bgUserOpName, bgOpName, bgOpArg, bgOp), None -> 
+                            Trace.TraceInformation("Reactor: --> background step {0}.{1} ({2})", bgUserOpName, bgOpName, bgOpArg)
                             let time = Stopwatch()
                             time.Start()
                             let res = bgOp ctok
                             time.Stop()
-                            let span = time.Elapsed
+                            let taken = time.Elapsed.TotalMilliseconds
                             //if span.TotalMilliseconds > 100.0 then 
-                            Trace.TraceInformation("Reactor: <-- background step, took {0}ms", span.TotalMilliseconds)
-                            return! loop ((if res then Some bgOp else None), onComplete, true)
+                            let msg = (if taken > 10000.0 then "BAD-BG-SLICE: >10s " elif taken > 3000.0 then "BAD-BG-SLICE: >3s " elif taken > 1000.0 then "BAD-BG-SLICE: > 1s" else "")
+                            Trace.TraceInformation("Reactor: {0}<-- background step, took {1}ms", msg, taken)
+                            return! loop ((if res then bgOpOpt else None), onComplete, true)
                         | None, None -> failwith "unreachable, should have used inbox.Receive"
                     }
         async { 
@@ -118,9 +120,9 @@ type Reactor() =
         }
 
     // [Foreground Mailbox Accessors] -----------------------------------------------------------                
-    member r.SetBackgroundOp(build) = 
+    member r.SetBackgroundOp(bgOpOpt) = 
         Trace.TraceInformation("Reactor: enqueue start background, length {0}", builder.CurrentQueueLength)
-        builder.Post(SetBackgroundOp build)
+        builder.Post(SetBackgroundOp bgOpOpt)
 
     member r.EnqueueOp(userOpName, opName, opArg, op) =
         Trace.TraceInformation("Reactor: enqueue {0}.{1} ({2}), length {3}", userOpName, opName, opArg, builder.CurrentQueueLength)

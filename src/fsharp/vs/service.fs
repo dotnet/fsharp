@@ -2594,8 +2594,8 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             return options, errors.Diagnostics
           })
             
-    member bc.InvalidateConfiguration(options : FSharpProjectOptions, startBackgroundCompile, userOpName) =
-        let startBackgroundCompile = defaultArg startBackgroundCompile implicitlyStartBackgroundWork
+    member bc.InvalidateConfiguration(options : FSharpProjectOptions, startBackgroundCompileIfAlreadySeen, userOpName) =
+        let startBackgroundCompileIfAlreadySeen = defaultArg startBackgroundCompileIfAlreadySeen implicitlyStartBackgroundWork
         // This operation can't currently be cancelled nor awaited
         reactor.EnqueueOp(userOpName, "InvalidateConfiguration", options.ProjectFileName, fun ctok -> 
             // If there was a similar entry then re-establish an empty builder .  This is a somewhat arbitrary choice - it
@@ -2607,9 +2607,9 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
                 let newBuilderInfo = CreateOneIncrementalBuilder (ctok, options, userOpName) |> Cancellable.runWithoutCancellation
                 incrementalBuildersCache.Set(ctok, options, newBuilderInfo)
 
-            // Start working on the project.  Also a somewhat arbitrary choice
-            if startBackgroundCompile then 
-               bc.CheckProjectInBackground(options, userOpName))
+                // Start working on the project.  Also a somewhat arbitrary choice
+                if startBackgroundCompileIfAlreadySeen then 
+                   bc.CheckProjectInBackground(options, userOpName + ".StartBackgroundCompile"))
 
     member bc.NotifyProjectCleaned (options : FSharpProjectOptions, userOpName) =
         reactor.EnqueueAndAwaitOpAsync(userOpName, "NotifyProjectCleaned", options.ProjectFileName, fun ctok -> 
@@ -2625,7 +2625,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
           })
 
     member bc.CheckProjectInBackground (options, userOpName) =
-        reactor.SetBackgroundOp (Some (fun ctok -> 
+        reactor.SetBackgroundOp (Some (userOpName, "CheckProjectInBackground", options.ProjectFileName, (fun ctok -> 
             // The creation of the background builder can't currently be cancelled
             let builderOpt,_,decrement = getOrCreateBuilderAndKeepAlive (ctok, options, userOpName) |> Cancellable.runWithoutCancellation
             use _unwind = decrement
@@ -2633,7 +2633,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             | None -> false
             | Some builder -> 
                 // The individual steps of the background build can't currently be cancelled
-                builder.Step(ctok) |> Cancellable.runWithoutCancellation))
+                builder.Step(ctok) |> Cancellable.runWithoutCancellation)))
 
     member bc.StopBackgroundCompile   () =
         reactor.SetBackgroundOp(None)
