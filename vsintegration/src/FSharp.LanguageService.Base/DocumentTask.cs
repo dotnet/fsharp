@@ -162,17 +162,44 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         }
 
         /// <summary>
+        /// Local JoinableTaskContext
+        /// ensuring non-reentrancy.
+        /// </summary>
+        private static JoinableTaskContext jtc = null;
+        private static JoinableTaskFactory JTF
+        {
+            get
+            {
+                if (jtc == null)
+                {
+                    JoinableTaskContext j = null;
+                    if (VsTaskLibraryHelper.ServiceInstance == null)
+                    {
+                        j = new JoinableTaskContext();
+                    }
+                    else
+                    {
+                        j = ThreadHelper.JoinableTaskContext;
+                    }
+                    Interlocked.CompareExchange(ref jtc, j, null);
+                }
+
+                return jtc.Factory;
+            }
+        }
+
+        /// <summary>
         /// Performs a callback on the UI thread and blocks until it is done, using the VS mechanism for
         /// ensuring non-reentrancy.
         /// </summary>
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         internal static T DoOnUIThread<T>(Func<T> callback)
         {
-            return  ThreadHelper.JoinableTaskFactory.Run<T>(async delegate
-                    {
-                        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(); 
-                        return callback();
-                    });
+             return  JTF.JoinableTaskFactory.Run<T>(async delegate 
+                     { 
+                        await JTF.SwitchToMainThreadAsync();  
+                        return callback(); 
+                     }); 
         }
 
         /// <summary>
@@ -182,11 +209,11 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         internal static void DoOnUIThread(Action callback)
         {
-            ThreadHelper.JoinableTaskFactory.Run(async delegate
-            {
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(); 
-                callback();
-            });
+             return  JTF.Run<T>(async delegate 
+                     { 
+                        await JTF.SwitchToMainThreadAsync();  
+                        return callback(); 
+                     }); 
         }
     }
 
