@@ -43,7 +43,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <VSRootSuffix>FSharpDev</VSRootSuffix>
+    <VSRootSuffix>RoslynDev</VSRootSuffix>
     <UseCodebase>true</UseCodebase>
     <DeployExtension Condition=" '$(DeployExtension)' == '' and ('$(AppVeyor)' != '' or '$(HUDSON_COOKIE)' != '' or '$(UsingMicrobuild)' != '') ">False</DeployExtension>
     <DeployExtension Condition=" '$(DeployExtension)' == '' and '$(AppVeyor)' == '' and '$(HUDSON_COOKIE)' == '' and '$(UsingMicrobuild)' == '' ">True</DeployExtension>
