@@ -196,7 +196,7 @@ let FCS (repositoryDir: string) : Options =
 
     { Options =
         {ProjectFileName = repositoryDir </> @"src\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj"
-         ProjectFileNames = files |> Array.map (fun x -> repositoryDir </> x)
+         SourceFiles = files |> Array.map (fun x -> repositoryDir </> x)
          OtherOptions =
           [|@"-o:obj\Release\FSharp.Compiler.Service.dll"; "-g"; "--noframework";
             @"--baseaddress:0x06800000"; "--define:DEBUG";
@@ -304,7 +304,7 @@ let FCS (repositoryDir: string) : Options =
 let VFPT (repositoryDir: string) : Options =
     { Options =
         {ProjectFileName = repositoryDir </> @"src\FSharp.Editing\FSharp.Editing.fsproj"
-         ProjectFileNames =
+         SourceFiles =
           [|@"src\FSharp.Editing\AssemblyInfo.fs";
             @"src\FSharp.Editing\Common\Utils.fs";
             @"src\FSharp.Editing\Common\CompilerLocationUtils.fs";

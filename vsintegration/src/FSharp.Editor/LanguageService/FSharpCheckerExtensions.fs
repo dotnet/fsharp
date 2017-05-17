@@ -15,25 +15,19 @@ type CheckResults =
     | StillRunning of Async<(FSharpParseFileResults * FSharpCheckFileResults) option>
     
 type FSharpChecker with
-    member this.ParseDocument(document: Document, options: FSharpProjectOptions, sourceText: string) =
+    member checker.ParseDocument(document: Document, options: FSharpProjectOptions, sourceText: string, userOpName: string) =
         asyncMaybe {
-            let! fileParseResults = this.ParseFileInProject(document.FilePath, sourceText, options) |> liftAsync
+            let! fileParseResults = checker.ParseFileInProject(document.FilePath, sourceText, options, userOpName=userOpName) |> liftAsync
             return! fileParseResults.ParseTree
         }
 
-    member this.ParseDocument(document: Document, options: FSharpProjectOptions, ?sourceText: SourceText) =
-        asyncMaybe {
-            let! sourceText =
-                match sourceText with
-                | Some x -> Task.FromResult x
-                | None -> document.GetTextAsync()
-            return! this.ParseDocument(document, options, sourceText.ToString())
-        }
+    member checker.ParseDocument(document: Document, options: FSharpProjectOptions, sourceText: SourceText, userOpName: string) =
+        checker.ParseDocument(document, options, sourceText=sourceText.ToString(), userOpName=userOpName)
 
-    member this.ParseAndCheckDocument(filePath: string, textVersionHash: int, sourceText: string, options: FSharpProjectOptions, allowStaleResults: bool) : Async<(FSharpParseFileResults * Ast.ParsedInput * FSharpCheckFileResults) option> =
+    member checker.ParseAndCheckDocument(filePath: string, textVersionHash: int, sourceText: string, options: FSharpProjectOptions, allowStaleResults: bool, userOpName: string) =
         let parseAndCheckFile =
             async {
-                let! parseResults, checkFileAnswer = this.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText, options)
+                let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText, options, userOpName=userOpName)
                 return
                     match checkFileAnswer with
                     | FSharpCheckFileAnswer.Aborted -> 
@@ -69,7 +63,7 @@ type FSharpChecker with
                     | Ready x -> async.Return x
                     | StillRunning worker ->
                         async {
-                            match allowStaleResults, this.TryGetRecentCheckResultsForFile(filePath, options) with
+                            match allowStaleResults, checker.TryGetRecentCheckResultsForFile(filePath, options) with
                             | true, Some (parseResults, checkFileResults, _) ->
                                 return Some (parseResults, checkFileResults)
                             | _ ->
@@ -80,7 +74,7 @@ type FSharpChecker with
         else parseAndCheckFile |> Async.map bindParsedInput
 
 
-    member this.ParseAndCheckDocument(document: Document, options: FSharpProjectOptions, allowStaleResults: bool, ?sourceText: SourceText) : Async<(FSharpParseFileResults * Ast.ParsedInput * FSharpCheckFileResults) option> =
+    member checker.ParseAndCheckDocument(document: Document, options: FSharpProjectOptions, allowStaleResults: bool, userOpName: string, ?sourceText: SourceText) =
         async {
             let! cancellationToken = Async.CancellationToken
             let! sourceText =
@@ -88,21 +82,21 @@ type FSharpChecker with
                 | Some x -> Task.FromResult x
                 | None -> document.GetTextAsync()
             let! textVersion = document.GetTextVersionAsync(cancellationToken)
-            return! this.ParseAndCheckDocument(document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options, allowStaleResults)
+            return! checker.ParseAndCheckDocument(document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options, allowStaleResults, userOpName=userOpName)
         }
 
 
-            member self.TryParseAndCheckFileInProject (projectOptions, fileName, source) = async {
-        let! (parseResults, checkAnswer) = self.ParseAndCheckFileInProject (fileName,0, source,projectOptions)
+    member checker.TryParseAndCheckFileInProject (projectOptions, fileName, source, userOpName) = async {
+        let! (parseResults, checkAnswer) = checker.ParseAndCheckFileInProject (fileName,0, source,projectOptions, userOpName=userOpName)
         match checkAnswer with
         | FSharpCheckFileAnswer.Aborted ->  return  None
         | FSharpCheckFileAnswer.Succeeded checkResults -> return Some (parseResults,checkResults)
     }
 
 
-    member self.GetAllUsesOfAllSymbolsInSourceString (projectOptions, fileName, source: string, checkForUnusedOpens) = async {
+    member checker.GetAllUsesOfAllSymbolsInSourceString (projectOptions, fileName, source: string, checkForUnusedOpens, userOpName) = async {
                   
-        let! parseAndCheckResults = self.TryParseAndCheckFileInProject (projectOptions, fileName, source)
+        let! parseAndCheckResults = checker.TryParseAndCheckFileInProject (projectOptions, fileName, source, userOpName=userOpName)
         match parseAndCheckResults with
         | None -> return [||]
         | Some(_parseResults,checkResults) ->

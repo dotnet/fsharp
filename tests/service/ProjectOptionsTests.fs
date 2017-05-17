@@ -50,7 +50,7 @@ let ``Project file parsing example 1 Default Configuration`` () =
     let projectFile = __SOURCE_DIRECTORY__ + @"/FSharp.Compiler.Service.Tests.fsproj"
     let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile)
 
-    checkOption options.ProjectFileNames "FileSystemTests.fs"
+    checkOption options.SourceFiles "FileSystemTests.fs"
     
     checkOption options.OtherOptions "FSharp.Compiler.Service.dll"
     checkOption options.OtherOptions "--define:TRACE"
@@ -65,7 +65,7 @@ let ``Project file parsing example 1 Release Configuration`` () =
     // Check with Configuration = Release
     let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Release")])
 
-    checkOption options.ProjectFileNames "FileSystemTests.fs"
+    checkOption options.SourceFiles "FileSystemTests.fs"
 
     checkOption options.OtherOptions "FSharp.Compiler.Service.dll"
     checkOption options.OtherOptions "--define:TRACE"
@@ -78,7 +78,7 @@ let ``Project file parsing example 1 Default configuration relative path`` () =
     Directory.SetCurrentDirectory(__SOURCE_DIRECTORY__)
     let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile)
 
-    checkOption options.ProjectFileNames "FileSystemTests.fs"
+    checkOption options.SourceFiles "FileSystemTests.fs"
 
     checkOption options.OtherOptions "FSharp.Compiler.Service.dll"
     checkOption options.OtherOptions "--define:TRACE"
@@ -123,14 +123,14 @@ let ``Project file parsing Sample_VS2013_FSharp_Portable_Library_net451_adjusted
 [<Test>]
 let ``Project file parsing -- compile files 1``() =
   let opts = ProjectCracker.GetProjectOptionsFromProjectFile(__SOURCE_DIRECTORY__ + @"/data/Test1.fsproj")
-  CollectionAssert.AreEqual (["Test1File2.fs"; "Test1File1.fs"], opts.ProjectFileNames |> Array.map Path.GetFileName)
+  CollectionAssert.AreEqual (["Test1File2.fs"; "Test1File1.fs"], opts.SourceFiles |> Array.map Path.GetFileName)
   CollectionAssert.IsEmpty (getCompiledFilenames opts.OtherOptions)
 
 [<Test>]
 let ``Project file parsing -- compile files 2``() =
   let opts = ProjectCracker.GetProjectOptionsFromProjectFile(__SOURCE_DIRECTORY__ + @"/data/Test2.fsproj")
 
-  CollectionAssert.AreEqual (["Test2File2.fs"; "Test2File1.fs"], opts.ProjectFileNames |> Array.map Path.GetFileName)
+  CollectionAssert.AreEqual (["Test2File2.fs"; "Test2File1.fs"], opts.SourceFiles |> Array.map Path.GetFileName)
   CollectionAssert.IsEmpty (getCompiledFilenames opts.OtherOptions)
 
 [<Test>]
@@ -413,7 +413,7 @@ let ``Project file parsing -- project file contains project reference to out-of-
 [<Test>]
 let ``Project file parsing -- space in file name``() =
   let opts = ProjectCracker.GetProjectOptionsFromProjectFile(__SOURCE_DIRECTORY__ + @"/data/Space in name.fsproj")
-  CollectionAssert.AreEqual (["Test2File2.fs"; "Test2File1.fs"], opts.ProjectFileNames |> Array.map Path.GetFileName)
+  CollectionAssert.AreEqual (["Test2File2.fs"; "Test2File1.fs"], opts.SourceFiles |> Array.map Path.GetFileName)
   CollectionAssert.IsEmpty (getCompiledFilenames opts.OtherOptions)
 
 [<Test>]
@@ -461,14 +461,14 @@ let ``Test OtherOptions order for GetProjectOptionsFromScript`` () =
 #endif
 
 [<Test>]
-let ``Test ProjectFileNames order for GetProjectOptionsFromScript`` () = // See #594
+let ``Test SourceFiles order for GetProjectOptionsFromScript`` () = // See #594
     let test scriptName expected =
         let scriptPath = __SOURCE_DIRECTORY__ + @"/data/ScriptProject/" + scriptName + ".fsx"
         let scriptSource = File.ReadAllText scriptPath
         let projOpts, _diagnostics =
             checker.GetProjectOptionsFromScript(scriptPath, scriptSource)
             |> Async.RunSynchronously
-        projOpts.ProjectFileNames
+        projOpts.SourceFiles
         |> Array.map Path.GetFileNameWithoutExtension
         |> shouldEqual  expected
     test "Main1" [|"BaseLib1"; "Lib1"; "Lib2"; "Main1"|] 
