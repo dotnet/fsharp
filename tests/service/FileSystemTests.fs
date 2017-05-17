@@ -95,7 +95,7 @@ let ``FileSystem compilation test``() =
                    yield "-r:" + r |]
  
         { ProjectFileName = @"c:\mycode\compilation.fsproj" // Make a name that is unique in this directory.
-          ProjectFileNames = [| fileName1; fileName2 |]
+          SourceFiles = [| fileName1; fileName2 |]
           OtherOptions = allFlags 
           ReferencedProjects = [| |];
           IsIncompleteTypeCheckEnvironment = false

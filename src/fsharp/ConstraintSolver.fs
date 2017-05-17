@@ -30,12 +30,10 @@ module internal Microsoft.FSharp.Compiler.ConstraintSolver
 //
 //------------------------------------------------------------------------- 
 
-open Internal.Utilities
 open Internal.Utilities.Collections
 
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.Ast
@@ -51,7 +49,6 @@ open Microsoft.FSharp.Compiler.Rational
 open Microsoft.FSharp.Compiler.InfoReader
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Tastops.DebugPrint
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.TypeRelations
 

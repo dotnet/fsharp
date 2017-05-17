@@ -36,7 +36,7 @@ let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri( Syste
 
 let internal options = { 
     ProjectFileName = "C:\\test.fsproj"
-    ProjectFileNames =  [| filePath |]
+    SourceFiles =  [| filePath |]
     ReferencedProjects = [| |]
     OtherOptions = [| "-r:" + PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll") |]
     IsIncompleteTypeCheckEnvironment = true

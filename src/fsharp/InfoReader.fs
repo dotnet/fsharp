@@ -4,10 +4,6 @@
 /// Select members from a type by name, searching the type hierarchy if needed
 module internal Microsoft.FSharp.Compiler.InfoReader
 
-open Internal.Utilities
-
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library

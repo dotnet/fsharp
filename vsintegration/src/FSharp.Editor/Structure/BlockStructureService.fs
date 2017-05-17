@@ -142,13 +142,15 @@ open BlockStructure
 type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoManager: ProjectInfoManager) =
     inherit BlockStructureService()
         
+    static let userOpName = "BlockStructure"
+
     override __.Language = FSharpConstants.FSharpLanguageName
  
     override __.GetBlockStructureAsync(document, cancellationToken) : Task<BlockStructure> =
         asyncMaybe {
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
             let! sourceText = document.GetTextAsync(cancellationToken)
-            let! parsedInput = checker.ParseDocument(document, options, sourceText)
+            let! parsedInput = checker.ParseDocument(document, options, sourceText, userOpName)
             return createBlockSpans sourceText parsedInput |> Seq.toImmutableArray
         } 
         |> Async.map (Option.defaultValue ImmutableArray<_>.Empty)

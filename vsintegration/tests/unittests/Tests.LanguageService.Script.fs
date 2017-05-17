@@ -1199,8 +1199,8 @@ type UsingMSBuild() as this =
         AssertArrayContainsPartialMatchOf(fas.OtherOptions, "System.Runtime.Remoting.dll")
         AssertArrayContainsPartialMatchOf(fas.OtherOptions, "System.Transactions.dll")
         AssertArrayContainsPartialMatchOf(fas.OtherOptions, "FSharp.Compiler.Interactive.Settings.dll")
-        Assert.AreEqual(Path.Combine(projectFolder,"File1.fsx"), fas.ProjectFileNames.[0])
-        Assert.AreEqual(1, fas.ProjectFileNames.Length)
+        Assert.AreEqual(Path.Combine(projectFolder,"File1.fsx"), fas.SourceFiles.[0])
+        Assert.AreEqual(1, fas.SourceFiles.Length)
 
 
     /// FEATURE: #reference against a strong name should work.

@@ -16,7 +16,7 @@ open Microsoft.VisualStudio.FSharp.Editor.Symbols
 
 module internal SymbolHelpers =
     let getSymbolUsesInSolution (symbol: FSharpSymbol, declLoc: SymbolDeclarationLocation, checkFileResults: FSharpCheckFileResults,
-                                 projectInfoManager: ProjectInfoManager, checker: FSharpChecker, solution: Solution) =
+                                 projectInfoManager: ProjectInfoManager, checker: FSharpChecker, solution: Solution, userOpName) =
         async {
             let! symbolUses =
                 match declLoc with
@@ -36,7 +36,7 @@ module internal SymbolHelpers =
                         async {
                             match projectInfoManager.TryGetOptionsForProject(project.Id) with
                             | Some options ->
-                                let! projectCheckResults = checker.ParseAndCheckProject(options)
+                                let! projectCheckResults = checker.ParseAndCheckProject(options, userOpName = userOpName)
                                 return! projectCheckResults.GetUsesOfSymbol(symbol)
                             | None -> return [||]
                         })
@@ -63,7 +63,7 @@ module internal SymbolHelpers =
 
     type OriginalText = string
 
-    let changeAllSymbolReferences (document: Document, symbolSpan: TextSpan, textChanger: string -> string, projectInfoManager: ProjectInfoManager, checker: FSharpChecker)
+    let changeAllSymbolReferences (document: Document, symbolSpan: TextSpan, textChanger: string -> string, projectInfoManager: ProjectInfoManager, checker: FSharpChecker, userOpName)
         : Async<(Func<CancellationToken, Task<Solution>> * OriginalText) option> =
         asyncMaybe {
             do! Option.guard (symbolSpan.Length > 0)
@@ -74,11 +74,11 @@ module internal SymbolHelpers =
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
             let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, symbolSpan.Start, document.FilePath, defines, SymbolLookupKind.Greedy, false)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true, userOpName = userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition(symbolSpan.Start)
             let textLinePos = sourceText.Lines.GetLinePosition(symbolSpan.Start)
             let fcsTextLineNumber = textLinePos.Line + 1
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.Text.ToString(), symbol.FullIsland)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.Text.ToString(), symbol.FullIsland, userOpName=userOpName)
             let! declLoc = symbolUse.GetDeclarationLocation(document)
             let newText = textChanger originalText
             // defer finding all symbol uses throughout the solution
@@ -86,7 +86,7 @@ module internal SymbolHelpers =
                 Func<_,_>(fun (cancellationToken: CancellationToken) ->
                     async {
                         let! symbolUsesByDocumentId = 
-                            getSymbolUsesInSolution(symbolUse.Symbol, declLoc, checkFileResults, projectInfoManager, checker, document.Project.Solution)
+                            getSymbolUsesInSolution(symbolUse.Symbol, declLoc, checkFileResults, projectInfoManager, checker, document.Project.Solution, userOpName)
                     
                         let mutable solution = document.Project.Solution
                         

@@ -26,6 +26,7 @@ type internal FSharpBreakpointResolutionService
         projectInfoManager: ProjectInfoManager
     ) =
 
+    static let userOpName = "BreakpointResolution"
     static member GetBreakpointLocation(checker: FSharpChecker, sourceText: SourceText, fileName: string, textSpan: TextSpan, options: FSharpProjectOptions) = 
         async {
             // REVIEW: ParseFileInProject can cause FSharp.Compiler.Service to become unavailable (i.e. not responding to requests) for 
@@ -41,7 +42,7 @@ type internal FSharpBreakpointResolutionService
             else
                 let textLineColumn = textLinePos.Character
                 let fcsTextLineNumber = Line.fromZ textLinePos.Line // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
-                let! parseResults = checker.ParseFileInProject(fileName, sourceText.ToString(), options)
+                let! parseResults = checker.ParseFileInProject(fileName, sourceText.ToString(), options, userOpName = userOpName)
                 return parseResults.ValidateBreakpointLocation(mkPos fcsTextLineNumber textLineColumn)
         }
 

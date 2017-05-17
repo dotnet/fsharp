@@ -35,6 +35,9 @@ type internal FSharpNavigableItem(document: Document, textSpan: TextSpan) =
         member this.ChildItems = ImmutableArray<INavigableItem>.Empty
 
 type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: ProjectInfoManager) =
+
+    static let userOpName = "GoToDefinition"
+
     /// Use an origin document to provide the solution & workspace used to 
     /// find the corresponding textSpan and INavigableItem for the range
     let rangeToNavigableItem (range: range, document: Document) = 
@@ -63,10 +66,9 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: Project
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()  
             
-            let! _, _, checkFileResults = 
-                checker.ParseAndCheckDocument (originDocument,projectOptions,allowStaleResults=true,sourceText=sourceText)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument (originDocument,projectOptions,allowStaleResults=true,sourceText=sourceText, userOpName = userOpName)
             let idRange = lexerSymbol.Ident.idRange
-            let! fsSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland)
+            let! fsSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland, userOpName=userOpName)
             let symbol = fsSymbolUse.Symbol
             // if the tooltip was spawned in an implementation file and we have a range targeting
             // a signature file, try to find the corresponding implementation file and target the
@@ -77,7 +79,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: Project
                 let! implDoc = originDocument.Project.Solution.TryGetDocumentFromPath fsfilePath
                 let! implSourceText = implDoc.GetTextAsync ()
                 let! projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject implDoc
-                let! _, _, checkFileResults = checker.ParseAndCheckDocument (implDoc, projectOptions, allowStaleResults=true, sourceText=implSourceText)
+                let! _, _, checkFileResults = checker.ParseAndCheckDocument (implDoc, projectOptions, allowStaleResults=true, sourceText=implSourceText, userOpName = userOpName)
                 let! symbolUses = checkFileResults.GetUsesOfSymbolInFile symbol |> liftAsync
                 let! implSymbol  = symbolUses |> Array.tryHead 
                 let implTextSpan = RoslynHelpers.FSharpRangeToTextSpan (implSourceText, implSymbol.RangeAlternate)
@@ -98,7 +100,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: Project
     /// use the targetSymbol to find the first instance of its presence in the provided source file
     member __.FindSymbolDeclarationInFile(targetSymbolUse: FSharpSymbolUse, filePath: string, source: string, options: FSharpProjectOptions, fileVersion:int) = 
         asyncMaybe {
-            let! _, checkFileAnswer = checker.ParseAndCheckFileInProject (filePath, fileVersion, source, options) |> liftAsync
+            let! _, checkFileAnswer = checker.ParseAndCheckFileInProject (filePath, fileVersion, source, options, userOpName = userOpName) |> liftAsync
             match checkFileAnswer with 
             | FSharpCheckFileAnswer.Aborted -> return! None
             | FSharpCheckFileAnswer.Succeeded checkFileResults ->
@@ -108,6 +110,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: Project
         }
 
 type private StatusBar(statusBar: IVsStatusbar) =
+
     let mutable searchIcon = int16 Microsoft.VisualStudio.Shell.Interop.Constants.SBAI_Find :> obj
         
     let clear() =
@@ -149,6 +152,8 @@ type internal FSharpGoToDefinitionService
         projectInfoManager: ProjectInfoManager,
         [<ImportMany>] _presenters: IEnumerable<INavigableItemsPresenter>
     ) =
+
+    static let userOpName = "GoToDefinition"
     let gotoDefinition = GoToDefinition(checkerProvider.Checker, projectInfoManager)
     let serviceProvider =  ServiceProvider.GlobalProvider
     let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar,IVsStatusbar>())
@@ -211,18 +216,13 @@ type internal FSharpGoToDefinitionService
             
             let preferSignature = isSignatureFile originDocument.FilePath
 
-            let! _, _, checkFileResults = 
-                checkerProvider.Checker.ParseAndCheckDocument (originDocument, projectOptions, allowStaleResults=true, sourceText=sourceText)
+            let! _, _, checkFileResults = checkerProvider.Checker.ParseAndCheckDocument (originDocument, projectOptions, allowStaleResults=true, sourceText=sourceText, userOpName=userOpName)
                 
             let! lexerSymbol = Tokenizer.getSymbolAtPosition (originDocument.Id, sourceText, position,originDocument.FilePath, defines, SymbolLookupKind.Greedy, false)
             let idRange = lexerSymbol.Ident.idRange
 
-            let! declarations = 
-                checkFileResults.GetDeclarationLocationAlternate 
-                    (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, preferSignature)
-                    |> liftAsync
-            let! targetSymbolUse = 
-                checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland)
+            let! declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, preferSignature, userOpName=userOpName) |> liftAsync
+            let! targetSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland, userOpName=userOpName)
 
             match declarations with
             | FSharpFindDeclResult.DeclFound targetRange -> 
@@ -244,10 +244,7 @@ type internal FSharpGoToDefinitionService
                         let navItem = FSharpNavigableItem (implDocument, implTextSpan)
                         return navItem
                     else // jump from implementation to the corresponding signature
-                        let! declarations = 
-                            checkFileResults.GetDeclarationLocationAlternate 
-                                (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, true) 
-                                |> liftAsync
+                        let! declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, true, userOpName=userOpName) |> liftAsync
                         match declarations with
                         | FSharpFindDeclResult.DeclFound targetRange -> 
                             let! sigDocument = originDocument.Project.Solution.TryGetDocumentFromPath targetRange.FileName
