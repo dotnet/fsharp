@@ -5,14 +5,12 @@
 module internal Microsoft.FSharp.Compiler.PostTypeCheckSemanticChecks
 
 open System.Collections.Generic
-open Internal.Utilities
 
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 
 open Microsoft.FSharp.Compiler.AccessibilityLogic
 open Microsoft.FSharp.Compiler.Ast
@@ -22,7 +20,6 @@ open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.InfoReader
@@ -113,7 +110,7 @@ let testHookMemberBody (membInfo: ValMemberInfo) (expr:Expr) =
 //      For correctness, this claim needs to be justified.
 //      
 //      Q:  Do any post check rewrite passes factor expressions out to other functions?      
-//      A1. The optimiser may introduce auxillary functions, e.g. by splitting out match-branches.
+//      A1. The optimiser may introduce auxiliary functions, e.g. by splitting out match-branches.
 //          This should not be done if the refactored body contains an unbound reraise.
 //      A2. TLR? Are any expression factored out into functions?
 //      

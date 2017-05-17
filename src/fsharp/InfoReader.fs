@@ -4,10 +4,6 @@
 /// Select members from a type by name, searching the type hierarchy if needed
 module internal Microsoft.FSharp.Compiler.InfoReader
 
-open Internal.Utilities
-
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
@@ -414,6 +410,7 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
     
 /// Get the declared constructors of any F# type
 let GetIntrinsicConstructorInfosOfType (infoReader:InfoReader) m ty = 
+  protectAssemblyExploration [] (fun () -> 
     let g = infoReader.g
     let amap = infoReader.amap 
     if isAppTy g ty then
@@ -440,7 +437,8 @@ let GetIntrinsicConstructorInfosOfType (infoReader:InfoReader) m ty =
                 | _ -> None) 
             |> List.map (fun x -> FSMeth(g,ty,x,None)) 
     else []
-    
+  )    
+
 //-------------------------------------------------------------------------
 // Collecting methods and properties taking into account hiding rules in the hierarchy
 
@@ -538,7 +536,7 @@ let private FilterOverrides findFlag (isVirt:'a->bool,isNewSlot,isDefiniteOverri
     | IgnoreOverrides ->  
         let equivNewSlots x y = isNewSlot x && isNewSlot y && equivSigs x y
         items
-          // Remove any F#-declared overrides. THese may occur in the same type as the abstract member (unlike with .NET metadata)
+          // Remove any F#-declared overrides. These may occur in the same type as the abstract member (unlike with .NET metadata)
           // Include any 'newslot' declared methods.
           |> List.map (List.filter (fun x -> not (isDefiniteOverride x))) 
 

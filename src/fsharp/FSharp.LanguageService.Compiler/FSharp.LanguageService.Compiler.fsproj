@@ -12,10 +12,9 @@
     <AssemblyName>FSharp.LanguageService.Compiler</AssemblyName>
     <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
-    <DefineConstants>COMPILED_AS_LANGUAGE_SERVICE_DLL;$(DefineConstants)</DefineConstants>
-    <DefineConstants>INCLUDE_METADATA_READER;$(DefineConstants)</DefineConstants>
+    <DefineConstants>COMPILER_SERVICE;$(DefineConstants)</DefineConstants>
+    <DefineConstants>COMPILER_SERVICE_DLL_VISUAL_STUDIO;$(DefineConstants)</DefineConstants>
     <DefineConstants>NO_INLINE_IL_PARSER;$(DefineConstants)</DefineConstants>
-    <DefineConstants>INCLUDE_METADATA_WRITER;$(DefineConstants)</DefineConstants>
     <NoWarn>$(NoWarn);62;9;75</NoWarn>
     <ProjectGuid>{a437a6ec-5323-47c2-8f86-e2cac54ff152}</ProjectGuid>
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -493,6 +492,24 @@
     <Compile Include="..\fsc.fs">
       <Link>Driver\fsc.fs</Link>
     </Compile>
+    <Compile Include="..\symbols\SymbolHelpers.fsi">
+      <Link>Symbols/SymbolHelpers.fsi</Link>
+    </Compile>
+    <Compile Include="..\symbols\SymbolHelpers.fs">
+      <Link>Symbols/SymbolHelpers.fs</Link>
+    </Compile>
+    <Compile Include="..\symbols\Symbols.fsi">
+      <Link>Symbols/Symbols.fsi</Link>
+    </Compile>
+    <Compile Include="..\symbols\Symbols.fs">
+      <Link>Symbols/Symbols.fs</Link>
+    </Compile>
+    <Compile Include="..\symbols\Exprs.fsi">
+      <Link>Symbols/Exprs.fsi</Link>
+    </Compile>
+    <Compile Include="..\symbols\Exprs.fs">
+      <Link>Symbols/Exprs.fs</Link>
+    </Compile>
     <Compile Include="..\vs\IncrementalBuild.fsi">
       <Link>Service/IncrementalBuild.fsi</Link>
     </Compile>
@@ -508,17 +525,11 @@
     <Compile Include="..\vs\ServiceConstants.fs">
       <Link>Service/ServiceConstants.fs</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceDeclarations.fsi">
-      <Link>Service/ServiceDeclarations.fsi</Link>
+    <Compile Include="..\vs\ServiceDeclarationLists.fsi">
+      <Link>Service/ServiceDeclarationLists.fsi</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceDeclarations.fs">
-      <Link>Service/ServiceDeclarations.fs</Link>
-    </Compile>
-    <Compile Include="..\vs\Symbols.fsi">
-      <Link>Service/Symbols.fsi</Link>
-    </Compile>
-    <Compile Include="..\vs\Symbols.fs">
-      <Link>Service/Symbols.fs</Link>
+    <Compile Include="..\vs\ServiceDeclarationLists.fs">
+      <Link>Service/ServiceDeclarationLists.fs</Link>
     </Compile>
     <Compile Include="..\vs\ServiceLexing.fsi">
       <Link>Service/ServiceLexing.fsi</Link>
@@ -550,6 +561,12 @@
     <Compile Include="..\MSBuildReferenceResolver.fs">
       <Link>Service/MSBuildReferenceResolver.fs</Link>
     </Compile>
+    <Compile Include="..\vs\ServiceDeclarationLists.fsi">
+      <Link>Service/ServiceDeclarationLists.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceDeclarationLists.fs">
+      <Link>Service/ServiceDeclarationLists.fs</Link>
+    </Compile>
     <Compile Include="..\vs\ServiceAssemblyContent.fsi">
       <Link>Service/ServiceAssemblyContent.fsi</Link>
     </Compile>
@@ -574,6 +591,12 @@
     <Compile Include="..\vs\ServiceInterfaceStubGenerator.fs">
       <Link>Service/ServiceInterfaceStubGenerator.fs</Link>
     </Compile>
+    <Compile Include="..\vs\ServiceStructure.fsi">
+      <Link>Service/ServiceStructure.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceStructure.fs">
+      <Link>Service/ServiceStructure.fs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
@@ -582,38 +605,65 @@
     <Reference Include="System.Numerics" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
-    <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll, Version=7.10.6070, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.OLE.Interop.7.10.6070\lib\Microsoft.VisualStudio.OLE.Interops.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Immutable.10.0.10.0.30319\lib\net40\Microsoft.VisualStudio.Shell.Immutable.10.0.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.11.0.dll" />
+    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.11.0.dll, Version=11.0.50727, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Immutable.11.0.11.0.50727\lib\net45\Microsoft.VisualStudio.Shell.Immutable.11.0.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion), Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion).$(RoslynVSPackagesVersion)\lib\Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion).dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0.dll" />
-    <Reference Include="Microsoft.VisualStudio.Shell.Interop.9.0.dll" />
-    <Reference Include="Microsoft.VisualStudio.Shell.Interop.10.0.dll" />
-    <Reference Include="Microsoft.VisualStudio.Shell.Interop.11.0.dll" />
-    <Reference Include="Microsoft.VisualStudio.Shell.Interop.dll" />
-    <Reference Include="Microsoft.VisualStudio.Threading, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Threading.14.1.131\lib\net45\Microsoft.VisualStudio.Threading.dll</HintPath>
+    <Reference Include="Microsoft.VisualStudio.Shell.Framework, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Framework.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Shell.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.dll, Version=7.10.6071, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Interop.7.10.6071\lib\Microsoft.VisualStudio.Shell.Interop.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0.dll, Version=8.0.50727, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Interop.8.0.8.0.50727\lib\Microsoft.VisualStudio.Shell.Interop.8.0.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.9.0.dll, Version=9.0.30729, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Interop.9.0.9.0.30729\lib\Microsoft.VisualStudio.Shell.Interop.9.0.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.10.0.dll, Version=10.0.30319, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Interop.10.0.10.0.30319\lib\Microsoft.VisualStudio.Shell.Interop.10.0.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Shell.Interop.11.0.dll, Version=11.0.61030, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Interop.11.0.11.0.61030\lib\Microsoft.VisualStudio.Shell.Interop.11.0.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Threading">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Threading.15.0.240\lib\net45\Microsoft.VisualStudio.Threading.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Shell.Design, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Design.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Shell.Design.dll</HintPath>
     </Reference>
     <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Newtonsoft.Json.8.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.DiaSymReader.PortablePdb">
       <HintPath>..\..\..\packages\Microsoft.DiaSymReader.PortablePdb.1.1.0\lib\portable-net45+win8\Microsoft.DiaSymReader.PortablePdb.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.DiaSymReader">
-      <HintPath>..\..\..\packages\Microsoft.DiaSymReader.1.0.8\lib\portable-net45+win8\Microsoft.DiaSymReader.dll</HintPath>
+      <HintPath>..\..\..\packages\Microsoft.DiaSymReader.1.1.0\lib\portable-net45+win8\Microsoft.DiaSymReader.dll</HintPath>
     </Reference>
     <Reference Include="System.Reflection.Metadata">
-      <HintPath>..\..\..\packages\System.Reflection.Metadata.1.4.1-beta-24227-04\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath>
+      <HintPath>..\..\..\packages\System.Reflection.Metadata.1.4.2\lib\portable-net45+win8\System.Reflection.Metadata.dll</HintPath>
     </Reference>
     <Reference Include="System.Collections.Immutable">
       <HintPath>..\..\..\packages\System.Collections.Immutable.1.2.0\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>

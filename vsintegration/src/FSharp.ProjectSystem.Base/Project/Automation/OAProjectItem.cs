@@ -350,7 +350,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
                 extensibility.EnterAutomationFunction();
                 try
                 {
-                    this.node.Remove(false);
+                    this.node.Remove(removeFromStorage: false);
                 }
                 finally
                 {
@@ -381,7 +381,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem.Automation
 
                 try
                 {
-                    this.node.Remove(true);
+                    this.node.Remove(removeFromStorage: true, promptSave: false);
                 }
                 finally
                 {

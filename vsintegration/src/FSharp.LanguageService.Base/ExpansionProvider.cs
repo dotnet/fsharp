@@ -270,7 +270,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
 
             IVsTextViewEx viewex = view as IVsTextViewEx;
             if (viewex  != null) {
-                return viewex.IsCompletorWindowActive() == VSConstants.S_OK;
+                return viewex.IsCompletorWindowActive() == Microsoft.VisualStudio.VSConstants.S_OK;
             }
 
             return false;

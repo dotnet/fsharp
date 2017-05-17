@@ -32,11 +32,12 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open UnitTests.TestLib.LanguageService
 
 let filePath = "C:\\test.fs"
 let internal options = { 
     ProjectFileName = "C:\\test.fsproj"
-    ProjectFileNames =  [| filePath |]
+    SourceFiles =  [| filePath |]
     ReferencedProjects = [| |]
     OtherOptions = [| |]
     IsIncompleteTypeCheckEnvironment = true
@@ -45,12 +46,13 @@ let internal options = {
     OriginalLoadReferences = []
     UnresolvedReferences = None
     ExtraProjectInfo = None
+    Stamp = None
 }
 
 let VerifyCompletionList(fileContents: string, marker: string, expected: string list, unexpected: string list) =
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     let results = 
-        FSharpCompletionProvider.ProvideCompletionsAsyncAux(FSharpChecker.Instance, SourceText.From(fileContents), caretPosition, options, filePath, 0) 
+        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(fileContents), caretPosition, options, filePath, 0, fun _ -> []) 
         |> Async.RunSynchronously 
         |> Option.defaultValue (ResizeArray())
         |> Seq.map(fun result -> result.DisplayText)
@@ -65,7 +67,7 @@ let VerifyCompletionListExactly(fileContents: string, marker: string, expected: 
     let caretPosition = fileContents.IndexOf(marker) + marker.Length
     
     let actual = 
-        FSharpCompletionProvider.ProvideCompletionsAsyncAux(FSharpChecker.Instance, SourceText.From(fileContents), caretPosition, options, filePath, 0) 
+        FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, SourceText.From(fileContents), caretPosition, options, filePath, 0, fun _ -> []) 
         |> Async.RunSynchronously 
         |> Option.defaultValue (ResizeArray())
         |> Seq.toList
@@ -82,6 +84,10 @@ let VerifyCompletionListExactly(fileContents: string, marker: string, expected: 
 
 let VerifyNoCompletionList(fileContents: string, marker: string) =
     VerifyCompletionListExactly(fileContents, marker, [])
+
+[<OneTimeSetUp>]
+let usingDefaultSettings() = 
+    SettingsPersistence.setSettings { ShowAfterCharIsTyped = true; ShowAfterCharIsDeleted = false; ShowAllSymbols = true }
     
 [<Test>]
 let ShouldTriggerCompletionAtCorrectMarkers() =

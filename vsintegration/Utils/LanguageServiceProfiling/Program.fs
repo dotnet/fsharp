@@ -53,9 +53,7 @@ let normalizeLineEnds (s: string) = s.Replace("\r\n", "\n").Replace("\n\n", "\n"
 let internal getQuickInfoText (FSharpToolTipText.FSharpToolTipText elements) : string =
     let rec parseElement = function
         | FSharpToolTipElement.None -> ""
-        | FSharpToolTipElement.Single(text, _) -> text
-        | FSharpToolTipElement.SingleParameter(text, _, _) -> text
-        | FSharpToolTipElement.Group(xs) -> xs |> List.map fst |> String.concat "\n"
+        | FSharpToolTipElement.Group(xs) -> xs |> List.map (fun item -> item.MainDescription) |> String.concat "\n"
         | FSharpToolTipElement.CompositionError(error) -> error
     elements |> List.map (parseElement) |> String.concat "\n" |> normalizeLineEnds
 
@@ -132,12 +130,7 @@ let main argv =
                 let! fileResults = checkFile fileVersion
                 match fileResults with
                 | Some fileResults ->
-                    let! symbolUse =
-                        fileResults.GetSymbolUseAtLocation(
-                            options.SymbolPos.Line, 
-                            options.SymbolPos.Column, 
-                            getLine(options.SymbolPos.Line),
-                            [options.SymbolText])
+                    let! symbolUse = fileResults.GetSymbolUseAtLocation(options.SymbolPos.Line, options.SymbolPos.Column, getLine(options.SymbolPos.Line),[options.SymbolText])
                     match symbolUse with
                     | Some symbolUse ->
                         eprintfn "Found symbol %s" symbolUse.Symbol.FullName
@@ -168,12 +161,13 @@ let main argv =
                         eprintfn "querying %A %s" completion.QualifyingNames completion.PartialName
                         let! listInfo =
                             fileResults.GetDeclarationListInfo(
-                                Some parseResult
-                                , completion.Position.Line
-                                , completion.Position.Column
-                                , getLine (completion.Position.Line)
-                                , completion.QualifyingNames
-                                , completion.PartialName)
+                                Some parseResult,
+                                completion.Position.Line,
+                                completion.Position.Column,
+                                getLine (completion.Position.Line),
+                                completion.QualifyingNames,
+                                completion.PartialName,
+                                fun() -> [])
                            
                         for i in listInfo.Items do
                             eprintfn "%s" (getQuickInfoText i.DescriptionText)

@@ -746,7 +746,7 @@
     } // end of property U::Item2
   } // end of class U
 
-  .class auto ansi serializable nested assembly beforefieldinit 'TestFunction21@7-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'TestFunction21@7-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit> clo2
@@ -785,7 +785,7 @@
 
   } // end of class 'TestFunction21@7-1'
 
-  .class auto ansi serializable nested assembly beforefieldinit TestFunction21@7
+  .class auto ansi serializable sealed nested assembly beforefieldinit TestFunction21@7
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>> clo1
