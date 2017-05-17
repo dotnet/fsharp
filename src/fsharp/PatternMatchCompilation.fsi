@@ -12,7 +12,6 @@ open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Range
 
 
-
 /// What should the decision tree contain for any incomplete match? 
 type ActionOnFailure = 
     | ThrowIncompleteMatchException 

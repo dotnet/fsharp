@@ -3967,7 +3967,7 @@ let OpenILModuleReader infile opts =
 
 // ++GLOBAL MUTABLE STATE (concurrency safe via locking)
 type ILModuleReaderCacheLockToken() = interface LockToken
-let ilModuleReaderCache = new AgedLookup<ILModuleReaderCacheLockToken, (string * System.DateTime * ILScopeRef * bool), ILModuleReader>(0, areSame=(fun (x,y) -> x = y))
+let ilModuleReaderCache = new AgedLookup<ILModuleReaderCacheLockToken, (string * System.DateTime * ILScopeRef * bool), ILModuleReader>(0, areSimilar=(fun (x,y) -> x = y))
 let ilModuleReaderCacheLock = Lock()
 
 let OpenILModuleReaderAfterReadingAllBytes infile opts = 

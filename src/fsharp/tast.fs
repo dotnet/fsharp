@@ -14,7 +14,6 @@ open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 
 open Microsoft.FSharp.Compiler 
@@ -34,8 +33,10 @@ open Microsoft.FSharp.Core.CompilerServices
 
 /// Unique name generator for stamps attached to lambdas and object expressions
 type Unique = int64
+
 //++GLOBAL MUTABLE STATE (concurrency-safe)
 let newUnique = let i = ref 0L in fun () -> System.Threading.Interlocked.Increment(i)
+
 type Stamp = int64
 
 /// Unique name generator for stamps attached to to val_specs, tycon_specs etc.

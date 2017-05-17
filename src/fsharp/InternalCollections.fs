@@ -13,7 +13,7 @@ type internal ValueStrength<'T when 'T : not struct> =
    | Weak of WeakReference<'T>
 #endif
 
-type internal AgedLookup<'Token, 'Key, 'Value when 'Value : not struct>(keepStrongly:int, areSame, ?requiredToKeep, ?onStrongDiscard, ?keepMax: int) =
+type internal AgedLookup<'Token, 'Key, 'Value when 'Value : not struct>(keepStrongly:int, areSimilar, ?requiredToKeep, ?onStrongDiscard, ?keepMax: int) =
     /// The list of items stored. Youngest is at the end of the list.
     /// The choice of order is somewhat arbitrary. If the other way then adding
     /// items would be O(1) and removing O(N).
@@ -39,8 +39,8 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value : not struct>(keepStro
             // This function returns true if two keys are the same according to the predicate
             // function passed in.
             | []->None
-            | (key',value)::t->
-                if areSame(key,key') then Some(key',value) 
+            | (similarKey,value)::t->
+                if areSimilar(key,similarKey) then Some(similarKey,value) 
                 else Lookup key t      
         Lookup key data    
         
@@ -53,18 +53,18 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value : not struct>(keepStro
         
     /// Promote a particular key value.
     let Promote (data, key, value) = 
-        (data |> List.filter (fun (key',_)-> not (areSame(key,key')))) @ [ (key, value) ] 
+        (data |> List.filter (fun (similarKey,_)-> not (areSimilar(key,similarKey)))) @ [ (key, value) ] 
 
     /// Remove a particular key value.
     let RemoveImpl (data, key) = 
-        let discard,keep = data |> List.partition (fun (key',_)-> areSame(key,key'))
+        let discard,keep = data |> List.partition (fun (similarKey,_)-> areSimilar(key,similarKey))
         keep, discard
         
     let TryGetKeyValueImpl(data,key) = 
         match TryPeekKeyValueImpl(data,key) with 
-        | Some(key', value) as result ->
+        | Some(similarKey, value) as result ->
             // If the result existed, move it to the end of the list (more likely to keep it)
-            result,Promote (data,key',value)
+            result,Promote (data,similarKey,value)
         | None -> None,data          
        
     /// Remove weak entries from the list that have been collected.
@@ -154,37 +154,42 @@ type internal AgedLookup<'Token, 'Key, 'Value when 'Value : not struct>(keepStro
 
         
 
-type internal MruCache<'Token, 'Key,'Value when 'Value : not struct>(keepStrongly, areSame, ?isStillValid : 'Key*'Value->bool, ?areSameForSubsumption, ?requiredToKeep, ?onStrongDiscard, ?keepMax) =
+type internal MruCache<'Token, 'Key,'Value when 'Value : not struct>(keepStrongly, areSame, ?isStillValid : 'Key*'Value->bool, ?areSimilar, ?requiredToKeep, ?onStrongDiscard, ?keepMax) =
         
-    /// Default behavior of <c>areSameForSubsumption</c> function is areSame.
-    let areSameForSubsumption = defaultArg areSameForSubsumption areSame
+    /// Default behavior of <c>areSimilar</c> function is areSame.
+    let areSimilar = defaultArg areSimilar areSame
         
     /// The list of items in the cache. Youngest is at the end of the list.
     /// The choice of order is somewhat arbitrary. If the other way then adding
     /// items would be O(1) and removing O(N).
-    let cache = AgedLookup<'Token, 'Key,'Value>(keepStrongly=keepStrongly,areSame=areSameForSubsumption,?onStrongDiscard=onStrongDiscard,?keepMax=keepMax,?requiredToKeep=requiredToKeep)
+    let cache = AgedLookup<'Token, 'Key,'Value>(keepStrongly=keepStrongly,areSimilar=areSimilar,?onStrongDiscard=onStrongDiscard,?keepMax=keepMax,?requiredToKeep=requiredToKeep)
         
     /// Whether or not this result value is still valid.
     let isStillValid = defaultArg isStillValid (fun _ -> true)
         
+    member bc.ContainsSimilarKey(tok, key) = 
+        match cache.TryPeekKeyValue(tok, key) with
+        | Some(_similarKey, _value)-> true
+        | None -> false
+       
     member bc.TryGetAny(tok, key) = 
         match cache.TryPeekKeyValue(tok, key) with
-        | Some(key', value)->
-            if areSame(key',key) then Some(value)
+        | Some(similarKey, value)->
+            if areSame(similarKey,key) then Some(value)
             else None
         | None -> None
        
     member bc.TryGet(tok, key) = 
         match cache.TryGetKeyValue(tok, key) with
-        | Some(key', value) -> 
-            if areSame(key', key) && isStillValid(key,value) then Some value
+        | Some(similarKey, value) -> 
+            if areSame(similarKey, key) && isStillValid(key,value) then Some value
             else None
         | None -> None
            
     member bc.Set(tok, key:'Key,value:'Value) = 
         cache.Put(tok, key,value)
        
-    member bc.Remove(tok, key) = 
+    member bc.RemoveAnySimilar(tok, key) = 
         cache.Remove(tok, key)
        
     member bc.Clear(tok) =
