@@ -2101,9 +2101,9 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
         let projectReferences =  
             [ for (nm,opts) in options.ReferencedProjects do
                
-               // Don't use cross-project references for FSHarp.Core, since various bits of code require a concrete FSHarp.Core to exist on-disk.
-               // The only solutions that have these cross-project references to FSHarp.Core are VisualFSharp.sln and FSHarp.sln. The only ramification
-               // of this is that you need to build FSHarp.Core to get intellisense in those projects.
+               // Don't use cross-project references for FSharp.Core, since various bits of code require a concrete FSharp.Core to exist on-disk.
+               // The only solutions that have these cross-project references to FSharp.Core are VisualFSharp.sln and FSharp.sln. The only ramification
+               // of this is that you need to build FSharp.Core to get intellisense in those projects.
 
                if (try Path.GetFileNameWithoutExtension(nm) with _ -> "") <> GetFSharpCoreLibraryName() then
 
