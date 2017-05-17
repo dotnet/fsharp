@@ -53,7 +53,7 @@ type internal InlineRenameLocationSet(locationsByDocument: DocumentLocations [],
                         return solution
                     else
                         let doc = locationsByDocument.[i]
-                        let! oldSourceText = doc.Document.GetTextAsync(cancellationToken)
+                        let! oldSourceText = doc.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                         let changes = doc.Locations |> Seq.map (fun loc -> TextChange(loc.TextSpan, replacementText))
                         let newSource = oldSourceText.WithChanges(changes)
                         return! applyChanges (i + 1) (solution.WithDocumentText(doc.Document.Id, newSource))
@@ -122,7 +122,8 @@ type internal InlineRenameInfo
                     |> Seq.map (fun (KeyValue(documentId, symbolUses)) ->
                         async {
                             let document = document.Project.Solution.GetDocument(documentId)
-                            let! sourceText = document.GetTextAsync(cancellationToken)
+                            let! cancellationToken = Async.CancellationToken
+                            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                             let locations =
                                 symbolUses
                                 |> Array.map (fun symbolUse ->
