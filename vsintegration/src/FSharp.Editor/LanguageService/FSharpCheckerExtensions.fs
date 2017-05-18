@@ -79,9 +79,9 @@ type FSharpChecker with
             let! cancellationToken = Async.CancellationToken
             let! sourceText =
                 match sourceText with
-                | Some x -> Task.FromResult x
-                | None -> document.GetTextAsync()
-            let! textVersion = document.GetTextVersionAsync(cancellationToken)
+                | Some x -> async.Return x
+                | None -> document.GetTextAsync(cancellationToken)  |> Async.AwaitTask
+            let! textVersion = document.GetTextVersionAsync(cancellationToken) |> Async.AwaitTask
             return! checker.ParseAndCheckDocument(document.FilePath, textVersion.GetHashCode(), sourceText.ToString(), options, allowStaleResults, userOpName=userOpName)
         }
 

@@ -24,7 +24,8 @@ type internal FSharpReplaceWithSuggestionCodeFixProvider() =
             title,
             (fun (cancellationToken: CancellationToken) ->
                 async {
-                    let! sourceText = context.Document.GetTextAsync()
+                    let! cancellationToken = Async.CancellationToken
+                    let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                     return context.Document.WithText(sourceText.WithChanges(textChange))
                 } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
             title)

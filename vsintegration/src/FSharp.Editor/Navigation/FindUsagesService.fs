@@ -26,7 +26,7 @@ type internal FSharpFindUsagesService
     static let userOpName = "FindUsages"
 
     // File can be included in more than one project, hence single `range` may results with multiple `Document`s.
-    let rangeToDocumentSpans (solution: Solution, range: range, cancellationToken: CancellationToken) =
+    let rangeToDocumentSpans (solution: Solution, range: range) =
         async {
             if range.Start = range.End then return []
             else 
@@ -35,7 +35,8 @@ type internal FSharpFindUsagesService
                     |> Seq.map (fun documentId ->
                         async {
                             let doc = solution.GetDocument(documentId)
-                            let! sourceText = doc.GetTextAsync(cancellationToken)
+                            let! cancellationToken = Async.CancellationToken
+                            let! sourceText = doc.GetTextAsync(cancellationToken) |> Async.AwaitTask
                             match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
                             | Some span ->
                                 let span = Tokenizer.fixupSpan(sourceText, span)
@@ -48,7 +49,7 @@ type internal FSharpFindUsagesService
 
     let findReferencedSymbolsAsync(document: Document, position: int, context: IFindUsagesContext, allReferences: bool, userOpName: string) : Async<unit> =
         asyncMaybe {
-            let! sourceText = document.GetTextAsync(context.CancellationToken)
+            let! sourceText = document.GetTextAsync(context.CancellationToken) |> Async.AwaitTask |> liftAsync
             let checker = checkerProvider.Checker
             let! options = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true, userOpName = userOpName)
@@ -70,7 +71,7 @@ type internal FSharpFindUsagesService
                 async {
                     let! declarationSpans =
                         match declarationRange with
-                        | Some range -> rangeToDocumentSpans(document.Project.Solution, range, context.CancellationToken)
+                        | Some range -> rangeToDocumentSpans(document.Project.Solution, range)
                         | None -> async.Return []
                     
                     return 
@@ -129,7 +130,7 @@ type internal FSharpFindUsagesService
                 | _ ->
                     // report a reference if we're interested in all _or_ if we're looking at an implementation
                     if allReferences || symbolUse.IsFromDispatchSlotImplementation then
-                        let! referenceDocSpans = rangeToDocumentSpans(document.Project.Solution, symbolUse.RangeAlternate, context.CancellationToken) |> liftAsync
+                        let! referenceDocSpans = rangeToDocumentSpans(document.Project.Solution, symbolUse.RangeAlternate) |> liftAsync
                         match referenceDocSpans with
                         | [] -> ()
                         | _ ->

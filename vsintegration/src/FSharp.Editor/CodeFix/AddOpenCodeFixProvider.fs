@@ -38,7 +38,8 @@ type internal FSharpAddOpenCodeFixProvider
             fixUnderscoresInMenuText fullName,
             fun (cancellationToken: CancellationToken) -> 
                 async {
-                    let! sourceText = context.Document.GetTextAsync()
+                    let! cancellationToken = Async.CancellationToken
+                    let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                     return context.Document.WithText(sourceText.Replace(context.Span, qualifier))
                 } |> RoslynHelpers.StartAsyncAsTask(cancellationToken))
 
@@ -49,7 +50,8 @@ type internal FSharpAddOpenCodeFixProvider
             fixUnderscoresInMenuText displayText,
             (fun (cancellationToken: CancellationToken) -> 
                 async {
-                    let! sourceText = context.Document.GetTextAsync()
+                    let! cancellationToken = Async.CancellationToken
+                    let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                     let changedText, _ = OpenDeclarationHelper.insertOpenDeclaration sourceText ctx ns
                     return context.Document.WithText(changedText)
                 } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
