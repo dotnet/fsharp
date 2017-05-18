@@ -47,7 +47,8 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: Project
             if not refDocumentIds.IsEmpty then 
                 let refDocumentId = refDocumentIds.First()
                 let refDocument = document.Project.Solution.GetDocument refDocumentId
-                let! refSourceText = refDocument.GetTextAsync()
+                let! cancellationToken = Async.CancellationToken
+                let! refSourceText = refDocument.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let refTextSpan = RoslynHelpers.FSharpRangeToTextSpan (refSourceText, range)
                 return Some (FSharpNavigableItem (refDocument, refTextSpan))
             else return None

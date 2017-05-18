@@ -167,7 +167,7 @@ type internal ProjectInfoManager
           try
             let fileName = document.FilePath
             let! cancellationToken = Async.CancellationToken
-            let! sourceText = document.GetTextAsync(cancellationToken)
+            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             // NOTE: we don't use FCS cross-project references from scripts to projects.  The projects must have been
             // compiled and #r will refer to files on disk.
             let tryGetOrCreateProjectId _ = None 

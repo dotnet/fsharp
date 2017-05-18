@@ -118,7 +118,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
                             title,
                             (fun (cancellationToken: CancellationToken) ->
                                 async {
-                                    let! sourceText = context.Document.GetTextAsync() |> Async.AwaitTask
+                                    let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                                     let getMemberByLocation(name, range: range) =
                                         let lineStr = sourceText.Lines.[range.EndLine-1].ToString()
                                         results.GetSymbolUseAtLocation(range.EndLine, range.EndColumn, lineStr, [name], userOpName=userOpName)
