@@ -1068,6 +1068,8 @@ module internal SymbolHelpers =
                 NicePrint.layoutILTypeRef denv finfo.ILTypeRef ^^
                 SepL.dot ^^
                 wordL (tagField finfo.FieldName) ^^
+                RightL.colon ^^
+                NicePrint.layoutType denv (finfo.FieldType(amap, m)) ^^
                 (
                     match finfo.LiteralValue with
                     | None -> emptyL
