@@ -112,9 +112,13 @@ type FSharpChecker with
                             if func.IsProperty then
                                 let fullNames =
                                     [|  if func.HasGetterMethod then
-                                            yield func.GetterMethod.EnclosingEntity.Value.TryGetFullName()
+                                            match func.GetterMethod.EnclosingEntity with 
+                                            | Some e -> yield e.TryGetFullName()
+                                            | None -> ()
                                         if func.HasSetterMethod then
-                                            yield func.SetterMethod.EnclosingEntity.Value.TryGetFullName()
+                                            match func.SetterMethod.EnclosingEntity with 
+                                            | Some e -> yield e.TryGetFullName()
+                                            | None -> ()
                                     |]
                                     |> Array.choose id
                                 match fullNames with
