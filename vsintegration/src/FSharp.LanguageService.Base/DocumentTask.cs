@@ -14,6 +14,7 @@ using System.Diagnostics;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.TextManager.Interop;
+using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Shell;
 using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
 using IServiceProvider = System.IServiceProvider;
@@ -195,11 +196,11 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         internal static T DoOnUIThread<T>(Func<T> callback)
         {
-             return  JTF.JoinableTaskFactory.Run<T>(async delegate 
-                     { 
+             return JTF.Run<T>(async delegate 
+                    { 
                         await JTF.SwitchToMainThreadAsync();  
                         return callback(); 
-                     }); 
+                    }); 
         }
 
         /// <summary>
@@ -209,11 +210,11 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes")]
         internal static void DoOnUIThread(Action callback)
         {
-             return  JTF.Run<T>(async delegate 
-                     { 
+            JTF.Run(async delegate 
+                    { 
                         await JTF.SwitchToMainThreadAsync();  
-                        return callback(); 
-                     }); 
+                        callback(); 
+                    }); 
         }
     }
 
