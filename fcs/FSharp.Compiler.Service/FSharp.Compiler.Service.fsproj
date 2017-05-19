@@ -584,10 +584,6 @@
       <Link>Service/fsi.fs</Link>
     </Compile>
 
-    <!-- includes an old API for testing the compiler and gathering diagnostics in-memory -->
-    <Compile Include="..\LegacyHostedCompilerForTesting.fs">
-      <Link>LegacyHostedCompilerForTesting.fs</Link>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />

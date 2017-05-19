@@ -163,9 +163,9 @@
       <Project>{702a7979-bcf9-4c41-853e-3adfc9897890}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service.Internal\FSharp.Compiler.Service.Internal.fsproj">
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service.Private\FSharp.Compiler.Service.Private.fsproj">
       <Project>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</Project>
-      <Name>FSharp.Compiler.Service.Internal</Name>
+      <Name>FSharp.Compiler.Service.Private</Name>
       <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="..\..\src\FSharp.Editor\FSharp.Editor.fsproj">
