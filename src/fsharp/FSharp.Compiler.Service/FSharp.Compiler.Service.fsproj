@@ -9,7 +9,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
-    <AssemblyName>FSharp.Compiler</AssemblyName>
+    <AssemblyName>FSharp.Compiler.Service</AssemblyName>
     <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
     <NoWarn>$(NoWarn);62;9</NoWarn>
@@ -62,8 +62,8 @@
       <InProject>false</InProject>
     </FilesToLocalize>
     <PackageNuspec Include="FSharp.Compiler.netcore.nuspec" Condition="'$(TargetFramework)' == 'coreclr'" />
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.dll.fs">
-      <Link>assemblyinfo.FSharp.Compiler.dll.fs</Link>
+    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Service.dll.fs">
+      <Link>assemblyinfo.FSharp.Compiler.Service.dll.fs</Link>
     </Compile>
     <FsSrGen Include="..\FSComp.txt">
       <Link>FSComp.txt</Link>
@@ -461,6 +461,8 @@
     <Compile Include="..\TypeChecker.fs">
       <Link>Logic\TypeChecker.fs</Link>
     </Compile>
+
+    <!-- includes the optimizer and code generator -->
     <Compile Include="..\Optimizer.fsi">
       <Link>Optimize\Optimizer.fsi</Link>
     </Compile>
@@ -492,7 +494,7 @@
       <Link>CodeGen\IlxGen.fs</Link>
     </Compile>
 
-    <!-- FSharp.Compiler.dll includes the core of the F# Compiler fsc.exe implementation -->
+    <!-- includes the core of the F# Compiler fsc.exe implementation -->
     <Compile Include="..\CompileOps.fsi">
       <Link>Driver\CompileOps.fsi</Link>
     </Compile>
@@ -512,8 +514,7 @@
       <Link>Driver\fsc.fs</Link>
     </Compile>
 
-    <!-- FSharp.Compiler.dll includes the symbol API. -->
-    <!-- Required because some of fsi.fs and its API is written in terms of symbols -->
+    <!-- the symbol API. -->
     <Compile Include="..\symbols\SymbolHelpers.fsi">
       <Link>Symbols/SymbolHelpers.fsi</Link>
     </Compile>
@@ -533,6 +534,7 @@
       <Link>Symbols/Exprs.fs</Link>
     </Compile>
 
+    <!-- the incremental builder and service . -->
     <Compile Include="..\vs\IncrementalBuild.fsi">
       <Link>Service/IncrementalBuild.fsi</Link>
     </Compile>
@@ -602,7 +604,6 @@
     <Compile Include="..\..\utils\reshapedmsbuild.fs">
       <Link>Service/reshapedmsbuild.fs</Link>
     </Compile>
-    <!-- FSharp.Compiler.dll includes the core of the F# Interactive fsi.exe implementation -->
     <Compile Include="..\SimulatedMSBuildReferenceResolver.fs">
       <Link>Service/SimulatedMSBuildReferenceResolver.fs</Link>
     </Compile>
@@ -625,6 +626,8 @@
       <Link>Service/ServiceStructure.fs</Link>
     </Compile>
 
+
+    <!-- the core of the F# Interactive fsi.exe implementation -->
     <FsSrGen Include="..\fsi\FSIstrings.txt">
       <Link>FSIstrings.txt</Link>
     </FsSrGen>
@@ -639,7 +642,7 @@
       <Link>InternalsVisibleTo.fs</Link>
     </Compile>
 
-    <!-- FSharp.Compiler.dll includes an old API for testing the compiler and gathering diagnostics in-memory -->
+    <!-- an old API for testing the compiler and gathering diagnostics in-memory -->
     <Compile Include="..\LegacyHostedCompilerForTesting.fs">
       <Link>LegacyHostedCompilerForTesting.fs</Link>
     </Compile>
