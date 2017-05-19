@@ -13322,8 +13322,7 @@ module MutRecBindingChecking =
                         //              ...
                         // and some others in prim-types.fs
                         //
-                        // REVIEW: consider also turning them off for FSharp.Compiler: && cenv.topCcu.AssemblyName <> "FSharp.Compiler" and more
-                        // generally allowing an optimization switch to turn off these checks
+                        // REVIEW: consider allowing an optimization switch to turn off these checks
 
                         let needsSafeStaticInit = not cenv.g.compilingFslib
                         

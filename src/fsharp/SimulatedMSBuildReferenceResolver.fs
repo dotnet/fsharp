@@ -165,10 +165,8 @@ let internal SimulatedMSBuildResolver =
 
             results.ToArray() }
 
-let internal GetBestAvailableResolver(msbuildEnabled: bool) = 
-#if RESHAPED_MSBUILD
-    ignore msbuildEnabled
-#else
+let internal GetBestAvailableResolver() = 
+#if !RESHAPED_MSBUILD
     let tryMSBuild v = 
         // Detect if MSBuild is on the machine, if so use the resolver from there
         let mb = try Assembly.Load(sprintf "Microsoft.Build.Framework, Version=%s.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" v) |> Option.ofObj with _ -> None
@@ -177,7 +175,7 @@ let internal GetBestAvailableResolver(msbuildEnabled: bool) =
         let obj = ty |> Option.bind (fun ty -> ty.InvokeMember("get_Resolver",BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.InvokeMethod ||| BindingFlags.NonPublic, null, null, [| |]) |> Option.ofObj)
         let resolver = obj |> Option.bind (fun obj -> match obj with :? Resolver as r -> Some r | _ -> None)
         resolver
-    match (if msbuildEnabled then tryMSBuild "12" else None) with 
+    match tryMSBuild "12" with 
     | Some r -> r
     | None -> 
 #endif

@@ -24,8 +24,6 @@
     <DefineConstants>$(DefineConstants);CROSS_PLATFORM_COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);COMPILER_PUBLIC_API</DefineConstants>
-    <DefineConstants>$(DefineConstants);COMPILER_SERVICE</DefineConstants>
-    <DefineConstants>$(DefineConstants);COMPILER_SERVICE_DLL</DefineConstants>
     <DefineConstants>$(DefineConstants);NO_STRONG_NAMES</DefineConstants>
     <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
     <TargetFrameworkProfile />
@@ -584,6 +582,11 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\fsi\fsi.fs">
       <Link>Service/fsi.fs</Link>
+    </Compile>
+
+    <!-- FSharp.Compiler.dll includes an old API for testing the compiler and gathering diagnostics in-memory -->
+    <Compile Include="..\LegacyHostedCompilerForTesting.fs">
+      <Link>LegacyHostedCompilerForTesting.fs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

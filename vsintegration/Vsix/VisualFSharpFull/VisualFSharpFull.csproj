@@ -137,13 +137,6 @@
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.LanguageService.Compiler\FSharp.LanguageService.Compiler.fsproj">
-      <Project>{A437A6EC-5323-47C2-8F86-E2CAC54FF152}</Project>
-      <Name>FSharp.LanguageService.Compiler</Name>
-      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3bPkgDefProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
-      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\src\fsharp\fsiAnyCpu\FsiAnyCPU.fsproj">
       <Project>{8B3E283D-B5FE-4055-9D80-7E3A32F3967B}</Project>
       <Name>FsiAnyCPU</Name>

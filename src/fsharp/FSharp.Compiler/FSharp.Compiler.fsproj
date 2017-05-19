@@ -533,18 +533,101 @@
       <Link>Symbols/Exprs.fs</Link>
     </Compile>
 
-    <!-- FSharp.Compiler.dll includes MSBuildReferenceResolver as it is the default reference resolver for fsc.exe and fsi.exe -->
-    <Compile Include="..\MSBuildReferenceResolver.fs">
-      <Link>MSBuildReferenceResolver.fs</Link>
+    <Compile Include="..\vs\IncrementalBuild.fsi">
+      <Link>Service/IncrementalBuild.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\IncrementalBuild.fs">
+      <Link>Service/IncrementalBuild.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\Reactor.fsi">
+      <Link>Service/Reactor.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\Reactor.fs">
+      <Link>Service/Reactor.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceConstants.fs">
+      <Link>Service/ServiceConstants.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceDeclarationLists.fsi">
+      <Link>Service/ServiceDeclarationLists.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceDeclarationLists.fs">
+      <Link>Service/ServiceDeclarationLists.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceLexing.fsi">
+      <Link>Service/ServiceLexing.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceLexing.fs">
+      <Link>Service/ServiceLexing.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceParseTreeWalk.fs">
+      <Link>Service/ServiceParseTreeWalk.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceNavigation.fsi">
+      <Link>Service/ServiceNavigation.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceNavigation.fs">
+      <Link>Service/ServiceNavigation.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceParamInfoLocations.fsi">
+      <Link>Service/ServiceParamInfoLocations.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceParamInfoLocations.fs">
+      <Link>Service/ServiceParamInfoLocations.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceUntypedParse.fsi">
+      <Link>Service/ServiceUntypedParse.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceUntypedParse.fs">
+      <Link>Service/ServiceUntypedParse.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceDeclarationLists.fsi">
+      <Link>Service/ServiceDeclarationLists.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceDeclarationLists.fs">
+      <Link>Service/ServiceDeclarationLists.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceAssemblyContent.fsi">
+      <Link>Service/ServiceAssemblyContent.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceAssemblyContent.fs">
+      <Link>Service/ServiceAssemblyContent.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceXmlDocParser.fsi">
+      <Link>Service/ServiceXmlDocParser.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceXmlDocParser.fs">
+      <Link>Service/ServiceXmlDocParser.fs</Link>
+    </Compile>
+    <Compile Include="..\..\utils\reshapedmsbuild.fs">
+      <Link>Service/reshapedmsbuild.fs</Link>
+    </Compile>
+    <!-- FSharp.Compiler.dll includes the core of the F# Interactive fsi.exe implementation -->
+    <Compile Include="..\SimulatedMSBuildReferenceResolver.fs">
+      <Link>Service/SimulatedMSBuildReferenceResolver.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\service.fsi">
+      <Link>Service/service.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\service.fs">
+      <Link>Service/service.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceInterfaceStubGenerator.fsi">
+      <Link>Service/ServiceInterfaceStubGenerator.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceInterfaceStubGenerator.fs">
+      <Link>Service/ServiceInterfaceStubGenerator.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceStructure.fsi">
+      <Link>Service/ServiceStructure.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceStructure.fs">
+      <Link>Service/ServiceStructure.fs</Link>
     </Compile>
 
-    <!-- FSharp.Compiler.dll includes the core of the F# Interactive fsi.exe implementation -->
     <FsSrGen Include="..\fsi\FSIstrings.txt">
       <Link>FSIstrings.txt</Link>
     </FsSrGen>
-    <Compile Include="..\fsi\console.fs">
-      <Link>InteractiveSession\console.fs</Link>
-    </Compile>
     <Compile Include="..\fsi\fsi.fsi">
       <Link>InteractiveSession\fsi.fsi</Link>
     </Compile>
@@ -588,44 +671,6 @@
       <Private>true</Private>
     </Reference>
   </ItemGroup>
-
-  <Choose>
-    <When Condition="$(MonoPackaging) != 'true'">
-      <ItemGroup Condition="'$(TargetFramework)' != 'coreclr'">
-        <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>
-        </Reference>
-        <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.dll</HintPath>
-        </Reference>
-        <Reference Include="Microsoft.Build.Utilities.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Utilities.Core.dll</HintPath>
-        </Reference>
-        <Reference Include="Microsoft.Build.Tasks.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Tasks.Core.dll</HintPath>
-        </Reference>    
-      </ItemGroup>      
-    </When>
-    <Otherwise>
-      <ItemGroup>
-        <Reference Include="Microsoft.Build.Framework, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <Private>True</Private>
-        </Reference>
-        <Reference Include="Microsoft.Build.Engine, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <Private>True</Private>
-        </Reference>
-        <Reference Include="Microsoft.Build, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <Private>True</Private>
-        </Reference>
-        <Reference Include="Microsoft.Build.Utilities.$(MonoPackagingMSBuildVersionSuffix), Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <Private>True</Private>
-        </Reference>
-        <Reference Include="Microsoft.Build.Tasks.$(MonoPackagingMSBuildVersionSuffix), Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-          <Private>True</Private>
-        </Reference>        
-      </ItemGroup>
-    </Otherwise>
-  </Choose>
 
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
