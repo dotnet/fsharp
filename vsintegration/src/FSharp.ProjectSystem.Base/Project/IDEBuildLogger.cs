@@ -371,10 +371,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             finally
             {
                 if (errorReporter != null) { 
-                    //UIThread.Run(delegate ()
-                   // {
-                        errorReporter.ClearErrors();
-                   // });
+                    errorReporter.ClearErrors();
                 }
             }
 		}

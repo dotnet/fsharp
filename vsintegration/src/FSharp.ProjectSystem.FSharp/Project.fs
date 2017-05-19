@@ -209,31 +209,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             // FSI-LINKAGE-POINT: unsited init
             do Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageCtorUnsited (this :> Package)
 
-            let mutable componentID = 0u
-
-            let thisLock = obj()
-
-            // Get the ComponentManager lazily, as the service may not yet have been created at package instantiation
-            member internal this.ComponentManager with get () = this.GetService(typeof<SOleComponentManager>) :?> IOleComponentManager
-
-            member this.RegisterForIdleTime() =
-
-                Debug.Assert(not (isNull this.ComponentManager), "No IOleComponentManager service. Idle operations (such as flushing the 'Error List' queue) will not be performed.")
-            
-                if not (isNull this.ComponentManager) && componentID = 0u then
-                    lock (thisLock) (fun _ -> 
-                        if componentID = 0u then
-                            let crinfo = Array.zeroCreate<OLECRINFO>(1)
-                            let mutable crinfo0 = crinfo.[0]
-                            crinfo0.cbSize <- Marshal.SizeOf(typeof<OLECRINFO>) |> uint32
-                            crinfo0.grfcrf <- uint32 (_OLECRF.olecrfNeedIdleTime ||| _OLECRF.olecrfNeedPeriodicIdleTime)
-                            crinfo0.grfcadvf <- uint32 (_OLECADVF.olecadvfModal ||| _OLECADVF.olecadvfRedrawOff ||| _OLECADVF.olecadvfWarningsOff)
-                            crinfo0.uIdleTimeInterval <- 1000u
-                            crinfo.[0] <- crinfo0
-     
-                            this.ComponentManager.FRegisterComponent(this, crinfo, &componentID) |> ignore
-                    )
-
             /// This method loads a localized string based on the specified resource.
 
             /// <param name="resourceName">Resource to load</param>
@@ -336,7 +311,6 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 Microsoft.VisualStudio.FSharp.Interactive.Hooks.fsiConsoleWindowPackageInitalizeSited (this :> Package) commandService
                 // FSI-LINKAGE-POINT: private method GetDialogPage forces fsi options to be loaded
                 let _fsiPropertyPage = this.GetDialogPage(typeof<Microsoft.VisualStudio.FSharp.Interactive.FsiPropertyPage>)
-                this.RegisterForIdleTime()
                 ()
 
             /// This method is called during Devenv /Setup to get the bitmap to
@@ -344,7 +318,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             /// This method may be deprecated - IdIcoLogoForAboutbox should now be called instead
             //  REVIEW: If this turns out to be true, remove the IdBmpSplash resource
             member this.getIdBmpSplash(pIdBmp:byref<uint32>) =
-                pIdBmp <- 0u ;
+                pIdBmp <- 0u
                 VSConstants.S_OK
             
             /// This method is called to get the icon that will be displayed in the
@@ -383,52 +357,12 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 pIdIco <- 400u
                 VSConstants.S_OK
 
-            override this.Dispose(disposing) =
-                try
-                    if not (isNull this.ComponentManager) && componentID <> 0u then
-                        lock (thisLock) (fun _ ->
-                            if componentID <> 0u then
-                                this.ComponentManager.FRevokeComponent(componentID) |> ignore
-                                componentID <- 0u)
-                finally
-                    base.Dispose(disposing)
-
             interface Microsoft.VisualStudio.FSharp.Interactive.ITestVFSI with
                 member this.SendTextInteraction(s:string) =
                     GetToolWindowAsITestVFSI().SendTextInteraction(s)
                 member this.GetMostRecentLines(n:int) : string[] =
                     GetToolWindowAsITestVFSI().GetMostRecentLines(n)
             
-            // Can we get rid of this now?
-            interface IOleComponent with
-                override this.FContinueMessageLoop(_uReason:uint32, _pvLoopData:IntPtr, _pMsgPeeked:MSG[]) = 1
-
-                override this.FDoIdle(grfidlef:uint32) =
-                    // see e.g "C:\Program Files\Microsoft Visual Studio 2008 SDK\VisualStudioIntegration\Common\IDL\olecm.idl" for details
-                    //Trace.Print("CurrentDirectoryDebug", (fun () -> sprintf "curdir='%s'\n" (System.IO.Directory.GetCurrentDirectory())))  // can be useful for watching how GetCurrentDirectory changes
-                    let periodic = (grfidlef &&& (uint32 _OLEIDLEF.oleidlefPeriodic)) <> 0u
-                    if periodic && not (isNull this.ComponentManager) && this.ComponentManager.FContinueIdle() <> 0 then
-                        0 //TaskReporterIdleRegistration.DoIdle(this.ComponentManager)
-                    else
-                        0
-
-                override this.FPreTranslateMessage(_pMsg) = 0
-
-                override this.FQueryTerminate(_fPromptUser) = 1
-
-                override this.FReserved1(_dwReserved, _message, _wParam, _lParam) = 1
-
-                override this.HwndGetWindow(_dwWhich, _dwReserved) = 0n
-
-                override this.OnActivationChange(_pic, _fSameComponent, _pcrinfo, _fHostIsActivating, _pchostinfo, _dwReserved) = ()
-
-                override this.OnAppActivate(_fActive, _dwOtherThreadID) = ()
-
-                override this.OnEnterState(_uStateID, _fEnter)  = ()
-        
-                override this.OnLoseActivation() = ()
-
-                override this.Terminate() = ()
 
     /// Factory for creating our editor, creates FSharp Projects
     [<Guid(GuidList.guidFSharpProjectFactoryString)>]

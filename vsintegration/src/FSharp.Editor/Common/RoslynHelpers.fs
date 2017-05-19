@@ -112,10 +112,13 @@ module internal RoslynHelpers =
     let StartAsyncUnitAsTask cancellationToken (computation:Async<unit>) = 
         StartAsyncAsTask cancellationToken computation  :> Task
 
-    let SupportedDiagnostics() =
+    let private TheSupportedDiagnostics =
         // We are constructing our own descriptors at run-time. Compiler service is already doing error formatting and localization.
-        let dummyDescriptor = DiagnosticDescriptor("0", String.Empty, String.Empty, String.Empty, DiagnosticSeverity.Error, true, null, null)
-        ImmutableArray.Create<DiagnosticDescriptor>(dummyDescriptor)
+        let dummyDescriptors = 
+           [| for i in 0 .. 10000 -> DiagnosticDescriptor(sprintf "FS%04d" i, String.Empty, String.Empty, String.Empty, DiagnosticSeverity.Error, true, null, null) |]
+        ImmutableArray.Create<DiagnosticDescriptor>(dummyDescriptors)
+
+    let SupportedDiagnostics() = TheSupportedDiagnostics
 
     let ConvertError(error: FSharpErrorInfo, location: Location) =
         // Normalize the error message into the same format that we will receive it from the compiler.

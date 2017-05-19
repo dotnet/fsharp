@@ -758,6 +758,8 @@ type Project() =
                 if File.Exists(absFilePath) then File.Delete(absFilePath)
             ))
     
+(* Disabled for now - see https://github.com/Microsoft/visualfsharp/pull/3071 - this is testing old project system features
+
     [<Test>]
     member public this.``RenameFile.BuildActionIsResetBasedOnFilenameExtension``() =
         let GetTextFromBuildAction (action:VSLangProj.prjBuildAction) =
@@ -830,7 +832,7 @@ type Project() =
                 VsMocks.vsUIShellShowMessageBoxResult <- None
                 File.Delete(currentAbsoluteFilePath) 
         ))
-
+*)
 
 
     [<Test>]
