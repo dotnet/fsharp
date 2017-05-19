@@ -37,7 +37,7 @@ open UnitTests.TestLib.LanguageService
 let filePath = "C:\\test.fs"
 let internal options = { 
     ProjectFileName = "C:\\test.fsproj"
-    ProjectFileNames =  [| filePath |]
+    SourceFiles =  [| filePath |]
     ReferencedProjects = [| |]
     OtherOptions = [| |]
     IsIncompleteTypeCheckEnvironment = true

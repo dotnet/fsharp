@@ -83,13 +83,13 @@ let ``Intro test`` () =
         msg.Message.Contains("Missing qualification after '.'") |> shouldEqual true
 
     // Get tool tip at the specified location
-    let tip = typeCheckResults.GetToolTipTextAlternate(4, 7, inputLines.[1], ["foo"], identToken) |> Async.RunSynchronously
+    let tip = typeCheckResults.GetToolTipText(4, 7, inputLines.[1], ["foo"], identToken) |> Async.RunSynchronously
     // (sprintf "%A" tip).Replace("\n","") |> shouldEqual """FSharpToolTipText [Single ("val foo : unit -> unitFull name: Test.foo",None)]"""
     // Get declarations (autocomplete) for a location
     let decls =  typeCheckResults.GetDeclarationListInfo(Some parseResult, 7, 23, inputLines.[6], [], "msg", (fun _ -> []), fun _ -> false)|> Async.RunSynchronously
     CollectionAssert.AreEquivalent(stringMethods,[ for item in decls.Items -> item.Name ])
     // Get overloads of the String.Concat method
-    let methods = typeCheckResults.GetMethodsAlternate(5, 27, inputLines.[4], Some ["String"; "Concat"]) |> Async.RunSynchronously
+    let methods = typeCheckResults.GetMethods(5, 27, inputLines.[4], Some ["String"; "Concat"]) |> Async.RunSynchronously
 
     methods.MethodName  |> shouldEqual "Concat"
 

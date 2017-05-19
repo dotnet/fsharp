@@ -16,13 +16,14 @@ type internal FSharpProposeUpperCaseLabelCodeFixProvider
     ) =
     inherit CodeFixProvider()
     let fixableDiagnosticIds = ["FS0053"]
+    static let userOpName = "ProposeUpperCaseLabel"
         
     override __.FixableDiagnosticIds = Seq.toImmutableArray fixableDiagnosticIds
 
     override __.RegisterCodeFixesAsync context : Task =
         asyncMaybe {
             let textChanger (originalText: string) = originalText.[0].ToString().ToUpper() + originalText.Substring(1)
-            let! solutionChanger, originalText = SymbolHelpers.changeAllSymbolReferences(context.Document, context.Span, textChanger, projectInfoManager, checkerProvider.Checker)
+            let! solutionChanger, originalText = SymbolHelpers.changeAllSymbolReferences(context.Document, context.Span, textChanger, projectInfoManager, checkerProvider.Checker, userOpName)
             let title = FSComp.SR.replaceWithSuggestion (textChanger originalText)
             context.RegisterCodeFix(
                 CodeAction.Create(title, solutionChanger, title),
