@@ -7,8 +7,9 @@ open System.Net.Sockets
 open System.Text
 open System.Threading
 open System.Linq
-open FSharp.Compiler.Hosted
-open FSharp.Compiler.Hosted.CompilerHelpers
+open Microsoft.FSharp.Compiler
+open Legacy.FSharp.Compiler.Hosted
+open Legacy.FSharp.Compiler.Hosted
 
 [<AutoOpen>]
 module Log =
@@ -25,6 +26,7 @@ type HostedCompilerServer(port) =
     let (|FscCompile|Unknown|) (message : string) =
         match message.Split([|MessageDelimiter|], StringSplitOptions.RemoveEmptyEntries) with
         | [|directory; commandLine|] ->
+            let legacyReferenceResolver = MSBuildReferenceResolver.Resolver 
             let args = parseCommandLine commandLine
             log <| sprintf "Args parsed as [%s]" (String.Join("] [", args))
             log <| sprintf "Dir  parsed as [%s]" directory

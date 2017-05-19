@@ -12,7 +12,7 @@ open Microsoft.FSharp.Compiler.CompileOps
 
 /// Represents the definitional contents of an assembly, as seen by the F# language
 #if COMPILER_PUBLIC_API
-type FSharpAssemblyContents = 
+type public FSharpAssemblyContents = 
 #else
 type internal FSharpAssemblyContents = 
 #endif

@@ -11,7 +11,6 @@ folder "InstallDir:Common7\IDE\CommonExtensions\Microsoft\FSharp\$(LocaleParentC
   file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\FSharp.Compiler.resources.dll" vs.file.ngen=yes
   file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\FSharp.Core.resources.dll" vs.file.ngen=yes
   file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\FSharp.LanguageService.Base.resources.dll" vs.file.ngen=yes
-  file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\FSharp.LanguageService.Compiler.resources.dll" vs.file.ngen=yes
   file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\FSharp.LanguageService.resources.dll" vs.file.ngen=yes
   file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\FSharp.ProjectSystem.Base.resources.dll" vs.file.ngen=yes
   file source="$(BinariesFolder)\net40\bin\localize\$(LocaleCode)\FSharp.ProjectSystem.FSharp.resources.dll" vs.file.ngen=yes

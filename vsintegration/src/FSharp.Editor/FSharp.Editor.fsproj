@@ -107,9 +107,9 @@
       <Project>{1c5c163c-37ea-4a3c-8ccc-0d34b74bf8ef}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.LanguageService.Compiler\FSharp.LanguageService.Compiler.fsproj">
-      <Project>{a437a6ec-5323-47c2-8f86-e2cac54ff152}</Project>
-      <Name>FSharp.LanguageService.Compiler</Name>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler\FSharp.Compiler.fsproj">
+      <Project>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</Project>
+      <Name>FSharp.Compiler</Name>
       <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.UIResources\FSharp.UIResources.csproj">

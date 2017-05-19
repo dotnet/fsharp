@@ -279,7 +279,7 @@ let evaluateSession(argv: string[]) =
                 member __.GetOptionalConsoleReadLine(probe) = getConsoleReadLine(probe) }
 
         // Create the console
-        and fsiSession = FsiEvaluationSession.Create (fsiConfig, argv, Console.In, Console.Out, Console.Error)
+        and fsiSession = FsiEvaluationSession.Create (fsiConfig, argv, Console.In, Console.Out, Console.Error, collectible=false, legacyReferenceResolver=MSBuildReferenceResolver.Resolver)
 
 
 #if !FX_NO_WINFORMS

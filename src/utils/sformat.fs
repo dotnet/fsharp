@@ -2,7 +2,7 @@
 
 // This file is compiled 3(!) times in the codebase
 //    - as the internal implementation of printf '%A' formatting 
-//           defines: RUNTIME
+//           defines: FSHARP_CORE
 //    - as the internal implementation of structured formatting in FSharp.Compiler.dll 
 //           defines: COMPILER 
 //           NOTE: this implementation is used by fsi.exe. This is very important.
@@ -17,11 +17,11 @@
 #nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
 
 #if COMPILER
-// FSharp.Compiler-proto.dll:
+// fsc-proto.exe:
 // FSharp.Compiler.dll:
 namespace Internal.Utilities.StructuredFormat
 #else
-#if RUNTIME 
+#if FSHARP_CORE 
 // FSharp.Core.dll:
 namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 #else
@@ -316,7 +316,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     type FormatOptions =
         { FloatingPointFormat: string;
           AttributeProcessor: (string -> (string * string) list -> bool -> unit);
-#if RUNTIME
+#if FSHARP_CORE
 #else
 #if COMPILER    // FSharp.Compiler.dll: This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
           PrintIntercepts: (IEnvironment -> obj -> Layout option) list;
@@ -337,7 +337,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
           ShowIEnumerable: bool; }
         static member Default =
             { FormatProvider = (System.Globalization.CultureInfo.InvariantCulture :> System.IFormatProvider);
-#if RUNTIME
+#if FSHARP_CORE
 #else
 #if COMPILER    // FSharp.Compiler.dll: This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
               PrintIntercepts = [];
@@ -1028,7 +1028,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                                 None
                                   // Seed with an empty layout with a space to the left for formatting purposes
                                   buildObjMessageL txt [leftL (tagText "")] 
-#if RUNTIME
+#if FSHARP_CORE
 #else
 #if COMPILER    // FSharp.Compiler.dll: This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
                         let res = 
@@ -1337,7 +1337,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 
         let any_to_string x = layout_as_string FormatOptions.Default x
 
-#if RUNTIME
+#if FSHARP_CORE
 #if FX_RESHAPED_REFLECTION
         let internal anyToStringForPrintf opts (showNonPublicMembers : bool) x = 
             let bindingFlags = ReflectionUtils.toBindingFlags showNonPublicMembers
