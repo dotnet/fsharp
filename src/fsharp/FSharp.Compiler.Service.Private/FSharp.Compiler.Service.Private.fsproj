@@ -583,12 +583,6 @@
     <Compile Include="..\vs\ServiceUntypedParse.fs">
       <Link>Service/ServiceUntypedParse.fs</Link>
     </Compile>
-    <Compile Include="..\vs\ServiceDeclarationLists.fsi">
-      <Link>Service/ServiceDeclarationLists.fsi</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceDeclarationLists.fs">
-      <Link>Service/ServiceDeclarationLists.fs</Link>
-    </Compile>
     <Compile Include="..\vs\ServiceAssemblyContent.fsi">
       <Link>Service/ServiceAssemblyContent.fsi</Link>
     </Compile>
