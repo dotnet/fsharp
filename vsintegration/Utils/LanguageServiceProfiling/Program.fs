@@ -69,7 +69,7 @@ let main argv =
     let getLine line = (getFileLines ()).[line]
 
     eprintfn "Found options for %s." options.Options.ProjectFileName
-    let checker = FSharpChecker.Create(projectCacheSize = 200, keepAllBackgroundResolutions = false, legacyReferenceResolver=Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver)
+    let checker = FSharpChecker.Create(projectCacheSize = 200, keepAllBackgroundResolutions = false)
     let waste = new ResizeArray<int[]>()
     
     let checkProject() : Async<FSharpCheckProjectResults option> =
