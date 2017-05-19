@@ -55,6 +55,9 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
       <None Include="project.json" />
   </ItemGroup>
+
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  
   <ItemGroup  Condition="'$(TargetFramework)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
@@ -119,7 +122,6 @@
     </Otherwise>
   </Choose>
 
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
     <ItemGroup>
       <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).exe" />
