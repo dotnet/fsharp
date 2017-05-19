@@ -9,7 +9,6 @@ open System.Threading
 open System.Linq
 open Microsoft.FSharp.Compiler
 open Legacy.FSharp.Compiler.Hosted
-open Legacy.FSharp.Compiler.Hosted
 
 [<AutoOpen>]
 module Log =
@@ -27,12 +26,12 @@ type HostedCompilerServer(port) =
         match message.Split([|MessageDelimiter|], StringSplitOptions.RemoveEmptyEntries) with
         | [|directory; commandLine|] ->
             let legacyReferenceResolver = MSBuildReferenceResolver.Resolver 
-            let args = parseCommandLine commandLine
+            let args = CompilerHelpers.parseCommandLine commandLine
             log <| sprintf "Args parsed as [%s]" (String.Join("] [", args))
             log <| sprintf "Dir  parsed as [%s]" directory
 
             // pass back pointer to function that does the work
-            FscCompile(fun () -> fscCompile directory args)
+            FscCompile(fun () -> CompilerHelpers.fscCompile legacyReferenceResolver directory args)
         | _ ->
             Unknown()
 
