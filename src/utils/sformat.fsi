@@ -3,7 +3,7 @@
 // This file is compiled 2(!) times in the codebase
 //    - as the internal implementation of printf '%A' formatting 
 //           defines: FSHARP_CORE
-//    - as the internal implementation of structured formatting in FSharp.Compiler.dll 
+//    - as the internal implementation of structured formatting in FSharp.Compiler.Service.dll 
 //           defines: COMPILER 
 //           NOTE: this implementation is used by fsi.exe. This is very important.
 //
@@ -16,7 +16,7 @@
 
 #if COMPILER
 // fsc-proto.exe:
-// FSharp.Compiler.dll:
+// FSharp.Compiler.Service.dll:
 namespace Internal.Utilities.StructuredFormat
 #else
 // FSharp.Core.dll:
@@ -36,9 +36,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
     type internal TaggedText =
         abstract Tag: LayoutTag
         abstract Text: string
-#else  // FSharp.Compiler.dll, fsc-proto.exe, FSharp.PowerPack.dll
-    // FSharp.PowerPack.dll: reveals representations
-    // fsc-proto.exe, FSharp.Compiler.dll: the F# compiler likes to see these representations
+#else  // FSharp.Compiler.Service.dll, fsc-proto.exe
 
     /// Data representing joints in structured layouts of terms.  The representation
     /// of this data type is only for the consumption of formatting engines.
@@ -305,12 +303,9 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 #endif
         { FloatingPointFormat: string
           AttributeProcessor: (string -> (string * string) list -> bool -> unit);
-#if FSHARP_CORE  // FSharp.Core.dll: PrintIntercepts aren't used there
-#else
-#if COMPILER    // FSharp.Compiler.dll: This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
+#if COMPILER  // FSharp.Core.dll: PrintIntercepts aren't used there
           PrintIntercepts: (IEnvironment -> obj -> Layout option) list;
           StringLimit: int;
-#endif
 #endif
           FormatProvider: System.IFormatProvider
 #if FX_RESHAPED_REFLECTION

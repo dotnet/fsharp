@@ -3,7 +3,7 @@
 // This file is compiled 3(!) times in the codebase
 //    - as the internal implementation of printf '%A' formatting 
 //           defines: FSHARP_CORE
-//    - as the internal implementation of structured formatting in FSharp.Compiler.dll 
+//    - as the internal implementation of structured formatting in FSharp.Compiler.Service.dll 
 //           defines: COMPILER 
 //           NOTE: this implementation is used by fsi.exe. This is very important.
 //
@@ -18,7 +18,7 @@
 
 #if COMPILER
 // fsc-proto.exe:
-// FSharp.Compiler.dll:
+// FSharp.Compiler.Service.dll:
 namespace Internal.Utilities.StructuredFormat
 #else
 #if FSHARP_CORE 
@@ -318,7 +318,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
           AttributeProcessor: (string -> (string * string) list -> bool -> unit);
 #if FSHARP_CORE
 #else
-#if COMPILER    // FSharp.Compiler.dll: This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
+#if COMPILER    // FSharp.Compiler.Service.dll: This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
           PrintIntercepts: (IEnvironment -> obj -> Layout option) list;
           StringLimit : int;
 #endif
@@ -339,7 +339,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             { FormatProvider = (System.Globalization.CultureInfo.InvariantCulture :> System.IFormatProvider);
 #if FSHARP_CORE
 #else
-#if COMPILER    // FSharp.Compiler.dll: This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
+#if COMPILER    // FSharp.Compiler.Service.dll: This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
               PrintIntercepts = [];
               StringLimit = System.Int32.MaxValue;
 #endif
@@ -1030,7 +1030,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                   buildObjMessageL txt [leftL (tagText "")] 
 #if FSHARP_CORE
 #else
-#if COMPILER    // FSharp.Compiler.dll: This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
+#if COMPILER    // FSharp.Compiler.Service.dll: This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
                         let res = 
                             match res with 
                             | Some _ -> res

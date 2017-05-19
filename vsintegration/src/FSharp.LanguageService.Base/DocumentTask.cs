@@ -286,7 +286,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         /// </summary>
         public bool IsBuildTask {
             get {
-                // The line below would be the only dependency on FSharp.Compiler.dll in this assembly.  To break that dependency, we duplicate the logic.
+                // The line below would be the only dependency on FSharp.Compiler.Service.dll in this assembly.  To break that dependency, we duplicate the logic.
                 //return !Microsoft.FSharp.Compiler.SourceCodeServices.CompilerEnvironment.IsCheckerSupportedSubcategory(subcategory);
                 switch (subcategory)
                 {

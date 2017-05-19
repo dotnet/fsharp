@@ -38,7 +38,7 @@ open Microsoft.FSharp.Core.ReflectionAdapters
 
 // Hardbinding dependencies should we NGEN fsi.exe
 #if !FX_NO_DEFAULT_DEPENDENCY_TYPE
-[<Dependency("FSharp.Compiler",LoadHint.Always)>] do ()
+[<Dependency("FSharp.Compiler.Service",LoadHint.Always)>] do ()
 [<Dependency("FSharp.Core",LoadHint.Always)>] do ()
 #endif
 

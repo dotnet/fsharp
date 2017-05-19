@@ -46,6 +46,6 @@ type internal Reactor =
     /// The timespan in milliseconds before background work begins after the operations queue is empty
     member PauseBeforeBackgroundWork : int with get, set
 
-    /// Get the reactor for FSharp.Compiler.dll
+    /// Get the reactor for FSharp.Compiler.Service.dll
     static member Singleton : Reactor
   
