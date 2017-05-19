@@ -57,6 +57,9 @@
     <Reference Include="mscorlib" />
     <Reference Include="System" />
   </ItemGroup>
+
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+
   <ItemGroup>
     <ProjectReference Include="..\FSharp.Compiler.Service.Private\FSharp.Compiler.Service.Private.fsproj">
       <Project>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</Project>
@@ -104,8 +107,6 @@
       </ItemGroup>
     </Otherwise>
   </Choose>
-
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 
 
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
