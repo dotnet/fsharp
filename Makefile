@@ -15,14 +15,13 @@ all:
 
 build-proto: restore
 	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=Proto /p:TargetFramework=$(TargetFramework) src/fsharp/FSharp.Build-proto/FSharp.Build-proto.fsproj
-	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=Proto /p:TargetFramework=$(TargetFramework) src/fsharp/FSharp.Compiler-proto/FSharp.Compiler-proto.fsproj
 	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=Proto /p:TargetFramework=$(TargetFramework) src/fsharp/Fsc-proto/Fsc-proto.fsproj
 
 # The main targets
 build:
 	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=net40 src/fsharp/FSharp.Core/FSharp.Core.fsproj
 	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=net40 src/fsharp/FSharp.Build/FSharp.Build.fsproj
-	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=net40 src/fsharp/FSharp.Compiler/FSharp.Compiler.fsproj
+	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=net40 src/fsharp/FSharp.Compiler/FSharp.Compiler.Service.Internal.fsproj
 	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=net40 src/fsharp/Fsc/Fsc.fsproj
 	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=net40 src/fsharp/FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj
 	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=net40 src/fsharp/FSharp.Compiler.Server.Shared/FSharp.Compiler.Server.Shared.fsproj
