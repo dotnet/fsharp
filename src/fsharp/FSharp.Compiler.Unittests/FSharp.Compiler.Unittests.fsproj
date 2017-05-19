@@ -60,8 +60,8 @@
     <Compile Include="EditDistance.fs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj">
-      <Name>FSharp.Compiler.Service</Name>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service.Internal\FSharp.Compiler.Service.Internal.fsproj">
+      <Name>FSharp.Compiler.Service.Internal</Name>
       <Project>{2e4d67b4-522d-4cf7-97e4-ba940f0b18f3}</Project>
     </ProjectReference>
     <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj">

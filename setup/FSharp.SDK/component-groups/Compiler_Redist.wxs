@@ -6,7 +6,7 @@
     <ComponentGroup Id="Compiler_Redist">
       <ComponentRef Id="Compiler_Redist_FSharp.Core.dll" />
       <ComponentRef Id="Compiler_Redist_FSharp.Build.dll" />
-      <ComponentRef Id="Compiler_Redist_FSharp.Compiler.Service.dll" />
+      <ComponentRef Id="Compiler_Redist_FSharp.Compiler.Service.Internal.dll" />
       <ComponentRef Id="Compiler_Redist_FSharp.Compiler.Interactive.Settings.dll" />      
       <ComponentRef Id="Compiler_Redist_FSharp.Data.TypeProviders.dll" />      
       <ComponentRef Id="Compiler_Redist_fsc.exe" />
@@ -65,9 +65,9 @@
         </File>
       </Component>
 
-      <Component Id="Compiler_Redist_FSharp.Compiler.Service.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Compiler.Service.dll, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_FSharp.Compiler.Service.dll" Source="$(var.BinariesDir)\net40\bin\FSharp.Compiler.Service.dll" KeyPath="yes">
-          <NetFx:NativeImage Id="Compiler_Redist_FSharp.Compiler.Service.Native.dll" Priority="0" Dependencies="no" Platform="all" AssemblyApplication="Compiler_Redist_fsc.exe" />
+      <Component Id="Compiler_Redist_FSharp.Compiler.Service.Internal.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Compiler.Service.Internal.dll, $(var.LocaleCode)))">
+        <File Id="Compiler_Redist_FSharp.Compiler.Service.Internal.dll" Source="$(var.BinariesDir)\net40\bin\FSharp.Compiler.Service.Internal,dll" KeyPath="yes">
+          <NetFx:NativeImage Id="Compiler_Redist_FSharp.Compiler.Service.Internal.Native.dll" Priority="0" Dependencies="no" Platform="all" AssemblyApplication="Compiler_Redist_fsc.exe" />
         </File>
       </Component>
 

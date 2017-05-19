@@ -123,9 +123,9 @@
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj">
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service.Internal\FSharp.Compiler.Service.Internal.fsproj">
       <Project>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</Project>
-      <Name>FSharp.Compiler.Service</Name>
+      <Name>FSharp.Compiler.Service.Internal</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <Private>True</Private>

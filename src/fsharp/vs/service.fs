@@ -10,6 +10,7 @@ open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Diagnostics
 open System.IO
+open System.Reflection
 open System.Text
 
 open Microsoft.FSharp.Core.Printf
@@ -43,6 +44,10 @@ open Microsoft.FSharp.Compiler.SourceCodeServices.SymbolHelpers
 open Internal.Utilities
 open Internal.Utilities.Collections
 open Microsoft.FSharp.Compiler.Layout.TaggedTextOps
+
+#if FX_RESHAPED_REFLECTION
+open Microsoft.FSharp.Core.ReflectionAdapters
+#endif
 
 type internal Layout = StructuredFormat.Layout
 

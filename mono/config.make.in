@@ -139,7 +139,7 @@ install-sdk-lib:
 	    echo "Signing $(outdir)$(ASSEMBLY) with Mono key"; \
 	    $(monobindir)/sn -q -R $(outdir)$(ASSEMBLY) $(topdir)mono/mono.snk; \
 	fi
-	@if test x-$(NAME) = x-FSharp.Compiler; then \
+	@if test x-$(NAME) = x-FSharp.Compiler.Service.Internal; then \
 	    echo "Installing extra dependency System.Collections.Immutable.dll to $(DESTDIR)$(monodir)/fsharp/"; \
 	    $(INSTALL_LIB) $(outdir)System.Collections.Immutable.dll $(DESTDIR)$(monodir)/fsharp/; \
 	    echo "Installing extra dependency System.Reflection.Metadata.dll to $(DESTDIR)$(monodir)/fsharp/"; \

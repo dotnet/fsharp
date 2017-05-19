@@ -18,7 +18,7 @@ let internal SimulatedMSBuildResolver =
     { new Resolver with 
         member __.HighestInstalledNetFrameworkVersion() = "v4.5"
         member __.DotNetFrameworkReferenceAssembliesRootDirectory = 
-#if RESHAPED_MSBUILD
+#if FX_RESHAPED_MSBUILD
             ""
 #else
             if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then 
@@ -34,7 +34,7 @@ let internal SimulatedMSBuildResolver =
         member __.Resolve(resolutionEnvironment, references, targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture,                
                             fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, logMessage, logWarningOrError) =
 
-#if !RESHAPED_MSBUILD
+#if !FX_RESHAPED_MSBUILD
             let registrySearchPaths() = 
               [ let registryKey = @"Software\Microsoft\.NetFramework";
                 use key = Registry.LocalMachine.OpenSubKey(registryKey)
@@ -69,7 +69,7 @@ let internal SimulatedMSBuildResolver =
                 yield! explicitIncludeDirs 
                 yield fsharpCoreDir
                 yield implicitIncludeDir 
-#if !RESHAPED_MSBUILD
+#if !FX_RESHAPED_MSBUILD
                 if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then 
                     yield! registrySearchPaths() 
 #endif
@@ -90,7 +90,7 @@ let internal SimulatedMSBuildResolver =
                             success r
                 with e -> logWarningOrError false "SR001" (e.ToString())
 
-#if !RESHAPED_MSBUILD
+#if !FX_RESHAPED_MSBUILD
                 // For this one we need to get the version search exactly right, without doing a load
                 try 
                     if not found && r.StartsWith("FSharp.Core, Version=")  && Environment.OSVersion.Platform = PlatformID.Win32NT then 
@@ -121,7 +121,7 @@ let internal SimulatedMSBuildResolver =
                             success trialPath
                   with e -> logWarningOrError false "SR001" (e.ToString())
 
-#if !RESHAPED_MSBUILD
+#if !FX_RESHAPED_MSBUILD
                 try 
                     // Seach the GAC on Windows
                     if not found && not isFileName && Environment.OSVersion.Platform = PlatformID.Win32NT then 
@@ -166,7 +166,7 @@ let internal SimulatedMSBuildResolver =
             results.ToArray() }
 
 let internal GetBestAvailableResolver() = 
-#if !RESHAPED_MSBUILD
+#if !FX_RESHAPED_MSBUILD
     let tryMSBuild v = 
         // Detect if MSBuild is on the machine, if so use the resolver from there
         let mb = try Assembly.Load(sprintf "Microsoft.Build.Framework, Version=%s.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" v) |> Option.ofObj with _ -> None

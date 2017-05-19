@@ -23,7 +23,7 @@ open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
 
 #if !FX_NO_DEFAULT_DEPENDENCY_TYPE
-[<Dependency("FSharp.Compiler.Service",LoadHint.Always)>] 
+[<Dependency("FSharp.Compiler.Service.Internal",LoadHint.Always)>] 
 #endif
 do ()
 
