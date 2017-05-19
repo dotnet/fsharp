@@ -18,13 +18,13 @@ let internal SimulatedMSBuildResolver =
     { new Resolver with 
         member x.HighestInstalledNetFrameworkVersion() = 
             let root = x.DotNetFrameworkReferenceAssembliesRootDirectory
-            if Directory.Exists(Path.Combine(RootBuilder,"v4.7")) then "v4.7"
-            elif Directory.Exists(Path.Combine(RootBuilder,"v4.6.2")) then "v4.6.2"
-            elif Directory.Exists(Path.Combine(RootBuilder,"v4.6.1")) then "v4.6.1"
-            elif Directory.Exists(Path.Combine(RootBuilder,"v4.6")) then "v4.6"
-            elif Directory.Exists(Path.Combine(RootBuilder,"v4.5.1")) then "v4.5.1"
-            elif Directory.Exists(Path.Combine(RootBuilder,"v4.5")) then "v4.5"
-            elif Directory.Exists(Path.Combine(RootBuilder,"v4.0")) then "v4.0"
+            if Directory.Exists(Path.Combine(root,"v4.7")) then "v4.7"
+            elif Directory.Exists(Path.Combine(root,"v4.6.2")) then "v4.6.2"
+            elif Directory.Exists(Path.Combine(root,"v4.6.1")) then "v4.6.1"
+            elif Directory.Exists(Path.Combine(root,"v4.6")) then "v4.6"
+            elif Directory.Exists(Path.Combine(root,"v4.5.1")) then "v4.5.1"
+            elif Directory.Exists(Path.Combine(root,"v4.5")) then "v4.5"
+            elif Directory.Exists(Path.Combine(root,"v4.0")) then "v4.0"
             else "v4.5"
 
         member __.DotNetFrameworkReferenceAssembliesRootDirectory = 
