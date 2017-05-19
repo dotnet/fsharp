@@ -215,9 +215,9 @@
     <Reference Include="System.Collections.Immutable, Version=1.2.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.1.2.0\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
     </Reference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service.Internal\FSharp.Compiler.Service.Internal.fsproj">
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Service.Private\FSharp.Compiler.Service.Private.fsproj">
       <Project>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</Project>
-      <Name>FSharp.Compiler.Service.Internal</Name>
+      <Name>FSharp.Compiler.Service.Private</Name>
       <Private>True</Private>
     </ProjectReference>
     <ProjectReference Include="..\FSharp.LanguageService\FSharp.LanguageService.fsproj">

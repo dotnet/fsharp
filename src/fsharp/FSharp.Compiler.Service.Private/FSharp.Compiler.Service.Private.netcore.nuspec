@@ -38,6 +38,6 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="FSharp.Compiler.Service.Internal.dll"     target="lib/netstandard1.6" />
+        <file src="FSharp.Compiler.Service.Private.dll"     target="lib/netstandard1.6" />
     </files>
 </package>
