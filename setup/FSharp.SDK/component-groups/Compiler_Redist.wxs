@@ -66,7 +66,7 @@
       </Component>
 
       <Component Id="Compiler_Redist_FSharp.Compiler.Service.Private.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Compiler.Service.Private.dll, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_FSharp.Compiler.Service.Private.dll" Source="$(var.BinariesDir)\net40\bin\FSharp.Compiler.Service.Private,dll" KeyPath="yes">
+        <File Id="Compiler_Redist_FSharp.Compiler.Service.Private.dll" Source="$(var.BinariesDir)\net40\bin\FSharp.Compiler.Service.Private.dll" KeyPath="yes">
           <NetFx:NativeImage Id="Compiler_Redist_FSharp.Compiler.Service.Private.Native.dll" Priority="0" Dependencies="no" Platform="all" AssemblyApplication="Compiler_Redist_fsc.exe" />
         </File>
       </Component>
