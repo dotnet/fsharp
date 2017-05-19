@@ -30,6 +30,9 @@
     <Compile Include="$(FSharpSourcesRoot)\utils\CompilerLocationUtils.fs">
       <Link>Internal.Utilities.CompilerLocationUtils.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\MSBuildReferenceResolver.fs">
+      <Link>MSBuildReferenceResolver.fs</Link>
+    </Compile>
     <Compile Include="TestLib.Utils.fs" />
     <Compile Include="TestLib.Salsa.fs" />
     <Compile Include="TestLib.LanguageService.fs" />
