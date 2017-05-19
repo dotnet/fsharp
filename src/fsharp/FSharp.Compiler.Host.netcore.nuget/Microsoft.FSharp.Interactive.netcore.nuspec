@@ -40,7 +40,7 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="FSharp.Compiler.Service.dll"  target="lib/netstandard1.6" />
+        <file src="FSharp.Compiler.Service.Internal.dll"  target="lib/netstandard1.6" />
         <file src="fsi.exe"                      target="lib/netstandard1.6" />
         <file src="FSharp.Compiler.Interactive.Settings.dll" target="lib/netstandard1.6" />
     </files>

@@ -9,7 +9,7 @@
 
   <ItemGroup Condition="'$(BUILD_NET40)'=='1'">
     <ProjectsWithNet40 Include="src/fsharp/FSharp.Build/FSharp.Build.fsproj" />
-    <ProjectsWithNet40 Include="src/fsharp/FSharp.Compiler.Service/FSharp.Compiler.Service.fsproj" />
+    <ProjectsWithNet40 Include="src/fsharp/FSharp.Compiler.Service.Internal/FSharp.Compiler.Service.Internal.fsproj" />
     <ProjectsWithNet40 Include="src/fsharp/FSharp.Compiler.Server.Shared/FSharp.Compiler.Server.Shared.fsproj"/>
     <ProjectsWithNet40 Include="src/fsharp/FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj" />
     <ProjectsWithNet40 Include="src/fsharp/Fsc/Fsc.fsproj" />
@@ -20,7 +20,7 @@
   <ItemGroup Condition="'$(BUILD_CORECLR)'=='1'">
     <ProjectsWithCoreClr Include="src/fsharp/FSharp.Core/FSharp.Core.fsproj" />
     <ProjectsWithCoreClr Include="src/fsharp/FSharp.Build/FSharp.Build.fsproj" />
-    <ProjectsWithCoreClr Include="src/fsharp/FSharp.Compiler.Service/FSharp.Compiler.Service.fsproj" />
+    <ProjectsWithCoreClr Include="src/fsharp/FSharp.Compiler.Service.Internal/FSharp.Compiler.Service.Internal.fsproj" />
     <ProjectsWithCoreClr Include="src/fsharp/FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj" />
     <ProjectsWithCoreClr Include="src/fsharp/Fsc/Fsc.fsproj" />
     <ProjectsWithCoreClr Include="src/fsharp/fsi/Fsi.fsproj" />
