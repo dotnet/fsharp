@@ -329,7 +329,7 @@ csGenericConstructRequiresPublicDefaultConstructor,"A generic construct requires
 484,csOptionalArgumentNotPermittedHere,"Optional arguments not permitted here"
 485,csMemberIsNotStatic,"%s is not a static member"
 486,csMemberIsNotInstance,"%s is not an instance member"
-487,csArgumentLengthMismatch,"Argument length mismatch"
+487,csArgumentLengthMismatch,"Argument length mismatch. %d arguments expected but %d were given"
 488,csArgumentTypesDoNotMatch,"The argument types don't match"
 489,csMethodExpectsParams,"This method expects a CLI 'params' parameter in this position. 'params' is a way of passing a variable number of arguments to a method in languages such as C#. Consider passing an array for this argument"
 490,csMemberIsNotAccessible,"The member or object constructor '%s' is not %s"
