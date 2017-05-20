@@ -15,7 +15,6 @@
         <tags>$tags$</tags>
         <dependencies>
             <group targetFramework=".NETStandard1.6">
-                <dependency id="Microsoft.FSharp.Core.netcore" version="$version$" />
                 <dependency id="Microsoft.NETCore.Platforms" version="1.0.1" />
                 <dependency id="NETStandard.Library" version="1.6.0" />
                 <dependency id="System.Collections.Immutable" version="1.2.0" />
@@ -41,9 +40,10 @@
     </metadata>
     <files>
         <file src="fsc.exe"                           target="lib/netstandard1.6" />
+        <file src="fsharp.core"                       target="lib/netstandard1.6" />
         <file src="FSharp.Compiler.dll"               target="lib/netstandard1.6" />
-        <file src="default.win32manifest"             target="runtimes/any/native/" />
         <file src="FSharp.Build.dll"                  target="lib/netstandard1.6" />
+        <file src="default.win32manifest"             target="runtimes/any/native/" />
         <file src="Microsoft.FSharp.targets"          target="runtimes/any/native/" />
         <file src="Microsoft.Portable.FSharp.targets" target="runtimes/any/native/" />
         <file src="Microsoft.FSharp.NetSdk.targets"   target="runtimes/any/native/" />
