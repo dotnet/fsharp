@@ -54,17 +54,20 @@ type internal CodeLensTagger
      ) as self =
     inherit SimpleTagger<CodeLensTag>(buffer)
 
-    //static let candidate = "abcdefghijklmnopqrstuvwxyz->ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    static let candidate = "abcdefghijklmnopqrstuvwxyz->ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     
-    //static let MeasureString candidate (textBox:TextBlock)=
-    //    let formattedText = 
-    //        FormattedText(candidate, CultureInfo.CurrentUICulture, FlowDirection.LeftToRight,
-    //            Typeface(textBox.FontFamily, textBox.FontStyle, textBox.FontWeight, textBox.FontStretch),
-    //            textBox.FontSize, Brushes.Black)
-    //    Size(formattedText.Width, formattedText.Height)
+    static let MeasureString candidate (textBox:TextBlock)=
+        let formattedText = 
+            FormattedText(candidate, CultureInfo.CurrentUICulture, FlowDirection.LeftToRight,
+                Typeface(textBox.FontFamily, textBox.FontStyle, textBox.FontWeight, textBox.FontStretch),
+                textBox.FontSize, Brushes.Black)
+        Size(formattedText.Width, formattedText.Height)
 
-    //static let MeasureTextBox textBox =
-    //    MeasureString candidate textBox
+    static let MeasureTextBox textBox =
+        MeasureString candidate textBox
+
+    static let GetTextBoxSize =
+        MeasureTextBox (TextBlock())
 
     let formatMap = lazy typeMap.Value.ClassificationFormatMapService.GetClassificationFormatMap "tooltip"
     //let visibleAdornments = ConcurrentDictionary()
@@ -77,12 +80,11 @@ type internal CodeLensTagger
     let mutable codeLensLayer: IAdornmentLayer option = None
     let mutable recentFirstVsblLineNmbr, recentLastVsblLineNmbr = 0, 0
     let mutable updated = false
+    let addedAdornmentTags = Dictionary()
 
     let defaultTextBlock = new TextBlock(Background = Brushes.Transparent, Opacity = 0.5, TextTrimming = TextTrimming.WordEllipsis)
     do DependencyObjectExtensions.SetDefaultTextProperties(defaultTextBlock, formatMap.Value)
 
-    //let GetTextBoxSize =
-    //    MeasureTextBox (TextBlock())
     
     let FSharpRangeToSpan (bufferSnapshot:ITextSnapshot) (range:range) =
         let startLine, endLine = 
@@ -231,7 +233,7 @@ type internal CodeLensTagger
                               FullTypeSignature = fullTypeSignature
                               UiElement = null }
                     let tag, trackingSpan = 
-                        CodeLensTag(0., 10., 0., 0., 0., PositionAffinity.Predecessor, res, self),
+                        CodeLensTag(0., GetTextBoxSize.Height, 0., 0., 0., PositionAffinity.Predecessor, res, self),
                         textSnapshot.CreateTrackingSpan(declarationSpan, SpanTrackingMode.EdgePositive)
                     newResults.[fullDeclarationText] <- self.CreateTagSpan(trackingSpan, tag)
                 ()
@@ -240,9 +242,10 @@ type internal CodeLensTagger
                 self.RemoveTagSpan(tagToUpdate.Key) |> ignore
                 let fullDeclarationText, tag = tagToUpdate.Value
                 newResults.[fullDeclarationText] <- 
-                    self.CreateTagSpan(tagToUpdate.Key.Span, CodeLensTag(0., 10., 0., 0., 0., PositionAffinity.Predecessor, tag, self))
+                    self.CreateTagSpan(tagToUpdate.Key.Span, CodeLensTag(0., GetTextBoxSize.Height, 0., 0., 0., PositionAffinity.Predecessor, tag, self))
 
             lastResults <- newResults
+            addedAdornmentTags.Clear()
             do! Async.SwitchToContext uiContext |> liftAsync
             let! layer = codeLensLayer
             // Remove outdated and invalid results
@@ -288,6 +291,7 @@ type internal CodeLensTagger
     
     /// Creates the code lens ui elements for the specified text view line
     let getCodeLensUIElement (lens : CodeLens) (line : ITextViewLine) =
+        let uiContext = SynchronizationContext.Current
         asyncMaybe {
             let! view = view
             match lens.Computed, isNull lens.UiElement with
@@ -299,6 +303,7 @@ type internal CodeLensTagger
             // The line is already computed but the UI element hasn't been created yet
             | _, _ ->
                 let! taggedText, navigation = lens.TaggedText
+                do! Async.SwitchToContext uiContext |> liftAsync
                 let textBox = new TextBlock(Width = view.ViewportWidth, Background = Brushes.Transparent, Opacity = 0.5, TextTrimming = TextTrimming.WordEllipsis)
                 DependencyObjectExtensions.SetDefaultTextProperties(textBox, formatMap.Value)
                 for text in taggedText do
@@ -315,6 +320,7 @@ type internal CodeLensTagger
                 layoutUIElementOnLine view line.Extent textBox
                 textBox.Opacity <- 0.5
                 lens.Computed <- true
+                lens.UiElement <- textBox
                 return Some textBox
         } |> Async.map (fun ui ->
                match ui with
@@ -427,18 +433,21 @@ type internal CodeLensTagger
                     match line.GetAdornmentTags this |> Seq.tryHead with
                     | None -> ()
                     | Some tag ->
-                        let codeLens = tag :?> CodeLens
-                        if not codeLens.Computed then
-                            getCodeLensUIElement codeLens line |> Async.Ignore |> RoslynHelpers.StartAsyncSafe CancellationToken.None
-                        else
-                            let da = DoubleAnimation(From = Nullable 0., To = Nullable 0.5, Duration = Duration(TimeSpan.FromSeconds 0.4))
-                            let! res = getCodeLensUIElement codeLens line |> liftAsync
-                            match res with
-                            | Some textBox ->
-                                layer.AddAdornment(AdornmentPositioningBehavior.ViewportRelative, Nullable(), 
-                                    this, textBox, AdornmentRemovedCallback(fun _ _ -> ())) |> ignore
-                                textBox.BeginAnimation(UIElement.OpacityProperty, da)
-                            | None -> ()
+                        if not(addedAdornmentTags.ContainsKey(tag)) then
+                            let codeLens = tag :?> CodeLens
+                            if not codeLens.Computed then
+                                getCodeLensUIElement codeLens line |> Async.Ignore |> RoslynHelpers.StartAsyncSafe CancellationToken.None
+                            else
+                                let da = DoubleAnimation(From = Nullable 0., To = Nullable 0.5, Duration = Duration(TimeSpan.FromSeconds 0.4))
+                                let! res = getCodeLensUIElement codeLens line |> liftAsync
+                                match res with
+                                | Some textBox ->
+                                    logInfof "Adding adornment for tag %A" tag
+                                    layer.AddAdornment(AdornmentPositioningBehavior.ViewportRelative, Nullable(), 
+                                        this, textBox, AdornmentRemovedCallback(fun _ _ -> ())) |> ignore
+                                    textBox.BeginAnimation(UIElement.OpacityProperty, da)
+                                    addedAdornmentTags.[tag] <- ()
+                                | None -> ()
                 with e -> logExceptionWithContext (e, "LayoutChanged, processing new visible lines")
         }
         |> Async.Ignore |> RoslynHelpers.StartAsyncSafe layoutChangedCts.Token
