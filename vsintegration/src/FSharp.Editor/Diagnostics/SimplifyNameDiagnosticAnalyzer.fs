@@ -22,10 +22,12 @@ type private TextVersionHash = int
 type internal SimplifyNameDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
     
+    static let userOpName = "SimplifyNameDiagnosticAnalyzer"
     let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().ProjectInfoManager
     let getChecker (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
     let getPlidLength (plid: string list) = (plid |> List.sumBy String.length) + plid.Length
     static let cache = ConditionalWeakTable<DocumentId, TextVersionHash * ImmutableArray<Diagnostic>>()
+    // Make sure only one document is being analyzed at a time, to be nice
     static let guard = new SemaphoreSlim(1)
 
     static let Descriptor = 
@@ -45,6 +47,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) =
         asyncMaybe {
+            do! Async.Sleep DefaultTuning.SimplifyNameInitialDelay |> liftAsync 
             do! Option.guard Settings.CodeFixes.SimplifyName
             let! options = getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document)
             let! textVersion = document.GetTextVersionAsync(cancellationToken)
@@ -56,7 +59,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                 | _ ->
                     let! sourceText = document.GetTextAsync()
                     let checker = getChecker document
-                    let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true)
+                    let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true, userOpName=userOpName)
                     let! symbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
                     let mutable result = ResizeArray()
                     let symbolUses =
@@ -86,12 +89,13 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                                         match rest with
                                         | [] -> return current
                                         | headIdent :: restPlid ->
-                                            let! res = checkResults.IsRelativeNameResolvable(posAtStartOfName, current, symbolUse.Symbol.Item) 
+                                            let! res = checkResults.IsRelativeNameResolvable(posAtStartOfName, current, symbolUse.Symbol.Item, userOpName=userOpName) 
                                             if res then return current
                                             else return! loop restPlid (headIdent :: current)
                                     }
                                 loop (List.rev plid) []
                                
+                            do! Async.Sleep DefaultTuning.SimplifyNameEachItemDelay |> liftAsync // be less intrusive, give other work priority most of the time
                             let! necessaryPlid = getNecessaryPlid plid |> liftAsync
                                 
                             match necessaryPlid with

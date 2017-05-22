@@ -111,7 +111,7 @@ Note: if you face this error [#2351](https://github.com/Microsoft/visualfsharp/i
 
 Or hard crash on launch ("Unknown Error"), delete these folders:
 
-* `%localappdata%\Microsoft\VisualStudio\15.0_(some number here)FSharpDev`
+* `%localappdata%\Microsoft\VisualStudio\15.0_(some number here)RoslynDev`
 * `%localappdata%\Microsoft\VisualStudio\15.0_(some number here)`
 
 #### [Optional] Install the Visual F# IDE Tools  (Windows Only)
@@ -138,9 +138,14 @@ Restart Visual Studio, it should now be running your freshly-built Visual F# IDE
 
 #### [Optional] F5 testing of local changes
 
-To test your changes locally _without_ overwriting your default installed F# tools, set the `VisualFSharp\Vsix\VisualFSharpOpenSource`
-project as the startup project.  When you hit F5 a new instance of Visual Studio will be started in the `FSharpDev` hive with your
-changes, but the root (default) hive will remain untouched.
+To test your changes locally _without_ overwriting your default installed Visual F# tools, set the `VisualFSharp\Vsix\VisualFSharpOpenSource`
+project as the startup project.  When you hit F5 a new instance of Visual Studio will be started in the `RoslynDev` hive with your
+changes, but the root (default) hive will remain untouched. You can also start this hive automatically using
+
+    devenv.exe /rootsuffix:RoslynDev
+    
+Because this uses the "RoslynDev" hive you can simultaneously test changes to an appropriate build of Roslyn binaries.
+
 
 #### [Optional] Rapid deployment of incremental changes to Visual F# IDE Tools components
 

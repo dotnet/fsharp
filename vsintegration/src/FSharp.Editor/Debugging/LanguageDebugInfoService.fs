@@ -53,7 +53,8 @@ type internal FSharpLanguageDebugInfoService [<ImportingConstructor>](projectInf
         member this.GetDataTipInfoAsync(document: Document, position: int, cancellationToken: CancellationToken): Task<DebugDataTipInfo> =
             async {
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
-                let! sourceText = document.GetTextAsync(cancellationToken)
+                let! cancellationToken = Async.CancellationToken
+                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let textSpan = TextSpan.FromBounds(0, sourceText.Length)
                 let tokens = Tokenizer.getColorizationData(document.Id, sourceText, textSpan, Some(document.Name), defines, cancellationToken)
                 let result = 

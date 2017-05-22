@@ -33,6 +33,7 @@ open Microsoft.FSharp.Compiler.ExtensionTyping
 [<NoEquality; NoComparison>]
 type TyparMap<'T> = 
     | TPMap of StampMap<'T>
+
     member tm.Item 
         with get (v: Typar) = 
             let (TPMap m) = tm
@@ -1071,13 +1072,13 @@ let mkCond spBind spTarget m ty e1 e2 e3 =  primMkCond spBind spTarget spTarget 
 
 let exprForValRef m vref =  Expr.Val(vref,NormalValUse,m)
 let exprForVal m v =  exprForValRef m (mkLocalValRef v)
-let gen_mk_local m s ty mut compgen =
+let mkLocalAux m s ty mut compgen =
     let thisv = NewVal(s,m,None,ty,mut,compgen,None,taccessPublic,ValNotInRecScope,None,NormalVal,[],ValInline.Optional,XmlDoc.Empty,false,false,false,false,false,false,None,ParentNone) 
     thisv,exprForVal m thisv
 
-let mkLocal         m s ty = gen_mk_local m s ty Immutable false
-let mkCompGenLocal m s ty = gen_mk_local m s ty Immutable true
-let mkMutableCompGenLocal m s ty = gen_mk_local m s ty Mutable true
+let mkLocal         m s ty = mkLocalAux m s ty Immutable false
+let mkCompGenLocal m s ty = mkLocalAux m s ty Immutable true
+let mkMutableCompGenLocal m s ty = mkLocalAux m s ty Mutable true
 
 
 // Type gives return type.  For type-lambdas this is the formal return type. 
@@ -4028,80 +4029,10 @@ let inline accFreeTyvars (opts:FreeVarOptions) f v acc =
     if ftyvs === ftyvs' then acc else 
     { acc with FreeTyvars = ftyvs' }
 
-#if FREEVARS_IN_TYPES_ANALYSIS
-type CheckCachability<'key,'acc>(name,f: FreeVarOptions -> 'key -> 'acc -> bool * 'acc) =
-    let dict = System.Collections.Generic.Dictionary<'key,int>(HashIdentity.Reference)
-    let idem = System.Collections.Generic.Dictionary<'key,int>(HashIdentity.Reference)
-    let closed = System.Collections.Generic.Dictionary<'key,int>(HashIdentity.Reference)
-    let mutable saved = 0
-    do System.AppDomain.CurrentDomain.ProcessExit.Add(fun _ ->
-        let hist = dict |> Seq.groupBy (fun (KeyValue(k,v)) -> v) |> Seq.map (fun (n,els) -> (n,Seq.length els)) |> Seq.sortBy (fun (n,_) -> n)
-        let total = hist |> Seq.sumBy (fun (nhits,nels) -> nels)
-        let totalHits = hist |> Seq.sumBy (fun (nhits,nels) -> nhits * nels)
-        printfn "*** %s saved %d hits (%g%%) ***" name saved (float  saved / float (saved + totalHits) * 100.0)
-        printfn "*** %s had %d hits total, possible saving %d ***" name totalHits (totalHits - total)
-        //for (nhits,nels) in hist do 
-        //    printfn "%s, %g%% els for %g%% hits had %d hits" name (float nels / float total * 100.0) (float (nels * nhits) / float totalHits * 100.0) nhits
-
-        let hist = idem |> Seq.groupBy (fun (KeyValue(k,v)) -> v) |> Seq.map (fun (n,els) -> (n,Seq.length els)) |> Seq.sortBy (fun (n,_) -> n)
-        let total = hist |> Seq.sumBy (fun (nhits,nels) -> nels)
-        let totalHits = hist |> Seq.sumBy (fun (nhits,nels) -> nhits * nels)
-        printfn "*** %s had %d idempotent hits total, possible saving %d ***" name totalHits (totalHits - total)
-        //for (nhits,nels) in hist do 
-        //    printfn "%s, %g%% els for %g%% hits had %d idempotent hits" name (float nels / float total * 100.0) (float (nels * nhits) / float totalHits * 100.0) nhits
-
-        let hist = closed |> Seq.groupBy (fun (KeyValue(k,v)) -> v) |> Seq.map (fun (n,els) -> (n,Seq.length els)) |> Seq.sortBy (fun (n,_) -> n)
-        let total = hist |> Seq.sumBy (fun (nhits,nels) -> nels)
-        let totalHits = hist |> Seq.sumBy (fun (nhits,nels) -> nhits * nels)
-        printfn "*** %s had %d closed hits total, possible saving %d ***" name totalHits (totalHits - total)
-       )
-        
-    member cache.Apply(opts,key,acc) = 
-        if not opts.collectInTypes then 
-            saved <- saved + 1
-            acc 
-        else
-            let cls,res = f opts  key acc
-            if opts.canCache then 
-                if dict.ContainsKey key then 
-                    dict.[key] <- dict.[key] + 1
-                else
-                    dict.[key] <- 1
-                if res === acc then
-                    if idem.ContainsKey key then 
-                        idem.[key] <- idem.[key] + 1
-                    else
-                        idem.[key] <- 1
-                if cls then
-                    if closed.ContainsKey key then 
-                        closed.[key] <- closed.[key] + 1
-                    else
-                        closed.[key] <- 1
-            res
-            
-
-    //member cache.OnExit() = 
-
-let accFreeVarsInTy_cache =  CheckCachability("accFreeVarsInTy", (fun opts ty fvs -> (freeInType opts ty === emptyFreeTyvars), accFreeTyvars opts (accFreeInType opts) ty fvs))
-let accFreevarsInValCache =  CheckCachability("accFreevarsInVal", (fun opts  v fvs ->  (freeInVal opts v === emptyFreeTyvars), accFreeTyvars opts (accFreeInVal opts) v fvs))
-let accFreeVarsInTys_cache =  CheckCachability("accFreeVarsInTys", (fun opts  tys fvs -> (freeInTypes opts tys === emptyFreeTyvars), accFreeTyvars opts (accFreeInTypes opts) tys fvs))
-let accFreevarsInTyconCache =  CheckCachability("accFreevarsInTycon", (fun opts  tys fvs -> false,accFreeTyvars opts (accFreeTycon opts) tys fvs))
-
-let accFreeVarsInTy opts ty fvs = accFreeVarsInTy_cache.Apply(opts,ty,fvs)
-let accFreeVarsInTys opts tys fvs = 
-    if isNil tys then fvs else accFreeVarsInTys_cache.Apply(opts,tys,fvs)
-let accFreevarsInTycon opts (tcr:TyconRef) acc = 
-    match tcr.IsLocalRef with 
-    | true -> accFreevarsInTyconCache.Apply(opts,tcr,acc)
-    | _ -> acc
-let accFreevarsInVal opts v fvs = accFreevarsInValCache.Apply(opts,v,fvs)
-#else
-
 let accFreeVarsInTy  opts ty    acc = accFreeTyvars opts accFreeInType ty acc
 let accFreeVarsInTys opts tys   acc = if isNil tys then acc else accFreeTyvars opts accFreeInTypes tys acc
 let accFreevarsInTycon opts tcref acc = accFreeTyvars opts accFreeTycon tcref acc
 let accFreevarsInVal   opts v     acc = accFreeTyvars opts accFreeInVal v acc
-#endif
     
 let accFreeVarsInTraitSln opts tys acc = accFreeTyvars opts accFreeInTraitSln tys acc 
 
@@ -5744,10 +5675,10 @@ let mkArray (argty, args, m) = Expr.Op(TOp.Array, [argty],args,m)
 //---------------------------------------------------------------------------
 
 let rec IterateRecursiveFixups g (selfv : Val option) rvs ((access : Expr),set) exprToFix  = 
-  let exprToFix =  stripExpr exprToFix
-  match exprToFix with 
-  | Expr.Const _ -> ()
-  | Expr.Op (TOp.Tuple tupInfo,argtys,args,m) when not (evalTupInfoIsStruct tupInfo) ->
+    let exprToFix =  stripExpr exprToFix
+    match exprToFix with 
+    | Expr.Const _ -> ()
+    | Expr.Op (TOp.Tuple tupInfo,argtys,args,m) when not (evalTupInfoIsStruct tupInfo) ->
       args |> List.iteri (fun n -> 
           IterateRecursiveFixups g None rvs 
             (mkTupleFieldGet g (tupInfo,access,argtys,n,m), 
@@ -5756,7 +5687,7 @@ let rec IterateRecursiveFixups g (selfv : Val option) rvs ((access : Expr),set) 
               errorR(Error(FSComp.SR.tastRecursiveValuesMayNotBeInConstructionOfTuple(),m));
               e)))
 
-  | Expr.Op (TOp.UnionCase (c),tinst,args,m) ->
+    | Expr.Op (TOp.UnionCase (c),tinst,args,m) ->
       args |> List.iteri (fun n -> 
           IterateRecursiveFixups g None rvs 
             (mkUnionCaseFieldGetUnprovenViaExprAddr (access,c,tinst,n,m), 
@@ -5767,7 +5698,7 @@ let rec IterateRecursiveFixups g (selfv : Val option) rvs ((access : Expr),set) 
                  errorR(Error(FSComp.SR.tastRecursiveValuesMayNotAppearInConstructionOfType(tcref.LogicalName),m));
                mkUnionCaseFieldSet (access,c,tinst,n,e,m))))
 
-  | Expr.Op (TOp.Recd (_,tcref),tinst,args,m) -> 
+    | Expr.Op (TOp.Recd (_,tcref),tinst,args,m) -> 
       (tcref.TrueInstanceFieldsAsRefList, args) ||> List.iter2 (fun fref arg -> 
           let fspec = fref.RecdField
           IterateRecursiveFixups g None rvs 
@@ -5777,13 +5708,13 @@ let rec IterateRecursiveFixups g (selfv : Val option) rvs ((access : Expr),set) 
                if not fspec.IsMutable && not (entityRefInThisAssembly g.compilingFslib tcref) then
                  errorR(Error(FSComp.SR.tastRecursiveValuesMayNotBeAssignedToNonMutableField(fspec.rfield_id.idText, tcref.LogicalName),m));
                mkRecdFieldSetViaExprAddr (access,fref,tinst,e,m))) arg )
-  | Expr.Val _
-  | Expr.Lambda _
-  | Expr.Obj _
-  | Expr.TyChoose _
-  | Expr.TyLambda _ -> 
-      rvs selfv access set exprToFix
-  | _ -> ()
+    | Expr.Val _
+    | Expr.Lambda _
+    | Expr.Obj _
+    | Expr.TyChoose _
+    | Expr.TyLambda _ -> 
+        rvs selfv access set exprToFix
+    | _ -> ()
 
 
 

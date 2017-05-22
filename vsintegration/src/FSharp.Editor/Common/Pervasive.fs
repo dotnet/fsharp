@@ -199,13 +199,4 @@ module Async =
         async { return! agent.PostAndAsyncReply id }
         
 
-type AsyncBuilder with
-    member __.Bind(computation: System.Threading.Tasks.Task<'a>, binder: 'a -> Async<'b>): Async<'b> =
-        async {
-            let! a = Async.AwaitTask computation
-            return! binder a
-        }
-
-    member __.ReturnFrom(computation: System.Threading.Tasks.Task<'a>): Async<'a> = Async.AwaitTask computation
-
 

@@ -2059,24 +2059,16 @@ type GeneralizeConstrainedTyparOptions =
 module GeneralizationHelpers = 
     let ComputeUngeneralizableTypars env = 
         
-        // This is just a List.fold. Unfolded here to enable better profiling 
-        let rec loop acc (items: UngeneralizableItem list) =
-             match items with 
-             | [] -> acc
-             | item::rest -> 
-                 let acc = 
-                     if item.WillNeverHaveFreeTypars then 
-                         acc 
-                     else
-                         let ftps = item.GetFreeTyvars().FreeTypars
-                         if ftps.IsEmpty then 
-                             acc 
-                         else 
-                             // These union operations are a performance sore point
-                             unionFreeTypars ftps acc
-                 loop acc rest
+        let acc = Collections.Generic.List()
+        for item in env.eUngeneralizableItems do
+            if not item.WillNeverHaveFreeTypars then
+                let ftps = item.GetFreeTyvars().FreeTypars
+                if not ftps.IsEmpty then
+                    for ftp in ftps do
+                        acc.Add(ftp)
+            
+        Zset.Create(typarOrder, acc)
 
-        loop emptyFreeTypars env.eUngeneralizableItems 
 
     let ComputeUnabstractableTycons env = 
         let acc_in_free_item acc (item: UngeneralizableItem) = 

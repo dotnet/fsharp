@@ -1,10 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-//-------------------------------------------------------------------------
-// Name environment and name resolution 
-//------------------------------------------------------------------------- 
 
-
+/// Name environment and name resolution 
 module internal Microsoft.FSharp.Compiler.NameResolution
 
 open Internal.Utilities
@@ -27,7 +24,6 @@ open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.AccessibilityLogic
 open Microsoft.FSharp.Compiler.AttributeChecking
 open Microsoft.FSharp.Compiler.InfoReader
-open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.PrettyNaming
 open System.Collections.Generic
 
@@ -4038,9 +4034,7 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
             | _-> []
         modsOrNs @ qualifiedFields
 
-(* Determining if an `Item` is resolvable at point by given `plid`. It's optimized by being lazy and early returning according to the given `Item` *)
-
-let private ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics typ (item: Item) : seq<Item> =
+let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics typ (item: Item) : seq<Item> =
     seq {
         let g = ncenv.g
         let amap = ncenv.amap
@@ -4209,7 +4203,7 @@ let private ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad stat
             | _ -> ()
     }
 
-let rec private ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv m ad statics plid (item: Item) typ =
+let rec ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv m ad statics plid (item: Item) typ =
     seq {
         let g = ncenv.g
         let amap = ncenv.amap
@@ -4260,7 +4254,7 @@ let rec private ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv 
                   yield! finfo.FieldType(amap, m) |> ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item
     }
 
-let rec private ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) nenv m ad (modref: ModuleOrNamespaceRef) plid (item: Item) =
+let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) nenv m ad (modref: ModuleOrNamespaceRef) plid (item: Item) =
     let g = ncenv.g
     let mty = modref.ModuleOrNamespaceType
     
@@ -4339,7 +4333,7 @@ let rec private ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameRe
                      yield! tcref |> generalizedTyconRef |> ResolvePartialLongIdentInTypeForItem ncenv nenv m ad true rest item
     }
 
-let rec private PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f plid (modref: ModuleOrNamespaceRef) =
+let rec PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f plid (modref: ModuleOrNamespaceRef) =
     let mty = modref.ModuleOrNamespaceType
     match plid with 
     | [] -> f modref
@@ -4349,7 +4343,7 @@ let rec private PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLa
             PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f rest (modref.NestedTyconRef mty) 
         | None -> Seq.empty
 
-let private PartialResolveLongIndentAsModuleOrNamespaceThenLazy (nenv:NameResolutionEnv) plid f =
+let PartialResolveLongIndentAsModuleOrNamespaceThenLazy (nenv:NameResolutionEnv) plid f =
     seq {
         match plid with 
         | id :: rest -> 
@@ -4361,7 +4355,7 @@ let private PartialResolveLongIndentAsModuleOrNamespaceThenLazy (nenv:NameResolu
         | [] -> ()
     }
 
-let rec private GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m ad plid (item: Item) : seq<Item> =
+let rec GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m ad plid (item: Item) : seq<Item> =
     seq {
         let g = ncenv.g
         

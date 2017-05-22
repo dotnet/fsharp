@@ -187,9 +187,10 @@ type internal FSharpNavigateToSearchService
 
     let itemsByDocumentId = ConditionalWeakTable<DocumentId, (int * Index.IIndexedNavigableItems)>()
 
-    let getNavigableItems(document: Document, options: FSharpProjectOptions, cancellationToken: CancellationToken) =
+    let getNavigableItems(document: Document, options: FSharpProjectOptions) =
         async {
-            let! sourceText = document.GetTextAsync(cancellationToken)
+            let! cancellationToken = Async.CancellationToken
+            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let! parseResults = checkerProvider.Checker.ParseFileInProject(document.FilePath, sourceText.ToString(), options)
             return 
                 match parseResults.ParseTree |> Option.map NavigateTo.getNavigableItems with
@@ -203,15 +204,16 @@ type internal FSharpNavigateToSearchService
                 | None -> [||]
         }
 
-    let getCachedIndexedNavigableItems(document: Document, options: FSharpProjectOptions, cancellationToken: CancellationToken) =
+    let getCachedIndexedNavigableItems(document: Document, options: FSharpProjectOptions) =
         async {
-            let! textVersion = document.GetTextVersionAsync(cancellationToken)
+            let! cancellationToken = Async.CancellationToken
+            let! textVersion = document.GetTextVersionAsync(cancellationToken)  |> Async.AwaitTask
             let textVersionHash = hash textVersion
             match itemsByDocumentId.TryGetValue document.Id with
             | true, (oldTextVersionHash, items) when oldTextVersionHash = textVersionHash ->
                 return items
             | _ ->
-                let! items = getNavigableItems(document, options, cancellationToken)
+                let! items = getNavigableItems(document, options)
                 let indexedItems = Index.build items
                 itemsByDocumentId.Remove(document.Id) |> ignore
                 itemsByDocumentId.Add(document.Id, (textVersionHash, indexedItems))
@@ -232,7 +234,7 @@ type internal FSharpNavigateToSearchService
                 let! options = projectInfoManager.TryGetOptionsForProject(project.Id)
                 let! items =
                     project.Documents
-                    |> Seq.map (fun document -> getCachedIndexedNavigableItems(document, options, cancellationToken))
+                    |> Seq.map (fun document -> getCachedIndexedNavigableItems(document, options))
                     |> Async.Parallel
                     |> liftAsync
                 
@@ -262,7 +264,7 @@ type internal FSharpNavigateToSearchService
         member __.SearchDocumentAsync(document, searchPattern, cancellationToken) : Task<ImmutableArray<INavigateToSearchResult>> =
             asyncMaybe {
                 let! options = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
-                let! items = getCachedIndexedNavigableItems(document, options, cancellationToken) |> liftAsync
+                let! items = getCachedIndexedNavigableItems(document, options) |> liftAsync
                 return items.Find(searchPattern)
             }
             |> Async.map (Option.defaultValue [||])
