@@ -19,7 +19,7 @@ echo Usage:
 echo.
 echo build.cmd ^<all^|net40^|coreclr^|pcls^|vs^>
 echo           ^<proto^|protofx^>
-echo           ^<ci^|ci_part1^|ci_part2^|ci_part3^|ci_part4^|microbuild|nuget^>
+echo           ^<ci^|ci_part1^|ci_part2^|ci_part3^|ci_part4^|microbuild^|nuget^>
 echo           ^<debug^|release^>
 echo           ^<diag^|publicsign^>
 echo           ^<test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-pcl-coreunit^|test-net40-ideunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
@@ -217,6 +217,7 @@ if /i "%ARG%" == "nuget" (
     set BUILD_PROTO=1
     set BUILD_NET40_FSHARP_CORE=1
     set BUILD_PROTO_WITH_CORECLR_LKG=1
+    set BUILD_PORTABLE=1
     set BUILD_CORECLR=1
     set BUILD_NUGET=1
 )
@@ -256,6 +257,7 @@ if /i "%ARG%" == "ci_part3" (
     set BUILD_PROTO=1
     set BUILD_CORECLR=1
     set BUILD_NET40_FSHARP_CORE=1
+    set BUILD_PORTABLE=1
     set BUILD_NUGET=1
     set TEST_CORECLR_FSHARP_SUITE=1
     set TEST_CORECLR_COREUNIT_SUITE=1
@@ -564,6 +566,15 @@ if "%RestorePackages%" == "true" (
         %_nugetexe% restore setup\packages.config -PackagesDirectory packages -ConfigFile %_nugetconfig%
         @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
     )
+)
+
+if "%BUILD_NUGET%" == "1" (
+    :: Copy the net20 and net40 build directory for nuget building
+    md %~dp0%BUILD_CONFIG%\dotnet20\bin
+    copy /Y %~dp0packages\FSharp.Core.4.1.17\lib\net20\*.* %~dp0%BUILD_CONFIG%\dotnet20\bin
+
+    md %~dp0%BUILD_CONFIG%\dotnet40\bin
+    copy /Y %~dp0packages\FSharp.Core.4.1.17\lib\net40\*.* %~dp0%BUILD_CONFIG%\dotnet40\bin
 )
 
 if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (

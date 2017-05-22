@@ -48,11 +48,11 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(TargetFSharpCorePackageVersion)' == '' ">
-    <TargetFSharpCorePackageVersion>1.0.0-*</TargetFSharpCorePackageVersion>
+    <TargetFSharpCorePackageVersion>4.2.0-*</TargetFSharpCorePackageVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(TargetFSharpCorePackageIdentity)' == '' ">
-    <TargetFSharpCorePackageIdentity>Microsoft.FSharp.Core.netcore</TargetFSharpCorePackageIdentity>
+    <TargetFSharpCorePackageIdentity>FSharp.Core</TargetFSharpCorePackageIdentity>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(DisableAutoValueTupleReference)' != 'true' ">

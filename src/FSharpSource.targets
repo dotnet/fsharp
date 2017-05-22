@@ -13,8 +13,6 @@
     <FSCoreVersion Condition="'$(FSharpCoreBackVersion)' == '3.0' AND '$(FSCoreVersion)' == '4.4.1.0'">4.3.0.0</FSCoreVersion>
     <FSCoreVersion Condition="'$(FSharpCoreBackVersion)' == '3.1' AND '$(FSCoreVersion)' == '4.4.1.0'">4.3.1.0</FSCoreVersion>
     <FSCoreVersion Condition="'$(FSharpCoreBackVersion)' == '4.0' AND '$(FSCoreVersion)' == '4.4.1.0'">4.4.0.0</FSCoreVersion>
-
-  
   </PropertyGroup>
 
   <Choose>
@@ -597,24 +595,6 @@
       <OldBuildVersionFiles Include="$(BuildVersionFilePath)BuildVersions-*.props" Exclude="$(BuildVersionFilePath)%(BuildVersionFileItem.Filename).props" />
     </ItemGroup>
     <Delete Files="@(OldBuildVersionFiles)" TreatErrorsAsWarnings="true"/>
-  </Target>
-
-  <Target Name="nugetpack"
-          DependsOnTargets="CreateOrUpdateBuildVersionFile"
-          AfterTargets="Build"
-          Condition="'$(TargetFramework)' == 'coreclr' "
-          Inputs="@(PackageNuspec)" 
-          Outputs='$(FSharpSourcesRoot.TrimEnd("\"))\..\$(Configuration)\artifacts\$(TargetFramework)\"%(PackageNuspec.Filename)).nupkg'>
-
-    <PropertyGroup>
-      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
-    </PropertyGroup>
-
-    <MakeDir Directories="$(FSharpSourcesRoot.TrimEnd('\'))\..\$(Configuration)\artifacts\$(TargetFramework)" />
-    <MakeDir Directories="$(FSharpSourcesRoot.TrimEnd('\'))\..\artifacts\$(TargetFramework)" />
-    <SetEnvVar Name="NUGET_PACKAGES" Value="$(NUGET_PACKAGES)" />
-    <Exec Command='$(MSBuildThisFileDirectory)..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(OutputPath.TrimEnd("\")) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot.TrimEnd("\"))\..\$(Configuration)\artifacts' />
-    <Exec Command='$(MSBuildThisFileDirectory)..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(OutputPath.TrimEnd("\")) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot.TrimEnd("\"))\..\artifacts' />
   </Target>
 
   <UsingTask TaskName="ReplaceFileText" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">

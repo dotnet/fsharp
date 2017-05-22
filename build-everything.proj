@@ -24,7 +24,7 @@
     <ProjectsWithCoreClr Include="src/fsharp/FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj" />
     <ProjectsWithCoreClr Include="src/fsharp/Fsc/Fsc.fsproj" />
     <ProjectsWithCoreClr Include="src/fsharp/fsi/Fsi.fsproj" />
-    <ProjectsWithCoreClr Include="src/fsharp/FSharp.Compiler.Host.netcore.nuget/FSharp.Compiler.Host.proj" />
+    <ProjectsWithCoreClr Include="src/fsharp/FSharp.Compiler.nuget/FSharp.Compiler.nuget.proj" />
  </ItemGroup>
 
   <ItemGroup Condition="'$(BUILD_PORTABLE)'=='1'">
@@ -57,7 +57,7 @@
     <ProjectsWithCoreClr Include="src/fsharp/FSharp.Core.Unittests/FSharp.Core.Unittests.fsproj"/>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TEST_PORTABLE_COREUNIT_SUITE)'=='1'" >
+  <ItemGroup Condition="'$(TEST_PORTABLE_COREUNIT_SUITE)'=='1' and ('$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259') " >
     <ProjectsWithPortableFrameworks Include="src/fsharp/FSharp.Core.Unittests/FSharp.Core.Unittests.fsproj"/>
   </ItemGroup>
 
@@ -90,6 +90,8 @@
     <MSBuild Projects="@(ProjectsWithPortableFrameworks)" Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable47;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
     <MSBuild Projects="@(ProjectsWithPortableFrameworks)" Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable78;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
     <MSBuild Projects="@(ProjectsWithPortableFrameworks)" Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=portable259;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <MSBuild Projects="@(ProjectsWithPortableFrameworks)" Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetFramework=xamarinmacmobile;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
+    <MSBuild Projects="@(ProjectsWithPortableFrameworks)" Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetFramework=monoandroid10+monotouch10+xamarinios10;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
     <MSBuild Projects="@(ProjectsWithCoreClr)"            Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetFramework=coreclr;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
     <MSBuild Projects="@(SetupProjects)"                  Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
     <MSBuild Projects="@(NugetProjects)"                  Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);" />

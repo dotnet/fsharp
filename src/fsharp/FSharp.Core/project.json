@@ -1,7 +1,5 @@
 {
   "dependencies": {
-    "Microsoft.NETCore.Platforms": "1.1.0",
-    "Microsoft.NETCore.Runtime.CoreCLR": "1.1.0",
     "System.Collections": "4.3.0",
     "System.Console": "4.3.0",
     "System.Diagnostics.Debug": "4.3.0",

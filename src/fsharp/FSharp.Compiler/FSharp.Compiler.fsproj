@@ -20,12 +20,6 @@
   </PropertyGroup>
   <!-- References -->
   <Import Project="$(FSharpSourcesRoot)\.nuget\NuGet.targets" Condition="Exists('$(FSharpSourcesRoot)\.nuget\NuGet.targets')" />
-  <!-- Nuget packaging configuration -->
-  <PropertyGroup>
-    <PackageVersion Condition="'$(PreReleaseLabel)' == ''">$(NuGeReleaseVersion)</PackageVersion>
-    <PackageVersion Condition="'$(PackageVersionMinor)' != ''">$(PackageVersionMajor)-$(PackageVersionMinor)</PackageVersion>
-    <PackageVersion Condition="'$(PackageVersionMinor)' == ''">$(NuGetPerBuildPreReleaseVersion)-0</PackageVersion>
-  </PropertyGroup>
   <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile">
     <ItemGroup>
       <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Framework.dll" />
@@ -61,7 +55,6 @@
       <HasLceComments>false</HasLceComments>
       <InProject>false</InProject>
     </FilesToLocalize>
-    <PackageNuspec Include="FSharp.Compiler.netcore.nuspec" Condition="'$(TargetFramework)' == 'coreclr'" />
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.dll.fs">
       <Link>assemblyinfo.FSharp.Compiler.dll.fs</Link>
     </Compile>

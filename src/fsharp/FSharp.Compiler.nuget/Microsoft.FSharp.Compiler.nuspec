@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
     <metadata>
-        <id>Microsoft.FSharp.Compiler.netcore</id>
+        <id>Microsoft.FSharp.Compiler</id>
         <description>
             .NET Core compatible version of the fsharp compiler fsc.exe.
             Supported Platforms: - .NET Core (.netstandard1.6)
@@ -39,14 +39,16 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="fsc.exe"                           target="lib/netstandard1.6" />
-        <file src="fsharp.core"                       target="lib/netstandard1.6" />
-        <file src="FSharp.Compiler.dll"               target="lib/netstandard1.6" />
-        <file src="FSharp.Build.dll"                  target="lib/netstandard1.6" />
-        <file src="default.win32manifest"             target="runtimes/any/native/" />
-        <file src="Microsoft.FSharp.targets"          target="runtimes/any/native/" />
-        <file src="Microsoft.Portable.FSharp.targets" target="runtimes/any/native/" />
-        <file src="Microsoft.FSharp.NetSdk.targets"   target="runtimes/any/native/" />
-        <file src="Microsoft.FSharp.NetSdk.props"     target="runtimes/any/native/" />
+        <file src="coreclr/bin/fsc.exe"                           target="lib/netstandard1.6" />
+        <file src="coreclr/bin/fsi.exe"                           target="lib/netstandard1.6" />
+        <file src="coreclr/bin/fsharp.core.dll"                   target="lib/netstandard1.6" />
+        <file src="coreclr/bin/FSharp.Compiler.dll"               target="lib/netstandard1.6" />
+        <file src="coreclr/bin/FSharp.Build.dll"                  target="lib/netstandard1.6" />
+        <file src="coreclr/bin/FSharp.Compiler.Interactive.Settings.dll" target="lib/netstandard1.6" />
+        <file src="coreclr/bin/default.win32manifest"             target="runtimes/any/native/" />
+        <file src="coreclr/bin/Microsoft.FSharp.targets"          target="runtimes/any/native/" />
+        <file src="coreclr/bin/Microsoft.Portable.FSharp.targets" target="runtimes/any/native/" />
+        <file src="coreclr/bin/Microsoft.FSharp.NetSdk.targets"   target="runtimes/any/native/" />
+        <file src="coreclr/bin/Microsoft.FSharp.NetSdk.props"     target="runtimes/any/native/" />
     </files>
 </package>
