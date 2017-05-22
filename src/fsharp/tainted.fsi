@@ -17,15 +17,22 @@ type internal TypeProviderError =
     
     /// creates new instance of TypeProviderError that represents one error
     new : (int * string) * string * range -> TypeProviderError
+
     /// creates new instance of TypeProviderError that represents collection of errors
     new : int * string * range * seq<string> -> TypeProviderError
+
     member Number : int
+
     member Range : range
+
     member ContextualErrorMessage : string
+
     /// creates new instance of TypeProviderError with specified type\method names
     member WithContext : string * string -> TypeProviderError
+
     /// creates new instance of TypeProviderError based on current instance information(message)
     member MapText : (string -> int * string) * string * range -> TypeProviderError
+
     /// provides uniform way to process aggregated errors
     member Iter : (TypeProviderError -> unit) -> unit
 
@@ -87,14 +94,18 @@ type internal Tainted<'T> =
 
 [<RequireQualifiedAccess>]
 module internal Tainted =
+
     /// Test whether the tainted value is null
     val (|Null|_|) : Tainted<'T> -> unit option when 'T : null
+
     /// Test whether the tainted value equals given value. 
     /// Failure in call to equality operation will be blamed on type provider of first operand
     val Eq : Tainted<'T> -> 'T -> bool when 'T : equality
+
     /// Test whether the tainted value equals given value. Type providers are ignored (equal tainted values produced by different type providers are equal)
     /// Failure in call to equality operation will be blamed on type provider of first operand
     val EqTainted : Tainted<'T> -> Tainted<'T> -> bool when 'T : equality and 'T : not struct
+
     /// Compute the hash value for the tainted value
     val GetHashCodeTainted : Tainted<'T> -> int when 'T : equality
 

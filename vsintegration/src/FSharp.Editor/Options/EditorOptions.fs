@@ -7,6 +7,14 @@ open Microsoft.VisualStudio.FSharp.UIResources
 open SettingsPersistence
 open OptionsUIHelpers
 
+
+module DefaultTuning = 
+    let SemanticColorizationInitialDelay = 0 (* milliseconds *)
+    let UnusedDeclarationsAnalyzerInitialDelay = 1000 (* milliseconds *)
+    let UnusedOpensAnalyzerInitialDelay = 2000 (* milliseconds *)
+    let SimplifyNameInitialDelay = 2000 (* milliseconds *)
+    let SimplifyNameEachItemDelay = 5 (* milliseconds *)
+
 // CLIMutable to make the record work also as a view model
 [<CLIMutable>]
 type IntelliSenseOptions =

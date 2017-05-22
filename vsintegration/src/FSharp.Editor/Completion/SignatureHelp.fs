@@ -28,6 +28,7 @@ type internal FSharpSignatureHelpProvider
         projectInfoManager: ProjectInfoManager
     ) =
 
+    static let userOpName = "SignatureHelpProvider"
     let xmlMemberIndexService = serviceProvider.GetService(typeof<IVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
 
@@ -36,7 +37,7 @@ type internal FSharpSignatureHelpProvider
 
     // Unit-testable core routine
     static member internal ProvideMethodsAsyncAux(checker: FSharpChecker, documentationBuilder: IDocumentationBuilder, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, triggerIsTypedChar: char option, filePath: string, textVersionHash: int) = async {
-        let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
+        let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options, userOpName = userOpName)
         match checkFileAnswer with
         | FSharpCheckFileAnswer.Aborted -> return None
         | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
@@ -55,7 +56,7 @@ type internal FSharpSignatureHelpProvider
         let lidEnd = nwpl.LongIdEndLocation
 
         // Get the methods
-        let! methodGroup = checkFileResults.GetMethodsAlternate(lidEnd.Line, lidEnd.Column, "", Some names)
+        let! methodGroup = checkFileResults.GetMethods(lidEnd.Line, lidEnd.Column, "", Some names)
 
         let methods = methodGroup.Methods
 

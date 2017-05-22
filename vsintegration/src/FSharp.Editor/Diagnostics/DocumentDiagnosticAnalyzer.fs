@@ -25,6 +25,7 @@ type internal DiagnosticsType =
 type internal FSharpDocumentDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
 
+    static let userOpName = "DocumentDiagnosticAnalyzer"
     let getChecker(document: Document) =
         document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
 
@@ -58,12 +59,12 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
 
     static member GetDiagnostics(checker: FSharpChecker, filePath: string, sourceText: SourceText, textVersionHash: int, options: FSharpProjectOptions, diagnosticType: DiagnosticsType) = 
         async {
-            let! parseResults = checker.ParseFileInProject(filePath, sourceText.ToString(), options) 
+            let! parseResults = checker.ParseFileInProject(filePath, sourceText.ToString(), options, userOpName=userOpName) 
             let! errors = 
                 async {
                     match diagnosticType with
                     | DiagnosticsType.Semantic ->
-                        let! checkResultsAnswer = checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options) 
+                        let! checkResultsAnswer = checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options, userOpName=userOpName) 
                         match checkResultsAnswer with
                         | FSharpCheckFileAnswer.Aborted -> return [||]
                         | FSharpCheckFileAnswer.Succeeded results ->
