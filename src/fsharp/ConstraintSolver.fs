@@ -2006,7 +2006,9 @@ and ArgsEquivInsideUndo (csenv:ConstraintSolverEnv) isConstraint calledArg (Call
     if typeEquiv csenv.g calledArgTy callerArgTy then 
         CompleteD
     else 
-        ErrorD(Error(FSComp.SR.csArgumentTypesDoNotMatch(NicePrint.minimalStringOfType csenv.DisplayEnv callerArgTy, NicePrint.minimalStringOfType csenv.DisplayEnv calledArgTy),m))
+        ErrorD(Error(FSComp.SR.csArgumentTypesDoNotMatch(
+                        NicePrint.minimalStringOfType csenv.DisplayEnv calledArgTy,
+                        NicePrint.minimalStringOfType csenv.DisplayEnv callerArgTy),m))
 
 and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNamedCallerArgs) methodName ad (calledMethGroup:CalledMeth<_> list) isSequential =
 
