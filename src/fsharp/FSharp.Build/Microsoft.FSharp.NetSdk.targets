@@ -63,7 +63,6 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   <ItemGroup>
     <PackageReference Include="System.ValueTuple" Version="4.*" Condition=" '$(DisableAutoValueTupleReference)' != 'true' and '$(FrameworkNeedsValueTupleReference)' == 'true' "></PackageReference>
     <PackageReference Include="$(TargetFSharpCorePackageIdentity)" Version="$(TargetFSharpCorePackageVersion)"  Condition=" '$(DisableAutoFSharpCoreReference)' != 'true' "></PackageReference>
-
   </ItemGroup>
 
 </Project>

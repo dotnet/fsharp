@@ -4,10 +4,18 @@
         <!-- rename to FSharp.Core when done -->
         <id>FSharp.Core</id>
         <description>
-            FSharp.Core library - FSharp.Core.dll
-            Supported Platforms:
-              .NET 4.0
-              .NET Standard 1.6 (netstandard1.6)
+            FSharp.Core redistributables from Visual F# 4.1.0
+                Supported Platforms:
+                    .NET 2.0                    (net20)
+                    .NET 4.0                    (net40)
+                    .NET 4.5+                   (net45)
+                    .NET Portable Profile 7     (portable-net45+netcore45)
+                    .NET Portable Profile 47    (portable-net45+sl5+netcore45)
+                    .NET Portable Profile 78    (portable-net45+netcore45+wp8)
+                    .NET Portable Profile 259   (portable-net45+netcore45+wpa81+wp8)
+                    .NET Standard 1.6           (netstandard1.6)
+                    MonoAndroid, MonoTouch, Xamarin.iOS (portable-net45+monoandroid10+monotouch10+xamarinios10)
+                    XamarinMac mobile           (xamarinmac20)
         </description>
         <language>en-US</language>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
@@ -17,6 +25,9 @@
         <projectUrl>$projectUrl$</projectUrl>
         <tags>$tags$</tags>
         <dependencies>
+            <group>
+                <dependency id="System.ValueTuple" version="4.3.0" />
+            </group>
             <group>
                 <dependency id="System.Collections" version="4.0.11" />
                 <dependency id="System.Console" version="4.0.0" />

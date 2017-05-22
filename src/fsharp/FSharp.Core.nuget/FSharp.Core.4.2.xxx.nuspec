@@ -5,20 +5,12 @@
         <id>FSharp.Core</id>
         <title>FSharp.Core for F# 4.1</title>
         <summary>FSharp.Core for F# 4.1</summary>
-        <description>FSharp.Core for F# 4.1
-
-          FSharp.Core redistributables from Visual F# 4.1.0
-
-          .NET 2.0
-          .NET 4.0
-          .NET Portable Profile 7 (portable-net45+netcore45)
-          .NET Portable Profile 47 (portable-net45+sl5+netcore45)
-          .NET Portable Profile 78 (portable-net45+netcore45+wp8)
-          .NET Portable Profile 259 (portable-net45+netcore45+wpa81+wp8)
-          .NET Standard 1.6 (netstandard1.6)
-
-          MonoAndroid, MonoTouch, Xamarin.iOS (portable-net45+monoandroid10+monotouch10+xamarinios10)
-          XamarinMac mobile (xamarinmac20)</description>
+        <description>
+            FSharp.Core redistributables from Visual F# 4.1.0
+                Supported Platforms:
+                    .NET 4.5+           (net45)
+                    netstandard1.6      (netstandard1.6)
+        </description>
         <language>en-US</language>
         <version>$version$</version>
         <authors>$authors$</authors>
@@ -27,9 +19,6 @@
         <tags>$tags$</tags>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <dependencies>
-            <group>
-                <dependency id="System.ValueTuple" version="4.3.0" />
-            </group>
             <group targetFramework=".NETStandard1.6">
                 <dependency id="System.Collections" version="4.0.11" />
                 <dependency id="System.Console" version="4.0.0" />
@@ -62,8 +51,6 @@
         <file src="coreclr/bin/FSharp.Core.sigdata"      target="lib/netstandard1.6/" />
         <file src="coreclr/bin/FSharp.Core.optdata"      target="lib/netstandard1.6/" />
         <file src="coreclr/bin/FSharp.Core.xml"          target="lib/netstandard1.6/" />
-        <file src="coreclr/bin/FSharp.Core.sigdata"      target="runtimes/any/native/" />
-        <file src="coreclr/bin/FSharp.Core.optdata"      target="runtimes/any/native/" />
 
         <file src="net40\bin\FSharp.Core.dll"            target="lib/net45/" />
         <file src="net40\bin\FSharp.Core.sigdata"        target="lib/net45/" />

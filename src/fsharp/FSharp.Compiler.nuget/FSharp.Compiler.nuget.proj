@@ -23,6 +23,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <RefMarker Include="_._"></RefMarker>
+
     <ProjectReference Include="..\fsi\Fsi.fsproj">
       <Name>fsi</Name>
       <Project>{d0e98c0d-490b-4c61-9329-0862f6e87645}</Project>
@@ -41,8 +43,14 @@
   <Target Name="Rebuild"  DependsOnTargets="$(nugetpackfsharpcompiler)" />
   <Target Name="Clean"    DependsOnTargets="CleanVersionFile" />
 
+  <Target Name="CopyFiles">  
+    <Copy  
+        SourceFiles="@(RefMarker)"
+        DestinationFolder="$(OutputPath)"
+    />
+  </Target>  
   <Target Name="nugetpack"
-          DependsOnTargets="CreateOrUpdateBuildVersionFile"
+          DependsOnTargets="CreateOrUpdateBuildVersionFile;CopyFiles"
           AfterTargets="Build"
           Inputs="@(PackageNuspec)" 
           Outputs='$(FSharpSourcesRoot)\$(Configuration)\artifacts\$(PackageVersion)\"%(PackageNuspec.Filename)).nupkg'>
