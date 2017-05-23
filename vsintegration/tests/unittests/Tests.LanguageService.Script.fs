@@ -1357,9 +1357,9 @@ type UsingMSBuild() as this =
                         <SpecificVersion>True</SpecificVersion>
                         <HintPath>%s\\FSharp.Compiler.Interactive.Settings.dll</HintPath>
                     </Reference>
-                    <Reference Include=""FSharp.Compiler.Service.Private, Version=%s, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
+                    <Reference Include=""FSharp.Compiler.Private, Version=%s, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
                         <SpecificVersion>True</SpecificVersion>
-                        <HintPath>%s\\FSharp.Compiler.Service.Private.dll</HintPath>
+                        <HintPath>%s\\FSharp.Compiler.Private.dll</HintPath>
                     </Reference>
                 </ItemGroup>" fsVersion binariesFolder fsVersion binariesFolder)
 
