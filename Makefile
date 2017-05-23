@@ -67,7 +67,7 @@ install:
 	-rm -fr $(DESTDIR)$(monodir)/Microsoft\ F#
 	-rm -fr $(DESTDIR)$(monodir)/Microsoft\ SDKs/F#
 	-rm -fr $(DESTDIR)$(monodir)/gac/FSharp.Core
-	-rm -fr $(DESTDIR)$(monodir)/gac/FSharp.Compiler
+	-rm -fr $(DESTDIR)$(monodir)/gac/FSharp.Compiler.Private
 	-rm -fr $(DESTDIR)$(monodir)/xbuild/Microsoft/VisualStudio/v/FSharp
 	-rm -fr $(DESTDIR)$(monodir)/xbuild/Microsoft/VisualStudio/v11.0/FSharp
 	-rm -fr $(DESTDIR)$(monodir)/xbuild/Microsoft/VisualStudio/v12.0/FSharp
@@ -75,7 +75,7 @@ install:
 	-rm -fr $(DESTDIR)$(monodir)/xbuild/Microsoft/VisualStudio/v15.0/FSharp
 	$(MAKE) -C mono/FSharp.Core TargetFramework=net40 install
 	$(MAKE) -C mono/FSharp.Build install
-	$(MAKE) -C mono/FSharp.Compiler install
+	$(MAKE) -C mono/FSharp.Compiler.Private install
 	$(MAKE) -C mono/Fsc install
 	$(MAKE) -C mono/FSharp.Compiler.Interactive.Settings install
 	$(MAKE) -C mono/FSharp.Compiler.Server.Shared install
