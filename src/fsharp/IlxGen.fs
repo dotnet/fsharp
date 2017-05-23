@@ -154,6 +154,7 @@ type IlxGenOptions =
     { fragName: string
       generateFilterBlocks: bool
       workAroundReflectionEmitBugs: bool
+      unverifiableOk: bool
       emitConstantArraysUsingStaticDataBlobs: bool
       /// If this is set, then the last module becomes the "main" module and its toplevel bindings are executed at startup 
       mainMethodInfo: Tast.Attribs option
@@ -2268,8 +2269,8 @@ and GenUnionCaseProof cenv cgbuf eenv (e,ucref,tyargs,m) sequel =
     GenExpr cenv cgbuf eenv SPSuppress e Continue
     let cuspec,idx = GenUnionCaseSpec cenv.amap m eenv.tyenv ucref tyargs
     let fty = EraseUnions.GetILTypeForAlternative cuspec idx 
-    let avoidHelpers = entityRefInThisAssembly cenv.g.compilingFslib ucref.TyconRef
-    EraseUnions.emitCastData cenv.g.ilg (UnionCodeGen cgbuf) (false,avoidHelpers,cuspec,idx)
+    //let avoidHelpers = entityRefInThisAssembly cenv.g.compilingFslib ucref.TyconRef
+    EraseUnions.emitCastData cenv.g.ilg (UnionCodeGen cgbuf) (cenv.opts.unverifiableOk,cuspec,idx)
     CG.EmitInstrs cgbuf (pop 1) (Push [fty]) [ ]  // push/pop to match the line above
     GenSequel cenv eenv.cloc cgbuf sequel
 
@@ -2304,8 +2305,8 @@ and GenGetUnionCaseTag cenv cgbuf eenv (e,tcref,tyargs,m) sequel =
 and GenSetUnionCaseField cenv cgbuf eenv (e,ucref,tyargs,n,e2,m) sequel = 
     GenExpr cenv cgbuf eenv SPSuppress e Continue
     let cuspec,idx = GenUnionCaseSpec cenv.amap m eenv.tyenv ucref tyargs
-    let avoidHelpers = entityRefInThisAssembly cenv.g.compilingFslib ucref.TyconRef
-    EraseUnions.emitCastData cenv.g.ilg (UnionCodeGen cgbuf) (false,avoidHelpers,cuspec,idx)
+    //let avoidHelpers = entityRefInThisAssembly cenv.g.compilingFslib ucref.TyconRef
+    EraseUnions.emitCastData cenv.g.ilg (UnionCodeGen cgbuf) (cenv.opts.unverifiableOk,cuspec,idx)
     CG.EmitInstrs cgbuf (pop 1) (Push [cuspec.EnclosingType]) [ ] // push/pop to match the line above
     GenExpr cenv cgbuf eenv SPSuppress e2 Continue
     CG.EmitInstrs cgbuf (pop 2) Push0 (EraseUnions.mkStData (cuspec, idx, n))

@@ -14,6 +14,7 @@ type OptimizationSettings =
     { abstractBigTargets : bool
       jitOptUser : bool option
       localOptUser : bool option
+      unverifiableOkOptUser : bool option
       crossModuleOptUser : bool option
       bigTargetSize : int
       veryBigExprSize : int 
@@ -26,6 +27,7 @@ type OptimizationSettings =
 
     member jitOpt : unit -> bool 
     member localOpt : unit -> bool 
+    member unverifiableOkOpt : unit -> bool 
     static member Defaults : OptimizationSettings
 
 /// Optimization information 

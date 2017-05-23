@@ -26,6 +26,7 @@
     <GeneratePkgDefFile>true</GeneratePkgDefFile>
     <IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <OtherFlags>$(OtherFlags) /warnon:1182 /unverifiable</OtherFlags>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <Import Project="$(FsLexToolPath)\FsLexYacc.targets" />
