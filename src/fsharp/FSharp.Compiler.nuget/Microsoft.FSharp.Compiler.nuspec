@@ -39,6 +39,18 @@
         </dependencies>
     </metadata>
     <files>
+        <!--
+            Why is this like this?
+            This package is used to deploy the fsharp compiler tools as built product.
+            
+            There are no reference assemblies or libs.  _._ indicates this.
+            
+            The dotnet publish command, publishes the target specific files under libs, content and runtimes.  
+            It delivers the dll's according to the selected runtime id.
+            The tools and build subdirectory, seem to be used when building product, 
+            Ie. for providing extra msbuild target files, or extra build time tools.
+           
+        -->
         <file src="coreclr/bin/_._"                               target="ref/netcoreapp1.0" />
         <file src="coreclr/bin/fsc.exe"                           target="runtimes/any/native" />
         <file src="coreclr/bin/fsi.exe"                           target="runtimes/any/native" />
