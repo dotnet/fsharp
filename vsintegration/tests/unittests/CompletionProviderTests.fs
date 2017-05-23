@@ -116,7 +116,7 @@ System.Console.WriteLine(x + y)
 
 [<Test>]
 let ShouldNotTriggerCompletionAfterAnyTriggerOtherThanInsertion() = 
-    for triggerKind in [CompletionTriggerKind.Deletion; CompletionTriggerKind.Other; CompletionTriggerKind.Snippets ] do
+    for triggerKind in [CompletionTriggerKind.Deletion; CompletionTriggerKind.Invoke; CompletionTriggerKind.Snippets ] do
     let fileContents = "System.Console.WriteLine(123)"
     let caretPosition = fileContents.IndexOf("System.")
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
