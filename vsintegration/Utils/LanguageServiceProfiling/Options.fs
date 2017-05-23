@@ -27,7 +27,7 @@ let FCS (repositoryDir: string) : Options =
     let files =
           [| @"src\fsharp\FSharp.Compiler.Service\obj\Release\FSComp.fs"
              @"src\fsharp\FSharp.Compiler.Service\obj\Release\FSIstrings.fs"
-             @"src\assemblyinfo\assemblyinfo.FSharp.Compiler.Service.Private.dll.fs"
+             @"src\assemblyinfo\assemblyinfo.FSharp.Compiler.Private.dll.fs"
              @"src\assemblyinfo\assemblyinfo.shared.fs"
              @"src\utils\reshapedreflection.fs"
              @"src\utils\sformat.fsi"
@@ -195,10 +195,10 @@ let FCS (repositoryDir: string) : Options =
              @"src\fsharp\fsi\fsi.fs" |]
 
     { Options =
-        {ProjectFileName = repositoryDir </> @"src\fsharp\FSharp.Compiler.Service.Private\FSharp.Compiler.Service.Private.fsproj"
+        {ProjectFileName = repositoryDir </> @"src\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj"
          SourceFiles = files |> Array.map (fun x -> repositoryDir </> x)
          OtherOptions =
-          [|@"-o:obj\Release\FSharp.Compiler.Service.Private.dll"; "-g"; "--noframework";
+          [|@"-o:obj\Release\FSharp.Compiler.Private.dll"; "-g"; "--noframework";
             @"--baseaddress:0x06800000"; "--define:DEBUG";
             @"--define:CROSS_PLATFORM_COMPILER"; "--define:FX_ATLEAST_45";
             @"--define:FX_ATLEAST_40"; "--define:BE_SECURITY_TRANSPARENT";
@@ -335,7 +335,7 @@ let VFPT (repositoryDir: string) : Options =
          OtherOptions =
           [|@"-o:obj\Release\FSharp.Editing.dll"; "--debug:pdbonly"; "--noframework";
             @"--define:TRACE"; "--doc:bin\Release\FSharp.Editing.XML"; "--optimize+";
-            @"-r:" + (repositoryDir </> @"packages\FSharp.Compiler.Service\lib\net45\FSharp.Compiler.Service.Private.dll");
+            @"-r:" + (repositoryDir </> @"packages\FSharp.Compiler.Service\lib\net45\FSharp.Compiler.Private.dll");
             @"-r:" + (repositoryDir </> @"packages\FSharp.Compiler.Service\lib\net45\FSharp.Compiler.Service.MSBuild.v12.dll");
             @"-r:" + (repositoryDir </> @"packages\FSharp.Core\lib\net40\FSharp.Core.dll");
             @"-r:C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.5\mscorlib.dll";

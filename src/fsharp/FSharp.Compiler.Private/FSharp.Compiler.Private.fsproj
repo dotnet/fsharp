@@ -9,7 +9,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
-    <AssemblyName>FSharp.Compiler.Service.Private</AssemblyName>
+    <AssemblyName>FSharp.Compiler.Private</AssemblyName>
     <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
     <NoWarn>$(NoWarn);62;9</NoWarn>
@@ -61,9 +61,9 @@
       <HasLceComments>false</HasLceComments>
       <InProject>false</InProject>
     </FilesToLocalize>
-    <PackageNuspec Include="FSharp.Compiler.Service.Private.netcore.nuspec" Condition="'$(TargetFramework)' == 'coreclr'" />
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Service.Private.dll.fs">
-      <Link>assemblyinfo.FSharp.Compiler.Service.Private.dll.fs</Link>
+    <PackageNuspec Include="FSharp.Compiler.Private.netcore.nuspec" Condition="'$(TargetFramework)' == 'coreclr'" />
+    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Private.dll.fs">
+      <Link>assemblyinfo.FSharp.Compiler.Private.dll.fs</Link>
     </Compile>
     <FsSrGen Include="..\FSComp.txt">
       <Link>FSComp.txt</Link>
