@@ -5014,20 +5014,35 @@ let NewVal (logicalName:string,m:range,compiledName,ty,isMutable,isCompGen,arity
     let stamp = newStamp() 
     Val.New
         { val_stamp = stamp
+          val_unused1 = Unchecked.defaultof<_>
           val_logical_name=logicalName
+          val_unused2 = Unchecked.defaultof<_>
           val_compiled_name= (match compiledName with Some v when v <> logicalName -> compiledName | _ -> None)
+          val_unused3 = Unchecked.defaultof<_>
           val_range=m
+          val_unused4 = Unchecked.defaultof<_>
           val_other_range=None
+          val_unused5 = Unchecked.defaultof<_>
           val_defn=None
+          val_unused6 = Unchecked.defaultof<_>
           val_repr_info= arity
+          val_unused7 = Unchecked.defaultof<_>
           val_actual_parent= actualParent
+          val_unused8 = Unchecked.defaultof<_>
           val_flags = ValFlags(recValInfo,baseOrThis,isCompGen,inlineInfo,isMutable,isModuleOrMemberBinding,isExtensionMember,isIncrClassSpecialMember,isTyFunc,allowTypeInst,isGeneratedEventVal)
+          val_unused9 = Unchecked.defaultof<_>
           val_const= konst
+          val_unused10 = Unchecked.defaultof<_>
           val_access=access
+          val_unused11 = Unchecked.defaultof<_>
           val_member_info=specialRepr
+          val_unused12 = Unchecked.defaultof<_>
           val_attribs=attribs
+          val_unused13 = Unchecked.defaultof<_>
           val_type = ty
+          val_unused14 = Unchecked.defaultof<_>
           val_xmldoc = doc
+          val_unused15 = Unchecked.defaultof<_>
           val_xmldocsig = ""} 
 
 
