@@ -2169,43 +2169,55 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     { 
       /// MUTABILITY: for unpickle linkage
       mutable val_logical_name: string
+      mutable val_unused1: string
 
       /// MUTABILITY: for unpickle linkage
       mutable val_compiled_name: string option
+      mutable val_unused2: string
 
       /// MUTABILITY: for unpickle linkage
       mutable val_range: range
+      mutable val_unused3: string
 
       /// If this field is populated, this is the implementation range for an item in a signature, otherwise it is 
       /// the signature range for an item in an implementation
       mutable val_other_range: (range * bool) option 
+      mutable val_unused4: string
 
       mutable val_type: TType
+      mutable val_unused5: string
 
       /// MUTABILITY: for unpickle linkage
       mutable val_stamp: Stamp 
+      mutable val_unused6: string
 
       /// See vflags section further below for encoding/decodings here 
       mutable val_flags: ValFlags
+      mutable val_unused7: string
 
       mutable val_const: Const option
+      mutable val_unused8: string
       
       /// What is the original, unoptimized, closed-term definition, if any? 
       /// Used to implement [<ReflectedDefinition>]
       mutable val_defn: Expr option 
+      mutable val_unused9: string
 
       /// How visible is this? 
       /// MUTABILITY: for unpickle linkage
       mutable val_access: Accessibility 
+      mutable val_unused10: string
 
       /// Is the value actually an instance method/property/event that augments 
       /// a type, and if so what name does it take in the IL?
       /// MUTABILITY: for unpickle linkage
       mutable val_member_info: ValMemberInfo option
+      mutable val_unused11: string
 
       /// Custom attributes attached to the value. These contain references to other values (i.e. constructors in types). Mutable to fixup  
       /// these value references after copying a collection of values. 
       mutable val_attribs: Attribs
+      mutable val_unused12: string
 
       // MUTABILITY CLEANUP: mutability of this field is used by 
       //     -- adjustAllUsesOfRecValue 
@@ -2215,16 +2227,19 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
       // For example, we use mutability to replace the empty arity initially assumed with an arity garnered from the 
       // type-checked expression.  
       mutable val_repr_info: ValReprInfo option
+      mutable val_unused13: string
 
       // MUTABILITY CLEANUP: mutability of this field is used by 
       //     -- LinearizeTopMatch
       //
       // The fresh temporary should just be created with the right parent
       mutable val_actual_parent: ParentRef
+      mutable val_unused14: string
 
       /// XML documentation attached to a value.
       /// MUTABILITY: for unpickle linkage
       mutable val_xmldoc : XmlDoc 
+      mutable val_unused15: string
       
       /// XML documentation signature for the value
       mutable val_xmldocsig : string } 
@@ -2575,20 +2590,35 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
     /// Create a new value with empty, unlinked data. Only used during unpickling of F# metadata.
     static member NewUnlinked() : Val  = 
         { val_logical_name    = Unchecked.defaultof<_>
+          val_unused1    = Unchecked.defaultof<_>
           val_compiled_name   = Unchecked.defaultof<_>
+          val_unused2    = Unchecked.defaultof<_>
           val_range           = Unchecked.defaultof<_>
+          val_unused3    = Unchecked.defaultof<_>
           val_other_range     = Unchecked.defaultof<_>
+          val_unused4    = Unchecked.defaultof<_>
           val_type            = Unchecked.defaultof<_>
+          val_unused5    = Unchecked.defaultof<_>
           val_stamp           = Unchecked.defaultof<_>
+          val_unused6    = Unchecked.defaultof<_>
           val_flags           = Unchecked.defaultof<_>
+          val_unused7    = Unchecked.defaultof<_>
           val_const           = Unchecked.defaultof<_>
+          val_unused8    = Unchecked.defaultof<_>
           val_defn            = Unchecked.defaultof<_>
+          val_unused9    = Unchecked.defaultof<_>
           val_access          = Unchecked.defaultof<_>
+          val_unused10    = Unchecked.defaultof<_>
           val_member_info     = Unchecked.defaultof<_>
+          val_unused11    = Unchecked.defaultof<_>
           val_attribs         = Unchecked.defaultof<_>
+          val_unused12    = Unchecked.defaultof<_>
           val_repr_info       = Unchecked.defaultof<_>
+          val_unused13    = Unchecked.defaultof<_>
           val_actual_parent   = Unchecked.defaultof<_>
+          val_unused14    = Unchecked.defaultof<_>
           val_xmldoc          = Unchecked.defaultof<_>
+          val_unused15    = Unchecked.defaultof<_>
           val_xmldocsig       = Unchecked.defaultof<_> }
 
 
@@ -4984,20 +5014,35 @@ let NewVal (logicalName:string,m:range,compiledName,ty,isMutable,isCompGen,arity
     let stamp = newStamp() 
     Val.New
         { val_stamp = stamp
+          val_unused1 = Unchecked.defaultof<_>
           val_logical_name=logicalName
+          val_unused2 = Unchecked.defaultof<_>
           val_compiled_name= (match compiledName with Some v when v <> logicalName -> compiledName | _ -> None)
+          val_unused3 = Unchecked.defaultof<_>
           val_range=m
+          val_unused4 = Unchecked.defaultof<_>
           val_other_range=None
+          val_unused5 = Unchecked.defaultof<_>
           val_defn=None
+          val_unused6 = Unchecked.defaultof<_>
           val_repr_info= arity
+          val_unused7 = Unchecked.defaultof<_>
           val_actual_parent= actualParent
+          val_unused8 = Unchecked.defaultof<_>
           val_flags = ValFlags(recValInfo,baseOrThis,isCompGen,inlineInfo,isMutable,isModuleOrMemberBinding,isExtensionMember,isIncrClassSpecialMember,isTyFunc,allowTypeInst,isGeneratedEventVal)
+          val_unused9 = Unchecked.defaultof<_>
           val_const= konst
+          val_unused10 = Unchecked.defaultof<_>
           val_access=access
+          val_unused11 = Unchecked.defaultof<_>
           val_member_info=specialRepr
+          val_unused12 = Unchecked.defaultof<_>
           val_attribs=attribs
+          val_unused13 = Unchecked.defaultof<_>
           val_type = ty
+          val_unused14 = Unchecked.defaultof<_>
           val_xmldoc = doc
+          val_unused15 = Unchecked.defaultof<_>
           val_xmldocsig = ""} 
 
 

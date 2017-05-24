@@ -2056,20 +2056,35 @@ and u_ValData st =
         (u_option u_const) 
         (u_space 1) st
     { val_logical_name=x1;
+      val_unused1    = Unchecked.defaultof<_>
       val_compiled_name=x1z;
+      val_unused2    = Unchecked.defaultof<_>
       val_range=(match x1a with None -> range0 | Some(a,_) -> a);
+      val_unused3    = Unchecked.defaultof<_>
       val_other_range=(match x1a with None -> None | Some(_,b) -> Some(b,true));
+      val_unused4    = Unchecked.defaultof<_>
       val_type=x2;
+      val_unused5    = Unchecked.defaultof<_>
       val_stamp=newStamp();
+      val_unused6    = Unchecked.defaultof<_>
       val_flags=ValFlags(x4);
+      val_unused7    = Unchecked.defaultof<_>
       val_defn = None;
+      val_unused8    = Unchecked.defaultof<_>
       val_member_info=x8;
+      val_unused9    = Unchecked.defaultof<_>
       val_attribs=x9;
+      val_unused10    = Unchecked.defaultof<_>
       val_repr_info=x10;
+      val_unused11    = Unchecked.defaultof<_>
       val_xmldoc=XmlDoc.Empty;
+      val_unused12    = Unchecked.defaultof<_>
       val_xmldocsig=x12;
+      val_unused13    = Unchecked.defaultof<_>
       val_access=x13;
+      val_unused14    = Unchecked.defaultof<_>
       val_actual_parent=x13b;
+      val_unused15    = Unchecked.defaultof<_>
       val_const=x14;
     }
 
