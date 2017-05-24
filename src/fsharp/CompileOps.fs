@@ -1653,7 +1653,7 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
           yield "System.Collections" // System.Collections.Generic.List<T>
           yield "System.Runtime.Numerics" // BigInteger
           yield "System.Threading"  // OperationCanceledException
-          // avoid a default reference to System.ValueTuple.dll in scripts and out-of-project sources
+          // always include a default reference to System.ValueTuple.dll in scripts and out-of-project sources
           yield "System.ValueTuple"
 
           yield "System.Web"
