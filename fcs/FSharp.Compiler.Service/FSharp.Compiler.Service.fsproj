@@ -603,6 +603,10 @@
     <Reference Include="System.Collections.Immutable">
       <HintPath>$(FSharpSourcesRoot)\..\..\packages\System.Collections.Immutable.1.2.0\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
     </Reference>
+    <Reference Include="System.ValueTuple">
+      <HintPath>$(FSharpSourcesRoot)\..\..\packages\System.ValueTuple.4.3.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
