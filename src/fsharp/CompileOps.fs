@@ -1618,8 +1618,16 @@ let OutputDiagnosticContext prefix fileLineFn os err =
 let GetFSharpCoreLibraryName () = "FSharp.Core"
 
 // If necessary assume a reference to the latest .NET Framework FSharp.Core with which those tools are built.
-let GetDefaultFSharpCoreReference() = 
-    typeof<list<int>>.Assembly.Location
+let GetDefaultFSharpCoreReference() = typeof<list<int>>.Assembly.Location
+
+// If necessary assume a reference to the latest System.ValueTuple with which those tools are built.
+let GetDefaultSystemValueTupleReference() = 
+    try 
+       let asm = typeof<System.ValueTuple<int,int>>.Assembly
+       if asm.FullName.StartsWith "System.ValueTuple" then 
+           Some asm.Location 
+       else None
+    with _ -> None
 
 let GetFsiLibraryName () = "FSharp.Compiler.Interactive.Settings"  
 
@@ -1654,7 +1662,9 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
           yield "System.Runtime.Numerics" // BigInteger
           yield "System.Threading"  // OperationCanceledException
           // always include a default reference to System.ValueTuple.dll in scripts and out-of-project sources
-          yield "System.ValueTuple"
+          match GetDefaultSystemValueTupleReference() with 
+          | None -> ()
+          | Some v -> yield v
 
           yield "System.Web"
           yield "System.Web.Services"
