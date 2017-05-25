@@ -57,7 +57,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.ValueTuple" Version="4.*" Condition=" '$(DisableImplcitSystemValueTupleReference)' != 'true' and '$(FrameworkNeedsValueTupleReference)' == 'true' "></PackageReference>
+    <PackageReference Include="System.ValueTuple" Version="4.*" Condition=" '$(DisableImplcitSystemValueTupleReference)' != 'true' and '$(_FrameworkNeedsValueTupleReference)' == 'true' "></PackageReference>
     <PackageReference Include="FSharp.Core" Version="$(FSharpCoreImplicitPackageVersion)"  Condition=" '$(DisableImplcitSystemValueTupleReference)' != 'true' "></PackageReference>
   </ItemGroup>
 
