@@ -1,4 +1,4 @@
-NAME=FSharp.Compiler
+NAME=FSharp.Compiler.Private
 ASSEMBLY = $(NAME).dll
 TOKEN=$(SIGN_TOKEN)
 

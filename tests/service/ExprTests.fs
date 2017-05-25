@@ -20,8 +20,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service
 open FSharp.Compiler.Service.Tests.Common
 
-// Create an interactive checker instance 
-let internal checker = FSharpChecker.Create(keepAssemblyContents=true)
+let internal exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
 
 
 [<AutoOpen>]
@@ -532,7 +531,7 @@ let bool2 = false
 #if EXTENSIONTYPING
 [<Test>]
 let ``Test Declarations project1`` () =
-    let wholeProjectResults = checker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
 
     for e in wholeProjectResults.Errors do 
         printfn "Project1 error: <<<%s>>>" e.Message
@@ -852,12 +851,12 @@ let BigSequenceExpression(outFileOpt,docFileOpt,baseAddressOpt) =
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let options =  exprChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
 
 [<Test>]
 let ``Test expressions of declarations stress big expressions`` () =
-    let wholeProjectResults = checker.ParseAndCheckProject(ProjectStressBigExpressions.options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(ProjectStressBigExpressions.options) |> Async.RunSynchronously
     
     wholeProjectResults.Errors.Length |> shouldEqual 0
 
@@ -882,7 +881,7 @@ let ``Check use of type provider that provides calls to F# code`` () =
 
     let res =
         options
-        |> checker.ParseAndCheckProject 
+        |> exprChecker.ParseAndCheckProject 
         |> Async.RunSynchronously
 
     Assert.AreEqual ([||], res.Errors, sprintf "Should not be errors, but: %A" res.Errors)
@@ -1096,7 +1095,7 @@ let ``Test Declarations selfhost`` () =
     let projectFile = __SOURCE_DIRECTORY__ + @"/FSharp.Compiler.Service.Tests.fsproj"
     // Check with Configuration = Release
     let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug")])
-    let wholeProjectResults = checker.ParseAndCheckProject(options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
     
     wholeProjectResults.Errors.Length |> shouldEqual 0 
 
@@ -1121,7 +1120,7 @@ let ``Test Declarations selfhost whole compiler`` () =
 
     //for x in options.OtherOptions do printfn "%s" x
 
-    let wholeProjectResults = checker.ParseAndCheckProject(options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
     
     (wholeProjectResults.Errors |> Array.filter (fun x -> x.Severity = FSharpErrorSeverity.Error)).Length |> shouldEqual 0 
 
@@ -1154,7 +1153,7 @@ let ``Test Declarations selfhost FSharp.Core`` () =
 
     let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug")])
 
-    let wholeProjectResults = checker.ParseAndCheckProject(options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
     
     //(wholeProjectResults.Errors |> Array.filter (fun x -> x.Severity = FSharpErrorSeverity.Error)).Length |> shouldEqual 0 
 

@@ -162,8 +162,6 @@ type UsingMSBuild() =
         Assert.AreEqual(1, ps)  // BuildPropertyDescriptor
         let ls = publicTypesInAsm @"FSharp.LanguageService.dll"
         Assert.AreEqual(0, ls)
-        let comp = publicTypesInAsm @"FSharp.Compiler.dll"
-        Assert.AreEqual(0, comp)
         let compis = publicTypesInAsm @"FSharp.Compiler.Interactive.Settings.dll"
         Assert.AreEqual(4, compis)
         let compserver = publicTypesInAsm @"FSharp.Compiler.Server.Shared.dll"

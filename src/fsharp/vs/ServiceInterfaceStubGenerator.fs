@@ -11,6 +11,7 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
         
+#if !FX_NO_INDENTED_TEXT_WRITER
 [<AutoOpen>]
 module internal CodeGenerationUtils =
     open System.IO
@@ -909,3 +910,4 @@ module internal InterfaceStubGenerator =
             None
         | ParsedInput.ImplFile input -> 
             walkImplFileInput input
+#endif
