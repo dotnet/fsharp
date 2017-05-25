@@ -55,8 +55,6 @@
       <HasLceComments>false</HasLceComments>
       <InProject>false</InProject>
     </FilesToLocalize>
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.dll.fs">
-      <Link>assemblyinfo.FSharp.Compiler.dll.fs</Link>
     <PackageNuspec Include="FSharp.Compiler.Private.netcore.nuspec" Condition="'$(TargetFramework)' == 'coreclr'" />
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Private.dll.fs">
       <Link>assemblyinfo.FSharp.Compiler.Private.dll.fs</Link>
@@ -638,7 +636,6 @@
     <Compile Include="..\LegacyHostedCompilerForTesting.fs">
       <Link>Misc/LegacyHostedCompilerForTesting.fs</Link>
     </Compile>
-    
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
     <None Include="project.json" />
