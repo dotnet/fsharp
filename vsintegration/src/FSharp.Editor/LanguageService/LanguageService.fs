@@ -46,7 +46,7 @@ type internal FSharpCheckerProvider
 
     let checker = 
         lazy
-            let checker = FSharpChecker.Create(projectCacheSize = 200, keepAllBackgroundResolutions = false (* , MaxMemory = 2300 *))
+            let checker = FSharpChecker.Create(projectCacheSize = 200, keepAllBackgroundResolutions = false (* , MaxMemory = 2300 *), legacyReferenceResolver=Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver)
 
             // This is one half of the bridge between the F# background builder and the Roslyn analysis engine.
             // When the F# background builder refreshes the background semantic build context for a file,

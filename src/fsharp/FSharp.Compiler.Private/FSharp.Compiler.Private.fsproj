@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
@@ -9,30 +9,41 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
-    <AssemblyName>FSharp.LanguageService.Compiler</AssemblyName>
+    <AssemblyName>FSharp.Compiler.Private</AssemblyName>
     <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
-    <DefineConstants>COMPILER_SERVICE;$(DefineConstants)</DefineConstants>
-    <DefineConstants>COMPILER_SERVICE_DLL_VISUAL_STUDIO;$(DefineConstants)</DefineConstants>
-    <DefineConstants>NO_INLINE_IL_PARSER;$(DefineConstants)</DefineConstants>
-    <NoWarn>$(NoWarn);62;9;75</NoWarn>
-    <ProjectGuid>{a437a6ec-5323-47c2-8f86-e2cac54ff152}</ProjectGuid>
+    <NoWarn>$(NoWarn);62;9</NoWarn>
+    <ProjectGuid>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</ProjectGuid>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <BaseAddress>0x06800000</BaseAddress>
-    <ImportVSSDKTargets>true</ImportVSSDKTargets>
-    <CreateVsixContainer>false</CreateVsixContainer>
-    <DeployExtension>false</DeployExtension>
-    <UseCodebase>true</UseCodebase>
-    <GeneratePkgDefFile>true</GeneratePkgDefFile>
-    <IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
-  </PropertyGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  <Import Project="$(FsLexToolPath)\FsLexYacc.targets" />
-  <Import Project="$(VsSDKInstall)\Microsoft.VsSDK.targets" Condition="'$(AddVsSdkAttributesToSomeCoreComponents)' == 'true'" />
-  <PropertyGroup>
     <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
   </PropertyGroup>
+  <!-- References -->
+  <Import Project="$(FSharpSourcesRoot)\.nuget\NuGet.targets" Condition="Exists('$(FSharpSourcesRoot)\.nuget\NuGet.targets')" />
+  <!-- Nuget packaging configuration -->
+  <PropertyGroup>
+    <PackageVersion Condition="'$(PreReleaseLabel)' == ''">$(NuGeReleaseVersion)</PackageVersion>
+    <PackageVersion Condition="'$(PackageVersionMinor)' != ''">$(PackageVersionMajor)-$(PackageVersionMinor)</PackageVersion>
+    <PackageVersion Condition="'$(PackageVersionMinor)' == ''">$(NuGetPerBuildPreReleaseVersion)-0</PackageVersion>
+  </PropertyGroup>
+  <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile">
+    <ItemGroup>
+      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Framework.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Conversion.Core.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Engine.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Utilities.Core.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Tasks.Core.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.DiaSymReader.PortablePdb.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.DiaSymReader.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\System.Reflection.Metadata.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\System.Collections.Immutable.dll" />
+      <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\System.ValueTuple.dll" />
+    </ItemGroup>
+  </Target>
+  <Import Project="$(FSharpSourcesRoot)\.nuget\NuGet.targets" Condition="Exists('$(FSharpSourcesRoot)\.nuget\NuGet.targets')" />
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  <Import Project="$(FsLexToolPath)\FsLexYacc.targets" />
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
     <ItemGroup>
       <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
@@ -50,6 +61,10 @@
       <HasLceComments>false</HasLceComments>
       <InProject>false</InProject>
     </FilesToLocalize>
+    <PackageNuspec Include="FSharp.Compiler.Private.netcore.nuspec" Condition="'$(TargetFramework)' == 'coreclr'" />
+    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Private.dll.fs">
+      <Link>assemblyinfo.FSharp.Compiler.Private.dll.fs</Link>
+    </Compile>
     <FsSrGen Include="..\FSComp.txt">
       <Link>FSComp.txt</Link>
     </FsSrGen>
@@ -59,10 +74,9 @@
     <Compile Include="..\..\utils\reshapedreflection.fs">
       <Link>Reflection\reshapedreflection.fs</Link>
     </Compile>
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.LanguageService.Compiler.dll.fs">
-      <Link>assemblyinfo.FSharp.LanguageService.Compiler.dll.fs</Link>
+    <Compile Include="..\..\utils\reshapedmsbuild.fs">
+      <Link>Reflection\reshapedmsbuild.fs</Link>
     </Compile>
-    <Compile Include="InternalsVisibleTo.fs" />
     <Compile Include="..\..\utils\sformat.fsi">
       <Link>ErrorText\sformat.fsi</Link>
     </Compile>
@@ -87,11 +101,11 @@
     <Compile Include="..\..\utils\prim-parsing.fs">
       <Link>LexYaccRuntime\prim-parsing.fs</Link>
     </Compile>
-    <Compile Include="..\..\utils\resizearray.fsi">
-      <Link>Utilities\resizearray.fsi</Link>
+    <Compile Include="..\..\utils\ResizeArray.fsi">
+      <Link>Utilities\ResizeArray.fsi</Link>
     </Compile>
-    <Compile Include="..\..\utils\resizearray.fs">
-      <Link>Utilities\resizearray.fs</Link>
+    <Compile Include="..\..\utils\ResizeArray.fs">
+      <Link>Utilities\ResizeArray.fs</Link>
     </Compile>
     <Compile Include="..\..\utils\HashMultiMap.fsi">
       <Link>Utilities\HashMultiMap.fsi</Link>
@@ -107,9 +121,6 @@
     </Compile>
     <Compile Include="..\..\utils\TaggedCollections.fs">
       <Link>Utilities\TaggedCollections.fs</Link>
-    </Compile>
-    <Compile Include="..\QueueList.fs">
-      <Link>Utilities\QueueList.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\ildiag.fsi">
       <Link>Utilities\ildiag.fsi</Link>
@@ -144,14 +155,17 @@
     <Compile Include="..\..\absil\bytes.fs">
       <Link>Utilities\bytes.fs</Link>
     </Compile>
-    <Compile Include="..\lib.fs">
-      <Link>Utilities\lib.fs</Link>
-    </Compile>
     <Compile Include="..\InternalCollections.fsi">
       <Link>Utilities\InternalCollections.fsi</Link>
     </Compile>
     <Compile Include="..\InternalCollections.fs">
       <Link>Utilities\InternalCollections.fs</Link>
+    </Compile>
+    <Compile Include="..\QueueList.fs">
+      <Link>Utilities\QueueList.fs</Link>
+    </Compile>
+    <Compile Include="..\lib.fs">
+      <Link>Utilities\lib.fs</Link>
     </Compile>
     <Compile Include="..\rational.fsi">
       <Link>Utilities\rational.fsi</Link>
@@ -207,16 +221,19 @@
       <Link>AbsIL\ilprint.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\ilmorph.fsi">
-      <Link>AbsIL/ilmorph.fsi</Link>
+      <Link>AbsIL\ilmorph.fsi</Link>
     </Compile>
     <Compile Include="..\..\absil\ilmorph.fs">
-      <Link>AbsIL/ilmorph.fs</Link>
+      <Link>AbsIL\ilmorph.fs</Link>
+    </Compile>
+    <Compile Include="..\..\absil\ilsign.fs" Condition=" '$(TargetFramework)'=='coreclr'">
+      <Link>AbsIL\ilsign.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\ilsupp.fsi">
-      <Link>AbsIL/ilsupp.fsi</Link>
+      <Link>AbsIL\ilsupp.fsi</Link>
     </Compile>
     <Compile Include="..\..\absil\ilsupp.fs">
-      <Link>AbsIL/ilsupp.fs</Link>
+      <Link>AbsIL\ilsupp.fs</Link>
     </Compile>
     <Compile Include="ilpars.fs">
       <Link>AbsIL\ilpars.fs</Link>
@@ -236,20 +253,20 @@
     <Compile Include="..\..\absil\ilread.fs">
       <Link>AbsIL\ilread.fs</Link>
     </Compile>
+    <Compile Include="..\..\absil\ilwrite.fsi">
+      <Link>AbsIL\ilwrite.fsi</Link>
+    </Compile>
     <Compile Include="..\..\absil\ilwritepdb.fsi">
-      <Link>AbsIL/ilwritepdb.fsi</Link>
+      <Link>AbsIL\ilwritepdb.fsi</Link>
     </Compile>
     <Compile Include="..\..\absil\ilwritepdb.fs">
-      <Link>AbsIL/ilwritepdb.fs</Link>
-    </Compile>
-    <Compile Include="..\..\absil\ilwrite.fsi">
-      <Link>AbsIL/ilwrite.fsi</Link>
+      <Link>AbsIL\ilwritepdb.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\ilwrite.fs">
-      <Link>AbsIL/ilwrite.fs</Link>
+      <Link>AbsIL\ilwrite.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\ilreflect.fs">
-      <Link>AbsIL/ilreflect.fs</Link>
+      <Link>AbsIL\ilreflect.fs</Link>
     </Compile>
     <Compile Include="..\..\utils\CompilerLocationUtils.fs">
       <Link>CompilerLocation\CompilerLocationUtils.fs</Link>
@@ -261,16 +278,16 @@
       <Link>ILXErase\ilxsettings.fs</Link>
     </Compile>
     <Compile Include="..\..\ilx\EraseClosures.fsi">
-      <Link>ILXErase/EraseClosures.fsi</Link>
+      <Link>ILXErase\EraseClosures.fsi</Link>
     </Compile>
     <Compile Include="..\..\ilx\EraseClosures.fs">
-      <Link>ILXErase/EraseClosures.fs</Link>
+      <Link>ILXErase\EraseClosures.fs</Link>
     </Compile>
     <Compile Include="..\..\ilx\EraseUnions.fsi">
-      <Link>ILXErase/EraseUnions.fsi</Link>
+      <Link>ILXErase\EraseUnions.fsi</Link>
     </Compile>
     <Compile Include="..\..\ilx\EraseUnions.fs">
-      <Link>ILXErase/EraseUnions.fs</Link>
+      <Link>ILXErase\EraseUnions.fs</Link>
     </Compile>
     <FsLex Include="..\pplex.fsl">
       <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
@@ -444,6 +461,8 @@
     <Compile Include="..\TypeChecker.fs">
       <Link>Logic\TypeChecker.fs</Link>
     </Compile>
+
+    <!-- includes the optimizer and code generator -->
     <Compile Include="..\Optimizer.fsi">
       <Link>Optimize\Optimizer.fsi</Link>
     </Compile>
@@ -451,29 +470,31 @@
       <Link>Optimize\Optimizer.fs</Link>
     </Compile>
     <Compile Include="..\DetupleArgs.fsi">
-      <Link>Optimize/DetupleArgs.fsi</Link>
+      <Link>Optimize\DetupleArgs.fsi</Link>
     </Compile>
     <Compile Include="..\DetupleArgs.fs">
-      <Link>Optimize/DetupleArgs.fs</Link>
+      <Link>Optimize\DetupleArgs.fs</Link>
     </Compile>
     <Compile Include="..\InnerLambdasToTopLevelFuncs.fsi">
-      <Link>Optimize/InnerLambdasToTopLevelFuncs.fsi</Link>
+      <Link>Optimize\InnerLambdasToTopLevelFuncs.fsi</Link>
     </Compile>
     <Compile Include="..\InnerLambdasToTopLevelFuncs.fs">
-      <Link>Optimize/InnerLambdasToTopLevelFuncs.fs</Link>
+      <Link>Optimize\InnerLambdasToTopLevelFuncs.fs</Link>
     </Compile>
     <Compile Include="..\LowerCallsAndSeqs.fs">
-      <Link>Optimize/LowerCallsAndSeqs.fs</Link>
+      <Link>Optimize\LowerCallsAndSeqs.fs</Link>
     </Compile>
     <Compile Include="..\autobox.fs">
       <Link>Optimize\autobox.fs</Link>
     </Compile>
     <Compile Include="..\IlxGen.fsi">
-      <Link>CodeGen/IlxGen.fsi</Link>
+      <Link>CodeGen\IlxGen.fsi</Link>
     </Compile>
     <Compile Include="..\IlxGen.fs">
-      <Link>CodeGen/IlxGen.fs</Link>
+      <Link>CodeGen\IlxGen.fs</Link>
     </Compile>
+
+    <!-- includes the core of the F# Compiler fsc.exe implementation -->
     <Compile Include="..\CompileOps.fsi">
       <Link>Driver\CompileOps.fsi</Link>
     </Compile>
@@ -492,6 +513,8 @@
     <Compile Include="..\fsc.fs">
       <Link>Driver\fsc.fs</Link>
     </Compile>
+
+    <!-- the symbol API. -->
     <Compile Include="..\symbols\SymbolHelpers.fsi">
       <Link>Symbols/SymbolHelpers.fsi</Link>
     </Compile>
@@ -510,6 +533,8 @@
     <Compile Include="..\symbols\Exprs.fs">
       <Link>Symbols/Exprs.fs</Link>
     </Compile>
+
+    <!-- the incremental builder and service . -->
     <Compile Include="..\vs\IncrementalBuild.fsi">
       <Link>Service/IncrementalBuild.fsi</Link>
     </Compile>
@@ -558,15 +583,6 @@
     <Compile Include="..\vs\ServiceUntypedParse.fs">
       <Link>Service/ServiceUntypedParse.fs</Link>
     </Compile>
-    <Compile Include="..\MSBuildReferenceResolver.fs">
-      <Link>Service/MSBuildReferenceResolver.fs</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceDeclarationLists.fsi">
-      <Link>Service/ServiceDeclarationLists.fsi</Link>
-    </Compile>
-    <Compile Include="..\vs\ServiceDeclarationLists.fs">
-      <Link>Service/ServiceDeclarationLists.fs</Link>
-    </Compile>
     <Compile Include="..\vs\ServiceAssemblyContent.fsi">
       <Link>Service/ServiceAssemblyContent.fsi</Link>
     </Compile>
@@ -578,6 +594,12 @@
     </Compile>
     <Compile Include="..\vs\ServiceXmlDocParser.fs">
       <Link>Service/ServiceXmlDocParser.fs</Link>
+    </Compile>
+    <Compile Include="..\..\utils\reshapedmsbuild.fs">
+      <Link>Service/reshapedmsbuild.fs</Link>
+    </Compile>
+    <Compile Include="..\SimulatedMSBuildReferenceResolver.fs">
+      <Link>Service/SimulatedMSBuildReferenceResolver.fs</Link>
     </Compile>
     <Compile Include="..\vs\service.fsi">
       <Link>Service/service.fsi</Link>
@@ -597,65 +619,40 @@
     <Compile Include="..\vs\ServiceStructure.fs">
       <Link>Service/ServiceStructure.fs</Link>
     </Compile>
+
+
+    <!-- the core of the F# Interactive fsi.exe implementation -->
+    <FsSrGen Include="..\fsi\FSIstrings.txt">
+      <Link>FSIstrings.txt</Link>
+    </FsSrGen>
+    <Compile Include="..\fsi\fsi.fsi">
+      <Link>InteractiveSession\fsi.fsi</Link>
+    </Compile>
+    <Compile Include="..\fsi\fsi.fs">
+      <Link>InteractiveSession\fsi.fs</Link>
+    </Compile>
+
+    <Compile Include="InternalsVisibleTo.fs" Condition="'$(TargetFramework)' != 'coreclr'">
+      <Link>Misc/InternalsVisibleTo.fs</Link>
+    </Compile>
+    <Compile Include="..\MSBuildReferenceResolver.fs">
+      <Link>Misc/MSBuildReferenceResolver.fs</Link>
+    </Compile>
+    <!-- an old API for testing the compiler and gathering diagnostics in-memory -->
+    <Compile Include="..\LegacyHostedCompilerForTesting.fs">
+      <Link>Misc/LegacyHostedCompilerForTesting.fs</Link>
+    </Compile>
+    
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
+    <None Include="project.json" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Windows.Forms" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <Reference Include="Microsoft.VisualStudio.OLE.Interop.dll, Version=7.10.6070, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.OLE.Interop.7.10.6070\lib\Microsoft.VisualStudio.OLE.Interops.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Immutable.10.0.10.0.30319\lib\net40\Microsoft.VisualStudio.Shell.Immutable.10.0.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.11.0.dll, Version=11.0.50727, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Immutable.11.0.11.0.50727\lib\net45\Microsoft.VisualStudio.Shell.Immutable.11.0.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion), Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion).$(RoslynVSPackagesVersion)\lib\Microsoft.VisualStudio.Shell.$(RoslynVSBinariesVersion).dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Shell.Framework, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Framework.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Shell.Framework.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Shell.Interop.dll, Version=7.10.6071, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Interop.7.10.6071\lib\Microsoft.VisualStudio.Shell.Interop.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0.dll, Version=8.0.50727, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Interop.8.0.8.0.50727\lib\Microsoft.VisualStudio.Shell.Interop.8.0.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Shell.Interop.9.0.dll, Version=9.0.30729, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Interop.9.0.9.0.30729\lib\Microsoft.VisualStudio.Shell.Interop.9.0.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Shell.Interop.10.0.dll, Version=10.0.30319, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Interop.10.0.10.0.30319\lib\Microsoft.VisualStudio.Shell.Interop.10.0.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Shell.Interop.11.0.dll, Version=11.0.61030, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Interop.11.0.11.0.61030\lib\Microsoft.VisualStudio.Shell.Interop.11.0.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Threading">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Threading.15.3.20\lib\net45\Microsoft.VisualStudio.Threading.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Shell.Design, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Design.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Shell.Design.dll</HintPath>
-    </Reference>
     <Reference Include="ISymWrapper, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Newtonsoft.Json.8.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="Microsoft.DiaSymReader.PortablePdb">
       <HintPath>..\..\..\packages\Microsoft.DiaSymReader.PortablePdb.1.1.0\lib\portable-net45+win8\Microsoft.DiaSymReader.PortablePdb.dll</HintPath>
     </Reference>
@@ -670,41 +667,51 @@
     </Reference>
     <Reference Include="System.ValueTuple">
       <HintPath>..\..\..\packages\System.ValueTuple.4.3.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+      <Private>true</Private>
     </Reference>
+  </ItemGroup>
+  <Choose>
+    <When Condition="$(MonoPackaging) != 'true'">
+      <ItemGroup Condition="'$(TargetFramework)' != 'coreclr'">
+        <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+          <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>
+        </Reference>
+        <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+          <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.dll</HintPath>
+        </Reference>
+        <Reference Include="Microsoft.Build.Utilities.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+          <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Utilities.Core.dll</HintPath>
+        </Reference>
+        <Reference Include="Microsoft.Build.Tasks.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+          <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Tasks.Core.dll</HintPath>
+        </Reference>
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <Reference Include="Microsoft.Build.Framework, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+          <Private>True</Private>
+        </Reference>
+        <Reference Include="Microsoft.Build.Engine, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+          <Private>True</Private>
+        </Reference>
+        <Reference Include="Microsoft.Build, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+          <Private>True</Private>
+        </Reference>
+        <Reference Include="Microsoft.Build.Utilities.$(MonoPackagingMSBuildVersionSuffix), Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+          <Private>True</Private>
+        </Reference>
+        <Reference Include="Microsoft.Build.Tasks.$(MonoPackagingMSBuildVersionSuffix), Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+          <Private>True</Private>
+        </Reference>
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
+
+  <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' != 'coreclr' AND '$(MonoPackaging)' != 'true' ">
-    <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Build.Utilities.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Utilities.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Build.Tasks.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Tasks.Core.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' != 'coreclr' AND '$(MonoPackaging)' == 'true' ">
-    <Reference Include="Microsoft.Build.Framework, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.Build.Engine, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.Build, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.Build.Utilities.$(MonoPackagingMSBuildVersionSuffix), Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.Build.Tasks.$(MonoPackagingMSBuildVersionSuffix), Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>True</Private>
-    </Reference>
   </ItemGroup>
 </Project>
