@@ -3,6 +3,7 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
+    <ProjectLanguage>FSharp</ProjectLanguage>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>
@@ -10,7 +11,7 @@
     <ProjectGuid>{DED3BBD7-53F4-428A-8C9F-27968E768605}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.Core</AssemblyName>
-    <DefineConstants>RUNTIME;$(DefineConstants)</DefineConstants>
+    <DefineConstants>FSHARP_CORE;$(DefineConstants)</DefineConstants>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <BaseAddress>0x05000000</BaseAddress>
     <CompilingFsLib>true</CompilingFsLib>
@@ -235,26 +236,18 @@
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Numerics" Condition="'$(TargetFramework)' == 'net40' OR 
-                                                    '$(TargetFramework)' == 'monotouch' OR 
-                                                    '$(TargetFramework)' == 'xamarinwatchos' OR 
-                                                    '$(TargetFramework)' == 'xamarintvos' OR 
-                                                    '$(TargetFramework)' == 'monodroid' OR
-                                                    '$(TargetFramework)' == 'xamarinmacmobile' OR
-                                                    '$(TargetFramework)' == 'xamarinmacfull'" >
+                                                    '$(TargetFramework)' == 'monoandroid10+monotouch10+xamarinios10' OR
+                                                    '$(TargetFramework)' == 'xamarinmacmobile'" >
       <Private>false</Private>
     </Reference>
 	<Reference Include="System.Net" Condition="'$(TargetFramework)' == 'portable47' OR 
                                                '$(TargetFramework)' == 'portable7'" >
       <Private>false</Private>
     </Reference>
-    <Reference Include="System.Core" Condition="'$(TargetFramework)' == 'monotouch' OR 
-                                                '$(TargetFramework)' == 'xamarinwatchos' OR 
-                                                '$(TargetFramework)' == 'xamarintvos' OR 
-                                                '$(TargetFramework)' == 'monodroid' OR 
+    <Reference Include="System.Core" Condition="'$(TargetFramework)' == 'monoandroid10+monotouch10+xamarinios10' OR 
                                                 '$(TargetFramework)' == 'portable47' OR 
                                                 '$(TargetFramework)' == 'portable7' OR
-                                                '$(TargetFramework)' == 'xamarinmacmobile' OR
-                                                '$(TargetFramework)' == 'xamarinmacfull'" >
+                                                '$(TargetFramework)' == 'xamarinmacmobile'" >
       <Private>false</Private>
     </Reference>
   </ItemGroup>
@@ -267,6 +260,9 @@
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 
   <!-- Hook compilation phase to do custom work -->
+  <!-- NOTE: The optdata and sigdata files are no longer needed by the F# compiler (the information is -->
+  <!-- integrated as resources into more recent FSharp.Core.dll's. However they are still produced to -->
+  <!-- allow older versions of the F# compiler to reference more recent FSharp.Core packages -->
   <Target Name="CopyToBuiltBin" BeforeTargets="AfterCompile" AfterTargets="CoreCompile" >
     <ItemGroup>
       <BuiltProjectOutputGroupKeyOutput Include="$(IntermediateOutputPath)\FSharp.Core.sigdata" />

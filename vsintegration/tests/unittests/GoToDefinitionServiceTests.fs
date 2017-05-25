@@ -12,36 +12,55 @@
 //   and capturing large amounts of structured output.
 (*
     cd Debug\net40\bin
-    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.Unittests.exe -g --optimize- -r .\FSharp.LanguageService.Compiler.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\unittests\GoToDefinitionServiceTests.fs 
+    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.Unittests.exe -g --optimize- -r .\FSharp.Compiler.Private.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\unittests\GoToDefinitionServiceTests.fs 
     .\VisualFSharp.Unittests.exe 
 *)
 // Technique 3: 
 // 
-//    Use F# Interactive.  This only works for FSharp.Compiler.Service.dll which has a public API
+//    Use F# Interactive.  This only works for FSharp.Compiler.Private.dll which has a public API
 
 namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
 
 open System
 open System.IO
-open System.Threading
-open System.Linq
-
 open NUnit.Framework
 
 open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Completion
-open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
-
-open Microsoft.VisualStudio.FSharp.Editor
-open Microsoft.VisualStudio.FSharp.LanguageService
-
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
+open UnitTests.TestLib.LanguageService
 
 [<TestFixture>][<Category "Roslyn Services">]
 module GoToDefinitionServiceTests =
+
+    let userOpName = "GoToDefinitionServiceTests"
+
+    let private findDefinition
+        (
+            checker: FSharpChecker, 
+            documentKey: DocumentId, 
+            sourceText: SourceText, 
+            filePath: string, 
+            position: int,
+            defines: string list, 
+            options: FSharpProjectOptions, 
+            textVersionHash: int
+        ) : range option = 
+        maybe {
+            let textLine = sourceText.Lines.GetLineFromPosition position
+            let textLinePos = sourceText.Lines.GetLinePosition position
+            let fcsTextLineNumber = Line.fromZ textLinePos.Line
+            let! lexerSymbol = Tokenizer.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Greedy, false)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument (filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true, userOpName=userOpName)  |> Async.RunSynchronously
+
+            let declarations = checkFileResults.GetDeclarationLocation (fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString(), lexerSymbol.FullIsland, false, userOpName=userOpName) |> Async.RunSynchronously
+            
+            match declarations with
+            | FSharpFindDeclResult.DeclFound range -> return range
+            | _ -> return! None
+        }
 
     [<Test>]
     let VerifyDefinition() =
@@ -84,7 +103,7 @@ let _ = Module1.foo 1
         let filePath = Path.GetTempFileName() + ".fs"
         let options: FSharpProjectOptions = { 
             ProjectFileName = "C:\\test.fsproj"
-            ProjectFileNames =  [| filePath |]
+            SourceFiles =  [| filePath |]
             ReferencedProjects = [| |]
             OtherOptions = [| |]
             IsIncompleteTypeCheckEnvironment = true
@@ -93,6 +112,7 @@ let _ = Module1.foo 1
             OriginalLoadReferences = []
             UnresolvedReferences = None
             ExtraProjectInfo = None
+            Stamp = None
         }
 
         File.WriteAllText(filePath, fileContents)
@@ -100,16 +120,11 @@ let _ = Module1.foo 1
         let caretPosition = fileContents.IndexOf(caretMarker) + caretMarker.Length - 1 // inside the marker
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
         let actual = 
-           FSharpGoToDefinitionService.FindDefinition(FSharpChecker.Instance, documentId, SourceText.From(fileContents), filePath, caretPosition, [], options, 0) 
-           |> Async.RunSynchronously
+           findDefinition(checker, documentId, SourceText.From(fileContents), filePath, caretPosition, [], options, 0) 
            |> Option.map (fun range -> (range.StartLine, range.EndLine, range.StartColumn, range.EndColumn))
 
         if actual <> expected then 
             Assert.Fail(sprintf "Incorrect information returned for fileContents=<<<%s>>>, caretMarker=<<<%s>>>, expected =<<<%A>>>, actual = <<<%A>>>" fileContents caretMarker expected actual)
-
-
-
-
 
 #if EXE
     VerifyDefinition()

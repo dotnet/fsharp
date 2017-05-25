@@ -12,39 +12,23 @@
 //   and capturing large amounts of structured output.
 (*
     cd Debug\net40\bin
-    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.Unittests.exe -g --optimize- -r .\FSharp.LanguageService.Compiler.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\unittests\SignatureHelpProviderTests.fs 
+    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.Unittests.exe -g --optimize- -r .\FSharp.Compiler.Private.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\unittests\SignatureHelpProviderTests.fs 
     .\VisualFSharp.Unittests.exe 
 *)
 // Technique 3: 
 // 
-//    Use F# Interactive.  This only works for FSharp.Compiler.Service.dll which has a public API
+//    Use F# Interactive.  This only works for FSharp.Compiler.Private.dll which has a public API
 [<NUnit.Framework.Category "Roslyn Services">]
 module Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn.SignatureHelpProvider
 
 open System
 open System.IO
-open System.Threading
 open System.Text
-
 open NUnit.Framework
-
-open Microsoft.CodeAnalysis
-open Microsoft.CodeAnalysis.Classification
-open Microsoft.CodeAnalysis.Editor
-open Microsoft.CodeAnalysis.Editor.Implementation.Debugging
-open Microsoft.CodeAnalysis.Editor.Shared.Utilities
-open Microsoft.CodeAnalysis.Formatting
-open Microsoft.CodeAnalysis.Host
-open Microsoft.CodeAnalysis.Host.Mef
-open Microsoft.CodeAnalysis.Options
-open Microsoft.CodeAnalysis.SignatureHelp
 open Microsoft.CodeAnalysis.Text
-
 open Microsoft.VisualStudio.FSharp.Editor
-open Microsoft.VisualStudio.FSharp.LanguageService
-
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.FSharp.Compiler.Range
+open UnitTests.TestLib.LanguageService
 
 let filePath = "C:\\test.fs"
 
@@ -52,7 +36,7 @@ let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri( Syste
 
 let internal options = { 
     ProjectFileName = "C:\\test.fsproj"
-    ProjectFileNames =  [| filePath |]
+    SourceFiles =  [| filePath |]
     ReferencedProjects = [| |]
     OtherOptions = [| "-r:" + PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll") |]
     IsIncompleteTypeCheckEnvironment = true
@@ -61,6 +45,7 @@ let internal options = {
     OriginalLoadReferences = []
     UnresolvedReferences = None
     ExtraProjectInfo = None
+    Stamp = None
 }
 
 [<Test>]
@@ -143,7 +128,7 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
             [("let _ = System.DateTime(",  Some ("[8..24)", 0, 0, None)) ])
           ]
 
-    let sb = System.Text.StringBuilder()
+    let sb = StringBuilder()
     for (fileContents, testCases) in manyTestCases do
       printfn "Test case: fileContents = %s..." fileContents.[2..4]
       
@@ -155,17 +140,17 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
 
             let documentationProvider = 
                 { new IDocumentationBuilder with
-                    override doc.AppendDocumentationFromProcessedXML(appendTo,processedXml,showExceptions, showReturns, paramName) = ()
-                    override doc.AppendDocumentation(appendTo,filename,signature, showExceptions, showReturns, paramName) = ()
+                    override doc.AppendDocumentationFromProcessedXML(_, _, _, _, _, _) = ()
+                    override doc.AppendDocumentation(_, _, _, _, _, _, _) = ()
                 } 
 
             let triggerChar = if marker = "," then Some ',' elif marker = "(" then Some '(' elif marker = "<" then Some '<' else None
-            let triggered = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(FSharpChecker.Instance, documentationProvider, SourceText.From(fileContents), caretPosition, options, triggerChar, filePath, 0) |> Async.RunSynchronously
-            FSharpChecker.Instance.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+            let triggered = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(checker, documentationProvider, SourceText.From(fileContents), caretPosition, options, triggerChar, filePath, 0) |> Async.RunSynchronously
+            checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             let actual = 
                 match triggered with 
                 | None -> None
-                | Some (results,applicableSpan,argumentIndex,argumentCount,argumentName) -> Some (applicableSpan.ToString(),argumentIndex,argumentCount,argumentName)
+                | Some (_,applicableSpan,argumentIndex,argumentCount,argumentName) -> Some (applicableSpan.ToString(),argumentIndex,argumentCount,argumentName)
 
             if expected <> actual then 
                 sb.AppendLine(sprintf "FSharpCompletionProvider.ProvideMethodsAsyncAux() gave unexpected results, expected %A, got %A" expected actual) |> ignore

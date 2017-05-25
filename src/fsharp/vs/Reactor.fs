@@ -13,15 +13,15 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
 /// Represents the capability to schedule work in the compiler service operations queue for the compilation thread
 type internal IReactorOperations = 
-    abstract EnqueueAndAwaitOpAsync : string * (CompilationThreadToken -> Cancellable<'T>) -> Async<'T>
-    abstract EnqueueOp: string * (CompilationThreadToken -> unit) -> unit
+    abstract EnqueueAndAwaitOpAsync : userOpName:string * opName:string * opArg:string * (CompilationThreadToken -> Cancellable<'T>) -> Async<'T>
+    abstract EnqueueOp: userOpName:string * opName:string * opArg:string * (CompilationThreadToken -> unit) -> unit
 
 [<NoEquality; NoComparison>]
 type internal ReactorCommands = 
     /// Kick off a build.
-    | SetBackgroundOp of (CompilationThreadToken -> bool)  option
+    | SetBackgroundOp of ( (* userOpName: *) string * (* opName: *) string * (* opArg: *) string * (CompilationThreadToken -> bool)) option
     /// Do some work not synchronized in the mailbox.
-    | Op of string * CancellationToken * (CompilationThreadToken -> unit) * (unit -> unit)
+    | Op of userOpName: string * opName: string * opArg: string * CancellationToken * (CompilationThreadToken -> unit) * (unit -> unit)
     /// Finish the background building
     | WaitForBackgroundOpCompletion of AsyncReplyChannel<unit>            
     /// Finish all the queued ops
@@ -45,7 +45,7 @@ type Reactor() =
 
         // Async workflow which receives messages and dispatches to worker functions.
         let rec loop (bgOpOpt, onComplete, bg) = 
-            async { Trace.TraceInformation("Reactor: receiving..., remaining {0}, mem {1}, gc2 {2}", inbox.CurrentQueueLength, GC.GetTotalMemory(false)/1000000L, GC.CollectionCount(2))
+            async { //Trace.TraceInformation("Reactor: receiving..., remaining {0}", inbox.CurrentQueueLength)
 
                     // Explanation: The reactor thread acts as the compilation thread in hosted scenarios
                     let ctok = AssumeCompilationThreadWithoutEvidence()
@@ -68,40 +68,47 @@ type Reactor() =
 #endif
                     match msg with
                     | Some (SetBackgroundOp bgOpOpt) -> 
-                        Trace.TraceInformation("Reactor: --> set background op, remaining {0}, mem {1}, gc2 {2}", inbox.CurrentQueueLength, GC.GetTotalMemory(false)/1000000L, GC.CollectionCount(2))
+                        //Trace.TraceInformation("Reactor: --> set background op, remaining {0}", inbox.CurrentQueueLength)
                         return! loop (bgOpOpt, onComplete, false)
-                    | Some (Op (desc, ct, op, ccont)) -> 
+                    | Some (Op (userOpName, opName, opArg, ct, op, ccont)) -> 
                         if ct.IsCancellationRequested then ccont() else
-                        Trace.TraceInformation("Reactor: --> {0}, remaining {1}, mem {2}, gc2 {3}", desc, inbox.CurrentQueueLength, GC.GetTotalMemory(false)/1000000L, GC.CollectionCount(2))
-                        let time = System.DateTime.Now
+                        Trace.TraceInformation("Reactor: --> {0}.{1} ({2}), remaining {3}", userOpName, opName, opArg, inbox.CurrentQueueLength)
+                        let time = Stopwatch()
+                        time.Start()
                         op ctok
-                        let span = System.DateTime.Now - time
+                        time.Stop()
+                        let span = time.Elapsed
                         //if span.TotalMilliseconds > 100.0 then 
-                        Trace.TraceInformation("Reactor: <-- {0}, remaining {1}, took {2}ms", desc, inbox.CurrentQueueLength, span.TotalMilliseconds)
+                        let taken = span.TotalMilliseconds
+                        let msg = (if taken > 10000.0 then "BAD-OP: >10s " elif taken > 3000.0 then "BAD-OP: >3s " elif taken > 1000.0 then "BAD-OP: > 1s " elif taken > 500.0 then "BAD-OP: >0.5s " else "")
+                        Trace.TraceInformation("Reactor: {0}<-- {1}.{2}, took {3} ms", msg, userOpName, opName, span.TotalMilliseconds)
                         return! loop (bgOpOpt, onComplete, false)
                     | Some (WaitForBackgroundOpCompletion channel) -> 
-                        Trace.TraceInformation("Reactor: --> wait for background (debug only), remaining {0}, mem {1}, gc2 {2}", inbox.CurrentQueueLength, GC.GetTotalMemory(false)/1000000L, GC.CollectionCount(2))
                         match bgOpOpt with 
                         | None -> ()
-                        | Some bgOp -> 
+                        | Some (bgUserOpName, bgOpName, bgOpArg, bgOp) -> 
+                            Trace.TraceInformation("Reactor: --> wait for background {0}.{1} ({2}), remaining {3}", bgUserOpName, bgOpName, bgOpArg, inbox.CurrentQueueLength)
                             while bgOp ctok do 
                                 ()
                         channel.Reply(())
                         return! loop (None, onComplete, false)
                     | Some (CompleteAllQueuedOps channel) -> 
-                        Trace.TraceInformation("Reactor: --> stop background work and complete all queued ops, remaining {0}, mem {1}, gc2 {2}", inbox.CurrentQueueLength, GC.GetTotalMemory(false)/1000000L, GC.CollectionCount(2))
+                        Trace.TraceInformation("Reactor: --> stop background work and complete all queued ops, remaining {0}", inbox.CurrentQueueLength)
                         return! loop (None, Some channel, false)
                     | None -> 
                         match bgOpOpt, onComplete with 
                         | _, Some onComplete -> onComplete.Reply()
-                        | Some bgOp, None -> 
-                            Trace.TraceInformation("Reactor: --> background step, remaining {0}, mem {1}, gc2 {2}", inbox.CurrentQueueLength, GC.GetTotalMemory(false)/1000000L, GC.CollectionCount(2))
-                            let time = System.DateTime.Now
+                        | Some  (bgUserOpName, bgOpName, bgOpArg, bgOp), None -> 
+                            Trace.TraceInformation("Reactor: --> background step {0}.{1} ({2})", bgUserOpName, bgOpName, bgOpArg)
+                            let time = Stopwatch()
+                            time.Start()
                             let res = bgOp ctok
-                            let span = System.DateTime.Now - time
+                            time.Stop()
+                            let taken = time.Elapsed.TotalMilliseconds
                             //if span.TotalMilliseconds > 100.0 then 
-                            Trace.TraceInformation("Reactor: <-- background step, remaining {0}, took {1}ms", inbox.CurrentQueueLength, span.TotalMilliseconds)
-                            return! loop ((if res then Some bgOp else None), onComplete, true)
+                            let msg = (if taken > 10000.0 then "BAD-BG-SLICE: >10s " elif taken > 3000.0 then "BAD-BG-SLICE: >3s " elif taken > 1000.0 then "BAD-BG-SLICE: > 1s " else "")
+                            Trace.TraceInformation("Reactor: {0}<-- background step, took {1}ms", msg, taken)
+                            return! loop ((if res then bgOpOpt else None), onComplete, true)
                         | None, None -> failwith "unreachable, should have used inbox.Receive"
                     }
         async { 
@@ -113,17 +120,17 @@ type Reactor() =
         }
 
     // [Foreground Mailbox Accessors] -----------------------------------------------------------                
-    member r.SetBackgroundOp(build) = 
+    member r.SetBackgroundOp(bgOpOpt) = 
         Trace.TraceInformation("Reactor: enqueue start background, length {0}", builder.CurrentQueueLength)
-        builder.Post(SetBackgroundOp build)
+        builder.Post(SetBackgroundOp bgOpOpt)
 
-    member r.EnqueueOp(desc, op) =
-        Trace.TraceInformation("Reactor: enqueue {0}, length {1}", desc, builder.CurrentQueueLength)
-        builder.Post(Op(desc, CancellationToken.None, op, (fun () -> ()))) 
+    member r.EnqueueOp(userOpName, opName, opArg, op) =
+        Trace.TraceInformation("Reactor: enqueue {0}.{1} ({2}), length {3}", userOpName, opName, opArg, builder.CurrentQueueLength)
+        builder.Post(Op(userOpName, opName, opArg, CancellationToken.None, op, (fun () -> ()))) 
 
-    member r.EnqueueOpPrim(desc, ct, op, ccont) =
-        Trace.TraceInformation("Reactor: enqueue {0}, length {1}", desc, builder.CurrentQueueLength)
-        builder.Post(Op(desc, ct, op, ccont)) 
+    member r.EnqueueOpPrim(userOpName, opName, opArg, ct, op, ccont) =
+        Trace.TraceInformation("Reactor: enqueue {0}.{1} ({2}), length {3}", userOpName, opName, opArg, builder.CurrentQueueLength)
+        builder.Post(Op(userOpName, opName, opArg, ct, op, ccont)) 
 
     member r.CurrentQueueLength =
         builder.CurrentQueueLength
@@ -138,11 +145,11 @@ type Reactor() =
         Trace.TraceInformation("Reactor: enqueue wait for all ops, length {0}", builder.CurrentQueueLength)
         builder.PostAndReply CompleteAllQueuedOps
 
-    member r.EnqueueAndAwaitOpAsync (desc, f) = 
+    member r.EnqueueAndAwaitOpAsync (userOpName, opName, opArg, f) = 
         async { 
             let! ct = Async.CancellationToken
             let resultCell = AsyncUtil.AsyncResultCell<_>()
-            r.EnqueueOpPrim(desc, ct,
+            r.EnqueueOpPrim(userOpName, opName, opArg, ct,
                 op=(fun ctok ->
                     let result =
                         try 
@@ -152,7 +159,7 @@ type Reactor() =
                         with e -> e |> AsyncUtil.AsyncException
 
                     resultCell.RegisterResult(result)),
-                    ccont=(fun () -> resultCell.RegisterResult (AsyncUtil.AsyncCanceled(OperationCanceledException())) )
+                    ccont=(fun () -> resultCell.RegisterResult (AsyncUtil.AsyncCanceled(OperationCanceledException(ct))) )
 
             )
             return! resultCell.AsyncResult 

@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.Layout
+module Microsoft.FSharp.Compiler.Layout
 
 open System
 open System.Collections.Generic
@@ -10,17 +10,22 @@ open Microsoft.FSharp.Core.Printf
 
 #nowarn "62" // This construct is for ML compatibility.
 
+#if COMPILER_PUBLIC_API
 type layout = Internal.Utilities.StructuredFormat.Layout
 type LayoutTag = Internal.Utilities.StructuredFormat.LayoutTag
 type TaggedText = Internal.Utilities.StructuredFormat.TaggedText
+#else
+type internal layout = Internal.Utilities.StructuredFormat.Layout
+type internal LayoutTag = Internal.Utilities.StructuredFormat.LayoutTag
+type internal TaggedText = Internal.Utilities.StructuredFormat.TaggedText
+#endif
 
-type NavigableTaggedText(tag, text, range: Range.range) =
+type NavigableTaggedText(taggedText: TaggedText, range: Range.range) =
     member val Range = range
     interface TaggedText with
-        member x.Tag = tag
-        member x.Text = text
-    static member Create(tt: TaggedText, range) =
-        NavigableTaggedText(tt.Tag, tt.Text, range)      
+        member x.Tag = taggedText.Tag
+        member x.Text = taggedText.Text
+let mkNav r t = NavigableTaggedText(t, r) :> TaggedText
 
 let spaces n = new String(' ',n)
 

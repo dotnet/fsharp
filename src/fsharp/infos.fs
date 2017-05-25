@@ -457,7 +457,7 @@ let private CombineMethInsts ttps mtps tinst minst = (mkTyparInst ttps tinst @ m
 /// Work out the instantiation relevant to interpret the backing metadata for a member.
 ///
 /// The 'minst' is the instantiation of any generic method type parameters (this instantiation is
-/// not included in the MethInfo objects, but carreid separately).
+/// not included in the MethInfo objects, but carried separately).
 let private GetInstantiationForMemberVal g isCSharpExt (typ,vref,minst) = 
     let memberParentTypars,memberMethodTypars,_retTy,parentTyArgs = AnalyzeTypeOfMemberVal isCSharpExt g (typ,vref)
     CombineMethInsts memberParentTypars memberMethodTypars parentTyArgs minst
@@ -788,6 +788,8 @@ type ILMethInfo =
 
     /// Get info about the arguments of the IL method. If this is an C#-style extension method then 
     /// drop the object argument.
+    ///
+    /// Any type parameters of the enclosing type are instantiated in the type returned.
     member x.GetParamNamesAndTypes(amap,m,minst) = 
         x.ParamMetadata |> List.map (fun p -> ParamNameAndType(Option.map (mkSynId m) p.Name, ImportILTypeFromMetadata amap m x.MetadataScope x.DeclaringTypeInst minst p.Type) )
 
@@ -872,7 +874,7 @@ type MethInfo =
     member x.DeclaringEntityRef   = 
         match x with 
         | ILMeth(_,ilminfo,_) when x.IsExtensionMember  -> ilminfo.DeclaringTyconRef
-        | FSMeth(_,_,vref,_) when x.IsExtensionMember -> vref.TopValActualParent
+        | FSMeth(_,_,vref,_) when x.IsExtensionMember && vref.HasTopValActualParent -> vref.TopValActualParent
         | _ -> tcrefOfAppTy x.TcGlobals x.EnclosingType 
 
     /// Get the information about provided static parameters, if any 
@@ -977,6 +979,8 @@ type MethInfo =
            
      /// Get the formal generic method parameters for the method as a list of variable types.
     member x.FormalMethodInst = generalizeTypars x.FormalMethodTypars
+
+    member x.FormalMethodTyparInst = mkTyparInst x.FormalMethodTypars x.FormalMethodInst
 
      /// Get the XML documentation associated with the method
     member x.XmlDoc = 
@@ -1642,7 +1646,6 @@ type ILFieldInfo =
         | ProvidedField(_,fi1,_), ProvidedField(_,fi2,_)-> ProvidedFieldInfo.TaintedEquals (fi1, fi2) 
         | _ -> false
 #endif
-
      /// Get an (uninstantiated) reference to the field as an Abstract IL ILFieldRef
     member x.ILFieldRef = rescopeILFieldRef x.ScopeRef (mkILFieldRef(x.ILTypeRef,x.FieldName,x.ILFieldType))
     override x.ToString() =  x.FieldName
@@ -1690,7 +1693,7 @@ type RecdFieldInfo =
 type UnionCaseInfo = 
     | UnionCaseInfo of TypeInst * Tast.UnionCaseRef 
 
-    /// Get the generic instantiation of the declaring type of the union case
+    /// Get the list of types for the instantiation of the type parameters of the declaring type of the union case
     member x.TypeInst = let (UnionCaseInfo(tinst,_)) = x in tinst
 
     /// Get a reference to the F# metadata for the uninstantiated union case
@@ -1707,6 +1710,10 @@ type UnionCaseInfo =
 
     /// Get the name of the union case
     member x.Name = x.UnionCase.DisplayName
+
+    /// Get the instantiation of the type parameters of the declaring type of the union case
+    member x.GetTyparInst(m) =  mkTyparInst (x.TyconRef.Typars(m)) x.TypeInst
+
     override x.ToString() = x.TyconRef.ToString() + "::" + x.Name
 
 
@@ -1756,16 +1763,22 @@ type ILPropInfo =
         (x.HasSetter && x.SetterMethod(g).IsNewSlot) 
 
     /// Get the names and types of the indexer arguments associated with the IL property.
+    ///
+    /// Any type parameters of the enclosing type are instantiated in the type returned.
     member x.GetParamNamesAndTypes(amap,m) = 
         let (ILPropInfo (tinfo,pdef)) = x
         pdef.Args |> List.map (fun ty -> ParamNameAndType(None, ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInst [] ty) )
 
     /// Get the types of the indexer arguments associated with the IL property.
+    ///
+    /// Any type parameters of the enclosing type are instantiated in the type returned.
     member x.GetParamTypes(amap,m) = 
         let (ILPropInfo (tinfo,pdef)) = x
         pdef.Args |> List.map (fun ty -> ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInst [] ty) 
 
     /// Get the return type of the IL property.
+    ///
+    /// Any type parameters of the enclosing type are instantiated in the type returned.
     member x.GetPropertyType (amap,m) = 
         let (ILPropInfo (tinfo,pdef)) = x
         ImportILTypeFromMetadata amap m tinfo.ILScopeRef tinfo.TypeInst [] pdef.Type
@@ -1833,7 +1846,7 @@ type PropInfo =
         | ProvidedProp(_,pi,m) -> pi.PUntaint((fun pi -> pi.CanWrite),m)
 #endif
 
-    /// Get the enclosing type of the proeprty. 
+    /// Get the enclosing type of the property. 
     ///
     /// If this is an extension member, then this is the apparent parent, i.e. the type the property appears to extend.
     member x.EnclosingType = 
@@ -2009,6 +2022,8 @@ type PropInfo =
 
 
     /// Get the names and types of the indexer parameters associated with the property
+    ///
+    /// If the property is in a generic type, then the type parameters are instantiated in the types returned.
     member x.GetParamNamesAndTypes(amap,m) = 
         match x with 
         | ILProp (_,ilpinfo) -> ilpinfo.GetParamNamesAndTypes(amap,m)
@@ -2359,3 +2374,7 @@ let PropInfosEquivByNameAndSig erasureFlag g amap m (pinfo:PropInfo) (pinfo2:Pro
     let retTy = pinfo.GetPropertyType(amap,m)
     let retTy2 = pinfo2.GetPropertyType(amap,m) 
     typeEquivAux erasureFlag g retTy retTy2
+
+let SettersOfPropInfos (pinfos:PropInfo list) = pinfos |> List.choose (fun pinfo -> if pinfo.HasSetter then Some(pinfo.SetterMethod,Some pinfo) else None) 
+let GettersOfPropInfos (pinfos:PropInfo list) = pinfos |> List.choose (fun pinfo -> if pinfo.HasGetter then Some(pinfo.GetterMethod,Some pinfo) else None) 
+

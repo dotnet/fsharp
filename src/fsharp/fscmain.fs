@@ -1,3 +1,4 @@
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.CommandLineMain
 
@@ -14,6 +15,7 @@ open Microsoft.FSharp.Compiler.Driver
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.CompileOps
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Internal.Utilities
 
 #if FX_RESHAPED_REFLECTION
@@ -21,13 +23,16 @@ open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
 
 #if !FX_NO_DEFAULT_DEPENDENCY_TYPE
-[<Dependency("FSharp.Compiler",LoadHint.Always)>] 
+[<Dependency("FSharp.Compiler.Private",LoadHint.Always)>] 
 #endif
 do ()
 
 
 module Driver = 
     let main argv = 
+
+        let ctok = AssumeCompilationThreadWithoutEvidence ()
+
         // Check for --pause as the very first step so that a compiler can be attached here.
         if argv |> Array.exists  (fun x -> x = "/pause" || x = "--pause") then 
             System.Console.WriteLine("Press return to continue...")
@@ -43,7 +48,7 @@ module Driver =
                     failwithf "%s" <| FSComp.SR.elSysEnvExitDidntExit() 
             }
 
-        mainCompile (argv, MSBuildReferenceResolver.Resolver, false, quitProcessExiter)
+        mainCompile (ctok, argv, MSBuildReferenceResolver.Resolver, (*bannerAlreadyPrinted*)false, (*openBinariesInMemory*)false, (*defaultCopyFSharpCore*)true, quitProcessExiter, ConsoleLoggerProvider(), None, None)
         0 
 
 [<EntryPoint>]

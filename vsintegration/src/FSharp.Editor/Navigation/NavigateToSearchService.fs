@@ -177,7 +177,7 @@ module private Utils =
             | _ -> container.Name
         typeAsString + name
 
-[<ExportLanguageService(typeof<INavigateToSearchService>, FSharpCommonConstants.FSharpLanguageName); Shared>]
+[<ExportLanguageService(typeof<INavigateToSearchService>, FSharpConstants.FSharpLanguageName); Shared>]
 type internal FSharpNavigateToSearchService 
     [<ImportingConstructor>] 
     (
@@ -187,15 +187,16 @@ type internal FSharpNavigateToSearchService
 
     let itemsByDocumentId = ConditionalWeakTable<DocumentId, (int * Index.IIndexedNavigableItems)>()
 
-    let getNavigableItems(document: Document, options: FSharpProjectOptions, cancellationToken: CancellationToken) =
+    let getNavigableItems(document: Document, options: FSharpProjectOptions) =
         async {
-            let! sourceText = document.GetTextAsync(cancellationToken)
+            let! cancellationToken = Async.CancellationToken
+            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let! parseResults = checkerProvider.Checker.ParseFileInProject(document.FilePath, sourceText.ToString(), options)
             return 
                 match parseResults.ParseTree |> Option.map NavigateTo.getNavigableItems with
                 | Some items ->
                     [| for item in items do
-                         let sourceSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, item.Range)
+                         let sourceSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, item.Range)
                          let glyph = Utils.navigateToItemKindToGlyph item.Kind
                          let kind = Utils.navigateToItemKindToRoslynKind item.Kind
                          let additionalInfo = Utils.containerToString item.Container document.Project
@@ -203,15 +204,16 @@ type internal FSharpNavigateToSearchService
                 | None -> [||]
         }
 
-    let getCachedIndexedNavigableItems(document: Document, options: FSharpProjectOptions, cancellationToken: CancellationToken) =
+    let getCachedIndexedNavigableItems(document: Document, options: FSharpProjectOptions) =
         async {
-            let! textVersion = document.GetTextVersionAsync(cancellationToken)
+            let! cancellationToken = Async.CancellationToken
+            let! textVersion = document.GetTextVersionAsync(cancellationToken)  |> Async.AwaitTask
             let textVersionHash = hash textVersion
             match itemsByDocumentId.TryGetValue document.Id with
             | true, (oldTextVersionHash, items) when oldTextVersionHash = textVersionHash ->
                 return items
             | _ ->
-                let! items = getNavigableItems(document, options, cancellationToken)
+                let! items = getNavigableItems(document, options)
                 let indexedItems = Index.build items
                 itemsByDocumentId.Remove(document.Id) |> ignore
                 itemsByDocumentId.Add(document.Id, (textVersionHash, indexedItems))
@@ -232,7 +234,7 @@ type internal FSharpNavigateToSearchService
                 let! options = projectInfoManager.TryGetOptionsForProject(project.Id)
                 let! items =
                     project.Documents
-                    |> Seq.map (fun document -> getCachedIndexedNavigableItems(document, options, cancellationToken))
+                    |> Seq.map (fun document -> getCachedIndexedNavigableItems(document, options))
                     |> Async.Parallel
                     |> liftAsync
                 
@@ -257,14 +259,14 @@ type internal FSharpNavigateToSearchService
             } 
             |> Async.map (Option.defaultValue [||])
             |> Async.map Seq.toImmutableArray
-            |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
+            |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
 
         member __.SearchDocumentAsync(document, searchPattern, cancellationToken) : Task<ImmutableArray<INavigateToSearchResult>> =
             asyncMaybe {
                 let! options = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
-                let! items = getCachedIndexedNavigableItems(document, options, cancellationToken) |> liftAsync
+                let! items = getCachedIndexedNavigableItems(document, options) |> liftAsync
                 return items.Find(searchPattern)
             }
             |> Async.map (Option.defaultValue [||])
             |> Async.map Seq.toImmutableArray
-            |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
+            |> RoslynHelpers.StartAsyncAsTask(cancellationToken)

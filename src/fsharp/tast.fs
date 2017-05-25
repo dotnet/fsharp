@@ -14,7 +14,6 @@ open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 
 open Microsoft.FSharp.Compiler 
@@ -34,8 +33,10 @@ open Microsoft.FSharp.Core.CompilerServices
 
 /// Unique name generator for stamps attached to lambdas and object expressions
 type Unique = int64
+
 //++GLOBAL MUTABLE STATE (concurrency-safe)
 let newUnique = let i = ref 0L in fun () -> System.Threading.Interlocked.Increment(i)
+
 type Stamp = int64
 
 /// Unique name generator for stamps attached to to val_specs, tycon_specs etc.
@@ -2420,6 +2421,11 @@ and [<StructuredFormatDisplay("{LogicalName}")>]
         match x.ActualParent  with 
         | Parent tcref -> tcref
         | ParentNone -> error(InternalError("TopValActualParent: does not have a parent",x.Range))
+
+    member x.HasTopValActualParent = 
+        match x.ActualParent  with 
+        | Parent _ -> true
+        | ParentNone -> false
             
     /// Get the apparent parent entity for a member
     member x.MemberApparentParent : TyconRef = 
@@ -2635,7 +2641,7 @@ and
 and 
     [<StructuredFormatDisplay("{Display}"); RequireQualifiedAccess>]
     NonLocalValOrMemberRef = 
-    { /// A reference to the entity containing the value or member. THis will always be a non-local reference
+    { /// A reference to the entity containing the value or member. This will always be a non-local reference
       EnclosingEntity : EntityRef 
 
       /// The name of the value, or the full signature of the member
@@ -3369,6 +3375,9 @@ and
     /// is declared.
     member x.TopValActualParent         = x.Deref.TopValActualParent
 
+    // Can be false for members after error recovery
+    member x.HasTopValActualParent         = x.Deref.HasTopValActualParent
+
     /// Get the apparent parent entity for a member
     member x.MemberApparentParent       = x.Deref.MemberApparentParent
 
@@ -3723,20 +3732,25 @@ and CcuThunk =
 
     /// Fixup a CCU to have the given contents
     member x.Fixup(avail:CcuThunk) = 
+
         match box x.target with
-        | null -> 
-            assert (avail.AssemblyName = x.AssemblyName)
-            x.target <- 
-               (match box avail.target with
-                | null -> error(Failure("internal error: ccu thunk '"+avail.name+"' not fixed up!"))
-                | _ -> avail.target)
-        | _ -> errorR(Failure("internal error: the ccu thunk for assembly "+x.AssemblyName+" not delayed!"))
+        | null -> ()
+        | _ -> 
+            // In the IDE we tolerate  a double-fixup of FSHarp.Core when editing the FSharp.Core project itself
+            if x.AssemblyName <>  "FSharp.Core" then 
+                errorR(Failure("internal error: Fixup: the ccu thunk for assembly "+x.AssemblyName+" not delayed!"))
+
+        assert (avail.AssemblyName = x.AssemblyName)
+        x.target <- 
+            match box avail.target with
+            | null -> error(Failure("internal error: ccu thunk '"+avail.name+"' not fixed up!"))
+            | _ -> avail.target
         
     /// Fixup a CCU to record it as "orphaned", i.e. not available
     member x.FixupOrphaned() = 
         match box x.target with
         | null -> x.orphanfixup<-true
-        | _ -> errorR(Failure("internal error: the ccu thunk for assembly "+x.AssemblyName+" not delayed!"))
+        | _ -> errorR(Failure("internal error: FixupOrphaned: the ccu thunk for assembly "+x.AssemblyName+" not delayed!"))
             
     /// Try to resolve a path into the CCU by referencing the .NET/CLI type forwarder table of the CCU
     member ccu.TryForward(nlpath:string[],item:string) : EntityRef option  = 
@@ -3939,7 +3953,7 @@ and ValReprInfo  =
     /// Get the number of type parameters of the value
     member x.NumTypars      = (let (ValReprInfo(n,_,_)) = x in n.Length)
 
-    /// Indicates if the value has no arguemnts - neither type parameters nor value arguments
+    /// Indicates if the value has no arguments - neither type parameters nor value arguments
     member x.HasNoArgs      = (let (ValReprInfo(n,args,_)) = x in n.IsEmpty && args.IsEmpty)
 
     /// Get the number of tupled arguments in each curried argument position
@@ -4053,7 +4067,7 @@ and
     ///
     /// Indicates the expression is a quoted expression tree. 
     ///
-    // MUTABLITY: this use of mutability is awkward and perhaps should be removed
+    // MUTABILITY: this use of mutability is awkward and perhaps should be removed
     | Quote of Expr * (ILTypeRef list * TTypes * Exprs * ExprData) option ref * bool * range * TType  
     
     /// Typechecking residue: Indicates a free choice of typars that arises due to 
@@ -4905,7 +4919,7 @@ let NewExn cpath (id:Ident) access repr attribs doc =
         entity_flags=EntityFlags(usesPrefixDisplay=false, isModuleOrNamespace=false, preEstablishedHasDefaultCtor=false, hasSelfReferentialCtor=false, isStructRecordOrUnionType=false)
         entity_il_repr_cache= newCache()   } 
 
-/// Create a new TAST RecdFied node for an F# class, struct or record field
+/// Create a new TAST RecdField node for an F# class, struct or record field
 let NewRecdField  stat konst id ty isMutable isVolatile pattribs fattribs docOption access secret =
     { rfield_mutable=isMutable
       rfield_pattribs=pattribs
@@ -5078,7 +5092,12 @@ let CombineCcuContentFragments m l =
 // Resource format for pickled data
 //--------------------------------------------------------------------------
 
-let FSharpOptimizationDataResourceName = "FSharpOptimizationData"
-let FSharpSignatureDataResourceName = "FSharpSignatureData"
+let FSharpOptimizationDataResourceName = "FSharpOptimizationData."
+let FSharpSignatureDataResourceName = "FSharpSignatureData."
+// For historical reasons, we use a different resource name for FSharp.Core, so older F# compilers 
+// don't complain when they see the resource. The prefix of these names must not be 'FSharpOptimizationData'
+// or 'FSharpSignatureData'
+let FSharpOptimizationDataResourceName2 = "FSharpOptimizationInfo." 
+let FSharpSignatureDataResourceName2 = "FSharpSignatureInfo."
 
 

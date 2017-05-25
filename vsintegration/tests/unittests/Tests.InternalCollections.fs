@@ -77,7 +77,7 @@ type MruCache =
         let PairToString (s,n) = rb.NumToString n
         let AreSameForSubsumption((s1,n1),(s2,n2)) = n1=n2
                 
-        let m = new MruCache<string*int,string>(3, PairToString, (fun (x,y) -> x = y), areSameForSubsumption=AreSameForSubsumption)
+        let m = new MruCache<string*int,string>(3, PairToString, (fun (x,y) -> x = y), areSimilar=AreSameForSubsumption)
         m.SetAlternate(("x",2),"Banana")
         let s = m.Get (("x",2))
         Assert.IsTrue("Banana"=s, "Check1")                                      
@@ -92,7 +92,7 @@ type MruCache =
         let AreSameForSubsumption((s1,n1),(s2,n2)) = s1=s2
                 
         let discarded = ref [] 
-        let m = new MruCache<string*int,string>(compute=fst, areSame=(fun (x,y) -> x = y), areSameForSubsumption=AreSameForSubsumption, keepStrongly=2, keepMax=2, onDiscard=(fun s -> discarded := s :: !discarded))
+        let m = new MruCache<string*int,string>(compute=fst, areSimilar=(fun (x,y) -> x = y), areSimilar=AreSameForSubsumption, keepStrongly=2, keepMax=2, onDiscard=(fun s -> discarded := s :: !discarded))
         m.SetAlternate(("x",1),"Banana") // no discard
         printfn "discarded = %A" discarded.Value
         Assert.IsTrue(discarded.Value = [], "Check1")                                      

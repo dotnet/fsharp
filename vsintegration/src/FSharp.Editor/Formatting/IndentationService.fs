@@ -13,7 +13,7 @@ open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 
 [<Shared>]
-[<ExportLanguageService(typeof<ISynchronousIndentationService>, FSharpCommonConstants.FSharpLanguageName)>]
+[<ExportLanguageService(typeof<ISynchronousIndentationService>, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpIndentationService() =
 
     static member GetDesiredIndentation(sourceText: SourceText, lineNumber: int, tabSize: int): Option<int> =        
@@ -45,12 +45,13 @@ type internal FSharpIndentationService() =
     interface ISynchronousIndentationService with
         member this.GetDesiredIndentation(document: Document, lineNumber: int, cancellationToken: CancellationToken): Nullable<IndentationResult> =
             async {
-                 let! sourceText = document.GetTextAsync(cancellationToken)
-                 let! options = document.GetOptionsAsync(cancellationToken)
-                 let tabSize = options.GetOption(FormattingOptions.TabSize, FSharpCommonConstants.FSharpLanguageName)
+                let! cancellationToken = Async.CancellationToken
+                let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
+                let tabSize = options.GetOption(FormattingOptions.TabSize, FSharpConstants.FSharpLanguageName)
                  
-                 return 
+                return 
                     match FSharpIndentationService.GetDesiredIndentation(sourceText, lineNumber, tabSize) with
                     | None -> Nullable()
                     | Some(indentation) -> Nullable<IndentationResult>(IndentationResult(sourceText.Lines.[lineNumber].Start, indentation))
-            } |> Async.RunSynchronously
+            } |> (fun c -> Async.RunSynchronously(c,cancellationToken=cancellationToken))

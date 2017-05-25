@@ -43,53 +43,11 @@ set SN64="%WINSDKNETFXTOOLS_x64%sn.exe"
 set NGEN32=%windir%\Microsoft.NET\Framework\v4.0.30319\ngen.exe
 set NGEN64=%windir%\Microsoft.NET\Framework64\v4.0.30319\ngen.exe
 
-rem Disable strong-name validation for F# binaries built from open source that are signed with the microsoft key
-%SN32% -q -Vr FSharp.Core,b03f5f7f11d50a3a
-%SN32% -q -Vr FSharp.Build,b03f5f7f11d50a3a
-%SN32% -q -Vr FSharp.Compiler.Interactive.Settings,b03f5f7f11d50a3a
-
-%SN32% -q -Vr fsc,b03f5f7f11d50a3a
-%SN32% -q -Vr fsi,b03f5f7f11d50a3a
-%SN32% -q -Vr fsiAnyCpu,b03f5f7f11d50a3a
-
-%SN32% -q -Vr HostedCompilerServer,b03f5f7f11d50a3a
-%SN32% -q -Vr FSharp.Compiler,b03f5f7f11d50a3a
-%SN32% -q -Vr FSharp.Compiler.Server.Shared,b03f5f7f11d50a3a
-%SN32% -q -Vr FSharp.Editor,b03f5f7f11d50a3a
-%SN32% -q -Vr FSharp.LanguageService,b03f5f7f11d50a3a
-%SN32% -q -Vr FSharp.LanguageService.Base,b03f5f7f11d50a3a
-%SN32% -q -Vr FSharp.LanguageService.Compiler,b03f5f7f11d50a3a
-%SN32% -q -Vr FSharp.ProjectSystem.Base,b03f5f7f11d50a3a
-%SN32% -q -Vr FSharp.ProjectSystem.FSharp,b03f5f7f11d50a3a
-%SN32% -q -Vr FSharp.ProjectSystem.PropertyPages,b03f5f7f11d50a3a
-%SN32% -q -Vr FSharp.VS.FSI,b03f5f7f11d50a3a
-%SN32% -q -Vr VisualFSharp.Unittests,b03f5f7f11d50a3a
-%SN32% -q -Vr VisualFSharp.Salsa,b03f5f7f11d50a3a
-%SN32% -q -Vr FSharp.Compiler.Unittests,b03f5f7f11d50a3a
+rem Disable strong-name validation for binaries that are delay-signed with the microsoft key
+%SN32% -q -Vr *,b03f5f7f11d50a3a
 
 if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
-    %SN64% -q -Vr FSharp.Core,b03f5f7f11d50a3a
-    %SN64% -q -Vr FSharp.Build,b03f5f7f11d50a3a
-    %SN64% -q -Vr FSharp.Compiler.Interactive.Settings,b03f5f7f11d50a3a
-
-    %SN64% -q -Vr fsc,b03f5f7f11d50a3a
-    %SN64% -q -Vr fsi,b03f5f7f11d50a3a
-    %SN64% -q -Vr fsiAnyCpu,b03f5f7f11d50a3a
-
-    %SN64% -q -Vr HostedCompilerServer,b03f5f7f11d50a3a
-    %SN64% -q -Vr FSharp.Compiler,b03f5f7f11d50a3a
-    %SN64% -q -Vr FSharp.Compiler.Server.Shared,b03f5f7f11d50a3a
-    %SN64% -q -Vr FSharp.Editor,b03f5f7f11d50a3a
-    %SN64% -q -Vr FSharp.LanguageService,b03f5f7f11d50a3a
-    %SN64% -q -Vr FSharp.LanguageService.Base,b03f5f7f11d50a3a
-    %SN64% -q -Vr FSharp.LanguageService.Compiler,b03f5f7f11d50a3a
-    %SN64% -q -Vr FSharp.ProjectSystem.Base,b03f5f7f11d50a3a
-    %SN64% -q -Vr FSharp.ProjectSystem.FSharp,b03f5f7f11d50a3a
-    %SN64% -q -Vr FSharp.ProjectSystem.PropertyPages,b03f5f7f11d50a3a
-    %SN64% -q -Vr FSharp.VS.FSI,b03f5f7f11d50a3a
-    %SN64% -q -Vr VisualFSharp.Unittests,b03f5f7f11d50a3a
-    %SN64% -q -Vr VisualFSharp.Salsa,b03f5f7f11d50a3a
-    %SN64% -q -Vr FSharp.Compiler.Unittests,b03f5f7f11d50a3a
+    %SN64% -q -Vr *,b03f5f7f11d50a3a
 )
 
 if /i "%1" == "signonly" goto :eof

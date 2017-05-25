@@ -71,7 +71,7 @@ type internal FSharpMethodListForAMethodTip(documentationBuilder: IDocumentation
         buf.ToString()
         )
             
-    override x.GetType(methodIndex) = safe methodIndex "" (fun m -> m.TypeText)
+    override x.GetReturnTypeText(methodIndex) = safe methodIndex "" (fun m -> m.ReturnTypeText)
 
     override x.GetParameterCount(methodIndex) =  safe methodIndex 0 (fun m -> getParameters(m).Length)
             
@@ -321,7 +321,7 @@ type internal FSharpIntellisenseInfo
                         // This can happen e.g. if you are typing quickly and the typecheck results are stale enough that you don't have a captured resolution for
                         // the name you just typed, but fresh enough that you do have the right name-resolution-environment to look up the name.
                         let lidEnd = nwpl.LongIdEndLocation
-                        let methods = typedResults.GetMethodsAlternate(lidEnd.Line, lidEnd.Column, "", Some names)  |> Async.RunSynchronously
+                        let methods = typedResults.GetMethods(lidEnd.Line, lidEnd.Column, "", Some names)  |> Async.RunSynchronously
                         
                         // If the name is an operator ending with ">" then it is a mistake 
                         // we can't tell whether "  >(" is a generic method call or an operator use 
@@ -445,7 +445,7 @@ type internal FSharpIntellisenseInfo
                                                 
                             // Correct the identifier (e.g. to correctly handle active pattern names that end with "BAR" token)
                             let tokenTag = QuickParse.CorrectIdentifierToken s tokenTag
-                            let dataTip = typedResults.GetStructuredToolTipTextAlternate(Range.Line.fromZ line, colAtEndOfNames, lineText, qualId, tokenTag) |> Async.RunSynchronously
+                            let dataTip = typedResults.GetStructuredToolTipText(Range.Line.fromZ line, colAtEndOfNames, lineText, qualId, tokenTag) |> Async.RunSynchronously
 
                             match dataTip with
                             | FSharpStructuredToolTipText.FSharpToolTipText [] when makeSecondAttempt -> getDataTip true
@@ -587,7 +587,7 @@ type internal FSharpIntellisenseInfo
                                     |   Some(s,colAtEndOfNames, _) ->
                                             if typedResults.HasFullTypeCheckInfo then 
                                                 let qualId = PrettyNaming.GetLongNameFromString s
-                                                match typedResults.GetF1KeywordAlternate(Range.Line.fromZ line,colAtEndOfNames, lineText, qualId) |> Async.RunSynchronously with
+                                                match typedResults.GetF1Keyword(Range.Line.fromZ line,colAtEndOfNames, lineText, qualId) |> Async.RunSynchronously with
                                                 | Some s -> Some s
                                                 | None -> None 
                                             else None                           

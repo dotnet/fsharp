@@ -18,7 +18,10 @@
     <NoWarn>$(NoWarn);62</NoWarn>
     <AssemblyName>fsi</AssemblyName>
     <BaseAddress>0x0A000000</BaseAddress>
-    <DefineConstants>EXTENSIONTYPING;COMPILER;$(DefineConstants)</DefineConstants>
+    <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
+    <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition="'$(TargetFramework)'=='net40'">FSI_SHADOW_COPY_REFERENCES;$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition="'$(TargetFramework)'=='net40'">FSI_SERVER;$(DefineConstants)</DefineConstants>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <Win32Resource>fsi.res</Win32Resource>
@@ -31,23 +34,15 @@
       <HasLceComments>false</HasLceComments>
       <InProject>false</InProject>
     </FilesToLocalize>
-    <FsSrGen Include="FSIstrings.txt">
-      <Link>FSIstrings.txt</Link>
-    </FsSrGen>
     <Compile Include="..\..\assemblyinfo\assemblyinfo.fsi.exe.fs">
       <Link>assemblyinfo.fsi.exe.fs</Link>
     </Compile>
-    <Compile Include="..\InternalCollections.fsi">
-      <Link>Utilities/InternalCollections.fsi</Link>
-    </Compile>
-    <Compile Include="..\InternalCollections.fs">
-      <Link>Utilities/InternalCollections.fs</Link>
-    </Compile>
+
     <Compile Include="console.fs">
-      <Link>Console/console.fs</Link>
+      <Link>console.fs</Link>
     </Compile>
-    <Compile Include="fsi.fs">
-      <Link>InteractiveSession/fsi.fs</Link>
+    <Compile Include="fsimain.fs">
+      <Link>fsimain.fs</Link>
     </Compile>
     <None Include="fsi.exe.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -57,6 +52,9 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
       <None Include="project.json" />
   </ItemGroup>
+
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  
   <ItemGroup  Condition="'$(TargetFramework)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
@@ -67,9 +65,9 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\FSharp.Compiler\FSharp.Compiler.fsproj">
+    <ProjectReference Include="..\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj">
       <Project>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</Project>
-      <Name>FSharp.Compiler</Name>
+      <Name>FSharp.Compiler.Private</Name>
     </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" >
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
@@ -83,7 +81,6 @@
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
     <ItemGroup>
       <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).exe" />

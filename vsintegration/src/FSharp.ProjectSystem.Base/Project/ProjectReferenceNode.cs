@@ -660,14 +660,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <summary>
         /// Overridden method. The method updates the build dependency list before removing the node from the hierarchy.
         /// </summary>
-        public override void Remove(bool removeFromStorage)
+        public override void Remove(bool removeFromStorage, bool promptSave = true)
         {
             if (this.ProjectMgr == null || !this.canRemoveReference)
             {
                 return;
             }
             this.ProjectMgr.RemoveBuildDependency(this.buildDependency);
-            base.Remove(removeFromStorage);
+            base.Remove(removeFromStorage, promptSave);
             
             // current reference is removed - delete associated error from list
             CleanProjectReferenceErrorState();
@@ -874,7 +874,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             object otherTargetFrameworkMonikerObj;
 
-            hierarchy.GetProperty(VSConstants.VSITEMID_ROOT, (int)__VSHPROPID4.VSHPROPID_TargetFrameworkMoniker, out otherTargetFrameworkMonikerObj);
+            int hr = hierarchy.GetProperty(VSConstants.VSITEMID_ROOT, (int)__VSHPROPID4.VSHPROPID_TargetFrameworkMoniker, out otherTargetFrameworkMonikerObj);
+            if (!ErrorHandler.Succeeded(hr))
+                return null;
 
             string targetFrameworkMoniker = (string)otherTargetFrameworkMonikerObj;
             return new System.Runtime.Versioning.FrameworkName(targetFrameworkMoniker);

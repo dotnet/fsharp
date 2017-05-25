@@ -6,6 +6,7 @@
     <DisplayName>Visual F# Tools</DisplayName>
     <Description xml:space="preserve">Deploy Visual F# Tools templates to Visual Studio</Description>
     <PackageId>Microsoft.FSharp.VSIX.Full.Core</PackageId>
+    <MoreInfo>https://docs.microsoft.com/en-us/dotnet/articles/fsharp/</MoreInfo>
   </Metadata>
   <Installation Experimental="true">
     <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[15.0]" />
@@ -14,13 +15,13 @@
     <Actions>
       <Action Type="Ngen" Path="fsiAnyCpu.exe" />
       <Action Type="Ngen" Path="fsi.exe" />
-      <Action Type="Ngen" Path="FSharp.Compiler.dll" />
+      <Action Type="Ngen" Path="FSharp.Compiler.Private.dll" />
       <Action Type="Ngen" Path="FSharp.Compiler.Interactive.Settings.dll" />
       <Action Type="Ngen" Path="FSharp.Compiler.Server.Shared.dll" />
       <Action Type="Ngen" Path="FSharp.Core.dll" />
       <Action Type="Ngen" Path="FSharp.Editor.dll" />
+      <Action Type="Ngen" Path="FSharp.UIResources.dll" />
       <Action Type="Ngen" Path="FSharp.LanguageService.Base.dll" />
-      <Action Type="Ngen" Path="FSharp.LanguageService.Compiler.dll" />
       <Action Type="Ngen" Path="FSharp.LanguageService.dll" />
       <Action Type="Ngen" Path="FSharp.ProjectSystem.Base.dll" />
       <Action Type="Ngen" Path="FSharp.ProjectSystem.FSharp.dll" />
@@ -39,7 +40,6 @@
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.VS.FSI.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.LanguageService.Base.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.LanguageService.pkgdef" />
-    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.LanguageService.Compiler.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.Editor.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.ProjectSystem.PropertyPages.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.Compiler.Server.Shared.pkgdef" />
@@ -64,6 +64,7 @@
     <Asset Type="Microsoft.VisualStudio.MefComponent" d:Source="Project" d:ProjectName="ProjectSystem.Base" Path="|ProjectSystem.Base|" />
   </Assets>
   <Prerequisites>
-    <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[15.0,16.0)" DisplayName="Visual Studio core editor" /> 
+    <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[15.0,16.0)" DisplayName="Visual Studio core editor" />
   </Prerequisites>
 </PackageManifest>
+

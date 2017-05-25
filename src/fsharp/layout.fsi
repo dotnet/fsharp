@@ -1,6 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
+#if COMPILER_PUBLIC_API
+module public Microsoft.FSharp.Compiler.Layout
+#else
 module internal Microsoft.FSharp.Compiler.Layout
+#endif
 
 open System.Text
 open System.Collections.Generic
@@ -13,10 +17,10 @@ type LayoutTag = Internal.Utilities.StructuredFormat.LayoutTag
 type TaggedText = Internal.Utilities.StructuredFormat.TaggedText
 
 type NavigableTaggedText =
-    new : LayoutTag * string * Range.range -> NavigableTaggedText
+    new : TaggedText * Range.range -> NavigableTaggedText
     member Range: Range.range
-    static member Create: TaggedText * Range.range -> NavigableTaggedText
     interface TaggedText
+val mkNav : Range.range -> TaggedText -> TaggedText
 
 module TaggedTextOps = Internal.Utilities.StructuredFormat.TaggedTextOps
 
