@@ -224,35 +224,16 @@ module internal FSharpEnvironment =
             // Property pages (ApplicationPropPage.vb)
 
             let key1 = @"Software\Microsoft\FSharp\4.1\Runtime\v4.0"
-#if COMPILER_SERVICE_DLL // The FSharp.Compiler.Service.dll is designed to work against old installs of F# 
             let key2 = @"Software\Microsoft\FSharp\4.0\Runtime\v4.0"
-            let key3 = @"Software\Microsoft\FSharp\3.1\Runtime\v4.0"
-            let key4 = @"Software\Microsoft\FSharp\2.0\Runtime\v4.0"
-            let key5 = @"Software\Microsoft\.NETFramework\AssemblyFolders\Microsoft.FSharp-" + FSharpTeamVersionNumber 
-#endif
 
             let result = tryRegKey key1
             match result with 
             | Some _ ->  result 
             | None -> 
-#if COMPILER_SERVICE_DLL // The FSharp.Compiler.Service.dll is designed to work against old installs of F# 
             let result =  tryRegKey key2
             match result with 
             | Some _ ->  result 
             | None ->
-            let result =  tryRegKey key3
-            match result with 
-            | Some _ ->  result 
-            | None ->
-            let result =  tryRegKey key4
-            match result with 
-            | Some _ ->  result 
-            | None ->
-            let result =  tryRegKey key5
-            match result with 
-            | Some _ ->  result 
-            | None ->
-#endif
 
             // On Unix we let you set FSHARP_COMPILER_BIN. I've rarely seen this used and its not documented in the install instructions.
             let result = 

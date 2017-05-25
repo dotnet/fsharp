@@ -6,7 +6,7 @@
     <ComponentGroup Id="Compiler_LangPack">
       <ComponentRef Id="Compiler_LangPack_FSharp.Core.dll_$(var.LocaleCode)" />
       <ComponentRef Id="Compiler_LangPack_FSharp.Build.dll_$(var.LocaleCode)" />
-      <ComponentRef Id="Compiler_LangPack_FSharp.Compiler.dll_$(var.LocaleCode)" />
+      <ComponentRef Id="Compiler_LangPack_FSharp.Compiler.Private.dll_$(var.LocaleCode)" />
       <ComponentRef Id="Compiler_LangPack_fsc.exe_$(var.LocaleCode)" />
       <ComponentRef Id="Compiler_LangPack_fsi.exe_$(var.LocaleCode)" />
       <ComponentRef Id="Compiler_LangPack_fsiAnyCPU.exe_$(var.LocaleCode)" />
@@ -21,8 +21,8 @@
         <File Id="Compiler_LangPack_FSharp.Build.dll_$(var.LocaleCode)" Source="$(var.BinariesDir)\net40\bin\localize\$(var.LocaleCode)\FSharp.Build.resources.dll" KeyPath="yes" />
       </Component>
 
-      <Component Id="Compiler_LangPack_FSharp.Compiler.dll_$(var.LocaleCode)" Guid="$(fsharp.guid(Compiler_LangPack_FSharp.Compiler.dll_$(var.LocaleCode), $(var.LocaleCode)))">
-        <File Id="Compiler_LangPack_FSharp.Compiler.dll_$(var.LocaleCode)" Source="$(var.BinariesDir)\net40\bin\localize\$(var.LocaleCode)\FSharp.Compiler.resources.dll" KeyPath="yes" />
+      <Component Id="Compiler_LangPack_FSharp.Compiler.Private.dll_$(var.LocaleCode)" Guid="$(fsharp.guid(Compiler_LangPack_FSharp.Compiler.Private.dll_$(var.LocaleCode), $(var.LocaleCode)))">
+        <File Id="Compiler_LangPack_FSharp.Compiler.Private.dll_$(var.LocaleCode)" Source="$(var.BinariesDir)\net40\bin\localize\$(var.LocaleCode)\FSharp.Compiler.Private.resources.dll" KeyPath="yes" />
       </Component>
 
       <Component Id="Compiler_LangPack_fsc.exe_$(var.LocaleCode)" Guid="$(fsharp.guid(Compiler_LangPack_fsc.exe_$(var.LocaleCode), $(var.LocaleCode)))">

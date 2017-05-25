@@ -30,13 +30,8 @@ open Microsoft.FSharp.Compiler.ExtensionTyping
 
 #if DEBUG
 
-#if COMPILER_SERVICE
 module internal CompilerService =
-#else
-module internal FullCompiler =
-#endif
     val showAssertForUnexpectedException : bool ref
-
 #endif
 
 //----------------------------------------------------------------------------
@@ -328,7 +323,7 @@ type TcConfigBuilder =
       mutable win32manifest : string
       mutable includewin32manifest : bool
       mutable linkResources : string list
-      mutable referenceResolver: ReferenceResolver.Resolver 
+      mutable legacyReferenceResolver: ReferenceResolver.Resolver 
       mutable showFullPaths : bool
       mutable errorStyle : ErrorStyle
       mutable utf8output : bool
@@ -376,12 +371,13 @@ type TcConfigBuilder =
     }
 
     static member CreateNew : 
-        referenceResolver: ReferenceResolver.Resolver *
+        legacyReferenceResolver: ReferenceResolver.Resolver *
         defaultFSharpBinariesDir: string * 
         optimizeForMemory: bool * 
         implicitIncludeDir: string * 
         isInteractive: bool * 
-        isInvalidationSupported: bool -> TcConfigBuilder
+        isInvalidationSupported: bool *
+        defaultCopyFSharpCore: bool -> TcConfigBuilder
 
     member DecideNames : string list -> outfile: string * pdbfile: string option * assemblyName: string 
     member TurnWarningOff : range * string -> unit
@@ -803,7 +799,7 @@ type LoadClosure =
       LoadClosureRootFileDiagnostics : (PhasedDiagnostic * bool) list }   
 
     // Used from service.fs, when editing a script file
-    static member ComputeClosureOfSourceText : CompilationThreadToken * referenceResolver: ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) * assumeDotNetFramework : bool -> LoadClosure
+    static member ComputeClosureOfSourceText : CompilationThreadToken * legacyReferenceResolver: ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) * assumeDotNetFramework : bool -> LoadClosure
 
     /// Used from fsi.fs and fsc.fs, for #load and command line. The resulting references are then added to a TcConfig.
     static member ComputeClosureOfSourceFiles : CompilationThreadToken * tcConfig:TcConfig * (string * range) list * implicitDefines:CodeContext * lexResourceManager : Lexhelp.LexResourceManager -> LoadClosure

@@ -373,8 +373,8 @@ type internal FSharpChecker =
     /// <param name="projectCacheSize">The optional size of the project checking cache.</param>
     /// <param name="keepAssemblyContents">Keep the checked contents of projects.</param>
     /// <param name="keepAllBackgroundResolutions">If false, do not keep full intermediate checking results from background checking suitable for returning from GetBackgroundCheckResultsForFileInProject. This reduces memory usage.</param>
-    /// <param name="msbuildEnabled">If false, no dependency on MSBuild v12 is assumed. If true, at attempt is made to load MSBuild for reference resolution in scripts</param>
-    static member Create : ?projectCacheSize: int * ?keepAssemblyContents: bool * ?keepAllBackgroundResolutions: bool * ?msbuildEnabled: bool -> FSharpChecker
+    /// <param name="legacyReferenceResolver">An optional resolver for non-file references, for legacy purposes</param>
+    static member Create : ?projectCacheSize: int * ?keepAssemblyContents: bool * ?keepAllBackgroundResolutions: bool  * ?legacyReferenceResolver: ReferenceResolver.Resolver -> FSharpChecker
 
     /// <summary>
     ///   Parse a source code file, returning information about brace matching in the file.
