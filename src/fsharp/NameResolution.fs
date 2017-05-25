@@ -1,10 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-//-------------------------------------------------------------------------
-// Name environment and name resolution 
-//------------------------------------------------------------------------- 
 
-
+/// Name environment and name resolution 
 module internal Microsoft.FSharp.Compiler.NameResolution
 
 open Internal.Utilities
@@ -27,7 +24,6 @@ open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.AccessibilityLogic
 open Microsoft.FSharp.Compiler.AttributeChecking
 open Microsoft.FSharp.Compiler.InfoReader
-open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.PrettyNaming
 open System.Collections.Generic
 
@@ -1425,35 +1421,29 @@ type TcResolutions
 
     static member Empty = empty
 
+[<Struct>]
+type TcSymbolUseData = 
+   { Item: Item
+     ItemOccurence: ItemOccurence
+     DisplayEnv: DisplayEnv
+     Range: range }
 
 /// Represents container for all name resolutions that were met so far when typechecking some particular file
 type TcSymbolUses(g, capturedNameResolutions : ResizeArray<CapturedNameResolution>, formatSpecifierLocations: (range * int)[]) = 
     
     // Make sure we only capture the information we really need to report symbol uses
-#if COMPILER_SERVICE_DLL // avoid a hard dependency on System.ValueTuple.dll from FSharp.Compiler.Service.dll
-    let cnrs = [| for cnr in capturedNameResolutions  -> (* struct *) (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.Range) |]
-#else
-    let cnrs = [| for cnr in capturedNameResolutions  ->    struct (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.Range) |]
-#endif
+    let cnrs = [| for cnr in capturedNameResolutions  ->  { Item=cnr.Item; ItemOccurence=cnr.ItemOccurence; DisplayEnv=cnr.DisplayEnv; Range=cnr.Range } |]
     let capturedNameResolutions = () 
     do ignore capturedNameResolutions // don't capture this!
 
     member this.GetUsesOfSymbol(item) = 
-#if COMPILER_SERVICE_DLL // avoid a hard dependency on System.ValueTuple.dll from FSharp.Compiler.Service.dll
-        [| for ( (* struct *)  (cnrItem,occ,denv,m)) in cnrs do
-#else
-        [| for (    struct     (cnrItem,occ,denv,m)) in cnrs do
-#endif
-               if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item cnrItem) then
-                  yield occ, denv, m |]
+        [| for cnr in cnrs do
+               if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item cnr.Item) then
+                  yield (cnr.ItemOccurence, cnr.DisplayEnv, cnr.Range) |]
 
     member this.GetAllUsesOfSymbols() = 
-#if COMPILER_SERVICE_DLL // avoid a hard dependency on System.ValueTuple.dll from FSharp.Compiler.Service.dll
-        [| for ( (* struct *) (cnrItem,occ,denv,m)) in cnrs do
-#else
-        [| for (    struct    (cnrItem,occ,denv,m)) in cnrs do
-#endif
-              yield (cnrItem, occ, denv, m) |]
+        [| for cnr in cnrs do
+              yield (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.Range)  |]
 
     member this.GetFormatSpecifierLocationsAndArity() =  formatSpecifierLocations
 
@@ -4038,9 +4028,7 @@ and ResolvePartialLongIdentToClassOrRecdFieldsImpl (ncenv: NameResolver) (nenv: 
             | _-> []
         modsOrNs @ qualifiedFields
 
-(* Determining if an `Item` is resolvable at point by given `plid`. It's optimized by being lazy and early returning according to the given `Item` *)
-
-let private ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics typ (item: Item) : seq<Item> =
+let ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad statics typ (item: Item) : seq<Item> =
     seq {
         let g = ncenv.g
         let amap = ncenv.amap
@@ -4209,7 +4197,7 @@ let private ResolveCompletionsInTypeForItem (ncenv: NameResolver) nenv m ad stat
             | _ -> ()
     }
 
-let rec private ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv m ad statics plid (item: Item) typ =
+let rec ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv m ad statics plid (item: Item) typ =
     seq {
         let g = ncenv.g
         let amap = ncenv.amap
@@ -4260,7 +4248,7 @@ let rec private ResolvePartialLongIdentInTypeForItem (ncenv: NameResolver) nenv 
                   yield! finfo.FieldType(amap, m) |> ResolvePartialLongIdentInTypeForItem ncenv nenv m ad false rest item
     }
 
-let rec private ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) nenv m ad (modref: ModuleOrNamespaceRef) plid (item: Item) =
+let rec ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameResolver) nenv m ad (modref: ModuleOrNamespaceRef) plid (item: Item) =
     let g = ncenv.g
     let mty = modref.ModuleOrNamespaceType
     
@@ -4339,7 +4327,7 @@ let rec private ResolvePartialLongIdentInModuleOrNamespaceForItem (ncenv: NameRe
                      yield! tcref |> generalizedTyconRef |> ResolvePartialLongIdentInTypeForItem ncenv nenv m ad true rest item
     }
 
-let rec private PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f plid (modref: ModuleOrNamespaceRef) =
+let rec PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f plid (modref: ModuleOrNamespaceRef) =
     let mty = modref.ModuleOrNamespaceType
     match plid with 
     | [] -> f modref
@@ -4349,7 +4337,7 @@ let rec private PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLa
             PartialResolveLookupInModuleOrNamespaceAsModuleOrNamespaceThenLazy f rest (modref.NestedTyconRef mty) 
         | None -> Seq.empty
 
-let private PartialResolveLongIndentAsModuleOrNamespaceThenLazy (nenv:NameResolutionEnv) plid f =
+let PartialResolveLongIndentAsModuleOrNamespaceThenLazy (nenv:NameResolutionEnv) plid f =
     seq {
         match plid with 
         | id :: rest -> 
@@ -4361,7 +4349,7 @@ let private PartialResolveLongIndentAsModuleOrNamespaceThenLazy (nenv:NameResolu
         | [] -> ()
     }
 
-let rec private GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m ad plid (item: Item) : seq<Item> =
+let rec GetCompletionForItem (ncenv: NameResolver) (nenv: NameResolutionEnv) m ad plid (item: Item) : seq<Item> =
     seq {
         let g = ncenv.g
         

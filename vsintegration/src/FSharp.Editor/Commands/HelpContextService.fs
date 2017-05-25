@@ -22,9 +22,10 @@ type internal FSharpHelpContextService
         projectInfoManager: ProjectInfoManager
     ) =
 
+    static let userOpName = "ImplementInterfaceCodeFix"
     static member GetHelpTerm(checker: FSharpChecker, sourceText : SourceText, fileName, options, span: TextSpan, tokens: List<ClassifiedSpan>, textVersion) : Async<string option> = 
         asyncMaybe {
-            let! _, _, check = checker.ParseAndCheckDocument(fileName, textVersion, sourceText.ToString(), options, allowStaleResults = true)
+            let! _, _, check = checker.ParseAndCheckDocument(fileName, textVersion, sourceText.ToString(), options, allowStaleResults = true, userOpName = userOpName)
             let textLines = sourceText.Lines
             let lineInfo = textLines.GetLineFromPosition(span.Start)
             let line = lineInfo.LineNumber
@@ -83,7 +84,7 @@ type internal FSharpHelpContextService
                         let! (s,colAtEndOfNames, _) = QuickParse.GetCompleteIdentifierIsland false lineText col
                         if check.HasFullTypeCheckInfo then 
                             let qualId = PrettyNaming.GetLongNameFromString s
-                            return! check.GetF1KeywordAlternate(Line.fromZ line, colAtEndOfNames, lineText, qualId)
+                            return! check.GetF1Keyword(Line.fromZ line, colAtEndOfNames, lineText, qualId)
                         else 
                             return! None
                     with e ->

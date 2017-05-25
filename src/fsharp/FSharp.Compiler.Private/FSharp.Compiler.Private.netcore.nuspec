@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
     <metadata>
-        <id>FSharp.Compiler.netcore</id>
+        <id>FSharp.Compiler.Private.netcore</id>
         <description>
-            .NET Core compatible version of the fsharp compiler dll
+            .NET Core compatible version of the fsharp compiler service dll
             Supported Platforms: - .NET Core (netstandard1.6)
         </description>
         <language>en-US</language>
@@ -38,6 +38,6 @@
         </dependencies>
     </metadata>
     <files>
-        <file src="FSharp.Compiler.dll"     target="lib/netstandard1.6" />
+        <file src="FSharp.Compiler.Private.dll"     target="lib/netstandard1.6" />
     </files>
 </package>

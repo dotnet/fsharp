@@ -4,9 +4,9 @@ namespace Microsoft.FSharp
 open System.Reflection
 open System.Runtime.InteropServices
 
-[<assembly:AssemblyDescription("FSharp.Compiler.dll")>]
+[<assembly:AssemblyDescription("FSharp.Compiler.Private.dll")>]
 [<assembly:AssemblyCompany("Microsoft Corporation")>]
-[<assembly:AssemblyTitle("FSharp.Compiler.dll")>]
+[<assembly:AssemblyTitle("FSharp.Compiler.Private.dll")>]
 [<assembly:AssemblyCopyright("\169 Microsoft Corporation.  Apache 2.0 License.")>]
 [<assembly:AssemblyProduct("Microsoft\174 F#")>]
 [<assembly:ComVisible(false)>]

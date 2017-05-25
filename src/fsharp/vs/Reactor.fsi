@@ -10,10 +10,10 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 type internal IReactorOperations = 
 
     /// Put the operation in the queue, and return an async handle to its result. 
-    abstract EnqueueAndAwaitOpAsync : description: string * action: (CompilationThreadToken -> Cancellable<'T>) -> Async<'T>
+    abstract EnqueueAndAwaitOpAsync : userOpName:string * opName:string * opArg:string * action: (CompilationThreadToken -> Cancellable<'T>) -> Async<'T>
 
     /// Enqueue an operation and return immediately. 
-    abstract EnqueueOp: description: string * action: (CompilationThreadToken -> unit) -> unit
+    abstract EnqueueOp: userOpName:string * opName:string * opArg:string * action: (CompilationThreadToken -> unit) -> unit
 
 /// Reactor is intended for long-running but interruptible operations, interleaved
 /// with one-off asynchronous operations. 
@@ -26,7 +26,7 @@ type internal Reactor =
 
     /// Set the background building function, which is called repeatedly
     /// until it returns 'false'.  If None then no background operation is used.
-    member SetBackgroundOp : build:(CompilationThreadToken -> bool) option -> unit
+    member SetBackgroundOp : ( (* userOpName:*) string * (* opName: *) string * (* opArg: *) string *  (CompilationThreadToken -> bool)) option -> unit
 
     /// Block until the current implicit background build is complete. Unit test only.
     member WaitForBackgroundOpCompletion : unit -> unit
@@ -35,17 +35,17 @@ type internal Reactor =
     member CompleteAllQueuedOps : unit -> unit
 
     /// Enqueue an uncancellable operation and return immediately. 
-    member EnqueueOp : description: string * op:(CompilationThreadToken -> unit) -> unit
+    member EnqueueOp : userOpName:string * opName: string * opArg: string * op:(CompilationThreadToken -> unit) -> unit
 
     /// For debug purposes
     member CurrentQueueLength : int
 
     /// Put the operation in the queue, and return an async handle to its result. 
-    member EnqueueAndAwaitOpAsync : description: string * (CompilationThreadToken -> Cancellable<'T>) -> Async<'T>
+    member EnqueueAndAwaitOpAsync : userOpName:string * opName:string * opArg:string * (CompilationThreadToken -> Cancellable<'T>) -> Async<'T>
 
     /// The timespan in milliseconds before background work begins after the operations queue is empty
     member PauseBeforeBackgroundWork : int with get, set
 
-    /// Get the reactor for FSharp.Compiler.dll
+    /// Get the reactor 
     static member Singleton : Reactor
   

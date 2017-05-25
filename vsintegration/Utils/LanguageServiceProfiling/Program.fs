@@ -70,7 +70,7 @@ let main argv =
 
     eprintfn "Found options for %s." options.Options.ProjectFileName
     let checker = FSharpChecker.Create(projectCacheSize = 200, keepAllBackgroundResolutions = false)
-    let waste = new ResizeArray<int array>()
+    let waste = new ResizeArray<int[]>()
     
     let checkProject() : Async<FSharpCheckProjectResults option> =
         async {
@@ -130,12 +130,7 @@ let main argv =
                 let! fileResults = checkFile fileVersion
                 match fileResults with
                 | Some fileResults ->
-                    let! symbolUse =
-                        fileResults.GetSymbolUseAtLocation(
-                            options.SymbolPos.Line, 
-                            options.SymbolPos.Column, 
-                            getLine(options.SymbolPos.Line),
-                            [options.SymbolText])
+                    let! symbolUse = fileResults.GetSymbolUseAtLocation(options.SymbolPos.Line, options.SymbolPos.Column, getLine(options.SymbolPos.Line),[options.SymbolText])
                     match symbolUse with
                     | Some symbolUse ->
                         eprintfn "Found symbol %s" symbolUse.Symbol.FullName

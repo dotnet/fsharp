@@ -18,7 +18,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 
 [<AutoOpen>]
 module internal Globals = 
-    let checker = FSharpChecker.Create()
+    let checker = FSharpChecker.Create(legacyReferenceResolver=Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver)
 
 //open Internal.Utilities
 type internal TextSpan       = Microsoft.VisualStudio.TextManager.Interop.TextSpan

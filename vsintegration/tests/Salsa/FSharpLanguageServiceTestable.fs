@@ -68,7 +68,7 @@ type internal FSharpLanguageServiceTestable() as this =
     member this.Initialize (sp, dp, prefs, sourceFact) = 
         if this.Unhooked then raise Error.UseOfUnhookedLanguageServiceState        
         artifacts <- Some (ProjectSitesAndFiles())
-        let checker = FSharpChecker.Create()
+        let checker = FSharpChecker.Create(legacyReferenceResolver=Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver)
         checker.BeforeBackgroundFileCheck.Add (fun (filename,_) -> UIThread.Run(fun () -> this.NotifyFileTypeCheckStateIsDirty(filename)))
         checkerContainerOpt <- Some (checker)
         serviceProvider <- Some sp
@@ -126,7 +126,7 @@ type internal FSharpLanguageServiceTestable() as this =
 
     /// Respond to project being cleaned/rebuilt (any live type providers in the project should be refreshed)
     member this.OnProjectCleaned(projectSite:IProjectSite) = 
-        let checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite((fun _ -> None), projectSite, "" ,None, serviceProvider.Value, false)
+        let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite((fun _ -> None), projectSite, "" ,None, serviceProvider.Value, false)
         this.FSharpChecker.NotifyProjectCleaned(checkOptions) |> Async.RunSynchronously
 
     member this.OnActiveViewChanged(textView) =
@@ -168,7 +168,7 @@ type internal FSharpLanguageServiceTestable() as this =
     interface IDependencyFileChangeNotify with
         member this.DependencyFileCreated projectSite = 
             // Invalidate the configuration if we notice any add for any DependencyFiles 
-            let checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite((fun _ -> None), projectSite, "", None, this.ServiceProvider, false)
+            let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite((fun _ -> None), projectSite, "", None, this.ServiceProvider, false)
             this.FSharpChecker.InvalidateConfiguration(checkOptions)
 
         member this.DependencyFileChanged (filename) = 

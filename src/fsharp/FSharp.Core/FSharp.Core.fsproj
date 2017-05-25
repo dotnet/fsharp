@@ -11,7 +11,7 @@
     <ProjectGuid>{DED3BBD7-53F4-428A-8C9F-27968E768605}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.Core</AssemblyName>
-    <DefineConstants>RUNTIME;$(DefineConstants)</DefineConstants>
+    <DefineConstants>FSHARP_CORE;$(DefineConstants)</DefineConstants>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <BaseAddress>0x05000000</BaseAddress>
     <CompilingFsLib>true</CompilingFsLib>

@@ -34,6 +34,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
     inherit CodeFixProvider()
     let fixableDiagnosticIds = ["FS0366"]
     let checker = checkerProvider.Checker
+    static let userOpName = "ImplementInterfaceCodeFixProvider"
 
     let queryInterfaceState appendBracketAt (pos: pos) tokens (ast: Ast.ParsedInput) =
         asyncMaybe {
@@ -117,10 +118,10 @@ type internal FSharpImplementInterfaceCodeFixProvider
                             title,
                             (fun (cancellationToken: CancellationToken) ->
                                 async {
-                                    let! sourceText = context.Document.GetTextAsync() |> Async.AwaitTask
+                                    let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                                     let getMemberByLocation(name, range: range) =
                                         let lineStr = sourceText.Lines.[range.EndLine-1].ToString()
-                                        results.GetSymbolUseAtLocation(range.EndLine, range.EndColumn, lineStr, [name])
+                                        results.GetSymbolUseAtLocation(range.EndLine, range.EndColumn, lineStr, [name], userOpName=userOpName)
                                     let! implementedMemberSignatures =
                                         InterfaceStubGenerator.getImplementedMemberSignatures getMemberByLocation displayContext state.InterfaceData    
                                     let newSourceText = applyImplementInterface sourceText state displayContext implementedMemberSignatures entity indentSize verboseMode
@@ -141,7 +142,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject context.Document
             let cancellationToken = context.CancellationToken
             let! sourceText = context.Document.GetTextAsync(cancellationToken)
-            let! _, parsedInput, checkFileResults = checker.ParseAndCheckDocument(context.Document, options, sourceText = sourceText, allowStaleResults = true)
+            let! _, parsedInput, checkFileResults = checker.ParseAndCheckDocument(context.Document, options, sourceText = sourceText, allowStaleResults = true, userOpName = userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition context.Span.Start
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(context.Document.FilePath, options.OtherOptions |> Seq.toList)
             // Notice that context.Span doesn't return reliable ranges to find tokens at exact positions.
@@ -174,7 +175,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
             let lineContents = textLine.ToString()                            
             let! options = context.Document.GetOptionsAsync(cancellationToken)
             let tabSize = options.GetOption(FormattingOptions.TabSize, FSharpConstants.FSharpLanguageName)
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, lineContents, symbol.FullIsland)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, lineContents, symbol.FullIsland, userOpName=userOpName)
             let! entity, displayContext = 
                 match symbolUse.Symbol with
                 | :? FSharpEntity as entity -> 
