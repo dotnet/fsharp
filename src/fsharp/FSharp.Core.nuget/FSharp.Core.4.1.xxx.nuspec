@@ -25,10 +25,7 @@
         <projectUrl>$projectUrl$</projectUrl>
         <tags>$tags$</tags>
         <dependencies>
-            <group>
-                <dependency id="System.ValueTuple" version="4.3.0" />
-            </group>
-            <group>
+            <group  targetFramework=".NETStandard1.6">
                 <dependency id="System.Collections" version="4.0.11" />
                 <dependency id="System.Console" version="4.0.0" />
                 <dependency id="System.Diagnostics.Debug" version="4.0.11" />

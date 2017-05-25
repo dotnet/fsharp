@@ -41,7 +41,7 @@
           Outputs='$(FSharpSourcesRoot)\$(Configuration)\artifacts\$(PackageVersion)\"%(PackageNuspec.Filename)).nupkg'>
 
     <PropertyGroup>
-      <PreReleaseSuffix Condition="'$(PreRelease)' != 'false'">-$(BuildRevision.Trim())-0</PreReleaseSuffix>
+      <PreReleaseSuffix Condition="'$(PreRelease)' != 'false'">-rc-$(BuildRevision.Trim())-0</PreReleaseSuffix>
       <PackageVersion>X.X.XXX</PackageVersion>
       <PackageVersion Condition="'@(PackageNuspec)' != 'FSharp.Core.4.1.xxx.nuspec'">4.1.18$(PreReleaseSuffix)</PackageVersion>
       <PackageVersion Condition="'@(PackageNuspec)' != 'FSharp.Core.4.2.xxx.nuspec'">4.2.0$(PreReleaseSuffix)</PackageVersion>

@@ -13,12 +13,13 @@
     <PackageAuthors    Condition="'$(PackageAuthors)' == ''"   >Microsoft</PackageAuthors>
     <PackageTags       Condition="'$(PackageTags)' == ''"      >Visual F# Compiler FSharp coreclr functional programming</PackageTags>
     <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\coreclr\bin</OutputPath>
-    <PreReleaseSuffix Condition="'$(PreRelease)' != 'false'">-$(BuildRevision.Trim())-0</PreReleaseSuffix>
+    <PreReleaseSuffix Condition="'$(PreRelease)' != 'false'">-rc-$(BuildRevision.Trim())-0</PreReleaseSuffix>
     <PackageVersion>4.2.0$(PreReleaseSuffix)</PackageVersion>
     <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
+    <PackageNuspec Include="Testing.FSharp.Compiler.nuspec" />
     <PackageNuspec Include="Microsoft.FSharp.Compiler.nuspec" />
   </ItemGroup>
 
