@@ -8,7 +8,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
     internal static class Constants
     {
-        public const string FSharpEditorFactoryIdString = "8a5aa6cf-46e3-4520-a70a-7393d15233e9";
+        public const string FSharpEditorFactoryIdString = "4EB7CCB7-4336-4FFD-B12B-396E9FD079A9";
         public const string FSharpContentType = "F#";
     }
 }

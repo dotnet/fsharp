@@ -271,12 +271,6 @@ and
     [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsscript")>]
     [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".ml")>]
     [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".mli")>]
-    [<ProvideEditorExtension(FSharpConstants.editorFactoryGuidString, ".fs", 97)>]
-    [<ProvideEditorExtension(FSharpConstants.editorFactoryGuidString, ".fsi", 97)>]
-    [<ProvideEditorExtension(FSharpConstants.editorFactoryGuidString, ".fsx", 97)>]
-    [<ProvideEditorExtension(FSharpConstants.editorFactoryGuidString, ".fsscript", 97)>]
-    [<ProvideEditorExtension(FSharpConstants.editorFactoryGuidString, ".ml", 97)>]
-    [<ProvideEditorExtension(FSharpConstants.editorFactoryGuidString, ".mli", 97)>]
     internal FSharpLanguageService(package : FSharpPackage) =
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
 
