@@ -38,7 +38,7 @@ open Microsoft.FSharp.Core.ReflectionAdapters
 
 // Hardbinding dependencies should we NGEN fsi.exe
 #if !FX_NO_DEFAULT_DEPENDENCY_TYPE
-[<Dependency("FSharp.Compiler",LoadHint.Always)>] do ()
+[<Dependency("FSharp.Compiler.Private",LoadHint.Always)>] do ()
 [<Dependency("FSharp.Core",LoadHint.Always)>] do ()
 #endif
 
@@ -279,7 +279,7 @@ let evaluateSession(argv: string[]) =
                 member __.GetOptionalConsoleReadLine(probe) = getConsoleReadLine(probe) }
 
         // Create the console
-        and fsiSession = FsiEvaluationSession.Create (fsiConfig, argv, Console.In, Console.Out, Console.Error)
+        and fsiSession = FsiEvaluationSession.Create (fsiConfig, argv, Console.In, Console.Out, Console.Error, collectible=false, legacyReferenceResolver=MSBuildReferenceResolver.Resolver)
 
 
 #if !FX_NO_WINFORMS
@@ -308,10 +308,11 @@ let evaluateSession(argv: string[]) =
         
         // Start the session
         fsiSession.Run() 
-
-    with e -> printf "Exception by fsi.exe:\n%+A\n" e
-
-    0
+        0
+    with 
+    | Microsoft.FSharp.Compiler.ErrorLogger.StopProcessingExn _ -> 1
+    | Microsoft.FSharp.Compiler.ErrorLogger.ReportedError _ -> 1
+    | e -> eprintf "Exception by fsi.exe:\n%+A\n" e; 1
 
 // Mark the main thread as STAThread since it is a GUI thread
 [<EntryPoint>]

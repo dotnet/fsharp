@@ -1037,7 +1037,7 @@ type FrameworkImportsCacheKey = (*resolvedpath*)string list * string * (*TargetF
 type FrameworkImportsCache(keepStrongly) = 
 
     // Mutable collection protected via CompilationThreadToken 
-    let frameworkTcImportsCache = AgedLookup<CompilationThreadToken, FrameworkImportsCacheKey,(TcGlobals * TcImports)>(keepStrongly, areSame=(fun (x,y) -> x = y)) 
+    let frameworkTcImportsCache = AgedLookup<CompilationThreadToken, FrameworkImportsCacheKey,(TcGlobals * TcImports)>(keepStrongly, areSimilar=(fun (x,y) -> x = y)) 
 
     member __.Downsize(ctok) = frameworkTcImportsCache.Resize(ctok, keepStrongly=0)
     member __.Clear(ctok) = frameworkTcImportsCache.Clear(ctok)
@@ -1562,7 +1562,7 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
             return true
       }
     
-    member builder.GetCheckResultsBeforeFileInProjectIfReady (filename): PartialCheckResults option  = 
+    member builder.GetCheckResultsBeforeFileInProjectEvenIfStale (filename): PartialCheckResults option  = 
         let slotOfFile = builder.GetSlotOfFileName filename
         let result = 
             match slotOfFile with
@@ -1676,11 +1676,11 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
 #endif
       }
 
-    member __.ProjectFileNames  = sourceFiles  |> List.map (fun (_,f,_) -> f)
+    member __.SourceFiles  = sourceFiles  |> List.map (fun (_,f,_) -> f)
 
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
-    static member TryCreateBackgroundBuilderForProjectOptions (ctok, referenceResolver, defaultFSharpBinariesDir, frameworkTcImportsCache: FrameworkImportsCache, loadClosureOpt:LoadClosure option, sourceFiles:string list, commandLineArgs:string list, projectReferences, projectDirectory, useScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions, maxTimeShareMilliseconds) =
+    static member TryCreateBackgroundBuilderForProjectOptions (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, frameworkTcImportsCache: FrameworkImportsCache, loadClosureOpt:LoadClosure option, sourceFiles:string list, commandLineArgs:string list, projectReferences, projectDirectory, useScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions, maxTimeShareMilliseconds) =
       cancellable {
     
         // Trap and report warnings and errors from creation.
@@ -1697,23 +1697,18 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
             let tcConfigB, sourceFilesNew = 
                     
                 // see also fsc.fs:runFromCommandLineToImportingAssemblies(), as there are many similarities to where the PS creates a tcConfigB
-                let tcConfigB = 
-                    TcConfigBuilder.CreateNew(referenceResolver, defaultFSharpBinariesDir, implicitIncludeDir=projectDirectory, 
-                                                optimizeForMemory=true, isInteractive=false, isInvalidationSupported=true) 
+                let tcConfigB = TcConfigBuilder.CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, implicitIncludeDir=projectDirectory, optimizeForMemory=true, isInteractive=false, isInvalidationSupported=true, defaultCopyFSharpCore=false) 
                 // The following uses more memory but means we don't take read-exclusions on the DLLs we reference 
                 // Could detect well-known assemblies--ie System.dll--and open them with read-locks 
                 tcConfigB.openBinariesInMemory <- true
-                tcConfigB.resolutionEnvironment 
-                    <- if useScriptResolutionRules 
-                        then ReferenceResolver.DesignTimeLike  
-                        else ReferenceResolver.CompileTimeLike
+                tcConfigB.resolutionEnvironment <- (if useScriptResolutionRules then ReferenceResolver.DesignTimeLike else ReferenceResolver.CompileTimeLike)
                 
                 tcConfigB.conditionalCompilationDefines <- 
                     let define = if useScriptResolutionRules then "INTERACTIVE" else "COMPILED"
                     define::tcConfigB.conditionalCompilationDefines
 
                 tcConfigB.projectReferences <- projectReferences
-#if COMPILER_SERVICE_DLL && NETSTANDARD1_6
+#if COMPILER_SERVICE_ASSUMES_DOTNETCORE_COMPILATION
                 tcConfigB.useSimpleResolution <- true // turn off msbuild resolution
 #endif
                 // Apply command-line arguments and collect more source files if they are in the arguments

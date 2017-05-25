@@ -12,12 +12,12 @@
 //   and capturing large amounts of structured output.
 (*
     cd Debug\net40\bin
-    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.Unittests.exe -g --optimize- -r .\FSharp.LanguageService.Compiler.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\unittests\SignatureHelpProviderTests.fs 
+    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.Unittests.exe -g --optimize- -r .\FSharp.Compiler.Private.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\unittests\SignatureHelpProviderTests.fs 
     .\VisualFSharp.Unittests.exe 
 *)
 // Technique 3: 
 // 
-//    Use F# Interactive.  This only works for FSharp.Compiler.Service.dll which has a public API
+//    Use F# Interactive.  This only works for FSharp.Compiler.Private.dll which has a public API
 [<NUnit.Framework.Category "Roslyn Services">]
 module Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn.SignatureHelpProvider
 
@@ -36,7 +36,7 @@ let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri( Syste
 
 let internal options = { 
     ProjectFileName = "C:\\test.fsproj"
-    ProjectFileNames =  [| filePath |]
+    SourceFiles =  [| filePath |]
     ReferencedProjects = [| |]
     OtherOptions = [| "-r:" + PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll") |]
     IsIncompleteTypeCheckEnvironment = true

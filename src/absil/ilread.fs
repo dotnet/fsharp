@@ -2355,7 +2355,7 @@ and seekReadMethod ctxt numtypars (idx:int) =
          elif pinvoke then 
            seekReadImplMap ctxt nm  idx
          elif internalcall || abstr || unmanaged || (codetype <> 0x00) then 
-           if codeRVA <> 0x0 then dprintn "non-IL or abstract method with non-zero RVA"
+           //if codeRVA <> 0x0 then dprintn "non-IL or abstract method with non-zero RVA"
            mkMethBodyLazyAux (notlazy MethodBody.Abstract)  
          else 
            seekReadMethodRVA ctxt (idx,nm,internalcall,noinline,numtypars) codeRVA   
@@ -3967,7 +3967,7 @@ let OpenILModuleReader infile opts =
 
 // ++GLOBAL MUTABLE STATE (concurrency safe via locking)
 type ILModuleReaderCacheLockToken() = interface LockToken
-let ilModuleReaderCache = new AgedLookup<ILModuleReaderCacheLockToken, (string * System.DateTime * ILScopeRef * bool), ILModuleReader>(0, areSame=(fun (x,y) -> x = y))
+let ilModuleReaderCache = new AgedLookup<ILModuleReaderCacheLockToken, (string * System.DateTime * ILScopeRef * bool), ILModuleReader>(0, areSimilar=(fun (x,y) -> x = y))
 let ilModuleReaderCacheLock = Lock()
 
 let OpenILModuleReaderAfterReadingAllBytes infile opts = 

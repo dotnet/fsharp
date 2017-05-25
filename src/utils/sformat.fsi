@@ -2,8 +2,8 @@
 
 // This file is compiled 2(!) times in the codebase
 //    - as the internal implementation of printf '%A' formatting 
-//           defines: RUNTIME
-//    - as the internal implementation of structured formatting in FSharp.Compiler.dll 
+//           defines: FSHARP_CORE
+//    - as the internal implementation of structured formatting in FSharp.Compiler.Service.dll 
 //           defines: COMPILER 
 //           NOTE: this implementation is used by fsi.exe. This is very important.
 //
@@ -15,17 +15,12 @@
 // all 4 cases the layout types are really different types.
 
 #if COMPILER
-// FSharp.Compiler-proto.dll:
-// FSharp.Compiler.dll:
+// fsc-proto.exe:
+// FSharp.Compiler.Service.dll:
 namespace Internal.Utilities.StructuredFormat
 #else
-#if RUNTIME 
 // FSharp.Core.dll:
 namespace Microsoft.FSharp.Text.StructuredPrintfImpl
-#else
-// Powerpack: 
-namespace Microsoft.FSharp.Text.StructuredFormat
-#endif
 #endif
 
     open System
@@ -35,15 +30,13 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     open Microsoft.FSharp.Primitives.Basics
 
     /// Data representing structured layouts of terms.  
-#if RUNTIME  // FSharp.Core.dll makes things internal and hides representations
+#if FSHARP_CORE  // FSharp.Core.dll makes things internal and hides representations
     type internal Layout
     type internal LayoutTag
     type internal TaggedText =
         abstract Tag: LayoutTag
         abstract Text: string
-#else  // FSharp.Compiler.dll, FSharp.Compiler-proto.dll, FSharp.PowerPack.dll
-    // FSharp.PowerPack.dll: reveals representations
-    // FSharp.Compiler-proto.dll, FSharp.Compiler.dll: the F# compiler likes to see these representations
+#else  // FSharp.Compiler.Service.dll, fsc-proto.exe
 
     /// Data representing joints in structured layouts of terms.  The representation
     /// of this data type is only for the consumption of formatting engines.
@@ -179,8 +172,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             val arrow : TaggedText
             val questionMark : TaggedText
 
-#if RUNTIME   // FSharp.Core.dll doesn't use PrintIntercepts
-#else  // FSharp.Compiler.dll, FSharp.Compiler-proto.dll, FSharp.PowerPack.dll
+#if !FSHARP_CORE   // FSharp.Core.dll doesn't use PrintIntercepts
 #if COMPILER_PUBLIC_API
     type IEnvironment = 
 #else
@@ -311,12 +303,9 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #endif
         { FloatingPointFormat: string
           AttributeProcessor: (string -> (string * string) list -> bool -> unit);
-#if RUNTIME  // FSharp.Core.dll: PrintIntercepts aren't used there
-#else
-#if COMPILER    // FSharp.Compiler.dll: This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
+#if COMPILER  // FSharp.Core.dll: PrintIntercepts aren't used there
           PrintIntercepts: (IEnvironment -> obj -> Layout option) list;
           StringLimit: int;
-#endif
 #endif
           FormatProvider: System.IFormatProvider
 #if FX_RESHAPED_REFLECTION
@@ -356,7 +345,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         /// as any_to_string
         val output_any: writer:TextWriter -> value:'T * Type -> unit
 
-#if RUNTIME   // FSharp.Core.dll: Most functions aren't needed in FSharp.Core.dll, but we add one entry for printf
+#if FSHARP_CORE   // FSharp.Core.dll: Most functions aren't needed in FSharp.Core.dll, but we add one entry for printf
 
 #if FX_RESHAPED_REFLECTION
         val anyToStringForPrintf: options:FormatOptions -> showNonPublicMembers : bool -> value:'T * Type -> string

@@ -8,6 +8,7 @@ open System.Collections.Immutable
 open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
+open Microsoft.CodeAnalysis.DocumentHighlighting
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
@@ -23,6 +24,8 @@ type internal FSharpHighlightSpan =
 [<Shared>]
 [<ExportLanguageService(typeof<IDocumentHighlightsService>, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerProvider: FSharpCheckerProvider, projectInfoManager: ProjectInfoManager) =
+
+    static let userOpName = "DocumentHighlights"
 
     /// Fix invalid spans if they appear to have redundant suffix and prefix.
     static let fixInvalidSymbolSpans (sourceText: SourceText) (lastIdent: string) (spans: FSharpHighlightSpan []) =
@@ -57,8 +60,8 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let! symbol = Tokenizer.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Greedy, false)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true, userOpName = userOpName)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, userOpName=userOpName)
             let! symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol) |> liftAsync
             return 
                 [| for symbolUse in symbolUses do
