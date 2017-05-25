@@ -216,7 +216,11 @@ type internal FSharpQuickInfoProvider
                         |> Seq.map (fun x -> x.Text.Length)
                         |> Seq.max
 
-                    let seperator = TaggedTextOps.tag Text (String.replicate width "-")  
+                    // eyeballed formula returning separator width in chars such as to prevent it from wrapping
+                    // will not be needed once we replace the ascii-art divider with a XAML element
+                    let width = if width / 2 > 85 then 85 else width / 2
+
+                    let seperator = TaggedTextOps.tag Text (String.replicate width "⎯")  
                     let lineBreak = TaggedTextOps.tag LineBreak "\n"
 
                     // get whitespace nomalized documentation text

@@ -9,7 +9,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
-    <AssemblyName>FSharp.Compiler</AssemblyName>
+    <AssemblyName>FSharp.Compiler.Private</AssemblyName>
     <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
     <NoWarn>$(NoWarn);62;9</NoWarn>
@@ -57,6 +57,9 @@
     </FilesToLocalize>
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.dll.fs">
       <Link>assemblyinfo.FSharp.Compiler.dll.fs</Link>
+    <PackageNuspec Include="FSharp.Compiler.Private.netcore.nuspec" Condition="'$(TargetFramework)' == 'coreclr'" />
+    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Private.dll.fs">
+      <Link>assemblyinfo.FSharp.Compiler.Private.dll.fs</Link>
     </Compile>
     <FsSrGen Include="..\FSComp.txt">
       <Link>FSComp.txt</Link>
@@ -454,6 +457,8 @@
     <Compile Include="..\TypeChecker.fs">
       <Link>Logic\TypeChecker.fs</Link>
     </Compile>
+
+    <!-- includes the optimizer and code generator -->
     <Compile Include="..\Optimizer.fsi">
       <Link>Optimize\Optimizer.fsi</Link>
     </Compile>
@@ -485,7 +490,7 @@
       <Link>CodeGen\IlxGen.fs</Link>
     </Compile>
 
-    <!-- FSharp.Compiler.dll includes the core of the F# Compiler fsc.exe implementation -->
+    <!-- includes the core of the F# Compiler fsc.exe implementation -->
     <Compile Include="..\CompileOps.fsi">
       <Link>Driver\CompileOps.fsi</Link>
     </Compile>
@@ -505,8 +510,7 @@
       <Link>Driver\fsc.fs</Link>
     </Compile>
 
-    <!-- FSharp.Compiler.dll includes the symbol API. -->
-    <!-- Required because some of fsi.fs and its API is written in terms of symbols -->
+    <!-- the symbol API. -->
     <Compile Include="..\symbols\SymbolHelpers.fsi">
       <Link>Symbols/SymbolHelpers.fsi</Link>
     </Compile>
@@ -526,18 +530,97 @@
       <Link>Symbols/Exprs.fs</Link>
     </Compile>
 
-    <!-- FSharp.Compiler.dll includes MSBuildReferenceResolver as it is the default reference resolver for fsc.exe and fsi.exe -->
-    <Compile Include="..\MSBuildReferenceResolver.fs">
-      <Link>MSBuildReferenceResolver.fs</Link>
+    <!-- the incremental builder and service . -->
+    <Compile Include="..\vs\IncrementalBuild.fsi">
+      <Link>Service/IncrementalBuild.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\IncrementalBuild.fs">
+      <Link>Service/IncrementalBuild.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\Reactor.fsi">
+      <Link>Service/Reactor.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\Reactor.fs">
+      <Link>Service/Reactor.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceConstants.fs">
+      <Link>Service/ServiceConstants.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceDeclarationLists.fsi">
+      <Link>Service/ServiceDeclarationLists.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceDeclarationLists.fs">
+      <Link>Service/ServiceDeclarationLists.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceLexing.fsi">
+      <Link>Service/ServiceLexing.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceLexing.fs">
+      <Link>Service/ServiceLexing.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceParseTreeWalk.fs">
+      <Link>Service/ServiceParseTreeWalk.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceNavigation.fsi">
+      <Link>Service/ServiceNavigation.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceNavigation.fs">
+      <Link>Service/ServiceNavigation.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceParamInfoLocations.fsi">
+      <Link>Service/ServiceParamInfoLocations.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceParamInfoLocations.fs">
+      <Link>Service/ServiceParamInfoLocations.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceUntypedParse.fsi">
+      <Link>Service/ServiceUntypedParse.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceUntypedParse.fs">
+      <Link>Service/ServiceUntypedParse.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceAssemblyContent.fsi">
+      <Link>Service/ServiceAssemblyContent.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceAssemblyContent.fs">
+      <Link>Service/ServiceAssemblyContent.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceXmlDocParser.fsi">
+      <Link>Service/ServiceXmlDocParser.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceXmlDocParser.fs">
+      <Link>Service/ServiceXmlDocParser.fs</Link>
+    </Compile>
+    <Compile Include="..\..\utils\reshapedmsbuild.fs">
+      <Link>Service/reshapedmsbuild.fs</Link>
+    </Compile>
+    <Compile Include="..\SimulatedMSBuildReferenceResolver.fs">
+      <Link>Service/SimulatedMSBuildReferenceResolver.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\service.fsi">
+      <Link>Service/service.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\service.fs">
+      <Link>Service/service.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceInterfaceStubGenerator.fsi">
+      <Link>Service/ServiceInterfaceStubGenerator.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceInterfaceStubGenerator.fs">
+      <Link>Service/ServiceInterfaceStubGenerator.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceStructure.fsi">
+      <Link>Service/ServiceStructure.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceStructure.fs">
+      <Link>Service/ServiceStructure.fs</Link>
     </Compile>
 
-    <!-- FSharp.Compiler.dll includes the core of the F# Interactive fsi.exe implementation -->
+
+    <!-- the core of the F# Interactive fsi.exe implementation -->
     <FsSrGen Include="..\fsi\FSIstrings.txt">
       <Link>FSIstrings.txt</Link>
     </FsSrGen>
-    <Compile Include="..\fsi\console.fs">
-      <Link>InteractiveSession\console.fs</Link>
-    </Compile>
     <Compile Include="..\fsi\fsi.fsi">
       <Link>InteractiveSession\fsi.fsi</Link>
     </Compile>
@@ -546,12 +629,14 @@
     </Compile>
 
     <Compile Include="InternalsVisibleTo.fs" Condition="'$(TargetFramework)' != 'coreclr'">
-      <Link>InternalsVisibleTo.fs</Link>
+      <Link>Misc/InternalsVisibleTo.fs</Link>
     </Compile>
-
-    <!-- FSharp.Compiler.dll includes an old API for testing the compiler and gathering diagnostics in-memory -->
+    <Compile Include="..\MSBuildReferenceResolver.fs">
+      <Link>Misc/MSBuildReferenceResolver.fs</Link>
+    </Compile>
+    <!-- an old API for testing the compiler and gathering diagnostics in-memory -->
     <Compile Include="..\LegacyHostedCompilerForTesting.fs">
-      <Link>LegacyHostedCompilerForTesting.fs</Link>
+      <Link>Misc/LegacyHostedCompilerForTesting.fs</Link>
     </Compile>
     
   </ItemGroup>
@@ -581,7 +666,6 @@
       <Private>true</Private>
     </Reference>
   </ItemGroup>
-
   <Choose>
     <When Condition="$(MonoPackaging) != 'true'">
       <ItemGroup Condition="'$(TargetFramework)' != 'coreclr'">
@@ -596,8 +680,8 @@
         </Reference>
         <Reference Include="Microsoft.Build.Tasks.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
           <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Tasks.Core.dll</HintPath>
-        </Reference>    
-      </ItemGroup>      
+        </Reference>
+      </ItemGroup>
     </When>
     <Otherwise>
       <ItemGroup>
@@ -615,7 +699,7 @@
         </Reference>
         <Reference Include="Microsoft.Build.Tasks.$(MonoPackagingMSBuildVersionSuffix), Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
           <Private>True</Private>
-        </Reference>        
+        </Reference>
       </ItemGroup>
     </Otherwise>
   </Choose>

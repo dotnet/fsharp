@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 #if COMPILER_PUBLIC_API
-module Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
+module public Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 #else
 module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 #endif
