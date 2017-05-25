@@ -1,6 +1,6 @@
 // #Regression #Conformance #UnitsOfMeasure #ObjectOrientedTypes 
 // Test error when overloading instance methods that differs only by units of measure attributes.
-//<Expects id="FS0438" span="(9,5)" status="error">Duplicate method\. The method '\.ctor' has the same name and signature as another method in this type once tuples, functions, units of measure and/or provided types are erased\.</Expects>
+//<Expects id="FS0438" span="(9,5)" status="error">Duplicate method\. The method '\.ctor' has the same name and signature as another method in type 'Foo<'a>' once tuples, functions, units of measure and/or provided types are erased\.</Expects>
 
 type Foo< [<Measure>] 'a > =
 

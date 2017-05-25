@@ -15,14 +15,13 @@ all:
 
 build-proto: restore
 	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=Proto /p:TargetFramework=$(TargetFramework) src/fsharp/FSharp.Build-proto/FSharp.Build-proto.fsproj
-	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=Proto /p:TargetFramework=$(TargetFramework) src/fsharp/FSharp.Compiler-proto/FSharp.Compiler-proto.fsproj
 	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=Proto /p:TargetFramework=$(TargetFramework) src/fsharp/Fsc-proto/Fsc-proto.fsproj
 
 # The main targets
 build:
 	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=net40 src/fsharp/FSharp.Core/FSharp.Core.fsproj
 	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=net40 src/fsharp/FSharp.Build/FSharp.Build.fsproj
-	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=net40 src/fsharp/FSharp.Compiler/FSharp.Compiler.fsproj
+	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=net40 src/fsharp/FSharp.Compiler.Private/FSharp.Compiler.Private.fsproj
 	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=net40 src/fsharp/Fsc/Fsc.fsproj
 	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=net40 src/fsharp/FSharp.Compiler.Interactive.Settings/FSharp.Compiler.Interactive.Settings.fsproj
 	MONO_ENV_OPTIONS=$(monoopts) $(XBUILD) /p:Configuration=$(Configuration) /p:TargetFramework=net40 src/fsharp/FSharp.Compiler.Server.Shared/FSharp.Compiler.Server.Shared.fsproj
@@ -68,7 +67,7 @@ install:
 	-rm -fr $(DESTDIR)$(monodir)/Microsoft\ F#
 	-rm -fr $(DESTDIR)$(monodir)/Microsoft\ SDKs/F#
 	-rm -fr $(DESTDIR)$(monodir)/gac/FSharp.Core
-	-rm -fr $(DESTDIR)$(monodir)/gac/FSharp.Compiler
+	-rm -fr $(DESTDIR)$(monodir)/gac/FSharp.Compiler.Private
 	-rm -fr $(DESTDIR)$(monodir)/xbuild/Microsoft/VisualStudio/v/FSharp
 	-rm -fr $(DESTDIR)$(monodir)/xbuild/Microsoft/VisualStudio/v11.0/FSharp
 	-rm -fr $(DESTDIR)$(monodir)/xbuild/Microsoft/VisualStudio/v12.0/FSharp
@@ -76,7 +75,7 @@ install:
 	-rm -fr $(DESTDIR)$(monodir)/xbuild/Microsoft/VisualStudio/v15.0/FSharp
 	$(MAKE) -C mono/FSharp.Core TargetFramework=net40 install
 	$(MAKE) -C mono/FSharp.Build install
-	$(MAKE) -C mono/FSharp.Compiler install
+	$(MAKE) -C mono/FSharp.Compiler.Private install
 	$(MAKE) -C mono/Fsc install
 	$(MAKE) -C mono/FSharp.Compiler.Interactive.Settings install
 	$(MAKE) -C mono/FSharp.Compiler.Server.Shared install

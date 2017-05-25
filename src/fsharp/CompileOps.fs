@@ -59,11 +59,7 @@ open Microsoft.FSharp.Core.ReflectionAdapters
 
 #if DEBUG
 [<AutoOpen>]
-#if COMPILER_SERVICE
 module internal CompilerService =
-#else
-module internal FullCompiler =
-#endif
     let showAssertForUnexpectedException = ref true
 #endif // DEBUG
 
@@ -1621,52 +1617,18 @@ let OutputDiagnosticContext prefix fileLineFn os err =
 
 let GetFSharpCoreLibraryName () = "FSharp.Core"
 
-type internal TypeInThisAssembly = class end
-let GetFSharpCoreReferenceUsedByCompiler(useSimpleResolution) = 
-  // On Mono, there is no good reference resolution
-  if useSimpleResolution then 
-    GetFSharpCoreLibraryName()+".dll"
-  else
-#if FX_RESHAPED_REFLECTION
-    let fsCoreName = GetFSharpCoreLibraryName()
-    // RESHAPED_REFLECTION does not have Assembly.GetReferencedAssemblies()
-    // So use the FSharp.Core.dll from alongside the fsc compiler.
-    // This can also be used for the out of gac work on DEV15
-    let fscCoreLocation = 
-        let fscLocation = typeof<Microsoft.FSharp.Core.MeasureAttribute>.Assembly.Location
-        Path.Combine(Path.GetDirectoryName(fscLocation), fsCoreName + ".dll")
-    if File.Exists(fscCoreLocation) then fscCoreLocation
-    else failwithf "Internal error: Could not find %s" fscCoreLocation
-#else
-#if COMPILER_SERVICE_DLL
-    // The component:
-    //    FSharp.Compiler.Service.dll
-    // assumes for the version of FSharp.Core running in the hosting environment when processing
-    // scripts and out-of-project files.
-    let fsCoreName = GetFSharpCoreLibraryName()
-    let foundReference =
-        match System.Reflection.Assembly.GetEntryAssembly() with
-        | null -> None
-        | entryAssembly ->
-            entryAssembly.GetReferencedAssemblies()
-            |> Array.tryPick (fun name ->
-                if name.Name = fsCoreName then Some(name.ToString())
-                else None)
+// If necessary assume a reference to the latest .NET Framework FSharp.Core with which those tools are built.
+let GetDefaultFSharpCoreReference() = typeof<list<int>>.Assembly.Location
 
-    // if not we use the referenced FSharp.Core from this project
-    match foundReference with
-    | Some fsharpCore -> fsharpCore
-    | None ->                        
-#endif
-    // All of these:
-    //    Visual F# fsc.exe
-    //    Visual F# IDE Tools FSharp.LanguageService.Compiler.dll 
-    //    FSharp.Compiler.Tools nuget package fsc.exe
-    //    Mono /usr/lib/mono/fsharp/fsc.exe
-    //
-    // assume a reference to the latest .NET Framework FSharp.Core with which those tools are built.
-    typeof<list<int>>.Assembly.Location
-#endif
+// If necessary assume a reference to the latest System.ValueTuple with which those tools are built.
+let GetDefaultSystemValueTupleReference() = 
+    try 
+       let asm = typeof<System.ValueTuple<int,int>>.Assembly
+       if asm.FullName.StartsWith "System.ValueTuple" then 
+           Some asm.Location 
+       else None
+    with _ -> None
+
 let GetFsiLibraryName () = "FSharp.Compiler.Interactive.Settings"  
 
 // This list is the default set of references for "non-project" files. 
@@ -1699,15 +1661,15 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
           yield "System.Collections" // System.Collections.Generic.List<T>
           yield "System.Runtime.Numerics" // BigInteger
           yield "System.Threading"  // OperationCanceledException
-#if !COMPILER_SERVICE_DLL // avoid a default reference to System.ValueTuple.dll when compiling with FSharp.Compiler.Service.dll. This is an inconsistency that is still to be ironed out.
-          yield "System.ValueTuple"
-#endif
+          // always include a default reference to System.ValueTuple.dll in scripts and out-of-project sources
+          match GetDefaultSystemValueTupleReference() with 
+          | None -> ()
+          | Some v -> yield v
 
           yield "System.Web"
           yield "System.Web.Services"
           yield "System.Windows.Forms"
           yield "System.Numerics" 
-#if COMPILER_SERVICE_DLL
      else
           yield Path.Combine(Path.GetDirectoryName(typeof<System.Object>.Assembly.Location),"mscorlib.dll"); // mscorlib
           yield typeof<System.Console>.Assembly.Location; // System.Console
@@ -1720,7 +1682,6 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
           yield typeof<System.Numerics.BigInteger>.Assembly.Location; // System.Runtime.Numerics
           yield typeof<System.Threading.Tasks.TaskExtensions>.Assembly.Location; // System.Threading.Tasks
           yield typeof<Microsoft.FSharp.Core.MeasureAttribute>.Assembly.Location; // FSharp.Core
-#endif
     ]
 
 
@@ -1836,16 +1797,16 @@ let SystemAssemblies () =
 //
 // REVIEW: it isn't clear if there is any negative effect
 // of leaving an assembly off this list.
-let BasicReferencesForScriptLoadClosure(useSimpleResolution, useFsiAuxLib, assumeDotNetFramework) = 
+let BasicReferencesForScriptLoadClosure(useFsiAuxLib, assumeDotNetFramework) = 
     [
      if assumeDotNetFramework then 
          
-#if COMPILER_SERVICE_DLL && NETSTANDARD1_6
+#if COMPILER_SERVICE_ASSUMES_DOTNETCORE_COMPILATION
          yield Path.Combine(Path.GetDirectoryName(typeof<System.Object>.Assembly.Location),"mscorlib.dll"); // mscorlib
 #else
          yield "mscorlib"
 #endif
-         yield GetFSharpCoreReferenceUsedByCompiler(useSimpleResolution) ] @ // Need to resolve these explicitly so they will be found in the reference assemblies directory which is where the .xml files are.
+         yield GetDefaultFSharpCoreReference() ] @ // Need to resolve these explicitly so they will be found in the reference assemblies directory which is where the .xml files are.
     DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) @ 
     [ if useFsiAuxLib then yield GetFsiLibraryName () ]
 
@@ -2134,7 +2095,7 @@ type TcConfigBuilder =
       mutable win32manifest : string
       mutable includewin32manifest : bool
       mutable linkResources : string list
-      mutable referenceResolver: ReferenceResolver.Resolver 
+      mutable legacyReferenceResolver: ReferenceResolver.Resolver 
 
       mutable showFullPaths : bool
       mutable errorStyle : ErrorStyle
@@ -2202,12 +2163,12 @@ type TcConfigBuilder =
       mutable shadowCopyReferences : bool
       }
 
-    static member CreateNew (referenceResolver,defaultFSharpBinariesDir,optimizeForMemory,implicitIncludeDir,isInteractive,isInvalidationSupported) =
+    static member CreateNew (legacyReferenceResolver,defaultFSharpBinariesDir,optimizeForMemory,implicitIncludeDir,isInteractive,isInvalidationSupported, defaultCopyFSharpCore) =
         System.Diagnostics.Debug.Assert(FileSystem.IsPathRootedShim(implicitIncludeDir), sprintf "implicitIncludeDir should be absolute: '%s'" implicitIncludeDir)
         if (String.IsNullOrEmpty(defaultFSharpBinariesDir)) then 
             failwith "Expected a valid defaultFSharpBinariesDir"
         { 
-#if COMPILER_SERVICE_DLL && NETSTANDARD1_6
+#if COMPILER_SERVICE_ASSUMES_DOTNETCORE_COMPILATION
           primaryAssembly = PrimaryAssembly.DotNetCore // defaut value, can be overridden using the command line switch
 #else
           primaryAssembly = PrimaryAssembly.Mscorlib // defaut value, can be overridden using the command line switch
@@ -2304,7 +2265,7 @@ type TcConfigBuilder =
           win32manifest = ""
           includewin32manifest = true
           linkResources = []
-          referenceResolver = referenceResolver
+          legacyReferenceResolver = legacyReferenceResolver
           showFullPaths =false
           errorStyle = ErrorStyle.DefaultErrors
 
@@ -2346,11 +2307,7 @@ type TcConfigBuilder =
           sqmSessionStartedTime = System.DateTime.Now.Ticks
           emitDebugInfoInQuotations = false
           exename = None
-#if COMPILER_SERVICE_DLL // FSharp.Compiler.Service doesn't copy FSharp.Core.dll implicitly
-          copyFSharpCore = false
-#else
-          copyFSharpCore = true
-#endif
+          copyFSharpCore = defaultCopyFSharpCore
           shadowCopyReferences = false
         }
 
@@ -2621,7 +2578,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
         match fileNameOpt with
         | None -> 
             // if FSharp.Core was not provided explicitly - use version that was referenced by compiler
-            AssemblyReference(range0, GetFSharpCoreReferenceUsedByCompiler(data.useSimpleResolution), None), None
+            AssemblyReference(range0, GetDefaultFSharpCoreReference(), None), None
         | _ -> res
 
     // If either mscorlib.dll/System.Runtime.dll or FSharp.Core.dll are explicitly specified then we require the --noframework flag.
@@ -2655,7 +2612,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                 None, (0, ""), false
             else
 #endif
-                None, (4, data.referenceResolver.HighestInstalledNetFrameworkVersion()), false
+                None, (4, data.legacyReferenceResolver.HighestInstalledNetFrameworkVersion()), false
 
     // Note: anycpu32bitpreferred can only be used with .Net version 4.5 and above
     // but now there is no way to discriminate between 4.0 and 4.5,
@@ -2845,7 +2802,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
         TcConfig(builder,validate)
 
-    member x.referenceResolver = data.referenceResolver
+    member x.legacyReferenceResolver = data.legacyReferenceResolver
     member tcConfig.CloneOfOriginalBuilder = 
         { data with conditionalCompilationDefines=data.conditionalCompilationDefines }
 
@@ -2896,7 +2853,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                         yield System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory() 
 #endif
                     | _ -> 
-                        let frameworkRoot = tcConfig.referenceResolver.DotNetFrameworkReferenceAssembliesRootDirectory
+                        let frameworkRoot = tcConfig.legacyReferenceResolver.DotNetFrameworkReferenceAssembliesRootDirectory
                         let frameworkRootVersion = Path.Combine(frameworkRoot,tcConfig.targetFrameworkVersion)
                         yield frameworkRootVersion
                         let facades = Path.Combine(frameworkRootVersion, "Facades")
@@ -3112,7 +3069,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
             // Whatever is left, pass to MSBuild.
             let Resolve(references,showMessages) =
                 try 
-                    tcConfig.referenceResolver.Resolve
+                    tcConfig.legacyReferenceResolver.Resolve
                        (tcConfig.resolutionEnvironment,
                         references,
                         tcConfig.targetFrameworkVersion,
@@ -3598,7 +3555,7 @@ type TcAssemblyResolutions(results : AssemblyResolution list, unresolved : Unres
             let assumeDotNetFramework = primaryReference.SimpleAssemblyNameIs("mscorlib")
             if tcConfig.framework then 
                 for s in DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) do 
-                    yield AssemblyReference(rangeStartup,s+".dll",None)
+                    yield AssemblyReference(rangeStartup,(if s.EndsWith(".dll") then s else s+".dll"),None)
 
             if tcConfig.useFsiAuxLib then
                 let name = Path.Combine(tcConfig.fsharpBinariesDir, GetFsiLibraryName() + ".dll")
@@ -4949,14 +4906,14 @@ module private ScriptPreprocessClosure =
         ParseOneInputLexbuf (tcConfig,lexResourceManager,defines,lexbuf,filename,isLastCompiland,errorLogger) 
           
     /// Create a TcConfig for load closure starting from a single .fsx file
-    let CreateScriptSourceTcConfig (referenceResolver, defaultFSharpBinariesDir, filename:string, codeContext, useSimpleResolution, useFsiAuxLib, basicReferences, applyCommandLineArgs, assumeDotNetFramework) =  
+    let CreateScriptSourceTcConfig (legacyReferenceResolver, defaultFSharpBinariesDir, filename:string, codeContext, useSimpleResolution, useFsiAuxLib, basicReferences, applyCommandLineArgs, assumeDotNetFramework) =  
         let projectDir = Path.GetDirectoryName(filename)
         let isInteractive = (codeContext = CodeContext.Evaluation)
         let isInvalidationSupported = (codeContext = CodeContext.Editing)
-        let tcConfigB = TcConfigBuilder.CreateNew(referenceResolver, defaultFSharpBinariesDir, true (* optimize for memory *), projectDir, isInteractive, isInvalidationSupported) 
+        let tcConfigB = TcConfigBuilder.CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, true (* optimize for memory *), projectDir, isInteractive, isInvalidationSupported, defaultCopyFSharpCore=false) 
         applyCommandLineArgs tcConfigB
         match basicReferences with 
-        | None -> BasicReferencesForScriptLoadClosure(useSimpleResolution, useFsiAuxLib, assumeDotNetFramework) |> List.iter(fun f->tcConfigB.AddReferencedAssemblyByPath(range0,f)) // Add script references
+        | None -> BasicReferencesForScriptLoadClosure(useFsiAuxLib, assumeDotNetFramework) |> List.iter(fun f->tcConfigB.AddReferencedAssemblyByPath(range0,f)) // Add script references
         | Some rs -> for m,r in rs do tcConfigB.AddReferencedAssemblyByPath(m,r)
 
         tcConfigB.resolutionEnvironment <-
@@ -5120,18 +5077,18 @@ module private ScriptPreprocessClosure =
         result
 
     /// Given source text, find the full load closure. Used from service.fs, when editing a script file
-    let GetFullClosureOfScriptSource(ctok, referenceResolver, defaultFSharpBinariesDir, filename, source, codeContext, useSimpleResolution,useFsiAuxLib, lexResourceManager:Lexhelp.LexResourceManager, applyCommmandLineArgs, assumeDotNetFramework) = 
+    let GetFullClosureOfScriptSource(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, source, codeContext, useSimpleResolution,useFsiAuxLib, lexResourceManager:Lexhelp.LexResourceManager, applyCommmandLineArgs, assumeDotNetFramework) = 
         // Resolve the basic references such as FSharp.Core.dll first, before processing any #I directives in the script
         //
         // This is tries to mimic the action of running the script in F# Interactive - the initial context for scripting is created
         // first, then #I and other directives are processed.
         let references0 = 
-            let tcConfig = CreateScriptSourceTcConfig(referenceResolver, defaultFSharpBinariesDir, filename, codeContext, useSimpleResolution, useFsiAuxLib, None, applyCommmandLineArgs, assumeDotNetFramework)
+            let tcConfig = CreateScriptSourceTcConfig(legacyReferenceResolver, defaultFSharpBinariesDir, filename, codeContext, useSimpleResolution, useFsiAuxLib, None, applyCommmandLineArgs, assumeDotNetFramework)
             let resolutions0,_unresolvedReferences = GetAssemblyResolutionInformation(ctok, tcConfig)
             let references0 =  resolutions0 |> List.map (fun r->r.originalReference.Range,r.resolvedPath) |> Seq.distinct |> List.ofSeq
             references0
 
-        let tcConfig = CreateScriptSourceTcConfig(referenceResolver, defaultFSharpBinariesDir, filename, codeContext, useSimpleResolution, useFsiAuxLib, Some references0, applyCommmandLineArgs, assumeDotNetFramework)
+        let tcConfig = CreateScriptSourceTcConfig(legacyReferenceResolver, defaultFSharpBinariesDir, filename, codeContext, useSimpleResolution, useFsiAuxLib, Some references0, applyCommmandLineArgs, assumeDotNetFramework)
 
         let closureSources = [ClosureSource(filename,range0,source,true)]
         let closureFiles,tcConfig = FindClosureFiles(closureSources, tcConfig, codeContext, lexResourceManager)
@@ -5147,9 +5104,9 @@ module private ScriptPreprocessClosure =
 
 type LoadClosure with
     // Used from service.fs, when editing a script file
-    static member ComputeClosureOfSourceText(ctok, referenceResolver, defaultFSharpBinariesDir, filename:string, source:string, codeContext, useSimpleResolution:bool, useFsiAuxLib, lexResourceManager:Lexhelp.LexResourceManager, applyCommmandLineArgs, assumeDotNetFramework) : LoadClosure = 
+    static member ComputeClosureOfSourceText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename:string, source:string, codeContext, useSimpleResolution:bool, useFsiAuxLib, lexResourceManager:Lexhelp.LexResourceManager, applyCommmandLineArgs, assumeDotNetFramework) : LoadClosure = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
-        ScriptPreprocessClosure.GetFullClosureOfScriptSource(ctok, referenceResolver, defaultFSharpBinariesDir, filename, source, codeContext, useSimpleResolution, useFsiAuxLib, lexResourceManager, applyCommmandLineArgs,assumeDotNetFramework)
+        ScriptPreprocessClosure.GetFullClosureOfScriptSource(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, source, codeContext, useSimpleResolution, useFsiAuxLib, lexResourceManager, applyCommmandLineArgs,assumeDotNetFramework)
 
     /// Used from fsi.fs and fsc.fs, for #load and command line.
     /// The resulting references are then added to a TcConfig.
