@@ -49,7 +49,7 @@
         <file src="coreclr/bin/fsc.exe"                                     target="lib/netstandard1.6" />
         <file src="coreclr/bin/fsi.exe"                                     target="lib/netstandard1.6" />
         <file src="coreclr/bin/FSharp.Core.dll"                             target="lib/netstandard1.6" />
-        <file src="coreclr/bin/FSharp.Compiler.dll"                         target="lib/netstandard1.6" />
+        <file src="coreclr/bin/FSharp.Compiler.Private.dll"                 target="lib/netstandard1.6" />
         <file src="coreclr/bin/FSharp.Build.dll"                            target="lib/netstandard1.6" />
         <file src="coreclr/bin/FSharp.Compiler.Interactive.Settings.dll"    target="lib/netstandard1.6" />
         <file src="coreclr/bin/default.win32manifest"                       target="runtimes/any/native"  />
