@@ -32,7 +32,7 @@
     <WarningsAsErrors />
     <FX_NO_LOADER Condition=" '$(FX_NO_LOADER)'==''">false</FX_NO_LOADER>
     
-    <RoslynVersion>2.3.0-beta2-61719-01</RoslynVersion>
+    <RoslynVersion>2.0.0</RoslynVersion>
     <RoslynVSBinariesVersion>15.0</RoslynVSBinariesVersion>
     <RoslynVSPackagesVersion>15.0.26201</RoslynVSPackagesVersion>
     <!--<VSSDK_BUILDTOOLS_VERSION>Microsoft.VSSDK.BuildTools.15.0.26124-RC3</VSSDK_BUILDTOOLS_VERSION>-->
