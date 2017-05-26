@@ -2628,7 +2628,7 @@ let FreshenObjectArgType cenv m rigid tcref isExtrinsic declaredTyconTypars =
 #endif
     // Struct members have a byref 'this' type (unless they are extrinsic extension members)
     let thisTy = 
-        if tcref.IsStructOrEnumTycon && not isExtrinsic then 
+        if not isExtrinsic && tcref.IsStructOrEnumTycon then 
             mkByrefTy cenv.g objTy 
         else 
             objTy
