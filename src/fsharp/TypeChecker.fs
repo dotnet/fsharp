@@ -15714,7 +15714,7 @@ module TcDeclarations =
     let private isField           = function SynMemberDefn.ValField (_,_)   -> true | _ -> false
     let private isTycon           = function SynMemberDefn.NestedType _            -> true | _ -> false
 
-    let private allFalse ps x = List.fold (fun acc p -> acc && not (p x)) true ps
+    let private allFalse ps x = List.forall (fun p -> not (p x)) ps
 
     /// Check the ordering on the bindings and members in a class construction
     // Accepted forms:
