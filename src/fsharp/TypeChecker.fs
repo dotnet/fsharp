@@ -6769,6 +6769,8 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
               let oldv,oldve = mkCompGenLocal mWholeExpr "inputRecord" overallTy
               Some (olde,oldv,oldve), tpenv
 
+    let hasOrigExpr = Option.isSome optOrigExpr
+
     let fldsList = 
         let flds = 
             [
@@ -6781,15 +6783,20 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
 
                     yield (List.frontAndBack lidwd.Lid, v)
             ]
+            
         match flds with 
         | [] -> []
         | _ ->
-            let tcref,_,fldsList = BuildFieldMap cenv env (Option.isSome optOrigExpr) overallTy flds mWholeExpr
+            let tcref,_,fldsList = BuildFieldMap cenv env hasOrigExpr overallTy flds mWholeExpr
             let _,_,_,gtyp = infoOfTyconRef mWholeExpr tcref
-            UnifyTypes cenv env mWholeExpr overallTy gtyp      
-            fldsList
+            UnifyTypes cenv env mWholeExpr overallTy gtyp
 
-    if Option.isSome optOrigExpr && not (isRecdTy cenv.g overallTy) then 
+            [ for n, v in fldsList do
+                match v with
+                | Some v -> yield n, v
+                | None -> () ]
+
+    if hasOrigExpr && not (isRecdTy cenv.g overallTy) then 
         errorR(Error(FSComp.SR.tcExpressionFormRequiresRecordTypes(),mWholeExpr))
 
     if requiresCtor || haveCtor then 
@@ -6800,9 +6807,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
             errorR(Error(FSComp.SR.tcObjectConstructionExpressionCanOnlyImplementConstructorsInObjectModelTypes(),mWholeExpr))
     else
         if isNil flds then 
-            let errorInfo = 
-                if Option.isSome optOrigExpr then FSComp.SR.tcEmptyCopyAndUpdateRecordInvalid()
-                else FSComp.SR.tcEmptyRecordInvalid()
+            let errorInfo = if hasOrigExpr then FSComp.SR.tcEmptyCopyAndUpdateRecordInvalid() else FSComp.SR.tcEmptyRecordInvalid()
             error(Error(errorInfo,mWholeExpr))
 
         if isFSharpObjModelTy cenv.g overallTy then errorR(Error(FSComp.SR.tcTypeIsNotARecordTypeNeedConstructor(),mWholeExpr))
@@ -6824,9 +6829,7 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
             errorR(InternalError("Unexpected failure in getting super type",mWholeExpr))
             None,tpenv
 
-    let expr,tpenv = 
-        let fldsList = fldsList |> List.choose (fun (n, v) -> if v.IsSome then Some (n, v.Value) else None)
-        TcRecordConstruction cenv overallTy env tpenv optOrigExpr  overallTy fldsList mWholeExpr
+    let expr,tpenv = TcRecordConstruction cenv overallTy env tpenv optOrigExpr overallTy fldsList mWholeExpr
 
     let expr = 
         match superTy with 
