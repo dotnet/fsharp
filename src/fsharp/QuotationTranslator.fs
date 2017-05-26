@@ -440,11 +440,16 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             wfail(Error(FSComp.SR.crefQuotationsCantContainStaticFieldRef(),m)) 
 
         | TOp.ValFieldGet(rfref),tyargs,args ->
-            ConvRFieldGet cenv env m rfref tyargs args            
+            ConvRFieldGet cenv env m rfref tyargs args
 
-        | TOp.TupleFieldGet(tupInfo,n),tyargs,[e] when not (evalTupInfoIsStruct tupInfo) -> 
-            let tyR = ConvType cenv env m (mkRefTupledTy cenv.g tyargs)
-            QP.mkTupleGet(tyR, n, ConvExpr cenv env e)
+        | TOp.TupleFieldGet(tupInfo,n),tyargs,[e] -> 
+            if evalTupInfoIsStruct tupInfo then
+                // TODO: what's the struct version of this
+                let tyR = ConvType cenv env m (mkRefTupledTy cenv.g tyargs)
+                QP.mkTupleGet(tyR, n, ConvExpr cenv env e)
+            else
+                let tyR = ConvType cenv env m (mkRefTupledTy cenv.g tyargs)
+                QP.mkTupleGet(tyR, n, ConvExpr cenv env e)
 
         | TOp.ILAsm(([ I_ldfld(_,_,fspec) ] 
                     | [ I_ldfld(_,_,fspec); AI_nop ]
