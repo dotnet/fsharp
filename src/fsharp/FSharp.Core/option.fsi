@@ -191,7 +191,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="value">The input string value.</param>
         /// <returns>The result option.</returns>
         [<CompiledName("OfString")>]
-        val ofString: value:String -> 'T option 
+        val ofString: value:String -> String option 
 
         /// <summary>Convert a potentially null value to an option.</summary>
         /// <param name="value">The input value.</param>
