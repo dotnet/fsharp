@@ -187,6 +187,12 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("OfNullable")>]
         val ofNullable: value:Nullable<'T> -> 'T option 
 
+        /// <summary>Convert a String value to an option. If the string is null, empty or whitespace, None is returned.</summary>
+        /// <param name="value">The input string value.</param>
+        /// <returns>The result option.</returns>
+        [<CompiledName("OfString")>]
+        val ofString: value:String -> 'T option 
+
         /// <summary>Convert a potentially null value to an option.</summary>
         /// <param name="value">The input value.</param>
         /// <returns>The result option.</returns>
