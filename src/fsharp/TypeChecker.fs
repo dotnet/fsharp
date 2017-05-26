@@ -6821,8 +6821,8 @@ and TcRecdExpr cenv overallTy env tpenv (inherits, optOrigExpr, flds, mWholeExpr
             None,tpenv
 
     let expr,tpenv = 
-        let fldsList = fldsList |> List.choose (fun (n, v) -> if v.IsSome then Some (n, v.Value) else None)
-        TcRecordConstruction cenv overallTy env tpenv optOrigExpr  overallTy fldsList mWholeExpr
+        let fldsList = fldsList |> List.choose (fun (n, v) -> match v with Some v -> Some (n, v) | _ -> None)
+        TcRecordConstruction cenv overallTy env tpenv optOrigExpr overallTy fldsList mWholeExpr
 
     let expr = 
         match superTy with 
