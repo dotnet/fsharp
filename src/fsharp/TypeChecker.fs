@@ -6699,7 +6699,7 @@ and TcConstExpr cenv overallTy env m tpenv c  =
 
     | SynConst.UserNum (s,suffix) -> 
         let expr = 
-            let modName = ("NumericLiteral" + suffix)
+            let modName = "NumericLiteral" + suffix
             let ad = env.eAccessRights
             match ResolveLongIndentAsModuleOrNamespace ResultCollectionSettings.AtMostOneResult cenv.amap m OpenQualified env.eNameResEnv ad [ident (modName,m)] with 
             | Result []
@@ -6707,21 +6707,25 @@ and TcConstExpr cenv overallTy env m tpenv c  =
             | Result ((_,mref,_) :: _) -> 
                 let expr = 
                     try 
-                        let i32 = int32 s  
-                        if i32 = 0 then SynExpr.App(ExprAtomicFlag.Atomic, false, mkSynLidGet m [modName] "FromZero",SynExpr.Const(SynConst.Unit,m),m)
-                        elif i32 = 1 then SynExpr.App(ExprAtomicFlag.Atomic, false, mkSynLidGet m [modName] "FromOne",SynExpr.Const(SynConst.Unit,m),m)
-                        else SynExpr.App(ExprAtomicFlag.Atomic, false, mkSynLidGet m [modName] "FromInt32",SynExpr.Const(SynConst.Int32 i32,m),m)
+                        match int32 s with
+                        | 0 -> SynExpr.App(ExprAtomicFlag.Atomic, false, mkSynLidGet m [modName] "FromZero",SynExpr.Const(SynConst.Unit,m),m)
+                        | 1 -> SynExpr.App(ExprAtomicFlag.Atomic, false, mkSynLidGet m [modName] "FromOne",SynExpr.Const(SynConst.Unit,m),m)
+                        | i32 -> SynExpr.App(ExprAtomicFlag.Atomic, false, mkSynLidGet m [modName] "FromInt32",SynExpr.Const(SynConst.Int32 i32,m),m)
                     with _ -> 
-                      try 
-                         let i64 = int64 s  
-                         SynExpr.App(ExprAtomicFlag.Atomic, false, mkSynLidGet m [modName] "FromInt64",SynExpr.Const(SynConst.Int64 i64,m),m)
-                      with _ ->             
-                        SynExpr.App(ExprAtomicFlag.Atomic, false, mkSynLidGet m [modName] "FromString",SynExpr.Const(SynConst.String (s,m),m),m) 
-                let ccu = ccuOfTyconRef mref
-                if Option.isSome ccu && ccuEq ccu.Value cenv.g.fslibCcu && suffix = "I" then 
-                    SynExpr.Typed(expr,SynType.LongIdent(LongIdentWithDots(pathToSynLid m ["System";"Numerics";"BigInteger"],[])),m)
-                else
+                        try 
+                            let i64 = int64 s  
+                            SynExpr.App(ExprAtomicFlag.Atomic, false, mkSynLidGet m [modName] "FromInt64",SynExpr.Const(SynConst.Int64 i64,m),m)
+                        with _ ->             
+                            SynExpr.App(ExprAtomicFlag.Atomic, false, mkSynLidGet m [modName] "FromString",SynExpr.Const(SynConst.String (s,m),m),m) 
+                
+                if suffix <> "I" then
                     expr
+                else    
+                    match ccuOfTyconRef mref with
+                    | Some ccu when ccuEq ccu cenv.g.fslibCcu ->
+                        SynExpr.Typed(expr,SynType.LongIdent(LongIdentWithDots(pathToSynLid m ["System";"Numerics";"BigInteger"],[])),m)
+                    | _ ->
+                        expr
 
         TcExpr cenv overallTy env tpenv expr
 
