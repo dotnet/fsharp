@@ -61,7 +61,9 @@
     </PropertyGroup>
 
     <MakeDir Directories="$(FSharpSourcesRoot)\..\artifacts" />
+    <MakeDir Directories="$(FSharpSourcesRoot)\..\$(Configuration)\artifacts" />
     <Exec Command='$(FSharpSourcesRoot)\..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(FSharpSourcesRoot)\..\$(Configuration) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot)\..\artifacts' />
+    <Exec Command='$(FSharpSourcesRoot)\..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(FSharpSourcesRoot)\..\$(Configuration) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot)\..\$(Configuration)\artifacts' />
   </Target>
 
 </Project>
