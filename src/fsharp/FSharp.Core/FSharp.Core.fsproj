@@ -282,4 +282,21 @@
       </FilesToSign>
     </ItemGroup>
   </Target>
+
+  <Target Name="nugetpack"
+          DependsOnTargets="CreateOrUpdateBuildVersionFile"
+          AfterTargets="Build"
+          Condition="'$(TargetFramework)' == 'coreclr' "
+          Inputs="@(PackageNuspec)" 
+          Outputs='$(FSharpSourcesRoot)\..\$(Configuration)\artifacts\"%(PackageNuspec.Filename)).nupkg'>
+
+    <PropertyGroup>
+      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
+    </PropertyGroup>
+
+    <MakeDir Directories="$(FSharpSourcesRoot)\..\artifacts" />
+    <SetEnvVar Name="NUGET_PACKAGES" Value="$(NUGET_PACKAGES)" />
+    <Exec Command='$(FSharpSourcesRoot)\..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(OutputPath.TrimEnd("\")) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot)\..\artifacts' />
+  </Target>
+
 </Project>
