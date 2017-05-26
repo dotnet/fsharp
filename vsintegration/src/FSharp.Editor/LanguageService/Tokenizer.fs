@@ -84,7 +84,7 @@ module internal Tokenizer =
             | Internal -> Glyph.EnumInternal
             | Protected -> Glyph.EnumProtected
             | Private -> Glyph.EnumPrivate
-        | FSharpGlyph.EnumMember -> Glyph.EnumMemberPublic
+        | FSharpGlyph.EnumMember -> Glyph.EnumMember
         | FSharpGlyph.Event ->
             match accessibility with
             | Public -> Glyph.EventPublic

@@ -47,7 +47,7 @@ type internal FSharpCompletionProvider
         |> List.filter (fun (keyword, _) -> not (PrettyNaming.IsOperatorName keyword))
         |> List.sortBy (fun (keyword, _) -> keyword)
         |> List.mapi (fun n (keyword, description) ->
-             CommonCompletionItem.Create(keyword, CompletionItemRules.Default, Nullable Glyph.Keyword, sortText = sprintf "%06d" (1000000 + n))
+             CommonCompletionItem.Create(keyword, Nullable Glyph.Keyword, sortText = sprintf "%06d" (1000000 + n))
                 .AddProperty("description", description)
                 .AddProperty(IsKeywordPropName, ""))
     
