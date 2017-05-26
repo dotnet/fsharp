@@ -589,8 +589,8 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         | TOp.ExnFieldSet(_tcref,_i),[],[_ex;_x] -> wfail(Error(FSComp.SR.crefQuotationsCantSetExceptionFields(), m))
         | TOp.RefAddrGet,_,_                       -> wfail(Error(FSComp.SR.crefQuotationsCantRequireByref(), m))
         | TOp.TraitCall (_ss),_,_                    -> wfail(Error(FSComp.SR.crefQuotationsCantCallTraitMembers(), m))
-        | _ -> 
-            wfail(InternalError( "Unexpected expression shape",m))
+        | shape -> 
+            wfail(InternalError(sprintf "Unexpected expression shape: %A" shape,m))
 
     | _ -> 
         wfail(InternalError(sprintf "unhandled construct in AST: %A" expr,expr.Range))
