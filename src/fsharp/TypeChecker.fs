@@ -15383,10 +15383,11 @@ module EstablishTypeDefinitionCores =
                 then
                     (tycon,tycon2)::acc
                 else acc // note: all edges added are (tycon,_)
-            let insertEdgeToType  ty     acc = 
-                if isAppTy cenv.g ty then // guard against possible earlier failure
-                    insertEdgeToTycon (tyconOfAppTy cenv.g ty) acc
-                else
+            let insertEdgeToType ty acc = 
+                match tryDestAppTy cenv.g ty with
+                | Some tcref ->
+                    insertEdgeToTycon tcref.Deref acc
+                | None ->
                     acc
 
             // collect edges from an a struct field (which is struct-contained in tycon)
