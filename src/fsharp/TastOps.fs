@@ -7189,16 +7189,17 @@ let (|SpecialComparableHeadType|_|) g ty =
     if isAnyTupleTy g ty then 
         let _tupInfo, elemTys = destAnyTupleTy g ty
         Some elemTys 
-    elif isAppTy g ty then 
-        let tcref,tinst = destAppTy g ty 
-        if isArrayTyconRef g tcref ||
-           tyconRefEq g tcref g.system_UIntPtr_tcref ||
-           tyconRefEq g tcref g.system_IntPtr_tcref then
-             Some tinst 
-        else 
-            None
     else
-        None
+        match ty with
+        | AppTy g (tcref,tinst) ->
+            if isArrayTyconRef g tcref ||
+               tyconRefEq g tcref g.system_UIntPtr_tcref ||
+               tyconRefEq g tcref g.system_IntPtr_tcref then
+                 Some tinst 
+            else 
+                None
+        | _ ->
+            None
 
 let (|SpecialEquatableHeadType|_|) g ty = (|SpecialComparableHeadType|_|) g ty
 let (|SpecialNotEquatableHeadType|_|) g ty = 
