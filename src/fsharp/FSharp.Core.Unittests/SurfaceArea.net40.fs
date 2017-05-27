@@ -2762,6 +2762,7 @@ Microsoft.FSharp.Core.OptionModule: Microsoft.FSharp.Core.FSharpOption`1[TResult
 Microsoft.FSharp.Core.OptionModule: Microsoft.FSharp.Core.FSharpOption`1[T] Filter[T](Microsoft.FSharp.Core.FSharpFunc`2[T,System.Boolean], Microsoft.FSharp.Core.FSharpOption`1[T])
 Microsoft.FSharp.Core.OptionModule: Microsoft.FSharp.Core.FSharpOption`1[T] Flatten[T](Microsoft.FSharp.Core.FSharpOption`1[Microsoft.FSharp.Core.FSharpOption`1[T]])
 Microsoft.FSharp.Core.OptionModule: Microsoft.FSharp.Core.FSharpOption`1[T] OfNullable[T](System.Nullable`1[T])
+Microsoft.FSharp.Core.OptionModule: Microsoft.FSharp.Core.FSharpOption`1[System.String] OfString(System.String)
 Microsoft.FSharp.Core.OptionModule: Microsoft.FSharp.Core.FSharpOption`1[T] OfObj[T](T)
 Microsoft.FSharp.Core.OptionModule: Microsoft.FSharp.Core.FSharpOption`1[T] OrElseWith[T](Microsoft.FSharp.Core.FSharpFunc`2[Microsoft.FSharp.Core.Unit,Microsoft.FSharp.Core.FSharpOption`1[T]], Microsoft.FSharp.Core.FSharpOption`1[T])
 Microsoft.FSharp.Core.OptionModule: Microsoft.FSharp.Core.FSharpOption`1[T] OrElse[T](Microsoft.FSharp.Core.FSharpOption`1[T], Microsoft.FSharp.Core.FSharpOption`1[T])
