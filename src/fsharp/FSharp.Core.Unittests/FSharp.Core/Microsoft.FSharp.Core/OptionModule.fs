@@ -216,3 +216,11 @@ type OptionModule() =
         let fn x = x + 3
         Assert.AreEqual(Option.map fn None, Option.bind (fn >> Some) None)
         Assert.AreEqual(Option.map fn (Some 5), Option.bind (fn >> Some) (Some 5))
+
+    [<Test>]
+    member this.OfString () =
+        Assert.AreEqual(Some "Test", Option.ofString "Test")
+        Assert.AreEqual(Some "   Foo", Option.ofString "   Foo")
+        Assert.AreEqual(None, Option.ofString "")
+        Assert.AreEqual(None, Option.ofString "   ")
+        Assert.AreEqual(None, Option.ofString null)
