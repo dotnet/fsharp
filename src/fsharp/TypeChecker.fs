@@ -13765,9 +13765,10 @@ let TcMutRecDefns_Phase2 cenv envInitial bindsm scopem mutRecNSInfo (envMutRec: 
 module AddAugmentationDeclarations = 
     let tcaugHasNominalInterface g (tcaug: TyconAugmentation) tcref =
         tcaug.tcaug_interfaces |> List.exists (fun (x,_,_) -> 
-            isAppTy g x && tyconRefEq g (tcrefOfAppTy g x) tcref)
+            match tryDestAppTy g x with
+            | Some tcref2 when tyconRefEq g tcref2 tcref -> true
+            | _ -> false)
 
-        
     let AddGenericCompareDeclarations cenv (env: TcEnv) (scSet:Set<Stamp>) (tycon:Tycon) =
         if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare cenv.g tycon && scSet.Contains tycon.Stamp then 
             let tcref = mkLocalTyconRef tycon
