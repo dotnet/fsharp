@@ -20,6 +20,7 @@ open System.Windows
 open System.Collections.Generic
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.Ast
 open Microsoft.CodeAnalysis.Editor.Shared.Extensions
 open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.CodeAnalysis.Classification
@@ -63,11 +64,23 @@ type internal CodeLensTagger
                 textBox.FontSize, Brushes.Black)
         Size(formattedText.Width, formattedText.Height)
 
-    static let MeasureTextBox textBox =
-        MeasureString candidate textBox
+    static let MeasureTextBlock textBlock =
+        MeasureString candidate textBlock
+    
 
-    static let GetTextBoxSize =
-        MeasureTextBox (TextBlock())
+    static let GetTextBlockSize = MeasureTextBlock (TextBlock())
+
+    let visit pos parseTree = 
+        AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with 
+            member this.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
+                defaultTraverse(expr)
+            
+            override this.VisitInheritSynMemberDefn (_, _, _, _, range) = Some range
+
+            override this.VisitTypeAbbrev( _, range) = Some range
+
+            override this.VisitLetOrUse(binding, range) = Some range
+        })
 
     let formatMap = lazy typeMap.Value.ClassificationFormatMapService.GetClassificationFormatMap "tooltip"
     //let visibleAdornments = ConcurrentDictionary()
@@ -80,12 +93,8 @@ type internal CodeLensTagger
     let mutable codeLensLayer: IAdornmentLayer option = None
     let mutable recentFirstVsblLineNmbr, recentLastVsblLineNmbr = 0, 0
     let mutable updated = false
-    let addedAdornmentTags = Dictionary()
+    let mutable addedAdornmentTags = Dictionary()
 
-    let defaultTextBlock = new TextBlock(Background = Brushes.Transparent, Opacity = 0.5, TextTrimming = TextTrimming.WordEllipsis)
-    do DependencyObjectExtensions.SetDefaultTextProperties(defaultTextBlock, formatMap.Value)
-
-    
     let FSharpRangeToSpan (bufferSnapshot:ITextSnapshot) (range:range) =
         let startLine, endLine = 
             bufferSnapshot.GetLineFromLineNumber(range.StartLine - 1),
@@ -110,7 +119,7 @@ type internal CodeLensTagger
             logInfof "Rechecking code due to buffer edit!"
             let! document = workspace.CurrentSolution.GetDocument(documentId.Value) |> Option.ofObj
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true)
+            let! _, parsedInput, checkFileResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true)
             logInfof "Getting uses of all symbols!"
             let! symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
             let textSnapshot = view.TextSnapshot.TextBuffer.CurrentSnapshot
@@ -128,6 +137,7 @@ type internal CodeLensTagger
             let unattachedSymbols = Generic.List()
             // Tags which are new or need to be updated due to changes.
             let tagsToUpdate = Dictionary()
+            let continuedAdornmentTags = Dictionary()
 
             let useResults (displayContext: FSharpDisplayContext, func: FSharpMemberOrFunctionOrValue) =
                 async {
@@ -161,44 +171,51 @@ type internal CodeLensTagger
                     match symbolUse.Symbol with
                     | :? FSharpEntity as entity ->
                         for func in entity.MembersFunctionsAndValues do
-                            let declarationSpan = FSharpRangeToSpan textSnapshot func.DeclarationLocation
-                            let fullDeclarationText = textSnapshot.GetText declarationSpan
-                            let fullTypeSignature = func.FullType.ToString()
-                            // Try to re-use the last results
-                            if lastResults.ContainsKey(fullDeclarationText) then
-                                // Make sure that the results are usable
-                                let lastResult = lastResults.[fullDeclarationText]
-                                let codeLens = lastResult.Tag.IdentityTag :?> CodeLens
-                                if codeLens.FullTypeSignature = fullTypeSignature then
-                                    // The results can be reused because the signature is the same
-                                    if codeLens.Computed then
-                                        // Just re-use the old results, changed nothing
-                                        newResults.[fullDeclarationText] <- lastResult
-                                        oldResults.Remove(fullDeclarationText) |> ignore // Just tracking this
-                                    else
-                                        // The old results aren't computed at all, because the line might have changed create new results
-                                        tagsToUpdate.[lastResult] <- (fullDeclarationText,
-                                            { TaggedText = Async.cache (useResults (symbolUse.DisplayContext, func))
-                                              Computed = false
-                                              FullTypeSignature = fullTypeSignature
-                                              UiElement = null })
-                                        oldResults.Remove(fullDeclarationText) |> ignore
-                                else
-                                    // The signature is invalid so save the invalid data to remove it later (if those is valid)
-                                    if codeLens.Computed && not(isNull(codeLens.UiElement))then
-                                        // Track the old element for removal
-                                        outdatedAdornments.Add codeLens.UiElement
-                                        // Push back the new results
-                                        tagsToUpdate.[lastResult] <- (fullDeclarationText,
+                            // Regardles of whether we are in a async maybe, we don't want to abort the whole process due to a single empty option.
+                            let rawElement = visit func.DeclarationLocation.Start parsedInput
+                            match rawElement with
+                            | None -> ()
+                            | Some declarationRange ->
+                                let declarationSpan = FSharpRangeToSpan textSnapshot declarationRange
+                                let fullDeclarationText = textSnapshot.GetText declarationSpan
+                                let fullTypeSignature = func.FullType.ToString()
+                                // Try to re-use the last results
+                                if lastResults.ContainsKey(fullDeclarationText) then
+                                    // Make sure that the results are usable
+                                    let lastResult = lastResults.[fullDeclarationText]
+                                    let codeLens = lastResult.Tag.IdentityTag :?> CodeLens
+                                    if codeLens.FullTypeSignature = fullTypeSignature then
+                                        // The results can be reused because the signature is the same
+                                        if codeLens.Computed then
+                                            // Just re-use the old results, changed nothing
+                                            newResults.[fullDeclarationText] <- lastResult
+                                            continuedAdornmentTags.[lastResult.Tag.IdentityTag] <- ()
+                                            logInfof "Declaration %A can be reused. IdentityTag %A" fullDeclarationText lastResult.Tag.IdentityTag
+                                            oldResults.Remove(fullDeclarationText) |> ignore // Just tracking this
+                                        else
+                                            // The old results aren't computed at all, because the line might have changed create new results
+                                            tagsToUpdate.[lastResult] <- (fullDeclarationText,
                                                 { TaggedText = Async.cache (useResults (symbolUse.DisplayContext, func))
                                                   Computed = false
                                                   FullTypeSignature = fullTypeSignature
                                                   UiElement = null })
-                                        oldResults.Remove(fullDeclarationText) |> ignore
-                            else
-                                // The symbol might be completely new or has slightly changed. 
-                                // We need to track this and iterate over the left entries to ensure that there isn't anything
-                                unattachedSymbols.Add((symbolUse, func, fullDeclarationText, fullTypeSignature))
+                                            oldResults.Remove(fullDeclarationText) |> ignore
+                                    else
+                                        // The signature is invalid so save the invalid data to remove it later (if those is valid)
+                                        if codeLens.Computed && not(isNull(codeLens.UiElement))then
+                                            // Track the old element for removal
+                                            outdatedAdornments.Add codeLens.UiElement
+                                            // Push back the new results
+                                            tagsToUpdate.[lastResult] <- (fullDeclarationText,
+                                                    { TaggedText = Async.cache (useResults (symbolUse.DisplayContext, func))
+                                                      Computed = false
+                                                      FullTypeSignature = fullTypeSignature
+                                                      UiElement = null })
+                                            oldResults.Remove(fullDeclarationText) |> ignore
+                                else
+                                    // The symbol might be completely new or has slightly changed. 
+                                    // We need to track this and iterate over the left entries to ensure that there isn't anything
+                                    unattachedSymbols.Add((symbolUse, func, fullDeclarationText, fullTypeSignature))
                     | _ -> ()
             
             // In best case this works quite fine because often enough we change only a small part of the file and not the complete.
@@ -213,6 +230,7 @@ type internal CodeLensTagger
                     if codeLens.Computed then
                         newResults.[fullDeclarationText] <- res.Value
                         newCodeLensResults.[fullDeclarationText] <- codeLens
+                        continuedAdornmentTags.[codeLens] <- ()
                     else
                         // The tag might be still valid but it hasn't been computed yet so create fresh results
                         newCodeLensResults.[fullDeclarationText] <- 
@@ -226,14 +244,14 @@ type internal CodeLensTagger
                     // This function hasn't got any cache and so it's completely new.
                     // So create completely new results
                     // And finally add a tag for this.
-                    let declarationSpan = FSharpRangeToSpan textSnapshot func.DeclarationLocation
+                    let declarationSpan = textSnapshot.GetLineFromLineNumber(func.DeclarationLocation.StartLine - 1).Extent.Span
                     let res = 
                             { TaggedText = Async.cache (useResults (symbolUse.DisplayContext, func))
                               Computed = false
                               FullTypeSignature = fullTypeSignature
                               UiElement = null }
                     let tag, trackingSpan = 
-                        CodeLensTag(0., GetTextBoxSize.Height, 0., 0., 0., PositionAffinity.Predecessor, res, self),
+                        CodeLensTag(0., GetTextBlockSize.Height, 0., 0., 0., PositionAffinity.Predecessor, res, self),
                         textSnapshot.CreateTrackingSpan(declarationSpan, SpanTrackingMode.EdgePositive)
                     newResults.[fullDeclarationText] <- self.CreateTagSpan(trackingSpan, tag)
                 ()
@@ -242,10 +260,10 @@ type internal CodeLensTagger
                 self.RemoveTagSpan(tagToUpdate.Key) |> ignore
                 let fullDeclarationText, tag = tagToUpdate.Value
                 newResults.[fullDeclarationText] <- 
-                    self.CreateTagSpan(tagToUpdate.Key.Span, CodeLensTag(0., GetTextBoxSize.Height, 0., 0., 0., PositionAffinity.Predecessor, tag, self))
+                    self.CreateTagSpan(tagToUpdate.Key.Span, CodeLensTag(0., GetTextBlockSize.Height, 0., 0., 0., PositionAffinity.Predecessor, tag, self))
 
             lastResults <- newResults
-            addedAdornmentTags.Clear()
+            addedAdornmentTags <- continuedAdornmentTags
             do! Async.SwitchToContext uiContext |> liftAsync
             let! layer = codeLensLayer
             // Remove outdated and invalid results
@@ -284,9 +302,9 @@ type internal CodeLensTagger
         let realStart = line.Start.Add(offset)
         // Get the geometry which respects the changed height due to the SpaceAdornmentTag
         let geometry = 
-            view.TextViewLines.GetCharacterBounds(realStart)
-        if (ui.GetValue(Canvas.LeftProperty) :?> float) < geometry.Left then
-                Canvas.SetLeft(ui, geometry.Left)
+            view.TextViewLines.GetCharacterBounds(realStart) |> ignore
+            view.TextViewLines.GetCharacterBounds(realStart) // Two calls needed to ensure left property is correct. THIS IS A BUG OF VS!
+        Canvas.SetLeft(ui, geometry.Left)
         Canvas.SetTop(ui, geometry.Top)
     
     /// Creates the code lens ui elements for the specified text view line
@@ -321,6 +339,10 @@ type internal CodeLensTagger
                 textBox.Opacity <- 0.5
                 lens.Computed <- true
                 lens.UiElement <- textBox
+                let offset = 
+                    view.TextViewLines.GetCharacterBounds(line.Start).Top - view.TextViewLines.GetCharacterBounds(view.TextViewLines.FirstVisibleLine.Start).Top
+                logInfof "Offset %A" offset
+                view.DisplayTextLineContainingBufferPosition(line.Start, offset, ViewRelativePosition.Top);
                 return Some textBox
         } |> Async.map (fun ui ->
                match ui with
@@ -446,7 +468,7 @@ type internal CodeLensTagger
                                     layer.AddAdornment(AdornmentPositioningBehavior.ViewportRelative, Nullable(), 
                                         this, textBox, AdornmentRemovedCallback(fun _ _ -> ())) |> ignore
                                     textBox.BeginAnimation(UIElement.OpacityProperty, da)
-                                    addedAdornmentTags.[tag] <- ()
+                                    addedAdornmentTags.[codeLens] <- ()
                                 | None -> ()
                 with e -> logExceptionWithContext (e, "LayoutChanged, processing new visible lines")
         }
@@ -506,7 +528,7 @@ type internal CodeLensProvider
             tagger.SetView view
             view.LayoutChanged.AddHandler(fun _ e -> tagger.LayoutChanged e)
             // The view has been initialized. Notify that we can now theoretically display CodeLens
-            // Temporarily removed, eventually needed again!
+            // Temporarily removed, eventually needed again!  
             ()
              
 
