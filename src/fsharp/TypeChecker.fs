@@ -4503,10 +4503,11 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
     | SynType.LongIdentApp (ltyp,LongIdentWithDots(longId,_),_,args,_commas,_,m) -> 
         let ad = env.eAccessRights
         let ltyp,tpenv = TcType cenv newOk checkCxs occ env tpenv ltyp
-        if not (isAppTy cenv.g ltyp) then error(Error(FSComp.SR.tcTypeHasNoNestedTypes(),m))
-        let tcref,tinst = destAppTy cenv.g ltyp
-        let tcref = ResolveTypeLongIdentInTyconRef cenv.tcSink cenv.nameResolver env.eNameResEnv (TypeNameResolutionInfo.ResolveToTypeRefs (TypeNameResolutionStaticArgsInfo.FromTyArgs args.Length)) ad m tcref longId 
-        TcTypeApp cenv newOk checkCxs occ env tpenv m tcref tinst args 
+        match ltyp with
+        | AppTy cenv.g (tcref,tinst) ->
+            let tcref = ResolveTypeLongIdentInTyconRef cenv.tcSink cenv.nameResolver env.eNameResEnv (TypeNameResolutionInfo.ResolveToTypeRefs (TypeNameResolutionStaticArgsInfo.FromTyArgs args.Length)) ad m tcref longId 
+            TcTypeApp cenv newOk checkCxs occ env tpenv m tcref tinst args
+        | _ -> error(Error(FSComp.SR.tcTypeHasNoNestedTypes(),m))
 
     | SynType.Tuple(args,m) ->   
         let isMeasure = match optKind with Some TyparKind.Measure -> true | None -> List.exists (fun (isquot,_) -> isquot) args | _ -> false
