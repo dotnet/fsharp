@@ -305,7 +305,7 @@ type internal TcSymbolUses =
     member GetAllUsesOfSymbols : unit -> (Item * ItemOccurence * DisplayEnv * range)[]
 
     /// Get the locations of all the printf format specifiers in the file
-    member GetFormatSpecifierLocations : unit -> range[]
+    member GetFormatSpecifierLocationsAndArity : unit -> (range * int)[]
 
 
 /// An abstract type for reporting the results of name resolution and type checking
@@ -321,7 +321,7 @@ type ITypecheckResultsSink =
     abstract NotifyNameResolution : pos * Item * Item * TyparInst * ItemOccurence * DisplayEnv * NameResolutionEnv * AccessorDomain * range * bool -> unit
 
     /// Record that a printf format specifier occurred at a specific location in the source
-    abstract NotifyFormatSpecifierLocation : range -> unit
+    abstract NotifyFormatSpecifierLocation : range * int -> unit
 
     /// Get the current source
     abstract CurrentSource : string option
@@ -480,5 +480,6 @@ type ResolveCompletionTargets =
 /// Resolve a (possibly incomplete) long identifier to a set of possible resolutions, qualified by type.
 val ResolveCompletionsInType       : NameResolver -> NameResolutionEnv -> ResolveCompletionTargets -> Range.range -> AccessorDomain -> bool -> TType -> Item list
 
+val GetVisibleNamespacesAndModulesAtPoint : NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> ModuleOrNamespaceRef list
 
 val IsItemResolvable : NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> Item -> bool

@@ -12,12 +12,12 @@
 //   and capturing large amounts of structured output.
 (*
     cd Debug\net40\bin
-    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.Unittests.exe -g --optimize- -r .\FSharp.LanguageService.Compiler.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\unittests\SignatureHelpProviderTests.fs 
+    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.Unittests.exe -g --optimize- -r .\FSharp.Compiler.Private.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\unittests\SignatureHelpProviderTests.fs 
     .\VisualFSharp.Unittests.exe 
 *)
 // Technique 3: 
 // 
-//    Use F# Interactive.  This only works for FSharp.Compiler.Service.dll which has a public API
+//    Use F# Interactive.  This only works for FSharp.Compiler.Private.dll which has a public API
 [<NUnit.Framework.Category "Roslyn Services">]
 module Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn.SignatureHelpProvider
 
@@ -28,6 +28,7 @@ open NUnit.Framework
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open UnitTests.TestLib.LanguageService
 
 let filePath = "C:\\test.fs"
 
@@ -35,7 +36,7 @@ let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri( Syste
 
 let internal options = { 
     ProjectFileName = "C:\\test.fsproj"
-    ProjectFileNames =  [| filePath |]
+    SourceFiles =  [| filePath |]
     ReferencedProjects = [| |]
     OtherOptions = [| "-r:" + PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll") |]
     IsIncompleteTypeCheckEnvironment = true
@@ -44,6 +45,7 @@ let internal options = {
     OriginalLoadReferences = []
     UnresolvedReferences = None
     ExtraProjectInfo = None
+    Stamp = None
 }
 
 [<Test>]
@@ -143,8 +145,8 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
                 } 
 
             let triggerChar = if marker = "," then Some ',' elif marker = "(" then Some '(' elif marker = "<" then Some '<' else None
-            let triggered = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(FSharpChecker.Instance, documentationProvider, SourceText.From(fileContents), caretPosition, options, triggerChar, filePath, 0) |> Async.RunSynchronously
-            FSharpChecker.Instance.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
+            let triggered = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(checker, documentationProvider, SourceText.From(fileContents), caretPosition, options, triggerChar, filePath, 0) |> Async.RunSynchronously
+            checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             let actual = 
                 match triggered with 
                 | None -> None

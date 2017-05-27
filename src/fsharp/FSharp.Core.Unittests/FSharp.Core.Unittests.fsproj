@@ -15,7 +15,7 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <ReferenceVsAssemblies>true</ReferenceVsAssemblies>
     <OutputType>Library</OutputType>
-    <UnitTestAssembly>true</UnitTestAssembly>
+    <StrongNames>false</StrongNames>
     <AssemblyName>FSharp.Core.Unittests</AssemblyName>
     <!-- Prevent compiler from inlining calls to FSharp.Core to improve code coverage accuracy -->
     <Optimize>false</Optimize>
@@ -59,8 +59,8 @@
       <Name>FSharp.Core</Name>
     </ProjectReference>
     <Reference Include="System.ValueTuple">
-        <HintPath Condition=" '$(TargetFramework)' == 'profile47' ">..\..\..\packages\System.ValueTuple.4.3.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
-        <HintPath Condition="'$(TargetFramework)' != 'profile47' ">..\..\..\packages\System.ValueTuple.4.3.0\lib\portable-net40+sl4+win8+wp8\System.ValueTuple.dll</HintPath>
+        <HintPath Condition=" '$(TargetFramework)' == 'profile47' ">..\..\..\packages\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+        <HintPath Condition="'$(TargetFramework)' != 'profile47' ">..\..\..\packages\System.ValueTuple.4.3.1\lib\portable-net40+sl4+win8+wp8\System.ValueTuple.dll</HintPath>
         <Private>True</Private>
     </Reference>
   </ItemGroup>

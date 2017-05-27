@@ -874,7 +874,7 @@ type MethInfo =
     member x.DeclaringEntityRef   = 
         match x with 
         | ILMeth(_,ilminfo,_) when x.IsExtensionMember  -> ilminfo.DeclaringTyconRef
-        | FSMeth(_,_,vref,_) when x.IsExtensionMember -> vref.TopValActualParent
+        | FSMeth(_,_,vref,_) when x.IsExtensionMember && vref.HasTopValActualParent -> vref.TopValActualParent
         | _ -> tcrefOfAppTy x.TcGlobals x.EnclosingType 
 
     /// Get the information about provided static parameters, if any 
@@ -1646,7 +1646,6 @@ type ILFieldInfo =
         | ProvidedField(_,fi1,_), ProvidedField(_,fi2,_)-> ProvidedFieldInfo.TaintedEquals (fi1, fi2) 
         | _ -> false
 #endif
-
      /// Get an (uninstantiated) reference to the field as an Abstract IL ILFieldRef
     member x.ILFieldRef = rescopeILFieldRef x.ScopeRef (mkILFieldRef(x.ILTypeRef,x.FieldName,x.ILFieldType))
     override x.ToString() =  x.FieldName

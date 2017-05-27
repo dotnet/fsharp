@@ -55,7 +55,7 @@
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto ansi serializable nested assembly beforefieldinit 'res2@8-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'res2@8-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [ComputationExprLibrary]Library.Eventually`1<int32>>
   {
     .field public class [ComputationExprLibrary]Library.EventuallyBuilder builder@
@@ -106,7 +106,7 @@
 
   } // end of class 'res2@8-1'
 
-  .class auto ansi serializable nested assembly beforefieldinit 'res3@17-2'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'res3@17-2'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [ComputationExprLibrary]Library.Eventually`1<int32>>
   {
     .field public class [ComputationExprLibrary]Library.EventuallyBuilder builder@
@@ -154,7 +154,7 @@
 
   } // end of class 'res3@17-2'
 
-  .class auto ansi serializable nested assembly beforefieldinit 'res3@20-3'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'res3@20-3'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [ComputationExprLibrary]Library.Eventually`1<int32>>
   {
     .field public class [ComputationExprLibrary]Library.EventuallyBuilder builder@
@@ -194,7 +194,7 @@
 
   } // end of class 'res3@20-3'
 
-  .class auto ansi serializable nested assembly beforefieldinit 'res3@15-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'res3@15-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [ComputationExprLibrary]Library.Eventually`1<int32>>
   {
     .field public class [ComputationExprLibrary]Library.EventuallyBuilder builder@
@@ -244,7 +244,7 @@
 
   } // end of class 'res3@15-1'
 
-  .class auto ansi serializable nested assembly beforefieldinit res3@14
+  .class auto ansi serializable sealed nested assembly beforefieldinit res3@14
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [ComputationExprLibrary]Library.Eventually`1<int32>>
   {
     .field public class [ComputationExprLibrary]Library.EventuallyBuilder builder@

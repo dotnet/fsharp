@@ -15,12 +15,12 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 /// An additional interface that an IProjectSite object can implement to indicate it has an FSharpProjectOptions 
 /// already available, so we don't have to recreate it
 type private IHaveCheckOptions = 
-    abstract OriginalCheckOptions : unit -> FSharpProjectOptions
+    abstract OriginalCheckOptions : unit -> string[] * FSharpProjectOptions
         
 /// Convert from FSharpProjectOptions into IProjectSite.         
-type private ProjectSiteOfScriptFile(filename:string, checkOptions : FSharpProjectOptions) = 
+type private ProjectSiteOfScriptFile(filename:string, referencedProjectFileNames, checkOptions : FSharpProjectOptions) = 
     interface IProjectSite with
-        override this.SourceFilesOnDisk() = checkOptions.ProjectFileNames
+        override this.SourceFilesOnDisk() = checkOptions.SourceFiles
         override this.DescriptionOfProject() = sprintf "Script Closure at Root %s" filename
         override this.CompilerFlags() = checkOptions.OtherOptions
         override this.ProjectFileName() = checkOptions.ProjectFileName
@@ -37,7 +37,7 @@ type private ProjectSiteOfScriptFile(filename:string, checkOptions : FSharpProje
         override this.AssemblyReferences() = [||]
 
     interface IHaveCheckOptions with
-        override this.OriginalCheckOptions() = checkOptions
+        override this.OriginalCheckOptions() = (referencedProjectFileNames, checkOptions)
         
         
 /// An orphan file project is a .fs, .ml, .fsi, .mli that is not associated with a .fsproj.
@@ -77,6 +77,7 @@ type private ProjectSiteOfSingleFile(sourceFile) =
 type internal ProjectSitesAndFiles() =
     static let sourceUserDataGuid = new Guid("{55F834FD-B950-4C61-BBAA-0511ABAF4AE2}") // Guid for source user data on text buffer
     
+    static let mutable stamp = 0L
     static let tryGetProjectSite(hierarchy:IVsHierarchy) =
         match hierarchy with
         | :? IProvideProjectSite as siteFactory -> 
@@ -109,38 +110,49 @@ type internal ProjectSitesAndFiles() =
         | Some _ -> Seq.empty
 
     static let rec referencedProvideProjectSites (projectSite:IProjectSite, serviceProvider:System.IServiceProvider) =
-        let solutionService = 
-            try Some (serviceProvider.GetService(typeof<SVsSolution>) :?> IVsSolution) with _ -> None
-        match solutionService with
-        | Some solutionService ->
-            referencedProjects projectSite
-            |> Seq.choose (fun p ->
-                match solutionService.GetProjectOfUniqueName(p.UniqueName) with
-                | VSConstants.S_OK, (:? IProvideProjectSite as ps) ->
-                    Some (p, ps)
-                | _ -> None)
-        | None -> Seq.empty
+        seq { 
+            let solutionService = try Some (serviceProvider.GetService(typeof<SVsSolution>) :?> IVsSolution) with _ -> None
+            match solutionService with
+            | Some solutionService ->
+                for p in referencedProjects projectSite do
+                    match solutionService.GetProjectOfUniqueName(p.UniqueName) with
+                    | VSConstants.S_OK, (:? IProvideProjectSite as ps) ->
+                        yield (p, ps)
+                    | _ -> ()
+            | None -> ()
+        }
                     
-    static let rec referencedProjectsOf (projectSite:IProjectSite, fileName, extraProjectInfo, serviceProvider:System.IServiceProvider) =
-        referencedProvideProjectSites (projectSite, serviceProvider)
-        |> Seq.choose (fun (p, ps) ->            
-            fullOutputAssemblyPath p
-            |> Option.map (fun path ->
-                path, getProjectOptionsForProjectSite (ps.GetProjectSite(), fileName, extraProjectInfo, serviceProvider))
-            )
-        |> Seq.toArray
+    static let rec referencedProjectsOf (tryGetOptionsForReferencedProject, projectSite:IProjectSite, extraProjectInfo, serviceProvider:System.IServiceProvider, useUniqueStamp) =
+        [| for (p,ps) in referencedProvideProjectSites (projectSite, serviceProvider) do
+              match fullOutputAssemblyPath p with 
+              | None -> ()
+              | Some path ->
+                  let referencedProjectOptions = 
+                      // Lookup may not succeed if the project has not been established yet
+                      // In this case we go and compute the options recursively.
+                      match tryGetOptionsForReferencedProject p.FileName with 
+                      | None -> getProjectOptionsForProjectSite (tryGetOptionsForReferencedProject, ps.GetProjectSite(), p.FileName, extraProjectInfo, serviceProvider, useUniqueStamp) |> snd
+                      | Some options -> options
+                  yield (p.FileName, (path, referencedProjectOptions)) |]
 
-    and getProjectOptionsForProjectSite(projectSite:IProjectSite, fileName, extraProjectInfo, serviceProvider) =            
-           {ProjectFileName = projectSite.ProjectFileName()
-            ProjectFileNames = projectSite.SourceFilesOnDisk()
-            OtherOptions = projectSite.CompilerFlags()
-            ReferencedProjects = referencedProjectsOf(projectSite, fileName, extraProjectInfo, serviceProvider)
-            IsIncompleteTypeCheckEnvironment = projectSite.IsIncompleteTypeCheckEnvironment
-            UseScriptResolutionRules = SourceFile.MustBeSingleFileProject fileName
-            LoadTime = projectSite.LoadTime
-            UnresolvedReferences = None
-            OriginalLoadReferences = []
-            ExtraProjectInfo=extraProjectInfo }   
+    and getProjectOptionsForProjectSite(tryGetOptionsForReferencedProject, projectSite:IProjectSite, fileName, extraProjectInfo, serviceProvider, useUniqueStamp) =            
+        let referencedProjectFileNames, referencedProjectOptions = 
+            referencedProjectsOf(tryGetOptionsForReferencedProject, projectSite, extraProjectInfo, serviceProvider, useUniqueStamp) 
+            |> Array.unzip
+
+        let options = 
+            {ProjectFileName = projectSite.ProjectFileName()
+             SourceFiles = projectSite.SourceFilesOnDisk()
+             OtherOptions = projectSite.CompilerFlags()
+             ReferencedProjects = referencedProjectOptions
+             IsIncompleteTypeCheckEnvironment = projectSite.IsIncompleteTypeCheckEnvironment
+             UseScriptResolutionRules = SourceFile.MustBeSingleFileProject fileName
+             LoadTime = projectSite.LoadTime
+             UnresolvedReferences = None
+             OriginalLoadReferences = []
+             ExtraProjectInfo=extraProjectInfo 
+             Stamp = (if useUniqueStamp then (stamp <- stamp + 1L; Some stamp) else None) }   
+        referencedProjectFileNames, options
 
     /// Construct a project site for a single file. May be a single file project (for scripts) or an orphan project site (for everything else).
     static member ProjectSiteOfSingleFile(filename:string) : IProjectSite = 
@@ -225,12 +237,13 @@ type internal ProjectSitesAndFiles() =
         |> Seq.toArray
 
     /// Create project options for this project site.
-    static member GetProjectOptionsForProjectSite(projectSite:IProjectSite,filename,extraProjectInfo,serviceProvider:System.IServiceProvider) =
+    static member GetProjectOptionsForProjectSite(tryGetOptionsForReferencedProject, projectSite:IProjectSite,filename,extraProjectInfo,serviceProvider:System.IServiceProvider, useUniqueStamp) =
         match projectSite with
         | :? IHaveCheckOptions as hco -> hco.OriginalCheckOptions()
         | _ ->             
-            getProjectOptionsForProjectSite(projectSite, filename, extraProjectInfo, serviceProvider)
+            getProjectOptionsForProjectSite(tryGetOptionsForReferencedProject, projectSite, filename, extraProjectInfo, serviceProvider, useUniqueStamp)
          
     /// Create project site for these project options
-    static member CreateProjectSiteForScript (filename, checkOptions) = ProjectSiteOfScriptFile (filename, checkOptions) :> IProjectSite
+    static member CreateProjectSiteForScript (filename, referencedProjectFileNames, checkOptions) = 
+        ProjectSiteOfScriptFile (filename, referencedProjectFileNames, checkOptions) :> IProjectSite
 

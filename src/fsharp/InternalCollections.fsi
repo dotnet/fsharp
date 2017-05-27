@@ -4,10 +4,12 @@ namespace Internal.Utilities.Collections
   
   /// Simple aging lookup table. When a member is accessed it's
   /// moved to the top of the list and when there are too many elements
-  /// the least-recently-accessed element falls of the end.
+  /// the least-recently-accessed element falls of the end.  
+  ///
+  ///  - areSimilar: Keep at most once association for two similar keys (as given by areSimilar)
   type internal AgedLookup<'Token, 'Key, 'Value when 'Value : not struct> = 
     new : keepStrongly:int
-            * areSame:('Key * 'Key -> bool) 
+            * areSimilar:('Key * 'Key -> bool) 
             * ?requiredToKeep:('Value -> bool)
             * ?onStrongDiscard : ('Value -> unit) // this may only be set if keepTotal=keepStrongly, i.e. not weak entries
             * ?keepMax: int
@@ -40,25 +42,36 @@ namespace Internal.Utilities.Collections
   /// threads seeing different live sets of cached items, and may result in the onDiscard action
   /// being called multiple times. In practice this means the collection is only safe for concurrent
   /// access if there is no discard action to execute.
+  ///
+  ///  - areSimilar: Keep at most once association for two similar keys (as given by areSimilar)
   type internal MruCache<'Token, 'Key,'Value when 'Value : not struct> =
     new : keepStrongly:int 
             * areSame:('Key * 'Key -> bool) 
             * ?isStillValid:('Key * 'Value -> bool)
-            * ?areSameForSubsumption:('Key * 'Key -> bool) 
+            * ?areSimilar:('Key * 'Key -> bool) 
             * ?requiredToKeep:('Value -> bool)
             * ?onDiscard:('Value -> unit)
             * ?keepMax:int
             -> MruCache<'Token,'Key,'Value>
+
     /// Clear out the cache.
     member Clear : 'Token -> unit
-    /// Get the value for the given key or <c>None</c> if not already available.
+
+    /// Get the similar (subsumable) value for the given key or <c>None</c> if not already available.
+    member ContainsSimilarKey : 'Token * key:'Key -> bool
+
+    /// Get the value for the given key or <c>None</c> if not still valid.
     member TryGetAny : 'Token * key:'Key -> 'Value option
-    /// Get the value for the given key or None if not already available
+
+    /// Get the value for the given key or None, but only if entry is still valid
     member TryGet : 'Token * key:'Key -> 'Value option
+
     /// Remove the given value from the mru cache.
-    member Remove : 'Token * key:'Key -> unit
+    member RemoveAnySimilar : 'Token * key:'Key -> unit
+
     /// Set the given key. 
     member Set : 'Token * key:'Key * value:'Value -> unit
+
     /// Resize
     member Resize : 'Token * keepStrongly: int * ?keepMax : int -> unit
 

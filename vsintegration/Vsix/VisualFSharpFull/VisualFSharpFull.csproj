@@ -11,7 +11,6 @@
     </FileUpgradeFlags>
     <OldToolsVersion>15.0</OldToolsVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
     <ProjectTypeGuids>{82b43b9b-a64c-4715-b499-d71e9ca2bd60};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
@@ -44,7 +43,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <VSRootSuffix>FSharpDev</VSRootSuffix>
+    <VSRootSuffix>RoslynDev</VSRootSuffix>
     <UseCodebase>true</UseCodebase>
     <DeployExtension Condition=" '$(DeployExtension)' == '' and ('$(AppVeyor)' != '' or '$(HUDSON_COOKIE)' != '' or '$(UsingMicrobuild)' != '') ">False</DeployExtension>
     <DeployExtension Condition=" '$(DeployExtension)' == '' and '$(AppVeyor)' == '' and '$(HUDSON_COOKIE)' == '' and '$(UsingMicrobuild)' == '' ">True</DeployExtension>
@@ -86,9 +85,9 @@
       <Link>License.txt</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
-    <Content Include="$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.3.0\System.ValueTuple.4.3.0.nupkg">
+    <Content Include="$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.3.1\System.ValueTuple.4.3.1.nupkg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>packages\System.ValueTuple.4.3.0.nupkg</Link>
+      <Link>packages\System.ValueTuple.4.3.1.nupkg</Link>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
   </ItemGroup>
@@ -124,9 +123,9 @@
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler\FSharp.Compiler.fsproj">
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj">
       <Project>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</Project>
-      <Name>FSharp.Compiler</Name>
+      <Name>FSharp.Compiler.Private</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <Private>True</Private>
@@ -138,23 +137,16 @@
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.LanguageService.Compiler\FSharp.LanguageService.Compiler.fsproj">
-      <Project>{A437A6EC-5323-47C2-8F86-E2CAC54FF152}</Project>
-      <Name>FSharp.LanguageService.Compiler</Name>
-      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3bPkgDefProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
-      <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fsiAnyCpu\FsiAnyCPU.fsproj">
+    <ProjectReference Include="..\..\..\src\fsharp\fsiAnyCpu\FsiAnyCPU.fsproj">
       <Project>{8B3E283D-B5FE-4055-9D80-7E3A32F3967B}</Project>
-      <Name>fsiAnyCpu</Name>
+      <Name>FsiAnyCPU</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\fsi\Fsi.fsproj">
+    <ProjectReference Include="..\..\..\src\fsharp\fsi\Fsi.fsproj">
       <Project>{D0E98C0D-490B-4C61-9329-0862F6E87645}</Project>
-      <Name>fsi</Name>
+      <Name>Fsi</Name>
       <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <Private>True</Private>

@@ -5,6 +5,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.Collections.Immutable
 open System.Collections.Generic
+open System.Threading
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
@@ -85,16 +86,28 @@ module internal RoslynHelpers =
 
     let CollectTaggedText (list: List<_>) (t:TaggedText) = list.Add(TaggedText(roslynTag t.Tag, t.Text))
 
-    let StartAsyncAsTask cancellationToken computation =
-        let computation =
-            async {
-                try
-                    return! computation
-                with e ->
-                    Assert.Exception(e)
-                    return Unchecked.defaultof<_>
-            }
-        Async.StartAsTask(computation, TaskCreationOptions.None, cancellationToken)
+    type VolatileBarrier() =
+        [<VolatileField>]
+        let mutable isStopped = false
+        member __.Proceed = not isStopped
+        member __.Stop() = isStopped <- true
+
+    // This is like Async.StartAsTask, but if cancellation occurs we explicitly associate the cancellation with cancellationToken
+    let StartAsyncAsTask (cancellationToken: CancellationToken) computation =
+        let tcs = new TaskCompletionSource<_>(TaskCreationOptions.None)
+        let barrier = VolatileBarrier()
+        let reg = cancellationToken.Register(fun _ -> if barrier.Proceed then tcs.TrySetCanceled(cancellationToken) |> ignore)
+        let task = tcs.Task
+        let disposeReg() = barrier.Stop(); if not task.IsCanceled then reg.Dispose()
+        Async.StartWithContinuations(
+                  async { do! Async.SwitchToThreadPool()
+                          return! computation }, 
+                  continuation=(fun result -> disposeReg(); tcs.TrySetResult(result) |> ignore), 
+                  exceptionContinuation=(function :? OperationCanceledException -> disposeReg(); tcs.TrySetCanceled(cancellationToken)  |> ignore
+                                                | exn -> disposeReg(); tcs.TrySetException(exn) |> ignore),
+                  cancellationContinuation=(fun _oce -> disposeReg(); tcs.TrySetCanceled(cancellationToken) |> ignore),
+                  cancellationToken=cancellationToken)
+        task
 
     let StartAsyncUnitAsTask cancellationToken (computation:Async<unit>) = 
         StartAsyncAsTask cancellationToken computation :> Task

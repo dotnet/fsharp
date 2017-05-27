@@ -13,8 +13,6 @@
     <FSCoreVersion Condition="'$(FSharpCoreBackVersion)' == '3.0' AND '$(FSCoreVersion)' == '4.4.1.0'">4.3.0.0</FSCoreVersion>
     <FSCoreVersion Condition="'$(FSharpCoreBackVersion)' == '3.1' AND '$(FSCoreVersion)' == '4.4.1.0'">4.3.1.0</FSCoreVersion>
     <FSCoreVersion Condition="'$(FSharpCoreBackVersion)' == '4.0' AND '$(FSCoreVersion)' == '4.4.1.0'">4.4.0.0</FSCoreVersion>
-
-  
   </PropertyGroup>
 
   <Choose>
@@ -26,8 +24,18 @@
       <Choose>
         <When Condition="'$(ProjectLanguage)' == 'FSharp'">
           <Choose>
-            <!-- In the open source "Mono" build we always sign the binaries with the public test.snk, apart from FSharp.Core -->
-            <When Condition="('$(MonoPackaging)' == 'true') AND ('$(AssemblyName)'!='FSharp.Core') AND ('$(AssemblyName)'!='FSharp.Core.Unittests')" >
+            <!-- Some unit test assemblies must not have strong names since they reference other assemblies that don't have strong names -->
+            <!-- These unit test assemblies can't use InternalsVisibleTo into assemblies with strong names. -->
+            <When Condition="'$(StrongNames)' == 'false'" >
+              <PropertyGroup>
+                <SkipSigning>true</SkipSigning>
+                <UseOpenSourceSign>false</UseOpenSourceSign>
+                <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
+                <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
+              </PropertyGroup>
+            </When>
+            <!-- In the open source "Mono" build we always fully sign the binaries with the public test.snk, apart from FSharp.Core, which gets the MSFT key -->
+            <When Condition="'$(MonoPackaging)' == 'true' AND '$(AssemblyName)'!='FSharp.Core'" >
               <PropertyGroup>
                 <OtherFlags>$(OtherFlags) --keyfile:"$(FSharpSourcesRoot)\fsharp\test.snk"</OtherFlags>
                 <DefineConstants>STRONG_NAME_FSHARP_COMPILER_WITH_TEST_KEY;$(DefineConstants)</DefineConstants>
@@ -36,54 +44,25 @@
                 <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
               </PropertyGroup>
             </When>
-            <When Condition="'$(AssemblyName)' == 'FSharp.Core' or '$(AssemblyName)' == 'FSharp.Build' or '$(AssemblyName)' == 'FSharp.Compiler' or '$(AssemblyName)' == 'FSharp.Compiler.Interactive.Settings' or '$(AssemblyName)' == 'FSharp.Compiler.Server.Shared' or '$(AssemblyName)' == 'fsc' or '$(AssemblyName)' == 'fsi' or '$(AssemblyName)' == 'fsiAnyCpu' or '$(AssemblyName)' == 'FSharp.Compiler.Unittests' or '$(AssemblyName)' == 'HostedCompilerServer' or '$(AssemblyName)' == 'ILComparer'" >
-              <PropertyGroup Condition="'$(AssemblyName)' == 'FSharp.Core' and ('$(TargetFramework)' == 'portable47' or '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259' or '$(TargetFramework)' == 'coreclr')">
-                 <IsPortableProfile>true</IsPortableProfile>
-              </PropertyGroup>
-              <PropertyGroup>
-                <OtherFlags Condition="'$(TargetFramework)' == 'coreclr' or $(BUILD_PUBLICSIGN) != '1'">$(OtherFlags) --delaysign+</OtherFlags>
-                <OtherFlags Condition="'$(TargetFramework)' != 'coreclr' and $(BUILD_PUBLICSIGN) == '1'">$(OtherFlags)  --publicsign+</OtherFlags>
-                <OtherFlags>$(OtherFlags) --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
-                <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
-                <StrongNames>true</StrongNames>
-                <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
-                <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
-              </PropertyGroup>
-            </When>
-            <When Condition="'$(AssemblyName)' == 'FSharp.LanguageService' or '$(AssemblyName)' == 'FSharp.LanguageService.Compiler' or '$(AssemblyName)' == 'FSharp.Editor' or '$(AssemblyName)' == 'FSharp.VS.FSI' or '$(AssemblyName)' == 'FSharp.ProjectSystem.FSharp'">
-              <PropertyGroup>
-                <OtherFlags Condition="'$(TargetFramework)' == 'coreclr' or $(BUILD_PUBLICSIGN) != '1'">$(OtherFlags) --delaysign+</OtherFlags>
-                <OtherFlags Condition="'$(TargetFramework)' != 'coreclr' and $(BUILD_PUBLICSIGN) == '1'">$(OtherFlags)  --publicsign+</OtherFlags>
-                <OtherFlags>$(OtherFlags) --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
-                <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
-                <StrongNames>true</StrongNames>
-                <MicroBuildAssemblyVersion>15.4.1.0</MicroBuildAssemblyVersion>
-                <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
-              </PropertyGroup>
-            </When>
-            <!-- do not strong-name the runtime unit tests, as they have non-strong-named dependencies -->
-            <When Condition="'$(UnitTestAssembly)' == 'true'">
-              <PropertyGroup>
-                <SkipSigning>true</SkipSigning><!-- Skip using the ,net toolset to generate signing . -->
-                <UseOpenSourceSign>false</UseOpenSourceSign>
-                <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
-                <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
-              </PropertyGroup>
-            </When>
+            <!-- In the Microsoft build we just delay-sign everything with the MSFT key -->
+            <!-- We have to do unit test DLLs well because they can see the internals of other strong-named DLLs -->
             <Otherwise>
-              <PropertyGroup Condition="'$(SIGN_WITH_MSFT_KEY)' == 'true'">
+              <PropertyGroup>
                 <OtherFlags Condition="'$(TargetFramework)' == 'coreclr' or $(BUILD_PUBLICSIGN) != '1'">$(OtherFlags) --delaysign+</OtherFlags>
                 <OtherFlags Condition="'$(TargetFramework)' != 'coreclr' and $(BUILD_PUBLICSIGN) == '1'">$(OtherFlags)  --publicsign+</OtherFlags>
                 <OtherFlags>$(OtherFlags) --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
                 <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
                 <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
+                <!-- certain delivered F# VS assemblies use a specific MicroBuildAssemblyVersion, otherwise use FSCoreVersion -->
+                <MicroBuildAssemblyVersion Condition="'$(UseVsMicroBuildAssemblyVersion)' == 'true'">15.4.1.0</MicroBuildAssemblyVersion>
                 <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
               </PropertyGroup>
             </Otherwise>
           </Choose>
         </When>
         <Otherwise>
+          <!-- Not F# code -->
           <PropertyGroup>
             <SignAssembly>true</SignAssembly>
             <AssemblyOriginatorKeyFile>$(FSharpSourcesRoot)\fsharp\msft.pubkey</AssemblyOriginatorKeyFile>
@@ -142,8 +121,6 @@
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
     <DefineConstants>$(DefineConstants);BE_SECURITY_TRANSPARENT</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_LCIDFROMCODEPAGE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FSI_SHADOW_COPY_REFERENCES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FSI_SERVER</DefineConstants>
     <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile></TargetFrameworkProfile>
     <!-- MSbuild works out the assembly references -->
@@ -214,6 +191,7 @@
     <DefineConstants>$(DefineConstants);FX_RESHAPED_GLOBALIZATION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_REFLECTION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_JITTRACKING_ISSUE</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_NO_INDENTED_TEXT_WRITER</DefineConstants>
     <DefineConstants Condition=" '$(FX_NO_LOADER)' != 'true' ">$(DefineConstants);FX_RESHAPED_REFLECTION_CORECLR</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_MSBUILD</DefineConstants>
     <DefineConstants>$(DefineConstants);FSI_TODO_NETCORE</DefineConstants>
@@ -618,24 +596,6 @@
       <OldBuildVersionFiles Include="$(BuildVersionFilePath)BuildVersions-*.props" Exclude="$(BuildVersionFilePath)%(BuildVersionFileItem.Filename).props" />
     </ItemGroup>
     <Delete Files="@(OldBuildVersionFiles)" TreatErrorsAsWarnings="true"/>
-  </Target>
-
-  <Target Name="nugetpack"
-          DependsOnTargets="CreateOrUpdateBuildVersionFile"
-          AfterTargets="Build"
-          Condition="'$(TargetFramework)' == 'coreclr' "
-          Inputs="@(PackageNuspec)" 
-          Outputs='$(FSharpSourcesRoot.TrimEnd("\"))\..\$(Configuration)\artifacts\"%(PackageNuspec.Filename)).nupkg'>
-
-    <PropertyGroup>
-      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
-    </PropertyGroup>
-
-    <MakeDir Directories="$(FSharpSourcesRoot.TrimEnd('\'))\..\$(Configuration)\artifacts" />
-    <MakeDir Directories="$(FSharpSourcesRoot.TrimEnd('\'))\..\artifacts" />
-    <SetEnvVar Name="NUGET_PACKAGES" Value="$(NUGET_PACKAGES)" />
-    <Exec Command='$(MSBuildThisFileDirectory)..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(OutputPath.TrimEnd("\")) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot.TrimEnd("\"))\..\$(Configuration)\artifacts' />
-    <Exec Command='$(MSBuildThisFileDirectory)..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(OutputPath.TrimEnd("\")) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot.TrimEnd("\"))\..\artifacts' />
   </Target>
 
   <UsingTask TaskName="ReplaceFileText" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">

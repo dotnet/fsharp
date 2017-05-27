@@ -55,7 +55,7 @@
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto ansi serializable nested assembly beforefieldinit 'res6@9-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'res6@9-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,bool>
   {
     .field public class [FSharp.Core]Microsoft.FSharp.Core.FSharpRef`1<int32> x
@@ -92,7 +92,7 @@
 
   } // end of class 'res6@9-1'
 
-  .class auto ansi serializable nested assembly beforefieldinit 'res6@10-2'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'res6@10-2'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [ComputationExprLibrary]Library.Eventually`1<class [FSharp.Core]Microsoft.FSharp.Core.Unit>>
   {
     .field public class [ComputationExprLibrary]Library.EventuallyBuilder builder@
@@ -161,7 +161,7 @@
 
   } // end of class 'res6@10-2'
 
-  .class auto ansi serializable nested assembly beforefieldinit 'res6@16-3'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'res6@16-3'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [ComputationExprLibrary]Library.Eventually`1<int32>>
   {
     .field public class [ComputationExprLibrary]Library.EventuallyBuilder builder@
@@ -197,7 +197,7 @@
 
   } // end of class 'res6@16-3'
 
-  .class auto ansi serializable nested assembly beforefieldinit res6@8
+  .class auto ansi serializable sealed nested assembly beforefieldinit res6@8
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [ComputationExprLibrary]Library.Eventually`1<int32>>
   {
     .field public class [ComputationExprLibrary]Library.EventuallyBuilder builder@

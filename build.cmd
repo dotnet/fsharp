@@ -19,10 +19,10 @@ echo Usage:
 echo.
 echo build.cmd ^<all^|net40^|coreclr^|pcls^|vs^>
 echo           ^<proto^|protofx^>
-echo           ^<ci^|ci_part1^|ci_part2^|ci_part3^|ci_part4^|microbuild^>
+echo           ^<ci^|ci_part1^|ci_part2^|ci_part3^|ci_part4^|microbuild^|nuget^>
 echo           ^<debug^|release^>
 echo           ^<diag^|publicsign^>
-echo           ^<test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-pcl-coreunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
+echo           ^<test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-pcl-coreunit^|test-net40-ideunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
 echo           ^<include tag^>
 echo           ^<init^>
 echo.
@@ -57,6 +57,7 @@ if "%BUILD_PROTO_WITH_CORECLR_LKG%" =="" (set BUILD_PROTO_WITH_CORECLR_LKG=0)
 set BUILD_PROTO=0
 set BUILD_PHASE=1
 set BUILD_NET40=0
+set BUILD_NET40_FSHARP_CORE=0
 set BUILD_CORECLR=0
 set BUILD_PORTABLE=0
 set BUILD_VS=0
@@ -94,10 +95,15 @@ for %%i in (%BUILD_FSC_DEFAULT%) do ( call :PROCESS_ARG %%i )
 REM apply defaults
 
 if /i "%_autoselect%" == "1" (
+    set BUILD_NET40_FSHARP_CORE=1
     set BUILD_NET40=1
 )
 
 if /i "%_autoselect_tests%" == "1" (
+    if /i "%BUILD_NET40_FSHARP_CORE%" == "1" (
+        set TEST_NET40_COREUNIT_SUITE=1
+    )
+
     if /i "%BUILD_NET40%" == "1" (
         set TEST_NET40_COMPILERUNIT_SUITE=1
         set TEST_NET40_COREUNIT_SUITE=1
@@ -129,8 +135,14 @@ set ARG2=%~2
 if "%ARG%" == "1" if "%2" == "" (set ARG=default)
 if "%2" == "" if not "%ARG%" == "default" goto :EOF
 
+if /i "%ARG%" == "net40-lib" (
+    set _autoselect=0
+    set BUILD_NET40_FSHARP_CORE=1
+)
+
 if /i "%ARG%" == "net40" (
     set _autoselect=0
+    set BUILD_NET40_FSHARP_CORE=1
     set BUILD_NET40=1
 )
 
@@ -167,6 +179,7 @@ if /i "%ARG%" == "all" (
     set BUILD_PORTABLE=1
     set BUILD_VS=1
     set BUILD_SETUP=%FSC_BUILD_SETUP%
+    set BUILD_NUGET=1
     set CI=1
 )
 
@@ -174,11 +187,13 @@ if /i "%ARG%" == "microbuild" (
     set _autoselect=0
     set BUILD_PROTO=1
     set BUILD_NET40=1
+    set BUILD_NET40_FSHARP_CORE=1
     set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
     set BUILD_SETUP=%FSC_BUILD_SETUP%
+    set BUILD_NUGET=1
 
     set TEST_NET40_COMPILERUNIT_SUITE=1
     set TEST_NET40_COREUNIT_SUITE=1
@@ -196,6 +211,17 @@ if /i "%ARG%" == "microbuild" (
     set TMP=%~dp0%BUILD_CONFIG%\TEMP
 )
 
+if /i "%ARG%" == "nuget" (
+    set _autoselect=0
+
+    set BUILD_PROTO=1
+    set BUILD_NET40_FSHARP_CORE=1
+    set BUILD_PROTO_WITH_CORECLR_LKG=1
+    set BUILD_PORTABLE=1
+    set BUILD_CORECLR=1
+    set BUILD_NUGET=1
+)
+
 REM These divide "ci" into two chunks which can be done in parallel
 if /i "%ARG%" == "ci_part1" (
     set _autoselect=0
@@ -203,6 +229,7 @@ if /i "%ARG%" == "ci_part1" (
     REM what we do
     set BUILD_PROTO=1
     set BUILD_NET40=1
+    set BUILD_NET40_FSHARP_CORE=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
     set BUILD_SETUP=%FSC_BUILD_SETUP%
@@ -216,7 +243,7 @@ if /i "%ARG%" == "ci_part2" (
     REM what we do
     set BUILD_PROTO=1
     set BUILD_NET40=1
-
+    set BUILD_NET40_FSHARP_CORE=1
     set TEST_NET40_COREUNIT_SUITE=1
     set TEST_NET40_FSHARP_SUITE=1
     set CI=1
@@ -229,7 +256,9 @@ if /i "%ARG%" == "ci_part3" (
     set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_PROTO=1
     set BUILD_CORECLR=1
-
+    set BUILD_NET40_FSHARP_CORE=1
+    set BUILD_PORTABLE=1
+    set BUILD_NUGET=1
     set TEST_CORECLR_FSHARP_SUITE=1
     set TEST_CORECLR_COREUNIT_SUITE=1
     set CI=1
@@ -241,6 +270,7 @@ if /i "%ARG%" == "ci_part4" (
     REM what we do
     set BUILD_PROTO=1
     set BUILD_NET40=1
+    set BUILD_NET40_FSHARP_CORE=1
     set BUILD_PORTABLE=1
 
     set TEST_NET40_COMPILERUNIT_SUITE=1
@@ -282,10 +312,12 @@ if /i "%ARG%" == "test-all" (
     set BUILD_PROTO=1
     set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_NET40=1
+    set BUILD_NET40_FSHARP_CORE=1
     set BUILD_CORECLR=1
     set BUILD_PORTABLE=1
     set BUILD_VS=1
     set BUILD_SETUP=%FSC_BUILD_SETUP%
+    set BUILD_NUGET=1
 
     set TEST_NET40_COMPILERUNIT_SUITE=1
     set TEST_NET40_COREUNIT_SUITE=1
@@ -297,40 +329,60 @@ if /i "%ARG%" == "test-all" (
 )
 
 if /i "%ARG%" == "test-net40-fsharpqa" (
+    set _autoselect=0
     set BUILD_NET40=1
+    set BUILD_NET40_FSHARP_CORE=1
     set BUILD_PORTABLE=1
     set TEST_NET40_FSHARPQA_SUITE=1
 )
 
 if /i "%ARG%" == "test-compiler-unit" (
+    set _autoselect=0
     set BUILD_NET40=1
+    set BUILD_NET40_FSHARP_CORE=1
     set TEST_NET40_COMPILERUNIT_SUITE=1
 )
 
-if /i "%ARG%" == "test-net40-coreunit" (
+if /i "%ARG%" == "test-net40-ideunit" (
+    set _autoselect=0
     set BUILD_NET40=1
+    set BUILD_NET40_FSHARP_CORE=1
+    set BUILD_VS=1
+    set BUILD_PORTABLE=1
+    set TEST_VS_IDEUNIT_SUITE=1
+)
+
+if /i "%ARG%" == "test-net40-coreunit" (
+    set _autoselect=0
+    set BUILD_NET40_FSHARP_CORE=1
     set TEST_NET40_COREUNIT_SUITE=1
 )
 
 if /i "%ARG%" == "test-coreclr-coreunit" (
+    set _autoselect=0
     set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_CORECLR=1
     set TEST_CORECLR_COREUNIT_SUITE=1
 )
 
 if /i "%ARG%" == "test-pcl-coreunit" (
+    set _autoselect=0
     set BUILD_PORTABLE=1
     set TEST_PORTABLE_COREUNIT_SUITE=1
 )
 
 if /i "%ARG%" == "test-net40-fsharp" (
+    set _autoselect=0
     set BUILD_NET40=1
+    set BUILD_NET40_FSHARP_CORE=1
     set BUILD_PORTABLE=1
     set TEST_NET40_FSHARP_SUITE=1
 )
 
 if /i "%ARG%" == "test-coreclr-fsharp" (
+    set _autoselect=0
     set BUILD_NET40=1
+    set BUILD_NET40_FSHARP_CORE=1
     set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_CORECLR=1
     set TEST_CORECLR_FSHARP_SUITE=1
@@ -363,6 +415,7 @@ echo.
 echo BUILD_PROTO=%BUILD_PROTO%
 echo BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG%
 echo BUILD_NET40=%BUILD_NET40%
+echo BUILD_NET40_FSHARP_CORE=%BUILD_NET40_FSHARP_CORE%
 echo BUILD_CORECLR=%BUILD_CORECLR%
 echo BUILD_PORTABLE=%BUILD_PORTABLE%
 echo BUILD_VS=%BUILD_VS%
@@ -489,8 +542,8 @@ if defined TF_BUILD (
     git fetch --all
 )
 
-REM set msbuildflags=/maxcpucount %_nrswitch% /nologo
 set msbuildflags=%_nrswitch% /nologo
+REM set msbuildflags=%_nrswitch% /nologo
 set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
 if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 
@@ -513,6 +566,15 @@ if "%RestorePackages%" == "true" (
         %_nugetexe% restore setup\packages.config -PackagesDirectory packages -ConfigFile %_nugetconfig%
         @if ERRORLEVEL 1 echo Error: Nuget restore failed  && goto :failure
     )
+)
+
+if "%BUILD_NUGET%" == "1" (
+    :: Copy the net20 and net40 build directory for nuget building
+    md %~dp0%BUILD_CONFIG%\dotnet20\bin
+    copy /Y %~dp0packages\FSharp.Core.4.1.17\lib\net20\*.* %~dp0%BUILD_CONFIG%\dotnet20\bin
+
+    md %~dp0%BUILD_CONFIG%\dotnet40\bin
+    copy /Y %~dp0packages\FSharp.Core.4.1.17\lib\net40\*.* %~dp0%BUILD_CONFIG%\dotnet40\bin
 )
 
 if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
@@ -588,7 +650,7 @@ if "%BUILD_PHASE%" == "1" (
 
 echo ---------------- Done with build, starting update/prepare ---------------
 
-if "%BUILD_NET40%" == "1" (
+if "%BUILD_NET40_FSHARP_CORE%" == "1" (
     call src\update.cmd %BUILD_CONFIG% -ngen
 )
 
@@ -639,7 +701,7 @@ echo SNEXE64:           %SNEXE64%
 echo ILDASM:            %ILDASM%
 echo
 
-if "%TEST_NET40_COMPILERUNIT_SUITE%" == "0" if "%TEST_PORTABLE_COREUNIT_SUITE%" == "0" if "%TEST_CORECLR_COREUNIT_SUITE%" == "0" if "%TEST_VS_IDEUNIT_SUITE%" == "0" if "%TEST_NET40_FSHARP_SUITE%" == "0" if "%TEST_NET40_FSHARPQA_SUITE%" == "0" goto :success
+if "%TEST_NET40_COMPILERUNIT_SUITE%" == "0" if "%TEST_NET40_COREUNIT_SUITE%" == "0" if "%TEST_PORTABLE_COREUNIT_SUITE%" == "0" if "%TEST_CORECLR_COREUNIT_SUITE%" == "0" if "%TEST_VS_IDEUNIT_SUITE%" == "0" if "%TEST_NET40_FSHARP_SUITE%" == "0" if "%TEST_NET40_FSHARPQA_SUITE%" == "0" goto :success
 
 echo ---------------- Done with update, starting tests -----------------------
 

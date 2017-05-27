@@ -22,9 +22,13 @@ type internal QuickInfoNavigation
         solution.TryGetDocumentIdFromFSharpRange (range, initialDoc.Project.Id) |> Option.isSome
 
     member __.RelativePath (range: range) =
-        let targetUri = Uri(range.FileName)
-        Uri(solution.FilePath).MakeRelativeUri(targetUri).ToString()
-        |> Uri.UnescapeDataString
+        let relativePathEscaped = 
+            match solution.FilePath with 
+            | null -> range.FileName
+            | sfp -> 
+                let targetUri = Uri(range.FileName)
+                Uri(sfp).MakeRelativeUri(targetUri).ToString()
+        relativePathEscaped |> Uri.UnescapeDataString
 
     member __.NavigateTo (range: range) = 
         asyncMaybe { 

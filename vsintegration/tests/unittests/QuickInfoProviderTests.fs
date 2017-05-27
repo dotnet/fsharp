@@ -11,12 +11,12 @@
 //   and capturing large amounts of structured output.
 (*
     cd Debug\net40\bin
-    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.Unittests.exe -g --optimize- -r .\FSharp.LanguageService.Compiler.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\unittests\CompletionProviderTests.fs 
+    .\fsc.exe --define:EXE -r:.\Microsoft.Build.Utilities.Core.dll -o VisualFSharp.Unittests.exe -g --optimize- -r .\FSharp.Compiler.Private.dll  -r .\FSharp.Editor.dll -r nunit.framework.dll ..\..\..\tests\service\FsUnit.fs ..\..\..\tests\service\Common.fs /delaysign /keyfile:..\..\..\src\fsharp\msft.pubkey ..\..\..\vsintegration\tests\unittests\CompletionProviderTests.fs 
     .\VisualFSharp.Unittests.exe 
 *)
 // Technique 3: 
 // 
-//    Use F# Interactive.  This only works for FSharp.Compiler.Service.dll which has a public API
+//    Use F# Interactive.  This only works for FSharp.Compiler.Private.dll which has a public API
 
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 [<NUnit.Framework.Category "Roslyn Services">]
@@ -29,14 +29,14 @@ open NUnit.Framework
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
-
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open UnitTests.TestLib.LanguageService
 
 let filePath = "C:\\test.fs"
 
 let internal options = { 
     ProjectFileName = "C:\\test.fsproj"
-    ProjectFileNames =  [| filePath |]
+    SourceFiles =  [| filePath |]
     ReferencedProjects = [| |]
     OtherOptions = [| |]
     IsIncompleteTypeCheckEnvironment = true
@@ -45,6 +45,7 @@ let internal options = {
     OriginalLoadReferences = []
     UnresolvedReferences = None
     ExtraProjectInfo = None
+    Stamp = None
 }
 
 let private normalizeLineEnds (s: string) = s.Replace("\r\n", "\n").Replace("\n\n", "\n")
@@ -97,7 +98,7 @@ Full name: System.Console"
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
         
         let quickInfo =
-            FSharpQuickInfoProvider.ProvideQuickInfo(FSharpChecker.Instance, documentId, SourceText.From(fileContents), filePath, caretPosition, options, 0)
+            FSharpQuickInfoProvider.ProvideQuickInfo(checker, documentId, SourceText.From(fileContents), filePath, caretPosition, options, 0)
             |> Async.RunSynchronously
         
         let actual = quickInfo |> Option.map (fun (text, _, _, _) -> getQuickInfoText text)
@@ -227,7 +228,7 @@ let res8 = abs 5.0<kg>
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
         
         let quickInfo =
-            FSharpQuickInfoProvider.ProvideQuickInfo(FSharpChecker.Instance, documentId, SourceText.From(fileContents), filePath, caretPosition, options, 0)
+            FSharpQuickInfoProvider.ProvideQuickInfo(checker, documentId, SourceText.From(fileContents), filePath, caretPosition, options, 0)
             |> Async.RunSynchronously
         
         let actual = quickInfo |> Option.map (fun (text, _, _, _) -> getQuickInfoText text)
