@@ -3,6 +3,7 @@
 namespace FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Core
 
 open NUnit.Framework
+open FsCheck
 
 // Various tests for the:
 // Microsoft.FSharp.Core.Option module
@@ -224,3 +225,11 @@ type OptionModule() =
         Assert.AreEqual(None, Option.ofString "")
         Assert.AreEqual(None, Option.ofString "   ")
         Assert.AreEqual(None, Option.ofString null)
+
+    [<Test>]
+    member this.OfStringBehavesTheSameAsIsNullOrWhitespace () =
+        Check.QuickThrowOnFailure <|
+        fun (value:string) ->
+            let isNullOrWhitespace = System.String.IsNullOrWhiteSpace value
+            let isNone = value |> Option.ofString |> Option.isNone
+            isNullOrWhitespace = isNone
