@@ -279,7 +279,13 @@ let evaluateSession(argv: string[]) =
                 member __.GetOptionalConsoleReadLine(probe) = getConsoleReadLine(probe) }
 
         // Create the console
-        and fsiSession = FsiEvaluationSession.Create (fsiConfig, argv, Console.In, Console.Out, Console.Error, collectible=false, legacyReferenceResolver=MSBuildReferenceResolver.Resolver)
+        and fsiSession = 
+#if FX_RESHAPED_MSBUILD
+            let resolver = SimulatedMSBuildReferenceResolver.GetBestAvailableResolver()
+#else
+            let resolver = MSBuildReferenceResolver.Resolver
+#endif
+            FsiEvaluationSession.Create (fsiConfig, argv, Console.In, Console.Out, Console.Error, collectible=false, legacyReferenceResolver=resolver)
 
 
 #if !FX_NO_WINFORMS
@@ -293,7 +299,7 @@ let evaluateSession(argv: string[]) =
             // Route GUI application exceptions to the exception handlers
             Application.add_ThreadException(new ThreadExceptionEventHandler(fun _ args -> fsiSession.ReportUnhandledException args.Exception));
 
-            let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with e->  false        
+            let runningOnMono = try System.Type.GetType("Mono.Runtime") <> null with _ ->  false
             if not runningOnMono then 
                 try 
                     TrySetUnhandledExceptionMode() 

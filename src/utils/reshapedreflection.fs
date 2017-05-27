@@ -320,19 +320,10 @@ module internal ReflectionAdapters =
 
 #if FX_RESHAPED_REFLECTION_CORECLR
 
-    type CustomAssemblyResolver() =
-        inherit AssemblyLoadContext()
-        override this.Load (assemblyName:AssemblyName):Assembly =
-            this.LoadFromAssemblyName(assemblyName)
-
-    let globalLoadContext = new CustomAssemblyResolver()
+    let globalLoadContext = AssemblyLoadContext.Default
 
 #endif
     type System.Reflection.Assembly with
-        member this.GetTypes() = 
-            this.DefinedTypes 
-            |> Seq.map (fun ti -> ti.AsType())
-            |> Seq.toArray
         member this.GetExportedTypes() = 
             this.DefinedTypes 
             |> Seq.filter(fun ti -> ti.IsPublic)
