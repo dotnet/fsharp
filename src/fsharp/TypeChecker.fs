@@ -5561,11 +5561,12 @@ and TcExprs cenv env m tpenv flexes argtys args =
     (tpenv, List.zip3 flexes argtys args) ||> List.mapFold (fun tpenv (flex,ty,e) -> 
          TcExprFlex cenv flex ty env tpenv e)
 
-and CheckSuperInit cenv objTy m = 
-        // Check the type is not abstract
-        if isAppTy cenv.g objTy && (let tcref = tcrefOfAppTy cenv.g objTy in isAbstractTycon tcref.Deref) then 
-            errorR(Error(FSComp.SR.tcAbstractTypeCannotBeInstantiated(),m))
-        
+and CheckSuperInit cenv objTy m =
+    // Check the type is not abstract
+    match tryDestAppTy cenv.g objTy with
+    | Some tcref when isAbstractTycon tcref.Deref ->
+        errorR(Error(FSComp.SR.tcAbstractTypeCannotBeInstantiated(),m))
+    | _ -> ()
 
 //-------------------------------------------------------------------------
 // TcExprUndelayed
