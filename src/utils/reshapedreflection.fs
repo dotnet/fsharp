@@ -324,6 +324,10 @@ module internal ReflectionAdapters =
 
 #endif
     type System.Reflection.Assembly with
+        member this.GetTypes() = 
+            this.DefinedTypes 
+            |> Seq.map (fun ti -> ti.AsType())
+            |> Seq.toArray
         member this.GetExportedTypes() = 
             this.DefinedTypes 
             |> Seq.filter(fun ti -> ti.IsPublic)
