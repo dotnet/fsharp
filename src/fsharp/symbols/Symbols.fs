@@ -2147,6 +2147,18 @@ and FSharpAssemblySignature private (cenv, topAttribs: TypeChecker.TopAttribs op
             tA.assemblyAttrs
             |> List.map (fun a -> FSharpAttribute(cenv,  AttribInfo.FSAttribInfo(cenv.g, a))) |> makeReadOnlyCollection
 
+    member __.FindEntityByPath path =
+        let inline findNested name = function
+            | Some (e : Entity) when e.IsModuleOrNamespace ->
+                e.ModuleOrNamespaceType.AllEntitiesByCompiledAndLogicalMangledNames.TryFind name
+            | _ -> None
+
+        match path with
+        | hd :: tl ->
+             List.fold (fun a x -> findNested x a) (mtyp.AllEntitiesByCompiledAndLogicalMangledNames.TryFind hd) tl
+             |> Option.map (fun e -> FSharpEntity(cenv, rescopeEntity optViewedCcu e))
+        | _ -> None
+
     override x.ToString() = "<assembly signature>"
 
 and FSharpAssembly internal (cenv, ccu: CcuThunk) = 
