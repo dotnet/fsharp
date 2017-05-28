@@ -93,6 +93,7 @@ To build and test Visual F# IDE Tools, install these requirements:
   - Under the "Other Toolsets" workloads, select "Visual Studio extension development"
   - Under the "Individual components" tab select "Windows 10 SDK" as shown below (needed for compiling RC resource, see #2556): \
   ![image](https://cloud.githubusercontent.com/assets/1249087/23730261/5c78c850-041b-11e7-9d9d-62766351fd0f.png)
+  - Failing to install this will lead to error FS0193: Could not find file visualfsharp\vsintegration\src\FSharp.ProjectSystem.FSharp\obj\net40\ProjectResources.rc.res.
 
 Steps to build:
 
