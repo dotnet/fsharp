@@ -138,9 +138,6 @@
   <data name="ConstraintSolverTypesNotInSubsumptionRelation" xml:space="preserve">
     <value>The type '{0}' is not compatible with the type '{1}'{2}</value>
   </data>
-  <data name="ConstraintSolverRelatedInformation" xml:space="preserve">
-    <value> {0}</value>
-  </data>
   <data name="ErrorFromAddingTypeEquation1" xml:space="preserve">
     <value>This expression was expected to have type\n    '{1}'    \nbut here has type\n    '{0}'    {2}</value>
   </data>
