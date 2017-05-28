@@ -1529,7 +1529,7 @@ let MakeSafeInitField (g: TcGlobals) env m isStatic =
 // Make the "delayed reference" boolean value recording the safe initialization of a type in a hierarchy where there is a HasSelfReferentialConstructor
 let ComputeInstanceSafeInitInfo cenv env m thisTy = 
     if InstanceMembersNeedSafeInitCheck cenv m thisTy then 
-        let rfield =  MakeSafeInitField cenv.g env m false
+        let rfield = MakeSafeInitField cenv.g env m false
         let tcref = tcrefOfAppTy cenv.g thisTy
         SafeInitField (mkRecdFieldRef tcref rfield.Name, rfield)
     else
@@ -4503,10 +4503,11 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
     | SynType.LongIdentApp (ltyp,LongIdentWithDots(longId,_),_,args,_commas,_,m) -> 
         let ad = env.eAccessRights
         let ltyp,tpenv = TcType cenv newOk checkCxs occ env tpenv ltyp
-        if not (isAppTy cenv.g ltyp) then error(Error(FSComp.SR.tcTypeHasNoNestedTypes(),m))
-        let tcref,tinst = destAppTy cenv.g ltyp
-        let tcref = ResolveTypeLongIdentInTyconRef cenv.tcSink cenv.nameResolver env.eNameResEnv (TypeNameResolutionInfo.ResolveToTypeRefs (TypeNameResolutionStaticArgsInfo.FromTyArgs args.Length)) ad m tcref longId 
-        TcTypeApp cenv newOk checkCxs occ env tpenv m tcref tinst args 
+        match ltyp with
+        | AppTy cenv.g (tcref,tinst) ->
+            let tcref = ResolveTypeLongIdentInTyconRef cenv.tcSink cenv.nameResolver env.eNameResEnv (TypeNameResolutionInfo.ResolveToTypeRefs (TypeNameResolutionStaticArgsInfo.FromTyArgs args.Length)) ad m tcref longId 
+            TcTypeApp cenv newOk checkCxs occ env tpenv m tcref tinst args
+        | _ -> error(Error(FSComp.SR.tcTypeHasNoNestedTypes(),m))
 
     | SynType.Tuple(args,m) ->   
         let isMeasure = match optKind with Some TyparKind.Measure -> true | None -> List.exists (fun (isquot,_) -> isquot) args | _ -> false
@@ -4904,13 +4905,13 @@ and TcNestedTypeApplication cenv newOk checkCxs occ env tpenv mWholeTypeApp typ 
 
 
 and TryAdjustHiddenVarNameToCompGenName cenv env (id:Ident) altNameRefCellOpt =
-      match altNameRefCellOpt with 
-      | Some ({contents = Undecided altId } as altNameRefCell) -> 
-          match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver AllIdsOK false id.idRange env.eAccessRights env.eNameResEnv TypeNameResolutionInfo.Default [id] with 
-          | Item.NewDef _ -> None // the name is not in scope as a pattern identifier (e.g. union case), so do not use the alternate ID
-          | _ -> altNameRefCell :=  Decided altId; Some altId  // the name is in scope as a pattern identifier, so use the alternate ID
-      | Some ({contents = Decided altId }) -> Some altId
-      | None -> None
+    match altNameRefCellOpt with 
+    | Some ({contents = Undecided altId } as altNameRefCell) -> 
+        match ResolvePatternLongIdent cenv.tcSink cenv.nameResolver AllIdsOK false id.idRange env.eAccessRights env.eNameResEnv TypeNameResolutionInfo.Default [id] with 
+        | Item.NewDef _ -> None // the name is not in scope as a pattern identifier (e.g. union case), so do not use the alternate ID
+        | _ -> altNameRefCell :=  Decided altId; Some altId  // the name is in scope as a pattern identifier, so use the alternate ID
+    | Some ({contents = Decided altId }) -> Some altId
+    | None -> None
 
 /// Bind the patterns used in a lambda. Not clear why we don't use TcPat.
 and TcSimplePat optArgsOK checkCxs cenv ty env (tpenv,names,takenNames) p = 
@@ -4920,9 +4921,10 @@ and TcSimplePat optArgsOK checkCxs cenv ty env (tpenv,names,takenNames) p =
         match TryAdjustHiddenVarNameToCompGenName cenv env id altNameRefCellOpt with 
         | Some altId -> TcSimplePat optArgsOK checkCxs cenv ty env (tpenv,names,takenNames) (SynSimplePat.Id (altId,None,compgen,isMemberThis,isOpt,m) )
         | None -> 
-
-            if isOpt && not optArgsOK then errorR(Error(FSComp.SR.tcOptionalArgsOnlyOnMembers(),m))
             if isOpt then 
+                if not optArgsOK then 
+                    errorR(Error(FSComp.SR.tcOptionalArgsOnlyOnMembers(),m))
+
                 let tyarg = NewInferenceType ()
                 UnifyTypes cenv env m ty (mkOptionTy cenv.g tyarg)
                     
@@ -5559,11 +5561,12 @@ and TcExprs cenv env m tpenv flexes argtys args =
     (tpenv, List.zip3 flexes argtys args) ||> List.mapFold (fun tpenv (flex,ty,e) -> 
          TcExprFlex cenv flex ty env tpenv e)
 
-and CheckSuperInit cenv objTy m = 
-        // Check the type is not abstract
-        if isAppTy cenv.g objTy && (let tcref = tcrefOfAppTy cenv.g objTy in isAbstractTycon tcref.Deref) then 
-            errorR(Error(FSComp.SR.tcAbstractTypeCannotBeInstantiated(),m))
-        
+and CheckSuperInit cenv objTy m =
+    // Check the type is not abstract
+    match tryDestAppTy cenv.g objTy with
+    | Some tcref when isAbstractTycon tcref.Deref ->
+        errorR(Error(FSComp.SR.tcAbstractTypeCannotBeInstantiated(),m))
+    | _ -> ()
 
 //-------------------------------------------------------------------------
 // TcExprUndelayed
@@ -6201,9 +6204,8 @@ and TcCtorCall isNaked cenv env tpenv overallTy objTy mObjTyOpt item superInit a
   
 // Check a record construction expression 
 and TcRecordConstruction cenv overallTy env tpenv optOrigExpr objTy fldsList m =
-    let tcref = tcrefOfAppTy cenv.g objTy
+    let tcref,tinst = destAppTy cenv.g objTy
     let tycon = tcref.Deref
-    let tinst = argsOfAppTy cenv.g objTy
     UnifyTypes cenv env m overallTy objTy
 
     // Types with implicit constructors can't use record or object syntax: all constructions must go through the implicit constructor 
@@ -10392,7 +10394,7 @@ and TcNonRecursiveBinding declKind cenv env tpenv ty b =
 //------------------------------------------------------------------------
 
 and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute)  =
-    let (LongIdentWithDots(tycon,_))= synAttr.TypeName
+    let (LongIdentWithDots(tycon,_)) = synAttr.TypeName
     let arg                       = synAttr.ArgExpr
     let targetIndicator           = synAttr.Target
     let isAppliedToGetterOrSetter = synAttr.AppliesToGetterAndSetter
@@ -10415,7 +10417,7 @@ and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute)  =
 
     let ad = env.eAccessRights
 
-    if not (IsTypeAccessible cenv.g cenv.amap mAttr ad ty) then  errorR(Error(FSComp.SR.tcTypeIsInaccessible(),mAttr))
+    if not (IsTypeAccessible cenv.g cenv.amap mAttr ad ty) then errorR(Error(FSComp.SR.tcTypeIsInaccessible(),mAttr))
 
     let tcref = tcrefOfAppTy cenv.g ty
 
@@ -13763,9 +13765,10 @@ let TcMutRecDefns_Phase2 cenv envInitial bindsm scopem mutRecNSInfo (envMutRec: 
 module AddAugmentationDeclarations = 
     let tcaugHasNominalInterface g (tcaug: TyconAugmentation) tcref =
         tcaug.tcaug_interfaces |> List.exists (fun (x,_,_) -> 
-            isAppTy g x && tyconRefEq g (tcrefOfAppTy g x) tcref)
+            match tryDestAppTy g x with
+            | Some tcref2 when tyconRefEq g tcref2 tcref -> true
+            | _ -> false)
 
-        
     let AddGenericCompareDeclarations cenv (env: TcEnv) (scSet:Set<Stamp>) (tycon:Tycon) =
         if AugmentWithHashCompare.TyconIsCandidateForAugmentationWithCompare cenv.g tycon && scSet.Contains tycon.Stamp then 
             let tcref = mkLocalTyconRef tycon
@@ -13933,8 +13936,8 @@ module TyconConstraintInference =
                     // Otherwise it's a nominal type
                     | _ -> 
 
-                        if isAppTy g ty then 
-                            let tcref,tinst = destAppTy g ty 
+                        match ty with
+                        | AppTy g (tcref,tinst) ->
                             // Check the basic requirement - IComparable/IStructuralComparable or assumed-comparable
                             (if initialAssumedTycons.Contains tcref.Stamp then 
                                 assumedTycons.Contains tcref.Stamp
@@ -13951,7 +13954,7 @@ module TyconConstraintInference =
                                     checkIfFieldTypeSupportsComparison  tycon ty 
                                 else 
                                     true) 
-                        else
+                        | _ ->
                             false
 
             let newSet = 
@@ -14056,8 +14059,8 @@ module TyconConstraintInference =
                         false
                     | _ -> 
                         // Check the basic requirement - any types except those eliminated
-                        if isAppTy g ty then
-                            let tcref,tinst = destAppTy g ty
+                        match ty with
+                        | AppTy g (tcref,tinst) ->
                             (if initialAssumedTycons.Contains tcref.Stamp then 
                                 assumedTycons.Contains tcref.Stamp
                              elif AugmentWithHashCompare.TyconIsCandidateForAugmentationWithEquals g tcref.Deref then
@@ -14074,7 +14077,7 @@ module TyconConstraintInference =
                                      checkIfFieldTypeSupportsEquality  tycon ty 
                                  else 
                                      true) 
-                        else
+                        | _ ->
                             false
 
             let newSet = 
@@ -15380,10 +15383,11 @@ module EstablishTypeDefinitionCores =
                 then
                     (tycon,tycon2)::acc
                 else acc // note: all edges added are (tycon,_)
-            let insertEdgeToType  ty     acc = 
-                if isAppTy cenv.g ty then // guard against possible earlier failure
-                    insertEdgeToTycon (tyconOfAppTy cenv.g ty) acc
-                else
+            let insertEdgeToType ty acc = 
+                match tryDestAppTy cenv.g ty with
+                | Some tcref ->
+                    insertEdgeToTycon tcref.Deref acc
+                | None ->
                     acc
 
             // collect edges from an a struct field (which is struct-contained in tycon)

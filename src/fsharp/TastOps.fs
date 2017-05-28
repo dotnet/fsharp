@@ -737,7 +737,6 @@ let tryAnyParTy    g ty = ty |> stripTyEqns g |> (function TType_var v -> Some v
 let (|AppTy|_|) g ty = ty |> stripTyEqns g |> (function TType_app(tcref,tinst) -> Some (tcref,tinst) | _ -> None) 
 let (|RefTupleTy|_|) g ty = ty |> stripTyEqns g |> (function TType_tuple(tupInfo,tys) when not (evalTupInfoIsStruct tupInfo) -> Some tys | _ -> None)
 let (|FunTy|_|) g ty = ty |> stripTyEqns g |> (function TType_fun(dty, rty) -> Some (dty, rty) | _ -> None)
-let tyconOfAppTy   g ty = (tcrefOfAppTy g ty).Deref
 
 let tryNiceEntityRefOfTy  ty = 
     let ty = stripTyparEqnsAux false ty 
@@ -1626,10 +1625,17 @@ let isStructOrEnumTyconTy g ty =
     | Some tcref -> tcref.Deref.IsStructOrEnumTycon
     | _ -> false
 
-let isStructRecordOrUnionTyconTy g ty = isAppTy g ty && (tyconOfAppTy g ty).IsStructRecordOrUnionTycon
+let isStructRecordOrUnionTyconTy g ty = 
+    match tryDestAppTy g ty with
+    | Some tcref -> tcref.Deref.IsStructRecordOrUnionTycon
+    | _ -> false
 
-let isStructTy g ty = isStructOrEnumTyconTy g ty || isStructTupleTy g ty
-
+let isStructTy g ty =
+    match tryDestAppTy g ty with
+    | Some tcref -> 
+        let tycon = tcref.Deref
+        tycon.IsStructRecordOrUnionTycon || tycon.IsStructOrEnumTycon
+    | _ -> false
 
 let isRefTy g ty = 
     not (isStructOrEnumTyconTy g ty) &&
@@ -4426,7 +4432,6 @@ let InferArityOfExprBinding g (v:Val) e =
 
 let underlyingTypeOfEnumTy (g: TcGlobals) typ = 
     assert(isEnumTy g typ)
-    let tycon = tyconOfAppTy g typ
     match metadataOfTy g typ with 
 #if EXTENSIONTYPING
     | ProvidedTypeMetadata info -> info.UnderlyingTypeOfEnum()
@@ -4449,7 +4454,8 @@ let underlyingTypeOfEnumTy (g: TcGlobals) typ =
         | "System.Char" -> g.char_ty
         | "System.Boolean" -> g.bool_ty
         | _ -> g.int32_ty
-    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
+    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
+        let tycon = (tcrefOfAppTy g typ).Deref
         match tycon.GetFieldByName "value__" with 
         | Some rf -> rf.FormalType
         | None ->  error(InternalError("no 'value__' field found for enumeration type "^tycon.LogicalName,tycon.Range))
@@ -7149,9 +7155,10 @@ let TypeNullIsExtraValue g m ty =
         // Putting AllowNullLiteralAttribute(true) on an F# type means 'null' can be used with that type
         isAppTy g ty && TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute (tcrefOfAppTy g ty) = Some(true)
 
-let TypeNullIsTrueValue g ty = 
-    (isAppTy g ty && IsUnionTypeWithNullAsTrueValue g (tyconOfAppTy g ty))  ||
-    (isUnitTy g ty)
+let TypeNullIsTrueValue g ty =
+    (match tryDestAppTy g ty with
+     | Some tcref -> IsUnionTypeWithNullAsTrueValue g tcref.Deref
+     | _ -> false) || (isUnitTy g ty)
 
 let TypeNullNotLiked g m ty = 
        not (TypeNullIsExtraValue g m ty) 
@@ -7189,16 +7196,17 @@ let (|SpecialComparableHeadType|_|) g ty =
     if isAnyTupleTy g ty then 
         let _tupInfo, elemTys = destAnyTupleTy g ty
         Some elemTys 
-    elif isAppTy g ty then 
-        let tcref,tinst = destAppTy g ty 
-        if isArrayTyconRef g tcref ||
-           tyconRefEq g tcref g.system_UIntPtr_tcref ||
-           tyconRefEq g tcref g.system_IntPtr_tcref then
-             Some tinst 
-        else 
-            None
     else
-        None
+        match ty with
+        | AppTy g (tcref,tinst) ->
+            if isArrayTyconRef g tcref ||
+               tyconRefEq g tcref g.system_UIntPtr_tcref ||
+               tyconRefEq g tcref g.system_IntPtr_tcref then
+                 Some tinst 
+            else 
+                None
+        | _ ->
+            None
 
 let (|SpecialEquatableHeadType|_|) g ty = (|SpecialComparableHeadType|_|) g ty
 let (|SpecialNotEquatableHeadType|_|) g ty = 
