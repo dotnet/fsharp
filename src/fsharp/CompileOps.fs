@@ -440,7 +440,6 @@ let ConstraintSolverMissingConstraintE() = DeclareResourceString("ConstraintSolv
 let ConstraintSolverTypesNotInEqualityRelation1E() = DeclareResourceString("ConstraintSolverTypesNotInEqualityRelation1","%s%s")
 let ConstraintSolverTypesNotInEqualityRelation2E() = DeclareResourceString("ConstraintSolverTypesNotInEqualityRelation2", "%s%s")
 let ConstraintSolverTypesNotInSubsumptionRelationE() = DeclareResourceString("ConstraintSolverTypesNotInSubsumptionRelation","%s%s%s")
-let ConstraintSolverErrorE() = DeclareResourceString("ConstraintSolverError","%s")
 let ErrorFromAddingTypeEquation1E() = DeclareResourceString("ErrorFromAddingTypeEquation1","%s%s%s")
 let ErrorFromAddingTypeEquation2E() = DeclareResourceString("ErrorFromAddingTypeEquation2","%s%s%s")
 let ErrorFromApplyingDefault1E() = DeclareResourceString("ErrorFromApplyingDefault1","%s")
@@ -652,7 +651,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
           if m.StartLine <> m2.StartLine then 
              os.Append(SeeAlsoE().Format (stringOfRange m2)) |> ignore
       | ConstraintSolverError(msg,m,m2) -> 
-         os.Append(ConstraintSolverErrorE().Format msg) |> ignore
+         os.Append msg |> ignore
          if m.StartLine <> m2.StartLine then 
             os.Append(SeeAlsoE().Format (stringOfRange m2)) |> ignore
       | ConstraintSolverRelatedInformation(fopt,_,e) -> 
