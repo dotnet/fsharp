@@ -281,9 +281,9 @@ let evaluateSession(argv: string[]) =
         // Create the console
         and fsiSession = 
 #if FX_RESHAPED_MSBUILD
-            let resolver = SimulatedMSBuildReferenceResolver.GetBestAvailableResolver()
+            let resolver = (SimulatedMSBuildReferenceResolver.GetBestAvailableResolver())
 #else
-            let resolver = MSBuildReferenceResolver.Resolver
+            let resolver = (MSBuildReferenceResolver.Resolver)
 #endif
             FsiEvaluationSession.Create (fsiConfig, argv, Console.In, Console.Out, Console.Error, collectible=false, legacyReferenceResolver=resolver)
 
