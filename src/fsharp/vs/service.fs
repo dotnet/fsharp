@@ -1906,8 +1906,9 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
             RequireCompilationThread ctok
             scope.IsRelativeNameResolvable(pos, plid, item))
 
-    member info.GetDisplayEnvForPos(pos: pos) : Async<DisplayEnv option> = 
-        reactorOp "GetDisplayContextAtPos" None (fun ctok scope -> 
+    member info.GetDisplayEnvForPos(pos: pos) : Async<DisplayEnv option> =
+        let userOpName = "CodeLens"
+        reactorOp userOpName "GetDisplayContextAtPos" None (fun ctok scope -> 
             DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent ctok
             let (nenv, _), _ = scope.GetBestDisplayEnvForPos(pos)
             Some nenv.DisplayEnv)

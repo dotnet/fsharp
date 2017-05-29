@@ -126,7 +126,7 @@ type internal CodeLensTagger
                 logInfof "Rechecking code due to buffer edit!"
                 let! document = workspace.CurrentSolution.GetDocument(documentId.Value) |> Option.ofObj
                 let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
-                let! _, parsedInput, checkFileResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true)
+                let! _, parsedInput, checkFileResults = checker.ParseAndCheckDocument(document, options, true, "CodeLens")
                 logInfof "Getting uses of all symbols!"
                 let! symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
                 let textSnapshot = view.TextSnapshot.TextBuffer.CurrentSnapshot
