@@ -4643,7 +4643,7 @@ and GenBindAfterSequencePoint cenv cgbuf eenv sp (TBind(vspec,rhsExpr,_)) =
     // Workaround for .NET and Visual Studio restriction w.r.t debugger type proxys
     // Mark internal constructors in internal classes as public. 
     let access = 
-        if access = ILMemberAccess.Assembly && vspec.IsConstructor && IsHiddenTycon eenv.sigToImplRemapInfo vspec.MemberApparentParent.Deref then 
+        if access = ILMemberAccess.Assembly && (vspec.IsConstructor || vspec.IsPropertyGetterMethod) && IsHiddenTycon eenv.sigToImplRemapInfo vspec.MemberApparentParent.Deref then 
             ILMemberAccess.Public
         else
             access
