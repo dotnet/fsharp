@@ -5874,7 +5874,7 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
         let e2',tpenv =
             let env = 
                 match e3opt with
-                | Some _ -> { env with eContextInfo = ContextInfo.OmittedElseBranch e2.Range }
+                | None -> { env with eContextInfo = ContextInfo.OmittedElseBranch e2.Range }
                 | _ -> { env with eContextInfo = ContextInfo.IfExpression e2.Range }
 
             if not isRecovery && Option.isNone e3opt then
