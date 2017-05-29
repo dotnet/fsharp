@@ -5879,9 +5879,8 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
 
             if not isRecovery && Option.isNone e3opt then
                 UnifyTypes cenv env m cenv.g.unit_ty overallTy
-                TcExprThatCanBeCtorBody cenv overallTy env tpenv e2
-            else
-                TcExprThatCanBeCtorBody cenv overallTy env tpenv e2
+
+            TcExprThatCanBeCtorBody cenv overallTy env tpenv e2
 
         let e3',sp2,tpenv = 
             match e3opt with 
