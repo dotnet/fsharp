@@ -449,17 +449,7 @@ module List =
         match l with 
         | [] -> false 
         | h::t -> LanguagePrimitives.PhysicalEquality x h || memq x t
-
-    // must be tail recursive 
-    let mapFold (f:'a -> 'b -> 'c * 'a) (s:'a) (l:'b list) : 'c list * 'a = 
-        match l with
-        | [] -> [], s
-        | [h] -> let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-                 let h',s' = f.Invoke(s, h)
-                 [h'], s'
-        | _ -> 
-            List.mapFold f s l
-
+        
     // Not tail recursive 
     let rec mapFoldBack f l s = 
         match l with 
@@ -487,7 +477,7 @@ module List =
       | x::xs -> fhead x :: List.map ftail xs
 
     let collectFold f s l = 
-      let l, s = mapFold f s l
+      let l, s = List.mapFold f s l
       List.concat l, s
 
     let collect2 f xs ys = List.concat (List.map2 f xs ys)
@@ -496,7 +486,7 @@ module List =
     let iterSquared f xss = xss |> List.iter (List.iter f)
     let collectSquared f xss = xss |> List.collect (List.collect f)
     let mapSquared f xss = xss |> List.map (List.map f)
-    let mapFoldSquared f z xss = mapFold (mapFold f) z xss
+    let mapFoldSquared f z xss = List.mapFold (List.mapFold f) z xss
     let forallSquared f xss = xss |> List.forall (List.forall f)
     let mapiSquared f xss = xss |> List.mapi (fun i xs -> xs |> List.mapi (fun j x -> f i j x))
     let existsSquared f xss = xss |> List.exists (fun xs -> xs |> List.exists (fun x -> f x))
