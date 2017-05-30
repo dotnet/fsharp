@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Core
+open System.IO
 open System.Reflection
 
 //Replacement for: System.Security.SecurityElement.Escape(line) All platforms
@@ -318,30 +319,10 @@ module internal ReflectionAdapters =
         member this.GetGetMethod() = this.GetMethod
         member this.GetSetMethod() = this.SetMethod
 
-#if FX_RESHAPED_REFLECTION_CORECLR
-
-    type CustomAssemblyResolver() =
-        inherit AssemblyLoadContext()
-        override this.Load (assemblyName:AssemblyName):Assembly =
-            this.LoadFromAssemblyName(assemblyName)
-
-    let globalLoadContext = new CustomAssemblyResolver()
-
-#endif
     type System.Reflection.Assembly with
-        member this.GetTypes() = 
-            this.DefinedTypes 
-            |> Seq.map (fun ti -> ti.AsType())
-            |> Seq.toArray
-        member this.GetExportedTypes() = 
-            this.DefinedTypes 
-            |> Seq.filter(fun ti -> ti.IsPublic)
-            |> Seq.map (fun ti -> ti.AsType()) 
-            |> Seq.toArray
-        member this.Location = 
-            this.ManifestModule.FullyQualifiedName
-
 #if FX_RESHAPED_REFLECTION_CORECLR
+        let globalLoadContext = AssemblyLoadContext.Default
+
         static member LoadFrom(filename:string) =
             globalLoadContext.LoadFromAssemblyPath(filename)
 
@@ -352,6 +333,20 @@ module internal ReflectionAdapters =
         static member GetAssemblyName(path) = 
             System.Runtime.Loader.AssemblyLoadContext.GetAssemblyName(path)
 #endif
+
+        member this.GetTypes() = 
+            this.DefinedTypes 
+            |> Seq.map (fun ti -> ti.AsType())
+            |> Seq.toArray
+
+        member this.GetExportedTypes() = 
+            this.DefinedTypes 
+            |> Seq.filter(fun ti -> ti.IsPublic)
+            |> Seq.map (fun ti -> ti.AsType()) 
+            |> Seq.toArray
+
+        member this.Location =
+            this.ManifestModule.FullyQualifiedName
 
     type System.Delegate with
         static member CreateDelegate(delegateType, methodInfo : MethodInfo) = methodInfo.CreateDelegate(delegateType)

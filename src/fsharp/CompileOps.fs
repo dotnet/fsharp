@@ -1691,6 +1691,7 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
 let SystemAssemblies () = 
    HashSet
     [ yield "mscorlib"
+      yield "System.PrivateCoreLib"
       yield "System.Runtime"
       yield GetFSharpCoreLibraryName() 
       yield "System"
@@ -2523,7 +2524,6 @@ let GetNameOfILModule (m: ILModuleDef) =
     | Some manifest -> manifest.Name
     | None -> m.Name
 
-
 let MakeScopeRefForILModule (ilModule: ILModuleDef) = 
     match ilModule.Manifest with 
     | Some m -> ILScopeRef.Assembly (mkRefToILAssembly m)
@@ -2609,7 +2609,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
 #if !ENABLE_MONO_SUPPORT
             // TODO:  we have to get msbuild out of this
             if data.useSimpleResolution then
-                None, (0, ""), false
+                None, ((if runningOnMono then 0 else 4), ""), false
             else
 #endif
                 None, (4, data.legacyReferenceResolver.HighestInstalledNetFrameworkVersion()), false
@@ -2826,7 +2826,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                   let apiFacades = Path.Combine(api, "Facades")
                   match tcConfig.resolutionEnvironment with
 #if !FSI_TODO_NETCORE
-                  // For F# Interactive code we must inly reference impementation assemblies
+                  // For F# Interactive code we must only reference impementation assemblies
                   | ReferenceResolver.RuntimeLike ->
                       yield runtimeRoot
                       if Directory.Exists(rootFacades) then
@@ -2848,18 +2848,15 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                 try 
                   [ 
                     match tcConfig.resolutionEnvironment with
-#if !FSI_TODO_NETCORE
-                    | ReferenceResolver.RuntimeLike ->
-                        yield System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory() 
-#endif
+                    | ReferenceResolver.RuntimeLike -> yield System.IO.Path.GetDirectoryName(typeof<obj>.Assembly.Location)
                     | _ -> 
                         let frameworkRoot = tcConfig.legacyReferenceResolver.DotNetFrameworkReferenceAssembliesRootDirectory
                         let frameworkRootVersion = Path.Combine(frameworkRoot,tcConfig.targetFrameworkVersion)
                         yield frameworkRootVersion
                         let facades = Path.Combine(frameworkRootVersion, "Facades")
-                        if Directory.Exists(facades) then
-                            yield facades
-                  ]                    
+                        if Directory.Exists(facades) then yield facades
+                        yield System.IO.Path.GetDirectoryName(typeof<obj>.Assembly.Location)
+                  ]
                 with e -> 
                     errorRecovery e range0; [] 
 
