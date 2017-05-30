@@ -13006,8 +13006,8 @@ module MutRecBindingChecking =
                             [ Phase2AOpen (mp,m) ], innerState
 #endif
                         
-                        | _ -> 
-                            error(InternalError("Unexpected definition",m)))
+                        | definition -> 
+                            error(InternalError(sprintf "Unexpected definition %A" definition,m)))
 
                 // If no constructor call, insert Phase2AIncrClassCtorJustAfterSuperInit at start
                 let defnAs = 
