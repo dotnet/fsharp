@@ -1588,7 +1588,7 @@ and [<Sealed>] ILTypeDefs(f : unit -> (string list * string * ILAttributes * Laz
             t)
 
     member x.AsArray = [| for (_,_,_,ltd) in array.Value -> ltd.Force() |]
-    member x.AsList = x.AsArray |> Array.toList
+    member x.AsList = [ for (_,_,_,ltd) in array.Value -> ltd.Force() ]
 
     interface IEnumerable with 
         member x.GetEnumerator() = ((x :> IEnumerable<ILTypeDef>).GetEnumerator() :> IEnumerator)
