@@ -2537,6 +2537,7 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
           | _ -> false) then 0x1000 else 0x0) ||| // RTSpecialName 
         (if md.IsReqSecObj then 0x8000 else 0x0) |||
         (if md.HasSecurity || not md.SecurityDecls.AsList.IsEmpty then 0x4000 else 0x0)
+   
     let implflags = 
         (match  md.mdCodeKind with 
          | MethodCodeKind.Native -> 0x0001

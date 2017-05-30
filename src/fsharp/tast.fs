@@ -62,6 +62,8 @@ type ValInline =
     | PseudoVal
     /// Indicates the value is inlined but the .NET IL code for the function still exists, e.g. to satisfy interfaces on objects, but that it is also always inlined 
     | Always
+    /// Indicates the value will be inlined be inlined by the .NET runtime
+    | Aggressive
     /// Indicates the value may optionally be inlined by the optimizer
     | Optional
     /// Indicates the value must never be inlined by the optimizer
@@ -71,7 +73,7 @@ type ValInline =
     member x.MustInline = 
         match x with 
         | ValInline.PseudoVal | ValInline.Always -> true 
-        | ValInline.Optional | ValInline.Never -> false
+        | ValInline.Optional | ValInline.Aggressive | ValInline.Never -> false
 
 /// A flag associated with values that indicates whether the recursive scope of the value is currently being processed, and 
 /// if the value has been generalized or not as yet.
@@ -123,6 +125,7 @@ type ValFlags(flags:int64) =
                      (match inlineInfo with
                                         | ValInline.PseudoVal ->             0b0000000000000000000L
                                         | ValInline.Always ->                0b0000000000000010000L
+                                        | ValInline.Aggressive ->            0b0100L
                                         | ValInline.Optional ->              0b0000000000000100000L
                                         | ValInline.Never ->                 0b0000000000000110000L) |||
                      (match isMutable with
