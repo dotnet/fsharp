@@ -105,7 +105,8 @@ let getUncodedToken (tab:TableName) idx = ((tab.Index <<< 24) ||| idx)
 // 0x01-0x08, 0x0E-0x1F, 0x27, 0x2D,
 // 0x7F. Otherwise, it holds 0. The 1 signifies Unicode characters that require handling beyond that normally provided for 8-bit encoding sets.
 
-// HOWEVER, there is a discrepancy here between the ECMA spec and the Microsoft C# implementation. The code below follows the latter. We�ve raised the issue with both teams. See Dev10 bug 850073 for details.
+// HOWEVER, there is a discrepancy here between the ECMA spec and the Microsoft C# implementation. 
+// The code below follows the latter. We've raised the issue with both teams. See Dev10 bug 850073 for details.
 
 let markerForUnicodeBytes (b:byte[]) = 
     let len = b.Length
