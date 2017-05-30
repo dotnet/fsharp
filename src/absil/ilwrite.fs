@@ -2548,7 +2548,8 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
         (if md.IsPreserveSig then 0x0080 else 0x0000) |||
         (if md.IsSynchronized then 0x0020 else 0x0000) |||
         (if md.IsMustRun then 0x0040 else 0x0000) |||
-        (if (md.IsNoInline || (match md.mdBody.Contents with MethodBody.IL il -> il.NoInlining | _ -> false)) then 0x0008 else 0x0000)
+        (if (md.IsNoInline || (match md.mdBody.Contents with MethodBody.IL il -> il.NoInlining | _ -> false)) then 0x0008 else 0x0000) |||
+        (if (md.IsAggressiveInline || (match md.mdBody.Contents with MethodBody.IL il -> il.AggressiveInlining | _ -> false)) then 0x0100 else 0x0000)
 
     if md.IsEntryPoint then 
         if cenv.entrypoint <> None then failwith "duplicate entrypoint"

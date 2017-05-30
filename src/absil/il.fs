@@ -1072,6 +1072,7 @@ type ILMethodBody =
     { IsZeroInit: bool;
       MaxStack: int32;
       NoInlining: bool;
+      AggressiveInlining: bool;
       Locals: ILLocals;
       Code:  ILCode;
       SourceMarker: ILSourceMarker option }
@@ -1371,6 +1372,7 @@ type ILMethodDef =
       IsPreserveSig: bool;
       IsMustRun: bool;
       IsNoInline: bool;
+      IsAggressiveInline : bool
       GenericParams: ILGenericParameterDefs;
       CustomAttrs: ILAttributes; }
     member x.ParameterTypes = typesOfILParams x.Parameters
@@ -2276,6 +2278,7 @@ let mkILMethodBody (zeroinit,locals,maxstack,code,tag) : ILMethodBody =
   { IsZeroInit=zeroinit
     MaxStack=maxstack
     NoInlining=false
+    AggressiveInlining=false
     Locals= locals 
     Code= code
     SourceMarker=tag }
@@ -2311,6 +2314,7 @@ let mkILCtor (access,args,impl) =
       IsUnmanagedExport=false;
       IsSynchronized=false;
       IsNoInline=false;
+      IsAggressiveInline=false
       IsMustRun=false;
       IsPreserveSig=false;
       CustomAttrs = emptyILCustomAttrs; }
@@ -2364,6 +2368,7 @@ let mkILStaticMethod (genparams,nm,access,args,ret,impl) =
       IsUnmanagedExport=false;
       IsSynchronized=false;
       IsNoInline=false;
+      IsAggressiveInline=false;
       IsMustRun=false;
       IsPreserveSig=false; }
 
@@ -2393,6 +2398,7 @@ let mkILClassCtor impl =
       IsUnmanagedExport=false; 
       IsSynchronized=false;
       IsNoInline=false;
+      IsAggressiveInline=false
       IsMustRun=false;
       IsPreserveSig=false;  } 
 
@@ -2433,6 +2439,7 @@ let mkILGenericVirtualMethod (nm,access,genparams,actual_args,actual_ret,impl) =
     IsUnmanagedExport=false; 
     IsSynchronized=false;
     IsNoInline=false;
+    IsAggressiveInline=false
     IsMustRun=false;
     IsPreserveSig=false; }
     
@@ -2462,6 +2469,7 @@ let mkILGenericNonVirtualMethod (nm,access,genparams, actual_args,actual_ret, im
     IsUnmanagedExport=false; 
     IsSynchronized=false;
     IsNoInline=false;
+    IsAggressiveInline=false
     IsMustRun=false;
     IsPreserveSig=false; }
     
