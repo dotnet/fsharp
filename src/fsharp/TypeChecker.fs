@@ -5872,10 +5872,13 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
     | SynExpr.IfThenElse (e1,e2,e3opt,spIfToThen,isRecovery,mIfToThen,m) ->
         let e1',tpenv = TcExprThatCantBeCtorBody cenv cenv.g.bool_ty env tpenv e1
         let e2',tpenv =
-            let env = 
-                match e3opt with
-                | None -> { env with eContextInfo = ContextInfo.OmittedElseBranch e2.Range }
-                | _ -> { env with eContextInfo = ContextInfo.IfExpression e2.Range }
+            let env =
+                match env.eContextInfo with
+                | ContextInfo.ElseBranchResult _ ->  { env with eContextInfo = ContextInfo.ElseBranchResult e2.Range }
+                | _ -> 
+                    match e3opt with
+                    | None -> { env with eContextInfo = ContextInfo.OmittedElseBranch e2.Range }
+                    | _ -> { env with eContextInfo = ContextInfo.IfExpression e2.Range }
 
             if not isRecovery && Option.isNone e3opt then
                 UnifyTypes cenv env m cenv.g.unit_ty overallTy
