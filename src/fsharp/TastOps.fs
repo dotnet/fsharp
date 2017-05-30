@@ -2718,9 +2718,9 @@ let isILAttrib (tref:ILTypeRef) (attr: ILAttribute) =
 // These linear iterations cost us a fair bit when there are lots of attributes
 // on imported types. However this is fairly rare and can also be solved by caching the
 // results of attribute lookups in the TAST
-let HasILAttribute tref (attrs: ILAttributes) = List.exists (isILAttrib tref) attrs.AsList
+let HasILAttribute tref (attrs: ILAttributes) = Array.exists (isILAttrib tref) attrs.AsArray
 
-let HasILAttributeByName tname (attrs: ILAttributes) = List.exists (isILAttribByName ([],tname)) attrs.AsList
+let HasILAttributeByName tname (attrs: ILAttributes) = Array.exists (isILAttribByName ([],tname)) attrs.AsArray
 
 let TryDecodeILAttribute (g:TcGlobals) tref (attrs: ILAttributes) = 
     attrs.AsArray |> Array.tryPick (fun x -> if isILAttrib tref x then Some(decodeILAttribData g.ilg x)  else None)
