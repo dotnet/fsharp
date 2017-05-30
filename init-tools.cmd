@@ -4,7 +4,9 @@ setlocal
 set INIT_TOOLS_LOG=%~dp0init-tools.log
 set PACKAGES_DIR=%~dp0packages\
 set TOOLRUNTIME_DIR=%~dp0Tools
-set DOTNET_PATH=%TOOLRUNTIME_DIR%\dotnetcli\
+set DOTNET_PATH=%TOOLRUNTIME_DIR%\dotnet\
+set DOTNET_TOOLS_PATH=%TOOLRUNTIME_DIR%\dotnetcli\
+set DOTNET_TOOLS_CMD=%DOTNET_PATH%dotnet.exe
 set DOTNET_CMD=%DOTNET_PATH%dotnet.exe
 if [%BUILDTOOLS_SOURCE%]==[] set BUILDTOOLS_SOURCE=https://dotnet.myget.org/F/dotnet-buildtools/api/v3/index.json
 set /P BUILDTOOLS_VERSION=< "%~dp0BuildToolsVersion.txt"
@@ -38,6 +40,22 @@ if NOT exist "%PACKAGES_DIR%NuGet.exe" (
 if NOT exist "%PROJECT_JSON_PATH%" mkdir "%PROJECT_JSON_PATH%"
 echo %PROJECT_JSON_CONTENTS% > "%PROJECT_JSON_FILE%"
 echo Running %0 > "%INIT_TOOLS_LOG%"
+
+set /p DOTNET_TOOLS_VERSION=< "%~dp0DotnetCLIToolsVersion.txt"
+if exist "%DOTNET_TOOLS_PATH%" goto :afterdotnettoolsrestore
+
+echo Installing dotnet OLD VERSION OF THE cli...
+echo ==========================================
+echo This is temporary until we build using the new dotnetcli
+echo The dotnet cli is a large file it may take a few minutes ...
+echo powershell -ExecutionPolicy unrestricted -NoProfile -Command ".\dotnet-install.ps1 -InstallDir %DOTNET_PATH% -Architecture x64 -Version %DOTNET_TOOLS_VERSION% -NoPath true; exit $LastExitCode;"
+powershell -ExecutionPolicy unrestricted -NoProfile -Command ".\dotnet-install.ps1 -InstallDir %DOTNET_TOOLS_PATH% -Architecture x64 -Version %DOTNET_TOOLS_VERSION% -NoPath true; exit $LastExitCode;"
+if errorlevel 1 (
+   echo ERROR: Could not install dotnet cli correctly.
+   set TOOLS_INIT_RETURN_CODE=1
+   goto :DONE
+)
+:afterdotnettoolsrestore
 
 set /p DOTNET_VERSION=< "%~dp0DotnetCLIVersion.txt"
 if exist "%DOTNET_CMD%" goto :afterdotnetrestore
