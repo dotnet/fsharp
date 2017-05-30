@@ -10005,7 +10005,7 @@ and bindLetRec (binds:Bindings) m e =
 
 /// Check for duplicate bindings in simple recursive patterns
 and CheckRecursiveBindingIds binds =
-    let hashOfBinds = new Dictionary<string,_>()
+    let hashOfBinds = new HashSet<string>()
             
     for (SynBinding.Binding(_,_,_,_,_,_,_,b,_,_,m,_)) in binds do
         let nm =
@@ -10013,10 +10013,8 @@ and CheckRecursiveBindingIds binds =
             | SynPat.Named(_,id,_,_,_) -> id.idText
             | SynPat.LongIdent(LongIdentWithDots([id],_),_,_,_,_,_) -> id.idText
             | _ -> ""
-        if nm <> "" then
-            if hashOfBinds.ContainsKey(nm) then
-                error(Duplicate("value",nm,m))
-            else hashOfBinds.[nm] <- b
+        if nm <> "" && not (hashOfBinds.Add nm) then
+            error(Duplicate("value",nm,m))
 
 /// Process a sequence of sequentials mixed with iterated lets "let ... in let ... in ..." in a tail recursive way 
 /// This avoids stack overflow on really large "let" and "letrec" lists
