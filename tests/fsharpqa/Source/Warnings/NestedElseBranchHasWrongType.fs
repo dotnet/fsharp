@@ -1,5 +1,5 @@
 // #Warnings
-//<Expects status="Error" id="FS0001">The 'if' expression needs to return type 'bool'</Expects>
+//<Expects status="Error" id="FS0001">All branches of an 'if' expression must return the same type.</Expects>
 
 let x = 1
 if x = 1 then true
