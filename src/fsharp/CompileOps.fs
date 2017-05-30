@@ -646,6 +646,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
                 os.Append(FSComp.SR.listElementHasWrongType(t1,t2)) |> ignore
           | ContextInfo.OmittedElseBranch range when range = m -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
           | ContextInfo.ElseBranchResult range when range = m -> os.Append(FSComp.SR.elseBranchHasWrongType(t1,t2)) |> ignore
+          | ContextInfo.FollowingPatternMatchClause range when range = m -> os.Append(FSComp.SR.followingPatternMatchClauseHasWrongType(t1,t2)) |> ignore
           | _ -> os.Append(ConstraintSolverTypesNotInEqualityRelation2E().Format t1 t2) |> ignore
           if m.StartLine <> m2.StartLine then 
              os.Append(SeeAlsoE().Format (stringOfRange m)) |> ignore
@@ -677,6 +678,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
                 os.Append(FSComp.SR.listElementHasWrongType(t1,t2)) |> ignore
           | ContextInfo.OmittedElseBranch range when range = m -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
           | ContextInfo.ElseBranchResult range when range = m -> os.Append(FSComp.SR.elseBranchHasWrongType(t1,t2)) |> ignore
+          | ContextInfo.FollowingPatternMatchClause range when range = m -> os.Append(FSComp.SR.followingPatternMatchClauseHasWrongType(t1,t2)) |> ignore
           | ContextInfo.TupleInRecordFields ->
                 os.Append(ErrorFromAddingTypeEquation1E().Format t2 t1 tpcs) |> ignore
                 os.Append(System.Environment.NewLine + FSComp.SR.commaInsteadOfSemicolonInRecord()) |> ignore
