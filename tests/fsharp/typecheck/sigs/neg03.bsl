@@ -106,7 +106,7 @@ neg03.fs(103,9,103,14): typecheck error FS0025: Incomplete pattern matches on th
 
 neg03.fs(106,15,106,17): typecheck error FS0025: Incomplete pattern matches on this expression. For example, the value '[0]' may indicate a case not covered by the pattern(s).
 
-neg03.fs(148,23,148,26): typecheck error FS0003: This value is not a function and cannot be applied
+neg03.fs(148,23,148,26): typecheck error FS0003: This value is not a function and cannot be applied.
 
 neg03.fs(151,9,151,23): typecheck error FS0002: This function takes too many arguments, or is used in a context where a function is not expected
 
