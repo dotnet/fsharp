@@ -8226,20 +8226,26 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                     // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
                     RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
                     
-                    match expr.Expr with 
-                    | Expr.Val (d,_,_) when
-                        let typ = d.Type
-                        HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_Dictionary typ ||
-                        HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IDictionary typ ||
-                        HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_List typ ||
-                        HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IList typ ||
-                        HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IReadOnlyList typ ||
-                        HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_ICollection typ ||
-                        isArray1DTy cenv.g typ ||
-                        isListTy cenv.g typ
-                        ->
-                          error (NotAFunction(denv,overallTy,true,mExpr,mArg)) 
-                    | _ -> error (NotAFunction(denv,overallTy,false,mExpr,mArg)) 
+                    let flag =
+                        match expr.Expr with
+                        | Expr.App(Expr.Val (d,_,m),_,_,_,_) ->
+                        
+                            let typ = d.Type
+                        
+                            match InfoReader.TryFindIntrinsicNamedItemOfType cenv.infoReader ("Item", AccessibleFromEverywhere) FindMemberFlag.IgnoreOverrides m typ with
+                            | Some (PropertyItem _) -> true
+                            // HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_Dictionary typ ||
+                            // HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IDictionary typ ||
+                            // HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_List typ ||
+                            // HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IList typ ||
+                            // HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IReadOnlyList typ ||
+                            // HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_ICollection typ ||
+                            // isArray1DTy cenv.g typ ||
+                            // isListTy cenv.g typ
+                            | _ -> false
+                        | _ -> false
+
+                    error (NotAFunction(denv,overallTy,flag,mExpr,mArg)) 
 
     propagate delayed expr.Range exprty
 
