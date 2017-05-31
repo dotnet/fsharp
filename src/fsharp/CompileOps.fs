@@ -628,6 +628,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
           
           match contextInfo with
+          | ContextInfo.IfExpression range when range = m -> os.Append(FSComp.SR.ifExpression(t1,t2)) |> ignore
           | ContextInfo.OmittedElseBranch range when range = m -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
           | ContextInfo.ElseBranchResult range when range = m -> os.Append(FSComp.SR.elseBranchHasWrongType(t1,t2)) |> ignore
           | _ -> os.Append(ConstraintSolverTypesNotInEqualityRelation1E().Format t1 t2 )  |> ignore
@@ -639,6 +640,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
           let t1, t2, _cxs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
           
           match contextInfo with
+          | ContextInfo.IfExpression range when range = m -> os.Append(FSComp.SR.ifExpression(t1,t2)) |> ignore
           | ContextInfo.OmittedElseBranch range when range = m -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
           | ContextInfo.ElseBranchResult range when range = m -> os.Append(FSComp.SR.elseBranchHasWrongType(t1,t2)) |> ignore
           | _ -> os.Append(ConstraintSolverTypesNotInEqualityRelation2E().Format t1 t2) |> ignore
@@ -664,6 +666,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
          &&   typeEquiv g t2 t2' ->
           let t1,t2,tpcs = NicePrint.minimalStringsOfTwoTypes denv t1 t2
           match contextInfo with
+          | ContextInfo.IfExpression range when range = m -> os.Append(FSComp.SR.ifExpression(t1,t2)) |> ignore
           | ContextInfo.OmittedElseBranch range when range = m -> os.Append(FSComp.SR.missingElseBranch(t2)) |> ignore
           | ContextInfo.ElseBranchResult range when range = m -> os.Append(FSComp.SR.elseBranchHasWrongType(t1,t2)) |> ignore
           | ContextInfo.TupleInRecordFields ->
