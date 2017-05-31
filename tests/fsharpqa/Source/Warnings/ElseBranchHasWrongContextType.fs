@@ -1,5 +1,5 @@
 // #Warnings
-//<Expects status="Error" id="FS0001">The 'if' expression needs to return type 'bool'</Expects>
+//<Expects status="Error" id="FS0001">The 'if' expression needs to have type 'bool'</Expects>
 
 let x = 1
 let y : bool = 
