@@ -8228,8 +8228,10 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                     
                     match expr.Expr with 
                     | Expr.Val (d,_,_) when
-                        HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_Dictionary d.Type ||
-                        HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IDictionary d.Type
+                        let typ = d.Type
+                        HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_Dictionary typ ||
+                        HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IDictionary typ ||
+                        isArray1DTy cenv.g typ
                         ->
                           error (NotAFunction(denv,overallTy,true,mExpr,mArg)) 
                     | _ -> error (NotAFunction(denv,overallTy,false,mExpr,mArg)) 
