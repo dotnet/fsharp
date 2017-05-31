@@ -944,7 +944,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
             
   member val tcref_LanguagePrimitives = mk_MFCore_tcref fslibCcu "LanguagePrimitives"
 
-
+  member val tcref_System_Collections_Generic_List       = findSysTyconRef sysGenerics "List`1"
   member val tcref_System_Collections_Generic_IList       = findSysTyconRef sysGenerics "IList`1"
   member val tcref_System_Collections_Generic_IReadOnlyList       = findSysTyconRef sysGenerics "IReadOnlyList`1"
   member val tcref_System_Collections_Generic_ICollection = findSysTyconRef sysGenerics "ICollection`1"

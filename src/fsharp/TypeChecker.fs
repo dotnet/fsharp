@@ -8233,6 +8233,8 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                         HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IDictionary typ ||
                         HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_List typ ||
                         HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IList typ ||
+                        HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IReadOnlyList typ ||
+                        HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_ICollection typ ||
                         isArray1DTy cenv.g typ ||
                         isListTy cenv.g typ
                         ->
