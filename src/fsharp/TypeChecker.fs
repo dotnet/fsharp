@@ -8220,26 +8220,29 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                 propagate delayedList' mExprAndArg resultTy 
             | None -> 
                 let mArg = arg.Range
-                match arg with 
+                match arg with
                 | SynExpr.CompExpr _ -> ()
-                | _ -> 
+                | SynExpr.ArrayOrListOfSeqExpr _ ->
                     // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
                     RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
                     
-                    match expr.Expr with 
-                    | Expr.Val (d,_,_) when
-                        let typ = d.Type
-                        HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_Dictionary typ ||
-                        HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IDictionary typ ||
-                        HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_List typ ||
-                        HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IList typ ||
-                        HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IReadOnlyList typ ||
-                        HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_ICollection typ ||
-                        isArray1DTy cenv.g typ ||
-                        isListTy cenv.g typ
-                        ->
-                          error (NotAFunction(denv,overallTy,true,mExpr,mArg)) 
-                    | _ -> error (NotAFunction(denv,overallTy,false,mExpr,mArg)) 
+                    let flag =
+                        match expr.Expr with
+                        | Expr.Val (d,_,_)
+                        | Expr.App(Expr.Val (d,_,_),_,_,_,_) ->
+                            let typ = d.Type
+                            isArray1DTy cenv.g typ ||                        
+                            if isAppTy cenv.g typ then
+                                let tcref = tcrefOfAppTy cenv.g typ
+                                let _, entityTy = generalizeTyconRef tcref
+                                let props = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 entityTy 
+                                props |> List.exists (fun x -> x.PropertyName = "Item")
+                            else false
+                        | _ -> false
+
+                    error (NotAFunction(denv,overallTy,flag,mExpr,mArg)) 
+                | _ -> 
+                    error (NotAFunction(denv,overallTy,false,mExpr,mArg)) 
 
     propagate delayed expr.Range exprty
 
