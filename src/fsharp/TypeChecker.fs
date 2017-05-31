@@ -8231,7 +8231,10 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                         let typ = d.Type
                         HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_Dictionary typ ||
                         HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IDictionary typ ||
-                        isArray1DTy cenv.g typ
+                        HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_List typ ||
+                        HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IList typ ||
+                        isArray1DTy cenv.g typ ||
+                        isListTy cenv.g typ
                         ->
                           error (NotAFunction(denv,overallTy,true,mExpr,mArg)) 
                     | _ -> error (NotAFunction(denv,overallTy,false,mExpr,mArg)) 
