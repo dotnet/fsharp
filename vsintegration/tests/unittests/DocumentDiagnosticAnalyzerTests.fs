@@ -263,7 +263,7 @@ let x = 3
 let y = (*start*)x(*end*) 4
 let arr = [| 1; 2; 3 |]
             """,
-            expectedMessage = "This value is not a function and cannot be applied")
+            expectedMessage = "This value is not a function and cannot be applied. But the given value has an indexer. Did you intend to call obj.[index] instead of obj[index]?")
 
     [<Test>]
     member public this.Multiline_Bug5449() =
@@ -272,7 +272,7 @@ let arr = [| 1; 2; 3 |]
 let f x = x + 1
 let r = (*start*)f 3(*end*) 4
             """,
-            expectedMessage = "This value is not a function and cannot be applied")
+            expectedMessage = "This value is not a function and cannot be applied.")
 
     [<Test>]
     member public this.InComputationExpression_Bug6095_A() =
