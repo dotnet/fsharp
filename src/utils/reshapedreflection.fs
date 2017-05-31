@@ -323,11 +323,15 @@ module internal ReflectionAdapters =
 #if FX_RESHAPED_REFLECTION_CORECLR
         let globalLoadContext = AssemblyLoadContext.Default
 
+<<<<<<< HEAD
         static member LoadFrom(filename:string) =
             globalLoadContext.LoadFromAssemblyPath(filename)
 
         static member UnsafeLoadFrom(filename:string) =
             globalLoadContext.LoadFromAssemblyPath(filename)
+=======
+    let globalLoadContext = AssemblyLoadContext.Default
+>>>>>>> 7913fe5721e866bc283104054dd7bbf32b57d110
 
     type System.Reflection.AssemblyName with
         static member GetAssemblyName(path) = 
