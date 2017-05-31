@@ -8228,21 +8228,16 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                     
                     let flag =
                         match expr.Expr with
-                        | Expr.App(Expr.Val (d,_,m),_,_,_,_) ->
-                        
+                        | Expr.Val (d,_,_)
+                        | Expr.App(Expr.Val (d,_,_),_,_,_,_) ->
                             let typ = d.Type
-                        
-                            match InfoReader.TryFindIntrinsicNamedItemOfType cenv.infoReader ("Item", AccessibleFromEverywhere) FindMemberFlag.IgnoreOverrides m typ with
-                            | Some (PropertyItem _) -> true
-                            // HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_Dictionary typ ||
-                            // HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IDictionary typ ||
-                            // HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_List typ ||
-                            // HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IList typ ||
-                            // HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IReadOnlyList typ ||
-                            // HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_ICollection typ ||
-                            // isArray1DTy cenv.g typ ||
-                            // isListTy cenv.g typ
-                            | _ -> false
+                            isArray1DTy cenv.g typ ||                        
+                            if isAppTy cenv.g typ then
+                                let tcref = tcrefOfAppTy cenv.g typ
+                                let _, entityTy = generalizeTyconRef tcref
+                                let props = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 entityTy 
+                                props |> List.exists (fun x -> x.PropertyName = "Item")
+                            else false
                         | _ -> false
 
                     error (NotAFunction(denv,overallTy,flag,mExpr,mArg)) 
