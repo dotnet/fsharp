@@ -4,10 +4,13 @@ setlocal
 set INIT_TOOLS_LOG=%~dp0init-tools.log
 set PACKAGES_DIR=%~dp0packages\
 set TOOLRUNTIME_DIR=%~dp0Tools
-set DOTNET_PATH=%TOOLRUNTIME_DIR%\dotnet\
-set DOTNET_TOOLS_PATH=%TOOLRUNTIME_DIR%\dotnetcli\
-set DOTNET_TOOLS_CMD=%DOTNET_PATH%dotnet.exe
+
+set DOTNET_PATH=%TOOLRUNTIME_DIR%\dotnetcli\
 set DOTNET_CMD=%DOTNET_PATH%dotnet.exe
+
+set DOTNET_TOOLS_PATH=%TOOLRUNTIME_DIR%\dotnet20\
+set DOTNET_TOOLS_CMD=%DOTNET_TOOLS_PATH%dotnet.exe
+
 if [%BUILDTOOLS_SOURCE%]==[] set BUILDTOOLS_SOURCE=https://dotnet.myget.org/F/dotnet-buildtools/api/v3/index.json
 set /P BUILDTOOLS_VERSION=< "%~dp0BuildToolsVersion.txt"
 set BUILD_TOOLS_PATH=%PACKAGES_DIR%microsoft.dotnet.buildtools\%BUILDTOOLS_VERSION%\lib\
@@ -88,7 +91,7 @@ echo Running: "%BUILD_TOOLS_PATH%init-tools.cmd" "%~dp0" "%DOTNET_CMD%" "%TOOLRU
 call "%BUILD_TOOLS_PATH%init-tools.cmd" "%~dp0" "%DOTNET_CMD%" "%TOOLRUNTIME_DIR%" >> "%INIT_TOOLS_LOG%"
 
 echo Updating CLI NuGet Frameworks map...
-robocopy "%TOOLRUNTIME_DIR%" "%TOOLRUNTIME_DIR%\dotnetcli\sdk\%DOTNET_VERSION%" NuGet.Frameworks.dll /XO >> "%INIT_TOOLS_LOG%"
+robocopy "%TOOLRUNTIME_DIR%" "%DOTNET_PATH%\sdk\%DOTNET_VERSION%" NuGet.Frameworks.dll /XO >> "%INIT_TOOLS_LOG%"
 set UPDATE_CLI_ERRORLEVEL=%ERRORLEVEL%
 if %UPDATE_CLI_ERRORLEVEL% GTR 1 (
   echo ERROR: Failed to update Nuget for CLI {Error level %UPDATE_CLI_ERRORLEVEL%}. Please check '%INIT_TOOLS_LOG%' for more details. 1>&2

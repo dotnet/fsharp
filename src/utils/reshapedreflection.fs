@@ -319,25 +319,11 @@ module internal ReflectionAdapters =
         member this.GetGetMethod() = this.GetMethod
         member this.GetSetMethod() = this.SetMethod
 
-    type System.Reflection.Assembly with
 #if FX_RESHAPED_REFLECTION_CORECLR
-        let globalLoadContext = AssemblyLoadContext.Default
-
-<<<<<<< HEAD
-        static member LoadFrom(filename:string) =
-            globalLoadContext.LoadFromAssemblyPath(filename)
-
-        static member UnsafeLoadFrom(filename:string) =
-            globalLoadContext.LoadFromAssemblyPath(filename)
-=======
     let globalLoadContext = AssemblyLoadContext.Default
->>>>>>> 7913fe5721e866bc283104054dd7bbf32b57d110
-
-    type System.Reflection.AssemblyName with
-        static member GetAssemblyName(path) = 
-            System.Runtime.Loader.AssemblyLoadContext.GetAssemblyName(path)
 #endif
 
+    type System.Reflection.Assembly with
         member this.GetTypes() = 
             this.DefinedTypes 
             |> Seq.map (fun ti -> ti.AsType())
@@ -351,6 +337,19 @@ module internal ReflectionAdapters =
 
         member this.Location =
             this.ManifestModule.FullyQualifiedName
+
+#if FX_RESHAPED_REFLECTION_CORECLR
+
+        static member LoadFrom(filename:string) =
+            globalLoadContext.LoadFromAssemblyPath(filename)
+
+        static member UnsafeLoadFrom(filename:string) =
+            globalLoadContext.LoadFromAssemblyPath(filename)
+
+    type System.Reflection.AssemblyName with
+        static member GetAssemblyName(path) = 
+            AssemblyLoadContext.GetAssemblyName(path)
+#endif
 
     type System.Delegate with
         static member CreateDelegate(delegateType, methodInfo : MethodInfo) = methodInfo.CreateDelegate(delegateType)

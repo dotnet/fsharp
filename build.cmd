@@ -582,7 +582,8 @@ if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
     call %~dp0init-tools.cmd
 )
 
-set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
+set _dotnetcliexe=%~dp0Tools\dotnetcli\dotnet.exe
+set _dotnet20exe=%~dp0Tools\dotnet20\dotnet.exe
 set NUGET_PACKAGES=%~dp0Packages
 
 set _fsiexe="packages\FSharp.Compiler.Tools.4.1.5\tools\fsi.exe"
@@ -599,7 +600,6 @@ if NOT EXIST Proto\net40\bin\fsc-proto.exe (
   set BUILD_PROTO=1
 )
 
-set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
 set _architecture=win7-x64
 
 rem Build Proto
@@ -608,19 +608,9 @@ if "%BUILD_PROTO%" == "1" (
 
   if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
 
-    pushd .\lkg\fsc & %_dotnetexe% restore & popd & if ERRORLEVEL 1 echo Error:%errorlevel% dotnet restore failed & goto :failure
-    pushd .\lkg\fsi & %_dotnetexe% restore & popd & if ERRORLEVEL 1 echo Error:%errorlevel% dotnet restore failed & goto :failure
-    pushd .\lkg\fsc & %_dotnetexe% publish project.json --no-build -o %~dp0Tools\lkg -r !_architecture! & popd & if ERRORLEVEL 1 echo Error: dotnet publish failed  & goto :failure
-    pushd .\lkg\fsi & %_dotnetexe% publish project.json --no-build -o %~dp0Tools\lkg -r !_architecture! & popd & if ERRORLEVEL 1 echo Error: dotnet publish failed  & goto :failure
-
     echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
          %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
     @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
-
-    echo %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
-         %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
-    @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
-
   )
 
   if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "0" (
@@ -631,12 +621,11 @@ if "%BUILD_PROTO%" == "1" (
     echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
          %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj
     @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
-
-    echo %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
-         %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
-    @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
-
   )
+
+  echo %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
+       %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
+  @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 )
 
 echo ---------------- Done with proto, starting build ------------------------
@@ -899,8 +888,8 @@ if "%TEST_CORECLR_COREUNIT_SUITE%" == "1" (
     set OUTPUTFILE=!RESULTSDIR!\test-coreclr-coreunit-output.log
     set ERRORFILE=!RESULTSDIR!\test-coreclr-coreunit-errors.log
 
-    echo "%_dotnetexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
-         "%_dotnetexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
+    echo "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
+         "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
 
     if ERRORLEVEL 1 (
         echo -----------------------------------------------------------------
@@ -922,8 +911,8 @@ if "%TEST_CORECLR_FSHARP_SUITE%" == "1" (
     set OUTPUTFILE=
     set ERRORFILE=
     set XMLFILE=!RESULTSDIR!\test-coreclr-fsharp-results.xml
-    echo "%_dotnetexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
-         "%_dotnetexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Tests.FSharpSuite.DrivingCoreCLR\FSharp.Tests.FSharpSuite.DrivingCoreCLR.dll" !WHERE_ARG_NUNIT!
+    echo "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
+         "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Tests.FSharpSuite.DrivingCoreCLR\FSharp.Tests.FSharpSuite.DrivingCoreCLR.dll" !WHERE_ARG_NUNIT!
 
     if errorlevel 1 (
         echo -----------------------------------------------------------------
