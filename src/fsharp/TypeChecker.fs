@@ -8220,9 +8220,9 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                 propagate delayedList' mExprAndArg resultTy 
             | None -> 
                 let mArg = arg.Range
-                match arg with 
+                match arg with
                 | SynExpr.CompExpr _ -> ()
-                | _ -> 
+                | SynExpr.ArrayOrListOfSeqExpr _ ->
                     // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
                     RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
                     
@@ -8241,6 +8241,8 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                         | _ -> false
 
                     error (NotAFunction(denv,overallTy,flag,mExpr,mArg)) 
+                | _ -> 
+                    error (NotAFunction(denv,overallTy,false,mExpr,mArg)) 
 
     propagate delayed expr.Range exprty
 
