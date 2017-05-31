@@ -70,7 +70,7 @@ let mkUnitDelayLambda (g: TcGlobals) m e =
 
 exception BakedInMemberConstraintName of string * range
 exception FunctionExpected of DisplayEnv * TType * range
-exception NotAFunction of DisplayEnv * TType * range * range
+exception NotAFunction of DisplayEnv * TType * bool * range * range
 exception Recursion of DisplayEnv * Ident * TType * TType  * range
 exception RecursiveUseCheckedAtRuntime of DisplayEnv * ValRef * range
 exception LetRecEvaluatedOutOfOrder of DisplayEnv * ValRef * ValRef * range
@@ -746,7 +746,7 @@ let UnifyFunctionType extraInfo cenv denv mFunExpr ty =
     | Some res -> res
     | None -> 
         match extraInfo with 
-        | Some argm -> error (NotAFunction(denv,ty,mFunExpr,argm))
+        | Some argm -> error (NotAFunction(denv,ty,false,mFunExpr,argm))
         | None ->    error (FunctionExpected(denv,ty,mFunExpr))
 
 let ReportImplicitlyIgnoredBoolExpression denv m ty expr =
@@ -8225,7 +8225,14 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                 | _ -> 
                     // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
                     RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
-                    error (NotAFunction(denv,overallTy,mExpr,mArg)) 
+                    
+                    match expr.Expr with 
+                    | Expr.Val (d,_,_) when
+                        HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_Dictionary d.Type ||
+                        HasHeadType cenv.g cenv.g.tcref_System_Collections_Generic_IDictionary d.Type
+                        ->
+                          error (NotAFunction(denv,overallTy,true,mExpr,mArg)) 
+                    | _ -> error (NotAFunction(denv,overallTy,false,mExpr,mArg)) 
 
     propagate delayed expr.Range exprty
 
@@ -8311,7 +8318,7 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
             let bodyOfCompExpr,tpenv = TcComputationOrSequenceExpression cenv env overallTy mFunExpr (Some(expr.Expr,exprty)) tpenv comp
             TcDelayed cenv overallTy env tpenv mExprAndArg (MakeApplicableExprNoFlex cenv bodyOfCompExpr) (tyOfExpr cenv.g bodyOfCompExpr) ExprAtomicFlag.NonAtomic delayed 
         | _ -> 
-            error (NotAFunction(denv,overallTy,mFunExpr,mArg)) 
+            error (NotAFunction(denv,overallTy,false,mFunExpr,mArg)) 
 
 //-------------------------------------------------------------------------
 // TcLongIdentThen : Typecheck "A.B.C<D>.E.F ... " constructs

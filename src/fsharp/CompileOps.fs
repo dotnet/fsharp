@@ -203,7 +203,7 @@ let GetRangeOfDiagnostic(err:PhasedDiagnostic) =
       | SelfRefObjCtor(_,m) -> 
           Some m
 
-      | NotAFunction(_,_,mfun,_) -> 
+      | NotAFunction(_,_,_,mfun,_) -> 
           Some mfun
 
       | IllegalFileNameChar(_) -> Some rangeCmdArgs
@@ -453,8 +453,6 @@ let BakedInMemberConstraintNameE() = DeclareResourceString("BakedInMemberConstra
 let BadEventTransformationE() = DeclareResourceString("BadEventTransformation","")
 let ParameterlessStructCtorE() = DeclareResourceString("ParameterlessStructCtor","")
 let InterfaceNotRevealedE() = DeclareResourceString("InterfaceNotRevealed","%s")
-let NotAFunction1E() = DeclareResourceString("NotAFunction1","")
-let NotAFunction2E() = DeclareResourceString("NotAFunction2","")
 let TyconBadArgsE() = DeclareResourceString("TyconBadArgs","%s%d%d")
 let IndeterminateTypeE() = DeclareResourceString("IndeterminateType","")
 let NameClash1E() = DeclareResourceString("NameClash1","%s%s")
@@ -743,11 +741,13 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
          os.Append(ParameterlessStructCtorE().Format) |> ignore
       | InterfaceNotRevealed(denv,ity,_) ->
           os.Append(InterfaceNotRevealedE().Format (NicePrint.minimalStringOfType denv ity)) |> ignore
-      | NotAFunction(_,_,_,marg) ->
-          if marg.StartColumn = 0 then 
-            os.Append(NotAFunction1E().Format) |> ignore
+      | NotAFunction(_,_,hasIndexer,_,marg) ->
+          if hasIndexer then
+              os.Append(FSComp.SR.notAFunctionButMaybeIndexer()) |> ignore
+          elif marg.StartColumn = 0 then 
+              os.Append(FSComp.SR.notAFunctionButMaybeDeclaration()) |> ignore
           else
-            os.Append(NotAFunction2E().Format) |> ignore
+              os.Append(FSComp.SR.notAFunction()) |> ignore
           
       | TyconBadArgs(_,tcref,d,_) -> 
           let exp = tcref.TyparsNoRange.Length

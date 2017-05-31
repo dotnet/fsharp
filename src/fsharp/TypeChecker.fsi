@@ -63,7 +63,7 @@ val TypeCheckOneSigFile :
 
 exception BakedInMemberConstraintName of string * range
 exception FunctionExpected of DisplayEnv * TType * range
-exception NotAFunction of DisplayEnv * TType * range * range
+exception NotAFunction of DisplayEnv * TType * bool * range * range
 exception Recursion of DisplayEnv * Ast.Ident * TType * TType * range
 exception RecursiveUseCheckedAtRuntime of DisplayEnv * ValRef * range
 exception LetRecEvaluatedOutOfOrder of DisplayEnv * ValRef * ValRef * range
