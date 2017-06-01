@@ -8241,7 +8241,9 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                         | _ -> false
 
                     error (NotAFunction(denv,overallTy,flag,mExpr,mArg)) 
-                | _ -> 
+                | _ ->
+                    // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
+                    RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
                     error (NotAFunction(denv,overallTy,false,mExpr,mArg)) 
 
     propagate delayed expr.Range exprty
