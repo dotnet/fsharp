@@ -51,14 +51,14 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <FSharpCoreImplicitPackageVersion>4.2.*</FSharpCoreImplicitPackageVersion>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(DisableImplcitSystemValueTupleReference)' != 'true' ">
+  <PropertyGroup Condition=" '$(DisableImplicitSystemValueTupleReference)' != 'true' ">
     <_FrameworkNeedsValueTupleReference Condition=" $(TargetFramework.StartsWith(netcoreapp1.)) or $(TargetFramework.StartsWith(netstandard1.)) ">true</_FrameworkNeedsValueTupleReference>
     <_FrameworkNeedsValueTupleReference Condition=" '$(TargetFramework)' == 'net40' or '$(TargetFramework)' == 'net45' or '$(TargetFramework)' == 'net46' or '$(TargetFramework)' == 'net461' or '$(TargetFramework)' == 'net462' or '$(TargetFramework)' == 'net47' ">true</_FrameworkNeedsValueTupleReference>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.ValueTuple" Version="4.*" Condition=" '$(DisableImplcitSystemValueTupleReference)' != 'true' and '$(_FrameworkNeedsValueTupleReference)' == 'true' "></PackageReference>
-    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreImplicitPackageVersion)"  Condition=" '$(DisableImplcitSystemValueTupleReference)' != 'true' "></PackageReference>
+    <PackageReference Include="System.ValueTuple" Version="4.*" Condition=" '$(DisableImplicitSystemValueTupleReference)' != 'true' and '$(_FrameworkNeedsValueTupleReference)' == 'true' "></PackageReference>
+    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreImplicitPackageVersion)"  Condition=" '$(DisableImplicitFSharpCoreReference)' != 'true' "></PackageReference>
   </ItemGroup>
 
 </Project>
