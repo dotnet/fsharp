@@ -536,7 +536,7 @@ and
     | ForEach of forSeqPoint:SequencePointInfoForForLoop * seqExprOnly:SeqExprOnly * isFromSource:bool * pat:SynPat * enumExpr:SynExpr * bodyExpr:SynExpr * range:range
 
     /// F# syntax: [ expr ], [| expr |]
-    | ArrayOrListOfSeqExpr of isList:bool * expr:SynExpr * range:range
+    | ArrayOrListOfSeqExpr of isArray:bool * expr:SynExpr * range:range
 
     /// CompExpr(isArrayOrList, isNotNakedRefCell, expr)
     ///

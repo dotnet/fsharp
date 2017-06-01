@@ -71,6 +71,7 @@ let mkUnitDelayLambda (g: TcGlobals) m e =
 exception BakedInMemberConstraintName of string * range
 exception FunctionExpected of DisplayEnv * TType * range
 exception NotAFunction of DisplayEnv * TType * range * range
+exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range
 exception Recursion of DisplayEnv * Ident * TType * TType  * range
 exception RecursiveUseCheckedAtRuntime of DisplayEnv * ValRef * range
 exception LetRecEvaluatedOutOfOrder of DisplayEnv * ValRef * ValRef * range
@@ -8236,12 +8237,23 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                 propagate delayedList' mExprAndArg resultTy 
             | None -> 
                 let mArg = arg.Range
-                match arg with 
+                match arg with
                 | SynExpr.CompExpr _ -> ()
-                | _ -> 
+                | SynExpr.ArrayOrListOfSeqExpr (false,_,_) ->
                     // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
                     RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
-                    error (NotAFunction(denv,overallTy,mExpr,mArg)) 
+                    if IsIndexerType cenv.g cenv.amap expr.Type then
+                        match expr.Expr with
+                        | Expr.Val (d,_,_) ->
+                            error (NotAFunctionButIndexer(denv,overallTy,Some d.DisplayName,mExpr,mArg))
+                        | _ ->
+                            error (NotAFunctionButIndexer(denv,overallTy,None,mExpr,mArg))
+                    else
+                        error (NotAFunction(denv,overallTy,mExpr,mArg))
+                | _ ->
+                    // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
+                    RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
+                    error (NotAFunction(denv,overallTy,mExpr,mArg))
 
     propagate delayed expr.Range exprty
 
