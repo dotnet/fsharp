@@ -44,12 +44,25 @@ type internal FSharpFixIndexerAccessCodeFixProvider() =
                 |> Seq.iter (fun diagnostic ->
                     let diagnostics = ImmutableArray.Create diagnostic
                     let span,replacement =
-                        context.Span,sourceText.GetSubText(context.Span).ToString()
+                        try
+                            let span = ref context.Span
+                        
+                            // skip all braces and blanks until we find [
+                            while 
+                                (!span).End < sourceText.Length &&
+                                 let t = TextSpan((!span).Start,(!span).Length + 1)
+                                 let s = sourceText.GetSubText(t).ToString()
+                                 s.[s.Length-1] <> '[' do
+                                span := TextSpan((!span).Start,(!span).Length + 1)
+
+                            !span,sourceText.GetSubText(!span).ToString()
+                        with
+                        | _ -> context.Span,sourceText.GetSubText(context.Span).ToString()
 
                     let codefix = 
                         createCodeFix(
                             FSComp.SR.addIndexerDot(), 
                             context,
-                            TextChange(span, replacement + "."))
+                            TextChange(span, replacement.TrimEnd() + "."))
                     context.RegisterCodeFix(codefix, diagnostics))
         } |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
