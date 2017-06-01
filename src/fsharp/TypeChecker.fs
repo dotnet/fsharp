@@ -8227,18 +8227,14 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                     RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
                     
                     let flag =
-                        match expr.Expr with
-                        | Expr.Val (d,_,_)
-                        | Expr.App(Expr.Val (d,_,_),_,_,_,_) ->
-                            let typ = d.Type
-                            isArray1DTy cenv.g typ ||                        
-                            if isAppTy cenv.g typ then
-                                let tcref = tcrefOfAppTy cenv.g typ
-                                let _, entityTy = generalizeTyconRef tcref
-                                let props = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 entityTy 
-                                props |> List.exists (fun x -> x.PropertyName = "Item")
-                            else false
-                        | _ -> false
+                        let typ = expr.Type
+                        isArray1DTy cenv.g typ ||
+                        if isAppTy cenv.g typ then
+                            let tcref = tcrefOfAppTy cenv.g typ
+                            let _, entityTy = generalizeTyconRef tcref
+                            let props = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 entityTy 
+                            props |> List.exists (fun x -> x.PropertyName = "Item")
+                        else false
 
                     error (NotAFunction(denv,overallTy,flag,mExpr,mArg)) 
                 | _ ->
