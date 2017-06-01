@@ -9,6 +9,6 @@ let y = d[1]
 let z = d[|1|]
 
 let f() = d
-let y = (f())[1]
+let a = (f())[1]
 
 exit 0
