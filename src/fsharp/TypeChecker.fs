@@ -5715,7 +5715,15 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
 
         // Always allow subsumption if a nominal type is known prior to type checking any arguments
         let flex = not (isTyparTy cenv.g argty)
-        let args',tpenv = List.mapFold (TcExprFlex cenv flex argty env) tpenv args
+        let first = ref true
+        let getInitEnv m = 
+            if !first then 
+                first := false
+                env
+            else
+                { env with eContextInfo = ContextInfo.CollectionElement (isArray,m) }
+
+        let args',tpenv = List.mapFold (fun tpenv (x:SynExpr) -> TcExprFlex cenv flex argty (getInitEnv x.Range) tpenv x) tpenv args
         
         let expr = 
             if isArray then Expr.Op(TOp.Array, [argty],args',m)
@@ -5872,12 +5880,19 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
     | SynExpr.IfThenElse (e1,e2,e3opt,spIfToThen,isRecovery,mIfToThen,m) ->
         let e1',tpenv = TcExprThatCantBeCtorBody cenv cenv.g.bool_ty env tpenv e1
         let e2',tpenv =
+            let env =
+                match env.eContextInfo with
+                | ContextInfo.ElseBranchResult _ ->  { env with eContextInfo = ContextInfo.ElseBranchResult e2.Range }
+                | _ -> 
+                    match e3opt with
+                    | None -> { env with eContextInfo = ContextInfo.OmittedElseBranch e2.Range }
+                    | _ -> { env with eContextInfo = ContextInfo.IfExpression e2.Range }
+
             if not isRecovery && Option.isNone e3opt then
-                let env = { env with eContextInfo = ContextInfo.OmittedElseBranch e2.Range}
                 UnifyTypes cenv env m cenv.g.unit_ty overallTy
-                TcExprThatCanBeCtorBody cenv overallTy env tpenv e2
-            else
-                TcExprThatCanBeCtorBody cenv overallTy env tpenv e2
+
+            TcExprThatCanBeCtorBody cenv overallTy env tpenv e2
+
         let e3',sp2,tpenv = 
             match e3opt with 
             | None ->
@@ -5886,6 +5901,7 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
                 let env = { env with eContextInfo = ContextInfo.ElseBranchResult e3.Range }
                 let e3',tpenv = TcExprThatCanBeCtorBody cenv overallTy env tpenv e3 
                 e3',SequencePointAtTarget,tpenv
+
         primMkCond spIfToThen SequencePointAtTarget sp2 m overallTy e1' e2' e3', tpenv
 
     // This is for internal use in the libraries only 
