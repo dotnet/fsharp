@@ -8225,18 +8225,7 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                 | SynExpr.ArrayOrListOfSeqExpr _ ->
                     // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
                     RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
-                    
-                    let flag =
-                        let typ = expr.Type
-                        isArray1DTy cenv.g typ ||
-                        if isAppTy cenv.g typ then
-                            let tcref = tcrefOfAppTy cenv.g typ
-                            let _, entityTy = generalizeTyconRef tcref
-                            let props = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 entityTy 
-                            props |> List.exists (fun x -> x.PropertyName = "Item")
-                        else false
-
-                    error (NotAFunction(denv,overallTy,flag,mExpr,mArg)) 
+                    error (NotAFunction(denv,overallTy,IsIndexerType cenv.g cenv.amap expr.Type,mExpr,mArg)) 
                 | _ ->
                     // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
                     RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
