@@ -203,7 +203,10 @@ let GetRangeOfDiagnostic(err:PhasedDiagnostic) =
       | SelfRefObjCtor(_,m) -> 
           Some m
 
-      | NotAFunction(_,_,_,mfun,_) -> 
+      | NotAFunction(_,_,mfun,_) -> 
+          Some mfun
+          
+      | NotAFunctionButIndexer(_,_,_,mfun,_) -> 
           Some mfun
 
       | IllegalFileNameChar(_) -> Some rangeCmdArgs
@@ -243,7 +246,7 @@ let GetDiagnosticNumber(err:PhasedDiagnostic) =
       (* DO NOT CHANGE THESE NUMBERS *)
       | ErrorFromAddingTypeEquation _ -> 1
       | FunctionExpected _ -> 2
-      | NotAFunction (_,_,true,_,_)  -> 3217
+      | NotAFunctionButIndexer _ -> 3217
       | NotAFunction _  -> 3
       | FieldNotMutable  _ -> 5
       | Recursion _ -> 6
@@ -742,14 +745,15 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
          os.Append(ParameterlessStructCtorE().Format) |> ignore
       | InterfaceNotRevealed(denv,ity,_) ->
           os.Append(InterfaceNotRevealedE().Format (NicePrint.minimalStringOfType denv ity)) |> ignore
-      | NotAFunction(_,_,hasIndexer,_,marg) ->
-          if hasIndexer then
-              os.Append(FSComp.SR.notAFunctionButMaybeIndexer()) |> ignore
-          elif marg.StartColumn = 0 then 
+      | NotAFunctionButIndexer(_,_,name,_,_) ->
+          match name with
+          | Some name -> os.Append(FSComp.SR.notAFunctionButMaybeIndexerWithName name) |> ignore
+          | _ -> os.Append(FSComp.SR.notAFunctionButMaybeIndexer()) |> ignore
+      | NotAFunction(_,_,_,marg) ->
+          if marg.StartColumn = 0 then
               os.Append(FSComp.SR.notAFunctionButMaybeDeclaration()) |> ignore
           else
               os.Append(FSComp.SR.notAFunction()) |> ignore
-          
       | TyconBadArgs(_,tcref,d,_) -> 
           let exp = tcref.TyparsNoRange.Length
           if exp = 0 then
