@@ -8223,7 +8223,7 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                 let mArg = arg.Range
                 match arg with
                 | SynExpr.CompExpr _ -> ()
-                | SynExpr.ArrayOrListOfSeqExpr (_,_,_) ->
+                | SynExpr.ArrayOrListOfSeqExpr (false,_,_) ->
                     // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
                     RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
                     if IsIndexerType cenv.g cenv.amap expr.Type then
