@@ -43,11 +43,13 @@ type internal FSharpFixIndexerAccessCodeFixProvider() =
                 diagnostics
                 |> Seq.iter (fun diagnostic ->
                     let diagnostics = ImmutableArray.Create diagnostic
+                    let span,replacement =
+                        context.Span,sourceText.GetSubText(context.Span).ToString()
 
                     let codefix = 
                         createCodeFix(
                             FSComp.SR.addIndexerDot(), 
                             context,
-                            TextChange(context.Span, sourceText.GetSubText(context.Span).ToString() + "."))
+                            TextChange(span, replacement + "."))
                     context.RegisterCodeFix(codefix, diagnostics))
         } |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
