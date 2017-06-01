@@ -243,6 +243,7 @@ let GetDiagnosticNumber(err:PhasedDiagnostic) =
       (* DO NOT CHANGE THESE NUMBERS *)
       | ErrorFromAddingTypeEquation _ -> 1
       | FunctionExpected _ -> 2
+      | NotAFunction (_,_,true,_,_)  -> 3217
       | NotAFunction _  -> 3
       | FieldNotMutable  _ -> 5
       | Recursion _ -> 6
