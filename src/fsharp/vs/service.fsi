@@ -255,10 +255,11 @@ type internal FSharpCheckFileResults =
     member GetUsesOfSymbolInFile : symbol:FSharpSymbol -> Async<FSharpSymbolUse[]>
 
     member internal GetVisibleNamespacesAndModulesAtPoint : pos -> Async<Tast.ModuleOrNamespaceRef[]>
-
-    /// Determines if a long ident is resolvable at a specific point.
+    
+    /// Find the most precise display environment for the given line and column.
+    member GetDisplayEnvForPos : pos : pos -> Async<DisplayEnv option>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member internal IsRelativeNameResolvable: cursorPos : pos * plid : string list * item: Item * ?userOpName: string -> Async<bool>
+    member IsRelativeNameResolvable : cursorPos:pos * plid:string list * item:Item * ?userOpName:string -> Async<bool>
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]

@@ -1262,6 +1262,8 @@ type TypeCheckInfo
     /// The assembly being analyzed
     member __.ThisCcu = thisCcu
 
+    /// Find the most precise display context for the given line and column.
+    member x.GetBestDisplayEnvForPos cursorPos  = GetBestEnvForPos cursorPos
     override __.ToString() = "TypeCheckInfo(" + mainInputFileName + ")"
 
 
@@ -1903,6 +1905,13 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
         reactorOp userOpName "IsRelativeNameResolvable" true (fun ctok scope -> 
             RequireCompilationThread ctok
             scope.IsRelativeNameResolvable(pos, plid, item))
+
+    member info.GetDisplayEnvForPos(pos: pos) : Async<DisplayEnv option> =
+        let userOpName = "CodeLens"
+        reactorOp userOpName "GetDisplayContextAtPos" None (fun ctok scope -> 
+            DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent ctok
+            let (nenv, _), _ = scope.GetBestDisplayEnvForPos(pos)
+            Some nenv.DisplayEnv)
     
 
     override info.ToString() = "FSharpCheckFileResults(" + filename + ")"
