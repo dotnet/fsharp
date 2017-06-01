@@ -70,7 +70,8 @@ let mkUnitDelayLambda (g: TcGlobals) m e =
 
 exception BakedInMemberConstraintName of string * range
 exception FunctionExpected of DisplayEnv * TType * range
-exception NotAFunction of DisplayEnv * TType * bool * range * range
+exception NotAFunction of DisplayEnv * TType * range * range
+exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range
 exception Recursion of DisplayEnv * Ident * TType * TType  * range
 exception RecursiveUseCheckedAtRuntime of DisplayEnv * ValRef * range
 exception LetRecEvaluatedOutOfOrder of DisplayEnv * ValRef * ValRef * range
@@ -746,7 +747,7 @@ let UnifyFunctionType extraInfo cenv denv mFunExpr ty =
     | Some res -> res
     | None -> 
         match extraInfo with 
-        | Some argm -> error (NotAFunction(denv,ty,false,mFunExpr,argm))
+        | Some argm -> error (NotAFunction(denv,ty,mFunExpr,argm))
         | None ->    error (FunctionExpected(denv,ty,mFunExpr))
 
 let ReportImplicitlyIgnoredBoolExpression denv m ty expr =
@@ -8222,14 +8223,21 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                 let mArg = arg.Range
                 match arg with
                 | SynExpr.CompExpr _ -> ()
-                | SynExpr.ArrayOrListOfSeqExpr _ ->
+                | SynExpr.ArrayOrListOfSeqExpr (_,_,_) ->
                     // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
                     RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
-                    error (NotAFunction(denv,overallTy,IsIndexerType cenv.g cenv.amap expr.Type,mExpr,mArg)) 
+                    if IsIndexerType cenv.g cenv.amap expr.Type then
+                        match expr.Expr with
+                        | Expr.Val (d,_,_) ->
+                            error (NotAFunctionButIndexer(denv,overallTy,Some d.DisplayName,mExpr,mArg))
+                        | _ ->
+                            error (NotAFunctionButIndexer(denv,overallTy,None,mExpr,mArg))
+                    else
+                        error (NotAFunction(denv,overallTy,mExpr,mArg))
                 | _ ->
                     // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
                     RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
-                    error (NotAFunction(denv,overallTy,false,mExpr,mArg)) 
+                    error (NotAFunction(denv,overallTy,mExpr,mArg))
 
     propagate delayed expr.Range exprty
 
@@ -8315,7 +8323,7 @@ and TcFunctionApplicationThen cenv overallTy env tpenv mExprAndArg expr exprty (
             let bodyOfCompExpr,tpenv = TcComputationOrSequenceExpression cenv env overallTy mFunExpr (Some(expr.Expr,exprty)) tpenv comp
             TcDelayed cenv overallTy env tpenv mExprAndArg (MakeApplicableExprNoFlex cenv bodyOfCompExpr) (tyOfExpr cenv.g bodyOfCompExpr) ExprAtomicFlag.NonAtomic delayed 
         | _ -> 
-            error (NotAFunction(denv,overallTy,false,mFunExpr,mArg)) 
+            error (NotAFunction(denv,overallTy,mFunExpr,mArg)) 
 
 //-------------------------------------------------------------------------
 // TcLongIdentThen : Typecheck "A.B.C<D>.E.F ... " constructs
