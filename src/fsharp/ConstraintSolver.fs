@@ -127,6 +127,8 @@ type ContextInfo =
 | RecordFields
 /// The type equation comes from the verification of a tuple in record fields.
 | TupleInRecordFields
+/// The type equation comes from a list or array constructor
+| CollectionElement of bool * range
 /// The type equation comes from a return in a computation expression.
 | ReturnInComputationExpression
 /// The type equation comes from a yield in a computation expression.
