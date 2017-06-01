@@ -205,6 +205,9 @@ let GetRangeOfDiagnostic(err:PhasedDiagnostic) =
 
       | NotAFunction(_,_,mfun,_) -> 
           Some mfun
+          
+      | NotAFunctionButIndexer(_,_,_,mfun,_) -> 
+          Some mfun
 
       | IllegalFileNameChar(_) -> Some rangeCmdArgs
 
@@ -243,6 +246,7 @@ let GetDiagnosticNumber(err:PhasedDiagnostic) =
       (* DO NOT CHANGE THESE NUMBERS *)
       | ErrorFromAddingTypeEquation _ -> 1
       | FunctionExpected _ -> 2
+      | NotAFunctionButIndexer _ -> 3217
       | NotAFunction _  -> 3
       | FieldNotMutable  _ -> 5
       | Recursion _ -> 6
@@ -453,8 +457,6 @@ let BakedInMemberConstraintNameE() = DeclareResourceString("BakedInMemberConstra
 let BadEventTransformationE() = DeclareResourceString("BadEventTransformation","")
 let ParameterlessStructCtorE() = DeclareResourceString("ParameterlessStructCtor","")
 let InterfaceNotRevealedE() = DeclareResourceString("InterfaceNotRevealed","%s")
-let NotAFunction1E() = DeclareResourceString("NotAFunction1","")
-let NotAFunction2E() = DeclareResourceString("NotAFunction2","")
 let TyconBadArgsE() = DeclareResourceString("TyconBadArgs","%s%d%d")
 let IndeterminateTypeE() = DeclareResourceString("IndeterminateType","")
 let NameClash1E() = DeclareResourceString("NameClash1","%s%s")
@@ -752,12 +754,15 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
          os.Append(ParameterlessStructCtorE().Format) |> ignore
       | InterfaceNotRevealed(denv,ity,_) ->
           os.Append(InterfaceNotRevealedE().Format (NicePrint.minimalStringOfType denv ity)) |> ignore
+      | NotAFunctionButIndexer(_,_,name,_,_) ->
+          match name with
+          | Some name -> os.Append(FSComp.SR.notAFunctionButMaybeIndexerWithName name) |> ignore
+          | _ -> os.Append(FSComp.SR.notAFunctionButMaybeIndexer()) |> ignore
       | NotAFunction(_,_,_,marg) ->
-          if marg.StartColumn = 0 then 
-            os.Append(NotAFunction1E().Format) |> ignore
+          if marg.StartColumn = 0 then
+              os.Append(FSComp.SR.notAFunctionButMaybeDeclaration()) |> ignore
           else
-            os.Append(NotAFunction2E().Format) |> ignore
-          
+              os.Append(FSComp.SR.notAFunction()) |> ignore
       | TyconBadArgs(_,tcref,d,_) -> 
           let exp = tcref.TyparsNoRange.Length
           if exp = 0 then
