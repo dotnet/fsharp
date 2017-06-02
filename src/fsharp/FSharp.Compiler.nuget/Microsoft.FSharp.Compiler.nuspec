@@ -39,7 +39,7 @@
         </dependencies>
         <contentFiles>
             <files include="any/any/default.win32manifest"                       buildAction="Content" copyToOutput="true" flatten="false"  />
-            <files include="any/any/Microsoft.FSharp.targets"                    buildAction="Content" copyToOutput="true" flatten="false"  />
+            <files include="any/any/Microsoft.FSharp.Targets"                    buildAction="Content" copyToOutput="true" flatten="false"  />
             <files include="any/any/Microsoft.Portable.FSharp.targets"           buildAction="Content" copyToOutput="true" flatten="false"  />
             <files include="any/any/Microsoft.FSharp.NetSdk.targets"             buildAction="Content" copyToOutput="true" flatten="false"  />
             <files include="any/any/Microsoft.FSharp.NetSdk.props"               buildAction="Content" copyToOutput="true" flatten="false"  />
@@ -61,8 +61,8 @@
         <file src="coreclr/bin/FSharp.Build.dll"                            target="lib/netstandard1.6" />
         <file src="coreclr/bin/FSharp.Compiler.Interactive.Settings.dll"    target="lib/netstandard1.6" />
         <file src="coreclr/bin/default.win32manifest"                       target="contentFiles/any/any/"  />
-        <file src="coreclr/bin/Microsoft.FSharp.targets"                    target="contentFiles/any/any/"  />
-        <file src="coreclr/bin/Microsoft.Portable.FSharp.targets"           target="contentFiles/any/any/"  />
+        <file src="coreclr/bin/Microsoft.FSharp.Targets"                    target="contentFiles/any/any/"  />
+        <file src="coreclr/bin/Microsoft.Portable.FSharp.Targets"           target="contentFiles/any/any/"  />
         <file src="coreclr/bin/Microsoft.FSharp.NetSdk.targets"             target="contentFiles/any/any/"  />
         <file src="coreclr/bin/Microsoft.FSharp.NetSdk.props"               target="contentFiles/any/any/"  />
     </files>
