@@ -34,13 +34,13 @@
     <Compile Include="..\FSharp.Build\Fsc.fs">
       <Link>Fsc.fs</Link>
     </Compile>
-    <CopyAndSubstituteText Include="..\FSharp.Build\Microsoft.FSharp.targets">
+    <CopyAndSubstituteText Include="..\FSharp.Build\Microsoft.FSharp.Targets">
       <Link>Microsoft.FSharp-proto.targets</Link>
       <TargetFilename>Microsoft.FSharp-proto.targets</TargetFilename>
       <Pattern1>{BuildSuffix}</Pattern1>
       <Replacement1>-proto</Replacement1>
     </CopyAndSubstituteText>
-    <CopyAndSubstituteText Include="..\FSharp.Build\Microsoft.Portable.FSharp.targets">
+    <CopyAndSubstituteText Include="..\FSharp.Build\Microsoft.Portable.FSharp.Targets">
       <Link>Microsoft.Portable.FSharp-proto.targets</Link>
       <TargetFilename>Microsoft.Portable.FSharp-proto.targets</TargetFilename>
       <Pattern1>{BuildSuffix}</Pattern1>

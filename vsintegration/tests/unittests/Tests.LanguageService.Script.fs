@@ -1498,7 +1498,7 @@ type UsingMSBuild() as this =
                                        "Script.fsx"])           
             for line in lines do 
                 printfn "%s" line
-                AssertNotContains(line,"error MSB") // Microsoft.FSharp.targets(135,9): error MSB6006: "fsc.exe" exited with code -532462766.
+                AssertNotContains(line,"error MSB") // Microsoft.FSharp.Targets(135,9): error MSB6006: "fsc.exe" exited with code -532462766.
 
         Assert.IsTrue(not(build.BuildSucceeded), "Expected build to fail")                                  
         

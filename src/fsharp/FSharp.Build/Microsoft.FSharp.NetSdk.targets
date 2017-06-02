@@ -41,7 +41,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <OtherFlags>$(OtherFlags) --simpleresolution --nocopyfsharpcore</OtherFlags>
   </PropertyGroup>
 
-  <Import Project="Microsoft.FSharp.targets" />
+  <Import Project="Microsoft.FSharp.Targets" />
 
   <PropertyGroup Condition="'$(PackProjectInputFile)' == ''">
     <PackProjectInputFile>$(MSBuildProjectFullPath)</PackProjectInputFile>
