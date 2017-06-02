@@ -44,8 +44,6 @@
     <Compile Include="Program.fs" Condition="'$(TargetDotnetProfile)' == 'coreclr'" />
   </ItemGroup>
   <ItemGroup  Condition=" '$(TargetDotnetProfile)' != 'coreclr' ">
-
-  <ItemGroup  Condition=" '$(TargetFramework)' != 'coreclr' ">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
