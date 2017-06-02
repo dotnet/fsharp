@@ -5,7 +5,7 @@
 
     <PropertyGroup>
         <SetupRootFolder>.</SetupRootFolder>
-        <TargetFramework Condition="'$(TargetFramework)'==''">net40</TargetFramework>
+        <TargetDotnetProfile Condition="'$(TargetDotnetProfile)'==''">net40</TargetDotnetProfile>
         <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     </PropertyGroup>
 

@@ -18,7 +18,7 @@
     <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
+  <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">
     <PackageNuspec Include="Testing.FSharp.Compiler.nuspec" />
     <PackageNuspec Include="Microsoft.FSharp.Compiler.nuspec" />
   </ItemGroup>

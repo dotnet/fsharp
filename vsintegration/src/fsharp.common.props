@@ -12,10 +12,10 @@
 
   <PropertyGroup Condition="'$(DevDivBuild)' == ''">
     <FSharpSourcesRoot Condition="'$(FSharpSourcesRoot)' == '' and '$(DevDivBuild)' == ''   ">..\..</FSharpSourcesRoot>
-    <TargetFramework Condition="'$(TargetFramework)' == ''">net40</TargetFramework>
+    <TargetDotnetProfile Condition="'$(TargetDotnetProfile)' == ''">net40</TargetDotnetProfile>
   </PropertyGroup>
   <PropertyGroup Condition=" ('$(Configuration)' == 'Debug' or '$(Configuration)' == 'Release') and '$(DevDivBuild)' == ''">
-    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutputPath>
+    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetDotnetProfile)\bin</OutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug'">
