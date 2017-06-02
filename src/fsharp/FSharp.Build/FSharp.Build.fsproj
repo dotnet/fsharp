@@ -39,12 +39,12 @@
     <Compile Include="Fsc.fs" />
     <Compile Include="CreateFSharpManifestResourceName.fsi" />
     <Compile Include="CreateFSharpManifestResourceName.fs" />
-    <CopyAndSubstituteText Include="Microsoft.FSharp.targets">
+    <CopyAndSubstituteText Include="Microsoft.FSharp.Targets">
         <TargetFilename>Microsoft.FSharp.Targets</TargetFilename>
         <Pattern1>{BuildSuffix}</Pattern1>
         <Replacement1></Replacement1>
     </CopyAndSubstituteText>
-    <CopyAndSubstituteText Include="Microsoft.Portable.FSharp.targets">
+    <CopyAndSubstituteText Include="Microsoft.Portable.FSharp.Targets">
       <TargetFilename>Microsoft.Portable.FSharp.Targets</TargetFilename>
       <Pattern1>{BuildSuffix}</Pattern1>
       <Replacement1></Replacement1>
