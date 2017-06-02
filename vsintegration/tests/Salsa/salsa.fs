@@ -695,7 +695,7 @@ module internal Salsa =
             Append otherProjMisc
 
             let t = targetsFileFolder.TrimEnd([|'\\'|])
-            Append (sprintf "    <Import Project=\"%s\\Microsoft.FSharp.targets\"/>" t)
+            Append (sprintf "    <Import Project=\"%s\\Microsoft.FSharp.Targets\"/>" t)
             Append "</Project>"
             sb.ToString()
 
@@ -1558,8 +1558,8 @@ module internal Salsa =
 
     let BuiltMSBuildBehaviourHooks() = Privates.MSBuildBehaviorHooks(false) :> ProjectBehaviorHooks
             
-    /// Salsa tests which create .fsproj files using the freshly built version of Microsoft.FSharp.targets and FSharp.Build
+    /// Salsa tests which create .fsproj files using the freshly built version of Microsoft.FSharp.Targets and FSharp.Build
     let BuiltMSBuildTestFlavour() = MSBuildTestFlavor(false) :> VsOps
 
-    /// Salsa tests which create .fsproj files using the installed version of Microsoft.FSharp.targets.
+    /// Salsa tests which create .fsproj files using the installed version of Microsoft.FSharp.Targets.
     let InstalledMSBuildTestFlavour() = MSBuildTestFlavor(true) :> VsOps

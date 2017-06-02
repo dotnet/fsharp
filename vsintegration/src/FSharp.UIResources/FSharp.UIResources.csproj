@@ -9,8 +9,8 @@
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <TargetFramework Condition=" '$(TargetFramework)' == '' ">net40</TargetFramework>
-    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutputPath>
+    <TargetDotnetProfile Condition=" '$(TargetDotnetProfile)' == '' ">net40</TargetDotnetProfile>
+    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetDotnetProfile)\bin</OutputPath>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{C4586A06-1402-48BC-8E35-A1B8642F895B}</ProjectGuid>
     <OutputType>Library</OutputType>
