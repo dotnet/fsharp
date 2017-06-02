@@ -45,6 +45,9 @@
     <!-- Always qualify the IntermediateOutputPath by the TargetFramework if any exists -->
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
     <IntermediateOutputPath Condition="'$(PortableProfileBeingReferenced)' != ''">obj\$(Configuration)\$(TargetFramework)\$(PortableProfileBeingReferenced)\</IntermediateOutputPath>
+
+    <FSharpCore41Version>4.1.18</FSharpCore41Version>
+    <FSharpCore42Version>4.2.1</FSharpCore42Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(MonoPackaging)' != 'true' AND '$(OS)' != 'Unix'">
