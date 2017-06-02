@@ -402,7 +402,7 @@
         <FscToolPath>$(FSharpSourcesRoot)\..\Tools\dotnet20</FscToolPath>
         <FscToolExe Condition="'$(OS)' != 'Unix'">dotnet.exe</FscToolExe>
         <FscToolExe Condition="'$(OS)' == 'Unix'">dotnet</FscToolExe>
-        <DotnetFscCompilerPath>$(MsBuildThisFileDirectory)..\Tools\dotnet20\sdk\2.0.0-preview2-006127\FSharp\fsc.exe</DotnetFscCompilerPath>
+        <DotnetFscCompilerPath>$(MsBuildThisFileDirectory)..\Tools\dotnet20\sdk\2.0.0-preview2-006210\FSharp\fsc.exe</DotnetFscCompilerPath>
       </PropertyGroup>
     </When>
     <When Condition="'$(BuildWith)' == 'LKG' AND '$(BUILD_PROTO_WITH_CORECLR_LKG)' != '1'">
@@ -525,14 +525,14 @@
 
   <Target Name="dotnetpublishfsccompiler" AfterTargets="CopyFilesToOutputDirectory" Condition=" '$(DOTNET_PUBLISH_FSC)' == 'true' ">
     <SetEnvVar Name="NUGET_PACKAGES" Value="$(NUGET_PACKAGES)" />
-    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe restore DeployCompiler\fsc\project.json"/>
-    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe &#45;&#45;verbose publish &#45;&#45;no-build DeployCompiler\fsc\project.json -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_FSC_PATH)"/>
+    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnet20\dotnet.exe restore DeployCompiler\fsc"/>
+    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnet20\dotnet.exe &#45;&#45;verbose publish &#45;&#45;no-build DeployCompiler\fsc -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_FSC_PATH)"/>
   </Target>
 
   <Target Name="dotnetpublishfsicompiler" AfterTargets="CopyFilesToOutputDirectory" Condition=" '$(DOTNET_PUBLISH_FSI)' == 'true' ">
     <SetEnvVar Name="NUGET_PACKAGES" Value="$(NUGET_PACKAGES)" />
-    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe restore DeployCompiler\fsi\project.json"/>
-    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnetcli\dotnet.exe &#45;&#45;verbose publish &#45;&#45;no-build DeployCompiler\fsi\project.json -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_FSI_PATH)"/>
+    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnet20\dotnet.exe restore DeployCompiler\fsi"/>
+    <Exec Command="$(MSBuildThisFileDirectory)..\Tools\dotnet20\dotnet.exe &#45;&#45;verbose publish &#45;&#45;no-build DeployCompiler\fsi -r $(DOTNET_PUBLISH_PLATFORM) -c $(Configuration) -o $(DOTNET_PUBLISH_FSI_PATH)"/>
   </Target>
 
   <Target Name="GenerateSourceLink" BeforeTargets="CoreCompile" Condition="'$(UseSourceLink)' == 'true'">

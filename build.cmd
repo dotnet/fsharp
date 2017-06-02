@@ -523,10 +523,6 @@ goto :eof
 :havemsbuild
 set _nrswitch=/nr:false
 
-rem uncomment to use coreclr msbuild not ready yet!!!!
-rem set _msbuildexe=%~dp0Tools\CoreRun.exe %~dp0Tools\MSBuild.exe
-rem set _nrswitch=
-
 :: See <http://www.appveyor.com/docs/environment-variables>
 if defined APPVEYOR (
    rem See <http://www.appveyor.com/docs/build-phase>
