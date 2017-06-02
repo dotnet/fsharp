@@ -103,8 +103,14 @@ module internal RoslynHelpers =
                   async { do! Async.SwitchToThreadPool()
                           return! computation }, 
                   continuation=(fun result -> disposeReg(); tcs.TrySetResult(result) |> ignore), 
-                  exceptionContinuation=(function :? OperationCanceledException -> disposeReg(); tcs.TrySetCanceled(cancellationToken)  |> ignore
-                                                | exn -> disposeReg(); tcs.TrySetException(exn) |> ignore),
+                  exceptionContinuation=(function :? OperationCanceledException -> 
+                                                        disposeReg()
+                                                        if tcs.Task.Status = TaskStatus.Running then
+                                                            tcs.TrySetCanceled(cancellationToken)  |> ignore
+                                                | exn ->
+                                                    disposeReg()
+                                                    if tcs.Task.Status = TaskStatus.Running then
+                                                        tcs.TrySetException(exn) |> ignore),
                   cancellationContinuation=(fun _oce -> disposeReg(); tcs.TrySetCanceled(cancellationToken) |> ignore),
                   cancellationToken=cancellationToken)
         task
