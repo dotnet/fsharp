@@ -10082,15 +10082,24 @@ and TcMatchPattern cenv inputTy env tpenv (pat:SynPat,optWhenExpr) =
     let m = pat.Range
     let patf',(tpenv,names,_) = TcPat WarnOnUpperCase cenv env None (ValInline.Optional,permitInferTypars,noArgOrRetAttribs,false,None,false) (tpenv,Map.empty,Set.empty) inputTy pat
     let envinner,values,vspecMap = MakeAndPublishSimpleVals cenv env m names false
-    let optWhenExpr',tpenv = Option.mapFold (TcExpr cenv cenv.g.bool_ty envinner) tpenv optWhenExpr
+    let optWhenExpr',tpenv = 
+        match optWhenExpr with
+        | Some whenExpr ->
+            let guardEnv = { envinner with eContextInfo = ContextInfo.PatternMatchGuard whenExpr.Range }
+            let whenExpr',tpenv  = TcExpr cenv cenv.g.bool_ty guardEnv tpenv whenExpr
+            Some whenExpr',tpenv
+        | None -> None,tpenv
     patf' (TcPatPhase2Input (values, true)),optWhenExpr', NameMap.range vspecMap,envinner,tpenv
 
 and TcMatchClauses cenv inputTy resultTy env tpenv clauses =
-    List.mapFold (TcMatchClause cenv inputTy resultTy env) tpenv clauses 
+    let first = ref true
+    let isFirst() = if !first then first := false; true else false
+    List.mapFold (fun clause -> TcMatchClause cenv inputTy resultTy env (isFirst()) clause) tpenv clauses
 
-and TcMatchClause cenv inputTy resultTy env tpenv (Clause(pat,optWhenExpr,e,patm,spTgt)) =
+and TcMatchClause cenv inputTy resultTy env isFirst tpenv (Clause(pat,optWhenExpr,e,patm,spTgt)) =
     let pat',optWhenExpr',vspecs,envinner,tpenv = TcMatchPattern cenv inputTy env tpenv (pat,optWhenExpr)
-    let e',tpenv = TcExprThatCanBeCtorBody cenv resultTy envinner tpenv e
+    let resultEnv = if isFirst then envinner else { envinner with eContextInfo = ContextInfo.FollowingPatternMatchClause e.Range }
+    let e',tpenv = TcExprThatCanBeCtorBody cenv resultTy resultEnv tpenv e
     TClause(pat',optWhenExpr',TTarget(vspecs, e',spTgt),patm),tpenv
 
 and TcStaticOptimizationConstraint cenv env tpenv c = 
