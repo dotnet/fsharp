@@ -2,14 +2,14 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <IsPortableProfile Condition="'$(TargetFramework)' == 'portable47' or '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259'">true</IsPortableProfile>
+    <IsPortableProfile Condition="'$(TargetDotnetProfile)' == 'portable47' or '$(TargetDotnetProfile)' == 'portable7' or '$(TargetDotnetProfile)' == 'portable78' or '$(TargetDotnetProfile)' == 'portable259'">true</IsPortableProfile>
     <FSCoreVersion Condition="'$(IsPortableProfile)' != 'true'">4.4.1.0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(TargetFramework)' == 'portable7'">3.7.41.0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(TargetFramework)' == 'portable47'">3.47.41.0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(TargetFramework)' == 'portable78'">3.78.41.0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(TargetFramework)' == 'portable259'">3.259.41.0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(TargetFramework)' == 'monoandroid10+monotouch10+xamarinios10' ">3.98.41.0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(TargetFramework)' == 'xamarinmacmobile' ">3.99.41.0</FSCoreVersion>
+    <FSCoreVersion Condition="'$(TargetDotnetProfile)' == 'portable7'">3.7.41.0</FSCoreVersion>
+    <FSCoreVersion Condition="'$(TargetDotnetProfile)' == 'portable47'">3.47.41.0</FSCoreVersion>
+    <FSCoreVersion Condition="'$(TargetDotnetProfile)' == 'portable78'">3.78.41.0</FSCoreVersion>
+    <FSCoreVersion Condition="'$(TargetDotnetProfile)' == 'portable259'">3.259.41.0</FSCoreVersion>
+    <FSCoreVersion Condition="'$(TargetDotnetProfile)' == 'monoandroid10+monotouch10+xamarinios10' ">3.98.41.0</FSCoreVersion>
+    <FSCoreVersion Condition="'$(TargetDotnetProfile)' == 'xamarinmacmobile' ">3.99.41.0</FSCoreVersion>
     <FSCoreVersion Condition="'$(FSharpCoreBackVersion)' == '3.0' AND '$(FSCoreVersion)' == '4.4.1.0'">4.3.0.0</FSCoreVersion>
     <FSCoreVersion Condition="'$(FSharpCoreBackVersion)' == '3.1' AND '$(FSCoreVersion)' == '4.4.1.0'">4.3.1.0</FSCoreVersion>
     <FSCoreVersion Condition="'$(FSharpCoreBackVersion)' == '4.0' AND '$(FSCoreVersion)' == '4.4.1.0'">4.4.0.0</FSCoreVersion>
@@ -48,8 +48,8 @@
             <!-- We have to do unit test DLLs well because they can see the internals of other strong-named DLLs -->
             <Otherwise>
               <PropertyGroup>
-                <OtherFlags Condition="'$(TargetFramework)' == 'coreclr' or $(BUILD_PUBLICSIGN) != '1'">$(OtherFlags) --delaysign+</OtherFlags>
-                <OtherFlags Condition="'$(TargetFramework)' != 'coreclr' and $(BUILD_PUBLICSIGN) == '1'">$(OtherFlags)  --publicsign+</OtherFlags>
+                <OtherFlags Condition="'$(TargetDotnetProfile)' == 'coreclr' or $(BUILD_PUBLICSIGN) != '1'">$(OtherFlags) --delaysign+</OtherFlags>
+                <OtherFlags Condition="'$(TargetDotnetProfile)' != 'coreclr' and $(BUILD_PUBLICSIGN) == '1'">$(OtherFlags)  --publicsign+</OtherFlags>
                 <OtherFlags>$(OtherFlags) --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
                 <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
@@ -116,7 +116,7 @@
     <FsCheckLibDir>$(FSharpSourcesRoot)\..\packages\FsCheck.$(FsCheckVersion)\lib\</FsCheckLibDir>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)'=='net40'">
+  <PropertyGroup Condition="'$(TargetDotnetProfile)'=='net40'">
     <DefineConstants Condition="'$(MonoPackaging)' == 'true'">$(DefineConstants);CROSS_PLATFORM_COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
     <DefineConstants>$(DefineConstants);BE_SECURITY_TRANSPARENT</DefineConstants>
@@ -128,7 +128,7 @@
 
 
   <!-- MonoAndroid, MonoTouch, XamarinWatchOS, XamarinTVOS -->
-  <PropertyGroup Condition="('$(TargetFramework)'=='monoandroid10+monotouch10+xamarinios10')">
+  <PropertyGroup Condition="('$(TargetDotnetProfile)'=='monoandroid10+monotouch10+xamarinios10')">
     <!-- Although Reflection Emit is available on MonoAndroid, we don't use it for FSharp.Core -->
     <!-- because we want the FSharp.Core DLLs to be identical for MonoAndroid and MonoTouch -->
     <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_EMIT</DefineConstants>
@@ -139,18 +139,18 @@
   </PropertyGroup>
 
   <!-- Target MonoAndroid -->
-  <PropertyGroup Condition="'$(TargetFramework)'=='monoandroid10+monotouch10+xamarinios10'">
+  <PropertyGroup Condition="'$(TargetDotnetProfile)'=='monoandroid10+monotouch10+xamarinios10'">
     <AssemblySearchPaths>$(FSharpSourcesRoot)\..\mono\dependencies\2.1\MonoAndroid;$(AssemblySearchPaths)</AssemblySearchPaths>
 
   </PropertyGroup>
 
   <!-- Target xamarinmacmobile similar to monoandroid10+monotouch10+xamarinios10 configurations, with Reflection.emit, structural equality, and BigInt -->
-  <PropertyGroup Condition="'$(TargetFramework)'=='xamarinmacmobile'">
+  <PropertyGroup Condition="'$(TargetDotnetProfile)'=='xamarinmacmobile'">
     <AssemblySearchPaths>$(FSharpSourcesRoot)\..\mono\dependencies\2.1\XamarinMac;$(AssemblySearchPaths)</AssemblySearchPaths>
 
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)'=='coreclr'">
+  <PropertyGroup Condition="'$(TargetDotnetProfile)'=='coreclr'">
     <DefineConstants>$(DefineConstants);FX_PORTABLE_OR_NETSTANDARD</DefineConstants>
     <DefineConstants>$(DefineConstants);NETSTANDARD1_6</DefineConstants>
     <DefineConstants>$(DefineConstants);PREFERRED_UI_LANG</DefineConstants>
@@ -204,7 +204,7 @@
     <PortableNuGetMode>true</PortableNuGetMode>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)'=='coreclr' AND '$(DOTNET_PUBLISH_TEST)'=='true' ">
+  <PropertyGroup Condition=" '$(TargetDotnetProfile)'=='coreclr' AND '$(DOTNET_PUBLISH_TEST)'=='true' ">
     <OutputPath>bin\$(Configuration)\netcoreapp1.0</OutputPath>
     <CustomOutputPath>true</CustomOutputPath>
     <DOTNET_PUBLISH>true</DOTNET_PUBLISH>
@@ -214,7 +214,7 @@
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)'=='coreclr' AND '$(DOTNET_PUBLISH_COMPILERS)'=='true' ">
+  <PropertyGroup Condition=" '$(TargetDotnetProfile)'=='coreclr' AND '$(DOTNET_PUBLISH_COMPILERS)'=='true' ">
     <DOTNET_PUBLISH_FSC>true</DOTNET_PUBLISH_FSC>
     <DOTNET_PUBLISH_FSC_PATH>$(FSharpSourcesRoot)\..\tests\testbin\$(Configuration)\coreclr\FSC</DOTNET_PUBLISH_FSC_PATH>
     <DOTNET_PUBLISH_FSI>true</DOTNET_PUBLISH_FSI>
@@ -222,7 +222,7 @@
   </PropertyGroup>
 
   <!-- Target Portable Profile 47 -->
-  <PropertyGroup Condition="'$(TargetFramework)'=='portable47'">
+  <PropertyGroup Condition="'$(TargetDotnetProfile)'=='portable47'">
     <DefineConstants>$(DefineConstants);FSCORE_PORTABLE_OLD</DefineConstants>
     <DefineConstants>$(DefineConstants);FSCORE_NO_STDIN</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_PORTABLE_OR_NETSTANDARD</DefineConstants>
@@ -274,7 +274,7 @@
   </PropertyGroup>
 
   <!-- Target Portable Profile 7 -->
-  <PropertyGroup Condition="'$(TargetFramework)'=='portable7'">
+  <PropertyGroup Condition="'$(TargetDotnetProfile)'=='portable7'">
     <DefineConstants>$(DefineConstants);FSCORE_PORTABLE_NEW</DefineConstants>
     <DefineConstants>$(DefineConstants);FSCORE_NO_STDIN</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_PORTABLE_OR_NETSTANDARD</DefineConstants>
@@ -307,7 +307,7 @@
     <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.5</TargetFrameworkVersion>    
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)'=='portable78'">
+  <PropertyGroup Condition="'$(TargetDotnetProfile)'=='portable78'">
     <DefineConstants>$(DefineConstants);FSCORE_PORTABLE_NEW</DefineConstants>
     <DefineConstants>$(DefineConstants);FSCORE_NO_STDIN</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_PORTABLE_OR_NETSTANDARD</DefineConstants>
@@ -344,7 +344,7 @@
   </PropertyGroup>
 
   <!-- Target Portable Profile 259 -->
-  <PropertyGroup Condition="'$(TargetFramework)'=='portable259'">
+  <PropertyGroup Condition="'$(TargetDotnetProfile)'=='portable259'">
     <DefineConstants>$(DefineConstants);FSCORE_PORTABLE_NEW</DefineConstants>
     <DefineConstants>$(DefineConstants);FSCORE_NO_STDIN</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_PORTABLE_OR_NETSTANDARD</DefineConstants>
@@ -382,10 +382,10 @@
 
   <!-- If building an FSharp.Core for a back version (Mono Debian source builds only), put it in a ualified directory -->
   <PropertyGroup>
-    <TargetFrameworkOutputDirectory Condition="'$(FSharpCoreBackVersion)' == ''">$(TargetFramework)</TargetFrameworkOutputDirectory>
-    <TargetFrameworkOutputDirectory Condition="'$(FSharpCoreBackVersion)' == '3.0'">fsharp30\$(TargetFramework)</TargetFrameworkOutputDirectory>
-    <TargetFrameworkOutputDirectory Condition="'$(FSharpCoreBackVersion)' == '3.1'">fsharp31\$(TargetFramework)</TargetFrameworkOutputDirectory>
-    <TargetFrameworkOutputDirectory Condition="'$(FSharpCoreBackVersion)' == '4.0'">fsharp40\$(TargetFramework)</TargetFrameworkOutputDirectory>
+    <TargetFrameworkOutputDirectory Condition="'$(FSharpCoreBackVersion)' == ''">$(TargetDotnetProfile)</TargetFrameworkOutputDirectory>
+    <TargetFrameworkOutputDirectory Condition="'$(FSharpCoreBackVersion)' == '3.0'">fsharp30\$(TargetDotnetProfile)</TargetFrameworkOutputDirectory>
+    <TargetFrameworkOutputDirectory Condition="'$(FSharpCoreBackVersion)' == '3.1'">fsharp31\$(TargetDotnetProfile)</TargetFrameworkOutputDirectory>
+    <TargetFrameworkOutputDirectory Condition="'$(FSharpCoreBackVersion)' == '4.0'">fsharp40\$(TargetDotnetProfile)</TargetFrameworkOutputDirectory>
     <IntermediateOutputPath>obj\$(TargetFrameworkOutputDirectory)\</IntermediateOutputPath>
   </PropertyGroup>
 
@@ -413,7 +413,7 @@
         <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.1.5\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
       </PropertyGroup>
     </When>
-    <When Condition="'$(BuildWith)' == '' AND ('$(TargetFramework)'=='portable47' OR '$(TargetFramework)'=='portable7' OR '$(TargetFramework)'=='portable78' OR '$(TargetFramework)'=='portable259' OR '$(TargetFramework)'=='coreclr')">
+    <When Condition="'$(BuildWith)' == '' AND ('$(TargetDotnetProfile)'=='portable47' OR '$(TargetDotnetProfile)'=='portable7' OR '$(TargetDotnetProfile)'=='portable78' OR '$(TargetDotnetProfile)'=='portable259' OR '$(TargetDotnetProfile)'=='coreclr')">
       <!-- Compiling portable/coreclr with Proto, currently always use a .NET Framework/Mono proto -->
       <PropertyGroup>
         <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFrameworkOutputDirectory)\bin</OutputPath>
@@ -459,7 +459,7 @@
   <Import Condition="'$(ProjectLanguage)' == 'FSharp'" Project="$(FSharpTargetsPath)"/>
 
   <!-- Hook up .NET Core to enable solution refresh of packages -->
-  <PropertyGroup Condition="'$(TargetFramework)'=='coreclr'">
+  <PropertyGroup Condition="'$(TargetDotnetProfile)'=='coreclr'">
 
     <!-- Implicitly needed by packageresolve.targets.  Should file a bug for a better error message here -->
     <PackagesDir>$(NUGET_PACKAGES)</PackagesDir>
@@ -475,7 +475,7 @@
          so we ignore the pre-calculation in the lock file and calculate asset applicability in the build task -->
     <NuGetIngoreLockFile>true</NuGetIngoreLockFile>
   </PropertyGroup>
-  <Import  Condition="'$(TargetFramework)'=='coreclr'" Project="..\Tools\Build.Common.Targets" />
+  <Import  Condition="'$(TargetDotnetProfile)'=='coreclr'" Project="..\Tools\Build.Common.Targets" />
 
   <PropertyGroup>
     <RootNamespace></RootNamespace>
@@ -509,7 +509,7 @@
   <Import Project="scripts\fssrgen.targets" />
   <Import Project="Microbuild.Settings.targets" Condition="'$(UseMicroBuild)' == 'true'"/>
 
-  <Target Name="dotnetrestore" BeforeTargets="Build" Condition=" '$(TargetFramework)' == 'coreclr' ">
+  <Target Name="dotnetrestore" BeforeTargets="Build" Condition=" '$(TargetDotnetProfile)' == 'coreclr' ">
    <Exec Command="$(MSBuildThisFileDirectory)..\.nuget\nuget.exe restore -PackagesDirectory $(PackagesDir) -Config $(MSBuildThisFileDirectory)..\.nuget\NuGet.Config project.json" />
   </Target>
 
