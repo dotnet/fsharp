@@ -9931,7 +9931,7 @@ and TcMethodApplication
 and TcUnnamedMethodArgs cenv env lambdaPropagationInfo tpenv args =  
     List.mapiFoldSquared (TcUnnamedMethodArg cenv env) (lambdaPropagationInfo,tpenv) args 
 
-and TcUnnamedMethodArg  cenv env  (lambdaPropagationInfo,tpenv) (i,j,CallerArg(argTy,mArg,isOpt,argExpr)) = 
+and TcUnnamedMethodArg cenv env  (lambdaPropagationInfo,tpenv) (i,j,CallerArg(argTy,mArg,isOpt,argExpr)) = 
     // Try to find the lambda propagation info for the corresponding unnamed argument at this position
     let lambdaPropagationInfoForArg = 
         [| for (unnamedInfo,_) in lambdaPropagationInfo -> 
@@ -9958,14 +9958,14 @@ and TcMethodArg  cenv env  (lambdaPropagationInfo,tpenv) (lambdaPropagationInfoF
     // Apply the F# 3.1 rule for extracting information for lambdas
     //
     // Before we check the argument, check to see if we can propagate info from a called lambda expression into the arguments of a received lambda
-    begin
-        if lambdaPropagationInfoForArg.Length > 0 then 
-            let allOverloadsAreFuncOrMismatchForThisArg = 
-                lambdaPropagationInfoForArg |> Array.forall (function ArgDoesNotMatch | CallerLambdaHasArgTypes _ -> true | NoInfo | CalledArgMatchesType _ -> false)
+    if lambdaPropagationInfoForArg.Length > 0 then 
+        let allOverloadsAreNotCalledArgMatchesForThisArg = 
+            lambdaPropagationInfoForArg 
+            |> Array.forall (function ArgDoesNotMatch | CallerLambdaHasArgTypes _ | NoInfo -> true | CalledArgMatchesType _ -> false)
 
-            if allOverloadsAreFuncOrMismatchForThisArg then 
-              let overloadsWhichAreFuncAtThisPosition = lambdaPropagationInfoForArg |> Array.choose (function CallerLambdaHasArgTypes r -> Some (List.toArray r) | _ -> None)
-              if overloadsWhichAreFuncAtThisPosition.Length > 0 then 
+        if allOverloadsAreNotCalledArgMatchesForThisArg then 
+            let overloadsWhichAreFuncAtThisPosition = lambdaPropagationInfoForArg |> Array.choose (function CallerLambdaHasArgTypes r -> Some (List.toArray r) | _ -> None)
+            if overloadsWhichAreFuncAtThisPosition.Length > 0 then 
                 let minFuncArity = overloadsWhichAreFuncAtThisPosition |> Array.minBy Array.length |> Array.length
                 let prefixOfLambdaArgsForEachOverload = overloadsWhichAreFuncAtThisPosition |> Array.map (Array.take minFuncArity)
           
@@ -9987,7 +9987,6 @@ and TcMethodArg  cenv env  (lambdaPropagationInfo,tpenv) (lambdaPropagationInfoF
                                         loop callerLambdaRangeTy (lambdaVarNum + 1)
                                 | None -> ()
                     loop argTy 0
-    end
 
     let e',tpenv = TcExpr cenv argTy env tpenv argExpr
 
@@ -10083,15 +10082,24 @@ and TcMatchPattern cenv inputTy env tpenv (pat:SynPat,optWhenExpr) =
     let m = pat.Range
     let patf',(tpenv,names,_) = TcPat WarnOnUpperCase cenv env None (ValInline.Optional,permitInferTypars,noArgOrRetAttribs,false,None,false) (tpenv,Map.empty,Set.empty) inputTy pat
     let envinner,values,vspecMap = MakeAndPublishSimpleVals cenv env m names false
-    let optWhenExpr',tpenv = Option.mapFold (TcExpr cenv cenv.g.bool_ty envinner) tpenv optWhenExpr
+    let optWhenExpr',tpenv = 
+        match optWhenExpr with
+        | Some whenExpr ->
+            let guardEnv = { envinner with eContextInfo = ContextInfo.PatternMatchGuard whenExpr.Range }
+            let whenExpr',tpenv  = TcExpr cenv cenv.g.bool_ty guardEnv tpenv whenExpr
+            Some whenExpr',tpenv
+        | None -> None,tpenv
     patf' (TcPatPhase2Input (values, true)),optWhenExpr', NameMap.range vspecMap,envinner,tpenv
 
 and TcMatchClauses cenv inputTy resultTy env tpenv clauses =
-    List.mapFold (TcMatchClause cenv inputTy resultTy env) tpenv clauses 
+    let first = ref true
+    let isFirst() = if !first then first := false; true else false
+    List.mapFold (fun clause -> TcMatchClause cenv inputTy resultTy env (isFirst()) clause) tpenv clauses
 
-and TcMatchClause cenv inputTy resultTy env tpenv (Clause(pat,optWhenExpr,e,patm,spTgt)) =
+and TcMatchClause cenv inputTy resultTy env isFirst tpenv (Clause(pat,optWhenExpr,e,patm,spTgt)) =
     let pat',optWhenExpr',vspecs,envinner,tpenv = TcMatchPattern cenv inputTy env tpenv (pat,optWhenExpr)
-    let e',tpenv = TcExprThatCanBeCtorBody cenv resultTy envinner tpenv e
+    let resultEnv = if isFirst then envinner else { envinner with eContextInfo = ContextInfo.FollowingPatternMatchClause e.Range }
+    let e',tpenv = TcExprThatCanBeCtorBody cenv resultTy resultEnv tpenv e
     TClause(pat',optWhenExpr',TTarget(vspecs, e',spTgt),patm),tpenv
 
 and TcStaticOptimizationConstraint cenv env tpenv c = 

@@ -137,6 +137,10 @@ type ContextInfo =
 | RuntimeTypeTest of bool
 /// The type equation comes from an downcast where a upcast could be used.
 | DowncastUsedInsteadOfUpcast of bool
+/// The type equation comes from a return type of a pattern match clause (not the first clause).
+| FollowingPatternMatchClause of range
+/// The type equation comes from a pattern match guard.
+| PatternMatchGuard of range
 
 exception ConstraintSolverTupleDiffLengths of DisplayEnv * TType list * TType list * range  * range 
 exception ConstraintSolverInfiniteTypes of ContextInfo * DisplayEnv * TType * TType * range * range
