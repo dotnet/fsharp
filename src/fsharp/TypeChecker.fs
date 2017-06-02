@@ -9931,7 +9931,7 @@ and TcMethodApplication
 and TcUnnamedMethodArgs cenv env lambdaPropagationInfo tpenv args =  
     List.mapiFoldSquared (TcUnnamedMethodArg cenv env) (lambdaPropagationInfo,tpenv) args 
 
-and TcUnnamedMethodArg  cenv env  (lambdaPropagationInfo,tpenv) (i,j,CallerArg(argTy,mArg,isOpt,argExpr)) = 
+and TcUnnamedMethodArg cenv env  (lambdaPropagationInfo,tpenv) (i,j,CallerArg(argTy,mArg,isOpt,argExpr)) = 
     // Try to find the lambda propagation info for the corresponding unnamed argument at this position
     let lambdaPropagationInfoForArg = 
         [| for (unnamedInfo,_) in lambdaPropagationInfo -> 
@@ -9959,11 +9959,11 @@ and TcMethodArg  cenv env  (lambdaPropagationInfo,tpenv) (lambdaPropagationInfoF
     //
     // Before we check the argument, check to see if we can propagate info from a called lambda expression into the arguments of a received lambda
     if lambdaPropagationInfoForArg.Length > 0 then 
-        let allOverloadsAreFuncOrMismatchForThisArg = 
+        let allOverloadsAreNotCalledArgMatchesForThisArg = 
             lambdaPropagationInfoForArg 
-            |> Array.forall (function ArgDoesNotMatch | CallerLambdaHasArgTypes _ -> true | NoInfo | CalledArgMatchesType _ -> false)
+            |> Array.forall (function ArgDoesNotMatch | CallerLambdaHasArgTypes _ | NoInfo -> true | CalledArgMatchesType _ -> false)
 
-        if allOverloadsAreFuncOrMismatchForThisArg then 
+        if allOverloadsAreNotCalledArgMatchesForThisArg then 
             let overloadsWhichAreFuncAtThisPosition = lambdaPropagationInfoForArg |> Array.choose (function CallerLambdaHasArgTypes r -> Some (List.toArray r) | _ -> None)
             if overloadsWhichAreFuncAtThisPosition.Length > 0 then 
                 let minFuncArity = overloadsWhichAreFuncAtThisPosition |> Array.minBy Array.length |> Array.length
