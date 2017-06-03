@@ -42,8 +42,8 @@
 
     <PropertyGroup>
       <PackageVersion>X.X.XXX</PackageVersion>
-      <PackageVersion Condition="'@(PackageNuspec)' != 'FSharp.Core.4.1.xxx.nuspec'">4.1.18</PackageVersion>
-      <PackageVersion Condition="'@(PackageNuspec)' != 'FSharp.Core.4.2.xxx.nuspec'">4.2.0</PackageVersion>
+      <PackageVersion Condition="'@(PackageNuspec)' != 'FSharp.Core.4.1.xxx.nuspec'">$(FSharpCore41Version)</PackageVersion>
+      <PackageVersion Condition="'@(PackageNuspec)' != 'FSharp.Core.4.2.xxx.nuspec'">$(FSharpCore42Version)</PackageVersion>
       <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
     </PropertyGroup>
 
