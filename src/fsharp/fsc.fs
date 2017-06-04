@@ -249,6 +249,9 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, setProcessThreadLocals,
         if not (String.IsNullOrEmpty(tcConfigB.sourceLink)) then
             error(Error(FSComp.SR.optsSourceLinkRequirePortablePDBs(), rangeCmdArgs))
 
+    if tcConfigB.deterministic && tcConfigB.debuginfo && (tcConfigB.portablePDB = false) then
+      error(Error(FSComp.SR.fscDeterministicDebugRequiresPortablePdb(), rangeCmdArgs))
+
     let inputFiles = List.rev !inputFilesRef
 
     // Check if we have a codepage from the console
