@@ -2905,7 +2905,7 @@ and newGuid (modul: ILModuleDef) =
     [| b0 m; b1 m; b2 m; b3 m; b0 m2; b1 m2; b2 m2; b3 m2; 0xa7uy; 0x45uy; 0x03uy; 0x83uy; b0 n; b1 n; b2 n; b3 n |]
 
 and deterministicGuid (modul: ILModuleDef) =
-    let n = 0
+    let n = 16909060
     let m = hash n
     let m2 = hash modul.Name
     [| b0 m; b1 m; b2 m; b3 m; b0 m2; b1 m2; b2 m2; b3 m2; 0xa7uy; 0x45uy; 0x03uy; 0x83uy; b0 n; b1 n; b2 n; b3 n |]
@@ -3868,8 +3868,9 @@ let writeBinaryAndReportMappings (outfile,
               let hMeta = sha.ComputeHash metadata
               let final = [| hCode; hData; hMeta |] |> Array.collect id |> sha.ComputeHash
 
-              // TEMP test until proper tests in
-              if metadata.[ guidStart..guidStart+3] <> [| 0uy; 0uy; 0uy; 0uy |] then failwith "Failed to find MVID"
+              // Confirm we have found the correct data and aren't corrupting the metadata
+              if metadata.[ guidStart..guidStart+3]     <> [| 4uy; 3uy; 2uy; 1uy |] then failwith "Failed to find MVID"
+              if metadata.[ guidStart+12..guidStart+15] <> [| 4uy; 3uy; 2uy; 1uy |] then failwith "Failed to find MVID"
 
               // Update MVID guid in metadata
               Array.blit final 0 metadata guidStart 16
@@ -3877,7 +3878,8 @@ let writeBinaryAndReportMappings (outfile,
               // Use last 4 bytes for timestamp - High bit set, to stop tool chains becoming confused
               let timestamp = int final.[16] ||| (int final.[17] <<< 8) ||| (int final.[18] <<< 16) ||| (int (final.[19] ||| 128uy) <<< 24) 
               writeInt32 os timestamp
-              // Update pdbData with new guid and timestamp.  // TOOD: this may need to be moved earlier, or MVID in pdb also fixed up (but difficult if compressed)
+              // Update pdbData with new guid and timestamp.  Portable and embedded PDBs don't need the ModuleID
+              // Full and PdbOnly aren't supported under deterministic builds currently, they rely on non-determinsitic Windows native code
               { pdbData with ModuleID = final.[0..15] ; Timestamp = timestamp }
             else
               writeInt32 os timestamp   // date since 1970
