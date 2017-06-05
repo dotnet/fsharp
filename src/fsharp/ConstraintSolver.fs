@@ -2003,14 +2003,19 @@ and MustUnifyInsideUndo csenv ndeep trace cxsln ty1 ty2 =
 
 and ArgsMustSubsumeOrConvertInsideUndo (csenv:ConstraintSolverEnv) ndeep trace cxsln isConstraint calledArg (CallerArg(callerArgTy,m,_,_) as callerArg) = 
     let calledArgTy = AdjustCalledArgType csenv.InfoReader isConstraint calledArg callerArg
-    SolveTypSubsumesTypWithReport csenv ndeep  m (WithTrace trace) cxsln calledArgTy callerArgTy 
+    SolveTypSubsumesTypWithReport csenv ndeep m (WithTrace trace) cxsln calledArgTy callerArgTy 
 
 and TypesMustSubsumeOrConvertInsideUndo (csenv:ConstraintSolverEnv) ndeep trace cxsln m calledArgTy callerArgTy = 
     SolveTypSubsumesTypWithReport csenv ndeep m trace cxsln calledArgTy callerArgTy 
 
 and ArgsEquivInsideUndo (csenv:ConstraintSolverEnv) isConstraint calledArg (CallerArg(callerArgTy,m,_,_) as callerArg) = 
     let calledArgTy = AdjustCalledArgType csenv.InfoReader isConstraint calledArg callerArg
-    if typeEquiv csenv.g calledArgTy callerArgTy then CompleteD else ErrorD(Error(FSComp.SR.csArgumentTypesDoNotMatch(),m))
+    if typeEquiv csenv.g calledArgTy callerArgTy then 
+        CompleteD
+    else 
+        ErrorD(Error(FSComp.SR.csArgumentTypesDoNotMatch(
+                        NicePrint.minimalStringOfType csenv.DisplayEnv calledArgTy,
+                        NicePrint.minimalStringOfType csenv.DisplayEnv callerArgTy),m))
 
 and ReportNoCandidatesError (csenv:ConstraintSolverEnv) (nUnnamedCallerArgs,nNamedCallerArgs) methodName ad (calledMethGroup:CalledMeth<_> list) isSequential =
 
