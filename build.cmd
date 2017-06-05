@@ -517,6 +517,10 @@ if exist "%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe" (
     set _msbuildexe="%ProgramFiles%\MSBuild\%VisualStudioVersion%\Bin\MSBuild.exe"
     goto :havemsbuild
 )
+if exist "%ProgramFiles(x86)%\MSBuild\14.0\Bin\MSBuild.exe" (
+    set _msbuildexe="%ProgramFiles(x86)%\MSBuild\14.0\Bin\MSBuild.exe"
+    goto :havemsbuild
+)
 echo Error: Could not find MSBuild.exe. && goto :failure
 goto :eof
 
