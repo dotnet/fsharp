@@ -51,7 +51,7 @@ echo Installing dotnet OLD VERSION OF THE cli...
 echo ==========================================
 echo This is temporary until we build using the new dotnetcli
 echo The dotnet cli is a large file it may take a few minutes ...
-echo powershell -ExecutionPolicy unrestricted -NoProfile -Command ".\dotnet-install.ps1 -InstallDir %DOTNET_PATH% -Architecture x64 -Version %DOTNET_TOOLS_VERSION% -NoPath true; exit $LastExitCode;"
+echo powershell -ExecutionPolicy unrestricted -NoProfile -Command ".\dotnet-install.ps1 -InstallDir %DOTNET_TOOLS_PATH% -Architecture x64 -Version %DOTNET_TOOLS_VERSION% -NoPath true; exit $LastExitCode;"
 powershell -ExecutionPolicy unrestricted -NoProfile -Command ".\dotnet-install.ps1 -InstallDir %DOTNET_TOOLS_PATH% -Architecture x64 -Version %DOTNET_TOOLS_VERSION% -NoPath true; exit $LastExitCode;"
 if errorlevel 1 (
    echo ERROR: Could not install dotnet cli correctly.

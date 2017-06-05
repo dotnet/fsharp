@@ -53,8 +53,8 @@
         <file src="coreclr/bin/FSharp.Build.dll"                            target="lib/netstandard1.6" />
         <file src="coreclr/bin/FSharp.Compiler.Interactive.Settings.dll"    target="lib/netstandard1.6" />
         <file src="coreclr/bin/default.win32manifest"                       target="runtimes/any/native"  />
-        <file src="coreclr/bin/Microsoft.FSharp.targets"                    target="runtimes/any/native"  />
-        <file src="coreclr/bin/Microsoft.Portable.FSharp.targets"           target="runtimes/any/native"  />
+        <file src="coreclr/bin/Microsoft.FSharp.Targets"                    target="runtimes/any/native"  />
+        <file src="coreclr/bin/Microsoft.Portable.FSharp.Targets"           target="runtimes/any/native"  />
         <file src="coreclr/bin/Microsoft.FSharp.NetSdk.targets"             target="runtimes/any/native"  />
         <file src="coreclr/bin/Microsoft.FSharp.NetSdk.props"               target="runtimes/any/native"  />
     </files>

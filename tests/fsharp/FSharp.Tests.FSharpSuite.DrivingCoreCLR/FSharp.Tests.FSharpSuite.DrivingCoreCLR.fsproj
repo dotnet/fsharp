@@ -1,12 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Import Project="$(MSBuildExtensionsPath32)\Sdks\Microsoft.NET.Sdk\Sdk\Sdk.props" Condition = " '$(TargetFramework)' == 'coreclr' " />
+
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\..\src</FSharpSourcesRoot>
     <ProjectGuid>{bda4d411-6ad9-4b3e-a3b3-07bad6bef1ed}</ProjectGuid>
     <DOTNET_PUBLISH_TEST>true</DOTNET_PUBLISH_TEST>
     <DOTNET_PUBLISH_COMPILERS>true</DOTNET_PUBLISH_COMPILERS>
   </PropertyGroup>
+
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
+
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -23,7 +28,9 @@
     <Tailcalls>false</Tailcalls>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
   </PropertyGroup>
+
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+
   <ItemGroup>
     <Compile Include="..\..\..\src\scripts\scriptlib.fsx">
       <Link>scriptlib.fsx</Link>
@@ -34,9 +41,9 @@
     </Compile>
     <Compile Include="..\single-test.fs" />
     <Compile Include="..\tests.fs" />
-    <Compile Include="Program.fs" Condition="'$(TargetFramework)' == 'coreclr'" />
+    <Compile Include="Program.fs" Condition="'$(TargetDotnetProfile)' == 'coreclr'" />
   </ItemGroup>
-  <ItemGroup  Condition=" '$(TargetFramework)' != 'coreclr' ">
+  <ItemGroup  Condition=" '$(TargetDotnetProfile)' != 'coreclr' ">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -54,4 +61,15 @@
       <Name>FSharp.Core</Name>
     </ProjectReference>
   </ItemGroup>
+
+  <ItemGroup  Condition=" '$(TargetFramework)' == 'coreclr' ">
+    <PackageReference Include="nunit" Version="4.2.0-*" />
+    <PackageReference Include="nunitlite" Version="4.2.0" />
+    <PackageReference Include="FSharp.Core" Version="4.2.0" />
+    <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
+  </ItemGroup>
+
+  <Import Project="$(MSBuildExtensionsPath32)\Sdks\Microsoft.NET.Sdk\Sdk\Sdk.targets" Condition = " '$(TargetFramework)' == 'coreclr' " />
+
 </Project>
+
