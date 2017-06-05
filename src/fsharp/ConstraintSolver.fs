@@ -1894,15 +1894,17 @@ and CanMemberSigsMatchUpToCheck
     // Check all the argument types. 
 
     if calledObjArgTys.Length <> callerObjArgTys.Length then 
-        if (calledObjArgTys.Length <> 0) then
+        if calledObjArgTys.Length <> 0 then
             ErrorD(Error (FSComp.SR.csMemberIsNotStatic(minfo.LogicalName),m))
         else
             ErrorD(Error (FSComp.SR.csMemberIsNotInstance(minfo.LogicalName),m))
     else
         Iterate2D subsumeTypes calledObjArgTys callerObjArgTys ++ (fun () -> 
         (calledMeth.ArgSets |> IterateD (fun argSet -> 
-            if argSet.UnnamedCalledArgs.Length <> argSet.UnnamedCallerArgs.Length then ErrorD(Error(FSComp.SR.csArgumentLengthMismatch(),m)) else
-            Iterate2D subsumeArg argSet.UnnamedCalledArgs argSet.UnnamedCallerArgs)) ++ (fun () -> 
+            if argSet.UnnamedCalledArgs.Length <> argSet.UnnamedCallerArgs.Length then
+                ErrorD(Error(FSComp.SR.csArgumentLengthMismatch(argSet.UnnamedCalledArgs.Length, argSet.UnnamedCallerArgs.Length),m))
+            else
+                Iterate2D subsumeArg argSet.UnnamedCalledArgs argSet.UnnamedCallerArgs)) ++ (fun () -> 
         (calledMeth.ParamArrayCalledArgOpt |> OptionD (fun calledArg ->
             if isArray1DTy g calledArg.CalledArgumentType then 
                 let paramArrayElemTy = destArrayTy g calledArg.CalledArgumentType
