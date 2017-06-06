@@ -34,7 +34,7 @@
   <Target Name="Rebuild"  DependsOnTargets="$(nugetpackfsharpcore)" />
   <Target Name="Clean"    DependsOnTargets="CleanVersionFile" />
 
-  <Target Name="nugetpack"
+  <Target Name="nugetpackfsharpcore"
           DependsOnTargets="CreateOrUpdateBuildVersionFile"
           AfterTargets="Build"
           Inputs="@(PackageNuspec)" 
