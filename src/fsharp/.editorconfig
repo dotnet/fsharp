@@ -1,0 +1,6 @@
+root = true
+
+[*.fs]
+end_of_line = lf
+insert_final_newline = false
+trim_trailing_whitespace = true
