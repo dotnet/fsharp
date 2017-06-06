@@ -813,6 +813,7 @@ module CoreTests =
 
         exec cfg ("." ++ "test.exe") ""
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let ``libtest-FSI_STDIN`` () = singleTestBuildAndRun "core/libtest" FSI_STDIN
 
@@ -824,6 +825,7 @@ module CoreTests =
 
     [<Test>]
     let ``libtest-AS_DLL`` () = singleTestBuildAndRun "core/libtest" AS_DLL
+#endif
 
     [<Test>]
     let ``libtest-FSI_BASIC`` () = singleTestBuildAndRun "core/libtest" FSI_BASIC
@@ -831,8 +833,10 @@ module CoreTests =
     [<Test>]
     let ``letrec (mutrec variations part two) FSI_BASIC`` () = singleTestBuildAndRun "core/letrec-mutrec2" FSI_BASIC
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
     let recordResolution () = singleTestBuildAndRun "core/recordResolution" FSC_OPT_PLUS_DEBUG
+#endif
 
     [<Test>]
     let ``load-script`` () = 
@@ -2294,6 +2298,7 @@ namespace CST.RI.Anshun
 
         fileVersionInfo.ProductVersion |> Assert.areEqual expected
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
 module GeneratedSignatureTests =
     [<Test>]
     let ``members-basics-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/members/basics" GENERATED_SIGNATURE
@@ -2312,4 +2317,5 @@ module GeneratedSignatureTests =
 
     [<Test>]
     let ``measures-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/measures" GENERATED_SIGNATURE
+#endif
 #endif
