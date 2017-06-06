@@ -82,6 +82,16 @@
     <Compile Include="Commands\HelpContextService.fs" />
     <Compile Include="Commands\FsiCommandService.fs" />
     <Compile Include="Commands\XmlDocCommandService.fs" />
+    <Compile Include="Commands\CodeFormat\Utils.fs" />
+    <Compile Include="Commands\CodeFormat\TokenMatcher.fs" />
+    <Compile Include="Commands\CodeFormat\FormatConfig.fs" />
+    <Compile Include="Commands\CodeFormat\SourceParser.fs" />
+    <Compile Include="Commands\CodeFormat\SourceTransformer.fs" />
+    <Compile Include="Commands\CodeFormat\CodePrinter.fs" />
+    <Compile Include="Commands\CodeFormat\CodeFormatterImpl.fs" />
+    <Compile Include="Commands\CodeFormat\CodeFormatter.fsi" />
+    <Compile Include="Commands\CodeFormat\CodeFormatter.fs" />
+    <Compile Include="Commands\CodeFormat\FormatCommandHandler.fs" />
     <Compile Include="CodeFix\AddNewKeywordToDisposableConstructorInvocation.fs" />
     <Compile Include="CodeFix\AddOpenCodeFixProvider.fs" />
     <Compile Include="CodeFix\ProposeUppercaseLabel.fs" />
