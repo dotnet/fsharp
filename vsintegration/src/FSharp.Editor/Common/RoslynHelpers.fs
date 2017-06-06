@@ -21,8 +21,8 @@ module internal RoslynHelpers =
 
     let FSharpRangeToTextSpan(sourceText: SourceText, range: range) =
         // Roslyn TextLineCollection is zero-based, F# range lines are one-based
-        let startPosition = sourceText.Lines.[range.StartLine - 1].Start + range.StartColumn
-        let endPosition = sourceText.Lines.[range.EndLine - 1].Start + range.EndColumn
+        let startPosition = sourceText.Lines.[max 0 (range.StartLine - 1)].Start + range.StartColumn
+        let endPosition = sourceText.Lines.[min (range.EndLine - 1) (sourceText.Lines.Count - 1)].Start + range.EndColumn
         TextSpan(startPosition, endPosition - startPosition)
 
     let TryFSharpRangeToTextSpan(sourceText: SourceText, range: range) : TextSpan option =
