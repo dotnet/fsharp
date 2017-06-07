@@ -90,10 +90,10 @@
         <file src="portable78/bin/FSharp.Core.optdata"    target="lib/portable-net45%2Bnetcore45%2Bwp8/" />
         <file src="portable78/bin/FSharp.Core.xml"        target="lib/portable-net45%2Bnetcore45%2Bwp8/" />
 
-        <file src="portable259/bin/FSharp.Core.dll"       target="lib/profile259/" />
-        <file src="portable259/bin/FSharp.Core.sigdata"   target="lib/profile259/" />
-        <file src="portable259/bin/FSharp.Core.optdata"   target="lib/profile259/" />
-        <file src="portable259/bin/FSharp.Core.xml"       target="lib/profile259/" />
+        <file src="portable259/bin/FSharp.Core.dll"       target="lib/portable-net45+netcore45+wpa81+wp8/" />
+        <file src="portable259/bin/FSharp.Core.sigdata"   target="lib/portable-net45+netcore45+wpa81+wp8/" />
+        <file src="portable259/bin/FSharp.Core.optdata"   target="lib/portable-net45+netcore45+wpa81+wp8/" />
+        <file src="portable259/bin/FSharp.Core.xml"       target="lib/portable-net45+netcore45+wpa81+wp8/" />
 
         <file src="portable47/bin/FSharp.Core.dll"        target="lib/portable-net45%2Bsl5%2Bnetcore45/" />
         <file src="portable47/bin/FSharp.Core.sigdata"    target="lib/portable-net45%2Bsl5%2Bnetcore45/" />
