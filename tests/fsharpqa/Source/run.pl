@@ -160,7 +160,7 @@ if (exists($ENV{PRECMD})) {
   # and it will expanded into $FSC_PIPE before invoking it
   $_ = $ENV{PRECMD};
   s/^\$FSC_PIPE/$FSC_PIPE/;
-  s/^\$FSI_PIPE/$FSI_PIPE/;
+  s/\$FSI_PIPE/$FSI_PIPE/g;
   s/^\$FSI32_PIPE/$FSI32_PIPE/;
   s/\$ISCFLAGS/$ISCFLAGS/;
   s/^\$CSC_PIPE/$CSC_PIPE/;

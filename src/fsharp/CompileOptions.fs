@@ -420,7 +420,10 @@ let SetOptimizeSwitch (tcConfigB : TcConfigBuilder) switch =
 
 let SetTailcallSwitch (tcConfigB : TcConfigBuilder) switch =
     tcConfigB.emitTailcalls <- (switch = OptionSwitch.On)
-        
+
+let SetDeterministicSwitch (tcConfigB : TcConfigBuilder) switch =
+    tcConfigB.deterministic <- (switch = OptionSwitch.On)
+
 let jitoptimizeSwitch (tcConfigB : TcConfigBuilder) switch =
     tcConfigB.optSettings <- { tcConfigB.optSettings with jitOptUser = Some (switch = OptionSwitch.On) }
     
@@ -676,6 +679,8 @@ let codeGenerationFlags isFsi (tcConfigB : TcConfigBuilder) =
                             Some (FSComp.SR.optsOptimize()))
          CompilerOption("tailcalls", tagNone, OptionSwitch (SetTailcallSwitch tcConfigB), None,
                             Some (FSComp.SR.optsTailcalls()))
+         CompilerOption("deterministic", tagNone, OptionSwitch (SetDeterministicSwitch tcConfigB), None,
+                            Some (FSComp.SR.optsDeterministic()))
          CompilerOption("crossoptimize", tagNone, OptionSwitch (crossOptimizeSwitch tcConfigB), None,
                             Some (FSComp.SR.optsCrossoptimize()))
         ]

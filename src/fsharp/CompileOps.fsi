@@ -342,6 +342,7 @@ type TcConfigBuilder =
       mutable optsOn        : bool 
       mutable optSettings   : Optimizer.OptimizationSettings 
       mutable emitTailcalls : bool
+      mutable deterministic : bool
 #if PREFERRED_UI_LANG
       mutable preferredUiLang: string option
 #endif
@@ -494,6 +495,7 @@ type TcConfig =
     member doFinalSimplify : bool
     member optSettings   : Optimizer.OptimizationSettings 
     member emitTailcalls : bool
+    member deterministic : bool
 #if PREFERRED_UI_LANG
     member preferredUiLang: string option
 #else
