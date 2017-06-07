@@ -20,12 +20,6 @@
   </PropertyGroup>
   <!-- References -->
   <Import Project="$(FSharpSourcesRoot)\.nuget\NuGet.targets" Condition="Exists('$(FSharpSourcesRoot)\.nuget\NuGet.targets')" />
-  <!-- Nuget packaging configuration -->
-  <PropertyGroup>
-    <PackageVersion Condition="'$(PreReleaseLabel)' == ''">$(NuGeReleaseVersion)</PackageVersion>
-    <PackageVersion Condition="'$(PackageVersionMinor)' != ''">$(PackageVersionMajor)-$(PackageVersionMinor)</PackageVersion>
-    <PackageVersion Condition="'$(PackageVersionMinor)' == ''">$(NuGetPerBuildPreReleaseVersion)-0</PackageVersion>
-  </PropertyGroup>
   <Target Name="CopyToBuiltBin" BeforeTargets="BuiltProjectOutputGroup" AfterTargets="CoreCompile">
     <ItemGroup>
       <BuiltProjectOutputGroupKeyOutput Include="$(FSharpSourcesRoot)\..\$(Configuration)\net40\bin\Microsoft.Build.Framework.dll" />
@@ -61,7 +55,7 @@
       <HasLceComments>false</HasLceComments>
       <InProject>false</InProject>
     </FilesToLocalize>
-    <PackageNuspec Include="FSharp.Compiler.Private.netcore.nuspec" Condition="'$(TargetFramework)' == 'coreclr'" />
+    <PackageNuspec Include="FSharp.Compiler.Private.netcore.nuspec" Condition="'$(TargetDotnetProfile)' == 'coreclr'" />
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Private.dll.fs">
       <Link>assemblyinfo.FSharp.Compiler.Private.dll.fs</Link>
     </Compile>
@@ -226,7 +220,7 @@
     <Compile Include="..\..\absil\ilmorph.fs">
       <Link>AbsIL\ilmorph.fs</Link>
     </Compile>
-    <Compile Include="..\..\absil\ilsign.fs" Condition=" '$(TargetFramework)'=='coreclr'">
+    <Compile Include="..\..\absil\ilsign.fs" Condition=" '$(TargetDotnetProfile)'=='coreclr'">
       <Link>AbsIL\ilsign.fs</Link>
     </Compile>
     <Compile Include="..\..\absil\ilsupp.fsi">
@@ -632,7 +626,7 @@
       <Link>InteractiveSession\fsi.fs</Link>
     </Compile>
 
-    <Compile Include="InternalsVisibleTo.fs" Condition="'$(TargetFramework)' != 'coreclr'">
+    <Compile Include="InternalsVisibleTo.fs" Condition="'$(TargetDotnetProfile)' != 'coreclr'">
       <Link>Misc/InternalsVisibleTo.fs</Link>
     </Compile>
     <Compile Include="..\MSBuildReferenceResolver.fs">
@@ -642,12 +636,11 @@
     <Compile Include="..\LegacyHostedCompilerForTesting.fs">
       <Link>Misc/LegacyHostedCompilerForTesting.fs</Link>
     </Compile>
-    
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
+  <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">
     <None Include="project.json" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' != 'coreclr'">
+  <ItemGroup Condition="'$(TargetDotnetProfile)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -666,13 +659,13 @@
       <HintPath>..\..\..\packages\System.Collections.Immutable.1.2.0\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
     </Reference>
     <Reference Include="System.ValueTuple">
-      <HintPath>..\..\..\packages\System.ValueTuple.4.3.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+      <HintPath>..\..\..\packages\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
       <Private>true</Private>
     </Reference>
   </ItemGroup>
   <Choose>
     <When Condition="$(MonoPackaging) != 'true'">
-      <ItemGroup Condition="'$(TargetFramework)' != 'coreclr'">
+      <ItemGroup Condition="'$(TargetDotnetProfile)' != 'coreclr'">
         <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
           <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>
         </Reference>

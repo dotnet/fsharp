@@ -52,7 +52,8 @@ type internal FSharpBreakpointResolutionService
                 let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! range = FSharpBreakpointResolutionService.GetBreakpointLocation(checkerProvider.Checker, sourceText, document.Name, textSpan, options)
-                return BreakpointResolutionResult.CreateSpanResult(document, RoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
+                let! span = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range)
+                return BreakpointResolutionResult.CreateSpanResult(document, span)
             } 
             |> Async.map Option.toObj 
             |> RoslynHelpers.StartAsyncAsTask cancellationToken

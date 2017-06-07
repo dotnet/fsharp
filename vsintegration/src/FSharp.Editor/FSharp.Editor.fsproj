@@ -91,6 +91,7 @@
     <Compile Include="CodeFix\SimplifyName.fs" />
     <Compile Include="CodeFix\RemoveUnusedOpens.fs" />
     <Compile Include="CodeFix\MissingReferenceCodeFixProvider.fs" />
+    <Compile Include="CodeFix\FixIndexerAccess.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
@@ -143,11 +144,11 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="EnvDTE80">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\EnvDTE80.8.0.1\lib\net10\EnvDTE.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\EnvDTE80.8.0.1\lib\net10\EnvDTE80.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Threading">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Threading.15.3.20\lib\net45\Microsoft.VisualStudio.Threading.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Threading.$(MicrosoftVisualStudioThreadingVersion)\lib\net45\Microsoft.VisualStudio.Threading.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Editor, Version=$(RoslynVSBinariesVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Editor.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Editor.dll</HintPath>

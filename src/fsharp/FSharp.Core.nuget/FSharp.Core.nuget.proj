@@ -1,0 +1,56 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
+    <PreReleaseLabel>rc</PreReleaseLabel>
+    <BuildVersionFilePath Condition="'$(BuildVersionFilePath)'==''" >obj\BuildVersionFile.props</BuildVersionFilePath>
+  </PropertyGroup>
+
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
+
+  <PropertyGroup>
+    <PackageLicenceUrl Condition="'$(PackageLicenceUrl)' == ''">https://github.com/Microsoft/visualfsharp/blob/master/License.txt</PackageLicenceUrl>
+    <PackageProjectUrl Condition="'$(PackageProjectUrl)' == ''">https://github.com/Microsoft/visualfsharp</PackageProjectUrl>
+    <PackageAuthors    Condition="'$(PackageAuthors)' == ''"   >https://github.com/Microsoft/visualfsharp Authors</PackageAuthors>
+    <PackageTags       Condition="'$(PackageTags)' == ''"      >Visual F# Compiler FSharp coreclr functional programming</PackageTags>
+    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\artifacts</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageNuspec Include="FSharp.Core.4.2.xxx.nuspec" />
+    <PackageNuspec Include="FSharp.Core.4.1.xxx.nuspec" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj">
+      <Name>FSharp.Core</Name>
+      <Project>{C94C257C-3C0A-4858-B5D8-D746498D1F08}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
+
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+
+  <Target Name="Build" Outputs="$(TargetPath)" DependsOnTargets="$(nugetpackfsharpcore)" />
+  <Target Name="Rebuild"  DependsOnTargets="$(nugetpackfsharpcore)" />
+  <Target Name="Clean"    DependsOnTargets="CleanVersionFile" />
+
+  <Target Name="nugetpackfsharpcore"
+          DependsOnTargets="CreateOrUpdateBuildVersionFile"
+          AfterTargets="Build"
+          Inputs="@(PackageNuspec)" 
+          Outputs='$(FSharpSourcesRoot)\$(Configuration)\artifacts\$(PackageVersion)\"%(PackageNuspec.Filename)).nupkg'>
+
+    <PropertyGroup>
+      <PackageVersion>X.X.XXX</PackageVersion>
+      <PackageVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.4.1.xxx.nuspec'">$(FSharpCore41Version)</PackageVersion>
+      <PackageVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.4.2.xxx.nuspec'">$(FSharpCore42Version)</PackageVersion>
+      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
+    </PropertyGroup>
+
+    <MakeDir Directories="$(FSharpSourcesRoot)\..\artifacts\$(PackageVersion)" />
+    <MakeDir Directories="$(FSharpSourcesRoot)\..\$(Configuration)\artifacts\$(PackageVersion)" />
+    <Exec Command='$(FSharpSourcesRoot)\..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(FSharpSourcesRoot)\..\$(Configuration) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot)\..\artifacts\$(PackageVersion)' />
+    <Exec Command='$(FSharpSourcesRoot)\..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(FSharpSourcesRoot)\..\$(Configuration) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot)\..\$(Configuration)\artifacts\$(PackageVersion)' />
+  </Target>
+
+</Project>

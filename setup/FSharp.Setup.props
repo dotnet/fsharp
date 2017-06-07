@@ -19,14 +19,14 @@
     </PropertyGroup>
     
     <PropertyGroup>
-        <TargetFramework Condition=" '$(TargetFramework)' == '' ">net40</TargetFramework>
+        <TargetDotnetProfile Condition=" '$(TargetDotnetProfile)' == '' ">net40</TargetDotnetProfile>
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     </PropertyGroup>
 
     <PropertyGroup>
         <BinariesDir>$(SetupRootFolder)\..\$(Configuration)</BinariesDir>
-        <VsixBuildLocation>$(BinariesDir)\$(TargetFramework)\bin</VsixBuildLocation>
+        <VsixBuildLocation>$(BinariesDir)\$(TargetDotnetProfile)\bin</VsixBuildLocation>
         <InsertionDir>$(BinariesDir)\insertion</InsertionDir>
         <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
         <OutputPath Condition="'$(Lang)' == ''">$(BinariesDir)\setup</OutputPath>

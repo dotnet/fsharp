@@ -23,75 +23,75 @@ xamarinmacenabled := @XAMARINMACENABLED@
 
 monodir := ${libdir}mono
 
-TargetFramework = net40
+TargetDotnetProfile = net40
 CONFIG = release
 Configuration = Release
 DISTVERSION = 201011
 
 # Version number mappings for various versions of FSharp.Core
 
-ifeq (x-$(TargetFramework)-,x-net40-)
+ifeq (x-$(TargetDotnetProfile)-,x-net40-)
 
 ifeq (x-$(FSharpCoreBackVersion)-,x--)
 VERSION = 4.4.1.0
 PKGINSTALL = yes
 REFASSEMPATH = .NETFramework/v4.0
-outsuffix = $(TargetFramework)
+outsuffix = $(TargetDotnetProfile)
 endif
 
 ifeq (x-$(FSharpCoreBackVersion)-,x-3.0-)
 VERSION = 4.3.0.0
 REFASSEMPATH = .NETFramework/v4.0
-outsuffix = fsharp30/$(TargetFramework)
+outsuffix = fsharp30/$(TargetDotnetProfile)
 endif
 
 ifeq (x-$(FSharpCoreBackVersion)-,x-3.1-)
 VERSION = 4.3.1.0
 REFASSEMPATH = .NETFramework/v4.0
-outsuffix = fsharp31/$(TargetFramework)
+outsuffix = fsharp31/$(TargetDotnetProfile)
 endif
 
 ifeq (x-$(FSharpCoreBackVersion)-,x-4.0-)
 VERSION = 4.4.0.0
 REFASSEMPATH = .NETFramework/v4.0
-outsuffix = fsharp40/$(TargetFramework)
+outsuffix = fsharp40/$(TargetDotnetProfile)
 endif
 
 endif
 
-ifeq (x-$(TargetFramework)-,x-monoandroid10+monotouch10+xamarinios10-)
+ifeq (x-$(TargetDotnetProfile)-,x-monoandroid10+monotouch10+xamarinios10-)
 VERSION = 3.98.41.0
-outsuffix = $(TargetFramework)
+outsuffix = $(TargetDotnetProfile)
 endif
 
 
-ifeq (x-$(TargetFramework)-,x-xamarinmacmobile-)
+ifeq (x-$(TargetDotnetProfile)-,x-xamarinmacmobile-)
 VERSION = 3.99.41.0
-outsuffix = $(TargetFramework)
+outsuffix = $(TargetDotnetProfile)
 endif
 
-ifeq (x-$(TargetFramework)-,x-portable47-)
+ifeq (x-$(TargetDotnetProfile)-,x-portable47-)
 VERSION = 3.47.41.0
 PCLPATH = .NETPortable
-outsuffix = $(TargetFramework)
+outsuffix = $(TargetDotnetProfile)
 endif
 
-ifeq (x-$(TargetFramework)-,x-portable7-)
+ifeq (x-$(TargetDotnetProfile)-,x-portable7-)
 VERSION = 3.7.41.0
 PCLPATH = .NETCore
-outsuffix = $(TargetFramework)
+outsuffix = $(TargetDotnetProfile)
 endif
 
-ifeq (x-$(TargetFramework)-,x-portable78-)
+ifeq (x-$(TargetDotnetProfile)-,x-portable78-)
 VERSION = 3.78.41.0
 PCLPATH = .NETCore
-outsuffix = $(TargetFramework)
+outsuffix = $(TargetDotnetProfile)
 endif
 
-ifeq (x-$(TargetFramework)-,x-portable259-)
+ifeq (x-$(TargetDotnetProfile)-,x-portable259-)
 VERSION = 3.259.41.0
 PCLPATH = .NETCore
-outsuffix = $(TargetFramework)
+outsuffix = $(TargetDotnetProfile)
 endif
 
 

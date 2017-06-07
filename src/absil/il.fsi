@@ -854,6 +854,7 @@ type ILAttribute =
 
 [<NoEquality; NoComparison; Sealed>]
 type ILAttributes =
+    member AsArray : ILAttribute []
     member AsList : ILAttribute list
 
 /// Method parameters and return values.

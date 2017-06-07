@@ -117,6 +117,8 @@ let FreshenMethInfo m (minfo:MethInfo) =
 type ContextInfo =
 /// No context was given.
 | NoContext
+/// The type equation comes from an IF expression.
+| IfExpression of range
 /// The type equation comes from an omitted else branch.
 | OmittedElseBranch of range
 /// The type equation comes from a type check of the result of an else branch.
@@ -125,6 +127,8 @@ type ContextInfo =
 | RecordFields
 /// The type equation comes from the verification of a tuple in record fields.
 | TupleInRecordFields
+/// The type equation comes from a list or array constructor
+| CollectionElement of bool * range
 /// The type equation comes from a return in a computation expression.
 | ReturnInComputationExpression
 /// The type equation comes from a yield in a computation expression.
@@ -133,6 +137,10 @@ type ContextInfo =
 | RuntimeTypeTest of bool
 /// The type equation comes from an downcast where a upcast could be used.
 | DowncastUsedInsteadOfUpcast of bool
+/// The type equation comes from a return type of a pattern match clause (not the first clause).
+| FollowingPatternMatchClause of range
+/// The type equation comes from a pattern match guard.
+| PatternMatchGuard of range
 
 exception ConstraintSolverTupleDiffLengths of DisplayEnv * TType list * TType list * range  * range 
 exception ConstraintSolverInfiniteTypes of ContextInfo * DisplayEnv * TType * TType * range * range
@@ -221,19 +229,19 @@ let rec occursCheck g un ty =
 // Predicates on types
 //------------------------------------------------------------------------- 
 
-let rec isNativeIntegerTy  g ty =
+let rec isNativeIntegerTy g ty =
     typeEquivAux EraseMeasures g g.nativeint_ty ty || 
     typeEquivAux EraseMeasures g g.unativeint_ty ty ||
     (isEnumTy g ty && isNativeIntegerTy g (underlyingTypeOfEnumTy g ty))
 
-let isSignedIntegerTy  g ty =
+let isSignedIntegerTy g ty =
     typeEquivAux EraseMeasures g g.sbyte_ty ty || 
     typeEquivAux EraseMeasures g g.int16_ty ty || 
     typeEquivAux EraseMeasures g g.int32_ty ty || 
     typeEquivAux EraseMeasures g g.nativeint_ty ty || 
     typeEquivAux EraseMeasures g g.int64_ty ty 
 
-let isUnsignedIntegerTy  g ty =
+let isUnsignedIntegerTy g ty =
     typeEquivAux EraseMeasures g g.byte_ty ty || 
     typeEquivAux EraseMeasures g g.uint16_ty ty || 
     typeEquivAux EraseMeasures g g.uint32_ty ty || 
@@ -767,10 +775,10 @@ and SolveTypEqualsTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace: OptionalTrace
 
     match sty1, sty2 with 
     // type vars inside forall-types may be alpha-equivalent 
-    | TType_var tp1, TType_var tp2 when  typarEq tp1 tp2 || (aenv.EquivTypars.ContainsKey tp1  && typeEquiv g aenv.EquivTypars.[tp1] ty2) -> CompleteD
+    | TType_var tp1, TType_var tp2 when typarEq tp1 tp2 || (aenv.EquivTypars.ContainsKey tp1 && typeEquiv g aenv.EquivTypars.[tp1] ty2) -> CompleteD
 
     | TType_var tp1, TType_var tp2 when PreferUnifyTypar tp1 tp2 -> SolveTyparEqualsTyp csenv ndeep m2 trace sty1 ty2
-    | TType_var tp1, TType_var tp2 when PreferUnifyTypar tp2 tp1 && not csenv.MatchingOnly -> SolveTyparEqualsTyp csenv ndeep m2 trace sty2 ty1
+    | TType_var tp1, TType_var tp2 when not csenv.MatchingOnly && PreferUnifyTypar tp2 tp1 -> SolveTyparEqualsTyp csenv ndeep m2 trace sty2 ty1
 
     | TType_var r, _ when (r.Rigidity <> TyparRigidity.Rigid) -> SolveTyparEqualsTyp csenv ndeep m2 trace sty1 ty2
     | _, TType_var r when (r.Rigidity <> TyparRigidity.Rigid) && not csenv.MatchingOnly -> SolveTyparEqualsTyp csenv ndeep m2 trace sty2 ty1
@@ -1831,7 +1839,7 @@ and SolveTypRequiresDefaultConstructor (csenv:ConstraintSolverEnv) ndeep m2 trac
             CompleteD
         else
             if GetIntrinsicConstructorInfosOfType csenv.InfoReader m ty 
-               |> List.exists (fun x -> IsMethInfoAccessible amap m AccessibleFromEverywhere x && x.IsNullary)
+               |> List.exists (fun x -> x.IsNullary && IsMethInfoAccessible amap m AccessibleFromEverywhere x)
             then 
                 match tryDestAppTy g ty with
                 | Some tcref when HasFSharpAttribute g g.attrib_AbstractClassAttribute tcref.Attribs ->
@@ -1982,8 +1990,7 @@ and ArgsMustSubsumeOrConvert
     let calledArgTy = AdjustCalledArgType csenv.InfoReader isConstraint calledArg callerArg    
     SolveTypSubsumesTypWithReport csenv ndeep m trace cxsln calledArgTy callerArg.Type ++ (fun () -> 
 
-    if calledArg.IsParamArray && isArray1DTy g calledArgTy && not (isArray1DTy g callerArg.Type)
-    then 
+    if calledArg.IsParamArray && isArray1DTy g calledArgTy && not (isArray1DTy g callerArg.Type) then 
         ErrorD(Error(FSComp.SR.csMethodExpectsParams(),m))
     else
         CompleteD)
@@ -2655,7 +2662,7 @@ let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:Trait
                 | true, false, 2 -> 
                         // If we resolve to an instance field on a struct and we haven't yet taken 
                         // the address of the object then go do that 
-                        if rfref.Tycon.IsStructOrEnumTycon  && not (isByrefTy g (tyOfExpr g argExprs.[0])) then 
+                        if rfref.Tycon.IsStructOrEnumTycon && not (isByrefTy g (tyOfExpr g argExprs.[0])) then 
                             let h = List.head argExprs
                             let wrap,h' = mkExprAddrOfExpr g true false DefinitelyMutates h None m 
                             Some (wrap (mkRecdFieldSetViaExprAddr (h', rfref, tinst, argExprs.[1], m)))
@@ -2664,7 +2671,7 @@ let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:Trait
                 | false, true, 0 -> 
                         Some (mkStaticRecdFieldGet (rfref, tinst, m))
                 | false, false, 1 -> 
-                        if rfref.Tycon.IsStructOrEnumTycon  && isByrefTy g (tyOfExpr g argExprs.[0]) then 
+                        if rfref.Tycon.IsStructOrEnumTycon && isByrefTy g (tyOfExpr g argExprs.[0]) then 
                             Some (mkRecdFieldGetViaExprAddr (argExprs.[0], rfref, tinst, m))
                         else 
                             Some (mkRecdFieldGet g (argExprs.[0], rfref, tinst, m))

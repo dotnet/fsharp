@@ -18,17 +18,17 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <FX_NO_LOADER>true</FX_NO_LOADER>
     <OtherFlags>$(OtherFlags) --warnon:1182 --compiling-fslib --maxerrors:20   --extraoptimizationloops:1 </OtherFlags>
-    <OtherFlags Condition=" '$(TargetFramework)'=='net40'">$(OtherFlags)       --compiling-fslib-40</OtherFlags>
-    <OtherFlags Condition=" '$(TargetFramework)'=='coreclr'">$(OtherFlags)     --compiling-fslib-40</OtherFlags>
-    <OtherFlags Condition=" '$(TargetFramework)'=='portable7'">$(OtherFlags)   --compiling-fslib-40</OtherFlags>
-    <OtherFlags Condition=" '$(TargetFramework)'=='portable78'">$(OtherFlags)  --compiling-fslib-40 --compiling-fslib-nobigint</OtherFlags>
-    <OtherFlags Condition=" '$(TargetFramework)'=='portable259'">$(OtherFlags) --compiling-fslib-40 --compiling-fslib-nobigint</OtherFlags>
+    <OtherFlags Condition=" '$(TargetDotnetProfile)'=='net40'">$(OtherFlags)       --compiling-fslib-40</OtherFlags>
+    <OtherFlags Condition=" '$(TargetDotnetProfile)'=='coreclr'">$(OtherFlags)     --compiling-fslib-40</OtherFlags>
+    <OtherFlags Condition=" '$(TargetDotnetProfile)'=='portable7'">$(OtherFlags)   --compiling-fslib-40</OtherFlags>
+    <OtherFlags Condition=" '$(TargetDotnetProfile)'=='portable78'">$(OtherFlags)  --compiling-fslib-40 --compiling-fslib-nobigint</OtherFlags>
+    <OtherFlags Condition=" '$(TargetDotnetProfile)'=='portable259'">$(OtherFlags) --compiling-fslib-40 --compiling-fslib-nobigint</OtherFlags>
   </PropertyGroup>
 
   <!-- Nuget packaging configuration -->
   <ItemGroup>
-    <PackageNuspec Include="FSharp.Core.netcore.nuspec" Condition="'$(TargetFramework)' == 'coreclr'" />
-    <None Include="FSharp.Core.runtimeconfig.json"      Condition="'$(TargetFramework)' == 'coreclr'" ><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></None>
+    <PackageNuspec Include="FSharp.Core.netcore.nuspec" Condition="'$(TargetDotnetProfile)' == 'coreclr'" />
+    <None Include="FSharp.Core.runtimeconfig.json"      Condition="'$(TargetDotnetProfile)' == 'coreclr'" ><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></None>
   </ItemGroup>
   <PropertyGroup>
     <PackageVersion    Condition="'$(PreReleaseLabel)' == ''">$(NuGeReleaseVersion)</PackageVersion>
@@ -232,26 +232,26 @@
       <Link>assemblyinfo.FSharp.Core.dll.fs</Link>
     </Compile>
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' != 'portable7' and '$(TargetFramework)' != 'coreclr'">
+  <ItemGroup Condition="'$(TargetDotnetProfile)' != 'portable7' and '$(TargetDotnetProfile)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
-    <Reference Include="System.Numerics" Condition="'$(TargetFramework)' == 'net40' OR 
-                                                    '$(TargetFramework)' == 'monoandroid10+monotouch10+xamarinios10' OR
-                                                    '$(TargetFramework)' == 'xamarinmacmobile'" >
+    <Reference Include="System.Numerics" Condition="'$(TargetDotnetProfile)' == 'net40' OR 
+                                                    '$(TargetDotnetProfile)' == 'monoandroid10+monotouch10+xamarinios10' OR
+                                                    '$(TargetDotnetProfile)' == 'xamarinmacmobile'" >
       <Private>false</Private>
     </Reference>
-	<Reference Include="System.Net" Condition="'$(TargetFramework)' == 'portable47' OR 
-                                               '$(TargetFramework)' == 'portable7'" >
+	<Reference Include="System.Net" Condition="'$(TargetDotnetProfile)' == 'portable47' OR 
+                                               '$(TargetDotnetProfile)' == 'portable7'" >
       <Private>false</Private>
     </Reference>
-    <Reference Include="System.Core" Condition="'$(TargetFramework)' == 'monoandroid10+monotouch10+xamarinios10' OR 
-                                                '$(TargetFramework)' == 'portable47' OR 
-                                                '$(TargetFramework)' == 'portable7' OR
-                                                '$(TargetFramework)' == 'xamarinmacmobile'" >
+    <Reference Include="System.Core" Condition="'$(TargetDotnetProfile)' == 'monoandroid10+monotouch10+xamarinios10' OR 
+                                                '$(TargetDotnetProfile)' == 'portable47' OR 
+                                                '$(TargetDotnetProfile)' == 'portable7' OR
+                                                '$(TargetDotnetProfile)' == 'xamarinmacmobile'" >
       <Private>false</Private>
     </Reference>
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
+  <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">
     <None Include="project.json" />
   </ItemGroup>
 
@@ -282,4 +282,21 @@
       </FilesToSign>
     </ItemGroup>
   </Target>
+
+  <Target Name="nugetpack"
+          DependsOnTargets="CreateOrUpdateBuildVersionFile"
+          AfterTargets="Build"
+          Condition="'$(TargetDotnetProfile)' == 'coreclr' "
+          Inputs="@(PackageNuspec)" 
+          Outputs='$(FSharpSourcesRoot)\..\$(Configuration)\artifacts\"%(PackageNuspec.Filename)).nupkg'>
+
+    <PropertyGroup>
+      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
+    </PropertyGroup>
+
+    <MakeDir Directories="$(FSharpSourcesRoot)\..\artifacts" />
+    <SetEnvVar Name="NUGET_PACKAGES" Value="$(NUGET_PACKAGES)" />
+    <Exec Command='$(FSharpSourcesRoot)\..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(OutputPath.TrimEnd("\")) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot)\..\artifacts' />
+  </Target>
+
 </Project>
