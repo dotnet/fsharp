@@ -49,19 +49,22 @@
           DependsOnTargets="CreateOrUpdateBuildVersionFile;CopyFiles"
           AfterTargets="Build"
           Inputs="@(PackageNuspec)" 
-          Outputs='$(FSharpSourcesRoot)\$(Configuration)\artifacts\$(PackageVersion)\"%(PackageNuspec.Filename)).nupkg'>
+          Outputs='$(FSharpSourcesRoot)\$(Configuration)\artifacts\$(PackageMajorVersion)\"%(PackageNuspec.Filename)).nupkg'>
 
     <PropertyGroup>
       <PackageVersion>X.X.XXX</PackageVersion>
       <PackageVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.4.1.xxx.nuspec'">$(FSharpCore41Version)</PackageVersion>
+      <PackageMajorVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.4.1.xxx.nuspec'">4.1</PackageMajorVersion>
       <PackageVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.4.2.xxx.nuspec'">$(FSharpCore42Version)</PackageVersion>
+      <PackageMajorVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.4.2.xxx.nuspec'">4.2</PackageMajorVersion>
       <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
     </PropertyGroup>
 
-    <MakeDir Directories="$(FSharpSourcesRoot)\..\artifacts\$(PackageVersion)" />
-    <MakeDir Directories="$(FSharpSourcesRoot)\..\$(Configuration)\artifacts\$(PackageVersion)" />
-    <Exec Command='$(FSharpSourcesRoot)\..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(FSharpSourcesRoot)\..\$(Configuration) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot)\..\artifacts\$(PackageVersion)' />
-    <Exec Command='$(FSharpSourcesRoot)\..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(FSharpSourcesRoot)\..\$(Configuration) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot)\..\$(Configuration)\artifacts\$(PackageVersion)' />
+    <MakeDir Directories="$(FSharpSourcesRoot)\..\artifacts\$(PackageMajorVersion)" />
+    <MakeDir Directories="$(FSharpSourcesRoot)\..\$(Configuration)\artifacts\$(PackageMajorVersion)" />
+
+    <Exec Command='$(FSharpSourcesRoot)\..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(FSharpSourcesRoot)\..\$(Configuration) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot)\..\artifacts\$(PackageMajorVersion)' />
+    <Exec Command='$(FSharpSourcesRoot)\..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(FSharpSourcesRoot)\..\$(Configuration) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot)\..\$(Configuration)\artifacts\$(PackageMajorVersion)' />
   </Target>
 
 </Project>
