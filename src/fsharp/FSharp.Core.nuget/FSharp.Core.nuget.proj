@@ -34,15 +34,15 @@
   <Target Name="Rebuild"  DependsOnTargets="$(nugetpackfsharpcore)" />
   <Target Name="Clean"    DependsOnTargets="CleanVersionFile" />
 
-  <Target Name="CopyFiles">  
-    <Copy SourceFiles="$(NugetLocalPackagesDir)\FSharp.Core.4.2.0\lib\net20\*.*"                                    DestinationFolder="$(FSharpSourcesRoot)\..\$(Configuration)\lib\net20\*.*" />
-    <Copy SourceFiles="$(NugetLocalPackagesDir)\FSharp.Core.4.2.0\lib\net40\*.*"                                    DestinationFolder="$(FSharpSourcesRoot)\..\$(Configuration)\lib\net40\*.*" />
-    <Copy SourceFiles="$(NugetLocalPackagesDir)\FSharp.Core.4.2.0\lib\portable-net45+monoandroid10+monotouch10+xamarinios10\*.*" DestinationFolder="$(FSharpSourcesRoot)\..\$(Configuration)\lib\portable-net45+monoandroid10+monotouch10+xamarinios10\*.*" />
-    <Copy SourceFiles="$(NugetLocalPackagesDir)\FSharp.Core.4.2.0\lib\portable-net45+netcore45\bin\*.*"             DestinationFolder="$(FSharpSourcesRoot)\..\$(Configuration)\lib\portable-net45+netcore45\bin\*.*" />
-    <Copy SourceFiles="$(NugetLocalPackagesDir)\FSharp.Core.4.2.0\lib\portable-net45+netcore45+wpa81+wp8\bin\*.*"   DestinationFolder="$(FSharpSourcesRoot)\..\$(Configuration)\lib\portable-net45+netcore45+wpa81+wp8\bin\*.*" />
-    <Copy SourceFiles="$(NugetLocalPackagesDir)\FSharp.Core.4.2.0\lib\portable-net45+sl5+netcore45\bin\*.*"         DestinationFolder="$(FSharpSourcesRoot)\..\$(Configuration)\lib\portable-net45+sl5+netcore45\bin\*.*" />
-    <Copy SourceFiles="$(NugetLocalPackagesDir)\FSharp.Core.4.2.0\lib\xamarinmac20\bin\*.*"                         DestinationFolder="$(FSharpSourcesRoot)\..\$(Configuration)\lib\xamarinmac20\bin\*.*" />
-
+  <Target Name="CopyFiles">
+    <ItemGroup>
+        <Profiles Include="$(NugetLocalPackagesDir)\FSharp.Core.4.2.0\lib\*\*.*" 
+                  Exclude="$(NugetLocalPackagesDir)\FSharp.Core.4.2.0\lib\net45\*\*.*;$(NugetLocalPackagesDir)\FSharp.Core.4.2.0\lib\netstandard1.6\*\*.*" />
+    </ItemGroup>
+      <Copy 
+            SourceFiles="@(Profiles)"  
+            DestinationFolder="$(FSharpSourcesRoot)\..\$(Configuration)\bin\profiles\%(RecursiveDir)"  
+      />  
   </Target>
 
   <Target Name="nugetpackfsharpcore"
