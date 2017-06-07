@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
     <ProjectLanguage>FSharp</ProjectLanguage>
   </PropertyGroup>
+
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
+
   <PropertyGroup>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{DED3BBD7-53F4-428A-8C9F-27968E768605}</ProjectGuid>
@@ -23,17 +26,6 @@
     <OtherFlags Condition=" '$(TargetDotnetProfile)'=='portable7'">$(OtherFlags)   --compiling-fslib-40</OtherFlags>
     <OtherFlags Condition=" '$(TargetDotnetProfile)'=='portable78'">$(OtherFlags)  --compiling-fslib-40 --compiling-fslib-nobigint</OtherFlags>
     <OtherFlags Condition=" '$(TargetDotnetProfile)'=='portable259'">$(OtherFlags) --compiling-fslib-40 --compiling-fslib-nobigint</OtherFlags>
-  </PropertyGroup>
-
-  <!-- Nuget packaging configuration -->
-  <ItemGroup>
-    <PackageNuspec Include="FSharp.Core.netcore.nuspec" Condition="'$(TargetDotnetProfile)' == 'coreclr'" />
-    <None Include="FSharp.Core.runtimeconfig.json"      Condition="'$(TargetDotnetProfile)' == 'coreclr'" ><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></None>
-  </ItemGroup>
-  <PropertyGroup>
-    <PackageVersion    Condition="'$(PreReleaseLabel)' == ''">$(NuGeReleaseVersion)</PackageVersion>
-    <PackageVersion    Condition="'$(PackageVersionMinor)' != ''">$(PackageVersionMajor)-$(PackageVersionMinor)</PackageVersion>
-    <PackageVersion    Condition="'$(PackageVersionMinor)' == ''">$(NuGetPerBuildPreReleaseVersion)-0</PackageVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -281,22 +273,6 @@
          <StrongName>StrongName</StrongName>
       </FilesToSign>
     </ItemGroup>
-  </Target>
-
-  <Target Name="nugetpack"
-          DependsOnTargets="CreateOrUpdateBuildVersionFile"
-          AfterTargets="Build"
-          Condition="'$(TargetDotnetProfile)' == 'coreclr' "
-          Inputs="@(PackageNuspec)" 
-          Outputs='$(FSharpSourcesRoot)\..\$(Configuration)\artifacts\"%(PackageNuspec.Filename)).nupkg'>
-
-    <PropertyGroup>
-      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
-    </PropertyGroup>
-
-    <MakeDir Directories="$(FSharpSourcesRoot)\..\artifacts" />
-    <SetEnvVar Name="NUGET_PACKAGES" Value="$(NUGET_PACKAGES)" />
-    <Exec Command='$(FSharpSourcesRoot)\..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(OutputPath.TrimEnd("\")) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot)\..\artifacts' />
   </Target>
 
 </Project>
