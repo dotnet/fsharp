@@ -1,10 +1,9 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
     <metadata>
-        <id>Microsoft.FSharp.Compiler.netcore</id>
+        <id>Testing.FSharp.Compiler</id>
         <description>
-            .NET Core compatible version of the fsharp compiler fsc.exe.
-            Supported Platforms: - .NET Core (.netstandard1.6)
+            Test deployable versionthe fsharp compiler fsc.exe. Supported Platforms: - .NET Core (.netstandard1.6)
         </description>
         <language>en-US</language>
         <requireLicenseAcceptance>true</requireLicenseAcceptance>
@@ -15,7 +14,6 @@
         <tags>$tags$</tags>
         <dependencies>
             <group targetFramework=".NETStandard1.6">
-                <dependency id="Microsoft.FSharp.Core.netcore" version="$version$" />
                 <dependency id="Microsoft.NETCore.Platforms" version="1.0.1" />
                 <dependency id="NETStandard.Library" version="1.6.0" />
                 <dependency id="System.Collections.Immutable" version="1.2.0" />
@@ -33,20 +31,31 @@
                 <dependency id="System.Threading.Tasks.Parallel" version="4.0.1" />
                 <dependency id="System.Threading.Thread" version="4.0.0" />
                 <dependency id="System.Threading.ThreadPool" version="4.0.10" />
-                <dependency id="System.ValueTuple" version="4.3.0" />
+                <dependency id="System.ValueTuple" version="4.3.1" />
                 <dependency id="Microsoft.DiaSymReader.PortablePdb" version="1.1.0" />
                 <dependency id="Microsoft.DiaSymReader" version="1.0.8" />
             </group>
         </dependencies>
     </metadata>
     <files>
-        <file src="fsc.exe"                           target="lib/netstandard1.6" />
-        <file src="FSharp.Compiler.Private.dll"       target="lib/netstandard1.6" />
-        <file src="default.win32manifest"             target="runtimes/any/native/" />
-        <file src="FSharp.Build.dll"                  target="lib/netstandard1.6" />
-        <file src="Microsoft.FSharp.targets"          target="runtimes/any/native/" />
-        <file src="Microsoft.Portable.FSharp.targets" target="runtimes/any/native/" />
-        <file src="Microsoft.FSharp.NetSdk.targets"   target="runtimes/any/native/" />
-        <file src="Microsoft.FSharp.NetSdk.props"     target="runtimes/any/native/" />
+        <!--
+            Why is this like this?
+            This package is used to deploy the fsharp compiler tools as built product.
+            
+            We need nuget package to merely deploy the contents of the lib directory.
+            tools, build and runtime/native make unnecessary copies.
+            this approach gives a very small deployment. Which is kind of necessary.
+        -->
+        <file src="coreclr/bin/fsc.exe"                                     target="lib/netstandard1.6" />
+        <file src="coreclr/bin/fsi.exe"                                     target="lib/netstandard1.6" />
+        <file src="coreclr/bin/FSharp.Core.dll"                             target="lib/netstandard1.6" />
+        <file src="coreclr/bin/FSharp.Compiler.Private.dll"                 target="lib/netstandard1.6" />
+        <file src="coreclr/bin/FSharp.Build.dll"                            target="lib/netstandard1.6" />
+        <file src="coreclr/bin/FSharp.Compiler.Interactive.Settings.dll"    target="lib/netstandard1.6" />
+        <file src="coreclr/bin/default.win32manifest"                       target="runtimes/any/native"  />
+        <file src="coreclr/bin/Microsoft.FSharp.Targets"                    target="runtimes/any/native"  />
+        <file src="coreclr/bin/Microsoft.Portable.FSharp.Targets"           target="runtimes/any/native"  />
+        <file src="coreclr/bin/Microsoft.FSharp.NetSdk.targets"             target="runtimes/any/native"  />
+        <file src="coreclr/bin/Microsoft.FSharp.NetSdk.props"               target="runtimes/any/native"  />
     </files>
 </package>
