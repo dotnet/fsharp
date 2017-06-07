@@ -107,6 +107,7 @@
   </PropertyGroup>  
 
   <PropertyGroup>
+    <NugetLocalPackagesDir>$(FSharpSourcesRoot)\..\packages</NugetLocalPackagesDir>
     <NUnitVersion>3.5.0</NUnitVersion>
     <NUnitFullVersion>3.5.0.0</NUnitFullVersion>
     <NUnitLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.$(NUnitVersion)\lib\net45</NUnitLibDir>

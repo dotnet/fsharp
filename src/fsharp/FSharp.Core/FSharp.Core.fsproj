@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
     <ProjectLanguage>FSharp</ProjectLanguage>
   </PropertyGroup>
+
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
+
   <PropertyGroup>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{DED3BBD7-53F4-428A-8C9F-27968E768605}</ProjectGuid>
@@ -20,9 +23,6 @@
     <OtherFlags>$(OtherFlags) --warnon:1182 --compiling-fslib --maxerrors:20   --extraoptimizationloops:1 </OtherFlags>
     <OtherFlags Condition=" '$(TargetDotnetProfile)'=='net40'">$(OtherFlags)       --compiling-fslib-40</OtherFlags>
     <OtherFlags Condition=" '$(TargetDotnetProfile)'=='coreclr'">$(OtherFlags)     --compiling-fslib-40</OtherFlags>
-    <OtherFlags Condition=" '$(TargetDotnetProfile)'=='portable7'">$(OtherFlags)   --compiling-fslib-40</OtherFlags>
-    <OtherFlags Condition=" '$(TargetDotnetProfile)'=='portable78'">$(OtherFlags)  --compiling-fslib-40 --compiling-fslib-nobigint</OtherFlags>
-    <OtherFlags Condition=" '$(TargetDotnetProfile)'=='portable259'">$(OtherFlags) --compiling-fslib-40 --compiling-fslib-nobigint</OtherFlags>
   </PropertyGroup>
 
   <!-- Nuget packaging configuration -->
@@ -30,6 +30,7 @@
     <PackageNuspec Include="FSharp.Core.netcore.nuspec" Condition="'$(TargetDotnetProfile)' == 'coreclr'" />
     <None Include="FSharp.Core.runtimeconfig.json"      Condition="'$(TargetDotnetProfile)' == 'coreclr'" ><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></None>
   </ItemGroup>
+
   <PropertyGroup>
     <PackageVersion    Condition="'$(PreReleaseLabel)' == ''">$(NuGeReleaseVersion)</PackageVersion>
     <PackageVersion    Condition="'$(PackageVersionMinor)' != ''">$(PackageVersionMajor)-$(PackageVersionMinor)</PackageVersion>
@@ -44,6 +45,7 @@
       <InProject>false</InProject>
     </FilesToLocalize>
   </ItemGroup>
+
   <ItemGroup>
     <CustomAdditionalCompileInputs Include="$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin\fsc-proto.exe">
       <Visible>false</Visible>
@@ -232,25 +234,15 @@
       <Link>assemblyinfo.FSharp.Core.dll.fs</Link>
     </Compile>
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetDotnetProfile)' != 'portable7' and '$(TargetDotnetProfile)' != 'coreclr'">
+
+  <ItemGroup Condition="'$(TargetDotnetProfile)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
-    <Reference Include="System.Numerics" Condition="'$(TargetDotnetProfile)' == 'net40' OR 
-                                                    '$(TargetDotnetProfile)' == 'monoandroid10+monotouch10+xamarinios10' OR
-                                                    '$(TargetDotnetProfile)' == 'xamarinmacmobile'" >
-      <Private>false</Private>
-    </Reference>
-	<Reference Include="System.Net" Condition="'$(TargetDotnetProfile)' == 'portable47' OR 
-                                               '$(TargetDotnetProfile)' == 'portable7'" >
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="System.Core" Condition="'$(TargetDotnetProfile)' == 'monoandroid10+monotouch10+xamarinios10' OR 
-                                                '$(TargetDotnetProfile)' == 'portable47' OR 
-                                                '$(TargetDotnetProfile)' == 'portable7' OR
-                                                '$(TargetDotnetProfile)' == 'xamarinmacmobile'" >
+    <Reference Include="System.Numerics" Condition="'$(TargetDotnetProfile)' == 'net40'" >
       <Private>false</Private>
     </Reference>
   </ItemGroup>
+
   <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">
     <None Include="project.json" />
   </ItemGroup>
@@ -271,7 +263,7 @@
     <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.Core.sigdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
     <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.Core.optdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
   </Target>
-  
+ 
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
     <ItemGroup>
       <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
@@ -281,22 +273,6 @@
          <StrongName>StrongName</StrongName>
       </FilesToSign>
     </ItemGroup>
-  </Target>
-
-  <Target Name="nugetpack"
-          DependsOnTargets="CreateOrUpdateBuildVersionFile"
-          AfterTargets="Build"
-          Condition="'$(TargetDotnetProfile)' == 'coreclr' "
-          Inputs="@(PackageNuspec)" 
-          Outputs='$(FSharpSourcesRoot)\..\$(Configuration)\artifacts\"%(PackageNuspec.Filename)).nupkg'>
-
-    <PropertyGroup>
-      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
-    </PropertyGroup>
-
-    <MakeDir Directories="$(FSharpSourcesRoot)\..\artifacts" />
-    <SetEnvVar Name="NUGET_PACKAGES" Value="$(NUGET_PACKAGES)" />
-    <Exec Command='$(FSharpSourcesRoot)\..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(OutputPath.TrimEnd("\")) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot)\..\artifacts' />
   </Target>
 
 </Project>
