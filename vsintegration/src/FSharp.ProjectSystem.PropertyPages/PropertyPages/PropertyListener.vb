@@ -85,7 +85,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
                             Debug.Assert(ConfigProperties IsNot Nothing, "Couldn't get ProjectConfigurationProperties from config")
                             If ConfigProperties IsNot Nothing Then
                                 EventSource = ConfigProperties
-                                Debug.Assert(SupportsConnectionPointContainer(EventSource), "Unable to get connection point container from configuration")
+                                ' Debug.Assert(SupportsConnectionPointContainer(EventSource), "Unable to get connection point container from configuration")
                             End If
                         End If
                     End If
