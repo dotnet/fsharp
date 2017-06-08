@@ -79,23 +79,23 @@
   <Target Name="Build">
     <MSBuild Projects="@(ProjectsWithNet40)"              Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
     <MSBuild Projects="@(ProjectsWithCoreClr)"            Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetDotnetProfile=coreclr;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
-    <MSBuild Projects="@(SetupProjects)"                  Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
     <MSBuild Projects="@(NugetProjects)"                  Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);" />
+    <MSBuild Projects="@(SetupProjects)"                  Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
   </Target>
 
   <Target Name="Rebuild">
     <MSBuild Projects="@(ProjectsWithNet40)"              Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
     <MSBuild Projects="@(ProjectsWithNet40PlusDefine)"    Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);FSHARP_SUITE_DRIVES_CORECLR_TESTS=true" />
     <MSBuild Projects="@(ProjectsWithCoreClr)"            Targets="Rebuild" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetDotnetProfile=coreclr;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
-    <MSBuild Projects="@(SetupProjects)"                  Targets="Rebuild" BuildInParallel="false" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
     <MSBuild Projects="@(NugetProjects)"                  Targets="Rebuild" BuildInParallel="false" Properties="Configuration=$(Configuration);" />
+    <MSBuild Projects="@(SetupProjects)"                  Targets="Rebuild" BuildInParallel="false" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
   </Target>
 
   <Target Name="Clean">
     <MSBuild Projects="@(ProjectsWithNet40)"              Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
     <MSBuild Projects="@(ProjectsWithNet40PlusDefine)"    Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);FSHARP_SUITE_DRIVES_CORECLR_TESTS=true" />
     <MSBuild Projects="@(ProjectsWithCoreClr)"            Targets="Clean" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetDotnetProfile=coreclr;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
-    <MSBuild Projects="@(SetupProjects)"                  Targets="Clean" BuildInParallel="false" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
     <MSBuild Projects="@(NugetProjects)"                  Targets="Clean" BuildInParallel="false" Properties="Configuration=$(Configuration);" />
+    <MSBuild Projects="@(SetupProjects)"                  Targets="Clean" BuildInParallel="false" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
   </Target>
 </Project>
