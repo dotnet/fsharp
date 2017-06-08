@@ -85,6 +85,10 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("OfNullable")>]
         let ofNullable (value:System.Nullable<'T>) = if value.HasValue then Some value.Value else None
 
+        [<CompiledName("OfString")>]
+        let ofString (value:System.String) =
+            if System.String.IsNullOrWhiteSpace value then None else Some value
+
         [<CompiledName("OfObj")>]
         let ofObj value = match value with null -> None | _ -> Some value
 
