@@ -11,6 +11,7 @@ open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Formatting
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
+open System.Text.RegularExpressions
 
 [<Shared>]
 [<ExportLanguageService(typeof<ISynchronousIndentationService>, FSharpConstants.FSharpLanguageName)>]
@@ -40,7 +41,22 @@ type internal FSharpIndentationService() =
                         | ' ' -> loop (column + 1) (spaces + 1)
                         | '\t' -> loop (column + 1) (((spaces / tabSize) + 1) * tabSize)
                         | _ -> spaces
-                Some (loop 0 0)
+
+                let lastIndent = loop 0 0
+
+                // Increase indent after line end with:
+                let regex =
+                    @"(
+                        = | <-
+                       | ->
+                       | \( | \[ | \[\| | \[< | \{
+                       | begin | do | class | function | then | else | struct | try
+                      )
+                      \s*$"
+                if Regex.IsMatch(previousLine.ToString(), regex, RegexOptions.IgnorePatternWhitespace) then
+                    Some ((lastIndent/tabSize + 1) * tabSize)
+                else
+                    Some lastIndent
 
     interface ISynchronousIndentationService with
         member this.GetDesiredIndentation(document: Document, lineNumber: int, cancellationToken: CancellationToken): Nullable<IndentationResult> =
