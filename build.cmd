@@ -17,12 +17,12 @@ echo Build and run a subset of test suites
 echo.
 echo Usage:
 echo.
-echo build.cmd ^<all^|net40^|coreclr^|pcls^|vs^>
+echo build.cmd ^<all^|net40^|coreclr^|vs^>
 echo           ^<proto^|protofx^>
 echo           ^<ci^|ci_part1^|ci_part2^|ci_part3^|ci_part4^|microbuild^|nuget^>
 echo           ^<debug^|release^>
 echo           ^<diag^|publicsign^>
-echo           ^<test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-pcl-coreunit^|test-net40-ideunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
+echo           ^<test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-net40-ideunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
 echo           ^<include tag^>
 echo           ^<init^>
 echo.
@@ -59,7 +59,6 @@ set BUILD_PHASE=1
 set BUILD_NET40=0
 set BUILD_NET40_FSHARP_CORE=0
 set BUILD_CORECLR=0
-set BUILD_PORTABLE=0
 set BUILD_VS=0
 set BUILD_CONFIG=release
 set BUILD_CONFIG_LOWERCASE=release
@@ -72,7 +71,6 @@ set TEST_NET40_FSHARP_SUITE=0
 set TEST_NET40_FSHARPQA_SUITE=0
 set TEST_CORECLR_COREUNIT_SUITE=0
 set TEST_CORECLR_FSHARP_SUITE=0
-set TEST_PORTABLE_COREUNIT_SUITE=0
 set TEST_VS_IDEUNIT_SUITE=0
 set INCLUDE_TEST_SPEC_NUNIT=
 set INCLUDE_TEST_TAGS=
@@ -116,10 +114,6 @@ if /i "%_autoselect_tests%" == "1" (
         set TEST_CORECLR_COREUNIT_SUITE=1
     )
 
-    if /i "%BUILD_PORTABLE%" == "1" (
-        set TEST_PORTABLE_COREUNIT_SUITE=1
-    )
-
     if /i "%BUILD_VS%" == "1" (
         set TEST_VS_IDEUNIT_SUITE=1
     )
@@ -152,11 +146,6 @@ if /i "%ARG%" == "coreclr" (
     set BUILD_CORECLR=1
 )
 
-if /i "%ARG%" == "pcls" (
-    set _autoselect=0
-    set BUILD_PORTABLE=1
-)
-
 if /i "%ARG%" == "vs" (
     set _autoselect=0
     set BUILD_NET40=1
@@ -176,7 +165,6 @@ if /i "%ARG%" == "all" (
     set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_NET40=1
     set BUILD_CORECLR=1
-    set BUILD_PORTABLE=1
     set BUILD_VS=1
     set BUILD_SETUP=%FSC_BUILD_SETUP%
     set BUILD_NUGET=1
@@ -190,7 +178,6 @@ if /i "%ARG%" == "microbuild" (
     set BUILD_NET40_FSHARP_CORE=1
     set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_CORECLR=1
-    set BUILD_PORTABLE=1
     set BUILD_VS=1
     set BUILD_SETUP=%FSC_BUILD_SETUP%
     set BUILD_NUGET=1
@@ -201,7 +188,6 @@ if /i "%ARG%" == "microbuild" (
     set TEST_NET40_FSHARPQA_SUITE=1
     set TEST_CORECLR_COREUNIT_SUITE=0
     set TEST_CORECLR_FSHARP_SUITE=0
-    set TEST_PORTABLE_COREUNIT_SUITE=1
     set TEST_VS_IDEUNIT_SUITE=1
     set CI=1
     set PUBLISH_VSIX=1
@@ -217,7 +203,6 @@ if /i "%ARG%" == "nuget" (
     set BUILD_PROTO=1
     set BUILD_NET40_FSHARP_CORE=1
     set BUILD_PROTO_WITH_CORECLR_LKG=1
-    set BUILD_PORTABLE=1
     set BUILD_CORECLR=1
     set BUILD_NUGET=1
 )
@@ -229,10 +214,12 @@ if /i "%ARG%" == "ci_part1" (
     REM what we do
     set BUILD_PROTO=1
     set BUILD_NET40=1
+    set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_NET40_FSHARP_CORE=1
-    set BUILD_PORTABLE=1
     set BUILD_VS=1
+    set BUILD_CORECLR=1
     set BUILD_SETUP=%FSC_BUILD_SETUP%
+    set BUILD_NUGET=1
     set TEST_VS_IDEUNIT_SUITE=1
     set CI=1
 )
@@ -257,7 +244,6 @@ if /i "%ARG%" == "ci_part3" (
     set BUILD_PROTO=1
     set BUILD_CORECLR=1
     set BUILD_NET40_FSHARP_CORE=1
-    set BUILD_PORTABLE=1
     set BUILD_NUGET=1
     set TEST_CORECLR_FSHARP_SUITE=1
     set TEST_CORECLR_COREUNIT_SUITE=1
@@ -271,11 +257,9 @@ if /i "%ARG%" == "ci_part4" (
     set BUILD_PROTO=1
     set BUILD_NET40=1
     set BUILD_NET40_FSHARP_CORE=1
-    set BUILD_PORTABLE=1
 
     set TEST_NET40_COMPILERUNIT_SUITE=1
     set TEST_NET40_FSHARPQA_SUITE=1
-    set TEST_PORTABLE_COREUNIT_SUITE=1
     set CI=1
 )
 
@@ -314,7 +298,6 @@ if /i "%ARG%" == "test-all" (
     set BUILD_NET40=1
     set BUILD_NET40_FSHARP_CORE=1
     set BUILD_CORECLR=1
-    set BUILD_PORTABLE=1
     set BUILD_VS=1
     set BUILD_SETUP=%FSC_BUILD_SETUP%
     set BUILD_NUGET=1
@@ -323,7 +306,6 @@ if /i "%ARG%" == "test-all" (
     set TEST_NET40_COREUNIT_SUITE=1
     set TEST_NET40_FSHARP_SUITE=1
     set TEST_NET40_FSHARPQA_SUITE=1
-    set TEST_PORTABLE_COREUNIT_SUITE=1
     set TEST_CORECLR_COREUNIT_SUITE=1
     set TEST_VS_IDEUNIT_SUITE=1
 )
@@ -332,7 +314,6 @@ if /i "%ARG%" == "test-net40-fsharpqa" (
     set _autoselect=0
     set BUILD_NET40=1
     set BUILD_NET40_FSHARP_CORE=1
-    set BUILD_PORTABLE=1
     set TEST_NET40_FSHARPQA_SUITE=1
 )
 
@@ -348,7 +329,6 @@ if /i "%ARG%" == "test-net40-ideunit" (
     set BUILD_NET40=1
     set BUILD_NET40_FSHARP_CORE=1
     set BUILD_VS=1
-    set BUILD_PORTABLE=1
     set TEST_VS_IDEUNIT_SUITE=1
 )
 
@@ -365,17 +345,10 @@ if /i "%ARG%" == "test-coreclr-coreunit" (
     set TEST_CORECLR_COREUNIT_SUITE=1
 )
 
-if /i "%ARG%" == "test-pcl-coreunit" (
-    set _autoselect=0
-    set BUILD_PORTABLE=1
-    set TEST_PORTABLE_COREUNIT_SUITE=1
-)
-
 if /i "%ARG%" == "test-net40-fsharp" (
     set _autoselect=0
     set BUILD_NET40=1
     set BUILD_NET40_FSHARP_CORE=1
-    set BUILD_PORTABLE=1
     set TEST_NET40_FSHARP_SUITE=1
 )
 
@@ -417,9 +390,9 @@ echo BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG%
 echo BUILD_NET40=%BUILD_NET40%
 echo BUILD_NET40_FSHARP_CORE=%BUILD_NET40_FSHARP_CORE%
 echo BUILD_CORECLR=%BUILD_CORECLR%
-echo BUILD_PORTABLE=%BUILD_PORTABLE%
 echo BUILD_VS=%BUILD_VS%
 echo BUILD_SETUP=%BUILD_SETUP%
+echo BUILD_NUGET=%BUILD_NUGET%
 echo BUILD_CONFIG=%BUILD_CONFIG%
 echo BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
 echo.
@@ -429,7 +402,6 @@ echo TEST_NET40_FSHARP_SUITE=%TEST_NET40_FSHARP_SUITE%
 echo TEST_NET40_FSHARPQA_SUITE=%TEST_NET40_FSHARPQA_SUITE%
 echo TEST_CORECLR_COREUNIT_SUITE=%TEST_CORECLR_COREUNIT_SUITE%
 echo TEST_CORECLR_FSHARP_SUITE=%TEST_CORECLR_FSHARP_SUITE%
-echo TEST_PORTABLE_COREUNIT_SUITE=%TEST_PORTABLE_COREUNIT_SUITE%
 echo TEST_VS_IDEUNIT_SUITE=%TEST_VS_IDEUNIT_SUITE%
 echo INCLUDE_TEST_SPEC_NUNIT=%INCLUDE_TEST_SPEC_NUNIT%
 echo INCLUDE_TEST_TAGS=%INCLUDE_TEST_TAGS%
@@ -568,15 +540,6 @@ if "%RestorePackages%" == "true" (
     )
 )
 
-if "%BUILD_NUGET%" == "1" (
-    :: Copy the net20 and net40 build directory for nuget building
-    md %~dp0%BUILD_CONFIG%\dotnet20\bin
-    copy /Y %~dp0packages\FSharp.Core.4.1.17\lib\net20\*.* %~dp0%BUILD_CONFIG%\dotnet20\bin
-
-    md %~dp0%BUILD_CONFIG%\dotnet40\bin
-    copy /Y %~dp0packages\FSharp.Core.4.1.17\lib\net40\*.* %~dp0%BUILD_CONFIG%\dotnet40\bin
-)
-
 if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
     :: Restore the Tools directory
     call %~dp0init-tools.cmd
@@ -701,7 +664,7 @@ echo SNEXE64:           %SNEXE64%
 echo ILDASM:            %ILDASM%
 echo
 
-if "%TEST_NET40_COMPILERUNIT_SUITE%" == "0" if "%TEST_NET40_COREUNIT_SUITE%" == "0" if "%TEST_PORTABLE_COREUNIT_SUITE%" == "0" if "%TEST_CORECLR_COREUNIT_SUITE%" == "0" if "%TEST_VS_IDEUNIT_SUITE%" == "0" if "%TEST_NET40_FSHARP_SUITE%" == "0" if "%TEST_NET40_FSHARPQA_SUITE%" == "0" goto :success
+if "%TEST_NET40_COMPILERUNIT_SUITE%" == "0" if "%TEST_NET40_COREUNIT_SUITE%" == "0" if "%TEST_CORECLR_COREUNIT_SUITE%" == "0" if "%TEST_VS_IDEUNIT_SUITE%" == "0" if "%TEST_NET40_FSHARP_SUITE%" == "0" if "%TEST_NET40_FSHARPQA_SUITE%" == "0" goto :success
 
 echo ---------------- Done with update, starting tests -----------------------
 
@@ -855,37 +818,6 @@ if "%TEST_NET40_COREUNIT_SUITE%" == "1" (
         type "!ERRORFILE!"
         echo -----------------------------------------------------------------
         echo Error: Running tests net40-coreunit failed, see logs above -- FAILED
-        echo -----------------------------------------------------------------
-        goto :failure
-    )
-)
-
-REM  ---------------- portable-coreunit  -----------------------
-
-if "%TEST_PORTABLE_COREUNIT_SUITE%" == "1" (
-
-    set OUTPUTARG=
-    set ERRORARG=
-    set OUTPUTFILE=
-    set ERRORFILE=
-    set XMLFILE=!RESULTSDIR!\test-portable-coreunit-results.xml
-    if "%CI%" == "1" (
-        set OUTPUTFILE=!RESULTSDIR!\test-portable-coreunit-output.log
-        set ERRORFILE=!RESULTSDIR!\test-portable-coreunit-errors.log
-        set ERRORARG=--err:"!ERRORFILE!" 
-        set OUTPUTARG=--output:"!OUTPUTFILE!" 
-    )
-
-    echo "!NUNIT3_CONSOLE!" /framework:V4.0 /result="!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! /work="!FSCBINPATH!" "!FSCBINPATH!\..\..\portable7\bin\FSharp.Core.Unittests.dll" "!FSCBINPATH!\..\..\portable47\bin\FSharp.Core.Unittests.dll" "!FSCBINPATH!\..\..\portable78\bin\FSharp.Core.Unittests.dll" "!FSCBINPATH!\..\..\portable259\bin\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
-         "!NUNIT3_CONSOLE!" /framework:V4.0 /result="!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! /work="!FSCBINPATH!" "!FSCBINPATH!\..\..\portable7\bin\FSharp.Core.Unittests.dll" "!FSCBINPATH!\..\..\portable47\bin\FSharp.Core.Unittests.dll" "!FSCBINPATH!\..\..\portable78\bin\FSharp.Core.Unittests.dll" "!FSCBINPATH!\..\..\portable259\bin\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
-
-    if errorlevel 1 (
-        echo -----------------------------------------------------------------
-        type "!OUTPUTFILE!"
-        echo -----------------------------------------------------------------
-        type "!ERRORFILE!"
-        echo -----------------------------------------------------------------
-        echo Error: Running tests portable-coreunit failed, see logs above -- FAILED
         echo -----------------------------------------------------------------
         goto :failure
     )
