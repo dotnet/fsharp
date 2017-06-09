@@ -19,7 +19,7 @@ echo Usage:
 echo.
 echo build.cmd ^<all^|net40^|coreclr^|vs^>
 echo           ^<proto^|protofx^>
-echo           ^<ci^|ci_part1^|ci_part2^|ci_part3^|ci_part4^|microbuild^|nuget^>
+echo           ^<ci^|ci_part1^|ci_part2^|ci_part3^|microbuild^|nuget^>
 echo           ^<debug^|release^>
 echo           ^<diag^|publicsign^>
 echo           ^<test^|test-net40-coreunit^|test-coreclr-coreunit^|test-compiler-unit^|test-net40-ideunit^|test-net40-fsharp^|test-coreclr-fsharp^|test-net40-fsharpqa^>
@@ -207,7 +207,7 @@ if /i "%ARG%" == "nuget" (
     set BUILD_NUGET=1
 )
 
-REM These divide "ci" into two chunks which can be done in parallel
+REM These divide "ci" into three chunks which can be done in parallel
 if /i "%ARG%" == "ci_part1" (
     set _autoselect=0
 
@@ -231,7 +231,9 @@ if /i "%ARG%" == "ci_part2" (
     set BUILD_PROTO=1
     set BUILD_NET40=1
     set BUILD_NET40_FSHARP_CORE=1
+    set TEST_NET40_COMPILERUNIT_SUITE=1
     set TEST_NET40_COREUNIT_SUITE=1
+    set TEST_NET40_FSHARPQA_SUITE=1
     set TEST_NET40_FSHARP_SUITE=1
     set CI=1
 )
@@ -245,21 +247,11 @@ if /i "%ARG%" == "ci_part3" (
     set BUILD_CORECLR=1
     set BUILD_NET40_FSHARP_CORE=1
     set BUILD_NUGET=1
+    set BUILD_NET40=1
+    set BUILD_VS=1
+    set BUILD_SETUP=%FSC_BUILD_SETUP%
     set TEST_CORECLR_FSHARP_SUITE=1
     set TEST_CORECLR_COREUNIT_SUITE=1
-    set CI=1
-)
-
-if /i "%ARG%" == "ci_part4" (
-    set _autoselect=0
-
-    REM what we do
-    set BUILD_PROTO=1
-    set BUILD_NET40=1
-    set BUILD_NET40_FSHARP_CORE=1
-
-    set TEST_NET40_COMPILERUNIT_SUITE=1
-    set TEST_NET40_FSHARPQA_SUITE=1
     set CI=1
 )
 
