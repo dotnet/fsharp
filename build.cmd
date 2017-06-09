@@ -214,12 +214,8 @@ if /i "%ARG%" == "ci_part1" (
     REM what we do
     set BUILD_PROTO=1
     set BUILD_NET40=1
-    set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_NET40_FSHARP_CORE=1
     set BUILD_VS=1
-    set BUILD_CORECLR=1
-    set BUILD_SETUP=%FSC_BUILD_SETUP%
-    set BUILD_NUGET=1
     set TEST_VS_IDEUNIT_SUITE=1
     set CI=1
 )
