@@ -31,7 +31,7 @@
     <BuildToolsTargets45>true</BuildToolsTargets45>
     <WarningsAsErrors />
     <FX_NO_LOADER Condition=" '$(FX_NO_LOADER)'==''">false</FX_NO_LOADER>
-    
+
     <RoslynVersion>2.0.0</RoslynVersion>
     <RoslynVSBinariesVersion>15.0</RoslynVSBinariesVersion>
     <RoslynVSPackagesVersion>15.0.26201</RoslynVSPackagesVersion>
@@ -44,8 +44,10 @@
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetDotnetProfile)\</IntermediateOutputPath>
     <IntermediateOutputPath Condition="'$(PortableProfileBeingReferenced)' != ''">obj\$(Configuration)\$(TargetDotnetProfile)\$(PortableProfileBeingReferenced)\</IntermediateOutputPath>
 
-    <FSharpCore41Version>4.1.18</FSharpCore41Version>
-    <FSharpCore42Version>4.2.1</FSharpCore42Version>
+    <FSharpCore41TargetVersion>4.1.18</FSharpCore41TargetVersion>
+    <FSharpCore41FrozenPortableVersion>4.1.20</FSharpCore41FrozenPortableVersion>
+    <FSharpCore41FrozenPortableTargetVersion>4.1.21</FSharpCore41FrozenPortableTargetVersion>
+    <FSharpCore42TargetVersion>4.2.2</FSharpCore42TargetVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(MonoPackaging)' != 'true' AND '$(OS)' != 'Unix'">
