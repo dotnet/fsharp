@@ -45,7 +45,7 @@ namespace testspace
         [| Some(0);  3; consoleProjectTemplate |]
         [| Some(0);  4; consoleProjectTemplate |]
         [| Some(0);  5; consoleProjectTemplate |]
-        [| Some(0);  6; consoleProjectTemplate |]
+        [| Some(4);  6; consoleProjectTemplate |]
         [| Some(4);  7; consoleProjectTemplate |]
         [| Some(4);  8; consoleProjectTemplate |]
         
@@ -53,7 +53,7 @@ namespace testspace
         [| Some(0);  1; libraryProjectTemplate |]
         [| Some(0);  2; libraryProjectTemplate |]
         [| Some(0);  3; libraryProjectTemplate |]
-        [| Some(0);  4; libraryProjectTemplate |]
+        [| Some(4);  4; libraryProjectTemplate |]
         [| Some(4);  5; libraryProjectTemplate |]
         
         [| None;     0; nestedTypesTemplate |]
