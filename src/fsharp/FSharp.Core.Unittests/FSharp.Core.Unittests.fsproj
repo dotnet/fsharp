@@ -20,7 +20,7 @@
     <!-- Prevent compiler from inlining calls to FSharp.Core to improve code coverage accuracy -->
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
-    <TargetProfile Condition=" '$(TargetDotnetProfile)' == 'portable7' or '$(TargetDotnetProfile)' == 'portable78' or '$(TargetDotnetProfile)' == 'portable259' or '$(TargetDotnetProfile)' == 'coreclr' ">netcore</TargetProfile>
+    <TargetProfile Condition=" '$(TargetDotnetProfile)' == 'coreclr' ">netcore</TargetProfile>
     <NoWarn>$(NoWarn);217</NoWarn>
   </PropertyGroup>
   <PropertyGroup>
@@ -50,13 +50,9 @@
       <SpecificVersion>true</SpecificVersion>
       <Private>True</Private>
       <HintPath Condition="'$(TargetDotnetProfile)' == 'net40'">$(FsCheckLibDir)\net45\FsCheck.dll</HintPath>
-      <HintPath Condition="'$(TargetDotnetProfile)' == 'portable7'">$(FsCheckLibDir)\portable-net45+netcore45\FsCheck.dll</HintPath>
-      <HintPath Condition="'$(TargetDotnetProfile)' == 'portable78'">$(FsCheckLibDir)\portable-net45+netcore45+wp8\FsCheck.dll</HintPath>
-      <HintPath Condition="'$(TargetDotnetProfile)' == 'portable259'">$(FsCheckLibDir)\portable-net45+netcore45+wpa81+wp8\FsCheck.dll</HintPath>
     </Reference>
     <Reference Include="System.ValueTuple">
-        <HintPath Condition=" '$(TargetDotnetProfile)' == 'profile47' ">..\..\..\packages\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
-        <HintPath Condition=" '$(TargetDotnetProfile)' != 'profile47' ">..\..\..\packages\System.ValueTuple.4.3.1\lib\portable-net40+sl4+win8+wp8\System.ValueTuple.dll</HintPath>
+        <HintPath>..\..\..\packages\System.ValueTuple.4.3.1\lib\portable-net40+sl4+win8+wp8\System.ValueTuple.dll</HintPath>
         <Private>True</Private>
     </Reference>
   </ItemGroup>
@@ -66,7 +62,7 @@
       <Name>FSharp.Core</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup Condition="(!$(TargetDotnetProfile.Contains('portable'))) and '$(TargetDotnetProfile)' != 'coreclr'">
+  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Numerics" Condition="'$(TargetDotnetProfile)' == 'net40'" />
@@ -74,20 +70,20 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="LibraryTestFx.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Utils.fs" Condition=" '$(TargetDotnetProfile)' != 'portable47' " />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Utils.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayModule2.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Array2Module.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Array3Module.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\Array4Module.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayProperties.fs" Condition=" '$(TargetDotnetProfile)' != 'portable47' " />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ArrayProperties.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ComparisonIdentityModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\HashIdentityModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListModule2.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ObsoleteListFunctions.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListType.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListProperties.fs" Condition=" '$(TargetDotnetProfile)' != 'portable47' " />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ListProperties.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\MapModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\MapType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SetModule.fs" />
@@ -95,13 +91,13 @@
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqModule.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqModule2.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\ObsoleteSeqFunctions.fs" />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqProperties.fs" Condition=" '$(TargetDotnetProfile)' != 'portable47' " />
-    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\CollectionModulesConsistency.fs" Condition=" '$(TargetDotnetProfile)' != 'portable47' " />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\SeqProperties.fs" />
+    <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\CollectionModulesConsistency.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Collections\StringModule.fs" />
     <Compile Include="FSharp.Core\PrimTypes.fs" />
     <Compile Include="FSharp.Core\ComparersRegression.fs" />
-    <Compile Include="FSharp.Core\DiscrimantedUnionType.fs"  Condition="'$(TargetDotnetProfile)' != 'portable47' AND '$(TargetDotnetProfile)' != 'portable78' AND '$(TargetDotnetProfile)' != 'portable259'  AND '$(TargetDotnetProfile)' != 'portable7'"/>
-    <Compile Include="FSharp.Core\RecordTypes.fs" Condition="'$(TargetDotnetProfile)' != 'portable47' AND '$(TargetDotnetProfile)' != 'portable78' AND '$(TargetDotnetProfile)' != 'portable259'  AND '$(TargetDotnetProfile)' != 'portable7'"/>
+    <Compile Include="FSharp.Core\DiscrimantedUnionType.fs" />
+    <Compile Include="FSharp.Core\RecordTypes.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\BigIntType.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\IntConversions.fs" />
     <Compile Include="FSharp.Core\Microsoft.FSharp.Core\IntConversionsGenerated.fs" />
