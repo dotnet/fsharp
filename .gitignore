@@ -65,6 +65,8 @@ scripts/*.patch
 /tests/fsharpqa/Source/*net40-fsharpqa-suite-failures.env
 /tests/fsharpqa/Source/*net40-fsharpqa-suite-failures.lst
 /tests/**/FSharp.Core.dll
+/tests/fsharp/optimize/stats/FSharpOptimizationInfo.FSharp.Core
+/tests/fsharp/optimize/stats/FSharpSignatureInfo.FSharp.Core
 lib/debug
 lib/release
 lib/proto
