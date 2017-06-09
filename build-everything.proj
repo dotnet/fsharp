@@ -27,10 +27,6 @@
     <ProjectsWithCoreClr Include="src/fsharp/FSharp.Compiler.nuget/FSharp.Compiler.nuget.proj" />
  </ItemGroup>
 
-  <ItemGroup Condition="'$(BUILD_PORTABLE)'=='1'">
-    <ProjectsWithPortableFrameworks Include="src/fsharp/FSharp.Core/FSharp.Core.fsproj" />
-  </ItemGroup>
-
   <ItemGroup Condition="'$(BUILD_VS)'=='1'">
     <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-src-build.proj" />
     <ProjectsWithNet40 Include="vsintegration/Utils/LanguageServiceProfiling/LanguageServiceProfiling.fsproj" />
@@ -55,10 +51,6 @@
 
   <ItemGroup Condition="'$(TEST_CORECLR_COREUNIT_SUITE)'=='1'">
     <ProjectsWithCoreClr Include="src/fsharp/FSharp.Core.Unittests/FSharp.Core.Unittests.fsproj"/>
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TEST_PORTABLE_COREUNIT_SUITE)'=='1' and ('$(TargetDotnetProfile)' == 'portable7' or '$(TargetDotnetProfile)' == 'portable78' or '$(TargetDotnetProfile)' == 'portable259') " >
-    <ProjectsWithPortableFrameworks Include="src/fsharp/FSharp.Core.Unittests/FSharp.Core.Unittests.fsproj"/>
   </ItemGroup>
 
   <ItemGroup Condition="'$(TEST_NET40_COMPILERUNIT_SUITE)'=='1'" >
@@ -86,38 +78,24 @@
 
   <Target Name="Build">
     <MSBuild Projects="@(ProjectsWithNet40)"              Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
-    <MSBuild Projects="@(ProjectsWithPortableFrameworks)" Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=portable7;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
-    <MSBuild Projects="@(ProjectsWithPortableFrameworks)" Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=portable47;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
-    <MSBuild Projects="@(ProjectsWithPortableFrameworks)" Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=portable78;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
-    <MSBuild Projects="@(ProjectsWithPortableFrameworks)" Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=portable259;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
-    <MSBuild Projects="@(ProjectsWithPortableFrameworks)" Targets="Build" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=xamarinmacmobile;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
-    <MSBuild Projects="@(ProjectsWithPortableFrameworks)" Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetDotnetProfile=monoandroid10+monotouch10+xamarinios10;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
     <MSBuild Projects="@(ProjectsWithCoreClr)"            Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetDotnetProfile=coreclr;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
-    <MSBuild Projects="@(SetupProjects)"                  Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
     <MSBuild Projects="@(NugetProjects)"                  Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);" />
+    <MSBuild Projects="@(SetupProjects)"                  Targets="Build" BuildInParallel="false" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
   </Target>
 
   <Target Name="Rebuild">
     <MSBuild Projects="@(ProjectsWithNet40)"              Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
     <MSBuild Projects="@(ProjectsWithNet40PlusDefine)"    Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);FSHARP_SUITE_DRIVES_CORECLR_TESTS=true" />
-    <MSBuild Projects="@(ProjectsWithPortableFrameworks)" Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=portable7;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
-    <MSBuild Projects="@(ProjectsWithPortableFrameworks)" Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=portable47;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
-    <MSBuild Projects="@(ProjectsWithPortableFrameworks)" Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=portable78;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
-    <MSBuild Projects="@(ProjectsWithPortableFrameworks)" Targets="Rebuild" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=portable259;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
     <MSBuild Projects="@(ProjectsWithCoreClr)"            Targets="Rebuild" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetDotnetProfile=coreclr;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
-    <MSBuild Projects="@(SetupProjects)"                  Targets="Rebuild" BuildInParallel="false" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
     <MSBuild Projects="@(NugetProjects)"                  Targets="Rebuild" BuildInParallel="false" Properties="Configuration=$(Configuration);" />
+    <MSBuild Projects="@(SetupProjects)"                  Targets="Rebuild" BuildInParallel="false" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
   </Target>
 
   <Target Name="Clean">
     <MSBuild Projects="@(ProjectsWithNet40)"              Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
     <MSBuild Projects="@(ProjectsWithNet40PlusDefine)"    Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=net40;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN);FSHARP_SUITE_DRIVES_CORECLR_TESTS=true" />
-    <MSBuild Projects="@(ProjectsWithPortableFrameworks)" Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=portable7;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
-    <MSBuild Projects="@(ProjectsWithPortableFrameworks)" Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=portable47;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
-    <MSBuild Projects="@(ProjectsWithPortableFrameworks)" Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=portable78;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
-    <MSBuild Projects="@(ProjectsWithPortableFrameworks)" Targets="Clean" BuildInParallel="true"  Properties="Configuration=$(Configuration);TargetDotnetProfile=portable259;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
     <MSBuild Projects="@(ProjectsWithCoreClr)"            Targets="Clean" BuildInParallel="false" Properties="Configuration=$(Configuration);TargetDotnetProfile=coreclr;BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
-    <MSBuild Projects="@(SetupProjects)"                  Targets="Clean" BuildInParallel="false" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
     <MSBuild Projects="@(NugetProjects)"                  Targets="Clean" BuildInParallel="false" Properties="Configuration=$(Configuration);" />
+    <MSBuild Projects="@(SetupProjects)"                  Targets="Clean" BuildInParallel="false" Properties="Configuration=$(Configuration);BUILD_PUBLICSIGN=$(BUILD_PUBLICSIGN)" />
   </Target>
 </Project>
