@@ -18,6 +18,7 @@
   <ItemGroup>
     <PackageNuspec Include="FSharp.Core.4.2.xxx.nuspec" />
     <PackageNuspec Include="FSharp.Core.4.1.xxx.nuspec" />
+    <PackageNuspec Include="Microsoft.Portable.FSharp.Core.4.1.xxx.nuspec" />
   </ItemGroup>
 
   <ItemGroup>
@@ -36,10 +37,10 @@
 
   <Target Name="CopyFiles">
     <ItemGroup>
-        <Profiles Include="$(NugetLocalPackagesDir)\Microsoft.Portable.FSharp.Core.4.1.18\lib\*\*.*" 
-                  Exclude="$(NugetLocalPackagesDir)\Microsoft.Portable.FSharp.Core.4.1.18\lib\net45\*\*.*;$(NugetLocalPackagesDir)\Microsoft.Portable.FSharp.Core.4.1.18\lib\netstandard1.6\*\*.*" />
+        <Profiles Include="$(NugetLocalPackagesDir)\Microsoft.Portable.FSharp.Core.$(FSharpCore41FrozenPortableVersion)\lib\**\*.*" 
+                  Exclude="$(NugetLocalPackagesDir)\Microsoft.Portable.FSharp.Core.$(FSharpCore41FrozenPortableVersion)\lib\net45\**\*.*;$(NugetLocalPackagesDir)\Microsoft.Portable.FSharp.Core.$(FSharpCore41FrozenPortableVersionm)\lib\netstandard1.6\**\*.*" />
     </ItemGroup>
-    <Copy SourceFiles="@(Profiles)" DestinationFolder="$(FSharpSourcesRoot)\..\$(Configuration)\profiles\%(RecursiveDir)" />
+    <Copy SourceFiles="@(Profiles)" DestinationFolder="$(FSharpSourcesRoot)\..\$(Configuration)\%(RecursiveDir)" />
   </Target>
 
   <Target Name="nugetpackfsharpcore"
@@ -50,10 +51,16 @@
 
     <PropertyGroup>
       <PackageVersion>X.X.XXX</PackageVersion>
-      <PackageVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.4.1.xxx.nuspec'">$(FSharpCore41Version)</PackageVersion>
+
+      <PackageVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.4.1.xxx.nuspec'">$(FSharpCore41TargetVersion)</PackageVersion>
       <PackageMajorVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.4.1.xxx.nuspec'">4.1</PackageMajorVersion>
-      <PackageVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.4.2.xxx.nuspec'">$(FSharpCore42Version)</PackageVersion>
+
+      <PackageVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.4.2.xxx.nuspec'">$(FSharpCore42TargetVersion)</PackageVersion>
       <PackageMajorVersion Condition="'@(PackageNuspec)' == 'FSharp.Core.4.2.xxx.nuspec'">4.2</PackageMajorVersion>
+
+      <PackageVersion Condition="'@(PackageNuspec)' == 'Microsoft.Portable.FSharp.Core.4.1.xxx.nuspec'">$(FSharpCore41FrozenPortableTargetVersion)</PackageVersion>
+      <PackageMajorVersion Condition="'@(PackageNuspec)' == 'Microsoft.Portable.FSharp.Core.4.1.xxx.nuspec'">4.1</PackageMajorVersion>
+
       <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
     </PropertyGroup>
 
