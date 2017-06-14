@@ -6,10 +6,12 @@ open System.Threading
 
 open NUnit.Framework
 
+open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
+open Microsoft.FSharp.Compiler.SourceCodeServices
 
 [<TestFixture>][<Category "Roslyn Services">]
 type IndentationServiceTests()  =
@@ -66,7 +68,22 @@ namespace testspace
 
     [<TestCaseSource("testCases")>]
     member this.TestIndentation(expectedIndentation: Option<int>, lineNumber: int, template: string) = 
-        let actualIndentation = FSharpIndentationService.GetDesiredIndentation(SourceText.From(template), lineNumber, tabSize)
+        let filePath = "C:\\test.fs"
+        let options: FSharpProjectOptions = { 
+            ProjectFileName = "C:\\test.fsproj"
+            SourceFiles =  [| filePath |]
+            ReferencedProjects = [| |]
+            OtherOptions = [| |]
+            IsIncompleteTypeCheckEnvironment = true
+            UseScriptResolutionRules = false
+            LoadTime = DateTime.MaxValue
+            OriginalLoadReferences = []
+            UnresolvedReferences = None
+            ExtraProjectInfo = None
+            Stamp = None
+        }
+        let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+        let actualIndentation = FSharpIndentationService.GetDesiredIndentation(documentId, SourceText.From(template), filePath, lineNumber, tabSize, (Some options))
         match expectedIndentation with
         | None -> Assert.IsTrue(actualIndentation.IsNone, "No indentation was expected at line {0}", lineNumber)
         | Some(indentation) -> Assert.AreEqual(expectedIndentation.Value, actualIndentation.Value, "Indentation on line {0} doesn't match", lineNumber)

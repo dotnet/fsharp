@@ -20,7 +20,7 @@ type internal FSharpIndentationService
     [<ImportingConstructor>]
     (projectInfoManager: ProjectInfoManager) =
 
-    static member GetDesiredIndentation(document: Document, sourceText: SourceText, lineNumber: int, tabSize: int, projectInfoManager: ProjectInfoManager): Async<Option<int>> =
+    static member GetDesiredIndentation(documentId: DocumentId, sourceText: SourceText, filePath: string, lineNumber: int, tabSize: int, optionsOpt: FSharpProjectOptions option): Option<int> =
         // Match indentation with previous line
         let rec tryFindPreviousNonEmptyLine l =
             if l <= 0 then None
@@ -31,10 +31,10 @@ type internal FSharpIndentationService
                 else
                     tryFindPreviousNonEmptyLine (l - 1)
 
-        let rec tryFindLastNoneEmptyToken (line: TextLine) = asyncMaybe {
-           let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
-           let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.FilePath, options.OtherOptions |> Seq.toList)
-           let tokens = Tokenizer.tokenizeLine(document.Id, sourceText, line.Start, document.FilePath, defines)
+        let rec tryFindLastNoneEmptyToken (line: TextLine) = maybe {
+           let! options = optionsOpt
+           let defines = CompilerEnvironment.GetCompilationDefinesForEditing(filePath, options.OtherOptions |> Seq.toList)
+           let tokens = Tokenizer.tokenizeLine(documentId, sourceText, line.Start, filePath, defines)
 
            let rec loop (tokens: FSharpTokenInfo list) =
                match tokens with
@@ -71,7 +71,7 @@ type internal FSharpIndentationService
             | Eq FSharpTokenTag.TRY -> Some ()
             | _ -> None
 
-        asyncMaybe {
+        maybe {
             // No indentation on the first line of a document
             if lineNumber = 0 then return! None
             else
@@ -90,12 +90,11 @@ type internal FSharpIndentationService
                     let lastIndent = loop 0 0
 
                     let! lastToken = tryFindLastNoneEmptyToken previousLine
-                    let indent =
+                    return
                         match lastToken with
                         | NeedIndent -> (lastIndent/tabSize + 1) * tabSize
                         | _ -> lastIndent
-                    return indent
-            }
+        }
 
     interface ISynchronousIndentationService with
         member this.GetDesiredIndentation(document: Document, lineNumber: int, cancellationToken: CancellationToken): Nullable<IndentationResult> =
@@ -104,7 +103,8 @@ type internal FSharpIndentationService
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
                 let tabSize = options.GetOption(FormattingOptions.TabSize, FSharpConstants.FSharpLanguageName)
-                let! indent = FSharpIndentationService.GetDesiredIndentation(document, sourceText, lineNumber, tabSize, projectInfoManager)
+                let projectOptionsOpt = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
+                let indent = FSharpIndentationService.GetDesiredIndentation(document.Id, sourceText, document.FilePath, lineNumber, tabSize, projectOptionsOpt)
                 return
                     match indent with
                     | None -> Nullable()
