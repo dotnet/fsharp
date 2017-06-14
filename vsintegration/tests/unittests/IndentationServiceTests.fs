@@ -102,12 +102,11 @@ end
 
 while true do
     printfn \"never end\"
-
 "
     
     static member private testCases: Object[][] = [|
         [| None;     0; consoleProjectTemplate |]
-        [| Some(0);  1; consoleProjectTemplate |]
+        [| None;     1; consoleProjectTemplate |]
         [| Some(0);  2; consoleProjectTemplate |]
         [| Some(0);  3; consoleProjectTemplate |]
         [| Some(0);  4; consoleProjectTemplate |]
@@ -117,36 +116,36 @@ while true do
         [| Some(4);  8; consoleProjectTemplate |]
         
         [| None;     0; libraryProjectTemplate |]
-        [| Some(0);  1; libraryProjectTemplate |]
+        [| None;     1; libraryProjectTemplate |]
         [| Some(0);  2; libraryProjectTemplate |]
         [| Some(0);  3; libraryProjectTemplate |]
         [| Some(4);  4; libraryProjectTemplate |]
         [| Some(4);  5; libraryProjectTemplate |]
         
         [| None;     0; nestedTypesTemplate |]
-        [| Some(0);  1; nestedTypesTemplate |]
+        [| None;     1; nestedTypesTemplate |]
         [| Some(0);  2; nestedTypesTemplate |]
         [| Some(4);  3; nestedTypesTemplate |]
         [| Some(8);  4; nestedTypesTemplate |]
         [| Some(8);  5; nestedTypesTemplate |]
 
         [| None;     0; autoIndentTemplate |]
-        [| Some(4);  1; autoIndentTemplate |]
-        [| Some(4);  5; autoIndentTemplate |]
-        [| Some(4);  10; autoIndentTemplate |]
-        [| Some(4);  13; autoIndentTemplate |]
-        [| Some(4);  18; autoIndentTemplate |]
-        [| Some(4);  20; autoIndentTemplate |]
-        [| Some(4);  23; autoIndentTemplate |]
-        [| Some(4);  28; autoIndentTemplate |]
-        [| Some(4);  33; autoIndentTemplate |]
-        [| Some(4);  38; autoIndentTemplate |]
-        [| Some(4);  43; autoIndentTemplate |]
-        [| Some(4);  47; autoIndentTemplate |]
-        [| Some(4);  51; autoIndentTemplate |]
-        [| Some(4);  54; autoIndentTemplate |]
-        [| Some(4);  57; autoIndentTemplate |]
-        [| Some(4);  60; autoIndentTemplate |]
+        [| Some(4);  2; autoIndentTemplate |]
+        [| Some(4);  6; autoIndentTemplate |]
+        [| Some(4);  11; autoIndentTemplate |]
+        [| Some(4);  14; autoIndentTemplate |]
+        [| Some(4);  19; autoIndentTemplate |]
+        [| Some(4);  21; autoIndentTemplate |]
+        [| Some(4);  24; autoIndentTemplate |]
+        [| Some(4);  29; autoIndentTemplate |]
+        [| Some(4);  34; autoIndentTemplate |]
+        [| Some(4);  39; autoIndentTemplate |]
+        [| Some(4);  44; autoIndentTemplate |]
+        [| Some(4);  48; autoIndentTemplate |]
+        [| Some(4);  52; autoIndentTemplate |]
+        [| Some(4);  55; autoIndentTemplate |]
+        [| Some(4);  58; autoIndentTemplate |]
+        [| Some(4);  61; autoIndentTemplate |]
     |]
 
     [<TestCaseSource("testCases")>]
