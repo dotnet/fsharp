@@ -171,6 +171,24 @@ module FSharpTokenTag =
     val LARROW : int
     /// Indicates the token is a `"`
     val QUOTE : int
+    /// Indicates the token is a whitespace
+    val WHITESPACE : int
+    /// Indicates the token is keyword `begin`
+    val BEGIN : int
+    /// Indicates the token is keyword `do`
+    val DO : int
+    /// Indicates the token is keyword `function`
+    val FUNCTION : int
+    /// Indicates the token is keyword `then`
+    val THEN : int
+    /// Indicates the token is keyword `else`
+    val ELSE : int
+    /// Indicates the token is keyword `struct`
+    val STRUCT : int
+    /// Indicates the token is keyword `class`
+    val CLASS : int
+    /// Indicates the token is keyword `try`
+    val TRY : int
     
 /// Information about a particular token from the tokenizer
 type FSharpTokenInfo = 

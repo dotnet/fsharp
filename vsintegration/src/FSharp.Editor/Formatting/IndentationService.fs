@@ -11,52 +11,91 @@ open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Formatting
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
-open System.Text.RegularExpressions
+
+open Microsoft.FSharp.Compiler.SourceCodeServices
 
 [<Shared>]
 [<ExportLanguageService(typeof<ISynchronousIndentationService>, FSharpConstants.FSharpLanguageName)>]
-type internal FSharpIndentationService() =
+type internal FSharpIndentationService
+    [<ImportingConstructor>]
+    (projectInfoManager: ProjectInfoManager) =
 
-    static member GetDesiredIndentation(sourceText: SourceText, lineNumber: int, tabSize: int): Option<int> =        
+    static member GetDesiredIndentation(document: Document, sourceText: SourceText, lineNumber: int, tabSize: int, projectInfoManager: ProjectInfoManager): Async<Option<int>> =
         // Match indentation with previous line
         let rec tryFindPreviousNonEmptyLine l =
             if l <= 0 then None
             else
                 let previousLine = sourceText.Lines.[l - 1]
-                if not (String.IsNullOrEmpty(previousLine.ToString())) then                    
+                if not (String.IsNullOrEmpty(previousLine.ToString())) then
                     Some previousLine
                 else
                     tryFindPreviousNonEmptyLine (l - 1)
-        // No indentation on the first line of a document
-        if lineNumber = 0 then None
-        else
-            match tryFindPreviousNonEmptyLine lineNumber with
-            | None -> Some 0
-            | Some previousLine ->          
-                let rec loop column spaces =
-                    if previousLine.Start + column >= previousLine.End then
-                        spaces
-                    else 
-                        match previousLine.Text.[previousLine.Start + column] with
-                        | ' ' -> loop (column + 1) (spaces + 1)
-                        | '\t' -> loop (column + 1) (((spaces / tabSize) + 1) * tabSize)
-                        | _ -> spaces
 
-                let lastIndent = loop 0 0
+        let rec tryFindLastNoneEmptyToken (line: TextLine) = asyncMaybe {
+           let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
+           let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.FilePath, options.OtherOptions |> Seq.toList)
+           let tokens = Tokenizer.tokenizeLine(document.Id, sourceText, line.Start, document.FilePath, defines)
 
-                // Increase indent after line end with:
-                let regex =
-                    @"(
-                        = | <-
-                       | ->
-                       | \( | \[ | \[\| | \[< | \{
-                       | begin | do | class | function | then | else | struct | try
-                      )
-                      \s*$"
-                if Regex.IsMatch(previousLine.ToString(), regex, RegexOptions.IgnorePatternWhitespace) then
-                    Some ((lastIndent/tabSize + 1) * tabSize)
-                else
-                    Some lastIndent
+           let rec loop (tokens: FSharpTokenInfo list) =
+               match tokens with
+               | [] -> None
+               | x::xs ->
+                   if x.Tag = FSharpTokenTag.WHITESPACE then
+                       loop xs
+                   else Some x
+
+           return! loop (List.rev tokens)
+        }
+
+        let (|Eq|_|) y x =
+            if x = y then Some()
+            else None
+
+        let (|NeedIndent|_|) (token: FSharpTokenInfo) =
+            match token.Tag with
+            | Eq FSharpTokenTag.EQUALS
+            | Eq FSharpTokenTag.LARROW
+            | Eq FSharpTokenTag.RARROW
+            | Eq FSharpTokenTag.LPAREN
+            | Eq FSharpTokenTag.LBRACK
+            | Eq FSharpTokenTag.LBRACK_BAR
+            | Eq FSharpTokenTag.LBRACK_LESS
+            | Eq FSharpTokenTag.LBRACE
+            | Eq FSharpTokenTag.BEGIN
+            | Eq FSharpTokenTag.DO
+            | Eq FSharpTokenTag.FUNCTION
+            | Eq FSharpTokenTag.THEN
+            | Eq FSharpTokenTag.ELSE
+            | Eq FSharpTokenTag.STRUCT
+            | Eq FSharpTokenTag.CLASS
+            | Eq FSharpTokenTag.TRY -> Some ()
+            | _ -> None
+
+        asyncMaybe {
+            // No indentation on the first line of a document
+            if lineNumber = 0 then return! None
+            else
+                match tryFindPreviousNonEmptyLine lineNumber with
+                | None -> return 0
+                | Some previousLine ->
+                    let rec loop column spaces =
+                        if previousLine.Start + column >= previousLine.End then
+                            spaces
+                        else
+                            match previousLine.Text.[previousLine.Start + column] with
+                            | ' ' -> loop (column + 1) (spaces + 1)
+                            | '\t' -> loop (column + 1) (((spaces / tabSize) + 1) * tabSize)
+                            | _ -> spaces
+
+                    let lastIndent = loop 0 0
+
+                    let! lastToken = tryFindLastNoneEmptyToken previousLine
+                    let indent =
+                        match lastToken with
+                        | NeedIndent -> (lastIndent/tabSize + 1) * tabSize
+                        | _ -> lastIndent
+                    return indent
+            }
 
     interface ISynchronousIndentationService with
         member this.GetDesiredIndentation(document: Document, lineNumber: int, cancellationToken: CancellationToken): Nullable<IndentationResult> =
@@ -65,9 +104,9 @@ type internal FSharpIndentationService() =
                 let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                 let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
                 let tabSize = options.GetOption(FormattingOptions.TabSize, FSharpConstants.FSharpLanguageName)
-                 
-                return 
-                    match FSharpIndentationService.GetDesiredIndentation(sourceText, lineNumber, tabSize) with
+                let! indent = FSharpIndentationService.GetDesiredIndentation(document, sourceText, lineNumber, tabSize, projectInfoManager)
+                return
+                    match indent with
                     | None -> Nullable()
                     | Some(indentation) -> Nullable<IndentationResult>(IndentationResult(sourceText.Lines.[lineNumber].Start, indentation))
             } |> (fun c -> Async.RunSynchronously(c,cancellationToken=cancellationToken))
