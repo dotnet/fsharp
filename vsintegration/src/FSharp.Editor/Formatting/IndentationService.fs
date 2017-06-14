@@ -31,7 +31,7 @@ type internal FSharpIndentationService
                 else
                     tryFindPreviousNonEmptyLine (l - 1)
 
-        let rec tryFindLastNoneEmptyToken (line: TextLine) = maybe {
+        let rec tryFindLastNoneWhitespaceToken (line: TextLine) = maybe {
            let! options = optionsOpt
            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(filePath, options.OtherOptions |> Seq.toList)
            let tokens = Tokenizer.tokenizeLine(documentId, sourceText, line.Start, filePath, defines)
@@ -80,7 +80,7 @@ type internal FSharpIndentationService
 
             let lastIndent = loop 0 0
 
-            let! lastToken = tryFindLastNoneEmptyToken previousLine
+            let! lastToken = tryFindLastNoneWhitespaceToken previousLine
             return
                 match lastToken with
                 | NeedIndent -> (lastIndent/tabSize + 1) * tabSize
