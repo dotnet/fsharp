@@ -411,11 +411,11 @@ val isAnyTupleTy       : TcGlobals -> TType -> bool
 val isRefTupleTy       : TcGlobals -> TType -> bool
 val isStructTupleTy    : TcGlobals -> TType -> bool
 val isUnionTy          : TcGlobals -> TType -> bool
-val isStructUnionTy    : TcGlobals -> TType -> bool
 val isReprHiddenTy     : TcGlobals -> TType -> bool
 val isFSharpObjModelTy : TcGlobals -> TType -> bool
 val isRecdTy           : TcGlobals -> TType -> bool
-val isStructRecdTy     : TcGlobals -> TType -> bool
+val isFSharpStructOrEnumTy : TcGlobals -> TType -> bool
+val isFSharpEnumTy     : TcGlobals -> TType -> bool
 val isTyparTy          : TcGlobals -> TType -> bool
 val isAnyParTy         : TcGlobals -> TType -> bool
 val tryAnyParTy        : TcGlobals -> TType -> Typar option
