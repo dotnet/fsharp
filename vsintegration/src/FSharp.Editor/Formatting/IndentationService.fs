@@ -36,15 +36,10 @@ type internal FSharpIndentationService
            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(filePath, options.OtherOptions |> Seq.toList)
            let tokens = Tokenizer.tokenizeLine(documentId, sourceText, line.Start, filePath, defines)
 
-           let rec loop (tokens: FSharpTokenInfo list) =
-               match tokens with
-               | [] -> None
-               | x::xs ->
-                   if x.Tag = FSharpTokenTag.WHITESPACE then
-                       loop xs
-                   else Some x
-
-           return! loop (List.rev tokens)
+           return!
+               tokens
+               |> List.rev
+               |> List.tryFind (fun x -> x.Tag <> FSharpTokenTag.WHITESPACE)
         }
 
         let (|Eq|_|) y x =
@@ -72,28 +67,24 @@ type internal FSharpIndentationService
             | _ -> None
 
         maybe {
-            // No indentation on the first line of a document
-            if lineNumber = 0 then return! None
-            else
-                match tryFindPreviousNonEmptyLine lineNumber with
-                | None -> return 0
-                | Some previousLine ->
-                    let rec loop column spaces =
-                        if previousLine.Start + column >= previousLine.End then
-                            spaces
-                        else
-                            match previousLine.Text.[previousLine.Start + column] with
-                            | ' ' -> loop (column + 1) (spaces + 1)
-                            | '\t' -> loop (column + 1) (((spaces / tabSize) + 1) * tabSize)
-                            | _ -> spaces
+            let! previousLine = tryFindPreviousNonEmptyLine lineNumber
 
-                    let lastIndent = loop 0 0
+            let rec loop column spaces =
+                if previousLine.Start + column >= previousLine.End then
+                    spaces
+                else
+                    match previousLine.Text.[previousLine.Start + column] with
+                    | ' ' -> loop (column + 1) (spaces + 1)
+                    | '\t' -> loop (column + 1) (((spaces / tabSize) + 1) * tabSize)
+                    | _ -> spaces
 
-                    let! lastToken = tryFindLastNoneEmptyToken previousLine
-                    return
-                        match lastToken with
-                        | NeedIndent -> (lastIndent/tabSize + 1) * tabSize
-                        | _ -> lastIndent
+            let lastIndent = loop 0 0
+
+            let! lastToken = tryFindLastNoneEmptyToken previousLine
+            return
+                match lastToken with
+                | NeedIndent -> (lastIndent/tabSize + 1) * tabSize
+                | _ -> lastIndent
         }
 
     interface ISynchronousIndentationService with
