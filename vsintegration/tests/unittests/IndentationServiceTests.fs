@@ -39,6 +39,71 @@ namespace testspace
         static member testmember = 1
 
 "
+
+    static let autoIndentTemplate = "
+let plus x y =
+    x + y
+
+let mutable x = 0
+x <-
+    10 * 2
+
+match Some 10 with
+| None -> 0
+| Some x ->
+    x + 1
+
+try
+    failwith \"fail\"
+with
+    | :? System.Exception -> \"error\"
+
+if 10 > 0 then
+    true
+else
+    false
+
+(
+    1,
+    2,
+)
+
+[
+    1
+    2
+]
+
+[|
+    1
+    2
+|]
+
+[<
+    Literal
+>]
+let constX = 10
+
+let t = seq {
+    yield 1
+}
+
+let g = function
+    | None -> 1
+    | Some _ -> 0
+
+module MyModule = begin
+end
+
+type MyType() = class
+end
+
+type MyStruct = struct
+end
+
+while true do
+    printfn \"never end\"
+
+"
     
     static member private testCases: Object[][] = [|
         [| None;     0; consoleProjectTemplate |]
@@ -64,6 +129,24 @@ namespace testspace
         [| Some(4);  3; nestedTypesTemplate |]
         [| Some(8);  4; nestedTypesTemplate |]
         [| Some(8);  5; nestedTypesTemplate |]
+
+        [| None;     0; autoIndentTemplate |]
+        [| Some(4);  1; autoIndentTemplate |]
+        [| Some(4);  5; autoIndentTemplate |]
+        [| Some(4);  10; autoIndentTemplate |]
+        [| Some(4);  13; autoIndentTemplate |]
+        [| Some(4);  18; autoIndentTemplate |]
+        [| Some(4);  20; autoIndentTemplate |]
+        [| Some(4);  23; autoIndentTemplate |]
+        [| Some(4);  28; autoIndentTemplate |]
+        [| Some(4);  33; autoIndentTemplate |]
+        [| Some(4);  38; autoIndentTemplate |]
+        [| Some(4);  43; autoIndentTemplate |]
+        [| Some(4);  47; autoIndentTemplate |]
+        [| Some(4);  51; autoIndentTemplate |]
+        [| Some(4);  54; autoIndentTemplate |]
+        [| Some(4);  57; autoIndentTemplate |]
+        [| Some(4);  60; autoIndentTemplate |]
     |]
 
     [<TestCaseSource("testCases")>]
