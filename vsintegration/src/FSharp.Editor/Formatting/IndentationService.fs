@@ -31,7 +31,7 @@ type internal FSharpIndentationService
                 else
                     tryFindPreviousNonEmptyLine (l - 1)
 
-        let rec tryFindLastNoneWhitespaceToken (line: TextLine) = maybe {
+        let rec tryFindLastNoneWhitespaceOrCommentToken (line: TextLine) = maybe {
            let! options = optionsOpt
            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(filePath, options.OtherOptions |> Seq.toList)
            let tokens = Tokenizer.tokenizeLine(documentId, sourceText, line.Start, filePath, defines)
@@ -39,7 +39,8 @@ type internal FSharpIndentationService
            return!
                tokens
                |> List.rev
-               |> List.tryFind (fun x -> x.Tag <> FSharpTokenTag.WHITESPACE)
+               |> List.tryFind (fun x ->
+                   x.Tag <> FSharpTokenTag.WHITESPACE && x.Tag <> FSharpTokenTag.COMMENT && x.Tag <> FSharpTokenTag.LINE_COMMENT)
         }
 
         let (|Eq|_|) y x =
@@ -80,7 +81,7 @@ type internal FSharpIndentationService
 
             let lastIndent = loop 0 0
 
-            let! lastToken = tryFindLastNoneWhitespaceToken previousLine
+            let! lastToken = tryFindLastNoneWhitespaceOrCommentToken previousLine
             return
                 match lastToken with
                 | NeedIndent -> (lastIndent/tabSize + 1) * tabSize

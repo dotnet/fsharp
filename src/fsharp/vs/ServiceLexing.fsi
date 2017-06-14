@@ -173,6 +173,10 @@ module FSharpTokenTag =
     val QUOTE : int
     /// Indicates the token is a whitespace
     val WHITESPACE : int
+    /// Indicates the token is a comment
+    val COMMENT : int
+    /// Indicates the token is a line comment
+    val LINE_COMMENT : int
     /// Indicates the token is keyword `begin`
     val BEGIN : int
     /// Indicates the token is keyword `do`
