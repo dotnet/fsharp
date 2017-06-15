@@ -15,8 +15,8 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 
 [<TestFixture>][<Category "Roslyn Services">]
 type IndentationServiceTests()  =
-    let filePath = "C:\\test.fs"
-    let options: FSharpProjectOptions = { 
+    static let filePath = "C:\\test.fs"
+    static let options: FSharpProjectOptions = { 
         ProjectFileName = "C:\\test.fsproj"
         SourceFiles =  [| filePath |]
         ReferencedProjects = [| |]
@@ -29,7 +29,9 @@ type IndentationServiceTests()  =
         ExtraProjectInfo = None
         Stamp = None
     }
-    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    static let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+
+    static let indentComment = System.Text.RegularExpressions.Regex(@"\$\s*Indent:\s*(\d+)\s*\$")
 
     static let tabSize = 4
 
@@ -64,14 +66,14 @@ x <-
     10 * 2 // $Indent: 4$
 
 match some 10 with
-| none -> 0
-| some x -> 
+| None -> 0
+| Some x -> 
     x + 1 // $Indent: 4$
 
 try
     failwith \"fail\" // $Indent: 4$
 with
-    | :? system.exception -> \"error\"
+    | :? System.Exception -> \"error\"
 
 if 10 > 0 then
     true // $Indent: 4$
@@ -94,7 +96,7 @@ else
 |]
 
 [<
-    literal // $Indent: 4$
+    Literal // $Indent: 4$
 >]
 let constx = 10
 
@@ -103,16 +105,16 @@ let t = seq { // $Indent: 0$
 }
 
 let g = function
-    | none -> 1 // $Indent: 4$
-    | some _ -> 0
+    | None -> 1 // $Indent: 4$
+    | Some _ -> 0
 
-module mymodule = begin
+module MyModule = begin
 end // $Indent: 4$
 
-type mytype() = class
+type MyType() = class
 end // $Indent: 4$
 
-type mystruct = struct
+type MyStruct = struct
 end // $Indent: 4$
 
 while true do
@@ -120,6 +122,9 @@ while true do
 
 // After line has keyword in comment such as function
 // should not be indented $Indent: 0$
+
+    // Even if the line before only had comment like this
+// The follwing line should inherit that indentation too $Indent: 4$
 "
     
     static member private testCases: Object[][] = [|
@@ -148,6 +153,17 @@ while true do
         [| Some(8);  5; nestedTypesTemplate |]
     |]
 
+    static member private autoIndentTestCases =
+        autoIndentTemplate.Split [|'\n'|]
+        |> Array.map (fun s -> s.Trim())
+        |> Array.indexed
+        |> Array.choose (fun (line, text) ->
+            let m = indentComment.Match text
+            if m.Success then Some (line, System.Convert.ToInt32 m.Groups.[1].Value)
+            else None )
+        |> Array.map (fun (lineNumber, expectedIndentation) ->
+            [| Some(expectedIndentation); lineNumber; autoIndentTemplate |]: Object[] )
+
     [<TestCaseSource("testCases")>]
     member this.TestIndentation(expectedIndentation: Option<int>, lineNumber: int, template: string) = 
         let actualIndentation = FSharpIndentationService.GetDesiredIndentation(documentId, SourceText.From(template), filePath, lineNumber, tabSize, (Some options))
@@ -155,17 +171,9 @@ while true do
         | None -> Assert.IsTrue(actualIndentation.IsNone, "No indentation was expected at line {0}", lineNumber)
         | Some(indentation) -> Assert.AreEqual(expectedIndentation.Value, actualIndentation.Value, "Indentation on line {0} doesn't match", lineNumber)
     
-    [<Test>]
-    member this.TestAutoIndentation() =
-        let indentComment = System.Text.RegularExpressions.Regex(@"\/\/\s*\$\s*Indent:\s*(\d+)\s*\$")
-
-        autoIndentTemplate.Split [|'\n'|]
-        |> Seq.map (fun s -> s.Trim())
-        |> Seq.indexed
-        |> Seq.choose (fun (line, text) ->
-            let m = indentComment.Match text
-            if m.Success then Some (line, System.Convert.ToInt32 m.Groups.[1].Value)
-            else None )
-        |> Seq.iter (fun (lineNumber, expectedIndentation) ->
-            let actualIndentation = FSharpIndentationService.GetDesiredIndentation(documentId, SourceText.From(autoIndentTemplate), filePath, lineNumber, tabSize, (Some options))
-            Assert.AreEqual(expectedIndentation, actualIndentation.Value, "Indentation on line {0} doesn't match", lineNumber) )
+    [<TestCaseSource("autoIndentTestCases")>]
+    member this.TestAutoIndentation(expectedIndentation: Option<int>, lineNumber: int, template: string) = 
+        let actualIndentation = FSharpIndentationService.GetDesiredIndentation(documentId, SourceText.From(template), filePath, lineNumber, tabSize, (Some options))
+        match expectedIndentation with
+        | None -> Assert.IsTrue(actualIndentation.IsNone, "No indentation was expected at line {0}", lineNumber)
+        | Some(indentation) -> Assert.AreEqual(expectedIndentation.Value, actualIndentation.Value, "Indentation on line {0} doesn't match", lineNumber)

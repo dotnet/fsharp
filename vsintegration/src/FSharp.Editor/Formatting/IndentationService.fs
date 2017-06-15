@@ -81,10 +81,10 @@ type internal FSharpIndentationService
 
             let lastIndent = loop 0 0
 
-            let! lastToken = tryFindLastNoneWhitespaceOrCommentToken previousLine
+            let lastToken = tryFindLastNoneWhitespaceOrCommentToken previousLine
             return
                 match lastToken with
-                | NeedIndent -> (lastIndent/tabSize + 1) * tabSize
+                | Some(NeedIndent) -> (lastIndent/tabSize + 1) * tabSize
                 | _ -> lastIndent
         }
 
