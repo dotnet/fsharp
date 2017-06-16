@@ -158,7 +158,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                       mlCompatibility: bool, isInteractive:bool, 
                       // The helper to find system types amongst referenced DLLs
                       tryFindSysTypeCcu, 
-                      emitDebugInfoInQuotations: bool, usesMscorlib: bool, noDebugData: bool) =
+                      emitDebugInfoInQuotations: bool, noDebugData: bool) =
       
   let vara = NewRigidTypar "a" envRange
   let varb = NewRigidTypar "b" envRange
@@ -1234,7 +1234,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.suppressed_types = v_suppressed_types
   /// Are we assuming all code gen is for F# interactive, with no static linking 
   member __.isInteractive=isInteractive
-  member __.usesMscorlib = usesMscorlib
 
   member __.FindSysTyconRef path nm = findSysTyconRef path nm
   member __.TryFindSysTyconRef path nm = tryFindSysTyconRef path nm

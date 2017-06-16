@@ -763,9 +763,9 @@ module MainModuleBuilder =
                           CustomAttrs = mkILCustomAttrs List.empty<ILAttribute>  }) |> 
           Seq.toList
 
-    let createSystemNumericsExportList (tcGlobals: TcGlobals) (tcImports:TcImports) =
+    let createSystemNumericsExportList (tcConfig: TcConfig) (tcImports:TcImports) =
         let refNumericsDllName =
-            if tcGlobals.usesMscorlib then "System.Numerics"
+            if (tcConfig.primaryAssembly.Name = "mscorlib") then "System.Numerics"
             else "System.Runtime.Numerics"
         let numericsAssemblyRef =
             match tcImports.GetImportedAssemblies() |> List.tryFind<ImportedAssembly>(fun a -> a.FSharpViewOfMetadata.AssemblyName = refNumericsDllName) with
@@ -844,7 +844,7 @@ module MainModuleBuilder =
             let exportedTypesList = 
                 if (tcConfig.compilingFslib && tcConfig.compilingFslib40) then 
                    (List.append (createMscorlibExportList tcGlobals)
-                                (if tcConfig.compilingFslibNoBigInt then [] else (createSystemNumericsExportList tcGlobals tcImports))
+                                (if tcConfig.compilingFslibNoBigInt then [] else (createSystemNumericsExportList tcConfig tcImports))
                    )
                 else
                     []

@@ -52,15 +52,18 @@ let lazyMap f (x:Lazy<_>) =
 [<RequireQualifiedAccess>]
 type PrimaryAssembly = 
     | Mscorlib
-    | DotNetCore   
+    | System_Runtime   
+    | NetStandard   
 
     member this.Name = 
         match this with
         | Mscorlib -> "mscorlib"
-        | DotNetCore -> "System.Runtime"
+        | System_Runtime -> "System.Runtime"
+        | NetStandard -> "netstandard"
     static member IsSomePrimaryAssembly n = 
       n = PrimaryAssembly.Mscorlib.Name 
-      || n = PrimaryAssembly.DotNetCore.Name  
+      || n = PrimaryAssembly.System_Runtime.Name  
+      || n = PrimaryAssembly.NetStandard.Name  
 
 // -------------------------------------------------------------------- 
 // Utilities: type names
