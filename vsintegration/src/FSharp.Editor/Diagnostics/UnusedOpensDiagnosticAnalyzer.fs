@@ -67,8 +67,8 @@ module private UnusedOpens =
                 [ yield ent.Namespace
                   yield Some ent.AccessPath
                   yield getAutoOpenAccessPath ent
-                  //for path in ent.AllCompilationPaths do
-                   // yield Some path 
+                  for path in ent.AllCompilationPaths do
+                    yield Some path 
                 ]
         | None -> []
 
@@ -145,6 +145,7 @@ type internal UnusedOpensDiagnosticAnalyzer() =
     let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().ProjectInfoManager
     let getChecker (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
 
+    static let userOpName = "UnusedOpensAnalyzer"
     static let Descriptor = 
         DiagnosticDescriptor(
             id = IDEDiagnosticIds.RemoveUnnecessaryImportsDiagnosticId, 
@@ -162,13 +163,14 @@ type internal UnusedOpensDiagnosticAnalyzer() =
         asyncMaybe {
             do! Option.guard Settings.CodeFixes.UnusedOpens
             let! sourceText = document.GetTextAsync()
-            let! _, parsedInput, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true)
+            let! _, parsedInput, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true, userOpName = userOpName)
             let! symbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
             return UnusedOpens.getUnusedOpens sourceText parsedInput symbolUses
         } 
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) =
         asyncMaybe {
+            do! Async.Sleep DefaultTuning.UnusedOpensAnalyzerInitialDelay |> liftAsync // be less intrusive, give other work priority most of the time
             let! options = getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document)
             let! sourceText = document.GetTextAsync()
             let checker = getChecker document

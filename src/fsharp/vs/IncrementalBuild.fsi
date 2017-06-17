@@ -14,40 +14,7 @@ open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.Tast
-
-
-[<RequireQualifiedAccess>]
-type internal FSharpErrorSeverity = 
-    | Warning 
-    | Error
-
-[<Class>]
-type internal FSharpErrorInfo = 
-    member FileName: string
-    member StartLineAlternate:int
-    member EndLineAlternate:int
-    [<Obsolete("This member has been replaced by StartLineAlternate, which produces 1-based line numbers rather than a 0-based line numbers. See https://github.com/fsharp/FSharp.Compiler.Service/issues/64")>]
-    member StartLine:Line0
-    [<Obsolete("This member has been replaced by EndLineAlternate, which produces 1-based line numbers rather than a 0-based line numbers. See https://github.com/fsharp/FSharp.Compiler.Service/issues/64")>]
-    member EndLine:Line0
-    member StartColumn:int
-    member EndColumn:int
-    member Severity:FSharpErrorSeverity
-    member Message:string
-    member Subcategory:string
-    member ErrorNumber:int
-    static member internal CreateFromExceptionAndAdjustEof : PhasedDiagnostic * isError: bool * trim: bool * range * lastPosInFile:(int*int) -> FSharpErrorInfo
-    static member internal CreateFromException : PhasedDiagnostic * isError: bool * trim: bool * range -> FSharpErrorInfo
-
-// Implementation details used by other code in the compiler    
-[<Sealed>]
-type internal ErrorScope = 
-    interface IDisposable
-    new : unit -> ErrorScope
-    member Diagnostics : FSharpErrorInfo list
-    static member Protect<'a> : range -> (unit->'a) -> (string->'a) -> 'a
-    static member ProtectWithDefault<'a> : range -> (unit -> 'a) -> 'a -> 'a
-    static member ProtectAndDiscard : range -> (unit -> unit) -> unit
+open Microsoft.FSharp.Compiler.SourceCodeServices
 
 /// Lookup the global static cache for building the FrameworkTcImports
 type internal FrameworkImportsCache = 
@@ -66,16 +33,6 @@ module internal IncrementalBuilderEventTesting =
 
   val GetMostRecentIncrementalBuildEvents : int -> IBEvent list
   val GetCurrentIncrementalBuildEventNum : unit -> int
-
-/// An error logger that capture errors, filtering them according to warning levels etc.
-type internal CompilationErrorLogger = 
-    inherit ErrorLogger
-
-    /// Create the error logger
-    new : debugName:string * tcConfig:TcConfig ->  CompilationErrorLogger
-            
-    /// Get the captured errors
-    member GetErrors : unit -> (PhasedDiagnostic * FSharpErrorSeverity) list
 
 /// Represents the state in the incremental graph associated with checking a file
 type internal PartialCheckResults = 
@@ -97,7 +54,9 @@ type internal PartialCheckResults =
       /// Represents the collected uses of symbols from type checking
       TcSymbolUses: TcSymbolUses list 
 
-      /// Represents the collected attributes to apply to the module of assembly generates
+      TcDependencyFiles: string list
+
+      /// Represents the collected attributes to apply to the module of assuembly generates
       TopAttribs: TypeChecker.TopAttribs option
 
       TimeStamp: DateTime }
@@ -106,10 +65,6 @@ type internal PartialCheckResults =
 [<Class>]
 type internal IncrementalBuilder = 
 
-      /// Increment the usage count on the IncrementalBuilder by 1. This initial usage count is 0. The returns an IDisposable which will 
-      /// decrement the usage count on the entire build by 1 and dispose if it is no longer used by anyone.
-      member IncrementUsageCount : unit -> IDisposable
-     
       /// Check if the builder is not disposed
       member IsAlive : bool
 
@@ -117,7 +72,7 @@ type internal IncrementalBuilder =
       member TcConfig : TcConfig
 
       /// The full set of source files including those from options
-      member ProjectFileNames : string list
+      member SourceFiles : string list
 
       /// Raised just before a file is type-checked, to invalidate the state of the file in VS and force VS to request a new direct typecheck of the file.
       /// The incremental builder also typechecks the file (error and intellisense results from the background builder are not
@@ -138,7 +93,7 @@ type internal IncrementalBuilder =
       member ImportedCcusInvalidated : IEvent<string>
 
       /// The list of files the build depends on
-      member Dependencies : string list
+      member AllDependenciesDeprecated : string list
 #if EXTENSIONTYPING
       /// Whether there are any 'live' type providers that may need a refresh when a project is Cleaned
       member ThereAreLiveTypeProviders : bool
@@ -151,7 +106,7 @@ type internal IncrementalBuilder =
       /// This is a very quick operation.
       ///
       /// This is safe for use from non-compiler threads but the objects returned must in many cases be accessed only from the compiler thread.
-      member GetCheckResultsBeforeFileInProjectIfReady: filename:string -> PartialCheckResults option
+      member GetCheckResultsBeforeFileInProjectEvenIfStale: filename:string -> PartialCheckResults option
 
       /// Get the preceding typecheck state of a slot, but only if it is up-to-date w.r.t.
       /// the timestamps on files and referenced DLLs prior to this one. Return None if the result is not available.
@@ -192,9 +147,13 @@ type internal IncrementalBuilder =
       /// This may be a marginally long-running operation (parses are relatively quick, only one file needs to be parsed)
       member GetParseResultsForFile : CompilationThreadToken * filename:string -> Cancellable<Ast.ParsedInput option * Range.range * string * (PhasedDiagnostic * FSharpErrorSeverity) list>
 
-      static member TryCreateBackgroundBuilderForProjectOptions : CompilationThreadToken * ReferenceResolver.Resolver * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string list * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool * maxTimeShareMilliseconds: int64 -> Cancellable<IncrementalBuilder option * FSharpErrorInfo list>
+      static member TryCreateBackgroundBuilderForProjectOptions : CompilationThreadToken * ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * FrameworkImportsCache * scriptClosureOptions:LoadClosure option * sourceFiles:string list * commandLineArgs:string list * projectReferences: IProjectReference list * projectDirectory:string * useScriptResolutionRules:bool * keepAssemblyContents: bool * keepAllBackgroundResolutions: bool * maxTimeShareMilliseconds: int64 -> Cancellable<IncrementalBuilder option * FSharpErrorInfo list>
 
+      /// Increment the usage count on the IncrementalBuilder by 1. This initial usage count is 0 so immediately after creation 
+      /// a call to KeepBuilderAlive should be made. The returns an IDisposable which will 
+      /// decrement the usage count and dispose if the usage count goes to zero
       static member KeepBuilderAlive : IncrementalBuilder option -> IDisposable
+
       member IsBeingKeptAliveApartFromCacheEntry : bool
 
 /// Generalized Incremental Builder. This is exposed only for unittesting purposes.
@@ -286,9 +245,3 @@ module internal IncrementalBuild =
         /// Set the concrete inputs for this build. 
         member GetInitialPartialBuild : vectorinputs: BuildInput list -> PartialBuild
 
-/// This represents the global state established as each task function runs as part of the build.
-///
-/// Use to reset error and warning handlers.
-type internal CompilationGlobalsScope =
-    new : ErrorLogger * BuildPhase -> CompilationGlobalsScope
-    interface IDisposable

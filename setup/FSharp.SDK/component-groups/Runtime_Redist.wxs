@@ -53,38 +53,38 @@
     </DirectoryRef>
     <DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETPortable_3.47.41.0">
       <Component Id="Runtime_Redist_3.47.41.0_FSharp.Core" Transitive="yes" Guid="$(fsharp.guid(Runtime_Redist_3.47.41.0_FSharp.Core, $(var.LocaleCode)))">
-        <File Id="Runtime_Redist_3.47.41.0_FSharp.Core.dll" Source="$(var.BinariesDir)\portable47\bin\FSharp.Core.dll" KeyPath="yes" />
-        <File Id="Runtime_Redist_3.47.41.0_FSharp.Core.xml" Source="$(var.BinariesDir)\portable47\bin\FSharp.Core.xml" />
+        <File Id="Runtime_Redist_3.47.41.0_FSharp.Core.dll" Source="$(var.BinariesDir)\profiles\portable-net45+sl5+netcore45\FSharp.Core.dll" KeyPath="yes" />
+        <File Id="Runtime_Redist_3.47.41.0_FSharp.Core.xml" Source="$(var.BinariesDir)\profiles\portable-net45+sl5+netcore45\FSharp.Core.xml" />
         <!-- See notes above on signdata/optdata and why they are still included here.  -->
-        <File Id="Runtime_Redist_3.47.41.0_FSharp.Core.sigdata" Source="$(var.BinariesDir)\portable47\bin\FSharp.Core.sigdata" />
-        <File Id="Runtime_Redist_3.47.41.0_FSharp.Core.optdata" Source="$(var.BinariesDir)\portable47\bin\FSharp.Core.optdata" />
+        <File Id="Runtime_Redist_3.47.41.0_FSharp.Core.sigdata" Source="$(var.BinariesDir)\profiles\portable-net45+sl5+netcore45\FSharp.Core.sigdata" />
+        <File Id="Runtime_Redist_3.47.41.0_FSharp.Core.optdata" Source="$(var.BinariesDir)\profiles\portable-net45+sl5+netcore45\FSharp.Core.optdata" />
       </Component>
     </DirectoryRef>
     <DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETCore_3.7.41.0">
       <Component Id="Runtime_Redist_3.7.41.0_FSharp.Core" Transitive="yes" Guid="$(fsharp.guid(Runtime_Redist_3.7.41.0_FSharp.Core, $(var.LocaleCode)))">
-        <File Id="Runtime_Redist_3.7.41.0_FSharp.Core.dll" Source="$(var.BinariesDir)\portable7\bin\FSharp.Core.dll" KeyPath="yes" />
-        <File Id="Runtime_Redist_3.7.41.0_FSharp.Core.xml" Source="$(var.BinariesDir)\portable7\bin\FSharp.Core.xml" />
+        <File Id="Runtime_Redist_3.7.41.0_FSharp.Core.dll" Source="$(var.BinariesDir)\profiles\portable-net45+netcore45\FSharp.Core.dll" KeyPath="yes" />
+        <File Id="Runtime_Redist_3.7.41.0_FSharp.Core.xml" Source="$(var.BinariesDir)\profiles\portable-net45+netcore45\FSharp.Core.xml" />
         <!-- See notes above on signdata/optdata and why they are still included here.  -->
-        <File Id="Runtime_Redist_3.7.41.0_FSharp.Core.sigdata" Source="$(var.BinariesDir)\portable7\bin\FSharp.Core.sigdata" />
-        <File Id="Runtime_Redist_3.7.41.0_FSharp.Core.optdata" Source="$(var.BinariesDir)\portable7\bin\FSharp.Core.optdata" />
+        <File Id="Runtime_Redist_3.7.41.0_FSharp.Core.sigdata" Source="$(var.BinariesDir)\profiles\portable-net45+netcore45\FSharp.Core.sigdata" />
+        <File Id="Runtime_Redist_3.7.41.0_FSharp.Core.optdata" Source="$(var.BinariesDir)\profiles\portable-net45+netcore45\FSharp.Core.optdata" />
       </Component>
     </DirectoryRef>
     <DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETCore_3.78.41.0">
       <Component Id="Runtime_Redist_3.78.41.0_FSharp.Core" Transitive="yes" Guid="$(fsharp.guid(Runtime_Redist_3.78.41.0_FSharp.Core, $(var.LocaleCode)))">
-        <File Id="Runtime_Redist_3.78.41.0_FSharp.Core.dll" Source="$(var.BinariesDir)\portable78\bin\FSharp.Core.dll" KeyPath="yes" />
-        <File Id="Runtime_Redist_3.78.41.0_FSharp.Core.xml" Source="$(var.BinariesDir)\portable78\bin\FSharp.Core.xml" />
+        <File Id="Runtime_Redist_3.78.41.0_FSharp.Core.dll" Source="$(var.BinariesDir)\profiles\portable-net45+netcore45+wp8\FSharp.Core.dll" KeyPath="yes" />
+        <File Id="Runtime_Redist_3.78.41.0_FSharp.Core.xml" Source="$(var.BinariesDir)\profiles\portable-net45+netcore45+wp8\FSharp.Core.xml" />
         <!-- See notes above on signdata/optdata and why they are still included here.  -->
-        <File Id="Runtime_Redist_3.78.41.0_FSharp.Core.sigdata" Source="$(var.BinariesDir)\portable78\bin\FSharp.Core.sigdata" />
-        <File Id="Runtime_Redist_3.78.41.0_FSharp.Core.optdata" Source="$(var.BinariesDir)\portable78\bin\FSharp.Core.optdata" />
+        <File Id="Runtime_Redist_3.78.41.0_FSharp.Core.sigdata" Source="$(var.BinariesDir)\profiles\portable-net45+netcore45+wp8\FSharp.Core.sigdata" />
+        <File Id="Runtime_Redist_3.78.41.0_FSharp.Core.optdata" Source="$(var.BinariesDir)\profiles\portable-net45+netcore45+wp8\FSharp.Core.optdata" />
       </Component>
     </DirectoryRef>
     <DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETCore_3.259.41.0">
       <Component Id="Runtime_Redist_3.259.41.0_FSharp.Core" Transitive="yes" Guid="$(fsharp.guid(Runtime_Redist_3.259.41.0_FSharp.Core, $(var.LocaleCode)))">
-        <File Id="Runtime_Redist_3.259.41.0_FSharp.Core.dll" Source="$(var.BinariesDir)\portable259\bin\FSharp.Core.dll" KeyPath="yes" />
-        <File Id="Runtime_Redist_3.259.41.0_FSharp.Core.xml" Source="$(var.BinariesDir)\portable259\bin\FSharp.Core.xml" />
+        <File Id="Runtime_Redist_3.259.41.0_FSharp.Core.dll" Source="$(var.BinariesDir)\profiles\portable-net45+netcore45+wpa81+wp8\FSharp.Core.dll" KeyPath="yes" />
+        <File Id="Runtime_Redist_3.259.41.0_FSharp.Core.xml" Source="$(var.BinariesDir)\profiles\portable-net45+netcore45+wpa81+wp8\FSharp.Core.xml" />
         <!-- See notes above on signdata/optdata and why they are still included here.  -->
-        <File Id="Runtime_Redist_3.259.41.0_FSharp.Core.sigdata" Source="$(var.BinariesDir)\portable259\bin\FSharp.Core.sigdata" />
-        <File Id="Runtime_Redist_3.259.41.0_FSharp.Core.optdata" Source="$(var.BinariesDir)\portable259\bin\FSharp.Core.optdata" />
+        <File Id="Runtime_Redist_3.259.41.0_FSharp.Core.sigdata" Source="$(var.BinariesDir)\profiles\portable-net45+netcore45+wpa81+wp8\FSharp.Core.sigdata" />
+        <File Id="Runtime_Redist_3.259.41.0_FSharp.Core.optdata" Source="$(var.BinariesDir)\profiles\portable-net45+netcore45+wpa81+wp8\FSharp.Core.optdata" />
       </Component>
     </DirectoryRef>
 

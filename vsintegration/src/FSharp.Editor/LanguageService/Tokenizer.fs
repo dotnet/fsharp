@@ -2,6 +2,7 @@
 
 open System
 open System.Collections.Generic
+open System.Collections.Concurrent
 open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
@@ -267,7 +268,7 @@ module internal Tokenizer =
                 data.[i] <- None
                 i <- i + 1
 
-    let private dataCache = ConditionalWeakTable<DocumentId, SourceTextData>()
+    let private dataCache = ConditionalWeakTable<DocumentId, ConcurrentDictionary<string list, SourceTextData>>()
 
     let compilerTokenToRoslynToken(colorKind: FSharpTokenColorKind) : string = 
         match colorKind with
@@ -346,13 +347,23 @@ module internal Tokenizer =
 
         SourceLineData(textLine.Start, lexState, previousLexState.Value, lineContents.GetHashCode(), classifiedSpans, List.ofSeq tokens)
 
+
+    // We keep incremental data per-document.  When text changes we correlate text line-by-line (by hash codes of lines)
+    // We index the data by the active defines in the document.
+    let private getSourceTextData(documentKey: DocumentId, defines: string list, linesCount) =
+        let dict = dataCache.GetValue(documentKey, fun key -> new ConcurrentDictionary<_,_>(1,1,HashIdentity.Structural))
+        if dict.ContainsKey(defines) then dict.[defines] 
+        else 
+            let data = SourceTextData(linesCount) 
+            dict.TryAdd(defines, data) |> ignore
+            data
+
     let getColorizationData(documentKey: DocumentId, sourceText: SourceText, textSpan: TextSpan, fileName: string option, defines: string list, 
-                            cancellationToken: CancellationToken) : List<ClassifiedSpan> =
+                             cancellationToken: CancellationToken) : List<ClassifiedSpan> =
             try
                 let sourceTokenizer = FSharpSourceTokenizer(defines, fileName)
                 let lines = sourceText.Lines
-                // We keep incremental data per-document.  When text changes we correlate text line-by-line (by hash codes of lines)
-                let sourceTextData = dataCache.GetValue(documentKey, fun key -> SourceTextData(lines.Count))
+                let sourceTextData = getSourceTextData(documentKey, defines, lines.Count)
  
                 let startLine = lines.GetLineFromPosition(textSpan.Start).LineNumber
                 let endLine = lines.GetLineFromPosition(textSpan.End).LineNumber
@@ -431,16 +442,16 @@ module internal Tokenizer =
         let isOperator t = t.ColorClass = FSharpTokenColorKind.Operator
         let isPunctuation t = t.ColorClass = FSharpTokenColorKind.Punctuation
     
-        let inline (|GenericTypeParameterPrefix|StaticallyResolvedTypeParameterPrefix|ActivePattern|Other|) (token: FSharpTokenInfo) =
+        let (|GenericTypeParameterPrefix|StaticallyResolvedTypeParameterPrefix|ActivePattern|Other|) (token: FSharpTokenInfo) =
             if token.Tag = FSharpTokenTag.QUOTE then GenericTypeParameterPrefix
             elif token.Tag = FSharpTokenTag.INFIX_AT_HAT_OP then
                     // The lexer return INFIX_AT_HAT_OP token for both "^" and "@" symbols.
                     // We have to check the char itself to distinguish one from another.
-                    if token.FullMatchedLength = 1 && lineStr.[token.LeftColumn] = '^' then 
+                    if token.FullMatchedLength = 1 && token.LeftColumn < lineStr.Length && lineStr.[token.LeftColumn] = '^' then 
                         StaticallyResolvedTypeParameterPrefix
                     else Other
             elif token.Tag = FSharpTokenTag.LPAREN then
-                if token.FullMatchedLength = 1 && lineStr.[token.LeftColumn+1] = '|' then
+                if token.FullMatchedLength = 1 && token.LeftColumn+1 < lineStr.Length && lineStr.[token.LeftColumn+1] = '|' then
                     ActivePattern
                 else Other
             else Other
@@ -539,7 +550,7 @@ module internal Tokenizer =
         let sourceTokenizer = FSharpSourceTokenizer(defines, Some fileName)
         let lines = sourceText.Lines
         // We keep incremental data per-document. When text changes we correlate text line-by-line (by hash codes of lines)
-        let sourceTextData = dataCache.GetValue(documentKey, fun key -> SourceTextData(lines.Count))
+        let sourceTextData = getSourceTextData(documentKey, defines, lines.Count)
         // Go backwards to find the last cached scanned line that is valid
         let scanStartLine = 
             let mutable i = min (lines.Count - 1) lineNumber
@@ -599,9 +610,15 @@ module internal Tokenizer =
     /// Fix invalid span if it appears to have redundant suffix and prefix.
     let fixupSpan (sourceText: SourceText, span: TextSpan) : TextSpan =
         let text = sourceText.GetSubText(span).ToString()
-        match text.LastIndexOf '.' with
-        | -1 | 0 -> span
-        | index -> TextSpan(span.Start + index + 1, text.Length - index - 1)
+        // backticked ident
+        if text.EndsWith "``" then
+            match text.[..text.Length - 3].LastIndexOf "``" with
+            | -1 | 0 -> span
+            | index -> TextSpan(span.Start + index, text.Length - index)
+        else 
+            match text.LastIndexOf '.' with
+            | -1 | 0 -> span
+            | index -> TextSpan(span.Start + index + 1, text.Length - index - 1)
 
     let isValidNameForSymbol (lexerSymbolKind: LexerSymbolKind, symbol: FSharpSymbol, name: string) : bool =
         let doubleBackTickDelimiter = "``"

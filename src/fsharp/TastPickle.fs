@@ -11,7 +11,6 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Lib.Bits
@@ -90,7 +89,6 @@ type InputTable<'T> =
 
 let new_itbl n r = { itbl_name=n; itbl_rows=r }
 
-#if INCLUDE_METADATA_WRITER
 [<NoEquality; NoComparison>]
 type NodeOutTable<'Data,'Node> = 
     { NodeStamp : ('Node -> Stamp)
@@ -127,8 +125,6 @@ type WriterState =
     ofile : string;
   }
 let pfailwith st str = ffailwith st.ofile str
-
-#endif
     
 [<NoEquality; NoComparison>]
 type NodeInTable<'Data,'Node> = 
@@ -165,8 +161,6 @@ let ufailwith st str = ffailwith st.ifile str
 // Basic pickle/unpickle operations
 //---------------------------------------------------------------------------
  
-#if INCLUDE_METADATA_WRITER
-
 type 'T pickler = 'T -> WriterState -> unit
 
 let p_byte b st = st.os.EmitIntAsByte b
@@ -240,8 +234,6 @@ let inline  p_tup14 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 (a,b,c,d,e,f,
 let inline  p_tup15 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 (a,b,c,d,e,f,x7,x8,x9,x10,x11,x12,x13,x14,x15) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit); (p10 x10 st : unit); (p11 x11 st : unit); (p12 x12 st : unit); (p13 x13 st : unit) ; (p14 x14 st : unit); (p15 x15 st : unit)
 let inline  p_tup16 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 (a,b,c,d,e,f,x7,x8,x9,x10,x11,x12,x13,x14,x15,x16) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit); (p10 x10 st : unit); (p11 x11 st : unit); (p12 x12 st : unit); (p13 x13 st : unit) ; (p14 x14 st : unit); (p15 x15 st : unit); (p16 x16 st : unit)
 let inline  p_tup17 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 (a,b,c,d,e,f,x7,x8,x9,x10,x11,x12,x13,x14,x15,x16,x17) (st:WriterState) = (p1 a st : unit); (p2 b st : unit); (p3 c st : unit); (p4 d st : unit); (p5 e st : unit); (p6 f st : unit); (p7 x7 st : unit); (p8 x8 st : unit); (p9 x9 st : unit); (p10 x10 st : unit); (p11 x11 st : unit); (p12 x12 st : unit); (p13 x13 st : unit) ; (p14 x14 st : unit); (p15 x15 st : unit); (p16 x16 st : unit); (p17 x17 st : unit)
-
-#endif
 
 let u_byte st = int (st.is.ReadByte())
 
@@ -389,7 +381,6 @@ let inline u_tup17 p1 p2 p3 p4 p5 p6 p7 p8 p9 p10 p11 p12 p13 p14 p15 p16 p17 (s
 // exception Nope
 
 // ctxt is for debugging
-#if INCLUDE_METADATA_WRITER
 let p_osgn_ref (_ctxt:string) (outMap : NodeOutTable<_,_>) x st = 
     let idx = outMap.Table.FindOrAdd (outMap.NodeStamp x)
     //if ((idx = 0) && outMap.Name = "oentities") then 
@@ -401,7 +392,6 @@ let p_osgn_decl (outMap : NodeOutTable<_,_>) p x st =
     let idx = outMap.Table.FindOrAdd stamp
     //dprintf "decl %d#%d in table %s has name %s\n" idx (outMap.NodeStamp x) outMap.Name (outMap.NodeName x);
     p_tup2 p_int p (idx,outMap.Deref x) st
-#endif
 
 let u_osgn_ref (inMap: NodeInTable<_,_>) st = 
     let n = u_int st
@@ -430,7 +420,6 @@ let lookup_uniq st tbl n =
 // between internal representations relatively easily
 //------------------------------------------------------------------------- 
  
-#if INCLUDE_METADATA_WRITER
 let p_array f (x: 'T[]) st =
     p_int x.Length st;
     for i = 0 to x.Length-1 do
@@ -495,9 +484,6 @@ let p_maybe_lazy p (x: MaybeLazy<_>) st =
 let p_hole () = 
     let h = ref (None : 'T pickler option)
     (fun f -> h := Some f),(fun x st -> match !h with Some f -> f x st | None -> pfailwith st "p_hole: unfilled hole")
-
-
-#endif
 
 let u_array f st =
     let n = u_int st
@@ -599,12 +585,10 @@ let u_strings = u_list u_string
 let u_ints = u_list u_int
 
 
-#if INCLUDE_METADATA_WRITER
 let p_encoded_string = p_prim_string
 let p_string s st = p_int (encode_string st.ostrings s) st
 let p_strings = p_list p_string
 let p_ints = p_list p_int
-#endif
 
 // CCU References 
 // A huge number of these occur in pickled F# data, so make them unique 
@@ -617,13 +601,11 @@ let u_encoded_ccuref st =
     | n -> ufailwith st ("u_encoded_ccuref: found number " + string n)
 let u_ccuref st   = lookup_uniq st st.iccus (u_int st)
 
-#if INCLUDE_METADATA_WRITER
 let p_encoded_ccuref x st = 
     p_byte 0 st // leave a dummy tag to make room for future encodings of ccurefs
     p_prim_string x st
 
 let p_ccuref s st = p_int (encode_ccuref st.occus s) st
-#endif
 
 // References to public items in this module 
 // A huge number of these occur in pickled F# data, so make them unique 
@@ -632,11 +614,9 @@ let lookup_pubpath st pubpathTab x = lookup_uniq st pubpathTab x
 let u_encoded_pubpath = u_array u_int
 let u_pubpath st = lookup_uniq st st.ipubpaths (u_int st)
 
-#if INCLUDE_METADATA_WRITER
 let encode_pubpath stringTab pubpathTab (PubPath(a)) = encode_uniq pubpathTab (Array.map (encode_string stringTab) a)
 let p_encoded_pubpath = p_array p_int
 let p_pubpath x st = p_int (encode_pubpath st.ostrings st.opubpaths x) st
-#endif
 
 // References to other modules 
 // A huge number of these occur in pickled F# data, so make them unique 
@@ -645,7 +625,6 @@ let lookup_nleref st nlerefTab x = lookup_uniq st nlerefTab x
 let u_encoded_nleref = u_tup2 u_int (u_array u_int)
 let u_nleref st = lookup_uniq st st.inlerefs (u_int st)
 
-#if INCLUDE_METADATA_WRITER
 let encode_nleref ccuTab stringTab nlerefTab thisCcu (nleref: NonLocalEntityRef) = 
 #if EXTENSIONTYPING
     // Remap references to statically-linked Entity nodes in provider-generated entities to point to the current assembly.
@@ -664,7 +643,6 @@ let encode_nleref ccuTab stringTab nlerefTab thisCcu (nleref: NonLocalEntityRef)
     encode_uniq nlerefTab (encode_ccuref ccuTab a, Array.map (encode_string stringTab) b)
 let p_encoded_nleref = p_tup2 p_int (p_array p_int)
 let p_nleref x st = p_int (encode_nleref st.occus st.ostrings st.onlerefs st.oscope x) st
-#endif
 
 // Simple types are types like "int", represented as TType(Ref_nonlocal(...,"int"),[]). 
 // A huge number of these occur in pickled F# data, so make them unique. 
@@ -673,15 +651,12 @@ let lookup_simpletyp st simpletypTab x = lookup_uniq st simpletypTab x
 let u_encoded_simpletyp st = u_int  st
 let u_encoded_anoninfo st = u_int  st
 let u_simpletyp st = lookup_uniq st st.isimpletyps (u_int st)
-#if INCLUDE_METADATA_WRITER
 let encode_simpletyp ccuTab stringTab nlerefTab simpletypTab thisCcu a = encode_uniq simpletypTab (encode_nleref ccuTab stringTab nlerefTab thisCcu a)
 let p_encoded_simpletyp x st = p_int x st
 let p_encoded_anoninfo x st = p_int x st
 let p_simpletyp x st = p_int (encode_simpletyp st.occus st.ostrings st.onlerefs st.osimpletyps st.oscope x) st
-#endif
 
 type sizes = int * int * int 
-#if INCLUDE_METADATA_WRITER
 let pickleObjWithDanglingCcus file g scope p x =
   let ccuNameTab,(ntycons, ntypars, nvals, nanoninfos),stringTab,pubpathTab,nlerefTab,simpletypTab,phase1bytes =
     let st1 = 
@@ -740,8 +715,6 @@ let pickleObjWithDanglingCcus file g scope p x =
     st2.os.Close()
   phase2bytes
   
-#endif
-    
 let check (ilscope:ILScopeRef) (inMap : NodeInTable<_,_>) =
     for i = 0 to inMap.Count - 1 do
       let n = inMap.Get i
@@ -817,7 +790,6 @@ let unpickleObjWithDanglingCcus file ilscope (iILModule:ILModuleDef option) u (p
 // Pickle/unpickle for Abstract IL data, up to IL instructions 
 //---------------------------------------------------------------------------
 
-#if INCLUDE_METADATA_WRITER
 let p_ILPublicKey x st = 
     match x with 
     | PublicKey b      -> p_byte 0 st; p_bytes b st
@@ -838,7 +810,6 @@ let p_ILScopeRef x st =
     | ILScopeRef.Local         -> p_byte 0 st
     | ILScopeRef.Module mref   -> p_byte 1 st; p_ILModuleRef mref st
     | ILScopeRef.Assembly aref -> p_byte 2 st; p_ILAssemblyRef aref st
-#endif
 
 let u_ILPublicKey st = 
     let tag = u_byte st
@@ -875,7 +846,6 @@ let u_ILScopeRef st =
     let res = rescopeILScopeRef st.iilscope res 
     res
 
-#if INCLUDE_METADATA_WRITER
 let p_ILHasThis x st = 
     p_byte (match x with 
             | ILThisConvention.Instance -> 0
@@ -914,7 +884,6 @@ and p_ILCallSig x st = p_tup3 p_ILCallConv p_ILTypes p_ILType (x.CallingConv,x.A
 and p_ILTypeRef (x:ILTypeRef) st = p_tup3 p_ILScopeRef p_strings p_string (x.Scope,x.Enclosing,x.Name) st
 
 and p_ILTypeSpec (a:ILTypeSpec) st = p_tup2 p_ILTypeRef p_ILTypes (a.TypeRef,a.GenericArgs) st
-#endif
 
 let u_ILBasicCallConv st = 
     match u_byte st with 
@@ -959,7 +928,6 @@ and u_ILCallSig = u_wrap (fun (a,b,c) -> {CallingConv=a; ArgTypes=b; ReturnType=
 and u_ILTypeSpec st = let a,b = u_tup2 u_ILTypeRef u_ILTypes st in ILTypeSpec.Create(a,b)
 
 
-#if INCLUDE_METADATA_WRITER
 let p_ILMethodRef (x: ILMethodRef) st = p_tup6 p_ILTypeRef p_ILCallConv p_int p_string p_ILTypes p_ILType (x.EnclosingTypeRef,x.CallingConv,x.GenericArity,x.Name,x.ArgTypes,x.ReturnType) st
 
 let p_ILFieldRef (x: ILFieldRef) st = p_tup3 p_ILTypeRef p_string p_ILType (x.EnclosingTypeRef, x.Name, x.Type) st
@@ -987,8 +955,6 @@ let p_ILBasicType x st =
 
 let p_ILVolatility x st = p_int (match x with Volatile -> 0 | Nonvolatile -> 1) st
 let p_ILReadonly   x st = p_int (match x with ReadonlyAddress -> 0 | NormalAddress -> 1) st
-
-#endif
 
 let u_ILMethodRef st = 
     let x1,x2,x3,x4,x5,x6 = u_tup6 u_ILTypeRef u_ILCallConv u_int u_string u_ILTypes u_ILType st
@@ -1181,8 +1147,6 @@ let decode_tab =
     List.iter (fun (icode,mk) -> add_instr (icode,(fun _ -> mk))) simple_instrs;
     tab
 
-#if INCLUDE_METADATA_WRITER
-
 let p_ILInstr x st =
     match x with
     | si when isNoArgInstr si       -> p_byte (encode_instr si) st
@@ -1220,7 +1184,6 @@ let p_ILInstr x st =
     | I_initobj c                     -> p_byte itag_initobj st;     p_ILType c st   
     | I_cpobj c                       -> p_byte itag_cpobj st;       p_ILType c st  
     | i -> pfailwith st (sprintf "the IL instruction '%+A' cannot be emitted" i) 
-#endif
 
 let u_ILInstr st = 
     let n = u_byte st
@@ -1232,25 +1195,21 @@ let u_ILInstr st =
 // Pickle/unpickle for F# types and module signatures
 //---------------------------------------------------------------------------
 
-#if INCLUDE_METADATA_WRITER
 // TODO: remove all pickling of maps
 let p_Map pk pv = p_wrap Map.toList (p_list (p_tup2 pk pv))
 let p_qlist pv = p_wrap QueueList.toList (p_list pv)
 let p_namemap p = p_Map p_string p
-#endif
 
 // TODO: remove all pickling of maps
 let u_Map uk uv = u_wrap Map.ofList (u_list (u_tup2 uk uv))
 let u_qlist uv = u_wrap QueueList.ofList (u_list uv)
 let u_namemap u = u_Map u_string u
 
-#if INCLUDE_METADATA_WRITER
 let p_pos (x: pos) st = p_tup2 p_int p_int (x.Line,x.Column) st
 let p_range (x: range) st = p_tup3 p_string p_pos p_pos (x.FileName, x.Start, x.End) st
 let p_dummy_range : range pickler   = fun _x _st -> ()
 let p_ident (x: Ident) st = p_tup2 p_string p_range (x.idText,x.idRange) st
 let p_xmldoc (XmlDoc x) st = p_array p_string x st
-#endif
 
 let u_pos st = let a = u_int st in let b = u_int st in mkPos a b
 let u_range st = let a = u_string st in let b = u_pos st in let c = u_pos st in mkRange a b c
@@ -1261,7 +1220,6 @@ let u_ident st = let a = u_string st in let b = u_range st in ident(a,b)
 let u_xmldoc st = XmlDoc (u_array u_string st)
 
 
-#if INCLUDE_METADATA_WRITER
 let p_local_item_ref ctxt tab st = p_osgn_ref ctxt tab st
 
 let p_tcref ctxt (x:EntityRef) st = 
@@ -1272,8 +1230,6 @@ let p_tcref ctxt (x:EntityRef) st =
 let p_ucref (UCRef(a,b)) st = p_tup2 (p_tcref "ucref") p_string (a,b) st
 let p_rfref (RFRef(a,b)) st = p_tup2 (p_tcref "rfref") p_string (a,b) st
 let p_tpref x st = p_local_item_ref "typar" st.otypars  x st
-
-#endif
 
 let u_local_item_ref tab st = u_osgn_ref tab st
 
@@ -1290,8 +1246,6 @@ let u_rfref st = let a,b = u_tup2 u_tcref u_string st in RFRef(a,b)
 
 let u_tpref st = u_local_item_ref st.itypars st
 
-
-#if INCLUDE_METADATA_WRITER
 // forward reference
 let fill_p_typ,p_typ = p_hole()
 let p_typs = (p_list p_typ)
@@ -1315,7 +1269,6 @@ let rec p_vref ctxt x st =
     | VRefNonLocal x -> p_byte 1 st; p_nonlocal_val_ref x st
 
 let p_vrefs ctxt = p_list (p_vref ctxt) 
-#endif
 
 let fill_u_typ,u_typ = u_hole()
 let u_typs = (u_list u_typ)
@@ -1340,9 +1293,6 @@ let u_vref st =
     
 let u_vrefs = u_list u_vref 
 
-
-
-#if INCLUDE_METADATA_WRITER
 let p_kind x st =
     p_byte (match x with
             | TyparKind.Type -> 0
@@ -1356,8 +1306,6 @@ let p_member_kind x st =
             | MemberKind.Constructor -> 3
             | MemberKind.ClassConstructor -> 4
             | MemberKind.PropertyGetSet -> pfailwith st "pickling: MemberKind.PropertyGetSet only expected in parse trees") st
-#endif
-
 
 let u_kind st =
     match u_byte st with
@@ -1374,7 +1322,6 @@ let u_member_kind st =
     | 4 -> MemberKind.ClassConstructor
     | _ -> ufailwith st "u_member_kind"
 
-#if INCLUDE_METADATA_WRITER
 let p_MemberFlags x st = 
     p_tup6 p_bool p_bool p_bool p_bool p_bool p_member_kind 
         (x.IsInstance, 
@@ -1383,7 +1330,6 @@ let p_MemberFlags x st =
          x.IsOverrideOrExplicitImpl, 
          x.IsFinal, 
          x.MemberKind) st
-#endif
 let u_MemberFlags st = 
     let x2,_x3UnusedBoolInFormat,x4,x5,x6,x7 = u_tup6 u_bool u_bool u_bool u_bool u_bool u_member_kind st
     { IsInstance=x2;
@@ -1393,7 +1339,6 @@ let u_MemberFlags st =
       MemberKind=x7}
 
 let fill_u_Expr_hole,u_expr_fwd = u_hole()
-#if INCLUDE_METADATA_WRITER
 let fill_p_Expr_hole,p_expr_fwd = p_hole()
 
 let p_anonInfo_data (anonInfo: AnonRecdTypeInfo) st = 
@@ -1420,7 +1365,6 @@ let p_trait_sln sln st =
 
 let p_trait (TTrait(a,b,c,d,e,f)) st  = 
     p_tup6 p_typs p_string p_MemberFlags p_typs (p_option p_typ) (p_option p_trait_sln) (a,b,c,d,e,!f) st
-#endif
 
 // We have to store trait solutions since they can occur in optimization data
 let u_anonInfo_data st = 
@@ -1456,7 +1400,6 @@ let u_trait st =
     let a,b,c,d,e,f = u_tup6 u_typs u_string u_MemberFlags u_typs (u_option u_typ) (u_option u_trait_sln) st
     TTrait (a,b,c,d,e,ref f)
 
-#if INCLUDE_METADATA_WRITER
 
 let p_rational q st = p_int32 (GetNumerator q) st; p_int32 (GetDenominator q) st
 
@@ -1513,8 +1456,6 @@ let rec p_normalized_measure unt st =
 // See https://github.com/Microsoft/visualfsharp/issues/69
 let p_measure_expr unt st = p_normalized_measure (normalizeMeasure st.oglobals unt) st
 
-#endif
-
 let u_rational st =
   let a,b = u_tup2 u_int32 u_int32 st in DivRational (intToRational a) (intToRational b)
 
@@ -1529,7 +1470,6 @@ let rec u_measure_expr st =
     | 5 -> let a = u_measure_expr st in let b = u_rational st in Measure.RationalPower (a,b)
     | _ -> ufailwith st "u_measure_expr"
 
-#if INCLUDE_METADATA_WRITER
 let p_typar_constraint x st = 
     match x with 
     | TyparConstraint.CoercesTo (a,_)                     -> p_byte 0 st; p_typ a st
@@ -1546,7 +1486,6 @@ let p_typar_constraint x st =
     | TyparConstraint.SupportsEquality _                      -> p_byte 11 st
     | TyparConstraint.IsUnmanaged _                           -> p_byte 12 st
 let p_typar_constraints = (p_list p_typar_constraint)
-#endif
 
 let u_typar_constraint st = 
     let tag = u_byte st
@@ -1570,7 +1509,6 @@ let u_typar_constraint st =
 let u_typar_constraints = (u_list_revi u_typar_constraint)
 
 
-#if INCLUDE_METADATA_WRITER
 let p_typar_spec_data (x:Typar) st = 
     p_tup5
       p_ident 
@@ -1586,7 +1524,6 @@ let p_typar_spec (x:Typar) st =
     p_osgn_decl st.otypars p_typar_spec_data x st
 
 let p_typar_specs = (p_list p_typar_spec)
-#endif
 
 let u_typar_spec_data st = 
     let a,c,d,e,g = u_tup5 u_ident u_attribs u_int64 u_typar_constraints u_xmldoc st
@@ -1605,8 +1542,6 @@ let u_typar_spec st =
 
 let u_typar_specs = (u_list u_typar_spec)
 
-
-#if INCLUDE_METADATA_WRITER
 let _ = fill_p_typ (fun ty st ->
     let ty = stripTyparEqns ty
     match ty with 
@@ -1628,7 +1563,6 @@ let _ = fill_p_typ (fun ty st ->
          p_anonInfo anonInfo st
          p_typs l st
   )
-#endif
 
 let _ = fill_u_typ (fun st ->
     let tag = u_byte st
@@ -1646,13 +1580,11 @@ let _ = fill_u_typ (fun st ->
     | _ -> ufailwith st "u_typ")
   
 
-#if INCLUDE_METADATA_WRITER
 let fill_p_binds,p_binds = p_hole()
 let fill_p_targets,p_targets = p_hole()
 let fill_p_Exprs,p_Exprs = p_hole()
 let fill_p_constraints,p_constraints = p_hole()
 let fill_p_Vals,p_Vals = p_hole()
-#endif
 
 let fill_u_binds,u_binds = u_hole()
 let fill_u_targets,u_targets = u_hole()
@@ -1660,7 +1592,6 @@ let fill_u_Exprs,u_Exprs = u_hole()
 let fill_u_constraints,u_constraints = u_hole()
 let fill_u_Vals,u_Vals = u_hole()
 
-#if INCLUDE_METADATA_WRITER
 let p_ArgReprInfo (x:ArgReprInfo) st = 
     p_attribs x.Attribs st; 
     p_option p_ident x.Name st
@@ -1673,7 +1604,6 @@ let p_ValReprInfo (ValReprInfo (a,args,ret)) st =
     p_list p_TyparReprInfo a st; 
     p_list (p_list p_ArgReprInfo) args st; 
     p_ArgReprInfo ret st
-#endif
 
 let u_ArgReprInfo st = 
     let a = u_attribs st 
@@ -1693,7 +1623,6 @@ let u_ValReprInfo st =
     let c = u_ArgReprInfo st
     ValReprInfo (a,b,c)
 
-#if INCLUDE_METADATA_WRITER
 let p_ranges x st = 
     p_option (p_tup2 p_range p_range) x st
 
@@ -1705,8 +1634,6 @@ let p_istype x st =
 
 let p_cpath (CompPath(a,b)) st = 
     p_tup2 p_ILScopeRef (p_list (p_tup2 p_string p_istype)) (a,b) st
-
-#endif
 
 let u_ranges st = u_option (u_tup2 u_range u_range) st
 
@@ -1722,7 +1649,6 @@ let u_cpath  st = let a,b = u_tup2 u_ILScopeRef (u_list (u_tup2 u_string u_istyp
 
 
 let rec dummy x = x
-#if INCLUDE_METADATA_WRITER
 and p_tycon_repr x st = 
     // The leading "p_byte 1" and "p_byte 0" come from the F# 2.0 format, which used an option value at this point.
     match x with 
@@ -1918,9 +1844,6 @@ and p_modul_typ (x: ModuleOrNamespaceType) st =
       (p_qlist p_entity_spec)
       (x.ModuleOrNamespaceKind,x.AllValsAndMembers,x.AllEntities)
       st
-
-#endif
-
 
 and u_tycon_repr st = 
     let tag1 = u_byte st
@@ -2228,7 +2151,6 @@ and u_modul_typ st =
 // Pickle/unpickle for F# expressions (for optimization data)
 //---------------------------------------------------------------------------
 
-#if INCLUDE_METADATA_WRITER
 and p_const x st = 
     match x with 
     | Const.Bool x       -> p_byte 0  st; p_bool x st
@@ -2249,7 +2171,6 @@ and p_const x st =
     | Const.Unit         -> p_byte 15 st
     | Const.Zero         -> p_byte 16 st
     | Const.Decimal s    -> p_byte 17 st; p_array p_int32 (System.Decimal.GetBits(s)) st
-#endif
 
 and u_const st = 
     let tag = u_byte st
@@ -2275,7 +2196,6 @@ and u_const st =
     | _ -> ufailwith st "u_const" 
 
 
-#if INCLUDE_METADATA_WRITER
 and p_dtree x st = 
     match x with 
     | TDSwitch (a,b,c,d) -> p_byte 0 st; p_tup4 p_expr (p_list p_dtree_case) (p_option p_dtree) p_dummy_range (a,b,c,d) st
@@ -2304,8 +2224,6 @@ and p_recdInfo x st =
     | RecdExpr -> ()
     | RecdExprIsObjInit -> pfailwith st "explicit object constructors can't be inlined and should not have optimization information"
 
-
-#endif
 and u_dtree st = 
     let tag = u_byte st
     match tag with
@@ -2339,7 +2257,6 @@ and u_lval_op_kind st =
     | _ -> ufailwith st "uval_op_kind"
 
   
-#if INCLUDE_METADATA_WRITER
 and p_op x st = 
     match x with 
     | TOp.UnionCase c                   -> p_byte 0 st; p_ucref c st
@@ -2385,8 +2302,6 @@ and p_op x st =
     | TOp.AnonRecd info   -> p_byte 31 st; p_anonInfo info st
     | TOp.AnonRecdGet (info, n)   -> p_byte 32 st; p_anonInfo info st; p_int n st
     | TOp.Goto _ | TOp.Label _ | TOp.Return -> failwith "unexpected backend construct in pickled TAST"
-
-#endif
 
 and u_op st = 
     let tag = u_byte st
@@ -2459,7 +2374,6 @@ and u_op st =
             TOp.AnonRecdGet (info, n)   
     | _ -> ufailwith st "u_op" 
 
-#if INCLUDE_METADATA_WRITER
 and p_expr expr st = 
     match expr with 
     | Expr.Link e -> p_expr !e st
@@ -2477,7 +2391,6 @@ and p_expr expr st =
     | Expr.StaticOptimization(a,b,c,d)  -> p_byte 11 st; p_tup4 p_constraints p_expr p_expr p_dummy_range (a,b,c,d) st
     | Expr.TyChoose (a,b,c)               -> p_byte 12 st; p_tup3 p_typar_specs p_expr p_dummy_range (a,b,c) st
     | Expr.Quote(ast,_,_,m,ty)            -> p_byte 13 st; p_tup3 p_expr p_dummy_range p_typ (ast,m,ty) st
-#endif
 
 and u_expr st = 
     let tag = u_byte st
@@ -2554,7 +2467,6 @@ and u_expr st =
             Expr.Quote (b,ref None,false,c,d) // isFromQueryExpression=false
     | _ -> ufailwith st "u_expr" 
 
-#if INCLUDE_METADATA_WRITER
 and p_static_optimization_constraint x st = 
     match x with
     | TTyconEqualsTycon (a,b) -> p_byte 0 st; p_tup2 p_typ p_typ (a,b) st
@@ -2566,7 +2478,6 @@ and p_method (TObjExprMethod (a,b,c,d,e,f)) st = p_tup6 p_slotsig p_attribs p_ty
 and p_methods x st = p_list p_method x st
 and p_intf x st = p_tup2 p_typ p_methods x st
 and p_intfs x st = p_list p_intf x st
-#endif
 
 and u_static_optimization_constraint st = 
     let tag = u_byte st
@@ -2593,7 +2504,6 @@ and u_intf st = u_tup2 u_typ u_methods st
 
 and u_intfs st = u_list u_intf st
 
-#if INCLUDE_METADATA_WRITER
 let _ = fill_p_binds (p_List p_bind)
 let _ = fill_p_targets (p_array p_target)
 let _ = fill_p_constraints (p_list p_static_optimization_constraint)
@@ -2602,7 +2512,6 @@ let _ = fill_p_Expr_hole p_expr
 let _ = fill_p_Exprs (p_List p_expr)
 let _ = fill_p_attribs (p_list p_attrib)
 let _ = fill_p_Vals (p_list p_Val)
-#endif
 
 let _ = fill_u_binds (u_List u_bind)
 let _ = fill_u_targets (u_array u_target)
@@ -2616,11 +2525,9 @@ let _ = fill_u_Vals (u_list u_Val)
 // Pickle/unpickle F# interface data 
 //---------------------------------------------------------------------------
 
-#if INCLUDE_METADATA_WRITER
 let pickleModuleOrNamespace mspec st = p_entity_spec mspec st
 let pickleCcuInfo minfo st = 
     p_tup4 pickleModuleOrNamespace p_string p_bool (p_space 3) (minfo.mspec, minfo.compileTimeWorkingDir, minfo.usesQuotations,()) st
-#endif
 
 let unpickleModuleOrNamespace st = u_entity_spec st 
   

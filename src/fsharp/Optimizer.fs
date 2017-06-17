@@ -197,10 +197,8 @@ type Summary<'Info> =
 // Note, this is a different notion of "size" to the one used for inlining heuristics
 //------------------------------------------------------------------------- 
 
-let rec SizeOfValueInfos (arr:_[]) = 
-    let n = arr.Length
-    let rec go i acc = if i >= n then acc else max acc (SizeOfValueInfo arr.[i])
-    go 0 0
+let rec SizeOfValueInfos (arr:_[]) =
+    if arr.Length <= 0 then 0 else max 0 (SizeOfValueInfo arr.[0])
 
 and SizeOfValueInfo x =
     match x with
@@ -208,9 +206,9 @@ and SizeOfValueInfo x =
     | ConstValue (_x,_)        -> 1
     | UnknownValue             -> 1
     | ValValue (_vr,vinfo)     -> SizeOfValueInfo vinfo + 1
-    | TupleValue vinfos        
+    | TupleValue vinfos
     | RecdValue (_,vinfos)
-    | UnionCaseValue (_,vinfos)-> 1 + SizeOfValueInfos vinfos
+    | UnionCaseValue (_,vinfos) -> 1 + SizeOfValueInfos vinfos
     | CurriedLambdaValue(_lambdaId,_arities,_bsize,_expr',_ety) -> 1
     | ConstExprValue (_size,_) -> 1
 

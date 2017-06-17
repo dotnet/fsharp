@@ -122,6 +122,16 @@ type Item =
 
     member DisplayName : string
 
+[<RequireQualifiedAccess>]
+/// Pairs an Item with a TyparInst showing how generic type variables of the item are instantiated at 
+/// a particular usage point.
+type ItemWithInst = 
+    { Item : Item
+      TyparInst: TyparInst }
+
+val (|ItemWithInst|) : ItemWithInst -> Item * TyparInst
+val ItemWithNoInst : Item -> ItemWithInst
+
 /// Represents a record field resolution and the information if the usage is deprecated.
 type FieldResolution = FieldResolution of RecdFieldRef * bool
 
@@ -251,6 +261,9 @@ type internal CapturedNameResolution =
     /// Named item
     member Item : Item
 
+    /// The active instantiation for any generic type parameters
+    member ItemWithInst: ItemWithInst
+
     /// Information about the occurrence of the symbol
     member ItemOccurence : ItemOccurence
 
@@ -298,7 +311,7 @@ type internal TcSymbolUses =
     member GetAllUsesOfSymbols : unit -> (Item * ItemOccurence * DisplayEnv * range)[]
 
     /// Get the locations of all the printf format specifiers in the file
-    member GetFormatSpecifierLocations : unit -> range[]
+    member GetFormatSpecifierLocationsAndArity : unit -> (range * int)[]
 
 
 /// An abstract type for reporting the results of name resolution and type checking
@@ -311,10 +324,10 @@ type ITypecheckResultsSink =
     abstract NotifyExprHasType    : pos * TType * DisplayEnv * NameResolutionEnv * AccessorDomain * range -> unit
 
     /// Record that a name resolution occurred at a specific location in the source
-    abstract NotifyNameResolution : pos * Item * Item * ItemOccurence * DisplayEnv * NameResolutionEnv * AccessorDomain * range * bool -> unit
+    abstract NotifyNameResolution : pos * Item * Item * TyparInst * ItemOccurence * DisplayEnv * NameResolutionEnv * AccessorDomain * range * bool -> unit
 
     /// Record that a printf format specifier occurred at a specific location in the source
-    abstract NotifyFormatSpecifierLocation : range -> unit
+    abstract NotifyFormatSpecifierLocation : range * int -> unit
 
     /// Get the current source
     abstract CurrentSource : string option
@@ -349,10 +362,10 @@ val internal TemporarilySuspendReportingTypecheckResultsToSink : TcResultsSink -
 val internal CallEnvSink                : TcResultsSink -> range * NameResolutionEnv * AccessorDomain -> unit
 
 /// Report a specific name resolution at a source range
-val internal CallNameResolutionSink     : TcResultsSink -> range * NameResolutionEnv * Item * Item * ItemOccurence * DisplayEnv * AccessorDomain -> unit
+val internal CallNameResolutionSink     : TcResultsSink -> range * NameResolutionEnv * Item * Item * TyparInst * ItemOccurence * DisplayEnv * AccessorDomain -> unit
 
 /// Report a specific name resolution at a source range, replacing any previous resolutions
-val internal CallNameResolutionSinkReplacing     : TcResultsSink -> range * NameResolutionEnv * Item * Item * ItemOccurence * DisplayEnv * AccessorDomain -> unit
+val internal CallNameResolutionSinkReplacing     : TcResultsSink -> range * NameResolutionEnv * Item * Item * TyparInst * ItemOccurence * DisplayEnv * AccessorDomain -> unit
 
 /// Report a specific name resolution at a source range
 val internal CallExprHasTypeSink        : TcResultsSink -> range * NameResolutionEnv * TType * DisplayEnv * AccessorDomain -> unit
@@ -433,26 +446,28 @@ val internal ResolvePartialLongIdentToClassOrRecdFields : NameResolver -> NameRe
 /// Return the fields for the given class or record
 val internal ResolveRecordOrClassFieldsOfType       : NameResolver -> range -> AccessorDomain -> TType -> bool -> Item list
 
-/// An adjustment to perform to the name resolution results if overload resolution fails.
-/// If overload resolution succeeds, the specific overload resolution is reported. If it fails, the 
-/// set of possible overloads is reported via this adjustment.
-type IfOverloadResolutionFails = IfOverloadResolutionFails of (unit -> unit)
-
-/// Specifies if overload resolution needs to notify Language Service of overload resolution
+/// Specifies extra work to do after overload resolution 
 [<RequireQualifiedAccess>]
-type AfterOverloadResolution =
+type AfterResolution =
     /// Notification is not needed
-    |   DoNothing
-    /// Notify the sink
-    |   SendToSink of (Item -> unit) * IfOverloadResolutionFails // overload resolution failure fallback
-    /// Find override among given overrides and notify the sink. The 'Item' contains the candidate overrides.
-    |   ReplaceWithOverrideAndSendToSink of Item * (Item -> unit) * IfOverloadResolutionFails // overload resolution failure fallback
+    | DoNothing
+
+    /// Notify the sink of the information needed to complete recording a use of a symbol
+    /// for the purposes of the language service.  One of the callbacks should be called by 
+    /// the checker.
+    ///
+    /// The first callback represents a case where we have learned the type 
+    /// instantiation of a generic method or value.
+    ///
+    /// The second represents the case where we have resolved overloading and/or 
+    /// a specific override. The 'Item option' contains the candidate overrides.
+    | RecordResolution of Item option * (TyparInst -> unit) * (MethInfo * PropInfo option * TyparInst -> unit) * (unit -> unit)
 
 /// Resolve a long identifier occurring in an expression position.
-val internal ResolveLongIdentAsExprAndComputeRange  : TcResultsSink -> NameResolver -> range -> AccessorDomain -> NameResolutionEnv -> TypeNameResolutionInfo -> Ident list -> Item * range * Ident list * AfterOverloadResolution
+val internal ResolveLongIdentAsExprAndComputeRange  : TcResultsSink -> NameResolver -> range -> AccessorDomain -> NameResolutionEnv -> TypeNameResolutionInfo -> Ident list -> Item * range * Ident list * AfterResolution
 
 /// Resolve a long identifier occurring in an expression position, qualified by a type.
-val internal ResolveExprDotLongIdentAndComputeRange : TcResultsSink -> NameResolver -> range -> AccessorDomain -> NameResolutionEnv -> TType -> Ident list -> FindMemberFlag -> bool -> Item * range * Ident list * AfterOverloadResolution
+val internal ResolveExprDotLongIdentAndComputeRange : TcResultsSink -> NameResolver -> range -> AccessorDomain -> NameResolutionEnv -> TType -> Ident list -> FindMemberFlag -> bool -> Item * range * Ident list * AfterResolution
 
 /// A generator of type instantiations used when no more specific type instantiation is known.
 val FakeInstantiationGenerator : range -> Typar list -> TType list
@@ -471,5 +486,6 @@ type ResolveCompletionTargets =
 /// Resolve a (possibly incomplete) long identifier to a set of possible resolutions, qualified by type.
 val ResolveCompletionsInType       : NameResolver -> NameResolutionEnv -> ResolveCompletionTargets -> Range.range -> AccessorDomain -> bool -> TType -> Item list
 
+val GetVisibleNamespacesAndModulesAtPoint : NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> ModuleOrNamespaceRef list
 
 val IsItemResolvable : NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> Item -> bool

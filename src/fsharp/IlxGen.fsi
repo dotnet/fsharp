@@ -83,3 +83,4 @@ type public IlxAssemblyGenerator =
 
 
 val ReportStatistics : TextWriter -> unit
+val IsValCompiledAsMethod : TcGlobals -> Val -> bool

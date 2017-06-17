@@ -16,6 +16,10 @@ open System.Text.RegularExpressions
 open Microsoft.FSharp.Compiler.SourceCodeServices
 #nowarn "52" // The value has been copied to ensure the original is not mutated
 
+[<AutoOpen>]
+module internal Globals = 
+    let checker = FSharpChecker.Create(legacyReferenceResolver=Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver)
+
 //open Internal.Utilities
 type internal TextSpan       = Microsoft.VisualStudio.TextManager.Interop.TextSpan
 
@@ -173,21 +177,24 @@ type internal GlobalParseAndTypeCheckCounter private(initialParseCount:int, init
                            expectedParsedFiles |> List.map GetNameOfOpenFile, 
                            expectedTypeCheckedFiles |> List.map GetNameOfOpenFile,
                            false)
-    member this.AssertExactly((aap,expectedParsedFiles) : string option * list<OpenFile>, (aat,expectedTypeCheckedFiles) : string option * list<OpenFile>) =
+    member this.AssertExactly((aap: string option,expectedParsedFiles:list<OpenFile>), (aat: string option,expectedTypeCheckedFiles:list<OpenFile>)) =
         this.AssertExactly((aap,expectedParsedFiles), (aat,expectedTypeCheckedFiles), false)
     member this.AssertExactly((aap,expectedParsedFiles) : string option * list<OpenFile>, (aat,expectedTypeCheckedFiles) : string option * list<OpenFile>, expectCreate : bool) =
-        let p = match aap with 
-                | Some(aap) -> aap :: (expectedParsedFiles |> List.map GetNameOfOpenFile)
-                | _ -> (expectedParsedFiles |> List.map GetNameOfOpenFile)
-        let t = match aat with
-                | Some(aat) -> aat :: (expectedTypeCheckedFiles |> List.map GetNameOfOpenFile)
-                | _ -> (expectedTypeCheckedFiles |> List.map GetNameOfOpenFile)
+        let p = 
+            match aap with 
+            | Some(aap) -> aap :: (expectedParsedFiles |> List.map GetNameOfOpenFile)
+            | _ -> (expectedParsedFiles |> List.map GetNameOfOpenFile)
+        let t = 
+            match aat with
+            | Some(aat) -> aat :: (expectedTypeCheckedFiles |> List.map GetNameOfOpenFile)
+            | _ -> (expectedTypeCheckedFiles |> List.map GetNameOfOpenFile)
         this.AssertExactly(p.Length, t.Length, p, t, expectCreate)
     member private this.AssertExactly(expectedParses, expectedTypeChecks, expectedParsedFiles : list<string>, expectedTypeCheckedFiles : list<string>, expectCreate : bool) =
-        let note,ok = if expectCreate then
-                        if this.SawIBCreated() then ("The incremental builder was created, as expected",true) else ("The incremental builder was NOT deleted and recreated, even though we expected it to be",false)
-                      else
-                        if this.SawIBCreated() then ("The incremental builder was UNEXPECTEDLY deleted",false) else ("",true)
+        let note,ok = 
+            if expectCreate then
+                if this.SawIBCreated() then ("The incremental builder was created, as expected",true) else ("The incremental builder was NOT deleted and recreated, even though we expected it to be",false)
+            else
+                if this.SawIBCreated() then ("The incremental builder was UNEXPECTEDLY deleted",false) else ("",true)
         let actualParsedFiles = this.GetParsedFilesSet()
         let actualTypeCheckedFiles = this.GetTypeCheckedFilesSet()
         let actualParses = actualParsedFiles.Count 

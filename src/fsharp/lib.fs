@@ -254,8 +254,10 @@ let map6Of6 f (a1,a2,a3,a4,a5,a6) = (a1,a2,a3,a4,a5,f a6)
 let foldPair (f1,f2)    acc (a1,a2)         = f2 (f1 acc a1) a2
 let fold1Of2 f1    acc (a1,_a2)         = f1 acc a1
 let foldTriple (f1,f2,f3) acc (a1,a2,a3)      = f3 (f2 (f1 acc a1) a2) a3
+let foldQuadruple (f1,f2,f3,f4) acc (a1,a2,a3,a4)      = f4 (f3 (f2 (f1 acc a1) a2) a3) a4
 let mapPair (f1,f2)    (a1,a2)     = (f1 a1, f2 a2)
 let mapTriple (f1,f2,f3) (a1,a2,a3)  = (f1 a1, f2 a2, f3 a3)
+let mapQuadruple (f1,f2,f3,f4) (a1,a2,a3,a4)  = (f1 a1, f2 a2, f3 a3, f4 a4)
 let fmap2Of2 f z (a1,a2)       = let z,a2 = f z a2 in z,(a1,a2)
 
 module List = 
@@ -386,37 +388,6 @@ let inline cacheOptRef cache f =
        cache := Some res
        res 
 
-
-// There is a bug in .NET Framework v2.0.52727 DD#153959 that very occasionally hits F# code.
-// It is related to recursive class loading in multi-assembly NGEN scenarios. The bug has been fixed but
-// not yet deployed.
-// The bug manifests itself as an ExecutionEngine failure or fast-fail process exit which comes
-// and goes depending on whether components are NGEN'd or not, e.g. 'ngen install FSharp.Compiler.dll'
-// One workaround for the bug is to break NGEN loading and fixups into smaller fragments. Roughly speaking, the NGEN
-// loading process works by doing delayed fixups of references in NGEN code. This happens on a per-method basis.
-// e.g. one manifestation is that a 'print' before calling a method like LexFilter.create gets
-// displayed but the corresponding 'print' in the body of that function doesn't get displayed. In between, the NGEN
-// image loader is performing a whole bunch of fixups of the NGEN code for the body of that method, and also for
-// bodies of methods referred to by that method. That second bit is very important: the fixup causing the crash may
-// be a couple of steps down the dependency chain.
-//
-// One way to break work into smaller chunks is to put delays in the call chains, i.e. insert extra stack frames. That's
-// what the function 'delayInsertedToWorkaroundKnownNgenBug' is for. If you get this problem, try inserting 
-//    delayInsertedToWorkaroundKnownNgenBug "Delay1" (fun () -> ...)
-// at the top of the function that doesn't seem to be being called correctly. This will help you isolate out the problem
-// and may make the problem go away altogether. Enable the 'print' commands in that function too.
-
-let delayInsertedToWorkaroundKnownNgenBug s f = 
-    (* Some random code to prevent inlining of this function *)
-    let res = ref 10
-    for i = 0 to 2 do 
-       res := !res + String.length s
-    done
-    if verbose then printf "------------------------executing NGEN bug delay '%s', calling 'f' --------------\n" s
-    let res = f()
-    if verbose then printf "------------------------exiting NGEN bug delay '%s' --------------\n" s
-    res
-    
 
 #if DUMPER
 type Dumper(x:obj) =

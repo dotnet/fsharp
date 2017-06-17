@@ -151,7 +151,7 @@ module Command =
             let fullpath = Commands.getfullpath dir
             match rt with 
             | Append p -> File.AppendText( p |> fullpath)
-            | Overwrite p -> new StreamWriter(File.OpenWrite(p |> fullpath))
+            | Overwrite p -> new StreamWriter(new FileStream(p |> fullpath, FileMode.Create))
 
         let outF fCont cmdArgs =
             match o with

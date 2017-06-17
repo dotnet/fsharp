@@ -21,6 +21,7 @@ if not exist %_ngenexe% echo Note: Could not find ngen.exe.
 %_ngenexe% install packages\FSharp.Compiler.Tools.4.0.1.21\tools\fsc.exe
 
 set BUILD_NET40=1
+set BUILD_NET40_FSHARP_CORE=1
 set BUILD_PORTABLE=1
 set TEST_NET40_COREUNIT_SUITE=1
 set TEST_PORTABLE_COREUNIT_SUITE=1
@@ -30,11 +31,11 @@ set TEST_PORTABLE_COREUNIT_SUITE=1
 
 %_ngenexe% install Proto\net440\bin\fsc-proto.exe
 
-%_msbuildexe% %msbuildflags% build-everything.proj /p:TargetFramework=net40 /p:Configuration=Release
-@if ERRORLEVEL 1 echo Error: "%_msbuildexe% %msbuildflags% src\fsharp-library-build.proj /p:TargetFramework=net40 /p:Configuration=Release" failed  && goto :failure
+%_msbuildexe% %msbuildflags% build-everything.proj /p:TargetDotnetProfile=net40 /p:Configuration=Release
+@if ERRORLEVEL 1 echo Error: "%_msbuildexe% %msbuildflags% src\fsharp-library-build.proj /p:TargetDotnetProfile=net40 /p:Configuration=Release" failed  && goto :failure
 
-%_msbuildexe% %msbuildflags% src/fsharp/FSharp.Core/FSharp.Core.fsproj /p:TargetFramework=monotouch /p:Configuration=Release /p:KeyFile=..\..\..\mono\mono.snk
-@if ERRORLEVEL 1 echo Error: "%_msbuildexe% %msbuildflags% src\fsharp-library-build.proj /p:TargetFramework=monotouch /p:Configuration=Release /p:KeyFile=..\..\..\mono.snk" failed  && goto :failure
+%_msbuildexe% %msbuildflags% src/fsharp/FSharp.Core/FSharp.Core.fsproj /p:TargetDotnetProfile=monotouch /p:Configuration=Release /p:KeyFile=..\..\..\mono\mono.snk
+@if ERRORLEVEL 1 echo Error: "%_msbuildexe% %msbuildflags% src\fsharp-library-build.proj /p:TargetDotnetProfile=monotouch /p:Configuration=Release /p:KeyFile=..\..\..\mono.snk" failed  && goto :failure
 
 
 @echo "Finished"

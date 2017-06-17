@@ -93,6 +93,7 @@ To build and test Visual F# IDE Tools, install these requirements:
   - Under the "Other Toolsets" workloads, select "Visual Studio extension development"
   - Under the "Individual components" tab select "Windows 10 SDK" as shown below (needed for compiling RC resource, see #2556): \
   ![image](https://cloud.githubusercontent.com/assets/1249087/23730261/5c78c850-041b-11e7-9d9d-62766351fd0f.png)
+  - Failing to install this will lead to error FS0193: Could not find file visualfsharp\vsintegration\src\FSharp.ProjectSystem.FSharp\obj\net40\ProjectResources.rc.res.
 
 Steps to build:
 
@@ -111,7 +112,7 @@ Note: if you face this error [#2351](https://github.com/Microsoft/visualfsharp/i
 
 Or hard crash on launch ("Unknown Error"), delete these folders:
 
-* `%localappdata%\Microsoft\VisualStudio\15.0_(some number here)FSharpDev`
+* `%localappdata%\Microsoft\VisualStudio\15.0_(some number here)RoslynDev`
 * `%localappdata%\Microsoft\VisualStudio\15.0_(some number here)`
 
 #### [Optional] Install the Visual F# IDE Tools  (Windows Only)
@@ -138,11 +139,16 @@ Restart Visual Studio, it should now be running your freshly-built Visual F# IDE
 
 #### [Optional] F5 testing of local changes
 
-To test your changes locally _without_ overwriting your default installed F# tools, set the `VisualFSharp\Vsix\VisualFSharpOpenSource`
-project as the startup project.  When you hit F5 a new instance of Visual Studio will be started in the `FSharpDev` hive with your
-changes, but the root (default) hive will remain untouched.
+To test your changes locally _without_ overwriting your default installed Visual F# tools, set the `VisualFSharp\Vsix\VisualFSharpOpenSource`
+project as the startup project.  When you hit F5 a new instance of Visual Studio will be started in the `RoslynDev` hive with your
+changes, but the root (default) hive will remain untouched. You can also start this hive automatically using
 
-### [Optional] Rapid deployment of incremental changes to Visual F# IDE Tools components
+    devenv.exe /rootsuffix:RoslynDev
+    
+Because this uses the "RoslynDev" hive you can simultaneously test changes to an appropriate build of Roslyn binaries.
+
+
+#### [Optional] Rapid deployment of incremental changes to Visual F# IDE Tools components
 
 For the brave, you can rapidly deploy incrementally updated versions of Visual F# IDE Tool components such as ``FSHarp.Editor.dll`` by copying them directly into the extension directory in your user AppData folder:
 
@@ -152,7 +158,7 @@ This gives a much tighter inner development loop than uninstalling/reinstalling 
 
 #### [Optional] Clobber the F# SDK on the machine
 
-**Note:** The step below will try to clobber the machine-wide installed F# SDK on your machine. This replaces the ``fsc.exe`` used by the standard innstall location or ``Microsoft.FSharp.targets``.  **Repairing Visual Studio 15 is currently the only way to revert this step.**
+**Note:** The step below will try to clobber the machine-wide installed F# SDK on your machine. This replaces the ``fsc.exe`` used by the standard install location or ``Microsoft.FSharp.Targets``.  **Repairing Visual Studio 15 is currently the only way to revert this step.**
 
 For **Debug**:
 
@@ -179,7 +185,7 @@ For **Release**:
 - [Windows 10 SDK](https://developer.microsoft.com/en-US/windows/downloads/windows-10-sdk)
 
 
-### Notes on the Windows .NET Framework build
+#### Notes on the Windows .NET Framework build
 
 1. The `update.cmd` script adds required strong name validation skips, and NGens the compiler and libraries. This requires admin privileges.
 1. The compiler binaries produced are "private" and strong-named signed with a test key.
@@ -190,7 +196,7 @@ For **Release**:
  - We use the proto compiler to compile the source for `FSharp.Core.dll` in this distribution.
  - We use the proto compiler to compile the source for `FSharp.Compiler.dll`, `fsc.exe`, `fsi.exe`, and other binaries found in this distribution.
 
-### Configuring proxy server
+#### Configuring proxy server
 
 If you are behind a proxy server, NuGet client tool must be configured to use it:
 
@@ -200,7 +206,7 @@ If you are behind a proxy server, NuGet client tool must be configured to use it
 
 Where you should set proper proxy address, user name and password.
 
-## Resources
+#### Resources
 
 The primary technical guide to the core compiler code is [The F# Compiler Technical Guide](http://fsharp.github.io/2015/09/29/fsharp-compiler-guide.html).  Please read and contribute to that guide.
 

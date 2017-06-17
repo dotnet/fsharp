@@ -268,50 +268,60 @@ stdin(619,21): warning FS1172: Infix operator member '**' has no arguments. Expe
 
 stdin(624,17): warning FS0864: This new member hides the abstract member 'System.Object.ToString() : string'. Rename the member or use 'override' instead.
 
+
       member this.M() = "string"
   ----------------^
 
-stdin(765,17): error FS0438: Duplicate method. The method 'M' has the same name and signature as another method in this type.
+stdin(765,17): error FS0438: Duplicate method. The method 'M' has the same name and signature as another method in type 'ExpectDupMethod'.
+
 
       member this.P = "string"
   ----------------^
 
-stdin(772,17): error FS0438: Duplicate method. The method 'get_P' has the same name and signature as another method in this type.
+stdin(772,17): error FS0438: Duplicate method. The method 'get_P' has the same name and signature as another method in type 'ExpectDupProperty'.
+
 
       type public   IBPublic   = interface inherit IAPrivate abstract Q : int end
   ------------------^^^^^^^^
 
 stdin(779,19): error FS0410: The type 'IAPrivate' is less accessible than the value, member or type 'IBPublic' it is used in.
 
+
       type internal IBInternal = interface inherit IAPrivate abstract Q : int end
   ------------------^^^^^^^^^^
 
 stdin(784,19): error FS0410: The type 'IAPrivate' is less accessible than the value, member or type 'IBInternal' it is used in.
+
 
       type public   IBPublic   = interface inherit IAInternal abstract Q : int end
   ------------------^^^^^^^^
 
 stdin(793,19): error FS0410: The type 'IAInternal' is less accessible than the value, member or type 'IBPublic' it is used in.
 
+
           override x.M(a:string) = 1
   -------------------^
 
 stdin(825,20): error FS0361: The override 'M : string -> int' implements more than one abstract slot, e.g. 'abstract member Regression4232.D.M : 'U -> int' and 'abstract member Regression4232.D.M : 'T -> int'
+
 
   let (|A|B|) (x:int) = A x;;
   -----^^^^^
 
 stdin(833,6): error FS1210: Active pattern '|A|B|' has a result type containing type variables that are not determined by the input. The common cause is a when a result case is not mentioned, e.g. 'let (|A|B|) (x:int) = A x'. This can be fixed with a type constraint, e.g. 'let (|A|B|) (x:int) : Choice<int,unit> = A x'
 
+
   let (|A|B|) (x:'a) = A x;;
   -----^^^^^
 
 stdin(836,6): error FS1210: Active pattern '|A|B|' has a result type containing type variables that are not determined by the input. The common cause is a when a result case is not mentioned, e.g. 'let (|A|B|) (x:int) = A x'. This can be fixed with a type constraint, e.g. 'let (|A|B|) (x:int) : Choice<int,unit> = A x'
 
+
   let (|A|B|) (p:'a) (x:int) = A p;;
   -----^^^^^
 
 stdin(839,6): error FS1210: Active pattern '|A|B|' has a result type containing type variables that are not determined by the input. The common cause is a when a result case is not mentioned, e.g. 'let (|A|B|) (x:int) = A x'. This can be fixed with a type constraint, e.g. 'let (|A|B|) (x:int) : Choice<int,unit> = A x'
+
 
   let (|A|B|) = failwith "" : Choice<int,int>;;
   -----^^^^^

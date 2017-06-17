@@ -1199,8 +1199,8 @@ type UsingMSBuild() as this =
         AssertArrayContainsPartialMatchOf(fas.OtherOptions, "System.Runtime.Remoting.dll")
         AssertArrayContainsPartialMatchOf(fas.OtherOptions, "System.Transactions.dll")
         AssertArrayContainsPartialMatchOf(fas.OtherOptions, "FSharp.Compiler.Interactive.Settings.dll")
-        Assert.AreEqual(Path.Combine(projectFolder,"File1.fsx"), fas.ProjectFileNames.[0])
-        Assert.AreEqual(1, fas.ProjectFileNames.Length)
+        Assert.AreEqual(Path.Combine(projectFolder,"File1.fsx"), fas.SourceFiles.[0])
+        Assert.AreEqual(1, fas.SourceFiles.Length)
 
 
     /// FEATURE: #reference against a strong name should work.
@@ -1357,9 +1357,9 @@ type UsingMSBuild() as this =
                         <SpecificVersion>True</SpecificVersion>
                         <HintPath>%s\\FSharp.Compiler.Interactive.Settings.dll</HintPath>
                     </Reference>
-                    <Reference Include=""FSharp.Compiler, Version=%s, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
+                    <Reference Include=""FSharp.Compiler.Private, Version=%s, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
                         <SpecificVersion>True</SpecificVersion>
-                        <HintPath>%s\\FSharp.Compiler.dll</HintPath>
+                        <HintPath>%s\\FSharp.Compiler.Private.dll</HintPath>
                     </Reference>
                 </ItemGroup>" fsVersion binariesFolder fsVersion binariesFolder)
 
@@ -1498,7 +1498,7 @@ type UsingMSBuild() as this =
                                        "Script.fsx"])           
             for line in lines do 
                 printfn "%s" line
-                AssertNotContains(line,"error MSB") // Microsoft.FSharp.targets(135,9): error MSB6006: "fsc.exe" exited with code -532462766.
+                AssertNotContains(line,"error MSB") // Microsoft.FSharp.Targets(135,9): error MSB6006: "fsc.exe" exited with code -532462766.
 
         Assert.IsTrue(not(build.BuildSucceeded), "Expected build to fail")                                  
         
@@ -1556,21 +1556,6 @@ type UsingMSBuild() as this =
               "#load \"" // Unclosed
               "#load \"Hello There\""]
             ) 
-        
-    //regression test for bug 2530
-    [<Test>]
-    [<Category("fsx moved from tao test")>]
-    member public this.``Fsx.IntellisenseForFSI``() =
-        let code = 
-                                      ["module Script"
-                                       "fsi(*MarkerFSI*)" 
-                                       ]
-        let (_, script1) = createSingleFileFsxFromLines code
-        TakeCoffeeBreak(this.VS)
-        let marker = "(*MarkerFSI*)"
-        let list = ["FormatProvider";"CommandLineArgs"]
-        let completions = DotCompletionAtStartOfMarker script1 marker
-        AssertCompListContainsAll(completions, list)
 
     [<Test>]
     [<Category("TypeProvider")>]

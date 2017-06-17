@@ -1,9 +1,6 @@
-
-[![Join the chat at https://gitter.im/Microsoft/visualfsharp](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Microsoft/visualfsharp?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
 # The Combined F# Language, Library, and Tools Repository
 
-You are invited to to help produce future releases of the F# language compiler, library, and tools.
+You are invited to help producing future releases of the F# language compiler, library, and tools.
 
 * [Contributing](#contributing)
 * [Using](#using)
@@ -15,6 +12,7 @@ F# is a mature, open source, cross-platform, functional-first programming langua
 |            | Ubuntu (Build) | Windows (Debug Build) | Windows (Release Tests 1) | Windows (Release Tests 2) | Windows  (Release Tests 3) | Windows (Release Tests 4) |
 |:----------:|:----------------:|:----------------:|:------------------:|:-----------------------:|:---------------------:|:----------:|
 |**master**  |[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ubuntu14.04)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ubuntu14.04/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/debug_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/debug_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part1_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part1_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part2_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part2_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part3_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part3_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part4_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part4_windows_nt/)|
+|**vs2017-rtm**  |[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/vs2017-rtm/release_ubuntu14.04)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/vs2017-rtm/job/release_ubuntu14.04/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/vs2017-rtm/debug_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/vs2017-rtm/job/debug_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/vs2017-rtm/release_ci_part1_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/vs2017-rtm/job/release_ci_part1_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/vs2017-rtm/release_ci_part2_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/vs2017-rtm/job/release_ci_part2_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/vs2017-rtm/release_ci_part3_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/vs2017-rtm/job/release_ci_part3_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/vs2017-rtm/release_ci_part4_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/vs2017-rtm/job/release_ci_part4_windows_nt/)|
 
 ## Contributing
 
@@ -46,8 +44,6 @@ This repository enables development on Linux, macOS and Windows.  It enables aut
 
 Changes contributed here are eventually included in all packagings of F# and open source F# editing tools. Microsoft coordinates packaging this repository as part of the Visual F# Tools, and the F# community coordinates packaging [other editions of F#](https://github.com/fsharp/fsharp/) for use on Linux, macOS, Android, iOS, and other platforms.
 
-
-
 ## Using
 
 For typical installs of  F#, see http://fsharp.org.
@@ -70,13 +66,12 @@ The actual package is built in https://github.com/fsharp/fsharp.
 You will need to adjust the targets reference on your project file to use the targets file from the installed ``FSharp.Compiler.Tools`` package.
 See https://github.com/fsharp/fsharp/issues/676 for how to modify your project file.
 
-
-
 ## Code of Conduct
 
 This project has adopted the code of conduct defined by the [Contributor Covenant](http://contributor-covenant.org/) to clarify expected behavior in our community. This code of conduct has been [adopted by many other projects](http://contributor-covenant.org/adopters/). For more information see the [Code of conduct](https://github.com/Microsoft/visualfsharp/wiki/Code-of-Conduct).
 
 ## Get In Touch
 
-Follow [@VisualFSharp](https://twitter.com/VisualFSharp) and [@fsharporg](https://twitter.com/fsharporg) on twitter and  subscribe to the [.NET Blog](https://blogs.msdn.microsoft.com/dotnet/).
+Follow [@VisualFSharp](https://twitter.com/VisualFSharp) and [@fsharporg](https://twitter.com/fsharporg) on twitter and subscribe to the [.NET Blog](https://blogs.msdn.microsoft.com/dotnet/).
 
+Members of the F# Software Foundation can be invited to the "F# Software Foundation" discussion rooms on slack. More details at http://fsharp.org/guides/slack/.

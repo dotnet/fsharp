@@ -15,9 +15,6 @@
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <ItemGroup>
-    <PackageNuspec Include="FSharp.Compiler.Interactive.Settings.netcore.nuspec" Condition="'$(TargetFramework)' == 'coreclr'" />
-  </ItemGroup>
-  <ItemGroup>
     <FsSrGen Include="..\FSInteractiveSettings.txt">
       <Link>FSInteractiveSettings.txt</Link>
     </FsSrGen>
@@ -38,10 +35,10 @@
       <Link>InteractiveSettings/fsiaux.fs</Link>
     </Compile>
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
+  <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">
       <None Include="project.json" />
   </ItemGroup>
-  <ItemGroup  Condition="'$(TargetFramework)' != 'coreclr'">
+  <ItemGroup  Condition="'$(TargetDotnetProfile)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
   </ItemGroup>
