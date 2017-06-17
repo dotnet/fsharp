@@ -102,8 +102,8 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
                                          directory-based rules rather than MSBuild
                                          resolution
 --targetprofile:<string>                 Specify target framework profile of this
-                                         assembly. Valid values are mscorlib or netcore.
-                                         Default - mscorlib
+                                         assembly. Valid values are mscorlib, netcore or
+                                         netstandard. Default - mscorlib
 --baseaddress:<address>                  Base address for the library to be built
 --noframework                            Do not reference the default CLI assemblies by
                                          default

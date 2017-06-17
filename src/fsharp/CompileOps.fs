@@ -1708,6 +1708,7 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
 let SystemAssemblies () = 
    HashSet
     [ yield "mscorlib"
+      yield "netstandard"
       yield "System.Runtime"
       yield GetFSharpCoreLibraryName() 
       yield "System"
@@ -2187,7 +2188,7 @@ type TcConfigBuilder =
             failwith "Expected a valid defaultFSharpBinariesDir"
         { 
 #if COMPILER_SERVICE_ASSUMES_DOTNETCORE_COMPILATION
-          primaryAssembly = PrimaryAssembly.DotNetCore // defaut value, can be overridden using the command line switch
+          primaryAssembly = PrimaryAssembly.System_Runtime // defaut value, can be overridden using the command line switch
 #else
           primaryAssembly = PrimaryAssembly.Mscorlib // defaut value, can be overridden using the command line switch
 #endif          
@@ -2600,13 +2601,13 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
             AssemblyReference(range0, GetDefaultFSharpCoreReference(), None), None
         | _ -> res
 
-    // If either mscorlib.dll/System.Runtime.dll or FSharp.Core.dll are explicitly specified then we require the --noframework flag.
+    // If either mscorlib.dll/System.Runtime.dll/netstandard.dll or FSharp.Core.dll are explicitly specified then we require the --noframework flag.
     // The reason is that some non-default frameworks may not have the default dlls. For example, Client profile does
     // not have System.Web.dll.
     do if ((primaryAssemblyExplicitFilenameOpt.IsSome || fslibExplicitFilenameOpt.IsSome) && data.framework) then
             error(Error(FSComp.SR.buildExplicitCoreLibRequiresNoFramework("--noframework"),rangeStartup))
 
-    let clrRootValue, (mscorlibMajorVersion,targetFrameworkVersionValue), primaryAssemblyIsSilverlight = 
+    let clrRootValue, targetFrameworkVersionValue  = 
         match primaryAssemblyExplicitFilenameOpt with
         | Some(primaryAssemblyFilename) ->
             let filename = ComputeMakePathAbsolute data.implicitIncludeDir primaryAssemblyFilename
@@ -2614,12 +2615,9 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                 use ilReader = OpenILBinary(filename,data.optimizeForMemory,data.openBinariesInMemory,None,None, data.shadowCopyReferences)
                 let ilModule = ilReader.ILModuleDef
                 match ilModule.ManifestOfAssembly.Version with 
-                | Some(v1,v2,v3,_) -> 
-                    if v1 = 1us then 
-                        warning(Error(FSComp.SR.buildRequiresCLI2(filename),rangeStartup))
+                | Some(v1,v2,_,_) -> 
                     let clrRoot = Some(Path.GetDirectoryName(FileSystem.GetFullPathShim(filename)))
-
-                    clrRoot, (int v1, sprintf "v%d.%d" v1 v2), (v1=5us && v2=0us && v3=5us) // SL5 mscorlib is 5.0.5.0
+                    clrRoot, (sprintf "v%d.%d" v1 v2)
                 | _ -> 
                     failwith (FSComp.SR.buildCouldNotReadVersionInfoFromMscorlib())
             with e ->
@@ -2628,48 +2626,15 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
 #if !ENABLE_MONO_SUPPORT
             // TODO:  we have to get msbuild out of this
             if data.useSimpleResolution then
-                None, (0, ""), false
+                None, ""
             else
 #endif
-                None, (4, data.legacyReferenceResolver.HighestInstalledNetFrameworkVersion()), false
+                None, data.legacyReferenceResolver.HighestInstalledNetFrameworkVersion()
 
-    // Note: anycpu32bitpreferred can only be used with .Net version 4.5 and above
-    // but now there is no way to discriminate between 4.0 and 4.5,
-    // so here we minimally validate if .Net version >= 4 or not.
-    do if data.prefer32Bit && mscorlibMajorVersion < 4 then 
-        error(Error(FSComp.SR.invalidPlatformTargetForOldFramework(),rangeCmdArgs))        
-    
     let systemAssemblies = SystemAssemblies ()
 
-    // Check that the referenced version of FSharp.Core.dll matches the referenced version of mscorlib.dll 
-    let checkFSharpBinaryCompatWithMscorlib filename (ilAssemblyRefs: ILAssemblyRef list) explicitFscoreVersionToCheckOpt m = 
-        let isfslib = fileNameOfPath filename = GetFSharpCoreLibraryName() + ".dll"
-        match ilAssemblyRefs |> List.tryFind (fun aref -> aref.Name = data.primaryAssembly.Name) with 
-        | Some aref ->
-            match aref.Version with
-            | Some(v1,_,_,_) ->
-                if isfslib && ((v1 < 4us) <> (mscorlibMajorVersion < 4)) then
-                    // the versions mismatch, however they are allowed to mismatch in one case:
-                    if primaryAssemblyIsSilverlight  && mscorlibMajorVersion=5   // SL5
-                        && (match explicitFscoreVersionToCheckOpt with 
-                            | Some(2us,3us,5us,_) // silverlight is supported for FSharp.Core 2.3.5.x and 3.47.x.y 
-                            | Some(3us,47us,_,_) 
-                            | None -> true        // the 'None' code path happens after explicit FSCore was already checked, from now on SL5 path is always excepted
-                            | _ -> false) 
-                    then
-                        ()
-                    else
-                        error(Error(FSComp.SR.buildMscorLibAndFSharpCoreMismatch(filename),m))
-                // If you're building an assembly that references another assembly built for a more recent
-                // framework version, we want to raise a warning
-                elif not(isfslib) && ((v1 = 4us) && (mscorlibMajorVersion < 4)) then
-                    warning(Error(FSComp.SR.buildMscorlibAndReferencedAssemblyMismatch(filename),m))
-                else
-                    ()
-            | _ -> ()
-        | _ -> ()
-
     // Look for an explicit reference to FSharp.Core and use that to compute fsharpBinariesDir
+    // FUTURE: remove this, we only read the binary for the exception it raises
     let fsharpBinariesDirValue = 
 #if FX_NO_SIMPLIFIED_LOADER
         data.defaultFSharpBinariesDir
@@ -2680,7 +2645,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
             if fslibReference.ProjectReference.IsNone then 
                 try 
                     use ilReader = OpenILBinary(filename,data.optimizeForMemory,data.openBinariesInMemory,None,None, data.shadowCopyReferences)
-                    checkFSharpBinaryCompatWithMscorlib filename ilReader.ILAssemblyRefs ilReader.ILModuleDef.ManifestOfAssembly.Version rangeStartup;
+                    ()
                 with e -> 
                     error(Error(FSComp.SR.buildErrorOpeningBinaryFile(filename, e.Message), rangeStartup))
                 
@@ -2690,7 +2655,6 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
             data.defaultFSharpBinariesDir
 #endif
 
-    member x.MscorlibMajorVersion = mscorlibMajorVersion
     member x.primaryAssembly = data.primaryAssembly
     member x.autoResolveOpenDirectivesToDlls = data.autoResolveOpenDirectivesToDlls
     member x.noFeedback = data.noFeedback
@@ -3019,10 +2983,6 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
 
     member tcConfig.ResolveSourceFile(m, nm, pathLoadedFrom) = 
         data.ResolveSourceFile(m, nm, pathLoadedFrom)
-
-    member tcConfig.CheckFSharpBinary (filename, ilAssemblyRefs, m) = 
-        use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
-        checkFSharpBinaryCompatWithMscorlib filename ilAssemblyRefs None m
 
     // NOTE!! if mode=Speculative then this method must not report ANY warnings or errors through 'warning' or 'error'. Instead
     // it must return warnings and errors as data
@@ -4165,7 +4125,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         if providerAssemblies.Count > 0 then
 
             // Find the SystemRuntimeAssemblyVersion value to report in the TypeProviderConfig.
-            let systemRuntimeAssemblyVersion = 
+            let primaryAssemblyVersion = 
                 let primaryAssemblyRef = tcConfig.PrimaryAssemblyDllReference()
                 let resolution = tcConfig.ResolveLibWithDirectories (CcuLoadFailureAction.RaiseError, primaryAssemblyRef) |> Option.get
                  // MSDN: this method causes the file to be opened and closed, but the assembly is not added to this domain
@@ -4192,7 +4152,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
             let providers = 
                 [ for assemblyName in providerAssemblies do
                       yield ExtensionTyping.GetTypeProvidersOfAssembly(fileNameOfRuntimeAssembly, ilScopeRefOfRuntimeAssembly, assemblyName, typeProviderEnvironment, 
-                                                                       tcConfig.isInvalidationSupported, tcConfig.isInteractive, systemRuntimeContainsType, systemRuntimeAssemblyVersion, m) ]
+                                                                       tcConfig.isInvalidationSupported, tcConfig.isInteractive, systemRuntimeContainsType, primaryAssemblyVersion, m) ]
             let providers = providers |> List.concat
 
             // Note, type providers are disposable objects. The TcImports owns the provider objects - when/if it is disposed, the providers are disposed.
@@ -4273,7 +4233,6 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
     member tcImports.PrepareToImportReferencedILAssembly (ctok, m, filename, dllinfo:ImportedBinary) =
         CheckDisposed()
         let tcConfig = tcConfigP.Get(ctok)
-        tcConfig.CheckFSharpBinary (filename,dllinfo.ILAssemblyRefs,m)
         assert dllinfo.RawMetadata.TryGetRawILModule().IsSome
         let ilModule = dllinfo.RawMetadata.TryGetRawILModule().Value
         let ilScopeRef = dllinfo.ILScopeRef
@@ -4310,9 +4269,9 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
 
     member tcImports.PrepareToImportReferencedFSharpAssembly (ctok, m, filename, dllinfo:ImportedBinary) =
         CheckDisposed()
+#if EXTENSIONTYPING
         let tcConfig = tcConfigP.Get(ctok)
-        tcConfig.CheckFSharpBinary (filename, dllinfo.ILAssemblyRefs, m)
-
+#endif
         let ilModule = dllinfo.RawMetadata 
         let ilScopeRef = dllinfo.ILScopeRef 
         let ilShortAssemName = getNameOfScopeRef ilScopeRef 
@@ -4636,7 +4595,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         // OK, now we have both mscorlib.dll and FSharp.Core.dll we can create TcGlobals
         let tcGlobals = TcGlobals(tcConfig.compilingFslib,ilGlobals,fslibCcu,
                                     tcConfig.implicitIncludeDir,tcConfig.mlCompatibility,
-                                    tcConfig.isInteractive,tryFindSysTypeCcu, tcConfig.emitDebugInfoInQuotations, (tcConfig.primaryAssembly.Name = "mscorlib"), tcConfig.noDebugData )
+                                    tcConfig.isInteractive,tryFindSysTypeCcu, tcConfig.emitDebugInfoInQuotations, tcConfig.noDebugData )
 
 #if DEBUG
         // the global_g reference cell is used only for debug printing
