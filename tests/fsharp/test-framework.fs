@@ -115,7 +115,7 @@ type TestConfig =
       FSCBinPath : string
       FSCOREDLLPATH : string
       FSI : string
-      FSI_FOR_SCRIPTS : string option
+      FSI_FOR_SCRIPTS : string
       fsi_flags : string
       ILDASM : string
       SN : string
@@ -455,7 +455,7 @@ let peverify cfg = Commands.peverify (exec cfg) cfg.PEVERIFY "/nologo"
 let sn cfg outfile arg = execAppendOutIgnoreExitCode cfg cfg.Directory outfile cfg.SN arg
 let peverifyWithArgs cfg args = Commands.peverify (exec cfg) cfg.PEVERIFY args
 let fsi cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI)
-let fsi_script cfg = match cfg.FSI_FOR_SCRIPTS with None -> failwith "no _fsiexe environment variable for FSI_FOR_SCRIPTS" | Some fsi -> Printf.ksprintf (Commands.fsi (exec cfg) fsi)
+let fsi_script cfg = Printf.ksprintf (Commands.fsi (exec cfg) cfg.FSI_FOR_SCRIPTS)
 let fsiExpectFail cfg = Printf.ksprintf (Commands.fsi (execExpectFail cfg) cfg.FSI)
 let fsiAppendIgnoreExitCode cfg stdoutPath stderrPath = Printf.ksprintf (Commands.fsi (execAppendIgnoreExitCode cfg stdoutPath stderrPath) cfg.FSI)
 let fileguard cfg = (Commands.getfullpath cfg.Directory) >> (fun x -> new FileGuard(x))
