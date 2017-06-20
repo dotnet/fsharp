@@ -105,12 +105,6 @@ type internal FSharpCompletionProvider
             let getAllSymbols() = 
                 getAllSymbols() |> List.filter (fun entity -> entity.FullName.Contains "." && not (PrettyNaming.IsOperatorName entity.Symbol.DisplayName))
 
-            //#if DEBUG
-            //let kprintfEntity = allEntities |> List.filter (fun x -> x.FullName.EndsWith "foo")
-            //Logging.Logging.logInfof "%+A" kprintfEntity
-            //let _x = kprintfEntity
-            //#endif
-
             let! declarations =
                 checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLineColumn, caretLine.ToString(), qualifyingNames, partialName, getAllSymbols, userOpName=userOpName) |> liftAsync
             
@@ -146,12 +140,6 @@ type internal FSharpCompletionProvider
                     match declItem.NamespaceToOpen with
                     | Some namespaceToOpen -> sprintf "%s (open %s)" declItem.Name namespaceToOpen
                     | _ -> declItem.Name
-                
-                let name = 
-                    if name = "foo" then 
-                        "f" + "o" + "o"
-                    else
-                        name
                     
                 let filterText =
                     match declItem.NamespaceToOpen, declItem.Name.Split '.' with
