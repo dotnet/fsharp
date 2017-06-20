@@ -4699,7 +4699,6 @@ namespace Microsoft.FSharp.Core
             open System.Runtime.CompilerServices
 
 #if !FX_NO_DEFAULT_DEPENDENCY_TYPE
-            [<Dependency("FSharp.Core",LoadHint.Always)>] 
             [<assembly: System.Runtime.CompilerServices.DefaultDependency(System.Runtime.CompilerServices.LoadHint.Always)>] 
 #endif
 
