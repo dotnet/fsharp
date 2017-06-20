@@ -105,12 +105,6 @@ type internal FSharpCompletionProvider
             let getAllSymbols() = 
                 getAllSymbols() |> List.filter (fun entity -> entity.FullName.Contains "." && not (PrettyNaming.IsOperatorName entity.Symbol.DisplayName))
 
-            //#if DEBUG
-            //let kprintfEntity = allEntities |> List.filter (fun x -> x.FullName.EndsWith "foo")
-            //Logging.Logging.logInfof "%+A" kprintfEntity
-            //let _x = kprintfEntity
-            //#endif
-
             let! declarations =
                 checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLineColumn, caretLine.ToString(), qualifyingNames, partialName, getAllSymbols, userOpName=userOpName) |> liftAsync
             
@@ -146,7 +140,7 @@ type internal FSharpCompletionProvider
                     match declItem.NamespaceToOpen with
                     | Some namespaceToOpen -> sprintf "%s (open %s)" declItem.Name namespaceToOpen
                     | _ -> declItem.Name
-                
+                    
                 let filterText =
                     match declItem.NamespaceToOpen, declItem.Name.Split '.' with
                     // There is no namespace to open and the item name does not contain dots, so we don't need to pass special FilterText to Roslyn.
