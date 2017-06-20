@@ -442,9 +442,10 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         | TOp.ValFieldGet(rfref),tyargs,args ->
             ConvRFieldGet cenv env m rfref tyargs args            
 
-        | TOp.TupleFieldGet(tupInfo,n),tyargs,[e] when not (evalTupInfoIsStruct tupInfo) -> 
-            let tyR = ConvType cenv env m (mkRefTupledTy cenv.g tyargs)
-            QP.mkTupleGet(tyR, n, ConvExpr cenv env e)
+        | TOp.TupleFieldGet(tupInfo,n),tyargs,[e] -> 
+            let eR = ConvLValueExpr cenv env e
+            let tyR = ConvType cenv env m (mkAnyTupledTy cenv.g tupInfo tyargs)
+            QP.mkTupleGet(tyR, n, eR)
 
         | TOp.ILAsm(([ I_ldfld(_,_,fspec) ] 
                     | [ I_ldfld(_,_,fspec); AI_nop ]
@@ -651,6 +652,7 @@ and ConvLValueArgs cenv env args =
 
 and ConvLValueExpr cenv env expr = 
     EmitDebugInfoIfNecessary cenv env expr.Range (ConvLValueExprCore cenv env expr)
+
 // This function has to undo the work of mkExprAddrOfExpr 
 and ConvLValueExprCore cenv env expr = 
     match expr with 
