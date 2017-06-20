@@ -3060,6 +3060,20 @@ module ReflectionOverTypeInstantiations =
     checkType "test cvweler9" t2 true
 
 
+module TestStaticCtor = 
+    [<ReflectedDefinition>]
+    type T() =
+        static do printfn "Hello" // removing this makes the RD lookup work
+        static member Ident (x:int) = x
+
+    let testStaticCtor() = 
+        // bug: threw error with message "Could not bind to method" 
+        check "cvwenklwevpo1" (Expr.TryGetReflectedDefinition(typeof<T>.GetMethod("Ident"))).IsSome true
+        check "cvwenklwevpo2" (Expr.TryGetReflectedDefinition(typeof<T>.GetConstructors(BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic).[0])).IsSome true
+
+    testStaticCtor()
+
+
 #if !FX_RESHAPED_REFLECTION
 module TestAssemblyAttributes = 
     let attributes = System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(false)
