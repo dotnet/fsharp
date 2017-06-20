@@ -735,7 +735,7 @@ type TypeCheckInfo
                        let globalResult =
                            match origLongIdentOpt with
                            | None | Some [] ->
-                               let allItems = 
+                               let globalItems = 
                                    allSymbols() 
                                    |> List.filter (fun x -> not x.Symbol.IsExplicitlySuppressed)
                                    |> List.filter (fun x -> 
@@ -745,13 +745,11 @@ type TypeCheckInfo
                                    
                                let getItem (x: AssemblySymbol) = x.Symbol.Item
                                
-                               match allItems, denv, m with
-                               | FilterRelevantItems getItem exactMatchResidueOpt (entities, denv, m) when not (isNil entities) ->
-                                   // lookup based on name and environment successful
-                                   Some(
-                                       entities 
-                                       |> List.map(fun entity ->
-                                            CompletionItem (getType()) (Some entity) (ItemWithNoInst entity.Symbol.Item)), denv, m)
+                               match globalItems, denv, m with
+                               | FilterRelevantItems getItem exactMatchResidueOpt (globalItemsFiltered, denv, m) when not (isNil globalItemsFiltered) ->
+                                   globalItemsFiltered 
+                                   |> List.map(fun globalItem -> CompletionItem (getType()) (Some globalItem) (ItemWithNoInst globalItem.Symbol.Item))
+                                   |> fun r -> Some(r, denv, m)
                                | _ -> None
                            | _ -> None // do not return unresolved items after dot
 
