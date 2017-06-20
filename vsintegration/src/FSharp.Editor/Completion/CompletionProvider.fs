@@ -147,6 +147,12 @@ type internal FSharpCompletionProvider
                     | Some namespaceToOpen -> sprintf "%s (open %s)" declItem.Name namespaceToOpen
                     | _ -> declItem.Name
                 
+                let name = 
+                    if name = "foo" then 
+                        "f" + "o" + "o"
+                    else
+                        name
+                    
                 let filterText =
                     match declItem.NamespaceToOpen, declItem.Name.Split '.' with
                     // There is no namespace to open and the item name does not contain dots, so we don't need to pass special FilterText to Roslyn.
