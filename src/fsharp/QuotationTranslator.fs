@@ -54,8 +54,8 @@ type QuotationGenerationScope =
 
     static member Create (g: TcGlobals, amap, scope, isReflectedDefinition) = 
         { g = g
-          scope=scope
-          amap=amap
+          scope = scope
+          amap = amap
           referencedTypeDefs = new ResizeArray<_>() 
           referencedTypeDefsTable = new Dictionary<_,_>() 
           typeSplices = new ResizeArray<_>() 
@@ -90,8 +90,8 @@ type QuotationTranslationEnv =
       substVals: ValMap<Expr> }
 
     static member Empty = 
-        { vs=ValMap<_>.Empty 
-          nvs=0
+        { vs = ValMap<_>.Empty 
+          nvs = 0
           tyvs = Map.empty 
           isinstVals = ValMap<_>.Empty 
           substVals = ValMap<_>.Empty }
@@ -103,15 +103,16 @@ type QuotationTranslationEnv =
     member env.BindTypars vs = 
         (env, vs) ||> List.fold (fun env v -> env.BindTypar v) // fold left-to-right because indexes are left-to-right 
 
-let BindFormalTypars (env:QuotationTranslationEnv)  vs = 
-    { env with tyvs=Map.empty}.BindTypars vs 
+let BindFormalTypars (env:QuotationTranslationEnv) vs = 
+    { env with tyvs = Map.empty }.BindTypars vs 
 
-let BindVal env v = 
-    let idx = env.nvs
-    { env with vs = env.vs.Add v idx; nvs = env.nvs + 1 }
+let BindVal env v =
+    { env with 
+       vs = env.vs.Add v env.nvs
+       nvs = env.nvs + 1 }
 
 let BindIsInstVal env v (ty,e) = 
-    { env with isinstVals =  env.isinstVals.Add v (ty,e) }
+    { env with isinstVals = env.isinstVals.Add v (ty,e) }
 
 let BindSubstVal env v e = 
     { env with substVals = env.substVals.Add v e  }
@@ -123,13 +124,13 @@ let BindFlatVals env vs = List.fold BindVal env vs // fold left-to-right because
 exception InvalidQuotedTerm of exn
 exception IgnoringPartOfQuotedTermWarning of string * Range.range
 
-let wfail e = raise (InvalidQuotedTerm(e))
+let wfail e = raise (InvalidQuotedTerm e)
 
 let (|ModuleValueOrMemberUse|_|) g expr = 
     let rec loop expr args = 
         match stripExpr expr with 
-        | Expr.App((InnerExprPat(Expr.Val(vref,vFlags,_) as f)),fty,tyargs,actualArgs,_m)  when vref.IsMemberOrModuleBinding ->
-            Some(vref,vFlags,f,fty,tyargs,actualArgs@args)
+        | Expr.App((InnerExprPat(Expr.Val(vref,vFlags,_) as f)),fty,tyargs,actualArgs,_m) when vref.IsMemberOrModuleBinding ->
+            Some(vref,vFlags,f,fty,tyargs,actualArgs @ args)
         | Expr.App(f,_fty,[],actualArgs,_)  ->
             loop f (actualArgs @ args)
         | (Expr.Val(vref,vFlags,_m) as f) when (match vref.ActualParent with ParentNone -> false | _ -> true) -> 
@@ -186,10 +187,12 @@ let rec EmitDebugInfoIfNecessary cenv env m astExpr : QP.ExprData =
                           mkInt cenv.g m m.StartLine 
                           mkInt cenv.g m m.StartColumn 
                           mkInt cenv.g m m.EndLine 
-                          mkInt cenv.g m m.EndColumn;  ] 
+                          mkInt cenv.g m m.EndColumn ] 
             let attrExpr = 
                 mk_tuple cenv.g m 
-                    [ mkString cenv.g m "DebugRange"; rangeExpr ]
+                    [ mkString cenv.g m "DebugRange"
+                      rangeExpr ]
+
             let attrExprR = ConvExprCore cenv env attrExpr
 
             QP.mkAttributedExpression(astExpr, attrExprR)
@@ -221,9 +224,10 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         let idx = cenv.exprSplices.Count
         let ty = tyOfExpr cenv.g expr
         
-        match (freeInExpr CollectTyparsAndLocalsNoCaching x0).FreeLocals |> Seq.tryPick (fun v -> if env.vs.ContainsVal v then Some(v) else None) with 
+        match (freeInExpr CollectTyparsAndLocalsNoCaching x0).FreeLocals |> Seq.tryPick (fun v -> if env.vs.ContainsVal v then Some v else None) with 
         | Some v -> errorR(Error(FSComp.SR.crefBoundVarUsedInSplice(v.DisplayName), v.Range))
         | None -> ()
+
         cenv.exprSplices.Add((x0, m))
         let hole = QP.mkHole(ConvType cenv env m ty,idx)
         (hole, rest) ||> List.fold (fun fR arg -> QP.mkApp (fR,ConvExpr cenv env arg))
@@ -235,8 +239,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         let (numEnclTypeArgs,_,isNewObj,valUseFlags,isSelfInit,takesInstanceArg,isPropGet,isPropSet) = 
             GetMemberCallInfo cenv.g (vref,vFlags)
 
-        let isMember,tps,curriedArgInfos,retTy = 
-
+        let isMember,tps,curriedArgInfos,retTy =
             match vref.MemberInfo with 
             | Some _ when not vref.IsExtensionMember -> 
                 // This is an application of a member method
@@ -264,8 +267,8 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
         // If so, adjust and try again
         if curriedArgs.Length < curriedArgInfos.Length ||
            ((List.take curriedArgInfos.Length curriedArgs,curriedArgInfos) ||> List.exists2 (fun arg argInfo -> 
-                       (argInfo.Length > (tryDestRefTupleExpr arg).Length))) then
-
+                       (argInfo.Length > (tryDestRefTupleExpr arg).Length)))
+        then
             if verboseCReflect then 
                 dprintfn "vref.DisplayName = %A was under applied" vref.DisplayName 
             // Too few arguments or incorrect tupling? Convert to a lambda and beta-reduce the 
@@ -278,7 +281,6 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             let expr,exprty = AdjustValForExpectedArity cenv.g m vref vFlags topValInfo 
             ConvExpr cenv env (MakeApplicationAndBetaReduce cenv.g (expr,exprty,[tyargs],curriedArgs,m)) 
         else
-        
             // Too many arguments? Chop 
             let (curriedArgs:Expr list ),laterArgs = List.chop curriedArgInfos.Length curriedArgs 
 
@@ -303,40 +305,40 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
                         let callArgs = (objArgs::untupledCurriedArgs) |> List.concat
 
                         let parentTyconR = ConvTyconRef cenv vref.TopValActualParent m 
-                        let isNewObj = (isNewObj || valUseFlags || isSelfInit) 
+                        let isNewObj = isNewObj || valUseFlags || isSelfInit
                         // The signature types are w.r.t. to the formal context 
                         let envinner = BindFormalTypars env tps 
-                        let argTys =  curriedArgInfos |> List.concat |> List.map fst
+                        let argTys = curriedArgInfos |> List.concat |> List.map fst
                         let methArgTypesR = ConvTypes cenv envinner m argTys 
                         let methRetTypeR = ConvReturnType cenv envinner m retTy
                         let methName = vref.CompiledName 
-                        let numGenericArgs = tyargs.Length-numEnclTypeArgs  
+                        let numGenericArgs = tyargs.Length - numEnclTypeArgs  
                         ConvObjectModelCall cenv env m (isPropGet,isPropSet,isNewObj,parentTyconR,methArgTypesR,methRetTypeR,methName,tyargs,numGenericArgs,callArgs)
                     else
                         // This is an application of the module value. 
                         ConvModuleValueApp cenv env m vref tyargs untupledCurriedArgs
                 match curriedArgs,curriedArgInfos with
                 // static member and module value unit argument elimination
-                |   [arg:Expr],[[]] ->
-                        // we got here if quotation is represents a call with unit argument
-                        // let f () = ()
-                        // <@ f @> // => (\arg -> f arg) => arg is Expr.Val - no-effects, first case
-                        // <@ f() @> // Expr.Const(Unit) - no-effects - first case
-                        // <@ f (someFunctionThatReturnsUnit) @> - potential effects - second case
-                        match arg with
-                        |   Expr.Val _ 
-                        |   Expr.Const(Const.Unit,_,_) -> subCall
-                        |   _ ->
-                                let argQ = ConvExpr cenv env arg 
-                                QP.mkSequential(argQ, subCall)
-                |   _ -> subCall
+                | [arg:Expr],[[]] ->
+                    // we got here if quotation is represents a call with unit argument
+                    // let f () = ()
+                    // <@ f @> // => (\arg -> f arg) => arg is Expr.Val - no-effects, first case
+                    // <@ f() @> // Expr.Const(Unit) - no-effects - first case
+                    // <@ f (someFunctionThatReturnsUnit) @> - potential effects - second case
+                    match arg with
+                    | Expr.Val _ 
+                    | Expr.Const(Const.Unit,_,_) -> subCall
+                    | _ ->
+                        let argQ = ConvExpr cenv env arg 
+                        QP.mkSequential(argQ, subCall)
+                | _ -> subCall
 
             List.fold (fun fR arg -> QP.mkApp (fR,ConvExpr cenv env arg)) callR laterArgs
 
 
     // Blast type application nodes and expression application nodes apart so values are left with just their type arguments 
     | Expr.App(f,fty,(_ :: _ as tyargs),(_ :: _ as args),m) -> 
-      let rfty = applyForallTy cenv.g  fty tyargs
+      let rfty = applyForallTy cenv.g fty tyargs
       ConvExpr cenv env (primMkApp (primMkApp (f,fty) tyargs [] m, rfty) [] args m) 
 
     // Uses of possibly-polymorphic values 
@@ -352,12 +354,10 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
     | Expr.Const(c,m,ty) -> 
         ConvConst cenv env m c ty
 
-    | Expr.Val(vref,_vFlags,m) -> 
-
+    | Expr.Val(vref,_vFlags,m) ->
         ConvValRef true cenv env m vref []
 
-    | Expr.Let(bind,body,_,_) -> 
-
+    | Expr.Let(bind,body,_,_) ->
         // The binding may be a compiler-generated binding that gets removed in the quotation presentation
         match ConvLetBind cenv env bind with 
         | None, env -> ConvExpr cenv env body
@@ -368,18 +368,18 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
          let vsR = vs |> List.map (ConvVal cenv env) 
          let env = BindFlatVals env vs
          let bodyR = ConvExpr cenv env body 
-         let bindsR = List.zip vsR (binds |> List.map (fun b -> b.Expr |> ConvExpr cenv env))
+         let bindsR = List.zip vsR (binds |> List.map (fun b -> ConvExpr cenv env b.Expr))
          QP.mkLetRec(bindsR,bodyR)
 
     | Expr.Lambda(_,_,_,vs,b,_,_) -> 
         let v,b = MultiLambdaToTupledLambda cenv.g vs b 
         let vR = ConvVal cenv env v 
-        let bR  = ConvExpr cenv (BindVal env v) b 
+        let bR = ConvExpr cenv (BindVal env v) b 
         QP.mkLambda(vR, bR)
 
     | Expr.Quote(ast,_,_,_,ety) -> 
         // F# 2.0-3.1 had a bug with nested 'raw' quotations. F# 4.0 + FSharp.Core 4.4.0.0+ allows us to do the right thing.
-        if cenv.quotationFormat = QuotationSerializationFormat.FSharp_40_Plus  && 
+        if cenv.quotationFormat = QuotationSerializationFormat.FSharp_40_Plus && 
            // Look for a 'raw' quotation
            tyconRefEq cenv.g (tcrefOfAppTy cenv.g ety) cenv.g.raw_expr_tcr 
         then
@@ -415,15 +415,18 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             let tyargsR = ConvTypes cenv env m tyargs
             let argsR = ConvExprs cenv env args
             QP.mkSum(mkR,tyargsR,argsR)
+
         | TOp.Tuple tupInfo,tyargs,_ -> 
             let tyR = ConvType cenv env m (mkAnyTupledTy cenv.g tupInfo tyargs)
             let argsR = ConvExprs cenv env args
             QP.mkTuple(tyR,argsR) // TODO: propagate to quotations
+
         | TOp.Recd (_,tcref),_,_  -> 
             let rgtypR = ConvTyconRef cenv tcref m
             let tyargsR = ConvTypes cenv env m tyargs
             let argsR = ConvExprs cenv env args
             QP.mkRecdMk(rgtypR,tyargsR,argsR)
+
         | TOp.UnionCaseFieldGet (ucref,n),tyargs,[e] -> 
             let tyargsR = ConvTypes cenv env m tyargs
             let tcR,s = ConvUnionCaseRef cenv ucref m
@@ -560,7 +563,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
         | TOp.ILCall(_,_,_,isNewObj,valUseFlags,isProp,_,ilMethRef,enclTypeArgs,methTypeArgs,_tys),[],callArgs -> 
              let parentTyconR = ConvILTypeRefUnadjusted cenv m ilMethRef.EnclosingTypeRef
-             let isNewObj = (isNewObj || (match valUseFlags with CtorValUsedAsSuperInit | CtorValUsedAsSelfInit -> true | _ -> false))
+             let isNewObj = isNewObj || (match valUseFlags with CtorValUsedAsSuperInit | CtorValUsedAsSelfInit -> true | _ -> false)
              let methArgTypesR = List.map (ConvILType cenv env m) ilMethRef.ArgTypes
              let methRetTypeR = ConvILType cenv env m ilMethRef.ReturnType
              let methName = ilMethRef.Name
@@ -568,6 +571,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
              let isPropSet = isProp && methName.StartsWith("set_",System.StringComparison.Ordinal)
              let tyargs = (enclTypeArgs@methTypeArgs)
              ConvObjectModelCall cenv env m (isPropGet,isPropSet,isNewObj,parentTyconR,methArgTypesR,methRetTypeR,methName,tyargs,methTypeArgs.Length,callArgs)
+
         | TOp.TryFinally _,[_resty],[Expr.Lambda(_,_,_,[_],e1,_,_); Expr.Lambda(_,_,_,[_],e2,_,_)] -> 
             QP.mkTryFinally(ConvExpr cenv env e1,ConvExpr cenv env e2)
 
@@ -580,6 +584,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
 
         | TOp.Bytes bytes,[],[] -> 
               ConvExpr cenv env (Expr.Op(TOp.Array, [cenv.g.byte_ty], List.ofArray (Array.map (mkByte cenv.g m) bytes), m))
+
         | TOp.UInt16s arr,[],[] -> 
               ConvExpr cenv env (Expr.Op(TOp.Array, [cenv.g.uint16_ty], List.ofArray (Array.map (mkUInt16 cenv.g m) arr), m))
               
@@ -595,7 +600,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
     | _ -> 
         wfail(InternalError(sprintf "unhandled construct in AST: %A" expr,expr.Range))
 
-and ConvLdfld  cenv env m (fspec: ILFieldSpec) enclTypeArgs args =
+and ConvLdfld cenv env m (fspec: ILFieldSpec) enclTypeArgs args =
     let tyargsR = ConvTypes cenv env m enclTypeArgs
     let parentTyconR = ConvILTypeRefUnadjusted cenv m fspec.EnclosingTypeRef
     let argsR = ConvLValueArgs cenv env args
@@ -619,6 +624,7 @@ and private ConvRFieldGetCore cenv env m rfref tyargs args =
             let envinner = BindFormalTypars env tcref.TyparsNoRange
             let propRetTypeR = ConvType cenv envinner m fspec.FormalType
             QP.mkPropGet( (parentTyconR, fldOrPropName,propRetTypeR,[]),tyargsR, argsR)
+
 and ConvLetBind cenv env (bind : Binding) = 
     match bind.Expr with 
     // Map for values bound by the 
@@ -637,6 +643,7 @@ and ConvLetBind cenv env (bind : Binding) =
     // Remove let unionCase = ... from quotation tree
     | Expr.Op(TOp.UnionCaseProof _,_,[e],_) -> 
         None, BindSubstVal env bind.Var e
+
     | _ ->
         let v = bind.Var
         let vR = ConvVal cenv env v 
@@ -651,6 +658,7 @@ and ConvLValueArgs cenv env args =
 
 and ConvLValueExpr cenv env expr = 
     EmitDebugInfoIfNecessary cenv env expr.Range (ConvLValueExprCore cenv env expr)
+
 // This function has to undo the work of mkExprAddrOfExpr 
 and ConvLValueExprCore cenv env expr = 
     match expr with 
@@ -674,7 +682,6 @@ and ConvObjectModelCall cenv env m callInfo =
     EmitDebugInfoIfNecessary cenv env m (ConvObjectModelCallCore cenv env m callInfo)
 
 and ConvObjectModelCallCore cenv env m (isPropGet,isPropSet,isNewObj,parentTyconR,methArgTypesR,methRetTypeR,methName,tyargs,numGenericArgs,callArgs) =
-
     let tyargsR = ConvTypes cenv env m tyargs
     let callArgsR = ConvLValueArgs cenv env callArgs
 
@@ -698,11 +705,12 @@ and ConvObjectModelCallCore cenv env m (isPropGet,isPropSet,isNewObj,parentTycon
               methArgTypes = methArgTypesR
               methRetType  = methRetTypeR
               methName     = methName
-              numGenericArgs=numGenericArgs }
+              numGenericArgs = numGenericArgs }
         QP.mkMethodCall(methR, tyargsR, callArgsR)
 
 and ConvModuleValueApp cenv env m (vref:ValRef) tyargs (args: Expr list list) =
     EmitDebugInfoIfNecessary cenv env m (ConvModuleValueAppCore cenv env m vref tyargs args)
+
 and ConvModuleValueAppCore cenv env m (vref:ValRef) tyargs (args: Expr list list) =
     match vref.ActualParent with 
     | ParentNone -> failwith "ConvModuleValueApp"
