@@ -52,15 +52,18 @@ let lazyMap f (x:Lazy<_>) =
 [<RequireQualifiedAccess>]
 type PrimaryAssembly = 
     | Mscorlib
-    | DotNetCore   
+    | System_Runtime   
+    | NetStandard   
 
     member this.Name = 
         match this with
         | Mscorlib -> "mscorlib"
-        | DotNetCore -> "System.Runtime"
+        | System_Runtime -> "System.Runtime"
+        | NetStandard -> "netstandard"
     static member IsSomePrimaryAssembly n = 
       n = PrimaryAssembly.Mscorlib.Name 
-      || n = PrimaryAssembly.DotNetCore.Name  
+      || n = PrimaryAssembly.System_Runtime.Name  
+      || n = PrimaryAssembly.NetStandard.Name  
 
 // -------------------------------------------------------------------- 
 // Utilities: type names
@@ -1588,7 +1591,7 @@ and [<Sealed>] ILTypeDefs(f : unit -> (string list * string * ILAttributes * Laz
             t)
 
     member x.AsArray = [| for (_,_,_,ltd) in array.Value -> ltd.Force() |]
-    member x.AsList = x.AsArray |> Array.toList
+    member x.AsList = [ for (_,_,_,ltd) in array.Value -> ltd.Force() ]
 
     interface IEnumerable with 
         member x.GetEnumerator() = ((x :> IEnumerable<ILTypeDef>).GetEnumerator() :> IEnumerator)

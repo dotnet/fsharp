@@ -10,6 +10,7 @@ open System.Collections.Generic
 open System.Collections.Concurrent
 open System.Diagnostics
 open System.IO
+open System.Reflection
 open System.Text
 
 open Microsoft.FSharp.Core.Printf
@@ -43,6 +44,10 @@ open Microsoft.FSharp.Compiler.SourceCodeServices.SymbolHelpers
 open Internal.Utilities
 open Internal.Utilities.Collections
 open Microsoft.FSharp.Compiler.Layout.TaggedTextOps
+
+#if FX_RESHAPED_REFLECTION
+open Microsoft.FSharp.Core.ReflectionAdapters
+#endif
 
 type internal Layout = StructuredFormat.Layout
 
@@ -1231,6 +1236,8 @@ type TypeCheckInfo
                 if minfos |> List.exists (fun minfo -> isStructTy g minfo.EnclosingType) then
                     Some (m, SemanticClassificationType.ValueType)
                 else Some (m, SemanticClassificationType.ReferenceType)
+            | CNR(_, Item.ExnCase _, LegitTypeOccurence, _, _, _, m) ->
+                Some (m, SemanticClassificationType.ReferenceType)
             | CNR(_, Item.ModuleOrNamespaces refs, LegitTypeOccurence, _, _, _, m) when refs |> List.exists (fun x -> x.IsModule) ->
                 Some (m, SemanticClassificationType.Module)
             | CNR(_, (Item.ActivePatternCase _ | Item.UnionCase _ | Item.ActivePatternResult _), _, _, _, _, m) ->
@@ -1981,16 +1988,16 @@ module CompileHelpers =
             1
 
     /// Compile using the given flags.  Source files names are resolved via the FileSystem API. The output file must be given by a -o flag. 
-    let compileFromArgs (ctok, argv: string[], referenceResolver, tcImportsCapture, dynamicAssemblyCreator)  = 
+    let compileFromArgs (ctok, argv: string[], legacyReferenceResolver, tcImportsCapture, dynamicAssemblyCreator)  = 
     
         let errors, errorLogger, loggerProvider = mkCompilationErorHandlers()
         let result = 
             tryCompile errorLogger (fun exiter -> 
-                mainCompile (ctok, argv, referenceResolver, (*bannerAlreadyPrinted*)true, (*openBinariesInMemory*)true, exiter, loggerProvider, tcImportsCapture, dynamicAssemblyCreator) )
+                mainCompile (ctok, argv, legacyReferenceResolver, (*bannerAlreadyPrinted*)true, (*openBinariesInMemory*)true, (*defaultCopyFSharpCore*)false, exiter, loggerProvider, tcImportsCapture, dynamicAssemblyCreator) )
     
         errors.ToArray(), result
 
-    let compileFromAsts (ctok, referenceResolver, asts, assemblyName, outFile, dependencies, noframework, pdbFile, executable, tcImportsCapture, dynamicAssemblyCreator) =
+    let compileFromAsts (ctok, legacyReferenceResolver, asts, assemblyName, outFile, dependencies, noframework, pdbFile, executable, tcImportsCapture, dynamicAssemblyCreator) =
 
         let errors, errorLogger, loggerProvider = mkCompilationErorHandlers()
     
@@ -1999,7 +2006,7 @@ module CompileHelpers =
     
         let result = 
             tryCompile errorLogger (fun exiter -> 
-                compileOfAst (ctok, referenceResolver, (*openBinariesInMemory=*)true, assemblyName, target, outFile, pdbFile, dependencies, noframework, exiter, loggerProvider, asts, tcImportsCapture, dynamicAssemblyCreator))
+                compileOfAst (ctok, legacyReferenceResolver, (*openBinariesInMemory=*)true, assemblyName, target, outFile, pdbFile, dependencies, noframework, exiter, loggerProvider, asts, tcImportsCapture, dynamicAssemblyCreator))
 
         errors.ToArray(), result
 
@@ -2068,7 +2075,7 @@ type ScriptClosureCacheToken() = interface LockToken
 
 
 // There is only one instance of this type, held in FSharpChecker
-type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions) as self =
+type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions) as self =
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.backgroundCompiler.reactor: The one and only Reactor
     let reactor = Reactor.Singleton
     let beforeFileChecked = Event<string * obj option>()
@@ -2099,8 +2106,16 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
       cancellable {
         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "CreateOneIncrementalBuilder", options.ProjectFileName)
         let projectReferences =  
-            [ for (nm,opts) in options.ReferencedProjects ->
-                { new IProjectReference with 
+            [ for (nm,opts) in options.ReferencedProjects do
+               
+               // Don't use cross-project references for FSharp.Core, since various bits of code require a concrete FSharp.Core to exist on-disk.
+               // The only solutions that have these cross-project references to FSharp.Core are VisualFSharp.sln and FSharp.sln. The only ramification
+               // of this is that you need to build FSharp.Core to get intellisense in those projects.
+
+               if (try Path.GetFileNameWithoutExtension(nm) with _ -> "") <> GetFSharpCoreLibraryName() then
+
+                 yield
+                    { new IProjectReference with 
                         member x.EvaluateRawContents(ctok) = 
                           cancellable {
                             Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "ParseAndCheckProjectImpl", nm)
@@ -2114,7 +2129,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
         let loadClosure = scriptClosureCacheLock.AcquireLock (fun ltok -> scriptClosureCache.TryGet (ltok, options))
         let! builderOpt, diagnostics = 
             IncrementalBuilder.TryCreateBackgroundBuilderForProjectOptions
-                  (ctok, referenceResolver, defaultFSharpBinariesDir, frameworkTcImportsCache, loadClosure, Array.toList options.SourceFiles, 
+                  (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, frameworkTcImportsCache, loadClosure, Array.toList options.SourceFiles, 
                    Array.toList options.OtherOptions, projectReferences, options.ProjectDirectory, 
                    options.UseScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions, maxTimeShareMilliseconds)
 
@@ -2581,7 +2596,7 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
             let applyCompilerOptions tcConfigB  = 
                 let fsiCompilerOptions = CompileOptions.GetCoreFsiCompilerOptions tcConfigB 
                 CompileOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, Array.toList otherFlags)
-            let loadClosure = LoadClosure.ComputeClosureOfSourceText(ctok, referenceResolver, defaultFSharpBinariesDir, filename, source, CodeContext.Editing, useSimpleResolution, useFsiAuxLib, new Lexhelp.LexResourceManager(), applyCompilerOptions, assumeDotNetFramework)
+            let loadClosure = LoadClosure.ComputeClosureOfSourceText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, source, CodeContext.Editing, useSimpleResolution, useFsiAuxLib, new Lexhelp.LexResourceManager(), applyCompilerOptions, assumeDotNetFramework)
             let otherFlags = 
                 [| yield "--noframework"; yield "--warn:3"; 
                    yield! otherFlags 
@@ -2704,9 +2719,9 @@ type BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContent
 [<Sealed>]
 [<AutoSerializable(false)>]
 // There is typically only one instance of this type in a Visual Studio process.
-type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions) =
+type FSharpChecker(legacyReferenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions) =
 
-    let backgroundCompiler = BackgroundCompiler(referenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions)
+    let backgroundCompiler = BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyContents, keepAllBackgroundResolutions)
 
     static let globalInstance = lazy FSharpChecker.Create()
         
@@ -2725,21 +2740,19 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
     let maxMemEvent = new Event<unit>()
 
     /// Instantiate an interactive checker.    
-    static member Create(?projectCacheSize, ?keepAssemblyContents, ?keepAllBackgroundResolutions, ?msbuildEnabled) = 
+    static member Create(?projectCacheSize, ?keepAssemblyContents, ?keepAllBackgroundResolutions, ?legacyReferenceResolver) = 
 
-        let msbuildEnabled = defaultArg msbuildEnabled true
-#if COMPILER_SERVICE && !COMPILER_SERVICE_DLL_VISUAL_STUDIO
-        let referenceResolver = SimulatedMSBuildReferenceResolver.GetBestAvailableResolver(msbuildEnabled)
-#else
-        let referenceResolver = (assert msbuildEnabled); MSBuildReferenceResolver.Resolver 
-#endif
+        let legacyReferenceResolver = 
+            match legacyReferenceResolver with 
+            | None -> SimulatedMSBuildReferenceResolver.GetBestAvailableResolver()
+            | Some rr -> rr
 
         let keepAssemblyContents = defaultArg keepAssemblyContents false
         let keepAllBackgroundResolutions = defaultArg keepAllBackgroundResolutions true
         let projectCacheSizeReal = defaultArg projectCacheSize projectCacheSizeDefault
-        new FSharpChecker(referenceResolver, projectCacheSizeReal,keepAssemblyContents, keepAllBackgroundResolutions)
+        new FSharpChecker(legacyReferenceResolver, projectCacheSizeReal,keepAssemblyContents, keepAllBackgroundResolutions)
 
-    member ic.ReferenceResolver = referenceResolver
+    member ic.ReferenceResolver = legacyReferenceResolver
 
     member ic.MatchBraces(filename, source, options, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
@@ -2774,7 +2787,7 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.Reactor.EnqueueAndAwaitOpAsync (userOpName, "Compile", "", fun ctok -> 
             cancellable {
-                return CompileHelpers.compileFromArgs (ctok, argv, referenceResolver, None, None)
+                return CompileHelpers.compileFromArgs (ctok, argv, legacyReferenceResolver, None, None)
             })
 
     member ic.Compile (ast:ParsedInput list, assemblyName:string, outFile:string, dependencies:string list, ?pdbFile:string, ?executable:bool, ?noframework:bool, ?userOpName: string) =
@@ -2782,7 +2795,7 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
       backgroundCompiler.Reactor.EnqueueAndAwaitOpAsync (userOpName, "Compile", assemblyName, fun ctok -> 
        cancellable {
             let noframework = defaultArg noframework false
-            return CompileHelpers.compileFromAsts (ctok, referenceResolver, ast, assemblyName, outFile, dependencies, noframework, pdbFile, executable, None, None)
+            return CompileHelpers.compileFromAsts (ctok, legacyReferenceResolver, ast, assemblyName, outFile, dependencies, noframework, pdbFile, executable, None, None)
        }
       )
 
@@ -2802,7 +2815,7 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
         let dynamicAssemblyCreator = Some (CompileHelpers.createDynamicAssembly (ctok, debugInfo, tcImportsRef, execute.IsSome, assemblyBuilderRef))
 
         // Perform the compilation, given the above capturing function.
-        let errorsAndWarnings, result = CompileHelpers.compileFromArgs (ctok, otherFlags, referenceResolver, tcImportsCapture, dynamicAssemblyCreator)
+        let errorsAndWarnings, result = CompileHelpers.compileFromArgs (ctok, otherFlags, legacyReferenceResolver, tcImportsCapture, dynamicAssemblyCreator)
 
         // Retrieve and return the results
         let assemblyOpt = 
@@ -2837,7 +2850,7 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
 
         // Perform the compilation, given the above capturing function.
         let errorsAndWarnings, result = 
-            CompileHelpers.compileFromAsts (ctok, referenceResolver, asts, assemblyName, outFile, dependencies, noframework, None, Some execute.IsSome, tcImportsCapture, dynamicAssemblyCreator)
+            CompileHelpers.compileFromAsts (ctok, legacyReferenceResolver, asts, assemblyName, outFile, dependencies, noframework, None, Some execute.IsSome, tcImportsCapture, dynamicAssemblyCreator)
 
         // Retrieve and return the results
         let assemblyOpt = 
@@ -3003,7 +3016,7 @@ type FSharpChecker(referenceResolver, projectCacheSize, keepAssemblyContents, ke
         tokens
 
 
-type FsiInteractiveChecker(referenceResolver, reactorOps: IReactorOperations, tcConfig: TcConfig, tcGlobals, tcImports, tcState) =
+type FsiInteractiveChecker(legacyReferenceResolver, reactorOps: IReactorOperations, tcConfig: TcConfig, tcGlobals, tcImports, tcState) =
     let keepAssemblyContents = false
 
     member __.ParseAndCheckInteraction (ctok, source, ?userOpName: string) =
@@ -3024,7 +3037,7 @@ type FsiInteractiveChecker(referenceResolver, reactorOps: IReactorOperations, tc
                 let fsiCompilerOptions = CompileOptions.GetCoreFsiCompilerOptions tcConfigB 
                 CompileOptions.ParseCompilerOptions (ignore, fsiCompilerOptions, [ ])
 
-            let loadClosure = LoadClosure.ComputeClosureOfSourceText(ctok, referenceResolver, defaultFSharpBinariesDir, filename, source, CodeContext.Editing, tcConfig.useSimpleResolution, tcConfig.useFsiAuxLib, new Lexhelp.LexResourceManager(), applyCompilerOptions, assumeDotNetFramework)
+            let loadClosure = LoadClosure.ComputeClosureOfSourceText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, source, CodeContext.Editing, tcConfig.useSimpleResolution, tcConfig.useFsiAuxLib, new Lexhelp.LexResourceManager(), applyCompilerOptions, assumeDotNetFramework)
             let! tcErrors, tcFileResult =  Parser.CheckOneFile(parseResults, source, filename, "project", tcConfig, tcGlobals, tcImports,  tcState, Some loadClosure, backgroundDiagnostics, reactorOps, (fun () -> true), None, userOpName)
             
             return 

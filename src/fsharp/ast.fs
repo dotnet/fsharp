@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 #if COMPILER_PUBLIC_API
-module Microsoft.FSharp.Compiler.Ast
+module public Microsoft.FSharp.Compiler.Ast
 #else
 module internal Microsoft.FSharp.Compiler.Ast
 #endif
@@ -536,7 +536,7 @@ and
     | ForEach of forSeqPoint:SequencePointInfoForForLoop * seqExprOnly:SeqExprOnly * isFromSource:bool * pat:SynPat * enumExpr:SynExpr * bodyExpr:SynExpr * range:range
 
     /// F# syntax: [ expr ], [| expr |]
-    | ArrayOrListOfSeqExpr of isList:bool * expr:SynExpr * range:range
+    | ArrayOrListOfSeqExpr of isArray:bool * expr:SynExpr * range:range
 
     /// CompExpr(isArrayOrList, isNotNakedRefCell, expr)
     ///
