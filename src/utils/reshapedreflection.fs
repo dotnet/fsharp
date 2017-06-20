@@ -147,8 +147,8 @@ module internal ReflectionAdapters =
             |> Array.filter (fun ei -> ei.Name = name)
             |> commit
 #endif
-        member this.GetConstructor(_bindingFlags, _binder, argsT:Type[], _parameterModifiers) =
-            this.GetConstructor(argsT)
+        member this.GetConstructor(bindingFlags, _binder, argsT:Type[], _parameterModifiers) =
+            this.GetConstructor(bindingFlags,argsT)
         member this.GetMethod(name, ?bindingFlags) =
             let bindingFlags = defaultArg bindingFlags publicFlags
             this.GetMethods(bindingFlags)
@@ -199,10 +199,11 @@ module internal ReflectionAdapters =
         member this.IsSealed = this.GetTypeInfo().IsSealed
         
         member this.BaseType = this.GetTypeInfo().BaseType
-        member this.GetConstructor(parameterTypes : Type[]) = 
+
+        member this.GetConstructor(bindingFlags, parameterTypes : Type[]) = 
             this.GetTypeInfo().DeclaredConstructors
+            |> Seq.filter (fun ci -> isAcceptable bindingFlags ci.IsStatic ci.IsPublic)
             |> Seq.filter (fun ci ->
-                not ci.IsStatic && //exclude type initializer
                 (
                     let parameters = ci.GetParameters()
                     (parameters.Length = parameterTypes.Length) &&
@@ -211,14 +212,19 @@ module internal ReflectionAdapters =
             )
             |> Seq.toArray
             |> commit
-        // MSDN: returns an array of Type objects representing all the interfaces implemented or inherited by the current Type.
-        member this.GetInterfaces() = this.GetTypeInfo().ImplementedInterfaces |> Seq.toArray
+
+        member this.GetConstructor(parameterTypes : Type[]) = 
+            this.GetConstructor(BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance, parameterTypes)
+
         member this.GetConstructors(?bindingFlags) = 
-            let bindingFlags = defaultArg bindingFlags publicFlags
+            let bindingFlags = defaultArg bindingFlags (BindingFlags.Public ||| BindingFlags.Instance)
             // type initializer will also be included in resultset
             this.GetTypeInfo().DeclaredConstructors 
             |> Seq.filter (fun ci -> isAcceptable bindingFlags ci.IsStatic ci.IsPublic)
             |> Seq.toArray
+
+        // MSDN: returns an array of Type objects representing all the interfaces implemented or inherited by the current Type.
+        member this.GetInterfaces() = this.GetTypeInfo().ImplementedInterfaces |> Seq.toArray
         member this.GetMethods() = this.GetMethods(publicFlags)
         member this.Assembly = this.GetTypeInfo().Assembly
         member this.IsSubclassOf(otherTy : Type) = this.GetTypeInfo().IsSubclassOf(otherTy)
