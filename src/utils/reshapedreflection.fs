@@ -213,7 +213,8 @@ module internal ReflectionAdapters =
             |> Seq.toArray
             |> commit
 
-        member this.GetConstructor(parameterTypes : Type[]) = this.GetConstructor(BindingFlags.Public ||| BindingFlags.Instance, parameterTypes)
+        member this.GetConstructor(parameterTypes : Type[]) = 
+            this.GetConstructor(BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.Instance, parameterTypes)
 
         member this.GetConstructors(?bindingFlags) = 
             let bindingFlags = defaultArg bindingFlags (BindingFlags.Public ||| BindingFlags.Instance)
