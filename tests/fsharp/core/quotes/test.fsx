@@ -3069,12 +3069,27 @@ module QuotationStructTupleTests =
            | struct (0,0) -> true
            | _ -> false @>
 
+    printfn "code = %A" code
     check "wcelwec" (match code with 
-                     | IfThenElse (Call (None, _, [TupleGet (PropertyGet (None, _, []), 0)]), IfThenElse (Call (None, _, [TupleGet (PropertyGet (None, _, []), 1)]), Value _, Value _), Value _) -> true
+                     | IfThenElse (Call (None, _, [TupleGet (PropertyGet (None, _, []), 0); _]), IfThenElse (Call (None, _, [TupleGet (PropertyGet (None, _, []), 1); _]), Value _, Value _), Value _) -> true
                      | _ -> false)
+         true
 
     for i = 0 to 7 do 
         check "vcknwwe0oo" (match Expr.TupleGet(<@@ struct (1,2,3,4,5,6,7,8) @@>, i) with TupleGet(b,n) -> b = <@@ struct (1,2,3,4,5,6,7,8) @@> && n = i | _ -> false) true 
+
+    let actual2 : Result<string, string> = Ok "foo"
+    let code2 = 
+        <@ match actual2 with
+           | Ok _ -> true
+           | Error _ -> false @>
+
+    printfn "code2 = %A" code2
+    check "cewcewwer" 
+         (match code2 with 
+            | IfThenElse (UnionCaseTest (PropertyGet (None, actual2, []), _), Value _, Value _) -> true
+            | _ -> false)
+         true
 
 
 #if !FX_RESHAPED_REFLECTION

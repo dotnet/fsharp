@@ -414,21 +414,21 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             let mkR = ConvUnionCaseRef cenv ucref m
             let tyargsR = ConvTypes cenv env m tyargs
             let argsR = ConvExprs cenv env args
-            QP.mkSum(mkR,tyargsR,argsR)
+            QP.mkUnion(mkR,tyargsR,argsR)
+
         | TOp.Tuple tupInfo,tyargs,_ -> 
             let tyR = ConvType cenv env m (mkAnyTupledTy cenv.g tupInfo tyargs)
             let argsR = ConvExprs cenv env args
             QP.mkTuple(tyR,argsR) // TODO: propagate to quotations
+
         | TOp.Recd (_,tcref),_,_  -> 
             let rgtypR = ConvTyconRef cenv tcref m
             let tyargsR = ConvTypes cenv env m tyargs
             let argsR = ConvExprs cenv env args
             QP.mkRecdMk(rgtypR,tyargsR,argsR)
+
         | TOp.UnionCaseFieldGet (ucref,n),tyargs,[e] -> 
-            let tyargsR = ConvTypes cenv env m tyargs
-            let tcR,s = ConvUnionCaseRef cenv ucref m
-            let projR = (tcR,s,n)
-            QP.mkSumFieldGet( projR, tyargsR,ConvExpr cenv env e)
+            ConvUnionFieldGet cenv env m ucref n tyargs e
 
         | TOp.ValFieldGetAddr(_rfref),_tyargs,_ -> 
             wfail(Error(FSComp.SR.crefQuotationsCantContainAddressOf(), m)) 
@@ -440,7 +440,7 @@ and private ConvExprCore cenv (env : QuotationTranslationEnv) (expr: Expr) : QP.
             wfail(Error(FSComp.SR.crefQuotationsCantContainStaticFieldRef(),m)) 
 
         | TOp.ValFieldGet(rfref),tyargs,args ->
-            ConvRFieldGet cenv env m rfref tyargs args            
+            ConvClassOrRecdFieldGet cenv env m rfref tyargs args            
 
         | TOp.TupleFieldGet(tupInfo,n),tyargs,[e] -> 
             let eR = ConvLValueExpr cenv env e
@@ -602,10 +602,17 @@ and ConvLdfld  cenv env m (fspec: ILFieldSpec) enclTypeArgs args =
     let argsR = ConvLValueArgs cenv env args
     QP.mkFieldGet( (parentTyconR, fspec.Name),tyargsR, argsR)
 
-and ConvRFieldGet cenv env m rfref tyargs args =
-    EmitDebugInfoIfNecessary cenv env m (ConvRFieldGetCore cenv env m rfref tyargs args)
+and ConvUnionFieldGet cenv env m ucref n tyargs e =
+    let tyargsR = ConvTypes cenv env m tyargs
+    let tcR,s = ConvUnionCaseRef cenv ucref m
+    let projR = (tcR,s,n)
+    let eR = ConvLValueExpr cenv env e
+    QP.mkUnionFieldGet(projR, tyargsR, eR)
 
-and private ConvRFieldGetCore cenv env m rfref tyargs args = 
+and ConvClassOrRecdFieldGet cenv env m rfref tyargs args =
+    EmitDebugInfoIfNecessary cenv env m (ConvClassOrRecdFieldGetCore cenv env m rfref tyargs args)
+
+and private ConvClassOrRecdFieldGetCore cenv env m rfref tyargs args = 
     let tyargsR = ConvTypes cenv env m tyargs
     let argsR = ConvLValueArgs cenv env args 
     let ((parentTyconR,fldOrPropName) as projR) = ConvRecdFieldRef cenv rfref m
@@ -659,7 +666,8 @@ and ConvLValueExprCore cenv env expr =
     | Expr.Op(op,tyargs,args,m) -> 
         match op, args, tyargs  with
         | TOp.LValueOp(LGetAddr,vref),_,_ -> ConvValRef false cenv env m vref [] 
-        | TOp.ValFieldGetAddr(rfref),_,_ -> ConvRFieldGet cenv env m rfref tyargs args
+        | TOp.ValFieldGetAddr(rfref),_,_ -> ConvClassOrRecdFieldGet cenv env m rfref tyargs args
+        | TOp.UnionCaseFieldGetAddr(ucref,n),[e],_ -> ConvUnionFieldGet cenv env m ucref n tyargs e
         | TOp.ILAsm([ I_ldflda(fspec) ],_rtys),_,_  -> ConvLdfld  cenv env m fspec tyargs args
         | TOp.ILAsm([ I_ldsflda(fspec) ],_rtys),_,_  -> ConvLdfld  cenv env m fspec tyargs args
         | TOp.ILAsm(([ I_ldelema(_ro,_isNativePtr,shape,_tyarg) ] ),_), (arr::idxs), [elemty]  -> 
@@ -840,26 +848,32 @@ and ConvDecisionTree cenv env tgs typR x =
             match dfltOpt with 
             | Some d -> ConvDecisionTree cenv env tgs typR d 
             | None -> wfail(Error(FSComp.SR.crefQuotationsCantContainThisPatternMatch(), m))
+
         let converted = 
             (csl,acc) ||> List.foldBack (fun (TCase(discrim,dtree)) acc -> 
+
                   match discrim with 
                   | DecisionTreeTest.UnionCase (ucref, tyargs) -> 
-                      let e1R = ConvExpr cenv env e1
+                      let e1R = ConvLValueExpr cenv env e1
                       let ucR = ConvUnionCaseRef cenv ucref m
                       let tyargsR = ConvTypes cenv env m tyargs
-                      QP.mkCond (QP.mkSumTagTest (ucR, tyargsR, e1R), ConvDecisionTree cenv env tgs typR dtree, acc)
+                      QP.mkCond (QP.mkUnionCaseTagTest (ucR, tyargsR, e1R), ConvDecisionTree cenv env tgs typR dtree, acc)
+
                   | DecisionTreeTest.Const (Const.Bool true) -> 
                       let e1R = ConvExpr cenv env e1
                       QP.mkCond (e1R, ConvDecisionTree cenv env tgs typR dtree, acc)
+
                   | DecisionTreeTest.Const (Const.Bool false) -> 
                       let e1R = ConvExpr cenv env e1
                       // Note, reverse the branches
                       QP.mkCond (e1R, acc, ConvDecisionTree cenv env tgs typR dtree)
+
                   | DecisionTreeTest.Const c -> 
                       let ty = tyOfExpr cenv.g e1
                       let eq = mkCallEqualsOperator cenv.g m ty e1 (Expr.Const (c, m, ty))
                       let eqR = ConvExpr cenv env eq 
                       QP.mkCond (eqR, ConvDecisionTree cenv env tgs typR dtree, acc)
+
                   | DecisionTreeTest.IsNull -> 
                       // Decompile cached isinst tests
                       match e1 with 
@@ -874,13 +888,17 @@ and ConvDecisionTree cenv env tgs typR x =
                           let eq = mkCallEqualsOperator cenv.g m ty e1 (Expr.Const (Const.Zero, m, ty))
                           let eqR = ConvExpr cenv env eq 
                           QP.mkCond (eqR, ConvDecisionTree cenv env tgs typR dtree, acc)
+
                   | DecisionTreeTest.IsInst (_srcty, tgty) -> 
                       let e1R = ConvExpr cenv env e1
                       QP.mkCond (QP.mkTypeTest (ConvType cenv env m tgty, e1R), ConvDecisionTree cenv env tgs typR dtree, acc)
+
                   | DecisionTreeTest.ActivePatternCase _ -> wfail(InternalError( "DecisionTreeTest.ActivePatternCase test in quoted expression",m))
+
                   | DecisionTreeTest.ArrayLength _ -> wfail(Error(FSComp.SR.crefQuotationsCantContainArrayPatternMatching(), m))
                  )
         EmitDebugInfoIfNecessary cenv env m converted
+
       | TDSuccess (args,n) -> 
           let (TTarget(vars,rhs,_)) = tgs.[n] 
           // TAST stores pattern bindings in reverse order for some reason
