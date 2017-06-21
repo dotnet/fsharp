@@ -6,7 +6,7 @@
     "emitEntryPoint": true
   },
   "dependencies": {
-    "Microsoft.FSharp.Interactive.netcore": "1.0.0-rc-170122",
+    "Microsoft.FSharp.Compiler": "4.2.0-rc-170619-0",
   },
   "runtimes": {
     "win7-x86": { },
@@ -25,6 +25,6 @@
     }
   },
   "scripts": {
-    "postpublish": [ "cmd /c copy %publish:OutputPath%\\runtimes\\any\\native\\* %publish:OutputPath%" ] 
+    "postpublish": [ "cmd /c copy %publish:OutputPath%\\contentFiles\\any\\any\\* %publish:OutputPath%" ] 
   }
 }
