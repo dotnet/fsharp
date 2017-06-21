@@ -60,6 +60,7 @@ set BUILD_NET40=0
 set BUILD_NET40_FSHARP_CORE=0
 set BUILD_CORECLR=0
 set BUILD_VS=0
+set BUILD_FCS=0
 set BUILD_CONFIG=release
 set BUILD_CONFIG_LOWERCASE=release
 set BUILD_DIAG=
@@ -152,6 +153,11 @@ if /i "%ARG%" == "vs" (
     set BUILD_VS=1
 )
 
+if /i "%ARG%" == "fcs" (
+    set _autoselect=0
+    set BUILD_FCS=1
+)
+
 if /i "%ARG%" == "vstest" (
     set TEST_VS_IDEUNIT_SUITE=1
 )
@@ -166,6 +172,7 @@ if /i "%ARG%" == "all" (
     set BUILD_NET40=1
     set BUILD_CORECLR=1
     set BUILD_VS=1
+    set BUILD_FCS=1
     set BUILD_SETUP=%FSC_BUILD_SETUP%
     set BUILD_NUGET=1
     set CI=1
@@ -216,6 +223,7 @@ if /i "%ARG%" == "ci_part1" (
     set BUILD_NET40=1
     set BUILD_NET40_FSHARP_CORE=1
     set BUILD_VS=1
+    set BUILD_FCS=1
     set TEST_VS_IDEUNIT_SUITE=1
     set CI=1
 )
@@ -287,6 +295,7 @@ if /i "%ARG%" == "test-all" (
     set BUILD_NET40_FSHARP_CORE=1
     set BUILD_CORECLR=1
     set BUILD_VS=1
+    set BUILD_FCS=1
     set BUILD_SETUP=%FSC_BUILD_SETUP%
     set BUILD_NUGET=1
 
@@ -379,6 +388,7 @@ echo BUILD_NET40=%BUILD_NET40%
 echo BUILD_NET40_FSHARP_CORE=%BUILD_NET40_FSHARP_CORE%
 echo BUILD_CORECLR=%BUILD_CORECLR%
 echo BUILD_VS=%BUILD_VS%
+echo BUILD_FCS=%BUILD_FCS%
 echo BUILD_SETUP=%BUILD_SETUP%
 echo BUILD_NUGET=%BUILD_NUGET%
 echo BUILD_CONFIG=%BUILD_CONFIG%
