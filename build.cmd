@@ -556,11 +556,6 @@ if "%BUILD_PROTO%" == "1" (
 
   if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
 
-      pushd .\lkg\fsc & %_dotnetexe% restore & popd & if ERRORLEVEL 1 echo Error:%errorlevel% dotnet restore failed & goto :failure
-    pushd .\lkg\fsi & %_dotnetexe% restore & popd & if ERRORLEVEL 1 echo Error:%errorlevel% dotnet restore failed & goto :failure
-    pushd .\lkg\fsc & %_dotnetexe% publish project.json --no-build -o %~dp0Tools\lkg -r !_architecture! & popd & if ERRORLEVEL 1 echo Error: dotnet publish failed  & goto :failure
-    pushd .\lkg\fsi & %_dotnetexe% publish project.json --no-build -o %~dp0Tools\lkg -r !_architecture! & popd & if ERRORLEVEL 1 echo Error: dotnet publish failed  & goto :failure
-
     echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto
          %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto
     @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
