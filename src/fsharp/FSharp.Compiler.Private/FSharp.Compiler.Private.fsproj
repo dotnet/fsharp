@@ -652,6 +652,7 @@
       <Project>{25555554-522d-4cf7-97e4-ba940f0b18f3}</Project>
       <Private>True</Private>
     </ProjectReference>
+  </ItemGroup>
   <ItemGroup Condition="'$(TargetDotnetProfile)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
