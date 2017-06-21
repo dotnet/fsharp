@@ -516,7 +516,7 @@ let AddDeclaredTypars check typars env =
     let env = ModifyNameResEnv (fun nenv -> AddDeclaredTyparsToNameEnv check nenv typars) env
     RegisterDeclaredTypars typars env
 
-/// Compilation environment for typechecking a compilation unit. Contains the
+/// Compilation environment for typechecking a single file in an assembly. Contains the
 /// F# and .NET modules loaded from disk, the search path, a table indicating
 /// how to List.map F# modules to assembly names, and some nasty globals 
 /// related to type inference. These are:
@@ -533,6 +533,9 @@ type cenv =
       
       /// Checks to run after all inference is complete. 
       mutable postInferenceChecks: ResizeArray<unit -> unit>
+
+      /// Set to true if this file causes the creation of generated provided types.
+      mutable createsGeneratedProvidedTypes: bool
 
       /// Are we in a script? if so relax the reporting of discarded-expression warnings at the top level
       isScript: bool 
@@ -573,6 +576,7 @@ type cenv =
           amap = amap
           recUses = ValMultiMap<_>.Empty
           postInferenceChecks = ResizeArray()
+          createsGeneratedProvidedTypes = false
           topCcu = topCcu
           isScript = isScript
           css = ConstraintSolverState.New(g,amap,infoReader,tcVal)
@@ -14686,6 +14690,8 @@ module EstablishTypeDefinitionCores =
                 let nm = theRootTypeWithRemapping.PUntaint((fun st -> st.FullName),m)
                 error(Error(FSComp.SR.etErasedTypeUsedInGeneration(desig,nm),m))
 
+            cenv.createsGeneratedProvidedTypes <- true
+
             // In compiled code, all types in the set of generated types end up being both generated and relocated, unless relocation is suppressed
             let isForcedSuppressRelocate = theRootTypeWithRemapping.PUntaint((fun st -> st.IsSuppressRelocate),m) 
             if isForcedSuppressRelocate && canAccessFromEverywhere tycon.Accessibility && not cenv.isScript then 
@@ -17014,14 +17020,14 @@ let TypeCheckOneImplFile
         conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
             try  
                 let reportErrors = not (checkForErrors())
-                Microsoft.FSharp.Compiler.PostTypeCheckSemanticChecks.CheckTopImpl (g,cenv.amap,reportErrors,cenv.infoReader,env.eInternalsVisibleCompPaths,cenv.topCcu,envAtEnd.DisplayEnv, implFileExprAfterSig,extraAttribs,isLastCompiland)
+                PostTypeCheckSemanticChecks.CheckTopImpl (g,cenv.amap,reportErrors,cenv.infoReader,env.eInternalsVisibleCompPaths,cenv.topCcu,envAtEnd.DisplayEnv, implFileExprAfterSig,extraAttribs,isLastCompiland)
             with e -> 
                 errorRecovery e m
                 false)
 
-    let implFile = TImplFile(qualNameOfFile,scopedPragmas, implFileExprAfterSig, hasExplicitEntryPoint,isScript)
+    let implFile = TImplFile(qualNameOfFile, scopedPragmas, implFileExprAfterSig, hasExplicitEntryPoint, isScript)
 
-    return (topAttrs,implFile,envAtEnd)
+    return (topAttrs,implFile,envAtEnd,cenv.createsGeneratedProvidedTypes)
  } 
    
 
@@ -17041,5 +17047,5 @@ let TypeCheckOneSigFile  (g,niceNameGen,amap,topCcu,checkForErrors,conditionalDe
         try sigFileType |> IterTyconsOfModuleOrNamespaceType (FinalTypeDefinitionChecksAtEndOfInferenceScope(cenv.infoReader, tcEnv.NameEnv, cenv.tcSink, false, tcEnv.DisplayEnv))
         with e -> errorRecovery e qualNameOfFile.Range
 
-    return (tcEnv,tcEnv,sigFileType)
+    return (tcEnv,sigFileType,cenv.createsGeneratedProvidedTypes)
  }

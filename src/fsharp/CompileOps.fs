@@ -5163,12 +5163,15 @@ type TcState =
       tcsNiceNameGen: NiceNameGenerator
       tcsTcSigEnv: TcEnv
       tcsTcImplEnv: TcEnv
+      tcsCreatesGeneratedProvidedTypes: bool
       /// The accumulated results of type checking for this assembly 
       tcsRootSigsAndImpls : TypecheckerSigsAndImpls }
     member x.NiceNameGenerator = x.tcsNiceNameGen
     member x.TcEnvFromSignatures = x.tcsTcSigEnv
     member x.TcEnvFromImpls = x.tcsTcImplEnv
     member x.Ccu = x.tcsCcu
+    member x.CreatesGeneratedProvidedTypes = x.tcsCreatesGeneratedProvidedTypes
+
     member x.PartialAssemblySignature = 
       let (RootSigsAndImpls(_rootSigs,_rootImpls,_allSigModulTyp,allImplementedSigModulTyp)) = x.tcsRootSigsAndImpls
       allImplementedSigModulTyp
@@ -5217,6 +5220,7 @@ let GetInitialTcState(m,ccuName,tcConfig:TcConfig,tcGlobals,tcImports:TcImports,
       tcsNiceNameGen=niceNameGen
       tcsTcSigEnv=tcEnv0
       tcsTcImplEnv=tcEnv0
+      tcsCreatesGeneratedProvidedTypes=false
       tcsRootSigsAndImpls = RootSigsAndImpls (rootSigs, rootImpls, allSigModulTyp, allImplementedSigModulTyp) }
 
 
@@ -5233,7 +5237,7 @@ let TypeCheckOneInputEventually
       let (RootSigsAndImpls(rootSigs,rootImpls,allSigModulTyp,allImplementedSigModulTyp)) = tcState.tcsRootSigsAndImpls
       let m = inp.Range
       let amap = tcImports.GetImportMap()
-      let! (topAttrs, mimpls,tcEnvAtEnd,tcSigEnv,tcImplEnv,topSigsAndImpls,ccuType) = 
+      let! (topAttrs, implFiles,tcEnvAtEnd,tcSigEnv,tcImplEnv,topSigsAndImpls,ccuType,createsGeneratedProvidedTypes) = 
         eventually {
             match inp with 
             | ParsedInput.SigFile (ParsedSigFileInput(_, qualNameOfFile, _, _, _) as file) ->
@@ -5247,10 +5251,10 @@ let TypeCheckOneInputEventually
                     errorR(Error(FSComp.SR.buildImplementationAlreadyGivenDetail(qualNameOfFile.Text),m))
 
                 // Typecheck the signature file 
-                let! (tcEnvAtEnd,tcEnv,smodulTypeRoot) = 
+                let! (tcEnv,sigFileType,createsGeneratedProvidedTypes) = 
                     TypeCheckOneSigFile (tcGlobals,tcState.tcsNiceNameGen,amap,tcState.tcsCcu,checkForErrors,tcConfig.conditionalCompilationDefines,tcSink) tcState.tcsTcSigEnv file
 
-                let rootSigs = Zmap.add qualNameOfFile  smodulTypeRoot rootSigs
+                let rootSigs = Zmap.add qualNameOfFile  sigFileType rootSigs
 
                 // Open the prefixPath for fsi.exe 
                 let tcEnv = 
@@ -5260,7 +5264,7 @@ let TypeCheckOneInputEventually
                         let m = qualNameOfFile.Range
                         TcOpenDecl tcSink tcGlobals amap m m tcEnv prefixPath
 
-                let res = (EmptyTopAttrs, [], tcEnvAtEnd, tcEnv, tcState.tcsTcImplEnv, RootSigsAndImpls(rootSigs, rootImpls, allSigModulTyp, allImplementedSigModulTyp), tcState.tcsCcuType)
+                let res = (EmptyTopAttrs, [], tcEnv, tcEnv, tcState.tcsTcImplEnv, RootSigsAndImpls(rootSigs, rootImpls, allSigModulTyp, allImplementedSigModulTyp), tcState.tcsCcuType, createsGeneratedProvidedTypes)
                 return res
 
             | ParsedInput.ImplFile (ParsedImplFileInput(filename,_,qualNameOfFile,_,_,_,_) as file) ->
@@ -5277,7 +5281,7 @@ let TypeCheckOneInputEventually
                 let tcImplEnv = tcState.tcsTcImplEnv
 
                 // Typecheck the implementation file 
-                let! topAttrs,implFile,tcEnvAtEnd = 
+                let! topAttrs, implFile, tcEnvAtEnd, createsGeneratedProvidedTypes = 
                     TypeCheckOneImplFile  (tcGlobals,tcState.tcsNiceNameGen,amap,tcState.tcsCcu,checkForErrors,tcConfig.conditionalCompilationDefines,tcSink) tcImplEnv rootSigOpt file
 
                 let hadSig = Option.isSome rootSigOpt
@@ -5320,14 +5324,15 @@ let TypeCheckOneInputEventually
                 if verbose then  dprintf "done TypeCheckOneInputEventually...\n"
 
                 let topSigsAndImpls = RootSigsAndImpls(rootSigs,rootImpls,allSigModulTyp,allImplementedSigModulTyp)
-                let res = (topAttrs,[implFile], tcEnvAtEnd, tcSigEnv, tcImplEnv, topSigsAndImpls, ccuType)
+                let res = (topAttrs,[implFile], tcEnvAtEnd, tcSigEnv, tcImplEnv, topSigsAndImpls, ccuType, createsGeneratedProvidedTypes)
                 return res }
      
-      return (tcEnvAtEnd,topAttrs,mimpls),
+      return (tcEnvAtEnd,topAttrs,implFiles),
              { tcState with 
                   tcsCcuType=ccuType
                   tcsTcSigEnv=tcSigEnv
                   tcsTcImplEnv=tcImplEnv
+                  tcsCreatesGeneratedProvidedTypes=tcState.tcsCreatesGeneratedProvidedTypes || createsGeneratedProvidedTypes
                   tcsRootSigsAndImpls = topSigsAndImpls }
    with e -> 
       errorRecovery e range0 
@@ -5344,14 +5349,14 @@ let TypeCheckOneInput (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, pre
 
 /// Finish checking multiple files (or one interactive entry into F# Interactive)
 let TypeCheckMultipleInputsFinish(results,tcState: TcState) =
-    let tcEnvsAtEndFile,topAttrs,mimpls = List.unzip3 results
+    let tcEnvsAtEndFile,topAttrs,implFiles = List.unzip3 results
     
     let topAttrs = List.foldBack CombineTopAttrs topAttrs EmptyTopAttrs
-    let mimpls = List.concat mimpls
+    let implFiles = List.concat implFiles
     // This is the environment required by fsi.exe when incrementally adding definitions 
     let tcEnvAtEndOfLastFile = (match tcEnvsAtEndFile with h :: _ -> h | _ -> tcState.TcEnvFromSignatures)
     
-    (tcEnvAtEndOfLastFile,topAttrs,mimpls),tcState
+    (tcEnvAtEndOfLastFile,topAttrs,implFiles),tcState
 
 /// Check multiple files (or one interactive entry into F# Interactive)
 let TypeCheckMultipleInputs (ctok, checkForErrors, tcConfig: TcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) =
@@ -5378,7 +5383,7 @@ let TypeCheckClosedInputSetFinish (declaredImpls: TypedImplFile list, tcState) =
     
 let TypeCheckClosedInputSet (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs) =
     // tcEnvAtEndOfLastFile is the environment required by fsi.exe when incrementally adding definitions 
-    let (tcEnvAtEndOfLastFile, topAttrs, mimpls),tcState = TypeCheckMultipleInputs (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs)
-    let tcState, declaredImpls = TypeCheckClosedInputSetFinish (mimpls, tcState)
+    let (tcEnvAtEndOfLastFile, topAttrs, implFiles),tcState = TypeCheckMultipleInputs (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs)
+    let tcState, declaredImpls = TypeCheckClosedInputSetFinish (implFiles, tcState)
     tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
 
