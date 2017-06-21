@@ -450,7 +450,6 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
-    <Reference Include="$(FSharpCoreLkgPath)\FSharp.Core.dll" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
@@ -471,6 +470,10 @@
     <Reference Include="System.ValueTuple">
       <HintPath>$(FSharpSourcesRoot)\..\packages\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
     </Reference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
+      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
+      <Name>FSharp.Core</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' != 'true' ">
     <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
@@ -505,15 +508,4 @@
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <Import Project="$(FsLexToolPath)\FsLexYacc.targets" />
-
-  <Target Name="CopyFSharpCoreOptSigFiles" AfterTargets="Build">
-    <ItemGroup>
-        <FSharpCoreOptSigFiles Include="$(FSharpCoreLkgPath)\FSharp.Core.dll" />
-        <FSharpCoreOptSigFiles Include="$(FSharpCoreLkgPath)\FSharp.Core.optdata" />
-        <FSharpCoreOptSigFiles Include="$(FSharpCoreLkgPath)\FSharp.Core.sigdata" />
-        <FSharpCoreOptSigFiles Include="$(FSharpCoreLkgPath)\FSharp.Core.xml" />
-    </ItemGroup>
-    
-    <Copy SourceFiles="@(FSharpCoreOptSigFiles)" DestinationFolder="$(OutputPath)" />
-  </Target>
 </Project>
