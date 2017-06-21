@@ -3,6 +3,7 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
+    <UseVsMicroBuildAssemblyVersion>true</UseVsMicroBuildAssemblyVersion>
   </PropertyGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>
@@ -17,17 +18,17 @@
     <UseCodebase>true</UseCodebase>
     <GeneratePkgDefFile>true</GeneratePkgDefFile>
     <IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
-    <TargetFrameworkVersion Condition="'$(TargetFramework)' != 'coreclr'">v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion Condition="'$(TargetDotnetProfile)' != 'coreclr'">v4.6</TargetFrameworkVersion>
 	<DefineConstants Condition="'$(AddVsSdkAttributesToSomeCoreComponents)' == 'true'">$(DefineConstants);HAVE_VS_SDK</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="FSharpInteractiveServer.fs" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
+  <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">
       <None Include="project.json" />
   </ItemGroup>
-  <ItemGroup  Condition="'$(TargetFramework)' != 'coreclr'">
+  <ItemGroup  Condition="'$(TargetDotnetProfile)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Runtime.Remoting" />

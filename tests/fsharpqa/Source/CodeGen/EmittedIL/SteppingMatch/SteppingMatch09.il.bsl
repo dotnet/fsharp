@@ -51,7 +51,7 @@
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto ansi serializable nested assembly beforefieldinit GenericInner@15
+  .class auto ansi serializable sealed nested assembly beforefieldinit GenericInner@15
          extends [FSharp.Core]Microsoft.FSharp.Core.FSharpTypeFunc
   {
     .method assembly specialname rtspecialname 
@@ -83,7 +83,7 @@
 
   } // end of class GenericInner@15
 
-  .class auto ansi serializable nested assembly beforefieldinit GenericInner@15T<T>
+  .class auto ansi serializable sealed nested assembly beforefieldinit GenericInner@15T<T>
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!T>,int32>
   {
     .field public class SteppingMatch09/GenericInner@15 self0@
@@ -136,7 +136,7 @@
 
   } // end of class GenericInner@15T
 
-  .class auto ansi serializable nested assembly beforefieldinit NonGenericInner@25
+  .class auto ansi serializable sealed nested assembly beforefieldinit NonGenericInner@25
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,int32>
   {
     .method assembly specialname rtspecialname 
@@ -177,7 +177,7 @@
 
   } // end of class NonGenericInner@25
 
-  .class auto ansi serializable nested assembly beforefieldinit NonGenericInnerWithCapture@34
+  .class auto ansi serializable sealed nested assembly beforefieldinit NonGenericInnerWithCapture@34
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,int32>
   {
     .field public int32 x

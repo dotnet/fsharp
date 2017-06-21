@@ -15,7 +15,7 @@
     <Actions>
       <Action Type="Ngen" Path="fsiAnyCpu.exe" />
       <Action Type="Ngen" Path="fsi.exe" />
-      <Action Type="Ngen" Path="FSharp.Compiler.dll" />
+      <Action Type="Ngen" Path="FSharp.Compiler.Service.dll" />
       <Action Type="Ngen" Path="FSharp.Compiler.Interactive.Settings.dll" />
       <Action Type="Ngen" Path="FSharp.DependencyManager.Paket.dll" />
       <Action Type="Ngen" Path="FSharp.Compiler.Server.Shared.dll" />
@@ -23,7 +23,6 @@
       <Action Type="Ngen" Path="FSharp.Editor.dll" />
       <Action Type="Ngen" Path="FSharp.UIResources.dll" />
       <Action Type="Ngen" Path="FSharp.LanguageService.Base.dll" />
-      <Action Type="Ngen" Path="FSharp.LanguageService.Compiler.dll" />
       <Action Type="Ngen" Path="FSharp.LanguageService.dll" />
       <Action Type="Ngen" Path="FSharp.ProjectSystem.Base.dll" />
       <Action Type="Ngen" Path="FSharp.ProjectSystem.FSharp.dll" />
@@ -42,7 +41,6 @@
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.VS.FSI.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.LanguageService.Base.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.LanguageService.pkgdef" />
-    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.LanguageService.Compiler.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.DependencyManager.Paket.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.Editor.pkgdef" />
     <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="File" Path="FSharp.ProjectSystem.PropertyPages.pkgdef" />

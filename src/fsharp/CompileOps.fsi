@@ -30,13 +30,8 @@ open Microsoft.FSharp.Compiler.ExtensionTyping
 
 #if DEBUG
 
-#if COMPILED_AS_LANGUAGE_SERVICE_DLL
 module internal CompilerService =
-#else
-module internal FullCompiler =
-#endif
     val showAssertForUnexpectedException : bool ref
-
 #endif
 
 //----------------------------------------------------------------------------
@@ -91,7 +86,7 @@ val GetDiagnosticNumber : PhasedDiagnostic -> int
 val SplitRelatedDiagnostics : PhasedDiagnostic -> PhasedDiagnostic * PhasedDiagnostic list
 
 /// Output an error to a buffer
-val OutputPhasedDiagnostic : StringBuilder -> PhasedDiagnostic -> isError: bool -> unit
+val OutputPhasedDiagnostic : StringBuilder -> PhasedDiagnostic -> flattenErrors: bool -> unit
 
 /// Output an error or warning to a buffer
 val OutputDiagnostic : implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle *  isError:bool -> StringBuilder -> PhasedDiagnostic -> unit
@@ -330,7 +325,7 @@ type TcConfigBuilder =
       mutable win32manifest : string
       mutable includewin32manifest : bool
       mutable linkResources : string list
-      mutable referenceResolver: ReferenceResolver.Resolver 
+      mutable legacyReferenceResolver: ReferenceResolver.Resolver 
       mutable showFullPaths : bool
       mutable errorStyle : ErrorStyle
       mutable utf8output : bool
@@ -349,6 +344,7 @@ type TcConfigBuilder =
       mutable optsOn        : bool 
       mutable optSettings   : Optimizer.OptimizationSettings 
       mutable emitTailcalls : bool
+      mutable deterministic : bool
 #if PREFERRED_UI_LANG
       mutable preferredUiLang: string option
 #endif
@@ -378,12 +374,13 @@ type TcConfigBuilder =
     }
 
     static member CreateNew : 
-        referenceResolver: ReferenceResolver.Resolver *
+        legacyReferenceResolver: ReferenceResolver.Resolver *
         defaultFSharpBinariesDir: string * 
         optimizeForMemory: bool * 
         implicitIncludeDir: string * 
         isInteractive: bool * 
-        isInvalidationSupported: bool -> TcConfigBuilder
+        isInvalidationSupported: bool *
+        defaultCopyFSharpCore: bool -> TcConfigBuilder
 
     member DecideNames : string list -> outfile: string * pdbfile: string option * assemblyName: string 
     member TurnWarningOff : range * string -> unit
@@ -500,6 +497,7 @@ type TcConfig =
     member doFinalSimplify : bool
     member optSettings   : Optimizer.OptimizationSettings 
     member emitTailcalls : bool
+    member deterministic : bool
 #if PREFERRED_UI_LANG
     member preferredUiLang: string option
 #else
@@ -541,9 +539,7 @@ type TcConfig =
     member sqmNumOfSourceFiles : int
     member sqmSessionStartedTime : int64
     member copyFSharpCore : bool
-#if FSI_SHADOW_COPY_REFERENCES
     member shadowCopyReferences : bool
-#endif
     static member Create : TcConfigBuilder * validate: bool -> TcConfig
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
@@ -807,7 +803,7 @@ type LoadClosure =
       LoadClosureRootFileDiagnostics : (PhasedDiagnostic * bool) list }   
 
     // Used from service.fs, when editing a script file
-    static member ComputeClosureOfSourceText : CompilationThreadToken * referenceResolver: ReferenceResolver.Resolver * filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) * assumeDotNetFramework : bool -> LoadClosure
+    static member ComputeClosureOfSourceText : CompilationThreadToken * legacyReferenceResolver: ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) * assumeDotNetFramework : bool -> LoadClosure
 
     /// Used from fsi.fs and fsc.fs, for #load and command line. The resulting references are then added to a TcConfig.
     static member ComputeClosureOfSourceFiles : CompilationThreadToken * tcConfig:TcConfig * (string * range) list * implicitDefines:CodeContext * lexResourceManager : Lexhelp.LexResourceManager -> LoadClosure

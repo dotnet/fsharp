@@ -33,6 +33,7 @@ open Microsoft.FSharp.Compiler.ExtensionTyping
 [<NoEquality; NoComparison>]
 type TyparMap<'T> = 
     | TPMap of StampMap<'T>
+
     member tm.Item 
         with get (v: Typar) = 
             let (TPMap m) = tm
@@ -372,6 +373,7 @@ let instTrait             tpinst x = if isNil tpinst then x else remapTraitAux (
 let instTyparConstraints tpinst x = if isNil tpinst then x else remapTyparConstraintsAux (mkInstRemap tpinst) x
 let instSlotSig tpinst ss = remapSlotSig (fun _ -> []) (mkInstRemap tpinst) ss
 let copySlotSig ss = remapSlotSig (fun _ -> []) Remap.Empty ss
+
 
 let mkTyparToTyparRenaming tpsOrig tps = 
     let tinst = generalizeTypars tps
@@ -715,6 +717,8 @@ let isUnionTy      g ty = ty |> stripTyEqns g |> (function TType_app(tcr,_) -> t
 let isReprHiddenTy   g ty = ty |> stripTyEqns g |> (function TType_app(tcr,_) -> tcr.IsHiddenReprTycon | _ -> false)
 let isFSharpObjModelTy g ty = ty |> stripTyEqns g |> (function TType_app(tcr,_) -> tcr.IsFSharpObjectModelTycon | _ -> false)
 let isRecdTy       g ty = ty |> stripTyEqns g |> (function TType_app(tcr,_) -> tcr.IsRecordTycon | _ -> false)
+let isFSharpStructOrEnumTy   g ty = ty |> stripTyEqns g |> (function TType_app(tcr,_) -> tcr.IsFSharpStructOrEnumTycon | _ -> false)
+let isFSharpEnumTy   g ty = ty |> stripTyEqns g |> (function TType_app(tcr,_) -> tcr.IsFSharpEnumTycon | _ -> false)
 let isTyparTy      g ty = ty |> stripTyEqns g |> (function TType_var _ -> true | _ -> false)
 let isAnyParTy     g ty = ty |> stripTyEqns g |> (function TType_var _ -> true | TType_measure unt -> isUnitParMeasure g unt | _ -> false)
 let isMeasureTy    g ty = ty |> stripTyEqns g |> (function TType_measure _ -> true | _ -> false)
@@ -735,7 +739,6 @@ let tryAnyParTy    g ty = ty |> stripTyEqns g |> (function TType_var v -> Some v
 let (|AppTy|_|) g ty = ty |> stripTyEqns g |> (function TType_app(tcref,tinst) -> Some (tcref,tinst) | _ -> None) 
 let (|RefTupleTy|_|) g ty = ty |> stripTyEqns g |> (function TType_tuple(tupInfo,tys) when not (evalTupInfoIsStruct tupInfo) -> Some tys | _ -> None)
 let (|FunTy|_|) g ty = ty |> stripTyEqns g |> (function TType_fun(dty, rty) -> Some (dty, rty) | _ -> None)
-let tyconOfAppTy   g ty = (tcrefOfAppTy g ty).Deref
 
 let tryNiceEntityRefOfTy  ty = 
     let ty = stripTyparEqnsAux false ty 
@@ -1070,13 +1073,13 @@ let mkCond spBind spTarget m ty e1 e2 e3 =  primMkCond spBind spTarget spTarget 
 
 let exprForValRef m vref =  Expr.Val(vref,NormalValUse,m)
 let exprForVal m v =  exprForValRef m (mkLocalValRef v)
-let gen_mk_local m s ty mut compgen =
+let mkLocalAux m s ty mut compgen =
     let thisv = NewVal(s,m,None,ty,mut,compgen,None,taccessPublic,ValNotInRecScope,None,NormalVal,[],ValInline.Optional,XmlDoc.Empty,false,false,false,false,false,false,None,ParentNone) 
     thisv,exprForVal m thisv
 
-let mkLocal         m s ty = gen_mk_local m s ty Immutable false
-let mkCompGenLocal m s ty = gen_mk_local m s ty Immutable true
-let mkMutableCompGenLocal m s ty = gen_mk_local m s ty Mutable true
+let mkLocal         m s ty = mkLocalAux m s ty Immutable false
+let mkCompGenLocal m s ty = mkLocalAux m s ty Immutable true
+let mkMutableCompGenLocal m s ty = mkLocalAux m s ty Mutable true
 
 
 // Type gives return type.  For type-lambdas this is the formal return type. 
@@ -1624,10 +1627,17 @@ let isStructOrEnumTyconTy g ty =
     | Some tcref -> tcref.Deref.IsStructOrEnumTycon
     | _ -> false
 
-let isStructRecordOrUnionTyconTy g ty = isAppTy g ty && (tyconOfAppTy g ty).IsStructRecordOrUnionTycon
+let isStructRecordOrUnionTyconTy g ty = 
+    match tryDestAppTy g ty with
+    | Some tcref -> tcref.Deref.IsStructRecordOrUnionTycon
+    | _ -> false
 
-let isStructTy g ty = isStructOrEnumTyconTy g ty || isStructTupleTy g ty
-
+let isStructTy g ty =
+    match tryDestAppTy g ty with
+    | Some tcref -> 
+        let tycon = tcref.Deref
+        tycon.IsStructRecordOrUnionTycon || tycon.IsStructOrEnumTycon
+    | _ -> false
 
 let isRefTy g ty = 
     not (isStructOrEnumTyconTy g ty) &&
@@ -2300,8 +2310,8 @@ module PrettyTypes =
                           
         choose tps (0,0) []
 
-    let PrettifyTypes g foldTys mapTys tys = 
-        let ftps = foldTys (accFreeInTypeLeftToRight g true false) emptyFreeTyparsLeftToRight tys
+    let PrettifyThings g foldTys mapTys things = 
+        let ftps = foldTys (accFreeInTypeLeftToRight g true false) emptyFreeTyparsLeftToRight things
         let ftps = List.rev ftps
         let rec computeKeep (keep: Typars) change (tps: Typars) = 
             match tps with 
@@ -2325,23 +2335,78 @@ module PrettyTypes =
             match t with
             | TType_forall (_,tau) -> tau
             | _ -> t
-        let tys = mapTys getTauStayTau tys
+        let tauThings = mapTys getTauStayTau things
                         
-        let prettyTypars = mapTys (instType renaming) tys
+        let prettyThings = mapTys (instType renaming) tauThings
         // niceTypars |> List.iter (fun tp -> dprintf "nice typar: %d\n" (stamp_of_typar tp)); *
         let tpconstraints  = niceTypars |> List.collect (fun tpnice -> List.map (fun tpc -> tpnice,tpc) tpnice.Constraints)
 
-        renaming,
-        prettyTypars,
-        tpconstraints
+        prettyThings, tpconstraints
 
-    let PrettifyTypes1   g x = PrettifyTypes g (fun f -> f) (fun f -> f) x
-    let PrettifyTypes2   g x = PrettifyTypes g (fun f -> foldPair (f,f)) (fun f -> mapPair (f,f)) x
-    let PrettifyTypesN   g x = PrettifyTypes g List.fold List.map   x
-    let PrettifyTypesNN   g x = PrettifyTypes g (fun f -> List.fold (List.fold f)) List.mapSquared   x
-    let PrettifyTypesNN1   g x = PrettifyTypes g (fun f -> foldPair (List.fold (List.fold f),f)) (fun f -> mapPair (List.mapSquared f,f)) x
-    let PrettifyTypesN1  g (x:UncurriedArgInfos * TType) = PrettifyTypes g (fun f -> foldPair (List.fold (fold1Of2  f), f)) (fun f -> mapPair (List.map (map1Of2  f),f)) x
-    let PrettifyTypesNM1 g (x:TType list * CurriedArgInfos * TType) = PrettifyTypes g (fun f -> foldTriple (List.fold f, List.fold (List.fold (fold1Of2 f)),f)) (fun f -> mapTriple (List.map f, List.mapSquared (map1Of2  f), f)) x
+    let PrettifyType g x = PrettifyThings g id id x
+    let PrettifyTypePair g x = PrettifyThings g (fun f -> foldPair (f,f)) (fun f -> mapPair (f,f)) x
+    let PrettifyTypes g x = PrettifyThings g List.fold List.map   x
+    let PrettifyCurriedTypes g x = PrettifyThings g (fun f -> List.fold (List.fold f)) List.mapSquared   x
+    let PrettifyCurriedSigTypes g x = PrettifyThings g (fun f -> foldPair (List.fold (List.fold f),f)) (fun f -> mapPair (List.mapSquared f,f)) x
+
+    // Badly formed code may instantiate rigid declared typars to types.
+    // Hence we double check here that the thing is really a type variable
+    let safeDestAnyParTy orig g ty = match tryAnyParTy g ty with None -> orig | Some x -> x
+    let tee f x = f x x
+
+    let foldUnurriedArgInfos f z (x: UncurriedArgInfos) = List.fold (fold1Of2 f) z x
+    let mapUnurriedArgInfos f (x: UncurriedArgInfos) = List.map (map1Of2 f) x
+
+    let foldTypar f z (x: Typar) = foldOn mkTyparTy f z x
+    let mapTypar g f (x: Typar) : Typar = (mkTyparTy >> f >> safeDestAnyParTy x g) x
+
+    let foldTypars f z (x: Typars) =  List.fold (foldTypar f) z x
+    let mapTypars g f (x: Typars) : Typars = List.map (mapTypar g f) x
+
+    let foldTyparInst f z (x: TyparInst) =  List.fold (foldPair (foldTypar f, f)) z x
+    let mapTyparInst g f (x: TyparInst) : TyparInst = List.map (mapPair (mapTypar g f, f)) x
+
+    let PrettifyInstAndTyparsAndType g x = 
+        PrettifyThings g 
+            (fun f -> foldTriple (foldTyparInst f, foldTypars f, f)) 
+            (fun f-> mapTriple (mapTyparInst g f, mapTypars g f, f)) 
+            x
+
+    let PrettifyInstAndUncurriedSig  g (x: TyparInst * UncurriedArgInfos * TType) = 
+        PrettifyThings g 
+            (fun f -> foldTriple (foldTyparInst f, foldUnurriedArgInfos f, f)) 
+            (fun f -> mapTriple (mapTyparInst g f, List.map (map1Of2  f),f))
+            x
+
+    let PrettifyInstAndCurriedSig g (x: TyparInst * TTypes * CurriedArgInfos * TType) = 
+        PrettifyThings g 
+            (fun f -> foldQuadruple (foldTyparInst f, List.fold f, List.fold (List.fold (fold1Of2 f)),f)) 
+            (fun f -> mapQuadruple (mapTyparInst g f, List.map f, List.mapSquared (map1Of2 f), f))
+            x
+
+    let PrettifyInstAndSig g x = 
+        PrettifyThings g 
+            (fun f -> foldTriple (foldTyparInst f, List.fold f, f))
+            (fun f -> mapTriple (mapTyparInst g f, List.map f, f) )
+            x
+
+    let PrettifyInstAndTypes g x = 
+        PrettifyThings g 
+            (fun f -> foldPair (foldTyparInst f, List.fold f)) 
+            (fun f -> mapPair (mapTyparInst g f, List.map f))
+            x
+ 
+    let PrettifyInstAndType g x = 
+        PrettifyThings g 
+            (fun f -> foldPair (foldTyparInst f, f)) 
+            (fun f -> mapPair (mapTyparInst g f, f))
+            x
+ 
+    let PrettifyInst g x = 
+        PrettifyThings g 
+            (fun f -> foldTyparInst f) 
+            (fun f -> mapTyparInst g f)
+            x
  
 module SimplifyTypes =
 
@@ -2655,18 +2720,17 @@ let isILAttrib (tref:ILTypeRef) (attr: ILAttribute) =
 // These linear iterations cost us a fair bit when there are lots of attributes
 // on imported types. However this is fairly rare and can also be solved by caching the
 // results of attribute lookups in the TAST
-let HasILAttribute tref (attrs: ILAttributes) = List.exists (isILAttrib tref) attrs.AsList
+let HasILAttribute tref (attrs: ILAttributes) = Array.exists (isILAttrib tref) attrs.AsArray
 
-let HasILAttributeByName tname (attrs: ILAttributes) = List.exists (isILAttribByName ([],tname)) attrs.AsList
+let HasILAttributeByName tname (attrs: ILAttributes) = Array.exists (isILAttribByName ([],tname)) attrs.AsArray
 
 let TryDecodeILAttribute (g:TcGlobals) tref (attrs: ILAttributes) = 
-    attrs.AsList |> List.tryPick(fun x -> if isILAttrib tref x then Some(decodeILAttribData g.ilg x)  else None)
+    attrs.AsArray |> Array.tryPick (fun x -> if isILAttrib tref x then Some(decodeILAttribData g.ilg x)  else None)
 
 // This one is done by name to ensure the compiler doesn't take a dependency on dereferencing a type that only exists in .NET 3.5
 let ILThingHasExtensionAttribute (attrs : ILAttributes) = 
-    attrs.AsList 
-    |> List.exists (fun attr -> 
-        attr.Method.EnclosingType.TypeSpec.Name = "System.Runtime.CompilerServices.ExtensionAttribute")
+    attrs.AsArray
+    |> Array.exists (fun attr -> attr.Method.EnclosingType.TypeSpec.Name = "System.Runtime.CompilerServices.ExtensionAttribute")
     
 // F# view of attributes (these get converted to AbsIL attributes in ilxgen) 
 let IsMatchingFSharpAttribute g (AttribInfo(_,tcref)) (Attrib(tcref2,_,_,_,_,_,_)) = tyconRefEq g tcref  tcref2
@@ -3286,7 +3350,7 @@ module DebugPrint = begin
             | argtys -> (prefixL ^^ nmL ^^ wordL(tagText "of")) --- layoutUnionCaseArgTypes argtys
 
         let layoutUnionCases ucases =
-            let prefixL = if List.length ucases > 1 then wordL(tagText "|") else emptyL
+            let prefixL = if not (isNilOrSingleton ucases) then wordL(tagText "|") else emptyL
             List.map (ucaseL prefixL) ucases
             
         let layoutRecdField (fld:RecdField) =
@@ -3972,80 +4036,10 @@ let inline accFreeTyvars (opts:FreeVarOptions) f v acc =
     if ftyvs === ftyvs' then acc else 
     { acc with FreeTyvars = ftyvs' }
 
-#if FREEVARS_IN_TYPES_ANALYSIS
-type CheckCachability<'key,'acc>(name,f: FreeVarOptions -> 'key -> 'acc -> bool * 'acc) =
-    let dict = System.Collections.Generic.Dictionary<'key,int>(HashIdentity.Reference)
-    let idem = System.Collections.Generic.Dictionary<'key,int>(HashIdentity.Reference)
-    let closed = System.Collections.Generic.Dictionary<'key,int>(HashIdentity.Reference)
-    let mutable saved = 0
-    do System.AppDomain.CurrentDomain.ProcessExit.Add(fun _ ->
-        let hist = dict |> Seq.groupBy (fun (KeyValue(k,v)) -> v) |> Seq.map (fun (n,els) -> (n,Seq.length els)) |> Seq.sortBy (fun (n,_) -> n)
-        let total = hist |> Seq.sumBy (fun (nhits,nels) -> nels)
-        let totalHits = hist |> Seq.sumBy (fun (nhits,nels) -> nhits * nels)
-        printfn "*** %s saved %d hits (%g%%) ***" name saved (float  saved / float (saved + totalHits) * 100.0)
-        printfn "*** %s had %d hits total, possible saving %d ***" name totalHits (totalHits - total)
-        //for (nhits,nels) in hist do 
-        //    printfn "%s, %g%% els for %g%% hits had %d hits" name (float nels / float total * 100.0) (float (nels * nhits) / float totalHits * 100.0) nhits
-
-        let hist = idem |> Seq.groupBy (fun (KeyValue(k,v)) -> v) |> Seq.map (fun (n,els) -> (n,Seq.length els)) |> Seq.sortBy (fun (n,_) -> n)
-        let total = hist |> Seq.sumBy (fun (nhits,nels) -> nels)
-        let totalHits = hist |> Seq.sumBy (fun (nhits,nels) -> nhits * nels)
-        printfn "*** %s had %d idempotent hits total, possible saving %d ***" name totalHits (totalHits - total)
-        //for (nhits,nels) in hist do 
-        //    printfn "%s, %g%% els for %g%% hits had %d idempotent hits" name (float nels / float total * 100.0) (float (nels * nhits) / float totalHits * 100.0) nhits
-
-        let hist = closed |> Seq.groupBy (fun (KeyValue(k,v)) -> v) |> Seq.map (fun (n,els) -> (n,Seq.length els)) |> Seq.sortBy (fun (n,_) -> n)
-        let total = hist |> Seq.sumBy (fun (nhits,nels) -> nels)
-        let totalHits = hist |> Seq.sumBy (fun (nhits,nels) -> nhits * nels)
-        printfn "*** %s had %d closed hits total, possible saving %d ***" name totalHits (totalHits - total)
-       )
-        
-    member cache.Apply(opts,key,acc) = 
-        if not opts.collectInTypes then 
-            saved <- saved + 1
-            acc 
-        else
-            let cls,res = f opts  key acc
-            if opts.canCache then 
-                if dict.ContainsKey key then 
-                    dict.[key] <- dict.[key] + 1
-                else
-                    dict.[key] <- 1
-                if res === acc then
-                    if idem.ContainsKey key then 
-                        idem.[key] <- idem.[key] + 1
-                    else
-                        idem.[key] <- 1
-                if cls then
-                    if closed.ContainsKey key then 
-                        closed.[key] <- closed.[key] + 1
-                    else
-                        closed.[key] <- 1
-            res
-            
-
-    //member cache.OnExit() = 
-
-let accFreeVarsInTy_cache =  CheckCachability("accFreeVarsInTy", (fun opts ty fvs -> (freeInType opts ty === emptyFreeTyvars), accFreeTyvars opts (accFreeInType opts) ty fvs))
-let accFreevarsInValCache =  CheckCachability("accFreevarsInVal", (fun opts  v fvs ->  (freeInVal opts v === emptyFreeTyvars), accFreeTyvars opts (accFreeInVal opts) v fvs))
-let accFreeVarsInTys_cache =  CheckCachability("accFreeVarsInTys", (fun opts  tys fvs -> (freeInTypes opts tys === emptyFreeTyvars), accFreeTyvars opts (accFreeInTypes opts) tys fvs))
-let accFreevarsInTyconCache =  CheckCachability("accFreevarsInTycon", (fun opts  tys fvs -> false,accFreeTyvars opts (accFreeTycon opts) tys fvs))
-
-let accFreeVarsInTy opts ty fvs = accFreeVarsInTy_cache.Apply(opts,ty,fvs)
-let accFreeVarsInTys opts tys fvs = 
-    if isNil tys then fvs else accFreeVarsInTys_cache.Apply(opts,tys,fvs)
-let accFreevarsInTycon opts (tcr:TyconRef) acc = 
-    match tcr.IsLocalRef with 
-    | true -> accFreevarsInTyconCache.Apply(opts,tcr,acc)
-    | _ -> acc
-let accFreevarsInVal opts v fvs = accFreevarsInValCache.Apply(opts,v,fvs)
-#else
-
 let accFreeVarsInTy  opts ty    acc = accFreeTyvars opts accFreeInType ty acc
 let accFreeVarsInTys opts tys   acc = if isNil tys then acc else accFreeTyvars opts accFreeInTypes tys acc
 let accFreevarsInTycon opts tcref acc = accFreeTyvars opts accFreeTycon tcref acc
 let accFreevarsInVal   opts v     acc = accFreeTyvars opts accFreeInVal v acc
-#endif
     
 let accFreeVarsInTraitSln opts tys acc = accFreeTyvars opts accFreeInTraitSln tys acc 
 
@@ -4439,7 +4433,6 @@ let InferArityOfExprBinding g (v:Val) e =
 
 let underlyingTypeOfEnumTy (g: TcGlobals) typ = 
     assert(isEnumTy g typ)
-    let tycon = tyconOfAppTy g typ
     match metadataOfTy g typ with 
 #if EXTENSIONTYPING
     | ProvidedTypeMetadata info -> info.UnderlyingTypeOfEnum()
@@ -4462,7 +4455,8 @@ let underlyingTypeOfEnumTy (g: TcGlobals) typ =
         | "System.Char" -> g.char_ty
         | "System.Boolean" -> g.bool_ty
         | _ -> g.int32_ty
-    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
+    | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata ->
+        let tycon = (tcrefOfAppTy g typ).Deref
         match tycon.GetFieldByName "value__" with 
         | Some rf -> rf.FormalType
         | None ->  error(InternalError("no 'value__' field found for enumeration type "^tycon.LogicalName,tycon.Range))
@@ -5688,10 +5682,10 @@ let mkArray (argty, args, m) = Expr.Op(TOp.Array, [argty],args,m)
 //---------------------------------------------------------------------------
 
 let rec IterateRecursiveFixups g (selfv : Val option) rvs ((access : Expr),set) exprToFix  = 
-  let exprToFix =  stripExpr exprToFix
-  match exprToFix with 
-  | Expr.Const _ -> ()
-  | Expr.Op (TOp.Tuple tupInfo,argtys,args,m) when not (evalTupInfoIsStruct tupInfo) ->
+    let exprToFix =  stripExpr exprToFix
+    match exprToFix with 
+    | Expr.Const _ -> ()
+    | Expr.Op (TOp.Tuple tupInfo,argtys,args,m) when not (evalTupInfoIsStruct tupInfo) ->
       args |> List.iteri (fun n -> 
           IterateRecursiveFixups g None rvs 
             (mkTupleFieldGet g (tupInfo,access,argtys,n,m), 
@@ -5700,7 +5694,7 @@ let rec IterateRecursiveFixups g (selfv : Val option) rvs ((access : Expr),set) 
               errorR(Error(FSComp.SR.tastRecursiveValuesMayNotBeInConstructionOfTuple(),m));
               e)))
 
-  | Expr.Op (TOp.UnionCase (c),tinst,args,m) ->
+    | Expr.Op (TOp.UnionCase (c),tinst,args,m) ->
       args |> List.iteri (fun n -> 
           IterateRecursiveFixups g None rvs 
             (mkUnionCaseFieldGetUnprovenViaExprAddr (access,c,tinst,n,m), 
@@ -5711,7 +5705,7 @@ let rec IterateRecursiveFixups g (selfv : Val option) rvs ((access : Expr),set) 
                  errorR(Error(FSComp.SR.tastRecursiveValuesMayNotAppearInConstructionOfType(tcref.LogicalName),m));
                mkUnionCaseFieldSet (access,c,tinst,n,e,m))))
 
-  | Expr.Op (TOp.Recd (_,tcref),tinst,args,m) -> 
+    | Expr.Op (TOp.Recd (_,tcref),tinst,args,m) -> 
       (tcref.TrueInstanceFieldsAsRefList, args) ||> List.iter2 (fun fref arg -> 
           let fspec = fref.RecdField
           IterateRecursiveFixups g None rvs 
@@ -5721,13 +5715,13 @@ let rec IterateRecursiveFixups g (selfv : Val option) rvs ((access : Expr),set) 
                if not fspec.IsMutable && not (entityRefInThisAssembly g.compilingFslib tcref) then
                  errorR(Error(FSComp.SR.tastRecursiveValuesMayNotBeAssignedToNonMutableField(fspec.rfield_id.idText, tcref.LogicalName),m));
                mkRecdFieldSetViaExprAddr (access,fref,tinst,e,m))) arg )
-  | Expr.Val _
-  | Expr.Lambda _
-  | Expr.Obj _
-  | Expr.TyChoose _
-  | Expr.TyLambda _ -> 
-      rvs selfv access set exprToFix
-  | _ -> ()
+    | Expr.Val _
+    | Expr.Lambda _
+    | Expr.Obj _
+    | Expr.TyChoose _
+    | Expr.TyLambda _ -> 
+        rvs selfv access set exprToFix
+    | _ -> ()
 
 
 
@@ -7070,7 +7064,7 @@ let XmlDocSigOfVal g path (v:Val) =
           | MemberKind.PropertyGetSet 
           | MemberKind.PropertySet
           | MemberKind.PropertyGet -> "P:",v.PropertyName
-        let path = prependPath path v.TopValActualParent.CompiledName
+        let path = if v.HasTopValActualParent then prependPath path v.TopValActualParent.CompiledName else path
         let parentTypars,methTypars = 
           match PartitionValTypars g v with
           | Some(_,memberParentTypars,memberMethodTypars,_,_) -> memberParentTypars,memberMethodTypars
@@ -7162,9 +7156,10 @@ let TypeNullIsExtraValue g m ty =
         // Putting AllowNullLiteralAttribute(true) on an F# type means 'null' can be used with that type
         isAppTy g ty && TryFindTyconRefBoolAttribute g m g.attrib_AllowNullLiteralAttribute (tcrefOfAppTy g ty) = Some(true)
 
-let TypeNullIsTrueValue g ty = 
-    (isAppTy g ty && IsUnionTypeWithNullAsTrueValue g (tyconOfAppTy g ty))  ||
-    (isUnitTy g ty)
+let TypeNullIsTrueValue g ty =
+    (match tryDestAppTy g ty with
+     | Some tcref -> IsUnionTypeWithNullAsTrueValue g tcref.Deref
+     | _ -> false) || (isUnitTy g ty)
 
 let TypeNullNotLiked g m ty = 
        not (TypeNullIsExtraValue g m ty) 
@@ -7202,16 +7197,17 @@ let (|SpecialComparableHeadType|_|) g ty =
     if isAnyTupleTy g ty then 
         let _tupInfo, elemTys = destAnyTupleTy g ty
         Some elemTys 
-    elif isAppTy g ty then 
-        let tcref,tinst = destAppTy g ty 
-        if isArrayTyconRef g tcref ||
-           tyconRefEq g tcref g.system_UIntPtr_tcref ||
-           tyconRefEq g tcref g.system_IntPtr_tcref then
-             Some tinst 
-        else 
-            None
     else
-        None
+        match ty with
+        | AppTy g (tcref,tinst) ->
+            if isArrayTyconRef g tcref ||
+               tyconRefEq g tcref g.system_UIntPtr_tcref ||
+               tyconRefEq g tcref g.system_IntPtr_tcref then
+                 Some tinst 
+            else 
+                None
+        | _ ->
+            None
 
 let (|SpecialEquatableHeadType|_|) g ty = (|SpecialComparableHeadType|_|) g ty
 let (|SpecialNotEquatableHeadType|_|) g ty = 
@@ -7401,7 +7397,7 @@ let mkChoiceTy (g:TcGlobals) m tinst =
      match List.length tinst with 
      | 0 -> g.unit_ty
      | 1 -> List.head tinst
-     | _ -> mkAppTy (mkChoiceTyconRef g m (List.length tinst)) tinst
+     | length -> mkAppTy (mkChoiceTyconRef g m length) tinst
 
 let mkChoiceCaseRef g m n i = 
      mkUnionCaseRef (mkChoiceTyconRef g m n) ("Choice"+string (i+1)+"Of"+string n)
@@ -7948,7 +7944,7 @@ let rec mkCompiledTuple g isStruct (argtys,args,m) =
     elif n < maxTuple then (mkCompiledTupleTyconRef g isStruct n, argtys, args, m)
     else
         let argtysA,argtysB = List.splitAfter goodTupleFields argtys
-        let argsA,argsB = List.splitAfter (goodTupleFields) args
+        let argsA,argsB = List.splitAfter goodTupleFields args
         let ty8, v8 = 
             match argtysB,argsB with 
             | [ty8],[arg8] -> 
@@ -8138,11 +8134,9 @@ let DetectAndOptimizeForExpression g option expr =
 // Used to remove Expr.Link for inner expressions in pattern matches
 let (|InnerExprPat|) expr = stripExpr expr
 
-//-------------------------------------------------------------------------
-// One of the transformations performed by the compiler
-// is to eliminate variables of static type "unit".  These are
-// utility functions related to this.
-//------------------------------------------------------------------------- 
+/// One of the transformations performed by the compiler
+/// is to eliminate variables of static type "unit".  These is a
+/// utility function related to this.
 
 let BindUnitVars g (mvs:Val list, paramInfos:ArgReprInfo list, body) = 
     match mvs,paramInfos with 

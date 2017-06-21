@@ -31,6 +31,7 @@ This is for those who contributed language features, compiler improvements, or i
 - [Gustavo Leon](https://github.com/gmpl)
 - [Steffen Forkmann](https://github.com/forki)
 - [Libo Zeng](https://github.com/liboz)
+- [Rikki Gibson](https://github.com/RikkiGibson)
 
 **SRTP Improvements**
 
@@ -51,6 +52,10 @@ This is for those who contributed language features, compiler improvements, or i
 **Interop Improvements**
 
 - [Eirik Tsarpalis](https://github.com/eiriktsarpalis)
+
+### F# 4.2 Compiler Improvements
+
+- Deterministic compilation via `--deterministic`, by [David Glassborow](https://github.com/davidglassborow)
 
 ## Tooling - Visual Studio and Platform Support
 
@@ -85,6 +90,11 @@ This is for those who contributed Visual Studio IDE features and platform suppor
 * Separate color themes for light and dark mode - [Jakub Majocha](https://github.com/majocha)
 * Semantic highlighting - [Vasily Kirichenko](https://github.com/vasily-kirichenko) and [Jared Hester](github.com/cloudroutine)
 * ReSharper-like ordering in Completion lists - [Vasily Kirichenko](https://github.com/vasily-kirichenko)
+* Collapse to Definition - [Vasily Kirichenko](https://github.com/vasily-kirichenko)
+* Support for Editor Settings - [Jakub Majocha](https://github.com/majocha)
+* Localized Go to Definition Status Bar - [Saul Rennison](https://github.com/saul)
+* R#-like completion for items in unopened namespaces - [Vasily Kirichenko](https://github.com/vasily-kirichenko)
+* Wrap XML docs - [Jakub Majocha](https://github.com/majocha)
 
 **Project System**
 
@@ -106,6 +116,8 @@ This is for those who contributed Visual Studio IDE features and platform suppor
 * Add open Statement Analyzer and Codefix - [Vasily Kirichenko](https://github.com/vasily-kirichenko)
 * Simplify Name Analyzer and Codefix - [Vasily Kirichenko](https://github.com/vasily-kirichenko)
 * Gray Out Unused Values - [Vasily Kirichenko](https://github.com/vasily-kirichenko)
+* Unused Declarations Analyzer and Codefix - [Vasily Kirichenko](https://github.com/vasily-kirichenko)
+* Add reference to \<assembly\> analyzer and codefix - [Saul Rennison](https://github.com/saul)
 
 ### .NET Core Support
 

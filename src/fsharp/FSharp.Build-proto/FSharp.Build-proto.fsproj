@@ -34,26 +34,37 @@
     <Compile Include="..\FSharp.Build\Fsc.fs">
       <Link>Fsc.fs</Link>
     </Compile>
-    <CopyAndSubstituteText Include="..\FSharp.Build\Microsoft.FSharp.targets">
+    <CopyAndSubstituteText Include="..\FSharp.Build\Microsoft.FSharp.Targets">
       <Link>Microsoft.FSharp-proto.targets</Link>
       <TargetFilename>Microsoft.FSharp-proto.targets</TargetFilename>
       <Pattern1>{BuildSuffix}</Pattern1>
       <Replacement1>-proto</Replacement1>
     </CopyAndSubstituteText>
-    <CopyAndSubstituteText Include="..\FSharp.Build\Microsoft.Portable.FSharp.targets">
+    <CopyAndSubstituteText Include="..\FSharp.Build\Microsoft.Portable.FSharp.Targets">
       <Link>Microsoft.Portable.FSharp-proto.targets</Link>
       <TargetFilename>Microsoft.Portable.FSharp-proto.targets</TargetFilename>
+      <Pattern1>{BuildSuffix}</Pattern1>
+      <Replacement1>-proto</Replacement1>
+    </CopyAndSubstituteText>
+    <CopyAndSubstituteText Include="..\FSharp.Build\Microsoft.FSharp.NetSdk.props">
+      <Link>Microsoft.FSharp.NetSdk-proto.props</Link>
+      <TargetFilename>Microsoft.FSharp.NetSdk-proto.props</TargetFilename>
+      <Pattern1>{BuildSuffix}</Pattern1>
+      <Replacement1>-proto</Replacement1>
+    </CopyAndSubstituteText>
+    <CopyAndSubstituteText Include="..\FSharp.Build\Microsoft.FSharp.NetSdk.targets">
+      <Link>Microsoft.FSharp.NetSdk-proto.targets</Link>
+      <TargetFilename>Microsoft.FSharp.NetSdk-proto.targets</TargetFilename>
       <Pattern1>{BuildSuffix}</Pattern1>
       <Replacement1>-proto</Replacement1>
     </CopyAndSubstituteText>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
-    <Reference Include="$(FSharpCoreLkgPath)\FSharp.Core.dll" />
     <Reference Include="System" />
     <Reference Include="System.Numerics" />
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' != 'coreclr' AND '$(MonoPackaging)' != 'true' ">
+  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' != 'true' ">
     <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>
     </Reference>
@@ -66,8 +77,12 @@
     <Reference Include="Microsoft.Build.Tasks.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Tasks.Core.dll</HintPath>
     </Reference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
+      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
+      <Name>FSharp.Core</Name>
+    </ProjectReference>
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' != 'coreclr' AND '$(MonoPackaging)' == 'true' ">
+  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' == 'true' ">
     <Reference Include="Microsoft.Build.Framework, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
         <Private>True</Private>
     </Reference>

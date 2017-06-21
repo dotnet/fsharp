@@ -4,14 +4,13 @@
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\..\src</FSharpSourcesRoot>
     <ProjectLanguage>CSharp</ProjectLanguage>
-    <SIGN_WITH_MSFT_KEY>true</SIGN_WITH_MSFT_KEY>
     <MicroBuildAssemblyVersion>15.4.1.0</MicroBuildAssemblyVersion>
     <MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <TargetFramework Condition=" '$(TargetFramework)' == '' ">net40</TargetFramework>
-    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin</OutputPath>
+    <TargetDotnetProfile Condition=" '$(TargetDotnetProfile)' == '' ">net40</TargetDotnetProfile>
+    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetDotnetProfile)\bin</OutputPath>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{C4586A06-1402-48BC-8E35-A1B8642F895B}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -22,7 +21,6 @@
     <UseVsVersion>true</UseVsVersion>
     <DefineConstants>$(DefineConstants)</DefineConstants>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
-    <DefineConstants>$(DefineConstants);FSHARP_CORE_4_5</DefineConstants>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <ItemGroup>

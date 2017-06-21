@@ -13,11 +13,14 @@
     <NoWarn>$(NoWarn);62</NoWarn>
     <AssemblyName>fsiAnyCpu</AssemblyName>
     <BaseAddress>0x0A000000</BaseAddress>
-    <DefineConstants>EXTENSIONTYPING;COMPILER;$(DefineConstants)</DefineConstants>
+    <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
+    <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition="'$(TargetDotnetProfile)'=='net40'">FSI_SHADOW_COPY_REFERENCES;$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition="'$(TargetDotnetProfile)'=='net40'">FSI_SERVER;$(DefineConstants)</DefineConstants>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <Win32Resource>..\fsi\fsi.res</Win32Resource>
-    <TargetFrameworkVersion Condition="'$(TargetFramework)' != 'coreclr'">v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion Condition="'$(TargetDotnetProfile)' != 'coreclr'">v4.6</TargetFrameworkVersion>
   </PropertyGroup>
   <ItemGroup>
     <FilesToLocalize Include="$(OutDir)$(AssemblyName).exe">
@@ -27,33 +30,22 @@
 	  <InProject>false</InProject>
     </FilesToLocalize>
   </ItemGroup>
-  <!-- MonoDevelop likes these here to recognise the configurations -->
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' " />
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' " />
   <ItemGroup>
-    <FsSrGen Include="..\fsi\FSIstrings.txt">
-      <Link>FSIstrings.txt</Link>
-    </FsSrGen>
     <Compile Include="..\..\assemblyinfo\assemblyinfo.fsi.exe.fs">
       <Link>assemblyinfo.fsi.exe.fs</Link>
-    </Compile>
-    <Compile Include="..\InternalCollections.fsi">
-      <Link>InternalCollections.fsi</Link>
-    </Compile>
-    <Compile Include="..\InternalCollections.fs">
-      <Link>InternalCollections.fs</Link>
     </Compile>
     <Compile Include="..\fsi\console.fs">
       <Link>console.fs</Link>
     </Compile>
-    <Compile Include="..\fsi\fsi.fs">
-      <Link>fsi.fs</Link>
+    <Compile Include="..\fsi\fsimain.fs">
+      <Link>fsimain.fs</Link>
     </Compile>
     <None Include="..\fsi\fsiAnyCpu.exe.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>fsiAnyCpu.exe.config</Link>
     </None>
   </ItemGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
@@ -67,16 +59,16 @@
       <Project>{d5870cf0-ed51-4cbc-b3d7-6f56da84ac06}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\FSharp.Compiler\FSharp.Compiler.fsproj">
+    <ProjectReference Include="..\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj">
       <Project>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</Project>
-      <Name>FSharp.Compiler</Name>
+      <Name>FSharp.Compiler.Private</Name>
     </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" >
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
     </ProjectReference>
   </ItemGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
     <ItemGroup>
       <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).exe" />

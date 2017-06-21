@@ -14,8 +14,8 @@ open Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.QuickInfo
 
 open Microsoft.VisualStudio.Language.Intellisense
 open Microsoft.VisualStudio.Utilities
+open Microsoft.VisualStudio.PlatformUI
 
-open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler
 
 open Internal.Utilities.StructuredFormat
@@ -65,45 +65,59 @@ type internal QuickInfoViewProvider
         |> typeMap.Value.GetClassificationType
         |> formatMap.Value.GetTextProperties
     
-    let formatText (navigation: QuickInfoNavigation) (content: Layout.TaggedText seq) : IDeferredQuickInfoContent =
+    let formatText (navigation: QuickInfoNavigation) (content: #seq<Layout.TaggedText>) =
 
         let navigateAndDismiss range _ =
             navigation.NavigateTo range
             SessionHandling.currentSession |> Option.iter ( fun session -> session.Dismiss() )
 
-        let inlines = 
-            seq { 
-                for taggedText in content do
-                    let run = Documents.Run taggedText.Text
-                    let inl =
-                        match taggedText with
-                        | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->                        
-                            let h = Documents.Hyperlink(run, ToolTip = nav.Range.FileName)
-                            h.Click.Add <| navigateAndDismiss nav.Range
-                            h :> Documents.Inline
-                        | _ -> run :> _
-                    DependencyObjectExtensions.SetTextProperties (inl, layoutTagToFormatting taggedText.Tag)
-                    yield inl
-            }
+        let secondaryToolTip range =
+            let t = ToolTip(Content = navigation.RelativePath range)
+            DependencyObjectExtensions.SetDefaultTextProperties(t, formatMap.Value)
+            let color = VSColorTheme.GetThemedColor(EnvironmentColors.ToolTipBrushKey)
+            t.Background <- Media.SolidColorBrush(Media.Color.FromRgb(color.R, color.G, color.B))
+            t
 
-        let createTextLinks () =
-            let tb = TextBlock(TextWrapping = TextWrapping.Wrap, TextTrimming = TextTrimming.None)
-            DependencyObjectExtensions.SetDefaultTextProperties(tb, formatMap.Value)
-            tb.Inlines.AddRange inlines
-            if tb.Inlines.Count = 0 then tb.Visibility <- Visibility.Collapsed
-            tb.Resources.[typeof<Documents.Hyperlink>] <- getStyle()
-            tb :> FrameworkElement
-            
-        { new IDeferredQuickInfoContent with member x.Create() = createTextLinks() }
+        let toInline (taggedText: Layout.TaggedText) =
+            let run = Documents.Run taggedText.Text
+            let inl =
+                match taggedText with
+                | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->                        
+                    let h = Documents.Hyperlink(run, ToolTip = secondaryToolTip nav.Range)
+                    h.Click.Add <| navigateAndDismiss nav.Range
+                    h :> Documents.Inline
+                | _ -> run :> _
+            DependencyObjectExtensions.SetTextProperties (inl, layoutTagToFormatting taggedText.Tag)
+            inl
 
-    let empty = 
-        { new IDeferredQuickInfoContent with 
-            member x.Create() = TextBlock(Visibility = Visibility.Collapsed) :> FrameworkElement }
+        let tb = TextBlock(TextWrapping = TextWrapping.Wrap, TextTrimming = TextTrimming.None)
+        DependencyObjectExtensions.SetDefaultTextProperties(tb, formatMap.Value)
+        tb.Inlines.AddRange(content |> Seq.map toInline)
+        if tb.Inlines.Count = 0 then tb.Visibility <- Visibility.Collapsed
+        tb.Resources.[typeof<Documents.Hyperlink>] <- getStyle()
+        tb
 
-    let createDeferredContent (symbolGlyph, mainDescription, documentation) =
-        QuickInfoDisplayDeferredContent(symbolGlyph, null, mainDescription, documentation, empty, empty, empty, empty)
+    let wrap (tb: TextBlock) =
+        // Formula to make max width of the TextBlock proportional to the tooltip font size.
+        // We need it, because the ascii-art divider inserted into xml documentation is of variable length and could wrap otherwise
+        let maxWidth = formatMap.Value.DefaultTextProperties.FontRenderingEmSize * 60.0
+        tb.MaxWidth <- maxWidth
+        tb.HorizontalAlignment <- HorizontalAlignment.Left
+        tb
 
-    member __.ProvideContent(glyph: Glyph, description: TaggedText seq, documentation: TaggedText seq, navigation: QuickInfoNavigation) =
-        let navigableText = formatText navigation
+    let defer toTextBlock layout =           
+        { new IDeferredQuickInfoContent with member __.Create() = upcast toTextBlock layout }
+
+    member __.ProvideContent(glyph: Glyph, description, documentation, typeParameterMap, usage, exceptions, navigation: QuickInfoNavigation) =
+        let navigable = defer (formatText navigation)
+        let wrapped = defer (formatText navigation >> wrap)
+        let empty = defer (fun () -> TextBlock(Visibility = Visibility.Collapsed)) ()
         let glyphContent = SymbolGlyphDeferredContent(glyph, glyphService)
-        createDeferredContent(glyphContent, navigableText description, navigableText documentation)
+        QuickInfoDisplayDeferredContent
+            (glyphContent, null, 
+             mainDescription = navigable description, 
+             documentation = wrapped documentation,
+             typeParameterMap = navigable typeParameterMap, 
+             anonymousTypes = empty, 
+             usageText = navigable usage, 
+             exceptionText = navigable exceptions)

@@ -30,8 +30,10 @@ type internal FSharpCompletionProvider
         projectInfoManager: ProjectInfoManager,
         assemblyContentProvider: AssemblyContentProvider
     ) =
+
     inherit CompletionProvider()
 
+    static let userOpName = "CompletionProvider"
     static let completionTriggers = [| '.' |]
     static let declarationItemsCache = ConditionalWeakTable<string, FSharpDeclarationListItem>()
     static let [<Literal>] NameInCodePropName = "NameInCode"
@@ -49,11 +51,13 @@ type internal FSharpCompletionProvider
                 .AddProperty("description", description)
                 .AddProperty(IsKeywordPropName, ""))
     
+    let checker = checkerProvider.Checker
+
     let xmlMemberIndexService = serviceProvider.GetService(typeof<IVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
     
     static let noCommitOnSpaceRules = 
-        CompletionItemRules.Default.WithCommitCharacterRule(CharacterSetModificationRule.Create(CharacterSetModificationKind.Remove, ' ', '.', '<', '>', '(', ')', '!'))
+        CompletionItemRules.Default.WithCommitCharacterRule(CharacterSetModificationRule.Create(CharacterSetModificationKind.Remove, ' ', '.', '<', '>', '(', ')', '!', ':'))
     
     static let getRules() = if Settings.IntelliSense.ShowAfterCharIsTyped then noCommitOnSpaceRules else CompletionItemRules.Default
 
@@ -85,7 +89,7 @@ type internal FSharpCompletionProvider
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, 
                                              textVersionHash: int, getAllSymbols: unit -> AssemblySymbol list) = 
         asyncMaybe {
-            let! parseResults, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)
+            let! parseResults, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true, userOpName = userOpName)
 
             //#if DEBUG
             //Logging.Logging.logInfof "AST:\n%+A" parsedInput
@@ -101,14 +105,8 @@ type internal FSharpCompletionProvider
             let getAllSymbols() = 
                 getAllSymbols() |> List.filter (fun entity -> entity.FullName.Contains "." && not (PrettyNaming.IsOperatorName entity.Symbol.DisplayName))
 
-            //#if DEBUG
-            //let kprintfEntity = allEntities |> List.filter (fun x -> x.FullName.EndsWith "foo")
-            //Logging.Logging.logInfof "%+A" kprintfEntity
-            //let _x = kprintfEntity
-            //#endif
-
             let! declarations =
-                checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLineColumn, caretLine.ToString(), qualifyingNames, partialName, getAllSymbols) |> liftAsync
+                checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLineColumn, caretLine.ToString(), qualifyingNames, partialName, getAllSymbols, userOpName=userOpName) |> liftAsync
             
             let results = List<Completion.CompletionItem>()
             
@@ -142,7 +140,7 @@ type internal FSharpCompletionProvider
                     match declItem.NamespaceToOpen with
                     | Some namespaceToOpen -> sprintf "%s (open %s)" declItem.Name namespaceToOpen
                     | _ -> declItem.Name
-                
+                    
                 let filterText =
                     match declItem.NamespaceToOpen, declItem.Name.Split '.' with
                     // There is no namespace to open and the item name does not contain dots, so we don't need to pass special FilterText to Roslyn.
@@ -214,13 +212,13 @@ type internal FSharpCompletionProvider
             do! Option.guard (CompletionUtils.shouldProvideCompletion(document.Id, document.FilePath, defines, sourceText, context.Position))
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
             let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken)
-            let! _, _, fileCheckResults = checkerProvider.Checker.ParseAndCheckDocument(document, options, true)
+            let! _, _, fileCheckResults = checker.ParseAndCheckDocument(document, options, true, userOpName=userOpName)
             let getAllSymbols() =
                 if Settings.IntelliSense.ShowAllSymbols
                 then assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies(fileCheckResults)
                 else []
             let! results = 
-                FSharpCompletionProvider.ProvideCompletionsAsyncAux(checkerProvider.Checker, sourceText, context.Position, options, 
+                FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, sourceText, context.Position, options, 
                                                                     document.FilePath, textVersion.GetHashCode(), getAllSymbols)
             context.AddItems(results)
         } |> Async.Ignore |> RoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
@@ -271,7 +269,7 @@ type internal FSharpCompletionProvider
                     let textWithItemCommitted = sourceText.WithChanges(TextChange(item.Span, nameInCode))
                     let line = sourceText.Lines.GetLineFromPosition(item.Span.Start)
                     let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
-                    let! parsedInput = checkerProvider.Checker.ParseDocument(document, options)
+                    let! parsedInput = checker.ParseDocument(document, options, sourceText, userOpName)
                     let fullNameIdents = fullName |> Option.map (fun x -> x.Split '.') |> Option.defaultValue [||]
                     
                     let insertionPoint = 

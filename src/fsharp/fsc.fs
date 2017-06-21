@@ -86,15 +86,12 @@ type ErrorLoggerUpToMaxErrors(tcConfigB: TcConfigBuilder, exiter: Exiter, nameFo
 
         errors <- errors + 1
 
-        match err.Exception with 
-        | InternalError _ 
-        | Failure _ 
-        | :? KeyNotFoundException -> 
-            match tcConfigB.simulateException with
-            | Some _ -> () // Don't show an assert for simulateException case so that unittests can run without an assert dialog.                     
-            | None -> Debug.Assert(false, sprintf "Bug seen in compiler: %s" (err.ToString()))
-        | _ -> 
-            ()
+        match err.Exception, tcConfigB.simulateException with 
+        | InternalError (msg, _), None 
+        | Failure msg, None -> Debug.Assert(false, sprintf "Bug in compiler: %s\n%s" msg (err.Exception.ToString()))
+        | :? KeyNotFoundException, None -> Debug.Assert(false, sprintf "Lookup exception in compiler: %s" (err.Exception.ToString()))
+        | _ ->  ()
+
       elif ReportWarning (tcConfigB.globalWarnLevel, tcConfigB.specificWarnOff, tcConfigB.specificWarnOn) err then
           x.HandleIssue(tcConfigB, err, isError)
     
@@ -247,10 +244,13 @@ let ProcessCommandLineFlags (tcConfigB: TcConfigBuilder, setProcessThreadLocals,
     ParseCompilerOptions (collect, GetCoreFscCompilerOptions tcConfigB, List.tail (PostProcessCompilerArgs abbrevArgs argv))
 
     if not (tcConfigB.portablePDB || tcConfigB.embeddedPDB) then
-        if tcConfigB.embedAllSource || (tcConfigB.embedSourceList |> List.length <> 0) then
+        if tcConfigB.embedAllSource || (tcConfigB.embedSourceList |> isNil |> not) then
             error(Error(FSComp.SR.optsEmbeddedSourceRequirePortablePDBs(), rangeCmdArgs))
         if not (String.IsNullOrEmpty(tcConfigB.sourceLink)) then
             error(Error(FSComp.SR.optsSourceLinkRequirePortablePDBs(), rangeCmdArgs))
+
+    if tcConfigB.deterministic && tcConfigB.debuginfo && (tcConfigB.portablePDB = false) then
+      error(Error(FSComp.SR.fscDeterministicDebugRequiresPortablePdb(), rangeCmdArgs))
 
     let inputFiles = List.rev !inputFilesRef
 
@@ -424,20 +424,7 @@ module XmlDocWriter =
         fprintfn os "</doc>"   
 
 
-//----------------------------------------------------------------------------
-// DefaultFSharpBinariesDir
-//----------------------------------------------------------------------------
-
-let DefaultFSharpBinariesDir = 
-#if FX_NO_APP_DOMAINS
-    System.AppContext.BaseDirectory
-#else
-    let exeName = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppDomain.CurrentDomain.FriendlyName)  
-    Filename.directoryName exeName
-#endif
-
-let outpath outfile extn =
-  String.concat "." (["out"; Filename.chopExtension (Filename.fileNameOfPath outfile); extn])
+let DefaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(FSharpEnvironment.tryCurrentDomain()).Value
 
 //----------------------------------------------------------------------------
 // GenerateInterfaceData, EncodeInterfaceData
@@ -720,9 +707,11 @@ module AttributeHelpers =
             None
 
     // Try to find an AssemblyVersion attribute 
-    let TryFindVersionAttribute g attrib attribName attribs =
+    let TryFindVersionAttribute g attrib attribName attribs deterministic =
         match TryFindStringAttribute g attrib attribs with
         | Some versionString ->
+             if deterministic && versionString.Contains("*") then
+                 errorR(Error(FSComp.SR.fscAssemblyWildcardAndDeterminism(attribName, versionString), Range.rangeStartup))
              try Some (IL.parseILVersion versionString)
              with e -> 
                  warning(Error(FSComp.SR.fscBadAssemblyVersion(attribName, versionString), Range.rangeStartup))
@@ -774,9 +763,9 @@ module MainModuleBuilder =
                           CustomAttrs = mkILCustomAttrs List.empty<ILAttribute>  }) |> 
           Seq.toList
 
-    let createSystemNumericsExportList (tcGlobals: TcGlobals) (tcImports:TcImports) =
+    let createSystemNumericsExportList (tcConfig: TcConfig) (tcImports:TcImports) =
         let refNumericsDllName =
-            if tcGlobals.usesMscorlib then "System.Numerics"
+            if (tcConfig.primaryAssembly.Name = "mscorlib") then "System.Numerics"
             else "System.Runtime.Numerics"
         let numericsAssemblyRef =
             match tcImports.GetImportedAssemblies() |> List.tryFind<ImportedAssembly>(fun a -> a.FSharpViewOfMetadata.AssemblyName = refNumericsDllName) with
@@ -855,7 +844,7 @@ module MainModuleBuilder =
             let exportedTypesList = 
                 if (tcConfig.compilingFslib && tcConfig.compilingFslib40) then 
                    (List.append (createMscorlibExportList tcGlobals)
-                                (if tcConfig.compilingFslibNoBigInt then [] else (createSystemNumericsExportList tcGlobals tcImports))
+                                (if tcConfig.compilingFslibNoBigInt then [] else (createSystemNumericsExportList tcConfig tcImports))
                    )
                 else
                     []
@@ -1564,6 +1553,13 @@ let ValidateKeySigningAttributes (tcConfig : TcConfig, tcGlobals, topAttrs) =
     
     StrongNameSigningInfo (delaysign, tcConfig.publicsign, signer, container)
 
+/// Checks if specified file name is absolute path. If yes - returns the name as is, otherwise makes full path using tcConfig.implicitIncludeDir as base.
+let expandFileNameIfNeeded (tcConfig : TcConfig) name = 
+    if FileSystem.IsPathRootedShim name then 
+        name 
+    else 
+        Path.Combine(tcConfig.implicitIncludeDir, name)
+
 let GetStrongNameSigner signingInfo = 
         let (StrongNameSigningInfo(delaysign, publicsign, signer, container)) = signingInfo
         // REVIEW: favor the container over the key file - C# appears to do this
@@ -1625,7 +1621,7 @@ let CopyFSharpCore(outFile: string, referencedDlls: AssemblyReference list) =
 [<NoEquality; NoComparison>]
 type Args<'T> = Args  of 'T
 
-let main0(ctok, argv, referenceResolver, bannerAlreadyPrinted, exiter:Exiter, errorLoggerProvider : ErrorLoggerProvider, disposables : DisposablesTracker) = 
+let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, openBinariesInMemory:bool, defaultCopyFSharpCore: bool, exiter:Exiter, errorLoggerProvider : ErrorLoggerProvider, disposables : DisposablesTracker) = 
 
     // See Bug 735819 
     let lcidFromCodePage = 
@@ -1641,6 +1637,7 @@ let main0(ctok, argv, referenceResolver, bannerAlreadyPrinted, exiter:Exiter, er
 
     let directoryBuildingFrom = Directory.GetCurrentDirectory()
     let setProcessThreadLocals tcConfigB =
+                    tcConfigB.openBinariesInMemory <- openBinariesInMemory
 #if PREFERRED_UI_LANG
                     match tcConfigB.preferredUiLang with
                     | Some s -> System.Globalization.CultureInfo.CurrentUICulture <- new System.Globalization.CultureInfo(s)
@@ -1660,7 +1657,7 @@ let main0(ctok, argv, referenceResolver, bannerAlreadyPrinted, exiter:Exiter, er
 
     let optimizeForMemory = false // optimizeForMemory - fsc.exe can use as much memory as it likes to try to compile as fast as possible
 
-    let tcConfigB = TcConfigBuilder.CreateNew(referenceResolver, DefaultFSharpBinariesDir, optimizeForMemory, directoryBuildingFrom, isInteractive=false, isInvalidationSupported=false)
+    let tcConfigB = TcConfigBuilder.CreateNew(legacyReferenceResolver, DefaultFSharpBinariesDir, optimizeForMemory, directoryBuildingFrom, isInteractive=false, isInvalidationSupported=false, defaultCopyFSharpCore=defaultCopyFSharpCore)
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
     SetOptimizeSwitch tcConfigB OptionSwitch.On
     SetDebugSwitch    tcConfigB None OptionSwitch.Off
@@ -1818,7 +1815,7 @@ let main1(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
 
     // Try to find an AssemblyVersion attribute 
     let assemVerFromAttrib = 
-        match AttributeHelpers.TryFindVersionAttribute tcGlobals "System.Reflection.AssemblyVersionAttribute" "AssemblyVersionAttribute" topAttrs.assemblyAttrs with
+        match AttributeHelpers.TryFindVersionAttribute tcGlobals "System.Reflection.AssemblyVersionAttribute" "AssemblyVersionAttribute" topAttrs.assemblyAttrs tcConfig.deterministic with
         | Some v -> 
            match tcConfig.version with 
            | VersionNone -> Some v
@@ -1845,6 +1842,76 @@ let main1(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
 
     // Pass on only the minimum information required for the next phase
     Args (ctok, tcConfig, tcImports, frameworkTcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedImplFiles, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter)
+
+
+// set up typecheck for given AST without parsing any command line parameters
+let main1OfAst (ctok, legacyReferenceResolver, openBinariesInMemory, assemblyName, target, outfile, pdbFile, dllReferences, noframework, exiter, errorLoggerProvider: ErrorLoggerProvider, inputs : ParsedInput list) =
+
+    let tcConfigB = TcConfigBuilder.CreateNew(legacyReferenceResolver, DefaultFSharpBinariesDir, (*optimizeForMemory*) false, Directory.GetCurrentDirectory(), isInteractive=false, isInvalidationSupported=false, defaultCopyFSharpCore=false)
+    tcConfigB.openBinariesInMemory <- openBinariesInMemory
+    tcConfigB.framework <- not noframework 
+    // Preset: --optimize+ -g --tailcalls+ (see 4505)
+    SetOptimizeSwitch tcConfigB OptionSwitch.On
+    SetDebugSwitch    tcConfigB None (
+        match pdbFile with
+        | Some _ -> OptionSwitch.On
+        | None -> OptionSwitch.Off)
+    SetTailcallSwitch tcConfigB OptionSwitch.On
+    tcConfigB.target <- target
+    tcConfigB.sqmNumOfSourceFiles <- 1
+        
+    let errorLogger = errorLoggerProvider.CreateErrorLoggerUpToMaxErrors (tcConfigB, exiter)
+
+    tcConfigB.conditionalCompilationDefines <- "COMPILED" :: tcConfigB.conditionalCompilationDefines
+
+    // append assembly dependencies
+    dllReferences |> List.iter (fun ref -> tcConfigB.AddReferencedAssemblyByPath(rangeStartup,ref))
+
+    // If there's a problem building TcConfig, abort    
+    let tcConfig = 
+        try
+            TcConfig.Create(tcConfigB,validate=false)
+        with e ->
+            exiter.Exit 1
+    
+    let foundationalTcConfigP = TcConfigProvider.Constant(tcConfig)
+    let sysRes,otherRes,knownUnresolved = TcAssemblyResolutions.SplitNonFoundationalResolutions(ctok, tcConfig)
+    let tcGlobals,frameworkTcImports = TcImports.BuildFrameworkTcImports (ctok, foundationalTcConfigP, sysRes, otherRes) |> Cancellable.runWithoutCancellation
+
+    use unwindParsePhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.Parse) 
+
+    let meta = Directory.GetCurrentDirectory()
+    let tcConfig = (tcConfig,inputs) ||> List.fold (fun tcc inp -> ApplyMetaCommandsFromInputToTcConfig (tcc, inp,meta))
+    let tcConfigP = TcConfigProvider.Constant(tcConfig)
+
+    let tcGlobals,tcImports =  
+        let tcImports = TcImports.BuildNonFrameworkTcImports(ctok, tcConfigP, tcGlobals, frameworkTcImports, otherRes,knownUnresolved) |> Cancellable.runWithoutCancellation
+        tcGlobals,tcImports
+
+    use unwindParsePhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.TypeCheck)            
+    let tcEnv0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
+
+    let tcState,topAttrs,typedAssembly,_tcEnvAtEnd = 
+        TypeCheck(ctok, tcConfig, tcImports, tcGlobals, errorLogger, assemblyName, NiceNameGenerator(), tcEnv0, inputs,exiter)
+
+    let generatedCcu = tcState.Ccu
+
+    use unwindPhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.CodeGen)
+    let signingInfo = ValidateKeySigningAttributes (tcConfig, tcGlobals, topAttrs)
+
+    // Try to find an AssemblyVersion attribute 
+    let assemVerFromAttrib = 
+        match AttributeHelpers.TryFindVersionAttribute tcGlobals "System.Reflection.AssemblyVersionAttribute" "AssemblyVersionAttribute" topAttrs.assemblyAttrs tcConfig.deterministic with
+        | Some v -> 
+            match tcConfig.version with 
+            | VersionNone -> Some v
+            | _ -> warning(Error(FSComp.SR.fscAssemblyVersionAttributeIgnored(),Range.range0)); None
+        | _ -> None
+
+    // Pass on only the minimum information required for the next phase to ensure GC kicks in.
+    // In principle the JIT should be able to do good liveness analysis to clean things up, but the
+    // data structures involved here are so large we can't take the risk.
+    Args(ctok, tcConfig, tcImports, frameworkTcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedAssembly, topAttrs, pdbFile, assemblyName, assemVerFromAttrib, signingInfo ,exiter)
 
   
 /// Phase 2a: encode signature data, optimize, encode optimization data
@@ -1883,7 +1950,11 @@ let main2a(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlo
     Args (ctok, tcConfig, tcImports, tcGlobals, errorLogger, generatedCcu, outfile, optimizedImpls, topAttrs, pdbfile, assemblyName, (sigDataAttributes, sigDataResources), optDataResources, assemVerFromAttrib, signingInfo, metadataVersion, exiter)
 
 /// Phase 2b: IL code generation
-let main2b(Args (ctok, tcConfig: TcConfig, tcImports, tcGlobals: TcGlobals, errorLogger, generatedCcu: CcuThunk, outfile, optimizedImpls, topAttrs, pdbfile, assemblyName, idata, optDataResources, assemVerFromAttrib, signingInfo, metadataVersion, exiter: Exiter)) = 
+let main2b (tcImportsCapture,dynamicAssemblyCreator) (Args (ctok, tcConfig: TcConfig, tcImports, tcGlobals: TcGlobals, errorLogger, generatedCcu: CcuThunk, outfile, optimizedImpls, topAttrs, pdbfile, assemblyName, idata, optDataResources, assemVerFromAttrib, signingInfo, metadataVersion, exiter: Exiter)) = 
+
+    match tcImportsCapture with 
+    | None -> ()
+    | Some f -> f tcImports
 
     // Compute a static linker. 
     let ilGlobals = tcGlobals.ilg
@@ -1899,7 +1970,7 @@ let main2b(Args (ctok, tcConfig: TcConfig, tcImports, tcGlobals: TcGlobals, erro
     // Check if System.SerializableAttribute exists in mscorlib.dll, 
     // so that make sure the compiler only emits "serializable" bit into IL metadata when it is available.
     // Note that SerializableAttribute may be relocated in the future but now resides in mscorlib.
-    let codegenResults = GenerateIlxCode (IlWriteBackend, false, false, tcConfig, topAttrs, optimizedImpls, generatedCcu.AssemblyName, ilxGenerator)
+    let codegenResults = GenerateIlxCode ((if Option.isSome dynamicAssemblyCreator then IlReflectBackend else IlWriteBackend), Option.isSome dynamicAssemblyCreator, false, tcConfig, topAttrs, optimizedImpls, generatedCcu.AssemblyName, ilxGenerator)
     let casApplied = new Dictionary<Stamp, bool>()
     let securityAttrs, topAssemblyAttrs = topAttrs.assemblyAttrs |> List.partition (fun a -> TypeChecker.IsSecurityAttribute tcGlobals (tcImports.GetImportMap()) casApplied a rangeStartup)
     // remove any security attributes from the top-level assembly attribute list
@@ -1912,10 +1983,10 @@ let main2b(Args (ctok, tcConfig: TcConfig, tcImports, tcGlobals: TcGlobals, erro
     AbortOnError(errorLogger, exiter)
     
     // Pass on only the minimum information required for the next phase
-    Args (ctok, tcConfig, errorLogger, staticLinker, ilGlobals, outfile, pdbfile, ilxMainModule, signingInfo, exiter)
+    Args (ctok, tcConfig, tcGlobals, errorLogger, staticLinker, outfile, pdbfile, ilxMainModule, signingInfo, exiter)
 
 /// Phase 3: static linking
-let main3(Args (ctok, tcConfig, errorLogger: ErrorLogger, staticLinker, ilGlobals, outfile, pdbfile, ilxMainModule, signingInfo, exiter:Exiter)) = 
+let main3(Args (ctok, tcConfig, tcGlobals, errorLogger: ErrorLogger, staticLinker, outfile, pdbfile, ilxMainModule, signingInfo, exiter:Exiter)) = 
         
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Output
 
@@ -1929,10 +2000,10 @@ let main3(Args (ctok, tcConfig, errorLogger: ErrorLogger, staticLinker, ilGlobal
     AbortOnError(errorLogger, exiter)
         
     // Pass on only the minimum information required for the next phase
-    Args (ctok, tcConfig, errorLogger, ilGlobals, ilxMainModule, outfile, pdbfile, signingInfo, exiter)
+    Args (ctok, tcConfig, errorLogger, tcGlobals, ilxMainModule, outfile, pdbfile, signingInfo, exiter)
 
 /// Phase 4: write the binaries
-let main4 (Args (ctok, tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainModule, outfile, pdbfile, signingInfo, exiter: Exiter)) = 
+let main4 dynamicAssemblyCreator (Args (ctok, tcConfig, errorLogger: ErrorLogger, tcGlobals: TcGlobals, ilxMainModule, outfile, pdbfile, signingInfo, exiter: Exiter)) = 
     ReportTime tcConfig "Write .NET Binary"
     use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Output
     let outfile = tcConfig.MakePathAbsolute outfile
@@ -1940,14 +2011,17 @@ let main4 (Args (ctok, tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainMod
     DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
 
     let pdbfile = pdbfile |> Option.map (tcConfig.MakePathAbsolute >> Path.GetFullPath)
-    begin
+
+    match dynamicAssemblyCreator with 
+    | None -> 
         try
             try 
                 ILBinaryWriter.WriteILBinary 
                  (outfile, 
-                  { ilg = ilGlobals
+                  { ilg = tcGlobals.ilg
                     pdbfile=pdbfile
                     emitTailcalls = tcConfig.emitTailcalls
+                    deterministic = tcConfig.deterministic
                     showTimes = tcConfig.showTimes
                     portablePDB = tcConfig.portablePDB
                     embeddedPDB = tcConfig.embeddedPDB
@@ -1962,7 +2036,8 @@ let main4 (Args (ctok, tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainMod
         with e -> 
             errorRecoveryNoRange e
             exiter.Exit 1 
-    end
+    | Some da -> da (tcGlobals,outfile,ilxMainModule)
+
     AbortOnError(errorLogger, exiter)
 
     // Don't copy referenced FSharp.core.dll if we are building FSharp.Core.dll
@@ -1976,22 +2051,27 @@ let main4 (Args (ctok, tcConfig, errorLogger: ErrorLogger, ilGlobals, ilxMainMod
 //-----------------------------------------------------------------------------
 
 /// Entry point typecheckAndCompile
-let typecheckAndCompile (argv, referenceResolver, bannerAlreadyPrinted, exiter:Exiter, errorLoggerProvider) =
-
-    // Explanation: Compilation happens on whichever thread calls this function.
-    let ctok = AssumeCompilationThreadWithoutEvidence ()
+let typecheckAndCompile (ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, openBinariesInMemory, defaultCopyFSharpCore, exiter:Exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator) =
 
     use d = new DisposablesTracker()
     use e = new SaveAndRestoreConsoleEncoding()
 
-    main0(ctok, argv, referenceResolver, bannerAlreadyPrinted, exiter, errorLoggerProvider, d)
+    main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, openBinariesInMemory, defaultCopyFSharpCore, exiter, errorLoggerProvider, d)
     |> main1
     |> main2a
-    |> main2b
+    |> main2b (tcImportsCapture,dynamicAssemblyCreator)
     |> main3 
-    |> main4
+    |> main4 dynamicAssemblyCreator
 
-/// Entry point (with ConsoleLoggerProvider)
-let mainCompile (argv, referenceResolver, bannerAlreadyPrinted, exiter:Exiter) = 
-    typecheckAndCompile(argv, referenceResolver, bannerAlreadyPrinted, exiter, ConsoleLoggerProvider())
+
+let compileOfAst (ctok, legacyReferenceResolver, openBinariesInMemory, assemblyName, target, outFile, pdbFile, dllReferences, noframework, exiter, errorLoggerProvider, inputs, tcImportsCapture, dynamicAssemblyCreator) = 
+    main1OfAst (ctok, legacyReferenceResolver, openBinariesInMemory, assemblyName, target, outFile, pdbFile, dllReferences, noframework, exiter, errorLoggerProvider, inputs)
+    |> main2a
+    |> main2b (tcImportsCapture, dynamicAssemblyCreator)
+    |> main3
+    |> main4 dynamicAssemblyCreator
+
+let mainCompile (ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, openBinariesInMemory, defaultCopyFSharpCore, exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator) = 
+    //System.Runtime.GCSettings.LatencyMode <- System.Runtime.GCLatencyMode.Batch
+    typecheckAndCompile(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, openBinariesInMemory, defaultCopyFSharpCore, exiter, errorLoggerProvider, tcImportsCapture, dynamicAssemblyCreator)
 

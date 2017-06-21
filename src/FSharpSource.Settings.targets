@@ -21,7 +21,7 @@
   <PropertyGroup>
     <!-- Settings used all the time -->
     <Tailcalls>true</Tailcalls>
-    <TargetFramework Condition="'$(TargetFramework)'==''">net40</TargetFramework>
+    <TargetDotnetProfile Condition="'$(TargetDotnetProfile)'==''">net40</TargetDotnetProfile>
 
     <!-- Currently always use .NET Framwork proto compiler -->
     <ProtoFlavour Condition="'$(ProtoFlavour)' == ''">net40</ProtoFlavour>
@@ -31,17 +31,23 @@
     <BuildToolsTargets45>true</BuildToolsTargets45>
     <WarningsAsErrors />
     <FX_NO_LOADER Condition=" '$(FX_NO_LOADER)'==''">false</FX_NO_LOADER>
-    
+
     <RoslynVersion>2.0.0</RoslynVersion>
     <RoslynVSBinariesVersion>15.0</RoslynVSBinariesVersion>
     <RoslynVSPackagesVersion>15.0.26201</RoslynVSPackagesVersion>
-    <!--<VSSDK_BUILDTOOLS_VERSION>Microsoft.VSSDK.BuildTools.15.0.26124-RC3</VSSDK_BUILDTOOLS_VERSION>-->
-    <!--<VSSDK_BUILDTOOLS_VERSION>Microsoft.VSSDK.BuildTools.$(RoslynVSPackagesVersion)</VSSDK_BUILDTOOLS_VERSION> -->
-    <VSSDK_BUILDTOOLS_VERSION>Microsoft.VSSDK.BuildTools.15.0.26201</VSSDK_BUILDTOOLS_VERSION> 
+    <VSSDK_BUILDTOOLS_VERSION>Microsoft.VSSDK.BuildTools.15.0.26201</VSSDK_BUILDTOOLS_VERSION>
 
-    <!-- Always qualify the IntermediateOutputPath by the TargetFramework if any exists -->
-    <IntermediateOutputPath>obj\$(Configuration)\$(TargetFramework)\</IntermediateOutputPath>
-    <IntermediateOutputPath Condition="'$(PortableProfileBeingReferenced)' != ''">obj\$(Configuration)\$(TargetFramework)\$(PortableProfileBeingReferenced)\</IntermediateOutputPath>
+    <MicrosoftVisualStudioThreadingVersion>15.0.240</MicrosoftVisualStudioThreadingVersion>
+    <MicrosoftVisualStudioValidationVersion>15.0.82</MicrosoftVisualStudioValidationVersion>
+
+    <!-- Always qualify the IntermediateOutputPath by the TargetDotnetProfile if any exists -->
+    <IntermediateOutputPath>obj\$(Configuration)\$(TargetDotnetProfile)\</IntermediateOutputPath>
+    <IntermediateOutputPath Condition="'$(PortableProfileBeingReferenced)' != ''">obj\$(Configuration)\$(TargetDotnetProfile)\$(PortableProfileBeingReferenced)\</IntermediateOutputPath>
+
+    <FSharpCore41TargetVersion>4.1.18</FSharpCore41TargetVersion>
+    <FSharpCore41FrozenPortableVersion>4.1.20</FSharpCore41FrozenPortableVersion>
+    <FSharpCore41FrozenPortableTargetVersion>4.1.21</FSharpCore41FrozenPortableTargetVersion>
+    <FSharpCore42TargetVersion>4.2.2</FSharpCore42TargetVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(MonoPackaging)' != 'true' AND '$(OS)' != 'Unix'">
@@ -72,7 +78,6 @@
     <EmbedAllSource Condition=" '$(DebugType)' == 'portable' or '$(DebugType)' == 'embedded' ">true</EmbedAllSource>
     <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">DEBUG;TRACE;CODE_ANALYSIS;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">DEBUG=True,TRACE=True,CODE_ANALYSIS=True,$(DefineConstants)</DefineConstants>
-    <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">false</SIGN_WITH_MSFT_KEY>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
@@ -84,7 +89,6 @@
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
     <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">TRACE;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">TRACE=True,$(DefineConstants)</DefineConstants>
-    <SIGN_WITH_MSFT_KEY Condition=" '$(SIGN_WITH_MSFT_KEY)' == '' ">false</SIGN_WITH_MSFT_KEY>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)'=='Proto'">
@@ -140,7 +144,7 @@
     <FsiToolPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.5\tools</FsiToolPath>
   </PropertyGroup>
 
-  <Import Project="../Tools/Build.Common.props" Condition="'$(TargetFramework)'=='coreclr'"/>
+  <Import Project="../Tools/Build.Common.props" Condition="'$(TargetDotnetProfile)'=='coreclr'"/>
   <Import Project="$(BuildVersionFilePath)"     Condition="Exists('$(BuildVersionFilePath)')" />
 
 </Project>

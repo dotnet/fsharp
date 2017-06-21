@@ -1,11 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 // This file is compiled 3(!) times in the codebase
-//    - as the internal implementation of printf '%A' formatting 
-//           defines: RUNTIME
-//    - as the internal implementation of structured formatting in FSharp.Compiler.dll 
+//    - as the internal implementation of printf '%A' formatting in FSharp.Core
+//    - as the internal implementation of structured formatting in the compiler and F# Interactive
 //           defines: COMPILER 
-//           NOTE: this implementation is used by fsi.exe. This is very important.
 //
 // The one implementation file is used because we very much want to keep the implementations of
 // structured formatting the same for fsi.exe and '%A' printing. However fsi.exe may have
@@ -17,17 +15,10 @@
 #nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
 
 #if COMPILER
-// FSharp.Compiler-proto.dll:
-// FSharp.Compiler.dll:
 namespace Internal.Utilities.StructuredFormat
 #else
-#if RUNTIME 
 // FSharp.Core.dll:
 namespace Microsoft.FSharp.Text.StructuredPrintfImpl
-#else
-// Powerpack: 
-namespace Microsoft.FSharp.Text.StructuredFormat
-#endif
 #endif
 
     // Breakable block layout implementation.
@@ -53,11 +44,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #endif
 
     [<StructuralEquality; NoComparison>]
-#if COMPILER
-    type internal LayoutTag =
-#else
     type LayoutTag =
-#endif
         | ActivePatternCase
         | ActivePatternResult
         | Alias
@@ -92,19 +79,11 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         | UnknownType
         | UnknownEntity
 
-#if COMPILER
-    type internal TaggedText =
-#else
     type TaggedText =
-#endif
         abstract Tag: LayoutTag
         abstract Text: string
-    
-#if COMPILER
-    type internal TaggedTextWriter =
-#else
+
     type TaggedTextWriter =
-#endif
         abstract Write: t: TaggedText -> unit
         abstract WriteLine: unit -> unit
 
@@ -112,11 +91,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     ///  - unbreakable, or
     ///  - breakable, and if broken the second block has a given indentation.
     [<StructuralEquality; NoComparison>]
-#if COMPILER
-    type internal Joint =
-#else
     type Joint =
-#endif
      | Unbreakable
      | Breakable of int
      | Broken of int
@@ -126,43 +101,23 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     ///
     /// If either juxt flag is true, then no space between words.
     [<NoEquality; NoComparison>]
-#if COMPILER
-    type internal Layout =
-#else
     type Layout =
-#endif
      | ObjLeaf of bool * obj * bool
      | Leaf of bool * TaggedText * bool
      | Node of bool * layout * bool * layout * bool * joint
      | Attr of string * (string * string) list * layout
 
-#if COMPILER
-    and internal layout = Layout
-#else
     and layout = Layout
-#endif
 
-#if COMPILER
-    and internal joint = Joint
-#else
     and joint = Joint
-#endif
 
     [<NoEquality; NoComparison>]
-#if COMPILER
-    type internal IEnvironment = 
-#else
     type IEnvironment = 
-#endif
         abstract GetLayout : obj -> layout
         abstract MaxColumns : int
         abstract MaxRows : int
 
-#if COMPILER 
-    module internal TaggedTextOps =
-#else
     module TaggedTextOps =
-#endif
         let tag tag text = 
           { new TaggedText with 
             member x.Tag = tag
@@ -248,11 +203,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             let arrow = tagPunctuation "->"
             let questionMark = tagPunctuation "?"
      
-#if COMPILER
-    module internal LayoutOps = 
-#else
     module LayoutOps = 
-#endif
         open TaggedTextOps
 
         let rec juxtLeft = function
@@ -353,19 +304,12 @@ namespace Microsoft.FSharp.Text.StructuredFormat
           
     /// These are a typical set of options used to control structured formatting.
     [<NoEquality; NoComparison>]
-#if COMPILER
-    type internal FormatOptions =
-#else
     type FormatOptions =
-#endif
         { FloatingPointFormat: string;
           AttributeProcessor: (string -> (string * string) list -> bool -> unit);
-#if RUNTIME
-#else
-#if COMPILER    // FSharp.Compiler.dll: This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
+#if COMPILER // This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
           PrintIntercepts: (IEnvironment -> obj -> Layout option) list;
           StringLimit : int;
-#endif
 #endif
           FormatProvider: System.IFormatProvider;
 #if FX_RESHAPED_REFLECTION
@@ -381,12 +325,9 @@ namespace Microsoft.FSharp.Text.StructuredFormat
           ShowIEnumerable: bool; }
         static member Default =
             { FormatProvider = (System.Globalization.CultureInfo.InvariantCulture :> System.IFormatProvider);
-#if RUNTIME
-#else
-#if COMPILER    // FSharp.Compiler.dll: This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
+#if COMPILER    // This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
               PrintIntercepts = [];
               StringLimit = System.Int32.MaxValue;
-#endif
 #endif
               AttributeProcessor= (fun _ _ _ -> ());
 #if FX_RESHAPED_REFLECTION
@@ -404,11 +345,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 
 
 
-#if COMPILER
-    module internal ReflectUtils = 
-#else
     module ReflectUtils = 
-#endif
         open System
         open System.Reflection
 
@@ -536,11 +473,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                 | _ -> 
                   GetValueInfoOfObject bindingFlags (obj) 
 
-#if COMPILER
-    module internal Display = 
-#else
     module Display = 
-#endif
 
         open ReflectUtils
         open LayoutOps
@@ -1080,9 +1013,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                                 None
                                   // Seed with an empty layout with a space to the left for formatting purposes
                                   buildObjMessageL txt [leftL (tagText "")] 
-#if RUNTIME
-#else
-#if COMPILER    // FSharp.Compiler.dll: This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
+#if COMPILER    // This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
                         let res = 
                             match res with 
                             | Some _ -> res
@@ -1092,7 +1023,6 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                                 member env.MaxColumns = opts.PrintLength
                                                 member env.MaxRows = opts.PrintLength }
                                 opts.PrintIntercepts |> List.tryPick (fun intercept -> intercept env x)
-#endif
 #endif
                         let res = 
                             match res with 
@@ -1389,7 +1319,11 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 
         let any_to_string x = layout_as_string FormatOptions.Default x
 
-#if RUNTIME
+#if COMPILER
+        /// Called 
+        let fsi_any_to_layout opts x = anyL ShowTopLevelBinding BindingFlags.Public opts x
+#else
+// FSharp.Core
 #if FX_RESHAPED_REFLECTION
         let internal anyToStringForPrintf opts (showNonPublicMembers : bool) x = 
             let bindingFlags = ReflectionUtils.toBindingFlags showNonPublicMembers
@@ -1399,7 +1333,3 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             x |> anyL ShowAll bindingFlags opts |> layout_to_string opts
 #endif
 
-#if COMPILER
-        /// Called 
-        let fsi_any_to_layout opts x = anyL ShowTopLevelBinding BindingFlags.Public opts x
-#endif  
