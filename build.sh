@@ -471,7 +471,7 @@ if [ "$BUILD_PROTO" = '1' ]; then
 #        { printeval "$_ngenexe install Proto/net40/bin/fsc-proto.exe /nologo"; } || failwith "NGen of proto failed"
     else
         # Build proto-compiler and libs
-        { printeval "$_msbuildexe $msbuildflags src/fsharp-proto-build.proj /p:UseMonoPackaging=true"; } || failwith "compiler proto build failed"
+        { printeval "$_msbuildexe $msbuildflags src/fsharp-proto-build.proj /p:UseMonoPackaging=true /p:Configuration=Proto;" } || failwith "compiler proto build failed"
     fi
 fi
 
