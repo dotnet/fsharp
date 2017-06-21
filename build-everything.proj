@@ -35,6 +35,10 @@
     <ProjectsWithNet40 Include="vsintegration/fsharp-vsintegration-vsix-build.proj" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(BUILD_FCS)'=='1'">
+    <ProjectsWithNet40 Include="fcs/FSharp.Compiler.Service/FSharp.Compiler.Service.fsproj" />
+  </ItemGroup>
+
   <ItemGroup Condition="'$(BUILD_SETUP)'=='1'">
     <SetupProjects Include="setup/fsharp-setup-build.proj" />
   </ItemGroup>

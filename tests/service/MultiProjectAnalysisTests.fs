@@ -1,6 +1,6 @@
 ﻿
 #if INTERACTIVE
-#r "../../Debug/net40/bin/FSharp.Compiler.Service.dll"
+#r "../../Debug/net40/bin/FSharp.Compiler.Service.dll" // note, run 'build fcs' to generate this, this DLL has a public API so can be used from F# Interactive
 #r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
@@ -771,18 +771,179 @@ let ``Test max memory gets triggered`` () =
 
 //------------------------------------------------------------------------------------
 
-#if FX_ATLEAST_45
+#if !DOTNETCORE
 
 [<Test>]
 let ``Type provider project references should not throw exceptions`` () =
-    let projectFile = __SOURCE_DIRECTORY__ + @"/data/TypeProviderConsole/TypeProviderConsole.fsproj"
-    let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug")])
+    //let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug")])
+    let options = 
+          {ProjectFileName = __SOURCE_DIRECTORY__ + @"/data/TypeProviderConsole/TypeProviderConsole.fsproj";
+           SourceFiles = [|__SOURCE_DIRECTORY__ + @"/data/TypeProviderConsole/Program.fs"|];
+           Stamp = None
+           OtherOptions =
+            [|yield "--simpleresolution";
+              yield "--noframework";
+              yield "--out:" + __SOURCE_DIRECTORY__ + @"/data/TypeProviderConsole/bin/Debug/TypeProviderConsole.exe";
+              yield "--doc:" + __SOURCE_DIRECTORY__ + @"/data/TypeProviderConsole/bin/Debug/TypeProviderConsole.xml";
+              yield "--subsystemversion:6.00"; 
+              yield "--highentropyva+"; 
+              yield "--fullpaths";
+              yield "--flaterrors"; 
+              yield "--target:exe"; 
+              yield "--define:DEBUG"; 
+              yield "--define:TRACE";
+              yield "--debug+"; 
+              yield "--optimize-"; 
+              yield "--tailcalls-"; 
+              yield "--debug:full";
+              yield "--platform:anycpu";
+              for r in mkStandardProjectReferences () do
+                  yield "-r:" + r
+              yield "-r:" + __SOURCE_DIRECTORY__ + @"/data/TypeProviderLibrary/TypeProviderLibrary.dll"|];
+           ReferencedProjects =
+            [|(__SOURCE_DIRECTORY__ + @"/data/TypeProviderLibrary/TypeProviderLibrary.dll",
+               {ProjectFileName = __SOURCE_DIRECTORY__ + @"/data/TypeProviderLibrary/TypeProviderLibrary.fsproj";
+                SourceFiles = [|__SOURCE_DIRECTORY__ + @"/data/TypeProviderLibrary/Library1.fs"|];
+                Stamp = None
+                OtherOptions =
+                 [|yield "--simpleresolution"; 
+                   yield "--noframework";
+                   yield "--out:" + __SOURCE_DIRECTORY__ + @"/data/TypeProviderLibrary/TypeProviderLibrary.dll";
+                   yield "--doc:" + __SOURCE_DIRECTORY__ + @"/data/TypeProviderLibrary/bin/Debug/TypeProviderLibrary.xml";
+                   yield "--subsystemversion:6.00"; 
+                   yield "--highentropyva+"; 
+                   yield "--fullpaths";
+                   yield "--flaterrors"; 
+                   yield "--target:library"; 
+                   yield "--define:DEBUG";
+                   yield "--define:TRACE"; 
+                   yield "--debug+"; 
+                   yield "--optimize-"; 
+                   yield "--tailcalls-";
+                   yield "--debug:full"; 
+                   yield "--platform:anycpu";
+                   for r in mkStandardProjectReferences () do
+                       yield "-r:" + r
+                   yield "-r:" + __SOURCE_DIRECTORY__ + @"/data/TypeProviderLibrary/FSharp.Data.TypeProviders.dll"; 
+                  |];
+                ReferencedProjects = [||];
+                IsIncompleteTypeCheckEnvironment = false;
+                UseScriptResolutionRules = false;
+                LoadTime = System.DateTime.Now
+                UnresolvedReferences = None;
+                OriginalLoadReferences = [];
+                ExtraProjectInfo = None;})|];
+           IsIncompleteTypeCheckEnvironment = false;
+           UseScriptResolutionRules = false;
+           LoadTime = System.DateTime.Now
+           UnresolvedReferences = None;
+           OriginalLoadReferences = [];
+           ExtraProjectInfo = None;}
+
     //printfn "options: %A" options
     let fileName = __SOURCE_DIRECTORY__ + @"/data/TypeProviderConsole/Program.fs"    
     let fileSource = File.ReadAllText(fileName)
-    let fileCheckResults, _ = checker.ParseAndCheckFileInProject(fileName, 0, fileSource, options) |> Async.RunSynchronously
-    //printfn "Errors: %A" fileCheckResults.Errors
+    let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, fileSource, options) |> Async.RunSynchronously
+    let fileCheckResults = 
+        match fileCheckAnswer with
+        | FSharpCheckFileAnswer.Succeeded(res) -> res
+        | res -> failwithf "Parsing did not finish... (%A)" res
+
+    printfn "Parse Errors: %A" fileParseResults.Errors
+    printfn "Errors: %A" fileCheckResults.Errors
     fileCheckResults.Errors |> Array.exists (fun error -> error.Severity = FSharpErrorSeverity.Error) |> shouldEqual false
+
+
+
+
+//------------------------------------------------------------------------------------
+
+[<Test>]
+let ``Projects creating generated types should not utilize cross-project-references but should still analyze oK once project is built`` () =
+    //let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug")])
+    let options = 
+          {ProjectFileName =
+            __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/TestConsole.fsproj";
+           SourceFiles =
+            [|__SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/AssemblyInfo.fs";
+              __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/Program.fs"|];
+           OtherOptions =
+            [|yield "--simpleresolution"; 
+              yield "--noframework";
+              yield "--out:" + __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/bin/Debug/TestConsole.exe";
+              yield "--doc:" + __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/bin/Debug/TestConsole.XML";
+              yield "--subsystemversion:6.00"; 
+              yield "--highentropyva+"; 
+              yield "--fullpaths";
+              yield "--flaterrors"; 
+              yield "--target:exe"; 
+              yield "--define:DEBUG"; 
+              yield "--define:TRACE";
+              yield "--debug+"; 
+              yield "--optimize-"; 
+              yield "--tailcalls-"; 
+              yield "--debug:full";
+              yield "--platform:anycpu";
+              yield "-r:" + __SOURCE_DIRECTORY__ + @"/../../packages/FSharp.Configuration.1.3.0/lib/net45/FSharp.Configuration.dll";
+              for r in mkStandardProjectReferences () do
+                  yield "-r:" + r
+              yield "-r:" + __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TypeProvidersBug/bin/Debug/TypeProvidersBug.dll"|];
+           ReferencedProjects =
+            [|(__SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TypeProvidersBug/bin/Debug/TypeProvidersBug.dll",
+               {ProjectFileName =
+                 __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TypeProvidersBug/TypeProvidersBug.fsproj";
+                SourceFiles =
+                 [|__SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TypeProvidersBug/AssemblyInfo.fs";
+                   __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TypeProvidersBug/Library1.fs"|];
+                OtherOptions =
+                 [|yield "--simpleresolution"; 
+                   yield "--noframework";
+                   yield "--out:" + __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TypeProvidersBug/bin/Debug/TypeProvidersBug.dll";
+                   yield "--doc:" + __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TypeProvidersBug/bin/Debug/TypeProvidersBug.XML";
+                   yield "--subsystemversion:6.00"; 
+                   yield "--highentropyva+"; 
+                   yield "--fullpaths";
+                   yield "--flaterrors"; 
+                   yield "--target:library"; 
+                   yield "--define:DEBUG";
+                   yield "--define:TRACE"; 
+                   yield "--debug+"; 
+                   yield "--optimize-"; 
+                   yield "--tailcalls-";
+                   yield "--debug:full"; 
+                   yield "--platform:anycpu";
+                   yield "-r:" + __SOURCE_DIRECTORY__ + @"/../../packages/FSharp.Configuration.1.3.0/lib/net45/FSharp.Configuration.dll";
+                   for r in mkStandardProjectReferences () do
+                       yield "-r:" + r |];
+                ReferencedProjects = [||];
+                IsIncompleteTypeCheckEnvironment = false;
+                UseScriptResolutionRules = false;
+                LoadTime = System.DateTime.Now
+                UnresolvedReferences = None;
+                OriginalLoadReferences = [];
+                Stamp = None;
+                ExtraProjectInfo = None;})|];
+           IsIncompleteTypeCheckEnvironment = false;
+           UseScriptResolutionRules = false;
+           LoadTime = System.DateTime.Now
+           UnresolvedReferences = None;
+           Stamp = None;
+           OriginalLoadReferences = [];
+           ExtraProjectInfo = None;}
+    //printfn "options: %A" options
+    let fileName = __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/Program.fs"    
+    let fileSource = File.ReadAllText(fileName)
+    let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, fileSource, options) |> Async.RunSynchronously
+    let fileCheckResults = 
+        match fileCheckAnswer with
+        | FSharpCheckFileAnswer.Succeeded(res) -> res
+        | res -> failwithf "Parsing did not finish... (%A)" res
+
+    printfn "Parse Errors: %A" fileParseResults.Errors
+    printfn "Errors: %A" fileCheckResults.Errors
+    fileCheckResults.Errors |> Array.exists (fun error -> error.Severity = FSharpErrorSeverity.Error) |> shouldEqual false
+
+
 
 #endif
 

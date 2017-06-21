@@ -724,6 +724,8 @@ type TcState =
 
     member NextStateAfterIncrementalFragment : TcEnv -> TcState
 
+    member CreatesGeneratedProvidedTypes : bool
+
 /// Get the initial type checking state for a set of inputs
 val GetInitialTcState : 
     range * string * TcConfig * TcGlobals * TcImports * Ast.NiceNameGenerator * TcEnv -> TcState

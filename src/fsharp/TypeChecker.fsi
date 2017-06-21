@@ -48,13 +48,13 @@ val TypeCheckOneImplFile :
       -> TcEnv 
       -> Tast.ModuleOrNamespaceType option
       -> ParsedImplFileInput
-      -> Eventually<TopAttribs * Tast.TypedImplFile * TcEnv>
+      -> Eventually<TopAttribs * Tast.TypedImplFile * TcEnv * bool>
 
 val TypeCheckOneSigFile : 
       TcGlobals * NiceNameGenerator * ImportMap * CcuThunk  * (unit -> bool) * ConditionalDefines * NameResolution.TcResultsSink 
       -> TcEnv                             
       -> ParsedSigFileInput
-      -> Eventually<TcEnv * TcEnv * ModuleOrNamespaceType >
+      -> Eventually<TcEnv * ModuleOrNamespaceType * bool>
 
 //-------------------------------------------------------------------------
 // Some of the exceptions arising from type checking. These should be moved to 
