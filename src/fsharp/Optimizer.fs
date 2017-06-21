@@ -2609,7 +2609,7 @@ and OptimizeApplication cenv env (f0,f0ty,tyargs,args,m) =
        // we beta-reduced, hence reoptimize 
         OptimizeExpr cenv env newExpr
     | _ -> 
-        match expr' with
+        match newExpr with
         // Rewrite Seq.map f (Seq.map g) xs into Seq.map (fun x -> f(g x)) xs
         | Expr.App(Expr.Val(outerValRef,_,_) as outerSeqMap,ttype1,[_;fOutType],
                     [(Expr.Lambda(_,None,None,_,_,m1,fRetType) as f)
