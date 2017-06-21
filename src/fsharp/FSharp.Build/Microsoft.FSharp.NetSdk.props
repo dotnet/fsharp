@@ -16,12 +16,21 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <DefineConstants>$(DefineConstants);TRACE</DefineConstants>
-    <WarningLevel Condition=" '$(WarningLevel)' == '' ">3</WarningLevel>
-  </PropertyGroup>
+  <Choose>
+    <When Condition="'$(DefineConstants)' == '' ">
+      <PropertyGroup>
+        <DefineConstants>TRACE</DefineConstants>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <DefineConstants>$(DefineConstants);TRACE</DefineConstants>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
 
   <PropertyGroup>
+    <WarningLevel Condition=" '$(WarningLevel)' == '' ">3</WarningLevel>
     <EnableDefaultCompileItems Condition=" '$(EnableDefaultCompileItems)' == '' ">false</EnableDefaultCompileItems>                                <!--- Do not glob F# source files -->
     <DefaultProjectTypeGuid Condition=" '$(DefaultProjectTypeGuid)' == '' ">{F2A71F9B-5D33-465A-A702-920D77279786}</DefaultProjectTypeGuid>         <!-- F# project type -->
   </PropertyGroup>
