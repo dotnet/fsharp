@@ -2189,7 +2189,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="x">The input value.</param>
         /// <returns>The same value.</returns>
         [<CompiledName("Identity")>]
-        val inline id : x:'T -> 'T 
+        val id : x:'T -> 'T 
 
         /// <summary>Create a mutable reference cell</summary>
         /// <param name="value">The value to contain in the cell.</param>
