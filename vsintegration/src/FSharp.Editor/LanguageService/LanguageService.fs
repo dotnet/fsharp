@@ -61,7 +61,7 @@ type internal FSharpCheckerProvider
                         if not documentIds.IsEmpty then 
                             for documentId in documentIds do
                                 Trace.TraceInformation("Requesting Roslyn reanalysis of {0}", documentId)
-                            analyzerService.Reanalyze(workspace,documentIds=documentIds,highPriority=true)
+                            analyzerService.Reanalyze(workspace,documentIds=documentIds)
                     | _ -> ()
                 with ex -> 
                     Assert.Exception(ex)
