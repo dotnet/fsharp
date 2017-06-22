@@ -849,18 +849,25 @@ and typarConstraintsAEquivAux erasureFlag g aenv tpc1 tpc2 =
     | TyparConstraint.RequiresDefaultConstructor _, TyparConstraint.RequiresDefaultConstructor _ -> true
     | _ -> false
 
-and typarConstraintSetsAEquivAux erasureFlag g aenv (tp1:Typar) (tp2:Typar) = 
-    tp1.StaticReq = tp2.StaticReq &&
-    ListSet.equals (typarConstraintsAEquivAux erasureFlag g aenv) tp1.Constraints tp2.Constraints
+and typarConstraintSetsAEquivAux relaxed erasureFlag g aenv (tp1:Typar) (tp2:Typar) = 
+    if tp1.StaticReq <> tp2.StaticReq then
+        false
+    else
+        if relaxed && List.isEmpty tp2.Constraints then 
+            true
+        else
+            ListSet.equals (typarConstraintsAEquivAux erasureFlag g aenv) tp1.Constraints tp2.Constraints
 
-and typarsAEquivAux erasureFlag g (aenv: TypeEquivEnv) tps1 tps2 = 
+and typarsAEquivAux2 relaxed erasureFlag g (aenv: TypeEquivEnv) tps1 tps2 = 
     List.length tps1 = List.length tps2 &&
     let aenv = aenv.BindEquivTypars tps1 tps2 
-    List.forall2 (typarConstraintSetsAEquivAux erasureFlag g aenv) tps1 tps2
+    List.forall2 (typarConstraintSetsAEquivAux relaxed erasureFlag g aenv) tps1 tps2
+
+and typarsAEquivAux erasureFlag g (aenv: TypeEquivEnv) tps1 tps2 = typarsAEquivAux2 false erasureFlag g aenv tps1 tps2
 
 and tcrefAEquiv g aenv tc1 tc2 = 
     tyconRefEq g tc1 tc2 || 
-    (aenv.EquivTycons.ContainsKey tc1  && tyconRefEq g aenv.EquivTycons.[tc1] tc2)
+    (aenv.EquivTycons.ContainsKey tc1 && tyconRefEq g aenv.EquivTycons.[tc1] tc2)
 
 and typeAEquivAux erasureFlag g aenv ty1 ty2 = 
     let ty1 = stripTyEqnsWrtErasure erasureFlag g ty1 
@@ -915,6 +922,7 @@ let typeEquiv g ty1 ty2 = typeEquivAux EraseNone g ty1 ty2
 let traitsAEquiv g aenv t1 t2 = traitsAEquivAux EraseNone g aenv t1 t2
 let typarConstraintsAEquiv g aenv c1 c2 = typarConstraintsAEquivAux EraseNone g aenv c1 c2
 let typarsAEquiv g aenv d1 d2 = typarsAEquivAux EraseNone g aenv d1 d2
+let typarsAEquivRelaxed g aenv d1 d2 = typarsAEquivAux2 true EraseNone g aenv d1 d2
 let returnTypesAEquiv g aenv t1 t2 = returnTypesAEquivAux EraseNone g aenv t1 t2
 
 let measureEquiv g m1 m2 = measureAEquiv g TypeEquivEnv.Empty m1 m2

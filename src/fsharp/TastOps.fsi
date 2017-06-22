@@ -551,6 +551,7 @@ val traitsAEquiv              :            TcGlobals -> TypeEquivEnv -> TraitCon
 val typarConstraintsAEquivAux : Erasure -> TcGlobals -> TypeEquivEnv -> TyparConstraint      -> TyparConstraint      -> bool
 val typarConstraintsAEquiv    :            TcGlobals -> TypeEquivEnv -> TyparConstraint      -> TyparConstraint      -> bool
 val typarsAEquiv              :            TcGlobals -> TypeEquivEnv -> Typars               -> Typars               -> bool
+val typarsAEquivRelaxed       :            TcGlobals -> TypeEquivEnv -> Typars               -> Typars               -> bool
 val typeAEquivAux             : Erasure -> TcGlobals -> TypeEquivEnv -> TType                  -> TType                  -> bool
 val typeAEquiv                :            TcGlobals -> TypeEquivEnv -> TType                  -> TType                  -> bool
 val returnTypesAEquivAux      : Erasure -> TcGlobals -> TypeEquivEnv -> TType option           -> TType option           -> bool

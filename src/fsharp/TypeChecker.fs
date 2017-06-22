@@ -15746,7 +15746,7 @@ module TcDeclarations =
                 let envForTycon = AddDeclaredTypars CheckForDuplicateTypars declaredTypars envForDecls
                 let _tpenv = TcTyparConstraints cenv NoNewTypars CheckCxs ItemOccurence.UseInType envForTycon emptyUnscopedTyparEnv cs
                 declaredTypars |> List.iter (SetTyparRigid cenv.g envForDecls.DisplayEnv m)
-                if not (typarsAEquiv cenv.g TypeEquivEnv.Empty reqTypars declaredTypars) then 
+                if not (typarsAEquivRelaxed cenv.g TypeEquivEnv.Empty reqTypars declaredTypars) then 
                     errorR(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
                 ExtrinsicExtensionBinding, declaredTypars
 
