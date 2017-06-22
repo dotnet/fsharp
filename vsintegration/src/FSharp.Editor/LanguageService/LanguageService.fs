@@ -59,7 +59,9 @@ type internal FSharpCheckerProvider
                         let solution = workspace.CurrentSolution
                         let documentIds = solution.GetDocumentIdsWithFilePath(fileName)
                         if not documentIds.IsEmpty then 
-                            analyzerService.Reanalyze(workspace,documentIds=documentIds)
+                            for documentId in documentIds do
+                                Trace.TraceInformation("Requesting Roslyn reanalysis of {0}", documentId)
+                            analyzerService.Reanalyze(workspace,documentIds=documentIds,highPriority=true)
                     | _ -> ()
                 with ex -> 
                     Assert.Exception(ex)
@@ -446,6 +448,7 @@ and
                 for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
                     let referencedProjectId = setup referencedSite                    
                     project.AddProjectReference(ProjectReference referencedProjectId)
+                workspace.ProjectTracker.AddProject(project)
             projectId
         setup (siteProvider.GetProjectSite()) |> ignore
 
