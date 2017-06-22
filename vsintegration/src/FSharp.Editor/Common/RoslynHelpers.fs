@@ -21,8 +21,8 @@ module internal RoslynHelpers =
 
     let FSharpRangeToTextSpan(sourceText: SourceText, range: range) =
         // Roslyn TextLineCollection is zero-based, F# range lines are one-based
-        let startPosition = sourceText.Lines.[range.StartLine - 1].Start + range.StartColumn
-        let endPosition = sourceText.Lines.[range.EndLine - 1].Start + range.EndColumn
+        let startPosition = sourceText.Lines.[max 0 (range.StartLine - 1)].Start + range.StartColumn
+        let endPosition = sourceText.Lines.[min (range.EndLine - 1) (sourceText.Lines.Count - 1)].Start + range.EndColumn
         TextSpan(startPosition, endPosition - startPosition)
 
     let TryFSharpRangeToTextSpan(sourceText: SourceText, range: range) : TextSpan option =
@@ -92,7 +92,10 @@ module internal RoslynHelpers =
         member __.Proceed = not isStopped
         member __.Stop() = isStopped <- true
 
-    // This is like Async.StartAsTask, but if cancellation occurs we explicitly associate the cancellation with cancellationToken
+    // This is like Async.StartAsTask, but
+    //  1. if cancellation occurs we explicitly associate the cancellation with cancellationToken
+    //  2. if exception occurs then set result to Unchecked.defaultof<_>, i.e. swallow exceptions
+    //     and hope that Roslyn copes with the null
     let StartAsyncAsTask (cancellationToken: CancellationToken) computation =
         let tcs = new TaskCompletionSource<_>(TaskCreationOptions.None)
         let barrier = VolatileBarrier()
@@ -102,10 +105,24 @@ module internal RoslynHelpers =
         Async.StartWithContinuations(
                   async { do! Async.SwitchToThreadPool()
                           return! computation }, 
-                  continuation=(fun result -> disposeReg(); tcs.TrySetResult(result) |> ignore), 
-                  exceptionContinuation=(function :? OperationCanceledException -> disposeReg(); tcs.TrySetCanceled(cancellationToken)  |> ignore
-                                                | exn -> disposeReg(); tcs.TrySetException(exn) |> ignore),
-                  cancellationContinuation=(fun _oce -> disposeReg(); tcs.TrySetCanceled(cancellationToken) |> ignore),
+                  continuation=(fun result -> 
+                      disposeReg()
+                      tcs.TrySetResult(result) |> ignore
+                  ), 
+                  exceptionContinuation=(fun exn -> 
+                      disposeReg()
+                      match exn with 
+                      | :? OperationCanceledException -> 
+                          tcs.TrySetCanceled(cancellationToken)  |> ignore
+                      | exn ->
+                          System.Diagnostics.Trace.WriteLine("Visual F# Tools: exception swallowed and not passed to Roslyn: {0}", exn.Message)
+                          let res = Unchecked.defaultof<_>
+                          tcs.TrySetResult(res) |> ignore
+                  ),
+                  cancellationContinuation=(fun _oce -> 
+                      disposeReg()
+                      tcs.TrySetCanceled(cancellationToken) |> ignore
+                  ),
                   cancellationToken=cancellationToken)
         task
 

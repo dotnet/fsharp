@@ -95,9 +95,12 @@ module internal SymbolHelpers =
                             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                             let mutable sourceText = sourceText
                             for symbolUse in symbolUses do
-                                let textSpan = Tokenizer.fixupSpan(sourceText, RoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate))
-                                sourceText <- sourceText.Replace(textSpan, newText)
-                                solution <- solution.WithDocumentText(documentId, sourceText)
+                                match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate) with 
+                                | None -> ()
+                                | Some span -> 
+                                    let textSpan = Tokenizer.fixupSpan(sourceText, span)
+                                    sourceText <- sourceText.Replace(textSpan, newText)
+                                    solution <- solution.WithDocumentText(documentId, sourceText)
                         return solution
                     } |> RoslynHelpers.StartAsyncAsTask cancellationToken),
                originalText

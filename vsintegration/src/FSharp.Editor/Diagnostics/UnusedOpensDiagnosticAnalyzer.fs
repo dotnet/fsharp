@@ -4,6 +4,7 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Collections.Immutable
+open System.Diagnostics
 open System.Threading
 open System.Threading.Tasks
 
@@ -170,6 +171,7 @@ type internal UnusedOpensDiagnosticAnalyzer() =
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) =
         asyncMaybe {
+            do Trace.TraceInformation("{0:n3} (start) UnusedOpensAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
             do! Async.Sleep DefaultTuning.UnusedOpensAnalyzerInitialDelay |> liftAsync // be less intrusive, give other work priority most of the time
             let! options = getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document)
             let! sourceText = document.GetTextAsync()

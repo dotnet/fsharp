@@ -151,7 +151,10 @@ and [<Class>] internal FSharpAssemblySignature =
 
     /// Get the declared attributes for the assembly.
     /// Only available when parsing an entire project. 
-    member Attributes: IList<FSharpAttribute>     
+    member Attributes: IList<FSharpAttribute>
+
+    /// Find entity using compiled names
+    member FindEntityByPath: string list -> FSharpEntity option
 
 
 /// A subtype of FSharpSymbol that represents a type definition or module as seen by the F# language

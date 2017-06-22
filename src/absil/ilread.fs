@@ -2355,7 +2355,7 @@ and seekReadMethod ctxt numtypars (idx:int) =
          elif pinvoke then 
            seekReadImplMap ctxt nm  idx
          elif internalcall || abstr || unmanaged || (codetype <> 0x00) then 
-           if codeRVA <> 0x0 then dprintn "non-IL or abstract method with non-zero RVA"
+           //if codeRVA <> 0x0 then dprintn "non-IL or abstract method with non-zero RVA"
            mkMethBodyLazyAux (notlazy MethodBody.Abstract)  
          else 
            seekReadMethodRVA ctxt (idx,nm,internalcall,noinline,numtypars) codeRVA   

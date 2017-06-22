@@ -141,6 +141,7 @@
 //<Expects status="notin">section='NoSection                ' ! option=script.fsx arg1 arg2 ...       kind=OptionGeneral</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=probeconsole                   kind=OptionSwitch</Expects>
 //<Expects status="notin">section='NoSection                ' ! option=peekahead                      kind=OptionSwitch</Expects>
+//<Expects status="notin">section='NoSection                ' ! option=noninteractive                 kind=OptionUnit</Expects>
 //<Expects status="notin">section='- INPUT FILES -          ' ! option=--                             kind=OptionRest</Expects>
 //<Expects status="notin">section='- ADVANCED -             ' ! option=exec                           kind=OptionUnit</Expects>
 //<Expects status="notin">section='- ADVANCED -             ' ! option=gui                            kind=OptionSwitch</Expects>

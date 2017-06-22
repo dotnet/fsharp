@@ -3,7 +3,7 @@
 /// The "unlinked" view of .NET metadata and code.  Central to 
 ///  to Abstract IL library
 #if COMPILER_PUBLIC_API
-module Microsoft.FSharp.Compiler.AbstractIL.IL 
+module public Microsoft.FSharp.Compiler.AbstractIL.IL 
 #else
 module internal Microsoft.FSharp.Compiler.AbstractIL.IL 
 #endif
@@ -14,7 +14,8 @@ open System.Collections.Generic
 [<RequireQualifiedAccess>]
 type PrimaryAssembly = 
     | Mscorlib
-    | DotNetCore
+    | System_Runtime
+    | NetStandard
 
     member Name: string
 
@@ -854,6 +855,7 @@ type ILAttribute =
 
 [<NoEquality; NoComparison; Sealed>]
 type ILAttributes =
+    member AsArray : ILAttribute []
     member AsList : ILAttribute list
 
 /// Method parameters and return values.

@@ -6,7 +6,7 @@
     <ComponentGroup Id="Compiler_Redist">
       <ComponentRef Id="Compiler_Redist_FSharp.Core.dll" />
       <ComponentRef Id="Compiler_Redist_FSharp.Build.dll" />
-      <ComponentRef Id="Compiler_Redist_FSharp.Compiler.dll" />
+      <ComponentRef Id="Compiler_Redist_FSharp.Compiler.Private.dll" />
       <ComponentRef Id="Compiler_Redist_FSharp.Compiler.Interactive.Settings.dll" />      
       <ComponentRef Id="Compiler_Redist_FSharp.Data.TypeProviders.dll" />      
       <ComponentRef Id="Compiler_Redist_fsc.exe" />
@@ -65,9 +65,9 @@
         </File>
       </Component>
 
-      <Component Id="Compiler_Redist_FSharp.Compiler.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Compiler.dll, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_FSharp.Compiler.dll" Source="$(var.BinariesDir)\net40\bin\FSharp.Compiler.dll" KeyPath="yes">
-          <NetFx:NativeImage Id="Compiler_Redist_FSharp.Compiler.Native.dll" Priority="0" Dependencies="no" Platform="all" AssemblyApplication="Compiler_Redist_fsc.exe" />
+      <Component Id="Compiler_Redist_FSharp.Compiler.Private.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Compiler.Private.dll, $(var.LocaleCode)))">
+        <File Id="Compiler_Redist_FSharp.Compiler.Private.dll" Source="$(var.BinariesDir)\net40\bin\FSharp.Compiler.Private.dll" KeyPath="yes">
+          <NetFx:NativeImage Id="Compiler_Redist_FSharp.Compiler.Private.Native.dll" Priority="0" Dependencies="no" Platform="all" AssemblyApplication="Compiler_Redist_fsc.exe" />
         </File>
       </Component>
 
@@ -111,11 +111,11 @@
       </Component>      
 
       <Component Id="Compiler_Redist_Microsoft.FSharp.targets" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.FSharp.targets, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_Microsoft.FSharp.targets" Source="$(var.BinariesDir)\net40\bin\Microsoft.FSharp.targets" />
+        <File Id="Compiler_Redist_Microsoft.FSharp.targets" Source="$(var.BinariesDir)\net40\bin\Microsoft.FSharp.Targets" />
       </Component>
 
       <Component Id="Compiler_Redist_Microsoft.Portable.FSharp.targets" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.Portable.FSharp.targets, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_Microsoft.Portable.FSharp.targets" Source="$(var.BinariesDir)\net40\bin\Microsoft.Portable.FSharp.targets" />
+        <File Id="Compiler_Redist_Microsoft.Portable.FSharp.targets" Source="$(var.BinariesDir)\net40\bin\Microsoft.Portable.FSharp.Targets" />
       </Component>
 
       <Component Id="Compiler_Redist_Microsoft.FSharp.NetSdk.props" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.FSharp.NetSdk.props, $(var.LocaleCode)))">
@@ -187,7 +187,7 @@
       </Component>
 
       <Component Id="Compiler_Redist_System.ValueTuple.dll" Guid="$(fsharp.guid(Compiler_Redist_System.ValueTuple.dll, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_System.ValueTuple.dll" Source="$(var.NugetPackagesDir)\System.ValueTuple.4.3.0\lib\netstandard1.0\System.ValueTuple.dll" />
+        <File Id="Compiler_Redist_System.ValueTuple.dll" Source="$(var.NugetPackagesDir)\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll" />
       </Component>
     </DirectoryRef>
 

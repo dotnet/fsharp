@@ -6381,10 +6381,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         private bool IsTargetFrameworkInstalled()
         {
+           var targetFrameworkMoniker = new System.Runtime.Versioning.FrameworkName(GetTargetFrameworkMoniker());
+           //Only check for .NetFramework. The expectation is that other frameworks will perform any checks themselves.
+           if (targetFrameworkMoniker.Identifier != ".NetFramework")
+              return true;
+
            var multiTargeting = this.site.GetService(typeof(SVsFrameworkMultiTargeting)) as IVsFrameworkMultiTargeting;
            Array frameworks;
            Marshal.ThrowExceptionForHR(multiTargeting.GetSupportedFrameworks(out frameworks));
-           var targetFrameworkMoniker = new System.Runtime.Versioning.FrameworkName(GetTargetFrameworkMoniker());
            foreach (string fx in frameworks)
            {
                uint compat;

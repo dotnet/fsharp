@@ -70,7 +70,7 @@ let main argv =
 
     eprintfn "Found options for %s." options.Options.ProjectFileName
     let checker = FSharpChecker.Create(projectCacheSize = 200, keepAllBackgroundResolutions = false)
-    let waste = new ResizeArray<int array>()
+    let waste = new ResizeArray<int[]>()
     
     let checkProject() : Async<FSharpCheckProjectResults option> =
         async {

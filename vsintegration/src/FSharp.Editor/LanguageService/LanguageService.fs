@@ -46,7 +46,7 @@ type internal FSharpCheckerProvider
 
     let checker = 
         lazy
-            let checker = FSharpChecker.Create(projectCacheSize = 200, keepAllBackgroundResolutions = false (* , MaxMemory = 2300 *))
+            let checker = FSharpChecker.Create(projectCacheSize = 200, keepAllBackgroundResolutions = false (* , MaxMemory = 2300 *), legacyReferenceResolver=Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver)
 
             // This is one half of the bridge between the F# background builder and the Roslyn analysis engine.
             // When the F# background builder refreshes the background semantic build context for a file,
@@ -59,6 +59,8 @@ type internal FSharpCheckerProvider
                         let solution = workspace.CurrentSolution
                         let documentIds = solution.GetDocumentIdsWithFilePath(fileName)
                         if not documentIds.IsEmpty then 
+                            for documentId in documentIds do
+                                Trace.TraceInformation("Requesting Roslyn reanalysis of {0}", documentId)
                             analyzerService.Reanalyze(workspace,documentIds=documentIds)
                     | _ -> ()
                 with ex -> 
@@ -449,6 +451,7 @@ and
                 for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
                     let referencedProjectId = setup referencedSite                    
                     project.AddProjectReference(ProjectReference referencedProjectId)
+                workspace.ProjectTracker.AddProject(project)
             projectId
         setup (siteProvider.GetProjectSite()) |> ignore
 
