@@ -3,9 +3,10 @@
 namespace rec Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Collections.Immutable
-open System.Threading.Tasks
 open System.Collections.Generic
+open System.Collections.Immutable
+open System.Diagnostics
+open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Diagnostics
@@ -99,6 +100,7 @@ type internal UnusedDeclarationsAnalyzer() =
 
     override __.AnalyzeSemanticsAsync(document, cancellationToken) =
         asyncMaybe {
+            do Trace.TraceInformation("{0:n3} (start) UnusedDeclarationsAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
             do! Async.Sleep DefaultTuning.UnusedDeclarationsAnalyzerInitialDelay |> liftAsync // be less intrusive, give other work priority most of the time
             match getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document) with
             | Some options ->
