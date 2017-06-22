@@ -9,7 +9,7 @@ You are invited to help producing future releases of the F# language compiler, l
 
 The F# Compiler and Tools are also mirrored in [the corresponding repository](http://github.com/fsharp/fsharp) of the F# Software Foundation.
 
-Changes contributed here are eventually propagaed to this repository and are included in all packagings of F# and open source F# editing tools. The process for doing this is explained in this guide by the [F# Core Engineering Group](https://fsharp.github.io/2014/06/18/fsharp-contributions.html). Currently,  the F# community coordinates packaging [other editions of F#](https://github.com/fsharp/fsharp/) for use on Linux, macOS, Android, iOS, and other platforms, and Microsoft coordinates packaging this repository as part of the Visual F# Tools. 
+Changes contributed here are eventually propagated to this repository and are included in all packagings of F# and open source F# editing tools. The process for doing this is explained in this guide by the [F# Core Engineering Group](https://fsharp.github.io/2014/06/18/fsharp-contributions.html). Currently, the F# community coordinates packaging [other editions of F#](https://github.com/fsharp/fsharp/) for use on Linux, macOS, Android, iOS, and other platforms, and Microsoft coordinates packaging this repository as part of the Visual F# Tools. 
 
 For historical reasons this repository is called "visualfsharp" and currently also contains the Visual F# IDE Tools. The eventual plan is to split these repositories into "fsharp" and "visualfsharp".
 
