@@ -4768,7 +4768,7 @@ namespace Microsoft.FSharp.Core
         let inline limitedHash (limit:int)  (x: 'T) = LanguagePrimitives.GenericLimitedHash limit x
 
         [<CompiledName("Identity")>]
-        let inline id x = x
+        let id x = x
 
 #if FX_NO_SYSTEM_CONSOLE
 #else
