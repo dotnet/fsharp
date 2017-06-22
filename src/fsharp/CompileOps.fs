@@ -3535,7 +3535,7 @@ type TcAssemblyResolutions(results : AssemblyResolution list, unresolved : Unres
             let assumeDotNetFramework = primaryReference.SimpleAssemblyNameIs("mscorlib")
             if tcConfig.framework then 
                 for s in DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) do 
-                    yield AssemblyReference(rangeStartup,(if s.EndsWith(".dll") then s else s+".dll"),None)
+                    yield AssemblyReference(rangeStartup,(if s.EndsWith(".dll",StringComparison.OrdinalIgnoreCase) then s else s+".dll"),None)
 
             if tcConfig.useFsiAuxLib then
                 let name = Path.Combine(tcConfig.fsharpBinariesDir, GetFsiLibraryName() + ".dll")
