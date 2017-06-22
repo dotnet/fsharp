@@ -61,7 +61,7 @@ type internal FSharpCheckerProvider
                         if not documentIds.IsEmpty then 
                             let docuentIdsFiltered = documentIds |> Seq.filter workspace.IsDocumentOpen |> Seq.toArray
                             for documentId in docuentIdsFiltered do
-                                Trace.TraceInformation("{0:n3} Requesting Roslyn reanalysis of {0}", DateTime.Now.TimeOfDay.TotalSeconds, documentId)
+                                Trace.TraceInformation("{0:n3} Requesting Roslyn reanalysis of {1}", DateTime.Now.TimeOfDay.TotalSeconds, documentId)
                             if docuentIdsFiltered.Length > 0 then 
                                 analyzerService.Reanalyze(workspace,documentIds=docuentIdsFiltered)
                     | _ -> ()
