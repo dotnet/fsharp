@@ -59,9 +59,11 @@ type internal FSharpCheckerProvider
                         let solution = workspace.CurrentSolution
                         let documentIds = solution.GetDocumentIdsWithFilePath(fileName)
                         if not documentIds.IsEmpty then 
-                            for documentId in documentIds do
-                                Trace.TraceInformation("Requesting Roslyn reanalysis of {0}", documentId)
-                            analyzerService.Reanalyze(workspace,documentIds=documentIds)
+                            let docuentIdsFiltered = documentIds |> Seq.filter workspace.IsDocumentOpen |> Seq.toArray
+                            for documentId in docuentIdsFiltered do
+                                Trace.TraceInformation("{0:n3} Requesting Roslyn reanalysis of {0}", DateTime.Now.TimeOfDay.TotalSeconds, documentId)
+                            if docuentIdsFiltered.Length > 0 then 
+                                analyzerService.Reanalyze(workspace,documentIds=docuentIdsFiltered)
                     | _ -> ()
                 with ex -> 
                     Assert.Exception(ex)
