@@ -3800,7 +3800,7 @@ namespace Microsoft.FSharp.Core
             | _ -> true
 
         [<CompiledName("Raise")>]
-        let raise (e: exn) = (# "throw" e : 'T #)
+        let inline raise (e: exn) = (# "throw" e : 'T #)
 
         let Failure message = new System.Exception(message)
         
@@ -3834,7 +3834,7 @@ namespace Microsoft.FSharp.Core
 *)
 
         [<CompiledName("FailWith")>]
-        let failwith message = raise (Failure(message))
+        let inline failwith message = raise (Failure(message))
 
 
         [<CompiledName("InvalidArg")>]
@@ -3860,11 +3860,11 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("Fst")>]
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
-        let fst (a,_) = a
+        let inline fst (a,_) = a
 
         [<CompiledName("Snd")>]
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
-        let snd (_,b) = b
+        let inline snd (_,b) = b
 
         [<CompiledName("Ignore")>]
         let inline ignore _ = ()
@@ -4768,7 +4768,7 @@ namespace Microsoft.FSharp.Core
         let inline limitedHash (limit:int)  (x: 'T) = LanguagePrimitives.GenericLimitedHash limit x
 
         [<CompiledName("Identity")>]
-        let id x = x
+        let inline id x = x
 
 #if FX_NO_SYSTEM_CONSOLE
 #else
