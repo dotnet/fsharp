@@ -50,7 +50,7 @@ type private ProjectSiteOfSingleFile(sourceFile) =
         let assumeDotNetFramework = true
         let defaultReferences = 
                 [ for r in CompilerEnvironment.DefaultReferencesForOrphanSources(assumeDotNetFramework) do 
-                    sprintf "-r:%s%s" r (if s.EndsWith(".dll",StringComparison.OrdinalIgnoreCase) then "" else ".dll") ]
+                    yield sprintf "-r:%s%s" r (if r.EndsWith(".dll",StringComparison.OrdinalIgnoreCase) then "" else ".dll") ]
         (flags @ defaultReferences) |> List.toArray
 
     let projectFileName = sourceFile + ".orphan.fsproj"
