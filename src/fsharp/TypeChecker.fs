@@ -1430,8 +1430,6 @@ let MakeAndPublishVal cenv env (altActualParent,inSig,declKind,vrec,(ValScheme(i
             let AGGRESSIVE_INLINING = 0x0100
             if (implflags &&& NO_INLINING) <> 0x0 then
                 ValInline.Never
-            elif (implflags &&& AGGRESSIVE_INLINING) <> 0x0 then
-                ValInline.Aggressive
             else
                 inlineFlag
 

@@ -1724,8 +1724,7 @@ and p_mustinline x st =
             | ValInline.PseudoVal -> 0
             | ValInline.Always  -> 1
             | ValInline.Optional -> 2
-            | ValInline.Never -> 3
-            | ValInline.Aggressive -> 4) st
+            | ValInline.Never -> 3) st
 
 and p_basethis x st = 
     p_byte (match x with 
