@@ -846,10 +846,11 @@ let goutput_mdef env os md =
   output_string os " ";
   (goutput_params menv) os md.Parameters;
   output_string os " ";
-  if md.IsSynchronized then output_string os "synchronized ";
-  if md.IsMustRun then output_string os "/* mustrun */ ";
-  if md.IsPreserveSig then output_string os "preservesig ";
-  if md.IsNoInline then output_string os "noinlining ";
+  if md.IsSynchronized then output_string os "synchronized "
+  if md.IsMustRun then output_string os "/* mustrun */ "
+  if md.IsPreserveSig then output_string os "preservesig "
+  if md.IsNoInline then output_string os "noinlining "
+  if md.IsAggressiveInline then output_string os "aggressiveinlining "
   (goutput_mbody is_entrypoint menv) os md;
   output_string os "\n"
 

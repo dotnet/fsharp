@@ -804,9 +804,10 @@ type ILLocals = list<ILLocal>
 [<RequireQualifiedAccess; NoComparison; NoEquality>]
 type ILMethodBody = 
     { IsZeroInit: bool;
-      /// strictly speakin should be a uint16 
+      /// strictly speaking should be a uint16 
       MaxStack: int32; 
       NoInlining: bool;
+      AggressiveInlining: bool;
       Locals: ILLocals;
       Code: ILCode;
       SourceMarker: ILSourceMarker option }
@@ -1054,6 +1055,7 @@ type ILMethodDef =
       /// .NET 2.0 feature: SafeHandle finalizer must be run.
       IsMustRun: bool; 
       IsNoInline: bool;
+      IsAggressiveInline: bool;
      
       GenericParams: ILGenericParameterDefs;
       CustomAttrs: ILAttributes; }
