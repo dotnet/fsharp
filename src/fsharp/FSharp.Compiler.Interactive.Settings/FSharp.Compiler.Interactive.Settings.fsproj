@@ -15,9 +15,19 @@
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
 
-  <Import Project="FSharp.Compiler.Interactive.Settings.Sources.proj"
+  <Import Project="FSharp.Compiler.Interactive.Settings.Sources.proj" />
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  
+
+  <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">
+      <None Include="project.json" />
+  </ItemGroup>
+  <ItemGroup  Condition="'$(TargetDotnetProfile)' != 'coreclr'">
+    <Reference Include="mscorlib" />
+    <Reference Include="System" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+  </ItemGroup>
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
     <ItemGroup>
       <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />

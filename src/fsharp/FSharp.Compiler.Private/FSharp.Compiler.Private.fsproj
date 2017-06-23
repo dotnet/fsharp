@@ -49,7 +49,7 @@
     </ItemGroup>
   </Target>
 
-  <Import Project = "$(MSBuildThisFileDirectory)..\..\FSharpSource.BuildFromSource.targets" />
+  <Import Project = "$(MSBuildThisFileDirectory)..\..\FSharpSource.Profiles.targets" />
   <Import Project="FSharp.Compiler.Private.Sources.proj" />
 
   <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">
@@ -115,7 +115,6 @@
       </ItemGroup>
     </Otherwise>
   </Choose>
-
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
