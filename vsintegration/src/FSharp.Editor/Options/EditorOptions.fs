@@ -50,7 +50,9 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
               UnderlineStyle = QuickInfoUnderlineStyle.Solid }
 
         store.RegisterDefault
-            { SimplifyName = true 
+            { // We have this off by default, disable until we work out how to make this low priority 
+              // See https://github.com/Microsoft/visualfsharp/pull/3238#issue-237699595
+              SimplifyName = false 
               AlwaysPlaceOpensAtTopLevel = false
               UnusedOpens = true }
 
