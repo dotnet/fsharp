@@ -62,8 +62,6 @@ type ValInline =
     | PseudoVal
     /// Indicates the value is inlined but the .NET IL code for the function still exists, e.g. to satisfy interfaces on objects, but that it is also always inlined 
     | Always
-    /// Indicates the value will be inlined be inlined by the .NET runtime
-    | Aggressive
     /// Indicates the value may optionally be inlined by the optimizer
     | Optional
     /// Indicates the value must never be inlined by the optimizer
