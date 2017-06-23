@@ -14468,7 +14468,7 @@ module EstablishTypeDefinitionCores =
                | _ -> () ]
             |> set
 
-    let TcTyconDefnCore_Phase1A_BuildInitialModule cenv envInitial parent typeNames compInfo =
+    let TcTyconDefnCore_Phase1A_BuildInitialModule cenv envInitial parent typeNames compInfo decls =
         let (ComponentInfo(attribs,_parms, _constraints,longPath,xml,_,vis,im)) = compInfo 
         let id = ComputeModuleName longPath
         let modAttrs = TcAttributes cenv envInitial AttributeTargets.ModuleDecl attribs 
@@ -14485,7 +14485,8 @@ module EstablishTypeDefinitionCores =
         let envForDecls, mtypeAcc = MakeInnerEnv envInitial id modKind    
         let mspec = NewModuleOrNamespace (Some envInitial.eCompPath) vis id (xml.ToXmlDoc()) modAttrs (MaybeLazy.Strict (NewEmptyModuleOrNamespaceType modKind))
         let innerParent = Parent (mkLocalModRef mspec)
-        MutRecDefnsPhase2DataForModule (mtypeAcc, mspec), (innerParent, typeNames, envForDecls)
+        let innerTypeNames = TypeNamesInMutRecDecls decls
+        MutRecDefnsPhase2DataForModule (mtypeAcc, mspec), (innerParent, innerTypeNames, envForDecls)
 
     /// Establish 'type <vis1> C < T1... TN >  = <vis2> ...' including 
     ///    - computing the mangled name for C
@@ -15560,8 +15561,8 @@ module EstablishTypeDefinitionCores =
             |> MutRecShapes.mapWithParent 
                  (parent, typeNames, envInitial)
                  // Build the initial entity for each module definition
-                 (fun (innerParent, typeNames, envForDecls) compInfo _decls -> 
-                     TcTyconDefnCore_Phase1A_BuildInitialModule cenv envForDecls innerParent typeNames compInfo) 
+                 (fun (innerParent, typeNames, envForDecls) compInfo decls -> 
+                     TcTyconDefnCore_Phase1A_BuildInitialModule cenv envForDecls innerParent typeNames compInfo decls) 
 
                  // Build the initial Tycon for each type definition
                  (fun (innerParent, _, envForDecls) (typeDefCore,tyconMemberInfo) -> 
