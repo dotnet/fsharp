@@ -50,7 +50,7 @@ module private FSharpQuickInfo =
             let! extDocId = solution.GetDocumentIdsWithFilePath declRange.FileName |> Seq.tryHead
             let extDocument = solution.GetProject(extDocId.ProjectId).GetDocument extDocId
             let! extSourceText = extDocument.GetTextAsync cancellationToken
-            let extSpan = RoslynHelpers.FSharpRangeToTextSpan (extSourceText, declRange)
+            let! extSpan = RoslynHelpers.TryFSharpRangeToTextSpan (extSourceText, declRange)
             let extLineText = (extSourceText.Lines.GetLineFromPosition extSpan.Start).ToString()
             
             // project options need to be retrieved because the signature file could be in another project 
@@ -69,9 +69,10 @@ module private FSharpQuickInfo =
             | extTooltipText  -> 
                 let! extSymbolUse =
                     extCheckFileResults.GetSymbolUseAtLocation(declRange.StartLine, extLexerSymbol.Ident.idRange.EndColumn, extLineText, extLexerSymbol.FullIsland, userOpName=userOpName)
+                let! span = RoslynHelpers.TryFSharpRangeToTextSpan (extSourceText, extLexerSymbol.Range)
                 
                 return { StructuredText = extTooltipText
-                         Span = RoslynHelpers.FSharpRangeToTextSpan (extSourceText, extLexerSymbol.Range)
+                         Span = span
                          Symbol = extSymbolUse.Symbol
                          SymbolKind = extLexerSymbol.Kind }
         }
@@ -110,7 +111,7 @@ module private FSharpQuickInfo =
                     | FSharpToolTipText [] 
                     | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
                     | _ -> 
-                        let targetTextSpan = RoslynHelpers.FSharpRangeToTextSpan (sourceText, lexerSymbol.Range)
+                        let! targetTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sourceText, lexerSymbol.Range)
                         return { StructuredText = targetTooltip
                                  Span = targetTextSpan
                                  Symbol = symbolUse.Symbol
@@ -180,7 +181,8 @@ type internal FSharpQuickInfoProvider
             | FSharpToolTipText [FSharpStructuredToolTipElement.None] -> return! None
             | _ -> 
                 let! symbolUse = checkFileResults.GetSymbolUseAtLocation (textLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, userOpName=FSharpQuickInfo.userOpName)
-                return res, RoslynHelpers.FSharpRangeToTextSpan (sourceText, symbol.Range), symbolUse.Symbol, symbol.Kind
+                let! symbolSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sourceText, symbol.Range)
+                return res, symbolSpan, symbolUse.Symbol, symbol.Kind
         }
     
     interface IQuickInfoProvider with

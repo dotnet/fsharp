@@ -71,6 +71,7 @@ let mkUnitDelayLambda (g: TcGlobals) m e =
 exception BakedInMemberConstraintName of string * range
 exception FunctionExpected of DisplayEnv * TType * range
 exception NotAFunction of DisplayEnv * TType * range * range
+exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range
 exception Recursion of DisplayEnv * Ident * TType * TType  * range
 exception RecursiveUseCheckedAtRuntime of DisplayEnv * ValRef * range
 exception LetRecEvaluatedOutOfOrder of DisplayEnv * ValRef * ValRef * range
@@ -515,7 +516,7 @@ let AddDeclaredTypars check typars env =
     let env = ModifyNameResEnv (fun nenv -> AddDeclaredTyparsToNameEnv check nenv typars) env
     RegisterDeclaredTypars typars env
 
-/// Compilation environment for typechecking a compilation unit. Contains the
+/// Compilation environment for typechecking a single file in an assembly. Contains the
 /// F# and .NET modules loaded from disk, the search path, a table indicating
 /// how to List.map F# modules to assembly names, and some nasty globals 
 /// related to type inference. These are:
@@ -532,6 +533,9 @@ type cenv =
       
       /// Checks to run after all inference is complete. 
       mutable postInferenceChecks: ResizeArray<unit -> unit>
+
+      /// Set to true if this file causes the creation of generated provided types.
+      mutable createsGeneratedProvidedTypes: bool
 
       /// Are we in a script? if so relax the reporting of discarded-expression warnings at the top level
       isScript: bool 
@@ -572,6 +576,7 @@ type cenv =
           amap = amap
           recUses = ValMultiMap<_>.Empty
           postInferenceChecks = ResizeArray()
+          createsGeneratedProvidedTypes = false
           topCcu = topCcu
           isScript = isScript
           css = ConstraintSolverState.New(g,amap,infoReader,tcVal)
@@ -1425,8 +1430,6 @@ let MakeAndPublishVal cenv env (altActualParent,inSig,declKind,vrec,(ValScheme(i
             let AGGRESSIVE_INLINING = 0x0100
             if (implflags &&& NO_INLINING) <> 0x0 then
                 ValInline.Never
-            elif (implflags &&& AGGRESSIVE_INLINING) <> 0x0 then
-                ValInline.Aggressive
             else
                 inlineFlag
 
@@ -5719,7 +5722,15 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
 
         // Always allow subsumption if a nominal type is known prior to type checking any arguments
         let flex = not (isTyparTy cenv.g argty)
-        let args',tpenv = List.mapFold (TcExprFlex cenv flex argty env) tpenv args
+        let first = ref true
+        let getInitEnv m = 
+            if !first then 
+                first := false
+                env
+            else
+                { env with eContextInfo = ContextInfo.CollectionElement (isArray,m) }
+
+        let args',tpenv = List.mapFold (fun tpenv (x:SynExpr) -> TcExprFlex cenv flex argty (getInitEnv x.Range) tpenv x) tpenv args
         
         let expr = 
             if isArray then Expr.Op(TOp.Array, [argty],args',m)
@@ -5876,12 +5887,19 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
     | SynExpr.IfThenElse (e1,e2,e3opt,spIfToThen,isRecovery,mIfToThen,m) ->
         let e1',tpenv = TcExprThatCantBeCtorBody cenv cenv.g.bool_ty env tpenv e1
         let e2',tpenv =
+            let env =
+                match env.eContextInfo with
+                | ContextInfo.ElseBranchResult _ ->  { env with eContextInfo = ContextInfo.ElseBranchResult e2.Range }
+                | _ -> 
+                    match e3opt with
+                    | None -> { env with eContextInfo = ContextInfo.OmittedElseBranch e2.Range }
+                    | _ -> { env with eContextInfo = ContextInfo.IfExpression e2.Range }
+
             if not isRecovery && Option.isNone e3opt then
-                let env = { env with eContextInfo = ContextInfo.OmittedElseBranch e2.Range}
                 UnifyTypes cenv env m cenv.g.unit_ty overallTy
-                TcExprThatCanBeCtorBody cenv overallTy env tpenv e2
-            else
-                TcExprThatCanBeCtorBody cenv overallTy env tpenv e2
+
+            TcExprThatCanBeCtorBody cenv overallTy env tpenv e2
+
         let e3',sp2,tpenv = 
             match e3opt with 
             | None ->
@@ -5890,6 +5908,7 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
                 let env = { env with eContextInfo = ContextInfo.ElseBranchResult e3.Range }
                 let e3',tpenv = TcExprThatCanBeCtorBody cenv overallTy env tpenv e3 
                 e3',SequencePointAtTarget,tpenv
+
         primMkCond spIfToThen SequencePointAtTarget sp2 m overallTy e1' e2' e3', tpenv
 
     // This is for internal use in the libraries only 
@@ -8224,12 +8243,23 @@ and Propagate cenv overallTy env tpenv (expr: ApplicableExpr) exprty delayed =
                 propagate delayedList' mExprAndArg resultTy 
             | None -> 
                 let mArg = arg.Range
-                match arg with 
+                match arg with
                 | SynExpr.CompExpr _ -> ()
-                | _ -> 
+                | SynExpr.ArrayOrListOfSeqExpr (false,_,_) ->
                     // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
                     RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
-                    error (NotAFunction(denv,overallTy,mExpr,mArg)) 
+                    if IsIndexerType cenv.g cenv.amap expr.Type then
+                        match expr.Expr with
+                        | Expr.Val (d,_,_) ->
+                            error (NotAFunctionButIndexer(denv,overallTy,Some d.DisplayName,mExpr,mArg))
+                        | _ ->
+                            error (NotAFunctionButIndexer(denv,overallTy,None,mExpr,mArg))
+                    else
+                        error (NotAFunction(denv,overallTy,mExpr,mArg))
+                | _ ->
+                    // 'delayed' is about to be dropped on the floor, first do rudimentary checking to get name resolutions in its body
+                    RecordNameAndTypeResolutions_IdeallyWithoutHavingOtherEffects_Delayed cenv env tpenv delayed
+                    error (NotAFunction(denv,overallTy,mExpr,mArg))
 
     propagate delayed expr.Range exprty
 
@@ -9907,7 +9937,7 @@ and TcMethodApplication
 and TcUnnamedMethodArgs cenv env lambdaPropagationInfo tpenv args =  
     List.mapiFoldSquared (TcUnnamedMethodArg cenv env) (lambdaPropagationInfo,tpenv) args 
 
-and TcUnnamedMethodArg  cenv env  (lambdaPropagationInfo,tpenv) (i,j,CallerArg(argTy,mArg,isOpt,argExpr)) = 
+and TcUnnamedMethodArg cenv env  (lambdaPropagationInfo,tpenv) (i,j,CallerArg(argTy,mArg,isOpt,argExpr)) = 
     // Try to find the lambda propagation info for the corresponding unnamed argument at this position
     let lambdaPropagationInfoForArg = 
         [| for (unnamedInfo,_) in lambdaPropagationInfo -> 
@@ -9934,14 +9964,14 @@ and TcMethodArg  cenv env  (lambdaPropagationInfo,tpenv) (lambdaPropagationInfoF
     // Apply the F# 3.1 rule for extracting information for lambdas
     //
     // Before we check the argument, check to see if we can propagate info from a called lambda expression into the arguments of a received lambda
-    begin
-        if lambdaPropagationInfoForArg.Length > 0 then 
-            let allOverloadsAreFuncOrMismatchForThisArg = 
-                lambdaPropagationInfoForArg |> Array.forall (function ArgDoesNotMatch | CallerLambdaHasArgTypes _ -> true | NoInfo | CalledArgMatchesType _ -> false)
+    if lambdaPropagationInfoForArg.Length > 0 then 
+        let allOverloadsAreNotCalledArgMatchesForThisArg = 
+            lambdaPropagationInfoForArg 
+            |> Array.forall (function ArgDoesNotMatch | CallerLambdaHasArgTypes _ | NoInfo -> true | CalledArgMatchesType _ -> false)
 
-            if allOverloadsAreFuncOrMismatchForThisArg then 
-              let overloadsWhichAreFuncAtThisPosition = lambdaPropagationInfoForArg |> Array.choose (function CallerLambdaHasArgTypes r -> Some (List.toArray r) | _ -> None)
-              if overloadsWhichAreFuncAtThisPosition.Length > 0 then 
+        if allOverloadsAreNotCalledArgMatchesForThisArg then 
+            let overloadsWhichAreFuncAtThisPosition = lambdaPropagationInfoForArg |> Array.choose (function CallerLambdaHasArgTypes r -> Some (List.toArray r) | _ -> None)
+            if overloadsWhichAreFuncAtThisPosition.Length > 0 then 
                 let minFuncArity = overloadsWhichAreFuncAtThisPosition |> Array.minBy Array.length |> Array.length
                 let prefixOfLambdaArgsForEachOverload = overloadsWhichAreFuncAtThisPosition |> Array.map (Array.take minFuncArity)
           
@@ -9963,7 +9993,6 @@ and TcMethodArg  cenv env  (lambdaPropagationInfo,tpenv) (lambdaPropagationInfoF
                                         loop callerLambdaRangeTy (lambdaVarNum + 1)
                                 | None -> ()
                     loop argTy 0
-    end
 
     let e',tpenv = TcExpr cenv argTy env tpenv argExpr
 
@@ -10009,7 +10038,7 @@ and bindLetRec (binds:Bindings) m e =
 
 /// Check for duplicate bindings in simple recursive patterns
 and CheckRecursiveBindingIds binds =
-    let hashOfBinds = new Dictionary<string,_>()
+    let hashOfBinds = new HashSet<string>()
             
     for (SynBinding.Binding(_,_,_,_,_,_,_,b,_,_,m,_)) in binds do
         let nm =
@@ -10017,10 +10046,8 @@ and CheckRecursiveBindingIds binds =
             | SynPat.Named(_,id,_,_,_) -> id.idText
             | SynPat.LongIdent(LongIdentWithDots([id],_),_,_,_,_,_) -> id.idText
             | _ -> ""
-        if nm <> "" then
-            if hashOfBinds.ContainsKey(nm) then
-                error(Duplicate("value",nm,m))
-            else hashOfBinds.[nm] <- b
+        if nm <> "" && not (hashOfBinds.Add nm) then
+            error(Duplicate("value",nm,m))
 
 /// Process a sequence of sequentials mixed with iterated lets "let ... in let ... in ..." in a tail recursive way 
 /// This avoids stack overflow on really large "let" and "letrec" lists
@@ -10061,15 +10088,24 @@ and TcMatchPattern cenv inputTy env tpenv (pat:SynPat,optWhenExpr) =
     let m = pat.Range
     let patf',(tpenv,names,_) = TcPat WarnOnUpperCase cenv env None (ValInline.Optional,permitInferTypars,noArgOrRetAttribs,false,None,false) (tpenv,Map.empty,Set.empty) inputTy pat
     let envinner,values,vspecMap = MakeAndPublishSimpleVals cenv env m names false
-    let optWhenExpr',tpenv = Option.mapFold (TcExpr cenv cenv.g.bool_ty envinner) tpenv optWhenExpr
+    let optWhenExpr',tpenv = 
+        match optWhenExpr with
+        | Some whenExpr ->
+            let guardEnv = { envinner with eContextInfo = ContextInfo.PatternMatchGuard whenExpr.Range }
+            let whenExpr',tpenv  = TcExpr cenv cenv.g.bool_ty guardEnv tpenv whenExpr
+            Some whenExpr',tpenv
+        | None -> None,tpenv
     patf' (TcPatPhase2Input (values, true)),optWhenExpr', NameMap.range vspecMap,envinner,tpenv
 
 and TcMatchClauses cenv inputTy resultTy env tpenv clauses =
-    List.mapFold (TcMatchClause cenv inputTy resultTy env) tpenv clauses 
+    let first = ref true
+    let isFirst() = if !first then first := false; true else false
+    List.mapFold (fun clause -> TcMatchClause cenv inputTy resultTy env (isFirst()) clause) tpenv clauses
 
-and TcMatchClause cenv inputTy resultTy env tpenv (Clause(pat,optWhenExpr,e,patm,spTgt)) =
+and TcMatchClause cenv inputTy resultTy env isFirst tpenv (Clause(pat,optWhenExpr,e,patm,spTgt)) =
     let pat',optWhenExpr',vspecs,envinner,tpenv = TcMatchPattern cenv inputTy env tpenv (pat,optWhenExpr)
-    let e',tpenv = TcExprThatCanBeCtorBody cenv resultTy envinner tpenv e
+    let resultEnv = if isFirst then envinner else { envinner with eContextInfo = ContextInfo.FollowingPatternMatchClause e.Range }
+    let e',tpenv = TcExprThatCanBeCtorBody cenv resultTy resultEnv tpenv e
     TClause(pat',optWhenExpr',TTarget(vspecs, e',spTgt),patm),tpenv
 
 and TcStaticOptimizationConstraint cenv env tpenv c = 
@@ -10233,15 +10269,15 @@ and TcNormalizedBinding declKind (cenv:cenv) env tpenv overallTy safeThisValOpt 
             if (not isMutable || isThreadStatic) then 
                 errorR(Error(FSComp.SR.tcVolatileFieldsMustBeMutable(),mBinding))
 
-        if isFixed then 
-            if declKind <> ExpressionBinding || isInline || isMutable then 
-                errorR(Error(FSComp.SR.tcFixedNotAllowed(),mBinding))
+        if isFixed && (declKind <> ExpressionBinding || isInline || isMutable) then
+            errorR(Error(FSComp.SR.tcFixedNotAllowed(),mBinding))
 
-        if HasFSharpAttributeOpt cenv.g cenv.g.attrib_DllImportAttribute valAttribs then 
-            if not declKind.CanBeDllImport || (match memberFlagsOpt with Some memberFlags -> memberFlags.IsInstance | _ -> false) then 
-                errorR(Error(FSComp.SR.tcDllImportNotAllowed(),mBinding))
+        if (not declKind.CanBeDllImport || (match memberFlagsOpt with Some memberFlags -> memberFlags.IsInstance | _ -> false)) &&
+            HasFSharpAttributeOpt cenv.g cenv.g.attrib_DllImportAttribute valAttribs 
+        then 
+            errorR(Error(FSComp.SR.tcDllImportNotAllowed(),mBinding))
             
-        if HasFSharpAttribute cenv.g cenv.g.attrib_ConditionalAttribute valAttribs && Option.isNone memberFlagsOpt then 
+        if Option.isNone memberFlagsOpt && HasFSharpAttribute cenv.g cenv.g.attrib_ConditionalAttribute valAttribs then 
             errorR(Error(FSComp.SR.tcConditionalAttributeRequiresMembers(),mBinding))
 
         if HasFSharpAttribute cenv.g cenv.g.attrib_EntryPointAttribute valAttribs then 
@@ -13012,8 +13048,8 @@ module MutRecBindingChecking =
                             [ Phase2AOpen (mp,m) ], innerState
 #endif
                         
-                        | _ -> 
-                            error(InternalError("Unexpected definition",m)))
+                        | definition -> 
+                            error(InternalError(sprintf "Unexpected definition %A" definition,m)))
 
                 // If no constructor call, insert Phase2AIncrClassCtorJustAfterSuperInit at start
                 let defnAs = 
@@ -14655,6 +14691,8 @@ module EstablishTypeDefinitionCores =
                 let desig = theRootTypeWithRemapping.TypeProviderDesignation
                 let nm = theRootTypeWithRemapping.PUntaint((fun st -> st.FullName),m)
                 error(Error(FSComp.SR.etErasedTypeUsedInGeneration(desig,nm),m))
+
+            cenv.createsGeneratedProvidedTypes <- true
 
             // In compiled code, all types in the set of generated types end up being both generated and relocated, unless relocation is suppressed
             let isForcedSuppressRelocate = theRootTypeWithRemapping.PUntaint((fun st -> st.IsSuppressRelocate),m) 
@@ -16984,14 +17022,14 @@ let TypeCheckOneImplFile
         conditionallySuppressErrorReporting (checkForErrors()) (fun () ->
             try  
                 let reportErrors = not (checkForErrors())
-                Microsoft.FSharp.Compiler.PostTypeCheckSemanticChecks.CheckTopImpl (g,cenv.amap,reportErrors,cenv.infoReader,env.eInternalsVisibleCompPaths,cenv.topCcu,envAtEnd.DisplayEnv, implFileExprAfterSig,extraAttribs,isLastCompiland)
+                PostTypeCheckSemanticChecks.CheckTopImpl (g,cenv.amap,reportErrors,cenv.infoReader,env.eInternalsVisibleCompPaths,cenv.topCcu,envAtEnd.DisplayEnv, implFileExprAfterSig,extraAttribs,isLastCompiland)
             with e -> 
                 errorRecovery e m
                 false)
 
-    let implFile = TImplFile(qualNameOfFile,scopedPragmas, implFileExprAfterSig, hasExplicitEntryPoint,isScript)
+    let implFile = TImplFile(qualNameOfFile, scopedPragmas, implFileExprAfterSig, hasExplicitEntryPoint, isScript)
 
-    return (topAttrs,implFile,envAtEnd)
+    return (topAttrs,implFile,envAtEnd,cenv.createsGeneratedProvidedTypes)
  } 
    
 
@@ -17011,5 +17049,5 @@ let TypeCheckOneSigFile  (g,niceNameGen,amap,topCcu,checkForErrors,conditionalDe
         try sigFileType |> IterTyconsOfModuleOrNamespaceType (FinalTypeDefinitionChecksAtEndOfInferenceScope(cenv.infoReader, tcEnv.NameEnv, cenv.tcSink, false, tcEnv.DisplayEnv))
         with e -> errorRecovery e qualNameOfFile.Range
 
-    return (tcEnv,tcEnv,sigFileType)
+    return (tcEnv,sigFileType,cenv.createsGeneratedProvidedTypes)
  }

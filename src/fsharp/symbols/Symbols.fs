@@ -1368,7 +1368,6 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
         | ValInline.Always -> FSharpInlineAnnotation.AlwaysInline
         | ValInline.Optional -> FSharpInlineAnnotation.OptionalInline
         | ValInline.Never -> FSharpInlineAnnotation.NeverInline
-        | ValInline.Aggressive -> FSharpInlineAnnotation.AggressiveInline
 
     member __.IsMutable = 
         if isUnresolved() then false else 

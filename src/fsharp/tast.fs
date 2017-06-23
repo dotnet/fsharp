@@ -73,7 +73,7 @@ type ValInline =
     member x.MustInline = 
         match x with 
         | ValInline.PseudoVal | ValInline.Always -> true 
-        | ValInline.Optional | ValInline.Aggressive | ValInline.Never -> false
+        | ValInline.Optional | ValInline.Never -> false
 
 /// A flag associated with values that indicates whether the recursive scope of the value is currently being processed, and 
 /// if the value has been generalized or not as yet.
@@ -125,7 +125,6 @@ type ValFlags(flags:int64) =
                      (match inlineInfo with
                                         | ValInline.PseudoVal ->             0b0000000000000000000L
                                         | ValInline.Always ->                0b0000000000000010000L
-                                        | ValInline.Aggressive ->            0b0100L
                                         | ValInline.Optional ->              0b0000000000000100000L
                                         | ValInline.Never ->                 0b0000000000000110000L) |||
                      (match isMutable with

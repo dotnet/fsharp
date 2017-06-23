@@ -39,12 +39,12 @@
     <Compile Include="Fsc.fs" />
     <Compile Include="CreateFSharpManifestResourceName.fsi" />
     <Compile Include="CreateFSharpManifestResourceName.fs" />
-    <CopyAndSubstituteText Include="Microsoft.FSharp.targets">
+    <CopyAndSubstituteText Include="Microsoft.FSharp.Targets">
         <TargetFilename>Microsoft.FSharp.Targets</TargetFilename>
         <Pattern1>{BuildSuffix}</Pattern1>
         <Replacement1></Replacement1>
     </CopyAndSubstituteText>
-    <CopyAndSubstituteText Include="Microsoft.Portable.FSharp.targets">
+    <CopyAndSubstituteText Include="Microsoft.Portable.FSharp.Targets">
       <TargetFilename>Microsoft.Portable.FSharp.Targets</TargetFilename>
       <Pattern1>{BuildSuffix}</Pattern1>
       <Replacement1></Replacement1>
@@ -60,11 +60,11 @@
         <Replacement1></Replacement1>
     </CopyAndSubstituteText>
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' != 'coreclr' ">
+  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' ">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' != 'coreclr' AND '$(MonoPackaging)' != 'true' ">
+  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' != 'true' ">
     <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>
     </Reference>
@@ -78,7 +78,7 @@
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Tasks.Core.dll</HintPath>
     </Reference>
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' != 'coreclr' AND '$(MonoPackaging)' == 'true' ">
+  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' == 'true' ">
     <Reference Include="Microsoft.Build.Framework, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
         <Private>True</Private>
     </Reference>

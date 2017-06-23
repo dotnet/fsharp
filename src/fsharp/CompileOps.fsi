@@ -342,6 +342,7 @@ type TcConfigBuilder =
       mutable optsOn        : bool 
       mutable optSettings   : Optimizer.OptimizationSettings 
       mutable emitTailcalls : bool
+      mutable deterministic : bool
 #if PREFERRED_UI_LANG
       mutable preferredUiLang: string option
 #endif
@@ -494,6 +495,7 @@ type TcConfig =
     member doFinalSimplify : bool
     member optSettings   : Optimizer.OptimizationSettings 
     member emitTailcalls : bool
+    member deterministic : bool
 #if PREFERRED_UI_LANG
     member preferredUiLang: string option
 #else
@@ -721,6 +723,8 @@ type TcState =
     member PartialAssemblySignature : ModuleOrNamespaceType
 
     member NextStateAfterIncrementalFragment : TcEnv -> TcState
+
+    member CreatesGeneratedProvidedTypes : bool
 
 /// Get the initial type checking state for a set of inputs
 val GetInitialTcState : 

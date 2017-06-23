@@ -64,8 +64,11 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
             let! symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol) |> liftAsync
             return 
                 [| for symbolUse in symbolUses do
-                     yield { IsDefinition = symbolUse.IsFromDefinition
-                             TextSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate) } |]
+                     match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate) with 
+                     | None -> ()
+                     | Some span -> 
+                         yield { IsDefinition = symbolUse.IsFromDefinition
+                                 TextSpan = span } |]
                 |> fixInvalidSymbolSpans sourceText symbol.Ident.idText
         }
 

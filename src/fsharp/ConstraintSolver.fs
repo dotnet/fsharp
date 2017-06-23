@@ -117,6 +117,8 @@ let FreshenMethInfo m (minfo:MethInfo) =
 type ContextInfo =
 /// No context was given.
 | NoContext
+/// The type equation comes from an IF expression.
+| IfExpression of range
 /// The type equation comes from an omitted else branch.
 | OmittedElseBranch of range
 /// The type equation comes from a type check of the result of an else branch.
@@ -125,6 +127,8 @@ type ContextInfo =
 | RecordFields
 /// The type equation comes from the verification of a tuple in record fields.
 | TupleInRecordFields
+/// The type equation comes from a list or array constructor
+| CollectionElement of bool * range
 /// The type equation comes from a return in a computation expression.
 | ReturnInComputationExpression
 /// The type equation comes from a yield in a computation expression.
@@ -133,6 +137,10 @@ type ContextInfo =
 | RuntimeTypeTest of bool
 /// The type equation comes from an downcast where a upcast could be used.
 | DowncastUsedInsteadOfUpcast of bool
+/// The type equation comes from a return type of a pattern match clause (not the first clause).
+| FollowingPatternMatchClause of range
+/// The type equation comes from a pattern match guard.
+| PatternMatchGuard of range
 
 exception ConstraintSolverTupleDiffLengths of DisplayEnv * TType list * TType list * range  * range 
 exception ConstraintSolverInfiniteTypes of ContextInfo * DisplayEnv * TType * TType * range * range

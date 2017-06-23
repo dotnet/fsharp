@@ -1,18 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
   <PropertyGroup>
-    <IsPortableProfile Condition="'$(TargetFramework)' == 'portable47' or '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259'">true</IsPortableProfile>
-    <FSCoreVersion Condition="'$(IsPortableProfile)' != 'true'">4.4.1.0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(TargetFramework)' == 'portable7'">3.7.41.0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(TargetFramework)' == 'portable47'">3.47.41.0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(TargetFramework)' == 'portable78'">3.78.41.0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(TargetFramework)' == 'portable259'">3.259.41.0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(TargetFramework)' == 'monoandroid10+monotouch10+xamarinios10' ">3.98.41.0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(TargetFramework)' == 'xamarinmacmobile' ">3.99.41.0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(FSharpCoreBackVersion)' == '3.0' AND '$(FSCoreVersion)' == '4.4.1.0'">4.3.0.0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(FSharpCoreBackVersion)' == '3.1' AND '$(FSCoreVersion)' == '4.4.1.0'">4.3.1.0</FSCoreVersion>
-    <FSCoreVersion Condition="'$(FSharpCoreBackVersion)' == '4.0' AND '$(FSCoreVersion)' == '4.4.1.0'">4.4.0.0</FSCoreVersion>
+    <FSCoreVersion>4.4.1.0</FSCoreVersion>
   </PropertyGroup>
 
   <Choose>
@@ -48,8 +39,8 @@
             <!-- We have to do unit test DLLs well because they can see the internals of other strong-named DLLs -->
             <Otherwise>
               <PropertyGroup>
-                <OtherFlags Condition="'$(TargetFramework)' == 'coreclr' or $(BUILD_PUBLICSIGN) != '1'">$(OtherFlags) --delaysign+</OtherFlags>
-                <OtherFlags Condition="'$(TargetFramework)' != 'coreclr' and $(BUILD_PUBLICSIGN) == '1'">$(OtherFlags)  --publicsign+</OtherFlags>
+                <OtherFlags Condition="'$(TargetDotnetProfile)' == 'coreclr' or $(BUILD_PUBLICSIGN) != '1'">$(OtherFlags) --delaysign+</OtherFlags>
+                <OtherFlags Condition="'$(TargetDotnetProfile)' != 'coreclr' and $(BUILD_PUBLICSIGN) == '1'">$(OtherFlags)  --publicsign+</OtherFlags>
                 <OtherFlags>$(OtherFlags) --keyfile:"$(FSharpSourcesRoot)\fsharp\msft.pubkey"</OtherFlags>
                 <DefineConstants>STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
@@ -107,6 +98,7 @@
   </PropertyGroup>  
 
   <PropertyGroup>
+    <NugetLocalPackagesDir>$(FSharpSourcesRoot)\..\packages</NugetLocalPackagesDir>
     <NUnitVersion>3.5.0</NUnitVersion>
     <NUnitFullVersion>3.5.0.0</NUnitFullVersion>
     <NUnitLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.$(NUnitVersion)\lib\net45</NUnitLibDir>
@@ -116,7 +108,7 @@
     <FsCheckLibDir>$(FSharpSourcesRoot)\..\packages\FsCheck.$(FsCheckVersion)\lib\</FsCheckLibDir>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TargetFramework)'=='net40'">
+  <PropertyGroup Condition="'$(TargetDotnetProfile)'=='net40'">
     <DefineConstants Condition="'$(MonoPackaging)' == 'true'">$(DefineConstants);CROSS_PLATFORM_COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
     <DefineConstants>$(DefineConstants);BE_SECURITY_TRANSPARENT</DefineConstants>
@@ -126,31 +118,7 @@
     <!-- MSbuild works out the assembly references -->
   </PropertyGroup>
 
-
-  <!-- MonoAndroid, MonoTouch, XamarinWatchOS, XamarinTVOS -->
-  <PropertyGroup Condition="('$(TargetFramework)'=='monoandroid10+monotouch10+xamarinios10')">
-    <!-- Although Reflection Emit is available on MonoAndroid, we don't use it for FSharp.Core -->
-    <!-- because we want the FSharp.Core DLLs to be identical for MonoAndroid and MonoTouch -->
-    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_EMIT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BIGINT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_STRUCTURAL_EQUALITY</DefineConstants>
-    <AssemblySearchPaths>$(FSharpSourcesRoot)\..\mono\dependencies\2.1\XamarinWatchOS;$(AssemblySearchPaths)</AssemblySearchPaths>
-
-  </PropertyGroup>
-
-  <!-- Target MonoAndroid -->
-  <PropertyGroup Condition="'$(TargetFramework)'=='monoandroid10+monotouch10+xamarinios10'">
-    <AssemblySearchPaths>$(FSharpSourcesRoot)\..\mono\dependencies\2.1\MonoAndroid;$(AssemblySearchPaths)</AssemblySearchPaths>
-
-  </PropertyGroup>
-
-  <!-- Target xamarinmacmobile similar to monoandroid10+monotouch10+xamarinios10 configurations, with Reflection.emit, structural equality, and BigInt -->
-  <PropertyGroup Condition="'$(TargetFramework)'=='xamarinmacmobile'">
-    <AssemblySearchPaths>$(FSharpSourcesRoot)\..\mono\dependencies\2.1\XamarinMac;$(AssemblySearchPaths)</AssemblySearchPaths>
-
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(TargetFramework)'=='coreclr'">
+  <PropertyGroup Condition="'$(TargetDotnetProfile)'=='coreclr'">
     <DefineConstants>$(DefineConstants);FX_PORTABLE_OR_NETSTANDARD</DefineConstants>
     <DefineConstants>$(DefineConstants);NETSTANDARD1_6</DefineConstants>
     <DefineConstants>$(DefineConstants);PREFERRED_UI_LANG</DefineConstants>
@@ -204,7 +172,7 @@
     <PortableNuGetMode>true</PortableNuGetMode>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)'=='coreclr' AND '$(DOTNET_PUBLISH_TEST)'=='true' ">
+  <PropertyGroup Condition=" '$(TargetDotnetProfile)'=='coreclr' AND '$(DOTNET_PUBLISH_TEST)'=='true' ">
     <OutputPath>bin\$(Configuration)\netcoreapp1.0</OutputPath>
     <CustomOutputPath>true</CustomOutputPath>
     <DOTNET_PUBLISH>true</DOTNET_PUBLISH>
@@ -214,178 +182,19 @@
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)'=='coreclr' AND '$(DOTNET_PUBLISH_COMPILERS)'=='true' ">
+  <PropertyGroup Condition=" '$(TargetDotnetProfile)'=='coreclr' AND '$(DOTNET_PUBLISH_COMPILERS)'=='true' ">
     <DOTNET_PUBLISH_FSC>true</DOTNET_PUBLISH_FSC>
     <DOTNET_PUBLISH_FSC_PATH>$(FSharpSourcesRoot)\..\tests\testbin\$(Configuration)\coreclr\FSC</DOTNET_PUBLISH_FSC_PATH>
     <DOTNET_PUBLISH_FSI>true</DOTNET_PUBLISH_FSI>
     <DOTNET_PUBLISH_FSI_PATH>$(FSharpSourcesRoot)\..\tests\testbin\$(Configuration)\coreclr\FSC</DOTNET_PUBLISH_FSI_PATH>
   </PropertyGroup>
 
-  <!-- Target Portable Profile 47 -->
-  <PropertyGroup Condition="'$(TargetFramework)'=='portable47'">
-    <DefineConstants>$(DefineConstants);FSCORE_PORTABLE_OLD</DefineConstants>
-    <DefineConstants>$(DefineConstants);FSCORE_NO_STDIN</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_PORTABLE_OR_NETSTANDARD</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_APP_DOMAINS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ARRAY_KEY_SORT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ASCII_ENCODING</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BASED_ARRAYS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BINARY_SERIALIZATION</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CHAR_PARSE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_COMMAND_LINE_ARGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_COMVISIBLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CONCURRENT_DICTIONARY</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CONVERTER</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CULTURE_INFO_ARGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CUSTOMATTRIBUTEDATA</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEBUG_PROXIES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEFAULT_DEPENDENCY_TYPE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEFAULT_ENCODING</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DOUBLE_BIT_CONVERTER</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ENVIRONMENT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXCEPTIONDISPATCHINFO</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXIT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EVENTWAITHANDLE_IDISPOSABLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_FILE_OPTIONS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_GET_HASH_CODE_HELPER</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ICLONEABLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_IOBSERVABLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_MISSINGMETHODEXCEPTION</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_NONBLOCK_IO</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_PARAMETERIZED_THREAD_START</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_PROCESS_DIAGNOSTICS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_PROCESS_START</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_METADATA_TOKENS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_ONLY</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_EMIT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REGISTERED_WAIT_HANDLES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_SECURITY_PERMISSIONS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_SYSTEM_CONSOLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_THREAD</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TO_LOWER_INVARIANT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TPL_PARALLEL</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TRUNCATE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_WEB_CLIENT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_WAITONE_MILLISECONDS</DefineConstants>
-    <TargetFrameworkProfile>Profile47</TargetFrameworkProfile>
-    <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.0</TargetFrameworkVersion>
-  </PropertyGroup>
-
-  <!-- Target Portable Profile 7 -->
-  <PropertyGroup Condition="'$(TargetFramework)'=='portable7'">
-    <DefineConstants>$(DefineConstants);FSCORE_PORTABLE_NEW</DefineConstants>
-    <DefineConstants>$(DefineConstants);FSCORE_NO_STDIN</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_PORTABLE_OR_NETSTANDARD</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ARRAY_KEY_SORT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BEGINEND_READWRITE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BINARY_SERIALIZATION</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CHAR_PARSE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CONVERTER</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CUSTOMATTRIBUTEDATA</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEFAULT_DEPENDENCY_TYPE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EVENTWAITHANDLE_IDISPOSABLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXIT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_MISSINGMETHODEXCEPTION</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_PARAMETERIZED_THREAD_START</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_EMIT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_METADATA_TOKENS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_ONLY</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REGISTERED_WAIT_HANDLES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_SECURITY_PERMISSIONS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_SYSTEM_CONSOLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_SYSTEM_BINDINGFLAGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_THREAD</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TYPECODE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_WEB_CLIENT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_RESHAPED_REFLECTION</DefineConstants>
-    <TargetProfile>netcore</TargetProfile>
-    <TargetFrameworkProfile>Profile7</TargetFrameworkProfile>
-    <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.5</TargetFrameworkVersion>    
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(TargetFramework)'=='portable78'">
-    <DefineConstants>$(DefineConstants);FSCORE_PORTABLE_NEW</DefineConstants>
-    <DefineConstants>$(DefineConstants);FSCORE_NO_STDIN</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_PORTABLE_OR_NETSTANDARD</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ARRAY_KEY_SORT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BEGINEND_READWRITE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BIGINT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BINARY_SERIALIZATION</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CHAR_PARSE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CONVERTER</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CONCURRENT_DICTIONARY</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CUSTOMATTRIBUTEDATA</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEFAULT_DEPENDENCY_TYPE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EVENTWAITHANDLE_IDISPOSABLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXIT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_MISSINGMETHODEXCEPTION</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_PARAMETERIZED_THREAD_START</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_EMIT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_METADATA_TOKENS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_ONLY</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REGISTERED_WAIT_HANDLES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_SECURITY_PERMISSIONS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_SYSTEM_CONSOLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_SYSTEM_BINDINGFLAGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_THREAD</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TPL_PARALLEL</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TYPECODE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_WEB_CLIENT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_RESHAPED_REFLECTION</DefineConstants>
-    <TargetProfile>netcore</TargetProfile>
-    <TargetFrameworkProfile>Profile78</TargetFrameworkProfile>
-    <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.5</TargetFrameworkVersion>
-  </PropertyGroup>
-
-  <!-- Target Portable Profile 259 -->
-  <PropertyGroup Condition="'$(TargetFramework)'=='portable259'">
-    <DefineConstants>$(DefineConstants);FSCORE_PORTABLE_NEW</DefineConstants>
-    <DefineConstants>$(DefineConstants);FSCORE_NO_STDIN</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_PORTABLE_OR_NETSTANDARD</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ARRAY_KEY_SORT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_ARRAY_LONG_LENGTH</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BEGINEND_READWRITE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BIGINT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_BINARY_SERIALIZATION</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CHAR_PARSE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CONCURRENT_DICTIONARY</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CONVERTER</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_CUSTOMATTRIBUTEDATA</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_DEFAULT_DEPENDENCY_TYPE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EVENTWAITHANDLE_IDISPOSABLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXIT_CONTEXT_FLAGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_EXIT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_MISSINGMETHODEXCEPTION</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_PARAMETERIZED_THREAD_START</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_METADATA_TOKENS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_EMIT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REFLECTION_ONLY</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_REGISTERED_WAIT_HANDLES</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_SECURITY_PERMISSIONS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_SYSTEM_CONSOLE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_SYSTEM_BINDINGFLAGS</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_THREAD</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TPL_PARALLEL</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_TYPECODE</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_NO_WEB_CLIENT</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_RESHAPED_REFLECTION</DefineConstants>
-    <TargetProfile>netcore</TargetProfile>
-    <TargetFrameworkProfile>Profile259</TargetFrameworkProfile>
-    <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.5</TargetFrameworkVersion>
-  </PropertyGroup>
-
-  <!-- If building an FSharp.Core for a back version (Mono Debian source builds only), put it in a ualified directory -->
+  <!-- If building an FSharp.Core for a back version (Mono Debian source builds only), put it in a qualified directory -->
   <PropertyGroup>
-    <TargetFrameworkOutputDirectory Condition="'$(FSharpCoreBackVersion)' == ''">$(TargetFramework)</TargetFrameworkOutputDirectory>
-    <TargetFrameworkOutputDirectory Condition="'$(FSharpCoreBackVersion)' == '3.0'">fsharp30\$(TargetFramework)</TargetFrameworkOutputDirectory>
-    <TargetFrameworkOutputDirectory Condition="'$(FSharpCoreBackVersion)' == '3.1'">fsharp31\$(TargetFramework)</TargetFrameworkOutputDirectory>
-    <TargetFrameworkOutputDirectory Condition="'$(FSharpCoreBackVersion)' == '4.0'">fsharp40\$(TargetFramework)</TargetFrameworkOutputDirectory>
+    <TargetFrameworkOutputDirectory Condition="'$(FSharpCoreBackVersion)' == ''">$(TargetDotnetProfile)</TargetFrameworkOutputDirectory>
+    <TargetFrameworkOutputDirectory Condition="'$(FSharpCoreBackVersion)' == '3.0'">fsharp30\$(TargetDotnetProfile)</TargetFrameworkOutputDirectory>
+    <TargetFrameworkOutputDirectory Condition="'$(FSharpCoreBackVersion)' == '3.1'">fsharp31\$(TargetDotnetProfile)</TargetFrameworkOutputDirectory>
+    <TargetFrameworkOutputDirectory Condition="'$(FSharpCoreBackVersion)' == '4.0'">fsharp40\$(TargetDotnetProfile)</TargetFrameworkOutputDirectory>
     <IntermediateOutputPath>obj\$(TargetFrameworkOutputDirectory)\</IntermediateOutputPath>
   </PropertyGroup>
 
@@ -394,11 +203,11 @@
       <PropertyGroup >
         <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(ProtoFlavour)\bin</OutputPath>
         <!-- When using coreclr to bootstrap to proto. We acquire the FSharp.Core LKG, targets LKG, the FSharp.Build LKG from the .NET Framework compiler tools LKG package. -->
-        <FSharpCoreLkgPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.5\tools</FSharpCoreLkgPath>
-        <FSharpNetCoreLkgPath>$(FSharpSourcesRoot)\..\Tools\lkg</FSharpNetCoreLkgPath>
+        <FSharpNetCoreLkgPath>$(FSharpSourcesRoot)\..\Tools\dotnet20\sdk\2.0.0-preview2-006494\FSharp</FSharpNetCoreLkgPath>
         <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.1.5\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
+
         <!-- When using coreclr to bootstrap, the compiler binary comes from the coreclr LKG, invoked using corehost.exe -->
-        <FscToolPath>$(FSharpSourcesRoot)\..\Tools\dotnetcli</FscToolPath>
+        <FscToolPath>$(FSharpSourcesRoot)\..\Tools\dotnet20</FscToolPath>
         <FscToolExe Condition="'$(OS)' != 'Unix'">dotnet.exe</FscToolExe>
         <FscToolExe Condition="'$(OS)' == 'Unix'">dotnet</FscToolExe>
         <DotnetFscCompilerPath>$(FSharpNetCoreLkgPath)\fsc.exe</DotnetFscCompilerPath>
@@ -408,12 +217,11 @@
        <!-- Use .NET Framework to bootstrap to proto -->
       <PropertyGroup >
         <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(ProtoFlavour)\bin</OutputPath>
-        <FSharpCoreLkgPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.5\tools</FSharpCoreLkgPath>
         <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.1.5\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
       </PropertyGroup>
     </When>
-    <When Condition="'$(BuildWith)' == '' AND ('$(TargetFramework)'=='portable47' OR '$(TargetFramework)'=='portable7' OR '$(TargetFramework)'=='portable78' OR '$(TargetFramework)'=='portable259' OR '$(TargetFramework)'=='coreclr')">
-      <!-- Compiling portable/coreclr with Proto, currently always use a .NET Framework/Mono proto -->
+    <When Condition="'$(BuildWith)' == '' AND '$(TargetDotnetProfile)'=='coreclr'">
+      <!-- Compiling coreclr with Proto, currently always use a .NET Framework/Mono proto -->
       <PropertyGroup>
         <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFrameworkOutputDirectory)\bin</OutputPath>
         <FscToolPath>$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin</FscToolPath>
@@ -445,7 +253,7 @@
     <Message Text="FsYaccToolPath = $(FsYaccToolPath)" />
     <Message Text="ToolsDir = $(ToolsDir)" />
     <Error Text="Expect $(FSharpTargetsPath) to exist" Condition="'!Exists('$(FSharpTargetsPath)')" />
-    <Error Text="Expect $(FSharpSourcesRoot)\..\Tools\lkg\fsc.exe to exist when BUILD_PROTO_WITH_CORECLR_LKG==1" Condition="'$(BUILD_PROTO_WITH_CORECLR_LKG)' == 1 AND !Exists('$(FSharpSourcesRoot)\..\Tools\lkg\fsc.exe')" />
+    <Error Text="Expect $(FSharpNetCoreLkgPath)\fsc.exe to exist when BUILD_PROTO_WITH_CORECLR_LKG==1" Condition="'$(BUILD_PROTO_WITH_CORECLR_LKG)' == 1 AND !Exists('$(FSharpNetCoreLkgPath)\fsc.exe')" />
     <Error Text="Expect $(FscToolPath)\$(FscToolExe) to exist" Condition="!Exists('$(FscToolPath)\$(FscToolExe)')" />
     <Error Text="Expect $(DotnetFscCompilerPath) to exist if non-empty" Condition="'$(DotnetFscCompilerPath)' != '' AND !Exists('$(DotnetFscCompilerPath)')" />
     <Error Text="Expect $(FsiToolPath)\$(FsiToolExe) to exist" Condition="!Exists('$(FsiToolPath)\$(FsiToolExe)')" />
@@ -456,23 +264,21 @@
   <Import Condition="'$(ProjectLanguage)' == 'FSharp'" Project="$(FSharpTargetsPath)"/>
 
   <!-- Hook up .NET Core to enable solution refresh of packages -->
-  <PropertyGroup Condition="'$(TargetFramework)'=='coreclr'">
+  <PropertyGroup Condition="'$(TargetDotnetProfile)'=='coreclr'">
 
     <!-- Implicitly needed by packageresolve.targets.  Should file a bug for a better error message here -->
     <PackagesDir>$(NUGET_PACKAGES)</PackagesDir>
 
     <NuGetToolPath Condition="'$(NuGetToolPath)' == ''">$(FSharpSourcesRoot)\..\.nuget\</NuGetToolPath>
     <NuGetConfigCommandLine>-ConfigFile "$(NuGetConfigFile)"</NuGetConfigCommandLine>
-
     <NugetRestoreCommand>"$(NuGetToolPath)NuGet.exe install -OutputDirectory "$(PackagesDir)" -Config "$(NuGetToolPath)NuGet.Config"</NugetRestoreCommand>
-
     <DnuRestoreCommand>"$(NuGetToolPath)NuGet.exe" restore -OutputDirectory "$(PackagesDir)" -Config "$(NuGetToolPath)NuGet.Config"</DnuRestoreCommand>
 
     <!-- Current version of .NET Core does not support all semantics used in our packages, 
          so we ignore the pre-calculation in the lock file and calculate asset applicability in the build task -->
     <NuGetIngoreLockFile>true</NuGetIngoreLockFile>
   </PropertyGroup>
-  <Import  Condition="'$(TargetFramework)'=='coreclr'" Project="..\Tools\Build.Common.Targets" />
+  <Import  Condition="'$(TargetDotnetProfile)'=='coreclr'" Project="..\Tools\Build.Common.Targets" />
 
   <PropertyGroup>
     <RootNamespace></RootNamespace>
@@ -506,7 +312,7 @@
   <Import Project="scripts\fssrgen.targets" />
   <Import Project="Microbuild.Settings.targets" Condition="'$(UseMicroBuild)' == 'true'"/>
 
-  <Target Name="dotnetrestore" BeforeTargets="Build" Condition=" '$(TargetFramework)' == 'coreclr' ">
+  <Target Name="dotnetrestore" BeforeTargets="Build" Condition=" '$(TargetDotnetProfile)' == 'coreclr' ">
    <Exec Command="$(MSBuildThisFileDirectory)..\.nuget\nuget.exe restore -PackagesDirectory $(PackagesDir) -Config $(MSBuildThisFileDirectory)..\.nuget\NuGet.Config project.json" />
   </Target>
 

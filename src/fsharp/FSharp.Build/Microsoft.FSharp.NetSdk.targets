@@ -36,12 +36,18 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
   </ItemGroup>
 
   <PropertyGroup>
+    <_TargetFrameworkVersionWithoutV>$(TargetFrameworkVersion)</_TargetFrameworkVersionWithoutV>
+    <_TargetFrameworkVersionWithoutV Condition="$(TargetFrameworkVersion.StartsWith('v'))">$(TargetFrameworkVersion.Substring(1))</_TargetFrameworkVersionWithoutV>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <TargetProfile Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' " >mscorlib</TargetProfile>
     <TargetProfile Condition=" '$(TargetFrameworkIdentifier)' != '.NETFramework' " >netcore</TargetProfile>
+    <TargetProfile Condition=" '$(TargetFrameworkIdentifier)' == '.NETStandard' and '$(_TargetFrameworkVersionWithoutV)' >= '2.0' " >netstandard</TargetProfile>
     <OtherFlags>$(OtherFlags) --simpleresolution --nocopyfsharpcore</OtherFlags>
   </PropertyGroup>
 
-  <Import Project="Microsoft.FSharp.targets" />
+  <Import Project="Microsoft.FSharp.Targets" />
 
   <PropertyGroup Condition="'$(PackProjectInputFile)' == ''">
     <PackProjectInputFile>$(MSBuildProjectFullPath)</PackProjectInputFile>
@@ -51,14 +57,20 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <FSharpCoreImplicitPackageVersion>4.2.*</FSharpCoreImplicitPackageVersion>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(DisableImplcitSystemValueTupleReference)' != 'true' ">
-    <_FrameworkNeedsValueTupleReference Condition=" $(TargetFramework.StartsWith(netcoreapp1.)) or $(TargetFramework.StartsWith(netstandard1.)) ">true</_FrameworkNeedsValueTupleReference>
-    <_FrameworkNeedsValueTupleReference Condition=" '$(TargetFramework)' == 'net40' or '$(TargetFramework)' == 'net45' or '$(TargetFramework)' == 'net46' or '$(TargetFramework)' == 'net461' or '$(TargetFramework)' == 'net462' or '$(TargetFramework)' == 'net47' ">true</_FrameworkNeedsValueTupleReference>
+  <PropertyGroup Condition=" '$(DisableImplicitSystemValueTupleReference)' != 'true' ">
+    <_FrameworkNeedsValueTupleReference Condition=" ('$(TargetFrameworkIdentifier)' == '.NETStandard' or '$(TargetFrameworkIdentifier)' == '.NETCoreApp') and !('$(_TargetFrameworkVersionWithoutV)' >= '2.0') ">true</_FrameworkNeedsValueTupleReference>
+    <_FrameworkNeedsValueTupleReference Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' and 
+                                                    ('$(_TargetFrameworkVersionWithoutV)' == '4.0' or 
+                                                     '$(_TargetFrameworkVersionWithoutV)' == '4.5' or 
+                                                     '$(_TargetFrameworkVersionWithoutV)' == '4.6' or
+                                                     '$(_TargetFrameworkVersionWithoutV)' == '4.6.1' or
+                                                     '$(_TargetFrameworkVersionWithoutV)' == '4.6.2' or
+                                                     '$(_TargetFrameworkVersionWithoutV)' == '4.7') ">true</_FrameworkNeedsValueTupleReference>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.ValueTuple" Version="4.*" Condition=" '$(DisableImplcitSystemValueTupleReference)' != 'true' and '$(_FrameworkNeedsValueTupleReference)' == 'true' "></PackageReference>
-    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreImplicitPackageVersion)"  Condition=" '$(DisableImplcitSystemValueTupleReference)' != 'true' "></PackageReference>
+    <PackageReference Include="System.ValueTuple" Version="4.*" Condition=" '$(DisableImplicitSystemValueTupleReference)' != 'true' and '$(_FrameworkNeedsValueTupleReference)' == 'true' "></PackageReference>
+    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreImplicitPackageVersion)"  Condition=" '$(DisableImplicitFSharpCoreReference)' != 'true' "></PackageReference>
   </ItemGroup>
 
 </Project>
