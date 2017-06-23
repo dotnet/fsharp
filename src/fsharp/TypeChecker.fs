@@ -9178,7 +9178,7 @@ and GetNewInferenceTypeForMethodArg cenv env tpenv x =
 
 /// Method calls, property lookups, attribute constructions etc. get checked through here 
 and TcMethodApplication 
-        checkingAttributeCall 
+        isCheckingAttributeCall 
         cenv 
         env 
         tpenv 
@@ -9384,7 +9384,7 @@ and TcMethodApplication
                 match tyargsOpt with 
                 | Some tyargs -> minfo.AdjustUserTypeInstForFSharpStyleIndexedExtensionMembers(tyargs)
                 | None -> minst
-            CalledMeth<SynExpr>(cenv.infoReader,Some(env.NameEnv),checkingAttributeCall, FreshenMethInfo, mMethExpr,ad,minfo,minst,callerTyArgs,pinfoOpt,callerObjArgTys,callerArgs,usesParamArrayConversion,true,objTyOpt)
+            CalledMeth<SynExpr>(cenv.infoReader,Some(env.NameEnv),isCheckingAttributeCall, FreshenMethInfo, mMethExpr,ad,minfo,minst,callerTyArgs,pinfoOpt,callerObjArgTys,callerArgs,usesParamArrayConversion,true,objTyOpt)
 
         let preArgumentTypeCheckingCalledMethGroup = 
             [ for (minfo,pinfoOpt) in candidateMethsAndProps do
@@ -9483,7 +9483,7 @@ and TcMethodApplication
                     match tyargsOpt with 
                     | Some tyargs -> minfo.AdjustUserTypeInstForFSharpStyleIndexedExtensionMembers(tyargs)
                     | None -> minst
-                CalledMeth<Expr>(cenv.infoReader,Some(env.NameEnv),checkingAttributeCall,FreshenMethInfo, mMethExpr,ad,minfo,minst,callerTyArgs,pinfoOpt,callerObjArgTys,callerArgs,usesParamArrayConversion,true,objTyOpt))
+                CalledMeth<Expr>(cenv.infoReader,Some(env.NameEnv),isCheckingAttributeCall,FreshenMethInfo, mMethExpr,ad,minfo,minst,callerTyArgs,pinfoOpt,callerObjArgTys,callerArgs,usesParamArrayConversion,true,objTyOpt))
           
         let callerArgCounts = (unnamedCurriedCallerArgs.Length, namedCurriedCallerArgs.Length)
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext cenv.css mMethExpr denv
@@ -9859,6 +9859,7 @@ and TcMethodApplication
 
     // Handle post-hoc property assignments 
     let expr = 
+        if isCheckingAttributeCall then expr else
         if isNil finalAssignedItemSetters then expr else 
         // This holds the result of the call 
         let objv,objExpr = mkMutableCompGenLocal mMethExpr "returnVal" exprty // mutable in case it's a struct 
@@ -10531,7 +10532,7 @@ and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute)  =
             | Item.CtorGroup(methodName,minfos) ->
                 let meths = minfos |> List.map (fun minfo -> minfo,None) 
                 let afterResolution = ForNewConstructors cenv.tcSink env tyid.idRange methodName minfos
-                let (expr,namedCallerArgs,_),_ = 
+                let (expr,attributeAssignedNamedItems,_),_ = 
                   TcMethodApplication true cenv env tpenv None [] mAttr mAttr methodName None ad PossiblyMutates false meths afterResolution NormalValUse [arg] (NewInferenceType ())  []
 
                 UnifyTypes cenv env mAttr ty (tyOfExpr cenv.g expr)
@@ -10540,9 +10541,9 @@ and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute)  =
                     AttribExpr(e,EvalLiteralExprOrAttribArg cenv.g e)
 
                 let namedAttribArgMap = 
-                  namedCallerArgs |> List.map (fun (CallerNamedArg(id,CallerArg(argtyv,m,isOpt,expr))) ->
+                  attributeAssignedNamedItems |> List.map (fun (CallerNamedArg(id,CallerArg(argtyv,m,isOpt,callerArgExpr))) ->
                     if isOpt then error(Error(FSComp.SR.tcOptionalArgumentsCannotBeUsedInCustomAttribute(),m))
-                    let m = expr.Range
+                    let m = callerArgExpr.Range
                     let setterItem, _ = ResolveLongIdentInType cenv.tcSink cenv.nameResolver env.NameEnv LookupKind.Expr m ad [id] IgnoreOverrides TypeNameResolutionInfo.Default ty
                     let nm, isProp, argty = 
                       match setterItem with   
@@ -10568,7 +10569,7 @@ and TcAttribute canFail cenv (env: TcEnv) attrTgt (synAttr: SynAttribute)  =
 
                     AddCxTypeMustSubsumeType ContextInfo.NoContext env.DisplayEnv cenv.css m NoTrace argty argtyv
 
-                    AttribNamedArg(nm,argty,isProp,mkAttribExpr expr))
+                    AttribNamedArg(nm,argty,isProp,mkAttribExpr callerArgExpr))
 
                 match expr with 
                 | Expr.Op(TOp.ILCall(_,_,valu,_,_,_,_,ilMethRef,[],[],_rtys),[],args,m) -> 
