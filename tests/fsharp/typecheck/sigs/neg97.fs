@@ -29,3 +29,16 @@ let pinStructAddressNotAllowed(x: 'T) =
     let mutable v = { X = 1.0; Y = 1.0 }
     use p = fixed &v.Y
     ()
+
+
+module Example1 = 
+    type X<'T> = Y of 'T
+    type X<'T when 'T :> string> with
+        static member X = 2
+        static member take (s: 'T) = s
+
+module Example2 = 
+    type X<'T> = Y of 'T
+    type X<'U when 'T :> string> with
+        static member X = 2
+        static member take (s: 'T) = s
