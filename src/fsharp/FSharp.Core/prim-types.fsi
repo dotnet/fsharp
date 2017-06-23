@@ -2065,7 +2065,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="exn">The exception to raise.</param>
         /// <returns>The result value.</returns>
         [<CompiledName("Raise")>]
-        val raise : exn:System.Exception -> 'T
+        val inline raise : exn:System.Exception -> 'T
         
         /// <summary>Rethrows an exception. This should only be used when handling an exception</summary>
         /// <returns>The result value.</returns>
@@ -2095,13 +2095,13 @@ namespace Microsoft.FSharp.Core
         /// <param name="tuple">The input tuple.</param>
         /// <returns>The first value.</returns>
         [<CompiledName("Fst")>]
-        val fst : tuple:('T1 * 'T2) -> 'T1
+        val inline fst : tuple:('T1 * 'T2) -> 'T1
         
         /// <summary>Return the second element of a tuple, <c>snd (a,b) = b</c>.</summary>
         /// <param name="tuple">The input tuple.</param>
         /// <returns>The second value.</returns>
         [<CompiledName("Snd")>]
-        val snd : tuple:('T1 * 'T2) -> 'T2
+        val inline snd : tuple:('T1 * 'T2) -> 'T2
 
         /// <summary>Generic comparison.</summary>
         /// <param name="e1">The first value.</param>
@@ -2163,7 +2163,7 @@ namespace Microsoft.FSharp.Core
         /// <param name="message">The exception message.</param>
         /// <returns>The result value.</returns>
         [<CompiledName("FailWith")>]
-        val failwith : message:string -> 'T 
+        val inline failwith : message:string -> 'T 
 
         /// <summary>Throw a <c>System.ArgumentException</c> exception with
         /// the given argument name and message.</summary>
