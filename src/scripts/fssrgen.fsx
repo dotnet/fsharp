@@ -440,23 +440,26 @@ let RunMain(filename, outFilename, outXmlFilenameOpt, projectNameOpt) =
         PrintErr(filename, 0, sprintf "An exception occurred when processing '%s'\n%s" filename (e.ToString()))
         1
 
+#if COMPILED
+[<EntryPoint>]
+#endif
 let Main args = 
 
     match args |> List.ofArray with
-    | [ _; inputFile; outFile; ] ->
+    | [ inputFile; outFile; ] ->
         let filename = System.IO.Path.GetFullPath(inputFile)
         let outFilename = System.IO.Path.GetFullPath(outFile)
 
         RunMain(filename, outFilename, None, None)
 
-    | [ _; inputFile; outFile; outXml ] ->
+    | [ inputFile; outFile; outXml ] ->
         let filename = System.IO.Path.GetFullPath inputFile
         let outFilename = System.IO.Path.GetFullPath outFile
         let outXmlFilename = System.IO.Path.GetFullPath outXml
 
         RunMain(filename, outFilename, Some outXmlFilename, None)
 
-    | [ _; inputFile; outFile; outXml; projectName ] ->
+    | [ inputFile; outFile; outXml; projectName ] ->
         let filename = System.IO.Path.GetFullPath inputFile
         let outFilename = System.IO.Path.GetFullPath outFile
         let outXmlFilename = System.IO.Path.GetFullPath outXml
@@ -467,6 +470,7 @@ let Main args =
         printfn "Error: invalid arguments."
         printfn "Usage: <INPUTFILE> <OUTPUTFILE> <OUTXMLFILE> <PROJECTNAME>"
         1
-
+#if !COMPILED
 printfn "fssrgen: args = %A" fsi.CommandLineArgs
-Main fsi.CommandLineArgs
+Main (fsi.CommandLineArgs |> Seq.skip 1 |> Seq.toArray)
+#endif

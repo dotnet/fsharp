@@ -1,0 +1,36 @@
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <ItemGroup>
+    <FsSrGen Include="FSBuild.txt" />
+    <Compile Include="InternalsVisibleTo.fs" />
+    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Build.dll.fs" />
+    <Compile Include="..\..\utils\CompilerLocationUtils.fs" />
+    <Compile Include="..\..\utils\reshapedreflection.fs" />
+    <Compile Include="Fsc.fsi" />
+    <Compile Include="Fsc.fs" />
+    <Compile Include="CreateFSharpManifestResourceName.fsi" />
+    <Compile Include="CreateFSharpManifestResourceName.fs" />
+    <CopyAndSubstituteText Include="Microsoft.FSharp.Targets">
+        <TargetFilename>Microsoft.FSharp.Targets</TargetFilename>
+        <Pattern1>{BuildSuffix}</Pattern1>
+        <Replacement1></Replacement1>
+    </CopyAndSubstituteText>
+    <CopyAndSubstituteText Include="Microsoft.Portable.FSharp.Targets">
+      <TargetFilename>Microsoft.Portable.FSharp.Targets</TargetFilename>
+      <Pattern1>{BuildSuffix}</Pattern1>
+      <Replacement1></Replacement1>
+    </CopyAndSubstituteText>
+    <CopyAndSubstituteText Include="Microsoft.FSharp.NetSdk.props">
+        <TargetFilename>Microsoft.FSharp.NetSdk.props</TargetFilename>
+        <Pattern1>{BuildSuffix}</Pattern1>
+        <Replacement1></Replacement1>
+    </CopyAndSubstituteText>
+    <CopyAndSubstituteText Include="Microsoft.FSharp.NetSdk.targets">
+        <TargetFilename>Microsoft.FSharp.NetSdk.targets</TargetFilename>
+        <Pattern1>{BuildSuffix}</Pattern1>
+        <Replacement1></Replacement1>
+    </CopyAndSubstituteText>
+  </ItemGroup>
+
+</Project>
