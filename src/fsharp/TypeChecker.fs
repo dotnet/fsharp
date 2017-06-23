@@ -6419,7 +6419,7 @@ and TcObjectExprBinding cenv (env: TcEnv) implty tpenv (absSlotInfo,bind) =
                 bindingRhs,logicalMethId,memberFlags
 
             | SynPat.InstanceMember(thisId,memberId,_,_,_),Some memberFlags -> 
-                CheckMemberFlags cenv.g None  NewSlotsOK OverridesOK memberFlags mBinding
+                CheckMemberFlags None  NewSlotsOK OverridesOK memberFlags mBinding
                 let bindingRhs = PushOnePatternToRhs cenv true (mkSynThisPatVar thisId) bindingRhs
                 let logicalMethId = ident (ComputeLogicalName memberId memberFlags,memberId.idRange)
                 bindingRhs,logicalMethId,memberFlags
@@ -10750,7 +10750,7 @@ and TcLetBindings cenv env containerInfo declKind tpenv (binds,bindsm,scopem) =
     let binds = stripLets [] expr
     binds,env,tpenv
 
-and CheckMemberFlags _g optIntfSlotTy newslotsOK overridesOK memberFlags m = 
+and CheckMemberFlags optIntfSlotTy newslotsOK overridesOK memberFlags m = 
     if newslotsOK = NoNewSlots && memberFlags.IsDispatchSlot then 
       errorR(Error(FSComp.SR.tcAbstractMembersIllegalInAugmentation(),m))
     if overridesOK = ErrorOnOverrides && memberFlags.MemberKind = MemberKind.Constructor then 
@@ -10969,7 +10969,7 @@ and AnalyzeRecursiveStaticMemberOrValDecl (cenv, envinner: TcEnv, tpenv, declKin
     | (Some(MemberOrValContainerInfo(tcref, optIntfSlotTy, baseValOpt, _safeInitInfo, declaredTyconTypars)),Some memberFlags) -> 
         assert (Option.isNone optIntfSlotTy)
       
-        CheckMemberFlags cenv.g None newslotsOK overridesOK memberFlags id.idRange
+        CheckMemberFlags None newslotsOK overridesOK memberFlags id.idRange
         CheckForNonAbstractInterface declKind tcref memberFlags id.idRange
 
         if memberFlags.MemberKind = MemberKind.Constructor && tcref.Deref.IsExceptionDecl then
@@ -11031,7 +11031,7 @@ and AnalyzeRecursiveInstanceMemberDecl (cenv,envinner: TcEnv, tpenv, declKind, s
      // Normal instance members. 
      | Some(MemberOrValContainerInfo(tcref, optIntfSlotTy, baseValOpt, _safeInitInfo, declaredTyconTypars)), Some memberFlags -> 
        
-         CheckMemberFlags cenv.g optIntfSlotTy newslotsOK overridesOK memberFlags mBinding
+         CheckMemberFlags optIntfSlotTy newslotsOK overridesOK memberFlags mBinding
 
          if Option.isSome vis && memberFlags.IsOverrideOrExplicitImpl then 
             errorR(Error(FSComp.SR.tcOverridesCannotHaveVisibilityDeclarations(),memberId.idRange))
@@ -15263,7 +15263,7 @@ module EstablishTypeDefinitionCores =
 
                                   let (ValSpfn(_, _, _, _, _valSynData, _, _, _, _,_, m)) = valSpfn 
 
-                                  CheckMemberFlags cenv.g None NewSlotsOK OverridesOK memberFlags m
+                                  CheckMemberFlags None NewSlotsOK OverridesOK memberFlags m
                                   
                                   let slots = fst (TcAndPublishValSpec (cenv,envinner,containerInfo,ModuleOrMemberBinding,Some memberFlags,tpenv,valSpfn))
                                   // Multiple slots may be returned, e.g. for 
@@ -15685,7 +15685,7 @@ module TcDeclarations =
 
     /// Given a type definition, compute whether its members form an extension of an existing type, and if so if it is an 
     /// intrinsic or extrinsic extension
-    let private ComputeTyconDeclKind tyconOpt isAtOriginalTyconDefn cenv envForDecls inSig m (typars:SynTyparDecl list) cs longPath = 
+    let private ComputeTyconDeclKind tyconOpt isAtOriginalTyconDefn cenv envForDecls inSig m (synTypars:SynTyparDecl list) synTyparCxs longPath = 
         let ad = envForDecls.eAccessRights
         
         let tcref = 
@@ -15693,14 +15693,14 @@ module TcDeclarations =
           | Some tycon when isAtOriginalTyconDefn -> 
 
             // This records a name resolution of the type at the location
-            let resInfo = TypeNameResolutionStaticArgsInfo.FromTyArgs typars.Length
+            let resInfo = TypeNameResolutionStaticArgsInfo.FromTyArgs synTypars.Length
             ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Binding OpenQualified envForDecls.eNameResEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No 
                |> ignore
 
             mkLocalTyconRef tycon
 
           | _ ->
-            let resInfo = TypeNameResolutionStaticArgsInfo.FromTyArgs typars.Length
+            let resInfo = TypeNameResolutionStaticArgsInfo.FromTyArgs synTypars.Length
             match ResolveTypeLongIdent cenv.tcSink cenv.nameResolver ItemOccurence.Binding OpenQualified envForDecls.eNameResEnv ad longPath resInfo PermitDirectReferenceToGeneratedType.No with
             | Result res -> res
             | res when inSig && longPath.Length = 1 ->
@@ -15732,20 +15732,26 @@ module TcDeclarations =
                         // There is a special case we allow when compiling FSharp.Core.dll which permits interface implementations across namespace fragments
                         (cenv.g.compilingFslib && tcref.LogicalName.StartsWith("Tuple`"))
         
+            let nReqTypars = reqTypars.Length
+
+            let declaredTypars = TcTyparDecls cenv envForDecls synTypars
+            let envForTycon = AddDeclaredTypars CheckForDuplicateTypars declaredTypars envForDecls
+            let _tpenv = TcTyparConstraints cenv NoNewTypars CheckCxs ItemOccurence.UseInType envForTycon emptyUnscopedTyparEnv synTyparCxs
+            declaredTypars |> List.iter (SetTyparRigid cenv.g envForDecls.DisplayEnv m)
+
             if isInSameModuleOrNamespace && not isInterfaceOrDelegateOrEnum then 
+                // For historical reasons we only give a warning for incorrect type parameters on intrinsic extensions
+                if nReqTypars <> synTypars.Length then 
+                    warning(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
+                if not (typarsAEquiv cenv.g TypeEquivEnv.Empty reqTypars declaredTypars) then 
+                    warning(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
+                // Note we return 'reqTypars' for intrinsic extensions since we may only have given warnings
                 IntrinsicExtensionBinding, reqTypars
             else 
                 if isInSameModuleOrNamespace && isInterfaceOrDelegateOrEnum then 
                     errorR(Error(FSComp.SR.tcMembersThatExtendInterfaceMustBePlacedInSeparateModule(),tcref.Range))
-                let nReqTypars = reqTypars.Length
-                if nReqTypars <> typars.Length then 
-                    // not recoverable
+                if nReqTypars <> synTypars.Length then 
                     error(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
-
-                let declaredTypars = TcTyparDecls cenv envForDecls typars
-                let envForTycon = AddDeclaredTypars CheckForDuplicateTypars declaredTypars envForDecls
-                let _tpenv = TcTyparConstraints cenv NoNewTypars CheckCxs ItemOccurence.UseInType envForTycon emptyUnscopedTyparEnv cs
-                declaredTypars |> List.iter (SetTyparRigid cenv.g envForDecls.DisplayEnv m)
                 if not (typarsAEquiv cenv.g TypeEquivEnv.Empty reqTypars declaredTypars) then 
                     errorR(Error(FSComp.SR.tcDeclaredTypeParametersForExtensionDoNotMatchOriginal(tcref.DisplayNameWithStaticParametersAndUnderscoreTypars), m))
                 ExtrinsicExtensionBinding, declaredTypars
