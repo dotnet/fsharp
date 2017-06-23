@@ -128,8 +128,8 @@
 
   <PropertyGroup>
     <!-- Compiler tool locations.		-->
-    <FsLexToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.4\build</FsLexToolPath>
-    <FsYaccToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.4\build</FsYaccToolPath>
+    <FsLexToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.6\build</FsLexToolPath>
+    <FsYaccToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.6\build</FsYaccToolPath>
     <FsiToolExe>fsi.exe</FsiToolExe>
     <FsLexToolExe>fslex.exe</FsLexToolExe>
     <FsYaccToolExe>fsyacc.exe</FsYaccToolExe>

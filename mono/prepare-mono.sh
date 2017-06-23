@@ -58,8 +58,8 @@ echo "chmod u+x packages/FSharp.Compiler.Tools.4.1.5/tools/fsi.exe"
 echo "chmod u+x packages/FsLexYacc.7.0.4/build/fslex.exe"
 echo "chmod u+x packages/FsLexYacc.7.0.4/build/fsyacc.exe"
 chmod u+x packages/FSharp.Compiler.Tools.4.1.5/tools/fsi.exe 
-chmod u+x packages/FsLexYacc.7.0.4/build/fslex.exe
-chmod u+x packages/FsLexYacc.7.0.4/build/fsyacc.exe
+chmod u+x packages/FsLexYacc.7.0.6/build/fslex.exe
+chmod u+x packages/FsLexYacc.7.0.66/build/fsyacc.exe
 
 # The FSharp.Compiler.Tools package doesn't work correctly unless a proper install of F# has been done on the machine.
 # OSX can skip this because the OSX Mono installer includes F#.
