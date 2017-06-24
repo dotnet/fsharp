@@ -132,7 +132,7 @@ type AsyncType() =
 
     member private this.WaitASec (t:Task) =
         let result = t.Wait(TimeSpan(hours=0,minutes=0,seconds=1))
-        Assert.IsTrue(result)        
+        Assert.IsTrue(result, "Task did not finish after waiting for a second.")
       
     
     [<Test>]
