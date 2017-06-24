@@ -1557,7 +1557,7 @@ namespace Microsoft.FSharp.Control
                     else
                         args.cont completedTask.Result)) |> unfake
 
-            task.ContinueWith(Action<Task<'T>>(continuation), continueWithExtra args.aux.token) |> ignore |> fake
+            task.ContinueWith(Action<Task<'T>>(continuation)) |> ignore |> fake
 
         let continueWithUnit (task : Task, args, useCcontForTaskCancellation) = 
 
@@ -1572,7 +1572,7 @@ namespace Microsoft.FSharp.Control
                     else
                         args.cont ())) |> unfake
 
-            task.ContinueWith(Action<Task>(continuation), continueWithExtra args.aux.token) |> ignore |> fake
+            task.ContinueWith(Action<Task>(continuation)) |> ignore |> fake
 #endif
 
 #if FX_NO_REGISTERED_WAIT_HANDLES
