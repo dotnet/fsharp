@@ -334,6 +334,34 @@ type CancellationType() =
                 | _ -> reraise()
             | _ -> reraise()
 
+
+    [<Test>]
+    member this.TestCancellationKeepsExceptionInfoAsTask() =
+        let cts = new CancellationTokenSource()
+        let ewh = new ManualResetEvent(false)
+        let msg = "Cleanup failure"
+        let a = async {
+            try ewh.Set() |> ignore
+                do! Async.Sleep 10000
+            finally raise <| Exception msg}
+        async {
+            ewh.WaitOne() |> ignore
+            cts.Cancel()
+        } |> Async.Start
+
+        try
+            Async.StartAsTask(a, cancellationToken = cts.Token).GetAwaiter().GetResult()
+        with
+        :? OperationCanceledException as o ->
+            match o.InnerException with
+            | :? AggregateException as a ->
+                Assert.AreEqual (1, a.InnerExceptions.Count)
+                match a.InnerException with
+                | e when not (isNull e) ->
+                    Assert.AreEqual(msg, e.Message)
+                | _ -> reraise()
+            | _ -> reraise()
+
     [<Test>]
     member this.TestCancellationKeepsExceptionInfoWithTryWith() =
         let cts = new CancellationTokenSource()
@@ -352,6 +380,35 @@ type CancellationType() =
 
         try
             Async.RunSynchronously(a, cancellationToken = cts.Token)
+        with
+        :? OperationCanceledException as o ->
+            match o.InnerException with
+            | :? AggregateException as a ->
+                Assert.AreEqual (1, a.InnerExceptions.Count)
+                match a.InnerException with
+                | e when not (isNull e) ->
+                    Assert.AreEqual(msg, e.Message)
+                | _ -> reraise()
+            | _ -> reraise()
+
+    [<Test>]
+    member this.TestCancellationKeepsExceptionInfoWithTryWithAsTask() =
+        let cts = new CancellationTokenSource()
+        let ewh = new ManualResetEvent(false)
+        let msg = "Cleanup failure"
+        let a = async {
+            try
+                try ewh.Set() |> ignore
+                    do! Async.Sleep 10000
+                finally raise <| Exception msg
+            with :? InvalidOperationException -> () }
+        async {
+            ewh.WaitOne() |> ignore
+            cts.Cancel()
+        } |> Async.Start
+
+        try
+            Async.StartAsTask(a, cancellationToken = cts.Token).GetAwaiter().GetResult()
         with
         :? OperationCanceledException as o ->
             match o.InnerException with
