@@ -163,7 +163,7 @@ type AsyncType() =
         Assert.IsTrue (t.IsCompleted)
         Assert.AreEqual(s, t.Result)    
 
-    [<Test>]
+    [<Test; Timeout(2000)>]
     member this.RunSynchronouslyCancellationWithDelayedResult () =
         let cts = new CancellationTokenSource()
         let tcs = TaskCompletionSource<int>()
