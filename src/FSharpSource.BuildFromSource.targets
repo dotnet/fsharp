@@ -77,4 +77,54 @@
     </CreateItem>
   </Target>
 
+  <ItemGroup>
+    <AvailableItemName Include="FsLex">
+      <Visible>false</Visible>
+    </AvailableItemName>
+    <AvailableItemName Include="FsYacc">
+      <Visible>false</Visible>
+    </AvailableItemName>
+  </ItemGroup>
+
+  <!-- Build FsLex files. -->
+  <Target Name="CallFsLex"
+          Inputs="@(FsLex)"
+          Outputs="@(FsLex->'$(FsLexOutputFolder)%(Filename).fs')"
+          Condition="'@(FsLex)'!=''">
+
+    <PropertyGroup>
+        <DotNetExePath>$(MSBuildThisFileDirectory)../Tools/dotnet20/dotnet.exe</DotNetExePath>
+        <DotNetExePath Condition="!Exists($(DotNetExe))">$(MSBuildBinPath)/../../dotnet.exe</DotNetExePath>
+        <FsLexPath>$(MSBuildThisFileDirectory)../Tools/fslex/fslex.dll</FsLexPath>
+    </PropertyGroup>
+
+    <!-- Create the output directory -->
+    <MakeDir Directories="$(FsLexOutputFolder)"/>
+
+    <!-- Run the tool -->
+    <Exec Command="&quot;$(DotNetExePath)&quot; &quot;$(FsLexPath)&quot;  -o &quot;$(FsLexOutputFolder)%(FsLex.Filename).fs&quot; %(FsLex.OtherFlags) %(FsLex.Identity)" />
+
+    <!-- Make sure it will get cleaned  -->
+    <CreateItem Include="$(FsLexOutputFolder)%(FsLex.Filename).fs">
+      <Output TaskParameter="Include" ItemName="FileWrites"/>
+    </CreateItem>
+  </Target>
+
+  <!-- Build FsYacc files. -->
+  <Target Name="CallFsYacc"
+          Inputs="@(FsYacc)"
+          Outputs="@(FsYacc->'$(FsYaccOutputFolder)%(Filename).fs')"
+          Condition="'@(FsYacc)'!=''">
+
+    <!-- Create the output directory -->
+    <MakeDir Directories="$(FsYaccOutputFolder)"/>
+    <!-- Run the tool -->
+    <Exec Command="&quot;$(DotNetExePath)&quot; &quot;$(FsLexPath)&quot;  -o &quot;$(FsYaccOutputFolder)%(FsYacc.Filename).fs&quot; %(FsYacc.OtherFlags) %(FsYacc.Identity)" />
+
+    <!-- Make sure it will get cleaned  -->
+    <CreateItem Include="$(FsYaccOutputFolder)%(FsYacc.Filename).fs">
+      <Output TaskParameter="Include" ItemName="FileWrites"/>
+    </CreateItem>
+  </Target>
+
 </Project>

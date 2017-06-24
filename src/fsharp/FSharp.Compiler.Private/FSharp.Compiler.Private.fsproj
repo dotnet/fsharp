@@ -48,10 +48,11 @@
       </FilesToSign>
     </ItemGroup>
   </Target>
-
   <Import Project = "$(MSBuildThisFileDirectory)..\..\FSharpSource.Profiles.targets" />
   <Import Project="FSharp.Compiler.Private.Sources.proj" />
-
+  <ItemGroup>
+    <PackageNuspec Include="FSharp.Compiler.Private.netcore.nuspec" Condition="'$(TargetDotnetProfile)' == 'coreclr'" />
+  </ItemGroup>
   <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">
     <None Include="project.json" />
   </ItemGroup>
