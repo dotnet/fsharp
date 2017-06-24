@@ -147,8 +147,39 @@ type AsyncType() =
             Async.StartAsTask a
         this.WaitASec t
         Assert.IsTrue (t.IsCompleted)
-        Assert.AreEqual(s, t.Result)    
+        Assert.AreEqual(s, t.Result)
+
+    [<Test>]
+    member this.StartAsTaskCancellation () =
+        let cts = new CancellationTokenSource()
+        let tcs = TaskCompletionSource<unit>()
+        let a = async {
+            cts.CancelAfter (100)
+            do! tcs.Task |> Async.AwaitTask }
+#if FSCORE_PORTABLE_NEW || coreclr
+        let t : Task<unit> =
+#else
+        use t : Task<unit> =
+#endif
+            Async.StartAsTask(a, cancellationToken = cts.Token)
+
+        // Should not finish
+        try
+            let result = t.Wait(300)
+            Assert.IsFalse (result)
+        with :? AggregateException -> Assert.Fail "Task should not finish, jet"
+
+        tcs.SetCanceled()
         
+        try
+            this.WaitASec t
+        with :? AggregateException as a ->
+            match a.InnerException with
+            | :? TaskCanceledException as t -> ()
+            | _ -> reraise()
+        System.Diagnostics.Debugger.Break() |> ignore
+        Assert.IsTrue (t.IsCompleted, "Task is not completed")
+
     [<Test>]
     member this.StartTask () =
         let s = "Hello tasks!"
