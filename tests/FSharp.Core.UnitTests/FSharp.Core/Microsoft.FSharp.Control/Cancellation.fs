@@ -334,7 +334,6 @@ type CancellationType() =
                 | _ -> reraise()
             | _ -> reraise()
 
-
     [<Test>]
     member this.TestCancellationKeepsExceptionInfoAsTask() =
         let cts = new CancellationTokenSource()
@@ -349,10 +348,11 @@ type CancellationType() =
             cts.Cancel()
         } |> Async.Start
 
+        let t = Async.StartAsTask(a, cancellationToken = cts.Token)
         try
-            Async.StartAsTask(a, cancellationToken = cts.Token).GetAwaiter().GetResult()
+            t.GetAwaiter().GetResult()
         with
-        :? OperationCanceledException as o ->
+        | :? OperationCanceledException as o ->
             match o.InnerException with
             | :? AggregateException as a ->
                 Assert.AreEqual (1, a.InnerExceptions.Count)
@@ -361,6 +361,9 @@ type CancellationType() =
                     Assert.AreEqual(msg, e.Message)
                 | _ -> reraise()
             | _ -> reraise()
+
+        Assert.IsTrue(t.IsCompleted, "Task should be marked as completed")
+        Assert.IsTrue(t.IsCanceled, "Task should be marked as cancelled")
 
     [<Test>]
     member this.TestCancellationKeepsExceptionInfoWithTryWith() =
@@ -407,10 +410,11 @@ type CancellationType() =
             cts.Cancel()
         } |> Async.Start
 
+        let t = Async.StartAsTask(a, cancellationToken = cts.Token)
         try
-            Async.StartAsTask(a, cancellationToken = cts.Token).GetAwaiter().GetResult()
+            t.GetAwaiter().GetResult()
         with
-        :? OperationCanceledException as o ->
+        | :? OperationCanceledException as o ->
             match o.InnerException with
             | :? AggregateException as a ->
                 Assert.AreEqual (1, a.InnerExceptions.Count)
@@ -419,3 +423,6 @@ type CancellationType() =
                     Assert.AreEqual(msg, e.Message)
                 | _ -> reraise()
             | _ -> reraise()
+
+        Assert.IsTrue(t.IsCompleted, "Task should be marked as completed")
+        Assert.IsTrue(t.IsCanceled, "Task should be marked as cancelled")
