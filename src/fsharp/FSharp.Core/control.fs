@@ -1536,14 +1536,6 @@ namespace Microsoft.FSharp.Control
     // Contains helpers that will attach continuation to the given task.
     // Should be invoked as a part of protectedPrimitive(withResync) call
     module TaskHelpers = 
-        let private continueWithExtra token =
-#if FSCORE_PORTABLE_OLD || FSCORE_PORTABLE_NEW
-            token |> ignore
-            TaskContinuationOptions.None
-#else
-            token
-#endif
-
         let continueWith (task : Task<'T>, args, useCcontForTaskCancellation) = 
 
             let continuation (completedTask : Task<_>) : unit =
