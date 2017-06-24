@@ -529,6 +529,14 @@ namespace Microsoft.FSharp.Control
         // delayPrim = "bindA (return ()) f"
         let delayA f = callA f ()
 
+        let protectExn (cexn:OperationCanceledException) (edi:ExceptionDispatchInfo) =
+            let exn = edi.GetAssociatedSourceException()
+            let collected =
+                match cexn.InnerException with
+                | null -> [|exn|]
+                | :? AggregateException as a -> Array.append (a.InnerExceptions |> Seq.toArray) [|exn|]
+                | _ -> [|cexn.InnerException; exn|]
+            new OperationCanceledException(cexn.Message, new AggregateException(collected))
         // Call p but augment the normal, exception and cancel continuations with a call to finallyFunction.
         // If the finallyFunction raises an exception then call the original exception continuation
         // with the new exception. If exception is raised after a cancellation, exception is ignored
@@ -546,8 +554,8 @@ namespace Microsoft.FSharp.Control
                     // If an exception is thrown we continue with the previous exception continuation.
                     let econt exn  = protect trampolineHolder args.aux.econt finallyFunction () (fun () -> args.aux.econt exn)
                     // The cancellation continuation runs the finallyFunction and then runs the previous cancellation continuation.
-                    // If an exception is thrown we continue with the previous cancellation continuation (the exception is lost)
-                    let ccont cexn = protect trampolineHolder (fun _ -> args.aux.ccont cexn) finallyFunction () (fun () -> args.aux.ccont cexn)
+                    // If an exception is thrown we collect/protect it in the OperationCancelledException
+                    let ccont cexn = protect trampolineHolder (protectExn cexn >> args.aux.ccont) finallyFunction () (fun () -> args.aux.ccont cexn)
                     invokeA p { args with cont = cont; aux = { args.aux with econt = econt; ccont = ccont } })
 
         // Re-route the exception continuation to call to catchFunction. If catchFunction or the new process fail
@@ -566,7 +574,7 @@ namespace Microsoft.FSharp.Control
         /// Call the finallyFunction if the computation results in a cancellation
         let whenCancelledA (finallyFunction : OperationCanceledException -> unit) p =
             unprotectedPrimitive (fun ({ aux = aux } as args)->
-                let ccont exn = protect aux.trampolineHolder (fun _ -> aux.ccont exn) finallyFunction exn (fun _ -> aux.ccont exn)
+                let ccont exn = protect aux.trampolineHolder (protectExn exn >> aux.ccont) finallyFunction exn (fun _ -> aux.ccont exn)
                 invokeA p { args with aux = { aux with ccont = ccont } })
 
         let getCancellationToken()  =
@@ -896,7 +904,11 @@ namespace Microsoft.FSharp.Control
             queueAsync 
                     token                        
                     (fun res -> resultCell.RegisterResult(Ok(res),reuseThread=true))
-                    (fun edi -> resultCell.RegisterResult(Error(edi),reuseThread=true))
+                    (fun edi ->
+                        let result =
+                            if token.IsCancellationRequested then Canceled(protectExn (new OperationCanceledException()) edi)
+                            else Error(edi)
+                        resultCell.RegisterResult(result,reuseThread=true))
                     (fun exn -> resultCell.RegisterResult(Canceled(exn),reuseThread=true))
                     computation 
                 |> unfake
@@ -927,7 +939,11 @@ namespace Microsoft.FSharp.Control
                         token
                         trampolineHolder
                         (fun res -> resultCell.RegisterResult(Ok(res),reuseThread=true))
-                        (fun edi -> resultCell.RegisterResult(Error(edi),reuseThread=true))
+                        (fun edi ->
+                            let result =
+                                if token.IsCancellationRequested then Canceled(protectExn (new OperationCanceledException()) edi)
+                                else Error(edi)
+                            resultCell.RegisterResult(result,reuseThread=true))
                         (fun exn -> resultCell.RegisterResult(Canceled(exn),reuseThread=true))
                         computation)
             |> unfake
