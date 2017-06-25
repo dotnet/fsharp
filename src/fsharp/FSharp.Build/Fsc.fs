@@ -123,7 +123,7 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     let mutable debugSymbols = false
     let mutable debugType : string = null
     let mutable defineConstants : ITaskItem[] = [||]
-    let mutable delaySign : string = null
+    let mutable delaySign : bool = false
     let mutable disabledWarnings : string = null
     let mutable documentationFile : string = null
     let mutable dotnetFscCompilerPath : string = null
@@ -139,7 +139,7 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     let mutable pdbFile : string = null
     let mutable platform : string = null
     let mutable prefer32bit : bool = false
-    let mutable publicSign : string = null
+    let mutable publicSign : bool = false
     let mutable provideCommandLineArgs : bool = false
     let mutable references : ITaskItem[] = [||]
     let mutable referencePath : string = null
@@ -217,8 +217,8 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
         builder.AppendSwitchIfNotNull("--sig:", generateInterfaceFile)
         // KeyFile
         builder.AppendSwitchIfNotNull("--keyfile:", keyFile)
-        builder.AppendSwitchIfNotNull("--delaySign:", delaySign)
-        builder.AppendSwitchIfNotNull("--publicSign:", publicSign)
+        if delaySign then builder.AppendSwitch("--delaysign+")
+        if publicSign then builder.AppendSwitch("--publicsign+")
         // Optimize
         if optimize then
             builder.AppendSwitch("--optimize+")
