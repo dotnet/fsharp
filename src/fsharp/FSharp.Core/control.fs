@@ -543,14 +543,11 @@ namespace Microsoft.FSharp.Control
                 match cexn.InnerException with
                 | null -> [|exn|]
                 | :? AggregateException as a -> Array.append (a.Flatten().InnerExceptions |> Seq.toArray) [|exn|]
-                | _ -> [|cexn.InnerException; exn|]
+                | inner -> [|inner; exn|]
             let aggr = (new AggregateException(collected)).Flatten()
             match cexn with
-            | :? TaskCanceledException ->
-                new TaskCanceledException(cexn.Message, aggr)
-                :> OperationCanceledException
-            | _ ->
-                new OperationCanceledException(cexn.Message, aggr)
+            | :? TaskCanceledException -> new TaskCanceledException(cexn.Message, aggr) :> OperationCanceledException
+            | _ -> new OperationCanceledException(cexn.Message, aggr)
         // Call p but augment the normal, exception and cancel continuations with a call to finallyFunction.
         // If the finallyFunction raises an exception then call the original exception continuation
         // with the new exception. If exception is raised after a cancellation, exception is ignored

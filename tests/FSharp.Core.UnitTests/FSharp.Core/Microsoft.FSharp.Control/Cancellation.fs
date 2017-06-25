@@ -323,8 +323,7 @@ type CancellationType() =
 
         try
             Async.RunSynchronously(a, cancellationToken = cts.Token)
-        with
-        :? OperationCanceledException as o ->
+        with :? OperationCanceledException as o ->
             match o.InnerException with
             | :? AggregateException as a ->
                 Assert.AreEqual (1, a.InnerExceptions.Count)
@@ -351,8 +350,7 @@ type CancellationType() =
         let t = Async.StartAsTask(a, cancellationToken = cts.Token)
         try
             t.GetAwaiter().GetResult()
-        with
-        | :? OperationCanceledException as o ->
+        with :? OperationCanceledException as o ->
             match o.InnerException with
             | :? AggregateException as a ->
                 Assert.AreEqual (1, a.InnerExceptions.Count)
@@ -383,8 +381,7 @@ type CancellationType() =
 
         try
             Async.RunSynchronously(a, cancellationToken = cts.Token)
-        with
-        :? OperationCanceledException as o ->
+        with :? OperationCanceledException as o ->
             match o.InnerException with
             | :? AggregateException as a ->
                 Assert.AreEqual (1, a.InnerExceptions.Count)
@@ -413,8 +410,7 @@ type CancellationType() =
         let t = Async.StartAsTask(a, cancellationToken = cts.Token)
         try
             t.GetAwaiter().GetResult()
-        with
-        | :? OperationCanceledException as o ->
+        with :? OperationCanceledException as o ->
             match o.InnerException with
             | :? AggregateException as a ->
                 Assert.AreEqual (1, a.InnerExceptions.Count)
