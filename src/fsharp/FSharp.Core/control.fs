@@ -529,14 +529,28 @@ namespace Microsoft.FSharp.Control
         // delayPrim = "bindA (return ()) f"
         let delayA f = callA f ()
 
+        // protect an exception in an cancellation workflow and adds it to the given OperationCanceledException
+        // ie creates a new instance, where the new information is added,
+        // if cexn is a TaskCanceledException the type is preserved as well.
         let protectExn (cexn:OperationCanceledException) (edi:ExceptionDispatchInfo) =
+            // It's probably ok to not care about the stack of the cexn object, because
+            // 1. we often don't even collect the stack in the ccont route
+            // 2. there are no suited APIs to handle this (at best we could add the original instance to the new instance...)
+            // If we ever need this we probably need to provide our own sub-types of OperationCanceledException
+            // and TaskCanceledException
             let exn = edi.GetAssociatedSourceException()
             let collected =
                 match cexn.InnerException with
                 | null -> [|exn|]
-                | :? AggregateException as a -> Array.append (a.InnerExceptions |> Seq.toArray) [|exn|]
+                | :? AggregateException as a -> Array.append (a.Flatten().InnerExceptions |> Seq.toArray) [|exn|]
                 | _ -> [|cexn.InnerException; exn|]
-            new OperationCanceledException(cexn.Message, new AggregateException(collected))
+            let aggr = (new AggregateException(collected)).Flatten()
+            match cexn with
+            | :? TaskCanceledException ->
+                new TaskCanceledException(cexn.Message, aggr)
+                :> OperationCanceledException
+            | _ ->
+                new OperationCanceledException(cexn.Message, aggr)
         // Call p but augment the normal, exception and cancel continuations with a call to finallyFunction.
         // If the finallyFunction raises an exception then call the original exception continuation
         // with the new exception. If exception is raised after a cancellation, exception is ignored
@@ -1002,8 +1016,15 @@ namespace Microsoft.FSharp.Control
             queueAsync
                 token
                 (fun r -> tcs.SetResult r |> fake)
-                (fun edi -> tcs.SetException edi.SourceException |> fake)
+                (fun edi ->
+                    let wrapper =
+                        if token.IsCancellationRequested then
+                            protectExn (new TaskCanceledException()) edi :> exn
+                        else
+                            edi.SourceException
+                    tcs.SetException wrapper |> fake)
 #if !FX_NO_ASYNCTASKMETHODBUILDER
+                // We wrap in a TaskCanceledException to maintain backwards compat.
                 (fun exn -> tcs.SetException (new TaskCanceledException(exn.Message, exn.InnerException)) |> fake)
 #else
                 (fun _ -> tcs.SetCanceled() |> fake)
@@ -1204,14 +1225,29 @@ namespace Microsoft.FSharp.Control
     // Contains helpers that will attach continuation to the given task.
     // Should be invoked as a part of protectedPrimitive(withResync) call
     module TaskHelpers = 
+        // This uses a trick to get the underlying OperationCanceledException
+        let inline getCancelledException (completedTask:Task) (waitWithAwaiter) =
+            let fallback = new TaskCanceledException(completedTask) :> OperationCanceledException
+            // sadly there is no other public api to retrieve it, but to call .GetAwaiter().GetResult().
+            try waitWithAwaiter()
+                // should not happen, but just in case...
+                fallback
+            with
+            | :? OperationCanceledException as o -> o
+            | other ->
+                // shouldn't happen, but just in case...
+                new TaskCanceledException(fallback.Message, other) :> OperationCanceledException
+
         let continueWith (task : Task<'T>, args, useCcontForTaskCancellation) = 
 
             let continuation (completedTask : Task<_>) : unit =
                 args.aux.trampolineHolder.Protect((fun () ->
                     if completedTask.IsCanceled then
+                        let cancelledException =
+                            getCancelledException completedTask (fun () -> completedTask.GetAwaiter().GetResult() |> ignore)
                         if useCcontForTaskCancellation
-                        then args.aux.ccont (new OperationCanceledException(args.aux.token))
-                        else args.aux.econt (ExceptionDispatchInfo.Capture(new TaskCanceledException(completedTask)))
+                        then args.aux.ccont (cancelledException)
+                        else args.aux.econt (ExceptionDispatchInfo.Capture(cancelledException))
                     elif completedTask.IsFaulted then
                         args.aux.econt (MayLoseStackTrace(completedTask.Exception))
                     else
@@ -1221,12 +1257,15 @@ namespace Microsoft.FSharp.Control
 
         let continueWithUnit (task : Task, args, useCcontForTaskCancellation) = 
 
+
             let continuation (completedTask : Task) : unit =
                 args.aux.trampolineHolder.Protect((fun () ->
                     if completedTask.IsCanceled then
+                        let cancelledException =
+                            getCancelledException completedTask (fun () -> completedTask.GetAwaiter().GetResult())
                         if useCcontForTaskCancellation
-                        then args.aux.ccont (new OperationCanceledException(args.aux.token))
-                        else args.aux.econt (ExceptionDispatchInfo.Capture(new TaskCanceledException(completedTask)))
+                        then args.aux.ccont (cancelledException)
+                        else args.aux.econt (ExceptionDispatchInfo.Capture(cancelledException))
                     elif completedTask.IsFaulted then
                         args.aux.econt (MayLoseStackTrace(completedTask.Exception))
                     else

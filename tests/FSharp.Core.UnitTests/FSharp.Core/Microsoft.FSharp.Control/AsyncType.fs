@@ -131,7 +131,12 @@ type AsyncType() =
 #if !FX_NO_TPL_PARALLEL
 
     member private this.WaitASec (t:Task) =
-        let result = t.Wait(TimeSpan(hours=0,minutes=0,seconds=1))
+        let result =
+            try t.Wait(TimeSpan(hours=0,minutes=0,seconds=1))
+            with :? AggregateException ->
+                // This throws the "original" exception
+                t.GetAwaiter().GetResult()
+                false
         Assert.IsTrue(result, "Task did not finish after waiting for a second.")
       
     
@@ -173,11 +178,112 @@ type AsyncType() =
         
         try
             this.WaitASec t
-        with :? AggregateException as a ->
-            match a.InnerException with
-            | :? TaskCanceledException as t -> ()
+        with :? TaskCanceledException -> ()
+        Assert.IsTrue (t.IsCompleted, "Task is not completed")
+        Assert.IsTrue (t.IsCanceled, "Task is not cancelled")
+
+    [<Test>]
+    member this.StartAsTaskCancellationViaException () =
+        let cts = new CancellationTokenSource()
+        let tcs = TaskCompletionSource<unit>()
+        let a = async {
+            cts.CancelAfter (100)
+            do! tcs.Task |> Async.AwaitTask }
+#if FSCORE_PORTABLE_NEW || coreclr
+        let t : Task<unit> =
+#else
+        use t : Task<unit> =
+#endif
+            Async.StartAsTask(a, cancellationToken = cts.Token)
+
+        // Should not finish
+        try
+            let result = t.Wait(300)
+            Assert.IsFalse (result)
+        with :? AggregateException -> Assert.Fail "Task should not finish, jet"
+
+        let msg = "Custom non-conforming 3rd-Party-Api throws"
+        tcs.SetException(Exception msg)
+
+        try
+            this.WaitASec t
+        with :? TaskCanceledException as t ->
+            match t.InnerException with
+            | :? AggregateException as a ->
+                Assert.AreEqual(1, a.InnerExceptions.Count)
+                Assert.AreEqual(msg, a.InnerException.Message)
             | _ -> reraise()
         Assert.IsTrue (t.IsCompleted, "Task is not completed")
+        Assert.IsTrue (t.IsCanceled, "Task is not cancelled")
+
+    [<Test>]
+    member this.RunSynchronouslyCancellation () =
+        let cts = new CancellationTokenSource()
+        let tcs = TaskCompletionSource<unit>()
+        let a = async {
+            cts.CancelAfter (100)
+            do! tcs.Task |> Async.AwaitTask }
+#if FSCORE_PORTABLE_NEW || coreclr
+        let t : Task<unit> =
+#else
+        use t : Task<unit> =
+#endif
+            Task.Run(new Func<unit>(fun () -> Async.RunSynchronously(a, cancellationToken = cts.Token)))
+
+        // Should not finish
+        try
+            let result = t.Wait(300)
+            Assert.IsFalse (result)
+        with :? AggregateException -> Assert.Fail "Task should not finish, jet"
+
+        tcs.SetCanceled()
+
+        try
+            this.WaitASec t
+        with :? OperationCanceledException -> ()
+
+        Assert.IsTrue (t.IsCompleted, "Task is not completed")
+        // We used Task.Run for convenience, it will not notice the cancellation
+        // -> Cancellation is noticed by RunSynchronously throwing 'OperationCanceledException'
+        // which is tested above
+        //Assert.IsTrue (t.IsCanceled, "Task is not cancelled")
+
+    [<Test>]
+    member this.RunSynchronouslyCancellationViaException () =
+        let cts = new CancellationTokenSource()
+        let tcs = TaskCompletionSource<unit>()
+        let a = async {
+            cts.CancelAfter (100)
+            do! tcs.Task |> Async.AwaitTask }
+#if FSCORE_PORTABLE_NEW || coreclr
+        let t : Task<unit> =
+#else
+        use t : Task<unit> =
+#endif
+            Task.Run(new Func<unit>(fun () -> Async.RunSynchronously(a, cancellationToken = cts.Token)))
+
+        // Should not finish
+        try
+            let result = t.Wait(300)
+            Assert.IsFalse (result)
+        with :? AggregateException -> Assert.Fail "Task should not finish, jet"
+
+        let msg = "Custom non-conforming 3rd-Party-Api throws"
+        tcs.SetException(Exception msg)
+
+        try
+            this.WaitASec t
+        with :? OperationCanceledException as t ->
+            match t.InnerException with
+            | :? AggregateException as a ->
+                Assert.AreEqual(1, a.InnerExceptions.Count)
+                Assert.AreEqual(msg, a.InnerException.Message)
+            | _ -> reraise()
+        Assert.IsTrue (t.IsCompleted, "Task is not completed")
+        // We used Task.Run for convenience, it will not notice the cancellation
+        // -> Cancellation is noticed by RunSynchronously throwing 'OperationCanceledException'
+        // which is tested above
+        //Assert.IsTrue (t.IsCanceled, "Task is not cancelled")
 
     [<Test>]
     member this.StartTask () =
