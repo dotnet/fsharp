@@ -2539,6 +2539,7 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
           | _ -> false) then 0x1000 else 0x0) ||| // RTSpecialName 
         (if md.IsReqSecObj then 0x8000 else 0x0) |||
         (if md.HasSecurity || not md.SecurityDecls.AsList.IsEmpty then 0x4000 else 0x0)
+   
     let implflags = 
         (match  md.mdCodeKind with 
          | MethodCodeKind.Native -> 0x0001
@@ -2550,7 +2551,8 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
         (if md.IsPreserveSig then 0x0080 else 0x0000) |||
         (if md.IsSynchronized then 0x0020 else 0x0000) |||
         (if md.IsMustRun then 0x0040 else 0x0000) |||
-        (if (md.IsNoInline || (match md.mdBody.Contents with MethodBody.IL il -> il.NoInlining | _ -> false)) then 0x0008 else 0x0000)
+        (if (md.IsNoInline || (match md.mdBody.Contents with MethodBody.IL il -> il.NoInlining | _ -> false)) then 0x0008 else 0x0000) |||
+        (if (md.IsAggressiveInline || (match md.mdBody.Contents with MethodBody.IL il -> il.AggressiveInlining | _ -> false)) then 0x0100 else 0x0000)
 
     if md.IsEntryPoint then 
         if cenv.entrypoint <> None then failwith "duplicate entrypoint"
