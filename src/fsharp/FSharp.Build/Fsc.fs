@@ -116,34 +116,42 @@ type FscCommandLineBuilder () =
 type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly")>] Fsc() as this = 
     inherit ToolTask()
     let mutable baseAddress : string = null
+    let mutable capturedArguments : string list = []  // list of individual args, to pass to HostObject Compile()
+    let mutable capturedFilenames : string list = []  // list of individual source filenames, to pass to HostObject Compile()
     let mutable codePage : string = null
+    let mutable commandLineArgs : ITaskItem list = []
     let mutable debugSymbols = false
     let mutable debugType : string = null
     let mutable defineConstants : ITaskItem[] = [||]
+    let mutable delaySign : bool = false
     let mutable disabledWarnings : string = null
     let mutable documentationFile : string = null
+    let mutable dotnetFscCompilerPath : string = null
     let mutable embedAllSources = false
     let mutable embed : string = null
     let mutable generateInterfaceFile : string = null
+    let mutable highEntropyVA : bool = false
     let mutable keyFile : string = null
     let mutable noFramework = false
     let mutable optimize  : bool = true
-    let mutable tailcalls : bool = true
     let mutable otherFlags : string = null
     let mutable outputAssembly : string = null 
     let mutable pdbFile : string = null
     let mutable platform : string = null
     let mutable prefer32bit : bool = false
+    let mutable publicSign : bool = false
+    let mutable provideCommandLineArgs : bool = false
     let mutable references : ITaskItem[] = [||]
     let mutable referencePath : string = null
     let mutable resources : ITaskItem[] = [||]
+    let mutable skipCompilerExecution : bool  = false
     let mutable sources : ITaskItem[] = [||]
     let mutable sourceLink : string = null
+    let mutable subsystemVersion : string = null
+    let mutable tailcalls : bool = true
+    let mutable targetProfile : string = null
     let mutable targetType : string = null 
     let mutable toolExe : string = "fsc.exe"
-    let mutable warningLevel : string = null
-    let mutable treatWarningsAsErrors : bool = false
-    let mutable warningsAsErrors : string = null
     let mutable toolPath : string = 
         let locationOfThisDll = 
             try Some(System.IO.Path.GetDirectoryName(typeof<FscCommandLineBuilder>.Assembly.Location))
@@ -151,22 +159,15 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
         match FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(locationOfThisDll) with
         | Some s -> s
         | None -> ""
+    let mutable treatWarningsAsErrors : bool = false
+    let mutable warningsAsErrors : string = null
     let mutable versionFile : string = null
+    let mutable warningLevel : string = null
     let mutable win32res : string = null
     let mutable win32manifest : string = null
     let mutable vserrors : bool = false
     let mutable vslcid : string = null
     let mutable utf8output : bool = false
-    let mutable subsystemVersion : string = null
-    let mutable highEntropyVA : bool = false
-    let mutable targetProfile : string = null
-    let mutable dotnetFscCompilerPath : string = null
-    let mutable skipCompilerExecution : bool  = false
-    let mutable provideCommandLineArgs : bool = false
-    let mutable commandLineArgs : ITaskItem list = []
-
-    let mutable capturedArguments : string list = []  // list of individual args, to pass to HostObject Compile()
-    let mutable capturedFilenames : string list = []  // list of individual source filenames, to pass to HostObject Compile()
 
 #if ENABLE_MONO_SUPPORT
     // The property YieldDuringToolExecution is not available on Mono.
@@ -216,6 +217,8 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
         builder.AppendSwitchIfNotNull("--sig:", generateInterfaceFile)
         // KeyFile
         builder.AppendSwitchIfNotNull("--keyfile:", keyFile)
+        if delaySign then builder.AppendSwitch("--delaysign+")
+        if publicSign then builder.AppendSwitch("--publicsign+")
         // Optimize
         if optimize then
             builder.AppendSwitch("--optimize+")
@@ -341,6 +344,9 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     member fsc.DebugType
         with get() = debugType
         and set(s) = debugType <- s
+    member fsc.DelaySign
+        with get() = delaySign
+        and set(s) = delaySign <- s
     // --nowarn <string>: Do not report the given specific warning.
     member fsc.DisabledWarnings
         with get() = disabledWarnings
@@ -412,6 +418,9 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     member fsc.Prefer32Bit
         with get() = prefer32bit 
         and set(s) = prefer32bit <- s 
+    member fsc.PublicSign
+        with get() = publicSign 
+        and set(s) = publicSign <- s 
     // -r <string>: Reference an F# or .NET assembly.
     member fsc.References 
         with get() = references 
