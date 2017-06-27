@@ -5,6 +5,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp1.0</TargetFramework>
+    <TargetExt>.exe</TargetExt>
     <AssemblyName>fsc</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
@@ -17,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.BuildFromSource.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Build\FSharp.Build.BuildFromSource.fsproj" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Private\FSharp.Compiler.Private.BuildFromSource.fsproj" />
     <PackageReference Include="System.Linq.Expressions" Version="4.3.0"></PackageReference>
     <PackageReference Include="System.Reflection.Metadata" Version="1.4.2"></PackageReference>

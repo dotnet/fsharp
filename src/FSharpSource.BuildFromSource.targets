@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <FSCoreVersion>4.4.1.0</FSCoreVersion>
-    <OutputPath>$(MSBuildThisFileDirectory)../BuildFromSource/$(Configuration)/$(TargetFramework)/bin</OutputPath>
+    <OutputPath>$(MSBuildThisFileDirectory)../BuildFromSource/$(Configuration)/bin</OutputPath>
 
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
@@ -21,6 +21,10 @@
     <DotNetExe Condition=" '$(OS)' != 'Unix' ">dotnet.exe</DotNetExe>
     <DotNetExePath>$(MSBuildThisFileDirectory)../Tools/dotnet20/$(DotNetExe)</DotNetExePath>
     <DotNetExePath Condition="!Exists($(DotNetExe))">$(MSBuildBinPath)/../../$(DotNetExe)</DotNetExePath>
+
+    <PreReleaseLabel></PreReleaseLabel>
+    <BuildVersionFilePath Condition="'$(BuildVersionFilePath)'==''" >$(IntermediateOutputFile)\BuildVersionFile.props</BuildVersionFilePath>
+
   </PropertyGroup>
 
   <PropertyGroup>
@@ -29,9 +33,10 @@
   </PropertyGroup>
 
   <Import Project="FSharpSource.Profiles.targets" />
+  <Import Project="$(BuildVersionFilePath)" Condition="Exists('$(BuildVersionFilePath)')" />
 
   <Target Name="CopyAndSubstituteTextFiles" 
-          BeforeTargets="AfterCompile" AfterTargets="CoreCompile"
+          BeforeTargets="Compile"
           Inputs="@(CopyAndSubstituteText)"
           Outputs="@(CopyAndSubstituteText->'$(OutDir)%(TargetFilename)')" >
 
