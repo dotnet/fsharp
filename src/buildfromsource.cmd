@@ -17,21 +17,12 @@ if ERRORLEVEL 1 echo Error: failed  && goto :failure
 dotnet  publish %__scriptpath%buildtools\fsyacc\fsyacc.fsproj -o %__scriptpath%..\Tools\fsyacc
 if ERRORLEVEL 1 echo Error: failed  && goto :failure
 
-rem build tools
-dotnet restore %__scriptpath%fsharp\FSharp.Build\FSharp.Build.BuildFromSource.fsproj
+rem build and pack tools
+dotnet restore %__scriptpath%fsharp\FSharp.Compiler.nuget\FSharp.Compiler.nuget.BuildFromSource.fsproj
 if ERRORLEVEL 1 echo Error: failed  && goto :failure
-dotnet publish %__scriptpath%fsharp\FSharp.Build\FSharp.Build.BuildFromSource.fsproj
-if ERRORLEVEL 1 echo Error: failed  && goto :failure
-
-dotnet restore %__scriptpath%fsharp\fsi\Fsi.BuildFromSource.fsproj
-if ERRORLEVEL 1 echo Error: failed  && goto :failure
-dotnet publish %__scriptpath%fsharp\fsi\Fsi.BuildFromSource.fsproj
+dotnet pack %__scriptpath%fsharp\FSharp.Compiler.nuget\FSharp.Compiler.nuget.BuildFromSource.fsproj -c release
 if ERRORLEVEL 1 echo Error: failed  && goto :failure
 
-dotnet restore %__scriptpath%fsharp\Fsc\Fsc.BuildFromSource.fsproj
-if ERRORLEVEL 1 echo Error: failed  && goto :failure
-dotnet publish %__scriptpath%fsharp\Fsc\Fsc.BuildFromSource.fsproj
-if ERRORLEVEL 1 echo Error: failed  && goto :failure
 goto :success
 
 REM ------ exit -------------------------------------

@@ -553,6 +553,7 @@ set _dotnetcliexe=%~dp0Tools\dotnetcli\dotnet.exe
 set _dotnet20exe=%~dp0Tools\dotnet20\dotnet.exe
 set NUGET_PACKAGES=%~dp0Packages
 set path=%_dotnet20exe%;%path%
+
 set _fsiexe="packages\FSharp.Compiler.Tools.4.1.5\tools\fsi.exe"
 if not exist %_fsiexe% echo Error: Could not find %_fsiexe% && goto :failure
 %_ngenexe% install %_fsiexe% /nologo 
@@ -565,8 +566,6 @@ pushd src
 call buildfromsource.cmd
 @if ERRORLEVEL 1 echo Error: buildfromsource.cmd failed  && goto :failure
 popd src
-
-
 
 echo ---------------- Done with package restore, starting proto ------------------------
 
