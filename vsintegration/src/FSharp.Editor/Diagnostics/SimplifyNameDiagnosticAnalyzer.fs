@@ -4,6 +4,7 @@ namespace rec Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Collections.Immutable
+open System.Diagnostics
 open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
@@ -47,8 +48,9 @@ type internal SimplifyNameDiagnosticAnalyzer() =
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) =
         asyncMaybe {
-            do! Async.Sleep DefaultTuning.SimplifyNameInitialDelay |> liftAsync 
             do! Option.guard Settings.CodeFixes.SimplifyName
+            do Trace.TraceInformation("{0:n3} (start) SimplifyName", DateTime.Now.TimeOfDay.TotalSeconds)
+            do! Async.Sleep DefaultTuning.SimplifyNameInitialDelay |> liftAsync 
             let! options = getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document)
             let! textVersion = document.GetTextVersionAsync(cancellationToken)
             let textVersionHash = textVersion.GetHashCode()

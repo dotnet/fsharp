@@ -48,13 +48,13 @@ val TypeCheckOneImplFile :
       -> TcEnv 
       -> Tast.ModuleOrNamespaceType option
       -> ParsedImplFileInput
-      -> Eventually<TopAttribs * Tast.TypedImplFile * TcEnv>
+      -> Eventually<TopAttribs * Tast.TypedImplFile * TcEnv * bool>
 
 val TypeCheckOneSigFile : 
       TcGlobals * NiceNameGenerator * ImportMap * CcuThunk  * (unit -> bool) * ConditionalDefines * NameResolution.TcResultsSink 
       -> TcEnv                             
       -> ParsedSigFileInput
-      -> Eventually<TcEnv * TcEnv * ModuleOrNamespaceType >
+      -> Eventually<TcEnv * ModuleOrNamespaceType * bool>
 
 //-------------------------------------------------------------------------
 // Some of the exceptions arising from type checking. These should be moved to 
@@ -64,6 +64,7 @@ val TypeCheckOneSigFile :
 exception BakedInMemberConstraintName of string * range
 exception FunctionExpected of DisplayEnv * TType * range
 exception NotAFunction of DisplayEnv * TType * range * range
+exception NotAFunctionButIndexer of DisplayEnv * TType * string option * range * range
 exception Recursion of DisplayEnv * Ast.Ident * TType * TType * range
 exception RecursiveUseCheckedAtRuntime of DisplayEnv * ValRef * range
 exception LetRecEvaluatedOutOfOrder of DisplayEnv * ValRef * ValRef * range

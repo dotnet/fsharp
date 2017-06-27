@@ -23,7 +23,7 @@ open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
 
 #if !FX_NO_DEFAULT_DEPENDENCY_TYPE
-[<Dependency("FSharp.Compiler",LoadHint.Always)>] 
+[<Dependency("FSharp.Compiler.Private",LoadHint.Always)>] 
 #endif
 do ()
 
@@ -48,7 +48,7 @@ module Driver =
                     failwithf "%s" <| FSComp.SR.elSysEnvExitDidntExit() 
             }
 
-        mainCompile (ctok, argv, MSBuildReferenceResolver.Resolver, (*bannerAlreadyPrinted*)false, (*openBinariesInMemory*)false, quitProcessExiter, ConsoleLoggerProvider(), None, None)
+        mainCompile (ctok, argv, MSBuildReferenceResolver.Resolver, (*bannerAlreadyPrinted*)false, (*openBinariesInMemory*)false, (*defaultCopyFSharpCore*)true, quitProcessExiter, ConsoleLoggerProvider(), None, None)
         0 
 
 [<EntryPoint>]

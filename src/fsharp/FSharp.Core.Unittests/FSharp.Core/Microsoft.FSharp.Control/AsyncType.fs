@@ -162,7 +162,22 @@ type AsyncType() =
         this.WaitASec t
         Assert.IsTrue (t.IsCompleted)
         Assert.AreEqual(s, t.Result)    
-      
+
+    [<Test>]
+    member this.RunSynchronouslyCancellationWithDelayedResult () =
+        let cts = new CancellationTokenSource()
+        let tcs = TaskCompletionSource<int>()
+        let _ = cts.Token.Register(fun () -> tcs.SetResult 42)
+        let a = async {
+            cts.CancelAfter (100)
+            let! result = tcs.Task |> Async.AwaitTask
+            return result }
+
+        try
+            Async.RunSynchronously(a, cancellationToken = cts.Token)
+                |> ignore
+        with :? OperationCanceledException as o -> ()
+
     [<Test>]
     member this.ExceptionPropagatesToTask () =
         let a = async { 

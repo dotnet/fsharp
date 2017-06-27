@@ -10,6 +10,7 @@ open System.Threading
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Completion
+open Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.Completion.FileSystem
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Classification
 
@@ -34,9 +35,15 @@ type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoM
 
     let getPathThroughLastSlash(text: SourceText, position: int, quotedPathGroup: Group) =
         PathCompletionUtilities.GetPathThroughLastSlash(
-            quotedPathGroup.Value,
-            getQuotedPathStart(text, position, quotedPathGroup),
-            position)
+            quotedPath = quotedPathGroup.Value,
+            quotedPathStart = getQuotedPathStart(text, position, quotedPathGroup),
+            position = position)
+ 
+    let getTextChangeSpan(text: SourceText, position: int, quotedPathGroup: Group) =
+        PathCompletionUtilities.GetTextChangeSpan(
+            quotedPath = quotedPathGroup.Value,
+            quotedPathStart = getQuotedPathStart(text, position, quotedPathGroup),
+            position = position)
 
     let getFileGlyph (extention: string) =
         match extention with
@@ -110,26 +117,30 @@ type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoM
             let snapshot = text.FindCorrespondingEditorTextSnapshot()
             
             do! Option.guard (not (isNull snapshot))
-
+            let fileSystem = CurrentWorkingDirectoryDiscoveryService.GetService(snapshot)
+            
             let extraSearchPaths =
                 if completion.UseIncludeDirectives then
                     getIncludeDirectives (text, position)
                 else []
-
+            
             let defaultSearchPath = Path.GetDirectoryName document.FilePath
             let searchPaths = defaultSearchPath :: extraSearchPaths
-
+            
             let helper = 
                 FileSystemCompletionHelper(
+                    this,
+                    getTextChangeSpan(text, position, quotedPathGroup),
+                    fileSystem,
                     Glyph.OpenFolder,
                     completion.AllowableExtensions |> List.tryPick getFileGlyph |> Option.defaultValue Glyph.None,
-                    Seq.toImmutableArray searchPaths,
-                    null,
-                    completion.AllowableExtensions |> Seq.toImmutableArray,
-                    rules)
+                    searchPaths = Seq.toImmutableArray searchPaths,
+                    allowableExtensions = completion.AllowableExtensions,
+                    itemRules = rules)
      
             let pathThroughLastSlash = getPathThroughLastSlash(text, position, quotedPathGroup)
-            context.AddItems(helper.GetItems(pathThroughLastSlash, ct))
+            let documentPath = if document.Project.IsSubmission then null else document.FilePath
+            context.AddItems(helper.GetItems(pathThroughLastSlash, documentPath))
         } 
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask context.CancellationToken

@@ -700,10 +700,8 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
 
          CompilerOption("peekahead","", OptionSwitch (fun flag -> peekAheadOnConsoleToPermitTyping <- flag=OptionSwitch.On), None, None); // "Probe to see if Console looks functional");
 
-#if COMPILER_SERVICE
          // Disables interaction (to be used by libraries embedding FSI only!)
-         CompilerOption("noninteractive","", OptionUnit (fun () -> interact <-  false), None, None);     
-#endif
+         CompilerOption("noninteractive","", OptionUnit (fun () -> interact <-  false), None, None);     // "Deprecated, use --exec instead"
 
         ])
       ]
@@ -748,11 +746,7 @@ type internal FsiCommandLineOptions(fsi: FsiEvaluationSessionHostConfig, argv: s
            let abbrevArgs = GetAbbrevFlagSet tcConfigB false
            ParseCompilerOptions (collect, fsiCompilerOptions, List.tail (PostProcessCompilerArgs abbrevArgs argv))
         with e ->
-#if COMPILER_SERVICE
             stopProcessingRecovery e range0; failwithf "Error creating evaluation session: %A" e
-#else
-            stopProcessingRecovery e range0; exit 1
-#endif
         inputFilesAcc
 
     do 
@@ -2358,13 +2352,11 @@ type internal FsiInteractionProcessor
         let names  = names |> List.filter (fun name -> name.StartsWith(stem,StringComparison.Ordinal)) 
         names
 
-#if COMPILER_SERVICE
-    member __.ParseAndCheckInteraction (ctok, referenceResolver, checker, istate, text:string) =
+    member __.ParseAndCheckInteraction (ctok, legacyReferenceResolver, checker, istate, text:string) =
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
 
-        let fsiInteractiveChecker = FsiInteractiveChecker(referenceResolver, checker, tcConfig, istate.tcGlobals, istate.tcImports, istate.tcState)
+        let fsiInteractiveChecker = FsiInteractiveChecker(legacyReferenceResolver, checker, tcConfig, istate.tcGlobals, istate.tcImports, istate.tcState)
         fsiInteractiveChecker.ParseAndCheckInteraction(ctok, text)
-#endif
 
 
 //----------------------------------------------------------------------------
@@ -2422,7 +2414,7 @@ let internal DriveFsiEventLoop (fsi: FsiEvaluationSessionHostConfig, fsiConsoleO
 
 /// The primary type, representing a full F# Interactive session, reading from the given
 /// text input, writing to the given text output and error writers.
-type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], inReader:TextReader, outWriter:TextWriter, errorWriter: TextWriter, fsiCollectible: bool, msbuildEnabled: bool) = 
+type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], inReader:TextReader, outWriter:TextWriter, errorWriter: TextWriter, fsiCollectible: bool, legacyReferenceResolver: ReferenceResolver.Resolver option) = 
 
 #if !FX_NO_HEAPTERMINATION
     do if not runningOnMono then Lib.UnmanagedProcessExecutionOptions.EnableHeapTerminationOnCorruption() (* SDL recommendation *)
@@ -2470,18 +2462,12 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(FSharpEnvironment.tryCurrentDomain()).Value
 
-#if COMPILER_SERVICE && !COMPILER_SERVICE_DLL_VISUAL_STUDIO
-    let referenceResolver = SimulatedMSBuildReferenceResolver.GetBestAvailableResolver(msbuildEnabled)
-#else
-    let referenceResolver = (assert msbuildEnabled); MSBuildReferenceResolver.Resolver 
-#endif
+    let legacyReferenceResolver = 
+        match legacyReferenceResolver with 
+        | None -> SimulatedMSBuildReferenceResolver.GetBestAvailableResolver()
+        | Some rr -> rr
 
-    let tcConfigB = 
-        TcConfigBuilder.CreateNew(referenceResolver,
-                                  defaultFSharpBinariesDir, 
-                                  true, // long running: optimizeForMemory 
-                                  currentDirectory,isInteractive=true, 
-                                  isInvalidationSupported=false)
+    let tcConfigB = TcConfigBuilder.CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir=defaultFSharpBinariesDir, optimizeForMemory=true, implicitIncludeDir=currentDirectory, isInteractive=true, isInvalidationSupported=false, defaultCopyFSharpCore=false)
     let tcConfigP = TcConfigProvider.BasedOnMutableBuilder(tcConfigB)
     do tcConfigB.resolutionEnvironment <- ReferenceResolver.RuntimeLike // See Bug 3608
     do tcConfigB.useFsiAuxLib <- fsi.UseFsiAuxLib
@@ -2557,10 +2543,9 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     let fsiConsoleInput = FsiConsoleInput(fsi, fsiOptions, inReader, outWriter)
 
-#if COMPILER_SERVICE
     /// The single, global interactive checker that can be safely used in conjunction with other operations
     /// on the FsiEvaluationSession.  
-    let checker = FSharpChecker.Create(msbuildEnabled=msbuildEnabled)
+    let checker = FSharpChecker.Create(legacyReferenceResolver=legacyReferenceResolver)
 
     let (tcGlobals,frameworkTcImports,nonFrameworkResolutions,unresolvedReferences) = 
         try 
@@ -2574,13 +2559,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
           TcImports.BuildNonFrameworkTcImports(ctokStartup, tcConfigP, tcGlobals, frameworkTcImports, nonFrameworkResolutions, unresolvedReferences) |> Cancellable.runWithoutCancellation
       with e -> 
           stopProcessingRecovery e range0; failwithf "Error creating evaluation session: %A" e
-#else
-    let tcGlobals,tcImports =  
-      try 
-          TcImports.BuildTcImports(ctokStartup, tcConfigP)  |> Cancellable.runWithoutCancellation
-      with e -> 
-          stopProcessingRecovery e range0; exit 1
-#endif
 
     let ilGlobals  = tcGlobals.ilg
 
@@ -2649,13 +2627,11 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     member x.GetCompletions(longIdent) = 
         fsiInteractionProcessor.CompletionsForPartialLID (fsiInteractionProcessor.CurrentState, longIdent)  |> Seq.ofList
 
-#if COMPILER_SERVICE
     member x.ParseAndCheckInteraction(code) = 
         let ctok = AssumeCompilationThreadWithoutEvidence ()
-        fsiInteractionProcessor.ParseAndCheckInteraction (ctok, referenceResolver, checker.ReactorOps, fsiInteractionProcessor.CurrentState, code)  
+        fsiInteractionProcessor.ParseAndCheckInteraction (ctok, legacyReferenceResolver, checker.ReactorOps, fsiInteractionProcessor.CurrentState, code)  
 
     member x.InteractiveChecker = checker
-#endif
 
     member x.CurrentPartialAssemblySignature = 
         fsiDynamicCompiler.CurrentPartialAssemblySignature (fsiInteractionProcessor.CurrentState)  
@@ -2877,8 +2853,8 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
         GC.KeepAlive fsiInterruptController.EventHandlers
 
 
-    static member Create(fsiConfig, argv, inReader, outWriter, errorWriter, ?collectible, ?msbuildEnabled) = 
-        new FsiEvaluationSession(fsiConfig, argv, inReader, outWriter, errorWriter, defaultArg collectible false, defaultArg msbuildEnabled true)
+    static member Create(fsiConfig, argv, inReader, outWriter, errorWriter, ?collectible, ?legacyReferenceResolver) = 
+        new FsiEvaluationSession(fsiConfig, argv, inReader, outWriter, errorWriter, defaultArg collectible false, legacyReferenceResolver)
     
     static member GetDefaultConfiguration(fsiObj:obj) = FsiEvaluationSession.GetDefaultConfiguration(fsiObj, true)
     

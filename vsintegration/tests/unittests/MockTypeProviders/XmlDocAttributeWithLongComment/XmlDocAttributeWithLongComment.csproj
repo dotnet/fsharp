@@ -17,7 +17,7 @@
     <NoWarn>0169;0067</NoWarn>
     <DefineConstants>DEBUG;TRACE;$(DefineConstants)</DefineConstants>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin\UnitTests\MockTypeProviders</OutputPath>
+    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetDotnetProfile)\bin\UnitTests\MockTypeProviders</OutputPath>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />

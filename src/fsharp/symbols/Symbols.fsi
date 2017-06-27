@@ -151,7 +151,10 @@ and [<Class>] internal FSharpAssemblySignature =
 
     /// Get the declared attributes for the assembly.
     /// Only available when parsing an entire project. 
-    member Attributes: IList<FSharpAttribute>     
+    member Attributes: IList<FSharpAttribute>
+
+    /// Find entity using compiled names
+    member FindEntityByPath: string list -> FSharpEntity option
 
 
 /// A subtype of FSharpSymbol that represents a type definition or module as seen by the F# language
@@ -691,14 +694,16 @@ and [<RequireQualifiedAccess>] FSharpInlineAnnotation =
 #else
 and [<RequireQualifiedAccess>] internal FSharpInlineAnnotation = 
 #endif
-   /// Indictes the value is inlined and compiled code for the function does not exist
+   /// Indicates the value is inlined and compiled code for the function does not exist
    | PseudoValue
-   /// Indictes the value is inlined but compiled code for the function still exists, e.g. to satisfy interfaces on objects, but that it is also always inlined 
+   /// Indicates the value is inlined but compiled code for the function still exists, e.g. to satisfy interfaces on objects, but that it is also always inlined 
    | AlwaysInline 
-   /// Indictes the value is optionally inlined 
+   /// Indicates the value is optionally inlined 
    | OptionalInline 
-   /// Indictes the value is never inlined 
-   | NeverInline 
+   /// Indicates the value is never inlined 
+   | NeverInline   
+   /// Indicates the value is aggressively inlined by the .NET runtime
+   | AggressiveInline 
 
 /// A subtype of F# symbol that represents an F# method, property, event, function or value, including extension members.
 #if COMPILER_PUBLIC_API

@@ -68,7 +68,7 @@ type internal FSharpLanguageServiceTestable() as this =
     member this.Initialize (sp, dp, prefs, sourceFact) = 
         if this.Unhooked then raise Error.UseOfUnhookedLanguageServiceState        
         artifacts <- Some (ProjectSitesAndFiles())
-        let checker = FSharpChecker.Create()
+        let checker = FSharpChecker.Create(legacyReferenceResolver=Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver)
         checker.BeforeBackgroundFileCheck.Add (fun (filename,_) -> UIThread.Run(fun () -> this.NotifyFileTypeCheckStateIsDirty(filename)))
         checkerContainerOpt <- Some (checker)
         serviceProvider <- Some sp

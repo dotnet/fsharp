@@ -658,6 +658,8 @@ module CoreTests =
 
         fsc cfg "%s -o:test.exe -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
 
+        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+
         peverify cfg "test.exe"
 
         begin
@@ -1669,6 +1671,18 @@ module TypecheckTests =
 #endif
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+    [<Test>]
+    let ``sigs pos26`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:exe -o:pos26.exe" cfg.fsc_flags ["pos26.fsi"; "pos26.fs"]
+        peverify cfg "pos26.exe"
+
+    [<Test>]
+    let ``sigs pos25`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:exe -o:pos25.exe" cfg.fsc_flags ["pos25.fs"]
+        peverify cfg "pos25.exe"
+
     [<Test>]
     let ``sigs pos24`` () = 
         let cfg = testConfig "typecheck/sigs"

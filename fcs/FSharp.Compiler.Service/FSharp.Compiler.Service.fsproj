@@ -24,8 +24,6 @@
     <DefineConstants>$(DefineConstants);CROSS_PLATFORM_COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);COMPILER_PUBLIC_API</DefineConstants>
-    <DefineConstants>$(DefineConstants);COMPILER_SERVICE</DefineConstants>
-    <DefineConstants>$(DefineConstants);COMPILER_SERVICE_DLL</DefineConstants>
     <DefineConstants>$(DefineConstants);NO_STRONG_NAMES</DefineConstants>
     <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
     <TargetFrameworkProfile />
@@ -585,6 +583,7 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\fsi\fsi.fs">
       <Link>Service/fsi.fs</Link>
     </Compile>
+
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
@@ -603,6 +602,10 @@
     </Reference>
     <Reference Include="System.Collections.Immutable">
       <HintPath>$(FSharpSourcesRoot)\..\..\packages\System.Collections.Immutable.1.2.0\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ValueTuple">
+      <HintPath>$(FSharpSourcesRoot)\..\..\packages\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+      <Private>true</Private>
     </Reference>
   </ItemGroup>
 

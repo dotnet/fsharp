@@ -1107,16 +1107,21 @@ module Patterns =
         let typ = mkNamedType(tc,tyargs)
         typ.GetField(fldName,staticOrInstanceBindingFlags) |> checkNonNullResult ("fldName", SR.GetString1(SR.QfailedToBindField, fldName))  // fxcop may not see "fldName" as an arg
 
+    let bindGenericCctor (tc:Type) =
+        tc.GetConstructor(staticBindingFlags,null,[| |],null) 
+        |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))  
+
     let bindGenericCtor (tc:Type,argTypes:Instantiable<Type list>) =
         let argtyps =  instFormal (getGenericArguments tc) argTypes
 #if FX_PORTABLE_OR_NETSTANDARD
         let argTypes = Array.ofList argtyps
         tc.GetConstructor(argTypes) 
         |> bindCtorBySearchIfCandidateIsNull tc argTypes
-        |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))  // fxcop may not see "tc" as an arg
+        |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))  
 #else        
-        tc.GetConstructor(instanceBindingFlags,null,Array.ofList argtyps,null) |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))  // fxcop may not see "tc" as an arg
+        tc.GetConstructor(instanceBindingFlags,null,Array.ofList argtyps,null) |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))  
 #endif
+
     let bindCtor (tc,argTypes:Instantiable<Type list>,tyargs) =
         let typ = mkNamedType(tc,tyargs)
         let argtyps = argTypes |> inst tyargs
@@ -1124,9 +1129,9 @@ module Patterns =
         let argTypes = Array.ofList argtyps
         typ.GetConstructor(argTypes) 
         |> bindCtorBySearchIfCandidateIsNull typ argTypes
-        |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor)) // fxcop may not see "tc" as an arg
+        |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor)) 
 #else        
-        typ.GetConstructor(instanceBindingFlags,null,Array.ofList argtyps,null) |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor)) // fxcop may not see "tc" as an arg
+        typ.GetConstructor(instanceBindingFlags,null,Array.ofList argtyps,null) |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor)) 
 #endif
 
     let chop n xs =
@@ -1432,9 +1437,13 @@ module Patterns =
             | Ambiguous(_) -> raise (System.Reflection.AmbiguousMatchException())
             | _ -> failwith "unreachable"
         | 1 -> 
-            let data = u_MethodInfoData st
-            let minfo = bindGenericMeth(data) in 
-            (minfo :> MethodBase)
+            let ((tc,_,_,methName,_) as data) = u_MethodInfoData st
+            if methName = ".cctor" then 
+                let cinfo = bindGenericCctor tc
+                (cinfo :> MethodBase)
+            else
+                let minfo = bindGenericMeth(data)
+                (minfo :> MethodBase)
         | 2 -> 
             let data = u_CtorInfoData st
             let cinfo = bindGenericCtor(data) in 

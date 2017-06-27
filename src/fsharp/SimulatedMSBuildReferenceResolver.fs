@@ -16,9 +16,19 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
 let internal SimulatedMSBuildResolver =
     { new Resolver with 
-        member __.HighestInstalledNetFrameworkVersion() = "v4.5"
+        member x.HighestInstalledNetFrameworkVersion() = 
+            let root = x.DotNetFrameworkReferenceAssembliesRootDirectory
+            if Directory.Exists(Path.Combine(root,"v4.7")) then "v4.7"
+            elif Directory.Exists(Path.Combine(root,"v4.6.2")) then "v4.6.2"
+            elif Directory.Exists(Path.Combine(root,"v4.6.1")) then "v4.6.1"
+            elif Directory.Exists(Path.Combine(root,"v4.6")) then "v4.6"
+            elif Directory.Exists(Path.Combine(root,"v4.5.1")) then "v4.5.1"
+            elif Directory.Exists(Path.Combine(root,"v4.5")) then "v4.5"
+            elif Directory.Exists(Path.Combine(root,"v4.0")) then "v4.0"
+            else "v4.5"
+
         member __.DotNetFrameworkReferenceAssembliesRootDirectory = 
-#if RESHAPED_MSBUILD
+#if FX_RESHAPED_MSBUILD
             ""
 #else
             if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then 
@@ -34,7 +44,7 @@ let internal SimulatedMSBuildResolver =
         member __.Resolve(resolutionEnvironment, references, targetFrameworkVersion, targetFrameworkDirectories, targetProcessorArchitecture,                
                             fsharpCoreDir, explicitIncludeDirs, implicitIncludeDir, logMessage, logWarningOrError) =
 
-#if !RESHAPED_MSBUILD
+#if !FX_RESHAPED_MSBUILD
             let registrySearchPaths() = 
               [ let registryKey = @"Software\Microsoft\.NetFramework";
                 use key = Registry.LocalMachine.OpenSubKey(registryKey)
@@ -69,7 +79,7 @@ let internal SimulatedMSBuildResolver =
                 yield! explicitIncludeDirs 
                 yield fsharpCoreDir
                 yield implicitIncludeDir 
-#if !RESHAPED_MSBUILD
+#if !FX_RESHAPED_MSBUILD
                 if System.Environment.OSVersion.Platform = System.PlatformID.Win32NT then 
                     yield! registrySearchPaths() 
 #endif
@@ -90,7 +100,7 @@ let internal SimulatedMSBuildResolver =
                             success r
                 with e -> logWarningOrError false "SR001" (e.ToString())
 
-#if !RESHAPED_MSBUILD
+#if !FX_RESHAPED_MSBUILD
                 // For this one we need to get the version search exactly right, without doing a load
                 try 
                     if not found && r.StartsWith("FSharp.Core, Version=")  && Environment.OSVersion.Platform = PlatformID.Win32NT then 
@@ -121,7 +131,7 @@ let internal SimulatedMSBuildResolver =
                             success trialPath
                   with e -> logWarningOrError false "SR001" (e.ToString())
 
-#if !RESHAPED_MSBUILD
+#if !FX_RESHAPED_MSBUILD
                 try 
                     // Seach the GAC on Windows
                     if not found && not isFileName && Environment.OSVersion.Platform = PlatformID.Win32NT then 
@@ -165,10 +175,8 @@ let internal SimulatedMSBuildResolver =
 
             results.ToArray() }
 
-let internal GetBestAvailableResolver(msbuildEnabled: bool) = 
-#if RESHAPED_MSBUILD
-    ignore msbuildEnabled
-#else
+let internal GetBestAvailableResolver() = 
+#if !FX_RESHAPED_MSBUILD
     let tryMSBuild v = 
         // Detect if MSBuild is on the machine, if so use the resolver from there
         let mb = try Assembly.Load(sprintf "Microsoft.Build.Framework, Version=%s.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" v) |> Option.ofObj with _ -> None
@@ -177,7 +185,7 @@ let internal GetBestAvailableResolver(msbuildEnabled: bool) =
         let obj = ty |> Option.bind (fun ty -> ty.InvokeMember("get_Resolver",BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.InvokeMethod ||| BindingFlags.NonPublic, null, null, [| |]) |> Option.ofObj)
         let resolver = obj |> Option.bind (fun obj -> match obj with :? Resolver as r -> Some r | _ -> None)
         resolver
-    match (if msbuildEnabled then tryMSBuild "12" else None) with 
+    match tryMSBuild "12" with 
     | Some r -> r
     | None -> 
 #endif

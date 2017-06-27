@@ -414,6 +414,8 @@ val isUnionTy          : TcGlobals -> TType -> bool
 val isReprHiddenTy     : TcGlobals -> TType -> bool
 val isFSharpObjModelTy : TcGlobals -> TType -> bool
 val isRecdTy           : TcGlobals -> TType -> bool
+val isFSharpStructOrEnumTy : TcGlobals -> TType -> bool
+val isFSharpEnumTy     : TcGlobals -> TType -> bool
 val isTyparTy          : TcGlobals -> TType -> bool
 val isAnyParTy         : TcGlobals -> TType -> bool
 val tryAnyParTy        : TcGlobals -> TType -> Typar option
@@ -427,7 +429,6 @@ val isProvenUnionCaseTy : TType -> bool
 val isAppTy        : TcGlobals -> TType -> bool
 val destAppTy      : TcGlobals -> TType -> TyconRef * TypeInst
 val tcrefOfAppTy   : TcGlobals -> TType -> TyconRef
-val tyconOfAppTy   : TcGlobals -> TType -> Tycon
 val tryDestAppTy   : TcGlobals -> TType -> TyconRef option
 val tryDestTyparTy : TcGlobals -> TType -> Typar option
 val tryDestFunTy : TcGlobals -> TType -> (TType * TType) option

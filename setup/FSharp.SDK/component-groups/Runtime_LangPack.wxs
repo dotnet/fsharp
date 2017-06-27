@@ -52,22 +52,22 @@
       </DirectoryRef>
       <DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETPortable_3.47.41.0_$(var.LocaleId)">
         <Component Id="Runtime_LangPack_3.47.41.0_FSharp.Core_LangPack" Transitive="yes" Guid="$(fsharp.guid(Runtime_LangPack_3.47.41.0_FSharp.Core_LangPack, $(var.LocaleCode)))">
-          <File Id="Runtime_LangPack_3.47.41._FSharp.Core.resources.dll" Source="$(var.BinariesDir)\portable47\bin\localize\$(var.LocaleCode)\FSharp.Core.resources.dll" KeyPath="yes" />
+          <File Id="Runtime_LangPack_3.47.41._FSharp.Core.resources.dll" Source="$(var.BinariesDir)\profiles\portable-net45+sl5+netcore45\localize\$(var.LocaleCode)\FSharp.Core.resources.dll" KeyPath="yes" />
         </Component>
       </DirectoryRef>
       <DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETCore_3.7.41.0_$(var.LocaleId)">
         <Component Id="Runtime_LangPack_3.7.41.0_FSharp.Core_LangPack" Transitive="yes" Guid="$(fsharp.guid(Runtime_LangPack_3.7.41.0_FSharp.Core_LangPack, $(var.LocaleCode)))">
-          <File Id="Runtime_LangPack_3.7.41.0_FSharp.Core.resources.dll" Source="$(var.BinariesDir)\portable7\bin\localize\$(var.LocaleCode)\FSharp.Core.resources.dll" KeyPath="yes" />
+          <File Id="Runtime_LangPack_3.7.41.0_FSharp.Core.resources.dll" Source="$(var.BinariesDir)\profiles\portable-net45+netcore45\localize\$(var.LocaleCode)\FSharp.Core.resources.dll" KeyPath="yes" />
         </Component>
       </DirectoryRef>
       <DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETCore_3.78.41.0_$(var.LocaleId)">
         <Component Id="Runtime_LangPack_3.78.41.0_FSharp.Core_LangPack" Transitive="yes" Guid="$(fsharp.guid(Runtime_LangPack_3.78.41.0_FSharp.Core_LangPack, $(var.LocaleCode)))">
-          <File Id="Runtime_LangPack_3.78.41.0_FSharp.Core.resources.dll" Source="$(var.BinariesDir)\portable78\bin\localize\$(var.LocaleCode)\FSharp.Core.resources.dll" KeyPath="yes" />
+          <File Id="Runtime_LangPack_3.78.41.0_FSharp.Core.resources.dll" Source="$(var.BinariesDir)\profiles\portable-net45+netcore45+wp8\localize\$(var.LocaleCode)\FSharp.Core.resources.dll" KeyPath="yes" />
         </Component>
       </DirectoryRef>
       <DirectoryRef Id="ReferenceAssemblies_Microsoft_FSharp_NETCore_3.259.41.0_$(var.LocaleId)">
         <Component Id="Runtime_LangPack_3.259.41.0_FSharp.Core_LangPack" Transitive="yes" Guid="$(fsharp.guid(Runtime_LangPack_3.259.41.0_FSharp.Core_LangPack, $(var.LocaleCode)))">
-          <File Id="Runtime_LangPack_3.259.41.0_FSharp.Core.resources.dll" Source="$(var.BinariesDir)\portable259\bin\localize\$(var.LocaleCode)\FSharp.Core.resources.dll" KeyPath="yes" />
+          <File Id="Runtime_LangPack_3.259.41.0_FSharp.Core.resources.dll" Source="$(var.BinariesDir)\profiles\portable-net45+netcore45+wpa81+wp8\localize\$(var.LocaleCode)\FSharp.Core.resources.dll" KeyPath="yes" />
         </Component>
       </DirectoryRef>
 

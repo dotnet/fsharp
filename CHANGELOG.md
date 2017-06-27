@@ -202,7 +202,7 @@ Includes commits up to `3385e58aabc91368c8e1f551650ba48705aaa285`
 * Allow breakpoints to be set inside of quotations
 * Support "Publish" action in project system for web, Azure
 * Bugfix [#126](https://visualfsharp.codeplex.com/workitem/126): F# package installer does not honor custom install paths for express SKUs
-* Bugfix [#75](https://visualfsharp.codeplex.com/workitem/75): Microsoft.FSharp.targets shim not deployed with F# SDK
+* Bugfix [#75](https://visualfsharp.codeplex.com/workitem/75): Microsoft.FSharp.Targets shim not deployed with F# SDK
 * Bugfix: Fix crash in smart indent provider
 * Bugfix [#55](https://visualfsharp.codeplex.com/workitem/55): Cannot add reference to F# PCL project
 * Bugfix: Typos in tutorial project script

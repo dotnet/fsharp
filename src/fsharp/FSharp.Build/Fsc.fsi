@@ -21,6 +21,7 @@ type Fsc = class
              member DebugSymbols : bool with get,set
              member DebugType : string with get,set
              member DefineConstants : Microsoft.Build.Framework.ITaskItem [] with get,set
+             member DelaySign : bool with get,set
              member DisabledWarnings : string with get,set
              member DocumentationFile : string with get,set
              member Embed : string with get,set
@@ -29,6 +30,7 @@ type Fsc = class
              member KeyFile : string with get,set
              member NoFramework : bool with get,set
              member Optimize : bool with get,set
+             member PublicSign : bool with get,set
              member Tailcalls : bool with get,set
              member OtherFlags : string with get,set
              member OutputAssembly : string with get,set
