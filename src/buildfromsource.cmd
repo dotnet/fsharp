@@ -11,4 +11,8 @@ rem build tools
 dotnet restore fsharp\FSharp.Build\FSharp.Build.BuildFromSource.fsproj
 dotnet publish fsharp\FSharp.Build\FSharp.Build.BuildFromSource.fsproj
 
+dotnet restore fsharp\fsi\Fsi.BuildFromSource.fsproj
+dotnet publish fsharp\fsi\Fsi.BuildFromSource.fsproj
 
+dotnet restore fsharp\Fsc\Fsc.BuildFromSource.fsproj
+dotnet publish fsharp\Fsc\Fsc.BuildFromSource.fsproj

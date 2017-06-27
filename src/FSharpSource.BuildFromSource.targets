@@ -9,13 +9,19 @@
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
-    <DefineConstants>$(DefineConstants);BUILD_FROM_SOURCE</DefineConstants>
+
+    <!-- Signing flags currently done using OtherFlags.  Can migrate to properties once build target updated -->
+    <DefineConstants>$(DefineConstants);STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY</DefineConstants>
+    <KeyFile>$(MSBuildThisFileDirectory)buildtools/keys/MSFT.snk</KeyFile>
+    <PublicSign>true</PublicSign>
+    <OtherFlags>$(OtherFlags) --delaysign --keyfile:$(KeyFile)</OtherFlags>
+
     <OtherFlags>$(OtherFlags) --nocopyfsharpcore</OtherFlags>
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetDotnetProfile  Condition="'$(TargetFramework)' == 'netstandard1.6' ">coreclr</TargetDotnetProfile>
-    <TargetDotnetProfile  Condition="'$(TargetFramework)' == 'netframework' ">net40</TargetDotnetProfile>
+    <TargetDotnetProfile  Condition=" $(TargetFramework.StartsWith('netstandard')) or $(TargetFramework.StartsWith('netcoreapp1.0')) ">coreclr</TargetDotnetProfile>
+    <TargetDotnetProfile  Condition=" $(TargetFramework.StartsWith('netframework')) ">net40</TargetDotnetProfile>
   </PropertyGroup>
 
   <Import Project="FSharpSource.Profiles.targets" />
@@ -90,7 +96,8 @@
   <Target Name="CallFsLex"
           Inputs="@(FsLex)"
           Outputs="@(FsLex->'$(FsLexOutputFolder)%(Filename).fs')"
-          Condition="'@(FsLex)'!=''">
+          Condition="'@(FsLex)'!=''"
+          BeforeTargets="CoreCompile">
 
     <PropertyGroup>
         <DotNetExePath>$(MSBuildThisFileDirectory)../Tools/dotnet20/dotnet.exe</DotNetExePath>
@@ -114,12 +121,19 @@
   <Target Name="CallFsYacc"
           Inputs="@(FsYacc)"
           Outputs="@(FsYacc->'$(FsYaccOutputFolder)%(Filename).fs')"
-          Condition="'@(FsYacc)'!=''">
+          Condition="'@(FsYacc)'!=''"
+          BeforeTargets="CoreCompile">
+
+    <PropertyGroup>
+        <DotNetExePath>$(MSBuildThisFileDirectory)../Tools/dotnet20/dotnet.exe</DotNetExePath>
+        <DotNetExePath Condition="!Exists($(DotNetExe))">$(MSBuildBinPath)/../../dotnet.exe</DotNetExePath>
+        <FsYaccPath>$(MSBuildThisFileDirectory)../Tools/fsyacc/fsyacc.dll</FsYaccPath>
+    </PropertyGroup>
 
     <!-- Create the output directory -->
     <MakeDir Directories="$(FsYaccOutputFolder)"/>
     <!-- Run the tool -->
-    <Exec Command="&quot;$(DotNetExePath)&quot; &quot;$(FsLexPath)&quot;  -o &quot;$(FsYaccOutputFolder)%(FsYacc.Filename).fs&quot; %(FsYacc.OtherFlags) %(FsYacc.Identity)" />
+    <Exec Command="&quot;$(DotNetExePath)&quot; &quot;$(FsYaccPath)&quot;  -o &quot;$(FsYaccOutputFolder)%(FsYacc.Filename).fs&quot; %(FsYacc.OtherFlags) %(FsYacc.Identity)" />
 
     <!-- Make sure it will get cleaned  -->
     <CreateItem Include="$(FsYaccOutputFolder)%(FsYacc.Filename).fs">
