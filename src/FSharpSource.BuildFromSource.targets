@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <FSCoreVersion>4.4.1.0</FSCoreVersion>
-    <OutputPath>$(MSBuildThisFileDirectory)../BuildFromSource/$(Configuration)/$(TargetFramework)\bin</OutputPath>
+    <OutputPath>$(MSBuildThisFileDirectory)../BuildFromSource/$(Configuration)/$(TargetFramework)/bin</OutputPath>
 
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
@@ -14,9 +14,13 @@
     <DefineConstants>$(DefineConstants);STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY</DefineConstants>
     <KeyFile>$(MSBuildThisFileDirectory)buildtools/keys/MSFT.snk</KeyFile>
     <PublicSign>true</PublicSign>
-    <OtherFlags>$(OtherFlags) --delaysign --keyfile:$(KeyFile)</OtherFlags>
-
+    <OtherFlags>$(OtherFlags) --publicsign --keyfile:$(KeyFile)</OtherFlags>
     <OtherFlags>$(OtherFlags) --nocopyfsharpcore</OtherFlags>
+
+    <DotNetExe Condition=" '$(OS)' == 'Unix' ">dotnet</DotNetExe>
+    <DotNetExe Condition=" '$(OS)' != 'Unix' ">dotnet.exe</DotNetExe>
+    <DotNetExePath>$(MSBuildThisFileDirectory)../Tools/dotnet20/$(DotNetExe)</DotNetExePath>
+    <DotNetExePath Condition="!Exists($(DotNetExe))">$(MSBuildBinPath)/../../$(DotNetExe)</DotNetExePath>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -54,13 +58,12 @@
           Condition="'@(FsSrGen)' != ''">
 
     <PropertyGroup>
-        <DotNetExePath>$(MSBuildThisFileDirectory)../Tools/dotnet20/dotnet.exe</DotNetExePath>
-        <DotNetExePath Condition="!Exists($(DotNetExe))">$(MSBuildBinPath)/../../dotnet.exe</DotNetExePath>
-        <FsSrGenPath>$(MSBuildThisFileDirectory)../Tools/fssrgen/fssrgen.dll</FsSrGenPath>
+      <FsSrGenPath>$(MSBuildThisFileDirectory)../Tools/fssrgen/fssrgen.dll</FsSrGenPath>
     </PropertyGroup>
 
     <!-- Create the output directory in case it doesn't exist yet -->
     <MakeDir Directories="$(IntermediateOutputPath)" />
+
     <!-- Run the tool -->
     <Exec Command="&quot;$(DotNetExePath)&quot; &quot;$(FsSrGenPath)&quot; &quot;%(FsSrGen.FullPath)&quot; &quot;$(IntermediateOutputPath)%(FsSrGen.Filename).fs&quot;  &quot;$(IntermediateOutputPath)%(FsSrGen.Filename).resx&quot; $(FsSrGenProjectName)" />
   </Target>
@@ -69,6 +72,7 @@
           DependsOnTargets="CallFsSrGen"
           Condition="'@(FsSrGen)'!=''"
           BeforeTargets="CoreResGen">
+
     <CreateItem Include="$(IntermediateOutputPath)%(FsSrGen.Filename).fs">
       <Output TaskParameter="Include" ItemName="CompileBefore"/>
     </CreateItem>
@@ -100,8 +104,6 @@
           BeforeTargets="CoreCompile">
 
     <PropertyGroup>
-        <DotNetExePath>$(MSBuildThisFileDirectory)../Tools/dotnet20/dotnet.exe</DotNetExePath>
-        <DotNetExePath Condition="!Exists($(DotNetExe))">$(MSBuildBinPath)/../../dotnet.exe</DotNetExePath>
         <FsLexPath>$(MSBuildThisFileDirectory)../Tools/fslex/fslex.dll</FsLexPath>
     </PropertyGroup>
 
@@ -125,13 +127,12 @@
           BeforeTargets="CoreCompile">
 
     <PropertyGroup>
-        <DotNetExePath>$(MSBuildThisFileDirectory)../Tools/dotnet20/dotnet.exe</DotNetExePath>
-        <DotNetExePath Condition="!Exists($(DotNetExe))">$(MSBuildBinPath)/../../dotnet.exe</DotNetExePath>
         <FsYaccPath>$(MSBuildThisFileDirectory)../Tools/fsyacc/fsyacc.dll</FsYaccPath>
     </PropertyGroup>
 
     <!-- Create the output directory -->
-    <MakeDir Directories="$(FsYaccOutputFolder)"/>
+    <MakeDir Directories="$(FsYaccOutputFolder)" />
+
     <!-- Run the tool -->
     <Exec Command="&quot;$(DotNetExePath)&quot; &quot;$(FsYaccPath)&quot;  -o &quot;$(FsYaccOutputFolder)%(FsYacc.Filename).fs&quot; %(FsYacc.OtherFlags) %(FsYacc.Identity)" />
 
