@@ -181,7 +181,7 @@ let createPackageManagerUnknownError packageManagerKey m =
 
 let tryFindDependencyManagerInPath m (path:string) : ReferenceType =
     try
-        if path.Contains ":" then
+        if path.Contains ": " then
             let managers = RegisteredDependencyManagers()
             match managers |> Seq.tryFind (fun kv -> path.StartsWith(kv.Value.Key + ":" )) with
             | None ->
