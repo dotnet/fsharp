@@ -409,8 +409,6 @@ module internal List =
         | [] -> false
         | h1::t1 -> f h1 || exists f t1
 
-    // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
-    // tail cons cells is permitted in carefully written library code.
     let rec revAcc xs acc = 
         match xs with 
         | [] -> acc

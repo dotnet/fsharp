@@ -10,8 +10,8 @@ open OptionsUIHelpers
 
 module DefaultTuning = 
     let SemanticColorizationInitialDelay = 0 (* milliseconds *)
-    let UnusedDeclarationsAnalyzerInitialDelay = 1000 (* milliseconds *)
-    let UnusedOpensAnalyzerInitialDelay = 2000 (* milliseconds *)
+    let UnusedDeclarationsAnalyzerInitialDelay = 0 (* 1000 *) (* milliseconds *)
+    let UnusedOpensAnalyzerInitialDelay = 0 (* 2000 *) (* milliseconds *)
     let SimplifyNameInitialDelay = 2000 (* milliseconds *)
     let SimplifyNameEachItemDelay = 5 (* milliseconds *)
 
@@ -50,7 +50,9 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
               UnderlineStyle = QuickInfoUnderlineStyle.Solid }
 
         store.RegisterDefault
-            { SimplifyName = true 
+            { // We have this off by default, disable until we work out how to make this low priority 
+              // See https://github.com/Microsoft/visualfsharp/pull/3238#issue-237699595
+              SimplifyName = false 
               AlwaysPlaceOpensAtTopLevel = false
               UnusedOpens = true }
 

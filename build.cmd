@@ -60,6 +60,7 @@ set BUILD_NET40=0
 set BUILD_NET40_FSHARP_CORE=0
 set BUILD_CORECLR=0
 set BUILD_VS=0
+set BUILD_FCS=0
 set BUILD_CONFIG=release
 set BUILD_CONFIG_LOWERCASE=release
 set BUILD_DIAG=
@@ -152,6 +153,11 @@ if /i "%ARG%" == "vs" (
     set BUILD_VS=1
 )
 
+if /i "%ARG%" == "fcs" (
+    set _autoselect=0
+    set BUILD_FCS=1
+)
+
 if /i "%ARG%" == "vstest" (
     set TEST_VS_IDEUNIT_SUITE=1
 )
@@ -166,6 +172,7 @@ if /i "%ARG%" == "all" (
     set BUILD_NET40=1
     set BUILD_CORECLR=1
     set BUILD_VS=1
+    set BUILD_FCS=1
     set BUILD_SETUP=%FSC_BUILD_SETUP%
     set BUILD_NUGET=1
     set CI=1
@@ -216,6 +223,7 @@ if /i "%ARG%" == "ci_part1" (
     set BUILD_NET40=1
     set BUILD_NET40_FSHARP_CORE=1
     set BUILD_VS=1
+    set BUILD_FCS=1
     set TEST_VS_IDEUNIT_SUITE=1
     set CI=1
 )
@@ -287,6 +295,7 @@ if /i "%ARG%" == "test-all" (
     set BUILD_NET40_FSHARP_CORE=1
     set BUILD_CORECLR=1
     set BUILD_VS=1
+    set BUILD_FCS=1
     set BUILD_SETUP=%FSC_BUILD_SETUP%
     set BUILD_NUGET=1
 
@@ -379,6 +388,7 @@ echo BUILD_NET40=%BUILD_NET40%
 echo BUILD_NET40_FSHARP_CORE=%BUILD_NET40_FSHARP_CORE%
 echo BUILD_CORECLR=%BUILD_CORECLR%
 echo BUILD_VS=%BUILD_VS%
+echo BUILD_FCS=%BUILD_FCS%
 echo BUILD_SETUP=%BUILD_SETUP%
 echo BUILD_NUGET=%BUILD_NUGET%
 echo BUILD_CONFIG=%BUILD_CONFIG%
@@ -483,10 +493,6 @@ goto :eof
 :havemsbuild
 set _nrswitch=/nr:false
 
-rem uncomment to use coreclr msbuild not ready yet!!!!
-rem set _msbuildexe=%~dp0Tools\CoreRun.exe %~dp0Tools\MSBuild.exe
-rem set _nrswitch=
-
 :: See <http://www.appveyor.com/docs/environment-variables>
 if defined APPVEYOR (
    rem See <http://www.appveyor.com/docs/build-phase>
@@ -533,7 +539,8 @@ if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
     call %~dp0init-tools.cmd
 )
 
-set _dotnetexe=%~dp0Tools\dotnetcli\dotnet.exe
+set _dotnetcliexe=%~dp0Tools\dotnetcli\dotnet.exe
+set _dotnet20exe=%~dp0Tools\dotnet20\dotnet.exe
 set NUGET_PACKAGES=%~dp0Packages
 
 set _fsiexe="packages\FSharp.Compiler.Tools.4.1.5\tools\fsi.exe"
@@ -559,19 +566,9 @@ if "%BUILD_PROTO%" == "1" (
 
   if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
 
-    pushd .\lkg\fsc & %_dotnetexe% restore & popd & if ERRORLEVEL 1 echo Error:%errorlevel% dotnet restore failed & goto :failure
-    pushd .\lkg\fsi & %_dotnetexe% restore & popd & if ERRORLEVEL 1 echo Error:%errorlevel% dotnet restore failed & goto :failure
-    pushd .\lkg\fsc & %_dotnetexe% publish project.json --no-build -o %~dp0Tools\lkg -r !_architecture! & popd & if ERRORLEVEL 1 echo Error: dotnet publish failed  & goto :failure
-    pushd .\lkg\fsi & %_dotnetexe% publish project.json --no-build -o %~dp0Tools\lkg -r !_architecture! & popd & if ERRORLEVEL 1 echo Error: dotnet publish failed  & goto :failure
-
     echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto
          %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto
     @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
-
-    echo %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
-         %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
-    @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
-
   )
 
   if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "0" (
@@ -582,12 +579,11 @@ if "%BUILD_PROTO%" == "1" (
     echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto
          %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto
     @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
-
-    echo %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
-         %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
-    @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
-
   )
+
+  echo %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
+       %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
+  @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 )
 
 echo ---------------- Done with proto, starting build ------------------------
@@ -819,8 +815,8 @@ if "%TEST_CORECLR_COREUNIT_SUITE%" == "1" (
     set OUTPUTFILE=!RESULTSDIR!\test-coreclr-coreunit-output.log
     set ERRORFILE=!RESULTSDIR!\test-coreclr-coreunit-errors.log
 
-    echo "%_dotnetexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
-         "%_dotnetexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
+    echo "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
+         "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
 
     if ERRORLEVEL 1 (
         echo -----------------------------------------------------------------
@@ -842,8 +838,8 @@ if "%TEST_CORECLR_FSHARP_SUITE%" == "1" (
     set OUTPUTFILE=
     set ERRORFILE=
     set XMLFILE=!RESULTSDIR!\test-coreclr-fsharp-results.xml
-    echo "%_dotnetexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
-         "%_dotnetexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Tests.FSharpSuite.DrivingCoreCLR\FSharp.Tests.FSharpSuite.DrivingCoreCLR.dll" !WHERE_ARG_NUNIT!
+    echo "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
+         "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Tests.FSharpSuite.DrivingCoreCLR\FSharp.Tests.FSharpSuite.DrivingCoreCLR.dll" !WHERE_ARG_NUNIT!
 
     if errorlevel 1 (
         echo -----------------------------------------------------------------
