@@ -2,7 +2,7 @@
 
 
 #if COMPILER_PUBLIC_API
-module Microsoft.FSharp.Compiler.Interactive.Shell
+module public Microsoft.FSharp.Compiler.Interactive.Shell
 #else
 module internal Microsoft.FSharp.Compiler.Interactive.Shell
 #endif
@@ -130,7 +130,7 @@ type FsiEvaluationSession =
     /// <param name="inReader">Read input from the given reader</param>
     /// <param name="outWriter">Write output to the given writer</param>
     /// <param name="collectible">Optionally make the dynamic assmbly for the session collectible</param>
-    static member Create : fsiConfig: FsiEvaluationSessionHostConfig * argv:string[] * inReader:TextReader * outWriter:TextWriter * errorWriter: TextWriter * ?collectible: bool * ?msbuildEnabled: bool -> FsiEvaluationSession
+    static member Create : fsiConfig: FsiEvaluationSessionHostConfig * argv:string[] * inReader:TextReader * outWriter:TextWriter * errorWriter: TextWriter * ?collectible: bool * ?legacyReferenceResolver: ReferenceResolver.Resolver -> FsiEvaluationSession
 
     /// A host calls this to request an interrupt on the evaluation thread.
     member Interrupt : unit -> unit
@@ -141,7 +141,6 @@ type FsiEvaluationSession =
     /// by input from 'stdin'.
     member GetCompletions : longIdent: string -> seq<string>
 
-#if COMPILER_SERVICE
     /// Execute the code as if it had been entered as one or more interactions, with an
     /// implicit termination at the end of the input. Stop on first error, discarding the rest
     /// of the input. Errors are sent to the output writer, a 'true' return value indicates there
@@ -220,8 +219,6 @@ type FsiEvaluationSession =
     /// If you are using an FsiEvaluationSession in this process, you should only use this InteractiveChecker 
     /// for additional checking operations.
     member InteractiveChecker: FSharpChecker
-
-#endif
 
     /// Get a handle to the resolved view of the current signature of the incrementally generated assembly.
     member CurrentPartialAssemblySignature : FSharpAssemblySignature

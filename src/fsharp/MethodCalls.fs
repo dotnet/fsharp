@@ -286,25 +286,25 @@ type CalledMeth<'T>
                             else None) 
                     | _ -> None)
 
-            let unassignedNamedItem = 
+            let unassignedNamedItems = 
                 namedCallerArgs |> List.filter (fun (CallerNamedArg(nm,_e)) -> 
                     fullCalledArgs |> List.forall (fun calledArg -> 
                         match calledArg.NameOpt with 
                         | Some nm2 -> nm.idText <> nm2.idText
                         | None -> true))
 
-            let attributeAssignedNamedItems,unassignedNamedItem = 
+            let attributeAssignedNamedItems = 
                 if isCheckingAttributeCall then 
-                    // the assignment of names to properties is substantially for attribute specifications 
-                    // permits bindings of names to non-mutable fields and properties, so we do that using the old 
-                    // reliable code for this later on. 
-                    unassignedNamedItem,[]
+                    // The process for assigning names-->properties is substantially different for attribute specifications 
+                    // because it permits the bindings of names to immutable fields. So we use the old 
+                    // code for this.
+                    unassignedNamedItems
                  else 
-                    [],unassignedNamedItem
+                    []
 
-            let assignedNamedProps,unassignedNamedItem = 
+            let assignedNamedProps,unassignedNamedItems = 
                 let returnedObjTy = if minfo.IsConstructor then minfo.EnclosingType else methodRetTy
-                unassignedNamedItem |> List.splitChoose (fun (CallerNamedArg(id,e) as arg) -> 
+                unassignedNamedItems |> List.splitChoose (fun (CallerNamedArg(id,e) as arg) -> 
                     let nm = id.idText
                     let pinfos = GetIntrinsicPropInfoSetsOfType infoReader (Some(nm),ad,AllowMultiIntfInstantiations.Yes) IgnoreOverrides id.idRange returnedObjTy
                     let pinfos = pinfos |> ExcludeHiddenOfPropInfos g infoReader.amap m 
@@ -347,7 +347,7 @@ type CalledMeth<'T>
                 
             let argSet = { UnnamedCalledArgs=unnamedCalledArgs; UnnamedCallerArgs=unnamedCallerArgs; ParamArrayCalledArgOpt=paramArrayCalledArgOpt; ParamArrayCallerArgs=paramArrayCallerArgs; AssignedNamedArgs=assignedNamedArgs }
 
-            (argSet,assignedNamedProps,unassignedNamedItem,attributeAssignedNamedItems,unnamedCalledOptArgs,unnamedCalledOutArgs))
+            (argSet,assignedNamedProps,unassignedNamedItems,attributeAssignedNamedItems,unnamedCalledOptArgs,unnamedCalledOutArgs))
 
     let argSets                     = argSetInfos |> List.map     (fun (x,_,_,_,_,_) -> x)
     let assignedNamedProps          = argSetInfos |> List.collect (fun (_,x,_,_,_,_) -> x)

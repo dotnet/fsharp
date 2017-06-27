@@ -69,8 +69,8 @@
   </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler\FSharp.Compiler.fsproj">
-      <Name>FSharp.Compiler</Name>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj">
+      <Name>FSharp.Compiler.Private</Name>
       <Project>{2e4d67b4-522d-4cf7-97e4-ba940f0b18f3}</Project>
       <Private>True</Private>
     </ProjectReference>

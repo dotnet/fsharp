@@ -719,6 +719,10 @@ module internal SymbolHelpers =
               let equalTypes(ty1, ty2) =
                   if isAppTy g ty1 && isAppTy g ty2 then tyconRefEq g (tcrefOfAppTy g ty1) (tcrefOfAppTy g ty2) 
                   else typeEquiv g ty1 ty2
+
+              ItemsAreEffectivelyEqual g item1 item2 || 
+
+              // Much of this logic is already covered by 'ItemsAreEffectivelyEqual'
               match item1,item2 with 
               | Item.DelegateCtor(ty1), Item.DelegateCtor(ty2) -> equalTypes(ty1, ty2)
               | Item.Types(dn1,[ty1]), Item.Types(dn2,[ty2]) -> 
@@ -740,15 +744,18 @@ module internal SymbolHelpers =
               | Item.MethodGroup(_, meths1,_), Item.MethodGroup(_, meths2,_) -> 
                   Seq.zip meths1 meths2 |> Seq.forall (fun (minfo1, minfo2) ->
                     MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
-              | (Item.Value vref1 | Item.CustomBuilder (_,vref1)), (Item.Value vref2 | Item.CustomBuilder (_,vref2)) -> valRefEq g vref1 vref2
+              | (Item.Value vref1 | Item.CustomBuilder (_,vref1)), (Item.Value vref2 | Item.CustomBuilder (_,vref2)) -> 
+                  valRefEq g vref1 vref2
               | Item.ActivePatternCase(APElemRef(_apinfo1, vref1, idx1)), Item.ActivePatternCase(APElemRef(_apinfo2, vref2, idx2)) ->
                   idx1 = idx2 && valRefEq g vref1 vref2
-              | Item.UnionCase(UnionCaseInfo(_, ur1),_), Item.UnionCase(UnionCaseInfo(_, ur2),_) -> g.unionCaseRefEq ur1 ur2
+              | Item.UnionCase(UnionCaseInfo(_, ur1),_), Item.UnionCase(UnionCaseInfo(_, ur2),_) -> 
+                  g.unionCaseRefEq ur1 ur2
               | Item.RecdField(RecdFieldInfo(_, RFRef(tcref1, n1))), Item.RecdField(RecdFieldInfo(_, RFRef(tcref2, n2))) -> 
                   (tyconRefEq g tcref1 tcref2) && (n1 = n2) // there is no direct function as in the previous case
               | Item.Property(_, pi1s), Item.Property(_, pi2s) -> 
                   List.zip pi1s pi2s |> List.forall(fun (pi1, pi2) -> PropInfo.PropInfosUseIdenticalDefinitions pi1 pi2)
-              | Item.Event(evt1), Item.Event(evt2) -> EventInfo.EventInfosUseIdenticalDefintions evt1 evt2
+              | Item.Event(evt1), Item.Event(evt2) -> 
+                  EventInfo.EventInfosUseIdenticalDefintions evt1 evt2
               | Item.CtorGroup(_, meths1), Item.CtorGroup(_, meths2) -> 
                   List.zip meths1 meths2 
                   |> List.forall (fun (minfo1, minfo2) -> MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)

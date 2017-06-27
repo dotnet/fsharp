@@ -1453,14 +1453,14 @@ let CheckEntityDefn cenv env (tycon:Entity) =
 
             if others |> List.exists (checkForDup EraseAll) then 
                 if others |> List.exists (checkForDup EraseNone) then 
-                    errorR(Error(FSComp.SR.chkDuplicateMethod(nm),m))
+                    errorR(Error(FSComp.SR.chkDuplicateMethod(nm, NicePrint.minimalStringOfType cenv.denv typ),m))
                 else
-                    errorR(Error(FSComp.SR.chkDuplicateMethodWithSuffix(nm),m))
+                    errorR(Error(FSComp.SR.chkDuplicateMethodWithSuffix(nm, NicePrint.minimalStringOfType cenv.denv typ),m))
 
             let numCurriedArgSets = minfo.NumArgs.Length
 
             if numCurriedArgSets > 1 && others |> List.exists (fun minfo2 -> not (IsAbstractDefaultPair2 minfo minfo2)) then 
-                errorR(Error(FSComp.SR.chkDuplicateMethodCurried nm,m))
+                errorR(Error(FSComp.SR.chkDuplicateMethodCurried(nm, NicePrint.minimalStringOfType cenv.denv typ),m))
 
             if numCurriedArgSets > 1 && 
                (minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst) 
@@ -1495,15 +1495,18 @@ let CheckEntityDefn cenv env (tycon:Entity) =
             
         for pinfo in immediateProps do
             let nm = pinfo.PropertyName
-            let m = (match pinfo.ArbitraryValRef with None -> m | Some vref -> vref.DefinitionRange)
-            if hashOfImmediateMeths.ContainsKey(nm) then 
-                errorR(Error(FSComp.SR.chkPropertySameNameMethod(nm),m))
+            let m = 
+                match pinfo.ArbitraryValRef with 
+                | None -> m 
+                | Some vref -> vref.DefinitionRange
+
+            if hashOfImmediateMeths.ContainsKey nm then 
+                errorR(Error(FSComp.SR.chkPropertySameNameMethod(nm, NicePrint.minimalStringOfType cenv.denv typ),m))
+
             let others = getHash hashOfImmediateProps nm
 
-            if pinfo.HasGetter && pinfo.HasSetter then 
-
-                if (pinfo.GetterMethod.IsVirtual <>  pinfo.SetterMethod.IsVirtual) then 
-                    errorR(Error(FSComp.SR.chkGetterSetterDoNotMatchAbstract(nm),m))
+            if pinfo.HasGetter && pinfo.HasSetter && pinfo.GetterMethod.IsVirtual <> pinfo.SetterMethod.IsVirtual then 
+                errorR(Error(FSComp.SR.chkGetterSetterDoNotMatchAbstract(nm, NicePrint.minimalStringOfType cenv.denv typ),m))
 
             let checkForDup erasureFlag pinfo2 =                         
                   // abstract/default pairs of duplicate properties are OK
@@ -1515,9 +1518,9 @@ let CheckEntityDefn cenv env (tycon:Entity) =
 
             if others |> List.exists (checkForDup EraseAll) then
                 if others |> List.exists (checkForDup EraseNone) then 
-                    errorR(Error(FSComp.SR.chkDuplicateProperty(nm) ,m))
+                    errorR(Error(FSComp.SR.chkDuplicateProperty(nm, NicePrint.minimalStringOfType cenv.denv typ) ,m))
                 else
-                    errorR(Error(FSComp.SR.chkDuplicatePropertyWithSuffix(nm) ,m))
+                    errorR(Error(FSComp.SR.chkDuplicatePropertyWithSuffix(nm, NicePrint.minimalStringOfType cenv.denv typ) ,m))
             // Check to see if one is an indexer and one is not
 
             if ( (pinfo.HasGetter && 
@@ -1529,7 +1532,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                  (let nargs = pinfo.GetParamTypes(cenv.amap,m).Length
                   others |> List.exists (fun pinfo2 -> (isNil(pinfo2.GetParamTypes(cenv.amap,m))) <> (nargs = 0)))) then 
                   
-                  errorR(Error(FSComp.SR.chkPropertySameNameIndexer(nm),m))
+                  errorR(Error(FSComp.SR.chkPropertySameNameIndexer(nm, NicePrint.minimalStringOfType cenv.denv typ),m))
 
             // Check to see if the signatures of the both getter and the setter imply the same property type
 

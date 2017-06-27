@@ -66,6 +66,7 @@ CompilerOptions01,NoMT				CompilerOptions\fsi\nologo
 CompilerOptions01,NoMT				CompilerOptions\fsi\subsystemversion
 CompilerOptions01,NoMT				CompilerOptions\fsi\times
 CompilerOptions02,NoMT				CompilerOptions\fsi\exename
+CompilerOptions01,NoMT,Determinism				CompilerOptions\fsc\determinism
 
 
 Conformance01			Conformance\BasicGrammarElements\Constants

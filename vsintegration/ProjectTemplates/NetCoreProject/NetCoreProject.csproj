@@ -20,10 +20,11 @@
     <CopyOutputSymbolsToOutputDirectory>false</CopyOutputSymbolsToOutputDirectory>
     <ProjectGuid>{5B739CF3-1116-4EB4-B598-6C16BEA81CE5}</ProjectGuid>
   </PropertyGroup>
+
   <PropertyGroup>
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
-    <TargetFramework Condition="'$(TargetFramework)' == ''">net40</TargetFramework>
-    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFramework)\bin\$(TemplateCategory)\$(AssemblyName)</OutputPath>
+    <TargetDotnetProfile Condition="'$(TargetDotnetProfile)' == ''">net40</TargetDotnetProfile>
+    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetDotnetProfile)\bin\$(TemplateCategory)\$(AssemblyName)</OutputPath>
   </PropertyGroup>
 
   <Import Project="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.Common.props" />

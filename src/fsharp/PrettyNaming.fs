@@ -6,7 +6,7 @@
 
 /// Anything to do with special names of identifiers and other lexical rules 
 #if COMPILER_PUBLIC_API
-module Microsoft.FSharp.Compiler.PrettyNaming
+module public Microsoft.FSharp.Compiler.PrettyNaming
 #else
 module internal Microsoft.FSharp.Compiler.PrettyNaming
 #endif

@@ -46,7 +46,7 @@ type internal FSharpCheckerProvider
 
     let checker = 
         lazy
-            let checker = FSharpChecker.Create(projectCacheSize = 200, keepAllBackgroundResolutions = false (* , MaxMemory = 2300 *))
+            let checker = FSharpChecker.Create(projectCacheSize = 200, keepAllBackgroundResolutions = false (* , MaxMemory = 2300 *), legacyReferenceResolver=Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver)
 
             // This is one half of the bridge between the F# background builder and the Roslyn analysis engine.
             // When the F# background builder refreshes the background semantic build context for a file,
@@ -59,7 +59,11 @@ type internal FSharpCheckerProvider
                         let solution = workspace.CurrentSolution
                         let documentIds = solution.GetDocumentIdsWithFilePath(fileName)
                         if not documentIds.IsEmpty then 
-                            analyzerService.Reanalyze(workspace,documentIds=documentIds)
+                            let docuentIdsFiltered = documentIds |> Seq.filter workspace.IsDocumentOpen |> Seq.toArray
+                            for documentId in docuentIdsFiltered do
+                                Trace.TraceInformation("{0:n3} Requesting Roslyn reanalysis of {1}", DateTime.Now.TimeOfDay.TotalSeconds, documentId)
+                            if docuentIdsFiltered.Length > 0 then 
+                                analyzerService.Reanalyze(workspace,documentIds=docuentIdsFiltered)
                     | _ -> ()
                 with ex -> 
                     Assert.Exception(ex)
@@ -446,6 +450,7 @@ and
                 for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
                     let referencedProjectId = setup referencedSite                    
                     project.AddProjectReference(ProjectReference referencedProjectId)
+                workspace.ProjectTracker.AddProject(project)
             projectId
         setup (siteProvider.GetProjectSite()) |> ignore
 

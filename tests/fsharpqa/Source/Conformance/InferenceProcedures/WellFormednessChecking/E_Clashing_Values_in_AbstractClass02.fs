@@ -13,5 +13,5 @@ type TT() = inherit T() with
 
 let tt = new TT()
 
-//<Expects status="error" span="(7,14-7,15)" id="FS0438">Duplicate method\. The method 'X' has the same name and signature as another method in this type\.$</Expects>
-//<Expects status="error" span="(11,28-11,29)" id="FS0438">Duplicate method\. The method 'X' has the same name and signature as another method in this type\.$</Expects>
+//<Expects status="error" span="(7,14-7,15)" id="FS0438">Duplicate method\. The method 'X' has the same name and signature as another method in type 'T'\.$</Expects>
+//<Expects status="error" span="(11,28-11,29)" id="FS0438">Duplicate method\. The method 'X' has the same name and signature as another method in type 'TT'\.$</Expects>

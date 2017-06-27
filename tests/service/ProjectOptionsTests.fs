@@ -1,5 +1,5 @@
 ﻿#if INTERACTIVE
-#r "../../Debug/net40/bin/FSharp.Compiler.Service.dll"
+#r "../../Debug/net40/bin/FSharp.Compiler.Service.dll" // note, run 'build fcs' to generate this, this DLL has a public API so can be used from F# Interactive
 #r "../../Debug/net40/bin/FSharp.Compiler.Service.ProjectCracker.dll"
 #r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "FsUnit.fs"
@@ -18,7 +18,6 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 
 open FSharp.Compiler.Service.Tests.Common
 
-#if FX_ATLEAST_45
 #if !NO_PROJECTCRACKER
 
 let normalizePath s = (new Uri(s)).LocalPath
@@ -477,7 +476,6 @@ let ``Test SourceFiles order for GetProjectOptionsFromScript`` () = // See #594
     test "Main4" [|"BaseLib2"; "Lib5"; "BaseLib1"; "Lib1"; "Lib2"; "Main4"|] 
     test "MainBad" [|"MainBad"|] 
 
-#endif
 
 
 
