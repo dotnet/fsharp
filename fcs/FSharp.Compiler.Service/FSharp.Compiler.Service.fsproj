@@ -457,10 +457,10 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\IlxGen.fs">
       <Link>CodeGen/IlxGen.fs</Link>
     </Compile>
-    <Compile Include="..\DependencyManager.Integration.fsi">
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\DependencyManager.Integration.fsi">
       <Link>Driver\DependencyManager.Integration.fsi</Link>
     </Compile>
-    <Compile Include="..\DependencyManager.Integration.fs">
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\DependencyManager.Integration.fs">
       <Link>Driver\DependencyManager.Integration.fs</Link>
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\CompileOps.fsi">
