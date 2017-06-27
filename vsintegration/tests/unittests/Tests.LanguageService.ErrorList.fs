@@ -59,7 +59,7 @@ type UsingMSBuild() as this =
         for error in errorList do
             printfn "%A" error.Severity
             let s = error.ToString()
-            errorTexts.AddLine s
+            errorTexts.AppendLine s |> ignore
             printf "%s\n" s 
 
         if num <> errorList.Length then 
