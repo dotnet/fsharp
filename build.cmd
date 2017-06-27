@@ -34,6 +34,7 @@ echo.Other examples:
 echo.
 echo.    build.cmd net40            (build compiler for .NET Framework)
 echo.    build.cmd coreclr          (build compiler for .NET Core)
+echo.    build.cmd buildfromsource  (build compiler for .NET Core -- Verify that buildfromsource works)
 echo.    build.cmd vs               (build Visual Studio IDE Tools)
 echo.    build.cmd all              (build everything)
 echo.    build.cmd test             (build and test default targets)
@@ -59,6 +60,7 @@ set BUILD_PHASE=1
 set BUILD_NET40=0
 set BUILD_NET40_FSHARP_CORE=0
 set BUILD_CORECLR=0
+set BUILD_BUILDFROMSOURCE=0
 set BUILD_VS=0
 set BUILD_FCS=0
 set BUILD_CONFIG=release
@@ -145,6 +147,13 @@ if /i "%ARG%" == "coreclr" (
     set _autoselect=0
     set BUILD_PROTO_WITH_CORECLR_LKG=1
     set BUILD_CORECLR=1
+    set BUILD_FROMSOURCE=1
+)
+
+if /i "%ARG%" == "buildfromsource" (
+    set _autoselect=0
+    set BUILD_PROTO_WITH_CORECLR_LKG=1
+    set BUILD_FROMSOURCE=1
 )
 
 if /i "%ARG%" == "vs" (
@@ -387,6 +396,7 @@ echo BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG%
 echo BUILD_NET40=%BUILD_NET40%
 echo BUILD_NET40_FSHARP_CORE=%BUILD_NET40_FSHARP_CORE%
 echo BUILD_CORECLR=%BUILD_CORECLR%
+echo BUILD_BUILDFROMSOURCE=%BUILD_BUILDFROMSOURCE%
 echo BUILD_VS=%BUILD_VS%
 echo BUILD_FCS=%BUILD_FCS%
 echo BUILD_SETUP=%BUILD_SETUP%
@@ -549,6 +559,14 @@ if not exist %_fsiexe% echo Error: Could not find %_fsiexe% && goto :failure
 
 if not exist %_nugetexe% echo Error: Could not find %_nugetexe% && goto :failure
 %_ngenexe% install %_nugetexe% /nologo 
+
+echo ---------------- Done with package restore, verify buildfrom source ---------------
+pushd src
+call buildfromsource.cmd
+@if ERRORLEVEL 1 echo Error: buildfromsource.cmd failed  && goto :failure
+popd src
+
+
 
 echo ---------------- Done with package restore, starting proto ------------------------
 
