@@ -22,7 +22,7 @@ open System.Runtime.InteropServices
 #if BUILD_FROM_SOURCE
 [<assembly: System.Reflection.AssemblyInformationalVersion("4.4.1.0")>]
 [<assembly: System.Reflection.AssemblyVersion("4.4.1.0")>]
-[<assembly: System.Reflection.AssemblyFileVersion("2017.06.22.0")>]
+[<assembly: System.Reflection.AssemblyFileVersion("2017.06.27.0")>]
 #endif
 
 do()
