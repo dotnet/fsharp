@@ -1,0 +1,69 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
+    <PreReleaseLabel>rc</PreReleaseLabel>
+    <BuildVersionFilePath Condition="'$(BuildVersionFilePath)'==''" >obj\BuildVersionFile.props</BuildVersionFilePath>
+  </PropertyGroup>
+
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
+
+  <PropertyGroup>
+    <PackageLicenceUrl Condition="'$(PackageLicenceUrl)' == ''">https://github.com/Microsoft/visualfsharp/blob/master/License.txt</PackageLicenceUrl>
+    <PackageProjectUrl Condition="'$(PackageProjectUrl)' == ''">https://github.com/Microsoft/visualfsharp</PackageProjectUrl>
+    <PackageAuthors    Condition="'$(PackageAuthors)' == ''"   >Microsoft</PackageAuthors>
+    <PackageTags       Condition="'$(PackageTags)' == ''"      >Visual F# Compiler FSharp coreclr functional programming</PackageTags>
+    <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\coreclr\bin</OutputPath>
+    <PreReleaseSuffix Condition="'$(PreRelease)' != 'false'">-rc-$(BuildRevision.Trim())-0</PreReleaseSuffix>
+    <PackageVersion>4.2.0$(PreReleaseSuffix)</PackageVersion>
+    <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">
+    <PackageNuspec Include="Testing.FSharp.Compiler.nuspec" />
+    <PackageNuspec Include="Microsoft.FSharp.Compiler.nuspec" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <RefMarker Include="_._"></RefMarker>
+
+    <ProjectReference Include="..\fsi\Fsi.fsproj">
+      <Name>fsi</Name>
+      <Project>{d0e98c0d-490b-4c61-9329-0862f6e87645}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Fsc\Fsc.fsproj">
+      <Name>Fsc</Name>
+      <Project>{C94C257C-3C0A-4858-B5D8-D746498D1F08}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
+
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+
+  <Target Name="Build" Outputs="$(TargetPath)" DependsOnTargets="$(nugetpackfsharpcompiler)" />
+  <Target Name="Rebuild"  DependsOnTargets="$(nugetpackfsharpcompiler)" />
+  <Target Name="Clean"    DependsOnTargets="CleanVersionFile" />
+
+  <Target Name="CopyFiles">  
+    <Copy  
+        SourceFiles="@(RefMarker)"
+        DestinationFolder="$(OutputPath)"
+    />
+  </Target>  
+  <Target Name="nugetpack"
+          DependsOnTargets="CreateOrUpdateBuildVersionFile;CopyFiles"
+          AfterTargets="Build"
+          Inputs="@(PackageNuspec)" 
+          Outputs='$(FSharpSourcesRoot)\$(Configuration)\artifacts\$(PackageVersion)\"%(PackageNuspec.Filename)).nupkg'>
+
+    <PropertyGroup>
+      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(PackageVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
+    </PropertyGroup>
+
+    <MakeDir Directories="$(FSharpSourcesRoot)\..\artifacts" />
+    <MakeDir Directories="$(FSharpSourcesRoot)\..\$(Configuration)\artifacts" />
+    <Exec Command='$(FSharpSourcesRoot)\..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(FSharpSourcesRoot)\..\$(Configuration) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot)\..\artifacts' />
+    <Exec Command='$(FSharpSourcesRoot)\..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(FSharpSourcesRoot)\..\$(Configuration) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot)\..\$(Configuration)\artifacts' />
+  </Target>
+
+</Project>
