@@ -2,7 +2,7 @@
 // NOTE: this file is used by other parties integrating paket reference loading in scripting environments.
 // Do not add any reference to F# codebase other than FSharp.Core.
 
-// This file should end up in paket repository instead of F#.
+// This file should eventually end up in paket repository instead of F#.
 
 /// Paket invokation for In-Script reference loading
 module internal ReferenceLoading.PaketHandler
