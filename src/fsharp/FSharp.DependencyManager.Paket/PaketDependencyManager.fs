@@ -1,8 +1,8 @@
 ﻿namespace Microsoft.FSharp.DependencyManager.Paket
 
-// used as a marker that compiler scans for, although there is no hard dependency, filtered by name
+/// Used as a marker that compiler scans for, although there is no hard dependency, filtered by name.
 type FSharpDependencyManagerAttribute() =
-  inherit System.Attribute()
+    inherit System.Attribute()
 
 type [<FSharpDependencyManager>] PaketDependencyManager() =
     member __.Name = "Paket"
