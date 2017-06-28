@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <ItemGroup>
+    <FsSrGen Include="..\FSInteractiveSettings.txt" />
+    <Compile Include="InternalsVisibleTo.fs" />
+    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Interactive.Settings.dll.fs" />
+    <Compile Include="..\..\utils\reshapedreflection.fs" />
+    <Compile Include="..\fsiattrs.fs" />
+    <Compile Include="..\fsiaux.fsi" />
+    <Compile Include="..\fsiaux.fs" />
+  </ItemGroup>
+
+</Project>

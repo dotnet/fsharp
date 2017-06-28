@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <FSCoreVersion>4.4.1.0</FSCoreVersion>
+    <OutputPath>$(MSBuildThisFileDirectory)../BuildFromSource/$(Configuration)/bin</OutputPath>
+
+    <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+
+    <!-- Signing flags currently done using OtherFlags.  Can migrate to properties once build target updated -->
+    <DefineConstants>$(DefineConstants);STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY</DefineConstants>
+    <KeyFile>$(MSBuildThisFileDirectory)buildtools/keys/MSFT.snk</KeyFile>
+    <PublicSign>true</PublicSign>
+    <OtherFlags>$(OtherFlags) --publicsign --keyfile:$(KeyFile)</OtherFlags>
+    <OtherFlags>$(OtherFlags) --nocopyfsharpcore</OtherFlags>
+
+    <DotNetExe Condition=" '$(OS)' == 'Unix' ">dotnet</DotNetExe>
+    <DotNetExe Condition=" '$(OS)' != 'Unix' ">dotnet.exe</DotNetExe>
+    <DotNetExePath>$(MSBuildThisFileDirectory)../Tools/dotnet20/$(DotNetExe)</DotNetExePath>
+    <DotNetExePath Condition="!Exists($(DotNetExe))">$(MSBuildBinPath)/../../$(DotNetExe)</DotNetExePath>
+
+    <PreReleaseLabel></PreReleaseLabel>
+    <BuildVersionFilePath Condition="'$(BuildVersionFilePath)'==''" >$(IntermediateOutputFile)\BuildVersionFile.props</BuildVersionFilePath>
+
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetDotnetProfile  Condition=" $(TargetFramework.StartsWith('netstandard')) or $(TargetFramework.StartsWith('netcoreapp1.0')) ">coreclr</TargetDotnetProfile>
+    <TargetDotnetProfile  Condition=" $(TargetFramework.StartsWith('netframework')) ">net40</TargetDotnetProfile>
+  </PropertyGroup>
+
+  <Import Project="FSharpSource.Profiles.targets" />
+  <Import Project="$(BuildVersionFilePath)" Condition="Exists('$(BuildVersionFilePath)')" />
+
+  <Target Name="CopyAndSubstituteTextFiles" 
+          BeforeTargets="Compile"
+          Inputs="@(CopyAndSubstituteText)"
+          Outputs="@(CopyAndSubstituteText->'$(OutDir)%(TargetFilename)')" >
+
+    <PropertyGroup>
+      <FileText>
+        $([System.Text.RegularExpressions.Regex]::Replace($([System.IO.File]::ReadAllText("%(CopyAndSubstituteText.FullPath)")), "%(CopyAndSubstituteText.Pattern1)", "%(CopyAndSubstituteText.Replacement1)"))
+      </FileText>
+
+      <FileText Condition = "'%(CopyAndSubstituteText.Pattern2)' != ''">
+        $([System.Text.RegularExpressions.Regex]::Replace($(FileText), "%(CopyAndSubstituteText.Pattern2)", "%(CopyAndSubstituteText.Replacement2)"))
+      </FileText>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(OutDir)%(CopyAndSubstituteText.TargetFilename)" Lines="$(FileText)" Overwrite="true" />
+  </Target>
+
+  <!--
+  =========================================================================
+    Build FsSrGen files.
+  =========================================================================
+  -->
+  <Target Name="CallFsSrGen"
+          Inputs="@(FsSrGen)"
+          Outputs="@(FsSrGen->'$(IntermediateOutputPath)%(Filename).fs');@(FsSrGen->'$(IntermediateOutputPath)%(Filename).resx')"
+          Condition="'@(FsSrGen)' != ''">
+
+    <PropertyGroup>
+      <FsSrGenPath>$(MSBuildThisFileDirectory)../Tools/fssrgen/fssrgen.dll</FsSrGenPath>
+    </PropertyGroup>
+
+    <!-- Create the output directory in case it doesn't exist yet -->
+    <MakeDir Directories="$(IntermediateOutputPath)" />
+
+    <!-- Run the tool -->
+    <Exec Command="&quot;$(DotNetExePath)&quot; &quot;$(FsSrGenPath)&quot; &quot;%(FsSrGen.FullPath)&quot; &quot;$(IntermediateOutputPath)%(FsSrGen.Filename).fs&quot;  &quot;$(IntermediateOutputPath)%(FsSrGen.Filename).resx&quot; $(FsSrGenProjectName)" />
+  </Target>
+
+  <Target Name="ProcessFsSrGen"
+          DependsOnTargets="CallFsSrGen"
+          Condition="'@(FsSrGen)'!=''"
+          BeforeTargets="CoreResGen">
+
+    <CreateItem Include="$(IntermediateOutputPath)%(FsSrGen.Filename).fs">
+      <Output TaskParameter="Include" ItemName="CompileBefore"/>
+    </CreateItem>
+    <CreateItem Include="$(IntermediateOutputPath)%(FsSrGen.Filename).resx" AdditionalMetadata="ManifestResourceName=%(FsSrGen.Filename)">
+      <Output TaskParameter="Include" ItemName="EmbeddedResource"/>
+    </CreateItem>
+    <CreateItem Include="$(IntermediateOutputPath)%(FsSrGen.Filename).fs">
+      <Output TaskParameter="Include" ItemName="FileWrites"/>
+    </CreateItem>
+    <CreateItem Include="$(IntermediateOutputPath)%(FsSrGen.Filename).resx">
+      <Output TaskParameter="Include" ItemName="FileWrites"/>
+    </CreateItem>
+  </Target>
+
+  <ItemGroup>
+    <AvailableItemName Include="FsLex">
+      <Visible>false</Visible>
+    </AvailableItemName>
+    <AvailableItemName Include="FsYacc">
+      <Visible>false</Visible>
+    </AvailableItemName>
+  </ItemGroup>
+
+  <!-- Build FsLex files. -->
+  <Target Name="CallFsLex"
+          Inputs="@(FsLex)"
+          Outputs="@(FsLex->'$(FsLexOutputFolder)%(Filename).fs')"
+          Condition="'@(FsLex)'!=''"
+          BeforeTargets="CoreCompile">
+
+    <PropertyGroup>
+        <FsLexPath>$(MSBuildThisFileDirectory)../Tools/fslex/fslex.dll</FsLexPath>
+    </PropertyGroup>
+
+    <!-- Create the output directory -->
+    <MakeDir Directories="$(FsLexOutputFolder)"/>
+
+    <!-- Run the tool -->
+    <Exec Command="&quot;$(DotNetExePath)&quot; &quot;$(FsLexPath)&quot;  -o &quot;$(FsLexOutputFolder)%(FsLex.Filename).fs&quot; %(FsLex.OtherFlags) %(FsLex.Identity)" />
+
+    <!-- Make sure it will get cleaned  -->
+    <CreateItem Include="$(FsLexOutputFolder)%(FsLex.Filename).fs">
+      <Output TaskParameter="Include" ItemName="FileWrites"/>
+    </CreateItem>
+  </Target>
+
+  <!-- Build FsYacc files. -->
+  <Target Name="CallFsYacc"
+          Inputs="@(FsYacc)"
+          Outputs="@(FsYacc->'$(FsYaccOutputFolder)%(Filename).fs')"
+          Condition="'@(FsYacc)'!=''"
+          BeforeTargets="CoreCompile">
+
+    <PropertyGroup>
+        <FsYaccPath>$(MSBuildThisFileDirectory)../Tools/fsyacc/fsyacc.dll</FsYaccPath>
+    </PropertyGroup>
+
+    <!-- Create the output directory -->
+    <MakeDir Directories="$(FsYaccOutputFolder)" />
+
+    <!-- Run the tool -->
+    <Exec Command="&quot;$(DotNetExePath)&quot; &quot;$(FsYaccPath)&quot;  -o &quot;$(FsYaccOutputFolder)%(FsYacc.Filename).fs&quot; %(FsYacc.OtherFlags) %(FsYacc.Identity)" />
+
+    <!-- Make sure it will get cleaned  -->
+    <CreateItem Include="$(FsYaccOutputFolder)%(FsYacc.Filename).fs">
+      <Output TaskParameter="Include" ItemName="FileWrites"/>
+    </CreateItem>
+  </Target>
+
+</Project>
