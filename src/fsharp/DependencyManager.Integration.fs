@@ -104,16 +104,14 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
         member __.Dispose () = instance.Dispose()
             
 
-let assemblySearchPaths = 
-    lazy(
-        [let assemblyLocation = typeof<IDependencyManagerProvider>.Assembly.Location
-         yield Path.GetDirectoryName assemblyLocation
-         let executingAssembly = Assembly.GetExecutingAssembly().Location
-         yield Path.GetDirectoryName executingAssembly
-         let baseDir = AppDomain.CurrentDomain.BaseDirectory
-         yield baseDir ]
-        |> List.distinct
-    )
+let assemblySearchPaths = lazy(
+    [ let assemblyLocation = typeof<IDependencyManagerProvider>.Assembly.Location
+      yield Path.GetDirectoryName assemblyLocation
+      let executingAssembly = Assembly.GetExecutingAssembly().Location
+      yield Path.GetDirectoryName executingAssembly
+      let baseDir = AppDomain.CurrentDomain.BaseDirectory
+      yield baseDir ]
+    |> List.distinct)
 
 let enumerateDependencyManagerAssembliesFromCurrentAssemblyLocation () =
     assemblySearchPaths.Force()
