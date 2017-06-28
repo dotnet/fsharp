@@ -562,10 +562,12 @@ if not exist %_nugetexe% echo Error: Could not find %_nugetexe% && goto :failure
 %_ngenexe% install %_nugetexe% /nologo 
 
 echo ---------------- Done with package restore, verify buildfrom source ---------------
-pushd src
-call buildfromsource.cmd
-@if ERRORLEVEL 1 echo Error: buildfromsource.cmd failed  && goto :failure
-popd src
+if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
+  pushd src
+  call buildfromsource.cmd
+  @if ERRORLEVEL 1 echo Error: buildfromsource.cmd failed  && goto :failure
+  popd
+)
 
 echo ---------------- Done with package restore, starting proto ------------------------
 
