@@ -5080,8 +5080,8 @@ module ScriptPreprocessClosure =
                 | _ -> closureFiles
 
         // Get all source files.
-        let sourceFiles = [ for (ClosureFile(filename,m,_,_,_,_)) in closureFiles -> (filename,m) ]
-        let sourceInputs = [ for (ClosureFile(filename,_,input,parseDiagnostics,metaDiagnostics,_nowarns)) in closureFiles -> ({ FileName=filename; SyntaxTree=input; ParseDiagnostics=parseDiagnostics; MetaCommandDiagnostics=metaDiagnostics }: LoadClosureInput)  ]
+        let sourceFiles = [  for (ClosureFile(filename,m,_,_,_,_)) in closureFiles -> (filename,m) ]
+        let sourceInputs = [  for (ClosureFile(filename,_,input,parseDiagnostics,metaDiagnostics,_nowarns)) in closureFiles -> ({ FileName=filename; SyntaxTree=input; ParseDiagnostics=parseDiagnostics; MetaCommandDiagnostics=metaDiagnostics }: LoadClosureInput)  ]
         let globalNoWarns = closureFiles |> List.collect (fun (ClosureFile(_,_,_,_,_,noWarns)) -> noWarns)
 
         // Resolve all references.
@@ -5347,13 +5347,13 @@ let TypeCheckOneInputEventually
 
                 // Check if we've already seen an implementation for this fragment 
                 if Zset.contains qualNameOfFile rootImpls then 
-                    errorR(Error(FSComp.SR.buildImplementationAlreadyGiven(qualNameOfFile.Text),m))
+                  errorR(Error(FSComp.SR.buildImplementationAlreadyGiven(qualNameOfFile.Text),m))
 
                 let tcImplEnv = tcState.tcsTcImplEnv
 
                 // Typecheck the implementation file 
                 let! topAttrs, implFile, tcEnvAtEnd, createsGeneratedProvidedTypes = 
-                    TypeCheckOneImplFile (tcGlobals,tcState.tcsNiceNameGen,amap,tcState.tcsCcu,checkForErrors,tcConfig.conditionalCompilationDefines,tcSink) tcImplEnv rootSigOpt file
+                    TypeCheckOneImplFile  (tcGlobals,tcState.tcsNiceNameGen,amap,tcState.tcsCcu,checkForErrors,tcConfig.conditionalCompilationDefines,tcSink) tcImplEnv rootSigOpt file
 
                 let hadSig = Option.isSome rootSigOpt
                 let implFileSigType = SigTypeOfImplFile implFile

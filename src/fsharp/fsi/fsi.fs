@@ -1334,7 +1334,6 @@ type internal FsiDynamicCompiler
       
     member fsiDynamicCompiler.EvalSourceFiles(ctok, istate, m, sourceFiles, lexResourceManager, errorLogger: ErrorLogger) =
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
-        let moduleNamesDict = Dictionary<string,Set<string>>()
         match sourceFiles with 
         | [] -> istate
         | _ -> 
@@ -1369,16 +1368,10 @@ type internal FsiDynamicCompiler
                     input.FileName, parsedInput)
               |> List.unzip
           
-
-          errorLogger.AbortOnError(fsiConsoleOutput)
+          errorLogger.AbortOnError(fsiConsoleOutput);
           if inputs |> List.exists Option.isNone then failwith "parse error"
           let inputs = List.map Option.get inputs 
           let istate = (istate, sourceFiles, inputs) |||> List.fold2 (fun istate sourceFile input -> fsiDynamicCompiler.ProcessMetaCommandsFromInputAsInteractiveCommands(ctok, istate, sourceFile, input))
-          
-          let inputs = 
-              inputs
-              |> List.map (DeduplicateParsedInputModuleName moduleNamesDict)
-
           fsiDynamicCompiler.EvalParsedSourceFiles (ctok, errorLogger, istate, inputs)
 
     
