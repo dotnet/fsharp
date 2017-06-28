@@ -60,7 +60,7 @@ type internal IDependencyManagerProvider =
     abstract Name : string
     abstract ToolName: string
     abstract Key: string
-    abstract ResolveDependencies : targetFramework: string * scriptDir: string * scriptName: string * packageManagerTextLines: string seq -> string option * string list
+    abstract ResolveDependencies : targetFramework: string * scriptDir: string * mainScriptName: string * scriptName: string * packageManagerTextLines: string seq -> string option * string list
 
 [<RequireQualifiedAccess>]
 type ReferenceType =
@@ -88,7 +88,7 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
         match ReflectionHelper.getInstanceProperty<string> theType Array.empty "Key" with
         | None -> None
         | Some keyProperty ->
-        match ReflectionHelper.getInstanceMethod<string * string list> theType [|typeof<string>;typeof<string>;typeof<string>;typeof<string seq>;|] "ResolveDependencies" with
+        match ReflectionHelper.getInstanceMethod<string * string list> theType [|typeof<string>;typeof<string>;typeof<string>;typeof<string>;typeof<string seq>;|] "ResolveDependencies" with
         | None -> None
         | Some resolveDependenciesMethod ->
             Some (fun () -> new ReflectionDependencyManagerProvider(theType, nameProperty, toolNameProperty, keyProperty, resolveDependenciesMethod) :> IDependencyManagerProvider)
@@ -97,8 +97,8 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
         member __.Name     = instance |> nameProperty
         member __.ToolName = instance |> toolNameProperty
         member __.Key      = instance |> keyProperty
-        member __.ResolveDependencies(targetFramework, scriptDir, scriptName, packageManagerTextLines) =
-            let arguments = [|box targetFramework; box scriptDir; box scriptName; box packageManagerTextLines|]
+        member __.ResolveDependencies(targetFramework, scriptDir, mainScriptName, scriptName, packageManagerTextLines) =
+            let arguments = [|box targetFramework; box scriptDir; box mainScriptName; box scriptName; box packageManagerTextLines|]
             resolveDeps.Invoke(instance, arguments) :?> _
     interface IDisposable with
         member __.Dispose () = instance.Dispose()
@@ -126,7 +126,7 @@ type ProjectDependencyManager() =
         member __.Name = "Project loader"
         member __.ToolName = ""
         member __.Key = "project"
-        member __.ResolveDependencies(_targetFramework:string, _scriptDir: string, _scriptName: string, _packageManagerTextLines: string seq) = 
+        member __.ResolveDependencies(_targetFramework:string, _scriptDir: string, _mainScriptName: string, _scriptName: string, _packageManagerTextLines: string seq) = 
             None,[]
 
     interface System.IDisposable with
@@ -137,7 +137,7 @@ type RefDependencyManager() =
         member __.Name = "Ref library loader"
         member __.ToolName = ""
         member __.Key = "ref"
-        member __.ResolveDependencies(_targetFramework:string, _scriptDir: string, _scriptName: string, _packageManagerTextLines: string seq) = 
+        member __.ResolveDependencies(_targetFramework:string, _scriptDir: string, _mainScriptName: string, _scriptName: string, _packageManagerTextLines: string seq) = 
             None,[]
 
     interface System.IDisposable with
@@ -148,7 +148,7 @@ type ImplDependencyManager() =
         member __.Name = "Impl library loader"
         member __.ToolName = ""
         member __.Key = "impl"
-        member __.ResolveDependencies(_targetFramework:string, _scriptDir: string, _scriptName: string, _packageManagerTextLines: string seq) = 
+        member __.ResolveDependencies(_targetFramework:string, _scriptDir: string, _mainScriptName: string, _scriptName: string, _packageManagerTextLines: string seq) = 
             None,[]
 
     interface System.IDisposable with
@@ -205,12 +205,13 @@ let tryFindDependencyManagerByKey m (key:string) : IDependencyManagerProvider op
         errorR(Error(FSComp.SR.packageManagerError(e.Message),m))
         None
 
-let resolve (packageManager:IDependencyManagerProvider) implicitIncludeDir fileName m packageManagerTextLines =
+let resolve (packageManager:IDependencyManagerProvider) implicitIncludeDir mainScriptName fileName m packageManagerTextLines =
     try
         let loadScript,additionalIncludeFolders =
             packageManager.ResolveDependencies(
                 targetFramework,
                 implicitIncludeDir,
+                mainScriptName,
                 fileName,
                 packageManagerTextLines)
 

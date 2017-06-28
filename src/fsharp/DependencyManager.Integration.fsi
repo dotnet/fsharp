@@ -10,7 +10,7 @@ type IDependencyManagerProvider =
     abstract Name : string
     abstract ToolName: string
     abstract Key: string
-    abstract ResolveDependencies : string * string * string * string seq -> string option * string list
+    abstract ResolveDependencies : string * string * string * string * string seq -> string option * string list
 
 [<RequireQualifiedAccess>]
 type ReferenceType =
@@ -26,4 +26,4 @@ val removeDependencyManagerKey : string -> string -> string
 
 val createPackageManagerUnknownError : string -> range -> exn
 
-val resolve : IDependencyManagerProvider -> string -> string -> range -> string seq -> (string option * string list) option
+val resolve : IDependencyManagerProvider -> string -> string -> string -> range -> string seq -> (string option * string list) option

@@ -4971,7 +4971,7 @@ module ScriptPreprocessClosure =
             let tcConfigB = tcConfig.CloneOfOriginalBuilder 
             TcConfig.Create(tcConfigB, validate=false),nowarns
     
-    let FindClosureFiles(_mainFile, _m, closureSources, origTcConfig:TcConfig, codeContext, lexResourceManager:Lexhelp.LexResourceManager) =
+    let FindClosureFiles(mainFile, _m, closureSources, origTcConfig:TcConfig, codeContext, lexResourceManager:Lexhelp.LexResourceManager) =
         let tcConfig = ref origTcConfig
         
         let observedSources = Observed()
@@ -4993,7 +4993,7 @@ module ScriptPreprocessClosure =
                                 errorR(DependencyManagerIntegration.createPackageManagerUnknownError packageManagerKey m)
                             | Some packageManager ->
                                 let packageManagerTextLines = packageManagerLines |> List.map fst
-                                match DependencyManagerIntegration.resolve packageManager tcConfig.Value.implicitIncludeDir scriptName m packageManagerTextLines with
+                                match DependencyManagerIntegration.resolve packageManager tcConfig.Value.implicitIncludeDir mainFile scriptName m packageManagerTextLines with
                                 | None -> () // error already reported
                                 | Some (loadScript,additionalIncludeFolders) ->
                                     // This may incrementally update tcConfig too with new #r references

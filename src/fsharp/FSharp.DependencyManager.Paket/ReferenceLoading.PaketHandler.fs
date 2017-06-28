@@ -98,10 +98,12 @@ let GetPaketLoadScriptLocation baseDir optionalFrameworkDir scriptName =
 /// <param name="targetFramework">A string given to paket command to fix the framework.</param>
 /// <param name="prioritizedSearchPaths">List of directories which are checked first to resolve `paket.exe`.</param>
 /// <param name="scriptDir"The folder containing the script</param>
-/// <param name="scriptName">filename for the script (not necessarily existing if interactive evaluation)</param>
+/// <param name="mainScriptName">Filename for the main script (not necessarily existing if interactive evaluation)</param>
+/// <param name="scriptName">Filename for the script (not necessarily existing if interactive evaluation)</param>
 /// <param name="packageManagerTextLinesFromScript">Package manager text lines from script, those are meant to be just the inner part, without `#r "paket:` prefix</param>
-let ResolveDependenciesForLanguage(fileType,targetFramework:string,prioritizedSearchPaths: string seq, scriptDir: string, scriptName: string,packageManagerTextLinesFromScript: string seq) =
-    let workingDir = Path.Combine(Path.GetTempPath(), "script-packages", string(abs(hash (scriptDir,scriptName))))
+let ResolveDependenciesForLanguage(fileType,targetFramework:string,prioritizedSearchPaths: string seq, scriptDir: string, _mainScriptName: string, scriptName: string, packageManagerTextLinesFromScript: string seq) =
+    let scriptHash = string(abs(hash (scriptDir,scriptName)))
+    let workingDir = Path.Combine(Path.GetTempPath(), "script-packages", scriptHash)
     let depsFileName = "paket.dependencies"
     let workingDirSpecFile = FileInfo(Path.Combine(workingDir,depsFileName))
     if not (Directory.Exists workingDir) then
@@ -147,16 +149,20 @@ let ResolveDependenciesForLanguage(fileType,targetFramework:string,prioritizedSe
         findSpecFile scriptDir
 
     /// hardcoded to load the "Main" group (implicit in paket)
-    let loadScript = GetPaketLoadScriptLocation workingDir (Some targetFramework) ("main.group." + fileType)
-    let additionalIncludeFolders() = 
+    let loadScriptFileName = GetPaketLoadScriptLocation workingDir (Some targetFramework) ("main.group." + fileType)
+    let loadScriptFileInfo = FileInfo loadScriptFileName
+    let copiedScriptFileInfo = FileInfo(Path.Combine(loadScriptFileInfo.Directory.FullName,"main.group." + scriptHash + "." + fileType))
+
+    let additionalIncludeFolders() =
         [Path.Combine(workingDir,"paket-files")]
         |> List.filter Directory.Exists
-
+    
     if workingDirSpecFile.Exists && 
         (File.ReadAllLines(workingDirSpecFile.FullName) |> Array.toList) = packageManagerTextLines && 
-        File.Exists loadScript
-    then 
-        (Some loadScript,additionalIncludeFolders())
+        loadScriptFileInfo.Exists &&
+        copiedScriptFileInfo.Exists
+    then
+        (Some copiedScriptFileInfo.FullName,additionalIncludeFolders())
     else 
         let toolPathOpt = 
             // we try to resolve .paket/paket.exe any place up in the folder structure from current script
@@ -173,7 +179,7 @@ let ResolveDependenciesForLanguage(fileType,targetFramework:string,prioritizedSe
                scriptDir userProfile
 
         | Some toolPath ->
-            try File.Delete(loadScript) with _ -> ()
+            try loadScriptFileInfo.Delete() with _ -> ()
             let toolPath = if runningOnMono then "mono " + toolPath else toolPath
             File.WriteAllLines(workingDirSpecFile.FullName, packageManagerTextLines)
             let startInfo = 
@@ -212,13 +218,15 @@ let ResolveDependenciesForLanguage(fileType,targetFramework:string,prioritizedSe
                 failwithf "Package resolution using '%s' failed, see directory '%s'.%s%s"
                     toolPath workingDir Environment.NewLine msg
             else
-                (Some loadScript,additionalIncludeFolders())
+                File.Copy(loadScriptFileInfo.FullName,copiedScriptFileInfo.FullName,true)
+                (Some copiedScriptFileInfo.FullName,additionalIncludeFolders())
 
 /// Resolve packages loaded into scripts using `paket:` in `#r` directives such as `#r @"paket: nuget AmazingNugetPackage"`. 
 /// <remarks>This function will throw if the resolution is not successful or the tool wasn't found</remarks>
 /// <param name="targetFramework">A string given to paket command to fix the framework.</param>
 /// <param name="scriptDir"The folder containing the script</param>
-/// <param name="scriptName">filename for the script (not necessarily existing if interactive evaluation)</param>
+/// <param name="mainScriptName">Filename for the main script (not necessarily existing if interactive evaluation)</param>
+/// <param name="scriptName">Filename for the script (not necessarily existing if interactive evaluation)</param>
 /// <param name="packageManagerTextLinesFromScript">Package manager text lines from script, those are meant to be just the inner part, without `#r "paket:` prefix</param>
-let ResolveDependencies(targetFramework:string, scriptDir: string, scriptName: string,packageManagerTextLinesFromScript: string seq) =
-    ResolveDependenciesForLanguage("fsx",targetFramework,Seq.empty, scriptDir, scriptName,packageManagerTextLinesFromScript)
+let ResolveDependencies(targetFramework:string, scriptDir: string, mainScriptName: string, scriptName: string, packageManagerTextLinesFromScript: string seq) =
+    ResolveDependenciesForLanguage("fsx",targetFramework,Seq.empty, scriptDir, mainScriptName, scriptName,packageManagerTextLinesFromScript)

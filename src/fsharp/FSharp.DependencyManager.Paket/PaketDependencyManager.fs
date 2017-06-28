@@ -8,10 +8,11 @@ type [<FSharpDependencyManager>] PaketDependencyManager() =
     member __.Name = "Paket"
     member __.ToolName = "paket.exe"
     member __.Key = "paket"
-    member __.ResolveDependencies(targetFramework:string, scriptDir: string, scriptName: string, packageManagerTextLines: string seq) = 
+    member __.ResolveDependencies(targetFramework:string, scriptDir: string, mainScriptName: string, scriptName: string, packageManagerTextLines: string seq) = 
         ReferenceLoading.PaketHandler.ResolveDependencies(
             targetFramework,
             scriptDir,
+            mainScriptName,
             scriptName,
             packageManagerTextLines)
 

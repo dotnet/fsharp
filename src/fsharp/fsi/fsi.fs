@@ -1309,7 +1309,7 @@ type internal FsiDynamicCompiler
                 | None ->
                     errorR(DependencyManagerIntegration.createPackageManagerUnknownError packageManagerKey m)
                 | Some packageManager ->
-                    match DependencyManagerIntegration.resolve packageManager tcConfigB.implicitIncludeDir "stdin.fsx" m packageManagerTextLines with
+                    match DependencyManagerIntegration.resolve packageManager tcConfigB.implicitIncludeDir "stdin.fsx" "stdin.fsx" m packageManagerTextLines with
                     | None -> () // error already reported
                     | Some (loadScript,additionalIncludeFolders) -> 
                         for folder in additionalIncludeFolders do 
