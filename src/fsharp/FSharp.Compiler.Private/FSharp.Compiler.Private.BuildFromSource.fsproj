@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>netstandard1.6</TargetFramework>
+    <AssemblyName>FSharp.Compiler.Private</AssemblyName>
+    <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
+    <AllowCrossTargeting>true</AllowCrossTargeting>
+    <DefineConstants>$(DefineConstants);EXTENSIONTYPING;COMPILER;BUILD_FROM_SOURCE</DefineConstants>
+    <OtherFlags>$(OtherFlags) --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
+  </PropertyGroup>
+
+  <Import Project="FSharp.Compiler.Private.Sources.proj" />
+  <Import Project = "$(MSBuildThisFileDirectory)../../FSharpSource.BuildFromSource.targets" />
+
+<!--
+    "System.Collections.Immutable":"1.2.0",
+    "System.Diagnostics.Process": "4.3.0",
+    "System.Diagnostics.TraceSource": "4.3.0",
+    "System.Linq.Expressions": "4.3.0",
+    "System.Linq.Queryable": "4.3.0",
+    "System.Net.Requests": "4.3.0",
+    "System.Reflection.Emit": "4.3.0",
+    "System.Reflection.Metadata": "1.4.2",
+    "System.Reflection.TypeExtensions": "4.3.0",
+    "System.Runtime": "4.3.0",
+    "System.Runtime.InteropServices": "4.3.0",
+    "System.Runtime.Loader": "4.3.0",
+    "System.Security.Cryptography.Algorithms": "4.3.0",
+    "System.Threading.Tasks.Parallel": "4.3.0",
+    "System.Threading.Thread": "4.3.0",
+    "System.Threading.ThreadPool": "4.3.0",
+    "Microsoft.DiaSymReader.PortablePdb": "1.1.0",
+    "Microsoft.DiaSymReader": "1.1.0",
+    "System.ValueTuple": "4.3.1"
+-->
+  <ItemGroup>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.BuildFromSource.fsproj" />
+    <PackageReference Include="System.Collections.Immutable" Version="1.2.0"></PackageReference>
+    <PackageReference Include="System.Diagnostics.Process" Version="4.3.0"></PackageReference>
+    <PackageReference Include="System.Diagnostics.TraceSource" Version="4.3.0"></PackageReference>
+    <PackageReference Include="System.Linq.Expressions" Version="4.3.0"></PackageReference>
+    <PackageReference Include="System.Linq.Queryable" Version="4.3.0"></PackageReference>
+    <PackageReference Include="System.Net.Requests" Version="4.3.0"></PackageReference>
+    <PackageReference Include="System.Reflection.Emit" Version="4.3.0"></PackageReference>
+    <PackageReference Include="System.Reflection.Metadata" Version="1.4.2"></PackageReference>
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.3.0"></PackageReference>
+    <PackageReference Include="System.Runtime" Version="4.3.0"></PackageReference>
+    <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0"></PackageReference>
+    <PackageReference Include="System.Runtime.Loader" Version="4.3.0"></PackageReference>
+    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="4.3.0"></PackageReference>
+    <PackageReference Include="System.Threading.Tasks.Parallel" Version="4.3.0"></PackageReference>
+    <PackageReference Include="System.Threading.Thread" Version="4.3.0"></PackageReference>
+    <PackageReference Include="System.Threading.ThreadPool" Version="4.3.0"></PackageReference>
+    <PackageReference Include="Microsoft.DiaSymReader.PortablePdb" Version="1.1.0"></PackageReference>
+    <PackageReference Include="Microsoft.DiaSymReader" Version="1.1.0"></PackageReference>
+    <PackageReference Include="System.ValueTuple" Version="4.3.1"></PackageReference>
+  </ItemGroup>
+
+</Project>
