@@ -232,7 +232,10 @@ and ReflectTypeSymbol(kind: ReflectTypeSymbolKind, args: Type[]) =
         | ReflectTypeSymbolKind.Array _ -> typeof<System.Array>
         | ReflectTypeSymbolKind.Pointer -> typeof<System.ValueType>
         | ReflectTypeSymbolKind.ByRef -> typeof<System.ValueType>
-        | ReflectTypeSymbolKind.Generic gtd  -> instType (args, [| |]) gtd.BaseType
+        | ReflectTypeSymbolKind.Generic gtd  -> 
+            if gtd.BaseType = null
+            then null 
+            else instType (args, [| |]) gtd.BaseType
         
     override this.Assembly = 
         match kind, args with 
@@ -284,7 +287,15 @@ and ReflectTypeSymbol(kind: ReflectTypeSymbolKind, args: Type[]) =
     member this.Kind = kind
     member this.Args = args
     
-    override this.GetConstructors _bindingAttr                                                      = notRequired "GetConstructors" this.Name
+    override this.GetConstructors _bindingAttr =
+        match kind,args with 
+        | ReflectTypeSymbolKind.SDArray,[| arg |] 
+        | ReflectTypeSymbolKind.Array _,[| arg |] 
+        | ReflectTypeSymbolKind.Pointer,[| arg |]         
+        | ReflectTypeSymbolKind.ByRef,[| arg |] -> arg.GetConstructors(_bindingAttr)
+        | ReflectTypeSymbolKind.Generic gtd, _ -> gtd.GetConstructors(_bindingAttr)
+        | _ -> failwith "unreachable"
+
     override this.GetMethodImpl(_ (* name *), _bindingAttr, _binderBinder, _callConvention, _ (* types *), _modifiers) = notRequired "ReflectTypeSymbol: GetMethodImpl" this.Name
         //match kind with
         //| ReflectTypeSymbolKind.Generic gtd -> 
@@ -333,19 +344,114 @@ and ReflectTypeSymbol(kind: ReflectTypeSymbolKind, args: Type[]) =
 
     override this.AssemblyQualifiedName                                                            = "[" + this.Assembly.FullName + "]" + this.FullName
 
-    override this.GetMembers _bindingAttr                                                           = notRequired "GetMembers" this.Name
-    override this.GetMethods _bindingAttr                                                           = notRequired "GetMethods" this.Name
-    override this.GetField(_name, _bindingAttr)                                                     = notRequired "GetField" this.Name
-    override this.GetFields _bindingAttr                                                            = notRequired "GetFields" this.Name
-    override this.GetInterface(_name, _ignoreCase)                                                  = notRequired "GetInterface" this.Name
-    override this.GetInterfaces()                                                                   = notRequired "GetInterfaces" this.Name
-    override this.GetEvent(_name, _bindingAttr)                                                     = notRequired "GetEvent" this.Name
-    override this.GetEvents _bindingAttr                                                            = notRequired "GetEvents" this.Name
-    override this.GetProperties _bindingAttr                                                        = notRequired "GetProperties" this.Name
+    override this.GetMembers _bindingAttr =
+        match kind,args with 
+        | ReflectTypeSymbolKind.SDArray,[| arg |] 
+        | ReflectTypeSymbolKind.Array _,[| arg |] 
+        | ReflectTypeSymbolKind.Pointer,[| arg |]         
+        | ReflectTypeSymbolKind.ByRef,[| arg |] -> arg.GetMembers(_bindingAttr)
+        | ReflectTypeSymbolKind.Generic gtd, _ -> gtd.GetMembers(_bindingAttr)
+        | _ -> failwith "unreachable"
+
+    override this.GetMethods _bindingAttr =
+        match kind,args with 
+        | ReflectTypeSymbolKind.SDArray,[| arg |] 
+        | ReflectTypeSymbolKind.Array _,[| arg |] 
+        | ReflectTypeSymbolKind.Pointer,[| arg |]         
+        | ReflectTypeSymbolKind.ByRef,[| arg |] -> arg.GetMethods(_bindingAttr)
+        | ReflectTypeSymbolKind.Generic gtd, _ -> gtd.GetMethods(_bindingAttr)
+        | _ -> failwith "unreachable"
+
+    override this.GetField(_name, _bindingAttr) =
+        match kind,args with 
+        | ReflectTypeSymbolKind.SDArray,[| arg |] 
+        | ReflectTypeSymbolKind.Array _,[| arg |] 
+        | ReflectTypeSymbolKind.Pointer,[| arg |]         
+        | ReflectTypeSymbolKind.ByRef,[| arg |] -> arg.GetField(_name,_bindingAttr)
+        | ReflectTypeSymbolKind.Generic gtd, _ -> gtd.GetField(_name,_bindingAttr)
+        | _ -> failwith "unreachable"
+
+    override this.GetFields _bindingAttr =
+        match kind,args with 
+        | ReflectTypeSymbolKind.SDArray,[| arg |] 
+        | ReflectTypeSymbolKind.Array _,[| arg |] 
+        | ReflectTypeSymbolKind.Pointer,[| arg |]         
+        | ReflectTypeSymbolKind.ByRef,[| arg |] -> arg.GetFields(_bindingAttr)
+        | ReflectTypeSymbolKind.Generic gtd, _ -> gtd.GetFields(_bindingAttr)
+        | _ -> failwith "unreachable"
+
+    override this.GetInterface(_name, _ignoreCase) =
+        match kind,args with 
+        | ReflectTypeSymbolKind.SDArray,[| arg |] 
+        | ReflectTypeSymbolKind.Array _,[| arg |] 
+        | ReflectTypeSymbolKind.Pointer,[| arg |]         
+        | ReflectTypeSymbolKind.ByRef,[| arg |] -> arg.GetInterface(_name, _ignoreCase)
+        | ReflectTypeSymbolKind.Generic gtd, _ -> gtd.GetInterface(_name, _ignoreCase)
+        | _ -> failwith "unreachable"
+
+    override this.GetInterfaces() =
+        match kind,args with 
+        | ReflectTypeSymbolKind.SDArray,[| arg |] 
+        | ReflectTypeSymbolKind.Array _,[| arg |] 
+        | ReflectTypeSymbolKind.Pointer,[| arg |]         
+        | ReflectTypeSymbolKind.ByRef,[| arg |] -> arg.GetInterfaces()
+        | ReflectTypeSymbolKind.Generic gtd, _ -> gtd.GetInterfaces()
+        | _ -> failwith "unreachable"
+
+    override this.GetEvent(_name, _bindingAttr) =
+        match kind,args with 
+        | ReflectTypeSymbolKind.SDArray,[| arg |] 
+        | ReflectTypeSymbolKind.Array _,[| arg |] 
+        | ReflectTypeSymbolKind.Pointer,[| arg |]         
+        | ReflectTypeSymbolKind.ByRef,[| arg |] -> arg.GetEvent(_name, _bindingAttr)
+        | ReflectTypeSymbolKind.Generic gtd, _ -> gtd.GetEvent(_name, _bindingAttr)
+        | _ -> failwith "unreachable"
+
+    override this.GetEvents _bindingAttr =
+        match kind,args with 
+        | ReflectTypeSymbolKind.SDArray,[| arg |] 
+        | ReflectTypeSymbolKind.Array _,[| arg |] 
+        | ReflectTypeSymbolKind.Pointer,[| arg |]         
+        | ReflectTypeSymbolKind.ByRef,[| arg |] -> arg.GetEvents(_bindingAttr)
+        | ReflectTypeSymbolKind.Generic gtd, _ -> gtd.GetEvents(_bindingAttr)
+        | _ -> failwith "unreachable"
+
+    override this.GetProperties _bindingAttr =
+        match kind,args with 
+        | ReflectTypeSymbolKind.SDArray,[| arg |] 
+        | ReflectTypeSymbolKind.Array _,[| arg |] 
+        | ReflectTypeSymbolKind.Pointer,[| arg |]         
+        | ReflectTypeSymbolKind.ByRef,[| arg |] -> arg.GetProperties(_bindingAttr)
+        | ReflectTypeSymbolKind.Generic gtd, _ -> gtd.GetProperties(_bindingAttr)
+        | _ -> failwith "unreachable"
+
     override this.GetPropertyImpl(_name, _bindingAttr, _binder, _returnType, _types, _modifiers)    = notRequired "GetPropertyImpl" this.Name
-    override this.GetNestedTypes _bindingAttr                                                       = notRequired "GetNestedTypes" this.Name
-    override this.GetNestedType(_name, _bindingAttr)                                                = notRequired "GetNestedType" this.Name
-    override this.GetAttributeFlagsImpl()                                                           = notRequired "GetAttributeFlagsImpl" this.Name
+    override this.GetNestedTypes _bindingAttr =
+        match kind,args with 
+        | ReflectTypeSymbolKind.SDArray,[| arg |] 
+        | ReflectTypeSymbolKind.Array _,[| arg |] 
+        | ReflectTypeSymbolKind.Pointer,[| arg |]         
+        | ReflectTypeSymbolKind.ByRef,[| arg |] -> arg.GetNestedTypes(_bindingAttr)
+        | ReflectTypeSymbolKind.Generic gtd, _ -> gtd.GetNestedTypes(_bindingAttr)
+        | _ -> failwith "unreachable"
+
+    override this.GetNestedType(_name, _bindingAttr) =
+        match kind,args with 
+        | ReflectTypeSymbolKind.SDArray,[| arg |] 
+        | ReflectTypeSymbolKind.Array _,[| arg |] 
+        | ReflectTypeSymbolKind.Pointer,[| arg |]         
+        | ReflectTypeSymbolKind.ByRef,[| arg |] -> arg.GetNestedType(_name, _bindingAttr)
+        | ReflectTypeSymbolKind.Generic gtd, _ -> gtd.GetNestedType(_name, _bindingAttr)
+        | _ -> failwith "unreachable"
+
+    override this.GetAttributeFlagsImpl() =
+        match kind,args with 
+        | ReflectTypeSymbolKind.SDArray,[| arg |] 
+        | ReflectTypeSymbolKind.Array _,[| arg |] 
+        | ReflectTypeSymbolKind.Pointer,[| arg |]         
+        | ReflectTypeSymbolKind.ByRef,[| arg |] -> arg.Attributes
+        | ReflectTypeSymbolKind.Generic gtd, _ -> gtd.Attributes
+        | _ -> failwith "unreachable"
     
     override this.UnderlyingSystemType = (this :> Type)
 
@@ -920,6 +1026,12 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
     member x.MakeMethodInfo (declTy,md) = TxMethodDef declTy md
     member x.MakeConstructorInfo (declTy,md) = TxConstructorDef declTy md
 
+    //interface IReflectableType with 
+    //    member x.GetTypeInfo() = 
+    //        { new TypeInfo() with 
+    //            member __.AsType() = x :?> Type 
+    //        }
+             
 
 and ReflectAssembly(g, ccu: CcuThunk, location:string) as asm =
     inherit Assembly()
@@ -943,6 +1055,20 @@ and ReflectAssembly(g, ccu: CcuThunk, location:string) as asm =
             match x.GetType(enc) with 
             | null -> null
             | t -> t.GetNestedType(nm2,BindingFlags.Public ||| BindingFlags.NonPublic)
+        elif nm.Contains("`") then
+            let argI, argE = nm.LastIndexOf("["), nm.LastIndexOf("]")
+            let i = nm.LastIndexOf(".", nm.LastIndexOf("`"))
+            let nsp,nm2, args = nm.[0..i-1], nm.[i+1..argI-1], nm.[argI+1..argE-1]
+            let genTypeArgs = 
+                args.Split([|","|], StringSplitOptions.RemoveEmptyEntries) 
+                |> Array.map (fun a ->
+                    match x.GetType(a) with
+                    | null -> Type.GetType(a)
+                    | a -> a
+                )
+            match x.TryBindType(Some nsp, nm2) with 
+            | Some t -> t.MakeGenericType(genTypeArgs)
+            | None -> null
         elif nm.Contains(".") then 
             let i = nm.LastIndexOf(".")
             let nsp,nm2 = nm.[0..i-1], nm.[i+1..]

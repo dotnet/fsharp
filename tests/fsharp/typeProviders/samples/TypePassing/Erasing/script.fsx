@@ -75,7 +75,7 @@ module MyGenericRecord =
     check "gcnkewcwpo21" S.Assembly_CustomAttributes_Count 0
 #endif
     check "gcnkewcwpo22" S.IsGenericType (T.IsGenericType)
-    inaccurate "gcnkewcwpo23" S.IsGenericTypeDefinition (T.IsGenericTypeDefinition) true //INACCURACY: this is wrong since we currently have no distinction between constructed and generalized type defs.
+    check "gcnkewcwpo23" S.IsGenericTypeDefinition (T.IsGenericTypeDefinition)
     check "gcnkewcwpo24" S.GetGenericArguments_Length (T.GetGenericArguments().Length)
    // TODO: rest of System.Type properties and methods
    // TODO: reset of FSharp Reflection methods 
