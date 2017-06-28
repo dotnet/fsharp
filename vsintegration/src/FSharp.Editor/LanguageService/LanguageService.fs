@@ -450,7 +450,7 @@ and
 
                 let referencedProjectSites = ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider)
                 
-                for referencedSite in referencedProjects do
+                for referencedSite in referencedProjectSites do
                     let referencedProjectFileName = referencedSite.ProjectFileName()
                     let referencedProjectDisplayName = projectDisplayNameOf referencedProjectFileName
                     let referencedProjectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(referencedProjectFileName, referencedProjectDisplayName)
