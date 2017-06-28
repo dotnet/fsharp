@@ -448,10 +448,17 @@ and
                                                 optionsAssociation.Remove(projectContext) |> ignore
                                                 project.Disconnect()))
                 for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
-                    let referencedProjectId = setup referencedSite                    
+                    let referencedProjectFileName = referencedSite.ProjectFileName()
+                    let referencedProjectDisplayName = projectDisplayNameOf referencedProjectFileName
+                    let referencedProjectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(referencedProjectFileName, referencedProjectDisplayName)
                     project.AddProjectReference(ProjectReference referencedProjectId)
-                workspace.ProjectTracker.AddProject(project)
-            projectId
+
+                if not (workspace.ProjectTracker.ContainsProject(project)) then 
+                    workspace.ProjectTracker.AddProject(project)
+
+                for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
+                    setup referencedSite                    
+
         setup (siteProvider.GetProjectSite()) |> ignore
 
     member this.SetupStandAloneFile(fileName: string, fileContents: string, workspace: VisualStudioWorkspaceImpl, hier: IVsHierarchy) =
