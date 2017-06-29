@@ -4884,10 +4884,14 @@ and TcTypeApp cenv newOk checkCxs occ env tpenv m tcref pathTypeArgs (synArgTys:
 
     // Add the types of the enclosing class for a nested type
     let actualArgTys = pathTypeArgs @ argTys
+
     if checkCxs = CheckCxs then
         List.iter2 (UnifyTypes cenv env m) tinst actualArgTys
+
+    // Try to decode System.Tuple --> F~ tuple types etc.
     let ty = 
-        match cenv.g.decodeTyconRefMap tcref actualArgTys with 
+        let decode = if cenv.g.compilingFslib then None else cenv.g.decodeTyconRefMap tcref actualArgTys
+        match decode with 
         | Some res -> res
         | None -> mkAppTy tcref actualArgTys
 
