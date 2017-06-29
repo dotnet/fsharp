@@ -1112,6 +1112,20 @@ module OverrideIComparableOnUnionTest = begin
   do testc s4 s2 
 end
 
+module TwoCaseUnionTest = 
+
+  [<Struct>]
+  type MyUnion = A | B
+
+  do test "union-TwoCaseUnionTest-def" (A <> B)
+  do test "union-TwoCaseUnionTest-def" (A = A)
+  do test "union-TwoCaseUnionTest-def" (B = B)
+  do test "union-TwoCaseUnionTest-def" (B > A)
+  do test "union-TwoCaseUnionTest-def" (A < B)
+  do test "union-TwoCaseUnionTest-def" (A <= B)
+  do test "union-TwoCaseUnionTest-def" (B >= A)
+
+
 module ToStringOnUnionTest = begin
 
   type MyUnion = A of string | B
