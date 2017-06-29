@@ -1762,7 +1762,7 @@ let CombineSyntacticAndInferredArities g declKind rhsExpr prelimScheme =
             else
             
                 let (ValReprInfo (_,curriedArgInfosFromExpression,_)) = 
-                    InferArityOfExpr g (GeneralizedTypeForTypeScheme typeScheme) argAttribs retAttribs rhsExpr
+                    InferArityOfExpr g AllowTypeDirectedDetupling.Yes (GeneralizedTypeForTypeScheme typeScheme) argAttribs retAttribs rhsExpr
 
                 // Choose between the syntactic arity and the expression-inferred arity
                 // If the syntax specifies an eliminated unit arg, then use that
@@ -3811,12 +3811,12 @@ let EliminateInitializationGraphs
                 let fty = (g.unit_ty --> ty)
                 let flazy,felazy = Tastops.mkCompGenLocal m  v.LogicalName fty 
                 let frhs = mkUnitDelayLambda g m e
-                if mustHaveArity then flazy.SetValReprInfo (Some(InferArityOfExpr g fty [] [] frhs))
+                if mustHaveArity then flazy.SetValReprInfo (Some(InferArityOfExpr g AllowTypeDirectedDetupling.Yes fty [] [] frhs))
 
                 let vlazy,velazy = Tastops.mkCompGenLocal m  v.LogicalName vty 
                 let vrhs = (mkLazyDelayed g m ty felazy)
                        
-                if mustHaveArity then vlazy.SetValReprInfo (Some(InferArityOfExpr g vty [] [] vrhs))
+                if mustHaveArity then vlazy.SetValReprInfo (Some(InferArityOfExpr g AllowTypeDirectedDetupling.Yes vty [] [] vrhs))
                 fixupPoints |> List.iter (fun (fp,_) -> fp := mkLazyForce g (!fp).Range ty velazy)
 
                 [mkInvisibleBind flazy frhs; mkInvisibleBind vlazy vrhs],
@@ -10703,7 +10703,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (binds,bindsm,scope
                     // type checker that anything related to binding module-level values is marked with an 
                     // val_repr_info, val_actual_parent and is_topbind
                     if (DeclKind.MustHaveArity declKind) then 
-                        AdjustValToTopVal tmp altActualParent (InferArityOfExprBinding cenv.g tmp rhsExpr)
+                        AdjustValToTopVal tmp altActualParent (InferArityOfExprBinding cenv.g AllowTypeDirectedDetupling.Yes tmp rhsExpr)
                     tmp,pat'
 
         let mkRhsBind (bodyExpr,bodyExprTy) = 
@@ -12244,7 +12244,7 @@ module IncrClassChecking =
             if isUnitTy cenv.g v.Type then 
                 false
             else 
-                let arity = InferArityOfExprBinding cenv.g v bind.Expr 
+                let arity = InferArityOfExprBinding cenv.g AllowTypeDirectedDetupling.Yes v bind.Expr 
                 not arity.HasNoArgs && not v.IsMutable
 
 
@@ -12282,7 +12282,7 @@ module IncrClassChecking =
                     warning (Error(FSComp.SR.chkUnusedValue(v.DisplayName), v.Range))
 
             let repr = 
-                match InferArityOfExprBinding g v bind.Expr with 
+                match InferArityOfExprBinding g AllowTypeDirectedDetupling.Yes v bind.Expr with 
                 | arity when arity.HasNoArgs || v.IsMutable -> 
                     // all mutable variables are forced into fields, since they may escape into closures within the implicit constructor
                     // e.g. 
