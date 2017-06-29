@@ -563,6 +563,10 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             If moniker = "" Or moniker = Nothing Then
                 Return False
             End If
+            ' .NET Core and .NETStandard don't need redists to be installed.
+            If moniker.StartsWith(".NETCoreApp") OrElse moniker.StartsWith(".NETStandard") Then
+                Return True
+            End If
             If moniker.Contains("v2") Then
                 Return Me.m_v20FSharpRedistInstalled
             End If
@@ -656,7 +660,8 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
                     Dim isPortable As Boolean = IsDotNetPortable(currentFrameworkName)
                     targetFrameworkSupported = True
 
-                    Dim supportedFrameworks As IEnumerable(Of TargetFrameworkMoniker) = TargetFrameworkMoniker.GetSupportedTargetFrameworkMonikers(vsFrameworkMultiTargeting, DTEProject)
+                    Dim supportedTargetFrameworksDescriptor As PropertyDescriptor = GetPropertyDescriptor("SupportedTargetFrameworks")
+                    Dim supportedFrameworks As IEnumerable(Of TargetFrameworkMoniker) = TargetFrameworkMoniker.GetSupportedTargetFrameworkMonikers(vsFrameworkMultiTargeting, DTEProject, supportedTargetFrameworksDescriptor)
 
                     For Each supportedFramework As TargetFrameworkMoniker In supportedFrameworks
                         If Me.ValidateTargetFrameworkMoniker(supportedFramework.Moniker) Then
