@@ -15,7 +15,22 @@
   </PropertyGroup>
 
   <Import Project = "$(MSBuildThisFileDirectory)../../FSharpSource.BuildFromSource.targets" />
-  <Import Project="Fsi.Sources.proj" />
+  <ItemGroup>
+    <Compile Include="..\..\assemblyinfo\assemblyinfo.fsi.exe.fs">
+      <Link>assemblyinfo.fsi.exe.fs</Link>
+    </Compile>
+
+    <Compile Include="console.fs">
+      <Link>console.fs</Link>
+    </Compile>
+    <Compile Include="fsimain.fs">
+      <Link>fsimain.fs</Link>
+    </Compile>
+    <None Include="fsi.exe.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>fsi.exe.config</Link>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.BuildFromSource.fsproj" />

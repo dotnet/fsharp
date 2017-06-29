@@ -35,7 +35,22 @@
       <InProject>false</InProject>
     </FilesToLocalize>
   </ItemGroup>
-  <Import Project="Fsi.Sources.proj" />
+  <ItemGroup>
+    <Compile Include="..\..\assemblyinfo\assemblyinfo.fsi.exe.fs">
+      <Link>assemblyinfo.fsi.exe.fs</Link>
+    </Compile>
+
+    <Compile Include="console.fs">
+      <Link>console.fs</Link>
+    </Compile>
+    <Compile Include="fsimain.fs">
+      <Link>fsimain.fs</Link>
+    </Compile>
+    <None Include="fsi.exe.config">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>fsi.exe.config</Link>
+    </None>
+  </ItemGroup>
   <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">
       <None Include="project.json" />
   </ItemGroup>
