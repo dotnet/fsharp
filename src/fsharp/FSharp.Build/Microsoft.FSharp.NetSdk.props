@@ -36,21 +36,21 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
 
   <PropertyGroup>
     <DefaultProjectTypeGuid Condition=" '$(DefaultProjectTypeGuid)' == '' ">{F2A71F9B-5D33-465A-A702-920D77279786}</DefaultProjectTypeGuid>         <!-- F# project type -->
-    <Prefer32Bit>false</Prefer32Bit>
-    <Tailcalls>true</Tailcalls>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <Prefer32Bit Condition="'$(Prefer32Bit)' == '' ">false</Prefer32Bit>
+    <Tailcalls Condition="'$(Tailcalls)' == '' ">true</Tailcalls>
+    <TreatWarningsAsErrors Condition="'$(TreatWarningsAsErrors)' == '' ">false</TreatWarningsAsErrors>
     <WarningLevel Condition=" '$(WarningLevel)' == '' ">3</WarningLevel>
-    <WarningsAsErrors />
+    <WarningsAsErrors Condition="'$(TreatWarningsAsErrors)' == '' " />
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-    <DebugSymbols>true</DebugSymbols>
-    <Optimize>false</Optimize>
+    <DebugSymbols Condition="'$(DebugSymbols)' == '' ">true</DebugSymbols>
+    <Optimize Condition="'$(Optimize)' == '' ">false</Optimize>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-    <DebugSymbols>false</DebugSymbols>
-    <Optimize>true</Optimize>
+    <DebugSymbols Condition="'$(DebugSymbols)' == '' ">false</DebugSymbols>
+    <Optimize Condition="'$(Optimize)' == '' ">true</Optimize>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(OS)' != 'Unix' and Exists('$(MSBuildThisFileDirectory)\RunFsc.cmd')" >
