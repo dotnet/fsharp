@@ -40,7 +40,7 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <Tailcalls Condition="'$(Tailcalls)' == '' ">true</Tailcalls>
     <TreatWarningsAsErrors Condition="'$(TreatWarningsAsErrors)' == '' ">false</TreatWarningsAsErrors>
     <WarningLevel Condition=" '$(WarningLevel)' == '' ">3</WarningLevel>
-    <WarningsAsErrors Condition="'$(TreatWarningsAsErrors)' == '' " />
+    <WarningsAsErrors Condition="'$(WarningsAsErrors)' == '' " />
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
