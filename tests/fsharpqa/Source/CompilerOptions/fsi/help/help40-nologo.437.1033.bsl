@@ -51,6 +51,7 @@ Usage: fsi.exe <options> [script.fsx [<arguments>]]
 		- ADVANCED -
 --codepage:<n>                           Specify the codepage used to read source files
 --utf8output                             Output messages in UTF-8 encoding
+--preferreduilang:<string>               Specify a strong name key container
 --fullpaths                              Output messages with fully qualified paths
 --lib:<dir;...>                          Specify a directory for the include path which
                                          is used to resolve source files and assemblies
