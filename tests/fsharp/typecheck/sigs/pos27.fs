@@ -22,4 +22,4 @@ module ValueTuple =
 
 module FSharpFunc = 
     let x1: FSharpFunc<int,int> = (fun x -> x + 1)
-    let x1: FSharpFunc<int,FSharpFunc<int,int>> = (fun x y -> x + 1 + y)
+    let x2: FSharpFunc<int,FSharpFunc<int,int>> = (fun x y -> x + 1 + y)
