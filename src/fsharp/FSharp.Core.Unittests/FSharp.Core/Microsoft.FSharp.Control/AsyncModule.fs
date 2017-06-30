@@ -39,7 +39,7 @@ module ChoiceUtils =
             | SomeResultAfter t -> t
             | ExceptionAfter t -> t
 
-    /// represent a choice worfklow
+    /// represent a choice workflow
     type ChoiceWorkflow = ChoiceWorkflow of children:ChoiceOp list * cancelAfter:int option
 
     /// normalizes random timeout arguments
@@ -138,7 +138,7 @@ module ChoiceUtils =
 module LeakUtils =
     // when testing for liveness, the things that we want to observe must always be created in
     // a nested function call to avoid the GC (possibly) treating them as roots past the last use in the block.
-    // We also need something non trivial to disuade the compiler from inlining in Release builds.
+    // We also need something non trivial to dissuade the compiler from inlining in Release builds.
     type ToRun<'a>(f : unit -> 'a) =
         member this.Invoke() = f()
    

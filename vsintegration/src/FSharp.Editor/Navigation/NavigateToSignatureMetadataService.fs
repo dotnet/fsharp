@@ -20,6 +20,8 @@ open Microsoft.VisualStudio.ComponentModelHost
 open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem 
+open Microsoft.VisualStudio.FSharp.Editor.Pervasive
+open Microsoft.VisualStudio.FSharp.Editor.TypedAstUtils
 
 [<Export>][<Shared>]
 type internal NavigateToSignatureMetadataService [<ImportingConstructor>] 
@@ -122,7 +124,7 @@ type internal NavigateToSignatureMetadataService [<ImportingConstructor>]
 
         { projectOptions with
             ProjectFileName = projectFileName
-            ProjectFileNames = sourceFiles
+            SourceFiles = sourceFiles
             OtherOptions = Array.append flags references
             IsIncompleteTypeCheckEnvironment = false
             UseScriptResolutionRules = false
@@ -136,7 +138,7 @@ type internal NavigateToSignatureMetadataService [<ImportingConstructor>]
 
     let tryFindExactLocation (filePath:string) (source:string) (currentSymbol:FSharpSymbolUse) (options:FSharpProjectOptions) = maybe {
         let checker = checkerProvider.Checker
-        let symbolUses = checker.GetAllUsesOfAllSymbolsInSourceString (options, filePath, source, false)  |> Async.RunSynchronously
+        let symbolUses = checker.GetAllUsesOfAllSymbolsInSourceString (options, filePath, source, false, "SignatureMetadataService")  |> Async.RunSynchronously
 
         /// Try to reconstruct fully qualified name for the purpose of matching symbols
         let tryGetFullyQualifiedName (fsSymbol:FSharpSymbol) =
@@ -250,7 +252,7 @@ type internal NavigateToSignatureMetadataService [<ImportingConstructor>]
                 ProjectFileName = sigProject.FilePath
                 ExtraProjectInfo = Some (box workspace)
             }
-        projectInfoManager.AddSingleFileProject (sigDocument.Project.Id, (projectOptions.LoadTime, projectOptions))
+        projectInfoManager.AddOrUpdateSingleFileProject (sigDocument.Project.Id, (projectOptions.LoadTime, projectOptions))
         sigDocument
 
 
@@ -285,7 +287,7 @@ type internal NavigateToSignatureMetadataService [<ImportingConstructor>]
                     OpenDeclarationGetter.getEffectiveOpenDeclarationsAtLocation  fsSymbolUse.RangeAlternate.Start ast
 
                 let options = sourceDoc.GetOptionsAsync () |> Async.RunTaskSynchronously
-                let indentSize = options.GetOption (FormattingOptions.TabSize, FSharpCommonConstants.FSharpLanguageName)
+                let indentSize = options.GetOption (FormattingOptions.TabSize, FSharpConstants.FSharpLanguageName)
 
                 match SignatureGenerator.formatSymbol 
                         (getXmlDocBySignature fsSymbolUse) indentSize displayContext openDeclarations fsSymbol 

@@ -129,7 +129,7 @@ type ListType() =
         Assert.IsFalse( b.Equals(a) )
         Assert.IsFalse( a.Equals(b) )
         
-        // Co/contra varience not supported
+        // Co/contra variance not supported
         let a = [] : string list
         let b = [] : obj list
         Assert.IsFalse(a.Equals(b))

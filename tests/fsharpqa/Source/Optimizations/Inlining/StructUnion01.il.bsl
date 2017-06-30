@@ -25,20 +25,20 @@
 }
 .mresource public FSharpSignatureData.StructUnion01
 {
-  // Offset: 0x00000000 Length: 0x0000088A
+  // Offset: 0x00000000 Length: 0x00000884
 }
 .mresource public FSharpOptimizationData.StructUnion01
 {
-  // Offset: 0x00000890 Length: 0x00000421
+  // Offset: 0x00000888 Length: 0x00000421
 }
 .module StructUnion01.dll
-// MVID: {576332E3-D3E9-6B24-A745-0383E3326357}
+// MVID: {58EED771-D3E9-6B24-A745-038371D7EE58}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x007C0000
+// Image base: 0x030C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -47,7 +47,7 @@
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto autochar serializable sealed nested public beforefieldinit U
+  .class sequential autochar serializable sealed nested public beforefieldinit U
          extends [mscorlib]System.ValueType
          implements class [mscorlib]System.IEquatable`1<valuetype StructUnion01/U>,
                     [mscorlib]System.Collections.IStructuralEquatable,
@@ -153,10 +153,10 @@
     } // end of method U::__DebugDisplay
 
     .method public strict virtual instance string 
-              ToString() cil managed
+            ToString() cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       22 (0x16)
+      // Code size       27 (0x1b)
       .maxstack  8
       IL_0000:  ldstr      "%+A"
       IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<valuetype StructUnion01/U,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,valuetype StructUnion01/U>::.ctor(string)

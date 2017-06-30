@@ -30,13 +30,8 @@ open Microsoft.FSharp.Compiler.ExtensionTyping
 
 #if DEBUG
 
-#if COMPILED_AS_LANGUAGE_SERVICE_DLL
 module internal CompilerService =
-#else
-module internal FullCompiler =
-#endif
     val showAssertForUnexpectedException : bool ref
-
 #endif
 
 //----------------------------------------------------------------------------
@@ -69,6 +64,12 @@ val ComputeQualifiedNameOfFileFromUniquePath : range * string list -> Ast.Qualif
 
 val PrependPathToInput : Ast.Ident list -> Ast.ParsedInput -> Ast.ParsedInput
 
+/// Checks if a module name is already given and deduplicates the name if needed.
+val DeduplicateModuleName : Dictionary<string,Set<string>> -> Set<string> -> string -> Ast.QualifiedNameOfFile -> Ast.QualifiedNameOfFile
+
+/// Checks if a ParsedInput is using a module name that was already given and deduplicates the name if needed.
+val DeduplicateParsedInputModuleName : Dictionary<string,Set<string>> -> Ast.ParsedInput -> Ast.ParsedInput
+
 val ParseInput : (UnicodeLexing.Lexbuf -> Parser.token) * ErrorLogger * UnicodeLexing.Lexbuf * string option * string * isLastCompiland:(bool * bool) -> Ast.ParsedInput
 
 //----------------------------------------------------------------------------
@@ -85,7 +86,7 @@ val GetDiagnosticNumber : PhasedDiagnostic -> int
 val SplitRelatedDiagnostics : PhasedDiagnostic -> PhasedDiagnostic * PhasedDiagnostic list
 
 /// Output an error to a buffer
-val OutputPhasedDiagnostic : ErrorStyle -> StringBuilder -> PhasedDiagnostic -> isError: bool -> unit
+val OutputPhasedDiagnostic : StringBuilder -> PhasedDiagnostic -> flattenErrors: bool -> unit
 
 /// Output an error or warning to a buffer
 val OutputDiagnostic : implicitIncludeDir:string * showFullPaths: bool * flattenErrors: bool * errorStyle: ErrorStyle *  isError:bool -> StringBuilder -> PhasedDiagnostic -> unit
@@ -197,7 +198,7 @@ type AssemblyResolution =
        originalReference : AssemblyReference
        /// Path to the resolvedFile
        resolvedPath : string    
-       /// Create the tooltip texxt for the assembly reference
+       /// Create the tooltip text for the assembly reference
        prepareToolTip : unit -> string
        /// Whether or not this is an installed system assembly (for example, System.dll)
        sysdir : bool
@@ -322,7 +323,7 @@ type TcConfigBuilder =
       mutable win32manifest : string
       mutable includewin32manifest : bool
       mutable linkResources : string list
-      mutable referenceResolver: ReferenceResolver.Resolver 
+      mutable legacyReferenceResolver: ReferenceResolver.Resolver 
       mutable showFullPaths : bool
       mutable errorStyle : ErrorStyle
       mutable utf8output : bool
@@ -341,6 +342,7 @@ type TcConfigBuilder =
       mutable optsOn        : bool 
       mutable optSettings   : Optimizer.OptimizationSettings 
       mutable emitTailcalls : bool
+      mutable deterministic : bool
 #if PREFERRED_UI_LANG
       mutable preferredUiLang: string option
 #endif
@@ -370,12 +372,13 @@ type TcConfigBuilder =
     }
 
     static member CreateNew : 
-        referenceResolver: ReferenceResolver.Resolver *
+        legacyReferenceResolver: ReferenceResolver.Resolver *
         defaultFSharpBinariesDir: string * 
         optimizeForMemory: bool * 
         implicitIncludeDir: string * 
         isInteractive: bool * 
-        isInvalidationSupported: bool -> TcConfigBuilder
+        isInvalidationSupported: bool *
+        defaultCopyFSharpCore: bool -> TcConfigBuilder
 
     member DecideNames : string list -> outfile: string * pdbfile: string option * assemblyName: string 
     member TurnWarningOff : range * string -> unit
@@ -492,6 +495,7 @@ type TcConfig =
     member doFinalSimplify : bool
     member optSettings   : Optimizer.OptimizationSettings 
     member emitTailcalls : bool
+    member deterministic : bool
 #if PREFERRED_UI_LANG
     member preferredUiLang: string option
 #else
@@ -533,9 +537,7 @@ type TcConfig =
     member sqmNumOfSourceFiles : int
     member sqmSessionStartedTime : int64
     member copyFSharpCore : bool
-#if FSI_SHADOW_COPY_REFERENCES
     member shadowCopyReferences : bool
-#endif
     static member Create : TcConfigBuilder * validate: bool -> TcConfig
 
 /// Represents a computation to return a TcConfig. Normally this is just a constant immutable TcConfig,
@@ -592,7 +594,7 @@ type TcAssemblyResolutions =
     
 
 
-/// Repreesnts a table of imported assemblies with their resolutions.
+/// Represents a table of imported assemblies with their resolutions.
 [<Sealed>] 
 type TcImports =
     interface System.IDisposable
@@ -615,8 +617,14 @@ type TcImports =
 
     /// Resolve a referenced assembly and report an error if the resolution fails.
     member ResolveAssemblyReference : CompilationThreadToken * AssemblyReference * ResolveAssemblyReferenceMode -> AssemblyResolution list
+
+    /// Try to find the given assembly reference by simple name.  Used in magic assembly resolution.  Effectively does implicit
+    /// unification of assemblies by simple assembly name.
+    member TryFindExistingFullyQualifiedPathBySimpleAssemblyName : CompilationThreadToken * string -> string option
+
     /// Try to find the given assembly reference.
-    member TryFindExistingFullyQualifiedPathFromAssemblyRef : CompilationThreadToken * ILAssemblyRef -> string option
+    member TryFindExistingFullyQualifiedPathByExactAssemblyRef : CompilationThreadToken * ILAssemblyRef -> string option
+
 #if EXTENSIONTYPING
     /// Try to find a provider-generated assembly
     member TryFindProviderGeneratedAssemblyByName : CompilationThreadToken * assemblyName:string -> System.Reflection.Assembly option
@@ -633,13 +641,13 @@ type TcImports =
 // Special resources in DLLs
 //--------------------------------------------------------------------------
 
-/// Determine if an IL resource attached to an F# assemnly is an F# signature data resource
+/// Determine if an IL resource attached to an F# assembly is an F# signature data resource
 val IsSignatureDataResource : ILResource -> bool
 
-/// Determine if an IL resource attached to an F# assemnly is an F# optimization data resource
+/// Determine if an IL resource attached to an F# assembly is an F# optimization data resource
 val IsOptimizationDataResource : ILResource -> bool
 
-/// Determine if an IL resource attached to an F# assemnly is an F# quotation data resource for reflected definitions
+/// Determine if an IL resource attached to an F# assembly is an F# quotation data resource for reflected definitions
 val IsReflectedDefinitionsResource : ILResource -> bool
 val GetSignatureDataResourceName : ILResource -> string
 
@@ -709,12 +717,14 @@ type TcState =
     /// Get the typing environment implied by the set of signature files and/or inferred signatures of implementation files checked so far
     member TcEnvFromSignatures : TcEnv
 
-    /// Get the typing environment implied by the set of implemetation files checked so far
+    /// Get the typing environment implied by the set of implementation files checked so far
     member TcEnvFromImpls : TcEnv
     /// The inferred contents of the assembly, containing the signatures of all implemented files.
     member PartialAssemblySignature : ModuleOrNamespaceType
 
     member NextStateAfterIncrementalFragment : TcEnv -> TcState
+
+    member CreatesGeneratedProvidedTypes : bool
 
 /// Get the initial type checking state for a set of inputs
 val GetInitialTcState : 
@@ -793,7 +803,7 @@ type LoadClosure =
       LoadClosureRootFileDiagnostics : (PhasedDiagnostic * bool) list }   
 
     // Used from service.fs, when editing a script file
-    static member ComputeClosureOfSourceText : CompilationThreadToken * referenceResolver: ReferenceResolver.Resolver * filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) * assumeDotNetFramework : bool -> LoadClosure
+    static member ComputeClosureOfSourceText : CompilationThreadToken * legacyReferenceResolver: ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) * assumeDotNetFramework : bool -> LoadClosure
 
     /// Used from fsi.fs and fsc.fs, for #load and command line. The resulting references are then added to a TcConfig.
     static member ComputeClosureOfSourceFiles : CompilationThreadToken * tcConfig:TcConfig * (string * range) list * implicitDefines:CodeContext * lexResourceManager : Lexhelp.LexResourceManager -> LoadClosure

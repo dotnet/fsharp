@@ -17,7 +17,6 @@ type CreateFSharpManifestResourceName public () =
                     (dependentUponFileName:string), (* may be null *) 
                     (binaryStream:System.IO.Stream) (* may be null *)) : string = 
 
-#if CROSS_PLATFORM_COMPILER
         // The Visual CSharp and XBuild CSharp toolchains transform resource names like this:
         //     SubDir\abc.resx --> SubDir.abc.resources
         //     SubDir\abc.txt --> SubDir.abc.txt
@@ -27,7 +26,7 @@ type CreateFSharpManifestResourceName public () =
         //
         // However for non-resx resources, for some reason Visual FSharp does _not_ add the directory name to the resource name.
         // It is very unclear where the directory name gets dropped in the Visual FSharp implementation 
-        // - is it in Microsoft.Common.targets, Microfost.FSharp.targets or how the base type CreateCSharpManifestResourceName 
+        // - is it in Microsoft.Common.targets, Microsoft.FSharp.Targets or how the base type CreateCSharpManifestResourceName 
         // is created and used - who knows, the code is not easy to understand despite it doing something very simple. That's
         // the nature of MSBuild/XBuild....
         //
@@ -42,7 +41,6 @@ type CreateFSharpManifestResourceName public () =
                 false  
         let fileName = if not runningOnMono || fileName.EndsWith(".resources", StringComparison.OrdinalIgnoreCase) then fileName else Path.GetFileName(fileName)
         let linkFileName = if not runningOnMono || linkFileName.EndsWith(".resources", StringComparison.OrdinalIgnoreCase) then linkFileName else Path.GetFileName(linkFileName)
-#endif
 
         let embeddedFileName = 
             match linkFileName with

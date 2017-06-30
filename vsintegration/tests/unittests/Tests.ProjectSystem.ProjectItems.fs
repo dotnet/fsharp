@@ -76,26 +76,6 @@ type ProjectItems() =
             ))
     
     [<Test>]
-    member public this.``AddNewItem.ItemAppearsAtBottomOfFsprojFileEvenIfUnknownItemWithSameName``() =
-        this.MakeProjectAndDo([], [], @"
-                <ItemGroup>
-                    <Unknown Include=""a.fs"" />
-                    <Compile Include=""orig.fs"" />
-                </ItemGroup>
-            ", (fun project ->
-            let absFilePath = Path.Combine(project.ProjectFolder, "a.fs")
-            try
-                File.AppendAllText(absFilePath, "#light")
-                // Note: this is not the same code path as the UI, but it is close
-                project.MoveNewlyAddedFileToBottomOfGroup (fun () ->
-                    project.AddNewFileNodeToHierarchy(project,absFilePath) |> ignore)
-                let msbuildInfo = TheTests.MsBuildCompileItems(project.BuildProject)
-                AssertEqual ["orig.fs"; "a.fs"] msbuildInfo
-            finally
-                File.Delete(absFilePath)
-            ))
-    
-    [<Test>]
     member public this.``AddNewItemBelow.ItemAppearsInRightSpot``() =
         this.MakeProjectAndDo(["orig1.fs"; "orig2.fs"], [], "", (fun project ->
             let absFilePath = Path.Combine(project.ProjectFolder, "new.fs")

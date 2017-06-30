@@ -297,6 +297,7 @@ module internal Salsa =
                 let projectObj, projectObjFlags = MSBuild.CrackProject(projectfile, configurationFunc(), platformFunc())
                 projectObj.GetProperty(ProjectFileConstants.ProjectGuid).EvaluatedValue
           member this.ProjectProvider = None
+          member this.AssemblyReferences() = [||]
 
     // Attempt to treat as MSBuild project.
     let internal NewMSBuildProjectSite(configurationFunc, platformFunc, msBuildProjectName) = 
@@ -457,7 +458,7 @@ module internal Salsa =
     
 
     // Result of querying the completion list
-    and CompletionItem = string * string * (unit -> string) * DeclarationType
+    and CompletionItem = CompletionItem of name: string * displayText: string * nameInCode: string * (unit -> string) * DeclarationType
 
     /// Representes the information that is displayed in the navigation bar
     and NavigationBarResult = 
@@ -694,7 +695,7 @@ module internal Salsa =
             Append otherProjMisc
 
             let t = targetsFileFolder.TrimEnd([|'\\'|])
-            Append (sprintf "    <Import Project=\"%s\\Microsoft.FSharp.targets\"/>" t)
+            Append (sprintf "    <Import Project=\"%s\\Microsoft.FSharp.Targets\"/>" t)
             Append "</Project>"
             sb.ToString()
 
@@ -1327,7 +1328,7 @@ module internal Salsa =
                     let result = Array.zeroCreate count
                     for i in 0..count-1 do 
                         let glyph = enum<DeclarationType> (declarations.GetGlyph(filterText,i))
-                        result.[i] <- (declarations.GetDisplayText(filterText,i), declarations.GetName(filterText,i), (fun () -> declarations.GetDescription(filterText,i)), glyph)
+                        result.[i] <- CompletionItem (declarations.GetDisplayText(filterText,i), declarations.GetName(filterText,i), declarations.GetNameInCode(filterText,i), (fun () -> declarations.GetDescription(filterText,i)), glyph)
                     result
 
             member file.AutoCompleteAtCursor(?filterText) = file.AutoCompleteAtCursorImpl(BackgroundRequestReason.MemberSelect, ?filterText=filterText)
@@ -1549,16 +1550,16 @@ module internal Salsa =
             member ops.CleanUp vs = VsImpl(vs).CleanUp()
             member ops.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients vs = VsImpl(vs).ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             member ops.AutoCompleteMemberDataTipsThrowsScope message = 
-                ItemDescriptionsImpl.ToolTipFault <- Some message
-                { new System.IDisposable with member x.Dispose() = ItemDescriptionsImpl.ToolTipFault <- None }
+                SymbolHelpers.ToolTipFault <- Some message
+                { new System.IDisposable with member x.Dispose() = SymbolHelpers.ToolTipFault <- None }
             member ops.OutOfConeFilesAreAddedAsLinks = false                
             member ops.SupportsOutputWindowPane = false
             member ops.CleanInvisibleProject vs = VsImpl(vs).CleanInvisibleProject()
 
     let BuiltMSBuildBehaviourHooks() = Privates.MSBuildBehaviorHooks(false) :> ProjectBehaviorHooks
             
-    /// Salsa tests which create .fsproj files using the freshly built version of Microsoft.FSharp.targets and FSharp.Build
+    /// Salsa tests which create .fsproj files using the freshly built version of Microsoft.FSharp.Targets and FSharp.Build
     let BuiltMSBuildTestFlavour() = MSBuildTestFlavor(false) :> VsOps
 
-    /// Salsa tests which create .fsproj files using the installed version of Microsoft.FSharp.targets.
+    /// Salsa tests which create .fsproj files using the installed version of Microsoft.FSharp.Targets.
     let InstalledMSBuildTestFlavour() = MSBuildTestFlavor(true) :> VsOps

@@ -328,7 +328,7 @@ type UsingMSBuild() as this =
 
         MoveCursorToEndOfMarker(fsx, "InDifferentFS.")
         let completion = AutoCompleteAtCursor fsx
-        let completion = completion |> Array.map (fun (name, _, _, _) -> name) |> set
+        let completion = completion |> Array.map (fun (CompletionItem(name, _, _, _, _)) -> name) |> set
         Assert.AreEqual(Set.count completion, 2, "Expected 2 elements in the completion list")
         Assert.IsTrue(completion.Contains "x", "Completion list should contain x because INTERACTIVE is defined")
         Assert.IsTrue(completion.Contains "B", "Completion list should contain B because DEBUG is not defined")
@@ -1199,8 +1199,8 @@ type UsingMSBuild() as this =
         AssertArrayContainsPartialMatchOf(fas.OtherOptions, "System.Runtime.Remoting.dll")
         AssertArrayContainsPartialMatchOf(fas.OtherOptions, "System.Transactions.dll")
         AssertArrayContainsPartialMatchOf(fas.OtherOptions, "FSharp.Compiler.Interactive.Settings.dll")
-        Assert.AreEqual(Path.Combine(projectFolder,"File1.fsx"), fas.ProjectFileNames.[0])
-        Assert.AreEqual(1, fas.ProjectFileNames.Length)
+        Assert.AreEqual(Path.Combine(projectFolder,"File1.fsx"), fas.SourceFiles.[0])
+        Assert.AreEqual(1, fas.SourceFiles.Length)
 
 
     /// FEATURE: #reference against a strong name should work.
@@ -1357,9 +1357,9 @@ type UsingMSBuild() as this =
                         <SpecificVersion>True</SpecificVersion>
                         <HintPath>%s\\FSharp.Compiler.Interactive.Settings.dll</HintPath>
                     </Reference>
-                    <Reference Include=""FSharp.Compiler, Version=%s, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
+                    <Reference Include=""FSharp.Compiler.Private, Version=%s, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"">
                         <SpecificVersion>True</SpecificVersion>
-                        <HintPath>%s\\FSharp.Compiler.dll</HintPath>
+                        <HintPath>%s\\FSharp.Compiler.Private.dll</HintPath>
                     </Reference>
                 </ItemGroup>" fsVersion binariesFolder fsVersion binariesFolder)
 
@@ -1498,7 +1498,7 @@ type UsingMSBuild() as this =
                                        "Script.fsx"])           
             for line in lines do 
                 printfn "%s" line
-                AssertNotContains(line,"error MSB") // Microsoft.FSharp.targets(135,9): error MSB6006: "fsc.exe" exited with code -532462766.
+                AssertNotContains(line,"error MSB") // Microsoft.FSharp.Targets(135,9): error MSB6006: "fsc.exe" exited with code -532462766.
 
         Assert.IsTrue(not(build.BuildSucceeded), "Expected build to fail")                                  
         
@@ -1556,21 +1556,6 @@ type UsingMSBuild() as this =
               "#load \"" // Unclosed
               "#load \"Hello There\""]
             ) 
-        
-    //regression test for bug 2530
-    [<Test>]
-    [<Category("fsx moved from tao test")>]
-    member public this.``Fsx.IntellisenseForFSI``() =
-        let code = 
-                                      ["module Script"
-                                       "fsi(*MarkerFSI*)" 
-                                       ]
-        let (_, script1) = createSingleFileFsxFromLines code
-        TakeCoffeeBreak(this.VS)
-        let marker = "(*MarkerFSI*)"
-        let list = ["FormatProvider";"CommandLineArgs"]
-        let completions = DotCompletionAtStartOfMarker script1 marker
-        AssertCompListContainsAll(completions, list)
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -1583,7 +1568,7 @@ type UsingMSBuild() as this =
                                      ]
         let refs = 
             [
-                PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")
+                PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")
             ]
         let (_, project, file) = this.CreateSingleFileProject(code, references = refs)
         TakeCoffeeBreak(this.VS)
@@ -1591,7 +1576,7 @@ type UsingMSBuild() as this =
 
     member public this.TypeProviderDisposalSmokeTest(clearing) =
         use _guard = this.UsingNewVS()
-        let providerAssemblyName = PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")
+        let providerAssemblyName = PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")
         let providerAssembly = System.Reflection.Assembly.LoadFrom providerAssemblyName
         Assert.IsNotNull(providerAssembly, "provider assembly should not be null")
         let providerCounters = providerAssembly.GetType("DummyProviderForLanguageServiceTesting.GlobalCounters")
@@ -1631,7 +1616,7 @@ type UsingMSBuild() as this =
         for i in 1 .. 50 do 
             let solution = this.CreateSolution()
             let project = CreateProject(solution,"testproject" + string (i % 20))    
-            this.AddAssemblyReference(project, PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll"))
+            this.AddAssemblyReference(project, PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll"))
             let fileName = sprintf "File%d.fs" i
             let file1 = AddFileFromText(project,fileName, ["let x" + string i + " = N1.T1()" ])    
             let file = OpenFile(project,fileName)

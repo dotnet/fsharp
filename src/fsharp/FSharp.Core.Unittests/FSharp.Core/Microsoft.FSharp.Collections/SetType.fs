@@ -146,7 +146,7 @@ type SetType() =
         Assert.IsFalse( b.Equals(a) )
         Assert.IsFalse( a.Equals(b) )
         
-        // Co/contra varience not supported
+        // Co/contra variance not supported
         let a = Set.empty<string>
         let b = Set.empty
         Assert.IsFalse(a.Equals(b))

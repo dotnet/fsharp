@@ -21,8 +21,10 @@ type internal FSharpHighlightSpan =
     override this.ToString() = sprintf "%+A" this
 
 [<Shared>]
-[<ExportLanguageService(typeof<IDocumentHighlightsService>, FSharpCommonConstants.FSharpLanguageName)>]
+[<ExportLanguageService(typeof<IDocumentHighlightsService>, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerProvider: FSharpCheckerProvider, projectInfoManager: ProjectInfoManager) =
+
+    static let userOpName = "DocumentHighlights"
 
     /// Fix invalid spans if they appear to have redundant suffix and prefix.
     static let fixInvalidSymbolSpans (sourceText: SourceText) (lastIdent: string) (spans: FSharpHighlightSpan []) =
@@ -56,14 +58,17 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! symbol = CommonHelpers.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Greedy)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true)
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland)
+            let! symbol = Tokenizer.getSymbolAtPosition(documentKey, sourceText, position, filePath, defines, SymbolLookupKind.Greedy, false)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true, userOpName = userOpName)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, userOpName=userOpName)
             let! symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol) |> liftAsync
             return 
                 [| for symbolUse in symbolUses do
-                     yield { IsDefinition = symbolUse.IsFromDefinition
-                             TextSpan = CommonRoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate) } |]
+                     match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate) with 
+                     | None -> ()
+                     | Some span -> 
+                         yield { IsDefinition = symbolUse.IsFromDefinition
+                                 TextSpan = span } |]
                 |> fixInvalidSymbolSpans sourceText symbol.Ident.idText
         }
 
@@ -86,4 +91,4 @@ type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerP
                 return ImmutableArray.Create(DocumentHighlights(document, highlightSpans))
             }   
             |> Async.map (Option.defaultValue ImmutableArray<DocumentHighlights>.Empty)
-            |> CommonRoslynHelpers.StartAsyncAsTask(cancellationToken)
+            |> RoslynHelpers.StartAsyncAsTask(cancellationToken)

@@ -105,7 +105,8 @@ let getUncodedToken (tab:TableName) idx = ((tab.Index <<< 24) ||| idx)
 // 0x01-0x08, 0x0E-0x1F, 0x27, 0x2D,
 // 0x7F. Otherwise, it holds 0. The 1 signifies Unicode characters that require handling beyond that normally provided for 8-bit encoding sets.
 
-// HOWEVER, there is a discrepancy here between the ECMA spec and the Microsoft C# implementation. The code below follows the latter. We�ve raised the issue with both teams. See Dev10 bug 850073 for details.
+// HOWEVER, there is a discrepancy here between the ECMA spec and the Microsoft C# implementation. 
+// The code below follows the latter. We've raised the issue with both teams. See Dev10 bug 850073 for details.
 
 let markerForUnicodeBytes (b:byte[]) = 
     let len = b.Length
@@ -129,7 +130,7 @@ let markerForUnicodeBytes (b:byte[]) =
 // -------------------------------------------------------------------- 
 
 /// Check that the data held at a fixup is some special magic value, as a sanity check
-/// to ensure the fixup is being placed at a ood lcoation.
+/// to ensure the fixup is being placed at a ood location.
 let checkFixup32 (data: byte[]) offset exp = 
     if data.[offset + 3] <> b3 exp then failwith "fixup sanity check failed"
     if data.[offset + 2] <> b2 exp then failwith "fixup sanity check failed"
@@ -550,6 +551,7 @@ type MetadataTable =
 type cenv = 
     { ilg: ILGlobals
       emitTailcalls: bool
+      deterministic: bool
       showTimes: bool
       desiredMetadataVersion: ILVersionInfo
       requiredDataFixups: (int32 * (int * bool)) list ref
@@ -1202,7 +1204,7 @@ and GenTypeDefPass2 pidx enc cenv (td:ILTypeDef) =
       if tidx <> tidx2 then failwith "index of typedef on second pass does not match index on first pass"
 
       // Add entries to auxiliary mapping tables, e.g. Nested, PropertyMap etc. 
-      // Note Nested is organised differntly to the others... 
+      // Note Nested is organised differently to the others... 
       if not (isNil enc) then
           AddUnsharedRow cenv TableNames.Nested 
               (UnsharedRow 
@@ -2376,7 +2378,7 @@ and GenFieldDefPass3 cenv env fd =
         AddUnsharedRow cenv TableNames.FieldMarshal 
               (UnsharedRow [| HasFieldMarshal (hfm_FieldDef, fidx)
                               Blob (GetNativeTypeAsBlobIdx cenv ntyp) |]) |> ignore
-    // Write Contant table 
+    // Write Content table 
     match fd.LiteralValue with 
     | None -> ()
     | Some i -> 
@@ -2472,7 +2474,7 @@ and GenParamPass3 cenv env seq (param: ILParameter) =
       | Some ntyp -> 
           AddUnsharedRow cenv TableNames.FieldMarshal 
                 (UnsharedRow [| HasFieldMarshal (hfm_ParamDef, pidx); Blob (GetNativeTypeAsBlobIdx cenv ntyp) |]) |> ignore
-      // Write Contant table for DefaultParameterValue attr
+      // Write Content table for DefaultParameterValue attr
       match param.Default with
       | None -> ()
       | Some i -> 
@@ -2537,6 +2539,7 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
           | _ -> false) then 0x1000 else 0x0) ||| // RTSpecialName 
         (if md.IsReqSecObj then 0x8000 else 0x0) |||
         (if md.HasSecurity || not md.SecurityDecls.AsList.IsEmpty then 0x4000 else 0x0)
+   
     let implflags = 
         (match  md.mdCodeKind with 
          | MethodCodeKind.Native -> 0x0001
@@ -2548,7 +2551,8 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
         (if md.IsPreserveSig then 0x0080 else 0x0000) |||
         (if md.IsSynchronized then 0x0020 else 0x0000) |||
         (if md.IsMustRun then 0x0040 else 0x0000) |||
-        (if (md.IsNoInline || (match md.mdBody.Contents with MethodBody.IL il -> il.NoInlining | _ -> false)) then 0x0008 else 0x0000)
+        (if (md.IsNoInline || (match md.mdBody.Contents with MethodBody.IL il -> il.NoInlining | _ -> false)) then 0x0008 else 0x0000) |||
+        (if (md.IsAggressiveInline || (match md.mdBody.Contents with MethodBody.IL il -> il.AggressiveInlining | _ -> false)) then 0x0100 else 0x0000)
 
     if md.IsEntryPoint then 
         if cenv.entrypoint <> None then failwith "duplicate entrypoint"
@@ -2780,8 +2784,8 @@ let rec GenTypeDefPass3 enc cenv (td:ILTypeDef) =
           if Option.isSome layout.Pack || Option.isSome layout.Size then 
             AddUnsharedRow cenv TableNames.ClassLayout
                 (UnsharedRow 
-                    [| UShort (match layout.Pack with None -> uint16 0x0 | Some p -> p)
-                       ULong (match layout.Size with None -> 0x0 | Some p -> p)
+                    [| UShort (defaultArg layout.Pack (uint16 0x0))
+                       ULong (defaultArg layout.Size 0x0)
                        SimpleIndex (TableNames.TypeDef, tidx) |]) |> ignore
                        
       td.SecurityDecls.AsList |> GenSecurityDeclsPass3 cenv (hds_TypeDef,tidx)
@@ -2902,9 +2906,15 @@ and newGuid (modul: ILModuleDef) =
     let m2 = hash modul.Name
     [| b0 m; b1 m; b2 m; b3 m; b0 m2; b1 m2; b2 m2; b3 m2; 0xa7uy; 0x45uy; 0x03uy; 0x83uy; b0 n; b1 n; b2 n; b3 n |]
 
-and GetModuleAsRow cenv (modul: ILModuleDef) = 
+and deterministicGuid (modul: ILModuleDef) =
+    let n = 16909060
+    let m = hash n
+    let m2 = hash modul.Name
+    [| b0 m; b1 m; b2 m; b3 m; b0 m2; b1 m2; b2 m2; b3 m2; 0xa7uy; 0x45uy; 0x03uy; 0x83uy; b0 n; b1 n; b2 n; b3 n |]
+
+and GetModuleAsRow (cenv:cenv) (modul: ILModuleDef) = 
     // Store the generated MVID in the environment (needed for generating debug information)
-    let modulGuid = newGuid modul
+    let modulGuid = if cenv.deterministic then deterministicGuid modul else newGuid modul
     cenv.moduleGuid <- modulGuid
     UnsharedRow 
         [| UShort (uint16 0x0) 
@@ -2926,7 +2936,7 @@ let SortTableRows tab (rows:GenericRow[]) =
     assert (TableRequiresSorting tab)
     let col = List.assoc tab sortedTableInfo
     rows 
-        // This needs to be a stable sort, so we use Lsit.sortWith
+        // This needs to be a stable sort, so we use List.sortWith
         |> Array.toList
         |> List.sortWith (fun r1 r2 -> rowElemCompare r1.[col] r2.[col]) 
         |> Array.ofList
@@ -2953,11 +2963,12 @@ let GenModule (cenv : cenv) (modul: ILModuleDef) =
     GenTypeDefsPass4 [] cenv tds
     reportTime cenv.showTimes "Module Generation Pass 4"
 
-let generateIL requiredDataFixups (desiredMetadataVersion,generatePdb, ilg : ILGlobals, emitTailcalls,showTimes)  (m : ILModuleDef) cilStartAddress =
+let generateIL requiredDataFixups (desiredMetadataVersion,generatePdb, ilg : ILGlobals, emitTailcalls, deterministic, showTimes)  (m : ILModuleDef) cilStartAddress =
     let isDll = m.IsDLL
 
     let cenv = 
         { emitTailcalls=emitTailcalls
+          deterministic = deterministic
           showTimes=showTimes
           ilg = ilg
           desiredMetadataVersion=desiredMetadataVersion
@@ -3066,12 +3077,14 @@ let count f arr =
     Array.fold (fun x y -> x + f y) 0x0 arr 
 
 module FileSystemUtilites = 
+    open System
     open System.Reflection
+    open System.Globalization
 #if FX_RESHAPED_REFLECTION
     open Microsoft.FSharp.Core.ReflectionAdapters
 #endif
     let progress = try System.Environment.GetEnvironmentVariable("FSharp_DebugSetFilePermissions") <> null with _ -> false
-    let setExecutablePermission filename =
+    let setExecutablePermission (filename: string) =
 
 #if ENABLE_MONO_SUPPORT
       if runningOnMono then 
@@ -3079,10 +3092,13 @@ module FileSystemUtilites =
             let monoPosix = Assembly.Load("Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756")
             if progress then eprintf "loading type Mono.Unix.UnixFileInfo...\n"
             let monoUnixFileInfo = monoPosix.GetType("Mono.Unix.UnixFileSystemInfo") 
-            let fileEntry = monoUnixFileInfo.InvokeMember("GetFileSystemEntry", (BindingFlags.InvokeMethod ||| BindingFlags.Static ||| BindingFlags.Public), null, null, [| box filename |],System.Globalization.CultureInfo.InvariantCulture)
-            let prevPermissions = monoUnixFileInfo.InvokeMember("get_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| |],System.Globalization.CultureInfo.InvariantCulture) |> unbox<int>
+            let fileEntry = monoUnixFileInfo.InvokeMember("GetFileSystemEntry", (BindingFlags.InvokeMethod ||| BindingFlags.Static ||| BindingFlags.Public), null, null, [| box filename |],CultureInfo.InvariantCulture)
+            let prevPermissions = monoUnixFileInfo.InvokeMember("get_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| |],CultureInfo.InvariantCulture) 
+            let prevPermissionsValue = prevPermissions |> unbox<int>
+            let newPermissionsValue = prevPermissionsValue ||| 0x000001ED
+            let newPermissions = Enum.ToObject(prevPermissions.GetType(), newPermissionsValue)
             // Add 0x000001ED (UserReadWriteExecute, GroupReadExecute, OtherReadExecute) to the access permissions on Unix
-            monoUnixFileInfo.InvokeMember("set_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| box (prevPermissions ||| 0x000001ED) |],System.Globalization.CultureInfo.InvariantCulture) |> ignore
+            monoUnixFileInfo.InvokeMember("set_FileAccessPermissions", (BindingFlags.InvokeMethod ||| BindingFlags.Instance ||| BindingFlags.Public), null, fileEntry, [| newPermissions |],CultureInfo.InvariantCulture) |> ignore
         with e -> 
             if progress then eprintf "failure: %s...\n" (e.ToString())
             // Fail silently
@@ -3092,7 +3108,7 @@ module FileSystemUtilites =
 #endif
         ()
 
-let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls,showTimes) modul cilStartAddress = 
+let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls,deterministic,showTimes) modul cilStartAddress =
 
     // When we know the real RVAs of the data section we fixup the references for the FieldRVA table. 
     // These references are stored as offsets into the metadata we return from this function 
@@ -3101,7 +3117,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
     let next = cilStartAddress
 
     let strings,userStrings,blobs,guids,tables,entryPointToken,code,requiredStringFixups,data,resources,pdbData,mappings = 
-      generateIL requiredDataFixups (desiredMetadataVersion,generatePdb,ilg,emitTailcalls,showTimes) modul cilStartAddress
+      generateIL requiredDataFixups (desiredMetadataVersion,generatePdb,ilg,emitTailcalls,deterministic,showTimes) modul cilStartAddress
 
     reportTime showTimes "Generated Tables and Code"
     let tableSize (tab: TableName) = tables.[tab.Index].Count
@@ -3398,14 +3414,14 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
     
     reportTime showTimes "Layout Metadata"
 
-    let metadata = 
+    let metadata, guidStart =
       let mdbuf =  ByteBuffer.Create 500000 
       mdbuf.EmitIntsAsBytes 
         [| 0x42; 0x53; 0x4a; 0x42; // Magic signature 
            0x01; 0x00; // Major version 
            0x01; 0x00; // Minor version 
         |];
-      mdbuf.EmitInt32 0x0; // Reservered 
+      mdbuf.EmitInt32 0x0; // Reserved 
 
       mdbuf.EmitInt32 paddedVersionLength;
       mdbuf.EmitBytes version;
@@ -3456,6 +3472,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
 
       reportTime showTimes "Write Metadata User Strings";
     // The GUID stream 
+      let guidStart = mdbuf.Position
       Array.iter mdbuf.EmitBytes guids;
       
     // The blob stream 
@@ -3467,7 +3484,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
           mdbuf.EmitIntAsByte 0x00;
       reportTime showTimes "Write Blob Stream";
      // Done - close the buffer and return the result. 
-      mdbuf.Close()
+      mdbuf.Close(), guidStart
     
 
    // Now we know the user string tables etc. we can fixup the 
@@ -3482,7 +3499,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
               applyFixup32 code locInCode token
     reportTime showTimes "Fixup Metadata";
 
-    entryPointToken,code, codePadding,metadata,data,resources,!requiredDataFixups,pdbData,mappings
+    entryPointToken,code, codePadding,metadata,data,resources,!requiredDataFixups,pdbData,mappings,guidStart
 
 //---------------------------------------------------------------------
 // PHYSICAL METADATA+BLOBS --> PHYSICAL PE FORMAT
@@ -3542,8 +3559,9 @@ let writeDirectory os dict =
 
 let writeBytes (os: BinaryWriter) (chunk:byte[]) = os.Write(chunk,0,chunk.Length)  
 
-let writeBinaryAndReportMappings (outfile, ilg: ILGlobals, pdbfile: string option, signer: ILStrongNameSigner option, portablePDB, embeddedPDB, embedAllSource, embedSourceList,
-                                  sourceLink, fixupOverlappingSequencePoints, emitTailcalls, showTimes, dumpDebugInfo) modul =
+let writeBinaryAndReportMappings (outfile, 
+                                  ilg: ILGlobals, pdbfile: string option, signer: ILStrongNameSigner option, portablePDB, embeddedPDB, 
+                                  embedAllSource, embedSourceList, sourceLink, emitTailcalls, deterministic, showTimes, dumpDebugInfo ) modul =
     // Store the public key from the signer into the manifest.  This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
 
@@ -3659,8 +3677,8 @@ let writeBinaryAndReportMappings (outfile, ilg: ILGlobals, pdbfile: string optio
                     | Some v -> v
                     | None -> failwith "Expected msorlib to have a version number"
 
-          let entryPointToken,code,codePadding,metadata,data,resources,requiredDataFixups,pdbData,mappings = 
-            writeILMetadataAndCode ((pdbfile <> None), desiredMetadataVersion, ilg,emitTailcalls,showTimes) modul next
+          let entryPointToken,code,codePadding,metadata,data,resources,requiredDataFixups,pdbData,mappings,guidStart =
+            writeILMetadataAndCode ((pdbfile <> None), desiredMetadataVersion, ilg,emitTailcalls, deterministic, showTimes) modul next
 
           reportTime showTimes "Generated IL and metadata";
           let _codeChunk,next = chunk code.Length next
@@ -3696,7 +3714,7 @@ let writeBinaryAndReportMappings (outfile, ilg: ILGlobals, pdbfile: string optio
           let pdbOpt =
             match portablePDB with
             | true  -> 
-                let (uncompressedLength, contentId, stream) as pdbStream = generatePortablePdb fixupOverlappingSequencePoints embedAllSource embedSourceList sourceLink showTimes pdbData 
+                let (uncompressedLength, contentId, stream) as pdbStream = generatePortablePdb embedAllSource embedSourceList sourceLink showTimes pdbData deterministic
                 if embeddedPDB then Some (compressPortablePdbStream uncompressedLength contentId stream)
                 else Some (pdbStream)
             | _ -> None
@@ -3842,7 +3860,33 @@ let writeBinaryAndReportMappings (outfile, ilg: ILGlobals, pdbfile: string optio
             writeInt32AsUInt16 os 0x014c;   // Machine - IMAGE_FILE_MACHINE_I386 
             
           writeInt32AsUInt16 os numSections;
-          writeInt32 os timestamp   // date since 1970 
+
+          let pdbData = 
+            if deterministic then
+              // Hash code, data and metadata
+              use sha = System.Security.Cryptography.SHA1.Create()    // IncrementalHash is core only
+              let hCode = sha.ComputeHash code
+              let hData = sha.ComputeHash data
+              let hMeta = sha.ComputeHash metadata
+              let final = [| hCode; hData; hMeta |] |> Array.collect id |> sha.ComputeHash
+
+              // Confirm we have found the correct data and aren't corrupting the metadata
+              if metadata.[ guidStart..guidStart+3]     <> [| 4uy; 3uy; 2uy; 1uy |] then failwith "Failed to find MVID"
+              if metadata.[ guidStart+12..guidStart+15] <> [| 4uy; 3uy; 2uy; 1uy |] then failwith "Failed to find MVID"
+
+              // Update MVID guid in metadata
+              Array.blit final 0 metadata guidStart 16
+
+              // Use last 4 bytes for timestamp - High bit set, to stop tool chains becoming confused
+              let timestamp = int final.[16] ||| (int final.[17] <<< 8) ||| (int final.[18] <<< 16) ||| (int (final.[19] ||| 128uy) <<< 24) 
+              writeInt32 os timestamp
+              // Update pdbData with new guid and timestamp.  Portable and embedded PDBs don't need the ModuleID
+              // Full and PdbOnly aren't supported under deterministic builds currently, they rely on non-determinsitic Windows native code
+              { pdbData with ModuleID = final.[0..15] ; Timestamp = timestamp }
+            else
+              writeInt32 os timestamp   // date since 1970
+              pdbData
+
           writeInt32 os 0x00; // Pointer to Symbol Table Always 0 
        // 00000090 
           writeInt32 os 0x00; // Number of Symbols Always 0 
@@ -3868,7 +3912,7 @@ let writeBinaryAndReportMappings (outfile, ilg: ILGlobals, pdbfile: string optio
           writeInt32 os textSectionPhysSize;          // Size of the code (text) section, or the sum of all code sections if there are multiple sections. 
         // 000000a0 
           writeInt32 os dataSectionPhysSize;          // Size of the initialized data section, or the sum of all such sections if there are multiple data sections. 
-          writeInt32 os 0x00;                         // Size of the uninitialized data section, or the sum of all such sections if there are multiple unitinitalized data sections. 
+          writeInt32 os 0x00;                         // Size of the uninitialized data section, or the sum of all such sections if there are multiple uninitialized data sections. 
           writeInt32 os entrypointCodeChunk.addr;     // RVA of entry point , needs to point to bytes 0xFF 0x25 followed by the RVA+!0x4000000 in a section marked execute/read for EXEs or 0 for DLLs e.g. 0x0000b57e 
           writeInt32 os textSectionAddr;              // e.g. 0x0002000 
        // 000000b0 
@@ -3973,7 +4017,7 @@ let writeBinaryAndReportMappings (outfile, ilg: ILGlobals, pdbfile: string optio
           writeInt32 os textSectionPhysLoc // PointerToRawData RVA to section's first page within the PE file. This shall be a multiple of FileAlignment from the optional header. When a section contains only uninitialized data, this field should be 0. e.g. 00000200 
        // 00000190  
           writeInt32 os 0x00 // PointerToRelocations RVA of Relocation section. 
-          writeInt32 os 0x00 // PointerToLinenumbers Always 0 (see Section 23.1). 
+          writeInt32 os 0x00 // PointerToLineNumbers Always 0 (see Section 23.1). 
        // 00000198  
           writeInt32AsUInt16 os 0x00// NumberOfRelocations Number of relocations, set to 0 if unused. 
           writeInt32AsUInt16 os 0x00  //  NumberOfLinenumbers Always 0 (see Section 23.1). 
@@ -3991,7 +4035,7 @@ let writeBinaryAndReportMappings (outfile, ilg: ILGlobals, pdbfile: string optio
           writeInt32 os dataSectionPhysLoc // PointerToRawData QUERY: Why does ECMA say "RVA" here? Offset to section's first page within the PE file. This shall be a multiple of FileAlignment from the optional header. When a section contains only uninitialized data, this field should be 0. e.g. 0x00009800 
        // 000001b8  
           writeInt32 os 0x00 // PointerToRelocations RVA of Relocation section. 
-          writeInt32 os 0x00 // PointerToLinenumbers Always 0 (see Section 23.1). 
+          writeInt32 os 0x00 // PointerToLineNumbers Always 0 (see Section 23.1). 
        // 000001c0  
           writeInt32AsUInt16 os 0x00 // NumberOfRelocations Number of relocations, set to 0 if unused. 
           writeInt32AsUInt16 os 0x00  //  NumberOfLinenumbers Always 0 (see Section 23.1). 
@@ -4007,7 +4051,7 @@ let writeBinaryAndReportMappings (outfile, ilg: ILGlobals, pdbfile: string optio
           writeInt32 os relocSectionPhysLoc // PointerToRawData QUERY: Why does ECMA say "RVA" here? Offset to section's first page within the PE file. This shall be a multiple of FileAlignment from the optional header. When a section contains only uninitialized reloc, this field should be 0. e.g. 0x00009800 
        // 000001b8  
           writeInt32 os 0x00 // PointerToRelocations RVA of Relocation section. 
-          writeInt32 os 0x00 // PointerToLinenumbers Always 0 (see Section 23.1). 
+          writeInt32 os 0x00 // PointerToLineNumbers Always 0 (see Section 23.1). 
        // 000001c0  
           writeInt32AsUInt16 os 0x00 // NumberOfRelocations Number of relocations, set to 0 if unused. 
           writeInt32AsUInt16 os 0x00  //  NumberOfLinenumbers Always 0 (see Section 23.1). 
@@ -4188,7 +4232,7 @@ let writeBinaryAndReportMappings (outfile, ilg: ILGlobals, pdbfile: string optio
     begin match pdbfile with
     | None -> ()
 #if ENABLE_MONO_SUPPORT
-    | Some fmdb when runningOnMono -> 
+    | Some fmdb when runningOnMono && not portablePDB ->
         writeMdbInfo fmdb outfile pdbData
 #endif
     | Some fpdb -> 
@@ -4204,7 +4248,7 @@ let writeBinaryAndReportMappings (outfile, ilg: ILGlobals, pdbfile: string optio
 #if FX_NO_PDB_WRITER
                     Array.empty<idd>
 #else
-                    writePdbInfo fixupOverlappingSequencePoints showTimes outfile fpdb pdbData debugDataChunk
+                    writePdbInfo showTimes outfile fpdb pdbData debugDataChunk
 #endif
             reportTime showTimes "Generate PDB Info"
 
@@ -4269,14 +4313,14 @@ type options =
      embedSourceList: string list
      sourceLink: string
      signer: ILStrongNameSigner option
-     fixupOverlappingSequencePoints: bool
      emitTailcalls : bool
+     deterministic : bool
      showTimes: bool
      dumpDebugInfo:bool }
 
 let WriteILBinary (outfile, (args: options), modul) =
-    writeBinaryAndReportMappings (outfile, args.ilg, args.pdbfile, args.signer, args.portablePDB, args.embeddedPDB, 
-                                  args.embedAllSource, args.embedSourceList, args.sourceLink, args.fixupOverlappingSequencePoints, 
-                                  args.emitTailcalls, args.showTimes, args.dumpDebugInfo) modul 
+    writeBinaryAndReportMappings (outfile, 
+                                  args.ilg, args.pdbfile, args.signer, args.portablePDB, args.embeddedPDB, args.embedAllSource, 
+                                  args.embedSourceList, args.sourceLink, args.emitTailcalls, args.deterministic, args.showTimes, args.dumpDebugInfo) modul
     |> ignore
 

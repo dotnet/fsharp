@@ -1,39 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
+    <ProjectLanguage>FSharp</ProjectLanguage>
+    <BuildWith Condition=" '$(Configuration)' == 'Proto' ">LKG</BuildWith>
   </PropertyGroup>
+
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
+
   <PropertyGroup>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{DED3BBD7-53F4-428A-8C9F-27968E768605}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AssemblyName>FSharp.Core</AssemblyName>
-    <DefineConstants>RUNTIME;$(DefineConstants)</DefineConstants>
+    <DefineConstants>FSHARP_CORE;$(DefineConstants)</DefineConstants>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <BaseAddress>0x05000000</BaseAddress>
     <CompilingFsLib>true</CompilingFsLib>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <FX_NO_LOADER>true</FX_NO_LOADER>
-    <OtherFlags>$(OtherFlags) --warnon:1182 --compiling-fslib --maxerrors:20   --extraoptimizationloops:1 </OtherFlags>
-    <OtherFlags Condition=" '$(TargetFramework)'=='net40'">$(OtherFlags)       --compiling-fslib-40</OtherFlags>
-    <OtherFlags Condition=" '$(TargetFramework)'=='coreclr'">$(OtherFlags)     --compiling-fslib-40</OtherFlags>
-    <OtherFlags Condition=" '$(TargetFramework)'=='portable7'">$(OtherFlags)   --compiling-fslib-40</OtherFlags>
-    <OtherFlags Condition=" '$(TargetFramework)'=='portable78'">$(OtherFlags)  --compiling-fslib-40 --compiling-fslib-nobigint</OtherFlags>
-    <OtherFlags Condition=" '$(TargetFramework)'=='portable259'">$(OtherFlags) --compiling-fslib-40 --compiling-fslib-nobigint</OtherFlags>
+    <OtherFlags>$(OtherFlags) --warnon:1182 --compiling-fslib --maxerrors:20 --extraoptimizationloops:1 --compiling-fslib-40</OtherFlags>
   </PropertyGroup>
 
   <!-- Nuget packaging configuration -->
   <ItemGroup>
-    <PackageNuspec Include="FSharp.Core.netcore.nuspec" Condition="'$(TargetFramework)' == 'coreclr'" />
-    <None Include="FSharp.Core.runtimeconfig.json"      Condition="'$(TargetFramework)' == 'coreclr'" ><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></None>
+    <PackageNuspec Include="Testing.FSharp.Core.nuspec" Condition="'$(TargetDotnetProfile)' == 'coreclr'" />
+    <None Include="FSharp.Core.runtimeconfig.json"      Condition="'$(TargetDotnetProfile)' == 'coreclr'" ><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></None>
   </ItemGroup>
-  <PropertyGroup>
-    <PackageVersion    Condition="'$(PreReleaseLabel)' == ''">$(NuGeReleaseVersion)</PackageVersion>
-    <PackageVersion    Condition="'$(PackageVersionMinor)' != ''">$(PackageVersionMajor)-$(PackageVersionMinor)</PackageVersion>
-    <PackageVersion    Condition="'$(PackageVersionMinor)' == ''">$(NuGetPerBuildPreReleaseVersion)-0</PackageVersion>
-  </PropertyGroup>
 
   <ItemGroup>
     <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
@@ -43,10 +38,14 @@
       <InProject>false</InProject>
     </FilesToLocalize>
   </ItemGroup>
+
   <ItemGroup>
     <CustomAdditionalCompileInputs Include="$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin\fsc-proto.exe">
       <Visible>false</Visible>
     </CustomAdditionalCompileInputs>
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedResource Include="FSCore.resx">
       <Link>FSCore.resx</Link>
     </EmbeddedResource>
@@ -231,34 +230,16 @@
       <Link>assemblyinfo.FSharp.Core.dll.fs</Link>
     </Compile>
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' != 'portable7' and '$(TargetFramework)' != 'coreclr'">
+
+  <ItemGroup Condition="'$(TargetDotnetProfile)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
-    <Reference Include="System.Numerics" Condition="'$(TargetFramework)' == 'net40' OR 
-                                                    '$(TargetFramework)' == 'monotouch' OR 
-                                                    '$(TargetFramework)' == 'xamarinwatchos' OR 
-                                                    '$(TargetFramework)' == 'xamarintvos' OR 
-                                                    '$(TargetFramework)' == 'monodroid' OR
-                                                    '$(TargetFramework)' == 'xamarinmacmobile' OR
-                                                    '$(TargetFramework)' == 'xamarinmacfull'" >
-      <Private>false</Private>
-    </Reference>
-	<Reference Include="System.Net" Condition="'$(TargetFramework)' == 'portable47' OR 
-                                               '$(TargetFramework)' == 'portable7'" >
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="System.Core" Condition="'$(TargetFramework)' == 'monotouch' OR 
-                                                '$(TargetFramework)' == 'xamarinwatchos' OR 
-                                                '$(TargetFramework)' == 'xamarintvos' OR 
-                                                '$(TargetFramework)' == 'monodroid' OR 
-                                                '$(TargetFramework)' == 'portable47' OR 
-                                                '$(TargetFramework)' == 'portable7' OR
-                                                '$(TargetFramework)' == 'xamarinmacmobile' OR
-                                                '$(TargetFramework)' == 'xamarinmacfull'" >
+    <Reference Include="System.Numerics">
       <Private>false</Private>
     </Reference>
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
+
+  <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">
     <None Include="project.json" />
   </ItemGroup>
 
@@ -267,6 +248,9 @@
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 
   <!-- Hook compilation phase to do custom work -->
+  <!-- NOTE: The optdata and sigdata files are no longer needed by the F# compiler (the information is -->
+  <!-- integrated as resources into more recent FSharp.Core.dll's. However they are still produced to -->
+  <!-- allow older versions of the F# compiler to reference more recent FSharp.Core packages -->
   <Target Name="CopyToBuiltBin" BeforeTargets="AfterCompile" AfterTargets="CoreCompile" >
     <ItemGroup>
       <BuiltProjectOutputGroupKeyOutput Include="$(IntermediateOutputPath)\FSharp.Core.sigdata" />
@@ -275,7 +259,7 @@
     <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.Core.sigdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
     <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.Core.optdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
   </Target>
-  
+
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
     <ItemGroup>
       <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />
@@ -286,4 +270,21 @@
       </FilesToSign>
     </ItemGroup>
   </Target>
+
+  <Target Name="nugetpack"
+          DependsOnTargets="CreateOrUpdateBuildVersionFile"
+          AfterTargets="Build"
+          Condition="'$(TargetDotnetProfile)' == 'coreclr' "
+          Inputs="@(PackageNuspec)" 
+          Outputs='$(FSharpSourcesRoot)\..\$(Configuration)\artifacts\"%(PackageNuspec.Filename)).nupkg'>
+
+    <PropertyGroup>
+      <PackageProperties>-prop "licenseUrl=$(PackageLicenceUrl)" -prop "version=$(FSharpCore42TargetVersion)" -prop "authors=$(PackageAuthors)" -prop "projectUrl=$(PackageProjectUrl)" -prop "tags=$(PackageTags)"</PackageProperties>
+    </PropertyGroup>
+
+    <MakeDir Directories="$(FSharpSourcesRoot)\..\artifacts" />
+    <SetEnvVar Name="NUGET_PACKAGES" Value="$(NUGET_PACKAGES)" />
+    <Exec Command='$(FSharpSourcesRoot)\..\.nuget\nuget.exe pack @(PackageNuspec) -BasePath $(OutputPath.TrimEnd("\")) -ExcludeEmptyDirectories $(PackageProperties) -OutputDirectory $(FSharpSourcesRoot)\..\artifacts' />
+  </Target>
+
 </Project>

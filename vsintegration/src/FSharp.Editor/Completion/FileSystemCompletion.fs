@@ -58,7 +58,7 @@ type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoM
         let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
         let textLines = text.Lines
         let triggerLine = textLines.GetLineFromPosition(position)
-        CommonHelpers.getColorizationData(documentId, text, triggerLine.Span, Some document.FilePath, defines, CancellationToken.None)
+        Tokenizer.getColorizationData(documentId, text, triggerLine.Span, Some document.FilePath, defines, CancellationToken.None)
 
     let isInStringLiteral(text: SourceText, position: int) : bool =
         getColorizationData(text, position)
@@ -143,7 +143,7 @@ type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoM
             context.AddItems(helper.GetItems(pathThroughLastSlash, documentPath))
         } 
         |> Async.Ignore
-        |> CommonRoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
+        |> RoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
  
     override __.IsInsertionTrigger(text, position, _) = 
         // Bring up completion when the user types a quote (i.e.: #r "), or if they type a slash

@@ -3,8 +3,8 @@
 namespace rec Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Composition
 open System.Collections.Immutable
+open System.Diagnostics
 open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
@@ -19,15 +19,16 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 
 type private TextVersionHash = int
 
-// TODO Turn it on when user settings dialog is ready to switch it on and off.
-// [<DiagnosticAnalyzer(FSharpCommonConstants.FSharpLanguageName)>]
+[<DiagnosticAnalyzer(FSharpConstants.FSharpLanguageName)>]
 type internal SimplifyNameDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
     
+    static let userOpName = "SimplifyNameDiagnosticAnalyzer"
     let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().ProjectInfoManager
     let getChecker (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
     let getPlidLength (plid: string list) = (plid |> List.sumBy String.length) + plid.Length
     static let cache = ConditionalWeakTable<DocumentId, TextVersionHash * ImmutableArray<Diagnostic>>()
+    // Make sure only one document is being analyzed at a time, to be nice
     static let guard = new SemaphoreSlim(1)
 
     static let Descriptor = 
@@ -47,6 +48,9 @@ type internal SimplifyNameDiagnosticAnalyzer() =
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) =
         asyncMaybe {
+            do! Option.guard Settings.CodeFixes.SimplifyName
+            do Trace.TraceInformation("{0:n3} (start) SimplifyName", DateTime.Now.TimeOfDay.TotalSeconds)
+            do! Async.Sleep DefaultTuning.SimplifyNameInitialDelay |> liftAsync 
             let! options = getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document)
             let! textVersion = document.GetTextVersionAsync(cancellationToken)
             let textVersionHash = textVersion.GetHashCode()
@@ -57,7 +61,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                 | _ ->
                     let! sourceText = document.GetTextAsync()
                     let checker = getChecker document
-                    let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true)
+                    let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true, userOpName=userOpName)
                     let! symbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
                     let mutable result = ResizeArray()
                     let symbolUses =
@@ -70,7 +74,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                             // so we have to calculate plid's start ourselves.
                             let plidStartCol = symbolUse.RangeAlternate.EndColumn - name.Length - (getPlidLength plid)
                             symbolUse, plid, plidStartCol, name)
-                        |> Array.filter (fun (_, plid, _, _) -> not (List.isEmpty plid))
+                        |> Array.filter (fun (_, plid, _, name) -> name <> "" && not (List.isEmpty plid))
                         |> Array.groupBy (fun (symbolUse, _, plidStartCol, _) -> symbolUse.RangeAlternate.StartLine, plidStartCol)
                         |> Array.map (fun (_, xs) -> xs |> Array.maxBy (fun (symbolUse, _, _, _) -> symbolUse.RangeAlternate.EndColumn))
                     
@@ -87,12 +91,13 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                                         match rest with
                                         | [] -> return current
                                         | headIdent :: restPlid ->
-                                            let! res = checkResults.IsRelativeNameResolvable(posAtStartOfName, current, symbolUse.Symbol.Item) 
+                                            let! res = checkResults.IsRelativeNameResolvable(posAtStartOfName, current, symbolUse.Symbol.Item, userOpName=userOpName) 
                                             if res then return current
                                             else return! loop restPlid (headIdent :: current)
                                     }
                                 loop (List.rev plid) []
                                
+                            do! Async.Sleep DefaultTuning.SimplifyNameEachItemDelay |> liftAsync // be less intrusive, give other work priority most of the time
                             let! necessaryPlid = getNecessaryPlid plid |> liftAsync
                                 
                             match necessaryPlid with
@@ -108,7 +113,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                                 result.Add(
                                     Diagnostic.Create(
                                        Descriptor,
-                                       CommonRoslynHelpers.RangeToLocation(unnecessaryRange, sourceText, document.FilePath),
+                                       RoslynHelpers.RangeToLocation(unnecessaryRange, sourceText, document.FilePath),
                                        properties = (dict [SimplifyNameDiagnosticAnalyzer.LongIdentPropertyKey, relativeName]).ToImmutableDictionary()))
                     
                     let diagnostics = result.ToImmutableArray()
@@ -118,7 +123,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
             finally guard.Release() |> ignore
         } 
         |> Async.map (Option.defaultValue ImmutableArray.Empty)
-        |> CommonRoslynHelpers.StartAsyncAsTask cancellationToken
+        |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
     interface IBuiltInAnalyzer with
         member __.OpenFileOnly _ = true

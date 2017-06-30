@@ -206,21 +206,21 @@ module internal VsOpsUtils =
     /// Verify the completion list is empty, typically for negative tests
     let AssertCompListIsEmpty (completions : CompletionItem[]) = 
       if not (Array.isEmpty completions) then
-          printfn "Expected empty completion list but got: %A" (completions |> Array.map (fun (nm, _, _, _) -> nm))
+          printfn "Expected empty completion list but got: %A" (completions |> Array.map (fun (CompletionItem(nm, _, _, _, _)) -> nm))
       Assert.IsTrue(Array.isEmpty completions, "Expected empty completion list but got some items")
 
     /// Verify that the given completion list contains a member with the given name
     let AssertCompListContains(completions : CompletionItem[], membername) =
-        let found = completions |> Array.filter(fun (name,_,_,_) -> name = membername) |> Array.length
+        let found = completions |> Array.filter(fun (CompletionItem(name,_,_,_,_)) -> name = membername) |> Array.length
         if found = 0 then
             printfn "Failed to find expected value %s in " membername
             let MAX = 25
             printfn "Completion list = %s" (if completions.Length > MAX then sprintf "%A ... and more" completions.[0..MAX] else sprintf "%A" completions)
-            Assert.Fail(sprintf "Couldn't find '%s' in completion list: %+A" membername (completions |> Array.map (fun (name,_,_,_) -> name)))
+            Assert.Fail(sprintf "Couldn't find '%s' in completion list: %+A" membername (completions |> Array.map (fun (CompletionItem(name,_,_,_,_)) -> name)))
 
     /// Verify the completion list does not contain a member with the given name
     let AssertCompListDoesNotContain(completions : CompletionItem[], membername) =
-        let found = completions |> Array.filter(fun (name,_,_,_) -> name = membername) |> Array.length
+        let found = completions |> Array.filter(fun (CompletionItem(name,_,_,_,_)) -> name = membername) |> Array.length
         if found <> 0 then
             printfn "Value %s should have been absent from " membername
             printfn "Completion list = %A" completions

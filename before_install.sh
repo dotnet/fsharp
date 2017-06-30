@@ -23,7 +23,7 @@ if [ $OS = 'Linux' ]; then
     sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
     echo "deb http://download.mono-project.com/repo/debian wheezy main" | sudo tee /etc/apt/sources.list.d/mono-xamarin.list
     sudo apt-get update
-    sudo apt-get -y install mono-devel
+    sudo apt-get -y install mono-devel autoconf libtool pkg-config make git
 fi
 
 # Check if SSL certificates have been imported into Mono's certificate store.
@@ -58,9 +58,9 @@ fi)
 fi)
 
 #TODO: work out how to avoid the need for this
-chmod u+x packages/FSharp.Compiler.Tools.4.0.1.21/tools/fsi.exe 
-chmod u+x packages/FsLexYacc.7.0.4/build/fslex.exe
-chmod u+x packages/FsLexYacc.7.0.4/build/fsyacc.exe
+chmod u+x packages/FSharp.Compiler.Tools.4.1.5/tools/fsi.exe 
+chmod u+x packages/FsLexYacc.7.0.6/build/fslex.exe
+chmod u+x packages/FsLexYacc.7.0.6/build/fsyacc.exe
 
 # The FSharp.Compiler.Tools package doesn't work correctly unless a proper install of F# has been done on the machine.
 # OSX can skip this because the OSX Mono installer includes F#.

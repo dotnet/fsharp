@@ -17,6 +17,8 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 
+open UnitTests.TestLib.LanguageService
+
 [<TestFixture>][<Category "Roslyn Services">]
 type DocumentDiagnosticAnalyzerTests()  =
     let filePath = "C:\\test.fs"
@@ -24,7 +26,7 @@ type DocumentDiagnosticAnalyzerTests()  =
     let endMarker = "(*end*)"
     let options: FSharpProjectOptions = { 
         ProjectFileName = "C:\\test.fsproj"
-        ProjectFileNames =  [| filePath |]
+        SourceFiles =  [| filePath |]
         ReferencedProjects = [| |]
         OtherOptions = [| |]
         IsIncompleteTypeCheckEnvironment = true
@@ -33,12 +35,13 @@ type DocumentDiagnosticAnalyzerTests()  =
         OriginalLoadReferences = []
         UnresolvedReferences = None
         ExtraProjectInfo = None
+        Stamp = None
     }
 
     let getDiagnostics (fileContents: string) = 
         async {
-            let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(FSharpChecker.Instance, filePath, SourceText.From(fileContents), 0, options, DiagnosticsType.Syntax) 
-            let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(FSharpChecker.Instance, filePath, SourceText.From(fileContents), 0, options, DiagnosticsType.Semantic) 
+            let! syntacticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(checker, filePath, SourceText.From(fileContents), 0, options, DiagnosticsType.Syntax) 
+            let! semanticDiagnostics = FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(checker, filePath, SourceText.From(fileContents), 0, options, DiagnosticsType.Semantic) 
             return syntacticDiagnostics.AddRange(semanticDiagnostics)
         } |> Async.RunSynchronously
 
@@ -260,7 +263,7 @@ let x = 3
 let y = (*start*)x(*end*) 4
 let arr = [| 1; 2; 3 |]
             """,
-            expectedMessage = "This value is not a function and cannot be applied")
+            expectedMessage = "This value is not a function and cannot be applied.")
 
     [<Test>]
     member public this.Multiline_Bug5449() =
@@ -269,7 +272,7 @@ let arr = [| 1; 2; 3 |]
 let f x = x + 1
 let r = (*start*)f 3(*end*) 4
             """,
-            expectedMessage = "This value is not a function and cannot be applied")
+            expectedMessage = "This value is not a function and cannot be applied.")
 
     [<Test>]
     member public this.InComputationExpression_Bug6095_A() =

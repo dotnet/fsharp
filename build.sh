@@ -81,6 +81,7 @@ fi
 
 export BUILD_PROTO=0
 export BUILD_PHASE=1
+export BUILD_NET40_FSHARP_CORE=0
 export BUILD_NET40=0
 export BUILD_CORECLR=0
 export BUILD_PORTABLE=0
@@ -114,6 +115,7 @@ do
         "net40")
             _autoselect=0
             export BUILD_NET40=1
+            export BUILD_NET40_FSHARP_CORE=1
             ;;
         "coreclr")
             _autoselect=0
@@ -127,6 +129,7 @@ do
         "vs")
             _autoselect=0
             export BUILD_NET40=1
+            export BUILD_NET40_FSHARP_CORE=1
             export BUILD_VS=1
             ;;
         "vstest")
@@ -140,6 +143,7 @@ do
             export BUILD_PROTO=1
             export BUILD_PROTO_WITH_CORECLR_LKG=1
             export BUILD_NET40=1
+            export BUILD_NET40_FSHARP_CORE=1
             export BUILD_CORECLR=1
             export BUILD_PORTABLE=1
             export BUILD_VS=1
@@ -150,6 +154,7 @@ do
             _autoselect=0
             export BUILD_PROTO=1
             export BUILD_NET40=1
+            export BUILD_NET40_FSHARP_CORE=1
             export BUILD_PROTO_WITH_CORECLR_LKG=1
             export BUILD_CORECLR=1
             export BUILD_PORTABLE=1
@@ -174,6 +179,7 @@ do
             # what we do
             export BUILD_PROTO=1
             export BUILD_NET40=1
+            export BUILD_NET40_FSHARP_CORE=1
             export BUILD_PORTABLE=1
             export BUILD_VS=1
             export BUILD_SETUP=$FSC_BUILD_SETUP
@@ -189,6 +195,7 @@ do
             export BUILD_PROTO_WITH_CORECLR_LKG=1
             export BUILD_PROTO=1
             export BUILD_NET40=1
+            export BUILD_NET40_FSHARP_CORE=1
             export BUILD_PORTABLE=1
 
             export TEST_NET40_COREUNIT_SUITE=1
@@ -203,6 +210,7 @@ do
             export BUILD_PROTO_WITH_CORECLR_LKG=1
             export BUILD_PROTO=1
             export BUILD_NET40=1
+            export BUILD_NET40_FSHARP_CORE=1
             export BUILD_CORECLR=1
 
             export TEST_CORECLR_FSHARP_SUITE=1
@@ -248,6 +256,7 @@ do
             export BUILD_PROTO=1
             export BUILD_PROTO_WITH_CORECLR_LKG=1
             export BUILD_NET40=1
+            export BUILD_NET40_FSHARP_CORE=1
             export BUILD_CORECLR=1
             export BUILD_PORTABLE=1
             export BUILD_VS=1
@@ -263,15 +272,17 @@ do
             ;;
         "test-net40-fsharpqa")
             export BUILD_NET40=1
+            export BUILD_NET40_FSHARP_CORE=1
             export BUILD_PORTABLE=1
             export TEST_NET40_FSHARPQA_SUITE=1
             ;;
         "test-compiler-unit")
             export BUILD_NET40=1
+            export BUILD_NET40_FSHARP_CORE=1
             export TEST_NET40_COMPILERUNIT_SUITE=1
             ;;
         "test-net40-coreunit")
-            export BUILD_NET40=1
+            export BUILD_NET40_FSHARP_CORE=1
             export TEST_NET40_COREUNIT_SUITE=1
             ;;
         "test-coreclr-coreunit")
@@ -285,11 +296,13 @@ do
             ;;
         "test-net40-fsharp")
             export BUILD_NET40=1
+            export BUILD_NET40_FSHARP_CORE=1
             export BUILD_PORTABLE=1
             export TEST_NET40_FSHARP_SUITE=1
             ;;
         "test-coreclr-fsharp")
             export BUILD_NET40=1
+            export BUILD_NET40_FSHARP_CORE=1
             export BUILD_PROTO_WITH_CORECLR_LKG=1
             export BUILD_CORECLR=1
             export TEST_CORECLR_FSHARP_SUITE=1
@@ -310,6 +323,7 @@ done
 # Apply defaults, if necessary.
 if [ $_autoselect -eq 1 ]; then
     export BUILD_NET40=1
+    export BUILD_NET40_FSHARP_CORE=1
 fi
 
 if [ $_autoselect_tests -eq 1 ]; then
@@ -322,6 +336,7 @@ if [ $_autoselect_tests -eq 1 ]; then
 
     if [ $BUILD_CORECLR -eq 1 ]; then
         export BUILD_NET40=1
+        export BUILD_NET40_FSHARP_CORE=1
         export TEST_CORECLR_FSHARP_SUITE=1
         export TEST_CORECLR_COREUNIT_SUITE=1
     fi
@@ -344,6 +359,7 @@ printf "\n"
 printf "BUILD_PROTO=%s\n" "$BUILD_PROTO"
 printf "BUILD_PROTO_WITH_CORECLR_LKG=%s\n" "$BUILD_PROTO_WITH_CORECLR_LKG"
 printf "BUILD_NET40=%s\n" "$BUILD_NET40"
+printf "BUILD_NET40_FSHARP_CORE=%s\n" "$BUILD_NET40_FSHARP_CORE"
 printf "BUILD_CORECLR=%s\n" "$BUILD_CORECLR"
 printf "BUILD_PORTABLE=%s\n" "$BUILD_PORTABLE"
 printf "BUILD_VS=%s\n" "$BUILD_VS"
@@ -455,7 +471,7 @@ if [ "$BUILD_PROTO" = '1' ]; then
 #        { printeval "$_ngenexe install Proto/net40/bin/fsc-proto.exe /nologo"; } || failwith "NGen of proto failed"
     else
         # Build proto-compiler and libs
-        { printeval "$_msbuildexe $msbuildflags src/fsharp-proto-build.proj /p:UseMonoPackaging=true"; } || failwith "compiler proto build failed"
+        { printeval "$_msbuildexe $msbuildflags src/fsharp-proto-build.proj /p:UseMonoPackaging=true /p:Configuration=Proto"; } || failwith "compiler proto build failed"
     fi
 fi
 
@@ -467,10 +483,21 @@ if [ "$BUILD_PHASE" = '1' ]; then
     { printeval "$cmd"; } || failwith "'$cmd' failed"
 fi
 
+build_status "Main part of build finished, completing parts of build needed for Mono setup"
+
+if [ "$BUILD_NET40" = '1' ]; then
+    { printeval "./autogen.sh --prefix=/usr"; } || failwith "./autogen.sh failed"
+
+    { printeval "make"; } || failwith "make failed"
+fi
+
 build_status "Done with build, starting update/prepare"
 
 if [ "$BUILD_NET40" = '1' ]; then
-    echo "TODO: Call update.sh"
+
+    { printeval "sudo make install"; } || failwith "sudo make install failed"
+
+# WINDOWS:
 #    src/update.sh $BUILD_CONFIG
 #    rc=$?;
 #    if [ $rc -ne 0 ]; then

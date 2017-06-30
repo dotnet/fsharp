@@ -6,7 +6,7 @@
     <ComponentGroup Id="Compiler_Redist">
       <ComponentRef Id="Compiler_Redist_FSharp.Core.dll" />
       <ComponentRef Id="Compiler_Redist_FSharp.Build.dll" />
-      <ComponentRef Id="Compiler_Redist_FSharp.Compiler.dll" />
+      <ComponentRef Id="Compiler_Redist_FSharp.Compiler.Private.dll" />
       <ComponentRef Id="Compiler_Redist_FSharp.Compiler.Interactive.Settings.dll" />      
       <ComponentRef Id="Compiler_Redist_FSharp.Data.TypeProviders.dll" />      
       <ComponentRef Id="Compiler_Redist_fsc.exe" />
@@ -15,6 +15,8 @@
       <ComponentRef Id="Compiler_Redist_FSharp.Compiler.Server.Shared.dll" />
       <ComponentRef Id="Compiler_Redist_Microsoft.FSharp.targets" />
       <ComponentRef Id="Compiler_Redist_Microsoft.Portable.FSharp.targets" />
+      <ComponentRef Id="Compiler_Redist_Microsoft.FSharp.NetSdk.props" />
+      <ComponentRef Id="Compiler_Redist_Microsoft.FSharp.NetSdk.targets" />
       <ComponentRef Id="Compiler_Redist_SupportedRuntimes.xml" />
       <ComponentRef Id="Compiler_Redist_RegistryKeys_CompilerLocation" />
 
@@ -43,8 +45,18 @@
         <File Id="Compiler_Redist_FSharp.Core.dll" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.dll" KeyPath="yes">
           <NetFx:NativeImage Id="Compiler_Redist_FSharp.Core.Native.dll" Priority="0" Dependencies="no" Platform="all" AssemblyApplication="Compiler_Redist_fsc.exe" />
         </File>
+        <!-- NOTE: The optdata and sigdata files are now integrated as resources for more recent FSharp.Core.dll's. -->
+        <!-- However old versions of FSharp.Core still need these files. For consistency we also continue to produce the files -->
+        <!-- for FSharp.Core 4.4.1.0, and include them in the redist. -->
+        <!-- -->
+        <!-- We should continue to produce the files for FSharp.Core 4.4.2.0 and beyond, for inclusion in the FSharp.Core -->
+        <!-- nuget package. We should do this for as long as it is possible that old F# compilers (VS2010-VS2017) will end up referring to newer -->
+        <!-- versions of the FSharp.Core package (which can happen automatically on package upgrade).  However for FSharp.Core 4.4.2.0 -->
+        <!-- beyond the files will not be needed in the redist, which is only ever installed on machines alongside a recent -->
+        <!-- F# compiler -->
         <File Id="FSharp_Core_Sigdata_File" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.sigdata" />
         <File Id="FSharp_Core_Optdata_File" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.optdata" />
+        <File Id="FSharp_Core_Xml_File" Source="$(var.BinariesDir)\net40\bin\FSharp.Core.xml" />
       </Component>
 
       <Component Id="Compiler_Redist_FSharp.Build.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Build.dll, $(var.LocaleCode)))">
@@ -53,9 +65,9 @@
         </File>
       </Component>
 
-      <Component Id="Compiler_Redist_FSharp.Compiler.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Compiler.dll, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_FSharp.Compiler.dll" Source="$(var.BinariesDir)\net40\bin\FSharp.Compiler.dll" KeyPath="yes">
-          <NetFx:NativeImage Id="Compiler_Redist_FSharp.Compiler.Native.dll" Priority="0" Dependencies="no" Platform="all" AssemblyApplication="Compiler_Redist_fsc.exe" />
+      <Component Id="Compiler_Redist_FSharp.Compiler.Private.dll" Guid="$(fsharp.guid(Compiler_Redist_FSharp.Compiler.Private.dll, $(var.LocaleCode)))">
+        <File Id="Compiler_Redist_FSharp.Compiler.Private.dll" Source="$(var.BinariesDir)\net40\bin\FSharp.Compiler.Private.dll" KeyPath="yes">
+          <NetFx:NativeImage Id="Compiler_Redist_FSharp.Compiler.Private.Native.dll" Priority="0" Dependencies="no" Platform="all" AssemblyApplication="Compiler_Redist_fsc.exe" />
         </File>
       </Component>
 
@@ -99,11 +111,19 @@
       </Component>      
 
       <Component Id="Compiler_Redist_Microsoft.FSharp.targets" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.FSharp.targets, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_Microsoft.FSharp.targets" Source="$(var.BinariesDir)\net40\bin\Microsoft.FSharp.targets" />
+        <File Id="Compiler_Redist_Microsoft.FSharp.targets" Source="$(var.BinariesDir)\net40\bin\Microsoft.FSharp.Targets" />
       </Component>
 
       <Component Id="Compiler_Redist_Microsoft.Portable.FSharp.targets" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.Portable.FSharp.targets, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_Microsoft.Portable.FSharp.targets" Source="$(var.BinariesDir)\net40\bin\Microsoft.Portable.FSharp.targets" />
+        <File Id="Compiler_Redist_Microsoft.Portable.FSharp.targets" Source="$(var.BinariesDir)\net40\bin\Microsoft.Portable.FSharp.Targets" />
+      </Component>
+
+      <Component Id="Compiler_Redist_Microsoft.FSharp.NetSdk.props" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.FSharp.NetSdk.props, $(var.LocaleCode)))">
+        <File Id="Compiler_Redist_Microsoft.FSharp.NetSdk.props" Source="$(var.BinariesDir)\net40\bin\Microsoft.FSharp.NetSdk.props" />
+      </Component>
+
+      <Component Id="Compiler_Redist_Microsoft.FSharp.NetSdk.targets" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.FSharp.NetSdk.targets, $(var.LocaleCode)))">
+        <File Id="Compiler_Redist_Microsoft.FSharp.NetSdk.targets" Source="$(var.BinariesDir)\net40\bin\Microsoft.FSharp.NetSdk.targets" />
       </Component>
 
       <Component Id="Compiler_Redist_SupportedRuntimes.xml" Guid="$(fsharp.guid(Compiler_Redist_SupportedRuntimes.xml, $(var.LocaleCode)))">
@@ -116,8 +136,10 @@
           <RegistryValue Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]" Type="string" />
         </RegistryKey>
         <RegistryKey Root="HKLM" Key="Software\Microsoft\VisualStudio\15.0\MSBuild\SafeImports" ForceCreateOnInstall="yes" ForceDeleteOnUninstall="yes">
-         <RegistryValue Name="Microsoft.FSharp.Targets" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]Microsoft.FSharp.Targets" Type="string" />
+          <RegistryValue Name="Microsoft.FSharp.Targets" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]Microsoft.FSharp.Targets" Type="string" />
           <RegistryValue Name="Microsoft.Portable.FSharp.Targets" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]Microsoft.Portable.FSharp.Targets" Type="string" />
+          <RegistryValue Name="Microsoft.FSharp.NetSdk.props" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]Microsoft.FSharp.NetSdk.props" Type="string" />
+          <RegistryValue Name="Microsoft.FSharp.NetSdk.targets" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]Microsoft.FSharpNetSdk.targets" Type="string" />
         </RegistryKey>
         <RegistryKey Root="HKLM" Key="Software\Microsoft\VisualStudio\15.0\Setup\F#" ForceCreateOnInstall="yes" ForceDeleteOnUninstall="yes">
           <RegistryValue Name="ProductDir" Value="[MicrosoftSDKs_FS_4.1_Framework_v4.0]" Type="string" />
@@ -157,7 +179,7 @@
       </Component>
 
       <Component Id="Compiler_Redist_Microsoft.DiaSymReader.PortablePdb.dll" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.DiaSymReader.PortablePdb.dll, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_Microsoft.DiaSymReader.PortablePdb.dll" Source="$(var.NugetPackagesDir)\Microsoft.DiaSymReader.PortablePdb.1.1.0\lib\net45\Microsoft.DiaSymReader.PortablePdb.dll" />
+        <File Id="Compiler_Redist_Microsoft.DiaSymReader.PortablePdb.dll" Source="$(var.NugetPackagesDir)\Microsoft.DiaSymReader.PortablePdb.1.1.0\lib\netstandard1.1\Microsoft.DiaSymReader.PortablePdb.dll" />
       </Component>
 
       <Component Id="Compiler_Redist_Microsoft.DiaSymReader.dll" Guid="$(fsharp.guid(Compiler_Redist_Microsoft.DiaSymReader.dll, $(var.LocaleCode)))">
@@ -165,7 +187,7 @@
       </Component>
 
       <Component Id="Compiler_Redist_System.ValueTuple.dll" Guid="$(fsharp.guid(Compiler_Redist_System.ValueTuple.dll, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_System.ValueTuple.dll" Source="$(var.NugetPackagesDir)\System.ValueTuple.4.3.0\lib\netstandard1.0\System.ValueTuple.dll" />
+        <File Id="Compiler_Redist_System.ValueTuple.dll" Source="$(var.NugetPackagesDir)\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll" />
       </Component>
     </DirectoryRef>
 

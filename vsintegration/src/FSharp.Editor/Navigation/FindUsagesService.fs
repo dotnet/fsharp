@@ -15,7 +15,7 @@ open Microsoft.CodeAnalysis.FindUsages
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
-[<ExportLanguageService(typeof<IFindUsagesService>, FSharpCommonConstants.FSharpLanguageName); Shared>]
+[<ExportLanguageService(typeof<IFindUsagesService>, FSharpConstants.FSharpLanguageName); Shared>]
 type internal FSharpFindUsagesService
     [<ImportingConstructor>]
     (
@@ -23,8 +23,10 @@ type internal FSharpFindUsagesService
         projectInfoManager: ProjectInfoManager
     ) =
     
+    static let userOpName = "FindUsages"
+
     // File can be included in more than one project, hence single `range` may results with multiple `Document`s.
-    let rangeToDocumentSpans (solution: Solution, range: range, cancellationToken: CancellationToken) =
+    let rangeToDocumentSpans (solution: Solution, range: range) =
         async {
             if range.Start = range.End then return []
             else 
@@ -33,10 +35,11 @@ type internal FSharpFindUsagesService
                     |> Seq.map (fun documentId ->
                         async {
                             let doc = solution.GetDocument(documentId)
-                            let! sourceText = doc.GetTextAsync(cancellationToken)
-                            match CommonRoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
+                            let! cancellationToken = Async.CancellationToken
+                            let! sourceText = doc.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                            match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
                             | Some span ->
-                                let span = CommonHelpers.fixupSpan(sourceText, span)
+                                let span = Tokenizer.fixupSpan(sourceText, span)
                                 return Some (DocumentSpan(doc, span))
                             | None -> return None
                         })
@@ -44,20 +47,20 @@ type internal FSharpFindUsagesService
                 return spans |> Array.choose id |> Array.toList
         }
 
-    let findReferencedSymbolsAsync(document: Document, position: int, context: IFindUsagesContext, allReferences: bool) : Async<unit> =
+    let findReferencedSymbolsAsync(document: Document, position: int, context: IFindUsagesContext, allReferences: bool, userOpName: string) : Async<unit> =
         asyncMaybe {
-            let! sourceText = document.GetTextAsync(context.CancellationToken)
+            let! sourceText = document.GetTextAsync(context.CancellationToken) |> Async.AwaitTask |> liftAsync
             let checker = checkerProvider.Checker
             let! options = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true, userOpName = userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition(position).ToString()
             let lineNumber = sourceText.Lines.GetLinePosition(position).Line + 1
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.FilePath, options.OtherOptions |> Seq.toList)
             
-            let! symbol = CommonHelpers.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy)
-            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland)
-            let! declaration = checkFileResults.GetDeclarationLocationAlternate (lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland, false) |> liftAsync
-            let tags = GlyphTags.GetTags(CommonRoslynHelpers.GetGlyphForSymbol (symbolUse.Symbol, symbol.Kind))
+            let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false)
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland, userOpName=userOpName)
+            let! declaration = checkFileResults.GetDeclarationLocation (lineNumber, symbol.Ident.idRange.EndColumn, textLine, symbol.FullIsland, false, userOpName=userOpName) |> liftAsync
+            let tags = GlyphTags.GetTags(Tokenizer.GetGlyphForSymbol (symbolUse.Symbol, symbol.Kind))
             
             let declarationRange = 
                 match declaration with
@@ -68,7 +71,7 @@ type internal FSharpFindUsagesService
                 async {
                     let! declarationSpans =
                         match declarationRange with
-                        | Some range -> rangeToDocumentSpans(document.Project.Solution, range, context.CancellationToken)
+                        | Some range -> rangeToDocumentSpans(document.Project.Solution, range)
                         | None -> async.Return []
                     
                     return 
@@ -110,7 +113,7 @@ type internal FSharpFindUsagesService
                             |> Seq.map (fun project ->
                                 asyncMaybe {
                                     let! options = projectInfoManager.TryGetOptionsForProject(project.Id)
-                                    let! projectCheckResults = checker.ParseAndCheckProject(options) |> liftAsync
+                                    let! projectCheckResults = checker.ParseAndCheckProject(options, userOpName = userOpName) |> liftAsync
                                     return! projectCheckResults.GetUsesOfSymbol(symbolUse.Symbol) |> liftAsync
                                 } |> Async.map (Option.defaultValue [||]))
                             |> Async.Parallel
@@ -127,7 +130,7 @@ type internal FSharpFindUsagesService
                 | _ ->
                     // report a reference if we're interested in all _or_ if we're looking at an implementation
                     if allReferences || symbolUse.IsFromDispatchSlotImplementation then
-                        let! referenceDocSpans = rangeToDocumentSpans(document.Project.Solution, symbolUse.RangeAlternate, context.CancellationToken) |> liftAsync
+                        let! referenceDocSpans = rangeToDocumentSpans(document.Project.Solution, symbolUse.RangeAlternate) |> liftAsync
                         match referenceDocSpans with
                         | [] -> ()
                         | _ ->
@@ -141,9 +144,9 @@ type internal FSharpFindUsagesService
 
     interface IFindUsagesService with
         member __.FindReferencesAsync(document, position, context) =
-            findReferencedSymbolsAsync(document, position, context, true)
-            |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+            findReferencedSymbolsAsync(document, position, context, true, userOpName)
+            |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
         member __.FindImplementationsAsync(document, position, context) =
-            findReferencedSymbolsAsync(document, position, context, false)
-            |> CommonRoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
+            findReferencedSymbolsAsync(document, position, context, false, userOpName)
+            |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
  

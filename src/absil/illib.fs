@@ -1,6 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
+#if COMPILER_PUBLIC_API
+module public Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
+#else
 module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
+#endif
 #nowarn "1178" // The struct, record or union type 'internal_instr_extension' is not structurally comparable because the type
 
 
@@ -9,8 +13,6 @@ open System.Collections
 open System.Collections.Generic
 open System.Reflection
 open Internal.Utilities
-open Internal.Utilities.Collections
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 
 #if FX_RESHAPED_REFLECTION
 open Microsoft.FSharp.Core.ReflectionAdapters
@@ -23,6 +25,20 @@ let (>>>&) (x:int32) (n:int32) = int32 (uint32 x >>> n)
 let notlazy v = Lazy<_>.CreateFromValue v
 
 let inline isNil l = List.isEmpty l
+
+/// Returns true if the list has less than 2 elements. Otherwise false.
+let inline isNilOrSingleton l =
+    match l with
+    | [] 
+    | [_] -> true
+    | _ -> false
+
+/// Returns true if the list contains exactly 1 element. Otherwise false.
+let inline isSingleton l =
+    match l with
+    | [_] -> true
+    | _ -> false
+
 let inline isNonNull x = not (isNull x)
 let inline nonNull msg x = if isNull x then failwith ("null: " ^ msg) else x
 let (===) x y = LanguagePrimitives.PhysicalEquality x y
@@ -38,7 +54,7 @@ let reportTime =
             let t = System.Diagnostics.Process.GetCurrentProcess().UserProcessorTime.TotalSeconds
             let prev = match !tPrev with None -> 0.0 | Some t -> t
             let first = match !tFirst with None -> (tFirst := Some t; t) | Some t -> t
-            dprintf "ilwrite: TIME %10.3f (total)   %10.3f (delta) - %s\n" (t - first) (t - prev) descr
+            printf "ilwrite: TIME %10.3f (total)   %10.3f (delta) - %s\n" (t - first) (t - prev) descr
             tPrev := Some t
 
 //-------------------------------------------------------------------------
@@ -249,8 +265,25 @@ module Option =
 
     let attempt (f: unit -> 'T) = try Some (f()) with _ -> None        
 
+    
+    let orElseWith f opt = 
+        match opt with 
+        | None -> f()
+        | x -> x
+
+    let orElse v opt = 
+        match opt with 
+        | None -> v
+        | x -> x
+
+    let defaultValue v opt = 
+        match opt with 
+        | None -> v
+        | Some x -> x
+
 module List = 
 
+    //let item n xs = List.nth xs n
 #if FX_RESHAPED_REFLECTION
     open PrimReflectionAdapters
     open Microsoft.FSharp.Core.ReflectionAdapters
@@ -416,17 +449,7 @@ module List =
         match l with 
         | [] -> false 
         | h::t -> LanguagePrimitives.PhysicalEquality x h || memq x t
-
-    // must be tail recursive 
-    let mapFold (f:'a -> 'b -> 'c * 'a) (s:'a) (l:'b list) : 'c list * 'a = 
-        match l with
-        | [] -> [], s
-        | [h] -> let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-                 let h',s' = f.Invoke(s, h)
-                 [h'], s'
-        | _ -> 
-            List.mapFold f s l
-
+        
     // Not tail recursive 
     let rec mapFoldBack f l s = 
         match l with 
@@ -454,7 +477,7 @@ module List =
       | x::xs -> fhead x :: List.map ftail xs
 
     let collectFold f s l = 
-      let l, s = mapFold f s l
+      let l, s = List.mapFold f s l
       List.concat l, s
 
     let collect2 f xs ys = List.concat (List.map2 f xs ys)
@@ -463,7 +486,7 @@ module List =
     let iterSquared f xss = xss |> List.iter (List.iter f)
     let collectSquared f xss = xss |> List.collect (List.collect f)
     let mapSquared f xss = xss |> List.map (List.map f)
-    let mapFoldSquared f z xss = mapFold (mapFold f) z xss
+    let mapFoldSquared f z xss = List.mapFold (List.mapFold f) z xss
     let forallSquared f xss = xss |> List.forall (List.forall f)
     let mapiSquared f xss = xss |> List.mapi (fun i xs -> xs |> List.mapi (fun j x -> f i j x))
     let existsSquared f xss = xss |> List.exists (fun xs -> xs |> List.exists (fun x -> f x))
@@ -610,7 +633,7 @@ module Lazy =
     let force (x: Lazy<'T>) = x.Force()
 
 //----------------------------------------------------------------------------
-// Singe threaded execution and mutual exclusion
+// Single threaded execution and mutual exclusion
 
 /// Represents a permission active at this point in execution
 type ExecutionToken = interface end
@@ -621,18 +644,18 @@ type ExecutionToken = interface end
 ///   - we can access various caches in the SourceCodeServices
 ///
 /// Like other execution tokens this should be passed via argument passing and not captured/stored beyond
-/// the lifetime of stack-based calls. This is not checked, it is a discipline withinn the compiler code. 
+/// the lifetime of stack-based calls. This is not checked, it is a discipline within the compiler code. 
 type CompilationThreadToken() = interface ExecutionToken
 
-/// Represnts a place where we are stating that execution on the compilation thread is required.  The
+/// Represents a place where we are stating that execution on the compilation thread is required.  The
 /// reason why will be documented in a comment in the code at the callsite.
 let RequireCompilationThread (_ctok: CompilationThreadToken) = ()
 
-/// Represnts a place in the compiler codebase where we are passed a CompilationThreadToken unnecessarily.
+/// Represents a place in the compiler codebase where we are passed a CompilationThreadToken unnecessarily.
 /// This reprents code that may potentially not need to be executed on the compilation thread.
 let DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  (_ctok: CompilationThreadToken) = ()
 
-/// Represnts a place in the compiler codebase where we assume we are executing on a compilation thread
+/// Represents a place in the compiler codebase where we assume we are executing on a compilation thread
 let AssumeCompilationThreadWithoutEvidence () = Unchecked.defaultof<CompilationThreadToken>
 
 /// Represents a token that indicates execution on a any of several potential user threads calling the F# compiler services.
@@ -693,7 +716,7 @@ type ValueOrCancelled<'TResult> =
 /// Represents a cancellable computation with explicit representation of a cancelled result.
 ///
 /// A cancellable computation is passed may be cancelled via a CancellationToken, which is propagated implicitly.  
-/// If cancellation occurs, it is propagated as data rather than by raising an OperationCancelledException.  
+/// If cancellation occurs, it is propagated as data rather than by raising an OperationCanceledException.  
 type Cancellable<'TResult> = Cancellable of (System.Threading.CancellationToken -> ValueOrCancelled<'TResult>)
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -702,7 +725,7 @@ module Cancellable =
     /// Run a cancellable computation using the given cancellation token
     let run (ct: System.Threading.CancellationToken) (Cancellable oper) = 
         if ct.IsCancellationRequested then 
-            ValueOrCancelled.Cancelled (OperationCanceledException()) 
+            ValueOrCancelled.Cancelled (OperationCanceledException ct) 
         else
             oper ct 
 
@@ -762,7 +785,7 @@ module Cancellable =
     let token () = Cancellable (fun ct -> ValueOrCancelled.Value ct)
 
     /// Represents a canceled computation
-    let canceled() = Cancellable (fun _ -> ValueOrCancelled.Cancelled (new OperationCanceledException()))
+    let canceled() = Cancellable (fun ct -> ValueOrCancelled.Cancelled (OperationCanceledException ct))
 
     /// Catch exceptions in a computation
     let private catch (Cancellable e) = 
@@ -785,7 +808,7 @@ module Cancellable =
         catch e |> bind (fun res ->  
             match res with Choice1Of2 r -> ret r | Choice2Of2 err -> handler err)
     
-    // /// Run the cancellable computation within an Async computation.  This isn't actaully used in the codebase, but left
+    // Run the cancellable computation within an Async computation.  This isn't actually used in the codebase, but left
     // here in case we need it in the future 
     //
     // let toAsync e =    
@@ -916,7 +939,7 @@ module Eventually =
         catch e 
         |> bind (function Result v -> Done v | Exception e -> handler e)
     
-    // All eventually computations carry a CompiationThreadToken
+    // All eventually computations carry a CompilationThreadToken
     let token =    
         NotYetDone (fun ctok -> Done ctok)
     
@@ -1058,6 +1081,42 @@ module Tables =
                 res 
             else
                 res <- f x; t.[x] <- res;  res
+
+
+/// Interface that defines methods for comparing objects using partial equality relation
+type IPartialEqualityComparer<'T> = 
+    inherit IEqualityComparer<'T>
+    /// Can the specified object be tested for equality?
+    abstract InEqualityRelation : 'T -> bool
+
+module IPartialEqualityComparer = 
+    let On f (c: IPartialEqualityComparer<_>) = 
+          { new IPartialEqualityComparer<_> with 
+                member __.InEqualityRelation x = c.InEqualityRelation (f x)
+                member __.Equals(x, y) = c.Equals(f x, f y)
+                member __.GetHashCode x = c.GetHashCode(f x) }
+    
+
+
+    // Wrapper type for use by the 'partialDistinctBy' function
+    [<StructuralEquality; NoComparison>]
+    type private WrapType<'T> = Wrap of 'T
+    
+    // Like Seq.distinctBy but only filters out duplicates for some of the elements
+    let partialDistinctBy (per:IPartialEqualityComparer<'T>) seq =
+        let wper = 
+            { new IPartialEqualityComparer<WrapType<'T>> with
+                member __.InEqualityRelation (Wrap x) = per.InEqualityRelation (x)
+                member __.Equals(Wrap x, Wrap y) = per.Equals(x, y)
+                member __.GetHashCode (Wrap x) = per.GetHashCode(x) }
+        // Wrap a Wrap _ around all keys in case the key type is itself a type using null as a representation
+        let dict = Dictionary<WrapType<'T>,obj>(wper)
+        seq |> List.filter (fun v -> 
+            let key = Wrap(v)
+            if (per.InEqualityRelation(v)) then 
+                if dict.ContainsKey(key) then false else (dict.[key] <- null; true)
+            else true)
+
 
 //-------------------------------------------------------------------------
 // Library: Name maps

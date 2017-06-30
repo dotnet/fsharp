@@ -62,7 +62,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         bool NeedsVisualRefresh { get; }
         bool OutliningEnabled { get; set; }
         void DisableOutlining();
-        void OnCommand(IVsTextView textView, VsCommands2K command, char ch);
+        void OnCommand(IVsTextView textView, Microsoft.VisualStudio.VSConstants.VSStd2KCmdID command, char ch);
         TokenInfo GetTokenInfo(int line, int col);
         void MethodTip(IVsTextView textView, int line, int index, TokenInfo info, MethodTipMiscellany methodTipMiscellany, RequireFreshResults requireFreshResults);
         void GetPairExtents(IVsTextView textView, int line, int col, out TextSpan span);

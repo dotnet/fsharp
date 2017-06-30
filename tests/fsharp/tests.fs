@@ -499,6 +499,10 @@ module CoreTests =
                 
 
 
+    // Debug with 
+    //     ..\..\..\..\debug\net40\bin\fsi.exe --nologo < test.fsx >a.out 2>a.err
+    // then 
+    ///    windiff z.output.test.default.stdout.bsl a.out
     let printing flag diffFileOut expectedFileOut diffFileErr expectedFileErr = 
        let cfg = testConfig "core/printing"
 
@@ -654,6 +658,8 @@ module CoreTests =
 
         fsc cfg "%s -o:test.exe -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
 
+        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+
         peverify cfg "test.exe"
 
         begin
@@ -774,7 +780,41 @@ module CoreTests =
         peverify cfg "test2.exe"
 
         exec cfg ("." ++ "test2.exe") ""
- 
+
+    // Repro for https://github.com/Microsoft/visualfsharp/issues/2679
+    [<Test>]
+    let ``add files with same name from different folders`` () = 
+        let cfg = testConfig "core/samename"
+
+        log "== Compiling F# Code with files with same name in different folders"
+        fsc cfg "%s -o:test.exe" cfg.fsc_flags ["folder1/a.fs"; "folder1/b.fs"; "folder2/a.fs"; "folder2/b.fs"]
+
+        peverify cfg "test.exe"
+
+        exec cfg ("." ++ "test.exe") ""
+
+    [<Test>]
+    let ``add files with same name from different folders including signature files`` () =
+        let cfg = testConfig "core/samename"
+
+        log "== Compiling F# Code with files with same name in different folders including signature files"
+        fsc cfg "%s -o:test.exe" cfg.fsc_flags ["folder1/a.fsi"; "folder1/a.fs"; "folder1/b.fsi"; "folder1/b.fs"; "folder2/a.fsi"; "folder2/a.fs"; "folder2/b.fsi"; "folder2/b.fs"]
+
+        peverify cfg "test.exe"
+
+        exec cfg ("." ++ "test.exe") ""
+
+    [<Test>]
+    let ``add files with same name from different folders including signature files that are not synced`` () =
+        let cfg = testConfig "core/samename"
+
+        log "== Compiling F# Code with files with same name in different folders including signature files"
+        fsc cfg "%s -o:test.exe" cfg.fsc_flags ["folder1/a.fsi"; "folder1/a.fs"; "folder1/b.fs"; "folder2/a.fsi"; "folder2/a.fs"; "folder2/b.fsi"; "folder2/b.fs"]
+
+        peverify cfg "test.exe"
+
+        exec cfg ("." ++ "test.exe") ""
+
     [<Test>]
     let ``libtest-FSI_STDIN`` () = singleTestBuildAndRun "core/libtest" FSI_STDIN
 
@@ -978,6 +1018,16 @@ module CoreTests =
         fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
    
         peverifyWithArgs cfg "/nologo /MD" "test.exe"
+                
+    [<Test>]
+    let fsi_load () = 
+        let cfg = testConfig "core/fsi-load"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
+
+        testOkFile.CheckExists()
                 
     [<Test>]
     let queriesLeafExpressionConvert () = 
@@ -1552,6 +1602,8 @@ module OptimizationTests =
 
         fsc cfg "%s -g --optimize- --target:library -o:lib.dll" cfg.fsc_flags ["lib.fs"; "lib2.fs"]
 
+        peverify cfg "lib.dll " 
+
         fsc cfg "%s -g --optimize- --target:library -o:lib3.dll -r:lib.dll " cfg.fsc_flags ["lib3.fs"]
 
         fsc cfg "%s -g --optimize- -o:test.exe -r:lib.dll -r:lib3.dll" cfg.fsc_flags ["test.fs "]
@@ -1619,6 +1671,18 @@ module TypecheckTests =
 #endif
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+    [<Test>]
+    let ``sigs pos26`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:exe -o:pos26.exe" cfg.fsc_flags ["pos26.fsi"; "pos26.fs"]
+        peverify cfg "pos26.exe"
+
+    [<Test>]
+    let ``sigs pos25`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:exe -o:pos25.exe" cfg.fsc_flags ["pos25.fs"]
+        peverify cfg "pos25.exe"
+
     [<Test>]
     let ``sigs pos24`` () = 
         let cfg = testConfig "typecheck/sigs"
@@ -2063,6 +2127,9 @@ module TypecheckTests =
     let ``type check neg97`` () = singleNegTest (testConfig "typecheck/sigs") "neg97"
 
     [<Test>] 
+    let ``type check neg98`` () = singleNegTest (testConfig "typecheck/sigs") "neg98"
+
+    [<Test>] 
     let ``type check neg_byref_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_1"
 
     [<Test>] 
@@ -2248,7 +2315,7 @@ module GeneratedSignatureTests =
     [<Test>]
     let ``members-basics-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/members/basics" GENERATED_SIGNATURE
 
-    [<Test>]
+    [<Test; Ignore("Flaky w.r.t. PEVerify.  https://github.com/Microsoft/visualfsharp/issues/2616")>]
     let ``access-GENERATED_SIGNATURE``() = singleTestBuildAndRun "core/access" GENERATED_SIGNATURE
 
     [<Test>]

@@ -4,11 +4,15 @@ __scriptpath=$(cd "$(dirname "$0")"; pwd -P)
 __init_tools_log=$__scriptpath/init-tools.log
 __PACKAGES_DIR=$__scriptpath/packages
 __TOOLRUNTIME_DIR=$__scriptpath/Tools
+
 __DOTNET_PATH=$__TOOLRUNTIME_DIR/dotnetcli
 __DOTNET_CMD=$__DOTNET_PATH/dotnet
+__DOTNET_VERSION=$(cat $__scriptpath/DotnetCLIVersion.txt)
+
 if [ -z "$__BUILDTOOLS_SOURCE" ]; then __BUILDTOOLS_SOURCE=https://dotnet.myget.org/F/dotnet-buildtools/api/v3/index.json; fi
 __BUILD_TOOLS_PACKAGE_VERSION=$(cat $__scriptpath/BuildToolsVersion.txt)
-__DOTNET_TOOLS_VERSION=$(cat $__scriptpath/DotnetCLIVersion.txt)
+
+
 __BUILD_TOOLS_PATH=$__PACKAGES_DIR/microsoft.dotnet.buildtools/$__BUILD_TOOLS_PACKAGE_VERSION/lib
 __PROJECT_JSON_PATH=$__TOOLRUNTIME_DIR/$__BUILD_TOOLS_PACKAGE_VERSION
 __PROJECT_JSON_FILE=$__PROJECT_JSON_PATH/project.json
@@ -99,32 +103,35 @@ if [ ! -e $__INIT_TOOLS_DONE_MARKER ]; then
 
         mkdir -p "$__DOTNET_PATH"
 
-        if [ -n "$DOTNET_TOOLSET_DIR" ] && [ -d "$DOTNET_TOOLSET_DIR/$__DOTNET_TOOLS_VERSION" ]; then
-            echo "Copying $DOTNET_TOOLSET_DIR/$__DOTNET_TOOLS_VERSION to $__DOTNET_PATH" >> $__init_tools_log
-            cp -r $DOTNET_TOOLSET_DIR/$__DOTNET_TOOLS_VERSION/* $__DOTNET_PATH
+        if [ -n "$DOTNET_TOOLSET_DIR" ] && [ -d "$DOTNET_TOOLSET_DIR/$__DOTNET_VERSION" ]; then
+            echo "Copying $DOTNET_TOOLSET_DIR/$__DOTNET_VERSION to $__DOTNET_PATH" >> $__init_tools_log
+            cp -r $DOTNET_TOOLSET_DIR/$__DOTNET_VERSION/* $__DOTNET_PATH
         elif [ -n "$DOTNET_TOOL_DIR" ] && [ -d "$DOTNET_TOOL_DIR" ]; then
             echo "Copying $DOTNET_TOOL_DIR to $__DOTNET_PATH" >> $__init_tools_log
             cp -r $DOTNET_TOOL_DIR/* $__DOTNET_PATH
         else
             echo "Installing dotnet cli..."
-            __DOTNET_LOCATION="https://dotnetcli.blob.core.windows.net/dotnet/Sdk/${__DOTNET_TOOLS_VERSION}/${__DOTNET_PKG}.${__DOTNET_TOOLS_VERSION}.tar.gz"
-            # curl has HTTPS CA trust-issues less often than wget, so lets try that first.
-            echo "Installing '${__DOTNET_LOCATION}' to '$__DOTNET_PATH/dotnet.tar'" >> $__init_tools_log
-            which curl > /dev/null 2> /dev/null
-            if [ $? -ne 0 ]; then
-                wget -q -O $__DOTNET_PATH/dotnet.tar ${__DOTNET_LOCATION}
-            else
-                curl --retry 10 -sSL --create-dirs -o $__DOTNET_PATH/dotnet.tar ${__DOTNET_LOCATION}
-            fi
-            cd $__DOTNET_PATH
-            tar -xf $__DOTNET_PATH/dotnet.tar
-
-            cd $__scriptpath
-
-            __PATCH_CLI_NUGET_FRAMEWORKS=1
+            echo "The dotnet cli is a large file it may take a few minutes ..."
+            ./scripts/dotnet-install.sh --install-dir "$__DOTNET_PATH" --architecture "x64" --runtime-id "linux-x64" --version "$__DOTNET_VERSION"
         fi
     fi
 
+    if [ ! -e $__DOTNET_TOOLS_PATH ]; then
+
+        mkdir -p "$__DOTNET_PATH"
+
+        if [ -n "$DOTNET_TOOLSET_DIR" ] && [ -d "$DOTNET_TOOLSET_DIR/$__DOTNET_TOOLS_VERSION" ]; then
+            echo "Copying $DOTNET_TOOLSET_DIR/$__DOTNET_TOOLS_VERSION to $__DOTNET_TOOLS_PATH" >> $__init_tools_log
+            cp -r $DOTNET_TOOLSET_DIR/$__DOTNET_VERSION/* $__DOTNET_PATH
+        elif [ -n "$DOTNET_TOOL_DIR" ] && [ -d "$DOTNET_TOOL_DIR" ]; then
+            echo "Copying $DOTNET_TOOL_DIR to $__DOTNET_TOOLS_PATH" >> $__init_tools_log
+            cp -r $DOTNET_TOOL_DIR/* $__DOTNET_PATH
+        else
+            echo "Installing dotnet cli..."
+            echo "The dotnet cli is a large file it may take a few minutes ..."
+            ./scripts/dotnet-install.sh --channel "release/2.0.0" --install-dir "$__DOTNET_PATH" --architecture "x64" --runtime-id "linux-x64" --version "$__DOTNET_VERSION"
+        fi
+    fi
 
     if [ -n "$BUILD_TOOLS_TOOLSET_DIR" ] && [ -d "$BUILD_TOOLS_TOOLSET_DIR/$__BUILD_TOOLS_PACKAGE_VERSION" ]; then
         echo "Copying $BUILD_TOOLS_TOOLSET_DIR/$__BUILD_TOOLS_PACKAGE_VERSION to $__TOOLRUNTIME_DIR" >> $__init_tools_log
@@ -154,7 +161,7 @@ if [ ! -e $__INIT_TOOLS_DONE_MARKER ]; then
 
     if [ $__PATCH_CLI_NUGET_FRAMEWORKS -eq 1 ]; then
         echo "Updating CLI NuGet Frameworks map..."
-        cp $__TOOLRUNTIME_DIR/NuGet.Frameworks.dll $__TOOLRUNTIME_DIR/dotnetcli/sdk/$__DOTNET_TOOLS_VERSION >> $__init_tools_log
+        cp $__TOOLRUNTIME_DIR/NuGet.Frameworks.dll $__TOOLRUNTIME_DIR/dotnetcli/sdk/$__DOTNET_VERSION >> $__init_tools_log
         if [ "$?" != "0" ]; then
             echo "ERROR: An error occured when updating Nuget for CLI . Please check '$__init_tools_log' for more details."1>&2
             exit 1

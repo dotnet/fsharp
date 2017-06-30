@@ -10,7 +10,7 @@ let root = Path.GetFullPath (__SOURCE_DIRECTORY__ ++ ".." ++ "..")
 try 
     let ProjectJsonLock    = getCmdLineArg "--projectJsonLock:"    (root ++ "tests" ++ "fsharp" ++ "project.lock.json")
     let PackagesDir        = getCmdLineArg "--packagesDir:"        (root ++ "packages")
-    let Framework           = getCmdLineArg "--framework:"         ".NETCoreApp,Version=v1.0"
+    let Framework          = getCmdLineArg "--framework:"         ".NETCoreApp,Version=v1.0"
     let Platform           = getCmdLineArg "--platform:"           defaultPlatform
     let FSharpCore         = getCmdLineArg "--fsharpCore:"         @"release/coreclr/bin/FSharp.Core.dll"
     let Output             = getCmdLineArg "--output:"             @"."
@@ -21,8 +21,6 @@ try
         let FSharpCoreDir = getDirectoryName FSharpCore
         [ FSharpCoreDir ++ "fsc.exe"
           FSharpCoreDir ++ "FSharp.Compiler.dll"
-          FSharpCoreDir ++ "FSharp.Core.sigdata"
-          FSharpCoreDir ++ "FSharp.Core.optdata"
           FSharpCoreDir ++ "default.win32manifest"
           FSharpCoreDir ++ "fsi.exe"
           FSharpCoreDir ++ "FSharp.Compiler.Interactive.Settings.dll" ]

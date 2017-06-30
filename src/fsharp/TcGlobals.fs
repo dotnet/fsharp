@@ -13,14 +13,11 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.PrettyNaming
 
@@ -161,7 +158,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                       mlCompatibility: bool, isInteractive:bool, 
                       // The helper to find system types amongst referenced DLLs
                       tryFindSysTypeCcu, 
-                      emitDebugInfoInQuotations: bool, usesMscorlib: bool, noDebugData: bool) =
+                      emitDebugInfoInQuotations: bool, noDebugData: bool) =
       
   let vara = NewRigidTypar "a" envRange
   let varb = NewRigidTypar "b" envRange
@@ -938,6 +935,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val tcref_System_Collections_IEqualityComparer = findSysTyconRef sysCollections "IEqualityComparer"
   member val tcref_System_Collections_Generic_IEqualityComparer = findSysTyconRef sysGenerics "IEqualityComparer`1"
   member val tcref_System_Collections_Generic_Dictionary = findSysTyconRef sysGenerics "Dictionary`2"
+  member val tcref_System_Collections_Generic_IDictionary = findSysTyconRef sysGenerics "IDictionary`2"
     
   member val tcref_System_IComparable = findSysTyconRef sys "IComparable"
   member val tcref_System_IStructuralComparable = findSysTyconRef sysCollections "IStructuralComparable"
@@ -946,7 +944,7 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
             
   member val tcref_LanguagePrimitives = mk_MFCore_tcref fslibCcu "LanguagePrimitives"
 
-
+  member val tcref_System_Collections_Generic_List       = findSysTyconRef sysGenerics "List`1"
   member val tcref_System_Collections_Generic_IList       = findSysTyconRef sysGenerics "IList`1"
   member val tcref_System_Collections_Generic_IReadOnlyList       = findSysTyconRef sysGenerics "IReadOnlyList`1"
   member val tcref_System_Collections_Generic_ICollection = findSysTyconRef sysGenerics "ICollection`1"
@@ -1236,7 +1234,6 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member __.suppressed_types = v_suppressed_types
   /// Are we assuming all code gen is for F# interactive, with no static linking 
   member __.isInteractive=isInteractive
-  member __.usesMscorlib = usesMscorlib
 
   member __.FindSysTyconRef path nm = findSysTyconRef path nm
   member __.TryFindSysTyconRef path nm = tryFindSysTyconRef path nm

@@ -175,7 +175,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         {
             if (string.IsNullOrEmpty(fileName)) return;
             IVsWindowFrame windowFrame = null;
-            uint itemID = VSConstants.VSITEMID_NIL;
+            uint itemID = Microsoft.VisualStudio.VSConstants.VSITEMID_NIL;
             IVsUIHierarchy hierarchy = null;
             if (VsShell.IsDocumentOpen(this.Site, fileName, Guid.Empty, out hierarchy, out itemID, out windowFrame))
             {
@@ -842,7 +842,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             }
             else if (site is IOleServiceProvider)
             {
-                this.site = new ServiceProvider((IOleServiceProvider)site);
+                this.site = new Microsoft.VisualStudio.Shell.ServiceProvider ((IOleServiceProvider)site);
             }
             Microsoft.VisualStudio.Shell.Package pkg = (Microsoft.VisualStudio.Shell.Package)this.site.GetService(typeof(Microsoft.VisualStudio.Shell.Package));
             this.lcid = pkg.GetProviderLocale();
@@ -1395,6 +1395,8 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
         internal abstract String GetName(string filterText, int index);
 
+        internal abstract string GetNameInCode(string filterText, int index);
+
         internal abstract String GetDescription(string filterText, int index);
 
         internal abstract int GetGlyph(string filterText, int index);
@@ -1428,7 +1430,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
         internal abstract string GetDescription(int index);
 
-        internal abstract string GetType(int index);
+        internal abstract string GetReturnTypeText(int index);
 
         internal abstract int GetParameterCount(int index);
 

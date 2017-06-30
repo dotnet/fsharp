@@ -629,12 +629,20 @@ namespace Microsoft.FSharp.Collections
 
 
 #if !FX_NO_DEBUG_PROXIES
-    and 
+    and
         [<Sealed>]
         MapDebugView<'Key,'Value when 'Key : comparison>(v: Map<'Key,'Value>)  =  
 
-         [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
-         member x.Items = v |> Seq.truncate 10000 |> Seq.toArray
+            [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
+            member x.Items =
+                v |> Seq.truncate 10000 |> Seq.map KeyValuePairDebugFriendly |> Seq.toArray
+    
+    and
+        [<DebuggerDisplay("{keyValue.Value}", Name = "[{keyValue.Key}]", Type = "")>]
+        KeyValuePairDebugFriendly<'Key,'Value>(keyValue : KeyValuePair<'Key, 'Value>) =
+        
+            [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
+            member x.KeyValue = keyValue
 #endif
         
 

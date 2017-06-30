@@ -23,24 +23,54 @@ val EncodeInterfaceData: tcConfig:TcConfig * tcGlobals:TcGlobals * exportRemappi
 val ValidateKeySigningAttributes : tcConfig:TcConfig * tcGlobals:TcGlobals * TypeChecker.TopAttribs -> StrongNameSigningInfo
 val GetStrongNameSigner : StrongNameSigningInfo -> ILBinaryWriter.ILStrongNameSigner option
 
-/// Proccess the given set of command line arguments
+/// Process the given set of command line arguments
 val internal ProcessCommandLineFlags : TcConfigBuilder * setProcessThreadLocals:(TcConfigBuilder -> unit) * lcidFromCodePage : int option * argv:string[] -> string list
 
 //---------------------------------------------------------------------------
 // The entry point used by fsc.exe
 
 val typecheckAndCompile : 
+    ctok: CompilationThreadToken *
     argv : string[] * 
-    referenceResolver: ReferenceResolver.Resolver * 
+    legacyReferenceResolver: ReferenceResolver.Resolver * 
     bannerAlreadyPrinted : bool * 
+    openBinariesInMemory: bool * 
+    defaultCopyFSharpCore: bool * 
     exiter : Exiter *
-    loggerProvider: ErrorLoggerProvider -> unit
+    loggerProvider: ErrorLoggerProvider *
+    tcImportsCapture: (TcImports -> unit) option *
+    dynamicAssemblyCreator: (TcGlobals * string * ILModuleDef -> unit) option
+      -> unit
 
 val mainCompile : 
-    argv : string[] * 
-    referenceResolver: ReferenceResolver.Resolver * 
-    bannerAlreadyPrinted : bool * 
-    exiter : Exiter -> unit
+    ctok: CompilationThreadToken *
+    argv: string[] * 
+    legacyReferenceResolver: ReferenceResolver.Resolver * 
+    bannerAlreadyPrinted: bool * 
+    openBinariesInMemory: bool * 
+    defaultCopyFSharpCore: bool * 
+    exiter: Exiter * 
+    loggerProvider: ErrorLoggerProvider * 
+    tcImportsCapture: (TcImports -> unit) option *
+    dynamicAssemblyCreator: (TcGlobals * string * ILModuleDef -> unit) option
+      -> unit
+
+val compileOfAst : 
+    ctok: CompilationThreadToken *
+    legacyReferenceResolver: ReferenceResolver.Resolver * 
+    openBinariesInMemory: bool * 
+    assemblyName:string * 
+    target:CompilerTarget * 
+    targetDll:string * 
+    targetPdb:string option * 
+    dependencies:string list * 
+    noframework:bool *
+    exiter:Exiter * 
+    loggerProvider: ErrorLoggerProvider * 
+    inputs:ParsedInput list *
+    tcImportsCapture : (TcImports -> unit) option *
+    dynamicAssemblyCreator: (TcGlobals * string * ILModuleDef -> unit) option
+      -> unit
 
 
 /// Part of LegacyHostedCompilerForTesting
@@ -50,9 +80,14 @@ type InProcErrorLoggerProvider =
     member CapturedWarnings : Diagnostic[]
     member CapturedErrors : Diagnostic[]
 
+/// The default ErrorLogger implementation, reporting messages to the Console up to the maxerrors maximum
+type ConsoleLoggerProvider = 
+    new : unit -> ConsoleLoggerProvider
+    inherit ErrorLoggerProvider
 
+// For unit testing
 module internal MainModuleBuilder =
     
-    val fileVersion: warn: (exn -> unit) -> findStringAttr: (string -> string option) -> assemblyVersion: AbstractIL.IL.ILVersionInfo -> AbstractIL.IL.ILVersionInfo
-    val productVersion: warn: (exn -> unit) -> findStringAttr: (string -> string option) -> fileVersion: AbstractIL.IL.ILVersionInfo -> string
-    val productVersionToILVersionInfo: string -> AbstractIL.IL.ILVersionInfo
+    val fileVersion: warn: (exn -> unit) -> findStringAttr: (string -> string option) -> assemblyVersion: ILVersionInfo -> ILVersionInfo
+    val productVersion: warn: (exn -> unit) -> findStringAttr: (string -> string option) -> fileVersion: ILVersionInfo -> string
+    val productVersionToILVersionInfo: string -> ILVersionInfo

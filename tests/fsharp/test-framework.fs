@@ -181,7 +181,17 @@ let config configurationName envVars =
     let ILDASM = requireFile (CORSDK ++ "ildasm.exe")
     let SN = requireFile (CORSDK ++ "sn.exe") 
     let PEVERIFY = requireFile (CORSDK ++ "peverify.exe")
-    let FSI_FOR_SCRIPTS = requireFile (SCRIPT_ROOT ++ ".." ++ ".." ++ (System.Environment.GetEnvironmentVariable("_fsiexe").Trim([| '\"' |])))
+    let FSI_FOR_SCRIPTS =
+        match envVars |> Map.tryFind "_fsiexe" with
+        | Some fsiexe when (not (String.IsNullOrWhiteSpace fsiexe)) -> requireFile (SCRIPT_ROOT ++ ".." ++ ".." ++ (fsiexe.Trim([| '\"' |])))
+        | _ ->
+            // build.cmd sets that var, if it is not set, we are probably called directly from visual studio or the nunit console runner.
+            let packagesDir = SCRIPT_ROOT ++ ".." ++ ".." ++ @"packages"
+            let fsharpCompilerTools = Directory.GetDirectories(packagesDir, "FSharp.Compiler.Tools.*")
+            match fsharpCompilerTools with
+            | [||] -> failwithf "Could not find any 'FSharp.Compiler.Tools' inside '%s'" packagesDir
+            | [| dir |] -> Path.Combine(dir, "tools", "fsi.exe")
+            | _ -> failwithf "Found more than one 'FSharp.Compiler.Tools' inside '%s', please clean up." packagesDir
     let dotNetExe = SCRIPT_ROOT ++ ".." ++ ".." ++ "Tools" ++ "dotnetcli" ++ "dotnet.exe"
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
@@ -385,7 +395,7 @@ module Command =
             let fullpath = Commands.getfullpath dir
             match rt with 
             | Append p -> File.AppendText( p |> fullpath)
-            | Overwrite p -> new StreamWriter(File.OpenWrite(p |> fullpath))
+            | Overwrite p -> new StreamWriter(new FileStream(p |> fullpath, FileMode.Create))
 
         let outF fCont cmdArgs =
             match redirect.Output with

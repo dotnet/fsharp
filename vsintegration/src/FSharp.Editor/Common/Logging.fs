@@ -71,7 +71,6 @@ type [<Export>] Logger [<ImportingConstructor>]
 [<AutoOpen>]
 module Logging =
 
-    
     let inline debug msg = Printf.kprintf Debug.WriteLine msg
 
     let private logger = lazy Logger(Logger.GlobalServiceProvider)

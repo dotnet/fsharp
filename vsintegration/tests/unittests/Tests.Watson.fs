@@ -4,6 +4,8 @@ namespace Tests.Compiler.Watson
 
 #nowarn "52" // The value has been copied to ensure the original is not mutated
 
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
+open Microsoft.FSharp.Compiler.Driver
 open NUnit.Framework
 open System
 open System.Text.RegularExpressions 
@@ -23,7 +25,9 @@ type Check =
                     File.Delete("watson-test.fs")
                 File.WriteAllText("watson-test.fs", "// Hello watson" )
                 let argv = [| "--simulateException:"+simulationCode; "watson-test.fs"|]
-                let _code = Microsoft.FSharp.Compiler.Driver.mainCompile (argv, Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver, false, Microsoft.FSharp.Compiler.ErrorLogger.QuitProcessExiter)
+
+                let ctok = AssumeCompilationThreadWithoutEvidence ()
+                let _code = mainCompile (ctok, argv, Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver, false, false, false, Microsoft.FSharp.Compiler.ErrorLogger.QuitProcessExiter, ConsoleLoggerProvider(), None, None)
                 ()
             with 
             | :? 'TException as e -> 
@@ -32,6 +36,10 @@ type Check =
                 else
                     printfn "%s" msg
                     Assert.Fail("The correct callstack was not reported to watson.")
+            | (Microsoft.FSharp.Compiler.ErrorLogger.ReportedError (Some (Microsoft.FSharp.Compiler.ErrorLogger.InternalError (msg, range) as e)))
+            | (Microsoft.FSharp.Compiler.ErrorLogger.InternalError (msg, range) as e) -> 
+                printfn "InternalError Exception: %s, range = %A, stack = %s" msg range (e.ToString())
+                Assert.Fail("An InternalError exception occurred.")
         finally               
 #if DEBUG
             Microsoft.FSharp.Compiler.CompileOps.CompilerService.showAssertForUnexpectedException := true 

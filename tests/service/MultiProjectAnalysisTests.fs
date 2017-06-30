@@ -1,24 +1,34 @@
 ﻿
 #if INTERACTIVE
-#r "../../Debug/net40/bin/FSharp.LanguageService.Compiler.dll"
-#r "../../Debug/net40/bin/nunit.framework.dll"
+#r "../../Debug/net40/bin/FSharp.Compiler.Service.dll" // note, run 'build fcs' to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
 #else
 module Tests.Service.MultiProjectAnalysisTests
 #endif
 
+open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.SourceCodeServices
+
 open NUnit.Framework
 open FsUnit
 open System
 open System.IO
+
+open System
 open System.Collections.Generic
-open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service.Tests.Common
 
+let numProjectsForStressTest = 100
+let internal checker = FSharpChecker.Create(projectCacheSize=numProjectsForStressTest + 10)
 
-module Project1A = 
+/// Extract range info 
+let internal tups (m:Range.range) = (m.StartLine, m.StartColumn), (m.EndLine, m.EndColumn)
+
+
+module internal Project1A = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -42,12 +52,12 @@ let x2 = C.M(arg1 = 3, arg2 = 4, ?arg3 = Some 5)
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let internal options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
 
 
 //-----------------------------------------------------------------------------------------
-module Project1B = 
+module internal Project1B = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -71,11 +81,11 @@ let x =
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let internal options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
 
 // A project referencing two sub-projects
-module MultiProject1 = 
+module internal MultiProject1 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -96,7 +106,7 @@ let p = (Project1A.x1, Project1B.b)
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let internal options = 
+    let options = 
         let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
         { options with 
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + Project1A.dllName); ("-r:" + Project1B.dllName) |]
@@ -110,6 +120,9 @@ let p = (Project1A.x1, Project1B.b)
 let ``Test multi project 1 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(MultiProject1.options) |> Async.RunSynchronously
+
+    for e in wholeProjectResults.Errors do 
+        printfn "multi project 1 error: <<<%s>>>" e.Message
 
     wholeProjectResults .Errors.Length |> shouldEqual 0
     wholeProjectResults.ProjectContext.GetReferencedAssemblies().Length |> shouldEqual 6
@@ -242,6 +255,10 @@ let ``Test ManyProjectsStressTest whole project errors`` () =
 
     let checker = ManyProjectsStressTest.makeCheckerForStressTest true
     let wholeProjectResults = checker.ParseAndCheckProject(ManyProjectsStressTest.jointProject.Options) |> Async.RunSynchronously
+    let wholeProjectResults = checker.ParseAndCheckProject(ManyProjectsStressTest.jointProject.Options) |> Async.RunSynchronously
+
+    for e in wholeProjectResults.Errors do 
+        printfn "ManyProjectsStressTest error: <<<%s>>>" e.Message
 
     wholeProjectResults .Errors.Length |> shouldEqual 0
     wholeProjectResults.ProjectContext.GetReferencedAssemblies().Length |> shouldEqual (ManyProjectsStressTest.numProjectsForStressTest + 4)
@@ -278,8 +295,6 @@ let ``Test ManyProjectsStressTest cache too small`` () =
 
     [ for x in wholeProjectResults.AssemblySignature.Entities.[0].MembersFunctionsAndValues -> x.DisplayName ] 
         |> shouldEqual ["p"]
-
-    for d in disposals do d.Dispose()
 
 [<Test>]
 let ``Test ManyProjectsStressTest all symbols`` () = 
@@ -531,7 +546,7 @@ let ``Test multi project symbols should pick up changes in dependent projects`` 
 //------------------------------------------------------------------
 
 
-module Project2A = 
+module internal Project2A = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -557,11 +572,11 @@ type C() =
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let internal options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
 //Project2A.fileSource1
 // A project referencing Project2A
-module Project2B = 
+module internal Project2B = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -577,7 +592,7 @@ let v = Project2A.C().InternalMember // access an internal symbol
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let internal options = 
+    let options = 
         let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
         { options with 
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + Project2A.dllName);  |]
@@ -586,7 +601,7 @@ let v = Project2A.C().InternalMember // access an internal symbol
 
 //Project2A.fileSource1
 // A project referencing Project2A but without access to the internals of A
-module Project2C = 
+module internal Project2C = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -602,7 +617,7 @@ let v = Project2A.C().InternalMember // access an internal symbol
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let internal options = 
+    let options = 
         let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
         { options with 
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + Project2A.dllName);  |]
@@ -613,6 +628,9 @@ let v = Project2A.C().InternalMember // access an internal symbol
 let ``Test multi project2 errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project2B.options) |> Async.RunSynchronously
+    for e in wholeProjectResults.Errors do 
+        printfn "multi project2 error: <<<%s>>>" e.Message
+
     wholeProjectResults .Errors.Length |> shouldEqual 0
 
 
@@ -648,7 +666,7 @@ let ``Test multi project 2 all symbols`` () =
  
 //------------------------------------------------------------------------------------
 
-module Project3A = 
+module internal Project3A = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -668,11 +686,11 @@ let (|DivisibleBy|_|) by n =
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let internal options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
 
 // A project referencing a sub-project
-module MultiProject3 = 
+module internal MultiProject3 = 
     open System.IO
 
     let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
@@ -694,7 +712,7 @@ let fizzBuzz = function
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let internal options = 
+    let options = 
         let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
         { options with 
             OtherOptions = Array.append options.OtherOptions [| ("-r:" + Project3A.dllName) |]
@@ -705,6 +723,8 @@ let fizzBuzz = function
 let ``Test multi project 3 whole project errors`` () = 
 
     let wholeProjectResults = checker.ParseAndCheckProject(MultiProject3.options) |> Async.RunSynchronously
+    for e in wholeProjectResults.Errors do 
+        printfn "multi project 3 error: <<<%s>>>" e.Message
 
     wholeProjectResults.Errors.Length |> shouldEqual 0
 
@@ -731,3 +751,200 @@ let ``Test active patterns' XmlDocSig declared in referenced projects`` () =
     let divisibleByEntity = divisibleByGroup.EnclosingEntity.Value
     divisibleByEntity.ToString() |> shouldEqual "Project3A"
 
+//------------------------------------------------------------------------------------
+
+
+
+[<Test>]
+let ``Test max memory gets triggered`` () =
+    let checker = FSharpChecker.Create()
+    let reached = ref false 
+    checker.MaxMemoryReached.Add (fun () -> reached := true)
+    let wholeProjectResults = checker.ParseAndCheckProject(MultiProject3.options) |> Async.RunSynchronously
+    reached.Value |> shouldEqual false
+    checker.MaxMemory <- 0
+    let wholeProjectResults2 = checker.ParseAndCheckProject(MultiProject3.options) |> Async.RunSynchronously
+    reached.Value |> shouldEqual true
+    let wholeProjectResults3 = checker.ParseAndCheckProject(MultiProject3.options) |> Async.RunSynchronously
+    reached.Value |> shouldEqual true
+
+
+//------------------------------------------------------------------------------------
+
+#if !DOTNETCORE
+
+[<Test>]
+let ``Type provider project references should not throw exceptions`` () =
+    //let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug")])
+    let options = 
+          {ProjectFileName = __SOURCE_DIRECTORY__ + @"/data/TypeProviderConsole/TypeProviderConsole.fsproj";
+           SourceFiles = [|__SOURCE_DIRECTORY__ + @"/data/TypeProviderConsole/Program.fs"|];
+           Stamp = None
+           OtherOptions =
+            [|yield "--simpleresolution";
+              yield "--noframework";
+              yield "--out:" + __SOURCE_DIRECTORY__ + @"/data/TypeProviderConsole/bin/Debug/TypeProviderConsole.exe";
+              yield "--doc:" + __SOURCE_DIRECTORY__ + @"/data/TypeProviderConsole/bin/Debug/TypeProviderConsole.xml";
+              yield "--subsystemversion:6.00"; 
+              yield "--highentropyva+"; 
+              yield "--fullpaths";
+              yield "--flaterrors"; 
+              yield "--target:exe"; 
+              yield "--define:DEBUG"; 
+              yield "--define:TRACE";
+              yield "--debug+"; 
+              yield "--optimize-"; 
+              yield "--tailcalls-"; 
+              yield "--debug:full";
+              yield "--platform:anycpu";
+              for r in mkStandardProjectReferences () do
+                  yield "-r:" + r
+              yield "-r:" + __SOURCE_DIRECTORY__ + @"/data/TypeProviderLibrary/TypeProviderLibrary.dll"|];
+           ReferencedProjects =
+            [|(__SOURCE_DIRECTORY__ + @"/data/TypeProviderLibrary/TypeProviderLibrary.dll",
+               {ProjectFileName = __SOURCE_DIRECTORY__ + @"/data/TypeProviderLibrary/TypeProviderLibrary.fsproj";
+                SourceFiles = [|__SOURCE_DIRECTORY__ + @"/data/TypeProviderLibrary/Library1.fs"|];
+                Stamp = None
+                OtherOptions =
+                 [|yield "--simpleresolution"; 
+                   yield "--noframework";
+                   yield "--out:" + __SOURCE_DIRECTORY__ + @"/data/TypeProviderLibrary/TypeProviderLibrary.dll";
+                   yield "--doc:" + __SOURCE_DIRECTORY__ + @"/data/TypeProviderLibrary/bin/Debug/TypeProviderLibrary.xml";
+                   yield "--subsystemversion:6.00"; 
+                   yield "--highentropyva+"; 
+                   yield "--fullpaths";
+                   yield "--flaterrors"; 
+                   yield "--target:library"; 
+                   yield "--define:DEBUG";
+                   yield "--define:TRACE"; 
+                   yield "--debug+"; 
+                   yield "--optimize-"; 
+                   yield "--tailcalls-";
+                   yield "--debug:full"; 
+                   yield "--platform:anycpu";
+                   for r in mkStandardProjectReferences () do
+                       yield "-r:" + r
+                   yield "-r:" + __SOURCE_DIRECTORY__ + @"/data/TypeProviderLibrary/FSharp.Data.TypeProviders.dll"; 
+                  |];
+                ReferencedProjects = [||];
+                IsIncompleteTypeCheckEnvironment = false;
+                UseScriptResolutionRules = false;
+                LoadTime = System.DateTime.Now
+                UnresolvedReferences = None;
+                OriginalLoadReferences = [];
+                ExtraProjectInfo = None;})|];
+           IsIncompleteTypeCheckEnvironment = false;
+           UseScriptResolutionRules = false;
+           LoadTime = System.DateTime.Now
+           UnresolvedReferences = None;
+           OriginalLoadReferences = [];
+           ExtraProjectInfo = None;}
+
+    //printfn "options: %A" options
+    let fileName = __SOURCE_DIRECTORY__ + @"/data/TypeProviderConsole/Program.fs"    
+    let fileSource = File.ReadAllText(fileName)
+    let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, fileSource, options) |> Async.RunSynchronously
+    let fileCheckResults = 
+        match fileCheckAnswer with
+        | FSharpCheckFileAnswer.Succeeded(res) -> res
+        | res -> failwithf "Parsing did not finish... (%A)" res
+
+    printfn "Parse Errors: %A" fileParseResults.Errors
+    printfn "Errors: %A" fileCheckResults.Errors
+    fileCheckResults.Errors |> Array.exists (fun error -> error.Severity = FSharpErrorSeverity.Error) |> shouldEqual false
+
+
+
+
+//------------------------------------------------------------------------------------
+
+[<Test>]
+let ``Projects creating generated types should not utilize cross-project-references but should still analyze oK once project is built`` () =
+    //let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug")])
+    let options = 
+          {ProjectFileName =
+            __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/TestConsole.fsproj";
+           SourceFiles =
+            [|__SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/AssemblyInfo.fs";
+              __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/Program.fs"|];
+           OtherOptions =
+            [|yield "--simpleresolution"; 
+              yield "--noframework";
+              yield "--out:" + __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/bin/Debug/TestConsole.exe";
+              yield "--doc:" + __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/bin/Debug/TestConsole.XML";
+              yield "--subsystemversion:6.00"; 
+              yield "--highentropyva+"; 
+              yield "--fullpaths";
+              yield "--flaterrors"; 
+              yield "--target:exe"; 
+              yield "--define:DEBUG"; 
+              yield "--define:TRACE";
+              yield "--debug+"; 
+              yield "--optimize-"; 
+              yield "--tailcalls-"; 
+              yield "--debug:full";
+              yield "--platform:anycpu";
+              yield "-r:" + __SOURCE_DIRECTORY__ + @"/../../packages/FSharp.Configuration.1.3.0/lib/net45/FSharp.Configuration.dll";
+              for r in mkStandardProjectReferences () do
+                  yield "-r:" + r
+              yield "-r:" + __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TypeProvidersBug/bin/Debug/TypeProvidersBug.dll"|];
+           ReferencedProjects =
+            [|(__SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TypeProvidersBug/bin/Debug/TypeProvidersBug.dll",
+               {ProjectFileName =
+                 __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TypeProvidersBug/TypeProvidersBug.fsproj";
+                SourceFiles =
+                 [|__SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TypeProvidersBug/AssemblyInfo.fs";
+                   __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TypeProvidersBug/Library1.fs"|];
+                OtherOptions =
+                 [|yield "--simpleresolution"; 
+                   yield "--noframework";
+                   yield "--out:" + __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TypeProvidersBug/bin/Debug/TypeProvidersBug.dll";
+                   yield "--doc:" + __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TypeProvidersBug/bin/Debug/TypeProvidersBug.XML";
+                   yield "--subsystemversion:6.00"; 
+                   yield "--highentropyva+"; 
+                   yield "--fullpaths";
+                   yield "--flaterrors"; 
+                   yield "--target:library"; 
+                   yield "--define:DEBUG";
+                   yield "--define:TRACE"; 
+                   yield "--debug+"; 
+                   yield "--optimize-"; 
+                   yield "--tailcalls-";
+                   yield "--debug:full"; 
+                   yield "--platform:anycpu";
+                   yield "-r:" + __SOURCE_DIRECTORY__ + @"/../../packages/FSharp.Configuration.1.3.0/lib/net45/FSharp.Configuration.dll";
+                   for r in mkStandardProjectReferences () do
+                       yield "-r:" + r |];
+                ReferencedProjects = [||];
+                IsIncompleteTypeCheckEnvironment = false;
+                UseScriptResolutionRules = false;
+                LoadTime = System.DateTime.Now
+                UnresolvedReferences = None;
+                OriginalLoadReferences = [];
+                Stamp = None;
+                ExtraProjectInfo = None;})|];
+           IsIncompleteTypeCheckEnvironment = false;
+           UseScriptResolutionRules = false;
+           LoadTime = System.DateTime.Now
+           UnresolvedReferences = None;
+           Stamp = None;
+           OriginalLoadReferences = [];
+           ExtraProjectInfo = None;}
+    //printfn "options: %A" options
+    let fileName = __SOURCE_DIRECTORY__ + @"/data/TypeProvidersBug/TestConsole/Program.fs"    
+    let fileSource = File.ReadAllText(fileName)
+    let fileParseResults, fileCheckAnswer = checker.ParseAndCheckFileInProject(fileName, 0, fileSource, options) |> Async.RunSynchronously
+    let fileCheckResults = 
+        match fileCheckAnswer with
+        | FSharpCheckFileAnswer.Succeeded(res) -> res
+        | res -> failwithf "Parsing did not finish... (%A)" res
+
+    printfn "Parse Errors: %A" fileParseResults.Errors
+    printfn "Errors: %A" fileCheckResults.Errors
+    fileCheckResults.Errors |> Array.exists (fun error -> error.Severity = FSharpErrorSeverity.Error) |> shouldEqual false
+
+
+
+#endif
+
+//------------------------------------------------------------------------------------

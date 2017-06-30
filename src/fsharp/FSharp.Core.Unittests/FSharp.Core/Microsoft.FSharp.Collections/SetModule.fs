@@ -607,7 +607,7 @@ type SetModule() =
     [<Test>]
     member this.GeneralTest1() =
         
-        // Retruns a random permutation of integers between the two bounds.
+        // Returns a random permutation of integers between the two bounds.
         let randomPermutation lowerBound upperBound = 
             let items = System.Collections.Generic.List<_>([lowerBound .. upperBound])
             let rng = new Random()
