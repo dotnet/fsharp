@@ -7,15 +7,15 @@
 # (These aren't generally useful to commit directly; if anything, they should be applied.)
 scripts/*.patch
 
-/fcs/fsharp/FSharp.Compiler.Private/illex.fs
-/fcs/fsharp/FSharp.Compiler.Private/ilpars.fs
-/fcs/fsharp/FSharp.Compiler.Private/ilpars.fsi
-/fcs/fsharp/FSharp.Compiler.Private/lex.fs
-/fcs/fsharp/FSharp.Compiler.Private/pars.fs
-/fcs/fsharp/FSharp.Compiler.Private/pars.fsi
-/fcs/fsharp/FSharp.Compiler.Private/pplex.fs
-/fcs/fsharp/FSharp.Compiler.Private/pppars.fs
-/fcs/fsharp/FSharp.Compiler.Private/pppars.fsi
+/fcs/FSharp.Compiler.Service/illex.fs
+/fcs/FSharp.Compiler.Service/ilpars.fs
+/fcs/FSharp.Compiler.Service/ilpars.fsi
+/fcs/FSharp.Compiler.Service/lex.fs
+/fcs/FSharp.Compiler.Service/pars.fs
+/fcs/FSharp.Compiler.Service/pars.fsi
+/fcs/FSharp.Compiler.Service/pplex.fs
+/fcs/FSharp.Compiler.Service/pppars.fs
+/fcs/FSharp.Compiler.Service/pppars.fsi
 /src/*.userprefs
 /src/fsharp/FSStrings.resources
 /src/fsharp/FSharp.Build/*.resx

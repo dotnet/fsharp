@@ -230,9 +230,11 @@ this file.
               DelaySign="$(DelaySign)"
               DisabledWarnings="$(NoWarn)"
               DocumentationFile="$(DocumentationFile)"
+              DotnetFscCompilerPath="$(DotnetFscCompilerPath)"
               EmbedAllSources="$(EmbedAllSources)"
               Embed="$(Embed)"
               GenerateInterfaceFile="$(GenerateInterfaceFile)"
+              HighEntropyVA="$(HighEntropyVA)"
               KeyFile="$(KeyOriginatorFile)"
               LCID="$(LCID)"
               NoFramework="true"
@@ -242,14 +244,18 @@ this file.
               PdbFile="$(PdbFile)"
               Platform="$(PlatformTarget)"
               Prefer32Bit="$(Actual32Bit)"
+              PreferredUILang="$(PreferredUILang)"
+              ProvideCommandLineArgs="$(ProvideCommandLineArgs)"
               PublicSign="$(PublicSign)"
               References="@(ReferencePath)"
               ReferencePath="$(ReferencePath)"
               Resources="@(ActualEmbeddedResources)"
+              SkipCompilerExecution="$(SkipCompilerExecution)"
               SourceLink="$(SourceLink)"
               Sources="@(CompileBefore);@(Compile);@(CompileAfter)"
               Tailcalls="$(Tailcalls)"
               TargetType="$(OutputType)"
+              TargetProfile="$(TargetProfile)"
               ToolExe="$(FscToolExe)"
               ToolPath="$(FscToolPath)"
               TreatWarningsAsErrors="$(TreatWarningsAsErrors)"
@@ -260,13 +266,8 @@ this file.
               WarningsAsErrors="$(WarningsAsErrors)"
               Win32ManifestFile="$(Win32Manifest)"
               Win32ResourceFile="$(Win32Resource)"
-              SubsystemVersion="$(SubsystemVersion)"
-              HighEntropyVA="$(HighEntropyVA)"
-              TargetProfile="$(TargetProfile)"
-              DotnetFscCompilerPath="$(DotnetFscCompilerPath)"
-              SkipCompilerExecution="$(SkipCompilerExecution)"
-              ProvideCommandLineArgs="$(ProvideCommandLineArgs)">
-            <Output TaskParameter="CommandLineArgs" ItemName="FscCommandLineArgs" />
+              SubsystemVersion="$(SubsystemVersion)">
+          <Output TaskParameter="CommandLineArgs" ItemName="FscCommandLineArgs" />
         </Fsc>
 
         <ItemGroup>

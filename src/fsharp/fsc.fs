@@ -1640,7 +1640,11 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, openBinarie
                     tcConfigB.openBinariesInMemory <- openBinariesInMemory
 #if PREFERRED_UI_LANG
                     match tcConfigB.preferredUiLang with
+#if FX_RESHAPED_GLOBALIZATION
                     | Some s -> System.Globalization.CultureInfo.CurrentUICulture <- new System.Globalization.CultureInfo(s)
+#else
+                    | Some s -> Thread.CurrentThread.CurrentUICulture <- new System.Globalization.CultureInfo(s)
+#endif
                     | None -> ()
 #else
                     match tcConfigB.lcid with

@@ -139,6 +139,7 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     let mutable pdbFile : string = null
     let mutable platform : string = null
     let mutable prefer32bit : bool = false
+    let mutable preferredUILang : string = null
     let mutable publicSign : bool = false
     let mutable provideCommandLineArgs : bool = false
     let mutable references : ITaskItem[] = [||]
@@ -299,6 +300,8 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
             builder.AppendSwitch("--vserrors")      
 
         builder.AppendSwitchIfNotNull("--LCID:", vslcid)
+        builder.AppendSwitchIfNotNull("--preferreduilang:", preferredUILang)
+
         if utf8output then
             builder.AppendSwitch("--utf8output")
             
@@ -332,45 +335,61 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     member fsc.BaseAddress
         with get() = baseAddress 
         and set(s) = baseAddress <- s        
+
     // --codepage <int>: Specify the codepage to use when opening source files
     member fsc.CodePage
         with get() = codePage
         and set(s) = codePage <- s
+
     // -g: Produce debug file. Disables optimizations if a -O flag is not given.
     member fsc.DebugSymbols
         with get() = debugSymbols
         and set(b) = debugSymbols <- b
+
     // --debug <none/portable/embedded/pdbonly/full>: Emit debugging information
     member fsc.DebugType
         with get() = debugType
         and set(s) = debugType <- s
+
     member fsc.DelaySign
         with get() = delaySign
         and set(s) = delaySign <- s
+
     // --nowarn <string>: Do not report the given specific warning.
     member fsc.DisabledWarnings
         with get() = disabledWarnings
         and set(a) = disabledWarnings <- a        
+
     // --define <string>: Define the given conditional compilation symbol.
     member fsc.DefineConstants
         with get() = defineConstants
         and set(a) = defineConstants <- a
+
     // --doc <string>: Write the xmldoc of the assembly to the given file.
     member fsc.DocumentationFile
         with get() = documentationFile
         and set(s) = documentationFile <- s
+
+    member fsc.DotnetFscCompilerPath  
+        with get() = dotnetFscCompilerPath
+        and set(p) = dotnetFscCompilerPath <- p
+
     member fsc.EmbedAllSources
         with get() = embedAllSources
         and  set(s) = embedAllSources <- s
+
     member fsc.Embed
         with get() = embed
         and set(e) = embed <- e
+
     // --generate-interface-file <string>: 
     //     Print the inferred interface of the
     //     assembly to a file.
+
     member fsc.GenerateInterfaceFile
         with get() = generateInterfaceFile
         and set(s) = generateInterfaceFile <- s  
+
     // --keyfile <string>: 
     //     Sign the assembly the given keypair file, as produced
     //     by the .NET Framework SDK 'sn.exe' tool. This produces
@@ -380,31 +399,42 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     member fsc.KeyFile
         with get() = keyFile
         and set(s) = keyFile <- s
+
+    member fsc.LCID
+        with get() = vslcid
+        and set(p) = vslcid <- p
+
     // --noframework
     member fsc.NoFramework
         with get() = noFramework 
         and set(b) = noFramework <- b        
+
     // --optimize
     member fsc.Optimize
         with get() = optimize
         and set(p) = optimize <- p
+
     // --tailcalls
     member fsc.Tailcalls
         with get() = tailcalls
         and set(p) = tailcalls <- p
+
     // REVIEW: decide whether to keep this, for now is handy way to deal with as-yet-unimplemented features
     member fsc.OtherFlags
         with get() = otherFlags
         and set(s) = otherFlags <- s
+
     // -o <string>: Name the output file.
     member fsc.OutputAssembly
         with get() = outputAssembly
         and set(s) = outputAssembly <- s
+
     // --pdb <string>: 
     //     Name the debug output file.
     member fsc.PdbFile
         with get() = pdbFile
         and set(s) = pdbFile <- s
+
     // --platform <string>: Limit which platforms this code can run on:
     //            x86
     //            x64
@@ -414,34 +444,58 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     member fsc.Platform
         with get() = platform 
         and set(s) = platform <- s 
+
     // indicator whether anycpu32bitpreferred is applicable or not
     member fsc.Prefer32Bit
         with get() = prefer32bit 
         and set(s) = prefer32bit <- s 
+
+    member fsc.PreferredUILang
+        with get() = preferredUILang 
+        and set(s) = preferredUILang <- s 
+
+    member fsc.ProvideCommandLineArgs  
+        with get() = provideCommandLineArgs
+        and set(p) = provideCommandLineArgs <- p
+
     member fsc.PublicSign
         with get() = publicSign 
         and set(s) = publicSign <- s 
+
     // -r <string>: Reference an F# or .NET assembly.
     member fsc.References 
         with get() = references 
         and set(a) = references <- a
+
     // --lib    
     member fsc.ReferencePath
         with get() = referencePath
         and set(s) = referencePath <- s
+
     // --resource <string>: Embed the specified managed resources (.resource).
     //   Produce .resource files from .resx files using resgen.exe or resxc.exe.
     member fsc.Resources
         with get() = resources
         and set(a) = resources <- a
+
+    member fsc.SkipCompilerExecution  
+        with get() = skipCompilerExecution
+        and set(p) = skipCompilerExecution <- p
+
     // SourceLink
     member fsc.SourceLink  
         with get() = sourceLink 
         and set(s) = sourceLink <- s
+
     // source files 
     member fsc.Sources  
         with get() = sources 
         and set(a) = sources <- a
+
+    member fsc.TargetProfile
+        with get() = targetProfile
+        and set(p) = targetProfile <- p
+
     // --target exe: Produce an executable with a console
     // --target winexe: Produce an executable which does not have a
     //      stdin/stdout/stderr
@@ -451,16 +505,20 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
         with get() = targetType
         and set(s) = targetType <- s
 
+    member fsc.TreatWarningsAsErrors
+        with get() = treatWarningsAsErrors
+        and set(p) = treatWarningsAsErrors <- p
+        
+    // For targeting other folders for "fsc.exe" (or ToolExe if different)
+    member fsc.ToolPath
+        with get() = toolPath
+        and set(s) = toolPath <- s
+
     // --version-file <string>: 
     member fsc.VersionFile
         with get() = versionFile
         and set(s) = versionFile <- s
 
-    // For targeting other folders for "fsc.exe" (or ToolExe if different)
-    member fsc.ToolPath
-        with get() = toolPath
-        and set(s) = toolPath <- s
-    
     // For specifying a win32 native resource file (.res)     
     member fsc.Win32ResourceFile
         with get() = win32res
@@ -475,11 +533,7 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     member fsc.WarningLevel
         with get() = warningLevel
         and set(s) = warningLevel <- s
-        
-    member fsc.TreatWarningsAsErrors
-        with get() = treatWarningsAsErrors
-        and set(p) = treatWarningsAsErrors <- p
-        
+
     member fsc.WarningsAsErrors 
         with get() = warningsAsErrors
         and set(s) = warningsAsErrors <- s
@@ -487,10 +541,6 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     member fsc.VisualStudioStyleErrors
         with get() = vserrors
         and set(p) = vserrors <- p
-
-    member fsc.LCID
-        with get() = vslcid
-        and set(p) = vslcid <- p
 
     member fsc.Utf8Output
         with get() = utf8output
@@ -503,22 +553,6 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     member fsc.HighEntropyVA
         with get() = highEntropyVA
         and set(p) = highEntropyVA <- p
-
-    member fsc.TargetProfile
-        with get() = targetProfile
-        and set(p) = targetProfile <- p
-
-    member fsc.DotnetFscCompilerPath  
-        with get() = dotnetFscCompilerPath
-        and set(p) = dotnetFscCompilerPath <- p
-
-    member fsc.SkipCompilerExecution  
-        with get() = skipCompilerExecution
-        and set(p) = skipCompilerExecution <- p
-
-    member fsc.ProvideCommandLineArgs  
-        with get() = provideCommandLineArgs
-        and set(p) = provideCommandLineArgs <- p
 
     [<Output>]
     member fsc.CommandLineArgs
