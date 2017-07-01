@@ -619,10 +619,13 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             VSErrorHandler.ThrowOnFailure(MyBase.ProjectHierarchy.GetSite(siteServiceProvider))
 
             Dim sp As System.IServiceProvider = GetServiceProvider()
+            Dim canUseTargetFSharpCoreVersionString As String = CType(dteproject.Properties.Item(ProjectSystemConstants.CanUseTargetFSharpCoreVersion).Value, String)
+            Dim canUseTargetFSharpCoreVersion As Boolean = False
 
-            Dim canUseTargetFSharpCoreVersionProperty As Boolean = CType(DTEProject.Properties.Item(ProjectSystemConstants.CanUseTargetFSharpCoreVersion).Value, Boolean)
-
-            If canUseTargetFSharpCoreVersionProperty Then
+            If String.IsNullOrWhiteSpace(canUseTargetFSharpCoreVersionString) <> True Then
+                canUseTargetFSharpCoreVersion = CType(canUseTargetFSharpCoreVersionString, Boolean)
+            End If
+            If canUseTargetFSharpCoreVersion Then
                 Try
                     Dim fsharpVersionLookup As IFSharpCoreVersionLookupService = CType(sp.GetService(GetType(IFSharpCoreVersionLookupService)), IFSharpCoreVersionLookupService)
                     For Each fsharpCoreVersion As FSharpCoreVersion In fsharpVersionLookup.ListAvailableFSharpCoreVersions(currentFrameworkName)
@@ -641,8 +644,6 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
                 TargetFSharpCoreVersion.SelectedIndex = 0
                 TargetFSharpCoreVersion.Enabled = False
             End If
-
-
         End Sub
 
         Private Sub PopulateTargetFrameworkAssemblies()
