@@ -1576,7 +1576,7 @@ let AdjustAndForgetUsesOfRecValue cenv (vrefTgt: ValRef) (valScheme : ValScheme)
                   // Keep any values for explicit type arguments 
                   let fixedUpExpr = 
                       let vrefFlags,tyargs0 = 
-                          match !fixupPoint with 
+                          match fixupPoint.Value with 
                           | Expr.App(Expr.Val (_,vrefFlags,_),_,tyargs0,[],_) -> vrefFlags,tyargs0
                           | Expr.Val(_,vrefFlags,_) -> vrefFlags,[] 
                           | _ -> 
@@ -1585,7 +1585,7 @@ let AdjustAndForgetUsesOfRecValue cenv (vrefTgt: ValRef) (valScheme : ValScheme)
                   
                       let ityargs = generalizeTypars (List.drop (List.length tyargs0) generalizedTypars)
                       primMkApp (Expr.Val (vrefTgt,vrefFlags,m),fty) (tyargs0 @ ityargs) [] m
-                  fixupPoint := fixedUpExpr)
+                  fixupPoint.Value <- fixedUpExpr)
 
     vrefTgt.Deref.SetValRec ValNotInRecScope
     cenv.recUses <- cenv.recUses.Remove vrefTgt.Deref 
