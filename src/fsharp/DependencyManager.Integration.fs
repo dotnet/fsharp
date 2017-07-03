@@ -8,6 +8,11 @@ open System.Reflection
 open System.IO
 open Microsoft.FSharp.Compiler.ErrorLogger
 
+#if FX_RESHAPED_REFLECTION
+    open PrimReflectionAdapters
+    open ReflectionAdapters    
+#endif
+
 // NOTE: this contains mostly members whose intents are :
 // * to keep ReferenceLoading.PaketHandler usable outside of F# (so it can be used in scriptcs & others)
 // * to minimize footprint of integration in fsi/CompileOps
