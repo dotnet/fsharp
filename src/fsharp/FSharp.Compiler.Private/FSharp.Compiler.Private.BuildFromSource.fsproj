@@ -638,6 +638,7 @@
     <PackageReference Include="System.Linq.Queryable" Version="4.3.0"></PackageReference>
     <PackageReference Include="System.Net.Requests" Version="4.3.0"></PackageReference>
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0"></PackageReference>
+    <PackageReference Include="System.Reflection.Extensions" Version="4.3.0"></PackageReference>
     <PackageReference Include="System.Reflection.Metadata" Version="1.4.2"></PackageReference>
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.3.0"></PackageReference>
     <PackageReference Include="System.Runtime" Version="4.3.0"></PackageReference>
