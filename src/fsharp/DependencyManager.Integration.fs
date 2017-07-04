@@ -23,18 +23,18 @@ let targetFramework = "net461"
 module ReflectionHelper =
     let assemblyHasAttribute (theAssembly: Assembly) attributeName =
         try
-#if FX_RESHAPED_REFLECTION
-            theAssembly.GetTypeInfo().GetCustomAttributes false
-#else
-            theAssembly.GetCustomAttributes false
-#endif
+            CustomAttributeExtensions.GetCustomAttributes(theAssembly)
             |> Seq.tryFind (fun a -> a.GetType().Name = attributeName)
             |> function | Some _ -> true | _ -> false
         with | _ -> false
 
     let getAttributeNamed (theType: Type) attributeName =
         try
+#if FX_RESHAPED_REFLECTION
+            theType.GetTypeInfo().GetCustomAttributes false
+#else
             theType.GetCustomAttributes false
+#endif
             |> Seq.tryFind (fun a -> a.GetType().Name = attributeName)
         with | _ -> None
 
@@ -125,9 +125,9 @@ let assemblySearchPaths = lazy(
 #if FX_RESHAPED_REFLECTION
           typeof<IDependencyManagerProvider>.GetTypeInfo().Assembly
 #else
-          Assembly.GetExecutingAssembly().Location
+          Assembly.GetExecutingAssembly()
 #endif
-      yield Path.GetDirectoryName executingAssembly
+      yield Path.GetDirectoryName(executingAssembly.Location)
 #if FX_NO_APP_DOMAINS
 #else
       let baseDir = AppDomain.CurrentDomain.BaseDirectory
