@@ -8,7 +8,7 @@
     <AssemblyName>FSharp.Compiler.Private</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <DefineConstants>$(DefineConstants);EXTENSIONTYPING;COMPILER;BUILD_FROM_SOURCE</DefineConstants>
+    <DefineConstants>$(DefineConstants);EXTENSIONTYPING;COMPILER;BUILD_FROM_SOURCE;FX_RESHAPED_REFLECTION</DefineConstants>
     <OtherFlags>$(OtherFlags) --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
   </PropertyGroup>
 
@@ -450,6 +450,12 @@
     <Compile Include="..\IlxGen.fs">
       <Link>CodeGen\IlxGen.fs</Link>
     </Compile>
+    <Compile Include="..\DependencyManager.Integration.fsi">
+      <Link>Driver\DependencyManager.Integration.fsi</Link>
+    </Compile>
+    <Compile Include="..\DependencyManager.Integration.fs">
+      <Link>Driver\DependencyManager.Integration.fs</Link>
+    </Compile>
 
     <!-- includes the core of the F# Compiler fsc.exe implementation -->
     <Compile Include="..\CompileOps.fsi">
@@ -609,6 +615,7 @@
     "System.Linq.Queryable": "4.3.0",
     "System.Net.Requests": "4.3.0",
     "System.Reflection.Emit": "4.3.0",
+    "System.Reflection.Extensions": "4.3.0",
     "System.Reflection.Metadata": "1.4.2",
     "System.Reflection.TypeExtensions": "4.3.0",
     "System.Runtime": "4.3.0",
@@ -631,6 +638,7 @@
     <PackageReference Include="System.Linq.Queryable" Version="4.3.0"></PackageReference>
     <PackageReference Include="System.Net.Requests" Version="4.3.0"></PackageReference>
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0"></PackageReference>
+    <PackageReference Include="System.Reflection.Extensions" Version="4.3.0"></PackageReference>
     <PackageReference Include="System.Reflection.Metadata" Version="1.4.2"></PackageReference>
     <PackageReference Include="System.Reflection.TypeExtensions" Version="4.3.0"></PackageReference>
     <PackageReference Include="System.Runtime" Version="4.3.0"></PackageReference>
