@@ -136,14 +136,16 @@ let assemblySearchPaths = lazy(
     ]
     |> List.distinct)
 
-let enumerateDependencyManagerAssembliesFromCurrentAssemblyLocation () =
+let enumerateDependencyManagerAssembliesFromCurrentAssemblyLocation m =
     assemblySearchPaths.Force()
     |> Seq.collect (fun path -> Directory.EnumerateFiles(path,"*DependencyManager*.dll"))
     |> Seq.choose (fun path -> 
         try
             Some(AbstractIL.Internal.Library.Shim.FileSystem.AssemblyLoadFrom path)
         with 
-        | _ -> None)
+        | exn ->
+            warning(Error(FSComp.SR.couldNotLoadDependencyManagerExtenstion(path,exn.Message),m))
+            None)
     |> Seq.filter (fun a -> ReflectionHelper.assemblyHasAttribute a "FSharpDependencyManagerAttribute")
 
 type ProjectDependencyManager() =
@@ -179,35 +181,37 @@ type ImplDependencyManager() =
     interface System.IDisposable with
         member __.Dispose() = ()
 
-let registeredDependencyManagers = lazy (
-    let defaultProviders =
-        [new ProjectDependencyManager() :> IDependencyManagerProvider
-         new RefDependencyManager() :> IDependencyManagerProvider
-         new ImplDependencyManager() :> IDependencyManagerProvider]
-    
-    let loadedProviders =
-        enumerateDependencyManagerAssembliesFromCurrentAssemblyLocation()
-        |> Seq.collect (fun a -> a.GetTypes())
-        |> Seq.choose ReflectionDependencyManagerProvider.InstanceMaker
-        |> Seq.map (fun maker -> maker ())
-    
-    defaultProviders
-    |> Seq.append loadedProviders
-    |> Seq.map (fun pm -> pm.Key, pm)
-    |> Map.ofSeq
-)
+let registeredDependencyManagers = ref None
 
-let RegisteredDependencyManagers() = registeredDependencyManagers.Force()
+let RegisteredDependencyManagers m =
+    match !registeredDependencyManagers with
+    | Some managers -> managers
+    | None ->
+        let defaultProviders =
+            [new ProjectDependencyManager() :> IDependencyManagerProvider
+             new RefDependencyManager() :> IDependencyManagerProvider
+             new ImplDependencyManager() :> IDependencyManagerProvider]
+    
+        let loadedProviders =
+            enumerateDependencyManagerAssembliesFromCurrentAssemblyLocation m
+            |> Seq.collect (fun a -> a.GetTypes())
+            |> Seq.choose ReflectionDependencyManagerProvider.InstanceMaker
+            |> Seq.map (fun maker -> maker ())
+    
+        defaultProviders
+        |> Seq.append loadedProviders
+        |> Seq.map (fun pm -> pm.Key, pm)
+        |> Map.ofSeq
 
 let createPackageManagerUnknownError packageManagerKey m =
-    let registeredKeys = String.Join(", ", RegisteredDependencyManagers() |> Seq.map (fun kv -> kv.Value.Key))
+    let registeredKeys = String.Join(", ", RegisteredDependencyManagers m |> Seq.map (fun kv -> kv.Value.Key))
     let searchPaths = assemblySearchPaths.Force()
     Error(FSComp.SR.packageManagerUnknown(packageManagerKey, String.Join(", ", searchPaths), registeredKeys),m)
 
 let tryFindDependencyManagerInPath m (path:string) : ReferenceType =
     try
         if path.Contains ":" && not (System.IO.Path.IsPathRooted path) then
-            let managers = RegisteredDependencyManagers()
+            let managers = RegisteredDependencyManagers m
             match managers |> Seq.tryFind (fun kv -> path.StartsWith(kv.Value.Key + ":" )) with
             | None ->
                 errorR(createPackageManagerUnknownError (path.Split(':').[0]) m)
@@ -224,7 +228,7 @@ let removeDependencyManagerKey (packageManagerKey:string) (path:string) = path.S
 
 let tryFindDependencyManagerByKey m (key:string) : IDependencyManagerProvider option =
     try
-        RegisteredDependencyManagers() |> Map.tryFind key
+        RegisteredDependencyManagers m |> Map.tryFind key
     with 
     | e -> 
         errorR(Error(FSComp.SR.packageManagerError(e.Message),m))

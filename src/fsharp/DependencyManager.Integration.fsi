@@ -18,12 +18,9 @@ type ReferenceType =
 | Library of string
 | UnknownType
 
-val RegisteredDependencyManagers : unit -> Map<string,IDependencyManagerProvider>
 val tryFindDependencyManagerInPath : range -> string -> ReferenceType
 val tryFindDependencyManagerByKey : range -> string -> IDependencyManagerProvider option
-
 val removeDependencyManagerKey : string -> string -> string
-
 val createPackageManagerUnknownError : string -> range -> exn
 
 val resolve : IDependencyManagerProvider -> string -> string -> string -> range -> string seq -> (string option * string list) option
