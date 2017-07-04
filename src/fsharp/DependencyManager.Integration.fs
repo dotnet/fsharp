@@ -23,7 +23,11 @@ let targetFramework = "net461"
 module ReflectionHelper =
     let assemblyHasAttribute (theAssembly: Assembly) attributeName =
         try
+#if FX_RESHAPED_REFLECTION
+            theAssembly.GetTypeInfo().GetCustomAttributes false
+#else
             theAssembly.GetCustomAttributes false
+#endif
             |> Seq.tryFind (fun a -> a.GetType().Name = attributeName)
             |> function | Some _ -> true | _ -> false
         with | _ -> false
@@ -110,23 +114,36 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
             
 
 let assemblySearchPaths = lazy(
-    [ let assemblyLocation = typeof<IDependencyManagerProvider>.Assembly.Location
+    [ let assemblyLocation =
+#if FX_RESHAPED_REFLECTION
+          typeof<IDependencyManagerProvider>.GetTypeInfo().Assembly.Location
+#else
+          typeof<IDependencyManagerProvider>.Assembly.Location
+#endif  
       yield Path.GetDirectoryName assemblyLocation
       let executingAssembly = 
 #if FX_RESHAPED_REFLECTION
-          typeof<ReflectionDependencyManagerProvider>.GetTypeInfo().Assembly
+          typeof<IDependencyManagerProvider>.GetTypeInfo().Assembly
 #else
           Assembly.GetExecutingAssembly().Location
 #endif
       yield Path.GetDirectoryName executingAssembly
+#if FX_NO_APP_DOMAINS
+#else
       let baseDir = AppDomain.CurrentDomain.BaseDirectory
-      yield baseDir ]
+      yield baseDir 
+#endif
+    ]
     |> List.distinct)
 
 let enumerateDependencyManagerAssembliesFromCurrentAssemblyLocation () =
     assemblySearchPaths.Force()
     |> Seq.collect (fun path -> Directory.EnumerateFiles(path,"*DependencyManager*.dll"))
-    |> Seq.choose (fun path -> try Assembly.LoadFrom path |> Some with | _ -> None)
+    |> Seq.choose (fun path -> 
+        try
+            Some(AbstractIL.Internal.Library.Shim.FileSystem.AssemblyLoadFrom path)
+        with 
+        | _ -> None)
     |> Seq.filter (fun a -> ReflectionHelper.assemblyHasAttribute a "FSharpDependencyManagerAttribute")
 
 type ProjectDependencyManager() =
