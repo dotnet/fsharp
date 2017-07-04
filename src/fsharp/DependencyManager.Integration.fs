@@ -112,7 +112,12 @@ type ReflectionDependencyManagerProvider(theType: Type, nameProperty: PropertyIn
 let assemblySearchPaths = lazy(
     [ let assemblyLocation = typeof<IDependencyManagerProvider>.Assembly.Location
       yield Path.GetDirectoryName assemblyLocation
-      let executingAssembly = Assembly.GetExecutingAssembly().Location
+      let executingAssembly = 
+#if FX_RESHAPED_REFLECTION
+          typeof<ReflectionDependencyManagerProvider>.GetTypeInfo().Assembly
+#else
+          Assembly.GetExecutingAssembly().Location
+#endif
       yield Path.GetDirectoryName executingAssembly
       let baseDir = AppDomain.CurrentDomain.BaseDirectory
       yield baseDir ]
