@@ -4858,31 +4858,44 @@ and TcProvidedTypeApp cenv env tpenv tcref args m =
 /// Note that the generic type may be a nested generic type List<T>.ListEnumerator<U>.
 /// In this case, 'args' is only the instantiation of the suffix type arguments, and pathTypeArgs gives
 /// the prefix of type arguments. 
-and TcTypeApp cenv newOk checkCxs occ env tpenv m tcref pathTypeArgs (args: SynType list) =
+and TcTypeApp cenv newOk checkCxs occ env tpenv m tcref pathTypeArgs (synArgTys: SynType list) =
     CheckTyconAccessible cenv.amap m env.eAccessRights tcref |> ignore
     CheckEntityAttributes cenv.g tcref m |> CommitOperationResult
     
 #if EXTENSIONTYPING
     // Provided types are (currently) always non-generic. Their names may include mangled 
     // static parameters, which are passed by the provider.
-    if tcref.Deref.IsProvided then TcProvidedTypeApp cenv env tpenv tcref args m else
+    if tcref.Deref.IsProvided then TcProvidedTypeApp cenv env tpenv tcref synArgTys m else
 #endif
 
     let tps,_,tinst,_ = infoOfTyconRef m tcref
+
     // If we're not checking constraints, i.e. when we first assert the super/interfaces of a type definition, then just 
     // clear the constraint lists of the freshly generated type variables. A little ugly but fairly localized. 
     if checkCxs = NoCheckCxs then tps |> List.iter (fun tp -> tp.typar_constraints <- [])
-    if tinst.Length <> pathTypeArgs.Length + args.Length then 
-        error (TyconBadArgs(env.DisplayEnv,tcref,pathTypeArgs.Length + args.Length,m))
-    let args',tpenv = 
+    if tinst.Length <> pathTypeArgs.Length + synArgTys.Length then 
+        error (TyconBadArgs(env.DisplayEnv,tcref,pathTypeArgs.Length + synArgTys.Length,m))
+
+    let argTys,tpenv = 
         // Get the suffix of typars
-        let tpsForArgs = List.drop (tps.Length - args.Length) tps
+        let tpsForArgs = List.drop (tps.Length - synArgTys.Length) tps
         let kindsForArgs = tpsForArgs |> List.map (fun tp -> tp.Kind)
-        TcTypesOrMeasures (Some kindsForArgs) cenv newOk checkCxs occ env tpenv args m
-    let args' = pathTypeArgs @ args'
+        TcTypesOrMeasures (Some kindsForArgs) cenv newOk checkCxs occ env tpenv synArgTys m
+
+    // Add the types of the enclosing class for a nested type
+    let actualArgTys = pathTypeArgs @ argTys
+
     if checkCxs = CheckCxs then
-        List.iter2 (UnifyTypes cenv env m) tinst args'
-    mkAppTy tcref args', tpenv
+        List.iter2 (UnifyTypes cenv env m) tinst actualArgTys
+
+    // Try to decode System.Tuple --> F~ tuple types etc.
+    let ty = 
+        let decode = if cenv.g.compilingFslib then None else cenv.g.decodeTyconRefMap tcref actualArgTys
+        match decode with 
+        | Some res -> res
+        | None -> mkAppTy tcref actualArgTys
+
+    ty, tpenv
 
 and TcTypeOrMeasureAndRecover optKind cenv newOk checkCxs occ env tpenv ty   =
     try TcTypeOrMeasure optKind cenv newOk checkCxs occ env tpenv ty 

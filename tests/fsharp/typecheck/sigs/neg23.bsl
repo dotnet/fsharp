@@ -1,15 +1,15 @@
 
-neg23.fs(9,21,9,24): typecheck error FS0438: Duplicate method. The method 'Foo' has the same name and signature as another method in type 'DuplicateOverloadUpToErasure1.SomeClass' once tuples, functions, units of measure and/or provided types are erased.
+neg23.fs(9,21,9,24): typecheck error FS0438: Duplicate method. The method 'Foo' has the same name and signature as another method in type 'DuplicateOverloadUpToErasure1.SomeClass'.
 
-neg23.fs(7,21,7,24): typecheck error FS0438: Duplicate method. The method 'Foo' has the same name and signature as another method in type 'DuplicateOverloadUpToErasure1.SomeClass' once tuples, functions, units of measure and/or provided types are erased.
+neg23.fs(7,21,7,24): typecheck error FS0438: Duplicate method. The method 'Foo' has the same name and signature as another method in type 'DuplicateOverloadUpToErasure1.SomeClass'.
 
-neg23.fs(19,21,19,24): typecheck error FS0438: Duplicate method. The method 'Foo' has the same name and signature as another method in type 'DuplicateOverloadUpToErasure2.SomeClass' once tuples, functions, units of measure and/or provided types are erased.
+neg23.fs(19,21,19,24): typecheck error FS0438: Duplicate method. The method 'Foo' has the same name and signature as another method in type 'DuplicateOverloadUpToErasure2.SomeClass'.
 
-neg23.fs(17,21,17,24): typecheck error FS0438: Duplicate method. The method 'Foo' has the same name and signature as another method in type 'DuplicateOverloadUpToErasure2.SomeClass' once tuples, functions, units of measure and/or provided types are erased.
+neg23.fs(17,21,17,24): typecheck error FS0438: Duplicate method. The method 'Foo' has the same name and signature as another method in type 'DuplicateOverloadUpToErasure2.SomeClass'.
 
-neg23.fs(28,21,28,24): typecheck error FS0438: Duplicate method. The method 'Foo' has the same name and signature as another method in type 'DuplicateOverloadUpToErasure3.SomeClass' once tuples, functions, units of measure and/or provided types are erased.
+neg23.fs(28,21,28,24): typecheck error FS0438: Duplicate method. The method 'Foo' has the same name and signature as another method in type 'DuplicateOverloadUpToErasure3.SomeClass'.
 
-neg23.fs(26,21,26,24): typecheck error FS0438: Duplicate method. The method 'Foo' has the same name and signature as another method in type 'DuplicateOverloadUpToErasure3.SomeClass' once tuples, functions, units of measure and/or provided types are erased.
+neg23.fs(26,21,26,24): typecheck error FS0438: Duplicate method. The method 'Foo' has the same name and signature as another method in type 'DuplicateOverloadUpToErasure3.SomeClass'.
 
 neg23.fs(55,21,55,24): typecheck error FS0438: Duplicate method. The method 'Foo' has the same name and signature as another method in type 'DuplicateOverloadUpToErasure6.SomeClass' once tuples, functions, units of measure and/or provided types are erased.
 
