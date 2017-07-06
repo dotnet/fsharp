@@ -385,13 +385,20 @@ module CoreTests =
 
         let cfg = testConfig "core/fsi-reference"
 
-        begin
-            use testOkFile = fileguard cfg "test.ok"
-            fsc cfg @"--target:library -o:ImplementationAssembly\ReferenceAssemblyExample.dll" ["ImplementationAssembly.fs"]
-            fsc cfg @"--target:library -o:ReferenceAssembly\ReferenceAssemblyExample.dll" ["ReferenceAssembly.fs"]
-            fsiStdin cfg "test.fsx" "" []
-            testOkFile.CheckExists()
-        end
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg @"--target:library -o:ImplementationAssembly\ReferenceAssemblyExample.dll" ["ImplementationAssembly.fs"]
+        fsc cfg @"--target:library -o:ReferenceAssembly\ReferenceAssemblyExample.dll" ["ReferenceAssembly.fs"]
+        fsiStdin cfg "test.fsx" "" []
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``fsi-netstandard20-FSharp-Data-type-provider`` () = 
+
+        let cfg = testConfig "core/fsi-netstandard20"
+
+        use testOkFile = fileguard cfg "test.ok"
+        fsiStdin cfg "test.fsx" "" []
+        testOkFile.CheckExists()
 
     [<Test>]
     let ``fsi-reload`` () = 
