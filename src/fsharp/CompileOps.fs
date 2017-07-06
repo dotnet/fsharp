@@ -1826,6 +1826,10 @@ let SystemAssemblies () =
       for facadeDllShortName in NetFrameworkFacadesForNetStandard20() do
          yield facadeDllShortName
 
+      yield "System.Reflection.TypeExtensions"
+      yield "System.Reflection.Emit.Lightweight"
+
+
       yield "FSharp.Compiler.Interactive.Settings"
       yield "Microsoft.DiaSymReader"
       yield "Microsoft.DiaSymReader.PortablePdb"
