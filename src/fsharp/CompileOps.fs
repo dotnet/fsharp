@@ -1828,7 +1828,9 @@ let SystemAssemblies () =
 
       yield "System.Reflection.TypeExtensions"
       yield "System.Reflection.Emit.Lightweight"
-
+      yield "System.Reflection.Metadata"
+      yield "System.Runtime.Loader"
+      yield "System.Threading.Tasks.Extensions"
 
       yield "FSharp.Compiler.Interactive.Settings"
       yield "Microsoft.DiaSymReader"
