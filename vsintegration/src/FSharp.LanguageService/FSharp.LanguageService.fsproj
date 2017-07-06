@@ -5,7 +5,6 @@
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\..\src</FSharpSourcesRoot>
     <UseVsMicroBuildAssemblyVersion>true</UseVsMicroBuildAssemblyVersion>
     <ProjectLanguage>FSharp</ProjectLanguage>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <ImportVSSDKTargets>true</ImportVSSDKTargets>
     <UseVsMicroBuildAssemblyVersion>true</UseVsMicroBuildAssemblyVersion>
     <CreateVsixContainer>false</CreateVsixContainer>

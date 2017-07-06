@@ -21,10 +21,9 @@
     <ProjectGuid>{B700E38B-F8C0-4E49-B5EC-DB7B7AC0C4E7}</ProjectGuid>
     <DefineConstants>$(DefineConstants);CODE_ANALYSIS</DefineConstants>
     <AsmmetaDependsOnMSBuildInVS>true</AsmmetaDependsOnMSBuildInVS>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <DefineConstants>$(DefineConstants);FX_PREFERRED_UI_LANG</DefineConstants>
-    <TargetFrameworkProfile>
-    </TargetFrameworkProfile>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkProfile></TargetFrameworkProfile>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <ImportVSSDKTargets>true</ImportVSSDKTargets>
     <CreateVsixContainer>false</CreateVsixContainer>

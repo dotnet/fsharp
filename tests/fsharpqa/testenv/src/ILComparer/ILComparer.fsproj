@@ -12,7 +12,6 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>ILComparer</RootNamespace>
     <AssemblyName>ILComparer</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <TargetFSharpCoreVersion>4.4.1.0</TargetFSharpCoreVersion>
     <Name>ILComparer</Name>

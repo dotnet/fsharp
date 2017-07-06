@@ -19,7 +19,6 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>FSharp.Core.UnitTests.TestApp</RootNamespace>
     <AssemblyName>FSharp.Core.UnitTests.TestApp</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <SilverlightApplication>true</SilverlightApplication>
     <SupportedCultures>
     </SupportedCultures>

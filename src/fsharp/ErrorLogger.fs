@@ -98,21 +98,30 @@ let inline protectAssemblyExploration dflt f =
     try 
        f()
      with 
-        | UnresolvedPathReferenceNoRange _ -> dflt
+        | UnresolvedReferenceNoRange _ 
+        | UnresolvedReferenceError _ 
+        | UnresolvedPathReferenceNoRange _ 
+        | UnresolvedPathReference _ -> dflt
         | _ -> reraise()
 
 let inline protectAssemblyExplorationF dflt f = 
     try 
        f()
      with 
-        | UnresolvedPathReferenceNoRange (asmName, path) -> dflt(asmName,path)
+        | UnresolvedReferenceNoRange asmName 
+        | UnresolvedReferenceError (asmName, _) -> dflt(asmName, "")
+        | UnresolvedPathReferenceNoRange (asmName, path) 
+        | UnresolvedPathReference (asmName, path, _) -> dflt(asmName,path)
         | _ -> reraise()
 
 let inline protectAssemblyExplorationNoReraise dflt1 dflt2 f  = 
     try 
        f()
      with 
-        | UnresolvedPathReferenceNoRange _ -> dflt1
+        | UnresolvedReferenceNoRange _ 
+        | UnresolvedReferenceError _ 
+        | UnresolvedPathReferenceNoRange _ 
+        | UnresolvedPathReference _ -> dflt1
         | _ -> dflt2
 
 // Attach a range if this is a range dual exception.

@@ -30,7 +30,8 @@ let Win32Manifest   = CompilerPath ++ "default.win32manifest"
 let isRepro = Verbosity = "repro" || Verbosity = "verbose"
 let isVerbose = Verbosity = "verbose"
 
-let dependencies = CrackProjectJson.collectReferences (isVerbose, PackagesDir, FrameworkName + "/" + Platform, ProjectJsonLock, false, false)
+let dependencies = 
+   CrackProjectJson.collectReferences (isVerbose, PackagesDir, FrameworkName + "/" + Platform, ProjectJsonLock, false, false)
 
 let runtimeConfigLines =
     [| "{";
