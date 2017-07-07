@@ -400,6 +400,35 @@ module CoreTests =
         fsiStdin cfg "test.fsx" "" []
         testOkFile.CheckExists()
 
+
+    [<Test>]
+    let ``fsc-netstandard20-FSharp-Data-type-provider`` () = 
+
+        let cfg = testConfig "core/fsi-netstandard2.0-typeprovider"
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
+        peverify cfg "test.exe"
+        exec cfg ("." ++ "test.exe") ""
+
+
+    [<Test>]
+    let ``fsi-netstandard16-FSharp-Data-type-provider`` () = 
+
+        let cfg = testConfig "core/fsi-netstandard1.6-typeprovider"
+        use testOkFile = fileguard cfg "test.ok"
+        fsiStdin cfg "test.fsx" "" []
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``fsc-netstandard16-FSharp-Data-type-provider`` () = 
+
+        let cfg = testConfig "core/fsi-netstandard1.6-typeprovider"
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
+        peverify cfg "test.exe"
+        exec cfg ("." ++ "test.exe") ""
+
+
     [<Test>]
     let ``fsi-reload`` () = 
         let cfg = testConfig "core/fsi-reload"
