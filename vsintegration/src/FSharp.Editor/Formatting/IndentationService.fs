@@ -31,7 +31,7 @@ type internal FSharpIndentationService
                 else
                     tryFindPreviousNonEmptyLine (l - 1)
 
-        let rec tryFindLastNoneWhitespaceOrCommentToken (line: TextLine) = maybe {
+        let rec tryFindLastNonWhitespaceOrCommentToken (line: TextLine) = maybe {
            let! options = optionsOpt
            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(filePath, options.OtherOptions |> Seq.toList)
            let tokens = Tokenizer.tokenizeLine(documentId, sourceText, line.Start, filePath, defines)
@@ -40,7 +40,9 @@ type internal FSharpIndentationService
                tokens
                |> List.rev
                |> List.tryFind (fun x ->
-                   x.Tag <> FSharpTokenTag.WHITESPACE && x.Tag <> FSharpTokenTag.COMMENT && x.Tag <> FSharpTokenTag.LINE_COMMENT)
+                   x.Tag <> FSharpTokenTag.WHITESPACE &&
+                   x.Tag <> FSharpTokenTag.COMMENT &&
+                   x.Tag <> FSharpTokenTag.LINE_COMMENT)
         }
 
         let (|Eq|_|) y x =
@@ -49,39 +51,33 @@ type internal FSharpIndentationService
 
         let (|NeedIndent|_|) (token: FSharpTokenInfo) =
             match token.Tag with
-            | Eq FSharpTokenTag.EQUALS
-            | Eq FSharpTokenTag.LARROW
-            | Eq FSharpTokenTag.RARROW
-            | Eq FSharpTokenTag.LPAREN
-            | Eq FSharpTokenTag.LBRACK
-            | Eq FSharpTokenTag.LBRACK_BAR
-            | Eq FSharpTokenTag.LBRACK_LESS
-            | Eq FSharpTokenTag.LBRACE
-            | Eq FSharpTokenTag.BEGIN
-            | Eq FSharpTokenTag.DO
-            | Eq FSharpTokenTag.FUNCTION
-            | Eq FSharpTokenTag.THEN
-            | Eq FSharpTokenTag.ELSE
-            | Eq FSharpTokenTag.STRUCT
-            | Eq FSharpTokenTag.CLASS
-            | Eq FSharpTokenTag.TRY -> Some ()
+            | Eq FSharpTokenTag.EQUALS // =
+            | Eq FSharpTokenTag.LARROW // <-
+            | Eq FSharpTokenTag.RARROW // ->
+            | Eq FSharpTokenTag.LPAREN // (
+            | Eq FSharpTokenTag.LBRACK // [
+            | Eq FSharpTokenTag.LBRACK_BAR // [|
+            | Eq FSharpTokenTag.LBRACK_LESS // [<
+            | Eq FSharpTokenTag.LBRACE // {
+            | Eq FSharpTokenTag.BEGIN // begin
+            | Eq FSharpTokenTag.DO // do
+            | Eq FSharpTokenTag.THEN // then
+            | Eq FSharpTokenTag.ELSE // else
+            | Eq FSharpTokenTag.STRUCT // struct
+            | Eq FSharpTokenTag.CLASS // class
+            | Eq FSharpTokenTag.TRY -> // try
+                Some ()
             | _ -> None
 
         maybe {
             let! previousLine = tryFindPreviousNonEmptyLine lineNumber
+            
+            let lastIndent =
+                previousLine.ToString()
+                |> Seq.takeWhile ((=) ' ')
+                |> Seq.length
 
-            let rec loop column spaces =
-                if previousLine.Start + column >= previousLine.End then
-                    spaces
-                else
-                    match previousLine.Text.[previousLine.Start + column] with
-                    | ' ' -> loop (column + 1) (spaces + 1)
-                    | '\t' -> loop (column + 1) (((spaces / tabSize) + 1) * tabSize)
-                    | _ -> spaces
-
-            let lastIndent = loop 0 0
-
-            let lastToken = tryFindLastNoneWhitespaceOrCommentToken previousLine
+            let lastToken = tryFindLastNonWhitespaceOrCommentToken previousLine
             return
                 match lastToken with
                 | Some(NeedIndent) -> (lastIndent/tabSize + 1) * tabSize
