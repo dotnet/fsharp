@@ -394,7 +394,7 @@ module CoreTests =
     [<Test>]
     let ``fsi-netstandard20-FSharp-Data-type-provider`` () = 
 
-        let cfg = testConfig "core/fsi-netstandard20"
+        let cfg = testConfig "core/fsi-netstandard2.0-typeprovider"
 
         use testOkFile = fileguard cfg "test.ok"
         fsiStdin cfg "test.fsx" "" []
