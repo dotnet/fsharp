@@ -1639,10 +1639,12 @@ let GetDefaultFSharpCoreReference() = typeof<list<int>>.Assembly.Location
 
 // If necessary assume a reference to the latest System.ValueTuple with which those tools are built.
 let GetDefaultSystemValueTupleReference() = 
-    let path = Path.GetDirectoryName(GetDefaultFSharpCoreReference())
-    let file = Path.Combine(path, "System.ValueTuple.dll")
-    if FileSystem.SafeExists file then Some file
-    else None
+    try 
+       let asm = typeof<System.ValueTuple<int,int>>.Assembly
+       if asm.FullName.StartsWith "System.ValueTuple" then 
+           Some asm.Location 
+       else None
+    with _ -> None
 
 let GetFsiLibraryName () = "FSharp.Compiler.Interactive.Settings"  
 
