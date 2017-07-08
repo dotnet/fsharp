@@ -12,6 +12,7 @@ open Microsoft.CodeAnalysis.Text
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open System.Threading
+open Microsoft.CodeAnalysis.Formatting
 
 [<Shared>]
 [<ExportLanguageService(typeof<IEditorFormattingService>, FSharpConstants.FSharpLanguageName)>]
@@ -23,11 +24,16 @@ type internal FSharpEditorFormattingService
     ) =
 
     static member GetFormattingChanges(document: Document, sourceText: SourceText, checker: FSharpChecker, optionsOpt: FSharpProjectOptions option, position: int) =
-        // Logic should be:
+        // Logic for determining formatting changes:
         // If first token on the current line is a closing brace,
         // match the indent with the indent on the line that opened it
 
         asyncMaybe {
+            
+            // Gate formatting on whether smart indentation is enabled
+            // (this is what C# does)
+            do! Option.guard (FSharpIndentationService.IsSmartIndentEnabled document.Project.Solution.Workspace)
+
             let! options = optionsOpt
             
             let line = sourceText.Lines.[sourceText.Lines.IndexOf position]
@@ -83,10 +89,13 @@ type internal FSharpEditorFormattingService
         member val SupportsFormatOnPaste = false
         member val SupportsFormatOnReturn = true
 
-        override __.SupportsFormattingOnTypedCharacter (_document, ch) =
-            match ch with
-            | ')' | ']' | '}' -> true
-            | _ -> false
+        override __.SupportsFormattingOnTypedCharacter (document, ch) =
+            if FSharpIndentationService.IsSmartIndentEnabled document.Project.Solution.Workspace then
+                match ch with
+                | ')' | ']' | '}' -> true
+                | _ -> false
+            else
+                false
 
         override __.GetFormattingChangesAsync (_document, _span, _cancellationToken) = null
 

@@ -20,7 +20,11 @@ type internal FSharpIndentationService
     [<ImportingConstructor>]
     (projectInfoManager: ProjectInfoManager) =
 
-    static member GetDesiredIndentation(documentId: DocumentId, sourceText: SourceText, filePath: string, lineNumber: int, tabSize: int, optionsOpt: FSharpProjectOptions option): Option<int> =
+    static member IsSmartIndentEnabled (workspace: Workspace) =
+        let options = workspace.Options
+        options.GetOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName) = FormattingOptions.IndentStyle.Smart
+
+    static member GetDesiredIndentation(document: Document, sourceText: SourceText, lineNumber: int, tabSize: int, optionsOpt: FSharpProjectOptions option): Option<int> =
         // Match indentation with previous line
         let rec tryFindPreviousNonEmptyLine l =
             if l <= 0 then None
@@ -33,8 +37,8 @@ type internal FSharpIndentationService
 
         let rec tryFindLastNonWhitespaceOrCommentToken (line: TextLine) = maybe {
            let! options = optionsOpt
-           let defines = CompilerEnvironment.GetCompilationDefinesForEditing(filePath, options.OtherOptions |> Seq.toList)
-           let tokens = Tokenizer.tokenizeLine(documentId, sourceText, line.Start, filePath, defines)
+           let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.FilePath, options.OtherOptions |> Seq.toList)
+           let tokens = Tokenizer.tokenizeLine(document.Id, sourceText, line.Start, document.FilePath, defines)
 
            return!
                tokens
@@ -77,10 +81,17 @@ type internal FSharpIndentationService
                 |> Seq.takeWhile ((=) ' ')
                 |> Seq.length
 
-            let lastToken = tryFindLastNonWhitespaceOrCommentToken previousLine
+            // Only use smart indentation after tokens that need indentation
+            // if the option is enabled
+            let lastToken =
+                if FSharpIndentationService.IsSmartIndentEnabled document.Project.Solution.Workspace then
+                    tryFindLastNonWhitespaceOrCommentToken previousLine
+                else
+                    None
+
             return
                 match lastToken with
-                | Some(NeedIndent) -> (lastIndent/tabSize + 1) * tabSize
+                | Some NeedIndent -> (lastIndent/tabSize + 1) * tabSize
                 | _ -> lastIndent
         }
 
@@ -92,7 +103,7 @@ type internal FSharpIndentationService
                 let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
                 let tabSize = options.GetOption(FormattingOptions.TabSize, FSharpConstants.FSharpLanguageName)
                 let projectOptionsOpt = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
-                let indent = FSharpIndentationService.GetDesiredIndentation(document.Id, sourceText, document.FilePath, lineNumber, tabSize, projectOptionsOpt)
+                let indent = FSharpIndentationService.GetDesiredIndentation(document, sourceText, lineNumber, tabSize, projectOptionsOpt)
                 return
                     match indent with
                     | None -> Nullable()
