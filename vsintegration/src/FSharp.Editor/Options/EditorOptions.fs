@@ -18,7 +18,8 @@ module DefaultTuning =
 // CLIMutable to make the record work also as a view model
 [<CLIMutable>]
 type IntelliSenseOptions =
-  { ShowAfterCharIsTyped: bool
+  { EnableInMemoryCrossProjectReferences: bool
+    ShowAfterCharIsTyped: bool
     ShowAfterCharIsDeleted: bool
     ShowAllSymbols : bool }
 
@@ -41,7 +42,8 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
     do  // Initialize default settings
         
         store.RegisterDefault
-            { ShowAfterCharIsTyped = true
+            { EnableInMemoryCrossProjectReferences = true
+              ShowAfterCharIsTyped = true
               ShowAfterCharIsDeleted = true
               ShowAllSymbols = true }
 
