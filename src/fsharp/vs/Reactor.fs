@@ -46,7 +46,7 @@ type Reactor() =
 
         // Async workflow which receives messages and dispatches to worker functions.
         let rec loop (bgOpOpt, onComplete, bg) = 
-            async { //Trace.TraceInformation("FCS: receiving..., remaining {0}", inbox.CurrentQueueLength)
+            async { //Trace.TraceInformation("Reactor: receiving..., remaining {0}", inbox.CurrentQueueLength)
 
                     // Explanation: The reactor thread acts as the compilation thread in hosted scenarios
                     let ctok = AssumeCompilationThreadWithoutEvidence()
@@ -73,7 +73,7 @@ type Reactor() =
 #endif
                     match msg with
                     | Some (SetBackgroundOp bgOpOpt) -> 
-                        Trace.TraceInformation("FCS: --> set background op, remaining {0}", inbox.CurrentQueueLength)
+                        //Trace.TraceInformation("Reactor: --> set background op, remaining {0}", inbox.CurrentQueueLength)
                         return! loop (bgOpOpt, onComplete, false)
 
                     | Some (Op (userOpName, opName, opArg, ct, op, ccont)) -> 
