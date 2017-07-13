@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 #if COMPILER_PUBLIC_API
-module Microsoft.FSharp.Compiler.ErrorLogger
+module public Microsoft.FSharp.Compiler.ErrorLogger
 #else
 module internal Microsoft.FSharp.Compiler.ErrorLogger
 #endif
@@ -187,9 +187,8 @@ type PhasedDiagnostic =
 
     /// Construct a phased error
     static member Create(exn:exn,phase:BuildPhase) : PhasedDiagnostic =
-#if !COMPILER_SERVICE  // TODO: renable this assert in the compiler service
-        System.Diagnostics.Debug.Assert(phase<>BuildPhase.DefaultPhase, sprintf "Compile error seen with no phase to attribute it to.%A %s %s" phase exn.Message exn.StackTrace )        
-#endif
+        // FUTURE: renable this assert, which has historically triggered in some compiler service scenarios
+        // System.Diagnostics.Debug.Assert(phase<>BuildPhase.DefaultPhase, sprintf "Compile error seen with no phase to attribute it to.%A %s %s" phase exn.Message exn.StackTrace )        
         {Exception = exn; Phase=phase}
 
     member this.DebugDisplay() =
@@ -272,13 +271,9 @@ let DiscardErrorsLogger =
 
 let AssertFalseErrorLogger =
     { new ErrorLogger("AssertFalseErrorLogger") with 
-#if COMPILER_SERVICE  // TODO: renable these asserts in the compiler service
+            // TODO: renable these asserts in the compiler service
             member x.DiagnosticSink(phasedError,isError) = (* assert false; *) ()
             member x.ErrorCount = (* assert false; *) 0 
-#else
-            member x.DiagnosticSink(phasedError,isError) = assert false; ()
-            member x.ErrorCount = assert false; 0 
-#endif
     }
 
 type CapturingErrorLogger(nm) = 
@@ -308,11 +303,8 @@ type internal CompileThreadStatic =
     static member BuildPhase
         with get() = 
             match box CompileThreadStatic.buildPhase with
-#if COMPILER_SERVICE  // TODO: renable these asserts in the compiler service
+            // FUTURE: renable these asserts, which have historically fired in some compiler service scernaios
             | null -> (* assert false; *) BuildPhase.DefaultPhase
-#else
-            | null -> assert false; BuildPhase.DefaultPhase
-#endif
             | _ -> CompileThreadStatic.buildPhase
         and set v = CompileThreadStatic.buildPhase <- v
             

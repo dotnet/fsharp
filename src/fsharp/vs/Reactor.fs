@@ -31,7 +31,7 @@ type internal ReactorCommands =
 /// There is one global Reactor for the entire language service, no matter how many projects or files
 /// are open. 
 type Reactor() = 
-    static let pauseBeforeBackgroundWorkDefault = GetEnvInteger "FCS_PauseBeforeBackgroundWorkMilliseconds" 1000
+    static let pauseBeforeBackgroundWorkDefault = GetEnvInteger "FCS_PauseBeforeBackgroundWorkMilliseconds" 10
     static let theReactor = Reactor()
     let mutable pauseBeforeBackgroundWork = pauseBeforeBackgroundWorkDefault
 
@@ -60,7 +60,11 @@ type Reactor() =
                                 | _, Some _ -> 
                                     return! inbox.TryReceive(0) 
                                 | Some _, _ -> 
-                                    let timeout = (if bg then 0 else pauseBeforeBackgroundWork)
+                                    let timeout = 
+                                        if bg then 0 
+                                        else 
+                                            Trace.TraceInformation("Reactor: {0:n3} pausing {1} milliseconds", DateTime.Now.TimeOfDay.TotalSeconds, pauseBeforeBackgroundWork)
+                                            pauseBeforeBackgroundWork
                                     return! inbox.TryReceive(timeout) }
 #if FX_RESHAPED_GLOBALIZATION
                     CultureInfo.CurrentUICulture <- culture
@@ -74,7 +78,7 @@ type Reactor() =
 
                     | Some (Op (userOpName, opName, opArg, ct, op, ccont)) -> 
                         if ct.IsCancellationRequested then ccont() else
-                        Trace.TraceInformation("FCS: --> {0}.{1} ({2}), remaining {3}", userOpName, opName, opArg, inbox.CurrentQueueLength)
+                        Trace.TraceInformation("Reactor: {0:n3} --> {1}.{2} ({3}), remaining {4}", DateTime.Now.TimeOfDay.TotalSeconds, userOpName, opName, opArg, inbox.CurrentQueueLength)
                         let time = Stopwatch()
                         time.Start()
                         op ctok
@@ -83,16 +87,14 @@ type Reactor() =
                         //if span.TotalMilliseconds > 100.0 then 
                         let taken = span.TotalMilliseconds
                         let msg = (if taken > 10000.0 then "BAD-OP: >10s " elif taken > 3000.0 then "BAD-OP: >3s " elif taken > 1000.0 then "BAD-OP: > 1s " elif taken > 500.0 then "BAD-OP: >0.5s " else "")
-                        if msg = "" then 
-                            Trace.TraceInformation("FCS: <-- {0}.{1}, took {2} ms ({3})", userOpName, opName, span.TotalMilliseconds, opArg)
-                        else
-                            Trace.TraceWarning("FCS: {0}<-- {1}.{2}, took {3} ms ({4})", msg, userOpName, opName, span.TotalMilliseconds, opArg)
+                        Trace.TraceInformation("Reactor: {0:n3} {1}<-- {2}.{3}, took {4} ms", DateTime.Now.TimeOfDay.TotalSeconds, msg, userOpName, opName, span.TotalMilliseconds)
                         return! loop (bgOpOpt, onComplete, false)
                     | Some (WaitForBackgroundOpCompletion channel) -> 
                         match bgOpOpt with 
                         | None -> ()
                         | Some (bgUserOpName, bgOpName, bgOpArg, bgOp) -> 
-                            Trace.TraceInformation("FCS: --> wait for background {0}.{1} ({2}), remaining {3}", bgUserOpName, bgOpName, bgOpArg, inbox.CurrentQueueLength)
+                            Trace.TraceInformation("Reactor: {0:n3} --> wait for background {1}.{2} ({3}), remaining {4}", DateTime.Now.TimeOfDay.TotalSeconds, bgUserOpName, bgOpName, bgOpArg, inbox.CurrentQueueLength)
+                            bgOpCts.Dispose()
                             bgOpCts <- new CancellationTokenSource()
                             while not bgOpCts.IsCancellationRequested && bgOp ctok bgOpCts.Token do 
                                 ()
@@ -104,16 +106,17 @@ type Reactor() =
                         return! loop (None, onComplete, false)
 
                     | Some (CompleteAllQueuedOps channel) -> 
-                        Trace.TraceInformation("FCS: --> stop background work and complete all queued ops, remaining {0}", inbox.CurrentQueueLength)
+                        Trace.TraceInformation("Reactor: {0:n3} --> stop background work and complete all queued ops, remaining {1}", DateTime.Now.TimeOfDay.TotalSeconds, inbox.CurrentQueueLength)
                         return! loop (None, Some channel, false)
 
                     | None -> 
                         match bgOpOpt, onComplete with 
                         | _, Some onComplete -> onComplete.Reply()
                         | Some  (bgUserOpName, bgOpName, bgOpArg, bgOp), None -> 
-                            Trace.TraceInformation("FCS: --> background step {0}.{1} ({2})", bgUserOpName, bgOpName, bgOpArg)
+                            Trace.TraceInformation("Reactor: {0:n3} --> background step {1}.{2} ({3})", DateTime.Now.TimeOfDay.TotalSeconds, bgUserOpName, bgOpName, bgOpArg)
                             let time = Stopwatch()
                             time.Start()
+                            bgOpCts.Dispose()
                             bgOpCts <- new CancellationTokenSource()
                             let res = bgOp ctok bgOpCts.Token
                             if bgOpCts.IsCancellationRequested then 
@@ -122,10 +125,7 @@ type Reactor() =
                             let taken = time.Elapsed.TotalMilliseconds
                             //if span.TotalMilliseconds > 100.0 then 
                             let msg = (if taken > 10000.0 then "BAD-BG-SLICE: >10s " elif taken > 3000.0 then "BAD-BG-SLICE: >3s " elif taken > 1000.0 then "BAD-BG-SLICE: > 1s " else "")
-                            if msg = "" then 
-                                Trace.TraceInformation("FCS: <-- background step, took {0}ms", taken)
-                            else
-                                Trace.TraceWarning("FCS: {0}<-- background step, took {1}ms", msg, taken)
+                            Trace.TraceInformation("Reactor: {0:n3} {1}<-- background step, took {2}ms", DateTime.Now.TimeOfDay.TotalSeconds, msg, taken)
                             return! loop ((if res then bgOpOpt else None), onComplete, true)
                         | None, None -> failwith "unreachable, should have used inbox.Receive"
                     }
@@ -139,7 +139,7 @@ type Reactor() =
 
     // [Foreground Mailbox Accessors] -----------------------------------------------------------                
     member r.SetBackgroundOp(bgOpOpt) = 
-        Trace.TraceInformation("FCS: enqueue start background, length {0}", builder.CurrentQueueLength)
+        Trace.TraceInformation("Reactor: {0:n3} enqueue start background, length {1}", DateTime.Now.TimeOfDay.TotalSeconds, builder.CurrentQueueLength)
         bgOpCts.Cancel()
         builder.Post(SetBackgroundOp bgOpOpt)
 
@@ -148,11 +148,11 @@ type Reactor() =
         bgOpCts.Cancel()
 
     member r.EnqueueOp(userOpName, opName, opArg, op) =
-        Trace.TraceInformation("FCS: enqueue {0}.{1} ({2}), length {3}", userOpName, opName, opArg, builder.CurrentQueueLength)
+        Trace.TraceInformation("Reactor: {0:n3} enqueue {1}.{2} ({3}), length {4}", DateTime.Now.TimeOfDay.TotalSeconds, userOpName, opName, opArg, builder.CurrentQueueLength)
         builder.Post(Op(userOpName, opName, opArg, CancellationToken.None, op, (fun () -> ()))) 
 
     member r.EnqueueOpPrim(userOpName, opName, opArg, ct, op, ccont) =
-        Trace.TraceInformation("FCS: enqueue {0}.{1} ({2}), length {3}", userOpName, opName, opArg, builder.CurrentQueueLength)
+        Trace.TraceInformation("Reactor: {0:n3} enqueue {1}.{2} ({3}), length {4}", DateTime.Now.TimeOfDay.TotalSeconds, userOpName, opName, opArg, builder.CurrentQueueLength)
         builder.Post(Op(userOpName, opName, opArg, ct, op, ccont)) 
 
     member r.CurrentQueueLength =
@@ -160,12 +160,12 @@ type Reactor() =
 
     // This is for testing only
     member r.WaitForBackgroundOpCompletion() =
-        Trace.TraceInformation("FCS: enqueue wait for background, length {0}", builder.CurrentQueueLength)
+        Trace.TraceInformation("Reactor: {0:n3} enqueue wait for background, length {0}", DateTime.Now.TimeOfDay.TotalSeconds, builder.CurrentQueueLength)
         builder.PostAndReply WaitForBackgroundOpCompletion 
 
     // This is for testing only
     member r.CompleteAllQueuedOps() =
-        Trace.TraceInformation("FCS: enqueue wait for all ops, length {0}", builder.CurrentQueueLength)
+        Trace.TraceInformation("Reactor: {0:n3} enqueue wait for all ops, length {0}", DateTime.Now.TimeOfDay.TotalSeconds, builder.CurrentQueueLength)
         builder.PostAndReply CompleteAllQueuedOps
 
     member r.EnqueueAndAwaitOpAsync (userOpName, opName, opArg, f) = 

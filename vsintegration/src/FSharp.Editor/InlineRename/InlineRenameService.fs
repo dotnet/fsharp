@@ -53,7 +53,7 @@ type internal InlineRenameLocationSet(locationsByDocument: DocumentLocations [],
                         return solution
                     else
                         let doc = locationsByDocument.[i]
-                        let! oldSourceText = doc.Document.GetTextAsync(cancellationToken)
+                        let! oldSourceText = doc.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                         let changes = doc.Locations |> Seq.map (fun loc -> TextChange(loc.TextSpan, replacementText))
                         let newSource = oldSourceText.WithChanges(changes)
                         return! applyChanges (i + 1) (solution.WithDocumentText(doc.Document.Id, newSource))
@@ -75,7 +75,7 @@ type internal InlineRenameInfo
         checker: FSharpChecker,
         projectInfoManager: ProjectInfoManager,
         document: Document,
-        sourceText: SourceText, 
+        triggerSpan: TextSpan, 
         lexerSymbol: LexerSymbol,
         symbolUse: FSharpSymbolUse,
         declLoc: SymbolDeclarationLocation,
@@ -88,10 +88,6 @@ type internal InlineRenameInfo
         match document.TryGetText() with
         | true, text -> text
         | _ -> document.GetTextAsync(cancellationToken).Result
-
-    let triggerSpan =
-        let span = RoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
-        Tokenizer.fixupSpan(sourceText, span)
 
     let symbolUses = 
         SymbolHelpers.getSymbolUsesInSolution(symbolUse.Symbol, declLoc, checkFileResults, projectInfoManager, checker, document.Project.Solution, userOpName)
@@ -122,12 +118,16 @@ type internal InlineRenameInfo
                     |> Seq.map (fun (KeyValue(documentId, symbolUses)) ->
                         async {
                             let document = document.Project.Solution.GetDocument(documentId)
-                            let! sourceText = document.GetTextAsync(cancellationToken)
+                            let! cancellationToken = Async.CancellationToken
+                            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                             let locations =
                                 symbolUses
-                                |> Array.map (fun symbolUse ->
-                                    let textSpan = Tokenizer.fixupSpan(sourceText, RoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate))
-                                    InlineRenameLocation(document, textSpan))
+                                |> Array.choose (fun symbolUse ->
+                                    RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate) 
+                                    |> Option.map (fun span -> 
+                                        let textSpan = Tokenizer.fixupSpan(sourceText, span)
+                                        InlineRenameLocation(document, textSpan)))
+
                             return { Document = document; Locations = locations }
                         })
                     |> Async.Parallel
@@ -157,7 +157,11 @@ type internal InlineRenameService
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true, userOpName = userOpName)
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.Text.ToString(), symbol.FullIsland, userOpName=userOpName)
             let! declLoc = symbolUse.GetDeclarationLocation(document)
-            return InlineRenameInfo(checker, projectInfoManager, document, sourceText, symbol, symbolUse, declLoc, checkFileResults) :> IInlineRenameInfo
+
+            let! span = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate)
+            let triggerSpan = Tokenizer.fixupSpan(sourceText, span)
+
+            return InlineRenameInfo(checker, projectInfoManager, document, triggerSpan, symbol, symbolUse, declLoc, checkFileResults) :> IInlineRenameInfo
         }
     
     interface IEditorInlineRenameService with

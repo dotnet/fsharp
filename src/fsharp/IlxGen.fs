@@ -5061,13 +5061,16 @@ and ComputeMethodImplAttribs cenv (_v:Val) attrs =
     // 0x80 - hasPreserveSigImplFlag
     // 0x20 - synchronize
     // (See ECMA 335, Partition II, section 23.1.11 - Flags for methods [MethodImplAttributes]) 
-    let attrs = attrs 
-                    |> List.filter (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_MethodImplAttribute >> not) 
-                        |> List.filter (IsMatchingFSharpAttributeOpt cenv.g cenv.g.attrib_PreserveSigAttribute >> not)
+    let attrs = 
+        attrs 
+        |> List.filter (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_MethodImplAttribute >> not) 
+        |> List.filter (IsMatchingFSharpAttributeOpt cenv.g cenv.g.attrib_PreserveSigAttribute >> not)
+
     let hasPreserveSigImplFlag = ((implflags &&& 0x80) <> 0x0) || hasPreserveSigAttr
     let hasSynchronizedImplFlag = (implflags &&& 0x20) <> 0x0
     let hasNoInliningImplFlag = (implflags &&& 0x08) <> 0x0
-    hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningImplFlag, attrs
+    let hasAggressiveInliningImplFlag = (implflags &&& 0x0100) <> 0x0
+    hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningImplFlag, hasAggressiveInliningImplFlag, attrs
     
 and GenMethodForBinding 
         cenv cgbuf eenv 
@@ -5152,7 +5155,7 @@ and GenMethodForBinding
         | _ -> [],None
     
     // check if the hasPreserveSigNamedArg and hasSynchronizedImplFlag implementation flags have been specified
-    let hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningFlag, attrs = ComputeMethodImplAttribs cenv v attrs
+    let hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningFlag, hasAggressiveInliningImplFlag, attrs = ComputeMethodImplAttribs cenv v attrs
         
     let securityAttributes,attrs = attrs |> List.partition (fun a -> IsSecurityAttribute cenv.g cenv.amap cenv.casApplied a m)
     
@@ -5183,6 +5186,7 @@ and GenMethodForBinding
                 IsSynchronized = hasSynchronizedImplFlag
                 IsEntryPoint = isExplicitEntryPoint
                 IsNoInline = hasNoInliningFlag
+                IsAggressiveInline = hasAggressiveInliningImplFlag
                 HasSecurity = mdef.HasSecurity || (securityAttributes.Length > 0)
                 SecurityDecls = secDecls }
 
@@ -6012,7 +6016,7 @@ and GenAbstractBinding cenv eenv tref (vref:ValRef) =
     let m = vref.Range
     let memberInfo = Option.get vref.MemberInfo
     let attribs = vref.Attribs
-    let hasPreserveSigImplFlag,hasSynchronizedImplFlag,hasNoInliningFlag,attribs = ComputeMethodImplAttribs cenv vref.Deref attribs
+    let hasPreserveSigImplFlag,hasSynchronizedImplFlag,hasNoInliningFlag,hasAggressiveInliningImplFlag,attribs = ComputeMethodImplAttribs cenv vref.Deref attribs
     if memberInfo.MemberFlags.IsDispatchSlot && not memberInfo.IsImplemented then 
         let ilAttrs = 
             [ yield! GenAttrs cenv eenv attribs 
@@ -6033,6 +6037,7 @@ and GenAbstractBinding cenv eenv tref (vref:ValRef) =
             IsPreserveSig=hasPreserveSigImplFlag
             IsSynchronized=hasSynchronizedImplFlag
             IsNoInline=hasNoInliningFlag
+            IsAggressiveInline=hasAggressiveInliningImplFlag
             mdKind=match mdef.mdKind with 
                     | MethodKind.Virtual vinfo -> 
                         MethodKind.Virtual {vinfo with IsFinal=memberInfo.MemberFlags.IsFinal

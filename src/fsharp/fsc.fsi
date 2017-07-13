@@ -32,9 +32,10 @@ val internal ProcessCommandLineFlags : TcConfigBuilder * setProcessThreadLocals:
 val typecheckAndCompile : 
     ctok: CompilationThreadToken *
     argv : string[] * 
-    referenceResolver: ReferenceResolver.Resolver * 
+    legacyReferenceResolver: ReferenceResolver.Resolver * 
     bannerAlreadyPrinted : bool * 
     openBinariesInMemory: bool * 
+    defaultCopyFSharpCore: bool * 
     exiter : Exiter *
     loggerProvider: ErrorLoggerProvider *
     tcImportsCapture: (TcImports -> unit) option *
@@ -44,9 +45,10 @@ val typecheckAndCompile :
 val mainCompile : 
     ctok: CompilationThreadToken *
     argv: string[] * 
-    referenceResolver: ReferenceResolver.Resolver * 
+    legacyReferenceResolver: ReferenceResolver.Resolver * 
     bannerAlreadyPrinted: bool * 
     openBinariesInMemory: bool * 
+    defaultCopyFSharpCore: bool * 
     exiter: Exiter * 
     loggerProvider: ErrorLoggerProvider * 
     tcImportsCapture: (TcImports -> unit) option *
@@ -55,7 +57,7 @@ val mainCompile :
 
 val compileOfAst : 
     ctok: CompilationThreadToken *
-    referenceResolver: ReferenceResolver.Resolver * 
+    legacyReferenceResolver: ReferenceResolver.Resolver * 
     openBinariesInMemory: bool * 
     assemblyName:string * 
     target:CompilerTarget * 

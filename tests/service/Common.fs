@@ -99,6 +99,18 @@ let fsCoreDefaultReference() =
         sysLib "FSharp.Core"
 *)
 
+let mkStandardProjectReferences () = 
+#if DOTNETCORE
+            let file = "Sample_NETCoreSDK_FSharp_Library_netstandard1.6.fsproj"
+            let projDir = Path.Combine(__SOURCE_DIRECTORY__, "../projects/Sample_NETCoreSDK_FSharp_Library_netstandard1.6")
+            readRefs projDir file
+#else
+            [ yield sysLib "mscorlib"
+              yield sysLib "System"
+              yield sysLib "System.Core"
+              yield fsCoreDefaultReference() ]
+#endif              
+
 let mkProjectCommandLineArgs (dllName, fileNames) = 
   let args = 
     [|  yield "--simpleresolution" 
@@ -117,17 +129,7 @@ let mkProjectCommandLineArgs (dllName, fileNames) =
         yield "--target:library" 
         for x in fileNames do 
             yield x
-        let references =
-#if DOTNETCORE
-            let file = "Sample_NETCoreSDK_FSharp_Library_netstandard1.6.fsproj"
-            let projDir = Path.Combine(__SOURCE_DIRECTORY__, "../projects/Sample_NETCoreSDK_FSharp_Library_netstandard1.6")
-            readRefs projDir file
-#else
-            [ yield sysLib "mscorlib"
-              yield sysLib "System"
-              yield sysLib "System.Core"
-              yield fsCoreDefaultReference() ]
-#endif              
+        let references = mkStandardProjectReferences ()
         for r in references do
             yield "-r:" + r
      |]
@@ -152,11 +154,7 @@ let mkProjectCommandLineArgsForScript (dllName, fileNames) =
         yield "--target:library" 
         for x in fileNames do 
             yield x
-    //    let implDir = Path.GetDirectoryName(typeof<System.Object>.Assembly.Location)
-        let references =
-            let file = "Sample_NETCoreSDK_FSharp_Library_netstandard1.6.fsproj"
-            let projDir = Path.Combine(__SOURCE_DIRECTORY__, "../projects/Sample_NETCoreSDK_FSharp_Library_netstandard1.6")
-            readRefs projDir file
+        let references = mkStandardProjectReferences ()
         for r in references do
             yield "-r:" + r
      |]

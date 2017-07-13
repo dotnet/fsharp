@@ -87,6 +87,11 @@ let GetSuperTypeOfType g amap m typ =
             Some g.obj_ty
         elif isStructTupleTy g typ then 
             Some g.obj_ty
+        elif isFSharpStructOrEnumTy g typ then
+            if isFSharpEnumTy g typ then
+                Some(g.system_Enum_typ)
+            else
+                Some (g.system_Value_typ)
         elif isRecdTy g typ || isUnionTy g typ then
             Some g.obj_ty
         else 
@@ -456,11 +461,19 @@ let private CombineMethInsts ttps mtps tinst minst = (mkTyparInst ttps tinst @ m
 
 /// Work out the instantiation relevant to interpret the backing metadata for a member.
 ///
-/// The 'minst' is the instantiation of any generic method type parameters (this instantiation is
-/// not included in the MethInfo objects, but carried separately).
-let private GetInstantiationForMemberVal g isCSharpExt (typ,vref,minst) = 
+/// The 'methTyArgs' is the instantiation of any generic method type parameters (this instantiation is
+/// not included in the MethInfo objects, but carried separately).  
+let private GetInstantiationForMemberVal g isCSharpExt (typ, vref, methTyArgs: TypeInst) = 
     let memberParentTypars,memberMethodTypars,_retTy,parentTyArgs = AnalyzeTypeOfMemberVal isCSharpExt g (typ,vref)
-    CombineMethInsts memberParentTypars memberMethodTypars parentTyArgs minst
+    /// In some recursive inference cases involving constraints this may need to be 
+    /// fixed up - we allow uniform generic recursion but nothing else.  
+    /// See https://github.com/Microsoft/visualfsharp/issues/3038#issuecomment-309429410
+    let methTyArgsFixedUp = 
+        if methTyArgs.Length < memberMethodTypars.Length then
+            methTyArgs @ (List.skip methTyArgs.Length memberMethodTypars |> generalizeTypars)
+        else 
+            methTyArgs
+    CombineMethInsts memberParentTypars memberMethodTypars parentTyArgs methTyArgsFixedUp
 
 /// Work out the instantiation relevant to interpret the backing metadata for a property.
 let private GetInstantiationForPropertyVal g (typ,vref) = 

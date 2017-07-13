@@ -25,6 +25,7 @@ type options =
    sourceLink: string
    signer : ILStrongNameSigner option
    emitTailcalls: bool
+   deterministic: bool
    showTimes : bool
    dumpDebugInfo : bool }
 

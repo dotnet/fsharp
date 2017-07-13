@@ -14,45 +14,20 @@
     <AssemblyName>FSharp.Compiler.Interactive.Settings</AssemblyName>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
-  <ItemGroup>
-    <PackageNuspec Include="FSharp.Compiler.Interactive.Settings.netcore.nuspec" Condition="'$(TargetFramework)' == 'coreclr'" />
-  </ItemGroup>
-  <ItemGroup>
-    <FsSrGen Include="..\FSInteractiveSettings.txt">
-      <Link>FSInteractiveSettings.txt</Link>
-    </FsSrGen>
-    <Compile Include="InternalsVisibleTo.fs"/>
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Interactive.Settings.dll.fs">
-      <Link>assemblyinfo.FSharp.Compiler.Interactive.Settings.dll.fs</Link>
-    </Compile>
-    <Compile Include="..\..\utils\reshapedreflection.fs">
-      <Link>Reflection/reshapedreflection.fs</Link>
-    </Compile>
-    <Compile Include="..\fsiattrs.fs">
-      <Link>Utilities/fsiattrs.fs</Link>
-    </Compile>
-    <Compile Include="..\fsiaux.fsi">
-      <Link>InteractiveSettings/fsiaux.fsi</Link>
-    </Compile>
-    <Compile Include="..\fsiaux.fs">
-      <Link>InteractiveSettings/fsiaux.fs</Link>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
+
+  <Import Project="FSharp.Compiler.Interactive.Settings.Sources.proj" />
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+
+  <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">
       <None Include="project.json" />
   </ItemGroup>
-  <ItemGroup  Condition="'$(TargetFramework)' != 'coreclr'">
+  <ItemGroup  Condition="'$(TargetDotnetProfile)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
-      <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
-        <Name>FSharp.Core</Name>
-      </ProjectReference>
-    </ItemGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" />
+  </ItemGroup>
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
     <ItemGroup>
       <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).dll" />

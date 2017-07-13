@@ -46,7 +46,7 @@ type internal FSharpCheckerProvider
 
     let checker = 
         lazy
-            let checker = FSharpChecker.Create(projectCacheSize = 200, keepAllBackgroundResolutions = false (* , MaxMemory = 2300 *))
+            let checker = FSharpChecker.Create(projectCacheSize = 200, keepAllBackgroundResolutions = false (* , MaxMemory = 2300 *), legacyReferenceResolver=Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver)
 
             // This is one half of the bridge between the F# background builder and the Roslyn analysis engine.
             // When the F# background builder refreshes the background semantic build context for a file,
@@ -59,7 +59,11 @@ type internal FSharpCheckerProvider
                         let solution = workspace.CurrentSolution
                         let documentIds = solution.GetDocumentIdsWithFilePath(fileName)
                         if not documentIds.IsEmpty then 
-                            analyzerService.Reanalyze(workspace,documentIds=documentIds)
+                            let docuentIdsFiltered = documentIds |> Seq.filter workspace.IsDocumentOpen |> Seq.toArray
+                            for documentId in docuentIdsFiltered do
+                                Trace.TraceInformation("{0:n3} Requesting Roslyn reanalysis of {1}", DateTime.Now.TimeOfDay.TotalSeconds, documentId)
+                            if docuentIdsFiltered.Length > 0 then 
+                                analyzerService.Reanalyze(workspace,documentIds=docuentIdsFiltered)
                     | _ -> ()
                 with ex -> 
                     Assert.Exception(ex)
@@ -167,7 +171,7 @@ type internal ProjectInfoManager
           try
             let fileName = document.FilePath
             let! cancellationToken = Async.CancellationToken
-            let! sourceText = document.GetTextAsync(cancellationToken)
+            let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             // NOTE: we don't use FCS cross-project references from scripts to projects.  The projects must have been
             // compiled and #r will refer to files on disk.
             let tryGetOrCreateProjectId _ = None 
@@ -443,10 +447,21 @@ and
                                                 projectInfoManager.ClearInfoForProject(project.Id)
                                                 optionsAssociation.Remove(projectContext) |> ignore
                                                 project.Disconnect()))
-                for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
-                    let referencedProjectId = setup referencedSite                    
+
+                let referencedProjectSites = ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider)
+                
+                for referencedSite in referencedProjectSites do
+                    let referencedProjectFileName = referencedSite.ProjectFileName()
+                    let referencedProjectDisplayName = projectDisplayNameOf referencedProjectFileName
+                    let referencedProjectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(referencedProjectFileName, referencedProjectDisplayName)
                     project.AddProjectReference(ProjectReference referencedProjectId)
-            projectId
+
+                if not (workspace.ProjectTracker.ContainsProject(project)) then 
+                    workspace.ProjectTracker.AddProject(project)
+
+                for referencedSite in referencedProjectSites do
+                    setup referencedSite                    
+
         setup (siteProvider.GetProjectSite()) |> ignore
 
     member this.SetupStandAloneFile(fileName: string, fileContents: string, workspace: VisualStudioWorkspaceImpl, hier: IVsHierarchy) =

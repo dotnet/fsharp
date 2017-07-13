@@ -3736,10 +3736,8 @@ and CcuThunk =
         match box x.target with
         | null -> ()
         | _ -> 
-#if COMPILER_SERVICE
             // In the IDE we tolerate  a double-fixup of FSHarp.Core when editing the FSharp.Core project itself
             if x.AssemblyName <>  "FSharp.Core" then 
-#endif
                 errorR(Failure("internal error: Fixup: the ccu thunk for assembly "+x.AssemblyName+" not delayed!"))
 
         assert (avail.AssemblyName = x.AssemblyName)

@@ -6,8 +6,7 @@
     <DefineConstants>$(DefineConstants);BUILDING_WITH_LKG</DefineConstants>
     <DefineConstants>$(DefineConstants);COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);COMPILER_PUBLIC_API</DefineConstants>
-    <DefineConstants>$(DefineConstants);COMPILER_SERVICE</DefineConstants>
-    <DefineConstants>$(DefineConstants);COMPILER_SERVICE_DLL</DefineConstants>
+    <DefineConstants>$(DefineConstants);COMPILER_SERVICE_ASSUMES_DOTNETCORE_COMPILATION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_PORTABLE_OR_NETSTANDARD</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_PORTABLE</DefineConstants>
     <DefineConstants>$(DefineConstants);NETSTANDARD1_6</DefineConstants>
@@ -47,11 +46,7 @@
     <DefineConstants>$(DefineConstants);FX_RESHAPED_REFLECTION</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_RESHAPED_REFLECTION_CORECLR</DefineConstants>
     <DefineConstants>$(DefineConstants);FSI_TODO_NETCORE</DefineConstants>
-    <DefineConstants>$(DefineConstants);NO_DEBUG_LOG</DefineConstants>
-    <DefineConstants>$(DefineConstants);NO_INLINE_IL_PARSER</DefineConstants>
-    <DefineConstants>$(DefineConstants);NO_LOADER_OPTIMIZATION</DefineConstants>
-    <DefineConstants>$(DefineConstants);NO_LOGGING_GUI</DefineConstants>
-    <DefineConstants>$(DefineConstants);RESHAPED_MSBUILD</DefineConstants>
+    <DefineConstants>$(DefineConstants);FX_RESHAPED_MSBUILD</DefineConstants>
     <DefineConstants>$(DefineConstants);SIGNED</DefineConstants>
     <DefineConstants>$(DefineConstants);STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY</DefineConstants>
     <NoWarn>$(NoWarn);44;69;65;54;61;75;62;9;2003;</NoWarn>

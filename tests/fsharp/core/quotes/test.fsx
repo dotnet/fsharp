@@ -1679,12 +1679,15 @@ module QuotationConstructionTests =
     check "vcknwwe0ii" (try let _ = Expr.TupleGet(<@@ (1,2) @@>, -1) in false with :? ArgumentException -> true) true
     for i = 0 to 7 do 
         check "vcknwwe0oo" (match Expr.TupleGet(<@@ (1,2,3,4,5,6,7,8) @@>, i) with TupleGet(b,n) -> b = <@@ (1,2,3,4,5,6,7,8) @@> && n = i | _ -> false) true 
+
     check "vcknwwe0pp" (match Expr.TypeTest(<@@ new obj() @@>, typeof<string>) with TypeTest(e,ty) -> e = <@@ new obj() @@> && ty = typeof<string> | _ -> false) true
     check "vcknwwe0aa" (match Expr.UnionCaseTest(<@@ [] : int list @@>, ucaseof <@@ [] : int list @@> ) with UnionCaseTest(e,uc) -> e = <@@ [] : int list @@> && uc = ucaseof <@@ [] : int list @@>  | _ -> false) true
     check "vcknwwe0ss" (Expr.Value(3)) <@@ 3 @@>
     check "vcknwwe0dd" (match Expr.Var(Var.Global("i",typeof<int>)) with Var(v) -> v = Var.Global("i",typeof<int>) | _ -> false) true
     check "vcknwwe0ff" (match Expr.VarSet(Var.Global("i",typeof<int>), <@@ 4 @@>) with VarSet(v,q) -> v = Var.Global("i",typeof<int>) && q = <@@ 4 @@>  | _ -> false) true
     check "vcknwwe0gg" (match Expr.WhileLoop(<@@ true @@>, <@@ () @@>) with WhileLoop(g,b) -> g = <@@ true @@> && b = <@@ () @@>  | _ -> false) true
+
+
 
 module QuotationStructUnionTests = 
 
@@ -3058,6 +3061,49 @@ module ReflectionOverTypeInstantiations =
 
     checkType "test cvweler8" t1 false
     checkType "test cvweler9" t2 true
+
+module QuotationStructTupleTests = 
+    let actual = struct (0,0)
+    let code = 
+        <@ match actual with
+           | struct (0,0) -> true
+           | _ -> false @>
+
+    printfn "code = %A" code
+    check "wcelwec" (match code with 
+                     | IfThenElse (Call (None, _, [TupleGet (PropertyGet (None, _, []), 0); _]), IfThenElse (Call (None, _, [TupleGet (PropertyGet (None, _, []), 1); _]), Value _, Value _), Value _) -> true
+                     | _ -> false)
+         true
+
+    for i = 0 to 7 do 
+        check "vcknwwe0oo" (match Expr.TupleGet(<@@ struct (1,2,3,4,5,6,7,8) @@>, i) with TupleGet(b,n) -> b = <@@ struct (1,2,3,4,5,6,7,8) @@> && n = i | _ -> false) true 
+
+    let actual2 : Result<string, string> = Ok "foo"
+    let code2 = 
+        <@ match actual2 with
+           | Ok _ -> true
+           | Error _ -> false @>
+
+    printfn "code2 = %A" code2
+    check "cewcewwer" 
+         (match code2 with 
+            | IfThenElse (UnionCaseTest (PropertyGet (None, actual2, []), _), Value _, Value _) -> true
+            | _ -> false)
+         true
+
+
+module TestStaticCtor = 
+    [<ReflectedDefinition>]
+    type T() =
+        static do printfn "Hello" // removing this makes the RD lookup work
+        static member Ident (x:int) = x
+
+    let testStaticCtor() = 
+        // bug: threw error with message "Could not bind to method" 
+        check "cvwenklwevpo1" (Expr.TryGetReflectedDefinition(typeof<T>.GetMethod("Ident"))).IsSome true
+        check "cvwenklwevpo2" (Expr.TryGetReflectedDefinition(typeof<T>.GetConstructors(BindingFlags.Static ||| BindingFlags.Public ||| BindingFlags.NonPublic).[0])).IsSome true
+
+    testStaticCtor()
 
 
 #if !FX_RESHAPED_REFLECTION

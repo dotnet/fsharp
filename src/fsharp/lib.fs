@@ -389,37 +389,6 @@ let inline cacheOptRef cache f =
        res 
 
 
-// There is a bug in .NET Framework v2.0.52727 DD#153959 that very occasionally hits F# code.
-// It is related to recursive class loading in multi-assembly NGEN scenarios. The bug has been fixed but
-// not yet deployed.
-// The bug manifests itself as an ExecutionEngine failure or fast-fail process exit which comes
-// and goes depending on whether components are NGEN'd or not, e.g. 'ngen install FSharp.Compiler.dll'
-// One workaround for the bug is to break NGEN loading and fixups into smaller fragments. Roughly speaking, the NGEN
-// loading process works by doing delayed fixups of references in NGEN code. This happens on a per-method basis.
-// e.g. one manifestation is that a 'print' before calling a method like LexFilter.create gets
-// displayed but the corresponding 'print' in the body of that function doesn't get displayed. In between, the NGEN
-// image loader is performing a whole bunch of fixups of the NGEN code for the body of that method, and also for
-// bodies of methods referred to by that method. That second bit is very important: the fixup causing the crash may
-// be a couple of steps down the dependency chain.
-//
-// One way to break work into smaller chunks is to put delays in the call chains, i.e. insert extra stack frames. That's
-// what the function 'delayInsertedToWorkaroundKnownNgenBug' is for. If you get this problem, try inserting 
-//    delayInsertedToWorkaroundKnownNgenBug "Delay1" (fun () -> ...)
-// at the top of the function that doesn't seem to be being called correctly. This will help you isolate out the problem
-// and may make the problem go away altogether. Enable the 'print' commands in that function too.
-
-let delayInsertedToWorkaroundKnownNgenBug s f = 
-    (* Some random code to prevent inlining of this function *)
-    let res = ref 10
-    for i = 0 to 2 do 
-       res := !res + String.length s
-    done
-    if verbose then printf "------------------------executing NGEN bug delay '%s', calling 'f' --------------\n" s
-    let res = f()
-    if verbose then printf "------------------------exiting NGEN bug delay '%s' --------------\n" s
-    res
-    
-
 #if DUMPER
 type Dumper(x:obj) =
      [<DebuggerBrowsable(DebuggerBrowsableState.Collapsed)>]
