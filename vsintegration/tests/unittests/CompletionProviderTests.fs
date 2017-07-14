@@ -87,7 +87,7 @@ let VerifyNoCompletionList(fileContents: string, marker: string) =
 
 [<OneTimeSetUp>]
 let usingDefaultSettings() = 
-    SettingsPersistence.setSettings { EnableInMemoryCrossProjectReferences=true; ShowAfterCharIsTyped = true; ShowAfterCharIsDeleted = false; ShowAllSymbols = true }
+    SettingsPersistence.setSettings { ShowAfterCharIsTyped = true; ShowAfterCharIsDeleted = false; ShowAllSymbols = true }
     
 [<Test>]
 let ShouldTriggerCompletionAtCorrectMarkers() =

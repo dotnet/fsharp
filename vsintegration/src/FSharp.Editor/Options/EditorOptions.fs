@@ -18,8 +18,7 @@ module DefaultTuning =
 // CLIMutable to make the record work also as a view model
 [<CLIMutable>]
 type IntelliSenseOptions =
-  { EnableInMemoryCrossProjectReferences: bool
-    ShowAfterCharIsTyped: bool
+  { ShowAfterCharIsTyped: bool
     ShowAfterCharIsDeleted: bool
     ShowAllSymbols : bool }
 
@@ -37,13 +36,16 @@ type CodeFixesOptions =
       AlwaysPlaceOpensAtTopLevel: bool
       UnusedOpens: bool }
 
+[<CLIMutable>]
+type LanguageServicePerformanceOptions = 
+    { EnableInMemoryCrossProjectReferences: bool }
+
 [<Export(typeof<ISettings>)>]
 type internal Settings [<ImportingConstructor>](store: SettingsStore) =
     do  // Initialize default settings
         
         store.RegisterDefault
-            { EnableInMemoryCrossProjectReferences = true
-              ShowAfterCharIsTyped = true
+            { ShowAfterCharIsTyped = true
               ShowAfterCharIsDeleted = true
               ShowAllSymbols = true }
 
@@ -58,11 +60,15 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
               AlwaysPlaceOpensAtTopLevel = false
               UnusedOpens = true }
 
+        store.RegisterDefault
+            { EnableInMemoryCrossProjectReferences = true }
+
     interface ISettings
 
     static member IntelliSense : IntelliSenseOptions = getSettings()
     static member QuickInfo : QuickInfoOptions = getSettings()
     static member CodeFixes : CodeFixesOptions = getSettings()
+    static member LanguageServicePerformance : LanguageServicePerformanceOptions = getSettings()
 
 module internal OptionsUI =
 
@@ -91,3 +97,9 @@ module internal OptionsUI =
         inherit AbstractOptionPage<CodeFixesOptions>()
         override this.CreateView() =
             upcast CodeFixesOptionControl()            
+
+    [<Guid(Guids.languageServicePerformanceOptionPageIdString)>]
+    type internal LanguageServicePerformanceOptionPage() =
+        inherit AbstractOptionPage<LanguageServicePerformanceOptions>()
+        override this.CreateView() =
+            upcast LanguageServicePerformanceOptionControl()

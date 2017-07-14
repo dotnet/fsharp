@@ -55,6 +55,9 @@
     <Compile Include="CodeFixesOptionControl.xaml.cs">
       <DependentUpon>CodeFixesOptionControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="LanguageServicePerformanceOptionControl.xaml.cs">
+      <DependentUpon>LanguageServicePerformanceOptionControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="IntelliSenseOptionControl.xaml.cs">
       <DependentUpon>IntelliSenseOptionControl.xaml</DependentUpon>
     </Compile>
@@ -75,6 +78,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="HyperlinkStyles.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="LanguageServicePerformanceOptionControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

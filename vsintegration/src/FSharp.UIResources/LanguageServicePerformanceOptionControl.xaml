@@ -1,4 +1,4 @@
-﻿<UserControl x:Class="Microsoft.VisualStudio.FSharp.UIResources.IntelliSenseOptionControl"
+﻿<UserControl x:Class="Microsoft.VisualStudio.FSharp.UIResources.LanguageServicePerformanceOptionControl"
              x:ClassModifier="internal"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -17,19 +17,13 @@
   <Grid>
     <ScrollViewer VerticalScrollBarVisibility="Auto">
       <StackPanel>
-        <GroupBox Header="{x:Static local:Strings.Completion_Lists}">
+                <GroupBox Header="{x:Static local:Strings.Language_Service_Performance}">
           <StackPanel>
-            <CheckBox x:Name="charTyped" IsChecked="{Binding ShowAfterCharIsTyped}"
-                      Content="{x:Static local:Strings.Show_completion_list_after_a_character_is_typed}"/>
-            <StackPanel Margin="15 0 0 0">
-              <CheckBox x:Name="charDeleted" IsEnabled="{Binding IsChecked, ElementName=charTyped}" IsChecked="{Binding ShowAfterCharIsDeleted}"
-                        Content="{x:Static local:Strings.Show_completion_list_after_a_character_is_deleted}"/>
-            </StackPanel>
-            <CheckBox x:Name="showAllSymbols" IsChecked="{Binding ShowAllSymbols}"
-                      Content="{x:Static local:Strings.Show_all_symbols}"/>
+            <CheckBox x:Name="enableInMemoryCrossProjectReferences" IsChecked="{Binding EnableInMemoryCrossProjectReferences}"
+                      Content="{x:Static local:Strings.Enable_in_memory_cross_project_references}"/>
           </StackPanel>
         </GroupBox>
-            </StackPanel>
+      </StackPanel>
     </ScrollViewer>
   </Grid>
 </UserControl>
