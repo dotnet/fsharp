@@ -740,9 +740,12 @@ val tyOfExpr : TcGlobals -> Expr -> TType
 // Top expressions to implement top types
 //------------------------------------------------------------------------- 
 
+[<RequireQualifiedAccess>]
+type AllowTypeDirectedDetupling = Yes | No
+
 val stripTopLambda : Expr * TType -> Typars * Val list list * Expr * TType
-val InferArityOfExpr : TcGlobals -> TType -> Attribs list list -> Attribs -> Expr -> ValReprInfo
-val InferArityOfExprBinding : TcGlobals -> Val -> Expr -> ValReprInfo
+val InferArityOfExpr : TcGlobals -> AllowTypeDirectedDetupling -> TType -> Attribs list list -> Attribs -> Expr -> ValReprInfo
+val InferArityOfExprBinding : TcGlobals -> AllowTypeDirectedDetupling -> Val -> Expr -> ValReprInfo
 
 //-------------------------------------------------------------------------
 //  Copy expressions and types
