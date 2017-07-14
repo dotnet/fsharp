@@ -24,10 +24,10 @@
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="100" />
+                                <ColumnDefinition Width="70" />
                             </Grid.ColumnDefinitions>
                             <Label Grid.Column="0" x:Name="projectCheckCacheSizeLabel" Content="{x:Static local:Strings.Project_check_cache_size}"/>
-                            <TextBox Grid.Column="1" Text="{Binding ProjectCheckCacheSize}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                            <TextBox Grid.Column="1" Text="{Binding ProjectCheckCacheSize}" HorizontalContentAlignment="Right" VerticalContentAlignment="Center"/>
                         </Grid>
                     </StackPanel>
                 </GroupBox>

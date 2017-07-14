@@ -63,7 +63,7 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
 
         store.RegisterDefault
             { EnableInMemoryCrossProjectReferences = true
-              ProjectCheckCacheSize = 3 }
+              ProjectCheckCacheSize = 200 }
 
     interface ISettings
 
