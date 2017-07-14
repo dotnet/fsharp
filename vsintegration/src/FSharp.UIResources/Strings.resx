@@ -126,6 +126,9 @@
   <data name="Completion_Lists" xml:space="preserve">
     <value>Completion Lists</value>
   </data>
+  <data name="Language_Service_Performance" xml:space="preserve">
+    <value>Performance</value>
+  </data>
   <data name="Dash_underline" xml:space="preserve">
     <value>D_ash underline</value>
   </data>
@@ -143,6 +146,12 @@
   </data>
   <data name="Show_completion_list_after_a_character_is_typed" xml:space="preserve">
     <value>_Show completion list after a character is typed</value>
+  </data>
+  <data name="Enable_in_memory_cross_project_references" xml:space="preserve">
+    <value>_Enable in-memory cross project references</value>
+  </data>
+  <data name="Project_check_cache_size" xml:space="preserve">
+    <value>Project check cache size</value>
   </data>
   <data name="Show_navigation_links_as" xml:space="preserve">
     <value>S_how navigation links as</value>
