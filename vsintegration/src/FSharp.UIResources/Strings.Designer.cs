@@ -115,7 +115,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Language Service Performance.
+        ///   Looks up a localized string similar to Performance.
         /// </summary>
         public static string Language_Service_Performance {
             get {

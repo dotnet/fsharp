@@ -55,6 +55,7 @@
     <Compile Include="CodeFixesOptionControl.xaml.cs">
       <DependentUpon>CodeFixesOptionControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="IntergerCheckValidationRule.cs" />
     <Compile Include="LanguageServicePerformanceOptionControl.xaml.cs">
       <DependentUpon>LanguageServicePerformanceOptionControl.xaml</DependentUpon>
     </Compile>
@@ -102,6 +103,7 @@
     <EmbeddedResource Include="Strings.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

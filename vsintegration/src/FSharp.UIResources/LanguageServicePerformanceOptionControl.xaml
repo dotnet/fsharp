@@ -27,7 +27,17 @@
                                 <ColumnDefinition Width="70" />
                             </Grid.ColumnDefinitions>
                             <Label Grid.Column="0" x:Name="projectCheckCacheSizeLabel" Content="{x:Static local:Strings.Project_check_cache_size}"/>
-                            <TextBox Grid.Column="1" Text="{Binding ProjectCheckCacheSize}" HorizontalContentAlignment="Right" VerticalContentAlignment="Center"/>
+                            <TextBox Grid.Column="1" 
+                                HorizontalContentAlignment="Right" 
+                                VerticalContentAlignment="Center">
+                                <TextBox.Text>
+                                    <Binding Path="ProjectCheckCacheSize">
+                                        <Binding.ValidationRules>
+                                            <local:IntegerRangeValidationRule Min="1" Max="1000" />
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </TextBox.Text>
+                            </TextBox>
                         </Grid>
                     </StackPanel>
                 </GroupBox>
