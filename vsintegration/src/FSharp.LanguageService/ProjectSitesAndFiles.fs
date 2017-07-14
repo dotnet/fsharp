@@ -123,7 +123,7 @@ type internal ProjectSitesAndFiles() =
             | None -> ()
         }
                     
-    static let rec referencedProjectsOf (tryGetOptionsForReferencedProject, projectSite:IProjectSite, extraProjectInfo, serviceProvider:System.IServiceProvider, useUniqueStamp) =
+    static let rec referencedProjectsOf (enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite:IProjectSite, extraProjectInfo, serviceProvider:System.IServiceProvider, useUniqueStamp) =
         [| for (p,ps) in referencedProvideProjectSites (projectSite, serviceProvider) do
               match fullOutputAssemblyPath p with 
               | None -> ()
@@ -132,14 +132,16 @@ type internal ProjectSitesAndFiles() =
                       // Lookup may not succeed if the project has not been established yet
                       // In this case we go and compute the options recursively.
                       match tryGetOptionsForReferencedProject p.FileName with 
-                      | None -> getProjectOptionsForProjectSite (tryGetOptionsForReferencedProject, ps.GetProjectSite(), p.FileName, extraProjectInfo, serviceProvider, useUniqueStamp) |> snd
+                      | None -> getProjectOptionsForProjectSite (enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, ps.GetProjectSite(), p.FileName, extraProjectInfo, serviceProvider, useUniqueStamp) |> snd
                       | Some options -> options
                   yield (p.FileName, (path, referencedProjectOptions)) |]
 
-    and getProjectOptionsForProjectSite(tryGetOptionsForReferencedProject, projectSite:IProjectSite, fileName, extraProjectInfo, serviceProvider, useUniqueStamp) =            
+    and getProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite:IProjectSite, fileName, extraProjectInfo, serviceProvider, useUniqueStamp) =            
         let referencedProjectFileNames, referencedProjectOptions = 
-            referencedProjectsOf(tryGetOptionsForReferencedProject, projectSite, extraProjectInfo, serviceProvider, useUniqueStamp) 
-            |> Array.unzip
+            if enableInMemoryCrossProjectReferences then
+                referencedProjectsOf(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, extraProjectInfo, serviceProvider, useUniqueStamp) 
+                |> Array.unzip
+            else [| |], [| |]
 
         let options = 
             {ProjectFileName = projectSite.ProjectFileName()
@@ -238,11 +240,11 @@ type internal ProjectSitesAndFiles() =
         |> Seq.toArray
 
     /// Create project options for this project site.
-    static member GetProjectOptionsForProjectSite(tryGetOptionsForReferencedProject, projectSite:IProjectSite,filename,extraProjectInfo,serviceProvider:System.IServiceProvider, useUniqueStamp) =
+    static member GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite:IProjectSite,filename,extraProjectInfo,serviceProvider:System.IServiceProvider, useUniqueStamp) =
         match projectSite with
         | :? IHaveCheckOptions as hco -> hco.OriginalCheckOptions()
         | _ ->             
-            getProjectOptionsForProjectSite(tryGetOptionsForReferencedProject, projectSite, filename, extraProjectInfo, serviceProvider, useUniqueStamp)
+            getProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, filename, extraProjectInfo, serviceProvider, useUniqueStamp)
          
     /// Create project site for these project options
     static member CreateProjectSiteForScript (filename, referencedProjectFileNames, checkOptions) = 
