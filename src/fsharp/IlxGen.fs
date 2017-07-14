@@ -1366,7 +1366,7 @@ type CodeGenBuffer(m:range,
             // Save the last sequence point away so we can make a decision graph look consistent (i.e. reassert the sequence point at each target)
             lastSeqPoint <- Some src
             
-    // For debug code, emit FeeFee breakpoints for hidden code, see http://blogs.msdn.com/jmstall/archive/2005/06/19/FeeFee_SequencePoints.aspx
+    // For debug code, emit FeeFee breakpoints for hidden code, see https://blogs.msdn.microsoft.com/jmstall/2005/06/19/line-hidden-and-0xfeefee-sequence-points/
     member cgbuf.EmitStartOfHiddenCode() = 
         if mgbuf.cenv.opts.generateDebugSymbols && not mgbuf.cenv.opts.localOptimizationsAreOn then 
             let doc = mgbuf.cenv.g.memoize_file m.FileIndex
