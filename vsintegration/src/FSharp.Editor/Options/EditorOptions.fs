@@ -38,7 +38,8 @@ type CodeFixesOptions =
 
 [<CLIMutable>]
 type LanguageServicePerformanceOptions = 
-    { EnableInMemoryCrossProjectReferences: bool }
+    { EnableInMemoryCrossProjectReferences: bool
+      ProjectCheckCacheSize: int }
 
 [<Export(typeof<ISettings>)>]
 type internal Settings [<ImportingConstructor>](store: SettingsStore) =
@@ -61,7 +62,8 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
               UnusedOpens = true }
 
         store.RegisterDefault
-            { EnableInMemoryCrossProjectReferences = true }
+            { EnableInMemoryCrossProjectReferences = true
+              ProjectCheckCacheSize = 3 }
 
     interface ISettings
 

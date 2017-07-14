@@ -133,6 +133,15 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Project check cache size.
+        /// </summary>
+        public static string Project_check_cache_size {
+            get {
+                return ResourceManager.GetString("Project_check_cache_size", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Show s_ymbols in unopened namespaces.
         /// </summary>
         public static string Show_all_symbols {

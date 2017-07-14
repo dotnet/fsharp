@@ -7,23 +7,31 @@
              xmlns:local="clr-namespace:Microsoft.VisualStudio.FSharp.UIResources"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="400">
-  <UserControl.Resources>
-    <ResourceDictionary>
-      <ResourceDictionary.MergedDictionaries>
-        <ResourceDictionary Source="OptionPageStyle.xaml"/>
-      </ResourceDictionary.MergedDictionaries>
-    </ResourceDictionary>
-  </UserControl.Resources>
-  <Grid>
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-      <StackPanel>
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="OptionPageStyle.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel>
                 <GroupBox Header="{x:Static local:Strings.Language_Service_Performance}">
-          <StackPanel>
-            <CheckBox x:Name="enableInMemoryCrossProjectReferences" IsChecked="{Binding EnableInMemoryCrossProjectReferences}"
+                    <StackPanel>
+                        <CheckBox x:Name="enableInMemoryCrossProjectReferences" IsChecked="{Binding EnableInMemoryCrossProjectReferences}"
                       Content="{x:Static local:Strings.Enable_in_memory_cross_project_references}"/>
-          </StackPanel>
-        </GroupBox>
-      </StackPanel>
-    </ScrollViewer>
-  </Grid>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="100" />
+                            </Grid.ColumnDefinitions>
+                            <Label Grid.Column="0" x:Name="projectCheckCacheSizeLabel" Content="{x:Static local:Strings.Project_check_cache_size}"/>
+                            <TextBox Grid.Column="1" Text="{Binding ProjectCheckCacheSize}"/>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
 </UserControl>
