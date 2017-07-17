@@ -17,8 +17,9 @@ namespace Microsoft.VisualStudio.FSharp.UIResources
 
         public override ValidationResult Validate(object value, CultureInfo cultureInfo)
         {
-            if (value is string text)
+            if (value is string)
             {
+                var text = (string)value;
                 if (int.TryParse(text, out int i) &&
                     i >= Min && i <= Max)
                 {
