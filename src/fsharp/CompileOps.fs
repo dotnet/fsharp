@@ -2584,8 +2584,12 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                 defaultCoreLibraryReference, if r.Range =rangeStartup then Some(filename) else None
         match data.referencedDLLs |> List.filter (fun assemblyReference -> assemblyReference.SimpleAssemblyNameIs libraryName) with
         | [r] -> nameOfDll r
-        | [] -> 
-            defaultCoreLibraryReference, None
+        | [] ->
+            let allowImplicitFSharpCore = false // TODO: read arg
+            if allowImplicitFSharpCore then
+                defaultCoreLibraryReference, None
+            else
+                error(Error((-1,"No FSharp.Core reference!"), rangeCmdArgs))
         | r:: _ -> 
             // Recover by picking the first one.
             errorR(Error(FSComp.SR.buildMultipleReferencesNotAllowed(libraryName),rangeCmdArgs)) 
