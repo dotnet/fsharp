@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+
+using System.Globalization;
 using System.Windows.Controls;
 
 namespace Microsoft.VisualStudio.FSharp.UIResources
@@ -20,7 +21,8 @@ namespace Microsoft.VisualStudio.FSharp.UIResources
             if (value is string)
             {
                 var text = (string)value;
-                if (int.TryParse(text, out int i) &&
+                int i = 0;
+                if (int.TryParse(text, out i) &&
                     i >= Min && i <= Max)
                 {
                     return ValidationResult.ValidResult;
