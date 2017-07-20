@@ -168,6 +168,7 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
         | Some s -> s
         | None -> ""
     let mutable treatWarningsAsErrors : bool = false
+    let mutable useStandardResourceNames : bool = false
     let mutable warningsAsErrors : string = null
     let mutable versionFile : string = null
     let mutable warningLevel : string = null
@@ -250,7 +251,10 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
         // Resources
         if resources <> null then 
             for item in resources do
-                builder.AppendSwitchIfNotNull("--resource:", item.ItemSpec, [|item.GetMetadata("LogicalName"); item.GetMetadata("Access")|])
+                match useStandardResourceNames with
+                | true -> builder.AppendSwitchIfNotNull("--resource:", item.ItemSpec, [|item.GetMetadata("LogicalName"); item.GetMetadata("Access")|])
+                | false -> builder.AppendSwitchIfNotNull("--resource:", item.ItemSpec)
+                
         // VersionFile
         builder.AppendSwitchIfNotNull("--versionfile:", versionFile)
         // References
@@ -521,6 +525,10 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
         with get() = toolPath
         and set(s) = toolPath <- s
 
+    // When set to true, generate resource names in the same way as C# with root namespace and folder names
+    member fsc.UseStandardResourceNames
+        with get() = useStandardResourceNames
+        and set(s) = useStandardResourceNames <- s
     // --version-file <string>: 
     member fsc.VersionFile
         with get() = versionFile
