@@ -1119,8 +1119,8 @@ type TypeCheckInfo
                   //Item.Value(vref)
                   FSharpFindDeclResult.DeclNotFound FSharpFindDeclFailureReason.Unknown
               | Item.Types (_, [TType_app (tr, _)]) when not tr.IsLocalRef ->
-                  match tr.ILTyconInfo, tr.PublicPath with
-                  | TILObjectReprData (ILScopeRef.Assembly assref, _, _), Some (PubPath parts) ->
+                  match tr.TypeReprInfo, tr.PublicPath with
+                  | TILObjectRepr(TILObjectReprData (ILScopeRef.Assembly assref, _, _)), Some (PubPath parts) ->
                       FSharpFindDeclResult.ExternalDecl (assref.Name, String.concat "." parts)
                   | _ -> 
                       FSharpFindDeclResult.DeclNotFound FSharpFindDeclFailureReason.Unknown
