@@ -31,7 +31,7 @@
                                 HorizontalContentAlignment="Right" 
                                 VerticalContentAlignment="Center">
                                 <TextBox.Text>
-                                    <Binding Path="ProjectCheckCacheSize">
+                                    <Binding UpdateSourceTrigger="PropertyChanged" Path="ProjectCheckCacheSize">
                                         <Binding.ValidationRules>
                                             <local:IntegerRangeValidationRule Min="1" Max="1000" />
                                         </Binding.ValidationRules>
