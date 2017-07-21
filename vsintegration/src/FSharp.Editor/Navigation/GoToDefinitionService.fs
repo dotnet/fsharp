@@ -232,7 +232,7 @@ type internal FSharpGoToDefinitionService
                 let! project = originDocument.Project.Solution.Projects |> Seq.tryFind (fun p -> p.AssemblyName = assy)
                 let! symbols = SymbolFinder.FindSourceDeclarationsAsync(project, fun (s:string) -> true)
  
-                let fullName sym =
+                let getFullName sym =
                     let rec inner (sym : ISymbol) parts =
                         match sym.ContainingSymbol with
                         | null ->
@@ -249,11 +249,7 @@ type internal FSharpGoToDefinitionService
                             inner container parts
                     inner sym [sym.Name] |> String.concat "."
  
-                let! symbol = symbols |> Seq.tryFind (fun sym ->
-                    let fn = fullName sym
-                    let _res = sprintf "%A = %A" fn symname
-                    fn = symname
-                    )
+                let! symbol = symbols |> Seq.tryFind (fun sym -> getFullName sym = symname)
                 let! location = symbol.Locations |> Seq.tryHead
                 return FSharpNavigableItem(project.GetDocument(location.SourceTree), location.SourceSpan)
 

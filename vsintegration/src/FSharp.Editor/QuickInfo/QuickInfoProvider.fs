@@ -152,7 +152,7 @@ module private FSharpQuickInfo =
                                 let! project = document.Project.Solution.Projects |> Seq.tryFind (fun p -> p.AssemblyName = assembly)
                                 let! symbols = SymbolFinder.FindSourceDeclarationsAsync(project, fun (s:string) -> true)
                                 
-                                let fullName sym =
+                                let getFullName sym =
                                     let rec inner (sym : ISymbol) parts =
                                         match sym.ContainingSymbol with
                                         | null ->
@@ -169,11 +169,7 @@ module private FSharpQuickInfo =
                                             inner container parts
                                     inner sym [sym.Name] |> String.concat "."
                                 
-                                let! symbol = symbols |> Seq.tryFind (fun sym ->
-                                    let fn = fullName sym
-                                    let _res = sprintf "%A = %A" fn symName
-                                    fn = symName
-                                    )
+                                let! symbol = symbols |> Seq.tryFind (fun sym -> getFullName sym = symName)
                                 let! location = symbol.Locations |> Seq.tryHead
                                 let! implTooltipInfo = getTooltipFromRange(checker, projectInfoManager, document, declRange, cancellationToken)
                                 return symbolUse, Some sigTooltipInfo, Some { implTooltipInfo with Span = location.SourceSpan }
@@ -229,8 +225,7 @@ type internal FSharpQuickInfoProvider
                     XmlDocumentation.BuildDataTipText(documentationBuilder, mainDescription.Add, documentation.Add, typeParameterMap.Add, usage.Add, exceptions.Add, tooltip.StructuredText)
                     let glyph = Tokenizer.GetGlyphForSymbol(tooltip.Symbol, tooltip.SymbolKind)
                     let navigation = QuickInfoNavigation(gotoDefinitionService, document, symbolUse.RangeAlternate)
-                    
-                    let content = viewProvider.ProvideContent( glyph, mainDescription, documentation=documentation, typeParameterMap=typeParameterMap, usage=usage, exceptions=exceptions, navigation=navigation)
+                    let content = viewProvider.ProvideContent(glyph, mainDescription, documentation=documentation, typeParameterMap=typeParameterMap, usage=usage, exceptions=exceptions, navigation=navigation)
                     return QuickInfoItem (tooltip.Span, content)
 
                 | Some sigTooltip, Some targetTooltip ->
