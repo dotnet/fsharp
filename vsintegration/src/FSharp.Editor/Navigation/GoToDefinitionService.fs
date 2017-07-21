@@ -16,6 +16,7 @@ open Microsoft.CodeAnalysis.Editor.Host
 open Microsoft.CodeAnalysis.Navigation
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis.FindSymbols
 
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
@@ -227,6 +228,35 @@ type internal FSharpGoToDefinitionService
             let! targetSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland, userOpName=userOpName)
 
             match declarations with
+            | FSharpFindDeclResult.ExternalDecl (assy, symname) ->
+                let! project = originDocument.Project.Solution.Projects |> Seq.tryFind (fun p -> p.AssemblyName = assy)
+                let! symbols = SymbolFinder.FindSourceDeclarationsAsync(project, fun (s:string) -> true)
+ 
+                let fullName sym =
+                    let rec inner (sym : ISymbol) parts =
+                        match sym.ContainingSymbol with
+                        | null ->
+                            parts
+                        // TODO: do we have any other terminating cases?
+                        | container when container.Kind = SymbolKind.NetModule ->
+                            parts
+                        | container when container.Kind = SymbolKind.Assembly ->
+                            parts
+                        // TODO: there are probably other containing symbols we'd want to skip
+                        | container when container.Name <> "" ->
+                            inner container (container.Name :: parts)
+                        | container ->
+                            inner container parts
+                    inner sym [sym.Name] |> String.concat "."
+ 
+                let! symbol = symbols |> Seq.tryFind (fun sym ->
+                    let fn = fullName sym
+                    let _res = sprintf "%A = %A" fn symname
+                    fn = symname
+                    )
+                let! location = symbol.Locations |> Seq.tryHead
+                return FSharpNavigableItem(project.GetDocument(location.SourceTree), location.SourceSpan)
+
             | FSharpFindDeclResult.DeclFound targetRange -> 
                 // if goto definition is called at we are alread at the declaration location of a symbol in
                 // either a signature or an implementation file then we jump to it's respective postion in thethe

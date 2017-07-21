@@ -28,6 +28,7 @@ type private TooltipInfo =
       SymbolKind: LexerSymbolKind }
 
 module private FSharpQuickInfo =
+    open Microsoft.CodeAnalysis.FindSymbols
 
     let userOpName = "QuickInfo"
 
@@ -147,6 +148,35 @@ module private FSharpQuickInfo =
                             | FSharpFindDeclResult.DeclFound declRange -> 
                                 let! implTooltipInfo = getTooltipFromRange(checker, projectInfoManager, document, declRange, cancellationToken)
                                 return symbolUse, Some sigTooltipInfo, Some { implTooltipInfo with Span = targetTooltipInfo.Span }
+                            | FSharpFindDeclResult.ExternalDecl (assembly, symName) -> 
+                                let! project = document.Project.Solution.Projects |> Seq.tryFind (fun p -> p.AssemblyName = assembly)
+                                let! symbols = SymbolFinder.FindSourceDeclarationsAsync(project, fun (s:string) -> true)
+                                
+                                let fullName sym =
+                                    let rec inner (sym : ISymbol) parts =
+                                        match sym.ContainingSymbol with
+                                        | null ->
+                                            parts
+                                        // TODO: do we have any other terminating cases?
+                                        | container when container.Kind = SymbolKind.NetModule ->
+                                            parts
+                                        | container when container.Kind = SymbolKind.Assembly ->
+                                            parts
+                                        // TODO: there are probably other containing symbols we'd want to skip
+                                        | container when container.Name <> "" ->
+                                            inner container (container.Name :: parts)
+                                        | container ->
+                                            inner container parts
+                                    inner sym [sym.Name] |> String.concat "."
+                                
+                                let! symbol = symbols |> Seq.tryFind (fun sym ->
+                                    let fn = fullName sym
+                                    let _res = sprintf "%A = %A" fn symName
+                                    fn = symName
+                                    )
+                                let! location = symbol.Locations |> Seq.tryHead
+                                let! implTooltipInfo = getTooltipFromRange(checker, projectInfoManager, document, declRange, cancellationToken)
+                                return symbolUse, Some sigTooltipInfo, Some { implTooltipInfo with Span = location.SourceSpan }
                         }
                     | _ -> async.Return None
                     |> liftAsync
