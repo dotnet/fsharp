@@ -24,6 +24,7 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open System
 open System.Windows.Forms
+open Microsoft.VisualStudio
 
 type internal FSharpNavigableItem(document: Document, textSpan: TextSpan) =
     interface INavigableItem with
@@ -148,6 +149,7 @@ type private StatusBar(statusBar: IVsStatusbar) =
 
 [<ExportLanguageService(typeof<IGoToDefinitionService>, FSharpConstants.FSharpLanguageName)>]
 [<Export(typeof<FSharpGoToDefinitionService>)>]
+[<Export(typeof<IVsSymbolicNavigationNotify>)>]
 type internal FSharpGoToDefinitionService 
     [<ImportingConstructor>]
     (
@@ -361,3 +363,13 @@ type internal FSharpGoToDefinitionService
                 else 
                     statusBar.TempMessage SR.CannotDetermineSymbol.Value
                     false
+
+    interface IVsSymbolicNavigationNotify with
+        
+        member __.OnBeforeNavigateToSymbol(pHierCodeFile, itemidCodeFile, pszRQName, pfNavigationHandled) = 
+            Logging.Logging.logInfof "OnBeforeNavigateToSymbol(%O, %O, %s)" pHierCodeFile itemidCodeFile pszRQName
+            VSConstants.S_OK
+        
+        member __.QueryNavigateToSymbol(pHierCodeFile, itemidCodeFile, pszRQName, _ppHierToNavigate, _pitemidToNavigate, _pSpanToNavigate, _pfWouldNavigate) = 
+            Logging.Logging.logInfof "QueryNavigateToSymbol(%O, %O, %s)" pHierCodeFile itemidCodeFile pszRQName
+            VSConstants.S_OK
