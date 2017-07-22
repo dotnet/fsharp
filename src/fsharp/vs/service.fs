@@ -1087,13 +1087,19 @@ type TypeCheckInfo
           | Some (item :: _, _, _, _) ->
               let result =
                   match item.Item with
-                  | Item.MethodGroup (_, (ILMeth (_,ilinfo,_)) :: _, _) 
                   | Item.CtorGroup (_, (ILMeth (_,ilinfo,_)) :: _) ->
                       match ilinfo.MetadataScope with
                       | ILScopeRef.Assembly assref ->
-                          Some (FSharpFindDeclResult.ExternalDecl (assref.Name, ilinfo.ILMethodRef.EnclosingTypeRef.FullName + "." + ilinfo.ILMethodRef.Name))
+                          Some (FSharpFindDeclResult.ExternalDecl (assref.Name, ilinfo.ILMethodRef.EnclosingTypeRef.FullName))
                       | _ -> None
-                  | Item.Property (_, PropInfo.ILProp (_, propInfo) :: _) ->
+
+                  | Item.MethodGroup (name, (ILMeth (_,ilinfo,_)) :: _, _) ->
+                      match ilinfo.MetadataScope with
+                      | ILScopeRef.Assembly assref ->
+                          Some (FSharpFindDeclResult.ExternalDecl (assref.Name, ilinfo.ILMethodRef.EnclosingTypeRef.FullName + "." + name))
+                      | _ -> None
+
+                  | Item.Property (_, ILProp (_, propInfo) :: _) ->
                       let methInfo = 
                           if propInfo.HasGetter then Some (propInfo.GetterMethod g)
                           elif propInfo.HasSetter then Some (propInfo.SetterMethod g)
@@ -1107,12 +1113,18 @@ type TypeCheckInfo
                             | _ -> None
                       | None -> None
                   
-                  | Item.ILField (ILFieldInfo (ILTypeInfo (tr, _, _, _) & typeInfo, _)) when not tr.IsLocalRef ->
+                  | Item.ILField (ILFieldInfo (ILTypeInfo (tr, _, _, _) & typeInfo, fieldDef)) when not tr.IsLocalRef ->
                       match typeInfo.ILScopeRef with
                       | ILScopeRef.Assembly assref ->
-                          Some (FSharpFindDeclResult.ExternalDecl (assref.Name, failwith ""))
+                          Some (FSharpFindDeclResult.ExternalDecl (assref.Name, typeInfo.Name + "." + fieldDef.Name))
                       | _ -> None
                   
+                  | Item.Event (ILEvent (_, ILEventInfo (ILTypeInfo (tr, _, _, _) & typeInfo, eventDef))) when not tr.IsLocalRef ->
+                      match typeInfo.ILScopeRef with
+                      | ILScopeRef.Assembly assref ->
+                          Some (FSharpFindDeclResult.ExternalDecl (assref.Name, typeInfo.Name + "." + eventDef.Name))
+                      | _ -> None
+
                   | Item.ImplicitOp(_, {contents = Some(TraitConstraintSln.FSMethSln(_, _vref, _))}) ->
                       //Item.Value(vref)
                       None
