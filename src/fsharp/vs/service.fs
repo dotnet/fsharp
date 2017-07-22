@@ -1084,50 +1084,51 @@ type TypeCheckInfo
           match GetDeclItemsForNamesAtPosition (ctok, None,Some(names), None, line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,ResolveOverloads.Yes,(fun() -> []), fun _ -> false) with
           | None
           | Some ([], _, _, _) -> FSharpFindDeclResult.DeclNotFound FSharpFindDeclFailureReason.Unknown
-          | Some (item :: _, _, _, _) -> 
-              match item.Item with
-              | Item.MethodGroup (_, (ILMeth (_,ilinfo,_)) :: _, _) 
-              | Item.CtorGroup (_, (ILMeth (_,ilinfo,_)) :: _) ->
-                  match ilinfo.MetadataScope with
-                  | ILScopeRef.Assembly assref ->
-                      FSharpFindDeclResult.ExternalDecl (assref.Name, ilinfo.ILMethodRef.EnclosingTypeRef.FullName + "." + ilinfo.ILMethodRef.Name)
-                  | _ -> 
-                      FSharpFindDeclResult.DeclNotFound FSharpFindDeclFailureReason.Unknown
-              | Item.Property (_, PropInfo.ILProp (_, propInfo) :: _) ->
-                  let methInfo = 
-                      if propInfo.HasGetter then Some (propInfo.GetterMethod g)
-                      elif propInfo.HasSetter then Some (propInfo.SetterMethod g)
-                      else None
+          | Some (item :: _, _, _, _) ->
+              let result =
+                  match item.Item with
+                  | Item.MethodGroup (_, (ILMeth (_,ilinfo,_)) :: _, _) 
+                  | Item.CtorGroup (_, (ILMeth (_,ilinfo,_)) :: _) ->
+                      match ilinfo.MetadataScope with
+                      | ILScopeRef.Assembly assref ->
+                          Some (FSharpFindDeclResult.ExternalDecl (assref.Name, ilinfo.ILMethodRef.EnclosingTypeRef.FullName + "." + ilinfo.ILMethodRef.Name))
+                      | _ -> None
+                  | Item.Property (_, PropInfo.ILProp (_, propInfo) :: _) ->
+                      let methInfo = 
+                          if propInfo.HasGetter then Some (propInfo.GetterMethod g)
+                          elif propInfo.HasSetter then Some (propInfo.SetterMethod g)
+                          else None
+                      
+                      match methInfo with
+                      | Some methInfo ->
+                            match methInfo.MetadataScope with
+                            | ILScopeRef.Assembly assref ->
+                                Some (FSharpFindDeclResult.ExternalDecl (assref.Name, methInfo.ILMethodRef.EnclosingTypeRef.FullName + "." + propInfo.PropertyName))
+                            | _ -> None
+                      | None -> None
                   
-                  match methInfo with
-                  | Some methInfo ->
-                        match methInfo.MetadataScope with
-                        | ILScopeRef.Assembly assref ->
-                            FSharpFindDeclResult.ExternalDecl (assref.Name, methInfo.ILMethodRef.EnclosingTypeRef.FullName + "." + propInfo.PropertyName)
-                        | _ -> 
-                            FSharpFindDeclResult.DeclNotFound FSharpFindDeclFailureReason.Unknown
-                  | None -> 
-                        FSharpFindDeclResult.DeclNotFound FSharpFindDeclFailureReason.Unknown
+                  | Item.ILField (ILFieldInfo (ILTypeInfo (tr, _, _, _) & typeInfo, _)) when not tr.IsLocalRef ->
+                      match typeInfo.ILScopeRef with
+                      | ILScopeRef.Assembly assref ->
+                          Some (FSharpFindDeclResult.ExternalDecl (assref.Name, failwith ""))
+                      | _ -> None
+                  
+                  | Item.ImplicitOp(_, {contents = Some(TraitConstraintSln.FSMethSln(_, _vref, _))}) ->
+                      //Item.Value(vref)
+                      None
 
-              | Item.ILField (ILFieldInfo (ILTypeInfo (tr, _, _, _) & typeInfo, _)) when not tr.IsLocalRef ->
-                  match typeInfo.ILScopeRef with
-                  | ILScopeRef.Assembly assref ->
-                      FSharpFindDeclResult.ExternalDecl (assref.Name, failwith "")
-                  | _ -> 
-                      FSharpFindDeclResult.DeclNotFound FSharpFindDeclFailureReason.Unknown
-              | Item.ImplicitOp(_, {contents = Some(TraitConstraintSln.FSMethSln(_, _vref, _))}) ->
-                  //Item.Value(vref)
-                  FSharpFindDeclResult.DeclNotFound FSharpFindDeclFailureReason.Unknown
-              | Item.Types (_, [TType_app (tr, _)]) when not tr.IsLocalRef ->
-                  match tr.TypeReprInfo, tr.PublicPath with
-                  | TILObjectRepr(TILObjectReprData (ILScopeRef.Assembly assref, _, _)), Some (PubPath parts) ->
-                      FSharpFindDeclResult.ExternalDecl (assref.Name, String.concat "." parts)
-                  | _ -> 
-                      FSharpFindDeclResult.DeclNotFound FSharpFindDeclFailureReason.Unknown
-              | item ->
+                  | Item.Types (_, [TType_app (tr, _)]) when not tr.IsLocalRef ->
+                      match tr.TypeReprInfo, tr.PublicPath with
+                      | TILObjectRepr(TILObjectReprData (ILScopeRef.Assembly assref, _, _)), Some (PubPath parts) ->
+                          Some (FSharpFindDeclResult.ExternalDecl (assref.Name, String.concat "." parts))
+                      | _ -> None
+                  | _ -> None
        
+              match result with
+              | Some x -> x
+              | None ->
                   let fail defaultReason = 
-                      match item with 
+                      match item.Item with 
 #if EXTENSIONTYPING
                       | SymbolHelpers.ItemIsProvidedType g (tcref) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.ProvidedType(tcref.DisplayName))
                       | Item.CtorGroup(name, ProvidedMeth(_)::_)
@@ -1138,12 +1139,12 @@ type TypeCheckInfo
 #endif
                       | _ -> FSharpFindDeclResult.DeclNotFound defaultReason
 
-                  match rangeOfItem g preferFlag item with
+                  match rangeOfItem g preferFlag item.Item with
                   | None   -> fail FSharpFindDeclFailureReason.Unknown 
                   | Some itemRange -> 
                   
                       let projectDir = Filename.directoryName (if projectFileName = "" then mainInputFileName else projectFileName)
-                      let filename = fileNameOfItem g (Some projectDir) itemRange item
+                      let filename = fileNameOfItem g (Some projectDir) itemRange item.Item
                       if FileSystem.SafeExists filename then 
                           FSharpFindDeclResult.DeclFound (mkRange filename itemRange.Start itemRange.End)
                       else 
