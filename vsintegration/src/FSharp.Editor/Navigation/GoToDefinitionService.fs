@@ -2,6 +2,7 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System.Composition
 open System.IO
 open System.Collections.Immutable
 open System.Linq
@@ -20,7 +21,6 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open System
-open System.ComponentModel.Composition
 
 type internal FSharpNavigableItem(document: Document, textSpan: TextSpan) =
     interface INavigableItem with
