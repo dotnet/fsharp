@@ -3,8 +3,6 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.IO
-open System.Composition
-open System.Collections.Generic
 open System.Collections.Immutable
 open System.Linq
 open System.Threading
@@ -12,7 +10,6 @@ open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Editor
-open Microsoft.CodeAnalysis.Editor.Host
 open Microsoft.CodeAnalysis.Navigation
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
@@ -23,8 +20,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open System
-open System.Windows.Forms
-open Microsoft.VisualStudio
+open System.ComponentModel.Composition
 
 type internal FSharpNavigableItem(document: Document, textSpan: TextSpan) =
     interface INavigableItem with
@@ -149,13 +145,11 @@ type private StatusBar(statusBar: IVsStatusbar) =
 
 [<ExportLanguageService(typeof<IGoToDefinitionService>, FSharpConstants.FSharpLanguageName)>]
 [<Export(typeof<FSharpGoToDefinitionService>)>]
-[<Export(typeof<IVsSymbolicNavigationNotify>)>]
 type internal FSharpGoToDefinitionService 
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager,
-        [<ImportMany>] _presenters: IEnumerable<INavigableItemsPresenter>
+        projectInfoManager: ProjectInfoManager
     ) =
 
     static let userOpName = "GoToDefinition"
@@ -363,13 +357,3 @@ type internal FSharpGoToDefinitionService
                 else 
                     statusBar.TempMessage SR.CannotDetermineSymbol.Value
                     false
-
-    interface IVsSymbolicNavigationNotify with
-        
-        member __.OnBeforeNavigateToSymbol(pHierCodeFile, itemidCodeFile, pszRQName, pfNavigationHandled) = 
-            Logging.Logging.logInfof "OnBeforeNavigateToSymbol(%O, %O, %s)" pHierCodeFile itemidCodeFile pszRQName
-            VSConstants.S_OK
-        
-        member __.QueryNavigateToSymbol(pHierCodeFile, itemidCodeFile, pszRQName, _ppHierToNavigate, _pitemidToNavigate, _pSpanToNavigate, _pfWouldNavigate) = 
-            Logging.Logging.logInfof "QueryNavigateToSymbol(%O, %O, %s)" pHierCodeFile itemidCodeFile pszRQName
-            VSConstants.S_OK
