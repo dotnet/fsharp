@@ -384,11 +384,11 @@ module internal SymbolHelpers =
         | Item.SetterArg (_,item) -> rangeOfItem g preferFlag item
         | Item.ArgName (id,_, _) -> Some id.idRange
         | Item.CustomOperation (_,_,implOpt) -> implOpt |> Option.bind (rangeOfMethInfo g preferFlag)
-        | Item.ImplicitOp _ -> None
-        | Item.NewDef id -> Some id.idRange
+        | Item.ImplicitOp (_, {contents = Some(TraitConstraintSln.FSMethSln(_, vref, _))}) -> Some vref.Range
         | Item.UnqualifiedType tcrefs -> tcrefs |> List.tryPick (rangeOfEntityRef preferFlag >> Some)
         | Item.DelegateCtor typ 
         | Item.FakeInterfaceCtor typ -> typ |> tryNiceEntityRefOfTy |> Option.map (rangeOfEntityRef preferFlag)
+        | _ -> None
 
     // Provided type definitions do not have a useful F# CCU for the purposes of goto-definition.
     let computeCcuOfTyconRef (tcref:TyconRef) = 
