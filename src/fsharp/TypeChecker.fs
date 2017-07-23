@@ -15030,7 +15030,9 @@ module EstablishTypeDefinitionCores =
             let hasMeasureableAttr = HasFSharpAttribute cenv.g cenv.g.attrib_MeasureableAttribute attrs
             let hasCLIMutable = HasFSharpAttribute cenv.g cenv.g.attrib_CLIMutableAttribute attrs
             
-            let hasStructLayoutAttr = HasFSharpAttribute cenv.g cenv.g.attrib_StructLayoutAttribute attrs
+            let structLayoutAttr = TryFindFSharpInt32Attribute cenv.g cenv.g.attrib_StructLayoutAttribute attrs
+            let hasStructLayoutAttr = Option.isSome structLayoutAttr
+            let hasExplicitLayout = structLayoutAttr = Some(int32 System.Runtime.InteropServices.LayoutKind.Explicit)
             let hasAllowNullLiteralAttr = TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_AllowNullLiteralAttribute attrs = Some(true)
 
             if hasAbstractAttr then 
@@ -15053,7 +15055,8 @@ module EstablishTypeDefinitionCores =
             let structLayoutAttributeCheck(allowed) = 
                 if hasStructLayoutAttr  then 
                     if allowed then 
-                        warning(PossibleUnverifiableCode(m))
+                        if hasExplicitLayout then
+                            warning(PossibleUnverifiableCode(m))
                     elif thisTyconRef.Typars(m).Length > 0 then 
                         errorR (Error(FSComp.SR.tcGenericTypesCannotHaveStructLayout(),m))
                     else
