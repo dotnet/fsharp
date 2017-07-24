@@ -2304,7 +2304,7 @@ namespace Microsoft.FSharp.Control
         let ensurePulse() = 
             match pulse with 
             | null -> 
-                pulse <- new AutoResetEvent(false);
+                pulse <- new AutoResetEvent(false)
             | _ -> 
                 ()
             pulse
@@ -2331,8 +2331,8 @@ namespace Microsoft.FSharp.Control
                     failwith "multiple waiting reader continuations for mailbox")
 
         let waitOne(timeout) = 
-            if timeout < 0  then 
-                waitOneNoTimeout
+            if timeout < 0 then
+                ensurePulse().AsyncWaitOne()
             else 
                 ensurePulse().AsyncWaitOne(millisecondsTimeout=timeout)
 
