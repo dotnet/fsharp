@@ -2591,7 +2591,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
             if allowImplicitFSharpCore then
                 defaultCoreLibraryReference, None
             else
-                error(Error((-1,"No FSharp.Core reference!"), rangeCmdArgs))
+                error(Error(FSComp.SR.noImplicitFSharpCoreAndNotExplicitOneEither(), rangeCmdArgs)) 
         | r:: _ -> 
             // Recover by picking the first one.
             errorR(Error(FSComp.SR.buildMultipleReferencesNotAllowed(libraryName),rangeCmdArgs)) 

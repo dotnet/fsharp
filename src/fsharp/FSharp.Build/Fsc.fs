@@ -133,6 +133,7 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     let mutable highEntropyVA : bool = false
     let mutable keyFile : string = null
     let mutable noFramework = false
+    let mutable noImplicitFSharpCore = false
     let mutable optimize  : bool = true
     let mutable otherFlags : string = null
     let mutable outputAssembly : string = null 
@@ -206,6 +207,9 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
         // NoFramework
         if noFramework then 
             builder.AppendSwitch("--noframework") 
+        // noImplicitFSharpCore
+        if noImplicitFSharpCore then 
+            builder.AppendSwitch("--noimplicitfsharpcore") 
         // BaseAddress
         builder.AppendSwitchIfNotNull("--baseaddress:", baseAddress)
         // DefineConstants
@@ -406,8 +410,13 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
 
     // --noframework
     member fsc.NoFramework
-        with get() = noFramework 
-        and set(b) = noFramework <- b        
+        with get() = noFramework
+        and set(b) = noFramework <- b
+
+    // --noframework
+    member fsc.NoImplicitFSharpCore
+        with get() = noImplicitFSharpCore
+        and set(b) = noImplicitFSharpCore <- b
 
     // --optimize
     member fsc.Optimize
