@@ -102,6 +102,40 @@ type MailboxProcessorType() =
 
         Assert.AreEqual(!result, Some("Received 1 Disposed"))
 
+
+    [<Test>]
+    member this.``Receive with timeout argument handles cancellation token``() =
+        let result = ref None
+
+        // https://github.com/Microsoft/visualfsharp/issues/3337
+        let cts = new CancellationTokenSource ()
+
+        let addMsg msg =
+            match !result with
+            | Some text -> result := Some(text + " " + msg)
+            | None -> result := Some msg
+
+        let mb =
+            MailboxProcessor.Start (
+                fun inbox -> async {
+                    use disp =
+                        { new IDisposable with
+                            member this.Dispose () =
+                                addMsg "Disposed"
+                        }
+
+                    while true do
+                        let! (msg : int) = inbox.Receive (100000)
+                        addMsg (sprintf "Received %i" msg)
+                }, cancellationToken = cts.Token)
+
+        mb.Post 1
+        Thread.Sleep 1000
+        cts.Cancel ()
+        Thread.Sleep 4000
+
+        Assert.AreEqual(!result, Some("Received 1 Disposed"))
+
     [<Test>]
     member this.Dispose() =
 
