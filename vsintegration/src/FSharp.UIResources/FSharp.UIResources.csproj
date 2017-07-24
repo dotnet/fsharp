@@ -55,7 +55,7 @@
     <Compile Include="CodeFixesOptionControl.xaml.cs">
       <DependentUpon>CodeFixesOptionControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="IntergerCheckValidationRule.cs" />
+    <Compile Include="IntegerRangeValidationRule.cs" />
     <Compile Include="LanguageServicePerformanceOptionControl.xaml.cs">
       <DependentUpon>LanguageServicePerformanceOptionControl.xaml</DependentUpon>
     </Compile>

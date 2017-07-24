@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+
+using System.Globalization;
 using System.Windows.Controls;
 
 namespace Microsoft.VisualStudio.FSharp.UIResources
@@ -17,9 +18,11 @@ namespace Microsoft.VisualStudio.FSharp.UIResources
 
         public override ValidationResult Validate(object value, CultureInfo cultureInfo)
         {
-            if (value is string text)
+            if (value is string)
             {
-                if (int.TryParse(text, out int i) &&
+                var text = (string)value;
+                int i = 0;
+                if (int.TryParse(text, out i) &&
                     i >= Min && i <= Max)
                 {
                     return ValidationResult.ValidResult;
