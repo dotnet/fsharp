@@ -2331,10 +2331,15 @@ namespace Microsoft.FSharp.Control
                     failwith "multiple waiting reader continuations for mailbox")
 
         let waitOne(timeout) = 
-            if timeout < 0 then
-                ensurePulse().AsyncWaitOne()
-            else 
-                ensurePulse().AsyncWaitOne(millisecondsTimeout=timeout)
+            lock syncRoot (fun () ->
+                if arrivals.Count = 0 then
+                    if timeout < 0 then
+                        ensurePulse().AsyncWaitOne()
+                    else
+                        ensurePulse().AsyncWaitOne(millisecondsTimeout=timeout)
+                else
+                    async.Return true
+            )
 
         member x.inbox = 
             match inboxStore with 
