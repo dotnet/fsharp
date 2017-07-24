@@ -137,6 +137,38 @@ type MailboxProcessorType() =
         Assert.AreEqual(Some("Received 1 Disposed"),!result)
 
     [<Test>]
+    member this.``Receive Races with Post``() =
+        let receiveEv = new ManualResetEvent(false)
+        let postEv = new ManualResetEvent(false)
+        let finishedEv = new ManualResetEvent(false)
+        let mb =
+            MailboxProcessor.Start (
+                fun inbox -> async {
+                    while true do
+                        let w = receiveEv.WaitOne()
+                        receiveEv.Reset() |> ignore
+                        let! (msg) = inbox.Receive ()
+                        finishedEv.Set() |> ignore
+                })
+        let post =
+            async {
+                while true do
+                    let r = postEv.WaitOne()
+                    postEv.Reset() |> ignore
+                    mb.Post(fun () -> ())
+            } |> Async.Start
+        for i in 0 .. 10000 do
+            if i % 2 = 0 then
+                receiveEv.Set() |> ignore
+                postEv.Set() |> ignore
+            else
+                postEv.Set() |> ignore
+                receiveEv.Set() |> ignore
+
+            finishedEv.WaitOne() |> ignore
+            finishedEv.Reset() |> ignore
+
+    [<Test>]
     member this.Dispose() =
 
         // No unit test actually hit the Dispose method for the Mailbox...
