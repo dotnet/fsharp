@@ -100,7 +100,7 @@ type MailboxProcessorType() =
         cts.Cancel ()
         Thread.Sleep 4000
 
-        Assert.AreEqual(!result, Some("Received 1 Disposed"))
+        Assert.AreEqual(Some("Received 1 Disposed"), !result)
 
 
     [<Test>]
@@ -134,7 +134,7 @@ type MailboxProcessorType() =
         cts.Cancel ()
         Thread.Sleep 4000
 
-        Assert.AreEqual(!result, Some("Received 1 Disposed"))
+        Assert.AreEqual(Some("Received 1 Disposed"),!result)
 
     [<Test>]
     member this.Dispose() =
