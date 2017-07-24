@@ -122,7 +122,7 @@ type internal CodeLensTagger
         asyncMaybe {
             try
                 let! view = view
-                do! Async.Sleep 800 |> liftAsync
+                //do! Async.Sleep 5 |> liftAsync
                 logInfof "Rechecking code due to buffer edit!"
                 let! document = workspace.CurrentSolution.GetDocument(documentId.Value) |> Option.ofObj
                 let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
@@ -233,6 +233,13 @@ type internal CodeLensTagger
                         | _ -> ()
             
                 // In best case this works quite fine because often enough we change only a small part of the file and not the complete.
+                
+                do! Async.SwitchToContext uiContext |> liftAsync
+                use updateBatch = self.Update()
+                self.RemoveTagSpans(fun tagSpan -> true) |> ignore
+        
+                let textSnapshot = view.TextSnapshot.TextBuffer.CurrentSnapshot
+                
                 for unattachedSymbol in unattachedSymbols do
                     let symbolUse, func, fullDeclarationText, fullTypeSignature = unattachedSymbol
                     let test (v:KeyValuePair<_, TrackingTagSpan<CodeLensTag>>) =
@@ -264,23 +271,25 @@ type internal CodeLensTagger
                                   FullTypeSignature = fullTypeSignature
                                   UiElement = null }
                         try
-                            let declarationSpan = textSnapshot.GetLineFromLineNumber(func.DeclarationLocation.StartLine - 1).Extent.Span
-                            let tag, trackingSpan = 
-                                CodeLensTag(0., GetTextBlockSize.Height, 0., 0., 0., PositionAffinity.Predecessor, res, self),
-                                textSnapshot.CreateTrackingSpan(declarationSpan, SpanTrackingMode.EdgeInclusive)
-                            newResults.[fullDeclarationText] <- self.CreateTagSpan(trackingSpan, tag)
+                            if updateBatch <> null then
+                                let declarationSpan = textSnapshot.GetLineFromLineNumber(func.DeclarationLocation.StartLine - 1).Extent.Span
+                                let tag, trackingSpan = 
+                                    CodeLensTag(0., GetTextBlockSize.Height, 0., 0., 0., PositionAffinity.Predecessor, res, self),
+                                    textSnapshot.CreateTrackingSpan(declarationSpan, SpanTrackingMode.EdgeInclusive)
+                                newResults.[fullDeclarationText] <- self.CreateTagSpan(trackingSpan, tag)
                         with e -> logExceptionWithContext (e, "Code Lens tracking tag span creation")
                     ()
 
-                for tagToUpdate in tagsToUpdate do
-                    self.RemoveTagSpan(tagToUpdate.Key) |> ignore
-                    let fullDeclarationText, tag = tagToUpdate.Value
-                    newResults.[fullDeclarationText] <- 
-                        self.CreateTagSpan(tagToUpdate.Key.Span, CodeLensTag(0., GetTextBlockSize.Height, 0., 0., 0., PositionAffinity.Predecessor, tag, self))
-
+                if updateBatch <> null then
+                    for tagToUpdate in tagsToUpdate do
+                        //self.RemoveTagSpans(fun tagSpan -> tagSpan.Tag = tagToUpdate.Key.Tag) |> ignore
+                        let fullDeclarationText, tag = tagToUpdate.Value
+                        newResults.[fullDeclarationText] <- 
+                            self.CreateTagSpan(tagToUpdate.Key.Span, CodeLensTag(0., GetTextBlockSize.Height, 0., 0., 0., PositionAffinity.Predecessor, tag, self))
+                        
                 lastResults <- newResults
                 addedAdornmentTags <- continuedAdornmentTags
-                do! Async.SwitchToContext uiContext |> liftAsync
+                
                 let! layer = codeLensLayer
                 // Remove outdated and invalid results
                 for oldResult in oldResults do
@@ -288,7 +297,7 @@ type internal CodeLensTagger
                     match isNull codeLens.UiElement with
                     | false -> layer.RemoveAdornment codeLens.UiElement
                     | _ -> ()
-                    self.RemoveTagSpan oldResult.Value |> ignore
+                    //self.RemoveTagSpan oldResult.Value |> ignore
                 // Remove outdated adornments
                 outdatedAdornments |> Seq.iter (fun e -> layer.RemoveAdornment e)
             
@@ -297,6 +306,7 @@ type internal CodeLensTagger
             
                 if not firstTimeChecked then
                     firstTimeChecked <- true
+                    
             with e -> logErrorf "%A" e
         } |> Async.Ignore
     
@@ -305,7 +315,7 @@ type internal CodeLensTagger
           while not firstTimeChecked && numberOfFails < 10 do
               try
                   do! executeCodeLenseAsync()
-                  do! Async.Sleep(1000)
+                  do! Async.Sleep(5000)
               with
               | e -> logErrorf "Code Lens startup failed with: %A" e
                      numberOfFails <- numberOfFails + 1
@@ -375,7 +385,7 @@ type internal CodeLensTagger
                    Some ui
                | _ -> 
                    None)
-    do buffer.Changed.AddHandler(fun _ e -> (self.BufferChanged e))
+    do buffer.ChangedLowPriority.AddHandler(fun _ e -> (self.BufferChanged e))
 
     member __.BufferChanged ___ =
         bufferChangedCts.Cancel() // Stop all ongoing async workflow. 
@@ -504,9 +514,10 @@ type internal CodeLensTagger
 
 [<Export(typeof<IWpfTextViewCreationListener>)>]
 [<Export(typeof<ITaggerProvider>)>]
-[<TagType(typeof<CodeLensTag>)>]
+[<TagType(typeof<SpaceNegotiatingAdornmentTag>)>]
 [<ContentType(FSharpConstants.FSharpContentTypeName)>]
 [<TextViewRole(PredefinedTextViewRoles.Document)>]
+[<Order(Before = "Default Priority")>]
 type internal CodeLensProvider  
     [<ImportingConstructor>]
     (
