@@ -306,8 +306,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         IReferenceContainerProvider,
         IVsProjectSpecialFiles, 
         IVsDesignTimeAssemblyResolution, 
-        IVsProjectUpgrade//,
-        //IVsSymbolicNavigationNotify
+        IVsProjectUpgrade
     {
         /// <summary>
         /// This class stores mapping from ids -> objects. Uses as a replacement of EventSinkCollection (ESC)
@@ -6661,20 +6660,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             return hierarchy;
         }
-
-        //public int OnBeforeNavigateToSymbol(IVsHierarchy pHierCodeFile, uint itemidCodeFile, string pszRQName, out int pfNavigationHandled)
-        //{
-        //    pfNavigationHandled = 0;
-        //    return VSConstants.S_OK;
-        //}
-
-        //public int QueryNavigateToSymbol(IVsHierarchy pHierCodeFile, uint itemidCodeFile, string pszRQName, out IVsHierarchy ppHierToNavigate, out uint pitemidToNavigate, TextSpan[] pSpanToNavigate, out int pfWouldNavigate)
-        //{
-        //    ppHierToNavigate = this;
-        //    pitemidToNavigate = 0;
-        //    pfWouldNavigate = 0;
-        //    return VSConstants.S_OK;
-        //}
     }
     internal enum AddItemContext
     {
