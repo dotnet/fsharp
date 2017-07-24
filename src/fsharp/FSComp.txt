@@ -880,6 +880,7 @@ optsStaticlink,"Statically link the given assembly and all referenced DLLs that 
 optsResident,"Use a resident background compilation service to improve compiler startup times."
 optsPdb,"Name the output debug file"
 optsSimpleresolution,"Resolve assembly references using directory-based rules rather than MSBuild resolution"
+optsNoImplicitFSharpCore,"Fail if no explicit FSharp.Core.dll reference is passed in, instead of using the one from the environment"
 1048,optsUnrecognizedTarget,"Unrecognized target '%s', expected 'exe', 'winexe', 'library' or 'module'"
 1049,optsUnrecognizedDebugType,"Unrecognized debug type '%s', expected 'pdbonly' or 'full'"
 1050,optsInvalidWarningLevel,"Invalid warning level '%d'"

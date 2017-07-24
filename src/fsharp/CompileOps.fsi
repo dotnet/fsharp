@@ -281,6 +281,7 @@ type TcConfigBuilder =
       mutable platform : ILPlatform option
       mutable prefer32Bit : bool
       mutable useSimpleResolution : bool
+      mutable noImplicitFSharpCore : bool
       mutable target : CompilerTarget
       mutable debuginfo : bool
       mutable testFlagEmitFeeFeeAs100001 : bool
@@ -436,6 +437,7 @@ type TcConfig =
     member platform : ILPlatform option
     member prefer32Bit : bool
     member useSimpleResolution : bool
+    member noImplicitFSharpCore : bool
     member target : CompilerTarget
     member debuginfo : bool
     member testFlagEmitFeeFeeAs100001 : bool
@@ -803,7 +805,7 @@ type LoadClosure =
       LoadClosureRootFileDiagnostics : (PhasedDiagnostic * bool) list }   
 
     // Used from service.fs, when editing a script file
-    static member ComputeClosureOfSourceText : CompilationThreadToken * legacyReferenceResolver: ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) * assumeDotNetFramework : bool -> LoadClosure
+    static member ComputeClosureOfSourceText : CompilationThreadToken * legacyReferenceResolver: ReferenceResolver.Resolver * defaultFSharpBinariesDir: string * filename: string * source: string * implicitDefines:CodeContext * useSimpleResolution: bool * noImplicitFSharpCore: bool * useFsiAuxLib: bool * lexResourceManager: Lexhelp.LexResourceManager * applyCompilerOptions: (TcConfigBuilder -> unit) * assumeDotNetFramework : bool -> LoadClosure
 
     /// Used from fsi.fs and fsc.fs, for #load and command line. The resulting references are then added to a TcConfig.
     static member ComputeClosureOfSourceFiles : CompilationThreadToken * tcConfig:TcConfig * (string * range) list * implicitDefines:CodeContext * lexResourceManager : Lexhelp.LexResourceManager -> LoadClosure

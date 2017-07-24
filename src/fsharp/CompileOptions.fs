@@ -768,6 +768,11 @@ let advancedFlagsBoth tcConfigB =
                              OptionUnit (fun () -> tcConfigB.useSimpleResolution<-true), 
                              None, 
                              Some (FSComp.SR.optsSimpleresolution()))
+        yield CompilerOption("noImplicitFSharpCore", 
+                             tagNone, 
+                             OptionUnit (fun () -> tcConfigB.noImplicitFSharpCore<-true), 
+                             None, 
+                             Some (FSComp.SR.optsNoImplicitFSharpCore()))
         yield CompilerOption("targetprofile", tagString, OptionString (SetTargetProfile tcConfigB), None, Some(FSComp.SR.optsTargetProfile()))
     ]
 
