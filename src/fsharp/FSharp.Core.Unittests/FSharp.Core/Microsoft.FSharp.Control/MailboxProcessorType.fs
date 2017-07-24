@@ -70,6 +70,41 @@ type MailboxProcessorType() =
         ()
 
     [<Test>]
+
+
+    [<Test>]
+    member this.``Scan handles cancellation token``() =
+        let result = ref None
+
+        // https://github.com/Microsoft/visualfsharp/issues/3337
+        let cts = new CancellationTokenSource ()
+
+        let addMsg msg =
+            match !result with
+            | Some text -> result := Some(text + " " + msg)
+            | None -> result := Some msg
+
+        let mb =
+            MailboxProcessor.Start (
+                fun inbox -> async {
+                    use disp =
+                        { new IDisposable with
+                            member this.Dispose () =
+                                addMsg "Disposed"
+                        }
+
+                    while true do
+                        let! (msg : int) = inbox.Scan (fun msg -> Some(async { return msg }) )
+                        addMsg (sprintf "Scanned %i" msg)
+                }, cancellationToken = cts.Token)
+
+        mb.Post 1
+        Thread.Sleep 1000
+        cts.Cancel ()
+        Thread.Sleep 4000
+
+        Assert.AreEqual(Some("Scanned 1 Disposed"), !result)
+
     member this.Dispose() =
 
         // No unit test actually hit the Dispose method for the Mailbox...
