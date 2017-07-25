@@ -36,6 +36,11 @@ type CodeFixesOptions =
       AlwaysPlaceOpensAtTopLevel: bool
       UnusedOpens: bool }
 
+[<CLIMutable>]
+type LanguageServicePerformanceOptions = 
+    { EnableInMemoryCrossProjectReferences: bool
+      ProjectCheckCacheSize: int }
+
 [<Export(typeof<ISettings>)>]
 type internal Settings [<ImportingConstructor>](store: SettingsStore) =
     do  // Initialize default settings
@@ -56,11 +61,16 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
               AlwaysPlaceOpensAtTopLevel = false
               UnusedOpens = true }
 
+        store.RegisterDefault
+            { EnableInMemoryCrossProjectReferences = true
+              ProjectCheckCacheSize = 200 }
+
     interface ISettings
 
     static member IntelliSense : IntelliSenseOptions = getSettings()
     static member QuickInfo : QuickInfoOptions = getSettings()
     static member CodeFixes : CodeFixesOptions = getSettings()
+    static member LanguageServicePerformance : LanguageServicePerformanceOptions = getSettings()
 
 module internal OptionsUI =
 
@@ -89,3 +99,9 @@ module internal OptionsUI =
         inherit AbstractOptionPage<CodeFixesOptions>()
         override this.CreateView() =
             upcast CodeFixesOptionControl()            
+
+    [<Guid(Guids.languageServicePerformanceOptionPageIdString)>]
+    type internal LanguageServicePerformanceOptionPage() =
+        inherit AbstractOptionPage<LanguageServicePerformanceOptions>()
+        override this.CreateView() =
+            upcast LanguageServicePerformanceOptionControl()

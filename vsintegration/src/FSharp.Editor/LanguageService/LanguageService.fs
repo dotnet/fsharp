@@ -22,7 +22,6 @@ open Microsoft.CodeAnalysis.Completion
 open Microsoft.CodeAnalysis.Options
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Editor
-open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.LanguageServices.Implementation.LanguageService
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
@@ -46,7 +45,12 @@ type internal FSharpCheckerProvider
 
     let checker = 
         lazy
-            let checker = FSharpChecker.Create(projectCacheSize = 200, keepAllBackgroundResolutions = false (* , MaxMemory = 2300 *), legacyReferenceResolver=Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver)
+            let checker = 
+                FSharpChecker.Create(
+                    projectCacheSize = Settings.LanguageServicePerformance.ProjectCheckCacheSize, 
+                    keepAllBackgroundResolutions = false,
+                    (* , MaxMemory = 2300 *) 
+                    legacyReferenceResolver=Microsoft.FSharp.Compiler.MSBuildReferenceResolver.Resolver)
 
             // This is one half of the bridge between the F# background builder and the Roslyn analysis engine.
             // When the F# background builder refreshes the background semantic build context for a file,
@@ -126,10 +130,10 @@ type internal ProjectInfoManager
             // compiled and #r will refer to files on disk
             let referencedProjectFileNames = [| |] 
             let site = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, referencedProjectFileNames, options)
-            return ProjectSitesAndFiles.GetProjectOptionsForProjectSite(tryGetOptionsForReferencedProject,site,fileName,options.ExtraProjectInfo,serviceProvider, true)
+            return ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject,site,fileName,options.ExtraProjectInfo,serviceProvider, true)
         else
             let site = ProjectSitesAndFiles.ProjectSiteOfSingleFile(fileName)
-            return ProjectSitesAndFiles.GetProjectOptionsForProjectSite(tryGetOptionsForReferencedProject,site,fileName,extraProjectInfo,serviceProvider, true)
+            return ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject,site,fileName,extraProjectInfo,serviceProvider, true)
       }
 
     /// Update the info for a project in the project table
@@ -137,7 +141,7 @@ type internal ProjectInfoManager
         this.AddOrUpdateProject(projectId, (fun isRefresh -> 
             let extraProjectInfo = Some(box workspace)
             let tryGetOptionsForReferencedProject f = f |> tryGetOrCreateProjectId |> Option.bind this.TryGetOptionsForProject
-            let referencedProjects, options = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(tryGetOptionsForReferencedProject, site, site.ProjectFileName(), extraProjectInfo, serviceProvider, true)
+            let referencedProjects, options = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, site, site.ProjectFileName(), extraProjectInfo, serviceProvider, true)
             let referencedProjectIds = referencedProjects |> Array.choose tryGetOrCreateProjectId
             checkerProvider.Checker.InvalidateConfiguration(options, startBackgroundCompileIfAlreadySeen = not isRefresh, userOpName= userOpName + ".UpdateProjectInfo")
             referencedProjectIds, options))
@@ -231,6 +235,7 @@ type
     [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.IntelliSenseOptionPage>, "F#", null, "IntelliSense", "6008")>]
     [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.QuickInfoOptionPage>, "F#", null, "QuickInfo", "6009")>]
     [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.CodeFixesOptionPage>, "F#", null, "Code Fixes", "6010")>]
+    [<ProvideLanguageEditorOptionPage(typeof<OptionsUI.LanguageServicePerformanceOptionPage>, "F#", null, "Performance", "6011")>]
     [<ProvideLanguageService(languageService = typeof<FSharpLanguageService>,
                              strLanguageName = FSharpConstants.FSharpLanguageName,
                              languageResourceID = 100,
