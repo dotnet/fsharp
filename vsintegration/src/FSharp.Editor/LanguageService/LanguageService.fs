@@ -417,7 +417,7 @@ and
 
     member this.SetupProjectFile(siteProvider: IProvideProjectSite, workspace: VisualStudioWorkspaceImpl, userOpName) =
         let userOpName = userOpName + ".SetupProjectFile"
-        let  rec setup (site: IProjectSite) =
+        let rec setup (site: IProjectSite) =
             let projectGuid = Guid(site.ProjectGuid)
             let projectFileName = site.ProjectFileName()
             let projectDisplayName = projectDisplayNameOf projectFileName
@@ -456,16 +456,16 @@ and
                 let referencedProjectSites = ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider)
                 
                 for referencedSite in referencedProjectSites do
-                    let referencedProjectFileName = referencedSite.ProjectFileName()
-                    let referencedProjectDisplayName = projectDisplayNameOf referencedProjectFileName
-                    let referencedProjectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(referencedProjectFileName, referencedProjectDisplayName)
-                    project.AddProjectReference(ProjectReference referencedProjectId)
+                    setup referencedSite                    
 
                 if not (workspace.ProjectTracker.ContainsProject(project)) then 
                     workspace.ProjectTracker.AddProject(project)
 
                 for referencedSite in referencedProjectSites do
-                    setup referencedSite                    
+                    let referencedProjectFileName = referencedSite.ProjectFileName()
+                    let referencedProjectDisplayName = projectDisplayNameOf referencedProjectFileName
+                    let referencedProjectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(referencedProjectFileName, referencedProjectDisplayName)
+                    project.AddProjectReference(ProjectReference referencedProjectId)
 
         setup (siteProvider.GetProjectSite()) |> ignore
 
