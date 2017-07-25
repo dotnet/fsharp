@@ -2308,27 +2308,6 @@ namespace Microsoft.FSharp.Control
             | _ -> 
                 ()
             pulse
-                
-        let waitOneNoTimeout = 
-            unprotectedPrimitive (fun ({ aux = aux } as args) -> 
-                match savedCont with 
-                | None -> 
-                    let descheduled = 
-                        // An arrival may have happened while we're preparing to deschedule
-                        lock syncRoot (fun () -> 
-                            if arrivals.Count = 0 then 
-                                // OK, no arrival so deschedule
-                                savedCont <- Some(args.cont, aux.trampolineHolder);
-                                true
-                            else
-                                false)
-                    if descheduled then 
-                        FakeUnit 
-                    else 
-                        // If we didn't deschedule then run the continuation immediately
-                        args.cont true
-                | Some _ -> 
-                    failwith "multiple waiting reader continuations for mailbox")
 
         let waitOne(timeout) = 
             lock syncRoot (fun () ->
@@ -2414,7 +2393,7 @@ namespace Microsoft.FSharp.Control
                 async { match x.scanArrivals(f) with
                         | None -> 
                             // Deschedule and wait for a message. When it comes, rescan the arrivals
-                            let! ok = AsyncHelpers.awaitEither waitOneNoTimeout timeoutAsync
+                            let! ok = AsyncHelpers.awaitEither (waitOne Threading.Timeout.Infinite) timeoutAsync
                             match ok with
                             | Choice1Of2 true -> 
                                 return! scan timeoutAsync timeoutCts
@@ -2442,30 +2421,34 @@ namespace Microsoft.FSharp.Control
                             let! res = resP
                             return Some res
                        }
+
             let rec scanNoTimeout () =
-                async { match x.scanArrivals(f) with
-                        |   None -> let! ok = waitOneNoTimeout
-                                    if ok then
-                                        return! scanNoTimeout()
-                                    else
-                                        return (failwith "Timed out with infinite timeout??")
-                        |   Some resP -> 
-                            let! res = resP
-                            return Some res
+                async { 
+                    match x.scanArrivals f with
+                    | None -> 
+                        let! ok = waitOne Threading.Timeout.Infinite
+                        if ok then
+                            return! scanNoTimeout()
+                        else
+                            return failwith "Timed out with infinite timeout??"
+                    | Some resP -> 
+                        let! res = resP
+                        return Some res
                 }
 
             // Look in the inbox first
-            async { match x.scanInbox(f,0) with
-                    |   None  when timeout < 0 -> return! scanNoTimeout()
-                    |   None -> 
-                            let! ct = Async.CancellationToken
-                            let timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct, CancellationToken.None)
-                            let timeoutAsync = AsyncHelpers.timeout timeout timeoutCts.Token
-                            return! scan timeoutAsync timeoutCts
-                    |   Some resP -> 
-                            let! res = resP
-                            return Some res
-
+            async { 
+                match x.scanInbox(f,0) with
+                | None when timeout < 0 -> 
+                    return! scanNoTimeout()
+                | None -> 
+                    let! ct = Async.CancellationToken
+                    let timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct, CancellationToken.None)
+                    let timeoutAsync = AsyncHelpers.timeout timeout timeoutCts.Token
+                    return! scan timeoutAsync timeoutCts
+                | Some resP ->
+                    let! res = resP
+                    return Some res
             }
 
         member x.Scan((f: 'Msg -> (Async<'T>) option), timeout) =
