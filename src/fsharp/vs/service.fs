@@ -2043,7 +2043,9 @@ module CompileHelpers =
             for exec in execs do 
                 match exec() with 
                 | None -> ()
-                | Some exn -> raise exn
+                | Some exn -> 
+                    PreserveStackTrace(exn)
+                    raise exn
 
         // Register the reflected definitions for the dynamically generated assembly
         for resource in ilxMainModule.Resources.AsList do 
