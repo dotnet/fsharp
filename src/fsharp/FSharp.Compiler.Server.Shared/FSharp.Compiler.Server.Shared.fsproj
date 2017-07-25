@@ -18,7 +18,6 @@
     <UseCodebase>true</UseCodebase>
     <GeneratePkgDefFile>true</GeneratePkgDefFile>
     <IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
-    <TargetFrameworkVersion Condition="'$(TargetDotnetProfile)' != 'coreclr'">v4.6</TargetFrameworkVersion>
 	<DefineConstants Condition="'$(AddVsSdkAttributesToSomeCoreComponents)' == 'true'">$(DefineConstants);HAVE_VS_SDK</DefineConstants>
   </PropertyGroup>
   <ItemGroup>

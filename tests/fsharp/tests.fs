@@ -385,13 +385,57 @@ module CoreTests =
 
         let cfg = testConfig "core/fsi-reference"
 
-        begin
-            use testOkFile = fileguard cfg "test.ok"
-            fsc cfg @"--target:library -o:ImplementationAssembly\ReferenceAssemblyExample.dll" ["ImplementationAssembly.fs"]
-            fsc cfg @"--target:library -o:ReferenceAssembly\ReferenceAssemblyExample.dll" ["ReferenceAssembly.fs"]
-            fsiStdin cfg "test.fsx" "" []
-            testOkFile.CheckExists()
-        end
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg @"--target:library -o:ImplementationAssembly\ReferenceAssemblyExample.dll" ["ImplementationAssembly.fs"]
+        fsc cfg @"--target:library -o:ReferenceAssembly\ReferenceAssemblyExample.dll" ["ReferenceAssembly.fs"]
+        fsiStdin cfg "test.fsx" "" []
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``fsi-netstandard20-FSharp-Data-type-provider`` () = 
+
+        let cfg = testConfig "core/fsi-netstandard2.0-typeprovider"
+
+        use testOkFile = fileguard cfg "test.ok"
+        fsiStdin cfg "test.fsx" "" []
+        testOkFile.CheckExists()
+
+
+    [<Test>]
+    let ``fsc-netstandard20-FSharp-Data-type-provider`` () = 
+
+        let cfg = testConfig "core/fsi-netstandard2.0-typeprovider"
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
+        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+        copy_y cfg  (cfg.FSCBinPath ++ "System.Runtime.dll") ("." ++ "System.Runtime.dll")
+        copy_y cfg  (cfg.FSCBinPath ++ "netstandard.dll") ("." ++ "netstandard.dll")
+        copy_y cfg  ("FSharp.Data" ++ "netstandard2.0" ++ "FSharp.Data.dll") ("." ++ "FSharp.Data.dll")
+        peverify cfg "test.exe"
+        exec cfg ("." ++ "test.exe") ""
+
+
+    [<Test>]
+    let ``fsi-netstandard16-FSharp-Data-type-provider`` () = 
+
+        let cfg = testConfig "core/fsi-netstandard1.6-typeprovider"
+        use testOkFile = fileguard cfg "test.ok"
+        fsiStdin cfg "test.fsx" "" []
+        testOkFile.CheckExists()
+
+    [<Test>]
+    let ``fsc-netstandard16-FSharp-Data-type-provider`` () = 
+
+        let cfg = testConfig "core/fsi-netstandard1.6-typeprovider"
+        use testOkFile = fileguard cfg "test.ok"
+        fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
+        //copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+        // NOTE: we would need to copy over several facade DLLs and then generate a binding redirects file
+        // inn order to verify and execute.
+        //copy_y cfg  (cfg.FSCBinPath ++ "System.Runtime.dll") ("." ++ "System.Runtime.dll")
+        //copy_y cfg  ("FSharp.Data" ++ "netstandard1.6" ++ "FSharp.Data.dll") ("." ++ "FSharp.Data.dll")
+        //peverify cfg "test.exe"
+        //exec cfg ("." ++ "test.exe") ""
 
     [<Test>]
     let ``fsi-reload`` () = 

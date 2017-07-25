@@ -21,9 +21,8 @@
     <UseVsVersion>true</UseVsVersion>
     <NoWarn>$(NoWarn);3001,3002,3003</NoWarn>
     <DefineConstants>$(DefineConstants);UITHREAD_FOR_LANGUAGESERVICE</DefineConstants>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
-    <TargetFrameworkProfile>
-    </TargetFrameworkProfile>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkProfile></TargetFrameworkProfile>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <ImportVSSDKTargets>true</ImportVSSDKTargets>
     <CreateVsixContainer>false</CreateVsixContainer>

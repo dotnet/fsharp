@@ -76,7 +76,7 @@ let CanImportILScopeRef (env:ImportMap) m scoref =
 
 /// Import a reference to a type definition, given the AbstractIL data for the type reference
 let ImportTypeRefData (env:ImportMap) m (scoref,path,typeName) = 
-    
+
     // Explanation: This represents an unchecked invariant in the hosted compiler: that any operations
     // which import types (and resolve assemblies from the tcImports tables) happen on the compilation thread.
     let ctok = AssumeCompilationThreadWithoutEvidence()
@@ -91,15 +91,20 @@ let ImportTypeRefData (env:ImportMap) m (scoref,path,typeName) =
     // the corresponding Tycon.
     let ccu = 
         match ccu with
-        | ResolvedCcu ccu->ccu
+        | ResolvedCcu ccu -> ccu
         | UnresolvedCcu ccuName -> 
-            error (Error(FSComp.SR.impTypeRequiredUnavailable(typeName, ccuName),m))
+            // use 'raise' instead of 'error' here to allow protectAssemblyExploration to catch this
+            raise(UnresolvedReferenceError(ccuName,m))
+
     let fakeTyconRef = mkNonLocalTyconRef (mkNonLocalEntityRef ccu path) typeName
     let tycon = 
         try   
             fakeTyconRef.Deref
         with _ ->
-            error (Error(FSComp.SR.impReferencedTypeCouldNotBeFoundInAssembly(String.concat "." (Array.append path  [| typeName |]), ccu.AssemblyName),m))
+            let path = String.concat "." (Array.append path  [| typeName |])
+            // use 'raise' instead of 'error' here to allow protectAssemblyExploration to catch this
+            raise(UnresolvedPathReference(ccu.AssemblyName,path,m))
+
 #if EXTENSIONTYPING
     // Validate (once because of caching)
     match tycon.TypeReprInfo with

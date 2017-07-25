@@ -1648,6 +1648,104 @@ let GetDefaultSystemValueTupleReference() =
 
 let GetFsiLibraryName () = "FSharp.Compiler.Interactive.Settings"  
 
+let NetFrameworkFacadesForNetStandard20 () = 
+  [ "Microsoft.Win32.Primitives"
+    "netstandard"
+    "System.AppContext"
+    "System.Collections.Concurrent"
+    "System.Collections"
+    "System.Collections.NonGeneric"
+    "System.Collections.Specialized"
+    "System.ComponentModel"
+    "System.ComponentModel.EventBasedAsync"
+    "System.ComponentModel.Primitives"
+    "System.ComponentModel.TypeConverter"
+    "System.Console"
+    "System.Data.Common"
+    "System.Diagnostics.Contracts"
+    "System.Diagnostics.Debug"
+    "System.Diagnostics.FileVersionInfo"
+    "System.Diagnostics.Process"
+    "System.Diagnostics.StackTrace"
+    "System.Diagnostics.TextWriterTraceListener"
+    "System.Diagnostics.Tools"
+    "System.Diagnostics.TraceSource"
+    "System.Diagnostics.Tracing"
+    "System.Drawing.Primitives"
+    "System.Dynamic.Runtime"
+    "System.Globalization.Calendars"
+    "System.Globalization"
+    "System.Globalization.Extensions"
+    "System.IO.Compression"
+    "System.IO.Compression.ZipFile"
+    "System.IO"
+    "System.IO.FileSystem"
+    "System.IO.FileSystem.DriveInfo"
+    "System.IO.FileSystem.Primitives"
+    "System.IO.FileSystem.Watcher"
+    "System.IO.IsolatedStorage"
+    "System.IO.MemoryMappedFiles"
+    "System.IO.Pipes"
+    "System.IO.UnmanagedMemoryStream"
+    "System.Linq"
+    "System.Linq.Expressions"
+    "System.Linq.Parallel"
+    "System.Linq.Queryable"
+    "System.Net.Http"
+    "System.Net.NameResolution"
+    "System.Net.NetworkInformation"
+    "System.Net.Ping"
+    "System.Net.Primitives"
+    "System.Net.Requests"
+    "System.Net.Security"
+    "System.Net.Sockets"
+    "System.Net.WebHeaderCollection"
+    "System.Net.WebSockets.Client"
+    "System.Net.WebSockets"
+    "System.ObjectModel"
+    "System.Reflection"
+    "System.Reflection.Extensions"
+    "System.Reflection.Primitives"
+    "System.Resources.Reader"
+    "System.Resources.ResourceManager"
+    "System.Resources.Writer"
+    "System.Runtime.CompilerServices.VisualC"
+    "System.Runtime"
+    "System.Runtime.Extensions"
+    "System.Runtime.Handles"
+    "System.Runtime.InteropServices"
+    "System.Runtime.InteropServices.RuntimeInformation"
+    "System.Runtime.Numerics"
+    "System.Runtime.Serialization.Formatters"
+    "System.Runtime.Serialization.Json"
+    "System.Runtime.Serialization.Primitives"
+    "System.Runtime.Serialization.Xml"
+    "System.Security.Claims"
+    "System.Security.Cryptography.Algorithms"
+    "System.Security.Cryptography.Csp"
+    "System.Security.Cryptography.Encoding"
+    "System.Security.Cryptography.Primitives"
+    "System.Security.Cryptography.X509Certificates"
+    "System.Security.Principal"
+    "System.Security.SecureString"
+    "System.Text.Encoding"
+    "System.Text.Encoding.Extensions"
+    "System.Text.RegularExpressions"
+    "System.Threading"
+    "System.Threading.Overlapped"
+    "System.Threading.Tasks"
+    "System.Threading.Tasks.Parallel"
+    "System.Threading.Thread"
+    "System.Threading.ThreadPool"
+    "System.Threading.Timer"
+    //"System.ValueTuple"
+    "System.Xml.ReaderWriter"
+    "System.Xml.XDocument"
+    "System.Xml.XmlDocument"
+    "System.Xml.XmlSerializer"
+    "System.Xml.XPath"
+    "System.Xml.XPath.XDocument" ]
+
 // This list is the default set of references for "non-project" files. 
 //
 // These DLLs are
@@ -1659,34 +1757,33 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
     [ if assumeDotNetFramework then 
           yield "System"
           yield "System.Xml" 
-          yield "System.Runtime.Remoting"
-          yield "System.Runtime.Serialization.Formatters.Soap"
+          yield "System.Xml.Linq" 
           yield "System.Data"
-          yield "System.Drawing"
           yield "System.Core"
-          // These are the Portable-profile and .NET Standard 1.6 dependencies of FSharp.Core.dll.  These are needed
-          // when an F# sript references an F# profile 7, 78, 259 or .NET Standard 1.6 component which in turn refers 
-          // to FSharp.Core for profile 7, 78, 259 or .NET Standard.
-          yield "System.Runtime" // lots of types
-          yield "System.Linq" // System.Linq.Expressions.Expression<T> 
-          yield "System.Reflection" // System.Reflection.ParameterInfo
-          yield "System.Linq.Expressions" // System.Linq.IQueryable<T>
-          yield "System.Threading.Tasks" // valuetype [System.Threading.Tasks]System.Threading.CancellationToken
-          yield "System.IO"  //  System.IO.TextWriter
-          //yield "System.Console"  //  System.Console.Out etc.
-          yield "System.Net.Requests"  //  System.Net.WebResponse etc.
-          yield "System.Collections" // System.Collections.Generic.List<T>
-          yield "System.Runtime.Numerics" // BigInteger
-          yield "System.Threading"  // OperationCanceledException
+
           // always include a default reference to System.ValueTuple.dll in scripts and out-of-project sources
           match GetDefaultSystemValueTupleReference() with 
           | None -> ()
           | Some v -> yield v
 
+          // These are assuumed in the F# scripting model for Mono/.NET Framework if they are available.  We should deprecate these or find some way
+          // to transition to a world where they are not assumed
+          yield "System.Runtime.Remoting"
+          yield "System.Runtime.Serialization.Formatters.Soap"
+          yield "System.Drawing"
           yield "System.Web"
           yield "System.Web.Services"
           yield "System.Windows.Forms"
           yield "System.Numerics" 
+
+          // Assume sufficient facade references to allow .NET Standard 2.0 components to be referenced
+          let facadePath = System.IO.Path.GetDirectoryName(GetDefaultFSharpCoreReference())
+          for facadeDllShortName in NetFrameworkFacadesForNetStandard20() do
+            let facadeDll = System.IO.Path.Combine(facadePath, facadeDllShortName + ".dll")
+            if File.Exists(facadeDll) then 
+                yield facadeDll
+
+
      else
           yield Path.Combine(Path.GetDirectoryName(typeof<System.Object>.Assembly.Location),"mscorlib.dll"); // mscorlib
           yield typeof<System.Console>.Assembly.Location; // System.Console
@@ -1708,8 +1805,6 @@ let DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework) =
 let SystemAssemblies () = 
    HashSet
     [ yield "mscorlib"
-      yield "netstandard"
-      yield "System.Runtime"
       yield GetFSharpCoreLibraryName() 
       yield "System"
       yield "System.Xml" 
@@ -1725,88 +1820,23 @@ let SystemAssemblies () =
       yield "System.Web.Services"
       yield "System.Windows.Forms"
       yield "System.Core"
-      yield "System.Runtime"
       yield "System.Observable"
       yield "System.Numerics"
       yield "System.ValueTuple"
 
       // Additions for coreclr and portable profiles
-      yield "System.Collections"
-      yield "System.Collections.Concurrent"
-      yield "System.Console"
-      yield "System.Diagnostics.Debug"
-      yield "System.Diagnostics.Tools"
-      yield "System.Globalization"
-      yield "System.IO"
-      yield "System.Linq"
-      yield "System.Linq.Expressions"
-      yield "System.Linq.Queryable"
-      yield "System.Net.Requests"
-      yield "System.Reflection"
-      yield "System.Reflection.Emit"
-      yield "System.Reflection.Emit.ILGeneration"
-      yield "System.Reflection.Extensions"
-      yield "System.Resources.ResourceManager"
-      yield "System.Runtime.Extensions"
-      yield "System.Runtime.InteropServices"
-      yield "System.Runtime.InteropServices.PInvoke"
-      yield "System.Runtime.Numerics"
-      yield "System.Text.Encoding"
-      yield "System.Text.Encoding.Extensions"
-      yield "System.Text.RegularExpressions"
-      yield "System.Threading"
-      yield "System.Threading.Tasks"
-      yield "System.Threading.Tasks.Parallel"
-      yield "System.Threading.Thread"
-      yield "System.Threading.ThreadPool"
-      yield "System.Threading.Timer"
+      for facadeDllShortName in NetFrameworkFacadesForNetStandard20() do
+         yield facadeDllShortName
+
+      yield "System.Reflection.TypeExtensions"
+      yield "System.Reflection.Emit.Lightweight"
+      yield "System.Reflection.Metadata"
+      yield "System.Runtime.Loader"
+      yield "System.Threading.Tasks.Extensions"
 
       yield "FSharp.Compiler.Interactive.Settings"
       yield "Microsoft.DiaSymReader"
       yield "Microsoft.DiaSymReader.PortablePdb"
-      yield "Microsoft.Win32.Registry"
-      yield "System.Diagnostics.Tracing"
-      yield "System.Globalization.Calendars"
-      yield "System.Reflection.Primitives"
-      yield "System.Runtime.Handles"
-      yield "Microsoft.Win32.Primitives"
-      yield "System.IO.FileSystem"
-      yield "System.Net.Primitives"
-      yield "System.Net.Sockets"
-      yield "System.Private.Uri"
-      yield "System.AppContext"
-      yield "System.Buffers"
-      yield "System.Collections.Immutable"
-      yield "System.Diagnostics.DiagnosticSource"
-      yield "System.Diagnostics.Process"
-      yield "System.Diagnostics.TraceSource"
-      yield "System.Globalization.Extensions"
-      yield "System.IO.Compression"
-      yield "System.IO.Compression.ZipFile"
-      yield "System.IO.FileSystem.Primitives"
-      yield "System.Net.Http"
-      yield "System.Net.NameResolution"
-      yield "System.Net.WebHeaderCollection"
-      yield "System.ObjectModel"
-      yield "System.Reflection.Emit.Lightweight"
-      yield "System.Reflection.Metadata"
-      yield "System.Reflection.TypeExtensions"
-      yield "System.Runtime.InteropServices.RuntimeInformation"
-      yield "System.Runtime.Loader"
-      yield "System.Security.Claims"
-      yield "System.Security.Cryptography.Algorithms"
-      yield "System.Security.Cryptography.Cng"
-      yield "System.Security.Cryptography.Csp"
-      yield "System.Security.Cryptography.Encoding"
-      yield "System.Security.Cryptography.OpenSsl"
-      yield "System.Security.Cryptography.Primitives"
-      yield "System.Security.Cryptography.X509Certificates"
-      yield "System.Security.Principal"
-      yield "System.Security.Principal.Windows"
-      yield "System.Threading.Overlapped"
-      yield "System.Threading.Tasks.Extensions"
-      yield "System.Xml.ReaderWriter"
-      yield "System.Xml.XDocument"
 
       ] 
 

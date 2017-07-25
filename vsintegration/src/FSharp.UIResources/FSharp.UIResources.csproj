@@ -15,12 +15,12 @@
     <ProjectGuid>{C4586A06-1402-48BC-8E35-A1B8642F895B}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <RootNamespace>Microsoft.VisualStudio.FSharp.UIResources</RootNamespace>
     <AssemblyName>FSharp.UIResources</AssemblyName>
     <TargetType>LIBRARY</TargetType>
     <UseVsVersion>true</UseVsVersion>
     <DefineConstants>$(DefineConstants)</DefineConstants>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <ItemGroup>
