@@ -2290,7 +2290,7 @@ namespace Microsoft.FSharp.Control
 
     [<Sealed>]
     [<AutoSerializable(false)>]        
-    type Mailbox<'Msg>() =  
+    type Mailbox<'Msg>(cancellationSupported: bool) =  
         let mutable inboxStore  = null 
         let mutable arrivals = new Queue<'Msg>()
         let syncRoot = arrivals
@@ -2309,7 +2309,7 @@ namespace Microsoft.FSharp.Control
                 ()
             pulse
                 
-        let waitOneNoTimeout = 
+        let waitOneNoTimeoutOrCancellation = 
             unprotectedPrimitive (fun ({ aux = aux } as args) -> 
                 match savedCont with 
                 | None -> 
@@ -2330,11 +2330,14 @@ namespace Microsoft.FSharp.Control
                 | Some _ -> 
                     failwith "multiple waiting reader continuations for mailbox")
 
+        let waitOneWithCancellation(timeout) = 
+            ensurePulse().AsyncWaitOne(millisecondsTimeout=timeout)
+
         let waitOne(timeout) = 
-            if timeout < 0  then 
-                waitOneNoTimeout
+            if timeout < 0 && not cancellationSupported then 
+                waitOneNoTimeoutOrCancellation
             else 
-                ensurePulse().AsyncWaitOne(millisecondsTimeout=timeout)
+                waitOneWithCancellation(timeout)
 
         member x.inbox = 
             match inboxStore with 
@@ -2409,19 +2412,19 @@ namespace Microsoft.FSharp.Control
                 async { match x.scanArrivals(f) with
                         | None -> 
                             // Deschedule and wait for a message. When it comes, rescan the arrivals
-                            let! ok = AsyncHelpers.awaitEither waitOneNoTimeout timeoutAsync
+                            let! ok = AsyncHelpers.awaitEither waitOneNoTimeoutOrCancellation timeoutAsync
                             match ok with
                             | Choice1Of2 true -> 
                                 return! scan timeoutAsync timeoutCts
                             | Choice1Of2 false ->
-                                return failwith "should not happen - waitOneNoTimeout always returns true"
+                                return failwith "should not happen - waitOneNoTimeoutOrCancellation always returns true"
                             | Choice2Of2 () ->
                                 lock syncRoot (fun () -> 
-                                    // Cancel the outstanding wait for messages installed by waitOneNoTimeout
+                                    // Cancel the outstanding wait for messages installed by waitOneWithCancellation
                                     //
                                     // HERE BE DRAGONS. This is bestowed on us because we only support
                                     // a single mailbox reader at any one time.
-                                    // If awaitEither returned control because timeoutAsync has terminated, waitOneNoTimeout
+                                    // If awaitEither returned control because timeoutAsync has terminated, waitOneNoTimeoutOrCancellation
                                     // might still be in-flight. In practical terms, it means that the push-to-async-result-cell 
                                     // continuation that awaitEither registered on it is still pending, i.e. it is still in savedCont.
                                     // That continuation is a no-op now, but it is still a registered reader for arriving messages.
@@ -2439,7 +2442,7 @@ namespace Microsoft.FSharp.Control
                        }
             let rec scanNoTimeout () =
                 async { match x.scanArrivals(f) with
-                        |   None -> let! ok = waitOneNoTimeout
+                        |   None -> let! ok = waitOne(Timeout.Infinite)
                                     if ok then
                                         return! scanNoTimeout()
                                     else
@@ -2518,8 +2521,9 @@ namespace Microsoft.FSharp.Control
     [<AutoSerializable(false)>]
     [<CompiledName("FSharpMailboxProcessor`1")>]
     type MailboxProcessor<'Msg>(initial, ?cancellationToken) =
+        let cancellationSupported = cancellationToken.IsSome
         let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
-        let mailbox = new Mailbox<'Msg>()
+        let mailbox = new Mailbox<'Msg>(cancellationSupported)
         let mutable defaultTimeout = Threading.Timeout.Infinite
         let mutable started = false
         let errorEvent = new Event<System.Exception>()
