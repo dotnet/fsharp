@@ -360,7 +360,8 @@ module ErrorLoggerExtensions =
         | :? System.NotSupportedException  -> ()
         | :? System.IO.IOException -> () // This covers FileNotFoundException and DirectoryNotFoundException
         | :? System.UnauthorizedAccessException -> ()
-        | exn -> 
+        | Failure _ // This gives reports for compiler INTERNAL ERRORs
+        | :? System.SystemException ->
             PreserveStackTrace(exn)
             raise exn
 #endif
