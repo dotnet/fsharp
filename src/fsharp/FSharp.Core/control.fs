@@ -2304,7 +2304,7 @@ namespace Microsoft.FSharp.Control
         let ensurePulse() = 
             match pulse with 
             | null -> 
-                pulse <- new AutoResetEvent(false)
+                pulse <- new AutoResetEvent(false);
             | _ -> 
                 ()
             pulse
@@ -2421,34 +2421,30 @@ namespace Microsoft.FSharp.Control
                             let! res = resP
                             return Some res
                        }
-
             let rec scanNoTimeout () =
-                async { 
-                    match x.scanArrivals f with
-                    | None -> 
-                        let! ok = waitOne Threading.Timeout.Infinite
-                        if ok then
-                            return! scanNoTimeout()
-                        else
-                            return failwith "Timed out with infinite timeout??"
-                    | Some resP -> 
-                        let! res = resP
-                        return Some res
+                async { match x.scanArrivals(f) with
+                        |   None -> let! ok = waitOne Threading.Timeout.Infinite
+                                    if ok then
+                                        return! scanNoTimeout()
+                                    else
+                                        return (failwith "Timed out with infinite timeout??")
+                        |   Some resP -> 
+                            let! res = resP
+                            return Some res
                 }
 
             // Look in the inbox first
-            async { 
-                match x.scanInbox(f,0) with
-                | None when timeout < 0 -> 
-                    return! scanNoTimeout()
-                | None -> 
-                    let! ct = Async.CancellationToken
-                    let timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct, CancellationToken.None)
-                    let timeoutAsync = AsyncHelpers.timeout timeout timeoutCts.Token
-                    return! scan timeoutAsync timeoutCts
-                | Some resP ->
-                    let! res = resP
-                    return Some res
+            async { match x.scanInbox(f,0) with
+                    |   None  when timeout < 0 -> return! scanNoTimeout()
+                    |   None -> 
+                            let! ct = Async.CancellationToken
+                            let timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(ct, CancellationToken.None)
+                            let timeoutAsync = AsyncHelpers.timeout timeout timeoutCts.Token
+                            return! scan timeoutAsync timeoutCts
+                    |   Some resP -> 
+                            let! res = resP
+                            return Some res
+
             }
 
         member x.Scan((f: 'Msg -> (Async<'T>) option), timeout) =
