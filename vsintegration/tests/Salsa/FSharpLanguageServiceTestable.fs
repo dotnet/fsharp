@@ -126,7 +126,8 @@ type internal FSharpLanguageServiceTestable() as this =
 
     /// Respond to project being cleaned/rebuilt (any live type providers in the project should be refreshed)
     member this.OnProjectCleaned(projectSite:IProjectSite) = 
-        let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite((fun _ -> None), projectSite, "" ,None, serviceProvider.Value, false)
+        let enableInMemoryCrossProjectReferences = true
+        let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, "" ,None, serviceProvider.Value, false)
         this.FSharpChecker.NotifyProjectCleaned(checkOptions) |> Async.RunSynchronously
 
     member this.OnActiveViewChanged(textView) =
@@ -167,8 +168,9 @@ type internal FSharpLanguageServiceTestable() as this =
     // For each change in dependency files, notify the language service of the change and propagate the update
     interface IDependencyFileChangeNotify with
         member this.DependencyFileCreated projectSite = 
+            let enableInMemoryCrossProjectReferences = true
             // Invalidate the configuration if we notice any add for any DependencyFiles 
-            let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite((fun _ -> None), projectSite, "", None, this.ServiceProvider, false)
+            let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, "", None, this.ServiceProvider, false)
             this.FSharpChecker.InvalidateConfiguration(checkOptions)
 
         member this.DependencyFileChanged (filename) = 
