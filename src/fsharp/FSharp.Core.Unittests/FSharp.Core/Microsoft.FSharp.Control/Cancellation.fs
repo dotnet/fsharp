@@ -274,7 +274,7 @@ type CancellationType() =
             do! Async.Sleep 100
             cts.Cancel()
             do! Async.Sleep 100
-            tcs.TrySetException (TimeoutException "Cancellation was requested, but wasn't honered after 1 second. We finish the task forcefully (requests might still run in the background).")
+            tcs.TrySetException (TimeoutException "Task timed out after token.")
                 |> ignore
         } |> Async.Start
 
