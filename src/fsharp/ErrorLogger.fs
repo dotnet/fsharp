@@ -364,6 +364,7 @@ module ErrorLoggerExtensions =
         | :? System.SystemException ->
             PreserveStackTrace(exn)
             raise exn
+        | _ -> ()
 #endif
 
     type ErrorLogger with  
