@@ -49,6 +49,16 @@ exception ReportedError of exn option with
         | ReportedError (Some exn) -> msg + " Original message: " + exn.Message + ")"
         | _ -> msg
 
+let rec findOriginalException err = 
+    match err with 
+    | ReportedError (Some err) -> err
+    | WrappedError(err,_)  -> findOriginalException err
+    | _ -> err
+
+type Suggestions = unit -> Set<string>
+
+let NoSuggestions : Suggestions = fun () -> Set.empty
+
 /// Thrown when we stop processing the F# Interactive entry or #load.
 exception StopProcessingExn of exn option with
     override this.Message = "Processing of a script fragment has stopped because an exception has been raised"
@@ -66,7 +76,7 @@ exception NumberedError of (int * string) * range with   // int is e.g. 191 in F
     override this.Message =
         match this :> exn with
         | NumberedError((_,msg),_) -> msg
-        | _ -> ""
+        | _ -> "impossible"
 
 exception Error of (int * string) * range with   // int is e.g. 191 in FS0191  // eventually remove this type, it is a transitional artifact of the old unnumbered error style
     override this.Message =
@@ -93,22 +103,12 @@ exception UnresolvedPathReferenceNoRange of (*assemblyname*) string * (*path*) s
 exception UnresolvedPathReference of (*assemblyname*) string * (*path*) string * range
 
 
-let rec findOriginalException err = 
-    match err with 
-    | ReportedError (Some err) -> err
-    | WrappedError(err,_)  -> findOriginalException err
-    | _ -> err
-
-
-type Suggestions = unit -> Set<string>
 
 exception ErrorWithSuggestions of (int * string) * range * string * Suggestions with   // int is e.g. 191 in FS0191 
     override this.Message =
         match this :> exn with
         | ErrorWithSuggestions((_,msg),_,_,_) -> msg
         | _ -> "impossible"
-
-let NoSuggestions : Suggestions = fun () -> Set.empty
 
 
 let inline protectAssemblyExploration dflt f = 
