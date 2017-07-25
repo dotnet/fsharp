@@ -2308,17 +2308,33 @@ namespace Microsoft.FSharp.Control
             | _ -> 
                 ()
             pulse
+                
+        let waitOneNoTimeout = 
+            unprotectedPrimitive (fun ({ aux = aux } as args) -> 
+                match savedCont with 
+                | None -> 
+                    let descheduled = 
+                        // An arrival may have happened while we're preparing to deschedule
+                        lock syncRoot (fun () -> 
+                            if arrivals.Count = 0 then 
+                                // OK, no arrival so deschedule
+                                savedCont <- Some(args.cont, aux.trampolineHolder);
+                                true
+                            else
+                                false)
+                    if descheduled then 
+                        FakeUnit 
+                    else 
+                        // If we didn't deschedule then run the continuation immediately
+                        args.cont true
+                | Some _ -> 
+                    failwith "multiple waiting reader continuations for mailbox")
 
         let waitOne(timeout) = 
-            lock syncRoot (fun () ->
-                if arrivals.Count = 0 then
-                    if timeout < 0 then
-                        ensurePulse().AsyncWaitOne()
-                    else
-                        ensurePulse().AsyncWaitOne(millisecondsTimeout=timeout)
-                else
-                    async.Return true
-            )
+            if timeout < 0  then 
+                waitOneNoTimeout
+            else 
+                ensurePulse().AsyncWaitOne(millisecondsTimeout=timeout)
 
         member x.inbox = 
             match inboxStore with 
@@ -2393,7 +2409,7 @@ namespace Microsoft.FSharp.Control
                 async { match x.scanArrivals(f) with
                         | None -> 
                             // Deschedule and wait for a message. When it comes, rescan the arrivals
-                            let! ok = AsyncHelpers.awaitEither (waitOne Threading.Timeout.Infinite) timeoutAsync
+                            let! ok = AsyncHelpers.awaitEither waitOneNoTimeout timeoutAsync
                             match ok with
                             | Choice1Of2 true -> 
                                 return! scan timeoutAsync timeoutCts
@@ -2423,7 +2439,7 @@ namespace Microsoft.FSharp.Control
                        }
             let rec scanNoTimeout () =
                 async { match x.scanArrivals(f) with
-                        |   None -> let! ok = waitOne Threading.Timeout.Infinite
+                        |   None -> let! ok = waitOneNoTimeout
                                     if ok then
                                         return! scanNoTimeout()
                                     else
