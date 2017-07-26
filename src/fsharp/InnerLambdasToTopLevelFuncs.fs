@@ -42,7 +42,12 @@ let liftTLR    = ref false
 let internalError str = dprintf "Error: %s\n" str;raise (Failure str)  
 
 module Zmap = 
-    let force k   mp (str,soK) = try Zmap.find k mp with e -> dprintf "Zmap.force: %s %s\n" str (soK k); raise e
+    let force k   mp (str,soK) = 
+        try Zmap.find k mp 
+        with e -> 
+            dprintf "Zmap.force: %s %s\n" str (soK k); 
+            PreserveStackTrace(e)
+            raise e
 
 //-------------------------------------------------------------------------
 // misc
