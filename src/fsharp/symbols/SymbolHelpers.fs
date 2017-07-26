@@ -127,13 +127,6 @@ type ErrorScope()  =
             | Some text -> err text
             | None -> err ""
 
-    static member ProtectWithDefault m f dflt = 
-        ErrorScope.Protect m f (fun _ -> dflt)
-
-    static member ProtectAndDiscard m f = 
-        ErrorScope.Protect m f (fun _ -> ())
-      
-
 /// An error logger that capture errors, filtering them according to warning levels etc.
 type internal CompilationErrorLogger (debugName:string, tcConfig:TcConfig) = 
     inherit ErrorLogger("CompilationErrorLogger("+debugName+")")
