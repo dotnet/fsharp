@@ -3331,7 +3331,9 @@ let AnalyzeArbitraryExprAsEnumerable cenv (env: TcEnv) localAlloc m exprty expr 
         if (AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m ty exprty) then 
             match tryType (mkCoerceExpr(expr,ty,expr.Range,exprty),ty) with 
             | Result res  -> Some res
-            | Exception e -> raise e
+            | Exception e -> 
+                PreserveStackTrace(e)
+                raise e
         else None
 
     // Next try to typecheck the thing as a sequence
@@ -3345,6 +3347,7 @@ let AnalyzeArbitraryExprAsEnumerable cenv (env: TcEnv) localAlloc m exprty expr 
     match probe ienumerable with
     | Some res -> res
     | None ->
+    PreserveStackTrace(e)
     raise e
 
 
