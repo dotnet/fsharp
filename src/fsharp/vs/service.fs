@@ -80,7 +80,7 @@ module EnvMisc =
 [<RequireQualifiedAccess>]
 type FSharpFindDeclFailureReason = 
     // generic reason: no particular information about error
-    | Unknown
+    | Unknown of message: string
     // source code file is not available
     | NoSourceCode
     // trying to find declaration of ProvidedType without TypeProviderDefinitionLocationAttribute
@@ -1102,7 +1102,7 @@ type TypeCheckInfo
        (fun () -> 
           match GetDeclItemsForNamesAtPosition (ctok, None,Some(names), None, line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,ResolveOverloads.Yes,(fun() -> []), fun _ -> false) with
           | None
-          | Some ([], _, _, _) -> FSharpFindDeclResult.DeclNotFound FSharpFindDeclFailureReason.Unknown
+          | Some ([], _, _, _) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.Unknown "")
           | Some (item :: _, _, _, _) -> 
 
               // For IL-based entities, switch to a different item. This is because
@@ -1131,7 +1131,7 @@ type TypeCheckInfo
                   | _ -> FSharpFindDeclResult.DeclNotFound defaultReason
 
               match rangeOfItem g preferFlag item with
-              | None   -> fail FSharpFindDeclFailureReason.Unknown 
+              | None   -> fail (FSharpFindDeclFailureReason.Unknown "")
               | Some itemRange -> 
 
                   let projectDir = Filename.directoryName (if projectFileName = "" then mainInputFileName else projectFileName)
@@ -1143,7 +1143,7 @@ type TypeCheckInfo
        )
        (fun msg -> 
            Trace.TraceInformation(sprintf "FCS: recovering from error in GetDeclarationLocation: '%s'" msg)
-           FSharpFindDeclResult.DeclNotFound FSharpFindDeclFailureReason.Unknown)
+           FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.Unknown msg))
 
     member scope.GetSymbolUseAtLocation (ctok, line, lineStr, colAtEndOfNames, names) =
       ErrorScope.Protect Range.range0 
@@ -1852,7 +1852,7 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
             
     member info.GetDeclarationLocation (line, colAtEndOfNames, lineStr, names, ?preferFlag, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
-        let dflt = FSharpFindDeclResult.DeclNotFound FSharpFindDeclFailureReason.Unknown
+        let dflt = FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.Unknown "")
         reactorOp userOpName "GetDeclarationLocation" dflt (fun ctok scope -> 
             scope.GetDeclarationLocation (ctok, line, lineStr, colAtEndOfNames, names, preferFlag))
 
