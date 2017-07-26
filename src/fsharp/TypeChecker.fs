@@ -2120,9 +2120,11 @@ module GeneralizationHelpers =
             && List.forall (IsGeneralizableValue g) args
 
         | Expr.LetRec(binds,body,_,_)  ->
+            binds |> List.forall (fun b -> not b.Var.IsMutable) &&
             binds |> List.forall (fun b -> IsGeneralizableValue g b.Expr) &&
             IsGeneralizableValue g body
         | Expr.Let(bind,body,_,_) -> 
+            not bind.Var.IsMutable &&
             IsGeneralizableValue g bind.Expr &&
             IsGeneralizableValue g body
 
