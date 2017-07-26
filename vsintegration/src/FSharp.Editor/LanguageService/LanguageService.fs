@@ -456,16 +456,13 @@ and
                 let referencedProjectSites = ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider)
                 
                 for referencedSite in referencedProjectSites do
-                    let referencedProjectFileName = referencedSite.ProjectFileName()
-                    let referencedProjectDisplayName = projectDisplayNameOf referencedProjectFileName
-                    let referencedProjectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(referencedProjectFileName, referencedProjectDisplayName)
+                    let referencedProjectId = setup referencedSite                    
                     project.AddProjectReference(ProjectReference referencedProjectId)
 
                 if not (workspace.ProjectTracker.ContainsProject(project)) then 
                     workspace.ProjectTracker.AddProject(project)
 
-                for referencedSite in referencedProjectSites do
-                    setup referencedSite                    
+            projectId
 
         setup (siteProvider.GetProjectSite()) |> ignore
 
