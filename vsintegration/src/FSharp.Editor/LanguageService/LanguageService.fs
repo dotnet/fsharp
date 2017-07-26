@@ -326,7 +326,6 @@ and
             | WorkspaceChangeKind.DocumentRemoved
             | WorkspaceChangeKind.AdditionalDocumentAdded
             | WorkspaceChangeKind.AdditionalDocumentRemoved
-            | WorkspaceChangeKind.DocumentInfoChanged
             | WorkspaceChangeKind.SolutionCleared ->
                 for projectId in this.Workspace.CurrentSolution.ProjectIds do
                     let project = this.Workspace.CurrentSolution.GetProject(projectId)
