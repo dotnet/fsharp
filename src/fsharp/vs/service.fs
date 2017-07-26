@@ -1368,6 +1368,10 @@ module internal Parser =
                                       lexResourceManager,
                                       ref [],
                                       errHandler.ErrorLogger)
+
+              // When analyzing files using ParseOneFile, i.e. for the use of editing clients, we do not apply line directives.
+              let lexargs = { lexargs with applyLineDirectives=false }
+
               Lexhelp.usingLexbufForParsing (lexbuf, mainInputFileName) (fun lexbuf -> 
                   try 
                     let skip = true
