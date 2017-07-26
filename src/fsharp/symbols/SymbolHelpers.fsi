@@ -229,8 +229,6 @@ type internal ErrorScope =
     new : unit -> ErrorScope
     member Diagnostics : FSharpErrorInfo list
     static member Protect<'a> : range -> (unit->'a) -> (string->'a) -> 'a
-    static member ProtectWithDefault<'a> : range -> (unit -> 'a) -> 'a -> 'a
-    static member ProtectAndDiscard : range -> (unit -> unit) -> unit
 
 /// An error logger that capture errors, filtering them according to warning levels etc.
 type internal CompilationErrorLogger = 
