@@ -335,8 +335,16 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         Private Function GetTokenValue(ByVal MacroName As String) As String
             Dim MacroEval As IVsBuildMacroInfo
             Dim MacroValue As String = Nothing
+            Dim Hier As IVsHierarchy = Nothing
+            Dim ItemId As UInteger
+            Dim ThisObj As Object = m_Objects(0)
 
-            MacroEval = CType(m_Objects(0), IVsBuildMacroInfo)
+            If TypeOf ThisObj Is IVsBrowseObject Then
+                VSErrorHandler.ThrowOnFailure(CType(ThisObj, IVsBrowseObject).GetProjectItem(Hier, ItemId))
+            ElseIf TypeOf ThisObj Is IVsCfgBrowseObject Then
+                VSErrorHandler.ThrowOnFailure(CType(ThisObj, IVsCfgBrowseObject).GetProjectItem(Hier, ItemId))
+            End If
+            MacroEval = CType(Hier, IVsBuildMacroInfo)
             VSErrorHandler.ThrowOnFailure(MacroEval.GetBuildMacroValue(MacroName, MacroValue))
 
             Return MacroValue
