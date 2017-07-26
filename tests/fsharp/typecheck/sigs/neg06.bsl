@@ -117,9 +117,7 @@ neg06.fs(215,10,215,18): typecheck error FS0954: This type definition involves a
 
 neg06.fs(223,13,223,21): typecheck error FS0039: The value or constructor 'BadType3' is not defined.
 
-neg06.fs(294,10,294,12): typecheck error FS0009: Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.
-
-neg06.fs(298,10,298,12): typecheck error FS0009: Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.
+neg06.fs(300,10,300,12): typecheck error FS0009: Uses of this construct may result in the generation of unverifiable .NET IL code. This warning can be disabled using '--nowarn:9' or '#nowarn "9"'.
 
 neg06.fs(304,10,304,12): typecheck error FS0937: Only structs and classes without primary constructors may be given the 'StructLayout' attribute
 
