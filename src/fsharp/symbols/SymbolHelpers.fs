@@ -87,7 +87,7 @@ type FSharpErrorInfo(fileName, s:pos, e:pos, severity: FSharpErrorSeverity, mess
 [<Sealed>]
 type ErrorScope()  = 
     let mutable errors = [] 
-    static let mutable mostRecentError = None
+    let mutable firstError = None
     let unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
     let unwindEL =        
         PushErrorLoggerPhaseUntilUnwind (fun _oldLogger -> 
@@ -95,8 +95,8 @@ type ErrorScope()  =
                 member x.DiagnosticSink(exn, isError) = 
                       let err = FSharpErrorInfo.CreateFromException(exn,isError,false,range.Zero)
                       errors <- err :: errors
-                      if isError then 
-                          mostRecentError <- Some err
+                      if isError && firstError.IsNone then 
+                          firstError <- Some err.Message
                 member x.ErrorCount = errors.Length })
         
     member x.Errors = errors |> List.filter (fun error -> error.Severity = FSharpErrorSeverity.Error)
@@ -112,16 +112,33 @@ type ErrorScope()  =
               unwindEL.Dispose() (* unwind pushes when ErrorScope disposes *)
               unwindBP.Dispose()
 
-    static member MostRecentError = mostRecentError
+    member x.FirstError with get() = firstError and set v = firstError <- v
     
+    /// Used at entry points to FSharp.Compiler.Service (service.fsi) which manipulate symbols and
+    /// perform other operations which might expose us to either bona-fide F# error messages such 
+    /// "missing assembly" (for incomplete assembly reference sets), or, if there is a compiler bug,
+    /// may hit internal compiler failures.
+    ///
+    /// In some calling cases, we get a chance to report the error as part of user text. For example
+    /// if there is a "msising assembly" error while formatting the text of the description of an
+    /// autocomplete, then the error message is shown in replacement of the text (rather than crashing Visual
+    /// Studio, or swallowing the exception completely)
     static member Protect<'a> (m:range) (f:unit->'a) (err:string->'a): 'a = 
         use errorScope = new ErrorScope()
         let res = 
             try 
                 Some (f())
-            with e -> errorRecovery e m; None
+            with e -> 
+                // Here we only call errorRecovery to save the error message for later use by TryGetFirstErrorText.
+                try 
+                    errorRecovery e m
+                with _ -> 
+                    // If error recovery fails, then we have an internal compiler error. In this case, we show the whole stack
+                    // in the extra message, should the extra message be used.
+                    errorScope.FirstError <- Some (e.ToString())
+                None
         match res with 
-        | Some res ->res
+        | Some res -> res
         | None -> 
             match errorScope.TryGetFirstErrorText() with 
             | Some text -> err text
