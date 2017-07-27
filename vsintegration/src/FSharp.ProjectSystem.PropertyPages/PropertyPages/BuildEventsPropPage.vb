@@ -335,16 +335,23 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         Private Function GetTokenValue(ByVal MacroName As String) As String
             Dim MacroEval As IVsBuildMacroInfo
             Dim MacroValue As String = Nothing
-            Dim Hier As IVsHierarchy = Nothing
-            Dim ItemId As UInteger
-            Dim ThisObj As Object = m_Objects(0)
 
-            If TypeOf ThisObj Is IVsBrowseObject Then
-                VSErrorHandler.ThrowOnFailure(CType(ThisObj, IVsBrowseObject).GetProjectItem(Hier, ItemId))
-            ElseIf TypeOf ThisObj Is IVsCfgBrowseObject Then
-                VSErrorHandler.ThrowOnFailure(CType(ThisObj, IVsCfgBrowseObject).GetProjectItem(Hier, ItemId))
+            ' The old project system provides IVsBuildMacroInfo this way...
+            MacroEval = TryCast(m_Objects(0), IVsBuildMacroInfo)
+            If MacroEval Is Nothing Then
+                Dim Hier As IVsHierarchy = Nothing
+                Dim ItemId As UInteger
+                Dim ThisObj As Object = m_Objects(0)
+
+                ' ...whereas CPS requires us to go through IVsBrowseObject.
+                If TypeOf ThisObj Is IVsBrowseObject Then
+                    VSErrorHandler.ThrowOnFailure(CType(ThisObj, IVsBrowseObject).GetProjectItem(Hier, ItemId))
+                ElseIf TypeOf ThisObj Is IVsCfgBrowseObject Then
+                    VSErrorHandler.ThrowOnFailure(CType(ThisObj, IVsCfgBrowseObject).GetProjectItem(Hier, ItemId))
+                End If
+                MacroEval = CType(Hier, IVsBuildMacroInfo)
             End If
-            MacroEval = CType(Hier, IVsBuildMacroInfo)
+
             VSErrorHandler.ThrowOnFailure(MacroEval.GetBuildMacroValue(MacroName, MacroValue))
 
             Return MacroValue
