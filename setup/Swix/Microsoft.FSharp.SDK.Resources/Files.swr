@@ -4,6 +4,7 @@ package name=Microsoft.FSharp.SDK.Resources
         version=$(FSharpPackageVersion)
         vs.package.type=msi
         vs.package.language=$(LocaleSpecificCulture)
+        vs.package.providerKey=Microsoft.FSharp.SDK.Resources,$(LocaleSpecificCulture),v4.1
 
 vs.installSize
   SystemDrive=12681438
