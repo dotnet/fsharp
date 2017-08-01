@@ -1,7 +1,5 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
   <!-- If Configuration is empty that means we are not being built in VS and so folks need to explicitly pass the different
       values for $(ConfigurationGroup), $(TargetGroup), or $(OSGroup) or accept the defaults for them.
   -->
@@ -11,18 +9,15 @@
     <Configuration Condition="'$(TargetGroup)'!=''">$(TargetGroup)_$(Configuration)</Configuration>
     <Configuration Condition="'$(OSGroup)'!='' and '$(OSGroup)'!='AnyOS'">$(OSGroup)_$(Configuration)</Configuration>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)'!=''">
     <ConfigurationGroup Condition="'$(ConfigurationGroup)'=='' and $(Configuration.ToLower().EndsWith('debug'))">Debug</ConfigurationGroup>
     <ConfigurationGroup Condition="'$(ConfigurationGroup)'=='' and $(Configuration.ToLower().EndsWith('release'))">Release</ConfigurationGroup>
     <ConfigurationGroup Condition="'$(ConfigurationGroup)'==''">Debug</ConfigurationGroup>
   </PropertyGroup>
-
   <PropertyGroup>
     <!-- Settings used all the time -->
     <Tailcalls>true</Tailcalls>
     <TargetDotnetProfile Condition="'$(TargetDotnetProfile)'==''">net40</TargetDotnetProfile>
-
     <!-- Currently always use .NET Framwork proto compiler -->
     <ProtoFlavour Condition="'$(ProtoFlavour)' == ''">net40</ProtoFlavour>
     <ProjectLanguage Condition="'$(ProjectLanguage)' == ''">FSharp</ProjectLanguage>
@@ -31,28 +26,23 @@
     <BuildToolsTargets45>true</BuildToolsTargets45>
     <WarningsAsErrors />
     <FX_NO_LOADER Condition=" '$(FX_NO_LOADER)'==''">false</FX_NO_LOADER>
-
-    <RoslynVersion>2.0.0</RoslynVersion>
+    <RoslynVersion>2.3.0-beta4-61913-01</RoslynVersion>
     <RoslynVSBinariesVersion>15.0</RoslynVSBinariesVersion>
     <RoslynVSPackagesVersion>15.0.26201</RoslynVSPackagesVersion>
     <VSSDK_BUILDTOOLS_VERSION>Microsoft.VSSDK.BuildTools.15.0.26201</VSSDK_BUILDTOOLS_VERSION>
-
     <MicrosoftVisualStudioThreadingVersion>15.0.240</MicrosoftVisualStudioThreadingVersion>
     <MicrosoftVisualStudioValidationVersion>15.0.82</MicrosoftVisualStudioValidationVersion>
-
     <!-- Always qualify the IntermediateOutputPath by the TargetDotnetProfile if any exists -->
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetDotnetProfile)\</IntermediateOutputPath>
     <IntermediateOutputPath Condition="'$(PortableProfileBeingReferenced)' != ''">obj\$(Configuration)\$(TargetDotnetProfile)\$(PortableProfileBeingReferenced)\</IntermediateOutputPath>
-
     <FSharpCore41TargetVersion>4.1.18</FSharpCore41TargetVersion>
     <FSharpCore41FrozenPortableVersion>4.1.20</FSharpCore41FrozenPortableVersion>
     <FSharpCore41FrozenPortableTargetVersion>4.1.21</FSharpCore41FrozenPortableTargetVersion>
     <FSharpCore42TargetVersion>4.2.3</FSharpCore42TargetVersion>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(MonoPackaging)' != 'true' AND '$(OS)' != 'Unix'">
-    <UseMicroBuild>true</UseMicroBuild> 
-    <UseSourceLink Condition = " '$(UseSourceLink)' == '' AND '$(Configuration)'=='Release' ">false</UseSourceLink>
+    <UseMicroBuild>true</UseMicroBuild>
+    <UseSourceLink Condition=" '$(UseSourceLink)' == '' AND '$(Configuration)'=='Release' ">false</UseSourceLink>
     <UseGatherBinaries>true</UseGatherBinaries>
     <AddVsSdkAttributesToSomeCoreComponents>true</AddVsSdkAttributesToSomeCoreComponents>
     <VsSDKInstall Condition=" '$(VsSDKInstall)' == '' ">$(MSBuildThisFileDirectory)..\packages\$(VSSDK_BUILDTOOLS_VERSION)\tools\vssdk</VsSDKInstall>
@@ -61,17 +51,14 @@
     <VsSDKIncludes Condition=" '$(VsSDKIncludes)' == '' ">$(MSBuildThisFileDirectory)..\packages\$(VSSDK_BUILDTOOLS_VERSION)\tools\vssdk\inc</VsSDKIncludes>
     <VsixSchemaPath Condition=" '$(VsixSchemaPath)' == '' ">$(MSBuildThisFileDirectory)..\packages\$(VSSDK_BUILDTOOLS_VERSION)\tools\vssdk\schemas\VSIXManifestSchema.xsd</VsixSchemaPath>
   </PropertyGroup>
-
   <PropertyGroup Condition=" '$(ProjectLanguage)' == 'FSharp' ">
     <!-- Things we do only for F# projects -->
     <OtherFlags>$(OtherFlags) --times</OtherFlags>
     <NoWarn>$(NoWarn);69;65;54;61;75</NoWarn>
   </PropertyGroup>
-
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <!-- Settings for Debug mode        -->
     <DebugType>full</DebugType>
-
     <Optimize Condition=" '$(Optimize)' == '' ">false</Optimize>
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
     <OtherFlags>$(OtherFlags) --no-jit-optimize</OtherFlags>
@@ -79,31 +66,26 @@
     <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">DEBUG;TRACE;CODE_ANALYSIS;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">DEBUG=True,TRACE=True,CODE_ANALYSIS=True,$(DefineConstants)</DefineConstants>
   </PropertyGroup>
-
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <!-- Flags used for Release mode.		-->
     <DebugType>pdbonly</DebugType>
-
     <Optimize Condition=" '$(Optimize)' == '' ">true</Optimize>
     <EmbedAllSource>false</EmbedAllSource>
     <ErrorReport Condition=" '$(ErrorReport)' == '' ">prompt</ErrorReport>
     <DefineConstants Condition=" '$(ProjectLanguage)' != 'VisualBasic' ">TRACE;$(DefineConstants)</DefineConstants>
     <DefineConstants Condition=" '$(ProjectLanguage)' == 'VisualBasic' ">TRACE=True,$(DefineConstants)</DefineConstants>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)'=='Proto'">
     <!-- Flags used when running the Proto compiler.		-->
     <DebugType Condition=" '$(DebugType)' == '' ">full</DebugType>
     <Optimize>true</Optimize>
     <DefineConstants>DEBUG;NO_STRONG_NAMES;$(DefineConstants)</DefineConstants>
   </PropertyGroup>
-
   <PropertyGroup>
     <!-- Standard defaults for output path and warning level -->
     <OutputPath Condition="'$(OutputPath)' == ''">bin\$(Configuration)</OutputPath>
     <WarningLevel Condition=" '$(WarningLevel)' == '' ">3</WarningLevel>
   </PropertyGroup>
-
   <PropertyGroup>
     <DefineConstants Condition="'$(VisualStudioVersion)'=='12.0' AND '$(ProjectLanguage)' == 'VisualBasic'">$(DefineConstants),VS_VERSION_DEV12=True</DefineConstants>
     <DefineConstants Condition="'$(VisualStudioVersion)'=='12.0' AND '$(ProjectLanguage)' != 'VisualBasic'">$(DefineConstants);VS_VERSION_DEV12</DefineConstants>
@@ -115,7 +97,6 @@
     <DefineConstants Condition="'$(VisualStudioVersion)'=='' AND '$(ProjectLanguage)' == 'VisualBasic'">$(DefineConstants),VS_VERSION_DEV14=True</DefineConstants>
     <DefineConstants Condition="'$(VisualStudioVersion)'=='' AND '$(ProjectLanguage)' != 'VisualBasic'">$(DefineConstants);VS_VERSION_DEV14</DefineConstants>
   </PropertyGroup>
-
   <!-- Nuget Package properties -->
   <PropertyGroup>
     <BuildRevision>$([System.DateTime]::Now.ToString(`yyMMdd`))</BuildRevision>
@@ -125,7 +106,6 @@
     <NUGET_PACKAGES Condition=" '$(NUGET_PACKAGES)' == '' ">$(MSBuildThisFileDirectory)..\packages</NUGET_PACKAGES>
     <RestorePackagesPath>$(NUGET_PACKAGES)</RestorePackagesPath>
   </PropertyGroup>
-
   <PropertyGroup>
     <!-- Compiler tool locations.		-->
     <FsLexToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.6\build</FsLexToolPath>
@@ -133,18 +113,13 @@
     <FsiToolExe>fsi.exe</FsiToolExe>
     <FsLexToolExe>fslex.exe</FsLexToolExe>
     <FsYaccToolExe>fsyacc.exe</FsYaccToolExe>
-
-
     <!-- The version of MSBuild assumed byt the F# compiler in the Mono packaging of F# -->
     <MonoPackagingMSBuildVersionSuffix>v12.0</MonoPackagingMSBuildVersionSuffix>
-    <MonoPackagingMSBuildVersionFull>12.0.0.0</MonoPackagingMSBuildVersionFull>	  
-
+    <MonoPackagingMSBuildVersionFull>12.0.0.0</MonoPackagingMSBuildVersionFull>
     <!-- FSharp.Compiler.Tools is currently only used to get a working FSI.EXE to execute some scripts during the build -->
     <!-- The LKG FSI.EXE requires MSBuild 15 to be installed, which is painful -->
     <FsiToolPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.5\tools</FsiToolPath>
   </PropertyGroup>
-
-  <Import Project="../Tools/Build.Common.props" Condition="'$(TargetDotnetProfile)'=='coreclr'"/>
-  <Import Project="$(BuildVersionFilePath)"     Condition="Exists('$(BuildVersionFilePath)')" />
-
+  <Import Project="../Tools/Build.Common.props" Condition="'$(TargetDotnetProfile)'=='coreclr'" />
+  <Import Project="$(BuildVersionFilePath)" Condition="Exists('$(BuildVersionFilePath)')" />
 </Project>
