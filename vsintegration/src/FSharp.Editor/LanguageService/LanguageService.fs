@@ -476,16 +476,19 @@ and
                                                 projectInfoManager.ClearInfoForProject(project.Id)
                                                 optionsAssociation.Remove(projectContext) |> ignore
                                                 project.Disconnect()))
-            | _ -> ()
-            if isnew then
-                for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
-                    let referencedProjectId = setup referencedSite
+                let referencedProjectSites = ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider)
+                
+                for referencedSite in referencedProjectSites do
+                    let referencedProjectFileName = referencedSite.ProjectFileName()
+                    let referencedProjectDisplayName = projectDisplayNameOf referencedProjectFileName
+                    let referencedProjectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(referencedProjectFileName, referencedProjectDisplayName)
                     project.AddProjectReference(ProjectReference referencedProjectId)
 
                 if not (workspace.ProjectTracker.ContainsProject(project)) then 
                     workspace.ProjectTracker.AddProject(project)
 
-            projectId
+                for referencedSite in referencedProjectSites do
+                    setup referencedSite                    
 
         setup (siteProvider.GetProjectSite()) |> ignore
 
