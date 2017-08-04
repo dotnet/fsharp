@@ -308,8 +308,6 @@ and
 
     let optionsAssociation = ConditionalWeakTable<IWorkspaceProjectContext, string[]>()
 
-    let lockObj = new Object()
-
     override this.Initialize() =
         base.Initialize()
 
@@ -453,11 +451,6 @@ and
                 for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
                     let referencedProjectId = setup referencedSite                    
                     project.AddProjectReference(ProjectReference referencedProjectId)
-
-                lock lockObj (fun () -> 
-                    if not (workspace.ProjectTracker.ContainsProject(project)) then 
-                        workspace.ProjectTracker.AddProject(project) |> ignore
-                )
 
             projectId
         setup (siteProvider.GetProjectSite()) |> ignore
