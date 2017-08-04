@@ -313,8 +313,6 @@ and
 
     let optionsAssociation = ConditionalWeakTable<IWorkspaceProjectContext, string[]>()
 
-    let lockObj = new Object()
-
     override this.Initialize() =
         base.Initialize()
 
