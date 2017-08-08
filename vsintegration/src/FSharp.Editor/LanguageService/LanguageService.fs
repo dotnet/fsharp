@@ -1,5 +1,4 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 #nowarn "40"
@@ -314,24 +313,21 @@ and
 
     let optionsAssociation = ConditionalWeakTable<IWorkspaceProjectContext, string[]>()
 
+    member private this.OnProjectChanged(projectId:ProjectId, workspace:VisualStudioWorkspaceImpl, _newSolution:Solution) =
+        let project = workspace.CurrentSolution.GetProject(projectId)
+        let siteProvider = this.ProvideProjectSiteProvider(this.Workspace, project)
+        this.SetupProjectFile(siteProvider, this.Workspace, "setupProjectsAfterSolutionOpen")
+    member private this.OnProjectAdded(projectId:ProjectId, workspace:VisualStudioWorkspaceImpl, newSolution:Solution) = this.OnProjectChanged(projectId, workspace, newSolution)
+    member private this.OnProjectRemoved(_projectId:ProjectId, _workspace:VisualStudioWorkspaceImpl, _newSolution:Solution) = ()
+
     override this.Initialize() =
         base.Initialize()
 
         let workspaceChanged (args:WorkspaceChangeEventArgs) =
             match args.Kind with
-            | WorkspaceChangeKind.ProjectAdded
-            | WorkspaceChangeKind.ProjectChanged
-            | WorkspaceChangeKind.ProjectRemoved
-            | WorkspaceChangeKind.DocumentAdded
-            | WorkspaceChangeKind.DocumentRemoved
-            | WorkspaceChangeKind.AdditionalDocumentAdded
-            | WorkspaceChangeKind.AdditionalDocumentRemoved
-            | WorkspaceChangeKind.DocumentInfoChanged
-            | WorkspaceChangeKind.SolutionCleared ->
-                for projectId in this.Workspace.CurrentSolution.ProjectIds do
-                    let project = this.Workspace.CurrentSolution.GetProject(projectId)
-                    let siteProvider = this.ProvideProjectSiteProvider(this.Workspace, project)
-                    this.SetupProjectFile(siteProvider, this.Workspace, "setupProjectsAfterSolutionOpen")
+            | WorkspaceChangeKind.ProjectAdded -> this.OnProjectAdded(args.ProjectId,   this.Workspace, args.NewSolution)
+            | WorkspaceChangeKind.ProjectChanged -> this.OnProjectChanged(args.ProjectId, this.Workspace, args.NewSolution)
+            | WorkspaceChangeKind.ProjectRemoved -> this.OnProjectRemoved(args.ProjectId, this.Workspace, args.NewSolution)
             | _ -> ()
 
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Completion.CompletionOptions.BlockForCompletionItems, FSharpConstants.FSharpLanguageName, false)
@@ -383,14 +379,14 @@ and
 
         let updatedFiles = site.SourceFilesOnDisk() |> wellFormedFilePathSetIgnoreCase
         let originalFiles = project.GetCurrentDocuments() |> Seq.map (fun file -> file.FilePath) |> wellFormedFilePathSetIgnoreCase
-        
+
         let mutable updated = forceUpdate
 
         for file in updatedFiles do
             if not(originalFiles.Contains(file)) then
                 projectContext.AddSourceFile(file)
                 updated <- true
-        
+
         for file in originalFiles do
             if not(updatedFiles.Contains(file)) then
                 projectContext.RemoveSourceFile(file)
@@ -454,11 +450,11 @@ and
                 |> Option.toObj
             Debug.Assert(hierarchy <> null, "About to CreateProjectContext with a non-hierarchy site")
 
-            let isnew, project = 
-                let p = workspace.ProjectTracker.GetProject projectId
-                match p with
+            let project = 
+               match workspace.ProjectTracker.GetProject projectId  with
                 | null ->
-                    true, projectContextFactory.CreateProjectContext(
+                    /// We make the project object when the project is not already tracked
+                    projectContextFactory.CreateProjectContext(
                               FSharpConstants.FSharpLanguageName, 
                               projectDisplayName, 
                               projectFileName, 
@@ -466,7 +462,7 @@ and
                               hierarchy, 
                               null, 
                               errorReporter) :?> AbstractProject
-                | _ -> false, p
+                | _ as p -> p
 
             match project :> obj with
             | :? IWorkspaceProjectContext as projectContext ->
@@ -479,10 +475,9 @@ and
                                                 optionsAssociation.Remove(projectContext) |> ignore
                                                 project.Disconnect()))
             | _ -> ()
-            if isnew then
-                for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
-                    let referencedProjectId = setup referencedSite
-                    project.AddProjectReference(ProjectReference referencedProjectId)
+            for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
+                let referencedProjectId = setup referencedSite
+                project.AddProjectReference(ProjectReference referencedProjectId)
 
             projectId
         setup (siteProvider.GetProjectSite()) |> ignore
@@ -503,9 +498,11 @@ and
                  let creationTime = System.DateTime.Now
                  let assemblyReferences () = 
                     [|
-                        for reference in project.ProjectReferences do 
+                        for reference in project.ProjectReferences do
                             let p = workspace.CurrentSolution.GetProject(reference.ProjectId)
-                            yield (p.OutputFilePath)
+                            if p <> null then
+                                let outputFilePath = p.OutputFilePath
+                                if String.IsNullOrEmpty(outputFilePath) = false then yield outputFilePath
                         for r in project.MetadataReferences do
                             match r with
                             | :? PortableExecutableReference  as per -> yield per.FilePath
@@ -591,7 +588,7 @@ and
                 | :? IProvideProjectSite as siteProvider when not (IsScript(filename)) ->
                     this.SetupProjectFile(siteProvider, this.Workspace, "SetupNewTextView")
                 | _ ->
-                        let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
-                        this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
+                    let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
+                    this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
             | _ -> ()
         | _ -> ()
