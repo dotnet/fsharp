@@ -34,6 +34,12 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.ComponentModelHost
 
+
+module LogFile =
+    let log (text:string) =
+        use logfile = File.AppendText(@"c:\temp\mylogfile.log")
+        logfile.WriteLine(text)
+
 // Exposes FSharpChecker as MEF export
 [<Export(typeof<FSharpCheckerProvider>); Composition.Shared>]
 type internal FSharpCheckerProvider 
@@ -90,12 +96,18 @@ type internal ProjectInfoManager
         checkerProvider: FSharpCheckerProvider,
         [<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider
     ) =
-    // A table of information about projects, excluding single-file projects.  
+
+    // A table of information about projects, excluding single-file projects.
     let projectTable = ConcurrentDictionary<ProjectId, Refreshable<ProjectId[] * FSharpProjectOptions>>()
 
     // A table of information about single-file projects.  Currently we only need the load time of each such file, plus
     // the original options for editing
     let singleFileProjectTable = ConcurrentDictionary<ProjectId, DateTime * FSharpProjectOptions>()
+
+    // Accumulate sorces and references for each project file
+    let lockObject = new Object()
+    let sourceFiles = new Dictionary<string, string[]>()
+    let referenceFiles = new Dictionary<string, string[]>()
 
     /// Clear a project from the project table
     member this.ClearInfoForProject(projectId: ProjectId) =
@@ -197,6 +209,42 @@ type internal ProjectInfoManager
         match singleFileProjectTable.TryGetValue(projectId) with 
         | true, (_loadTime, originalOptions) -> Some originalOptions
         | _ -> this.TryGetOptionsForProject(projectId) 
+
+    [<Export>]
+    member this.HandleCommandLineChanges(path:string, sources:ImmutableArray<CommandLineSourceFile>, references:ImmutableArray<CommandLineReference>) =
+        let projectDir = Path.GetDirectoryName(path)
+        let fullPath p = if Path.IsPathRooted(p) then p else Path.Combine(projectDir, p)
+        let sourcePaths = sources |> Seq.map(fun s -> fullPath s.Path) |> Seq.toArray
+        let referencePaths = references |> Seq.map(fun r -> fullPath r.Reference) |> Seq.toArray
+
+        LogFile.log "======================================="
+        LogFile.log path 
+        LogFile.log projectDir
+        LogFile.log "======================================="
+        sourcePaths |> Seq.iter(fun s -> LogFile.log s)
+        LogFile.log "======================================="
+        referencePaths |> Seq.iter(fun r -> LogFile.log r)
+        LogFile.log "======================================="
+
+        lock lockObject (fun () -> match sourceFiles.TryGetValue path with
+                                   | true, _ -> sourceFiles.Remove(path) |> ignore
+                                                sourceFiles.Add(path, sourcePaths)
+                                   | _       -> sourceFiles.Add(path, sourcePaths)
+                                   match referenceFiles.TryGetValue path with
+                                   | true, _ -> referenceFiles.Remove(path) |> ignore
+                                                referenceFiles.Add(path, referencePaths)
+                                   | _       -> referenceFiles.Add(path, referencePaths) )
+        ()
+
+    member __.GetSourceFiles(path:string) = 
+        lock lockObject (fun () -> match sourceFiles.TryGetValue path with
+                                   | true, value -> value
+                                   | _           -> Array.empty<string>)
+
+    member __.GetReferenceFiles(path:string) = 
+        lock lockObject (fun () -> match referenceFiles.TryGetValue path with
+                                   | true, value -> value
+                                   | _           -> Array.empty<string>)
 
 // Used to expose FSharpChecker/ProjectInfo manager to diagnostic providers
 // Diagnostic providers can be executed in environment that does not use MEF so they can rely only
@@ -317,6 +365,7 @@ and
         let project = workspace.CurrentSolution.GetProject(projectId)
         let siteProvider = this.ProvideProjectSiteProvider(this.Workspace, project)
         this.SetupProjectFile(siteProvider, this.Workspace, "setupProjectsAfterSolutionOpen")
+
     member private this.OnProjectAdded(projectId:ProjectId, workspace:VisualStudioWorkspaceImpl, newSolution:Solution) = this.OnProjectChanged(projectId, workspace, newSolution)
     member private this.OnProjectRemoved(_projectId:ProjectId, _workspace:VisualStudioWorkspaceImpl, _newSolution:Solution) = ()
 
@@ -434,10 +483,9 @@ and
             let projectGuid = Guid(site.ProjectGuid)
             let projectFileName = site.ProjectFileName()
             let projectDisplayName = projectDisplayNameOf projectFileName
-
             let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
-
             projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, projectId, site, workspace, userOpName)
+
             let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
             let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
 
@@ -487,7 +535,7 @@ and
         let hier = visualStudioWorkspace.GetHierarchy(project.Id)
         {new IProvideProjectSite with
              member this.GetProjectSite() =
-                 let compileItems () = [| for document in project.Documents do yield document.FilePath |]
+                 let compileItems () = projectInfoManager.GetSourceFiles(project.FilePath)
                  let compilerFlags () = [| "" |]
                  let caption () = project.Name
                  let projFileName () = project.FilePath
@@ -496,18 +544,7 @@ and
                  let targetFrameworkMoniker = ""
                  let projectGuid () = project.Id.Id.ToString()
                  let creationTime = System.DateTime.Now
-                 let assemblyReferences () = 
-                    [|
-                        for reference in project.ProjectReferences do
-                            let p = workspace.CurrentSolution.GetProject(reference.ProjectId)
-                            if p <> null then
-                                let outputFilePath = p.OutputFilePath
-                                if String.IsNullOrEmpty(outputFilePath) = false then yield outputFilePath
-                        for r in project.MetadataReferences do
-                            match r with
-                            | :? PortableExecutableReference  as per -> yield per.FilePath
-                            | :? UnresolvedMetadataReference as umr -> yield umr.Reference
-                            | _ -> () |]
+                 let assemblyReferences () = projectInfoManager.GetReferenceFiles(project.FilePath)
                  { new Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite with
                      member __.SourceFilesOnDisk() = compileItems ()
                      member __.DescriptionOfProject() = caption ()
