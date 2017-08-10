@@ -1,5 +1,4 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 #nowarn "40"
@@ -7,11 +6,13 @@ namespace Microsoft.VisualStudio.FSharp.Editor
 open System
 open System.Collections.Concurrent
 open System.Collections.Generic
+open System.Collections.Immutable
 open System.ComponentModel.Composition
+open System.Diagnostics
+open System.IO
+open System.Linq
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
-open System.IO
-open System.Diagnostics
 
 open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.SourceCodeServices
@@ -23,6 +24,7 @@ open Microsoft.CodeAnalysis.Options
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.TextManager.Interop
+open Microsoft.VisualStudio.LanguageServices
 open Microsoft.VisualStudio.LanguageServices.Implementation.LanguageService
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 open Microsoft.VisualStudio.LanguageServices.Implementation.TaskList
@@ -31,6 +33,12 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.ComponentModelHost
+
+
+module LogFile =
+    let log (text:string) =
+        use logfile = File.AppendText(@"c:\temp\mylogfile.log")
+        logfile.WriteLine(text)
 
 // Exposes FSharpChecker as MEF export
 [<Export(typeof<FSharpCheckerProvider>); Composition.Shared>]
@@ -88,12 +96,18 @@ type internal ProjectInfoManager
         checkerProvider: FSharpCheckerProvider,
         [<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider
     ) =
-    // A table of information about projects, excluding single-file projects.  
+
+    // A table of information about projects, excluding single-file projects.
     let projectTable = ConcurrentDictionary<ProjectId, Refreshable<ProjectId[] * FSharpProjectOptions>>()
 
     // A table of information about single-file projects.  Currently we only need the load time of each such file, plus
     // the original options for editing
     let singleFileProjectTable = ConcurrentDictionary<ProjectId, DateTime * FSharpProjectOptions>()
+
+    // Accumulate sorces and references for each project file
+    let lockObject = new Object()
+    let sourceFiles = new Dictionary<string, string[]>()
+    let referenceFiles = new Dictionary<string, string[]>()
 
     /// Clear a project from the project table
     member this.ClearInfoForProject(projectId: ProjectId) =
@@ -196,6 +210,42 @@ type internal ProjectInfoManager
         | true, (_loadTime, originalOptions) -> Some originalOptions
         | _ -> this.TryGetOptionsForProject(projectId) 
 
+    [<Export>]
+    member this.HandleCommandLineChanges(path:string, sources:ImmutableArray<CommandLineSourceFile>, references:ImmutableArray<CommandLineReference>) =
+        let projectDir = Path.GetDirectoryName(path)
+        let fullPath p = if Path.IsPathRooted(p) then p else Path.Combine(projectDir, p)
+        let sourcePaths = sources |> Seq.map(fun s -> fullPath s.Path) |> Seq.toArray
+        let referencePaths = references |> Seq.map(fun r -> fullPath r.Reference) |> Seq.toArray
+
+        LogFile.log "======================================="
+        LogFile.log path 
+        LogFile.log projectDir
+        LogFile.log "======================================="
+        sourcePaths |> Seq.iter(fun s -> LogFile.log s)
+        LogFile.log "======================================="
+        referencePaths |> Seq.iter(fun r -> LogFile.log r)
+        LogFile.log "======================================="
+
+        lock lockObject (fun () -> match sourceFiles.TryGetValue path with
+                                   | true, _ -> sourceFiles.Remove(path) |> ignore
+                                                sourceFiles.Add(path, sourcePaths)
+                                   | _       -> sourceFiles.Add(path, sourcePaths)
+                                   match referenceFiles.TryGetValue path with
+                                   | true, _ -> referenceFiles.Remove(path) |> ignore
+                                                referenceFiles.Add(path, referencePaths)
+                                   | _       -> referenceFiles.Add(path, referencePaths) )
+        ()
+
+    member __.GetSourceFiles(path:string) = 
+        lock lockObject (fun () -> match sourceFiles.TryGetValue path with
+                                   | true, value -> value
+                                   | _           -> Array.empty<string>)
+
+    member __.GetReferenceFiles(path:string) = 
+        lock lockObject (fun () -> match referenceFiles.TryGetValue path with
+                                   | true, value -> value
+                                   | _           -> Array.empty<string>)
+
 // Used to expose FSharpChecker/ProjectInfo manager to diagnostic providers
 // Diagnostic providers can be executed in environment that does not use MEF so they can rely only
 // on services exposed by the workspace
@@ -265,14 +315,12 @@ type
 
     override this.CreateWorkspace() = this.ComponentModel.GetService<VisualStudioWorkspaceImpl>()
 
-    override this.CreateLanguageService() = 
-        FSharpLanguageService(this)        
+    override this.CreateLanguageService() = FSharpLanguageService(this)
 
     override this.CreateEditorFactories() = Seq.empty<IVsEditorFactory>
 
     override this.RegisterMiscellaneousFilesWorkspaceInformation(_) = ()
-    
-and 
+and
     [<Guid(FSharpConstants.languageServiceGuidString)>]
     [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fs")>]
     [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsi")>]
@@ -313,15 +361,29 @@ and
 
     let optionsAssociation = ConditionalWeakTable<IWorkspaceProjectContext, string[]>()
 
+    member private this.OnProjectChanged(projectId:ProjectId, workspace:VisualStudioWorkspaceImpl, _newSolution:Solution) =
+        let project = workspace.CurrentSolution.GetProject(projectId)
+        let siteProvider = this.ProvideProjectSiteProvider(this.Workspace, project)
+        this.SetupProjectFile(siteProvider, this.Workspace, "setupProjectsAfterSolutionOpen")
+
+    member private this.OnProjectAdded(projectId:ProjectId, workspace:VisualStudioWorkspaceImpl, newSolution:Solution) = this.OnProjectChanged(projectId, workspace, newSolution)
+    member private this.OnProjectRemoved(_projectId:ProjectId, _workspace:VisualStudioWorkspaceImpl, _newSolution:Solution) = ()
+
     override this.Initialize() =
         base.Initialize()
 
+        let workspaceChanged (args:WorkspaceChangeEventArgs) =
+            match args.Kind with
+            | WorkspaceChangeKind.ProjectAdded -> this.OnProjectAdded(args.ProjectId,   this.Workspace, args.NewSolution)
+            | WorkspaceChangeKind.ProjectChanged -> this.OnProjectChanged(args.ProjectId, this.Workspace, args.NewSolution)
+            | WorkspaceChangeKind.ProjectRemoved -> this.OnProjectRemoved(args.ProjectId, this.Workspace, args.NewSolution)
+            | _ -> ()
+
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Completion.CompletionOptions.BlockForCompletionItems, FSharpConstants.FSharpLanguageName, false)
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Shared.Options.ServiceFeatureOnOffOptions.ClosedFileDiagnostic, FSharpConstants.FSharpLanguageName, Nullable false)
+        this.Workspace.DocumentClosed.Add <| fun args -> tryRemoveSingleFileProject args.Document.Project.Id 
+        this.Workspace.WorkspaceChanged.Add(workspaceChanged)
 
-        this.Workspace.DocumentClosed.Add <| fun args ->
-            tryRemoveSingleFileProject args.Document.Project.Id 
-            
         Events.SolutionEvents.OnAfterCloseSolution.Add <| fun _ ->
             //checkerProvider.Checker.StopBackgroundCompile()
 
@@ -334,7 +396,7 @@ and
             singleFileProjects.Keys |> Seq.iter tryRemoveSingleFileProject
 
         let ctx = System.Threading.SynchronizationContext.Current
-        
+
         let rec setupProjectsAfterSolutionOpen() =
             async {
                 use openedProjects = MailboxProcessor.Start <| fun inbox ->
@@ -358,27 +420,27 @@ and
 
         let theme = package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
         theme.SetColors()
-        
+
     /// Sync the information for the project 
-    member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, workspace, forceUpdate, userOpName) =
+    member __.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, workspace, forceUpdate, userOpName) =
         let wellFormedFilePathSetIgnoreCase (paths: seq<string>) =
             HashSet(paths |> Seq.filter isPathWellFormed |> Seq.map (fun s -> try System.IO.Path.GetFullPath(s) with _ -> s), StringComparer.OrdinalIgnoreCase)
 
         let updatedFiles = site.SourceFilesOnDisk() |> wellFormedFilePathSetIgnoreCase
         let originalFiles = project.GetCurrentDocuments() |> Seq.map (fun file -> file.FilePath) |> wellFormedFilePathSetIgnoreCase
-        
+
         let mutable updated = forceUpdate
 
         for file in updatedFiles do
             if not(originalFiles.Contains(file)) then
                 projectContext.AddSourceFile(file)
                 updated <- true
-        
+
         for file in originalFiles do
             if not(updatedFiles.Contains(file)) then
                 projectContext.RemoveSourceFile(file)
                 updated <- true
-        
+
         let updatedRefs = site.AssemblyReferences() |> wellFormedFilePathSetIgnoreCase
         let originalRefs = project.GetCurrentMetadataReferences() |> Seq.map (fun ref -> ref.FilePath) |> wellFormedFilePathSetIgnoreCase
 
@@ -417,48 +479,109 @@ and
 
     member this.SetupProjectFile(siteProvider: IProvideProjectSite, workspace: VisualStudioWorkspaceImpl, userOpName) =
         let userOpName = userOpName + ".SetupProjectFile"
-        let  rec setup (site: IProjectSite) =
+        let rec setup (site: IProjectSite) =
             let projectGuid = Guid(site.ProjectGuid)
             let projectFileName = site.ProjectFileName()
             let projectDisplayName = projectDisplayNameOf projectFileName
-
             let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
+            projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, projectId, site, workspace, userOpName)
 
-            if isNull (workspace.ProjectTracker.GetProject projectId) then
-                projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, projectId, site, workspace, userOpName)
-                let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
-                let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
+            let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
+            let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
 
-                let hierarchy =
-                    site.ProjectProvider
-                    |> Option.map (fun p -> p :?> IVsHierarchy)
-                    |> Option.toObj
+            // Roslyn is expecting site to be an IVsHierarchy.
+            // It just so happens that the object that implements IProvideProjectSite is also
+            // an IVsHierarchy. This assertion is to ensure that the assumption holds true.
+            let hierarchy =
+                site.ProjectProvider
+                |> Option.map (fun p -> p :?> IVsHierarchy)
+                |> Option.toObj
+            Debug.Assert(hierarchy <> null, "About to CreateProjectContext with a non-hierarchy site")
 
-                // Roslyn is expecting site to be an IVsHierarchy.
-                // It just so happens that the object that implements IProvideProjectSite is also
-                // an IVsHierarchy. This assertion is to ensure that the assumption holds true.
-                Debug.Assert(hierarchy <> null, "About to CreateProjectContext with a non-hierarchy site")
-
-                let projectContext = 
+            let project = 
+               match workspace.ProjectTracker.GetProject projectId  with
+                | null ->
+                    /// We make the project object when the project is not already tracked
                     projectContextFactory.CreateProjectContext(
-                        FSharpConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectGuid, hierarchy, null, errorReporter)
+                              FSharpConstants.FSharpLanguageName, 
+                              projectDisplayName, 
+                              projectFileName, 
+                              projectGuid, 
+                              hierarchy, 
+                              null, 
+                              errorReporter) :?> AbstractProject
+                | _ as p -> p
 
-                let project = projectContext :?> AbstractProject
-
+            match project :> obj with
+            | :? IWorkspaceProjectContext as projectContext ->
                 this.SyncProject(project, projectContext, site, workspace, forceUpdate=false, userOpName=userOpName)
-                site.AdviseProjectSiteChanges(FSharpConstants.FSharpLanguageServiceCallbackName, 
-                                              AdviseProjectSiteChanges(fun () -> this.SyncProject(project, projectContext, site, workspace, forceUpdate=true, userOpName="AdviseProjectSiteChanges."+userOpName)))
-                site.AdviseProjectSiteClosed(FSharpConstants.FSharpLanguageServiceCallbackName, 
-                                             AdviseProjectSiteChanges(fun () -> 
+                site.AdviseProjectSiteChanges(FSharpConstants.FSharpLanguageServiceCallbackName,
+                                                AdviseProjectSiteChanges(fun () -> this.SyncProject(project, projectContext, site, workspace, forceUpdate=true, userOpName="AdviseProjectSiteChanges."+userOpName)))
+                site.AdviseProjectSiteClosed(FSharpConstants.FSharpLanguageServiceCallbackName,
+                                                AdviseProjectSiteChanges(fun () ->
                                                 projectInfoManager.ClearInfoForProject(project.Id)
                                                 optionsAssociation.Remove(projectContext) |> ignore
                                                 project.Disconnect()))
-                for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
-                    let referencedProjectId = setup referencedSite                    
-                    project.AddProjectReference(ProjectReference referencedProjectId)
+            | _ -> ()
+            for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
+                let referencedProjectId = setup referencedSite
+                project.AddProjectReference(ProjectReference referencedProjectId)
 
             projectId
         setup (siteProvider.GetProjectSite()) |> ignore
+
+    member private __.ProvideProjectSiteProvider(workspace:Workspace, project:Project) =
+        let visualStudioWorkspace = workspace :?> VisualStudioWorkspace
+        let hier = visualStudioWorkspace.GetHierarchy(project.Id)
+        {new IProvideProjectSite with
+             member this.GetProjectSite() =
+                 let compileItems () = projectInfoManager.GetSourceFiles(project.FilePath)
+                 let compilerFlags () = [| "" |]
+                 let caption () = project.Name
+                 let projFileName () = project.FilePath
+                 let taskProvider = None
+                 let taskReporter = None
+                 let targetFrameworkMoniker = ""
+                 let projectGuid () = project.Id.Id.ToString()
+                 let creationTime = System.DateTime.Now
+                 let assemblyReferences () = projectInfoManager.GetReferenceFiles(project.FilePath)
+                 { new Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite with
+                     member __.SourceFilesOnDisk() = compileItems ()
+                     member __.DescriptionOfProject() = caption ()
+                     member __.CompilerFlags() = compilerFlags ()
+                     member __.ProjectFileName() = projFileName ()
+                     member __.ErrorListTaskProvider() = taskProvider
+                     member __.ErrorListTaskReporter() = taskReporter
+                     member __.AdviseProjectSiteChanges(_,_) = ()
+                     member __.AdviseProjectSiteCleaned(_,_) = ()
+                     member __.AdviseProjectSiteClosed(_,_) = ()
+                     member __.IsIncompleteTypeCheckEnvironment = false
+                     member __.TargetFrameworkMoniker = targetFrameworkMoniker
+                     member __.ProjectGuid = projectGuid ()
+                     member __.LoadTime = creationTime
+                     member __.ProjectProvider = Some this
+                     member __.AssemblyReferences() = assemblyReferences ()
+                 }
+         interface IVsHierarchy with
+             member __.SetSite(psp)                                    = hier.SetSite(psp)
+             member __.GetSite(psp)                                    = hier.GetSite(ref psp)
+             member __.QueryClose(pfCanClose)                          = hier.QueryClose(ref pfCanClose)
+             member __.Close()                                         = hier.Close()
+             member __.GetGuidProperty(itemid, propid, pguid)          = hier.GetGuidProperty(itemid, propid, ref pguid)
+             member __.SetGuidProperty(itemid, propid, rguid)          = hier.SetGuidProperty(itemid, propid, ref rguid)
+             member __.GetProperty(itemid, propid, pvar)               = hier.GetProperty(itemid, propid, ref pvar) 
+             member __.SetProperty(itemid, propid, var)                = hier.SetProperty(itemid, propid, var)
+             member __.GetNestedHierarchy(itemid, iidHierarchyNested, ppHierarchyNested, pitemidNested) = hier.GetNestedHierarchy(itemid, ref iidHierarchyNested, ref ppHierarchyNested, ref pitemidNested)
+             member __.GetCanonicalName(itemid, pbstrName)             = hier.GetCanonicalName(itemid, ref pbstrName)
+             member __.ParseCanonicalName(pszName, pitemid)            = hier.ParseCanonicalName(pszName, ref pitemid)
+             member __.Unused0()                                       = hier.Unused0()
+             member __.AdviseHierarchyEvents(pEventSink, pdwCookie)    = hier.AdviseHierarchyEvents(pEventSink, ref pdwCookie)
+             member __.UnadviseHierarchyEvents(dwCookie)               = hier.UnadviseHierarchyEvents(dwCookie)
+             member __.Unused1()                                       = hier.Unused1()
+             member __.Unused2()                                       = hier.Unused2()
+             member __.Unused3()                                       = hier.Unused3()
+             member __.Unused4()                                       = hier.Unused4()
+        }
 
     member this.SetupStandAloneFile(fileName: string, fileContents: string, workspace: VisualStudioWorkspaceImpl, hier: IVsHierarchy) =
 
@@ -476,7 +599,7 @@ and
 
             let projectContext = projectContextFactory.CreateProjectContext(FSharpConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectId.Id, hier, null, errorReporter)
             projectContext.AddSourceFile(fileName)
-            
+
             let project = projectContext :?> AbstractProject
             singleFileProjects.[projectId] <- project
 
@@ -493,19 +616,16 @@ and
         base.SetupNewTextView(textView)
 
         let textViewAdapter = package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
-               
         match textView.GetBuffer() with
         | (VSConstants.S_OK, textLines) ->
             let filename = VsTextLines.GetFilename textLines
-            match VsRunningDocumentTable.FindDocumentWithoutLocking(package.RunningDocumentTable,filename) with
+            match VsRunningDocumentTable.FindDocumentWithoutLocking(package.RunningDocumentTable, filename) with
             | Some (hier, _) ->
                 match hier with
-                | :? IProvideProjectSite as siteProvider when not (IsScript(filename)) -> 
+                | :? IProvideProjectSite as siteProvider when not (IsScript(filename)) ->
                     this.SetupProjectFile(siteProvider, this.Workspace, "SetupNewTextView")
-                | _ -> 
+                | _ ->
                     let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
                     this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
             | _ -> ()
         | _ -> ()
-
-      

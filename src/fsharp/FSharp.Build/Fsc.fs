@@ -204,13 +204,13 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
         builder.AppendSwitchIfNotNull("--sourcelink:", sourceLink)
         // NoFramework
         if noFramework then 
-            builder.AppendSwitch("--noframework") 
+            builder.AppendSwitch("--noframework")
         // BaseAddress
         builder.AppendSwitchIfNotNull("--baseaddress:", baseAddress)
         // DefineConstants
         if defineConstants <> null then 
             for item in defineConstants do
-                builder.AppendSwitchIfNotNull("--define:", item.ItemSpec)          
+                builder.AppendSwitchIfNotNull("--define:", item.ItemSpec)
         // DocumentationFile
         builder.AppendSwitchIfNotNull("--doc:", documentationFile)
         // GenerateInterfaceFile
