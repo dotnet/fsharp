@@ -80,18 +80,16 @@
           Condition="'@(FsSrGen)'!=''"
           BeforeTargets="CoreResGen">
 
-    <CreateItem Include="$(IntermediateOutputPath)%(FsSrGen.Filename).fs">
-      <Output TaskParameter="Include" ItemName="CompileBefore"/>
-    </CreateItem>
-    <CreateItem Include="$(IntermediateOutputPath)%(FsSrGen.Filename).resx" AdditionalMetadata="ManifestResourceName=%(FsSrGen.Filename)">
-      <Output TaskParameter="Include" ItemName="EmbeddedResource"/>
-    </CreateItem>
-    <CreateItem Include="$(IntermediateOutputPath)%(FsSrGen.Filename).fs">
-      <Output TaskParameter="Include" ItemName="FileWrites"/>
-    </CreateItem>
-    <CreateItem Include="$(IntermediateOutputPath)%(FsSrGen.Filename).resx">
-      <Output TaskParameter="Include" ItemName="FileWrites"/>
-    </CreateItem>
+    <ItemGroup>
+      <CompileBefore Include="$(IntermediateOutputPath)%(FsSrGen.Filename).fs" />
+      <FileWrites Include="$(IntermediateOutputPath)%(FsSrGen.Filename).fs" />
+      <FileWrites Include="$(IntermediateOutputPath)%(FsSrGen.Filename).resx" />
+      <EmbeddedResource Include="$(IntermediateOutputPath)%(FsSrGen.Filename).resx">
+        <ManifestResourceName>%(FsSrGen.Filename)</ManifestResourceName>
+        <Type>Resx</Type>
+        <WithCulture>false</WithCulture>
+      </EmbeddedResource>
+    </ItemGroup>
   </Target>
 
   <ItemGroup>
