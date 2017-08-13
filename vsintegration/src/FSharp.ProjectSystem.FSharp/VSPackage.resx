@@ -275,6 +275,9 @@
   <data name="4016" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Resources\Data_Entity.ico;System.Drawing.Icon, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="4017" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>Resources\FSharpResources.ico;System.Drawing.Icon, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
   <data name="4100" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>Resources\ProjectNode.bmp;System.Drawing.Bitmap, System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
@@ -436,6 +439,12 @@
   </data>
   <data name="5052" xml:space="preserve">
     <value>A project for creating an F# library (.dll) that can run on .NET Framework 4.5, Windows Store, Windows Phone 8.1, Windows Phone Silverlight 8, Xamarin.iOS, Xamarin.Android and Xamarin.iOS(Classic).  Profile 259</value>
+  </data>
+  <data name="5053" xml:space="preserve">
+    <value>Resources File</value>
+  </data>
+  <data name="5054" xml:space="preserve">
+    <value>A file for storing resources</value>
   </data>
   <data name="6000" xml:space="preserve">
     <value>F# Tools</value>
