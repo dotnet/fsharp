@@ -24,9 +24,15 @@ $ErrorActionPreference = "Stop"
 
 try {
     $branchName = $branchName -Replace "refs/heads/" # get rid of prefix
+    $requestUrl = ""
 
     switch ($branchName) {
-        "microbuild" { }
+        "microbuild" {
+            $requestUrl = "https://dotnet.myget.org/F/fsharp/vsix/upload"
+        }
+        "microbuild-dev15-rtm" {
+            $requestUrl = "https://dotnet.myget.org/F/fsharp-preview/vsix/upload"
+        }
         default {
             Write-Host "Branch [$branchName] is not supported for publishing."
             exit 0 # non-fatal
@@ -34,7 +40,6 @@ try {
     }
 
     $branchName = $branchName.Replace("/", "_") # can't have slashes in the branch name
-    $requestUrl = "https://dotnet.myget.org/F/fsharp/vsix/upload"
     $vsix = Join-Path $binariesPath "net40\bin\VisualFSharpFull.vsix"
 
     Write-Host "  Uploading '$vsix' to '$requestUrl'."
