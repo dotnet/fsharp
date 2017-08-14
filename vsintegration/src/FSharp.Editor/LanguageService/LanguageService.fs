@@ -421,18 +421,19 @@ and
             let projectGuid = Guid(site.ProjectGuid)
             let projectFileName = site.ProjectFileName()
             let projectDisplayName = projectDisplayNameOf projectFileName
+
             let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
 
             if isNull (workspace.ProjectTracker.GetProject projectId) then
                 projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, projectId, site, workspace, userOpName)
                 let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
                 let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
-                
+
                 let hierarchy =
                     site.ProjectProvider
                     |> Option.map (fun p -> p :?> IVsHierarchy)
                     |> Option.toObj
-                
+
                 // Roslyn is expecting site to be an IVsHierarchy.
                 // It just so happens that the object that implements IProvideProjectSite is also
                 // an IVsHierarchy. This assertion is to ensure that the assumption holds true.
@@ -461,12 +462,7 @@ and
                     let referencedProjectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(referencedProjectFileName, referencedProjectDisplayName)
                     project.AddProjectReference(ProjectReference referencedProjectId)
 
-                if not (workspace.ProjectTracker.ContainsProject(project)) then 
-                    workspace.ProjectTracker.AddProject(project)
-
-                for referencedSite in referencedProjectSites do
-                    setup referencedSite                    
-
+            projectId
         setup (siteProvider.GetProjectSite()) |> ignore
 
     member this.SetupStandAloneFile(fileName: string, fileContents: string, workspace: VisualStudioWorkspaceImpl, hier: IVsHierarchy) =
