@@ -201,6 +201,41 @@ type MailboxProcessorType() =
             finishedEv.Reset() |> ignore
 
     [<Test>]
+    member this.``Receive Races with Post on timeout``() =
+        let receiveEv = new ManualResetEvent(false)
+        let postEv = new ManualResetEvent(false)
+        let finishedEv = new ManualResetEvent(false)
+        let mb =
+            MailboxProcessor.Start (
+                fun inbox -> async {
+                    while true do
+                        let w = receiveEv.WaitOne()
+                        receiveEv.Reset() |> ignore
+                        let! (msg) = inbox.Receive (5000)
+                        finishedEv.Set() |> ignore
+                })
+        let isErrored = mb.Error |> Async.AwaitEvent |> Async.StartAsTask
+        let post =
+            async {
+                while true do
+                    let r = postEv.WaitOne()
+                    postEv.Reset() |> ignore
+                    mb.Post(fun () -> ())
+            } |> Async.Start
+        for i in 0 .. 10000 do
+            if i % 2 = 0 then
+                receiveEv.Set() |> ignore
+                postEv.Set() |> ignore
+            else
+                postEv.Set() |> ignore
+                receiveEv.Set() |> ignore
+
+            while not (finishedEv.WaitOne(100)) do
+                if isErrored.IsCompleted then
+                    raise <| Exception("Mailbox should not fail!", isErrored.Result)
+            finishedEv.Reset() |> ignore
+
+    [<Test>]
     member this.Dispose() =
 
         // No unit test actually hit the Dispose method for the Mailbox...
