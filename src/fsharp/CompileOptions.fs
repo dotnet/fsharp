@@ -728,7 +728,7 @@ let codePageFlag (tcConfigB : TcConfigBuilder) =
 
 #if PREFERRED_UI_LANG
 let preferredUiLang (tcConfigB: TcConfigBuilder) = 
-        CompilerOption("preferreduilang", tagString, OptionString (fun s -> tcConfigB.preferredUiLang <- Some(s)), None, Some(FSComp.SR.optsStrongKeyContainer()))
+        CompilerOption("preferreduilang", tagString, OptionString (fun s -> tcConfigB.preferredUiLang <- Some(s)), None, Some(FSComp.SR.optsPreferredUiLang()))
 #endif
 
 let utf8OutputFlag (tcConfigB: TcConfigBuilder) = 

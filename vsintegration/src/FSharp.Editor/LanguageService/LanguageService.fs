@@ -454,7 +454,7 @@ and
                                                 optionsAssociation.Remove(projectContext) |> ignore
                                                 project.Disconnect()))
                 for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
-                    let referencedProjectId = setup referencedSite                    
+                    let referencedProjectId = setup referencedSite
                     project.AddProjectReference(ProjectReference referencedProjectId)
 
             projectId

@@ -3933,6 +3933,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             var dict = new Dictionary<Microsoft.Build.Construction.ProjectItemElement, Microsoft.Build.Evaluation.ProjectItem>();
             foreach (var item in MSBuildProject.GetStaticAndVisibleItemsInOrder(this.buildProject))
             {
+                // File with "Content" or "None" build action is not compiled, so it's safe to use wildcard
+                if (item.ItemType == "Content" || item.ItemType == "None") continue;
+
                 Microsoft.Build.Evaluation.ProjectItem previousItem;
                 var key = item.Xml;
                 if (dict.TryGetValue(key, out previousItem))
