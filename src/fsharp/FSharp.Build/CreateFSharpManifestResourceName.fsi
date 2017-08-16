@@ -6,3 +6,4 @@ namespace Microsoft.FSharp.Build
 type CreateFSharpManifestResourceName =
     inherit Microsoft.Build.Tasks.CreateCSharpManifestResourceName
     public new : unit -> CreateFSharpManifestResourceName
+    member UseStandardResourceNames : bool with get,set

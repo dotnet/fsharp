@@ -1012,7 +1012,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
                 let stripEndingSemicolon (sb : StringBuilder) =
                     let len = sb.Length
-                    if sb.[len - 1] = ';' then sb.Remove(len - 1, 1) |> ignore
+                    if len > 0 && sb.[len - 1] = ';' then sb.Remove(len - 1, 1) |> ignore
                     ()
 
                 let targetFrameworkMoniker = this.GetTargetFrameworkMoniker()

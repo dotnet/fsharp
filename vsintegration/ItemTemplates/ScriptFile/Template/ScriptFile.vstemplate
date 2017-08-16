@@ -6,7 +6,6 @@
     <Icon Package="{91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C}" ID="4006" />
     <TemplateID>Microsoft.FSharp.ScriptFile</TemplateID>
     <ProjectType>FSharp</ProjectType>
-    <RequiredFrameworkVersion>2.0</RequiredFrameworkVersion>
     <SortOrder>30</SortOrder>
     <NumberOfParentCategoriesToRollUp>1</NumberOfParentCategoriesToRollUp>
     <DefaultName>Script.fsx</DefaultName>

@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.16774
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:1:0
 }
 .assembly CodeGenRenamings01
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.CodeGenRenamings01
 {
-  // Offset: 0x00000000 Length: 0x000003F0
+  // Offset: 0x00000000 Length: 0x000003CC
 }
 .mresource public FSharpOptimizationData.CodeGenRenamings01
 {
-  // Offset: 0x000003F8 Length: 0x0000011B
+  // Offset: 0x000003D0 Length: 0x0000011B
 }
 .module CodeGenRenamings01.exe
-// MVID: {4DAC0DCC-8173-986B-A745-0383CC0DAC4D}
+// MVID: {59563B16-8173-986B-A745-0383163B5659}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000000000180000
+// Image base: 0x00B60000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -86,7 +86,7 @@
       // Code size       103 (0x67)
       .maxstack  7
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\CodeGenRenamings01.fs'
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 CodeGenRenamings01/seq1@9::pc
       IL_0006:  ldc.i4.1
@@ -103,28 +103,28 @@
 
       IL_001f:  br.s       IL_0027
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_0021:  nop
       IL_0022:  br.s       IL_0041
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_0024:  nop
       IL_0025:  br.s       IL_0057
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_0027:  nop
       IL_0028:  br.s       IL_005e
 
-      .line 100001,100001 : 0,0 
-      .line 100001,100001 : 0,0 
+      .line 100001,100001 : 0,0 ''
+      .line 100001,100001 : 0,0 ''
       IL_002a:  nop
       IL_002b:  ldarg.0
       IL_002c:  ldc.i4.1
       IL_002d:  stfld      int32 CodeGenRenamings01/seq1@9::pc
-      .line 9,9 : 18,30 
+      .line 9,9 : 18,30 ''
       IL_0032:  ldarg.0
       IL_0033:  ldc.i4.1
       IL_0034:  ldc.i4.1
@@ -137,7 +137,7 @@
       IL_0041:  ldarg.0
       IL_0042:  ldc.i4.2
       IL_0043:  stfld      int32 CodeGenRenamings01/seq1@9::pc
-      .line 9,9 : 32,44 
+      .line 9,9 : 32,44 ''
       IL_0048:  ldarg.0
       IL_0049:  ldc.i4.2
       IL_004a:  ldc.i4.2
@@ -438,7 +438,7 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       710 (0x2c6)
+    // Code size       568 (0x238)
     .maxstack  12
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> alist,
              [1] int32[] 'array',
@@ -453,25 +453,11 @@
              [10] int32[] a2,
              [11] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> V_11,
              [12] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> V_12,
-             [13] int32 V_13,
-             [14] int32 V_14,
-             [15] int32 V_15,
-             [16] int32 V_16,
-             [17] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> V_17,
-             [18] class [mscorlib]System.Tuple`3<int32,int32,int32> V_18,
-             [19] class [mscorlib]System.Tuple`3<int32,int32,int32> V_19,
-             [20] int32 V_20,
-             [21] int32 V_21,
-             [22] int32 V_22,
-             [23] class [mscorlib]System.Tuple`3<int32,int32,int32> V_23,
-             [24] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> V_24,
-             [25] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> V_25,
-             [26] int32 V_26,
-             [27] int32 V_27,
-             [28] int32 V_28,
-             [29] int32 V_29,
-             [30] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> V_30)
-    .line 5,5 : 1,24 
+             [13] class [mscorlib]System.Tuple`3<int32,int32,int32> V_13,
+             [14] class [mscorlib]System.Tuple`3<int32,int32,int32> V_14,
+             [15] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> V_15,
+             [16] class [mscorlib]System.Tuple`4<int32,int32,int32,int32> V_16)
+    .line 5,5 : 1,24 ''
     IL_0000:  nop
     IL_0001:  ldc.i4.1
     IL_0002:  ldc.i4.1
@@ -484,7 +470,7 @@
     IL_0014:  dup
     IL_0015:  stsfld     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> '<StartupCode$CodeGenRenamings01>'.$CodeGenRenamings01::alist@5
     IL_001a:  stloc.0
-    .line 6,6 : 1,26 
+    .line 6,6 : 1,26 ''
     IL_001b:  ldc.i4.3
     IL_001c:  newarr     [mscorlib]System.Int32
     IL_0021:  dup
@@ -502,7 +488,7 @@
     IL_0039:  dup
     IL_003a:  stsfld     int32[] '<StartupCode$CodeGenRenamings01>'.$CodeGenRenamings01::array@6
     IL_003f:  stloc.1
-    .line 7,7 : 1,27 
+    .line 7,7 : 1,27 ''
     IL_0040:  ldc.i4.1
     IL_0041:  ldc.i4.1
     IL_0042:  ldc.i4.s   10
@@ -513,7 +499,7 @@
     IL_004e:  dup
     IL_004f:  stsfld     class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> '<StartupCode$CodeGenRenamings01>'.$CodeGenRenamings01::aseq@7
     IL_0054:  stloc.2
-    .line 8,8 : 1,27 
+    .line 8,8 : 1,27 ''
     IL_0055:  ldc.i4.1
     IL_0056:  ldc.i4.1
     IL_0057:  newobj     instance void class [mscorlib]System.Tuple`2<int32,int32>::.ctor(!0,
@@ -537,7 +523,7 @@
     IL_0080:  dup
     IL_0081:  stsfld     class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,int32>> '<StartupCode$CodeGenRenamings01>'.$CodeGenRenamings01::seq1@9
     IL_0086:  stloc.s    seq1
-    .line 10,10 : 1,34 
+    .line 10,10 : 1,34 ''
     IL_0088:  ldc.i4.2
     IL_0089:  newarr     class [mscorlib]System.Tuple`2<int32,int32>
     IL_008e:  dup
@@ -557,7 +543,7 @@
     IL_00aa:  dup
     IL_00ab:  stsfld     class [mscorlib]System.Tuple`2<int32,int32>[] '<StartupCode$CodeGenRenamings01>'.$CodeGenRenamings01::array1@10
     IL_00b0:  stloc.s    array1
-    .line 11,11 : 1,30 
+    .line 11,11 : 1,30 ''
     IL_00b2:  ldc.i4.2
     IL_00b3:  ldc.i4.2
     IL_00b4:  ldc.i4.0
@@ -567,7 +553,7 @@
     IL_00ba:  dup
     IL_00bb:  stsfld     int32[0...,0...] '<StartupCode$CodeGenRenamings01>'.$CodeGenRenamings01::a3@11
     IL_00c0:  stloc.s    a3
-    .line 12,12 : 1,37 
+    .line 12,12 : 1,37 ''
     IL_00c2:  ldc.i4.3
     IL_00c3:  ldc.i4.3
     IL_00c4:  ldc.i4.3
@@ -579,7 +565,7 @@
     IL_00cb:  dup
     IL_00cc:  stsfld     int32[0...,0...,0...] '<StartupCode$CodeGenRenamings01>'.$CodeGenRenamings01::array3D@12
     IL_00d1:  stloc.s    array3D
-    .line 13,13 : 1,39 
+    .line 13,13 : 1,39 ''
     IL_00d3:  ldc.i4.4
     IL_00d4:  ldc.i4.4
     IL_00d5:  ldc.i4.4
@@ -593,39 +579,39 @@
     IL_00dd:  dup
     IL_00de:  stsfld     int32[0...,0...,0...,0...] '<StartupCode$CodeGenRenamings01>'.$CodeGenRenamings01::array4D@13
     IL_00e3:  stloc.s    array4D
-    .line 16,16 : 9,27 
+    .line 16,16 : 9,27 ''
     IL_00e5:  call       int32[] CodeGenRenamings01::get_array()
     IL_00ea:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::OfArray<int32>(!!0[])
     IL_00ef:  pop
-    .line 17,17 : 9,24 
+    .line 17,17 : 9,24 ''
     IL_00f0:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> CodeGenRenamings01::get_aseq()
     IL_00f5:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0> [FSharp.Core]Microsoft.FSharp.Collections.ListModule::OfSeq<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_00fa:  pop
-    .line 20,20 : 9,27 
+    .line 20,20 : 9,27 ''
     IL_00fb:  call       class [mscorlib]System.Tuple`2<int32,int32>[] CodeGenRenamings01::get_array1()
     IL_0100:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Collections.MapModule::OfArray<int32,int32>(class [mscorlib]System.Tuple`2<!!0,!!1>[])
     IL_0105:  pop
-    .line 21,21 : 9,25 
+    .line 21,21 : 9,25 ''
     IL_0106:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`2<int32,int32>> CodeGenRenamings01::get_list1()
     IL_010b:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Collections.MapModule::OfList<int32,int32>(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<class [mscorlib]System.Tuple`2<!!0,!!1>>)
     IL_0110:  pop
-    .line 22,22 : 9,23 
+    .line 22,22 : 9,23 ''
     IL_0111:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<int32,int32>> CodeGenRenamings01::get_seq1()
     IL_0116:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpMap`2<!!0,!!1> [FSharp.Core]Microsoft.FSharp.Collections.MapModule::OfSeq<int32,int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<class [mscorlib]System.Tuple`2<!!0,!!1>>)
     IL_011b:  pop
-    .line 25,25 : 1,28 
+    .line 25,25 : 1,28 ''
     IL_011c:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32> CodeGenRenamings01::get_alist()
     IL_0121:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::OfList<int32>(class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!0>)
     IL_0126:  dup
     IL_0127:  stsfld     int32[] '<StartupCode$CodeGenRenamings01>'.$CodeGenRenamings01::a1@25
     IL_012c:  stloc.s    a1
-    .line 26,26 : 1,27 
+    .line 26,26 : 1,27 ''
     IL_012e:  call       class [mscorlib]System.Collections.Generic.IEnumerable`1<int32> CodeGenRenamings01::get_aseq()
     IL_0133:  call       !!0[] [FSharp.Core]Microsoft.FSharp.Collections.ArrayModule::OfSeq<int32>(class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
     IL_0138:  dup
     IL_0139:  stsfld     int32[] '<StartupCode$CodeGenRenamings01>'.$CodeGenRenamings01::a2@26
     IL_013e:  stloc.s    a2
-    .line 27,27 : 1,33 
+    .line 27,27 : 1,33 ''
     IL_0140:  call       int32[] CodeGenRenamings01::get_a2()
     IL_0145:  ldc.i4.0
     IL_0146:  call       int32[] CodeGenRenamings01::get_a1()
@@ -636,7 +622,7 @@
                                                                                                 int32,
                                                                                                 !!0)
     IL_0156:  nop
-    .line 30,30 : 1,87 
+    .line 30,30 : 1,87 ''
     IL_0157:  call       int32[0...,0...] CodeGenRenamings01::get_a3()
     IL_015c:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array2DModule::Length1<int32>(!!0[0...,0...])
     IL_0161:  call       int32[0...,0...] CodeGenRenamings01::get_a3()
@@ -652,151 +638,93 @@
     IL_0184:  stloc.s    V_11
     IL_0186:  ldloc.s    V_11
     IL_0188:  stloc.s    V_12
-    IL_018a:  ldloc.s    V_12
-    IL_018c:  call       instance !0 class [mscorlib]System.Tuple`4<int32,int32,int32,int32>::get_Item1()
-    IL_0191:  stloc.s    V_13
-    IL_0193:  ldloc.s    V_12
-    IL_0195:  call       instance !1 class [mscorlib]System.Tuple`4<int32,int32,int32,int32>::get_Item2()
-    IL_019a:  stloc.s    V_14
-    IL_019c:  ldloc.s    V_12
-    IL_019e:  call       instance !2 class [mscorlib]System.Tuple`4<int32,int32,int32,int32>::get_Item3()
-    IL_01a3:  stloc.s    V_15
-    IL_01a5:  ldloc.s    V_12
-    IL_01a7:  call       instance !3 class [mscorlib]System.Tuple`4<int32,int32,int32,int32>::get_Item4()
-    IL_01ac:  stloc.s    V_16
-    IL_01ae:  ldloc.s    V_13
-    IL_01b0:  ldloc.s    V_14
-    IL_01b2:  ldloc.s    V_15
-    IL_01b4:  ldloc.s    V_16
-    IL_01b6:  newobj     instance void class [mscorlib]System.Tuple`4<int32,int32,int32,int32>::.ctor(!0,
-                                                                                                      !1,
-                                                                                                      !2,
-                                                                                                      !3)
-    IL_01bb:  stloc.s    V_17
-    .line 31,31 : 1,41 
-    IL_01bd:  call       int32[0...,0...] CodeGenRenamings01::get_a3()
-    IL_01c2:  ldc.i4.0
-    IL_01c3:  ldc.i4.0
-    IL_01c4:  call       int32[0...,0...] CodeGenRenamings01::get_a3()
-    IL_01c9:  ldc.i4.0
-    IL_01ca:  ldc.i4.0
-    IL_01cb:  call       !!0 [FSharp.Core]Microsoft.FSharp.Collections.Array2DModule::Get<int32>(!!0[0...,0...],
+    .line 31,31 : 1,41 ''
+    IL_018a:  call       int32[0...,0...] CodeGenRenamings01::get_a3()
+    IL_018f:  ldc.i4.0
+    IL_0190:  ldc.i4.0
+    IL_0191:  call       int32[0...,0...] CodeGenRenamings01::get_a3()
+    IL_0196:  ldc.i4.0
+    IL_0197:  ldc.i4.0
+    IL_0198:  call       !!0 [FSharp.Core]Microsoft.FSharp.Collections.Array2DModule::Get<int32>(!!0[0...,0...],
                                                                                                  int32,
                                                                                                  int32)
-    IL_01d0:  call       void [FSharp.Core]Microsoft.FSharp.Collections.Array2DModule::Set<int32>(!!0[0...,0...],
+    IL_019d:  call       void [FSharp.Core]Microsoft.FSharp.Collections.Array2DModule::Set<int32>(!!0[0...,0...],
                                                                                                   int32,
                                                                                                   int32,
                                                                                                   !!0)
-    IL_01d5:  nop
-    .line 34,34 : 1,86 
-    IL_01d6:  call       int32[0...,0...,0...] CodeGenRenamings01::get_array3D()
-    IL_01db:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array3DModule::Length1<int32>(!!0[0...,0...,0...])
-    IL_01e0:  call       int32[0...,0...,0...] CodeGenRenamings01::get_array3D()
-    IL_01e5:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array3DModule::Length2<int32>(!!0[0...,0...,0...])
-    IL_01ea:  call       int32[0...,0...,0...] CodeGenRenamings01::get_array3D()
-    IL_01ef:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array3DModule::Length3<int32>(!!0[0...,0...,0...])
-    IL_01f4:  newobj     instance void class [mscorlib]System.Tuple`3<int32,int32,int32>::.ctor(!0,
+    IL_01a2:  nop
+    .line 34,34 : 1,86 ''
+    IL_01a3:  call       int32[0...,0...,0...] CodeGenRenamings01::get_array3D()
+    IL_01a8:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array3DModule::Length1<int32>(!!0[0...,0...,0...])
+    IL_01ad:  call       int32[0...,0...,0...] CodeGenRenamings01::get_array3D()
+    IL_01b2:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array3DModule::Length2<int32>(!!0[0...,0...,0...])
+    IL_01b7:  call       int32[0...,0...,0...] CodeGenRenamings01::get_array3D()
+    IL_01bc:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array3DModule::Length3<int32>(!!0[0...,0...,0...])
+    IL_01c1:  newobj     instance void class [mscorlib]System.Tuple`3<int32,int32,int32>::.ctor(!0,
                                                                                                 !1,
                                                                                                 !2)
-    IL_01f9:  stloc.s    V_18
-    IL_01fb:  ldloc.s    V_18
-    IL_01fd:  stloc.s    V_19
-    IL_01ff:  ldloc.s    V_19
-    IL_0201:  call       instance !0 class [mscorlib]System.Tuple`3<int32,int32,int32>::get_Item1()
-    IL_0206:  stloc.s    V_20
-    IL_0208:  ldloc.s    V_19
-    IL_020a:  call       instance !1 class [mscorlib]System.Tuple`3<int32,int32,int32>::get_Item2()
-    IL_020f:  stloc.s    V_21
-    IL_0211:  ldloc.s    V_19
-    IL_0213:  call       instance !2 class [mscorlib]System.Tuple`3<int32,int32,int32>::get_Item3()
-    IL_0218:  stloc.s    V_22
-    IL_021a:  ldloc.s    V_20
-    IL_021c:  ldloc.s    V_21
-    IL_021e:  ldloc.s    V_22
-    IL_0220:  newobj     instance void class [mscorlib]System.Tuple`3<int32,int32,int32>::.ctor(!0,
-                                                                                                !1,
-                                                                                                !2)
-    IL_0225:  stloc.s    V_23
-    .line 35,35 : 1,55 
-    IL_0227:  call       int32[0...,0...,0...] CodeGenRenamings01::get_array3D()
-    IL_022c:  ldc.i4.0
-    IL_022d:  ldc.i4.0
-    IL_022e:  ldc.i4.0
-    IL_022f:  call       int32[0...,0...,0...] CodeGenRenamings01::get_array3D()
-    IL_0234:  ldc.i4.0
-    IL_0235:  ldc.i4.0
-    IL_0236:  ldc.i4.0
-    IL_0237:  call       !!0 [FSharp.Core]Microsoft.FSharp.Collections.Array3DModule::Get<int32>(!!0[0...,0...,0...],
+    IL_01c6:  stloc.s    V_13
+    IL_01c8:  ldloc.s    V_13
+    IL_01ca:  stloc.s    V_14
+    .line 35,35 : 1,55 ''
+    IL_01cc:  call       int32[0...,0...,0...] CodeGenRenamings01::get_array3D()
+    IL_01d1:  ldc.i4.0
+    IL_01d2:  ldc.i4.0
+    IL_01d3:  ldc.i4.0
+    IL_01d4:  call       int32[0...,0...,0...] CodeGenRenamings01::get_array3D()
+    IL_01d9:  ldc.i4.0
+    IL_01da:  ldc.i4.0
+    IL_01db:  ldc.i4.0
+    IL_01dc:  call       !!0 [FSharp.Core]Microsoft.FSharp.Collections.Array3DModule::Get<int32>(!!0[0...,0...,0...],
                                                                                                  int32,
                                                                                                  int32,
                                                                                                  int32)
-    IL_023c:  call       void [FSharp.Core]Microsoft.FSharp.Collections.Array3DModule::Set<int32>(!!0[0...,0...,0...],
+    IL_01e1:  call       void [FSharp.Core]Microsoft.FSharp.Collections.Array3DModule::Set<int32>(!!0[0...,0...,0...],
                                                                                                   int32,
                                                                                                   int32,
                                                                                                   int32,
                                                                                                   !!0)
-    IL_0241:  nop
-    .line 38,38 : 1,111 
-    IL_0242:  call       int32[0...,0...,0...,0...] CodeGenRenamings01::get_array4D()
-    IL_0247:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Length1<int32>(!!0[0...,0...,0...,0...])
-    IL_024c:  call       int32[0...,0...,0...,0...] CodeGenRenamings01::get_array4D()
-    IL_0251:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Length2<int32>(!!0[0...,0...,0...,0...])
-    IL_0256:  call       int32[0...,0...,0...,0...] CodeGenRenamings01::get_array4D()
-    IL_025b:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Length3<int32>(!!0[0...,0...,0...,0...])
-    IL_0260:  call       int32[0...,0...,0...,0...] CodeGenRenamings01::get_array4D()
-    IL_0265:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Length4<int32>(!!0[0...,0...,0...,0...])
-    IL_026a:  newobj     instance void class [mscorlib]System.Tuple`4<int32,int32,int32,int32>::.ctor(!0,
+    IL_01e6:  nop
+    .line 38,38 : 1,111 ''
+    IL_01e7:  call       int32[0...,0...,0...,0...] CodeGenRenamings01::get_array4D()
+    IL_01ec:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Length1<int32>(!!0[0...,0...,0...,0...])
+    IL_01f1:  call       int32[0...,0...,0...,0...] CodeGenRenamings01::get_array4D()
+    IL_01f6:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Length2<int32>(!!0[0...,0...,0...,0...])
+    IL_01fb:  call       int32[0...,0...,0...,0...] CodeGenRenamings01::get_array4D()
+    IL_0200:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Length3<int32>(!!0[0...,0...,0...,0...])
+    IL_0205:  call       int32[0...,0...,0...,0...] CodeGenRenamings01::get_array4D()
+    IL_020a:  call       int32 [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Length4<int32>(!!0[0...,0...,0...,0...])
+    IL_020f:  newobj     instance void class [mscorlib]System.Tuple`4<int32,int32,int32,int32>::.ctor(!0,
                                                                                                       !1,
                                                                                                       !2,
                                                                                                       !3)
-    IL_026f:  stloc.s    V_24
-    IL_0271:  ldloc.s    V_24
-    IL_0273:  stloc.s    V_25
-    IL_0275:  ldloc.s    V_25
-    IL_0277:  call       instance !0 class [mscorlib]System.Tuple`4<int32,int32,int32,int32>::get_Item1()
-    IL_027c:  stloc.s    V_26
-    IL_027e:  ldloc.s    V_25
-    IL_0280:  call       instance !1 class [mscorlib]System.Tuple`4<int32,int32,int32,int32>::get_Item2()
-    IL_0285:  stloc.s    V_27
-    IL_0287:  ldloc.s    V_25
-    IL_0289:  call       instance !2 class [mscorlib]System.Tuple`4<int32,int32,int32,int32>::get_Item3()
-    IL_028e:  stloc.s    V_28
-    IL_0290:  ldloc.s    V_25
-    IL_0292:  call       instance !3 class [mscorlib]System.Tuple`4<int32,int32,int32,int32>::get_Item4()
-    IL_0297:  stloc.s    V_29
-    IL_0299:  ldloc.s    V_26
-    IL_029b:  ldloc.s    V_27
-    IL_029d:  ldloc.s    V_28
-    IL_029f:  ldloc.s    V_29
-    IL_02a1:  newobj     instance void class [mscorlib]System.Tuple`4<int32,int32,int32,int32>::.ctor(!0,
-                                                                                                      !1,
-                                                                                                      !2,
-                                                                                                      !3)
-    IL_02a6:  stloc.s    V_30
-    .line 39,39 : 1,59 
-    IL_02a8:  call       int32[0...,0...,0...,0...] CodeGenRenamings01::get_array4D()
-    IL_02ad:  ldc.i4.0
-    IL_02ae:  ldc.i4.0
-    IL_02af:  ldc.i4.0
-    IL_02b0:  ldc.i4.0
-    IL_02b1:  call       int32[0...,0...,0...,0...] CodeGenRenamings01::get_array4D()
-    IL_02b6:  ldc.i4.0
-    IL_02b7:  ldc.i4.0
-    IL_02b8:  ldc.i4.0
-    IL_02b9:  ldc.i4.0
-    IL_02ba:  call       !!0 [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Get<int32>(!!0[0...,0...,0...,0...],
+    IL_0214:  stloc.s    V_15
+    IL_0216:  ldloc.s    V_15
+    IL_0218:  stloc.s    V_16
+    .line 39,39 : 1,59 ''
+    IL_021a:  call       int32[0...,0...,0...,0...] CodeGenRenamings01::get_array4D()
+    IL_021f:  ldc.i4.0
+    IL_0220:  ldc.i4.0
+    IL_0221:  ldc.i4.0
+    IL_0222:  ldc.i4.0
+    IL_0223:  call       int32[0...,0...,0...,0...] CodeGenRenamings01::get_array4D()
+    IL_0228:  ldc.i4.0
+    IL_0229:  ldc.i4.0
+    IL_022a:  ldc.i4.0
+    IL_022b:  ldc.i4.0
+    IL_022c:  call       !!0 [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Get<int32>(!!0[0...,0...,0...,0...],
                                                                                                  int32,
                                                                                                  int32,
                                                                                                  int32,
                                                                                                  int32)
-    IL_02bf:  call       void [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Set<int32>(!!0[0...,0...,0...,0...],
+    IL_0231:  call       void [FSharp.Core]Microsoft.FSharp.Collections.Array4DModule::Set<int32>(!!0[0...,0...,0...,0...],
                                                                                                   int32,
                                                                                                   int32,
                                                                                                   int32,
                                                                                                   int32,
                                                                                                   !!0)
-    IL_02c4:  nop
-    IL_02c5:  ret
+    IL_0236:  nop
+    IL_0237:  ret
   } // end of method $CodeGenRenamings01::main@
 
 } // end of class '<StartupCode$CodeGenRenamings01>'.$CodeGenRenamings01

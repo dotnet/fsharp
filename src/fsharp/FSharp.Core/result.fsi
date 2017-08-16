@@ -15,9 +15,9 @@ namespace Microsoft.FSharp.Core
         val map : mapping:('T -> 'U) -> result:Result<'T, 'TError> -> Result<'U, 'TError>
 
         /// <summary><c>map f inp</c> evaluates to <c>match inp with Error x -> Error (f x) | Ok v -> Ok v</c>.</summary>
-        /// <param name="mapping">A function to apply to the OK result value.</param>
+        /// <param name="mapping">A function to apply to the Error result value.</param>
         /// <param name="result">The input result.</param>
-        /// <returns>A result of the input value after applying the mapping function, or Error if the input is Error.</returns>
+        /// <returns>A result of the error value after applying the mapping function, or Ok if the input is Ok.</returns>
         [<CompiledName("MapError")>]
         val mapError: mapping:('TError -> 'U) -> result:Result<'T, 'TError> -> Result<'T, 'U>
 

@@ -51,6 +51,8 @@ Usage: fsharpi <options> [script.fsx [<arguments>]]
 		- ADVANCED -
 --codepage:<n>                           Specify the codepage used to read source files
 --utf8output                             Output messages in UTF-8 encoding
+--preferreduilang:<string>               Specify the preferred output language culture
+                                         name (e.g. es-ES, ja-JP)
 --fullpaths                              Output messages with fully qualified paths
 --lib:<dir;...>                          Specify a directory for the include path which
                                          is used to resolve source files and assemblies

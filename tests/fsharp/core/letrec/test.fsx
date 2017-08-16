@@ -625,6 +625,23 @@ module BasicPermutations =
           // to the base implementations of overridden members <file> <line>
           override x.Foo a = base.Foo(a)
 
+module Test2 = 
+    let tag = 
+        let mutable i = 0
+        fun _ -> i <- i+1; i // this should _not_ generalize, see https://github.com/Microsoft/visualfsharp/issues/3358
+
+    test "vwekjwve91" (tag()) 1
+    test "vwekjwve92" (tag()) 2
+    test "vwekjwve93" (tag()) 3
+
+module Test3 = 
+    let rec tag = 
+        let mutable i = 0
+        fun _ -> i <- i+1; i // this should _not_ generalize, see https://github.com/Microsoft/visualfsharp/issues/3358
+
+    test "vwekjwve94" (tag()) 1
+    test "vwekjwve95" (tag()) 2
+    test "vwekjwve96" (tag()) 3
 
 #if TESTS_AS_APP
 let RUN() = !failures

@@ -977,7 +977,7 @@ module Pass4_RewriteAssembly =
 
     let ConvertBind g (TBind(v,repr,_) as bind)  =
         match v.ValReprInfo with 
-        | None -> v.SetValReprInfo (Some (InferArityOfExprBinding g v repr ))
+        | None -> v.SetValReprInfo (Some (InferArityOfExprBinding g AllowTypeDirectedDetupling.Yes v repr ))
         | Some _ -> ()
         
         bind

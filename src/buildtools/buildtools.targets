@@ -1,0 +1,69 @@
+<!--
+***********************************************************************************************
+FsLexYacc.targets
+
+WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and have
+		  created a backup copy.  Incorrect changes to this file will make it
+		  impossible to load or build your projects from the command-line or the IDE.
+
+PowerPack build rules.
+
+Copyright (C) Microsoft Corporation. All rights reserved.
+***********************************************************************************************
+-->
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<PropertyGroup>
+		<CompileDependsOn>CallFsLex;CallFsYacc;$(CompileDependsOn)</CompileDependsOn>
+		<FsLexToolPath Condition="'$(FsLexToolPath)' == ''">$(MSBuildThisFileDirectory)</FsLexToolPath>
+		<FsLexToolExe Condition="'$(FsLexToolExe)' == ''">fslex.exe</FsLexToolExe>
+		<FsYaccToolPath Condition="'$(FsYaccToolPath)' == ''">$(MSBuildThisFileDirectory)</FsYaccToolPath>
+		<FsYaccToolExe Condition="'$(FsYaccToolExe)' == ''">fsyacc.exe</FsYaccToolExe>
+	</PropertyGroup>
+
+	<!-- Build FsLex files. -->
+	<Target
+		Name="CallFsLex"
+		Inputs="@(FsLex)"
+		Outputs="@(FsLex->'$(FsLexOutputFolder)%(Filename).fs')"
+		Condition="'@(FsLex)'!=''">
+
+		<!-- Create the output directory -->
+		<MakeDir Directories="$(FsLexOutputFolder)"/>
+		<!-- Call FsLex -->
+		<Exec Command="&quot;$(FsLexToolPath)\$(FsLexToolExe)&quot;  -o &quot;$(FsLexOutputFolder)%(FsLex.Filename).fs&quot; %(FsLex.OtherFlags) %(FsLex.Identity)" Condition="'$(OS)' != 'Unix'" />
+		<Exec Command="mono &quot;$(FsLexToolPath)\$(FsLexToolExe)&quot;  -o &quot;$(FsLexOutputFolder)%(FsLex.Filename).fs&quot; %(FsLex.OtherFlags) %(FsLex.Identity)" Condition="'$(OS)' == 'Unix'" />
+		<!-- Make sure it will get cleaned  -->
+		<CreateItem Include="$(FsLexOutputFolder)%(FsLex.Filename).fs">
+			<Output TaskParameter="Include" ItemName="FileWrites"/>
+		</CreateItem>
+	</Target>
+
+	<!-- Build FsYacc files. -->
+	<Target
+		Name="CallFsYacc"
+		Inputs="@(FsYacc)"
+		Outputs="@(FsYacc->'$(FsYaccOutputFolder)%(Filename).fs')"
+		Condition="'@(FsYacc)'!=''">
+
+		<!-- Create the output directory -->
+		<MakeDir Directories="$(FsYaccOutputFolder)"/>
+		<Exec Command="&quot;$(FsYaccToolPath)\$(FsYaccToolExe)&quot;  -o &quot;$(FsYaccOutputFolder)%(FsYacc.Filename).fs&quot; %(FsYacc.OtherFlags) %(FsYacc.Identity)" Condition="'$(OS)' != 'Unix'" />
+		<Exec Command="mono &quot;$(FsYaccToolPath)\$(FsYaccToolExe)&quot;  -o &quot;$(FsYaccOutputFolder)%(FsYacc.Filename).fs&quot; %(FsYacc.OtherFlags) %(FsYacc.Identity)" Condition="'$(OS)' == 'Unix'" />
+
+		<!-- Make sure it will get cleaned  -->
+		<CreateItem Include="$(FsYaccOutputFolder)%(FsYacc.Filename).fs">
+			<Output TaskParameter="Include" ItemName="FileWrites"/>
+		</CreateItem>
+	</Target>
+	<ItemGroup>
+		<AvailableItemName Include="FsLex">
+			<Visible>false</Visible>
+		</AvailableItemName>
+		<AvailableItemName Include="FsYacc">
+			<Visible>false</Visible>
+		</AvailableItemName>
+	</ItemGroup>
+</Project>
+
+

@@ -143,8 +143,8 @@ To test your changes locally _without_ overwriting your default installed Visual
 project as the startup project.  When you hit F5 a new instance of Visual Studio will be started in the `RoslynDev` hive with your
 changes, but the root (default) hive will remain untouched. You can also start this hive automatically using
 
-    devenv.exe /rootsuffix:RoslynDev
-    
+    devenv.exe /rootsuffix RoslynDev
+
 Because this uses the "RoslynDev" hive you can simultaneously test changes to an appropriate build of Roslyn binaries.
 
 
