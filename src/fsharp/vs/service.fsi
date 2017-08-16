@@ -37,8 +37,8 @@ type FSharpFindDeclFailureReason =
 type internal FSharpFindDeclFailureReason = 
 #endif
 
-    /// Generic reason: no particular information about error
-    | Unknown
+    /// Generic reason: no particular information about error apart from a message
+    | Unknown of message: string
 
     /// Source code file is not available
     | NoSourceCode

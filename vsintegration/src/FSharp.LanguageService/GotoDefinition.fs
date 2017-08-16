@@ -73,7 +73,7 @@ module internal GotoDefinition =
                           Trace.Write("LanguageService", sprintf "Goto definition failed: Reason %+A" reason)
                           let text = 
                               match reason with                    
-                              | FSharpFindDeclFailureReason.Unknown -> Strings.Errors.GotoDefinitionFailed()
+                              | FSharpFindDeclFailureReason.Unknown _message -> Strings.Errors.GotoDefinitionFailed()
                               | FSharpFindDeclFailureReason.NoSourceCode -> Strings.Errors.GotoDefinitionFailed_NoSourceCode()
                               | FSharpFindDeclFailureReason.ProvidedType(typeName) -> Strings.Errors.GotoDefinitionFailed_ProvidedType(typeName)
                               | FSharpFindDeclFailureReason.ProvidedMember(name) -> Strings.Errors.GotoFailed_ProvidedMember(name)
