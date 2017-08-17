@@ -15,7 +15,23 @@
 "Culture"="neutral"
 "codeBase"="$PackageFolder$\FSharp.Core.dll"
 
-[$RootKey$\Editors\{8a5aa6cf-46e3-4520-a70a-7393d15233e9}\LogicalViews]
+[$RootKey$\Editors\{4EB7CCB7-4336-4FFD-B12B-396E9FD079A9}\Extensions]
+"fs"=dword:00000028
+"fsx"=dword:00000028
+"fsscript"=dword:00000028
+"fsi"=dword:00000028
+"ml"=dword:00000028
+"mli"=dword:00000028
+
+$RootKey$\Editors\{4EB7CCB7-4336-4FFD-B12B-396E9FD079A9}]
+"CommonPhysicalViewAttributes"=dword:00000002
+"DisplayName"="Visual F#"
+"EditorTrustLevel"=dword:00000002
+"ExcludeDefTextEditor"=dword:00000001
+"Package"="{91A04A73-4F2C-4E7C-AD38-C1A68E7DA05C}"
+@="Microsoft FSharp Editor Factory"
+
+[$RootKey$\Editors\{4EB7CCB7-4336-4FFD-B12B-396E9FD079A9}\LogicalViews]
 "{7651a700-06e5-11d1-8ebd-00a0c90f26ea}"=""
 "{7651a701-06e5-11d1-8ebd-00a0c90f26ea}"=""
 "{7651a703-06e5-11d1-8ebd-00a0c90f26ea}"=""
