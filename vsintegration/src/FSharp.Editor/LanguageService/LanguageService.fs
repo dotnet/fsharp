@@ -77,12 +77,20 @@ type internal FSharpCheckerProvider
 
     member this.Checker = checker.Value
 
+
+
 /// A value and a function to recompute/refresh the value.  The function is passed a flag indicating if a refresh is happening.
 type Refreshable<'T> = 'T * (bool -> 'T)
 
-// Exposes project information as MEF component
-[<Export(typeof<ProjectInfoManager>); Composition.Shared>]
-type internal ProjectInfoManager 
+/// Exposes FCS FSharpProjectOptions information management as MEF component.
+//
+// This service allows analyzers to get an appropriate FSharpProjectOptions value for a project or single file.
+// It also allows a 'cheaper' route to get the project options relevant to parsing (e.g. the #define values).
+// The main entrypoints are TryGetOptionsForDocumentOrProject and TryGetOptionsForEditingDocumentOrProject.
+
+
+[<Export(typeof<FSharpProjectOptionsManager>); Composition.Shared>]
+type internal FSharpProjectOptionsManager 
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
@@ -202,7 +210,7 @@ type internal ProjectInfoManager
 type internal FSharpCheckerWorkspaceService =
     inherit Microsoft.CodeAnalysis.Host.IWorkspaceService
     abstract Checker: FSharpChecker
-    abstract ProjectInfoManager: ProjectInfoManager
+    abstract FSharpProjectOptionsManager: FSharpProjectOptionsManager
 
 type internal RoamingProfileStorageLocation(keyName: string) =
     inherit OptionStorageLocation()
@@ -222,13 +230,13 @@ type internal FSharpCheckerWorkspaceServiceFactory
     [<Composition.ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: FSharpProjectOptionsManager
     ) =
     interface Microsoft.CodeAnalysis.Host.Mef.IWorkspaceServiceFactory with
         member this.CreateService(_workspaceServices) =
             upcast { new FSharpCheckerWorkspaceService with
                 member this.Checker = checkerProvider.Checker
-                member this.ProjectInfoManager = projectInfoManager }
+                member this.FSharpProjectOptionsManager = projectInfoManager }
 
 type
     [<Guid(FSharpConstants.packageGuidString)>]
@@ -289,7 +297,7 @@ and
     internal FSharpLanguageService(package : FSharpPackage) =
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
 
-    let projectInfoManager = package.ComponentModel.DefaultExportProvider.GetExport<ProjectInfoManager>().Value
+    let projectInfoManager = package.ComponentModel.DefaultExportProvider.GetExport<FSharpProjectOptionsManager>().Value
 
     let projectDisplayNameOf projectFileName = 
         if String.IsNullOrWhiteSpace projectFileName then projectFileName

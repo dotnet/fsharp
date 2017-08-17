@@ -25,7 +25,7 @@ type internal FSharpSignatureHelpProvider
     (
         serviceProvider: SVsServiceProvider,
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: FSharpProjectOptionsManager
     ) =
 
     static let userOpName = "SignatureHelpProvider"
