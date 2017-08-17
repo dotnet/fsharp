@@ -23,7 +23,7 @@ type internal FSharpNavigationBarItemService
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: FSharpProjectOptionsManager
     ) =
     
     static let userOpName = "NavigationBarItem"

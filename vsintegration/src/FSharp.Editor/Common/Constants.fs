@@ -72,3 +72,5 @@ module internal Guids =
     [<Literal>]
     /// "8FDA964A-263D-4B4E-9560-29897535217C"
     let languageServicePerformanceOptionPageIdString = "8FDA964A-263D-4B4E-9560-29897535217C"
+
+    let blueHighContrastThemeId = Guid "{ce94d289-8481-498b-8ca9-9b6191a315b9}"

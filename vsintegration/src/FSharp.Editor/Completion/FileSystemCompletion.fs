@@ -22,7 +22,7 @@ type internal Completion =
           AllowableExtensions = allowableExtensions
           UseIncludeDirectives = useIncludeDirectives }
 
-type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoManager: ProjectInfoManager, completions: Completion list) =
+type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoManager: FSharpProjectOptionsManager, completions: Completion list) =
     inherit CommonCompletionProvider()
 
     let [<Literal>] NetworkPath = "\\\\"

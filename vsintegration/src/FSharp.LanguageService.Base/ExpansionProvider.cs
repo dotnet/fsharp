@@ -305,7 +305,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             this.view = view;
             title = path = null;
 
-            LanguageService svc = this.source.LanguageService;
+            LanguageService_DEPRECATED svc = this.source.LanguageService;
             IVsExpansionManager mgr = svc.Site.GetService(typeof(SVsExpansionManager)) as IVsExpansionManager;
             if (mgr == null) return NativeMethods.E_FAIL ;
             Guid guidLanguage = svc.GetLanguageServiceGuid();
