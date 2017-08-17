@@ -57,11 +57,6 @@
         <file src="coreclr/bin/FSharp.Core.optdata"      target="lib/netstandard1.6/" />
         <file src="coreclr/bin/FSharp.Core.xml"          target="lib/netstandard1.6/" />
 
-        <file src="coreclr2/bin/FSharp.Core.dll"          target="lib/netstandard2.0/" />
-        <file src="coreclr2/bin/FSharp.Core.sigdata"      target="lib/netstandard2.0/" />
-        <file src="coreclr2/bin/FSharp.Core.optdata"      target="lib/netstandard2.0/" />
-        <file src="coreclr2/bin/FSharp.Core.xml"          target="lib/netstandard2.0/" />
-
         <file src="net40/bin/FSharp.Core.dll"            target="lib/net45/" />
         <file src="net40/bin/FSharp.Core.sigdata"        target="lib/net45/" />
         <file src="net40/bin/FSharp.Core.optdata"        target="lib/net45/" />
