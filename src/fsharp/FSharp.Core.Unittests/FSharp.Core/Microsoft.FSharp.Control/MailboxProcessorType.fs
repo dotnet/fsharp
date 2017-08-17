@@ -189,7 +189,7 @@ type MailboxProcessorType() =
                     postEv.Reset() |> ignore
                     mb.Post(fun () -> ())
             } |> Async.Start
-        for i in 0 .. 10000 do
+        for i in 0 .. 100000 do
             if i % 2 = 0 then
                 receiveEv.Set() |> ignore
                 postEv.Set() |> ignore
