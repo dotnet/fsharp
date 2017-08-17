@@ -395,6 +395,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
             member x.GetEnumerator() = (x.GetFreshEnumerator() :> IEnumerator)
         interface IEnumerator<'T> with
             member x.Current = if redirect then redirectTo.LastGenerated else x.LastGenerated
+        interface System.IDisposable with
             member x.Dispose() = if redirect then redirectTo.Close() else x.Close()
         interface IEnumerator with
             member x.Current = box (if redirect then redirectTo.LastGenerated else x.LastGenerated)

@@ -406,7 +406,7 @@ namespace Microsoft.FSharp.Collections
                     if not finished then disposeG g
 
         // Internal type, used to optimize Enumerator/Generator chains
-        type LazyGeneratorWrappingEnumerator<'T>(e:System.Collections.Generic.IEnumerator<'T>) =
+        type LazyGeneratorWrappingEnumerator<'T>(e:IEnumerator<'T>) =
             member g.Enumerator = e
             interface Generator<'T> with
                 member g.Apply = (fun () ->
@@ -419,9 +419,9 @@ namespace Microsoft.FSharp.Collections
         let EnumerateFromGenerator(g:Generator<'T>) =
             match g with
             | :? LazyGeneratorWrappingEnumerator<'T> as g -> g.Enumerator
-            | _ -> (new EnumeratorWrappingLazyGenerator<_>(g) :> System.Collections.Generic.IEnumerator<_>)
+            | _ -> (new EnumeratorWrappingLazyGenerator<'T>(g) :> IEnumerator<'T>)
 
-        let GenerateFromEnumerator (e:System.Collections.Generic.IEnumerator<'T>) =
+        let GenerateFromEnumerator (e:IEnumerator<'T>) =
             match e with
             | :? EnumeratorWrappingLazyGenerator<'T> as e ->  e.Generator
             | _ -> (new LazyGeneratorWrappingEnumerator<'T>(e) :> Generator<'T>)
