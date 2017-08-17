@@ -73,7 +73,7 @@ type internal InlineRenameLocationSet(locationsByDocument: DocumentLocations [],
 type internal InlineRenameInfo
     (
         checker: FSharpChecker,
-        projectInfoManager: ProjectInfoManager,
+        projectInfoManager: FSharpProjectOptionsManager,
         document: Document,
         triggerSpan: TextSpan, 
         lexerSymbol: LexerSymbol,
@@ -141,13 +141,13 @@ type internal InlineRenameInfo
 type internal InlineRenameService 
     [<ImportingConstructor>]
     (
-        projectInfoManager: ProjectInfoManager,
+        projectInfoManager: FSharpProjectOptionsManager,
         checkerProvider: FSharpCheckerProvider,
         [<ImportMany>] _refactorNotifyServices: seq<IRefactorNotifyService>
     ) =
 
     static let userOpName = "InlineRename"
-    static member GetInlineRenameInfo(checker: FSharpChecker, projectInfoManager: ProjectInfoManager, document: Document, sourceText: SourceText, position: int, 
+    static member GetInlineRenameInfo(checker: FSharpChecker, projectInfoManager: FSharpProjectOptionsManager, document: Document, sourceText: SourceText, position: int, 
                                       defines: string list, options: FSharpProjectOptions) : Async<IInlineRenameInfo option> = 
         asyncMaybe {
             let textLine = sourceText.Lines.GetLineFromPosition(position)
