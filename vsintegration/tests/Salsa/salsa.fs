@@ -1445,7 +1445,7 @@ module internal Salsa =
             let rdt = box (VsMocks.createRdt())
             let tm = box (VsMocks.createTextManager())
             let documentationProvider = 
-                { new IDocumentationBuilder with
+                { new IDocumentationBuilder_DEPRECATED with
                     override doc.AppendDocumentationFromProcessedXML(appendTo,processedXml:string,showExceptions, showReturns, paramName) = 
                         appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.tagText processedXml)
                         appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.Literals.lineBreak)

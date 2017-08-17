@@ -26,7 +26,7 @@ module internal TaggedText =
 // functionality and thus have considerable value, they should ony be deleted if we are sure this 
 // is not the case.
 //
-type internal FSharpMethodListForAMethodTip_DEPRECATED(documentationBuilder: IDocumentationBuilder, methodsName, methods: FSharpMethodGroupItem[], nwpl: FSharpNoteworthyParamInfoLocations, snapshot: ITextSnapshot, isThisAStaticArgumentsTip: bool) =
+type internal FSharpMethodListForAMethodTip_DEPRECATED(documentationBuilder: IDocumentationBuilder_DEPRECATED, methodsName, methods: FSharpMethodGroupItem[], nwpl: FSharpNoteworthyParamInfoLocations, snapshot: ITextSnapshot, isThisAStaticArgumentsTip: bool) =
     inherit MethodListForAMethodTip_DEPRECATED() 
 
     // Compute the tuple end points
@@ -303,7 +303,7 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                      /// The colorizer for this view (though why do we need to be lazy about creating this?)
                      colorizer: Lazy<FSharpColorizer_DEPRECATED>,
                      /// A service that will provide Xml Content
-                     documentationBuilder : IDocumentationBuilder,
+                     documentationBuilder : IDocumentationBuilder_DEPRECATED,
                      provideMethodList : bool
                      ) = 
         inherit IntellisenseInfo_DEPRECATED() 

@@ -65,7 +65,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                  getInteractiveChecker: unit -> FSharpChecker, 
                  getProjectSitesAndFiles : unit -> ProjectSitesAndFiles,
                  getServiceProvider: unit -> System.IServiceProvider,
-                 getDocumentationBuilder: unit -> IDocumentationBuilder) =    
+                 getDocumentationBuilder: unit -> IDocumentationBuilder_DEPRECATED) =    
 
     let mutable parseFileResults : FSharpParseFileResults option = None
     let mutable lastParseFileRequest : BackgroundRequest_DEPRECATED = null
