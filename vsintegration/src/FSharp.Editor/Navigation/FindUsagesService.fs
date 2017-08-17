@@ -20,7 +20,7 @@ type internal FSharpFindUsagesService
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: FSharpProjectOptionsManager
     ) =
     
     static let userOpName = "FindUsages"

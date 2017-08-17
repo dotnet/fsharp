@@ -26,7 +26,7 @@ type internal FSharpLanguageServiceTestable() as this =
     let mutable serviceProvider : System.IServiceProvider option = None
     let mutable preferences : LanguagePreferences option = None
     let mutable documentationBuilder : Microsoft.VisualStudio.FSharp.LanguageService.IDocumentationBuilder option = None
-    let mutable sourceFactory : (IVsTextLines -> IFSharpSource) option = None
+    let mutable sourceFactory : (IVsTextLines -> IFSharpSource_DEPRECATED) option = None
     let mutable dirtyForTypeCheckFiles : Set<string> = Set.empty
     let mutable isInitialized = false
     let mutable unhooked = false
@@ -34,7 +34,7 @@ type internal FSharpLanguageServiceTestable() as this =
         let buffer = Com.ThrowOnFailure1(view.GetBuffer())
         this.GetColorizer(buffer)                         
 
-    let bgRequests = new FSharpLanguageServiceBackgroundRequests(getColorizer,(fun () -> this.FSharpChecker),(fun () -> this.ProjectSitesAndFiles),(fun () -> this.ServiceProvider),(fun () -> this.DocumentationBuilder))
+    let bgRequests = new FSharpLanguageServiceBackgroundRequests_DEPRECATED(getColorizer,(fun () -> this.FSharpChecker),(fun () -> this.ProjectSitesAndFiles),(fun () -> this.ServiceProvider),(fun () -> this.DocumentationBuilder))
     
     member this.FSharpChecker = 
         if this.Unhooked then raise Error.UseOfUnhookedLanguageServiceState
@@ -118,7 +118,7 @@ type internal FSharpLanguageServiceTestable() as this =
         bgRequests.AddOutOfDateProjectFileName(site.ProjectFileName()) 
         for filename in site.SourceFilesOnDisk() do
             let rdt = this.ServiceProvider.RunningDocumentTable
-            match this.ProjectSitesAndFiles.TryGetSourceOfFile(rdt,filename) with
+            match this.ProjectSitesAndFiles.TryGetSourceOfFile_DEPRECATED(rdt,filename) with
             | Some source -> 
                 source.RecolorizeWholeFile()
                 source.RecordChangeToView()
@@ -135,8 +135,8 @@ type internal FSharpLanguageServiceTestable() as this =
 
     member this.BackgroundRequests = bgRequests
     
-    /// Unittestable complement to LanguageServce.CreateSource
-    member this.CreateSource(buffer:IVsTextLines) : IFSharpSource =
+    /// Unittestable complement to LanguageServce.CreateSource_DEPRECATED
+    member this.CreateSource_DEPRECATED(buffer:IVsTextLines) : IFSharpSource_DEPRECATED =
     
         // Each time a source is created, also verify that the IProjectSite has been initialized to listen to changes to the project.
         // We can't listen to OnProjectLoaded because the language service is not guaranteed to be loaded when this is called.
@@ -162,11 +162,11 @@ type internal FSharpLanguageServiceTestable() as this =
         
         // Create the source and register file change callbacks there.       
         let source = this.SourceFactory(buffer)
-        this.ProjectSitesAndFiles.SetSource(buffer, source)
+        this.ProjectSitesAndFiles.SetSource_DEPRECATED(buffer, source)
         source
     
     // For each change in dependency files, notify the language service of the change and propagate the update
-    interface IDependencyFileChangeNotify with
+    interface IDependencyFileChangeNotify_DEPRECATED with
         member this.DependencyFileCreated projectSite = 
             let enableInMemoryCrossProjectReferences = true
             // Invalidate the configuration if we notice any add for any DependencyFiles 
@@ -182,20 +182,20 @@ type internal FSharpLanguageServiceTestable() as this =
     member this.OnIdle() = 
         for file in dirtyForTypeCheckFiles do
             let rdt = this.ServiceProvider.RunningDocumentTable
-            match this.ProjectSitesAndFiles.TryGetSourceOfFile(rdt, file) with
+            match this.ProjectSitesAndFiles.TryGetSourceOfFile_DEPRECATED(rdt, file) with
             | Some source -> source.RecordChangeToView()
             | None ->  ()
         dirtyForTypeCheckFiles <- Set.empty
         
 
     /// Remove a colorizer.
-    member this.CloseColorizer(colorizer:FSharpColorizer) = 
+    member this.CloseColorizer(colorizer:FSharpColorizer_DEPRECATED) = 
         let buffer = colorizer.Buffer
         let mutable guid = colorizerGuid
         (buffer :?> IVsUserData).SetData(&guid, null) |> ErrorHandler.ThrowOnFailure |> ignore
 
     /// Get a colorizer for a particular buffer.
-    member this.GetColorizer(buffer:IVsTextLines) : FSharpColorizer = 
+    member this.GetColorizer(buffer:IVsTextLines) : FSharpColorizer_DEPRECATED = 
         let mutable guid = colorizerGuid
         let mutable colorizerObj = null
         
@@ -203,21 +203,21 @@ type internal FSharpLanguageServiceTestable() as this =
         match colorizerObj with
         | null ->
             let scanner = 
-                new FSharpScanner(fun source ->
+                new FSharpScanner_DEPRECATED(fun source ->
                     // Note: in theory, the next few lines do not need to be recomputed every line.  Instead we could just cache the tokenizer
                     // and only update it when e.g. the project system notifies us there is an important change (e.g. a file rename, etc).
                     // In practice we have been there, and always screwed up some non-unit-tested/testable corner-cases.
                     // So this is not ideal from a perf perspective, but it is easy to reason about the correctness.
                     let filename = VsTextLines.GetFilename buffer
                     let rdt = this.ServiceProvider.RunningDocumentTable
-                    let defines = this.ProjectSitesAndFiles.GetDefinesForFile(rdt, filename)
+                    let defines = this.ProjectSitesAndFiles.GetDefinesForFile_DEPRECATED(rdt, filename)
                     let sourceTokenizer = FSharpSourceTokenizer(defines,Some(filename))
                     sourceTokenizer.CreateLineTokenizer(source))
 
-            let colorizer = new FSharpColorizer(this.CloseColorizer, buffer, scanner) 
+            let colorizer = new FSharpColorizer_DEPRECATED(this.CloseColorizer, buffer, scanner) 
             (buffer :?> IVsUserData).SetData(&guid, colorizer) |> ErrorHandler.ThrowOnFailure |> ignore
             colorizer
-        | _ -> colorizerObj :?> FSharpColorizer
+        | _ -> colorizerObj :?> FSharpColorizer_DEPRECATED
     
     /// Block until the background compile finishes.
     //

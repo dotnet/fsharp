@@ -23,7 +23,7 @@ type internal ITaggedTextCollector =
     abstract IsEmpty: bool
     abstract StartXMLDoc: unit -> unit
 
-type internal TextSanitizingCollector(collector, ?lineLimit: int) =
+type internal TextSanitizingCollector_DEPRECATED(collector, ?lineLimit: int) =
     let mutable isEmpty = true 
     let mutable endsWithLineBreak = false
     let mutable count = 0
@@ -301,7 +301,7 @@ module internal XmlDocumentation =
                     reraise()    
  
     /// Append an XmlCommnet to the segment.
-    let AppendXmlComment(documentationProvider:IDocumentationBuilder, sink: ITaggedTextCollector, xml, showExceptions, showParameters, paramName) =
+    let AppendXmlComment_DEPRECATED(documentationProvider:IDocumentationBuilder, sink: ITaggedTextCollector, xml, showExceptions, showParameters, paramName) =
         match xml with
         | FSharpXmlDoc.None -> ()
         | FSharpXmlDoc.XmlDocFileSignature(filename,signature) -> 
@@ -317,9 +317,9 @@ module internal XmlDocumentation =
             AppendHardLine collector
 
     /// Build a data tip text string with xml comments injected.
-    let BuildTipText(documentationProvider:IDocumentationBuilder, dataTipText: FSharpStructuredToolTipElement list, textCollector, xmlCollector, showText, showExceptions, showParameters) = 
-        let textCollector: ITaggedTextCollector = TextSanitizingCollector(textCollector, lineLimit = 45) :> _
-        let xmlCollector: ITaggedTextCollector = TextSanitizingCollector(xmlCollector, lineLimit = 45) :> _
+    let BuildTipText_DEPRECATED(documentationProvider:IDocumentationBuilder, dataTipText: FSharpStructuredToolTipElement list, textCollector, xmlCollector, showText, showExceptions, showParameters) = 
+        let textCollector: ITaggedTextCollector = TextSanitizingCollector_DEPRECATED(textCollector, lineLimit = 45) :> _
+        let xmlCollector: ITaggedTextCollector = TextSanitizingCollector_DEPRECATED(xmlCollector, lineLimit = 45) :> _
 
         let addSeparatorIfNecessary add =
             if add then
@@ -357,7 +357,7 @@ module internal XmlDocumentation =
                         textCollector.Add Literals.lineBreak
                         renderL (taggedTextListR textCollector.Add) r |> ignore)
 
-                    AppendXmlComment(documentationProvider, xmlCollector, item0.XmlDoc, showExceptions, showParameters, item0.ParamName)
+                    AppendXmlComment_DEPRECATED(documentationProvider, xmlCollector, item0.XmlDoc, showExceptions, showParameters, item0.ParamName)
 
                     true
                 else
@@ -369,15 +369,15 @@ module internal XmlDocumentation =
 
         List.fold Process false dataTipText |> ignore
 
-    let BuildDataTipText(documentationProvider, textCollector, xmlCollector, FSharpToolTipText(dataTipText)) = 
-        BuildTipText(documentationProvider, dataTipText, textCollector, xmlCollector, true, true, false) 
+    let BuildDataTipText_DEPRECATED(documentationProvider, textCollector, xmlCollector, FSharpToolTipText(dataTipText)) = 
+        BuildTipText_DEPRECATED(documentationProvider, dataTipText, textCollector, xmlCollector, true, true, false) 
 
-    let BuildMethodOverloadTipText(documentationProvider, textCollector, xmlCollector, FSharpToolTipText(dataTipText), showParams) = 
-        BuildTipText(documentationProvider, dataTipText, textCollector, xmlCollector, false, false, showParams) 
+    let BuildMethodOverloadTipText_DEPRECATED(documentationProvider, textCollector, xmlCollector, FSharpToolTipText(dataTipText), showParams) = 
+        BuildTipText_DEPRECATED(documentationProvider, dataTipText, textCollector, xmlCollector, false, false, showParams) 
 
-    let BuildMethodParamText(documentationProvider, xmlCollector, xml, paramName) =
-        AppendXmlComment(documentationProvider, TextSanitizingCollector(xmlCollector), xml, false, true, Some paramName)
+    let BuildMethodParamText_DEPRECATED(documentationProvider, xmlCollector, xml, paramName) =
+        AppendXmlComment_DEPRECATED(documentationProvider, TextSanitizingCollector_DEPRECATED(xmlCollector), xml, false, true, Some paramName)
 
     let documentationBuilderCache = System.Runtime.CompilerServices.ConditionalWeakTable<IVsXMLMemberIndexService, IDocumentationBuilder>()
-    let CreateDocumentationBuilder(xmlIndexService: IVsXMLMemberIndexService, dte: DTE) = 
+    let CreateDocumentationBuilder_DEPRECATED(xmlIndexService: IVsXMLMemberIndexService, dte: DTE) = 
         documentationBuilderCache.GetValue(xmlIndexService,(fun _ -> Provider(xmlIndexService, dte) :> IDocumentationBuilder))
