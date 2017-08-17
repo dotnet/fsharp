@@ -775,11 +775,10 @@ namespace Microsoft.FSharp.Core
                 //assert not(TypeInfo<'T>.TypeInfo = TypeNullnessSemantics_NullTrueValue)
                 notnullPrim(isinstPrim<'T>(x)) 
 
-            let Dispose<'T>(x:'T) = 
+            let Dispose<'T when 'T :> System.IDisposable >(x:'T) = 
                 match box x with 
                 | null -> ()
-                | :? System.IDisposable as y -> y.Dispose()
-                | _ -> ()
+                | _ -> x.Dispose()
 
             let FailInit() : unit = raise (System.InvalidOperationException(SR.GetString(SR.checkInit)))
 
