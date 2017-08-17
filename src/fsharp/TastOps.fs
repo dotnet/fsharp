@@ -57,7 +57,7 @@ type TyconRefMap<'T>(imap: StampMap<'T>) =
     member m.Add (v: TyconRef) x = TyconRefMap (imap.Add (v.Stamp,x))
     member m.Remove (v: TyconRef) = TyconRefMap (imap.Remove v.Stamp)
     member m.IsEmpty = imap.IsEmpty
-
+    member m.Contents = imap
     static member Empty : TyconRefMap<'T> = TyconRefMap Map.empty
     static member OfList vs = (vs, TyconRefMap<'T>.Empty) ||> List.foldBack (fun (x,y) acc -> acc.Add x y) 
 
@@ -1301,6 +1301,7 @@ type TyconRefMultiMap<'T>(contents: TyconRefMap<'T list>) =
         | _ -> []
 
     member m.Add (v, x) = TyconRefMultiMap<'T>(contents.Add v (x :: m.Find v))
+    member m.Contents = contents
     static member Empty = TyconRefMultiMap<'T>(TyconRefMap<_>.Empty)
     static member OfList vs = (vs, TyconRefMultiMap<'T>.Empty) ||> List.foldBack (fun (x,y) acc -> acc.Add (x, y)) 
 
@@ -1518,7 +1519,7 @@ let isVoidTy     g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> t
 let isILAppTy    g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tcref.IsILTycon                          | _ -> false) 
 let isNativePtrTy    g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g g.nativeptr_tcr tcref           | _ -> false) 
 let isByrefTy    g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tyconRefEq g g.byref_tcr tcref           | _ -> false) 
-let isByrefLikeTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> isByrefLikeTyconRef g tcref          | _ -> false) 
+let isByrefLikeTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> isByrefLikeTyconRef g tcref          | _ -> false)
 #if EXTENSIONTYPING
 let extensionInfoOfTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref,_) -> tcref.TypeReprInfo                | _ -> TNoRepr) 
 #endif

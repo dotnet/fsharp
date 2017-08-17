@@ -8,7 +8,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
-open Microsoft.FSharp.Compiler 
+open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AccessibilityLogic
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.AttributeChecking
@@ -20,7 +20,7 @@ open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals
 
 /// Use the given function to select some of the member values from the members of an F# type
-let private SelectImmediateMemberVals g optFilter f (tcref:TyconRef) = 
+let SelectImmediateMemberVals g optFilter f (tcref:TyconRef) = 
     let chooser (vref:ValRef) = 
         match vref.MemberInfo with 
         // The 'when' condition is a workaround for the fact that values providing 

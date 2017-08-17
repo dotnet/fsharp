@@ -298,6 +298,7 @@ type TyconRefMap<'T> =
     member Add : TyconRef -> 'T -> TyconRefMap<'T>
     member Remove : TyconRef -> TyconRefMap<'T>
     member IsEmpty : bool
+    member Contents : StampMap<'T>
     static member Empty : TyconRefMap<'T>
     static member OfList : (TyconRef * 'T) list -> TyconRefMap<'T>
 
@@ -306,6 +307,7 @@ type TyconRefMap<'T> =
 type TyconRefMultiMap<'T> =
     member Find : TyconRef -> 'T list
     member Add : TyconRef * 'T -> TyconRefMultiMap<'T>
+    member Contents : TyconRefMap<'T list>
     static member Empty : TyconRefMultiMap<'T>
     static member OfList : (TyconRef * 'T) list -> TyconRefMultiMap<'T>
 
@@ -998,6 +1000,9 @@ type TypeDefMetadata =
 #endif
 
 val metadataOfTycon : Tycon -> TypeDefMetadata
+#if EXTENSIONTYPING
+val extensionInfoOfTy : TcGlobals -> TType -> TyconRepresentation
+#endif
 val metadataOfTy : TcGlobals -> TType -> TypeDefMetadata
 
 val isStringTy       : TcGlobals -> TType -> bool
