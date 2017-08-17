@@ -148,3 +148,4 @@ namespace Microsoft.FSharp.Core.CompilerServices
         interface IEnumerable
         interface IEnumerator<'T> 
         interface IEnumerator 
+        interface IDisposable 

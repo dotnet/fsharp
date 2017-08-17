@@ -5260,9 +5260,10 @@ namespace Microsoft.FSharp.Core
                             state.Current
 
                     { new IEnumerator<'T> with
-                        member __.Dispose () = ()
-
                         member __.Current = current ()
+
+                      interface System.IDisposable with
+                        member __.Dispose () = ()
 
                       interface IEnumerator with 
                         member __.Current = box (current ())
@@ -5317,8 +5318,10 @@ namespace Microsoft.FSharp.Core
                                 derefValue
 
                         { new IEnumerator<'T> with
-                            member __.Dispose () = ()
                             member __.Current = current ()
+
+                          interface System.IDisposable with
+                            member __.Dispose () = ()
 
                           interface IEnumerator with
                             member __.Current = box (current ())
