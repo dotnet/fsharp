@@ -673,54 +673,52 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   let addFieldNeverAttrs (fdef:ILFieldDef) = {fdef with CustomAttrs = addNeverAttrs fdef.CustomAttrs}
   let mkDebuggerTypeProxyAttribute (ty : ILType) = mkILCustomAttribute ilg (findSysILTypeRef tname_DebuggerTypeProxyAttribute,  [ilg.typ_Type], [ILAttribElem.TypeRef (Some ty.TypeRef)], [])
 
+  let entries1 = 
+     [| "Int32"    , v_int_tcr 
+        "IntPtr"   , v_nativeint_tcr 
+        "UIntPtr"  , v_unativeint_tcr
+        "Int16"    , v_int16_tcr 
+        "Int64"    , v_int64_tcr 
+        "UInt16"   , v_uint16_tcr
+        "UInt32"   , v_uint32_tcr
+        "UInt64"   , v_uint64_tcr
+        "SByte"    , v_sbyte_tcr
+        "Decimal"  , v_decimal_tcr
+        "Byte"     , v_byte_tcr
+        "Boolean"  , v_bool_tcr
+        "String"   , v_string_tcr
+        "Object"   , v_obj_tcr
+        "Exception", v_exn_tcr
+        "Char"     , v_char_tcr
+        "Double"   , v_float_tcr
+        "Single"   , v_float32_tcr |] 
+            |> Array.map (fun (nm, tcr) -> 
+                let ty = mkNonGenericTy tcr 
+                nm, findSysTyconRef sys nm, (fun _ -> ty)) 
+
+  let entries2 =
+        [| 
+            "FSharpFunc`2" ,       v_fastFunc_tcr      , (fun tinst -> mkFunTy (List.item 0 tinst) (List.item 1 tinst))
+            "Tuple`2"      ,       v_ref_tuple2_tcr    , decodeTupleTy tupInfoRef
+            "Tuple`3"      ,       v_ref_tuple3_tcr    , decodeTupleTy tupInfoRef
+            "Tuple`4"      ,       v_ref_tuple4_tcr    , decodeTupleTy tupInfoRef
+            "Tuple`5"      ,       v_ref_tuple5_tcr    , decodeTupleTy tupInfoRef
+            "Tuple`6"      ,       v_ref_tuple6_tcr    , decodeTupleTy tupInfoRef
+            "Tuple`7"      ,       v_ref_tuple7_tcr    , decodeTupleTy tupInfoRef
+            "Tuple`8"      ,       v_ref_tuple8_tcr    , decodeTupleTy tupInfoRef
+            "ValueTuple`2" ,       v_struct_tuple2_tcr , decodeTupleTy tupInfoStruct
+            "ValueTuple`3" ,       v_struct_tuple3_tcr , decodeTupleTy tupInfoStruct
+            "ValueTuple`4" ,       v_struct_tuple4_tcr , decodeTupleTy tupInfoStruct
+            "ValueTuple`5" ,       v_struct_tuple5_tcr , decodeTupleTy tupInfoStruct
+            "ValueTuple`6" ,       v_struct_tuple6_tcr , decodeTupleTy tupInfoStruct
+            "ValueTuple`7" ,       v_struct_tuple7_tcr , decodeTupleTy tupInfoStruct
+            "ValueTuple`8" ,       v_struct_tuple8_tcr , decodeTupleTy tupInfoStruct |] 
+
     // Build a map that uses the "canonical" F# type names and TyconRef's for these
     // in preference to the .NET type names. Doing this normalization is a fairly performance critical
     // piece of code as it is frequently invoked in the process of converting .NET metadata to F# internal
     // compiler data structures (see import.fs).
-  let betterTyconRefMap = 
-       begin 
-        let entries1 = 
-         [| "Int32"    , v_int_tcr 
-            "IntPtr"   , v_nativeint_tcr 
-            "UIntPtr"  , v_unativeint_tcr
-            "Int16"    , v_int16_tcr 
-            "Int64"    , v_int64_tcr 
-            "UInt16"   , v_uint16_tcr
-            "UInt32"   , v_uint32_tcr
-            "UInt64"   , v_uint64_tcr
-            "SByte"    , v_sbyte_tcr
-            "Decimal"  , v_decimal_tcr
-            "Byte"     , v_byte_tcr
-            "Boolean"  , v_bool_tcr
-            "String"   , v_string_tcr
-            "Object"   , v_obj_tcr
-            "Exception", v_exn_tcr
-            "Char"     , v_char_tcr
-            "Double"   , v_float_tcr
-            "Single"   , v_float32_tcr |] 
-             |> Array.map (fun (nm, tcr) -> 
-                   let ty = mkNonGenericTy tcr 
-                   nm, findSysTyconRef sys nm, (fun _ -> ty)) 
-
-        let entries2 =
-            [| 
-              "FSharpFunc`2" ,       v_fastFunc_tcr      , (fun tinst -> mkFunTy (List.item 0 tinst) (List.item 1 tinst))
-              "Tuple`2"      ,       v_ref_tuple2_tcr    , decodeTupleTy tupInfoRef
-              "Tuple`3"      ,       v_ref_tuple3_tcr    , decodeTupleTy tupInfoRef
-              "Tuple`4"      ,       v_ref_tuple4_tcr    , decodeTupleTy tupInfoRef
-              "Tuple`5"      ,       v_ref_tuple5_tcr    , decodeTupleTy tupInfoRef
-              "Tuple`6"      ,       v_ref_tuple6_tcr    , decodeTupleTy tupInfoRef
-              "Tuple`7"      ,       v_ref_tuple7_tcr    , decodeTupleTy tupInfoRef
-              "Tuple`8"      ,       v_ref_tuple8_tcr    , decodeTupleTy tupInfoRef
-              "ValueTuple`2" ,       v_struct_tuple2_tcr , decodeTupleTy tupInfoStruct
-              "ValueTuple`3" ,       v_struct_tuple3_tcr , decodeTupleTy tupInfoStruct
-              "ValueTuple`4" ,       v_struct_tuple4_tcr , decodeTupleTy tupInfoStruct
-              "ValueTuple`5" ,       v_struct_tuple5_tcr , decodeTupleTy tupInfoStruct
-              "ValueTuple`6" ,       v_struct_tuple6_tcr , decodeTupleTy tupInfoStruct
-              "ValueTuple`7" ,       v_struct_tuple7_tcr , decodeTupleTy tupInfoStruct
-              "ValueTuple`8" ,       v_struct_tuple8_tcr , decodeTupleTy tupInfoStruct |] 
-
-        let entries = Array.append entries1 entries2
+  let buildTyconMapper (entries: (string * TyconRef * _)[])  = 
         if compilingFslib then 
             // This map is for use when building FSharp.Core.dll. The backing Tycon's may not yet exist for
             // the TyconRef's we have in our hands, hence we can't dereference them to find their stamps.
@@ -759,8 +757,10 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
                  let key = tcref2.Stamp
                  if dict.ContainsKey key then Some(dict.[key] tinst)
                  else None)  
-       end
-           
+
+  let betterTyconRefMapper = buildTyconMapper (Array.append entries1 entries2)
+
+  let decodeTyconRefMapper = buildTyconMapper entries2
 
   override x.ToString() = "<TcGlobals>"
   member __.ilg=ilg
@@ -1052,7 +1052,8 @@ type public TcGlobals(compilingFslib: bool, ilg:ILGlobals, fslibCcu: CcuThunk, d
   member val attrib_SecuritySafeCriticalAttribute          = findSysAttrib "System.Security.SecuritySafeCriticalAttribute"
   member val attrib_ComponentModelEditorBrowsableAttribute = findSysAttrib "System.ComponentModel.EditorBrowsableAttribute"
 
-  member __.better_tcref_map = betterTyconRefMap
+  member __.betterTyconRefMap = betterTyconRefMapper
+  member __.decodeTyconRefMap = decodeTyconRefMapper
   member __.new_decimal_info = v_new_decimal_info
   member __.seq_info    = v_seq_info
   member val seq_vref    = (ValRefForIntrinsic v_seq_info) 

@@ -32,13 +32,13 @@
     <WarningsAsErrors />
     <FX_NO_LOADER Condition=" '$(FX_NO_LOADER)'==''">false</FX_NO_LOADER>
 
-    <RoslynVersion>2.0.0</RoslynVersion>
+    <RoslynVersion>2.3.0-beta2-61719-01</RoslynVersion>
     <RoslynVSBinariesVersion>15.0</RoslynVSBinariesVersion>
     <RoslynVSPackagesVersion>15.0.26201</RoslynVSPackagesVersion>
     <VSSDK_BUILDTOOLS_VERSION>Microsoft.VSSDK.BuildTools.15.0.26201</VSSDK_BUILDTOOLS_VERSION>
 
-    <MicrosoftVisualStudioThreadingVersion>15.0.240</MicrosoftVisualStudioThreadingVersion>
-    <MicrosoftVisualStudioValidationVersion>15.0.82</MicrosoftVisualStudioValidationVersion>
+    <MicrosoftVisualStudioThreadingVersion>15.3.23</MicrosoftVisualStudioThreadingVersion>
+    <MicrosoftVisualStudioValidationVersion>15.3.15</MicrosoftVisualStudioValidationVersion>
 
     <!-- Always qualify the IntermediateOutputPath by the TargetDotnetProfile if any exists -->
     <IntermediateOutputPath>obj\$(Configuration)\$(TargetDotnetProfile)\</IntermediateOutputPath>
@@ -47,7 +47,7 @@
     <FSharpCore41TargetVersion>4.1.18</FSharpCore41TargetVersion>
     <FSharpCore41FrozenPortableVersion>4.1.20</FSharpCore41FrozenPortableVersion>
     <FSharpCore41FrozenPortableTargetVersion>4.1.21</FSharpCore41FrozenPortableTargetVersion>
-    <FSharpCore42TargetVersion>4.2.2</FSharpCore42TargetVersion>
+    <FSharpCore42TargetVersion>4.2.3</FSharpCore42TargetVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(MonoPackaging)' != 'true' AND '$(OS)' != 'Unix'">
@@ -128,8 +128,8 @@
 
   <PropertyGroup>
     <!-- Compiler tool locations.		-->
-    <FsLexToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.4\build</FsLexToolPath>
-    <FsYaccToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.4\build</FsYaccToolPath>
+    <FsLexToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.6\build</FsLexToolPath>
+    <FsYaccToolPath>$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.6\build</FsYaccToolPath>
     <FsiToolExe>fsi.exe</FsiToolExe>
     <FsLexToolExe>fslex.exe</FsLexToolExe>
     <FsYaccToolExe>fsyacc.exe</FsYaccToolExe>

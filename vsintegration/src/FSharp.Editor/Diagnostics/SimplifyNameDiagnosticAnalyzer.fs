@@ -19,13 +19,12 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 
 type private TextVersionHash = int
 
-// Disable until we work out how to make this low priority
-//[<DiagnosticAnalyzer(FSharpConstants.FSharpLanguageName)>]
+[<DiagnosticAnalyzer(FSharpConstants.FSharpLanguageName)>]
 type internal SimplifyNameDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
     
     static let userOpName = "SimplifyNameDiagnosticAnalyzer"
-    let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().ProjectInfoManager
+    let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().FSharpProjectOptionsManager
     let getChecker (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
     let getPlidLength (plid: string list) = (plid |> List.sumBy String.length) + plid.Length
     static let cache = ConditionalWeakTable<DocumentId, TextVersionHash * ImmutableArray<Diagnostic>>()
@@ -49,9 +48,9 @@ type internal SimplifyNameDiagnosticAnalyzer() =
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) =
         asyncMaybe {
+            do! Option.guard Settings.CodeFixes.SimplifyName
             do Trace.TraceInformation("{0:n3} (start) SimplifyName", DateTime.Now.TimeOfDay.TotalSeconds)
             do! Async.Sleep DefaultTuning.SimplifyNameInitialDelay |> liftAsync 
-            do! Option.guard Settings.CodeFixes.SimplifyName
             let! options = getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document)
             let! textVersion = document.GetTextVersionAsync(cancellationToken)
             let textVersionHash = textVersion.GetHashCode()

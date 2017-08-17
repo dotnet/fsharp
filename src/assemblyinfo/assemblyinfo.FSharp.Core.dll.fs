@@ -18,5 +18,12 @@ open System.Runtime.InteropServices
 [<assembly:AssemblyFlags(System.Reflection.AssemblyNameFlags.Retargetable)>]
 #endif
 
+// Until dotnet sdk can version assemblies, use this
+#if BUILD_FROM_SOURCE
+[<assembly: System.Reflection.AssemblyInformationalVersion("4.4.1.0")>]
+[<assembly: System.Reflection.AssemblyVersion("4.4.1.0")>]
+[<assembly: System.Reflection.AssemblyFileVersion("2017.06.27.0")>]
+#endif
+
 do()
 

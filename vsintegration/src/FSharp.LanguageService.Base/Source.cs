@@ -107,9 +107,9 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
     /// Source represents one source file and manages the parsing and intellisense on this file
     /// and keeping things like the drop down combos in sync with the source and so on.
     /// </summary>
-    abstract internal class FSharpSourceBase : ISource, IVsTextLinesEvents, IVsHiddenTextClient, IVsUserDataEvents
+    abstract internal class FSharpSourceBase_DEPRECATED : ISource, IVsTextLinesEvents, IVsHiddenTextClient, IVsUserDataEvents
     {
-        private LanguageService service;
+        private LanguageService_DEPRECATED service;
         private IVsTextLines textLines;
         private Colorizer colorizer;
         private CompletionSet completionSet;
@@ -120,7 +120,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         private NativeMethods.ConnectionPointCookie userDataEvents;
         private IVsTextColorState colorState;
         private IVsHiddenTextSession hiddenTextSession;
-        private BackgroundRequest lastBraceMatchRequest = null;
+        private BackgroundRequest_DEPRECATED lastBraceMatchRequest = null;
         private string originalFileName = null;
 
         private bool doOutlining;
@@ -137,7 +137,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return componentModel.GetService<IVsEditorAdaptersFactoryService>();
         }
 
-        internal FSharpSourceBase(LanguageService service, IVsTextLines textLines, Colorizer colorizer)
+        internal FSharpSourceBase_DEPRECATED(LanguageService_DEPRECATED service, IVsTextLines textLines, Colorizer colorizer)
         {
 #if LANGTRACE
             Tracing.TraceRef(textLines, "Source.textLines");
@@ -166,7 +166,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             this.openedTime = System.DateTime.Now;
         }
 
-        ~FSharpSourceBase()
+        ~FSharpSourceBase_DEPRECATED()
         {
 #if LANGTRACE
             Trace.WriteLine("~Source");
@@ -184,7 +184,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             set { this.colorState = value; }
         }
 
-        public LanguageService LanguageService
+        public LanguageService_DEPRECATED LanguageService
         {
             get { return this.service; }
         }
@@ -222,7 +222,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         }
 
 
-        public LanguageService Service { get { return this.service; } }
+        public LanguageService_DEPRECATED Service { get { return this.service; } }
 
 
         public ExpansionProvider GetExpansionProvider()
@@ -923,7 +923,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             {
                 if (this.NeedsVisualRefresh && !this.service.IsServingBackgroundRequest)
                 {
-                    BackgroundRequest req = this.BeginBackgroundRequest(0, 0, new TokenInfo(), BackgroundRequestReason.FullTypeCheck, this.service.LastActiveTextView, RequireFreshResults.Yes, new BackgroundRequestResultHandler(this.HandleUntypedParseOrFullTypeCheckResponse));
+                    BackgroundRequest_DEPRECATED req = this.BeginBackgroundRequest(0, 0, new TokenInfo(), BackgroundRequestReason.FullTypeCheck, this.service.LastActiveTextView, RequireFreshResults.Yes, new BackgroundRequestResultHandler(this.HandleUntypedParseOrFullTypeCheckResponse));
                     if (req != null) req.StartTimeForOnIdleRequest = Environment.TickCount;
                 }
             }
@@ -967,7 +967,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
             var matchBraces = false;
             var methodTip = false;
-            MethodTipMiscellany misc = 0;
+            MethodTipMiscellany_DEPRECATED misc = 0;
 
             if ((triggerClass & TokenTriggers.MemberSelect) != 0 && (command == VsCommands2K.TYPECHAR))
             {
@@ -991,11 +991,11 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             {
                 methodTip = true;
 
-                misc = MethodTipMiscellany.JustPressedOpenParen;
+                misc = MethodTipMiscellany_DEPRECATED.JustPressedOpenParen;
                 if ((triggerClass & TokenTriggers.ParameterNext) != 0)
-                    misc = MethodTipMiscellany.JustPressedComma;
+                    misc = MethodTipMiscellany_DEPRECATED.JustPressedComma;
                 if ((triggerClass & TokenTriggers.ParameterEnd) != 0)
-                    misc = MethodTipMiscellany.JustPressedCloseParen;
+                    misc = MethodTipMiscellany_DEPRECATED.JustPressedCloseParen;
             }
             else if (this.methodData.IsDisplayed)
             {
@@ -1003,11 +1003,11 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                 {
                     // the may have just erased a paren or comma, need to re-parse
                     methodTip = true;
-                    misc = MethodTipMiscellany.JustPressedBackspace;
+                    misc = MethodTipMiscellany_DEPRECATED.JustPressedBackspace;
                 }
                 else
                 {
-                    this.methodData.Refresh(MethodTipMiscellany.Typing);
+                    this.methodData.Refresh(MethodTipMiscellany_DEPRECATED.Typing);
                 }
             }
 
@@ -1059,7 +1059,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             // are doing intellisense in which case we want to match the entire value
             // of quoted strings.
             TokenType type = info.Type;
-            if ((flags != FSharpSourceBase.WholeToken || type != TokenType.String) && (type == TokenType.Comment || type == TokenType.LineComment || type == TokenType.Text || type == TokenType.String || type == TokenType.Literal))
+            if ((flags != FSharpSourceBase_DEPRECATED.WholeToken || type != TokenType.String) && (type == TokenType.Comment || type == TokenType.LineComment || type == TokenType.Text || type == TokenType.String || type == TokenType.Literal))
                 return false;
             //search for a token
             switch (flags & WORDEXTFLAGS.WORDEXT_MOVETYPE_MASK)
@@ -1214,12 +1214,12 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return textViewHost.TextView;
         }
 
-        public void MethodTip(IVsTextView textView, int line, int index, TokenInfo info, MethodTipMiscellany methodTipMiscellany, RequireFreshResults requireFreshResults)
+        public void MethodTip(IVsTextView textView, int line, int index, TokenInfo info, MethodTipMiscellany_DEPRECATED methodTipMiscellany, RequireFreshResults requireFreshResults)
         {
             this.BeginBackgroundRequest(line, index, info, BackgroundRequestReason.MethodTip, textView, requireFreshResults, new BackgroundRequestResultHandler(this.HandleMethodTipResponse), methodTipMiscellany);
         }
 
-        private void HandleMethodTipResponse(BackgroundRequest req)
+        private void HandleMethodTipResponse(BackgroundRequest_DEPRECATED req)
         {
             try
             {
@@ -1240,10 +1240,10 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                 }
                 else
                 {
-                    Microsoft.FSharp.Core.FSharpOption<MethodListForAMethodTip> methodsOpt = req.ResultIntellisenseInfo.GetMethodListForAMethodTip();
+                    Microsoft.FSharp.Core.FSharpOption<MethodListForAMethodTip_DEPRECATED> methodsOpt = req.ResultIntellisenseInfo.GetMethodListForAMethodTip();
 					if (methodsOpt != null)
 					{
-						MethodListForAMethodTip methods = methodsOpt.Value;
+						MethodListForAMethodTip_DEPRECATED methods = methodsOpt.Value;
 
 						if (methods != null)
 						{
@@ -1256,7 +1256,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
 						}
 					}
-                    else if (req.MethodTipMiscellany == MethodTipMiscellany.JustPressedOpenParen && req.Timestamp != req.ResultTimestamp)
+                    else if (req.MethodTipMiscellany == MethodTipMiscellany_DEPRECATED.JustPressedOpenParen && req.Timestamp != req.ResultTimestamp)
                     {
                         // Second-chance param info: we didn't get any result and the basis typecheck was stale. We need to retrigger the completion.
                         this.MethodTip(req.View, req.Line, req.Col, req.TokenInfo, req.MethodTipMiscellany, RequireFreshResults.Yes);
@@ -1279,7 +1279,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             this.BeginBackgroundRequest(line, index, info, BackgroundRequestReason.MatchBraces, textView, RequireFreshResults.No, new BackgroundRequestResultHandler(this.HandleMatchBracesResponse));
         }
 
-        public void MatchBracesAndMethodTip(IVsTextView textView, int line, int index, MethodTipMiscellany misc, TokenInfo info)
+        public void MatchBracesAndMethodTip(IVsTextView textView, int line, int index, MethodTipMiscellany_DEPRECATED misc, TokenInfo info)
         {
             this.BeginBackgroundRequest(line, index, info, BackgroundRequestReason.MatchBracesAndMethodTip, textView, RequireFreshResults.No, 
                 req =>
@@ -1290,7 +1290,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                 );
         }
 
-        public void HandleMatchBracesResponse(BackgroundRequest req)
+        public void HandleMatchBracesResponse(BackgroundRequest_DEPRECATED req)
         {
             try
             {
@@ -1309,9 +1309,9 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                 NativeMethods.ThrowOnFailure(req.View.GetCaretPos(out line, out idx));
 
                 // Get all braces from language service and filter them
-                List<BraceMatch> braces = new List<BraceMatch>();
-                foreach (BraceMatch m in req.ResultSink.Braces) braces.Add(m);
-                braces.RemoveAll(delegate(BraceMatch match)
+                List<BraceMatch_DEPRECATED> braces = new List<BraceMatch_DEPRECATED>();
+                foreach (BraceMatch_DEPRECATED m in req.ResultSink.Braces) braces.Add(m);
+                braces.RemoveAll(delegate(BraceMatch_DEPRECATED match)
                 {
                     if (match.a.iStartLine == line && match.a.iStartIndex == idx) return false;
                     if (match.b.iEndLine == line && match.b.iEndIndex == idx) return false;
@@ -1320,7 +1320,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
                 // Transform collection of braces into an array of spans
                 List<TextSpan> spans = new List<TextSpan>();
-                foreach (BraceMatch m in braces)
+                foreach (BraceMatch_DEPRECATED m in braces)
                 {
                     spans.Add(m.a); spans.Add(m.b);
                 }
@@ -1415,7 +1415,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             endBraceSpan = new TextSpan();
 
             // Synchronously return the matching brace location.      
-            BackgroundRequest req = null;
+            BackgroundRequest_DEPRECATED req = null;
 
             if (this.lastBraceMatchRequest != null && this.lastBraceMatchRequest.Timestamp == this.ChangeCount)
             {
@@ -1449,7 +1449,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             int i = 0;
             for (i = 0; i < matches; i++)
             {
-                BraceMatch m = (BraceMatch)req.ResultSink.Braces[i];
+                BraceMatch_DEPRECATED m = (BraceMatch_DEPRECATED)req.ResultSink.Braces[i];
                 TripleMatch t = m as TripleMatch;
                 if (TextSpanHelper.ContainsInclusive(m.a, line, col))
                 {
@@ -1485,7 +1485,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return found;
         }
 
-        void HandleGetPairExtentResponse(BackgroundRequest request)
+        void HandleGetPairExtentResponse(BackgroundRequest_DEPRECATED request)
         {
             if (this.service == null)
             {
@@ -1494,7 +1494,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             this.lastBraceMatchRequest = request;
         }
 
-        public BackgroundRequest BeginBackgroundRequest(int line, int idx, TokenInfo info, BackgroundRequestReason reason, IVsTextView view, RequireFreshResults requireFreshResults, BackgroundRequestResultHandler callback, MethodTipMiscellany methodTipMiscellany = 0)
+        public BackgroundRequest_DEPRECATED BeginBackgroundRequest(int line, int idx, TokenInfo info, BackgroundRequestReason reason, IVsTextView view, RequireFreshResults requireFreshResults, BackgroundRequestResultHandler callback, MethodTipMiscellany_DEPRECATED methodTipMiscellany = 0)
         {
             var wpfTextView = GetWpfTextViewFromVsTextView(view);
             var snapshot = wpfTextView.TextSnapshot;
@@ -1516,7 +1516,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                 this.service.RecentFullTypeCheckFile.Equals(fname) &&
                 requireFreshResults != RequireFreshResults.Yes)
             {
-                BackgroundRequest request = this.service.CreateBackgroundRequest(this, line, idx, info, null, snapshot, methodTipMiscellany, fname, reason, view);
+                BackgroundRequest_DEPRECATED request = this.service.CreateBackgroundRequest(this, line, idx, info, null, snapshot, methodTipMiscellany, fname, reason, view);
                 request.ResultIntellisenseInfo = this.service.RecentFullTypeCheckResults;
                 request.ResultClearsDirtinessOfFile = false;
                 request.Timestamp = this.ChangeCount;
@@ -1528,7 +1528,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             {
 
                 string text = this.GetText(); // get all the text
-                BackgroundRequest request = this.service.CreateBackgroundRequest(this, line, idx, info, text, snapshot, methodTipMiscellany, fname, reason, view);
+                BackgroundRequest_DEPRECATED request = this.service.CreateBackgroundRequest(this, line, idx, info, text, snapshot, methodTipMiscellany, fname, reason, view);
                 request.Timestamp = this.ChangeCount;
                 request.DirtySpan = this.dirtySpan;
                 request.RequireFreshResults = requireFreshResults;
@@ -1550,7 +1550,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             }
         }
 
-        public void HandleResponseHelper(BackgroundRequest req)
+        public void HandleResponseHelper(BackgroundRequest_DEPRECATED req)
         {
             try
             {
@@ -1589,7 +1589,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         }
 
 
-        public void HandleUntypedParseOrFullTypeCheckResponse(BackgroundRequest req)
+        public void HandleUntypedParseOrFullTypeCheckResponse(BackgroundRequest_DEPRECATED req)
         {
             if (this.service == null) return;
             try
@@ -1933,7 +1933,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         char commitChar;
         int commitIndex;
         IVsTextView textView;
-        Declarations decls;
+        Declarations_DEPRECATED decls;
         string filterText;
         ISource source;
         bool isCommitted;
@@ -1972,7 +1972,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             }
         }
 
-        public void Init(IVsTextView textView, Declarations declarations, bool completeWord)
+        public void Init(IVsTextView textView, Declarations_DEPRECATED declarations, bool completeWord)
         {
             Close();
             this.textView = textView;
@@ -2110,13 +2110,13 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         int GetTokenExtent(int line, int idx, out int startIdx, out int endIdx)
         {
             int hr = Microsoft.VisualStudio.VSConstants.S_OK;
-            bool rc = this.source.GetWordExtent(line, idx, FSharpSourceBase.WholeToken, out startIdx, out endIdx);
+            bool rc = this.source.GetWordExtent(line, idx, FSharpSourceBase_DEPRECATED.WholeToken, out startIdx, out endIdx);
             // make sure the span is positive.
             endIdx = Math.Max(startIdx, endIdx);
 
             if (!rc && idx > 0)
             {
-                rc = this.source.GetWordExtent(line, idx - 1, FSharpSourceBase.WholeToken, out startIdx, out endIdx);
+                rc = this.source.GetWordExtent(line, idx - 1, FSharpSourceBase_DEPRECATED.WholeToken, out startIdx, out endIdx);
                 if (!rc)
                 {
                     // Must stop core text editor from looking at startIdx and endIdx since they are likely
@@ -2270,7 +2270,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
     {
         IServiceProvider provider;
         IVsMethodTipWindow methodTipWindow;
-        MethodListForAMethodTip methods;
+        MethodListForAMethodTip_DEPRECATED methods;
         private NativeStringsCacheForOverloads nativeStringsCacheForOverloads;
         int currentParameter;
         int currentMethod;
@@ -2321,7 +2321,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             }
         }
 
-        private static bool MethodsSeemToDiffer(MethodListForAMethodTip a, MethodListForAMethodTip b)
+        private static bool MethodsSeemToDiffer(MethodListForAMethodTip_DEPRECATED a, MethodListForAMethodTip_DEPRECATED b)
         {
             // this is an approximate test, that is good enough in practice
             return (a.GetName(0) != b.GetName(0))
@@ -2329,7 +2329,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                 || (!(a.GetNoteworthyParamInfoLocations()[0].Equals(b.GetNoteworthyParamInfoLocations()[0])));
         }
 
-        private static HashSet<string> FormalParamNames(MethodListForAMethodTip m, int index)
+        private static HashSet<string> FormalParamNames(MethodListForAMethodTip_DEPRECATED m, int index)
         {
             int numParams = m.GetParameterCount(index);
             HashSet<string> hs = new HashSet<string>();
@@ -2342,10 +2342,10 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return hs;
         }
 
-        public void Refresh(IVsTextView textView, MethodListForAMethodTip methods, TextSpan context, MethodTipMiscellany methodTipMiscellany)
+        public void Refresh(IVsTextView textView, MethodListForAMethodTip_DEPRECATED methods, TextSpan context, MethodTipMiscellany_DEPRECATED methodTipMiscellany)
         {
             bool needToDismissNow = false;
-            if (this.displayed && methodTipMiscellany == MethodTipMiscellany.JustPressedBackspace
+            if (this.displayed && methodTipMiscellany == MethodTipMiscellany_DEPRECATED.JustPressedBackspace
                 && MethodsSeemToDiffer(this.methods, methods))
             {
                 // We just hit backspace, and apparently the 'set of methods' changed.  This most commonly happens in a case like
@@ -2371,24 +2371,24 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                 this.Refresh(methodTipMiscellany);
             }
         }
-        public void Refresh(MethodTipMiscellany methodTipMiscellany)
+        public void Refresh(MethodTipMiscellany_DEPRECATED methodTipMiscellany)
         {
-            var wpfTextView = FSharpSourceBase.GetWpfTextViewFromVsTextView(textView);
+            var wpfTextView = FSharpSourceBase_DEPRECATED.GetWpfTextViewFromVsTextView(textView);
             var ranges = methods.GetParameterRanges();
             Debug.Assert(ranges != null && ranges.Length > 0);
 
             // Don't do anything for open parens and commas that aren't intrinsic to a method call
-            if (!this.displayed && methodTipMiscellany == MethodTipMiscellany.JustPressedCloseParen)
+            if (!this.displayed && methodTipMiscellany == MethodTipMiscellany_DEPRECATED.JustPressedCloseParen)
             {
                 return;  // close paren must never cause it to appear
             }
-            if (!this.displayed && methodTipMiscellany == MethodTipMiscellany.JustPressedOpenParen)
+            if (!this.displayed && methodTipMiscellany == MethodTipMiscellany_DEPRECATED.JustPressedOpenParen)
             {
                 // the only good open paren is the start of the first param, don't want to cause a tip to be displayed $here$:  foo(x, $($y+z), w)
                 if (!ranges[0].GetSpan(wpfTextView.TextSnapshot).Start.Equals(wpfTextView.Caret.Position.BufferPosition))
                     return;
             }
-            if (!this.displayed && methodTipMiscellany == MethodTipMiscellany.JustPressedComma)
+            if (!this.displayed && methodTipMiscellany == MethodTipMiscellany_DEPRECATED.JustPressedComma)
             {
                 // the only good commas will be, interestingly, at the start of the following param span
                 // this by virtue of fact that we assume comma is one character after where the previous parameter range ends (and thus the first character of the next range)
@@ -2426,7 +2426,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             {
                 // a bit of a kludge; if they just backspaced over the last comma and there's no close parenthesis, the caret is just to the right of all the param
                 // ranges, but we don't want to dismiss the tip.  so look just left of the caret and see if that would be inside the final param
-                if (methodTipMiscellany == MethodTipMiscellany.JustPressedBackspace
+                if (methodTipMiscellany == MethodTipMiscellany_DEPRECATED.JustPressedBackspace
                     && ranges[ranges.Length - 1].GetSpan(wpfTextView.TextSnapshot).Contains(wpfTextView.Caret.Position.BufferPosition.Subtract(1)))
                 {
                     this.currentParameter = ranges.Length - 1;
@@ -2439,8 +2439,8 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                 }
             }
             // possibly select a method from overload list based on current num of params the user has
-            if (methodTipMiscellany == MethodTipMiscellany.ExplicitlyInvokedViaCtrlShiftSpace
-                || methodTipMiscellany == MethodTipMiscellany.JustPressedComma)
+            if (methodTipMiscellany == MethodTipMiscellany_DEPRECATED.ExplicitlyInvokedViaCtrlShiftSpace
+                || methodTipMiscellany == MethodTipMiscellany_DEPRECATED.JustPressedComma)
             {
                 Debug.Assert(this.methods != null, "this can happen if we just called Dismiss() because we erroneously decided the caret moves outside the parens");
 

@@ -1672,6 +1672,26 @@ module TypecheckTests =
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
+    let ``sigs pos27`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:exe -o:pos27.exe" cfg.fsc_flags ["pos27.fs"]
+        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+
+        peverify cfg "pos27.exe"
+
+    [<Test>]
+    let ``sigs pos26`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:exe -o:pos26.exe" cfg.fsc_flags ["pos26.fsi"; "pos26.fs"]
+        peverify cfg "pos26.exe"
+
+    [<Test>]
+    let ``sigs pos25`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:exe -o:pos25.exe" cfg.fsc_flags ["pos25.fs"]
+        peverify cfg "pos25.exe"
+
+    [<Test>]
     let ``sigs pos24`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos24.exe" cfg.fsc_flags ["pos24.fs"]
@@ -2113,6 +2133,9 @@ module TypecheckTests =
 
     [<Test>] 
     let ``type check neg97`` () = singleNegTest (testConfig "typecheck/sigs") "neg97"
+
+    [<Test>] 
+    let ``type check neg98`` () = singleNegTest (testConfig "typecheck/sigs") "neg98"
 
     [<Test>] 
     let ``type check neg_byref_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_1"
