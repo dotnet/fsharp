@@ -17,6 +17,13 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <BaseAddress>0x06800000</BaseAddress>
     <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
+    <ImportVSSDKTargets>true</ImportVSSDKTargets>
+    <CreateVsixContainer>false</CreateVsixContainer>
+    <DeployExtension>false</DeployExtension>
+    <UseCodebase>true</UseCodebase>
+    <GeneratePkgDefFile>true</GeneratePkgDefFile>
+    <IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
+    <DefineConstants Condition="'$(AddVsSdkAttributesToSomeCoreComponents)' == 'true'">$(DefineConstants);HAVE_VS_SDK</DefineConstants>
   </PropertyGroup>
   <!-- References -->
   <Import Project="$(FSharpSourcesRoot)\.nuget\NuGet.targets" Condition="Exists('$(FSharpSourcesRoot)\.nuget\NuGet.targets')" />
@@ -37,6 +44,7 @@
   </Target>
   <Import Project="$(FSharpSourcesRoot)\.nuget\NuGet.targets" Condition="Exists('$(FSharpSourcesRoot)\.nuget\NuGet.targets')" />
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  <Import Project="$(VsSDKInstall)\Microsoft.VsSDK.targets" Condition="'$(AddVsSdkAttributesToSomeCoreComponents)' == 'true'"/>
   <Import Project="$(FsLexToolPath)\FsLexYacc.targets" />
   <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
     <ItemGroup>
@@ -663,6 +671,15 @@
     <Reference Include="System.ValueTuple">
       <HintPath>..\..\..\packages\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
       <Private>true</Private>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Shell.14.0, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" Condition="'$(AddVsSdkAttributesToSomeCoreComponents)' == 'true'">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.14.0.14.3.25407\lib\Microsoft.VisualStudio.Shell.14.0.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Shell.Framework" Condition="'$(AddVsSdkAttributesToSomeCoreComponents)' == 'true'">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Framework.$(RoslynVSPackagesVersion)\lib\net45\Microsoft.VisualStudio.Shell.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" Condition="'$(AddVsSdkAttributesToSomeCoreComponents)' == 'true'">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Immutable.10.0.10.0.30319\lib\net40\Microsoft.VisualStudio.Shell.Immutable.10.0.dll</HintPath>
     </Reference>
   </ItemGroup>
   <Choose>

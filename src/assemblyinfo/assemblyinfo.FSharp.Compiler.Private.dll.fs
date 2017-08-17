@@ -71,4 +71,10 @@ open System.Runtime.InteropServices
 [<assembly: System.Reflection.AssemblyFileVersion("2017.06.27.0")>]
 #endif
 
+#if HAVE_VS_SDK
+// This Visual Studio-specific attribute is needed on this DLL because for historical reasons it shipped as part of the Visual F# IDE Tools rather than this F# SDK
+[<assembly: Microsoft.VisualStudio.Shell.ProvideCodeBase(CodeBase = @"$PackageFolder$\FSharp.Compiler.Private.dll")>]
+do()
+#endif
+
 do()

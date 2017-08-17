@@ -518,8 +518,7 @@ if defined TF_BUILD (
     git fetch --all
 )
 
-set msbuildflags=%_nrswitch% /nologo
-REM set msbuildflags=%_nrswitch% /nologo
+set msbuildflags=%_nrswitch% /nologo /m
 set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
 if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 
