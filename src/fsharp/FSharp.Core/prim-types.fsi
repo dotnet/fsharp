@@ -1105,7 +1105,7 @@ namespace Microsoft.FSharp.Core
 
             /// <summary>A compiler intrinsic for the efficient compilation of sequence expressions</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
-            val Dispose<'T when 'T :> System.IDisposable > : resource:'T -> unit
+            val Dispose<'T> : resource:'T -> unit
 
             /// <summary>A compiler intrinsic for checking initialization soundness of recursive bindings</summary>
             [<CompilerMessage("This function is for use by compiled F# code and should not be used directly", 1204, IsHidden=true)>]
