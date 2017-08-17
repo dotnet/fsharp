@@ -10,6 +10,7 @@
                 Supported Platforms:
                     .NET 4.5+           (net45)
                     netstandard1.6      (netstandard1.6)
+                    netstandard2.0      (netstandard2.0)
         </description>
         <language>en-US</language>
         <version>$version$</version>
@@ -44,6 +45,8 @@
                 <dependency id="System.Threading.ThreadPool" version="4.0.10" />
                 <dependency id="System.Threading.Timer" version="4.0.1" />
             </group>
+            <group targetFramework=".NETStandard2.0">
+            </group>
             <group targetFramework="net45">
             </group>
         </dependencies>
@@ -53,6 +56,11 @@
         <file src="coreclr/bin/FSharp.Core.sigdata"      target="lib/netstandard1.6/" />
         <file src="coreclr/bin/FSharp.Core.optdata"      target="lib/netstandard1.6/" />
         <file src="coreclr/bin/FSharp.Core.xml"          target="lib/netstandard1.6/" />
+
+        <file src="coreclr2/bin/FSharp.Core.dll"          target="lib/netstandard2.0/" />
+        <file src="coreclr2/bin/FSharp.Core.sigdata"      target="lib/netstandard2.0/" />
+        <file src="coreclr2/bin/FSharp.Core.optdata"      target="lib/netstandard2.0/" />
+        <file src="coreclr2/bin/FSharp.Core.xml"          target="lib/netstandard2.0/" />
 
         <file src="net40/bin/FSharp.Core.dll"            target="lib/net45/" />
         <file src="net40/bin/FSharp.Core.sigdata"        target="lib/net45/" />
