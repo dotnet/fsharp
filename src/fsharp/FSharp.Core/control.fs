@@ -2308,7 +2308,7 @@ namespace Microsoft.FSharp.Control
         let ensurePulse() = 
             match pulse with 
             | null -> 
-                pulse <- new AutoResetEvent(false)
+                pulse <- new AutoResetEvent(false);
             | _ -> 
                 ()
             pulse
@@ -2391,7 +2391,7 @@ namespace Microsoft.FSharp.Control
                 then None
                 else
                     let x = inbox.[0]
-                    inbox.RemoveAt(0)
+                    inbox.RemoveAt(0);
                     Some(x)
 
         member x.Post(msg) =
@@ -2406,10 +2406,9 @@ namespace Microsoft.FSharp.Control
                 | None -> 
                     match pulse with 
                     | null -> 
-                        // No one waiting, leaving the message in the queue is sufficient
-                        () 
+                        () // no one waiting, leaving the message in the queue is sufficient
                     | ev -> 
-                        // Someone is waiting on the wait handle
+                        // someone is waiting on the wait handle
                         ev.Set() |> ignore
 
                 | Some(action,trampolineHolder) -> 
