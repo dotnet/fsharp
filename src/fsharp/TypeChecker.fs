@@ -2120,9 +2120,11 @@ module GeneralizationHelpers =
             && List.forall (IsGeneralizableValue g) args
 
         | Expr.LetRec(binds,body,_,_)  ->
+            binds |> List.forall (fun b -> not b.Var.IsMutable) &&
             binds |> List.forall (fun b -> IsGeneralizableValue g b.Expr) &&
             IsGeneralizableValue g body
         | Expr.Let(bind,body,_,_) -> 
+            not bind.Var.IsMutable &&
             IsGeneralizableValue g bind.Expr &&
             IsGeneralizableValue g body
 
@@ -3329,7 +3331,9 @@ let AnalyzeArbitraryExprAsEnumerable cenv (env: TcEnv) localAlloc m exprty expr 
         if (AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m ty exprty) then 
             match tryType (mkCoerceExpr(expr,ty,expr.Range,exprty),ty) with 
             | Result res  -> Some res
-            | Exception e -> raise e
+            | Exception e -> 
+                PreserveStackTrace(e)
+                raise e
         else None
 
     // Next try to typecheck the thing as a sequence
@@ -3343,6 +3347,7 @@ let AnalyzeArbitraryExprAsEnumerable cenv (env: TcEnv) localAlloc m exprty expr 
     match probe ienumerable with
     | Some res -> res
     | None ->
+    PreserveStackTrace(e)
     raise e
 
 
@@ -15030,7 +15035,7 @@ module EstablishTypeDefinitionCores =
             let hasMeasureableAttr = HasFSharpAttribute cenv.g cenv.g.attrib_MeasureableAttribute attrs
             let hasCLIMutable = HasFSharpAttribute cenv.g cenv.g.attrib_CLIMutableAttribute attrs
             
-            let hasStructLayoutAttr = HasFSharpAttribute cenv.g cenv.g.attrib_StructLayoutAttribute attrs
+            let structLayoutAttr = TryFindFSharpInt32Attribute cenv.g cenv.g.attrib_StructLayoutAttribute attrs
             let hasAllowNullLiteralAttr = TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_AllowNullLiteralAttribute attrs = Some(true)
 
             if hasAbstractAttr then 
@@ -15051,13 +15056,17 @@ module EstablishTypeDefinitionCores =
                 
                 
             let structLayoutAttributeCheck(allowed) = 
-                if hasStructLayoutAttr  then 
+                let explicitKind = int32 System.Runtime.InteropServices.LayoutKind.Explicit
+                match structLayoutAttr with
+                | Some kind ->
                     if allowed then 
-                        warning(PossibleUnverifiableCode(m))
+                        if kind = explicitKind then
+                            warning(PossibleUnverifiableCode(m))
                     elif thisTyconRef.Typars(m).Length > 0 then 
                         errorR (Error(FSComp.SR.tcGenericTypesCannotHaveStructLayout(),m))
                     else
                         errorR (Error(FSComp.SR.tcOnlyStructsCanHaveStructLayout(),m))
+                | None -> ()
                 
             let hiddenReprChecks(hasRepr) =
                  structLayoutAttributeCheck(false)

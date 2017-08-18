@@ -80,7 +80,7 @@ module EnvMisc =
 [<RequireQualifiedAccess>]
 type FSharpFindDeclFailureReason = 
     // generic reason: no particular information about error
-    | Unknown
+    | Unknown of message: string
     // source code file is not available
     | NoSourceCode
     // trying to find declaration of ProvidedType without TypeProviderDefinitionLocationAttribute
@@ -589,7 +589,7 @@ type TypeCheckInfo
     let getItem (x: ItemWithInst) = x.Item
     let GetDeclaredItems (parseResultsOpt: FSharpParseFileResults option, lineStr: string, origLongIdentOpt, colAtEndOfNamesAndResidue, residueOpt, line, loc, 
                           filterCtors, resolveOverloads, hasTextChangedSinceLastTypecheck, isInRangeOperator, allSymbols: unit -> AssemblySymbol list) =
- 
+
             // Are the last two chars (except whitespaces) = ".."
             let isLikeRangeOp = 
                 match FindFirstNonWhitespacePosition lineStr (colAtEndOfNamesAndResidue - 1) with
@@ -893,7 +893,9 @@ type TypeCheckInfo
                 /// Find items in the best naming environment.
                 let (nenv, ad), m = GetBestEnvForPos cursorPos
                 NameResolution.IsItemResolvable ncenv nenv m ad plid item)
-            (fun _ -> false)
+            (fun msg -> 
+                Trace.TraceInformation(sprintf "FCS: recovering from error in IsRelativeNameResolvable: '%s'" msg)
+                false)
         
     /// Get the auto-complete items at a location
     member __.GetDeclarations (ctok, parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, getAllSymbols, hasTextChangedSinceLastTypecheck) =
@@ -911,7 +913,9 @@ type TypeCheckInfo
                         |> Option.map (fun parsedInput -> UntypedParseImpl.GetFullNameOfSmallestModuleOrNamespaceAtPoint(parsedInput, mkPos line 0))
                     let isAttributeApplication = ctx = Some CompletionContext.AttributeApplication
                     FSharpDeclarationListInfo.Create(infoReader,m,denv,getAccessibility,items,reactorOps,currentNamespaceOrModule,isAttributeApplication,checkAlive))
-            (fun msg -> FSharpDeclarationListInfo.Error msg)
+            (fun msg -> 
+                Trace.TraceInformation(sprintf "FCS: recovering from error in GetDeclarations: '%s'" msg)
+                FSharpDeclarationListInfo.Error msg)
 
     /// Get the symbols for auto-complete items at a location
     member __.GetDeclarationListSymbols (ctok, parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, hasTextChangedSinceLastTypecheck) =
@@ -975,7 +979,9 @@ type TypeCheckInfo
 
                     //end filtering
                     items)
-            (fun _msg -> [])
+            (fun msg -> 
+                Trace.TraceInformation(sprintf "FCS: recovering from error in GetDeclarationListSymbols: '%s'" msg)
+                [])
             
     /// Get the "reference resolution" tooltip for at a location
     member __.GetReferenceResolutionStructuredToolTipText(ctok, line,col) = 
@@ -1009,7 +1015,9 @@ type TypeCheckInfo
                                     
         ErrorScope.Protect Range.range0 
             dataTipOfReferences
-            (fun err -> FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError err])
+            (fun err -> 
+                Trace.TraceInformation(sprintf "FCS: recovering from error in GetReferenceResolutionStructuredToolTipText: '%s'" err)
+                FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError err])
 
     // GetToolTipText: return the "pop up" (or "Quick Info") text given a certain context.
     member __.GetStructuredToolTipText(ctok, line, lineStr, colAtEndOfNames, names) = 
@@ -1020,7 +1028,9 @@ type TypeCheckInfo
                     | None -> FSharpToolTipText []
                     | Some(items, denv, _, m) ->
                          FSharpToolTipText(items |> List.map (fun x -> FormatStructuredDescriptionOfItem false infoReader m denv x.ItemWithInst)))
-                (fun err -> FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError err])
+                (fun err -> 
+                    Trace.TraceInformation(sprintf "FCS: recovering from error in GetStructuredToolTipText: '%s'" err)
+                    FSharpToolTipText [FSharpStructuredToolTipElement.CompositionError err])
                
         // See devdiv bug 646520 for rationale behind truncating and caching these quick infos (they can be big!)
         let key = line,colAtEndOfNames,lineStr
@@ -1059,7 +1069,9 @@ type TypeCheckInfo
                                 -> GetF1Keyword g typ
                         |   _ -> None
             )    
-            (fun _ -> None)
+            (fun msg -> 
+                Trace.TraceInformation(sprintf "FCS: recovering from error in GetF1Keyword: '%s'" msg)
+                None)
 
     member __.GetMethods (ctok, line, lineStr, colAtEndOfNames, namesOpt) =
         ErrorScope.Protect Range.range0 
@@ -1068,20 +1080,29 @@ type TypeCheckInfo
                 | None -> FSharpMethodGroup("",[| |])
                 | Some (items, denv, _, m) -> FSharpMethodGroup.Create(infoReader, m, denv, items |> List.map (fun x -> x.ItemWithInst)))
             (fun msg -> 
+                Trace.TraceInformation(sprintf "FCS: recovering from error in GetMethods: '%s'" msg)
                 FSharpMethodGroup(msg,[| |]))
 
     member __.GetMethodsAsSymbols (ctok, line, lineStr, colAtEndOfNames, names) =
+      ErrorScope.Protect Range.range0 
+       (fun () -> 
         match GetDeclItemsForNamesAtPosition (ctok, None,Some(names), None, line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors, ResolveOverloads.No,(fun() -> []),fun _ -> false) with
         | None | Some ([],_,_,_) -> None
         | Some (items, denv, _, m) ->
             let allItems = items |> List.collect (fun item -> SymbolHelpers.FlattenItems g m item.Item)
             let symbols = allItems |> List.map (fun item -> FSharpSymbol.Create(g, thisCcu, tcImports, item))
             Some (symbols, denv, m)
+       )
+       (fun msg -> 
+           Trace.TraceInformation(sprintf "FCS: recovering from error in GetMethodsAsSymbols: '%s'" msg)
+           None)
 
     member scope.GetDeclarationLocation (ctok, line, lineStr, colAtEndOfNames, names, preferFlag) =
+      ErrorScope.Protect Range.range0 
+       (fun () -> 
           match GetDeclItemsForNamesAtPosition (ctok, None,Some(names), None, line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors,ResolveOverloads.Yes,(fun() -> []), fun _ -> false) with
           | None
-          | Some ([], _, _, _) -> FSharpFindDeclResult.DeclNotFound FSharpFindDeclFailureReason.Unknown
+          | Some ([], _, _, _) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.Unknown "")
           | Some (item :: _, _, _, _) -> 
 
               // For IL-based entities, switch to a different item. This is because
@@ -1110,7 +1131,7 @@ type TypeCheckInfo
                   | _ -> FSharpFindDeclResult.DeclNotFound defaultReason
 
               match rangeOfItem g preferFlag item with
-              | None   -> fail FSharpFindDeclFailureReason.Unknown 
+              | None   -> fail (FSharpFindDeclFailureReason.Unknown "")
               | Some itemRange -> 
 
                   let projectDir = Filename.directoryName (if projectFileName = "" then mainInputFileName else projectFileName)
@@ -1119,13 +1140,23 @@ type TypeCheckInfo
                       FSharpFindDeclResult.DeclFound (mkRange filename itemRange.Start itemRange.End)
                   else 
                       fail FSharpFindDeclFailureReason.NoSourceCode // provided items may have TypeProviderDefinitionLocationAttribute that binds them to some location
+       )
+       (fun msg -> 
+           Trace.TraceInformation(sprintf "FCS: recovering from error in GetDeclarationLocation: '%s'" msg)
+           FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.Unknown msg))
 
     member scope.GetSymbolUseAtLocation (ctok, line, lineStr, colAtEndOfNames, names) =
+      ErrorScope.Protect Range.range0 
+       (fun () -> 
         match GetDeclItemsForNamesAtPosition (ctok, None,Some(names), None, line, lineStr, colAtEndOfNames, ResolveTypeNamesToCtors, ResolveOverloads.Yes,(fun() -> []), fun _ -> false) with
         | None | Some ([], _, _, _) -> None
         | Some (item :: _, denv, _, m) -> 
             let symbol = FSharpSymbol.Create(g, thisCcu, tcImports, item.Item)
             Some (symbol, denv, m)
+       ) 
+       (fun msg -> 
+           Trace.TraceInformation(sprintf "FCS: recovering from error in GetSymbolUseAtLocation: '%s'" msg)
+           None)
 
     member scope.PartialAssemblySignature() = FSharpAssemblySignature(g, thisCcu, tcImports, None, ccuSig)
 
@@ -1139,6 +1170,8 @@ type TypeCheckInfo
          sSymbolUses.GetFormatSpecifierLocationsAndArity()
 
     member __.GetSemanticClassification(range: range option) : (range * SemanticClassificationType) [] =
+      ErrorScope.Protect Range.range0 
+       (fun () -> 
         let (|LegitTypeOccurence|_|) = function
             | ItemOccurence.UseInType
             | ItemOccurence.UseInAttribute
@@ -1243,6 +1276,10 @@ type TypeCheckInfo
             | _ -> None)
         |> Seq.toArray
         |> Array.append (sSymbolUses.GetFormatSpecifierLocationsAndArity() |> Array.map (fun m -> fst m, SemanticClassificationType.Printf))
+       ) 
+       (fun msg -> 
+           Trace.TraceInformation(sprintf "FCS: recovering from error in GetSemanticClassification: '%s'" msg)
+           Array.empty)
 
     /// The resolutions in the file
     member __.ScopeResolutions = sResolutions
@@ -1291,7 +1328,7 @@ module internal Parser =
                 if not(exn.IsPhaseInCompile()) then
                     // Reaching this point means that the error would be sticky if we let it prop up to the language service.
                     // Assert and recover by replacing phase with one known to the language service.
-                    System.Diagnostics.Debug.Assert(false, sprintf "The subcategory '%s' seen in an error should not be seen by the language service" (exn.Subcategory()))
+                    Trace.TraceInformation(sprintf "The subcategory '%s' seen in an error should not be seen by the language service" (exn.Subcategory()))
                     {exn with Phase=BuildPhase.TypeCheck}
                 else exn
             if reportErrors then 
@@ -1815,7 +1852,7 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
             
     member info.GetDeclarationLocation (line, colAtEndOfNames, lineStr, names, ?preferFlag, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
-        let dflt = FSharpFindDeclResult.DeclNotFound FSharpFindDeclFailureReason.Unknown
+        let dflt = FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.Unknown "")
         reactorOp userOpName "GetDeclarationLocation" dflt (fun ctok scope -> 
             scope.GetDeclarationLocation (ctok, line, lineStr, colAtEndOfNames, names, preferFlag))
 
@@ -2043,7 +2080,9 @@ module CompileHelpers =
             for exec in execs do 
                 match exec() with 
                 | None -> ()
-                | Some exn -> raise exn
+                | Some exn -> 
+                    PreserveStackTrace(exn)
+                    raise exn
 
         // Register the reflected definitions for the dynamically generated assembly
         for resource in ilxMainModule.Resources.AsList do 
