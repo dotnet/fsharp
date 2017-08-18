@@ -89,8 +89,8 @@ module internal GotoDefinition =
                               | FSharpFindDeclFailureReason.ProvidedMember(name) -> Strings.Errors.GotoFailed_ProvidedMember(name)
                           GotoDefinitionResult_DEPRECATED.MakeError text
                       | FSharpFindDeclResult.ExternalDecl _ -> 
-                            GotoDefinitionResult.MakeError(Strings.Errors.GotoDefinitionFailed_NoSourceCode())
-                else 
+                            GotoDefinitionResult_DEPRECATED.MakeError(Strings.Errors.GotoDefinitionFailed_NoSourceCode())
+                else
                     Trace.Write("LanguageService", "Goto definition: No 'TypeCheckInfo' available")
                     Strings.Errors.GotoDefinitionFailed_NoTypecheckInfo()
                     |> GotoDefinitionResult_DEPRECATED.MakeError

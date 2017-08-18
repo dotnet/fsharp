@@ -149,7 +149,7 @@ type internal FSharpGoToDefinitionService
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager,
+        projectInfoManager: FSharpProjectOptionsManager
     ) =
 
     static let userOpName = "GoToDefinition"
