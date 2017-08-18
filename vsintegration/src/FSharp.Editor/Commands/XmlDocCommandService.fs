@@ -21,9 +21,12 @@ type internal XmlDocCommandFilter
         wpfTextView: IWpfTextView, 
         filePath: string, 
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager,
+        projectInfoManager: FSharpProjectOptionsManager,
         workspace: VisualStudioWorkspaceImpl
      ) =
+
+    static let userOpName = "XmlDocCommand"
+
     let checker = checkerProvider.Checker
 
     let document =
@@ -65,7 +68,7 @@ type internal XmlDocCommandFilter
                                 let! document = document.Value
                                 let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                                 let sourceText = wpfTextView.TextBuffer.CurrentSnapshot.GetText()
-                                let! parsedInput = checker.ParseDocument(document, options, sourceText)
+                                let! parsedInput = checker.ParseDocument(document, options, sourceText, userOpName)
                                 let xmlDocables = XmlDocParser.getXmlDocables (sourceText, Some parsedInput) 
                                 let xmlDocablesBelowThisLine = 
                                     // +1 because looking below current line for e.g. a 'member'
@@ -114,7 +117,7 @@ type internal XmlDocCommandFilter
 type internal XmlDocCommandFilterProvider 
     [<ImportingConstructor>] 
     (checkerProvider: FSharpCheckerProvider,
-     projectInfoManager: ProjectInfoManager,
+     projectInfoManager: FSharpProjectOptionsManager,
      workspace: VisualStudioWorkspaceImpl,
      textDocumentFactoryService: ITextDocumentFactoryService,
      editorFactory: IVsEditorAdaptersFactoryService) =

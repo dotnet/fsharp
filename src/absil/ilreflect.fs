@@ -301,7 +301,7 @@ module Zmap =
     let force x m str = match Zmap.tryFind x m with Some y -> y | None -> failwithf "Zmap.force: %s: x = %+A" str x
 
 let equalTypes (s:Type) (t:Type) = s.Equals(t)
-let equalTypeLists ss tt =  List.lengthsEqAndForall2 equalTypes ss tt
+let equalTypeLists ss tt = List.lengthsEqAndForall2 equalTypes ss tt
 
 let getGenericArgumentsOfType (typT : Type) = 
     if typT.IsGenericType   then typT.GetGenericArguments() else [| |]
@@ -1466,6 +1466,7 @@ let convMethodImplFlags mdef =
     ||| flagsIf mdef.IsPreserveSig MethodImplAttributes.PreserveSig
     ||| flagsIf mdef.IsSynchronized MethodImplAttributes.Synchronized
     ||| flagsIf (match mdef.mdBody.Contents with MethodBody.IL b -> b.NoInlining | _ -> false) MethodImplAttributes.NoInlining
+    ||| flagsIf (match mdef.mdBody.Contents with MethodBody.IL b -> b.AggressiveInlining | _ -> false) MethodImplAttributes.AggressiveInlining
 
 //----------------------------------------------------------------------------
 // buildMethodPass2

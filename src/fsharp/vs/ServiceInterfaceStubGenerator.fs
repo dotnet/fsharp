@@ -11,6 +11,7 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
         
+#if !FX_NO_INDENTED_TEXT_WRITER
 [<AutoOpen>]
 module internal CodeGenerationUtils =
     open System.IO
@@ -447,7 +448,7 @@ module internal InterfaceStubGenerator =
 
     let internal (|TypeOfMember|_|) (m: FSharpMemberOrFunctionOrValue) =
         match m.FullTypeSafe with
-        | Some (MemberFunctionType typ) when m.IsProperty && m.EnclosingEntity.IsFSharp ->
+        | Some (MemberFunctionType typ) when m.IsProperty && m.EnclosingEntity.IsSome && m.EnclosingEntity.Value.IsFSharp ->
             Some typ
         | Some typ -> Some typ
         | None -> None
@@ -909,3 +910,4 @@ module internal InterfaceStubGenerator =
             None
         | ParsedInput.ImplFile input -> 
             walkImplFileInput input
+#endif

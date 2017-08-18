@@ -139,16 +139,18 @@ module internal BlockStructure =
 
 open BlockStructure
  
-type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoManager: ProjectInfoManager) =
+type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoManager: FSharpProjectOptionsManager) =
     inherit BlockStructureService()
         
+    static let userOpName = "BlockStructure"
+
     override __.Language = FSharpConstants.FSharpLanguageName
  
     override __.GetBlockStructureAsync(document, cancellationToken) : Task<BlockStructure> =
         asyncMaybe {
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
             let! sourceText = document.GetTextAsync(cancellationToken)
-            let! parsedInput = checker.ParseDocument(document, options, sourceText)
+            let! parsedInput = checker.ParseDocument(document, options, sourceText, userOpName)
             return createBlockSpans sourceText parsedInput |> Seq.toImmutableArray
         } 
         |> Async.map (Option.defaultValue ImmutableArray<_>.Empty)
@@ -156,7 +158,7 @@ type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoMan
         |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
 
 [<ExportLanguageServiceFactory(typeof<BlockStructureService>, FSharpConstants.FSharpLanguageName); Shared>]
-type internal FSharpBlockStructureServiceFactory [<ImportingConstructor>](checkerProvider: FSharpCheckerProvider, projectInfoManager: ProjectInfoManager) =
+type internal FSharpBlockStructureServiceFactory [<ImportingConstructor>](checkerProvider: FSharpCheckerProvider, projectInfoManager: FSharpProjectOptionsManager) =
     interface ILanguageServiceFactory with
         member __.CreateLanguageService(_languageServices) =
             upcast FSharpBlockStructureService(checkerProvider.Checker, projectInfoManager)

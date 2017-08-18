@@ -1,5 +1,7 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
+//------- DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS ---------------
+
 namespace Microsoft.VisualStudio.FSharp.LanguageService
 
 open System
@@ -17,16 +19,15 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 module internal TaggedText =
     let appendTo (sb: System.Text.StringBuilder) (t: Layout.TaggedText) = sb.Append t.Text |> ignore 
  
-/// Represents all the information necessary to display and navigate 
-/// within a method tip (e.g. param info, overloads, ability to move thru overloads and params)
-///
-/// Completes the base class "MethodListForAMethodTip" with F#-specific implementations.
+// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
 //
-// Note, the MethodListForAMethodTip type inherited by this code is defined in the F# Project System C# code. This is the only implementation
-// in the codebase, hence we are free to change it and refactor things (e.g. bring more things into F# code) 
-// if we wish.
-type internal FSharpMethodListForAMethodTip(documentationBuilder: IDocumentationBuilder, methodsName, methods: FSharpMethodGroupItem[], nwpl: FSharpNoteworthyParamInfoLocations, snapshot: ITextSnapshot, isThisAStaticArgumentsTip: bool) =
-    inherit MethodListForAMethodTip() 
+// Note: Tests using this code should either be adjusted to test the corresponding feature in
+// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
+// functionality and thus have considerable value, they should ony be deleted if we are sure this 
+// is not the case.
+//
+type internal FSharpMethodListForAMethodTip_DEPRECATED(documentationBuilder: IDocumentationBuilder_DEPRECATED, methodsName, methods: FSharpMethodGroupItem[], nwpl: FSharpNoteworthyParamInfoLocations, snapshot: ITextSnapshot, isThisAStaticArgumentsTip: bool) =
+    inherit MethodListForAMethodTip_DEPRECATED() 
 
     // Compute the tuple end points
     let tupleEnds = 
@@ -67,11 +68,11 @@ type internal FSharpMethodListForAMethodTip(documentationBuilder: IDocumentation
 
     override x.GetDescription(methodIndex) = safe methodIndex "" (fun m -> 
         let buf = Text.StringBuilder()
-        XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, m.StructuredDescription, true)
+        XmlDocumentation.BuildMethodOverloadTipText_DEPRECATED(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, m.StructuredDescription, true)
         buf.ToString()
         )
             
-    override x.GetType(methodIndex) = safe methodIndex "" (fun m -> m.TypeText)
+    override x.GetReturnTypeText(methodIndex) = safe methodIndex "" (fun m -> m.ReturnTypeText)
 
     override x.GetParameterCount(methodIndex) =  safe methodIndex 0 (fun m -> getParameters(m).Length)
             
@@ -106,14 +107,16 @@ type internal ObsoleteGlyph =
     | Record = 126
     | DiscriminatedUnion = 132
 
-/// A collections of declarations as would be returned by a dot-completion request.
+// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
 //
-// Note, the Declarations type inherited by this code is defined in the F# Project System C# code. This is the only implementation
-// in the codebase, hence we are free to change it and refactor things (e.g. bring more things into F# code) 
-// if we wish.
-type internal FSharpDeclarations(documentationBuilder, declarations: FSharpDeclarationListItem[], reason: BackgroundRequestReason) = 
+// Note: Tests using this code should either be adjusted to test the corresponding feature in
+// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
+// functionality and thus have considerable value, they should ony be deleted if we are sure this 
+// is not the case.
+//
+type internal FSharpDeclarations_DEPRECATED(documentationBuilder, declarations: FSharpDeclarationListItem[], reason: BackgroundRequestReason) = 
         
-    inherit Declarations()  
+    inherit Declarations_DEPRECATED()  
 
     // Sort the declarations, NOTE: we used ORDINAL comparison here, this is "by design" from F# 2.0, partly because it puts lowercase last.
     let declarations = declarations |> Array.sortWith (fun d1 d2 -> compare d1.Name d2.Name)
@@ -178,7 +181,7 @@ type internal FSharpDeclarations(documentationBuilder, declarations: FSharpDecla
         let decls = trimmedDeclarations filterText
         if (index >= 0 && index < decls.Length) then
             let buf = Text.StringBuilder()
-            XmlDocumentation.BuildDataTipText(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, decls.[index].StructuredDescriptionText) 
+            XmlDocumentation.BuildDataTipText_DEPRECATED(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, decls.[index].StructuredDescriptionText) 
             buf.ToString()
         else ""
 
@@ -279,11 +282,14 @@ type internal FSharpDeclarations(documentationBuilder, declarations: FSharpDecla
 
 
                    
-/// Implements the remainder of the IntellisenseInfo base type from MPF.
-/// 
-/// The scope object is the result of computing a particular typecheck. It may be queried for things like
-/// data tip text, member completion and so forth.
-type internal FSharpIntellisenseInfo 
+// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
+//
+// Note: Tests using this code should either be adjusted to test the corresponding feature in
+// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
+// functionality and thus have considerable value, they should ony be deleted if we are sure this 
+// is not the case.
+//
+type internal FSharpIntellisenseInfo_DEPRECATED 
                     (/// The recent result of parsing
                      untypedResults: FSharpParseFileResults,
                      /// Line/column/snapshot of BackgroundRequest that initiated creation of this scope
@@ -295,12 +301,12 @@ type internal FSharpIntellisenseInfo
                      /// The text view
                      view: IVsTextView,
                      /// The colorizer for this view (though why do we need to be lazy about creating this?)
-                     colorizer: Lazy<FSharpColorizer>,
+                     colorizer: Lazy<FSharpColorizer_DEPRECATED>,
                      /// A service that will provide Xml Content
-                     documentationBuilder : IDocumentationBuilder,
+                     documentationBuilder : IDocumentationBuilder_DEPRECATED,
                      provideMethodList : bool
                      ) = 
-        inherit IntellisenseInfo() 
+        inherit IntellisenseInfo_DEPRECATED() 
 
         let methodList = 
           if provideMethodList then 
@@ -321,7 +327,7 @@ type internal FSharpIntellisenseInfo
                         // This can happen e.g. if you are typing quickly and the typecheck results are stale enough that you don't have a captured resolution for
                         // the name you just typed, but fresh enough that you do have the right name-resolution-environment to look up the name.
                         let lidEnd = nwpl.LongIdEndLocation
-                        let methods = typedResults.GetMethodsAlternate(lidEnd.Line, lidEnd.Column, "", Some names)  |> Async.RunSynchronously
+                        let methods = typedResults.GetMethods(lidEnd.Line, lidEnd.Column, "", Some names)  |> Async.RunSynchronously
                         
                         // If the name is an operator ending with ">" then it is a mistake 
                         // we can't tell whether "  >(" is a generic method call or an operator use 
@@ -356,7 +362,7 @@ type internal FSharpIntellisenseInfo
                                            (not isThisAStaticArgumentsTip && m.HasParameters) then   // need to distinguish TP<...>(...)  angle brackets tip from parens tip
                                             yield m |]
                             if filteredMethods.Length <> 0 then
-                                Some (FSharpMethodListForAMethodTip(documentationBuilder, methods.MethodName, filteredMethods, nwpl, brSnapshot, isThisAStaticArgumentsTip) :> MethodListForAMethodTip)
+                                Some (FSharpMethodListForAMethodTip_DEPRECATED(documentationBuilder, methods.MethodName, filteredMethods, nwpl, brSnapshot, isThisAStaticArgumentsTip) :> MethodListForAMethodTip_DEPRECATED)
                             else
                                 None
                     | _ -> 
@@ -421,7 +427,7 @@ type internal FSharpIntellisenseInfo
                     // Try the actual column first...
                     let tokenTag, col, possibleIdentifier, makeSecondAttempt =
                       if token.Type = TokenType.Operator && not alwaysTreatTokenAsIdentifier then                      
-                          let tag, startCol, endCol = OperatorToken.asIdentifier token                      
+                          let tag, startCol, endCol = OperatorToken.asIdentifier_DEPRECATED token                      
                           let op = lineText.Substring(startCol, endCol - startCol)
                           tag, startCol, Some(op, endCol, false), true
                       else
@@ -445,13 +451,13 @@ type internal FSharpIntellisenseInfo
                                                 
                             // Correct the identifier (e.g. to correctly handle active pattern names that end with "BAR" token)
                             let tokenTag = QuickParse.CorrectIdentifierToken s tokenTag
-                            let dataTip = typedResults.GetStructuredToolTipTextAlternate(Range.Line.fromZ line, colAtEndOfNames, lineText, qualId, tokenTag) |> Async.RunSynchronously
+                            let dataTip = typedResults.GetStructuredToolTipText(Range.Line.fromZ line, colAtEndOfNames, lineText, qualId, tokenTag) |> Async.RunSynchronously
 
                             match dataTip with
                             | FSharpStructuredToolTipText.FSharpToolTipText [] when makeSecondAttempt -> getDataTip true
                             | _ -> 
                                 let buf = Text.StringBuilder()
-                                XmlDocumentation.BuildDataTipText(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, dataTip)
+                                XmlDocumentation.BuildDataTipText_DEPRECATED(documentationBuilder, TaggedText.appendTo buf, TaggedText.appendTo buf, dataTip)
 
                                 // The data tip is located w.r.t. the start of the last identifier
                                 let sizeFixup = if isQuotedIdentifier then 4 else 0
@@ -481,7 +487,7 @@ type internal FSharpIntellisenseInfo
 
         /// Implements the corresponding abstract member from IntellisenseInfo in MPF.
         override scope.GetDeclarations(textSnapshot, line, col, reason) =
-            assert(FSharpIntellisenseInfo.IsReasonRequiringSyncParse(reason))
+            assert(FSharpIntellisenseInfo_DEPRECATED.IsReasonRequiringSyncParse(reason))
             async {
                 try
                     let isInCommentOrString =
@@ -528,7 +534,7 @@ type internal FSharpIntellisenseInfo
                                 hasTextChangedSinceLastTypecheck (textSnapshot, oldTextSnapshot, Range.Range.toZ range)
 
                             let! decls = typedResults.GetDeclarationListInfo(untypedParseInfoOpt, Range.Line.fromZ line, col, lineText, fst plid, snd plid, (fun() -> []), detectTextChange) 
-                            return (new FSharpDeclarations(documentationBuilder, decls.Items, reason) :> Declarations) 
+                            return (new FSharpDeclarations_DEPRECATED(documentationBuilder, decls.Items, reason) :> Declarations_DEPRECATED) 
                     else
                         // no TypeCheckInfo in ParseResult.
                         return null 
@@ -587,7 +593,7 @@ type internal FSharpIntellisenseInfo
                                     |   Some(s,colAtEndOfNames, _) ->
                                             if typedResults.HasFullTypeCheckInfo then 
                                                 let qualId = PrettyNaming.GetLongNameFromString s
-                                                match typedResults.GetF1KeywordAlternate(Range.Line.fromZ line,colAtEndOfNames, lineText, qualId) |> Async.RunSynchronously with
+                                                match typedResults.GetF1Keyword(Range.Line.fromZ line,colAtEndOfNames, lineText, qualId) |> Async.RunSynchronously with
                                                 | Some s -> Some s
                                                 | None -> None 
                                             else None                           
@@ -608,13 +614,13 @@ type internal FSharpIntellisenseInfo
           
         // for tests
         member this.GotoDefinition (textView, line, column) =
-            GotoDefinition.GotoDefinition (colorizer.Value, typedResults, textView, line, column)
+            GotoDefinition.GotoDefinition_DEPRECATED (colorizer.Value, typedResults, textView, line, column)
 
         override this.Goto (textView, line, column) =
-            GotoDefinition.GotoDefinition (colorizer.Value, typedResults, textView, line, column)
+            GotoDefinition.GotoDefinition_DEPRECATED (colorizer.Value, typedResults, textView, line, column)
 
         // This is called on the UI thread after fresh full typecheck results are available
-        member this.OnParseFileOrCheckFileComplete(source: IFSharpSource) =
+        member this.OnParseFileOrCheckFileComplete(source: IFSharpSource_DEPRECATED) =
             for line in colorizer.Value.SetExtraColorizations(typedResults.GetSemanticClassification None) do
                 source.RecolorizeLine line
 

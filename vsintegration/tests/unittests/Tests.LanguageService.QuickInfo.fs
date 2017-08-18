@@ -285,7 +285,6 @@ type Async =
   static member Choice : computations:seq<Async<'T option>> -> Async<'T option>
   static member FromBeginEnd : beginAction:(AsyncCallback * obj -> IAsyncResult) * endAction:(IAsyncResult -> 'T) * ?cancelAction:(unit -> unit) -> Async<'T>
   ...
-
 Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
 
         this.CheckTooltip(source, "Asyn", false, checkTooltip expectedTooltip)
@@ -373,7 +372,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                                 let a = typeof<N.T(*Marker*)> """
 
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
-         "type T =\n  new : unit -> T\n  event Event1 : EventHandler\n  static member M : unit -> int []\n  static member StaticProp : decimal\n\nFull name: N.T", 
+         "type T =\n  new : unit -> T\n  event Event1 : EventHandler\n  static member M : unit -> int []\n  static member StaticProp : decimal", 
          addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithNullComment.dll")])
     
     [<Test>]
@@ -386,7 +385,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
                                 let a = typeof<N.T(*Marker*)> """
         
         this.AssertQuickInfoContainsAtStartOfMarker (fileContents, "T(*Marker*)",
-         "type T =\n  new : unit -> T\n  event Event1 : EventHandler\n  static member M : unit -> int []\n  static member StaticProp : decimal\n\nFull name: N.T",
+         "type T =\n  new : unit -> T\n  event Event1 : EventHandler\n  static member M : unit -> int []\n  static member StaticProp : decimal\nFull name: N.T",
          addtlRefAssy = [PathRelativeToTestAssembly( @"UnitTests\MockTypeProviders\XmlDocAttributeWithEmptyComment.dll")])
          
 
@@ -739,7 +738,7 @@ Full name: Microsoft.FSharp.Control.Async""".TrimStart().Replace("\r\n", "\n")
         this.AssertQuickInfoContainsAtStartOfMarker( 
             fileContents,
             marker = "TTT",
-            expected = "type TTT = Samples.FSharp.RegexTypeProvider.RegexTyped<...>\n\nFull name: File1.TTT",
+            expected = "type TTT = Samples.FSharp.RegexTypeProvider.RegexTyped<...>\nFull name: File1.TTT",
             addtlRefAssy = ["System"; PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")])
 
     [<Test>]
@@ -3664,7 +3663,7 @@ query."
                         where (result |> Array.exists(fun i -> i = char)) 
                         yield char
                        } """
-        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Mark1*)", "member WorkflowBuilder.Combine : f:'b * g:'c -> 'c",queryAssemblyRefs)
+        this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Mark1*)", "member WorkflowBuilder.Combine : f:'b0 * g:'c1 -> 'c1",queryAssemblyRefs)
         this.AssertQuickInfoContainsAtStartOfMarker (fileContent, "(*Mark2*)", "member WorkflowBuilder.Zero : unit -> unit",queryAssemblyRefs)
 
     [<Test>]

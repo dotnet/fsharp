@@ -144,7 +144,7 @@ let AdjustCalledArgType (infoReader:InfoReader) isConstraint (calledArg: CalledA
         // If the called method argument is a delegate type, then the caller may provide a function 
         let calledArgTy = 
             let adjustDelegateTy calledTy =
-                let (SigOfFunctionForDelegate(_,delArgTys,_,fty)) = GetSigOfFunctionForDelegate infoReader calledTy m  AccessibleFromSomeFSharpCode
+                let (SigOfFunctionForDelegate(_,delArgTys,_,fty)) = GetSigOfFunctionForDelegate infoReader calledTy m  AccessibleFromSomewhere
                 let delArgTys = if isNil delArgTys then [g.unit_ty] else delArgTys
                 if (fst (stripFunTy g callerArgTy)).Length = delArgTys.Length
                 then fty 
@@ -286,25 +286,25 @@ type CalledMeth<'T>
                             else None) 
                     | _ -> None)
 
-            let unassignedNamedItem = 
+            let unassignedNamedItems = 
                 namedCallerArgs |> List.filter (fun (CallerNamedArg(nm,_e)) -> 
                     fullCalledArgs |> List.forall (fun calledArg -> 
                         match calledArg.NameOpt with 
                         | Some nm2 -> nm.idText <> nm2.idText
                         | None -> true))
 
-            let attributeAssignedNamedItems,unassignedNamedItem = 
+            let attributeAssignedNamedItems = 
                 if isCheckingAttributeCall then 
-                    // the assignment of names to properties is substantially for attribute specifications 
-                    // permits bindings of names to non-mutable fields and properties, so we do that using the old 
-                    // reliable code for this later on. 
-                    unassignedNamedItem,[]
+                    // The process for assigning names-->properties is substantially different for attribute specifications 
+                    // because it permits the bindings of names to immutable fields. So we use the old 
+                    // code for this.
+                    unassignedNamedItems
                  else 
-                    [],unassignedNamedItem
+                    []
 
-            let assignedNamedProps,unassignedNamedItem = 
+            let assignedNamedProps,unassignedNamedItems = 
                 let returnedObjTy = if minfo.IsConstructor then minfo.EnclosingType else methodRetTy
-                unassignedNamedItem |> List.splitChoose (fun (CallerNamedArg(id,e) as arg) -> 
+                unassignedNamedItems |> List.splitChoose (fun (CallerNamedArg(id,e) as arg) -> 
                     let nm = id.idText
                     let pinfos = GetIntrinsicPropInfoSetsOfType infoReader (Some(nm),ad,AllowMultiIntfInstantiations.Yes) IgnoreOverrides id.idRange returnedObjTy
                     let pinfos = pinfos |> ExcludeHiddenOfPropInfos g infoReader.amap m 
@@ -347,7 +347,7 @@ type CalledMeth<'T>
                 
             let argSet = { UnnamedCalledArgs=unnamedCalledArgs; UnnamedCallerArgs=unnamedCallerArgs; ParamArrayCalledArgOpt=paramArrayCalledArgOpt; ParamArrayCallerArgs=paramArrayCallerArgs; AssignedNamedArgs=assignedNamedArgs }
 
-            (argSet,assignedNamedProps,unassignedNamedItem,attributeAssignedNamedItems,unnamedCalledOptArgs,unnamedCalledOutArgs))
+            (argSet,assignedNamedProps,unassignedNamedItems,attributeAssignedNamedItems,unnamedCalledOptArgs,unnamedCalledOutArgs))
 
     let argSets                     = argSetInfos |> List.map     (fun (x,_,_,_,_,_) -> x)
     let assignedNamedProps          = argSetInfos |> List.collect (fun (_,x,_,_,_,_) -> x)
@@ -360,29 +360,45 @@ type CalledMeth<'T>
     member x.amap = infoReader.amap
 
       /// the method we're attempting to call 
-    member x.Method=minfo
+    member x.Method = minfo
+
       /// the instantiation of the method we're attempting to call 
-    member x.CalledTyArgs=calledTyArgs
+    member x.CalledTyArgs = calledTyArgs
+
+      /// the instantiation of the method we're attempting to call 
+    member x.CalledTyparInst = 
+        let tps = minfo.FormalMethodTypars 
+        if tps.Length = calledTyArgs.Length then mkTyparInst tps calledTyArgs else []
+
       /// the formal instantiation of the method we're attempting to call 
-    member x.CallerTyArgs=callerTyArgs
+    member x.CallerTyArgs = callerTyArgs
+
       /// The types of the actual object arguments, if any
-    member x.CallerObjArgTys=callerObjArgTys
+    member x.CallerObjArgTys = callerObjArgTys
+
       /// The argument analysis for each set of curried arguments
-    member x.ArgSets=argSets
+    member x.ArgSets = argSets
+
       /// return type
-    member x.ReturnType=methodRetTy
+    member x.ReturnType = methodRetTy
+
       /// named setters
-    member x.AssignedItemSetters=assignedNamedProps
+    member x.AssignedItemSetters = assignedNamedProps
+
       /// the property related to the method we're attempting to call, if any  
-    member x.AssociatedPropertyInfo=pinfoOpt
+    member x.AssociatedPropertyInfo = pinfoOpt
+
       /// unassigned args
-    member x.UnassignedNamedArgs=unassignedNamedItems
+    member x.UnassignedNamedArgs = unassignedNamedItems
+
       /// args assigned to specify values for attribute fields and properties (these are not necessarily "property sets")
-    member x.AttributeAssignedNamedArgs=attributeAssignedNamedItems
+    member x.AttributeAssignedNamedArgs = attributeAssignedNamedItems
+
       /// unnamed called optional args: pass defaults for these
-    member x.UnnamedCalledOptArgs=unnamedCalledOptArgs
+    member x.UnnamedCalledOptArgs = unnamedCalledOptArgs
+
       /// unnamed called out args: return these as part of the return tuple
-    member x.UnnamedCalledOutArgs=unnamedCalledOutArgs
+    member x.UnnamedCalledOutArgs = unnamedCalledOutArgs
 
     static member GetMethod (x:CalledMeth<'T>) = x.Method
 
@@ -476,7 +492,7 @@ let ExamineArgumentForLambdaPropagation (infoReader:InfoReader) (arg: AssignedCa
             NoInfo   // not a function type on the called side - no information
     else CalledArgMatchesType(adjustedCalledArgTy)  // not a lambda on the caller side - push information from caller to called
 
-let ExamineMethodForLambdaPropagation(x:CalledMeth<SynExpr>) =
+let ExamineMethodForLambdaPropagation (x:CalledMeth<SynExpr>) =
     let unnamedInfo = x.AssignedUnnamedArgs |> List.mapSquared (ExamineArgumentForLambdaPropagation x.infoReader)
     let namedInfo = x.AssignedNamedArgs |> List.mapSquared (fun arg -> (arg.NamedArgIdOpt.Value, ExamineArgumentForLambdaPropagation x.infoReader arg))
     if unnamedInfo |> List.existsSquared (function CallerLambdaHasArgTypes _ -> true | _ -> false) || 
@@ -788,7 +804,7 @@ let BuildNewDelegateExpr (eventInfoOpt:EventInfo option, g, amap, delegateTy, in
             if List.exists (isByrefTy g) delArgTys then
                     error(Error(FSComp.SR.tcFunctionRequiresExplicitLambda(List.length delArgTys),m)) 
 
-            let delArgVals = delArgTys |> List.map (fun argty -> fst (mkCompGenLocal m "delegateArg" argty)) 
+            let delArgVals = delArgTys |> List.mapi (fun i argty -> fst (mkCompGenLocal m ("delegateArg"^string i) argty)) 
             let expr = 
                 let args = 
                     match eventInfoOpt with 

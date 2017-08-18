@@ -1,0 +1,76 @@
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+
+<!--
+***********************************************************************************************
+Microsoft.FSharp.NetSdk.targets
+
+WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and have
+          created a backup copy.  Incorrect changes to this file will make it
+          impossible to load or build your projects from the command-line or the IDE.
+
+***********************************************************************************************
+-->
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <AlwaysUseNumericalSuffixInItemNames>true</AlwaysUseNumericalSuffixInItemNames>
+    <DefineCommonItemSchemas Condition=" '$(DefineCommonItemSchemas)' == '' ">true</DefineCommonItemSchemas>
+    <DefineCommonReferenceSchemas Condition=" '$(DefineCommonReferenceSchemas)' == '' ">true</DefineCommonReferenceSchemas>
+    <DefineCommonCapabilities Condition=" '$(DefineCommonCapabilities)' == '' ">true</DefineCommonCapabilities>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(_DebugSymbolsProduced)' == 'true' and '$(PdbFile)' != ''">
+    <_DebugSymbolsIntermediatePathTemporary Include="$(PdbFile)"/>
+    <!-- Add any missing .pdb extension, as the compiler does -->
+    <_DebugSymbolsIntermediatePath Include="@(_DebugSymbolsIntermediatePathTemporary->'%(RootDir)%(Directory)%(Filename).pdb')"/>
+  </ItemGroup>
+
+  <!-- Locate and add mscorlib, unless NoStdLib is set -->
+  <ItemGroup>
+    <_ExplicitReference Include="$(FrameworkPathOverride)\mscorlib.dll" Condition=" '$(NoStdLib)' != 'true' " />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <_TargetFrameworkVersionWithoutV>$(TargetFrameworkVersion)</_TargetFrameworkVersionWithoutV>
+    <_TargetFrameworkVersionWithoutV Condition="$(TargetFrameworkVersion.StartsWith('v'))">$(TargetFrameworkVersion.Substring(1))</_TargetFrameworkVersionWithoutV>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetProfile Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' " >mscorlib</TargetProfile>
+    <TargetProfile Condition=" '$(TargetFrameworkIdentifier)' != '.NETFramework' " >netcore</TargetProfile>
+    <TargetProfile Condition=" '$(TargetFrameworkIdentifier)' == '.NETStandard' and '$(_TargetFrameworkVersionWithoutV)' >= '2.0' " >netstandard</TargetProfile>
+    <OtherFlags>$(OtherFlags) --simpleresolution --nocopyfsharpcore</OtherFlags>
+  </PropertyGroup>
+
+  <Import Project="Microsoft.FSharp.Targets" />
+
+  <PropertyGroup Condition="'$(PackProjectInputFile)' == ''">
+    <PackProjectInputFile>$(MSBuildProjectFullPath)</PackProjectInputFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(FSharpCoreImplicitPackageVersion)' == '' ">
+    <FSharpCoreImplicitPackageVersion>4.2.*</FSharpCoreImplicitPackageVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(DisableImplicitSystemValueTupleReference)' != 'true' ">
+    <_FrameworkNeedsValueTupleReference Condition=" ('$(TargetFrameworkIdentifier)' == '.NETStandard' or '$(TargetFrameworkIdentifier)' == '.NETCoreApp') and !('$(_TargetFrameworkVersionWithoutV)' >= '2.0') ">true</_FrameworkNeedsValueTupleReference>
+    <_FrameworkNeedsValueTupleReference Condition=" '$(TargetFrameworkIdentifier)' == '.NETFramework' and 
+                                                    ('$(_TargetFrameworkVersionWithoutV)' == '4.0' or 
+                                                     '$(_TargetFrameworkVersionWithoutV)' == '4.5' or 
+                                                     '$(_TargetFrameworkVersionWithoutV)' == '4.6' or
+                                                     '$(_TargetFrameworkVersionWithoutV)' == '4.6.1' or
+                                                     '$(_TargetFrameworkVersionWithoutV)' == '4.6.2' or
+                                                     '$(_TargetFrameworkVersionWithoutV)' == '4.7') ">true</_FrameworkNeedsValueTupleReference>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.ValueTuple" Version="4.*" Condition=" '$(DisableImplicitSystemValueTupleReference)' != 'true' and '$(_FrameworkNeedsValueTupleReference)' == 'true' "></PackageReference>
+    <PackageReference Include="FSharp.Core" Version="$(FSharpCoreImplicitPackageVersion)"  Condition=" '$(DisableImplicitFSharpCoreReference)' != 'true' "></PackageReference>
+  </ItemGroup>
+
+</Project>

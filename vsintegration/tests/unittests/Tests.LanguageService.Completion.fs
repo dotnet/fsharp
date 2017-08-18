@@ -5568,18 +5568,6 @@ let x = query { for bbbb in abbbbc(*D0*) do
         AssertCompListContainsAll(completions, ["ToString"])    
 
     [<Test>]
-    [<Ignore("TODO tao test refactor")>]
-    member this.InternalNotVisibleInDiffAssembly() =
-        let fileContents = """
-            module CodeAccessibility
-            let type1 = new InternalNotVisibleInDiffAssembly.Module1.Type1()
-            type1(*MarkerDiffAssmb*)"""
-        let (solution, project, file) = this.CreateSingleFileProject(fileContents, references = ["InternalNotVisibleDiffAssembly.Assembly.dll"])
-
-        let completions = DotCompletionAtStartOfMarker file "(*MarkerDiffAssmb*)"
-        AssertCompListDoesNotContainAny(completions, ["fieldInternal";"MethodInternal"])
-
-    [<Test>]
     member this.``Literal.Float``() = 
         this.VerifyDotCompListContainAllAtStartOfMarker(
             fileContents = "let myfloat = (42.0)(*Mconstantfloat*)",

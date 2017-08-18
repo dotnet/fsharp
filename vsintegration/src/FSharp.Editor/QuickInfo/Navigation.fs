@@ -1,5 +1,7 @@
 ﻿namespace Microsoft.VisualStudio.FSharp.Editor
 
+open System
+
 open Microsoft.CodeAnalysis
 
 open Microsoft.FSharp.Compiler.Range
@@ -18,6 +20,15 @@ type internal QuickInfoNavigation
         range <> rangeStartup &&
         range <> thisSymbolUseRange &&
         solution.TryGetDocumentIdFromFSharpRange (range, initialDoc.Project.Id) |> Option.isSome
+
+    member __.RelativePath (range: range) =
+        let relativePathEscaped = 
+            match solution.FilePath with 
+            | null -> range.FileName
+            | sfp -> 
+                let targetUri = Uri(range.FileName)
+                Uri(sfp).MakeRelativeUri(targetUri).ToString()
+        relativePathEscaped |> Uri.UnescapeDataString
 
     member __.NavigateTo (range: range) = 
         asyncMaybe { 

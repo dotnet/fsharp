@@ -219,7 +219,7 @@ let getRowCounts tableRowCounts =
     tableRowCounts |> Seq.iter(fun x -> builder.Add(x))
     builder.MoveToImmutable()
 
-let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sourceLink:string) showTimes (info:PdbData) = 
+let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sourceLink:string) showTimes (info:PdbData) isDeterministic =
     sortMethods showTimes info
     let externalRowCounts = getRowCounts info.TableRowCounts
     let docs = 
@@ -260,12 +260,9 @@ let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sou
 
     let documentIndex =
         let includeSource file =
-            let isInList =
-                if isNil embedSourceList then false
-                else
-                    embedSourceList |> List.tryFind(fun f -> String.Compare(file, f, StringComparison.OrdinalIgnoreCase ) = 0) |> Option.isSome
+            let isInList = embedSourceList |> List.exists (fun f -> String.Compare(file, f, StringComparison.OrdinalIgnoreCase ) = 0)
 
-            if not embedAllSource && not isInList || not (File.Exists(file)) then
+            if not embedAllSource && not isInList || not (File.Exists file) then
                 None
             else
                 let stream = File.OpenRead(file)
@@ -448,7 +445,19 @@ let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sou
         | None -> MetadataTokens.MethodDefinitionHandle(0)
         | Some x -> MetadataTokens.MethodDefinitionHandle(x)
 
-    let serializer = PortablePdbBuilder(metadata, externalRowCounts, entryPoint, null)
+    let deterministicIdProvider isDeterministic  : System.Func<IEnumerable<Blob>, BlobContentId> = 
+        match isDeterministic with
+        | false -> null
+        | true ->
+            let convert (content:IEnumerable<Blob>) = 
+                use sha = System.Security.Cryptography.SHA1.Create()    // IncrementalHash is core only
+                let hash = content 
+                           |> Seq.map ( fun c -> c.GetBytes().Array |> sha.ComputeHash )         
+                           |> Seq.collect id |> Array.ofSeq |> sha.ComputeHash
+                BlobContentId.FromHash(hash)
+            System.Func<IEnumerable<Blob>, BlobContentId>( convert )
+
+    let serializer = PortablePdbBuilder(metadata, externalRowCounts, entryPoint, deterministicIdProvider isDeterministic)
     let blobBuilder = new BlobBuilder()
     let contentId= serializer.Serialize(blobBuilder)
     let portablePdbStream = new MemoryStream()

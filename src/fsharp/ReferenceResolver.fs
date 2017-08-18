@@ -2,9 +2,13 @@
 
 namespace Microsoft.FSharp.Compiler
 
+#if COMPILER_PUBLIC_API
+module public ReferenceResolver = 
+#else
 module internal ReferenceResolver = 
+#endif
 
-    exception ResolutionFailure
+    exception internal ResolutionFailure
 
     type ResolutionEnvironment = 
         /// Indicates a script or source being compiled

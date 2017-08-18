@@ -12,12 +12,10 @@
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <ReferenceVsAssemblies>true</ReferenceVsAssemblies>
     <OutputType>Library</OutputType>
-    <UnitTestAssembly>true</UnitTestAssembly>
     <AssemblyName>FSharp.Compiler.Unittests</AssemblyName>
     <!-- Prevent compiler from inlining calls to FSharp.Core to improve code coverage accuracy -->
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
-    <TargetProfile Condition=" '$(TargetFramework)' == 'portable7' or '$(TargetFramework)' == 'portable78' or '$(TargetFramework)' == 'portable259' ">netcore</TargetProfile>
   </PropertyGroup>
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);EXTENSIONTYPING</DefineConstants>
@@ -43,13 +41,13 @@
       <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>
     </Reference>
   </ItemGroup>
-  <ItemGroup Condition="!$(TargetFramework.Contains('portable'))">
+  <ItemGroup Condition="!$(TargetDotnetProfile.Contains('portable'))">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
-    <Reference Include="System.Numerics" Condition="'$(TargetFramework)' == 'net40'" />
+    <Reference Include="System.Numerics" Condition="'$(TargetDotnetProfile)' == 'net40'" />
     <Reference Include="System.Core" />
     <Reference Include="System.ValueTuple">
-        <HintPath>..\..\..\packages\System.ValueTuple.4.3.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+        <HintPath>..\..\..\packages\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -61,8 +59,8 @@
     <Compile Include="EditDistance.fs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler\FSharp.Compiler.fsproj">
-      <Name>FSharp.Compiler</Name>
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj">
+      <Name>FSharp.Compiler.Private</Name>
       <Project>{2e4d67b4-522d-4cf7-97e4-ba940f0b18f3}</Project>
     </ProjectReference>
     <ProjectReference Include="..\FSharp.Core\FSharp.Core.fsproj">

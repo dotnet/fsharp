@@ -21,14 +21,15 @@ type Range = Position * Position
 /// Represents encoded information for the end-of-line continuation of lexing
 type FSharpTokenizerLexState = int64
 
-/// Represents stable information for the state of the lexing engine at the end of a line
-type internal FSharpTokenizerColorState =
+/// Represents stable information for the state of the laxing engine at the end of a line
+type FSharpTokenizerColorState =
     | Token = 1
     | IfDefSkip = 3
     | String = 4
     | Comment = 5
     | StringInComment = 6
     | VerbatimStringInComment = 7
+    | CamlOnly = 8
     | VerbatimString = 9
     | SingleLineComment = 10
     | EndLineThenSkip = 11
@@ -38,8 +39,8 @@ type internal FSharpTokenizerColorState =
     | InitialState = 0 
     
 
-/// Gives an indication of the color class to assign to the token an IDE
-type internal FSharpTokenColorKind =
+/// Gives an indicattion of the color class to assign to the token an IDE
+type FSharpTokenColorKind =
     | Default = 0
     | Text = 0
     | Keyword = 1
@@ -54,7 +55,7 @@ type internal FSharpTokenColorKind =
     | Punctuation = 11
     
 /// Gives an indication of what should happen when the token is typed in an IDE
-type internal FSharpTokenTriggerClass =
+type FSharpTokenTriggerClass =
     | None         = 0x00000000
     | MemberSelect = 0x00000001
     | MatchBraces  = 0x00000002
@@ -64,8 +65,8 @@ type internal FSharpTokenTriggerClass =
     | ParamNext    = 0x00000020
     | ParamEnd     = 0x00000040    
     
-/// Gives an indication of the class to assign to the characters of the token in an IDE
-type internal FSharpTokenCharKind = 
+/// Gives an indication of the class to assign to the characters of the token an IDE
+type FSharpTokenCharKind = 
     | Default     = 0x00000000
     | Text        = 0x00000000
     | Keyword     = 0x00000001
@@ -79,7 +80,7 @@ type internal FSharpTokenCharKind =
     | Comment     = 0x0000000A    
 
 /// Some of the values in the field FSharpTokenInfo.Tag
-module internal FSharpTokenTag = 
+module FSharpTokenTag = 
     /// Indicates the token is an identifier
     val Identifier: int
     /// Indicates the token is a string
@@ -170,9 +171,31 @@ module internal FSharpTokenTag =
     val LARROW : int
     /// Indicates the token is a `"`
     val QUOTE : int
+    /// Indicates the token is a whitespace
+    val WHITESPACE : int
+    /// Indicates the token is a comment
+    val COMMENT : int
+    /// Indicates the token is a line comment
+    val LINE_COMMENT : int
+    /// Indicates the token is keyword `begin`
+    val BEGIN : int
+    /// Indicates the token is keyword `do`
+    val DO : int
+    /// Indicates the token is keyword `function`
+    val FUNCTION : int
+    /// Indicates the token is keyword `then`
+    val THEN : int
+    /// Indicates the token is keyword `else`
+    val ELSE : int
+    /// Indicates the token is keyword `struct`
+    val STRUCT : int
+    /// Indicates the token is keyword `class`
+    val CLASS : int
+    /// Indicates the token is keyword `try`
+    val TRY : int
     
 /// Information about a particular token from the tokenizer
-type internal FSharpTokenInfo = 
+type FSharpTokenInfo = 
     { /// Left column of the token.
       LeftColumn:int
       /// Right column of the token.
@@ -197,7 +220,7 @@ type internal FSharpTokenInfo =
 /// A new lexState is also returned.  An IDE-plugin should in general cache the lexState 
 /// values for each line of the edited code.
 [<Sealed>] 
-type internal FSharpLineTokenizer =
+type FSharpLineTokenizer =
     /// Scan one token from the line
     member ScanToken : lexState:FSharpTokenizerLexState -> FSharpTokenInfo option * FSharpTokenizerLexState
     static member ColorStateOfLexState : FSharpTokenizerLexState -> FSharpTokenizerColorState
@@ -206,13 +229,21 @@ type internal FSharpLineTokenizer =
 
 /// Tokenizer for a source file. Holds some expensive-to-compute resources at the scope of the file.
 [<Sealed>]
-type internal FSharpSourceTokenizer =
-    new : conditionalDefines:string list * fileName:Option<string> -> FSharpSourceTokenizer
+type FSharpSourceTokenizer =
+    new : conditionalDefines:string list * fileName:string option -> FSharpSourceTokenizer
     member CreateLineTokenizer : lineText:string -> FSharpLineTokenizer
     member CreateBufferTokenizer : bufferFiller:(char[] * int * int -> int) -> FSharpLineTokenizer
     
 
 module internal TestExpose =     
-    val TokenInfo                                    : Parser.token -> (FSharpTokenColorKind * FSharpTokenCharKind * FSharpTokenTriggerClass) 
+    val TokenInfo : Parser.token -> (FSharpTokenColorKind * FSharpTokenCharKind * FSharpTokenTriggerClass)
 
+module Keywords =
+    /// Add backticks if the identifier is a keyword.
+    val QuoteIdentifierIfNeeded : string -> string
 
+    /// Remove backticks if present.
+    val NormalizeIdentifierBackticks : string -> string
+
+    /// Keywords paired with their descriptions. Used in completion and quick info.
+    val KeywordsWithDescription : (string * string) list

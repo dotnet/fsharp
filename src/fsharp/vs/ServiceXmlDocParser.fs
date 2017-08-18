@@ -5,10 +5,10 @@ namespace Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 
 /// Represent an Xml documentation block in source code
-type internal XmlDocable =
+type XmlDocable =
     | XmlDocable of line:int * indent:int * paramNames:string list
 
-module internal XmlDocParsing =
+module XmlDocParsing =
     open Microsoft.FSharp.Compiler.Range
     open Microsoft.FSharp.Compiler.Ast
         
@@ -159,7 +159,7 @@ module internal XmlDocParsing =
             // Should not fail here, just in case 
             []
 
-module internal XmlDocComment =
+module XmlDocComment =
     let private ws (s: string, pos) = 
         let res = s.TrimStart()
         Some (res, pos + (s.Length - res.Length))
@@ -184,7 +184,7 @@ module internal XmlDocComment =
         let res = parser (s.TrimEnd(), 0) |> Option.map snd |> Option.map (fun x -> x - 1)
         res
 
-module internal XmlDocParser =
+module XmlDocParser =
     /// Get the list of Xml documentation from current source code
     let getXmlDocables (sourceCodeOfTheFile, input) =
         let sourceCodeLinesOfTheFile = String.getLines sourceCodeOfTheFile

@@ -24,7 +24,6 @@ type PickledDataWithReferences<'RawData> =
     /// Like Fixup but loader may return None, in which case there is no fixup.
     member OptionalFixup: (CcuReference -> CcuThunk option) -> 'RawData
     
-#if INCLUDE_METADATA_WRITER
 /// The type of state written to by picklers
 type WriterState 
 
@@ -84,7 +83,6 @@ val internal pickleCcuInfo : pickler<PickledCcuInfo>
 
 /// Serialize an arbitrary object using the given pickler
 val pickleObjWithDanglingCcus : string -> TcGlobals -> scope:CcuThunk -> pickler<'T> -> 'T -> byte[]
-#endif
 
 /// The type of state unpicklers read from
 type ReaderState 

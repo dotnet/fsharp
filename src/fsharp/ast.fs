@@ -1,6 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
+#if COMPILER_PUBLIC_API
+module public Microsoft.FSharp.Compiler.Ast
+#else
 module internal Microsoft.FSharp.Compiler.Ast
+#endif
 
 open System.Collections.Generic
 open Internal.Utilities
@@ -532,7 +536,7 @@ and
     | ForEach of forSeqPoint:SequencePointInfoForForLoop * seqExprOnly:SeqExprOnly * isFromSource:bool * pat:SynPat * enumExpr:SynExpr * bodyExpr:SynExpr * range:range
 
     /// F# syntax: [ expr ], [| expr |]
-    | ArrayOrListOfSeqExpr of isList:bool * expr:SynExpr * range:range
+    | ArrayOrListOfSeqExpr of isArray:bool * expr:SynExpr * range:range
 
     /// CompExpr(isArrayOrList, isNotNakedRefCell, expr)
     ///
@@ -2119,6 +2123,7 @@ type LexerWhitespaceContinuation =
     | StringInComment    of ifdef:LexerIfdefStackEntries * int * range:range
     | VerbatimStringInComment   of ifdef:LexerIfdefStackEntries * int * range:range
     | TripleQuoteStringInComment   of ifdef:LexerIfdefStackEntries * int * range:range
+    | MLOnly            of ifdef:LexerIfdefStackEntries * range:range
     | EndLine           of LexerEndlineContinuation
 
     member x.LexerIfdefStack =
@@ -2132,7 +2137,8 @@ type LexerWhitespaceContinuation =
         | LexCont.TripleQuoteString (ifdef=ifd)
         | LexCont.StringInComment (ifdef=ifd)
         | LexCont.VerbatimStringInComment (ifdef=ifd)
-        | LexCont.TripleQuoteStringInComment (ifdef=ifd) -> ifd
+        | LexCont.TripleQuoteStringInComment (ifdef=ifd)
+        | LexCont.MLOnly (ifdef=ifd) -> ifd
         | LexCont.EndLine endl -> endl.LexerIfdefStack
 
 and LexCont = LexerWhitespaceContinuation
@@ -2149,35 +2155,35 @@ and LexCont = LexerWhitespaceContinuation
 exception SyntaxError of obj (* ParseErrorContext<_> *) * range:range
 
 /// Get an F# compiler position from a lexer position
-let posOfLexPosition (p:Position) =
+let internal posOfLexPosition (p:Position) =
     mkPos p.Line p.Column
 
 /// Get an F# compiler range from a lexer range
-let mkSynRange (p1:Position) (p2: Position) =
+let internal mkSynRange (p1:Position) (p2: Position) =
     mkFileIndexRange p1.FileIndex (posOfLexPosition p1) (posOfLexPosition p2)
 
 type LexBuffer<'Char> with
-    member lexbuf.LexemeRange  = mkSynRange lexbuf.StartPos lexbuf.EndPos
+    member internal lexbuf.LexemeRange  = mkSynRange lexbuf.StartPos lexbuf.EndPos
 
 /// Get the range corresponding to the result of a grammar rule while it is being reduced
-let lhs (parseState: IParseState) =
+let internal lhs (parseState: IParseState) =
     let p1 = parseState.ResultStartPosition
     let p2 = parseState.ResultEndPosition
     mkSynRange p1 p2
 
 /// Get the range covering two of the r.h.s. symbols of a grammar rule while it is being reduced
-let rhs2 (parseState: IParseState) i j =
+let internal rhs2 (parseState: IParseState) i j = 
     let p1 = parseState.InputStartPosition i
     let p2 = parseState.InputEndPosition j
     mkSynRange p1 p2
 
 /// Get the range corresponding to one of the r.h.s. symbols of a grammar rule while it is being reduced
-let rhs parseState i = rhs2 parseState i i
+let internal rhs parseState i = rhs2 parseState i i 
 
 type IParseState with
 
     /// Get the generator used for compiler-generated argument names.
-    member x.SynArgNameGenerator =
+    member internal x.SynArgNameGenerator = 
         let key = "SynArgNameGenerator"
         let bls = x.LexBuffer.BufferLocalStore
         if not (bls.ContainsKey key) then
@@ -2185,7 +2191,7 @@ type IParseState with
         bls.[key] :?> SynArgNameGenerator
 
     /// Reset the generator used for compiler-generated argument names.
-    member x.ResetSynArgNameGenerator() = x.SynArgNameGenerator.Reset()
+    member internal x.ResetSynArgNameGenerator() = x.SynArgNameGenerator.Reset()
 
 
 /// XmlDoc F# lexer/parser state, held in the BufferLocalStore for the lexer.
@@ -2194,20 +2200,20 @@ module LexbufLocalXmlDocStore =
     // The key into the BufferLocalStore used to hold the current accumulated XmlDoc lines
     let private xmlDocKey = "XmlDoc"
 
-    let ClearXmlDoc (lexbuf:Lexbuf) =
+    let internal ClearXmlDoc (lexbuf:Lexbuf) = 
         lexbuf.BufferLocalStore.[xmlDocKey] <- box (XmlDocCollector())
 
     /// Called from the lexer to save a single line of XML doc comment.
-    let SaveXmlDocLine (lexbuf:Lexbuf, lineText, pos) =
-        if not (lexbuf.BufferLocalStore.ContainsKey(xmlDocKey)) then
+    let internal SaveXmlDocLine (lexbuf:Lexbuf, lineText, pos) = 
+        if not (lexbuf.BufferLocalStore.ContainsKey(xmlDocKey)) then 
             lexbuf.BufferLocalStore.[xmlDocKey] <- box (XmlDocCollector())
         let collector = unbox<XmlDocCollector>(lexbuf.BufferLocalStore.[xmlDocKey])
         collector.AddXmlDocLine (lineText, pos)
 
     /// Called from the parser each time we parse a construct that marks the end of an XML doc comment range,
     /// e.g. a 'type' declaration. The markerRange is the range of the keyword that delimits the construct.
-    let GrabXmlDocBeforeMarker (lexbuf:Lexbuf, markerRange:range)  =
-        if lexbuf.BufferLocalStore.ContainsKey(xmlDocKey) then
+    let internal GrabXmlDocBeforeMarker (lexbuf:Lexbuf, markerRange:range)  = 
+        if lexbuf.BufferLocalStore.ContainsKey(xmlDocKey) then 
             PreXmlDoc.CreateFromGrabPoint(unbox<XmlDocCollector>(lexbuf.BufferLocalStore.[xmlDocKey]),markerRange.End)
         else
             PreXmlDoc.Empty

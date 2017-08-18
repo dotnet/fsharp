@@ -409,8 +409,6 @@ module internal List =
         | [] -> false
         | h1::t1 -> f h1 || exists f t1
 
-    // optimized mutation-based implementation. This code is only valid in fslib, where mutation of private
-    // tail cons cells is permitted in carefully written library code.
     let rec revAcc xs acc = 
         match xs with 
         | [] -> acc
@@ -925,81 +923,9 @@ module internal List =
 module internal Array = 
 
     open System
-    open System.Collections.Generic
-
-#if FX_NO_ARRAY_KEY_SORT
-    // Mimic behavior of BCL QSort routine, used under the hood by various array sorting APIs
-    let qsort<'Key,'Value>(keys : 'Key[], values : 'Value[], start : int, last : int, comparer : IComparer<'Key>) =  
-            let valuesExist = 
-                match values with
-                | null -> false
-                | _ -> true
-                
-            let swap (p1, p2) =
-                let tk = keys.[p1]
-                keys.[p1] <- keys.[p2]
-                keys.[p2] <- tk
-                if valuesExist then
-                    let tv = values.[p1]
-                    values.[p1] <- values.[p2]
-                    values.[p2] <- tv
-                    
-            let partition (left, right, pivot) =
-                let value = keys.[pivot]
-                swap (pivot, right)
-                let mutable store = left
-                
-                for i in left..(right - 1) do
-                    if comparer.Compare(keys.[i],value) < 0 then
-                        swap(i, store)
-                        store <- store + 1
-
-                swap (store, right)
-                store
-            
-            let rec qs (left, right) =
-                if left < right then
-                    let pivot = left + (right-left)/2
-                    let newpivot = partition(left,right,pivot)
-                    qs(left,newpivot - 1)
-                    qs(newpivot+1,right)
-            
-            qs(start, last)
-            
-    type System.Array with
-        static member Sort<'Key,'Value>(keys : 'Key[], values : 'Value[], comparer : IComparer<'Key>) =
-            let valuesExist = 
-                match values with
-                | null -> false
-                | _ -> true
-            match keys,values with
-            | null,_ -> raise (ArgumentNullException())
-            | _,_ when valuesExist && (keys.Length <> values.Length) -> raise (ArgumentException())
-            | _,_ -> qsort(keys, values, 0, keys.Length-1, comparer)
-
-        static member Sort<'Key,'Value  when 'Key : comparison>(keys : 'Key[], values : 'Value[]) =
-            let valuesExist = 
-                match values with
-                | null -> false
-                | _ -> true
-            match keys,values with
-            | null,_ -> raise (ArgumentNullException())
-            | _,_ when valuesExist && (keys.Length <> values.Length) -> raise (ArgumentException())
-            | _,_ -> qsort(keys,values,0,keys.Length-1,LanguagePrimitives.FastGenericComparer<'Key>)
-
-        static member Sort<'Key,'Value>(keys : 'Key[], values : 'Value[], start : int, length : int, comparer : IComparer<'Key>) =
-            match keys with
-            | null -> raise (ArgumentNullException())
-            | _ -> qsort(keys,values,start,start+length-1,comparer)
-#else
-#endif
 
     let inline fastComparerForArraySort<'t when 't : comparison> () =
-#if FX_NO_ARRAY_KEY_SORT
-        LanguagePrimitives.FastGenericComparer<'t>
-#else
         LanguagePrimitives.FastGenericComparerCanBeNull<'t>
-#endif        
 
     // The input parameter should be checked by callers if necessary
     let inline zeroCreateUnchecked (count:int) = 

@@ -998,6 +998,30 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
+        /// Retrives the configuration and the platform using the IVsSolutionBuildManager2 interface.
+        /// </summary>
+        /// <param name="serviceProvider">A service provider.</param>
+        /// <param name="hierarchy">The hierrachy whose configuration is requested.</param>
+        /// <returns>true if successfull.</returns>
+        public static bool TryGetConfigurationAndPlatform(IVsCfg config, out ConfigCanonicalName configCanonicalName)
+        {
+
+            string configName = null;
+            config.get_DisplayName(out configName);
+
+            if (configName == null)
+            {
+                configCanonicalName = new ConfigCanonicalName();
+                return false;
+            }
+
+            configCanonicalName = new ConfigCanonicalName(configName);
+
+            return true;
+        }
+
+
+        /// <summary>
         /// Determines whether the shell is in command line mode.
         /// </summary>
         /// <param name="serviceProvider">A reference to a Service Provider.</param>

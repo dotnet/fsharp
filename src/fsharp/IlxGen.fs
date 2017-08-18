@@ -1366,7 +1366,7 @@ type CodeGenBuffer(m:range,
             // Save the last sequence point away so we can make a decision graph look consistent (i.e. reassert the sequence point at each target)
             lastSeqPoint <- Some src
             
-    // For debug code, emit FeeFee breakpoints for hidden code, see http://blogs.msdn.com/jmstall/archive/2005/06/19/FeeFee_SequencePoints.aspx
+    // For debug code, emit FeeFee breakpoints for hidden code, see https://blogs.msdn.microsoft.com/jmstall/2005/06/19/line-hidden-and-0xfeefee-sequence-points/
     member cgbuf.EmitStartOfHiddenCode() = 
         if mgbuf.cenv.opts.generateDebugSymbols && not mgbuf.cenv.opts.localOptimizationsAreOn then 
             let doc = mgbuf.cenv.g.memoize_file m.FileIndex
@@ -2198,12 +2198,12 @@ and GenCoerce cenv cgbuf eenv (e,tgty,m,srcty) sequel =
      // Do an extra check - should not be needed 
      TypeRelations.TypeFeasiblySubsumesType 0 cenv.g cenv.amap m tgty TypeRelations.NoCoerce srcty then
      begin 
-       // The .NET IL doesn't always support implict subsumption for interface types, e.g. at stack merge points 
-       // Hence be conservative here and always cast explicitly. 
        if (isInterfaceTy cenv.g tgty) then (
            GenExpr cenv cgbuf eenv SPSuppress e Continue
            let ilToTy = GenType cenv.amap m eenv.tyenv tgty
-           CG.EmitInstrs cgbuf (pop 1) (Push [ilToTy]) [ I_unbox_any ilToTy  ]
+           // Section "III.1.8.1.3 Merging stack states" of ECMA-335 implies that no unboxing
+           // is required, but we still push the coerce'd type on to the code gen buffer.
+           CG.EmitInstrs cgbuf (pop 1) (Push [ilToTy]) []
            GenSequel cenv eenv.cloc cgbuf sequel
        ) else (
            GenExpr cenv cgbuf eenv SPSuppress e sequel
@@ -4383,7 +4383,7 @@ and GenDecisionTreeSwitch cenv cgbuf inplabOpt stackAtTargets eenv e cases defau
         | DecisionTreeTest.ArrayLength _
         | DecisionTreeTest.IsNull 
         | DecisionTreeTest.Const(Const.Zero) -> 
-            if List.length cases <> 1 || Option.isNone defaultTargetOpt then failwith "internal error: GenDecisionTreeSwitch: DecisionTreeTest.IsInst/isnull/query"
+            if not (isSingleton cases) || Option.isNone defaultTargetOpt then failwith "internal error: GenDecisionTreeSwitch: DecisionTreeTest.IsInst/isnull/query"
             let bi = 
               match firstDiscrim with 
               | DecisionTreeTest.Const(Const.Zero) ->
@@ -5061,13 +5061,16 @@ and ComputeMethodImplAttribs cenv (_v:Val) attrs =
     // 0x80 - hasPreserveSigImplFlag
     // 0x20 - synchronize
     // (See ECMA 335, Partition II, section 23.1.11 - Flags for methods [MethodImplAttributes]) 
-    let attrs = attrs 
-                    |> List.filter (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_MethodImplAttribute >> not) 
-                        |> List.filter (IsMatchingFSharpAttributeOpt cenv.g cenv.g.attrib_PreserveSigAttribute >> not)
+    let attrs = 
+        attrs 
+        |> List.filter (IsMatchingFSharpAttribute cenv.g cenv.g.attrib_MethodImplAttribute >> not) 
+        |> List.filter (IsMatchingFSharpAttributeOpt cenv.g cenv.g.attrib_PreserveSigAttribute >> not)
+
     let hasPreserveSigImplFlag = ((implflags &&& 0x80) <> 0x0) || hasPreserveSigAttr
     let hasSynchronizedImplFlag = (implflags &&& 0x20) <> 0x0
     let hasNoInliningImplFlag = (implflags &&& 0x08) <> 0x0
-    hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningImplFlag, attrs
+    let hasAggressiveInliningImplFlag = (implflags &&& 0x0100) <> 0x0
+    hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningImplFlag, hasAggressiveInliningImplFlag, attrs
     
 and GenMethodForBinding 
         cenv cgbuf eenv 
@@ -5152,7 +5155,7 @@ and GenMethodForBinding
         | _ -> [],None
     
     // check if the hasPreserveSigNamedArg and hasSynchronizedImplFlag implementation flags have been specified
-    let hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningFlag, attrs = ComputeMethodImplAttribs cenv v attrs
+    let hasPreserveSigImplFlag, hasSynchronizedImplFlag, hasNoInliningFlag, hasAggressiveInliningImplFlag, attrs = ComputeMethodImplAttribs cenv v attrs
         
     let securityAttributes,attrs = attrs |> List.partition (fun a -> IsSecurityAttribute cenv.g cenv.amap cenv.casApplied a m)
     
@@ -5183,6 +5186,7 @@ and GenMethodForBinding
                 IsSynchronized = hasSynchronizedImplFlag
                 IsEntryPoint = isExplicitEntryPoint
                 IsNoInline = hasNoInliningFlag
+                IsAggressiveInline = hasAggressiveInliningImplFlag
                 HasSecurity = mdef.HasSecurity || (securityAttributes.Length > 0)
                 SecurityDecls = secDecls }
 
@@ -6012,7 +6016,7 @@ and GenAbstractBinding cenv eenv tref (vref:ValRef) =
     let m = vref.Range
     let memberInfo = Option.get vref.MemberInfo
     let attribs = vref.Attribs
-    let hasPreserveSigImplFlag,hasSynchronizedImplFlag,hasNoInliningFlag,attribs = ComputeMethodImplAttribs cenv vref.Deref attribs
+    let hasPreserveSigImplFlag,hasSynchronizedImplFlag,hasNoInliningFlag,hasAggressiveInliningImplFlag,attribs = ComputeMethodImplAttribs cenv vref.Deref attribs
     if memberInfo.MemberFlags.IsDispatchSlot && not memberInfo.IsImplemented then 
         let ilAttrs = 
             [ yield! GenAttrs cenv eenv attribs 
@@ -6033,6 +6037,7 @@ and GenAbstractBinding cenv eenv tref (vref:ValRef) =
             IsPreserveSig=hasPreserveSigImplFlag
             IsSynchronized=hasSynchronizedImplFlag
             IsNoInline=hasNoInliningFlag
+            IsAggressiveInline=hasAggressiveInliningImplFlag
             mdKind=match mdef.mdKind with 
                     | MethodKind.Virtual vinfo -> 
                         MethodKind.Virtual {vinfo with IsFinal=memberInfo.MemberFlags.IsFinal
@@ -6808,7 +6813,7 @@ and GenExnDef cenv mgbuf eenv m (exnc:Tycon) =
 
 
 let CodegenAssembly cenv eenv mgbuf fileImpls = 
-    if List.length fileImpls > 0 then 
+    if not (isNil fileImpls) then 
       let a,b = List.frontAndBack fileImpls
       let eenv = List.fold (GenTopImpl cenv mgbuf None) eenv a
       let _eenv = GenTopImpl cenv mgbuf cenv.opts.mainMethodInfo eenv b

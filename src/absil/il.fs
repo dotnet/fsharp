@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-module internal Microsoft.FSharp.Compiler.AbstractIL.IL
+module Microsoft.FSharp.Compiler.AbstractIL.IL 
 
 #nowarn "49"
 #nowarn "343" // The type 'ILAssemblyRef' implements 'System.IComparable' explicitly but provides no corresponding override for 'Object.Equals'.
@@ -52,15 +52,18 @@ let lazyMap f (x:Lazy<_>) =
 [<RequireQualifiedAccess>]
 type PrimaryAssembly = 
     | Mscorlib
-    | DotNetCore   
+    | System_Runtime   
+    | NetStandard   
 
     member this.Name = 
         match this with
         | Mscorlib -> "mscorlib"
-        | DotNetCore -> "System.Runtime"
+        | System_Runtime -> "System.Runtime"
+        | NetStandard -> "netstandard"
     static member IsSomePrimaryAssembly n = 
       n = PrimaryAssembly.Mscorlib.Name 
-      || n = PrimaryAssembly.DotNetCore.Name  
+      || n = PrimaryAssembly.System_Runtime.Name  
+      || n = PrimaryAssembly.NetStandard.Name  
 
 // -------------------------------------------------------------------- 
 // Utilities: type names
@@ -561,8 +564,7 @@ type ILTypeRef =
     member x.ApproxId = x.hashCode
 
     member x.AsBoxedType (tspec:ILTypeSpec) = 
-        match List.length tspec.tspecInst with 
-        | 0 -> 
+        if isNil tspec.tspecInst then
             let v = x.asBoxedType
             match box v with 
             | null -> 
@@ -570,7 +572,8 @@ type ILTypeRef =
                x.asBoxedType <- r
                r
             | _ -> v
-        | _ -> ILType.Boxed tspec
+        else 
+            ILType.Boxed tspec
 
     override x.GetHashCode() = x.hashCode
     override x.Equals(yobj) = 
@@ -768,7 +771,7 @@ type ILFieldSpec =
 // Debug info.                                                     
 // -------------------------------------------------------------------- 
 
-type Guid =  byte[]
+type ILGuid =  byte[]
 
 type ILPlatform = 
     | X86
@@ -776,9 +779,9 @@ type ILPlatform =
     | IA64
 
 type ILSourceDocument = 
-    { sourceLanguage: Guid option; 
-      sourceVendor: Guid option;
-      sourceDocType: Guid option;
+    { sourceLanguage: ILGuid option; 
+      sourceVendor: ILGuid option;
+      sourceDocType: ILGuid option;
       sourceFile: string; }
     static member Create(language,vendor,docType,file) =
         { sourceLanguage=language; 
@@ -1072,6 +1075,7 @@ type ILMethodBody =
     { IsZeroInit: bool;
       MaxStack: int32;
       NoInlining: bool;
+      AggressiveInlining: bool;
       Locals: ILLocals;
       Code:  ILCode;
       SourceMarker: ILSourceMarker option }
@@ -1112,7 +1116,7 @@ type ILFieldInit =
 [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
 type ILNativeType = 
     | Empty
-    | Custom of Guid * string * string * byte[] (* guid,nativeTypeName,custMarshallerName,cookieString *)
+    | Custom of ILGuid * string * string * byte[] (* guid,nativeTypeName,custMarshallerName,cookieString *)
     | FixedSysString of int32
     | FixedArray of int32
     | Currency
@@ -1371,6 +1375,7 @@ type ILMethodDef =
       IsPreserveSig: bool;
       IsMustRun: bool;
       IsNoInline: bool;
+      IsAggressiveInline : bool
       GenericParams: ILGenericParameterDefs;
       CustomAttrs: ILAttributes; }
     member x.ParameterTypes = typesOfILParams x.Parameters
@@ -1588,7 +1593,7 @@ and [<Sealed>] ILTypeDefs(f : unit -> (string list * string * ILAttributes * Laz
             t)
 
     member x.AsArray = [| for (_,_,_,ltd) in array.Value -> ltd.Force() |]
-    member x.AsList = x.AsArray |> Array.toList
+    member x.AsList = [ for (_,_,_,ltd) in array.Value -> ltd.Force() ]
 
     interface IEnumerable with 
         member x.GetEnumerator() = ((x :> IEnumerable<ILTypeDef>).GetEnumerator() :> IEnumerator)
@@ -2276,6 +2281,7 @@ let mkILMethodBody (zeroinit,locals,maxstack,code,tag) : ILMethodBody =
   { IsZeroInit=zeroinit
     MaxStack=maxstack
     NoInlining=false
+    AggressiveInlining=false
     Locals= locals 
     Code= code
     SourceMarker=tag }
@@ -2311,6 +2317,7 @@ let mkILCtor (access,args,impl) =
       IsUnmanagedExport=false;
       IsSynchronized=false;
       IsNoInline=false;
+      IsAggressiveInline=false
       IsMustRun=false;
       IsPreserveSig=false;
       CustomAttrs = emptyILCustomAttrs; }
@@ -2364,6 +2371,7 @@ let mkILStaticMethod (genparams,nm,access,args,ret,impl) =
       IsUnmanagedExport=false;
       IsSynchronized=false;
       IsNoInline=false;
+      IsAggressiveInline=false;
       IsMustRun=false;
       IsPreserveSig=false; }
 
@@ -2393,6 +2401,7 @@ let mkILClassCtor impl =
       IsUnmanagedExport=false; 
       IsSynchronized=false;
       IsNoInline=false;
+      IsAggressiveInline=false
       IsMustRun=false;
       IsPreserveSig=false;  } 
 
@@ -2433,6 +2442,7 @@ let mkILGenericVirtualMethod (nm,access,genparams,actual_args,actual_ret,impl) =
     IsUnmanagedExport=false; 
     IsSynchronized=false;
     IsNoInline=false;
+    IsAggressiveInline=false
     IsMustRun=false;
     IsPreserveSig=false; }
     
@@ -2462,6 +2472,7 @@ let mkILGenericNonVirtualMethod (nm,access,genparams, actual_args,actual_ret, im
     IsUnmanagedExport=false; 
     IsSynchronized=false;
     IsNoInline=false;
+    IsAggressiveInline=false
     IsMustRun=false;
     IsPreserveSig=false; }
     
@@ -3681,6 +3692,31 @@ let compareILVersions (a1,a2,a3,a4) ((b1,b2,b3,b4) : ILVersionInfo) =
     if c <> 0 then c else
     0
 
+let unscopeILTypeRef (x: ILTypeRef) = ILTypeRef.Create(ILScopeRef.Local,x.Enclosing,x.Name)
+
+let rec unscopeILTypeSpec (tspec:ILTypeSpec) = 
+    let tref = tspec.TypeRef
+    let tinst = tspec.GenericArgs
+    let tref = unscopeILTypeRef tref
+    ILTypeSpec.Create (tref, unscopeILTypes tinst)
+
+and unscopeILType typ = 
+    match typ with 
+    | ILType.Ptr t -> ILType.Ptr (unscopeILType t)
+    | ILType.FunctionPointer t -> ILType.FunctionPointer (unscopeILCallSig t)
+    | ILType.Byref t -> ILType.Byref (unscopeILType t)
+    | ILType.Boxed cr -> mkILBoxedType (unscopeILTypeSpec cr)
+    | ILType.Array (s,ty) -> ILType.Array (s,unscopeILType ty)
+    | ILType.Value cr -> ILType.Value (unscopeILTypeSpec cr)
+    | ILType.Modified(b,tref,ty) -> ILType.Modified(b,unscopeILTypeRef tref, unscopeILType ty)
+    | x -> x
+
+and unscopeILTypes i = 
+    if List.isEmpty i then i
+    else List.map unscopeILType i
+
+and unscopeILCallSig csig = 
+    mkILCallSig (csig.CallingConv,unscopeILTypes csig.ArgTypes,unscopeILType csig.ReturnType)
 
 let resolveILMethodRefWithRescope r td (mref:ILMethodRef) = 
     let args = mref.ArgTypes
@@ -3688,13 +3724,15 @@ let resolveILMethodRefWithRescope r td (mref:ILMethodRef) =
     let nm = mref.Name
     let possibles = td.Methods.FindByNameAndArity (nm,nargs)
     if isNil possibles then failwith ("no method named " + nm + " found in type " + td.Name)
+    let argTypes = mref.ArgTypes |> List.map r
+    let retType : ILType = r mref.ReturnType
     match 
       possibles |> List.filter (fun md -> 
           mref.CallingConv = md.CallingConv &&
           // REVIEW: this uses equality on ILType.  For CMOD_OPTIONAL this is not going to be correct
-          (md.Parameters,mref.ArgTypes) ||> List.lengthsEqAndForall2 (fun p1 p2 -> r p1.Type = p2) &&
+          (md.Parameters,argTypes) ||>  List.lengthsEqAndForall2 (fun p1 p2 -> r p1.Type = p2) &&
           // REVIEW: this uses equality on ILType.  For CMOD_OPTIONAL this is not going to be correct 
-          r md.Return.Type = mref.ReturnType) with 
+          r md.Return.Type = retType)  with 
     | [] -> failwith ("no method named "+nm+" with appropriate argument types found in type "+td.Name)
     | [mdef] ->  mdef
     | _ -> failwith ("multiple methods named "+nm+" appear with identical argument types in type "+td.Name)

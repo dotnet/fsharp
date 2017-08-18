@@ -70,6 +70,17 @@ module FSharpTokenTag =
     let RARROW = tagOfToken RARROW
     let LARROW = tagOfToken LARROW
     let QUOTE = tagOfToken QUOTE
+    let WHITESPACE = tagOfToken (WHITESPACE Unchecked.defaultof<_>)
+    let COMMENT = tagOfToken (COMMENT Unchecked.defaultof<_>)
+    let LINE_COMMENT = tagOfToken (LINE_COMMENT Unchecked.defaultof<_>)
+    let BEGIN = tagOfToken BEGIN
+    let DO = tagOfToken DO
+    let FUNCTION = tagOfToken FUNCTION
+    let THEN = tagOfToken THEN
+    let ELSE = tagOfToken ELSE
+    let STRUCT = tagOfToken STRUCT
+    let CLASS = tagOfToken CLASS
+    let TRY = tagOfToken TRY
 
            
 /// This corresponds to a token categorization originally used in Visual Studio 2003.
@@ -304,6 +315,7 @@ type FSharpTokenizerColorState =
     | Comment = 5
     | StringInComment = 6
     | VerbatimStringInComment = 7
+    | CamlOnly = 8
     | VerbatimString = 9
     | SingleLineComment = 10
     | EndLineThenSkip = 11
@@ -414,6 +426,7 @@ module internal LexerStateEncoding =
             | LexCont.StringInComment (ifd,n,m)                       -> FSharpTokenizerColorState.StringInComment,           resize32 n, m.Start, ifd
             | LexCont.VerbatimStringInComment (ifd,n,m)               -> FSharpTokenizerColorState.VerbatimStringInComment,   resize32 n, m.Start, ifd
             | LexCont.TripleQuoteStringInComment (ifd,n,m)            -> FSharpTokenizerColorState.TripleQuoteStringInComment,resize32 n, m.Start, ifd
+            | LexCont.MLOnly (ifd,m)                                  -> FSharpTokenizerColorState.CamlOnly,                  0L,         m.Start, ifd
             | LexCont.VerbatimString (ifd,m)                          -> FSharpTokenizerColorState.VerbatimString,            0L,         m.Start, ifd
             | LexCont.TripleQuoteString (ifd,m)                       -> FSharpTokenizerColorState.TripleQuoteString,         0L,         m.Start, ifd
         encodeLexCont tag n1 p1 ifd lightSyntaxStatus
@@ -431,6 +444,7 @@ module internal LexerStateEncoding =
             |  FSharpTokenizerColorState.StringInComment            -> LexCont.StringInComment (ifd,n1,mkRange "file" p1 p1)
             |  FSharpTokenizerColorState.VerbatimStringInComment    -> LexCont.VerbatimStringInComment (ifd,n1,mkRange "file" p1 p1)
             |  FSharpTokenizerColorState.TripleQuoteStringInComment -> LexCont.TripleQuoteStringInComment (ifd,n1,mkRange "file" p1 p1)
+            |  FSharpTokenizerColorState.CamlOnly                   -> LexCont.MLOnly (ifd,mkRange "file" p1 p1)
             |  FSharpTokenizerColorState.VerbatimString             -> LexCont.VerbatimString (ifd,mkRange "file" p1 p1)
             |  FSharpTokenizerColorState.TripleQuoteString          -> LexCont.TripleQuoteString (ifd,mkRange "file" p1 p1)
             |  FSharpTokenizerColorState.EndLineThenSkip            -> LexCont.EndLine(LexerEndlineContinuation.Skip(ifd,n1,mkRange "file" p1 p1))
@@ -456,6 +470,7 @@ module internal LexerStateEncoding =
         | LexCont.StringInComment (ifd,n,m)            -> Lexer.stringInComment n m (argsWithIfDefs ifd) skip lexbuf
         | LexCont.VerbatimStringInComment (ifd,n,m)    -> Lexer.verbatimStringInComment n m (argsWithIfDefs ifd) skip lexbuf
         | LexCont.TripleQuoteStringInComment (ifd,n,m) -> Lexer.tripleQuoteStringInComment n m (argsWithIfDefs ifd) skip lexbuf
+        | LexCont.MLOnly (ifd,m)                       -> Lexer.mlOnly m (argsWithIfDefs ifd) skip lexbuf
         | LexCont.VerbatimString (ifd,m)               -> Lexer.verbatimString (ByteBuffer.Create 100,defaultStringFinisher,m,(argsWithIfDefs ifd)) skip lexbuf
         | LexCont.TripleQuoteString (ifd,m)            -> Lexer.tripleQuoteString (ByteBuffer.Create 100,defaultStringFinisher,m,(argsWithIfDefs ifd)) skip lexbuf
 
@@ -750,4 +765,11 @@ type FSharpSourceTokenizer(defineConstants : string list, filename : Option<stri
     member this.CreateBufferTokenizer(bufferFiller) = 
         let lexbuf = UnicodeLexing.FunctionAsLexbuf bufferFiller
         FSharpLineTokenizer(lexbuf, None, filename, lexArgsLightOn, lexArgsLightOff)
+
+module Keywords =
+    open Microsoft.FSharp.Compiler.Lexhelp.Keywords
+
+    let QuoteIdentifierIfNeeded s = QuoteIdentifierIfNeeded s
+    let NormalizeIdentifierBackticks s = NormalizeIdentifierBackticks s
+    let KeywordsWithDescription = keywordsWithDescription
 

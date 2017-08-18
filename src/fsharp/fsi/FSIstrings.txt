@@ -50,4 +50,5 @@ fsiUnexpectedThreadAbortException,"- Unexpected ThreadAbortException (Ctrl-C) du
 fsiFailedToResolveAssembly,"Failed to resolve assembly '%s'"
 fsiBindingSessionTo,"Binding session to '%s'..."
 fsiProductName,"Microsoft (R) F# Interactive version %s"
+fsiProductNameCommunity,"F# Interactive for F# %s"
 shadowCopyReferences,"Prevents references from being locked by the F# Interactive process"

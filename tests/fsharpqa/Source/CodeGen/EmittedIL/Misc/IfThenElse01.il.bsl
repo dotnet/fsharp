@@ -55,7 +55,7 @@
          extends [mscorlib]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-    .class auto ansi serializable nested assembly beforefieldinit f5@5
+    .class auto ansi serializable sealed nested assembly beforefieldinit f5@5
            extends [FSharp.Core]Microsoft.FSharp.Core.FSharpTypeFunc
     {
       .method assembly specialname rtspecialname 
@@ -87,7 +87,7 @@
 
     } // end of class f5@5
 
-    .class auto ansi serializable nested assembly beforefieldinit f5@5T<a>
+    .class auto ansi serializable sealed nested assembly beforefieldinit f5@5T<a>
            extends class [FSharp.Core]Microsoft.FSharp.Core.OptimizedClosures/FSharpFunc`5<int32,int32,!a,!a,!a>
     {
       .field public class IfThenElse01/M/f5@5 self0@

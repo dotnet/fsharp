@@ -3,7 +3,7 @@
 // This component is used by the 'fsharpqa' tests for faster in-memory compilation.  It should be removed and the 
 // proper compiler service API used instead.
 
-namespace FSharp.Compiler.Hosted
+namespace Legacy.FSharp.Compiler.Hosted
 
 open System
 open System.IO
@@ -13,6 +13,7 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Driver
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.CompileOps
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 
 /// build issue location
 type internal Location =
@@ -52,8 +53,11 @@ type internal CompilationOutput =
     { Errors : Diagnostic[]
       Warnings : Diagnostic[]  }
 
-type internal InProcCompiler(referenceResolver) = 
+type internal InProcCompiler(legacyReferenceResolver) = 
     member this.Compile(argv) = 
+
+        // Explanation: Compilation happens on whichever thread calls this function.
+        let ctok = AssumeCompilationThreadWithoutEvidence ()
 
         let loggerProvider = InProcErrorLoggerProvider()
         let exitCode = ref 0
@@ -61,7 +65,7 @@ type internal InProcCompiler(referenceResolver) =
             { new Exiter with
                  member this.Exit n = exitCode := n; raise StopProcessing }
         try 
-            typecheckAndCompile(argv, referenceResolver, false, exiter, loggerProvider.Provider)
+            typecheckAndCompile(ctok, argv, legacyReferenceResolver, false, false, true, exiter, loggerProvider.Provider, None, None)
         with 
             | StopProcessing -> ()
             | ReportedError _  | WrappedError(ReportedError _,_)  ->
@@ -72,9 +76,8 @@ type internal InProcCompiler(referenceResolver) =
         !exitCode = 0, output
 
 /// in-proc version of fsc.exe
-type internal FscCompiler() =
-    let referenceResolver = MSBuildReferenceResolver.Resolver 
-    let compiler = InProcCompiler(referenceResolver)
+type internal FscCompiler(legacyReferenceResolver) =
+    let compiler = InProcCompiler(legacyReferenceResolver)
 
     let emptyLocation = 
         { 
@@ -170,7 +173,6 @@ type internal FscCompiler() =
         (exitCode, lines)
 
 module internal CompilerHelpers =
-    let fscCompiler = FscCompiler()
 
     /// splits a provided command line string into argv array
     /// currently handles quotes, but not escaped quotes
@@ -192,7 +194,7 @@ module internal CompilerHelpers =
         |> Array.ofList
 
     /// runs in-proc fsc compilation, returns array consisting of exit code, then compiler output
-    let fscCompile directory args =
+    let fscCompile legacyReferenceResolver directory args =
         // in-proc compiler still prints banner to console, so need this to capture it
         let origOut = Console.Out
         let origError = Console.Error
@@ -203,7 +205,7 @@ module internal CompilerHelpers =
         try
             try
                 Directory.SetCurrentDirectory directory
-                let (exitCode, output) = fscCompiler.Compile(args)
+                let (exitCode, output) = FscCompiler(legacyReferenceResolver).Compile(args)
                 let consoleOut = sw.ToString().Split([|'\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries)
                 let consoleError = ew.ToString().Split([|'\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries)
                 exitCode, [| yield! consoleOut; yield! output |], consoleError
