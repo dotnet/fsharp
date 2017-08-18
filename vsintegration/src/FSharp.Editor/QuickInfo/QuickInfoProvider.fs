@@ -11,6 +11,7 @@ open System.Text
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis.FindSymbols
 
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
@@ -28,7 +29,6 @@ type private TooltipInfo =
       SymbolKind: LexerSymbolKind }
 
 module private FSharpQuickInfo =
-    open Microsoft.CodeAnalysis.FindSymbols
 
     let userOpName = "QuickInfo"
 

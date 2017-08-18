@@ -1137,13 +1137,13 @@ type TypeCheckInfo
                   | Item.ILField (ILFieldInfo (ILTypeInfo (tr, _, _, _) & typeInfo, fieldDef)) when not tr.IsLocalRef ->
                       match typeInfo.ILScopeRef with
                       | ILScopeRef.Assembly assref ->
-                          Some (FSharpFindDeclResult.ExternalDecl (assref.Name, typeInfo.Name + "." + fieldDef.Name))
+                          Some (FSharpFindDeclResult.ExternalDecl (assref.Name, typeInfo.ILTypeRef.FullName + "." + fieldDef.Name))
                       | _ -> None
                   
                   | Item.Event (ILEvent (_, ILEventInfo (ILTypeInfo (tr, _, _, _) & typeInfo, eventDef))) when not tr.IsLocalRef ->
                       match typeInfo.ILScopeRef with
                       | ILScopeRef.Assembly assref ->
-                          Some (FSharpFindDeclResult.ExternalDecl (assref.Name, typeInfo.Name + "." + eventDef.Name))
+                          Some (FSharpFindDeclResult.ExternalDecl (assref.Name, typeInfo.ILTypeRef.FullName + "." + eventDef.Name))
                       | _ -> None
 
                   | Item.ImplicitOp(_, {contents = Some(TraitConstraintSln.FSMethSln(_, _vref, _))}) ->

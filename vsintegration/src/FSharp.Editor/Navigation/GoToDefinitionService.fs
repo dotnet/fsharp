@@ -226,7 +226,7 @@ type internal FSharpGoToDefinitionService
             match declarations with
             | FSharpFindDeclResult.ExternalDecl (assy, symname) ->
                 let! project = originDocument.Project.Solution.Projects |> Seq.tryFind (fun p -> p.AssemblyName = assy)
-                let! symbols = SymbolFinder.FindSourceDeclarationsAsync(project, fun (s:string) -> true)
+                let! symbols = SymbolFinder.FindSourceDeclarationsAsync(project, fun _ -> true)
  
                 let getFullName sym =
                     let rec inner (sym : ISymbol) parts =
@@ -234,11 +234,8 @@ type internal FSharpGoToDefinitionService
                         | null ->
                             parts
                         // TODO: do we have any other terminating cases?
-                        | container when container.Kind = SymbolKind.NetModule ->
+                        | container when container.Kind = SymbolKind.NetModule || container.Kind = SymbolKind.Assembly ->
                             parts
-                        | container when container.Kind = SymbolKind.Assembly ->
-                            parts
-                        // TODO: there are probably other containing symbols we'd want to skip
                         | container when container.Name <> "" ->
                             inner container (container.Name :: parts)
                         | container ->
