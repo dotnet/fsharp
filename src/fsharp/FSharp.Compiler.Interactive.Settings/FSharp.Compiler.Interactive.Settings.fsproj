@@ -7,7 +7,7 @@
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{649FA588-F02E-457C-9FCF-87E46407481E}</ProjectGuid>
     <OutputType>Library</OutputType>
     <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
