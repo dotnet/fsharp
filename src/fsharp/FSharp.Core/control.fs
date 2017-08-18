@@ -2357,7 +2357,7 @@ namespace Microsoft.FSharp.Control
             else let msg = arrivals.Dequeue()
                  match f msg with
                  | None -> 
-                     x.inbox.Add(msg)
+                     x.inbox.Add(msg);
                      x.scanArrivalsUnsafe(f)
                  | res -> res
 
