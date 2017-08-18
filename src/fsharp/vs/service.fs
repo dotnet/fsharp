@@ -1150,7 +1150,7 @@ type TypeCheckInfo
                       //Item.Value(vref)
                       None
 
-                  | Item.Types (_, [TType_app (tr, _)]) when not tr.IsLocalRef ->
+                  | Item.Types (_, [AppTy g (tr, _)]) when not tr.IsLocalRef ->
                       match tr.TypeReprInfo, tr.PublicPath with
                       | TILObjectRepr(TILObjectReprData (ILScopeRef.Assembly assref, _, _)), Some (PubPath parts) ->
                           Some (FSharpFindDeclResult.ExternalDecl (assref.Name, String.concat "." parts))
