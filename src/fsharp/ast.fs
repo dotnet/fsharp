@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 #if COMPILER_PUBLIC_API
-module Microsoft.FSharp.Compiler.Ast
+module public Microsoft.FSharp.Compiler.Ast
 #else
 module internal Microsoft.FSharp.Compiler.Ast
 #endif
@@ -536,7 +536,7 @@ and
     | ForEach of forSeqPoint:SequencePointInfoForForLoop * seqExprOnly:SeqExprOnly * isFromSource:bool * pat:SynPat * enumExpr:SynExpr * bodyExpr:SynExpr * range:range
 
     /// F# syntax: [ expr ], [| expr |]
-    | ArrayOrListOfSeqExpr of isList:bool * expr:SynExpr * range:range
+    | ArrayOrListOfSeqExpr of isArray:bool * expr:SynExpr * range:range
 
     /// CompExpr(isArrayOrList, isNotNakedRefCell, expr)
     ///
@@ -2123,6 +2123,7 @@ type LexerWhitespaceContinuation =
     | StringInComment    of ifdef:LexerIfdefStackEntries * int * range:range
     | VerbatimStringInComment   of ifdef:LexerIfdefStackEntries * int * range:range
     | TripleQuoteStringInComment   of ifdef:LexerIfdefStackEntries * int * range:range
+    | MLOnly            of ifdef:LexerIfdefStackEntries * range:range
     | EndLine           of LexerEndlineContinuation
 
     member x.LexerIfdefStack =
@@ -2136,7 +2137,8 @@ type LexerWhitespaceContinuation =
         | LexCont.TripleQuoteString (ifdef=ifd)
         | LexCont.StringInComment (ifdef=ifd)
         | LexCont.VerbatimStringInComment (ifdef=ifd)
-        | LexCont.TripleQuoteStringInComment (ifdef=ifd) -> ifd
+        | LexCont.TripleQuoteStringInComment (ifdef=ifd)
+        | LexCont.MLOnly (ifdef=ifd) -> ifd
         | LexCont.EndLine endl -> endl.LexerIfdefStack
 
 and LexCont = LexerWhitespaceContinuation

@@ -3,9 +3,10 @@
 namespace rec Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open System.Collections.Immutable
-open System.Threading.Tasks
 open System.Collections.Generic
+open System.Collections.Immutable
+open System.Diagnostics
+open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Diagnostics
@@ -15,7 +16,8 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 type internal UnusedDeclarationsAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
     
-    let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().ProjectInfoManager
+    static let userOpName = "UnusedDeclarationsAnalyzer"
+    let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().FSharpProjectOptionsManager
     let getChecker (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
     let [<Literal>] DescriptorId = "FS1182"
     
@@ -98,11 +100,13 @@ type internal UnusedDeclarationsAnalyzer() =
 
     override __.AnalyzeSemanticsAsync(document, cancellationToken) =
         asyncMaybe {
+            do Trace.TraceInformation("{0:n3} (start) UnusedDeclarationsAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
+            do! Async.Sleep DefaultTuning.UnusedDeclarationsAnalyzerInitialDelay |> liftAsync // be less intrusive, give other work priority most of the time
             match getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document) with
             | Some options ->
                 let! sourceText = document.GetTextAsync()
                 let checker = getChecker document
-                let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true)
+                let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true, userOpName = userOpName)
                 let! allSymbolUsesInFile = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
                 let unusedRanges = getUnusedDeclarationRanges allSymbolUsesInFile (isScriptFile document.FilePath)
                 return

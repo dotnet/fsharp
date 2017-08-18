@@ -69,9 +69,9 @@ val mkLet : (VarData * ExprData) * ExprData -> ExprData
 val mkRecdMk : NamedTypeData  * TypeData list * ExprData list -> ExprData
 val mkRecdGet : RecdFieldData   * TypeData list * ExprData list -> ExprData 
 val mkRecdSet :  RecdFieldData * TypeData list * ExprData list -> ExprData 
-val mkSum : (NamedTypeData * string) * TypeData list * ExprData list -> ExprData 
-val mkSumFieldGet : (NamedTypeData * string * int) * TypeData list * ExprData -> ExprData  
-val mkSumTagTest : (NamedTypeData * string)   * TypeData list * ExprData -> ExprData  
+val mkUnion : (NamedTypeData * string) * TypeData list * ExprData list -> ExprData 
+val mkUnionFieldGet : (NamedTypeData * string * int) * TypeData list * ExprData -> ExprData  
+val mkUnionCaseTagTest : (NamedTypeData * string)   * TypeData list * ExprData -> ExprData  
 val mkTuple : TypeData * ExprData list -> ExprData 
 val mkTupleGet : TypeData * int * ExprData -> ExprData
 val mkCoerce : TypeData * ExprData -> ExprData 

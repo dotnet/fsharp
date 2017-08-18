@@ -1,5 +1,5 @@
 ﻿#if INTERACTIVE
-#r "../../Debug/net40/bin/FSharp.Compiler.Service.dll"
+#r "../../Debug/net40/bin/FSharp.Compiler.Service.dll" // note, run 'build fcs' to generate this, this DLL has a public API so can be used from F# Interactive
 #r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
@@ -95,7 +95,7 @@ let ``FileSystem compilation test``() =
                    yield "-r:" + r |]
  
         { ProjectFileName = @"c:\mycode\compilation.fsproj" // Make a name that is unique in this directory.
-          ProjectFileNames = [| fileName1; fileName2 |]
+          SourceFiles = [| fileName1; fileName2 |]
           OtherOptions = allFlags 
           ReferencedProjects = [| |];
           IsIncompleteTypeCheckEnvironment = false

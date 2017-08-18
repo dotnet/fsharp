@@ -33,7 +33,7 @@ type ProjectCracker =
 
             logMap := Map.add opts.ProjectFile opts.LogOutput !logMap
             { ProjectFileName = opts.ProjectFile
-              ProjectFileNames = sourceFiles
+              SourceFiles = sourceFiles
               OtherOptions = otherOptions
               ReferencedProjects = referencedProjects
               IsIncompleteTypeCheckEnvironment = false

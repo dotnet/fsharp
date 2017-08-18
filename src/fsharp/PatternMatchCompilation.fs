@@ -3,7 +3,6 @@
 module internal Microsoft.FSharp.Compiler.PatternMatchCompilation
 
 open System.Collections.Generic
-open Internal.Utilities
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
@@ -14,7 +13,6 @@ open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.Tastops.DebugPrint
 open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.TypeRelations

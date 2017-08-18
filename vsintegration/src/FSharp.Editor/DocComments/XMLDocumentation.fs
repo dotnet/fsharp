@@ -214,7 +214,7 @@ module internal XmlDocumentation =
     /// Provide Xml Documentation             
     type Provider(xmlIndexService:IVsXMLMemberIndexService, dte: DTE) = 
         /// Index of assembly name to xml member index.
-        let mutable xmlCache = new AgedLookup<VsThreadToken,string,IVsXMLMemberIndex>(10,areSame=(fun (x,y) -> x = y))
+        let mutable xmlCache = new AgedLookup<VsThreadToken,string,IVsXMLMemberIndex>(10,areSimilar=(fun (x,y) -> x = y))
         
         let events = dte.Events :?> Events2
         let solutionEvents = events.SolutionEvents

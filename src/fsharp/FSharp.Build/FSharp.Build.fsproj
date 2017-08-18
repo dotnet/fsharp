@@ -12,7 +12,6 @@
     <AssemblyName>FSharp.Build</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <ProjectGuid>{702A7979-BCF9-4C41-853E-3ADFC9897890}</ProjectGuid>
-    <FX_NOLOADER>true</FX_NOLOADER>
   </PropertyGroup>
   <ItemGroup>
     <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
@@ -23,38 +22,22 @@
     </FilesToLocalize>
   </ItemGroup>
 
-  <!-- Nuget packaging configuration -->
   <ItemGroup>
-    <PackageNuspec Include="FSharp.Build.netcore.nuspec" Condition="'$(TargetFramework)' == 'coreclr'" />
-  </ItemGroup>
-  <PropertyGroup>
-    <PackageVersion    Condition="'$(PreReleaseLabel)'     == ''">$(NuGeReleaseVersion)</PackageVersion>
-    <PackageVersion    Condition="'$(PackageVersionMinor)' != ''">$(PackageVersionMajor)-$(PackageVersionMinor)</PackageVersion>
-    <PackageVersion    Condition="'$(PackageVersionMinor)' == ''">$(NuGetPerBuildPreReleaseVersion)-0</PackageVersion>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <FsSrGen Include="FSBuild.txt">
-      <Link>FSBuild.txt</Link>
-    </FsSrGen>
+    <FsSrGen Include="FSBuild.txt" />
     <Compile Include="InternalsVisibleTo.fs" />
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Build.dll.fs">
-      <Link>Utilities/assemblyinfo.FSharp.Build.dll.fs</Link>
-    </Compile>
-    <Compile Include="..\..\utils\CompilerLocationUtils.fs">
-      <Link>Utilities/CompilerLocationUtils.fs</Link>
-    </Compile>
+    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Build.dll.fs" />
+    <Compile Include="..\..\utils\CompilerLocationUtils.fs" />
     <Compile Include="..\..\utils\reshapedreflection.fs" />
     <Compile Include="Fsc.fsi" />
     <Compile Include="Fsc.fs" />
     <Compile Include="CreateFSharpManifestResourceName.fsi" />
     <Compile Include="CreateFSharpManifestResourceName.fs" />
-    <CopyAndSubstituteText Include="Microsoft.FSharp.targets">
+    <CopyAndSubstituteText Include="Microsoft.FSharp.Targets">
         <TargetFilename>Microsoft.FSharp.Targets</TargetFilename>
         <Pattern1>{BuildSuffix}</Pattern1>
         <Replacement1></Replacement1>
     </CopyAndSubstituteText>
-    <CopyAndSubstituteText Include="Microsoft.Portable.FSharp.targets">
+    <CopyAndSubstituteText Include="Microsoft.Portable.FSharp.Targets">
       <TargetFilename>Microsoft.Portable.FSharp.Targets</TargetFilename>
       <Pattern1>{BuildSuffix}</Pattern1>
       <Replacement1></Replacement1>
@@ -70,11 +53,12 @@
         <Replacement1></Replacement1>
     </CopyAndSubstituteText>
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' != 'coreclr' ">
+
+  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' ">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' != 'coreclr' AND '$(MonoPackaging)' != 'true' ">
+  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' != 'true' ">
     <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>
     </Reference>
@@ -88,20 +72,20 @@
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Tasks.Core.dll</HintPath>
     </Reference>
   </ItemGroup>
-  <ItemGroup Condition=" '$(TargetFramework)' != 'coreclr' AND '$(MonoPackaging)' == 'true' ">
-    <Reference Include="Microsoft.Build.Framework, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+  <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' == 'true' ">
+    <Reference Include="Microsoft.Build.Framework, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' == 'true' " >
         <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.Build.Engine, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <Reference Include="Microsoft.Build.Engine, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' == 'true' " >
         <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.Build, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <Reference Include="Microsoft.Build, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' == 'true' " >
         <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.Build.Utilities.$(MonoPackagingMSBuildVersionSuffix), Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <Reference Include="Microsoft.Build.Utilities.$(MonoPackagingMSBuildVersionSuffix), Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' == 'true' " >
         <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.Build.Tasks.$(MonoPackagingMSBuildVersionSuffix), Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <Reference Include="Microsoft.Build.Tasks.$(MonoPackagingMSBuildVersionSuffix), Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' == 'true' " >
         <Private>True</Private>
     </Reference>
   </ItemGroup>

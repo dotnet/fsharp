@@ -11,7 +11,6 @@ open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
-open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Lib.Bits

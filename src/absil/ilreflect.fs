@@ -1466,6 +1466,7 @@ let convMethodImplFlags mdef =
     ||| flagsIf mdef.IsPreserveSig MethodImplAttributes.PreserveSig
     ||| flagsIf mdef.IsSynchronized MethodImplAttributes.Synchronized
     ||| flagsIf (match mdef.mdBody.Contents with MethodBody.IL b -> b.NoInlining | _ -> false) MethodImplAttributes.NoInlining
+    ||| flagsIf (match mdef.mdBody.Contents with MethodBody.IL b -> b.AggressiveInlining | _ -> false) MethodImplAttributes.AggressiveInlining
 
 //----------------------------------------------------------------------------
 // buildMethodPass2

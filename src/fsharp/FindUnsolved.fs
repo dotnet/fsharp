@@ -9,22 +9,12 @@ module internal Microsoft.FSharp.Compiler.FindUnsolved
 open Internal.Utilities
 
 open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.AbstractIL
-open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
-open Microsoft.FSharp.Compiler.Range
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Layout
-open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.TypeRelations
-open Microsoft.FSharp.Compiler.Infos
 
 type env = Nix
 
@@ -175,8 +165,13 @@ and accDiscrim cenv env d =
         accTypeInst cenv env tys
 
 and accAttrib cenv env (Attrib(_,_k,args,props,_,_,_m)) = 
-    args |> List.iter (fun (AttribExpr(e1,_)) -> accExpr cenv env e1)
-    props |> List.iter (fun (AttribNamedArg(_nm,_ty,_flg,AttribExpr(expr,_))) -> accExpr cenv env expr)
+    args |> List.iter (fun (AttribExpr(expr1,expr2)) -> 
+        accExpr cenv env expr1
+        accExpr cenv env expr2)
+    props |> List.iter (fun (AttribNamedArg(_nm,ty,_flg,AttribExpr(expr,expr2))) -> 
+        accExpr cenv env expr
+        accExpr cenv env expr2
+        accTy cenv env ty)
   
 and accAttribs cenv env attribs = List.iter (accAttrib cenv env) attribs
 
@@ -209,6 +204,7 @@ let accTyconRecdField cenv env _tycon (rfield:RecdField) =
 
 let accTycon cenv env (tycon:Tycon) =
     accAttribs cenv env tycon.Attribs
+    abstractSlotValsOfTycons [tycon] |> List.iter (accVal cenv env) 
     tycon.AllFieldsArray |> Array.iter (accTyconRecdField cenv env tycon)
     if tycon.IsUnionTycon then                             (* This covers finite unions. *)
       tycon.UnionCasesAsList |> List.iter (fun uc ->

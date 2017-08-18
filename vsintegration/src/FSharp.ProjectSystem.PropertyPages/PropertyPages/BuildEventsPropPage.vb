@@ -188,10 +188,10 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         Protected Overrides ReadOnly Property ControlData() As PropertyControlData()
             Get
                 If m_ControlData Is Nothing Then
-                    m_ControlData = New PropertyControlData() { _
-                    New PropertyControlData(VsProjPropId2.VBPROJPROPID_PreBuildEvent, "PreBuildEvent", Me.txtPreBuildEventCommandLine, ControlDataFlags.None, New Control() {btnPreBuildBuilder, lblPreBuildEventCommandLine}), _
-                    New PropertyControlData(VsProjPropId2.VBPROJPROPID_PostBuildEvent, "PostBuildEvent", Me.txtPostBuildEventCommandLine, ControlDataFlags.None, New Control() {btnPostBuildBuilder, lblPostBuildEventCommandLine}), _
-                    New PropertyControlData(VsProjPropId2.VBPROJPROPID_RunPostBuildEvent, "RunPostBuildEvent", Me.cboRunPostBuildEvent, AddressOf RunPostBuildEventSet, AddressOf RunPostBuildEventGet, ControlDataFlags.None, New Control() {Me.lblRunPostBuildEvent}) _
+                    m_ControlData = New PropertyControlData() {
+                    New PropertyControlData(VsProjPropId2.VBPROJPROPID_PreBuildEvent, "PreBuildEvent", Me.txtPreBuildEventCommandLine, ControlDataFlags.None, New Control() {btnPreBuildBuilder, lblPreBuildEventCommandLine}),
+                    New PropertyControlData(VsProjPropId2.VBPROJPROPID_PostBuildEvent, "PostBuildEvent", Me.txtPostBuildEventCommandLine, ControlDataFlags.None, New Control() {btnPostBuildBuilder, lblPostBuildEventCommandLine}),
+                    New PropertyControlData(VsProjPropId2.VBPROJPROPID_RunPostBuildEvent, "RunPostBuildEvent", Me.cboRunPostBuildEvent, AddressOf RunPostBuildEventSet, AddressOf RunPostBuildEventGet, ControlDataFlags.None, New Control() {Me.lblRunPostBuildEvent})
                     }
                 End If
 
@@ -211,7 +211,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
         ''' <param name="value"></param>
         ''' <remarks></remarks>
         Private Function RunPostBuildEventSet(ByVal control As Control, ByVal prop As PropertyDescriptor, ByVal value As Object) As Boolean
-            If (Not (PropertyControlData.IsSpecialValue(value))) Then
+            If (Not (PropertyControlData.IsSpecialValue(value) OrElse String.IsNullOrEmpty(TryCast(value, String)))) Then
                 Me.cboRunPostBuildEvent.SelectedIndex = CType(value, Integer)
                 Return True
             Else
@@ -336,7 +336,22 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             Dim MacroEval As IVsBuildMacroInfo
             Dim MacroValue As String = Nothing
 
-            MacroEval = CType(m_Objects(0), IVsBuildMacroInfo)
+            ' The old project system provides IVsBuildMacroInfo this way...
+            MacroEval = TryCast(m_Objects(0), IVsBuildMacroInfo)
+            If MacroEval Is Nothing Then
+                Dim Hier As IVsHierarchy = Nothing
+                Dim ItemId As UInteger
+                Dim ThisObj As Object = m_Objects(0)
+
+                ' ...whereas CPS requires us to go through IVsBrowseObject.
+                If TypeOf ThisObj Is IVsBrowseObject Then
+                    VSErrorHandler.ThrowOnFailure(CType(ThisObj, IVsBrowseObject).GetProjectItem(Hier, ItemId))
+                ElseIf TypeOf ThisObj Is IVsCfgBrowseObject Then
+                    VSErrorHandler.ThrowOnFailure(CType(ThisObj, IVsCfgBrowseObject).GetProjectItem(Hier, ItemId))
+                End If
+                MacroEval = CType(Hier, IVsBuildMacroInfo)
+            End If
+
             VSErrorHandler.ThrowOnFailure(MacroEval.GetBuildMacroValue(MacroName, MacroValue))
 
             Return MacroValue

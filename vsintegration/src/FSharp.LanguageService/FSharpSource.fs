@@ -1,5 +1,7 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
+//------- DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS ---------------
+
 #nowarn "40"
 
 namespace Microsoft.VisualStudio.FSharp.LanguageService
@@ -23,17 +25,29 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 
 #nowarn "45" // This method will be made public in the underlying IL because it may implement an interface or override a method
 
-type internal IDependencyFileChangeNotify = 
+//
+// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
+//
+// Note: Tests using this code should either be adjusted to test the corresponding feature in
+// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
+// functionality and thus have considerable value, they should ony be deleted if we are sure this 
+// is not the case.
+//
+type internal IDependencyFileChangeNotify_DEPRECATED = 
 
-     /// Invoked when a dependency file gets created or deleted 
      abstract DependencyFileCreated : IProjectSite -> unit
 
-     /// Invoked when a dependency file changes
      abstract DependencyFileChanged : string -> unit
 
-/// An interface implemented by both the unit-testable FSharpSourceTestable
-/// and the actual FSharpSource.
-type internal IFSharpSource =
+//
+// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
+//
+// Note: Tests using this code should either be adjusted to test the corresponding feature in
+// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
+// functionality and thus have considerable value, they should ony be deleted if we are sure this 
+// is not the case.
+//
+type internal IFSharpSource_DEPRECATED =
     /// Request colorization of the whole source file
     abstract RecolorizeWholeFile : unit -> unit
     abstract RecolorizeLine : line:int -> unit
@@ -56,15 +70,21 @@ type internal IFSharpSource =
     
     
 
-/// The core implementation of IFSharpSource and IVsFileChangeEvents, delegating to the given 
-/// functions to allow some unit testing. This implements IFSharpSource (used during unit-testing).
-type internal FSharpSourceTestable
+//
+// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
+//
+// Note: Tests using this code should either be adjusted to test the corresponding feature in
+// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
+// functionality and thus have considerable value, they should ony be deleted if we are sure this 
+// is not the case.
+//
+type internal FSharpSourceTestable_DEPRECATED
                     (recolorizeWholeFile:unit->unit, 
                      recolorizeLine:int->unit, 
                      currentFileName:unit -> string, 
                      isClosed:unit->bool, 
                      vsFileWatch:IVsFileChangeEx, 
-                     depFileChange: IDependencyFileChangeNotify) =         
+                     depFileChange: IDependencyFileChangeNotify_DEPRECATED) =         
             
         let mutable projectSite : IProjectSite option = None
 
@@ -82,7 +102,7 @@ type internal FSharpSourceTestable
         let IncrementWithWrap(v:int) =
             if v = Int32.MaxValue then 0 else v + 1    
         
-        interface IFSharpSource with 
+        interface IFSharpSource_DEPRECATED with 
             member source.RecolorizeWholeFile() = recolorizeWholeFile() 
             member source.RecolorizeLine line = recolorizeLine line
             
@@ -181,6 +201,14 @@ type internal FSharpSourceTestable
                 lastDependencies.Clear()
 
 
+//
+// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
+//
+// Note: Tests using this code should either be adjusted to test the corresponding feature in
+// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
+// functionality and thus have considerable value, they should ony be deleted if we are sure this 
+// is not the case.
+//
 [<AllowNullLiteralAttribute>]
 type internal VSFontsAndColorsHelper private(fontFamily, pointSize, excludedCodeForegroundColorBrush, backgroundBrush) =
         static let Compute(site:System.IServiceProvider) =
@@ -228,14 +256,22 @@ type internal VSFontsAndColorsHelper private(fontFamily, pointSize, excludedCode
                                                  }, &k) |> ignore
             theInstance.Contents
            
-type internal FSharpIntelliSenseToAppearAdornment(view: IWpfTextView, cursorPoint: SnapshotPoint, site: System.IServiceProvider) as this =
+//
+// Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
+//
+// Note: Tests using this code should either be adjusted to test the corresponding feature in
+// FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
+// functionality and thus have considerable value, they should ony be deleted if we are sure this 
+// is not the case.
+//
+type internal FSharpIntelliSenseToAppearAdornment_DEPRECATED(view: IWpfTextView, cursorPoint: SnapshotPoint, site: System.IServiceProvider) as this =
         let fontFamily, pointSize, excludedCodeForegroundColorBrush, backgroundBrush = VSFontsAndColorsHelper.GetContents(site)
         // TODO: We should really create our own adornment layer.  It is possible (unlikely) that pre-existing layers may be re-ordered, or that
         // code 'owning' the layer will choose to clear all adornments, for example.  But creating a new adornment layer can only be done via MEF-export, and
         // as of yet, we have not done any MEF-exporting in the language service.  So for now, use the existing VisibleWhitespace layer, and incur some risk, just to 
         // unblock the feature.
         let layer = view.GetAdornmentLayer("VisibleWhitespace") 
-        let tag = "FSharpIntelliSenseToAppearAdornment"
+        let tag = "FSharpIntelliSenseToAppearAdornment_DEPRECATED"
         let pointSize = float pointSize * 96.0 / 72.0  // need to convert from pt to px
         do
             // draw it now
@@ -278,9 +314,9 @@ type internal FSharpIntelliSenseToAppearAdornment(view: IWpfTextView, cursorPoin
         member this.RemoveSelf() =
             layer.RemoveAdornmentsByTag(tag)
 
-/// Implements ISource, IVsTextLinesEvents, IVsHiddenTextClient, IVsUserDataEvents etc. via FSharpSourceBase by filling in the remaining functionality 
-type internal FSharpSource(service:LanguageService, textLines, colorizer, vsFileWatch:IVsFileChangeEx, depFileChange: IDependencyFileChangeNotify, getInteractiveChecker) as source = 
-        inherit FSharpSourceBase(service, textLines, colorizer)
+/// Implements ISource, IVsTextLinesEvents, IVsHiddenTextClient, IVsUserDataEvents etc. via FSharpSourceBase_DEPRECATED by filling in the remaining functionality 
+type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLines, colorizer, vsFileWatch:IVsFileChangeEx, depFileChange: IDependencyFileChangeNotify_DEPRECATED, getInteractiveChecker) as source = 
+        inherit FSharpSourceBase_DEPRECATED(service, textLines, colorizer)
         
         let mutable lastCommentSpan = new TextSpan()
         let mutable vsFileWatch = vsFileWatch
@@ -296,7 +332,7 @@ type internal FSharpSource(service:LanguageService, textLines, colorizer, vsFile
             if source.ColorState<>null && textLines<>null && line >= 0 && line < source.GetLineCount() then      // textlines is used by GetLineCount()
                     source.ColorState.ReColorizeLines(line, line) |> ignore
 
-        let iSource = new FSharpSourceTestable(recolorizeWholeFile,recolorizeLine,(fun () -> VsTextLines.GetFilename textLines),(fun () -> source.IsClosed),vsFileWatch, depFileChange) :> IFSharpSource
+        let iSource = new FSharpSourceTestable_DEPRECATED(recolorizeWholeFile,recolorizeLine,(fun () -> VsTextLines.GetFilename textLines),(fun () -> source.IsClosed),vsFileWatch, depFileChange) :> IFSharpSource_DEPRECATED
 
         override source.NormalizeErrorString(message) = ErrorLogger.NormalizeErrorString message
         override source.NewlineifyErrorString(message) = ErrorLogger.NewlineifyErrorString message
@@ -322,7 +358,7 @@ type internal FSharpSource(service:LanguageService, textLines, colorizer, vsFile
             // get a sync parse of the file
             let co = 
                 { ProjectFileName = fileName + ".dummy.fsproj"
-                  ProjectFileNames = [| fileName |]
+                  SourceFiles = [| fileName |]
                   OtherOptions = flags
                   ReferencedProjects = [| |]
                   IsIncompleteTypeCheckEnvironment = true
@@ -343,34 +379,18 @@ type internal FSharpSource(service:LanguageService, textLines, colorizer, vsFile
             info.LineStart <- "//"
             info
             
-        override source.GetTaskProvider() =
-            match iSource.ProjectSite with
-            | Some ps ->
-                match ps.ErrorListTaskProvider() with
-                | Some etp -> etp
-                | _ -> base.GetTaskProvider()
-            | _ -> base.GetTaskProvider()
-            
-        override source.GetTaskReporter() =
-            match iSource.ProjectSite with
-            | Some(ps) ->
-                match ps.ErrorListTaskReporter() with
-                | Some(etr) -> etr
-                | _ -> base.GetTaskReporter()
-            | _ -> base.GetTaskReporter()       
-
-        member val FSharpIntelliSenseToAppearAdornment : FSharpIntelliSenseToAppearAdornment option = None with get, set
+        member val FSharpIntelliSenseToAppearAdornment_DEPRECATED : FSharpIntelliSenseToAppearAdornment_DEPRECATED option = None with get, set
         member val CancellationTokenSource : CancellationTokenSource = null with get, set
 
         member source.ResetFSharpIntelliSenseToAppearAdornment() =
             UIThread.MustBeCalledFromUIThread()
             if source.CancellationTokenSource <> null && not source.CancellationTokenSource.IsCancellationRequested then
                 source.CancellationTokenSource.Cancel()
-            match source.FSharpIntelliSenseToAppearAdornment with
+            match source.FSharpIntelliSenseToAppearAdornment_DEPRECATED with
             | None -> ()
             | Some a -> 
                 a.RemoveSelf()
-                source.FSharpIntelliSenseToAppearAdornment <- None
+                source.FSharpIntelliSenseToAppearAdornment_DEPRECATED <- None
 
         member source.AttachFSharpIntelliSenseToAppearAdornment(wpfTextView, cursorPoint, completionWasExplicitlyRequested) =
             UIThread.MustBeCalledFromUIThread()
@@ -386,15 +406,15 @@ type internal FSharpSource(service:LanguageService, textLines, colorizer, vsFile
                 async {
                     do! Async.Sleep(timeUntilPopup)  
                     UIThread.MustBeCalledFromUIThread()
-                    if source.FSharpIntelliSenseToAppearAdornment.IsNone then
-                        source.FSharpIntelliSenseToAppearAdornment <- Some <| new FSharpIntelliSenseToAppearAdornment(wpfTextView, cursorPoint, service.Site)
+                    if source.FSharpIntelliSenseToAppearAdornment_DEPRECATED.IsNone then
+                        source.FSharpIntelliSenseToAppearAdornment_DEPRECATED <- Some <| new FSharpIntelliSenseToAppearAdornment_DEPRECATED(wpfTextView, cursorPoint, service.Site)
                         // reset if they move cursor, (ideally would only reset if moved out of 'applicative span', but for now, any movement cancels)
                         let rec caretSubscription : IDisposable = wpfTextView.Caret.PositionChanged.Subscribe(fun _ea -> source.ResetFSharpIntelliSenseToAppearAdornment(); caretSubscription.Dispose())
                         // if the user types new chars right before the caret, the editor does not fire a Caret.PositionChanged event, but LayoutChanged will fire, so also hook that
                         let rec layoutSubscription : IDisposable = wpfTextView.LayoutChanged.Subscribe(fun _ea -> source.ResetFSharpIntelliSenseToAppearAdornment(); layoutSubscription.Dispose())
                         ()
                     else
-                        Debug.Assert(false, "why was FSharpIntelliSenseToAppearAdornment already set?")
+                        Debug.Assert(false, "why was FSharpIntelliSenseToAppearAdornment_DEPRECATED already set?")
                 }
             Async.StartImmediate(Async.TryCancelled(cancelableTask, ignore), source.CancellationTokenSource.Token)
 
@@ -408,7 +428,7 @@ type internal FSharpSource(service:LanguageService, textLines, colorizer, vsFile
             NativeMethods.ThrowOnFailure(textView.GetCaretPos(line, idx)) |> ignore
             if requireFreshResults <> RequireFreshResults.Yes then
                 // if it was Yes, then we are in second-chance intellisense and we already started the task for the first-chance
-                let wpfTextView = FSharpSourceBase.GetWpfTextViewFromVsTextView(textView)
+                let wpfTextView = FSharpSourceBase_DEPRECATED.GetWpfTextViewFromVsTextView(textView)
                 let ss = wpfTextView.TextSnapshot
                 let tsLine = ss.GetLineFromLineNumber(!line)
                 let lineLen = tsLine.End.Position - tsLine.Start.Position 
@@ -541,8 +561,8 @@ type internal FSharpSource(service:LanguageService, textLines, colorizer, vsFile
                 fileName <- newfileName
                 iSource.RecolorizeWholeFile()
 
-        // Just forward to IFSharpSource  
-        interface IFSharpSource with
+        // Just forward to IFSharpSource_DEPRECATED  
+        interface IFSharpSource_DEPRECATED with
             member source.RecolorizeWholeFile() = iSource.RecolorizeWholeFile() 
             member source.RecolorizeLine line = iSource.RecolorizeLine line
             member source.RecordChangeToView() = iSource.RecordChangeToView()
@@ -555,16 +575,16 @@ type internal FSharpSource(service:LanguageService, textLines, colorizer, vsFile
             member source.SetDependencyFiles(files) = iSource.SetDependencyFiles(files)
                 
         /// Hook file change events.  It's not clear that this implementation is ever utilized, since
-        /// the implementation on FSharpSourceTestable is used instead.
+        /// the implementation on FSharpSourceTestable_DEPRECATED is used instead.
         interface IVsFileChangeEvents with 
             member changes.FilesChanged(_count : uint32, _files: string [], _changeFlags : uint32 []) = 0
             member changes.DirectoryChanged(_directory: string) = 0
                 
 module internal Source = 
         /// This is the ideal implementation of the Source concept abstracted from MLS.  
-        let CreateSourceTestable (recolorizeWholeFile, recolorizeLine, filename, isClosed, vsFileWatch, depFileChangeNotify) = 
-            new FSharpSourceTestable(recolorizeWholeFile, recolorizeLine, filename, isClosed, vsFileWatch, depFileChangeNotify) :> IFSharpSource
+        let CreateSourceTestable_DEPRECATED (recolorizeWholeFile, recolorizeLine, filename, isClosed, vsFileWatch, depFileChangeNotify) = 
+            new FSharpSourceTestable_DEPRECATED(recolorizeWholeFile, recolorizeLine, filename, isClosed, vsFileWatch, depFileChangeNotify) :> IFSharpSource_DEPRECATED
 
-        let CreateSource(service, textLines, colorizer, vsFileWatch, depFileChangeNotify, getInteractiveChecker) =
-            new FSharpSource(service, textLines, colorizer, vsFileWatch, depFileChangeNotify, getInteractiveChecker) :> IFSharpSource
+        let CreateSource_DEPRECATED(service, textLines, colorizer, vsFileWatch, depFileChangeNotify, getInteractiveChecker) =
+            new FSharpSource_DEPRECATED(service, textLines, colorizer, vsFileWatch, depFileChangeNotify, getInteractiveChecker) :> IFSharpSource_DEPRECATED
                 

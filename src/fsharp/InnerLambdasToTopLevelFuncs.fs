@@ -42,7 +42,12 @@ let liftTLR    = ref false
 let internalError str = dprintf "Error: %s\n" str;raise (Failure str)  
 
 module Zmap = 
-    let force k   mp (str,soK) = try Zmap.find k mp with e -> dprintf "Zmap.force: %s %s\n" str (soK k); raise e
+    let force k   mp (str,soK) = 
+        try Zmap.find k mp 
+        with e -> 
+            dprintf "Zmap.force: %s %s\n" str (soK k); 
+            PreserveStackTrace(e)
+            raise e
 
 //-------------------------------------------------------------------------
 // misc
@@ -972,7 +977,7 @@ module Pass4_RewriteAssembly =
 
     let ConvertBind g (TBind(v,repr,_) as bind)  =
         match v.ValReprInfo with 
-        | None -> v.SetValReprInfo (Some (InferArityOfExprBinding g v repr ))
+        | None -> v.SetValReprInfo (Some (InferArityOfExprBinding g AllowTypeDirectedDetupling.Yes v repr ))
         | Some _ -> ()
         
         bind

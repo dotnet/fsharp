@@ -4,10 +4,6 @@
 /// Select members from a type by name, searching the type hierarchy if needed
 module internal Microsoft.FSharp.Compiler.InfoReader
 
-open Internal.Utilities
-
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
@@ -158,6 +154,17 @@ let GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m typ =
 
     let pinfos = pinfos |> List.filter (IsPropInfoAccessible g amap m ad)
     pinfos
+
+// Checks whether the given type has an indexer property.
+let IsIndexerType g amap typ = 
+    isArray1DTy g typ ||
+    isListTy g typ ||
+    match tryDestAppTy g typ with
+    | Some tcref ->
+        let _, entityTy = generalizeTyconRef tcref
+        let props = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) g amap range0 entityTy 
+        props |> List.exists (fun x -> x.PropertyName = "Item")
+    | _ -> false
 
 
 /// Sets of methods up the hierarchy, ignoring duplicates by name and sig.

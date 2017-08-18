@@ -3812,7 +3812,7 @@ namespace Microsoft.FSharp.Core
             | _ -> true
 
         [<CompiledName("Raise")>]
-        let raise (e: exn) = (# "throw" e : 'T #)
+        let inline raise (e: exn) = (# "throw" e : 'T #)
 
         let Failure message = new System.Exception(message)
         
@@ -3846,7 +3846,7 @@ namespace Microsoft.FSharp.Core
 *)
 
         [<CompiledName("FailWith")>]
-        let failwith message = raise (Failure(message))
+        let inline failwith message = raise (Failure(message))
 
 
         [<CompiledName("InvalidArg")>]
@@ -3872,11 +3872,11 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("Fst")>]
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
-        let fst (a,_) = a
+        let inline fst (a,_) = a
 
         [<CompiledName("Snd")>]
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
-        let snd (_,b) = b
+        let inline snd (_,b) = b
 
         [<CompiledName("Ignore")>]
         let inline ignore _ = ()
@@ -4711,7 +4711,6 @@ namespace Microsoft.FSharp.Core
             open System.Runtime.CompilerServices
 
 #if !FX_NO_DEFAULT_DEPENDENCY_TYPE
-            [<Dependency("FSharp.Core",LoadHint.Always)>] 
             [<assembly: System.Runtime.CompilerServices.DefaultDependency(System.Runtime.CompilerServices.LoadHint.Always)>] 
 #endif
 
@@ -5273,9 +5272,10 @@ namespace Microsoft.FSharp.Core
                             state.Current
 
                     { new IEnumerator<'T> with
-                        member __.Dispose () = ()
-
                         member __.Current = current ()
+
+                      interface System.IDisposable with
+                        member __.Dispose () = ()
 
                       interface IEnumerator with 
                         member __.Current = box (current ())
@@ -5330,8 +5330,10 @@ namespace Microsoft.FSharp.Core
                                 derefValue
 
                         { new IEnumerator<'T> with
-                            member __.Dispose () = ()
                             member __.Current = current ()
+
+                          interface System.IDisposable with
+                            member __.Dispose () = ()
 
                           interface IEnumerator with
                             member __.Current = box (current ())

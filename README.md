@@ -1,17 +1,25 @@
-# The Combined F# Language, Library, and Tools Repository
+# The F# Language, Library Repository (also Visual F# Tools Repository)
 
-You are invited to help producing future releases of the F# language compiler, library, and tools.
+You are invited to help producing future releases of the F# language compiler, library, and tools. This repository enables development on Linux, macOS and Windows, along with some automated CI testing for these.
 
+* [About F#](http://fsharp.org)
+* [Testimonials](http://fsharp.org/testimonials)
 * [Contributing](#contributing)
 * [Using](#using)
 
-F# is a mature, open source, cross-platform, functional-first programming language which empowers users and organizations to tackle complex computing problems with simple, maintainable, and robust code. F# is used in a wide range of application areas and is supported by industry-leading companies providing professional tools, and by an active open community. You can find out more about F# at http://fsharp.org.
+The F# Compiler and Tools are also mirrored in [the corresponding repository](http://github.com/fsharp/fsharp) of the F# Software Foundation.
+
+Changes contributed here are eventually propagated to this repository and are included in all packagings of F# and open source F# editing tools. The process for doing this is explained in this guide by the [F# Core Engineering Group](https://fsharp.github.io/2014/06/18/fsharp-contributions.html). Currently, the F# community coordinates packaging [other editions of F#](https://github.com/fsharp/fsharp/) for use on Linux, macOS, Android, iOS, and other platforms, and Microsoft coordinates packaging this repository as part of the Visual F# Tools. 
+
+For historical reasons this repository is called "visualfsharp" and currently also contains the Visual F# IDE Tools. The eventual plan is to split these repositories into "fsharp" and "visualfsharp".
+
 
 ## Build Status
 
-|            | Ubuntu (Build) | Windows (Debug Build) | Windows (Release Tests 1) | Windows (Release Tests 2) | Windows  (Release Tests 3) | Windows (Release Tests 4) |
-|:----------:|:----------------:|:----------------:|:------------------:|:-----------------------:|:---------------------:|:----------:|
-|**master**  |[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ubuntu14.04)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ubuntu14.04/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/debug_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/debug_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part1_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part1_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part2_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part2_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part3_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part3_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part4_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part4_windows_nt/)|
+|            | Ubuntu (Build) | Windows (Debug Build) | Windows (Release Tests 1) | Windows (Release Tests 2) | Windows  (Release Tests 3) |
+|:----------:|:----------------:|:----------------:|:------------------:|:-----------------------:|:---------------------:|
+|**master**  |[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ubuntu14.04)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ubuntu14.04/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/debug_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/debug_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part1_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part1_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part2_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part2_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/master/release_ci_part3_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/master/job/release_ci_part3_windows_nt/)|
+|**vs2017-rtm**  |[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/vs2017-rtm/release_ubuntu14.04)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/vs2017-rtm/job/release_ubuntu14.04/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/vs2017-rtm/debug_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/vs2017-rtm/job/debug_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/vs2017-rtm/release_ci_part1_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/vs2017-rtm/job/release_ci_part1_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/vs2017-rtm/release_ci_part2_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/vs2017-rtm/job/release_ci_part2_windows_nt/)|[![Build Status](https://ci2.dot.net/buildStatus/icon?job=Microsoft_visualfsharp/vs2017-rtm/release_ci_part3_windows_nt)](https://ci2.dot.net/job/Microsoft_visualfsharp/job/vs2017-rtm/job/release_ci_part3_windows_nt/)|
 
 ## Contributing
 
@@ -36,12 +44,6 @@ To contribute to the F# ecosystem more generally see the F# Software Foundation'
 
 This project is subject to the Apache Licence, Version 2.0. A copy of the license can be found in [License.txt](License.txt) at the root of this repo.
 
-
-### Code Flow to Packagings of F#
-
-This repository enables development on Linux, macOS and Windows.  It enables automated CI testing for some of these.
-
-Changes contributed here are eventually included in all packagings of F# and open source F# editing tools. Microsoft coordinates packaging this repository as part of the Visual F# Tools, and the F# community coordinates packaging [other editions of F#](https://github.com/fsharp/fsharp/) for use on Linux, macOS, Android, iOS, and other platforms.
 
 ## Using
 

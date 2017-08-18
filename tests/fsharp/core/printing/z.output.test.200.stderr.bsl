@@ -272,13 +272,13 @@ stdin(624,17): warning FS0864: This new member hides the abstract member 'System
       member this.M() = "string"
   ----------------^
 
-stdin(765,17): error FS0438: Duplicate method. The method 'M' has the same name and signature as another method in this type.
+stdin(765,17): error FS0438: Duplicate method. The method 'M' has the same name and signature as another method in type 'ExpectDupMethod'.
 
 
       member this.P = "string"
   ----------------^
 
-stdin(772,17): error FS0438: Duplicate method. The method 'get_P' has the same name and signature as another method in this type.
+stdin(772,17): error FS0438: Duplicate method. The method 'get_P' has the same name and signature as another method in type 'ExpectDupProperty'.
 
 
       type public   IBPublic   = interface inherit IAPrivate abstract Q : int end

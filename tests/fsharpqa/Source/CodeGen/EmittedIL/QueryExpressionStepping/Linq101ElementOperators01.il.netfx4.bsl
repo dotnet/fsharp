@@ -422,7 +422,7 @@
 
   } // end of class products12@12
 
-  .class auto ansi serializable nested assembly beforefieldinit 'products12@13-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'products12@13-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [Utils]Utils/Product,bool>
   {
     .method assembly specialname rtspecialname 
@@ -819,7 +819,7 @@
 
   } // end of class startsWithO@22
 
-  .class auto ansi serializable nested assembly beforefieldinit 'startsWithO@23-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'startsWithO@23-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<string,bool>
   {
     .method assembly specialname rtspecialname 
@@ -1583,7 +1583,7 @@
 
   } // end of class fourthLowNum@52
 
-  .class auto ansi serializable nested assembly beforefieldinit 'fourthLowNum@53-1'
+  .class auto ansi serializable sealed nested assembly beforefieldinit 'fourthLowNum@53-1'
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,bool>
   {
     .method assembly specialname rtspecialname 

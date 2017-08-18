@@ -333,7 +333,7 @@ module internal DescriptionListsImpl =
             [], prettyRetTyL
 
         | Item.DelegateCtor delty -> 
-            let (SigOfFunctionForDelegate(_, _, _, fty)) = GetSigOfFunctionForDelegate infoReader delty m AccessibleFromSomeFSharpCode
+            let (SigOfFunctionForDelegate(_, _, _, fty)) = GetSigOfFunctionForDelegate infoReader delty m AccessibleFromSomewhere
 
             // No need to pass more generic type information in here since the instanitations have already been applied
             let _prettyTyparInst, prettyParams, prettyRetTyL, _prettyConstraintsL = PrettyParamsOfParamDatas g denv item.TyparInst [ParamData(false, false, NotOptional, NoCallerInfo, None, ReflectedArgInfo.None, fty)] delty
@@ -481,10 +481,11 @@ type FSharpDeclarationListItem(name: string, nameInCode: string, fullName: strin
     member __.NameInCode = nameInCode
 
     member __.StructuredDescriptionTextAsync = 
+        let userOpName = "ToolTip"
         match info with
         | Choice1Of2 (items: CompletionItem list, infoReader, m, denv, reactor:IReactorOperations, checkAlive) -> 
             // reactor causes the lambda to execute on the background compiler thread, through the Reactor
-            reactor.EnqueueAndAwaitOpAsync ("StructuredDescriptionTextAsync", fun ctok -> 
+            reactor.EnqueueAndAwaitOpAsync (userOpName, "StructuredDescriptionTextAsync", name, fun ctok -> 
                 RequireCompilationThread ctok
                 // This is where we do some work which may touch TAST data structures owned by the IncrementalBuilder - infoReader, item etc. 
                 // It is written to be robust to a disposal of an IncrementalBuilder, in which case it will just return the empty string. 

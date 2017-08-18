@@ -1,6 +1,6 @@
 ﻿
 #if INTERACTIVE
-#r "../../Debug/net40/bin/FSharp.Compiler.Service.dll"
+#r "../../Debug/net40/bin/FSharp.Compiler.Service.dll" // note, run 'build fcs' to generate this, this DLL has a public API so can be used from F# Interactive
 #r "../../Debug/net40/bin/FSharp.Compiler.Service.ProjectCracker.dll"
 #r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "FsUnit.fs"
@@ -20,8 +20,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 open FSharp.Compiler.Service
 open FSharp.Compiler.Service.Tests.Common
 
-// Create an interactive checker instance 
-let internal checker = FSharpChecker.Create(keepAssemblyContents=true)
+let internal exprChecker = FSharpChecker.Create(keepAssemblyContents=true)
 
 
 [<AutoOpen>]
@@ -33,7 +32,7 @@ module internal Utils =
         | BasicPatterns.Application(f,tyargs,args) -> quote low (printExpr 10 f + printTyargs tyargs + " " + printCurriedArgs args)
         | BasicPatterns.BaseValue(_) -> "base"
         | BasicPatterns.Call(Some obj,v,tyargs1,tyargs2,argsL) -> printObjOpt (Some obj) + v.CompiledName  + printTyargs tyargs2 + printTupledArgs argsL
-        | BasicPatterns.Call(None,v,tyargs1,tyargs2,argsL) -> v.EnclosingEntity.CompiledName + printTyargs tyargs1 + "." + v.CompiledName  + printTyargs tyargs2 + " " + printTupledArgs argsL
+        | BasicPatterns.Call(None,v,tyargs1,tyargs2,argsL) -> v.EnclosingEntity.Value.CompiledName + printTyargs tyargs1 + "." + v.CompiledName  + printTyargs tyargs2 + " " + printTupledArgs argsL
         | BasicPatterns.Coerce(ty1,e1) -> quote low (printExpr 10 e1 + " :> " + printTy ty1)
         | BasicPatterns.DefaultValue(ty1) -> "dflt"
         | BasicPatterns.FastIntegerForLoop _ -> "for-loop"
@@ -46,7 +45,7 @@ module internal Utils =
         | BasicPatterns.LetRec(vse,b) -> "let rec ... in " + printExpr 0 b
         | BasicPatterns.NewArray(ty,es) -> "[|" + (es |> Seq.map (printExpr 0) |> String.concat "; ") +  "|]" 
         | BasicPatterns.NewDelegate(ty,es) -> "new-delegate" 
-        | BasicPatterns.NewObject(v,tys,args) -> "new " + v.EnclosingEntity.CompiledName + printTupledArgs args 
+        | BasicPatterns.NewObject(v,tys,args) -> "new " + v.EnclosingEntity.Value.CompiledName + printTupledArgs args 
         | BasicPatterns.NewRecord(v,args) -> 
             let fields = v.TypeDefinition.FSharpFields
             "{" + ((fields, args) ||> Seq.map2 (fun f a -> f.Name + " = " + printExpr 0 a) |> String.concat "; ") + "}" 
@@ -532,7 +531,7 @@ let bool2 = false
 #if EXTENSIONTYPING
 [<Test>]
 let ``Test Declarations project1`` () =
-    let wholeProjectResults = checker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
 
     for e in wholeProjectResults.Errors do 
         printfn "Project1 error: <<<%s>>>" e.Message
@@ -852,12 +851,12 @@ let BigSequenceExpression(outFileOpt,docFileOpt,baseAddressOpt) =
 
     let fileNames = [fileName1]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let options =  exprChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
 
 
 [<Test>]
 let ``Test expressions of declarations stress big expressions`` () =
-    let wholeProjectResults = checker.ParseAndCheckProject(ProjectStressBigExpressions.options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(ProjectStressBigExpressions.options) |> Async.RunSynchronously
     
     wholeProjectResults.Errors.Length |> shouldEqual 0
 
@@ -867,7 +866,7 @@ let ``Test expressions of declarations stress big expressions`` () =
     // This should not stack overflow
     printDeclarations None (List.ofSeq file1.Declarations) |> Seq.toList |> ignore
 
-#if FX_ATLEAST_45 && !DOTNETCORE
+#if !NO_PROJECTCRACKER && !DOTNETCORE
 
 [<Test>]
 let ``Check use of type provider that provides calls to F# code`` () = 
@@ -882,7 +881,7 @@ let ``Check use of type provider that provides calls to F# code`` () =
 
     let res =
         options
-        |> checker.ParseAndCheckProject 
+        |> exprChecker.ParseAndCheckProject 
         |> Async.RunSynchronously
 
     Assert.AreEqual ([||], res.Errors, sprintf "Should not be errors, but: %A" res.Errors)
@@ -1096,7 +1095,7 @@ let ``Test Declarations selfhost`` () =
     let projectFile = __SOURCE_DIRECTORY__ + @"/FSharp.Compiler.Service.Tests.fsproj"
     // Check with Configuration = Release
     let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug")])
-    let wholeProjectResults = checker.ParseAndCheckProject(options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
     
     wholeProjectResults.Errors.Length |> shouldEqual 0 
 
@@ -1121,7 +1120,7 @@ let ``Test Declarations selfhost whole compiler`` () =
 
     //for x in options.OtherOptions do printfn "%s" x
 
-    let wholeProjectResults = checker.ParseAndCheckProject(options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
     
     (wholeProjectResults.Errors |> Array.filter (fun x -> x.Severity = FSharpErrorSeverity.Error)).Length |> shouldEqual 0 
 
@@ -1154,7 +1153,7 @@ let ``Test Declarations selfhost FSharp.Core`` () =
 
     let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile, [("Configuration", "Debug")])
 
-    let wholeProjectResults = checker.ParseAndCheckProject(options) |> Async.RunSynchronously
+    let wholeProjectResults = exprChecker.ParseAndCheckProject(options) |> Async.RunSynchronously
     
     //(wholeProjectResults.Errors |> Array.filter (fun x -> x.Severity = FSharpErrorSeverity.Error)).Length |> shouldEqual 0 
 

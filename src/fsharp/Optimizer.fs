@@ -197,10 +197,8 @@ type Summary<'Info> =
 // Note, this is a different notion of "size" to the one used for inlining heuristics
 //------------------------------------------------------------------------- 
 
-let rec SizeOfValueInfos (arr:_[]) = 
-    let n = arr.Length
-    let rec go i acc = if i >= n then acc else max acc (SizeOfValueInfo arr.[i])
-    go 0 0
+let rec SizeOfValueInfos (arr:_[]) =
+    if arr.Length <= 0 then 0 else max 0 (SizeOfValueInfo arr.[0])
 
 and SizeOfValueInfo x =
     match x with
@@ -208,9 +206,9 @@ and SizeOfValueInfo x =
     | ConstValue (_x,_)        -> 1
     | UnknownValue             -> 1
     | ValValue (_vr,vinfo)     -> SizeOfValueInfo vinfo + 1
-    | TupleValue vinfos        
+    | TupleValue vinfos
     | RecdValue (_,vinfos)
-    | UnionCaseValue (_,vinfos)-> 1 + SizeOfValueInfos vinfos
+    | UnionCaseValue (_,vinfos) -> 1 + SizeOfValueInfos vinfos
     | CurriedLambdaValue(_lambdaId,_arities,_bsize,_expr',_ety) -> 1
     | ConstExprValue (_size,_) -> 1
 
@@ -2922,7 +2920,7 @@ and OptimizeSwitchFallback cenv env (e', einfo, cases,dflt,m) =
     let info = { info with TotalSize = info.TotalSize + size; FunctionSize = info.FunctionSize + size;  }
     TDSwitch (e',cases',dflt',m),info
 
-and OptimizeBinding cenv isRec env (TBind(v,e,spBind)) =
+and OptimizeBinding cenv isRec env (TBind(vref,expr,spBind)) =
     try 
         
         // The aim here is to stop method splitting for direct-self-tailcalls. We do more than that: if an expression
@@ -2930,15 +2928,16 @@ and OptimizeBinding cenv isRec env (TBind(v,e,spBind)) =
         // any expression that contains a reference to any value in RVS.
         // This doesn't prevent splitting for mutually recursive references. See FSharp 1.0 bug 2892.
         let env = 
-            if isRec then { env with dontSplitVars = env.dontSplitVars.Add v ()  } 
+            if isRec then { env with dontSplitVars = env.dontSplitVars.Add vref ()  } 
             else env
         
-        let repr',einfo = 
-            let env = if v.IsCompilerGenerated && Option.isSome env.latestBoundId then env else {env with latestBoundId=Some v.Id} 
-            let cenv = if v.InlineInfo = ValInline.PseudoVal then { cenv with optimizing=false} else cenv 
-            let e',einfo = OptimizeLambdas (Some v) cenv env (InferArityOfExprBinding cenv.g v e)  e v.Type 
+        let exprOptimized,einfo = 
+            let env = if vref.IsCompilerGenerated && Option.isSome env.latestBoundId then env else {env with latestBoundId=Some vref.Id} 
+            let cenv = if vref.InlineInfo = ValInline.PseudoVal then { cenv with optimizing=false} else cenv 
+            let arityInfo = InferArityOfExprBinding cenv.g AllowTypeDirectedDetupling.No vref expr
+            let exprOptimized,einfo = OptimizeLambdas (Some vref) cenv env arityInfo  expr vref.Type 
             let size = localVarSize 
-            e',{einfo with FunctionSize=einfo.FunctionSize+size; TotalSize = einfo.TotalSize+size} 
+            exprOptimized,{einfo with FunctionSize=einfo.FunctionSize+size; TotalSize = einfo.TotalSize+size} 
 
         // Trim out optimization information for large lambdas we'll never inline
         // Trim out optimization information for expressions that call protected members 
@@ -2962,18 +2961,18 @@ and OptimizeBinding cenv isRec env (TBind(v,e,spBind)) =
             | UnionCaseValue (a,b) -> UnionCaseValue (a,Array.map cut b)
             | UnknownValue | ConstValue _  | ConstExprValue _ -> ivalue
             | SizeValue(_,a) -> MakeSizedValueInfo (cut a) 
-        let einfo = if v.MustInline  then einfo else {einfo with Info = cut einfo.Info } 
+        let einfo = if vref.MustInline  then einfo else {einfo with Info = cut einfo.Info } 
         let einfo = 
-            if (not v.MustInline && not (cenv.settings.KeepOptimizationValues())) ||
+            if (not vref.MustInline && not (cenv.settings.KeepOptimizationValues())) ||
                
                // Bug 4916: do not record inline data for initialization trigger expressions
                // Note: we can't eliminate these value infos at the file boundaries because that would change initialization
                // order
-               IsCompiledAsStaticPropertyWithField cenv.g v ||
+               IsCompiledAsStaticPropertyWithField cenv.g vref ||
                
-               (v.InlineInfo = ValInline.Never) ||
+               (vref.InlineInfo = ValInline.Never) ||
                // MarshalByRef methods may not be inlined
-               (match v.ActualParent with 
+               (match vref.ActualParent with 
                 | Parent tcref -> 
                     match cenv.g.system_MarshalByRefObject_tcref with
                     | None -> false
@@ -2982,7 +2981,7 @@ and OptimizeBinding cenv isRec env (TBind(v,e,spBind)) =
                     if mbrTyconRef.TryDeref.IsSome then
                         // Check if this is a subtype of MarshalByRefObject
                         assert (cenv.g.system_MarshalByRefObject_typ.IsSome)
-                        ExistsSameHeadTypeInHierarchy cenv.g cenv.amap v.Range (generalizedTyconRef tcref) cenv.g.system_MarshalByRefObject_typ.Value
+                        ExistsSameHeadTypeInHierarchy cenv.g cenv.amap vref.Range (generalizedTyconRef tcref) cenv.g.system_MarshalByRefObject_typ.Value
                     else 
                         false
                 | ParentNone -> false) ||
@@ -2990,7 +2989,7 @@ and OptimizeBinding cenv isRec env (TBind(v,e,spBind)) =
                // These values are given a special going-over by the optimizer and 
                // ilxgen.fs, hence treat them as if no-inline (when preparing the inline information for 
                // FSharp.Core).
-               (let nvref = mkLocalValRef v 
+               (let nvref = mkLocalValRef vref 
                 cenv.g.compilingFslib &&
                    (valRefEq cenv.g nvref cenv.g.seq_vref ||
                     valRefEq cenv.g nvref cenv.g.seq_generated_vref ||
@@ -3011,13 +3010,13 @@ and OptimizeBinding cenv isRec env (TBind(v,e,spBind)) =
                     valRefEq cenv.g nvref cenv.g.generic_hash_inner_vref))
             then {einfo with Info=UnknownValue} 
             else einfo 
-        if v.MustInline  && IsPartialExprVal einfo.Info then 
-            errorR(InternalError("the mustinline value '"+v.LogicalName+"' was not inferred to have a known value",v.Range))
+        if vref.MustInline  && IsPartialExprVal einfo.Info then 
+            errorR(InternalError("the mustinline value '"+vref.LogicalName+"' was not inferred to have a known value",vref.Range))
         
-        let env = BindInternalLocalVal cenv v (mkValInfo einfo v) env 
-        (TBind(v,repr',spBind), einfo), env
+        let env = BindInternalLocalVal cenv vref (mkValInfo einfo vref) env 
+        (TBind(vref,exprOptimized,spBind), einfo), env
     with exn -> 
-        errorRecovery exn v.Range 
+        errorRecovery exn vref.Range 
         raise (ReportedError (Some exn))
           
 and OptimizeBindings cenv isRec env xs = List.mapFold (OptimizeBinding cenv isRec) env xs
