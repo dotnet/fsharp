@@ -65,7 +65,7 @@ module internal ClassificationDefinitions =
         ) =
 
         let (| LightTheme | DarkTheme | UnknownTheme |) id =
-            if id = KnownColorThemes.Light || id = KnownColorThemes.Blue then LightTheme 
+            if id = KnownColorThemes.Light || id = KnownColorThemes.Blue || id = Guids.blueHighContrastThemeId then LightTheme 
             elif id = KnownColorThemes.Dark then DarkTheme
             else UnknownTheme
     

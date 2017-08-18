@@ -77,12 +77,20 @@ type internal FSharpCheckerProvider
 
     member this.Checker = checker.Value
 
+
+
 /// A value and a function to recompute/refresh the value.  The function is passed a flag indicating if a refresh is happening.
 type Refreshable<'T> = 'T * (bool -> 'T)
 
-// Exposes project information as MEF component
-[<Export(typeof<ProjectInfoManager>); Composition.Shared>]
-type internal ProjectInfoManager 
+/// Exposes FCS FSharpProjectOptions information management as MEF component.
+//
+// This service allows analyzers to get an appropriate FSharpProjectOptions value for a project or single file.
+// It also allows a 'cheaper' route to get the project options relevant to parsing (e.g. the #define values).
+// The main entrypoints are TryGetOptionsForDocumentOrProject and TryGetOptionsForEditingDocumentOrProject.
+
+
+[<Export(typeof<FSharpProjectOptionsManager>); Composition.Shared>]
+type internal FSharpProjectOptionsManager 
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
@@ -202,7 +210,7 @@ type internal ProjectInfoManager
 type internal FSharpCheckerWorkspaceService =
     inherit Microsoft.CodeAnalysis.Host.IWorkspaceService
     abstract Checker: FSharpChecker
-    abstract ProjectInfoManager: ProjectInfoManager
+    abstract FSharpProjectOptionsManager: FSharpProjectOptionsManager
 
 type internal RoamingProfileStorageLocation(keyName: string) =
     inherit OptionStorageLocation()
@@ -222,13 +230,13 @@ type internal FSharpCheckerWorkspaceServiceFactory
     [<Composition.ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: FSharpProjectOptionsManager
     ) =
     interface Microsoft.CodeAnalysis.Host.Mef.IWorkspaceServiceFactory with
         member this.CreateService(_workspaceServices) =
             upcast { new FSharpCheckerWorkspaceService with
                 member this.Checker = checkerProvider.Checker
-                member this.ProjectInfoManager = projectInfoManager }
+                member this.FSharpProjectOptionsManager = projectInfoManager }
 
 type
     [<Guid(FSharpConstants.packageGuidString)>]
@@ -289,7 +297,7 @@ and
     internal FSharpLanguageService(package : FSharpPackage) =
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
 
-    let projectInfoManager = package.ComponentModel.DefaultExportProvider.GetExport<ProjectInfoManager>().Value
+    let projectInfoManager = package.ComponentModel.DefaultExportProvider.GetExport<FSharpProjectOptionsManager>().Value
 
     let projectDisplayNameOf projectFileName = 
         if String.IsNullOrWhiteSpace projectFileName then projectFileName
@@ -421,18 +429,19 @@ and
             let projectGuid = Guid(site.ProjectGuid)
             let projectFileName = site.ProjectFileName()
             let projectDisplayName = projectDisplayNameOf projectFileName
+
             let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
 
             if isNull (workspace.ProjectTracker.GetProject projectId) then
                 projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, projectId, site, workspace, userOpName)
                 let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
                 let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
-                
+
                 let hierarchy =
                     site.ProjectProvider
                     |> Option.map (fun p -> p :?> IVsHierarchy)
                     |> Option.toObj
-                
+
                 // Roslyn is expecting site to be an IVsHierarchy.
                 // It just so happens that the object that implements IProvideProjectSite is also
                 // an IVsHierarchy. This assertion is to ensure that the assumption holds true.
@@ -445,6 +454,9 @@ and
                 let project = projectContext :?> AbstractProject
 
                 this.SyncProject(project, projectContext, site, workspace, forceUpdate=false, userOpName=userOpName)
+
+                site.BuildErrorReporter <- Some (errorReporter :> Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2)
+
                 site.AdviseProjectSiteChanges(FSharpConstants.FSharpLanguageServiceCallbackName, 
                                               AdviseProjectSiteChanges(fun () -> this.SyncProject(project, projectContext, site, workspace, forceUpdate=true, userOpName="AdviseProjectSiteChanges."+userOpName)))
                 site.AdviseProjectSiteClosed(FSharpConstants.FSharpLanguageServiceCallbackName, 
@@ -452,21 +464,11 @@ and
                                                 projectInfoManager.ClearInfoForProject(project.Id)
                                                 optionsAssociation.Remove(projectContext) |> ignore
                                                 project.Disconnect()))
-
-                let referencedProjectSites = ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider)
-                
-                for referencedSite in referencedProjectSites do
-                    let referencedProjectFileName = referencedSite.ProjectFileName()
-                    let referencedProjectDisplayName = projectDisplayNameOf referencedProjectFileName
-                    let referencedProjectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(referencedProjectFileName, referencedProjectDisplayName)
+                for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
+                    let referencedProjectId = setup referencedSite
                     project.AddProjectReference(ProjectReference referencedProjectId)
 
-                if not (workspace.ProjectTracker.ContainsProject(project)) then 
-                    workspace.ProjectTracker.AddProject(project)
-
-                for referencedSite in referencedProjectSites do
-                    setup referencedSite                    
-
+            projectId
         setup (siteProvider.GetProjectSite()) |> ignore
 
     member this.SetupStandAloneFile(fileName: string, fileContents: string, workspace: VisualStudioWorkspaceImpl, hier: IVsHierarchy) =
