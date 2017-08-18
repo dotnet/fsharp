@@ -12,7 +12,6 @@
     <AssemblyName>FSharp.Build</AssemblyName>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <ProjectGuid>{702A7979-BCF9-4C41-853E-3ADFC9897890}</ProjectGuid>
-    <FX_NOLOADER>true</FX_NOLOADER>
   </PropertyGroup>
   <ItemGroup>
     <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
@@ -24,16 +23,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <FsSrGen Include="FSBuild.txt">
-      <Link>FSBuild.txt</Link>
-    </FsSrGen>
+    <FsSrGen Include="FSBuild.txt" />
     <Compile Include="InternalsVisibleTo.fs" />
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Build.dll.fs">
-      <Link>Utilities/assemblyinfo.FSharp.Build.dll.fs</Link>
-    </Compile>
-    <Compile Include="..\..\utils\CompilerLocationUtils.fs">
-      <Link>Utilities/CompilerLocationUtils.fs</Link>
-    </Compile>
+    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Build.dll.fs" />
+    <Compile Include="..\..\utils\CompilerLocationUtils.fs" />
     <Compile Include="..\..\utils\reshapedreflection.fs" />
     <Compile Include="Fsc.fsi" />
     <Compile Include="Fsc.fs" />
@@ -60,6 +53,7 @@
         <Replacement1></Replacement1>
     </CopyAndSubstituteText>
   </ItemGroup>
+
   <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' ">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
@@ -79,19 +73,19 @@
     </Reference>
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' == 'true' ">
-    <Reference Include="Microsoft.Build.Framework, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <Reference Include="Microsoft.Build.Framework, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' == 'true' " >
         <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.Build.Engine, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <Reference Include="Microsoft.Build.Engine, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' == 'true' " >
         <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.Build, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <Reference Include="Microsoft.Build, Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' == 'true' " >
         <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.Build.Utilities.$(MonoPackagingMSBuildVersionSuffix), Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <Reference Include="Microsoft.Build.Utilities.$(MonoPackagingMSBuildVersionSuffix), Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' == 'true' " >
         <Private>True</Private>
     </Reference>
-    <Reference Include="Microsoft.Build.Tasks.$(MonoPackagingMSBuildVersionSuffix), Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <Reference Include="Microsoft.Build.Tasks.$(MonoPackagingMSBuildVersionSuffix), Version=$(MonoPackagingMSBuildVersionFull), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" Condition=" '$(TargetDotnetProfile)' != 'coreclr' AND '$(MonoPackaging)' == 'true' " >
         <Private>True</Private>
     </Reference>
   </ItemGroup>

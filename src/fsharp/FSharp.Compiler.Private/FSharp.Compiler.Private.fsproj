@@ -55,7 +55,6 @@
       <HasLceComments>false</HasLceComments>
       <InProject>false</InProject>
     </FilesToLocalize>
-    <PackageNuspec Include="FSharp.Compiler.Private.netcore.nuspec" Condition="'$(TargetDotnetProfile)' == 'coreclr'" />
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Private.dll.fs">
       <Link>assemblyinfo.FSharp.Compiler.Private.dll.fs</Link>
     </Compile>
@@ -614,7 +613,6 @@
       <Link>Service/ServiceStructure.fs</Link>
     </Compile>
 
-
     <!-- the core of the F# Interactive fsi.exe implementation -->
     <FsSrGen Include="..\fsi\FSIstrings.txt">
       <Link>FSIstrings.txt</Link>
@@ -636,6 +634,9 @@
     <Compile Include="..\LegacyHostedCompilerForTesting.fs">
       <Link>Misc/LegacyHostedCompilerForTesting.fs</Link>
     </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageNuspec Include="FSharp.Compiler.Private.netcore.nuspec" Condition="'$(TargetDotnetProfile)' == 'coreclr'" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">
     <None Include="project.json" />
@@ -700,7 +701,6 @@
       </ItemGroup>
     </Otherwise>
   </Choose>
-
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>

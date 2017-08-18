@@ -2007,20 +2007,22 @@ and CanMemberSigsMatchUpToCheck
 // to allow us to report the outer types involved in the constraint 
 and private SolveTypSubsumesTypWithReport (csenv:ConstraintSolverEnv) ndeep m trace cxsln ty1 ty2 =
     TryD (fun () -> SolveTypSubsumesTypKeepAbbrevs csenv ndeep m trace cxsln ty1 ty2)
-         (fun res ->
-            match csenv.eContextInfo with
-            | ContextInfo.RuntimeTypeTest isOperator ->
-                // test if we can cast other way around
-                match CollectThenUndo (fun newTrace -> SolveTypSubsumesTypKeepAbbrevs csenv ndeep m (OptionalTrace.WithTrace newTrace) cxsln ty2 ty1) with 
-                | OkResult _ -> ErrorD (ErrorsFromAddingSubsumptionConstraint(csenv.g,csenv.DisplayEnv,ty1,ty2,res,ContextInfo.DowncastUsedInsteadOfUpcast isOperator,m))
-                | _ -> ErrorD (ErrorsFromAddingSubsumptionConstraint(csenv.g,csenv.DisplayEnv,ty1,ty2,res,ContextInfo.NoContext,m))
-            | _ -> ErrorD (ErrorsFromAddingSubsumptionConstraint(csenv.g,csenv.DisplayEnv,ty1,ty2,res,csenv.eContextInfo,m)))
+         (function
+          | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+          | res ->
+                match csenv.eContextInfo with
+                | ContextInfo.RuntimeTypeTest isOperator ->
+                    // test if we can cast other way around
+                    match CollectThenUndo (fun newTrace -> SolveTypSubsumesTypKeepAbbrevs csenv ndeep m (OptionalTrace.WithTrace newTrace) cxsln ty2 ty1) with 
+                    | OkResult _ -> ErrorD (ErrorsFromAddingSubsumptionConstraint(csenv.g,csenv.DisplayEnv,ty1,ty2,res,ContextInfo.DowncastUsedInsteadOfUpcast isOperator,m))
+                    | _ -> ErrorD (ErrorsFromAddingSubsumptionConstraint(csenv.g,csenv.DisplayEnv,ty1,ty2,res,ContextInfo.NoContext,m))
+                | _ -> ErrorD (ErrorsFromAddingSubsumptionConstraint(csenv.g,csenv.DisplayEnv,ty1,ty2,res,csenv.eContextInfo,m)))
 
 and private SolveTypEqualsTypWithReport (csenv:ConstraintSolverEnv) ndeep  m trace cxsln ty1 ty2 = 
     TryD (fun () -> SolveTypEqualsTypKeepAbbrevsWithCxsln csenv ndeep m trace cxsln ty1 ty2)
          (function
-            | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
-            | res -> ErrorD (ErrorFromAddingTypeEquation(csenv.g,csenv.DisplayEnv,ty1,ty2,res,m)))
+          | LocallyAbortOperationThatFailsToResolveOverload -> CompleteD
+          | res -> ErrorD (ErrorFromAddingTypeEquation(csenv.g,csenv.DisplayEnv,ty1,ty2,res,m)))
   
 and ArgsMustSubsumeOrConvert 
         (csenv:ConstraintSolverEnv)

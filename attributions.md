@@ -53,6 +53,10 @@ This is for those who contributed language features, compiler improvements, or i
 
 - [Eirik Tsarpalis](https://github.com/eiriktsarpalis)
 
+### F# 4.2 Compiler Improvements
+
+- Deterministic compilation via `--deterministic`, by [David Glassborow](https://github.com/davidglassborow)
+
 ## Tooling - Visual Studio and Platform Support
 
 This is for those who contributed Visual Studio IDE features and platform support for F#.

@@ -694,14 +694,16 @@ and [<RequireQualifiedAccess>] FSharpInlineAnnotation =
 #else
 and [<RequireQualifiedAccess>] internal FSharpInlineAnnotation = 
 #endif
-   /// Indictes the value is inlined and compiled code for the function does not exist
+   /// Indicates the value is inlined and compiled code for the function does not exist
    | PseudoValue
-   /// Indictes the value is inlined but compiled code for the function still exists, e.g. to satisfy interfaces on objects, but that it is also always inlined 
+   /// Indicates the value is inlined but compiled code for the function still exists, e.g. to satisfy interfaces on objects, but that it is also always inlined 
    | AlwaysInline 
-   /// Indictes the value is optionally inlined 
+   /// Indicates the value is optionally inlined 
    | OptionalInline 
-   /// Indictes the value is never inlined 
-   | NeverInline 
+   /// Indicates the value is never inlined 
+   | NeverInline   
+   /// Indicates the value is aggressively inlined by the .NET runtime
+   | AggressiveInline 
 
 /// A subtype of F# symbol that represents an F# method, property, event, function or value, including extension members.
 #if COMPILER_PUBLIC_API
@@ -718,7 +720,7 @@ and [<Class>] internal FSharpMemberOrFunctionOrValue =
     member IsUnresolved : bool
 
     /// Get the enclosing entity for the definition
-    member EnclosingEntity : FSharpEntity
+    member EnclosingEntity : FSharpEntity option
     
     /// Get the declaration location of the member, function or value
     member DeclarationLocation: range

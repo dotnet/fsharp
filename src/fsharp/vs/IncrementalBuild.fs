@@ -1442,7 +1442,7 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
                   // We return 'None' for the assembly portion of the cross-assembly reference 
                   let hasTypeProviderAssemblyAttrib = 
                       topAttrs.assemblyAttrs |> List.exists (fun (Attrib(tcref,_,_,_,_,_,_)) -> tcref.CompiledRepresentationForNamedType.BasicQualifiedName = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName)
-                  if hasTypeProviderAssemblyAttrib then
+                  if tcState.CreatesGeneratedProvidedTypes || hasTypeProviderAssemblyAttrib then
                     None
                   else
                     Some  (RawFSharpAssemblyDataBackedByLanguageService (tcConfig,tcGlobals,tcState,outfile,topAttrs,assemblyName,ilAssemRef) :> IRawFSharpAssemblyData)

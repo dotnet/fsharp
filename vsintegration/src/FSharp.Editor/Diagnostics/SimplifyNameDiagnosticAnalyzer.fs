@@ -4,6 +4,7 @@ namespace rec Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Collections.Immutable
+open System.Diagnostics
 open System.Threading
 open System.Threading.Tasks
 open System.Runtime.CompilerServices
@@ -23,7 +24,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
     
     static let userOpName = "SimplifyNameDiagnosticAnalyzer"
-    let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().ProjectInfoManager
+    let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().FSharpProjectOptionsManager
     let getChecker (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
     let getPlidLength (plid: string list) = (plid |> List.sumBy String.length) + plid.Length
     static let cache = ConditionalWeakTable<DocumentId, TextVersionHash * ImmutableArray<Diagnostic>>()
@@ -47,8 +48,9 @@ type internal SimplifyNameDiagnosticAnalyzer() =
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) =
         asyncMaybe {
-            do! Async.Sleep DefaultTuning.SimplifyNameInitialDelay |> liftAsync 
             do! Option.guard Settings.CodeFixes.SimplifyName
+            do Trace.TraceInformation("{0:n3} (start) SimplifyName", DateTime.Now.TimeOfDay.TotalSeconds)
+            do! Async.Sleep DefaultTuning.SimplifyNameInitialDelay |> liftAsync 
             let! options = getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document)
             let! textVersion = document.GetTextVersionAsync(cancellationToken)
             let textVersionHash = textVersion.GetHashCode()
