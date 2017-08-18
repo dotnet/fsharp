@@ -2300,11 +2300,15 @@ namespace Microsoft.FSharp.Control
         //     -- "cont" is non-null and the reader is "activated" by re-scheduling cont in the thread pool; or
         //     -- "pulse" is non-null and the reader is "activated" by setting this event
         let mutable savedCont : ((bool -> FakeUnitValue) * TrampolineHolder) option = None
+
+        // Readers who have a timeout use this event
         let mutable pulse : AutoResetEvent = null
+
+        // Make sure that the "pulse" value is created
         let ensurePulse() = 
             match pulse with 
             | null -> 
-                pulse <- new AutoResetEvent(false);
+                pulse <- new AutoResetEvent(false)
             | _ -> 
                 ()
             pulse
@@ -2353,9 +2357,10 @@ namespace Microsoft.FSharp.Control
             else let msg = arrivals.Dequeue()
                  match f msg with
                  | None -> 
-                     x.inbox.Add(msg); 
+                     x.inbox.Add(msg)
                      x.scanArrivalsUnsafe(f)
                  | res -> res
+
         // Lock the arrivals queue while we scan that
         member x.scanArrivals(f) = lock syncRoot (fun () -> x.scanArrivalsUnsafe(f))
 
@@ -2386,23 +2391,27 @@ namespace Microsoft.FSharp.Control
                 then None
                 else
                     let x = inbox.[0]
-                    inbox.RemoveAt(0);
+                    inbox.RemoveAt(0)
                     Some(x)
 
         member x.Post(msg) =
             lock syncRoot (fun () ->
-                arrivals.Enqueue(msg);
-                // This is called when we enqueue a message, within a lock
-                // We cooperatively unblock any waiting reader. If there is no waiting
+
+                // Add the message to the arrivals queue
+                arrivals.Enqueue(msg)
+
+                // Cooperatively unblock any waiting reader. If there is no waiting
                 // reader we just leave the message in the incoming queue
                 match savedCont with
                 | None -> 
                     match pulse with 
                     | null -> 
-                        () // no one waiting, leaving the message in the queue is sufficient
+                        // No one waiting, leaving the message in the queue is sufficient
+                        () 
                     | ev -> 
-                        // someone is waiting on the wait handle
+                        // Someone is waiting on the wait handle
                         ev.Set() |> ignore
+
                 | Some(action,trampolineHolder) -> 
                     savedCont <- None
                     trampolineHolder.QueueWorkItem(fun () -> action true) |> unfake)
@@ -2472,16 +2481,25 @@ namespace Microsoft.FSharp.Control
                     | None -> return raise(TimeoutException(SR.GetString(SR.mailboxScanTimedOut)))
                     | Some res -> return res }
 
-
         member x.TryReceive(timeout) =
             let rec processFirstArrival() =
                 async { match x.receiveFromArrivals() with
                         | None -> 
-                            // Wait until we have been notified about a message. When that happens, rescan the arrivals
-                            let! ok = waitOne(timeout)
-                            if ok then return! processFirstArrival()
-                            else return None
+                            // Make sure the pulse is created if it is going to be needed. 
+                            // If it isn't, then create it, and go back to the start to 
+                            // check arrivals again.
+                            match pulse with
+                            | null -> 
+                                if timeout >= 0 || cancellationSupported then 
+                                    ensurePulse() |> ignore
+                                return! processFirstArrival()
+                            | _ -> 
+                                // Wait until we have been notified about a message. When that happens, rescan the arrivals
+                                let! ok = waitOne(timeout)
+                                if ok then return! processFirstArrival()
+                                else return None
                         | res -> return res }
+
             // look in the inbox first
             async { match x.receiveFromInbox() with
                     | None -> return! processFirstArrival()
@@ -2492,11 +2510,21 @@ namespace Microsoft.FSharp.Control
             let rec processFirstArrival() =
                 async { match x.receiveFromArrivals() with
                         | None -> 
-                            // Wait until we have been notified about a message. When that happens, rescan the arrivals
-                            let! ok = waitOne(timeout)
-                            if ok then return! processFirstArrival()
-                            else return raise(TimeoutException(SR.GetString(SR.mailboxReceiveTimedOut)))
+                            // Make sure the pulse is created if it is going to be needed. 
+                            // If it isn't, then create it, and go back to the start to 
+                            // check arrivals again.
+                            match pulse with
+                            | null -> 
+                                if timeout >= 0 || cancellationSupported then 
+                                    ensurePulse() |> ignore
+                                return! processFirstArrival()
+                            | _ -> 
+                                // Wait until we have been notified about a message. When that happens, rescan the arrivals
+                                let! ok = waitOne(timeout)
+                                if ok then return! processFirstArrival()
+                                else return raise(TimeoutException(SR.GetString(SR.mailboxReceiveTimedOut)))
                         | Some res -> return res }
+
             // look in the inbox first
             async { match x.receiveFromInbox() with
                     | None -> return! processFirstArrival() 
