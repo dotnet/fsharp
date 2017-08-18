@@ -482,18 +482,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         private IDEBuildLogger buildLogger;
 
-        private bool useProvidedLogger;
-
         private Microsoft.Build.Evaluation.Project buildProject;
 
         // TODO cache an instance for perf; but be sure not to be stale (correctness)
         private BuildActionConverter buildActionConverter = new BuildActionConverter();
 
         private ConfigProvider configProvider;
-
-        private Shell.TaskProvider taskProvider;
-
-        private TaskReporter taskReporter;
 
         private Shell.ErrorListProvider projectErrorListProvider;
 
@@ -1062,41 +1056,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Gets or sets the build logger.
-        /// </summary>
-        public IDEBuildLogger BuildLogger
-        {
-            get
-            {
-                return this.buildLogger;
-            }
-            private set
-            {
-                this.buildLogger = value;
-                this.useProvidedLogger = true;
-            }
-        }
-
-        /// <summary>
-        /// Gets the taskprovider.
-        /// </summary>
-        public Shell.TaskProvider TaskProvider
-        {
-            get
-            {
-                return this.taskProvider;
-            }
-        }
-
-        internal TaskReporter TaskReporter
-        {
-            get
-            {
-                return this.taskReporter;
-            }
-        }
-
-        /// <summary>
         /// Gets the project file name.
         /// </summary>
         public string FileName
@@ -1384,17 +1343,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             CCITracing.TraceCall();
             this.site = new ServiceProvider(site);
 
-            if (taskReporter != null)
-            {
-                taskReporter.Dispose();
-            }
-            if (taskProvider != null)
-            {
-                taskProvider.Dispose();
-            }
-            taskProvider = new Shell.TaskProvider ( this.site);
-            taskReporter = new TaskReporter ("Project System (ProjectNode.cs)");
-            taskReporter.TaskListProvider = new TaskListProvider(taskProvider);
             if (projectErrorListProvider != null)
             {
                 projectErrorListProvider.Dispose();
@@ -1575,22 +1523,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                             {
                                 this.projectEventsProvider.AfterProjectFileOpened -= this.OnAfterProjectOpen;
                             }
-                            if (this.taskReporter != null)
-                            {
-                                this.taskReporter.Dispose();
-                                this.taskReporter = null;                                
-                            }
                             if (projectErrorListProvider != null)
                             {
                                 projectErrorListProvider.Dispose();
                                 projectErrorListProvider = null;
-                            }
-                            if (this.taskProvider != null)
-                            {
-                                this.taskProvider.Tasks.Clear();
-                                this.taskProvider.Refresh();
-                                this.taskProvider.Dispose();
-                                this.taskProvider = null;
                             }
                             if (buildLogger != null)
                             {
@@ -3070,13 +3006,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="output"></param>
         public virtual void SetOutputLogger(IVsOutputWindowPane output)
         {
+            var errorReporter = this.GetBuildErrorReporter();
+
             // Create our logger, if it was not specified
-            if (!this.useProvidedLogger || this.buildLogger == null)
+            if (buildLogger == null)
             {
                 // Because we may be aggregated, we need to make sure to get the outer IVsHierarchy
                 // Create the logger
-                this.BuildLogger = new IDEBuildLogger(output, this.TaskProvider, this.InteropSafeIVsHierarchy);
-                this.buildLogger.TaskReporter = this.TaskReporter;
+                buildLogger = new IDEBuildLogger(output, this.InteropSafeIVsHierarchy, errorReporter);
 
                 // To retrive the verbosity level, the build logger depends on the registry root 
                 // (otherwise it will used an hardcoded default)
@@ -3085,18 +3022,18 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 {
                     string registryRoot;
                     registry.GetLocalRegistryRoot(out registryRoot);
-                    IDEBuildLogger logger = this.BuildLogger as IDEBuildLogger;
-                    if (!String.IsNullOrEmpty(registryRoot) && (null != logger))
+                    if (!String.IsNullOrEmpty(registryRoot) && (buildLogger != null))
                     {
-                        logger.BuildVerbosityRegistryRoot = registryRoot;
-                        logger.ErrorString = this.ErrorString;
-                        logger.WarningString = this.WarningString;
+                        buildLogger.BuildVerbosityRegistryRoot = registryRoot;
+                        buildLogger.ErrorString = this.ErrorString;
+                        buildLogger.WarningString = this.WarningString;
                     }
                 }
             }
             else
             {
-                this.BuildLogger.OutputWindowPane = output;
+                buildLogger.OutputWindowPane = output;
+                buildLogger.ErrorReporter = errorReporter;
             }
         }
 
@@ -3129,6 +3066,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         public abstract void ComputeSourcesAndFlags();
+
+        public abstract IVsLanguageServiceBuildErrorReporter2 GetBuildErrorReporter();
 
         internal abstract int FixupAppConfigOnTargetFXChange(string newTargetFramework, string targetFSharpCoreVersion, bool autoGenerateBindingRedirects);
 
@@ -3297,7 +3236,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
                 // Do the actual Build
                 var loggerList = new System.Collections.Generic.List<Microsoft.Build.Framework.ILogger>(this.buildEngine.Loggers);
-                if (useProvidedLogger && buildLogger != null)
+                if (buildLogger != null)
                     loggerList.Add(buildLogger);
                 if (myDebugLogger != null)
                     loggerList.Add(myDebugLogger);

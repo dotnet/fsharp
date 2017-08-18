@@ -37,11 +37,8 @@ and internal IProjectSite =
     /// The name of the project file.
     abstract ProjectFileName : unit -> string
 
-    /// The error list task provider (should one exist - null, otherwise)
-    abstract ErrorListTaskProvider : unit -> Microsoft.VisualStudio.Shell.TaskProvider option
-
     /// The error list task reporter
-    abstract ErrorListTaskReporter : unit -> Microsoft.VisualStudio.FSharp.LanguageService.TaskReporter option
+    abstract BuildErrorReporter : Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2 option with get, set
 
     /// False type resolution errors are invalid. This occurs with orphaned source files. The prior 
     /// type checking state is unknown. In this case we don't want to squiggle the type checking files.
