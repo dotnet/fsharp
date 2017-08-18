@@ -48,7 +48,6 @@
       </FilesToSign>
     </ItemGroup>
   </Target>
-  <Import Project = "$(MSBuildThisFileDirectory)..\..\FSharpSource.Profiles.targets" />
   <ItemGroup>
     <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
       <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
