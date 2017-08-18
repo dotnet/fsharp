@@ -37,7 +37,7 @@ module private FSharpQuickInfo =
     let getTooltipFromRange
         (
             checker: FSharpChecker, 
-            projectInfoManager: ProjectInfoManager, 
+            projectInfoManager: FSharpProjectOptionsManager, 
             document: Document, 
             declRange: range, 
             cancellationToken: CancellationToken
@@ -81,7 +81,7 @@ module private FSharpQuickInfo =
     let getTooltipInfo 
         (
             checker: FSharpChecker, 
-            projectInfoManager: ProjectInfoManager, 
+            projectInfoManager: FSharpProjectOptionsManager, 
             document: Document, 
             position: int, 
             cancellationToken: CancellationToken
@@ -160,7 +160,7 @@ type internal FSharpQuickInfoProvider
     (
         [<Import(typeof<SVsServiceProvider>)>] serviceProvider: IServiceProvider,
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager,
+        projectInfoManager: FSharpProjectOptionsManager,
         gotoDefinitionService: FSharpGoToDefinitionService,
         viewProvider: QuickInfoViewProvider
     ) =

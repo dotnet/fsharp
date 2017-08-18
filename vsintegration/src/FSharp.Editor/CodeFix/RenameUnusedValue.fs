@@ -20,7 +20,7 @@ type internal FSharpRenameUnusedValueCodeFixProvider
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: FSharpProjectOptionsManager
     ) =
     
     inherit CodeFixProvider()

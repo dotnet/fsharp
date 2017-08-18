@@ -22,7 +22,7 @@ type internal FSharpAddOpenCodeFixProvider
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: ProjectInfoManager,
+        projectInfoManager: FSharpProjectOptionsManager,
         assemblyContentProvider: AssemblyContentProvider
     ) =
     inherit CodeFixProvider()

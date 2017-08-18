@@ -40,16 +40,18 @@
           Inputs="@(CopyAndSubstituteText)"
           Outputs="@(CopyAndSubstituteText->'$(OutDir)%(TargetFilename)')" >
 
-    <PropertyGroup>
-      <FileText>
-        $([System.Text.RegularExpressions.Regex]::Replace($([System.IO.File]::ReadAllText("%(CopyAndSubstituteText.FullPath)")), "%(CopyAndSubstituteText.Pattern1)", "%(CopyAndSubstituteText.Replacement1)"))
-      </FileText>
-
-      <FileText Condition = "'%(CopyAndSubstituteText.Pattern2)' != ''">
-        $([System.Text.RegularExpressions.Regex]::Replace($(FileText), "%(CopyAndSubstituteText.Pattern2)", "%(CopyAndSubstituteText.Replacement2)"))
-      </FileText>
-    </PropertyGroup>
-    <WriteLinesToFile File="$(OutDir)%(CopyAndSubstituteText.TargetFilename)" Lines="$(FileText)" Overwrite="true" />
+    <ItemGroup>
+        <Results Include="@(CopyAndSubstituteText->'$(OutDir)%(TargetFilename)')">
+            <Lines>
+                $([System.Text.RegularExpressions.Regex]::Replace($([System.IO.File]::ReadAllText("%(CopyAndSubstituteText.FullPath)")), "%(CopyAndSubstituteText.Pattern1)", "%(CopyAndSubstituteText.Replacement1)"))
+            </Lines>
+            <Lines  Condition = "'%(CopyAndSubstituteText.Pattern2)' != ''">
+                $([System.Text.RegularExpressions.Regex]::Replace($(FileText), "%(CopyAndSubstituteText.Pattern2)", "%(CopyAndSubstituteText.Replacement2)"))
+            </Lines>
+        </Results>
+    </ItemGroup>
+    
+    <WriteLinesToFile File="$(OutDir)%(Results.Filename)%(Results.Extension)" Lines="%(Results.Lines)" Overwrite="true" />
   </Target>
 
   <!--
@@ -78,18 +80,16 @@
           Condition="'@(FsSrGen)'!=''"
           BeforeTargets="CoreResGen">
 
-    <CreateItem Include="$(IntermediateOutputPath)%(FsSrGen.Filename).fs">
-      <Output TaskParameter="Include" ItemName="CompileBefore"/>
-    </CreateItem>
-    <CreateItem Include="$(IntermediateOutputPath)%(FsSrGen.Filename).resx" AdditionalMetadata="ManifestResourceName=%(FsSrGen.Filename)">
-      <Output TaskParameter="Include" ItemName="EmbeddedResource"/>
-    </CreateItem>
-    <CreateItem Include="$(IntermediateOutputPath)%(FsSrGen.Filename).fs">
-      <Output TaskParameter="Include" ItemName="FileWrites"/>
-    </CreateItem>
-    <CreateItem Include="$(IntermediateOutputPath)%(FsSrGen.Filename).resx">
-      <Output TaskParameter="Include" ItemName="FileWrites"/>
-    </CreateItem>
+    <ItemGroup>
+      <CompileBefore Include="$(IntermediateOutputPath)%(FsSrGen.Filename).fs" />
+      <FileWrites Include="$(IntermediateOutputPath)%(FsSrGen.Filename).fs" />
+      <FileWrites Include="$(IntermediateOutputPath)%(FsSrGen.Filename).resx" />
+      <EmbeddedResource Include="$(IntermediateOutputPath)%(FsSrGen.Filename).resx">
+        <ManifestResourceName>%(FsSrGen.Filename)</ManifestResourceName>
+        <Type>Resx</Type>
+        <WithCulture>false</WithCulture>
+      </EmbeddedResource>
+    </ItemGroup>
   </Target>
 
   <ItemGroup>

@@ -25,6 +25,12 @@
         <projectUrl>$projectUrl$</projectUrl>
         <tags>$tags$</tags>
         <dependencies>
+            <group targetFramework="net20">
+            </group>
+            <group targetFramework="net40">
+            </group>
+            <group targetFramework="net45">
+            </group>
             <group  targetFramework=".NETStandard1.6">
                 <dependency id="System.Collections" version="4.0.11" />
                 <dependency id="System.Console" version="4.0.0" />
@@ -49,6 +55,18 @@
                 <dependency id="System.Threading.Thread" version="4.0.0" />
                 <dependency id="System.Threading.ThreadPool" version="4.0.10" />
                 <dependency id="System.Threading.Timer" version="4.0.1" />
+            </group>
+            <group targetFramework="portable-net45+monoandroid10+monotouch10+xamarinios10">
+            </group>
+            <group targetFramework="portable-net45+netcore45">
+            </group>
+            <group targetFramework="portable-net45+netcore45+wp8">
+            </group>
+            <group targetFramework="portable-net45+netcore45+wpa81+wp8">
+            </group>
+            <group targetFramework="portable-net45+sl5+netcore45">
+            </group>
+            <group targetFramework="xamarinmac20">
             </group>
         </dependencies>
     </metadata>

@@ -44,6 +44,8 @@
                 <dependency id="System.Threading.ThreadPool" version="4.0.10" />
                 <dependency id="System.Threading.Timer" version="4.0.1" />
             </group>
+            <group targetFramework="net45">
+            </group>
         </dependencies>
     </metadata>
     <files>

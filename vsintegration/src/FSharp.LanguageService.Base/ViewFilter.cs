@@ -44,7 +44,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
     public class ViewFilter : IVsTextViewFilter, IVsTextViewEvents, IOleCommandTarget, IDisposable, IVsExpansionEvents {
         private CodeWindowManager mgr;
         private NativeMethods.ConnectionPointCookie textViewEvents;
-        private LanguageService service;
+        private LanguageService_DEPRECATED service;
         private IVsTextView textView;
         private IOleCommandTarget nextTarget;
         private TextTipData textTipData;
@@ -267,7 +267,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
         }
 
 
-        internal void GetDataTipResponse(BackgroundRequest req)
+        internal void GetDataTipResponse(BackgroundRequest_DEPRECATED req)
         {
             if (req == null || req.Source == null || req.Source.IsClosed) return;
 
@@ -512,7 +512,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                         return true;
 
                     case VsCommands2K.PARAMINFO:
-                        this.source.MethodTip(this.textView, line, col, this.source.GetTokenInfo(line, col), MethodTipMiscellany.ExplicitlyInvokedViaCtrlShiftSpace, RequireFreshResults.No);
+                        this.source.MethodTip(this.textView, line, col, this.source.GetTokenInfo(line, col), MethodTipMiscellany_DEPRECATED.ExplicitlyInvokedViaCtrlShiftSpace, RequireFreshResults.No);
                         return true;
 
                     case VsCommands2K.QUICKINFO: 
@@ -821,7 +821,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 new BackgroundRequestResultHandler(HandleQuickInfoResponse));
         }
 
-        void HandleQuickInfoResponse(BackgroundRequest req){
+        void HandleQuickInfoResponse(BackgroundRequest_DEPRECATED req){
             if (req == null || req.Source == null || req.Source.IsClosed) return;
 
             int line;
@@ -942,7 +942,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
                 new BackgroundRequestResultHandler(HandleGotoResponse));
         }
 
-        void HandleGotoResponse(BackgroundRequest req) {
+        void HandleGotoResponse(BackgroundRequest_DEPRECATED req) {
             if (req == null || req.Source == null || req.Source.IsClosed) return;
 
             // Make sure caret hasn't moved since we kicked this off.
@@ -954,7 +954,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
 
             string url = null;
             TextSpan span;
-            IntellisenseInfo scope = req.ResultIntellisenseInfo;
+            IntellisenseInfo_DEPRECATED scope = req.ResultIntellisenseInfo;
             if (scope != null && gotoCmd == Microsoft.VisualStudio.VSConstants.VSStd97CmdID.GotoDefn)
             {
                 var gotoResult = scope.Goto(textView, line, col);
