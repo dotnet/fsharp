@@ -89,24 +89,28 @@ this file.
 
         <CreateFSharpManifestResourceName
              Condition="'@(ResxWithNoCulture)' != '' AND '$(UsingXBuild)' == 'true'"
+             UseStandardResourceNames="$(UseStandardResourceNames)"
          ResourceFiles="@(ResxWithNoCulture)" RootNamespace="$(RootNamespace)">
             <Output TaskParameter = "ManifestResourceNames" ItemName = "ManifestResourceWithNoCultureName" />
         </CreateFSharpManifestResourceName>
 
         <CreateFSharpManifestResourceName
              Condition="'@(NonResxWithNoCulture)' != '' AND '$(UsingXBuild)' == 'true'"
+             UseStandardResourceNames="$(UseStandardResourceNames)"
          ResourceFiles="@(NonResxWithNoCulture)" RootNamespace="$(RootNamespace)">
             <Output TaskParameter = "ManifestResourceNames" ItemName = "ManifestNonResxWithNoCulture" />
         </CreateFSharpManifestResourceName>
 
         <CreateFSharpManifestResourceName
              Condition="'@(ResxWithCulture)' != '' AND '$(UsingXBuild)' == 'true'"
+             UseStandardResourceNames="$(UseStandardResourceNames)"
              ResourceFiles="@(ResxWithCulture)" RootNamespace="$(RootNamespace)">
             <Output TaskParameter = "ManifestResourceNames" ItemName = "ManifestResourceWithCultureName" />
         </CreateFSharpManifestResourceName>
 
         <CreateFSharpManifestResourceName
              Condition="'@(NonResxWithCulture)' != '' AND '$(UsingXBuild)' == 'true'"
+             UseStandardResourceNames="$(UseStandardResourceNames)"
              ResourceFiles="@(NonResxWithCulture)" RootNamespace="$(RootNamespace)">
             <Output TaskParameter = "ManifestResourceNames" ItemName = "ManifestNonResxWithCulture" />
         </CreateFSharpManifestResourceName>
@@ -123,6 +127,7 @@ this file.
         <CreateFSharpManifestResourceName
               ResourceFiles="@(EmbeddedResource)"
               RootNamespace="$(RootNamespace)"
+              UseStandardResourceNames="$(UseStandardResourceNames)"
               Condition="'%(EmbeddedResource.ManifestResourceName)' == '' and ('%(EmbeddedResource.WithCulture)' == 'false' or '%(EmbeddedResource.Type)' == 'Resx') AND '$(UsingXBuild)' == 'false'">
 
             <Output TaskParameter="ResourceFilesWithManifestResourceNames" ItemName="_Temporary" />
@@ -133,6 +138,7 @@ this file.
         <CreateFSharpManifestResourceName
               ResourceFiles="@(EmbeddedResource)"
               RootNamespace="$(RootNamespace)"
+              UseStandardResourceNames="$(UseStandardResourceNames)"
               PrependCultureAsDirectory="false"
               Condition="'%(EmbeddedResource.ManifestResourceName)' == '' and '%(EmbeddedResource.WithCulture)' == 'true' and '%(EmbeddedResource.Type)' == 'Non-Resx' AND '$(UsingXBuild)' == 'false'">
 
@@ -230,9 +236,11 @@ this file.
               DelaySign="$(DelaySign)"
               DisabledWarnings="$(NoWarn)"
               DocumentationFile="$(DocumentationFile)"
+              DotnetFscCompilerPath="$(DotnetFscCompilerPath)"
               EmbedAllSources="$(EmbedAllSources)"
               Embed="$(Embed)"
               GenerateInterfaceFile="$(GenerateInterfaceFile)"
+              HighEntropyVA="$(HighEntropyVA)"
               KeyFile="$(KeyOriginatorFile)"
               LCID="$(LCID)"
               NoFramework="true"
@@ -242,17 +250,22 @@ this file.
               PdbFile="$(PdbFile)"
               Platform="$(PlatformTarget)"
               Prefer32Bit="$(Actual32Bit)"
+              PreferredUILang="$(PreferredUILang)"
+              ProvideCommandLineArgs="$(ProvideCommandLineArgs)"
               PublicSign="$(PublicSign)"
               References="@(ReferencePath)"
               ReferencePath="$(ReferencePath)"
               Resources="@(ActualEmbeddedResources)"
+              SkipCompilerExecution="$(SkipCompilerExecution)"
               SourceLink="$(SourceLink)"
               Sources="@(CompileBefore);@(Compile);@(CompileAfter)"
               Tailcalls="$(Tailcalls)"
               TargetType="$(OutputType)"
+              TargetProfile="$(TargetProfile)"
               ToolExe="$(FscToolExe)"
               ToolPath="$(FscToolPath)"
               TreatWarningsAsErrors="$(TreatWarningsAsErrors)"
+              UseStandardResourceNames="$(UseStandardResourceNames)"
               Utf8Output="$(Utf8Output)"
               VersionFile="$(VersionFile)"
               VisualStudioStyleErrors="$(VisualStudioStyleErrors)"
@@ -260,13 +273,8 @@ this file.
               WarningsAsErrors="$(WarningsAsErrors)"
               Win32ManifestFile="$(Win32Manifest)"
               Win32ResourceFile="$(Win32Resource)"
-              SubsystemVersion="$(SubsystemVersion)"
-              HighEntropyVA="$(HighEntropyVA)"
-              TargetProfile="$(TargetProfile)"
-              DotnetFscCompilerPath="$(DotnetFscCompilerPath)"
-              SkipCompilerExecution="$(SkipCompilerExecution)"
-              ProvideCommandLineArgs="$(ProvideCommandLineArgs)">
-            <Output TaskParameter="CommandLineArgs" ItemName="FscCommandLineArgs" />
+              SubsystemVersion="$(SubsystemVersion)">
+          <Output TaskParameter="CommandLineArgs" ItemName="FscCommandLineArgs" />
         </Fsc>
 
         <ItemGroup>

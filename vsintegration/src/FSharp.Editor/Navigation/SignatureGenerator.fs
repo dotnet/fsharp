@@ -211,14 +211,14 @@ let private hasUnitOnlyParameter (mem: FSharpMemberOrFunctionOrValue) =
     mem.CurriedParameterGroups.Count = 1 && mem.CurriedParameterGroups.[0].Count = 0
 
 let private mustAppearAsAbstractMember (mem: FSharpMemberOrFunctionOrValue) =
-    let enclosingEntityIsFSharpClass = mem.EnclosingEntity.IsClass && mem.EnclosingEntity.IsFSharp
-
-    if mem.IsDispatchSlot then
-        match mem.EnclosingEntity with
+    match mem.IsDispatchSlot, mem.EnclosingEntity with
+    | true, Some entity ->
+        let enclosingEntityIsFSharpClass = entity.IsClass && entity.IsFSharp
+        match entity with
         | TypedAstPatterns.Interface | TypedAstPatterns.AbstractClass -> true
-        | _ -> enclosingEntityIsFSharpClass 
-    else
-        false
+        | _ -> enclosingEntityIsFSharpClass
+    | _ -> false
+    
 
 let private needsInlineAnnotation (mem: FSharpMemberOrFunctionOrValue) =
     match mem.InlineAnnotation with
@@ -447,7 +447,8 @@ let private generateSignature ctx (mem: FSharpMemberOrFunctionOrValue) =
             let formattedTypeName = formatType ctx param.Type
             if param.IsOptionalArg then
                 let result = formattedTypeName
-                if mem.EnclosingEntity.IsFSharp && result.EndsWith(" option") then
+                let isFSharp = mem.EnclosingEntity |> Option.map(fun e -> e.IsFSharp) |> Option.defaultValue false
+                if isFSharp && result.EndsWith(" option") then
                     // result has the 'XXXX option' format: we remove the trailing ' option'
                     result.Substring(0, result.Length - (" option").Length)
                 else
@@ -480,7 +481,7 @@ let private generateSignature ctx (mem: FSharpMemberOrFunctionOrValue) =
             "unit"
 
     match mem with
-    | TypedAstPatterns.Constructor entity ->
+    | TypedAstPatterns.Constructor (Some entity) ->
         let signatureInputParamsPart = generateInputParamsPart mem
         let signatureReturnTypePart = getTypeNameWithGenericParams ctx entity false
 

@@ -1762,7 +1762,7 @@ let CombineSyntacticAndInferredArities g declKind rhsExpr prelimScheme =
             else
             
                 let (ValReprInfo (_,curriedArgInfosFromExpression,_)) = 
-                    InferArityOfExpr g (GeneralizedTypeForTypeScheme typeScheme) argAttribs retAttribs rhsExpr
+                    InferArityOfExpr g AllowTypeDirectedDetupling.Yes (GeneralizedTypeForTypeScheme typeScheme) argAttribs retAttribs rhsExpr
 
                 // Choose between the syntactic arity and the expression-inferred arity
                 // If the syntax specifies an eliminated unit arg, then use that
@@ -2120,9 +2120,11 @@ module GeneralizationHelpers =
             && List.forall (IsGeneralizableValue g) args
 
         | Expr.LetRec(binds,body,_,_)  ->
+            binds |> List.forall (fun b -> not b.Var.IsMutable) &&
             binds |> List.forall (fun b -> IsGeneralizableValue g b.Expr) &&
             IsGeneralizableValue g body
         | Expr.Let(bind,body,_,_) -> 
+            not bind.Var.IsMutable &&
             IsGeneralizableValue g bind.Expr &&
             IsGeneralizableValue g body
 
@@ -3329,7 +3331,9 @@ let AnalyzeArbitraryExprAsEnumerable cenv (env: TcEnv) localAlloc m exprty expr 
         if (AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m ty exprty) then 
             match tryType (mkCoerceExpr(expr,ty,expr.Range,exprty),ty) with 
             | Result res  -> Some res
-            | Exception e -> raise e
+            | Exception e -> 
+                PreserveStackTrace(e)
+                raise e
         else None
 
     // Next try to typecheck the thing as a sequence
@@ -3343,6 +3347,7 @@ let AnalyzeArbitraryExprAsEnumerable cenv (env: TcEnv) localAlloc m exprty expr 
     match probe ienumerable with
     | Some res -> res
     | None ->
+    PreserveStackTrace(e)
     raise e
 
 
@@ -3811,12 +3816,12 @@ let EliminateInitializationGraphs
                 let fty = (g.unit_ty --> ty)
                 let flazy,felazy = Tastops.mkCompGenLocal m  v.LogicalName fty 
                 let frhs = mkUnitDelayLambda g m e
-                if mustHaveArity then flazy.SetValReprInfo (Some(InferArityOfExpr g fty [] [] frhs))
+                if mustHaveArity then flazy.SetValReprInfo (Some(InferArityOfExpr g AllowTypeDirectedDetupling.Yes fty [] [] frhs))
 
                 let vlazy,velazy = Tastops.mkCompGenLocal m  v.LogicalName vty 
                 let vrhs = (mkLazyDelayed g m ty felazy)
                        
-                if mustHaveArity then vlazy.SetValReprInfo (Some(InferArityOfExpr g vty [] [] vrhs))
+                if mustHaveArity then vlazy.SetValReprInfo (Some(InferArityOfExpr g AllowTypeDirectedDetupling.Yes vty [] [] vrhs))
                 fixupPoints |> List.iter (fun (fp,_) -> fp := mkLazyForce g (!fp).Range ty velazy)
 
                 [mkInvisibleBind flazy frhs; mkInvisibleBind vlazy vrhs],
@@ -4858,31 +4863,44 @@ and TcProvidedTypeApp cenv env tpenv tcref args m =
 /// Note that the generic type may be a nested generic type List<T>.ListEnumerator<U>.
 /// In this case, 'args' is only the instantiation of the suffix type arguments, and pathTypeArgs gives
 /// the prefix of type arguments. 
-and TcTypeApp cenv newOk checkCxs occ env tpenv m tcref pathTypeArgs (args: SynType list) =
+and TcTypeApp cenv newOk checkCxs occ env tpenv m tcref pathTypeArgs (synArgTys: SynType list) =
     CheckTyconAccessible cenv.amap m env.eAccessRights tcref |> ignore
     CheckEntityAttributes cenv.g tcref m |> CommitOperationResult
     
 #if EXTENSIONTYPING
     // Provided types are (currently) always non-generic. Their names may include mangled 
     // static parameters, which are passed by the provider.
-    if tcref.Deref.IsProvided then TcProvidedTypeApp cenv env tpenv tcref args m else
+    if tcref.Deref.IsProvided then TcProvidedTypeApp cenv env tpenv tcref synArgTys m else
 #endif
 
     let tps,_,tinst,_ = infoOfTyconRef m tcref
+
     // If we're not checking constraints, i.e. when we first assert the super/interfaces of a type definition, then just 
     // clear the constraint lists of the freshly generated type variables. A little ugly but fairly localized. 
     if checkCxs = NoCheckCxs then tps |> List.iter (fun tp -> tp.typar_constraints <- [])
-    if tinst.Length <> pathTypeArgs.Length + args.Length then 
-        error (TyconBadArgs(env.DisplayEnv,tcref,pathTypeArgs.Length + args.Length,m))
-    let args',tpenv = 
+    if tinst.Length <> pathTypeArgs.Length + synArgTys.Length then 
+        error (TyconBadArgs(env.DisplayEnv,tcref,pathTypeArgs.Length + synArgTys.Length,m))
+
+    let argTys,tpenv = 
         // Get the suffix of typars
-        let tpsForArgs = List.drop (tps.Length - args.Length) tps
+        let tpsForArgs = List.drop (tps.Length - synArgTys.Length) tps
         let kindsForArgs = tpsForArgs |> List.map (fun tp -> tp.Kind)
-        TcTypesOrMeasures (Some kindsForArgs) cenv newOk checkCxs occ env tpenv args m
-    let args' = pathTypeArgs @ args'
+        TcTypesOrMeasures (Some kindsForArgs) cenv newOk checkCxs occ env tpenv synArgTys m
+
+    // Add the types of the enclosing class for a nested type
+    let actualArgTys = pathTypeArgs @ argTys
+
     if checkCxs = CheckCxs then
-        List.iter2 (UnifyTypes cenv env m) tinst args'
-    mkAppTy tcref args', tpenv
+        List.iter2 (UnifyTypes cenv env m) tinst actualArgTys
+
+    // Try to decode System.Tuple --> F~ tuple types etc.
+    let ty = 
+        let decode = if cenv.g.compilingFslib then None else cenv.g.decodeTyconRefMap tcref actualArgTys
+        match decode with 
+        | Some res -> res
+        | None -> mkAppTy tcref actualArgTys
+
+    ty, tpenv
 
 and TcTypeOrMeasureAndRecover optKind cenv newOk checkCxs occ env tpenv ty   =
     try TcTypeOrMeasure optKind cenv newOk checkCxs occ env tpenv ty 
@@ -10703,7 +10721,7 @@ and TcLetBinding cenv isUse env containerInfo declKind tpenv (binds,bindsm,scope
                     // type checker that anything related to binding module-level values is marked with an 
                     // val_repr_info, val_actual_parent and is_topbind
                     if (DeclKind.MustHaveArity declKind) then 
-                        AdjustValToTopVal tmp altActualParent (InferArityOfExprBinding cenv.g tmp rhsExpr)
+                        AdjustValToTopVal tmp altActualParent (InferArityOfExprBinding cenv.g AllowTypeDirectedDetupling.Yes tmp rhsExpr)
                     tmp,pat'
 
         let mkRhsBind (bodyExpr,bodyExprTy) = 
@@ -12244,7 +12262,7 @@ module IncrClassChecking =
             if isUnitTy cenv.g v.Type then 
                 false
             else 
-                let arity = InferArityOfExprBinding cenv.g v bind.Expr 
+                let arity = InferArityOfExprBinding cenv.g AllowTypeDirectedDetupling.Yes v bind.Expr 
                 not arity.HasNoArgs && not v.IsMutable
 
 
@@ -12282,7 +12300,7 @@ module IncrClassChecking =
                     warning (Error(FSComp.SR.chkUnusedValue(v.DisplayName), v.Range))
 
             let repr = 
-                match InferArityOfExprBinding g v bind.Expr with 
+                match InferArityOfExprBinding g AllowTypeDirectedDetupling.Yes v bind.Expr with 
                 | arity when arity.HasNoArgs || v.IsMutable -> 
                     // all mutable variables are forced into fields, since they may escape into closures within the implicit constructor
                     // e.g. 
@@ -15017,7 +15035,7 @@ module EstablishTypeDefinitionCores =
             let hasMeasureableAttr = HasFSharpAttribute cenv.g cenv.g.attrib_MeasureableAttribute attrs
             let hasCLIMutable = HasFSharpAttribute cenv.g cenv.g.attrib_CLIMutableAttribute attrs
             
-            let hasStructLayoutAttr = HasFSharpAttribute cenv.g cenv.g.attrib_StructLayoutAttribute attrs
+            let structLayoutAttr = TryFindFSharpInt32Attribute cenv.g cenv.g.attrib_StructLayoutAttribute attrs
             let hasAllowNullLiteralAttr = TryFindFSharpBoolAttribute cenv.g cenv.g.attrib_AllowNullLiteralAttribute attrs = Some(true)
 
             if hasAbstractAttr then 
@@ -15038,13 +15056,17 @@ module EstablishTypeDefinitionCores =
                 
                 
             let structLayoutAttributeCheck(allowed) = 
-                if hasStructLayoutAttr  then 
+                let explicitKind = int32 System.Runtime.InteropServices.LayoutKind.Explicit
+                match structLayoutAttr with
+                | Some kind ->
                     if allowed then 
-                        warning(PossibleUnverifiableCode(m))
+                        if kind = explicitKind then
+                            warning(PossibleUnverifiableCode(m))
                     elif thisTyconRef.Typars(m).Length > 0 then 
                         errorR (Error(FSComp.SR.tcGenericTypesCannotHaveStructLayout(),m))
                     else
                         errorR (Error(FSComp.SR.tcOnlyStructsCanHaveStructLayout(),m))
+                | None -> ()
                 
             let hiddenReprChecks(hasRepr) =
                  structLayoutAttributeCheck(false)

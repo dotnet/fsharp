@@ -26,7 +26,7 @@ open Microsoft.VisualStudio.FSharp.Editor.TypedAstUtils
 [<Export>][<Shared>]
 type internal NavigateToSignatureMetadataService [<ImportingConstructor>] 
     (   checkerProvider: FSharpCheckerProvider
-    ,   projectInfoManager: ProjectInfoManager
+    ,   projectInfoManager: FSharpProjectOptionsManager
     ,   workspace : VisualStudioWorkspaceImpl
     ) =
     
@@ -149,7 +149,8 @@ type internal NavigateToSignatureMetadataService [<ImportingConstructor>]
                         Some (sprintf "%s.%s" entity.AccessPath entity.DisplayName)
 
                     | TypedAstPatterns.MemberFunctionOrValue mem ->
-                        tryGetFullyQualifiedName mem.EnclosingEntity
+                        mem.EnclosingEntity
+                        |> Option.bind tryGetFullyQualifiedName
                         |> Option.map (fun parent -> sprintf "%s.%s" parent mem.DisplayName)
 
                     | TypedAstPatterns.Field (field, _) ->
