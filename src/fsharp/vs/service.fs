@@ -1133,19 +1133,19 @@ type TypeCheckInfo
                               FSharpFindDeclResult.ExternalDecl (assref.Name, externalSym))
                       | _ -> None
 
-                  | Item.Property (_, ILProp (_, propInfo) :: _) ->
-                      let constructorAndMeth = 
-                          if propInfo.HasGetter then Some (ExternalSymbol.PropertyGet, propInfo.GetterMethod g)
-                          elif propInfo.HasSetter then Some (ExternalSymbol.PropertySet, propInfo.SetterMethod g)
+                  | Item.Property (name, ILProp (_, propInfo) :: _) ->
+                      let methInfo = 
+                          if propInfo.HasGetter then Some (propInfo.GetterMethod g)
+                          elif propInfo.HasSetter then Some (propInfo.SetterMethod g)
                           else None
                       
-                      match constructorAndMeth with
-                      | Some (constructor, methInfo) ->
-                            match methInfo.MetadataScope with
-                            | ILScopeRef.Assembly assref ->
-                                let externalSym = constructor (methInfo.ILMethodRef.EnclosingTypeRef.FullName, propInfo.PropertyName)
-                                Some (FSharpFindDeclResult.ExternalDecl (assref.Name, externalSym))
-                            | _ -> None
+                      match methInfo with
+                      | Some methInfo ->
+                          match methInfo.MetadataScope with
+                          | ILScopeRef.Assembly assref ->
+                              let externalSym = ExternalSymbol.Property (methInfo.ILMethodRef.EnclosingTypeRef.FullName, name)
+                              Some (FSharpFindDeclResult.ExternalDecl (assref.Name, externalSym))
+                          | _ -> None
                       | None -> None
                   
                   | Item.ILField (ILFieldInfo (ILTypeInfo (tr, _, _, _) & typeInfo, fieldDef)) when not tr.IsLocalRef ->

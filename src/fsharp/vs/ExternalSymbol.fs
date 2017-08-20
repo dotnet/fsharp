@@ -20,7 +20,7 @@ type ExternalType =
     | Type of fullName: string * genericArgs: ExternalType list
     | Array of inner: ExternalType
     | Pointer of inner: ExternalType
-    | TypeVar of name: string
+    | TypeVar of typeName: string
 with
     override this.ToString () =
         match this with
@@ -87,8 +87,7 @@ type ExternalSymbol =
     | Method of typeName: string * name: string * paramSyms: ParamTypeSymbol list * genericArity: int
     | Field of typeName: string * name: string
     | Event of typeName: string * name: string
-    | PropertyGet of typeName: string * name: string
-    | PropertySet of typeName: string * name: string
+    | Property of typeName: string * name: string
 with
     override this.ToString () =
         match this with
@@ -109,8 +108,7 @@ with
             |> sprintf "%s.%s%s(%s)" typeName name genericAritySuffix
         | Field (typeName, name)
         | Event (typeName, name)
-        | PropertyGet (typeName, name)
-        | PropertySet (typeName, name) ->
+        | Property (typeName, name) ->
             sprintf "%s.%s" typeName name
 
     member internal this.ToDebuggerDisplay () =

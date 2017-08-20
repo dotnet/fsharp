@@ -222,13 +222,7 @@ module internal ExternalSymbol =
             |> Option.toList
 
         | :? IPropertySymbol as propsym ->
-            [
-                if propsym.GetMethod <> null then
-                    yield upcast propsym.GetMethod, ExternalSymbol.PropertyGet(container, propsym.MetadataName)
-
-                if propsym.SetMethod <> null then
-                    yield upcast propsym.SetMethod, ExternalSymbol.PropertySet(container, propsym.MetadataName)
-            ]
+            [upcast propsym, ExternalSymbol.Property(container, propsym.MetadataName)]
 
         | :? IFieldSymbol as fieldsym ->
             [upcast fieldsym, ExternalSymbol.Field(container, fieldsym.MetadataName)]
