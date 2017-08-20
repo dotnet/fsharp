@@ -139,6 +139,14 @@ module Option =
         | Some x -> x
         | None -> f()
 
+    /// Returns 'Some list' if all elements in the list are Some, otherwise None
+    let ofOptionList (xs : 'a option list) : 'a list option =
+
+        if xs |> List.forall Option.isSome then
+            xs |> List.map Option.get |> Some
+        else
+            None
+
 
 [<RequireQualifiedAccess>]
 module List =

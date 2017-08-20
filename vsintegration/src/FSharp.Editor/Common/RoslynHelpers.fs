@@ -103,27 +103,30 @@ module internal RoslynHelpers =
         let task = tcs.Task
         let disposeReg() = barrier.Stop(); if not task.IsCanceled then reg.Dispose()
         Async.StartWithContinuations(
-                  async { do! Async.SwitchToThreadPool()
-                          return! computation }, 
-                  continuation=(fun result -> 
-                      disposeReg()
-                      tcs.TrySetResult(result) |> ignore
-                  ), 
-                  exceptionContinuation=(fun exn -> 
-                      disposeReg()
-                      match exn with 
-                      | :? OperationCanceledException -> 
-                          tcs.TrySetCanceled(cancellationToken)  |> ignore
-                      | exn ->
-                          System.Diagnostics.Trace.WriteLine("Visual F# Tools: exception swallowed and not passed to Roslyn: {0}", exn.Message)
-                          let res = Unchecked.defaultof<_>
-                          tcs.TrySetResult(res) |> ignore
-                  ),
-                  cancellationContinuation=(fun _oce -> 
-                      disposeReg()
-                      tcs.TrySetCanceled(cancellationToken) |> ignore
-                  ),
-                  cancellationToken=cancellationToken)
+            async {
+                do! Async.SwitchToThreadPool()
+                return! computation
+            }, 
+            continuation=(fun result -> 
+                disposeReg()
+                tcs.TrySetResult(result) |> ignore
+            ), 
+            exceptionContinuation=(fun exn -> 
+                disposeReg()
+                match exn with 
+                | :? OperationCanceledException -> 
+                    tcs.TrySetCanceled(cancellationToken)  |> ignore
+                | exn ->
+                    System.Diagnostics.Debug.Assert(false, "Visual F# Tools: Exception swallowed and not passed to Roslyn", exn.ToString())
+                    System.Diagnostics.Trace.WriteLine(sprintf "Visual F# Tools: Exception swallowed and not passed to Roslyn:\n%O" exn)
+                    let res = Unchecked.defaultof<_>
+                    tcs.TrySetResult(res) |> ignore
+            ),
+            cancellationContinuation=(fun _oce -> 
+                disposeReg()
+                tcs.TrySetCanceled(cancellationToken) |> ignore
+            ),
+            cancellationToken=cancellationToken)
         task
 
     let StartAsyncUnitAsTask cancellationToken (computation:Async<unit>) = 
