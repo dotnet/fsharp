@@ -41,12 +41,12 @@ module internal IdentifierUtils =
     let isFixableIdentifier (s: string) = 
         not (String.IsNullOrEmpty s) && encapsulateIdentifier LexerSymbolKind.Ident s |> isIdentifier
 
-    let private forbiddenChars = ["."; "+"; "$"; "&"; "["; "]"; "/"; "\\"; "*"; "\""]
+    let private forbiddenChars = Set ["."; "+"; "$"; "&"; "["; "]"; "/"; "\\"; "*"; "\""]
 
-    let isTypeNameIdent (s: string) =
-        not (String.IsNullOrEmpty s) &&
-        forbiddenChars |> Seq.forall (fun c -> not (s.Contains c)) &&
-        isFixableIdentifier s 
+    let isTypeNameIdent (ident: string) =
+        not (String.IsNullOrEmpty ident) &&
+        forbiddenChars |> Seq.forall (forbiddenChars.Contains >> not) &&
+        isFixableIdentifier ident 
 
     let isUnionCaseIdent (s: string) =
         isTypeNameIdent s &&    

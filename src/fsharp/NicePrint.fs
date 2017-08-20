@@ -31,7 +31,7 @@ open Microsoft.FSharp.Core.Printf
 open Microsoft.FSharp.Compiler.ExtensionTyping
 open Microsoft.FSharp.Core.CompilerServices
 #endif
-
+#region "IL printing utilities"
 [<AutoOpen>]
 module internal PrintUtilities = 
     let bracketIfL x lyt = if x then bracketL lyt else lyt
@@ -540,7 +540,7 @@ module private PrintIL =
             let body     = layoutILTypeDef denv typeDef
             (pre ^^ WordL.equals) @@-- body
                 
-
+#endregion 
 module private PrintTypes = 
     // Note: We need nice printing of constants in order to print literals and attributes 
     let layoutConst g ty c =
@@ -2120,3 +2120,43 @@ let moduleOrNamespaceL denv mspec = moduleOrNamespaceLP false denv Path.Empty ms
 let assemblyL denv (mspec : ModuleOrNamespace) = moduleOrNamespaceTypeLP true denv Path.Empty mspec.ModuleOrNamespaceType // we seem to get the *assembly* name as an outer module, this strips this off
 #endif
 
+[<AutoOpen>]
+module internal CodeGenerationUtils =
+    open System
+    open System.IO
+    open System.CodeDom.Compiler
+    
+    /// String writer supporting code file generation (especially automatic signature file generation!)
+    type ColumnIndentedTextWriter() =
+        let stringWriter = new StringWriter()
+        let indentWriter = new IndentedTextWriter(stringWriter, " ")
+
+        member __.Write(s: string) =
+            indentWriter.Write("{0}", s)
+
+        member __.Write(s: string, [<ParamArray>] objs: obj []) =
+            indentWriter.Write(s, objs)
+
+        member __.WriteLine(s: string) =
+            indentWriter.WriteLine("{0}", s)
+
+        member __.WriteLine(s: string, [<ParamArray>] objs: obj []) =
+            indentWriter.WriteLine(s, objs)
+
+        member x.WriteBlankLines count =
+            for _ in 0 .. count - 1 do
+                x.WriteLine ""
+
+        member __.Indent i = 
+            indentWriter.Indent <- indentWriter.Indent + i
+
+        member __.Unindent i = 
+            indentWriter.Indent <- max 0 (indentWriter.Indent - i)
+
+        member __.Dump() =
+            indentWriter.InnerWriter.ToString()
+
+        interface IDisposable with
+            member __.Dispose() =
+                stringWriter.Dispose()
+                indentWriter.Dispose()

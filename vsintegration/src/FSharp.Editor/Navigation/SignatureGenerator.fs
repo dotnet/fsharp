@@ -1,4 +1,5 @@
-﻿module Microsoft.VisualStudio.FSharp.Editor.SignatureGenerator
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+module Microsoft.VisualStudio.FSharp.Editor.SignatureGenerator
 
 open System
 open System.Diagnostics
@@ -54,13 +55,6 @@ module internal CodeGenerationUtils =
             member __.Dispose() =
                 stringWriter.Dispose()
                 indentWriter.Dispose()
-
-    let (|IndexerArg|) = function
-        | SynIndexerArg.Two(e1, e2) -> [e1; e2]
-        | SynIndexerArg.One e -> [e]
-
-    let (|IndexerArgList|) xs =
-        List.collect (|IndexerArg|) xs
 
     let hasAttribute<'T> (attrs: seq<FSharpAttribute>) =
         attrs |> Seq.exists (fun a -> a.AttributeType.CompiledName = typeof<'T>.Name)

@@ -287,22 +287,17 @@ type internal FSharpGoToDefinitionService
                         return navItem
             // Definition is external
             | _ -> 
-                let fsSymbol = 
-                    checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString (), lexerSymbol.FullIsland) 
-                    |> Async.RunSynchronously
-                match fsSymbol with
-                | Some symbol ->
-                    let sigDocument, range = 
-                        match signatureMetadataService.TryFindMetadataRange (originDocument, ast, symbol) with
-                        | Some a -> a
-                        | _ -> failwith "unexpected exception in goto definition service"
-                    let sigSourceText = sigDocument.GetTextAsync() |> Async.RunTaskSynchronously
-                    let sigTextSpan = RoslynHelpers.FSharpRangeToTextSpan (sigSourceText, range)
-                    return FSharpNavigableItem (sigDocument, sigTextSpan)
-                | _ -> return! None
+                let! fsSymbol = 
+                    checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString (), lexerSymbol.FullIsland)
+                let sigDocument, range = 
+                    match signatureMetadataService.TryFindMetadataRange (originDocument, ast, fsSymbol) with
+                    | Some a -> a
+                    | _ -> failwith "unexpected exception in goto definition service"
+                let! sigSourceText = sigDocument.GetTextAsync cancellationToken
+                let sigTextSpan = RoslynHelpers.FSharpRangeToTextSpan (sigSourceText, range)
+                return FSharpNavigableItem (sigDocument, sigTextSpan)
         } 
         |> Async.map (Option.map (fun x -> x :> INavigableItem) >> Option.toArray >> Array.toSeq)
-        |> Async.map(fun a -> Logging.Logging.logWarning "GotoDefinitionFinished!"; a)
         |> RoslynHelpers.StartAsyncAsTask cancellationToken        
    
     interface IGoToDefinitionService with

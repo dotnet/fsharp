@@ -1,4 +1,5 @@
-﻿namespace Microsoft.VisualStudio.FSharp.Editor
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.IO
@@ -26,9 +27,9 @@ open System.Threading
 
 [<Export>][<Shared>]
 type internal NavigateToSignatureMetadataService [<ImportingConstructor>] 
-    (   checkerProvider: FSharpCheckerProvider
-    ,   projectInfoManager: FSharpProjectOptionsManager
-    ,   workspace : VisualStudioWorkspaceImpl
+    (   checkerProvider: FSharpCheckerProvider,
+        projectInfoManager: FSharpProjectOptionsManager,
+        workspace : VisualStudioWorkspaceImpl
     ) =
     
     let xmlDocCache = Dictionary<string, IVsXMLMemberIndex>()

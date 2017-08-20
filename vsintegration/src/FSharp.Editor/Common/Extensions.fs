@@ -115,15 +115,7 @@ module String =
                 yield String.Empty
         |]
 
-    let getNonEmptyLines (str: string) =
-        use reader = new StringReader(str)
-        [|
-        let line = ref (reader.ReadLine())
-        while not (isNull (!line)) do
-            if (!line).Length > 0 then
-                yield !line
-            line := reader.ReadLine()
-        |]
+    let getNonEmptyLines (str: string) = str.Split([|'\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries)
 
     let lowerCaseFirstChar (str: string) =
         if String.IsNullOrEmpty str 
@@ -276,8 +268,9 @@ module Dict =
         dict
 
     let tryFind key (dict: #IDictionary<'k, 'v>) = 
-        let success, value = dict.TryGetValue key
-        Option.someIf value success
+        match dict.TryGetValue key with
+        | true, value -> Some value
+        | _ -> None
 
     let ofSeq (xs: ('k * 'v) seq) = 
         let dict = Dictionary()

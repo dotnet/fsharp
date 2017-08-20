@@ -1,4 +1,5 @@
-﻿namespace Microsoft.VisualStudio.FSharp.Editor
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Collections.Generic
@@ -170,108 +171,6 @@ module internal OpenDeclarationGetter =
                 Some ident)
         |> List.choose id
         |> longIdentToArray
-
-    let getOpenDeclarations (ast: ParsedInput option) (entities: AssemblySymbol list option) 
-                            (qualifyOpenDeclarations: Line -> EndColumn -> Idents -> Async<RawOpenDeclaration list>) = async {
-        match ast, entities with
-        | Some (ParsedInput.ImplFile (ParsedImplFileInput(_, _, _, _, _, modules, _))), Some entities ->
-            let autoOpenModulesAndActivePatterns = 
-                getAutoOpenModules entities @ getActivePatterns entities
-            //debug "All AutoOpen modules: %A" autoOpenModules
-             
-            let rec walkModuleOrNamespace acc (decls, moduleRange) = async {
-                let rec loop acc exprs = async {
-                    match exprs with
-                    | [] -> return acc
-                    | SynModuleDecl.NestedModule (_, _, nestedModuleDecls, _, nestedModuleRange) :: rest -> 
-                        let! acc' = walkModuleOrNamespace acc (nestedModuleDecls, nestedModuleRange)
-                        return! loop acc' rest
-                    | SynModuleDecl.Open (LongIdentWithDots(longIdent, _), openStatementRange) :: rest ->
-                        let identArray = processOpenDeclaration longIdent
-                        let! rawOpenDeclarations =  
-                            identArray |> qualifyOpenDeclarations openStatementRange.StartLine openStatementRange.EndColumn
-
-                        for openDecl in rawOpenDeclarations do
-                            Debug.Assert (openDecl.Idents |> Array.endsWith identArray, 
-                                            sprintf "%A must be suffix for %A" identArray openDecl.Idents)
-                            for ident in openDecl.Idents do
-                                Debug.Assert (IdentifierUtils.isIdentifier ident,
-                                              sprintf "%s as part of %A must be an identifier" ident openDecl.Idents)
-
-                        (* The idea that each open declaration can actually open itself and all direct AutoOpen modules,
-                            children AutoOpen modules and so on until a non-AutoOpen module is met.
-                            Example:
-                               
-                            module M =
-                                [<AutoOpen>]                                  
-                                module A1 =
-                                    [<AutoOpen>] 
-                                    module A2 =
-                                        module A3 = 
-                                            [<AutoOpen>] 
-                                            module A4 = ...
-                                     
-                            // this declaration actually open M, M.A1, M.A1.A2, but NOT M.A1.A2.A3 or M.A1.A2.A3.A4
-                            open M
-                        *)
-
-                        let rec loop' acc maxLength =
-                            let newModules =
-                                autoOpenModulesAndActivePatterns
-                                |> List.filter (fun autoOpenModule -> 
-                                    autoOpenModule.Length = maxLength + 1
-                                    && acc |> List.exists (fun collectedAutoOpenModule ->
-                                        autoOpenModule |> Array.startsWith collectedAutoOpenModule))
-                            match newModules with
-                            | [] -> acc
-                            | _ -> loop' (acc @ newModules) (maxLength + 1)
-                            
-                        let identsAndAutoOpens = 
-                            rawOpenDeclarations
-                            |> List.map (fun openDecl -> 
-                                    { Declarations = loop' [openDecl.Idents] openDecl.Idents.Length 
-                                      Parent = openDecl.Parent
-                                      IsUsed = false })
-
-                        (* For each module that has ModuleSuffix attribute value we add additional Idents "<Name>Module". For example:
-                               
-                            module M =
-                                [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-                                module M1 =
-                                    module M2 =
-                                        let func _ = ()
-                            open M.M1.M2
-                            The last line will produce two Idents: "M.M1.M2" and "M.M1Module.M2".
-                            The reason is that FCS return different FullName for entities declared in ModuleSuffix modules
-                            depending on whether the module is in the current project or not. 
-                        *)
-                        let finalOpenDecls = 
-                            identsAndAutoOpens
-                            |> Seq.distinct
-                            |> Seq.toList
-
-                        let acc = { Declarations = finalOpenDecls
-                                    DeclarationRange = openStatementRange
-                                    ScopeRange = Range.mkRange openStatementRange.FileName openStatementRange.Start moduleRange.End
-                                    IsUsed = false } :: acc
-
-                        return! loop acc rest
-                    | _ :: rest -> return! loop acc rest
-                }
-                let! openStatements = loop [] decls
-                return openStatements @ acc
-            }
-
-            let rec loop acc exprs = async {
-                match exprs with
-                | [] -> return acc
-                | SynModuleOrNamespace(_, _, _, decls, _, _, _, moduleRange) :: rest ->
-                    let! acc' = walkModuleOrNamespace acc (decls, moduleRange)
-                    return! loop (acc' @ acc) rest
-            }
-            return! loop [] modules
-        | _ -> return []
-    }
 
     let getEffectiveOpenDeclarationsAtLocation (pos: pos) (ast: ParsedInput) =
         let openStatements =
@@ -446,36 +345,3 @@ module internal OpenDeclarationGetter =
 //                  fullName endPos.Line endPos.Column prefix
             Some prefix
         | _ -> None
-
-    let getUnusedOpenDeclarations ast allSymbolsUses openDeclarations allEntities =
-        let longIdentsByEndPos = UntypedAstUtils.getLongIdents ast
-
-        let symbolPrefixes: (Range.range * Idents) [] =
-            allSymbolsUses
-            |> getSymbolUsesPotentiallyRequireOpenDecls
-            //|> printSymbolUses "SymbolUsesPotentiallyRequireOpenDecls"
-            |> removeModuleSuffixes allEntities
-            //|> printSymbolUses "SymbolUsesWithModuleSuffixedRemoved"
-            |> filterNestedSymbolUses longIdentsByEndPos
-            //|> printSymbolUses "SymbolUses without nested"
-            |> Array.collect(fun symbolUse ->
-                let sUseRange = symbolUse.SymbolUse.RangeAlternate
-                symbolUse.FullNames
-                |> Array.choose (fun fullName ->
-                    getFullPrefix longIdentsByEndPos fullName sUseRange.End
-                    |> Option.bind (function
-                         | [||] -> None
-                         | prefix -> Some (sUseRange, prefix)))) 
-
-        //debug "[SourceCodeClassifier] Symbols prefixes:\n%A,\nOpen declarations:\n%A" symbolPrefixes openDeclarations
-        
-        let openDeclarations = 
-            Array.foldBack (fun (symbolRange: Range.range, symbolPrefix: Idents) openDecls ->
-                openDecls |> updateOpenDeclsWithSymbolPrefix symbolPrefix symbolRange
-            ) symbolPrefixes openDeclarations
-            |> spreadIsUsedFlagToParents
-
-        //debug "[SourceCodeClassifier] Fully processed open declarations:"
-        //for decl in openDeclarations do debug "%A" decl
-
-        openDeclarations |> List.filter (fun decl -> not decl.IsUsed)

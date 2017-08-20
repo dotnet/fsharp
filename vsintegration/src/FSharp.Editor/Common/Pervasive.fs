@@ -182,8 +182,6 @@ let inline liftAsync (computation : Async<'T>) : Async<'T option> =
 let liftTaskAsync task = task |> Async.AwaitTask |> liftAsync
 
 type Microsoft.FSharp.Control.Async with
-    static member Raise (e : #exn) = 
-        Async.FromContinuations(fun (_,econt,_) -> econt e)
 
     static member RunTaskSynchronously task  = task |> Async.AwaitTask |> Async.RunSynchronously 
 
