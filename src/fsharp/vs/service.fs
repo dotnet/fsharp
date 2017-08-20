@@ -17,7 +17,7 @@ open Microsoft.FSharp.Core.Printf
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.IL
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
+open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.AbstractIL.Internal  
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library  
 
@@ -95,7 +95,7 @@ type FSharpFindDeclResult =
     /// found declaration
     | DeclFound of range
     /// Indicates an external declaration was found
-    | ExternalDecl of assembly : string * fullName : string
+    | ExternalDecl of assembly : string * externalSym : ExternalSymbol
 
 /// This type is used to describe what was found during the name resolution.
 /// (Depending on the kind of the items, we may stop processing or continue to find better items)
@@ -1098,7 +1098,7 @@ type TypeCheckInfo
        (fun msg -> 
            Trace.TraceInformation(sprintf "FCS: recovering from error in GetMethodsAsSymbols: '%s'" msg)
            None)
-
+           
     member scope.GetDeclarationLocation (ctok, line, lineStr, colAtEndOfNames, names, preferFlag) =
       ErrorScope.Protect Range.range0 
        (fun () -> 
@@ -1106,44 +1106,60 @@ type TypeCheckInfo
           | None
           | Some ([], _, _, _) -> FSharpFindDeclResult.DeclNotFound (FSharpFindDeclFailureReason.Unknown "")
           | Some (item :: _, _, _, _) ->
+              let getTypeVarNames (ilinfo: ILMethInfo) =
+                  let classTypeParams = ilinfo.DeclaringTyconRef.ILTyconRawMetadata.GenericParams |> List.map (fun paramDef -> paramDef.Name)
+                  let methodTypeParams = ilinfo.FormalMethodTypars |> List.map (fun typ -> typ.Name)
+                  classTypeParams @ methodTypeParams |> Array.ofList
+
               let result =
                   match item.Item with
                   | Item.CtorGroup (_, (ILMeth (_,ilinfo,_)) :: _) ->
                       match ilinfo.MetadataScope with
                       | ILScopeRef.Assembly assref ->
-                          Some (FSharpFindDeclResult.ExternalDecl (assref.Name, ilinfo.ILMethodRef.EnclosingTypeRef.FullName))
+                          let typeVarNames = getTypeVarNames ilinfo
+                          ParamTypeSymbol.tryOfILTypes typeVarNames ilinfo.ILMethodRef.ArgTypes
+                          |> Option.map (fun args ->
+                              let externalSym = ExternalSymbol.Constructor (ilinfo.ILMethodRef.EnclosingTypeRef.FullName, args)
+                              FSharpFindDeclResult.ExternalDecl (assref.Name, externalSym))
                       | _ -> None
 
                   | Item.MethodGroup (name, (ILMeth (_,ilinfo,_)) :: _, _) ->
                       match ilinfo.MetadataScope with
                       | ILScopeRef.Assembly assref ->
-                          Some (FSharpFindDeclResult.ExternalDecl (assref.Name, ilinfo.ILMethodRef.EnclosingTypeRef.FullName + "." + name))
+                          let typeVarNames = getTypeVarNames ilinfo
+                          ParamTypeSymbol.tryOfILTypes typeVarNames ilinfo.ILMethodRef.ArgTypes
+                          |> Option.map (fun args ->
+                              let externalSym = ExternalSymbol.Method (ilinfo.ILMethodRef.EnclosingTypeRef.FullName, name, args, ilinfo.ILMethodRef.GenericArity)
+                              FSharpFindDeclResult.ExternalDecl (assref.Name, externalSym))
                       | _ -> None
 
                   | Item.Property (_, ILProp (_, propInfo) :: _) ->
-                      let methInfo = 
-                          if propInfo.HasGetter then Some (propInfo.GetterMethod g)
-                          elif propInfo.HasSetter then Some (propInfo.SetterMethod g)
+                      let constructorAndMeth = 
+                          if propInfo.HasGetter then Some (ExternalSymbol.PropertyGet, propInfo.GetterMethod g)
+                          elif propInfo.HasSetter then Some (ExternalSymbol.PropertySet, propInfo.SetterMethod g)
                           else None
                       
-                      match methInfo with
-                      | Some methInfo ->
+                      match constructorAndMeth with
+                      | Some (constructor, methInfo) ->
                             match methInfo.MetadataScope with
                             | ILScopeRef.Assembly assref ->
-                                Some (FSharpFindDeclResult.ExternalDecl (assref.Name, methInfo.ILMethodRef.EnclosingTypeRef.FullName + "." + propInfo.PropertyName))
+                                let externalSym = constructor (methInfo.ILMethodRef.EnclosingTypeRef.FullName, propInfo.PropertyName)
+                                Some (FSharpFindDeclResult.ExternalDecl (assref.Name, externalSym))
                             | _ -> None
                       | None -> None
                   
                   | Item.ILField (ILFieldInfo (ILTypeInfo (tr, _, _, _) & typeInfo, fieldDef)) when not tr.IsLocalRef ->
                       match typeInfo.ILScopeRef with
                       | ILScopeRef.Assembly assref ->
-                          Some (FSharpFindDeclResult.ExternalDecl (assref.Name, typeInfo.ILTypeRef.FullName + "." + fieldDef.Name))
+                          let externalSym = ExternalSymbol.Field (typeInfo.ILTypeRef.FullName, fieldDef.Name)
+                          Some (FSharpFindDeclResult.ExternalDecl (assref.Name, externalSym))
                       | _ -> None
                   
                   | Item.Event (ILEvent (_, ILEventInfo (ILTypeInfo (tr, _, _, _) & typeInfo, eventDef))) when not tr.IsLocalRef ->
                       match typeInfo.ILScopeRef with
                       | ILScopeRef.Assembly assref ->
-                          Some (FSharpFindDeclResult.ExternalDecl (assref.Name, typeInfo.ILTypeRef.FullName + "." + eventDef.Name))
+                          let externalSym = ExternalSymbol.Event (typeInfo.ILTypeRef.FullName, eventDef.Name)
+                          Some (FSharpFindDeclResult.ExternalDecl (assref.Name, externalSym))
                       | _ -> None
 
                   | Item.ImplicitOp(_, {contents = Some(TraitConstraintSln.FSMethSln(_, _vref, _))}) ->
@@ -1153,7 +1169,8 @@ type TypeCheckInfo
                   | Item.Types (_, [AppTy g (tr, _)]) when not tr.IsLocalRef ->
                       match tr.TypeReprInfo, tr.PublicPath with
                       | TILObjectRepr(TILObjectReprData (ILScopeRef.Assembly assref, _, _)), Some (PubPath parts) ->
-                          Some (FSharpFindDeclResult.ExternalDecl (assref.Name, String.concat "." parts))
+                          let fullName = parts |> String.concat "."
+                          Some (FSharpFindDeclResult.ExternalDecl (assref.Name, ExternalSymbol.Type fullName))
                       | _ -> None
                   | _ -> None
        
