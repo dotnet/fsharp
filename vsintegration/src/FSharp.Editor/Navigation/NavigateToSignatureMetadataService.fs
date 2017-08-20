@@ -22,6 +22,7 @@ open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem 
 open Microsoft.VisualStudio.FSharp.Editor.Pervasive
 open Microsoft.VisualStudio.FSharp.Editor.TypedAstUtils
+open System.Threading
 
 [<Export>][<Shared>]
 type internal NavigateToSignatureMetadataService [<ImportingConstructor>] 
@@ -227,7 +228,12 @@ type internal NavigateToSignatureMetadataService [<ImportingConstructor>]
         let (result,currentFlags) = vsTextBuffer.GetStateFlags ()
 
         // Try to set buffer to read-only mode
-        if result = VSConstants.S_OK then vsTextBuffer.SetStateFlags(currentFlags ||| uint32 BUFFERSTATEFLAGS.BSF_USER_READONLY) |> ignore
+        if result = VSConstants.S_OK then 
+            let currContext = SynchronizationContext.Current
+            async {
+                Async.SwitchToContext currContext |> Async.RunSynchronously
+                vsTextBuffer.SetStateFlags(currentFlags ||| uint32 BUFFERSTATEFLAGS.BSF_USER_READONLY) |> ignore
+            } |> Async.Start
         let container = (editorAdapterFactory.GetDataBuffer vsTextBuffer).AsTextContainer()        
         workspace.GetRelatedDocumentIds container 
         |> Seq.map(fun docId -> workspace.CurrentSolution.GetDocument docId) |> Seq.head
@@ -241,9 +247,9 @@ type internal NavigateToSignatureMetadataService [<ImportingConstructor>]
         |> Option.bind Option.ofNull
         |> Option.iter (fun window -> window.CloseFrame (uint32 __FRAMECLOSE.FRAMECLOSE_NoSave) |> ignore)
   
+        
         let (_,_,windowFrame) = VsShellUtilities.OpenDocument(serviceProvider,sigPath,VSConstants.LOGVIEWID.Primary_guid)
         currentWindow <- Some windowFrame
-        windowFrame.Show () |> ignore    
         
         let sigDocument = documentFromWindowFrame windowFrame
         let sigProject = sigDocument.Project

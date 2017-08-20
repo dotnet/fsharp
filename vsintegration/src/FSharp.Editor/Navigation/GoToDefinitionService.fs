@@ -296,12 +296,13 @@ type internal FSharpGoToDefinitionService
                         match signatureMetadataService.TryFindMetadataRange (originDocument, ast, symbol) with
                         | Some a -> a
                         | _ -> failwith "unexpected exception in goto definition service"
-                    let sigSourceText = sigDocument.GetTextAsync cancellationToken |> Async.RunTaskSynchronously
+                    let sigSourceText = sigDocument.GetTextAsync() |> Async.RunTaskSynchronously
                     let sigTextSpan = RoslynHelpers.FSharpRangeToTextSpan (sigSourceText, range)
-                    return! FSharpNavigableItem (sigDocument, sigTextSpan) |> Some
+                    return FSharpNavigableItem (sigDocument, sigTextSpan)
                 | _ -> return! None
         } 
         |> Async.map (Option.map (fun x -> x :> INavigableItem) >> Option.toArray >> Array.toSeq)
+        |> Async.map(fun a -> Logging.Logging.logWarning "GotoDefinitionFinished!"; a)
         |> RoslynHelpers.StartAsyncAsTask cancellationToken        
    
     interface IGoToDefinitionService with

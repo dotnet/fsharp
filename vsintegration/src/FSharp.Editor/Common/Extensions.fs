@@ -172,6 +172,11 @@ module Option =
         function
         | Some x -> x
         | None -> f()
+    
+    /// Creates `Some value` if `flag` is true, otherwise returns None
+    let inline someIf value flag =
+        if flag then Some value
+        else None
 
 
 [<RequireQualifiedAccess>]
@@ -271,9 +276,8 @@ module Dict =
         dict
 
     let tryFind key (dict: #IDictionary<'k, 'v>) = 
-        let mutable value = Unchecked.defaultof<_>
-        if dict.TryGetValue (key, &value) then Some value
-        else None
+        let success, value = dict.TryGetValue key
+        Option.someIf value success
 
     let ofSeq (xs: ('k * 'v) seq) = 
         let dict = Dictionary()
