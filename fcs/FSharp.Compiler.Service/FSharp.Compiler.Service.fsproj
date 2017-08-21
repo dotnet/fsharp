@@ -559,6 +559,12 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\vs\ServiceXmlDocParser.fs">
       <Link>Service/ServiceXmlDocParser.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\vs\ExternalSymbol.fsi">
+      <Link>Service/ExternalSymbol.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\vs\ExternalSymbol.fs">
+      <Link>Service/ExternalSymbol.fs</Link>
+    </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\vs\service.fsi">
       <Link>Service/service.fsi</Link>
     </Compile>
