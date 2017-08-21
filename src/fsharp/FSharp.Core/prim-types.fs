@@ -3622,7 +3622,7 @@ namespace Microsoft.FSharp.Collections
         // similar to 'take' but with n representing an index, not a number of elements
         // and with exceptions matching array slicing
         let sliceTake n l =
-            if n < 0 then []
+            if n < 0 then [] else
             match l with
             | [] -> outOfRange()
             | x::xs ->
