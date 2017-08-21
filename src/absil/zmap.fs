@@ -43,7 +43,7 @@ module internal Zmap =
         
     let ofList m xs = List.fold (fun m (k,v) -> add k v m) (empty m) xs
 
-    let keys   m = chooseL (fun k _ -> Some k) m 
-    let values m = chooseL (fun _ v -> Some v) m
+    let keys   (m:Zmap<_,_>) = m.Fold (fun k _ s -> k::s) []
+    let values (m:Zmap<_,_>) = m.Fold (fun _ v s -> v::s) []
 
     let memberOf m k = mem k m
