@@ -59,6 +59,8 @@
     <Compile Include="Tests.ProjectSystem.References.fs" />
     <Compile Include="Tests.ProjectSystem.RoundTrip.fs" />
     <Compile Include="Tests.ProjectSystem.UpToDate.fs" />
+    <Compile Include="Tests.Helpers.fs" />
+    <Compile Include="Tests.OpenDeclarationsGetter.fs" />
     <Compile Include="..\..\..\tests\service\FsUnit.fs">
       <Link>FsUnit.fs</Link>
     </Compile>
@@ -138,6 +140,7 @@
       <Pattern2>{FinalDir}</Pattern2>
       <Replacement2>$([System.IO.Path]::GetFullPath('$(OutputPath)'))\</Replacement2>
     </CopyAndSubstituteText>
+    <None Include="app.runsettings" />
     <None Include="app.runsettings" />    
   </ItemGroup>
 

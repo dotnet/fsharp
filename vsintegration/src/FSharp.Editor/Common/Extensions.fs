@@ -115,6 +115,32 @@ module String =
                 yield String.Empty
         |]
 
+    let getNonEmptyLines (str: string) = str.Split([|'\r'; '\n'|], StringSplitOptions.RemoveEmptyEntries)
+
+    let lowerCaseFirstChar (str: string) =
+        if String.IsNullOrEmpty str 
+         || Char.IsLower(str, 0) then str else 
+        let strArr = str.ToCharArray()
+        match Array.tryHead strArr with
+        | None -> str
+        | Some c  -> 
+            strArr.[0] <- Char.ToLower c
+            String (strArr)
+
+
+    let extractTrailingIndex (str: string) =
+        match str with
+        | null -> null, None
+        | _ ->
+            let charr = str.ToCharArray() 
+            Array.Reverse charr
+            let digits = Array.takeWhile Char.IsDigit charr
+            Array.Reverse  digits
+            String digits
+            |> function
+               | "" -> str, None
+               | index -> str.Substring (0, str.Length - index.Length), Some (int index)
+
 
 [<RequireQualifiedAccess>]
 module Option =
@@ -138,6 +164,11 @@ module Option =
         function
         | Some x -> x
         | None -> f()
+    
+    /// Creates `Some value` if `flag` is true, otherwise returns None
+    let inline someIf value flag =
+        if flag then Some value
+        else None
 
 
 [<RequireQualifiedAccess>]
@@ -223,3 +254,25 @@ module Exception =
         | _ -> root
         |> flattenInner
         |> String.concat " ---> "
+
+[<RequireQualifiedAccess>]
+module Dict = 
+    open System.Collections.Generic
+
+    let add key value (dict: #IDictionary<_,_>) =
+        dict.[key] <- value
+        dict
+
+    let remove (key: 'k) (dict: #IDictionary<'k,_>) =
+        dict.Remove key |> ignore
+        dict
+
+    let tryFind key (dict: #IDictionary<'k, 'v>) = 
+        match dict.TryGetValue key with
+        | true, value -> Some value
+        | _ -> None
+
+    let ofSeq (xs: ('k * 'v) seq) = 
+        let dict = Dictionary()
+        for k, v in xs do dict.[k] <- v
+        dict

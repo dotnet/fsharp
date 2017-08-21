@@ -51,6 +51,8 @@
     <Compile Include="LanguageService\LanguageService.fs" />
     <Compile Include="LanguageService\AssemblyContentProvider.fs" />
     <Compile Include="LanguageService\SymbolHelpers.fs" />
+    <Compile Include="LanguageService\UntypedAstUtils.fs" />
+    <Compile Include="LanguageService\IdentifierUtils.fs" />
     <Compile Include="Classification\ClassificationDefinitions.fs" />
     <Compile Include="Classification\ColorizationService.fs" />
     <Compile Include="Formatting\BraceMatchingService.fs" />
@@ -71,6 +73,9 @@
     <Compile Include="Completion\SignatureHelp.fs" />
     <Compile Include="InlineRename\InlineRenameService.fs" />
     <Compile Include="DocumentHighlights\DocumentHighlightsService.fs" />
+    <Compile Include="Navigation\SignatureGenerator.fs" />
+    <Compile Include="Navigation\OpenDeclarationsGetter.fs" />
+    <Compile Include="Navigation\NavigateToSignatureMetadataService.fs" />
     <Compile Include="Navigation\GoToDefinitionService.fs" />
     <Compile Include="Navigation\NavigationBarItemService.fs" />
     <Compile Include="Navigation\NavigateToSearchService.fs" />

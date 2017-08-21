@@ -152,6 +152,7 @@ type internal FSharpGoToDefinitionService
     (
         checkerProvider: FSharpCheckerProvider,
         projectInfoManager: FSharpProjectOptionsManager,
+        signatureMetadataService: NavigateToSignatureMetadataService,
         [<ImportMany>] _presenters: IEnumerable<INavigableItemsPresenter>
     ) =
 
@@ -218,7 +219,7 @@ type internal FSharpGoToDefinitionService
             
             let preferSignature = isSignatureFile originDocument.FilePath
 
-            let! _, _, checkFileResults = checkerProvider.Checker.ParseAndCheckDocument (originDocument, projectOptions, allowStaleResults=true, sourceText=sourceText, userOpName=userOpName)
+            let! _, ast, checkFileResults = checkerProvider.Checker.ParseAndCheckDocument (originDocument, projectOptions, allowStaleResults=true, sourceText=sourceText, userOpName=userOpName)
                 
             let! lexerSymbol = Tokenizer.getSymbolAtPosition (originDocument.Id, sourceText, position,originDocument.FilePath, defines, SymbolLookupKind.Greedy, false)
             let idRange = lexerSymbol.Ident.idRange
@@ -284,7 +285,17 @@ type internal FSharpGoToDefinitionService
                         let! implTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (implSourceText, targetRange)
                         let navItem = FSharpNavigableItem (implDocument, implTextSpan)
                         return navItem
-                | _ -> return! None
+            // Definition is external
+            | _ -> 
+                let! fsSymbol = 
+                    checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, lexerSymbol.Ident.idRange.EndColumn, textLine.ToString (), lexerSymbol.FullIsland)
+                let sigDocument, range = 
+                    match signatureMetadataService.TryFindMetadataRange (originDocument, ast, fsSymbol) with
+                    | Some a -> a
+                    | _ -> failwith "unexpected exception in goto definition service"
+                let! sigSourceText = sigDocument.GetTextAsync cancellationToken
+                let sigTextSpan = RoslynHelpers.FSharpRangeToTextSpan (sigSourceText, range)
+                return FSharpNavigableItem (sigDocument, sigTextSpan)
         } 
         |> Async.map (Option.map (fun x -> x :> INavigableItem) >> Option.toArray >> Array.toSeq)
         |> RoslynHelpers.StartAsyncAsTask cancellationToken        

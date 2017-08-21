@@ -16,6 +16,10 @@ let isScriptFile (filePath:string) =
     let ext = Path.GetExtension filePath 
     String.Equals (ext, ".fsx", StringComparison.OrdinalIgnoreCase) || String.Equals (ext, ".fsscript", StringComparison.OrdinalIgnoreCase)
 
+/// Load times used to reset type checking properly on script/project load/unload. It just has to be unique for each project load/reload.
+/// Not yet sure if this works for scripts.
+let fakeDateTimeRepresentingTimeLoaded x = DateTime(abs (int64 (match x with null -> 0 | _ -> x.GetHashCode())) % 103231L)
+
 /// Path combination operator
 let (</>) path1 path2 = Path.Combine (path1, path2) 
 
@@ -176,6 +180,10 @@ let inline liftAsync (computation : Async<'T>) : Async<'T option> =
     }
 
 let liftTaskAsync task = task |> Async.AwaitTask |> liftAsync
+
+type Microsoft.FSharp.Control.Async with
+
+    static member RunTaskSynchronously task  = task |> Async.AwaitTask |> Async.RunSynchronously 
 
 module Async =
     let map (f: 'T -> 'U) (a: Async<'T>) : Async<'U> =
