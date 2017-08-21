@@ -3622,7 +3622,7 @@ namespace Microsoft.FSharp.Collections
         // similar to 'take' but with n representing an index, not a number of elements
         // and with exceptions matching array slicing
         let sliceTake n l =
-            if n < 0 then outOfRange()
+            if n < 0 then []
             match l with
             | [] -> outOfRange()
             | x::xs ->
@@ -3637,7 +3637,7 @@ namespace Microsoft.FSharp.Collections
                 match lst with
                 | _ when i = 0 -> lst
                 | _::t -> loop (i-1) t
-                | [] -> outOfRange()
+                | [] -> []
             loop n l
 
     type List<'T> with
