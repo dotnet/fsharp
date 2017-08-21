@@ -10,8 +10,14 @@
     <OutputType>Library</OutputType>
     <RootNamespace>FSharp.Compiler.Service.ProjectCracker</RootNamespace>
     <AssemblyName>FSharp.Compiler.Service.ProjectCracker</AssemblyName>
+
+    <!-- Currently we use a separate version number sequence for FSharp.Compiler.Service.dll, corresponding to the nuget package version -->
+    <StrongNames>false</StrongNames>
+    <MicroBuildAssemblyVersion>14.0.0.0</MicroBuildAssemblyVersion>
+
+    <!-- Currently we target .NET 4.5 for FSharp.Compiler.Service.dll, corresponding to the nuget package version -->
     <TargetFrameworkVersion Condition=" '$(TargetFrameworkVersion)' == '' ">v4.5</TargetFrameworkVersion>
-    <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
+
     <Name>FSharp.Compiler.Service.ProjectCracker</Name>
     <OutputPath>..\..\..\bin\$(TargetFrameworkVersion)</OutputPath>
     <DocumentationFile>..\..\..\bin\$(TargetFrameworkVersion)\FSharp.Compiler.Service.ProjectCracker.xml</DocumentationFile>
@@ -38,14 +44,18 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
-    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>False</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml" />
+
+
+    <!-- we build the nuget against FSHarp.Core 4.4.0.0 instead of our latest to allow use in wider range of F# tools -->
+    <Reference Include="FSharp.Core">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Portable.FSharp.Core.4.1.20\lib\profiles\net40\FSharp.Core.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\FSharp.Compiler.Service.ProjectCrackerTool\ProjectCrackerOptions.fs">

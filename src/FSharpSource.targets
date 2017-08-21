@@ -21,7 +21,7 @@
               <PropertyGroup>
                 <SkipSigning>true</SkipSigning>
                 <UseOpenSourceSign>false</UseOpenSourceSign>
-                <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
+                <MicroBuildAssemblyVersion Condition="'$(MicroBuildAssemblyVersion)' == ''">$(FSCoreVersion)</MicroBuildAssemblyVersion>
                 <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
               </PropertyGroup>
             </When>
@@ -31,7 +31,7 @@
                 <OtherFlags>$(OtherFlags) --keyfile:"$(FSharpSourcesRoot)\fsharp\test.snk"</OtherFlags>
                 <DefineConstants>STRONG_NAME_FSHARP_COMPILER_WITH_TEST_KEY;$(DefineConstants)</DefineConstants>
                 <StrongNames>true</StrongNames>
-                <MicroBuildAssemblyVersion>$(FSCoreVersion)</MicroBuildAssemblyVersion>
+                <MicroBuildAssemblyVersion Condition="'$(MicroBuildAssemblyVersion)' == ''">$(FSCoreVersion)</MicroBuildAssemblyVersion>
                 <MicroBuildAssemblyFileLanguage>fs</MicroBuildAssemblyFileLanguage>
               </PropertyGroup>
             </When>

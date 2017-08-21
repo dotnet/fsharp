@@ -19,7 +19,14 @@
     <NoWarn>$(NoWarn);44;62;9</NoWarn>
     <ProjectGuid>{8157b50e-397d-4232-a4e0-1977afc7076d}</ProjectGuid>
     <AllowCrossTargeting>true</AllowCrossTargeting>
+
+    <!-- Currently we use a separate version number sequence for FSharp.Compiler.Service.dll, corresponding to the nuget package version -->
+    <StrongNames>false</StrongNames>
+    <MicroBuildAssemblyVersion>14.0.0.0</MicroBuildAssemblyVersion>
+
+    <!-- Currently we target .NET 4.5 for FSharp.Compiler.Service.dll, corresponding to the nuget package version -->
     <TargetFrameworkVersion Condition=" '$(TargetFrameworkVersion)' == '' ">v4.5</TargetFrameworkVersion>
+
     <BaseAddress>0x06800000</BaseAddress>
     <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
     <Tailcalls>true</Tailcalls>
@@ -34,7 +41,6 @@
     <DefineConstants Condition="$(TargetFrameworkVersion) == 'v4.5'">$(DefineConstants);FX_ATLEAST_45</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_ATLEAST_40</DefineConstants>
     <DefineConstants>$(DefineConstants);FX_MSBUILDRESOLVER_RUNTIMELIKE</DefineConstants>
-    <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
     <TargetFrameworkProfile />
     <ResolveNuGetPackages>false</ResolveNuGetPackages>
     <Prefer32Bit>true</Prefer32Bit>
@@ -82,9 +88,13 @@
     <Reference Include="Microsoft.Build.Tasks.v12.0">
       <Private>True</Private>
     </Reference>
-    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>False</Private>
+
+    <!-- we build the nuget against FSHarp.Core 4.4.0.0 instead of our latest to allow use in wider range of F# tools -->
+    <Reference Include="FSharp.Core">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Portable.FSharp.Core.4.1.20\lib\profiles\net40\FSharp.Core.dll</HintPath>
+      <Private>true</Private>
     </Reference>
+
     <ProjectReference Include="..\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj">
       <Name>FSharp.Compiler.Service</Name>
       <Project>{2e4d67b4-522d-4cf7-97e4-ba940f0b18f3}</Project>
