@@ -129,6 +129,10 @@ let _ = CSharpClass(0)
             |> Async.RunSynchronously
             |> Seq.map (fun su -> su.Symbol)
             |> Seq.find (function :? FSharpMemberOrFunctionOrValue as mfv -> mfv.IsConstructor | _ -> false)
-    let members = (ctor :?> FSharpMemberOrFunctionOrValue).EnclosingEntity.MembersFunctionsAndValues
-    Seq.exists (fun (mfv : FSharpMemberOrFunctionOrValue) -> mfv.IsConstructor) members |> should be True
-    Seq.exists (fun (mfv : FSharpMemberOrFunctionOrValue) -> mfv.IsEffectivelySameAs ctor) members |> should be True
+    match (ctor :?> FSharpMemberOrFunctionOrValue).EnclosingEntity with 
+    | Some e ->
+        let members = e.MembersFunctionsAndValues
+        Seq.exists (fun (mfv : FSharpMemberOrFunctionOrValue) -> mfv.IsConstructor) members |> should be True
+        Seq.exists (fun (mfv : FSharpMemberOrFunctionOrValue) -> mfv.IsEffectivelySameAs ctor) members |> should be True
+    | None -> failwith "Expected Some for EnclosingEntity"
+
