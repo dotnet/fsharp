@@ -56,32 +56,20 @@
     <Reference Include="System.Numerics" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml" />
-    <Reference Include="Microsoft.Build.Framework, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.Build.Engine, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.Build, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.Build.Utilities.v12.0">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.Build.Tasks.v12.0">
-      <Private>True</Private>
-    </Reference>
+    <Reference Include="Microsoft.Build.Framework, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"></Reference>
+    <Reference Include="Microsoft.Build.Engine, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"></Reference>
+    <Reference Include="Microsoft.Build, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"></Reference>
+    <Reference Include="Microsoft.Build.Utilities.v12.0"></Reference>
+    <Reference Include="Microsoft.Build.Tasks.v12.0"></Reference>
 
     <!-- we build the nuget against FSHarp.Core 4.4.0.0 instead of our latest to allow use in wider range of F# tools -->
     <Reference Include="FSharp.Core">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Portable.FSharp.Core.4.1.20\lib\profiles\net40\FSharp.Core.dll</HintPath>
-      <Private>true</Private>
     </Reference>
 
     <ProjectReference Include="..\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj">
       <Name>FSharp.Compiler.Service</Name>
       <Project>{2e4d67b4-522d-4cf7-97e4-ba940f0b18f3}</Project>
-      <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />

@@ -1,0 +1,113 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.-->
+<Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\src</FSharpSourcesRoot>
+    <ProjectLanguage>FSharp</ProjectLanguage>
+    <Name>VisualFSharp.Unittests</Name>
+  </PropertyGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{EE85AAB7-CDA0-4C4E-BDA0-A64DDDD13E3F}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AssemblyName>VisualFSharp.Unittests</AssemblyName>
+    <TargetType>LIBRARY</TargetType>
+    <NoWarn>58;75</NoWarn>
+    <PlatformTarget>x86</PlatformTarget>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
+    <DefineConstants>NO_PROJECTCRACKER;$(DefineConstants)</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\FsUnit.fs">
+      <Link>FsUnit.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\Common.fs">
+      <Link>Common.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\EditorTests.fs">
+      <Link>EditorTests.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\FileSystemTests.fs">
+      <Link>FileSystemTests.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\ProjectAnalysisTests.fs">
+      <Link>ProjectAnalysisTests.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\MultiProjectAnalysisTests.fs">
+      <Link>MultiProjectAnalysisTests.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\PerfTests.fs">
+      <Link>PerfTests.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\InteractiveCheckerTests.fs">
+      <Link>InteractiveCheckerTests.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\ExprTests.fs">
+      <Link>ExprTests.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\CSharpProjectAnalysis.fs">
+      <Link>CSharpProjectAnalysis.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\..\tests\service\ProjectOptionsTests.fs">
+      <Link>ProjectOptionsTests.fs</Link>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="mscorlib" />
+    <Reference Include="System" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="UIAutomationTypes" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build.Utilities.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Utilities.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Build.Tasks.Core, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Tasks.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Collections.Immutable">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.1.2.0\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="nunit.framework">
+      <Private>True</Private>
+      <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>
+    </Reference>
+    <!-- we build the nuget against FSHarp.Core 4.4.0.0 instead of our latest to allow use in wider range of F# tools -->
+    <Reference Include="FSharp.Core">
+      <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Portable.FSharp.Core.4.1.20\lib\profiles\net40\FSharp.Core.dll</HintPath>
+    </Reference>
+
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\tests\service\data\CSharp_Analysis\CSharp_Analysis.csproj">
+      <Name>CSharp_Analysis</Name>
+      <Project>{887630A3-4B1D-40EA-B8B3-2D842E9C40DB}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\fcs\FSharp.Compiler.Service\FSharp.Compiler.Service.fsproj">
+      <Project>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</Project>
+      <Name>FSharp.Compiler.Service</Name>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+</Project>
