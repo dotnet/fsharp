@@ -15,14 +15,18 @@ module private Option =
         else
             None
     
+/// Represents a type in an external (non F#) assembly.
 [<RequireQualifiedAccess>]
 type ExternalType =
+      /// Type defined in non-F# assembly.
     | Type of fullName: string * genericArgs: ExternalType list
+      /// Array of type that is defined in non-F# assembly.
     | Array of inner: ExternalType
+      /// Pointer defined in non-F# assembly.
     | Pointer of inner: ExternalType
+      /// Type variable defined in non-F# assembly.
     | TypeVar of typeName: string
-with
-    override this.ToString () =
+    override this.ToString() =
         match this with
         | Type (name, genericArgs) ->
             match genericArgs with
@@ -38,7 +42,6 @@ with
         | TypeVar name -> sprintf "'%s" name
         
 module ExternalType =
-
     let rec internal tryOfILType (typeVarNames: string array) (ilType: ILType) =
         
         match ilType with
@@ -63,14 +66,12 @@ module ExternalType =
 type ParamTypeSymbol =
     | Param of ExternalType
     | Byref of ExternalType
-with
     override this.ToString () =
         match this with
         | Param t -> t.ToString()
         | Byref t -> sprintf "ref %O" t
 
 module ParamTypeSymbol =
-
     let rec internal tryOfILType (typeVarNames : string array) =
         function
         | ILType.Byref inner -> ExternalType.tryOfILType typeVarNames inner |> Option.map ParamTypeSymbol.Byref
@@ -88,7 +89,6 @@ type ExternalSymbol =
     | Field of typeName: string * name: string
     | Event of typeName: string * name: string
     | Property of typeName: string * name: string
-with
     override this.ToString () =
         match this with
         | Type fullName -> fullName
