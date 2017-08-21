@@ -37,6 +37,9 @@
 
   <ItemGroup Condition="'$(BUILD_FCS)'=='1'">
     <ProjectsWithNet40 Include="fcs/FSharp.Compiler.Service/FSharp.Compiler.Service.fsproj" />
+    <ProjectsWithNet40 Include="fcs/FSharp.Compiler.Service.MSBuild.v12/FSharp.Compiler.Service.MSBuild.v12.fsproj" />
+    <ProjectsWithNet40 Include="fcs/FSharp.Compiler.Service.ProjectCracker/FSharp.Compiler.Service.ProjectCracker.fsproj" />
+    <ProjectsWithNet40 Include="fcs/FSharp.Compiler.Service.ProjectCrackerTool/FSharp.Compiler.Service.ProjectCrackerTool.fsproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(BUILD_SETUP)'=='1'">

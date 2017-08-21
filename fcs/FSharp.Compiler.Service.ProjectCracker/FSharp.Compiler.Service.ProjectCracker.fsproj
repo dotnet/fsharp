@@ -1,6 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\src</FSharpSourcesRoot>
+  </PropertyGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
+  <Import Project="..\fcs.props" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -10,17 +14,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>FSharp.Compiler.Service.ProjectCracker</RootNamespace>
     <AssemblyName>FSharp.Compiler.Service.ProjectCracker</AssemblyName>
-
-    <!-- Currently we use a separate version number sequence for FSharp.Compiler.Service.dll, corresponding to the nuget package version -->
-    <StrongNames>false</StrongNames>
-    <MicroBuildAssemblyVersion>14.0.0.0</MicroBuildAssemblyVersion>
-
-    <!-- Currently we target .NET 4.5 for FSharp.Compiler.Service.dll, corresponding to the nuget package version -->
-    <TargetFrameworkVersion Condition=" '$(TargetFrameworkVersion)' == '' ">v4.5</TargetFrameworkVersion>
-
     <Name>FSharp.Compiler.Service.ProjectCracker</Name>
-    <OutputPath>..\..\..\bin\$(TargetFrameworkVersion)</OutputPath>
-    <DocumentationFile>..\..\..\bin\$(TargetFrameworkVersion)\FSharp.Compiler.Service.ProjectCracker.xml</DocumentationFile>
     <ResolveNuGetPackages>false</ResolveNuGetPackages>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -70,5 +64,5 @@
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
-  <Import Project="$(SolutionDir)\packages\FSharp.Compiler.Tools\tools\Microsoft.FSharp.Targets" />
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 </Project>

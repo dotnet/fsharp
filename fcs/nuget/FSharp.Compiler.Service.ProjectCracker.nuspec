@@ -10,28 +10,22 @@
         </description>
         <language>en-US</language>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
-        <version>14.0.0</version>
-        <authors>Microsoft Corporation, Dave Thomas, Anh-Dung Phan, Tomas Petricek, Robin Neatherway</authors>
+        <version>14.0.1</version>
+        <authors>Microsoft Corporation and F# community contributors</authors>
         <licenseUrl>https://github.com/fsharp/FSharp.Compiler.Service/blob/master/LICENSE</licenseUrl>
         <projectUrl>https://github.com/fsharp/FSharp.Compiler.Service</projectUrl>
         <iconUrl>https://raw.github.com/fsharp/FSharp.Compiler.Service/master/misc/logo.png</iconUrl>
         <tags>F#, fsharp, interactive, compiler, editor</tags>
         <summary>F# compiler services for creating IDE tools, language extensions and for F# embedding.</summary>
-        <dependencies>
-            <group targetFramework="net45">
-                <dependency id="System.Collections.Immutable" version="1.2.0" />
-                <dependency id="System.Reflection.Metadata" version="1.4.2" />
-            </group>
-        </dependencies>
     </metadata>
     <files>
-        <file src="../FSharp.Compiler.Service.ProjectCrackerTool/FSharp.Compiler.Service.ProjectCracker.targets" target="build/net45" />
-        <file src="../../release/net40/bin/FSharp.Compiler.Service.ProjectCrackerTool.exe" target="utilities/net45" />
-        <file src="../../release/net40/bin/FSharp.Compiler.Service.ProjectCrackerTool.exe.config" target="utilities/net45" />
-        <file src="../../release/net40/bin/FSharp.Compiler.Service.ProjectCrackerTool.pdb" target="utilities/net45" />
-        <file src="../../release/net40/bin/FSharp.Compiler.Service.ProjectCrackerTool.dll" target="lib/net45" />
-        <file src="../../release/net40/bin/FSharp.Compiler.Service.ProjectCrackerTool.pdb" target="lib/net45" />
-        <file src="../../release/net40/bin/FSharp.Compiler.Service.ProjectCrackerTool.xml" target="lib/net45" />
+        <file src="..\FSharp.Compiler.Service.ProjectCrackerTool\FSharp.Compiler.Service.ProjectCracker.targets" target="build\net45" />
+        <file src="..\..\release\net40\bin\FSharp.Compiler.Service.ProjectCrackerTool.exe" target="utilities\net45" />
+        <file src="..\..\release\net40\bin\FSharp.Compiler.Service.ProjectCrackerTool.exe.config" target="utilities\net45" />
+        <file src="..\..\release\net40\bin\FSharp.Compiler.Service.ProjectCrackerTool.pdb" target="utilities\net45" />
+        <file src="..\..\release\net40\bin\FSharp.Compiler.Service.ProjectCracker.dll" target="lib\net45" />
+        <file src="..\..\release\net40\bin\FSharp.Compiler.Service.ProjectCracker.pdb" target="lib\net45" />
+        <file src="..\..\release\net40\bin\FSharp.Compiler.Service.ProjectCracker.xml" target="lib\net45" />
     </files>
 </package>
 

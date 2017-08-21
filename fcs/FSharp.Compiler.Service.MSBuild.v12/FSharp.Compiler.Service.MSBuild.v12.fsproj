@@ -1,15 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!--
-# Copyright (c) 2002-2011 Microsoft Corporation. 
-#
-# 
-# 
-# 
-#
-#
-# You must not remove this notice, or any other, from this software.
+# Copyright (c) 2002-2011 Microsoft Corporation.  You must not remove this notice, or any other, from this software.
 -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\src</FSharpSourcesRoot>
+  </PropertyGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
+  <Import Project="..\fcs.props" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -19,14 +17,6 @@
     <NoWarn>$(NoWarn);44;62;9</NoWarn>
     <ProjectGuid>{8157b50e-397d-4232-a4e0-1977afc7076d}</ProjectGuid>
     <AllowCrossTargeting>true</AllowCrossTargeting>
-
-    <!-- Currently we use a separate version number sequence for FSharp.Compiler.Service.dll, corresponding to the nuget package version -->
-    <StrongNames>false</StrongNames>
-    <MicroBuildAssemblyVersion>14.0.0.0</MicroBuildAssemblyVersion>
-
-    <!-- Currently we target .NET 4.5 for FSharp.Compiler.Service.dll, corresponding to the nuget package version -->
-    <TargetFrameworkVersion Condition=" '$(TargetFrameworkVersion)' == '' ">v4.5</TargetFrameworkVersion>
-
     <BaseAddress>0x06800000</BaseAddress>
     <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
     <Tailcalls>true</Tailcalls>
@@ -34,13 +24,6 @@
     <OtherFlags>$(OtherFlags) --times</OtherFlags>
     <NoWarn>$(NoWarn);69;65;54;61;75</NoWarn>
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>..\..\..\bin\$(TargetFrameworkVersion)</OutputPath>
-    <DocumentationFile>$(OutputPath)\$(AssemblyName).xml</DocumentationFile>
-    <DefineConstants>$(DefineConstants);CROSS_PLATFORM_COMPILER</DefineConstants>
-    <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
-    <DefineConstants Condition="$(TargetFrameworkVersion) == 'v4.5'">$(DefineConstants);FX_ATLEAST_45</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_ATLEAST_40</DefineConstants>
-    <DefineConstants>$(DefineConstants);FX_MSBUILDRESOLVER_RUNTIMELIKE</DefineConstants>
     <TargetFrameworkProfile />
     <ResolveNuGetPackages>false</ResolveNuGetPackages>
     <Prefer32Bit>true</Prefer32Bit>
@@ -56,13 +39,13 @@
     <Optimize>true</Optimize>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Service.MSBuild.v12.dll.fs">
+    <Compile Include="..\..\src\assemblyinfo\assemblyinfo.FSharp.Compiler.Service.MSBuild.v12.dll.fs">
       <Link>AssemblyInfo/assemblyinfo.FSharp.Compiler.Service.MSBuild.v12.dll.fs</Link>
     </Compile>
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.shared.fs" Condition="Exists('..\..\assemblyinfo\assemblyinfo.shared.fs')">
+    <Compile Include="..\..\src\assemblyinfo\assemblyinfo.shared.fs" Condition="Exists('..\..\assemblyinfo\assemblyinfo.shared.fs')">
       <Link>AssemblyInfo/assemblyinfo.shared.fs</Link>
     </Compile>
-    <Compile Include="..\MSBuildReferenceResolver.fs">
+    <Compile Include="..\..\src\fsharp\MSBuildReferenceResolver.fs">
       <Link>Service/MSBuildReferenceResolver.fs</Link>
     </Compile>
   </ItemGroup>
@@ -101,12 +84,10 @@
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <PropertyGroup>
-    <FSharpTargetsPath>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets</FSharpTargetsPath>
+    <DefineConstants></DefineConstants>
+    <DefineConstants>$(DefineConstants);CROSS_PLATFORM_COMPILER</DefineConstants>
+    <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(VisualStudioVersion)' == '10.0' OR '$(VisualStudioVersion)' == '11.0'">
-    <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
-  </PropertyGroup>
-  <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
-  <Import Project="$(SolutionDir)\.paket\paket.targets" />
 </Project>

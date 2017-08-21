@@ -1,6 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\src</FSharpSourcesRoot>
+  </PropertyGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
+  <Import Project="..\fcs.props" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -10,20 +14,10 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>FSharp.Compiler.Service.ProjectCrackerTool</RootNamespace>
     <AssemblyName>FSharp.Compiler.Service.ProjectCrackerTool</AssemblyName>
-
-    <!-- Currently we use a separate version number sequence for FSharp.Compiler.Service.dll, corresponding to the nuget package version -->
-    <StrongNames>false</StrongNames>
-    <MicroBuildAssemblyVersion>14.0.0.0</MicroBuildAssemblyVersion>
-
-    <!-- Currently we target .NET 4.5 for FSharp.Compiler.Service.dll, corresponding to the nuget package version -->
-    <TargetFrameworkVersion Condition=" '$(TargetFrameworkVersion)' == '' ">v4.5</TargetFrameworkVersion>
-
     <Name>FSharp.Compiler.Service.ProjectCrackerTool</Name>
     <OtherFlags>$(OtherFlags) --staticlink:FSharp.Core</OtherFlags>
-    <NoWarn>$(NoWarn);40</NoWarn>
+    <NoWarn>$(NoWarn);40;44;2011</NoWarn>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <OutputPath>$(SolutionDir)bin\$(TargetFrameworkVersion)</OutputPath>
-    <DocumentationFile>$(SolutionDir)bin\$(TargetFrameworkVersion)\FSharp.Compiler.Service.ProjectCrackerTool.xml</DocumentationFile>
     <ResolveNuGetPackages>false</ResolveNuGetPackages>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -48,7 +42,6 @@
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
   </PropertyGroup>
-  <Import Project="$(SolutionDir)\packages\FSharp.Compiler.Tools\tools\Microsoft.FSharp.Targets" />
   <ItemGroup>
     <Compile Include="ProjectCrackerOptions.fs" />
     <Compile Include="ProjectCrackerTool.fs" />
@@ -59,18 +52,14 @@
   <ItemGroup>
     <Reference Include="Microsoft.Build.Framework, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <SpecificVersion>True</SpecificVersion>
-      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.Build.Engine, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <SpecificVersion>True</SpecificVersion>
-      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.Build, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <SpecificVersion>True</SpecificVersion>
-      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.Build.Utilities.v12.0">
-      <Private>True</Private>
     </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
@@ -87,4 +76,5 @@
     </Reference>
 
   </ItemGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
 </Project>

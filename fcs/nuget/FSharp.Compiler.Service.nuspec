@@ -10,8 +10,8 @@
         </description>
         <language>en-US</language>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
-        <version>14.0.0</version>
-        <authors>Microsoft Corporation, Dave Thomas, Anh-Dung Phan, Tomas Petricek</authors>
+        <version>14.0.1</version>
+        <authors>Microsoft Corporation and F# community contributors</authors>
         <licenseUrl>https://github.com/fsharp/FSharp.Compiler.Service/blob/master/LICENSE</licenseUrl>
         <projectUrl>https://github.com/fsharp/FSharp.Compiler.Service</projectUrl>
         <iconUrl>https://raw.github.com/fsharp/FSharp.Compiler.Service/master/misc/logo.png</iconUrl>
@@ -22,11 +22,33 @@
                 <dependency id="System.Collections.Immutable" version="1.2.0" />
                 <dependency id="System.Reflection.Metadata" version="1.4.2" />
             </group>
+            <group targetFramework=".NETStandard1.6">
+                <dependency id="Microsoft.NETCore.Platforms" version="1.0.1" />
+                <dependency id="NETStandard.Library" version="1.6.0" />
+                <dependency id="System.Collections.Immutable" version="1.2.0" />
+                <dependency id="System.Console" version="4.0.0" />
+                <dependency id="System.Diagnostics.Process" version="4.1.0" />
+                <dependency id="System.Diagnostics.TraceSource" version="4.0.0" />
+                <dependency id="System.Linq.Expressions" version="4.1.0" />
+                <dependency id="System.Linq.Queryable" version="4.0.1" />
+                <dependency id="System.Net.Requests" version="4.0.11" />
+                <dependency id="System.Reflection.Emit" version="4.0.1" />
+                <dependency id="System.Reflection.Metadata" version="1.4.2" />
+                <dependency id="System.Runtime.InteropServices" version="4.1.0" />
+                <dependency id="System.Runtime.Loader" version="4.0.0" />
+                <dependency id="System.Security.Cryptography.Algorithms" version="4.2.0" />
+                <dependency id="System.Threading.Tasks.Parallel" version="4.0.1" />
+                <dependency id="System.Threading.Thread" version="4.0.0" />
+                <dependency id="System.Threading.ThreadPool" version="4.0.10" />
+                <dependency id="System.ValueTuple" version="4.3.1" />
+                <dependency id="Microsoft.DiaSymReader.PortablePdb" version="1.1.0" />
+                <dependency id="Microsoft.DiaSymReader" version="1.0.8" />
+            </group>
         </dependencies>
     </metadata>
     <files>
-        <file src="../../release/net40/bin/FSharp.Compiler.Service.dll" target="lib/net45" />
-        <file src="../../release/net40/bin/FSharp.Compiler.Service.pdb" target="lib/net45" />
-        <file src="../../release/net40/bin/FSharp.Compiler.Service.xml" target="lib/net45" />
+        <file src="..\..\release\net40\bin\FSharp.Compiler.Service.dll" target="lib\net45" />
+        <file src="..\..\release\net40\bin\FSharp.Compiler.Service.pdb" target="lib\net45" />
+        <file src="..\..\release\net40\bin\FSharp.Compiler.Service.xml" target="lib\net45" />
     </files>
 </package>
