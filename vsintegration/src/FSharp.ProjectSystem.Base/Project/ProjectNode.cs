@@ -37,6 +37,7 @@ using System.Linq;
 using Microsoft.Build.Execution;
 
 using Microsoft.VisualStudio.FSharp.LanguageService;
+using Microsoft.VisualStudio.TextManager.Interop;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
@@ -303,9 +304,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         IBuildDependencyUpdate,
         IProjectEventsListener,
         IReferenceContainerProvider,
-        IVsProjectSpecialFiles
-        , IVsDesignTimeAssemblyResolution
-        , IVsProjectUpgrade
+        IVsProjectSpecialFiles, 
+        IVsDesignTimeAssemblyResolution, 
+        IVsProjectUpgrade
     {
         /// <summary>
         /// This class stores mapping from ids -> objects. Uses as a replacement of EventSinkCollection (ESC)

@@ -558,6 +558,12 @@
     <Compile Include="..\SimulatedMSBuildReferenceResolver.fs">
       <Link>Service/SimulatedMSBuildReferenceResolver.fs</Link>
     </Compile>
+    <Compile Include="..\vs\ExternalSymbol.fsi">
+      <Link>Service/ExternalSymbol.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ExternalSymbol.fs">
+      <Link>Service/ExternalSymbol.fs</Link>
+    </Compile>
     <Compile Include="..\vs\service.fsi">
       <Link>Service/service.fsi</Link>
     </Compile>
