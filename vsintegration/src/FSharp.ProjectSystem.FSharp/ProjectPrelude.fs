@@ -198,6 +198,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         [<Literal>]
         let   TailcallsDescription = "TailcallsDescription"
         [<Literal>]
+        let   UseStandardResourceNames = "UseStandardResourceNames"
+        [<Literal>]
+        let   UseStandardResourceNamesDescription = "UseStandardResourceNamesDescription"
+        [<Literal>]
         let   TemplateNotFound = "TemplateNotFound"
         [<Literal>]
         let   NeedReloadToChangeTargetFx = "NeedReloadToChangeTargetFx" 

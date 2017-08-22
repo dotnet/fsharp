@@ -11,6 +11,7 @@
     <AssemblyName>$safeprojectname$</AssemblyName>
     <TargetFrameworkVersion>v$targetframeworkversion$</TargetFrameworkVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <UseStandardResourceNames>true</UseStandardResourceNames>
     $if$ ($targetframeworkversion$ >= 4.0)
     <TargetFSharpCoreVersion>4.4.1.0</TargetFSharpCoreVersion>
     $else$

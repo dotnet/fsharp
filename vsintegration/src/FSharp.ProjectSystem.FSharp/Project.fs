@@ -1982,7 +1982,12 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     | OutputType.Library -> "Library"
                     | _ -> raise <| ArgumentException(FSharpSR.GetString(FSharpSR.InvalidOutputType), "value")
                 this.Node.ProjectMgr.SetProjectProperty(ProjectFileConstants.OutputType, outputTypeInteger)
-        
+
+        [<Browsable(false)>]
+        member this.UseStandardResourceNames 
+            with get() = this.Node.ProjectMgr.GetProjectProperty(ProjectFileConstants.UseStandardResourceNames)
+            and set(value) = this.Node.ProjectMgr.SetProjectProperty(ProjectFileConstants.UseStandardResourceNames, value)
+
         // Build Events Page Properties
         [<Browsable(false)>]
         member this.PreBuildEvent
