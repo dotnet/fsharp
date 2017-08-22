@@ -513,9 +513,7 @@ namespace Microsoft.FSharp.Collections
     [<Sealed>]
     [<CompiledName("FSharpSet`1")>]
     [<DebuggerTypeProxy(typedefof<SetDebugView<_>>)>]
-#if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("Count = {Count}")>]
-#endif
     [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")>]
     type Set<[<EqualityConditionalOn>]'T when 'T : comparison >(comparer:IComparer<'T>, tree: SetTree<'T>) = 
 
@@ -561,16 +559,12 @@ namespace Microsoft.FSharp.Collections
             serializedData <- null
 #endif
 
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         member internal set.Comparer = comparer
-        //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
+
         member internal set.Tree : SetTree<'T> = tree
 
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         static member Empty : Set<'T> = empty
 
         member s.Add(x) : Set<'T> = 
@@ -602,9 +596,7 @@ namespace Microsoft.FSharp.Collections
             let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
             SetTree.fold (fun x z -> f.Invoke(z, x)) z s.Tree 
 
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         member s.IsEmpty  = SetTree.isEmpty s.Tree
 
         member s.Partition f  : Set<'T> *  Set<'T> = 
@@ -665,19 +657,13 @@ namespace Microsoft.FSharp.Collections
 
         static member Compare(a: Set<'T>, b: Set<'T>) = SetTree.compare a.Comparer  a.Tree b.Tree
 
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         member x.Choose = SetTree.choose x.Tree
 
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         member x.MinimumElement = SetTree.minimumElement x.Tree
 
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         member x.MaximumElement = SetTree.maximumElement x.Tree
 
         member x.IsSubsetOf(y: Set<'T>) = SetTree.subset x.Comparer x.Tree y.Tree 
@@ -750,9 +736,7 @@ namespace Microsoft.FSharp.Collections
         [<Sealed>]
         SetDebugView<'T when 'T : comparison>(v: Set<'T>)  =  
 
-#if !FX_NO_DEBUG_DISPLAYS
              [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
-#endif
              member x.Items = v |> Seq.truncate 1000 |> Seq.toArray 
 
 namespace Microsoft.FSharp.Collections
