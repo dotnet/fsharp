@@ -4133,10 +4133,10 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("Decrement")>]
         let decr x = x.contents <- x.contents - 1
-#if !FX_NO_EXIT
+
         [<CompiledName("Exit")>]
         let exit (n:int) = System.Environment.Exit(n); failwith "System.Environment.Exit did not exit!"
-#endif
+
         let inline parseByte (s:string)       = (# "conv.ovf.u1" (ParseUInt32 s) : byte #)
         let inline ParseSByte (s:string)      = (# "conv.ovf.i1" (ParseInt32 s)  : sbyte #)
         let inline ParseInt16 (s:string)      = (# "conv.ovf.i2" (ParseInt32 s)  : int16 #)

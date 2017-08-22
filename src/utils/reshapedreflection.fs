@@ -49,10 +49,6 @@ module internal ReflectionAdapters =
     let isInstanceFlag  f    = hasFlag BindingFlags.Instance f
     let isNonPublicFlag f    = hasFlag BindingFlags.NonPublic f
 
-#if FX_NO_EXIT
-    let exit (_n:int) = failwith "System.Environment.Exit does not exist!"
-#endif
-
 #if FX_NO_TYPECODE
     [<System.Flags>]
     type TypeCode = 
