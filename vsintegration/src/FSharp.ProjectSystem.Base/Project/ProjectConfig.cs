@@ -426,6 +426,18 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
         }
 
+        public bool UseStandardResourceNames
+        {
+            get
+            {
+                return getNullableBool(ProjectFileConstants.UseStandardResourceNames) ?? true;
+            }
+            set
+            {
+                setBool(ProjectFileConstants.UseStandardResourceNames, value);
+            }
+        }
+
         public bool Prefer32Bit
         {
             get
