@@ -68,24 +68,28 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <DelaySign>true</DelaySign>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <!-- we set EnableDefaultEmbeddedResourceItems because I like the explicitness -->
-    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(FSharpSourcesRoot)/assemblyinfo/assemblyinfo.FSharp.Compiler.Service.dll.fs">
       <Link>AssemblyInfo/assemblyinfo.FSharp.Compiler.Service.dll.fs</Link>
     </Compile>
-    <EmbeddedResource Include="FSComp.resx">
-      <Link>FSComp.resx</Link>
-    </EmbeddedResource>
+    <FsSrGen Include="$(FSharpSourcesRoot)\fsharp\FSComp.txt">
+      <Link>FSComp.txt</Link>
+    </FsSrGen>
+    <FsSrGen Include="$(FSharpSourcesRoot)\fsharp\fsi\FSIstrings.txt">
+      <Link>FSIstrings.txt</Link>
+    </FsSrGen>
     <EmbeddedResource Include="$(FSharpSourcesRoot)/fsharp/FSStrings.resx">
       <Link>FSStrings.resx</Link>
     </EmbeddedResource>
-    <EmbeddedResource Include="FSIstrings.resx">
-      <Link>FSIstrings.resx</Link>
-    </EmbeddedResource>
-    <Compile Include="FSComp.fs" />
-    <Compile Include="FSIstrings.fs" />
+    <FsYacc Include="$(FSharpSourcesRoot)\absil\ilpars.fsy">
+      <OtherFlags>--module Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiParser --open Microsoft.FSharp.Compiler.AbstractIL --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <Link>ilpars.fsy</Link>
+    </FsYacc>
+    <FsYacc Include="$(FSharpSourcesRoot)\fsharp\pars.fsy">
+      <OtherFlags>--module Microsoft.FSharp.Compiler.Parser --open Microsoft.FSharp.Compiler --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <Link>pars.fsy</Link>
+    </FsYacc>
     <Compile Include="$(FSharpSourcesRoot)/utils/reshapedreflection.fs">
       <Link>Reshaped/reshapedreflection.fs</Link>
     </Compile>
@@ -293,6 +297,22 @@
     <Compile Include="$(FSharpSourcesRoot)/ilx/EraseUnions.fs">
       <Link>ILXErase/EraseUnions.fs</Link>
     </Compile>
+    <FsLex Include="$(FSharpSourcesRoot)\absil\illex.fsl">
+      <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
+      <Link>AbsIL/illex.fsl</Link>
+    </FsLex>
+    <FsLex Include="$(FSharpSourcesRoot)\fsharp\lex.fsl">
+      <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
+      <Link>ParserAndUntypedAST/lex.fsl</Link>
+    </FsLex>
+    <FsLex Include="$(FSharpSourcesRoot)\fsharp\pplex.fsl">
+      <OtherFlags>--unicode --lexlib Internal.Utilities.Text.Lexing</OtherFlags>
+      <Link>ParserAndUntypedAST/pplex.fsl</Link>
+    </FsLex>
+    <FsYacc Include="$(FSharpSourcesRoot)\fsharp\pppars.fsy">
+      <OtherFlags>--module Microsoft.FSharp.Compiler.PPParser --open Microsoft.FSharp.Compiler --internal --lexlib Internal.Utilities.Text.Lexing --parslib Internal.Utilities.Text.Parsing</OtherFlags>
+      <Link>ParserAndUntypedAST/pppars.fsy</Link>
+    </FsYacc>
     <Compile Include="$(FSharpSourcesRoot)/fsharp/UnicodeLexing.fsi">
       <Link>ParserAndUntypedAST/UnicodeLexing.fsi</Link>
     </Compile>
@@ -623,4 +643,7 @@
     <PackageReference Include="System.Security.Cryptography.Algorithms" Version="4.3.0" />
     <PackageReference Include="FSharp.Core" Version="4.1.*" />
   </ItemGroup>
+  <Import Project="$(FSharpSourcesRoot)\scripts\fssrgen.targets" />
+  <Import Project="$(FSharpSourcesRoot)\..\packages\FsLexYacc.7.0.6\build\FsLexYacc.targets" />
+	<Target Name="GenerateCode" AfterTargets="Restore" BeforeTargets="BeforeBuild"       DependsOnTargets="CallFsLex;CallFsYacc;ProcessFsSrGen"></Target>
 </Project>

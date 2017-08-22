@@ -138,34 +138,6 @@ let isDotnetSDKInstalled =
         with
         _ -> false
 
-Target "CodeGen.NetStd" (fun _ ->
-    let lexArgs = "--lexlib Internal.Utilities.Text.Lexing"
-    let yaccArgs = "--internal --parslib Internal.Utilities.Text.Parsing"
-    let module1 = "--module Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiParser"
-    let module2 = "--module Microsoft.FSharp.Compiler.Parser"
-    let module3 = "--module Microsoft.FSharp.Compiler.PPParser"
-    let open1 = "--open Microsoft.FSharp.Compiler.AbstractIL"
-    let open2 = "--open Microsoft.FSharp.Compiler"
-    let open3 = "--open Microsoft.FSharp.Compiler"
-
-    // restore all the required tools, declared in each fsproj
-    run false "dotnet" "restore %s" netstdsln
-    run false "dotnet" "restore %s" "tools.fsproj"
-
-    // run tools
-    let toolDir = "../packages/FsLexYacc.7.0.6/build"
-    let fsLex fsl out = runCmdIn isMono "." (sprintf "%s/fslex.exe" toolDir) "%s --unicode %s -o %s" fsl lexArgs out
-    let fsYacc fsy out m o = runCmdIn isMono "." (sprintf "%s/fsyacc.exe" toolDir) "%s %s %s %s %s -o %s" fsy lexArgs yaccArgs m o out
-
-    run false "dotnet" "fssrgen ../src/fsharp/FSComp.txt FSharp.Compiler.Service.netstandard/FSComp.fs FSharp.Compiler.Service.netstandard/FSComp.resx"
-    run false "dotnet" "fssrgen ../src/fsharp/fsi/FSIstrings.txt FSharp.Compiler.Service.netstandard/FSIstrings.fs FSharp.Compiler.Service.netstandard/FSIstrings.resx"
-    fsLex "../src/fsharp/lex.fsl" "FSharp.Compiler.Service.netstandard/lex.fs"
-    fsLex "../src/fsharp/pplex.fsl" "FSharp.Compiler.Service.netstandard/pplex.fs"
-    fsLex "../src/absil/illex.fsl" "FSharp.Compiler.Service.netstandard/illex.fs"
-    fsYacc "../src/absil/ilpars.fsy" "FSharp.Compiler.Service.netstandard/ilpars.fs" module1 open1
-    fsYacc "../src/fsharp/pars.fsy" "FSharp.Compiler.Service.netstandard/pars.fs" module2 open2
-    fsYacc "../src/fsharp/pppars.fsy" "FSharp.Compiler.Service.netstandard/pppars.fs" module3 open3
-)
 
 Target "Build.NetStd" (fun _ ->
     run false "dotnet" "pack %s -v n -c Release" netstdsln
@@ -222,7 +194,6 @@ Target "Build" DoNothing
 
 "Clean"
   =?> ("BuildVersion", isAppVeyorBuild)
-  ==> "CodeGen.NetStd"
   ==> "Build.NetStd"
 
 "Clean"
