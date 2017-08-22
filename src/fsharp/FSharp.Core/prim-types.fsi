@@ -3243,33 +3243,6 @@ namespace Microsoft.FSharp.Control
     and 
         [<System.Obsolete("This type is obsolete. Please use System.Lazy instead.", true)>]
         'T ``lazy`` = System.Lazy<'T>        
-    
-#if FX_NO_IOBSERVABLE
-namespace System
-
-    open Microsoft.FSharp.Core
-
-    /// <summary>A client that may be subscribed to observe the results from an IObservable.</summary>
-    [<AllowNullLiteral>]
-    type IObserver<'T> =
-        /// <summary>Notify an observer of a new result</summary>
-        /// <param name="value">The value to notify observers.</param>
-        abstract OnNext : value : 'T -> unit
-        /// <summary>Notify an observer of an error </summary>
-        /// <param name="error">The exception to notify observers.</param>
-        abstract OnError : error : exn -> unit
-        /// <summary>Notify an observer that no more results will be produced.</summary>
-        abstract OnCompleted : unit -> unit
-
-    /// <summary>A source of observable results</summary>
-    [<AllowNullLiteral>]
-    type IObservable<'T> =
-        /// <summary>Subscribe an observer to the source of results</summary>
-        /// <param name="observer">The observer to be added to those that are notified.</param>
-        /// <returns>An IDisposable to allow for unsubscription.</returns>
-        abstract Subscribe : observer : IObserver<'T> -> System.IDisposable;
-#else
-#endif        
 
 namespace Microsoft.FSharp.Control
 

@@ -5819,27 +5819,6 @@ namespace Microsoft.FSharp.Control
     type 'T ``lazy`` = Lazy<'T>       
 
 
-
-//============================================================================
-//============================================================================
-
-#if FX_NO_IOBSERVABLE
-namespace System
-
-    open Microsoft.FSharp.Core
-    
-    [<AllowNullLiteral>]
-    type IObserver<'T> =
-        abstract OnNext : value : 'T -> unit
-        abstract OnError : error : exn -> unit
-        abstract OnCompleted : unit -> unit
-
-    [<AllowNullLiteral>]
-    type IObservable<'T> =
-        abstract Subscribe : observer : IObserver<'T> -> System.IDisposable;
-#else
-#endif
-
 namespace Microsoft.FSharp.Control
 
     open System
