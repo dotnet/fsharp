@@ -2824,15 +2824,6 @@ namespace Microsoft.FSharp.Core
 
         let CheckedMultiplyDynamic<'T,'U,'V> x n  = CheckedMultiplyDynamicImplTable<'T,'U,'V>.Impl x n
 
-#if FX_NO_LAZY
-
-    type internal PrivateEnvironment = 
-        static member internal GetResourceString(name:string,_arguments:obj[]) = name
-        static member internal GetResourceString(name:string) = name
-
-#else
-#endif
-
 
 namespace System
 
@@ -6175,84 +6166,6 @@ namespace Microsoft.FSharp.Core
                           if n >= 0 then PowDecimal x n else 1.0M /  PowDecimal x n)
 
 
-        
-        
-
-
-
-//============================================================================
-//============================================================================
-#if FX_NO_LAZY
-namespace System
-    open System.Diagnostics
-    open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.Operators
-
-    
-    type LazyFailure(exn:exn) =
-        static let undefined = LazyFailure(InvalidOperationException("a lazy value was accessed during its own initialization"))
-        member x.Exception = exn
-        static member Undefined = undefined
-
-    [<AllowNullLiteral>]
-    type Lazy<'T>(value : 'T, funcOrException: obj) = 
-
-        /// This field holds the result of a successful computation. It's initial value is Unchecked.defaultof
-        let mutable value = value 
-
-        /// This field holds either the function to run or a LazyFailure object recording the exception raised 
-        /// from running the function. It is null if the thunk has been evaluated successfully.
-        [<VolatileField>]
-        let mutable funcOrException = funcOrException
-
-        static member Create(f: (unit->'T)) : Lazy<'T> = 
-            Lazy<'T> (value = Unchecked.defaultof<'T>, funcOrException = box(f) )
-        static member CreateFromValue(x:'T) : Lazy<'T> = 
-            Lazy<'T> (value = x, funcOrException = null)
-        member x.IsValueCreated = (match funcOrException with null -> true | _ -> false)
-        member x.Value =  
-            match funcOrException with 
-            | null -> value 
-            | _ -> 
-                // Enter the lock in case another thread is in the process of evaluating the result
-                System.Threading.Monitor.Enter(x);
-                try 
-                    match funcOrException with 
-                    | null -> value 
-                    | :? LazyFailure as res -> 
-                          raise(res.Exception)
-                    | :? (unit -> 'T) as f -> 
-                          funcOrException <- box(LazyFailure.Undefined)
-                          try 
-                              let res = f () 
-                              value <- res; 
-                              funcOrException <- null; 
-                              res
-                          with e -> 
-                              funcOrException <- box(new LazyFailure(e)); 
-                              reraise()
-                    | _ -> 
-                        failwith "unreachable"
-                finally
-                    System.Threading.Monitor.Exit(x)
-        override x.ToString() = 
-            if x.IsValueCreated then 
-                if box x.Value = null then
-                    "<null>"
-                else
-                    x.Value.ToString()
-            else
-                match funcOrException with 
-                | :? LazyFailure as res -> 
-                    match res.Exception with 
-                    | e when System.Runtime.CompilerServices.RuntimeHelpers.Equals(e,LazyFailure.Undefined) -> "<evaluating>"
-                    | e ->  e.ToString()
-                | _ -> 
-                    "<unevaluated>"
-
-#else
-#endif
-
 namespace Microsoft.FSharp.Control
 
     open System    
@@ -6263,15 +6176,6 @@ namespace Microsoft.FSharp.Control
 
     module LazyExtensions = 
         type System.Lazy<'T> with
-#if FX_NO_LAZY
-            [<CompiledName("Create")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
-            static member Create(f : unit -> 'T) : Lazy<'T> = 
-                System.Lazy<'T> (value = Unchecked.defaultof<'T>, funcOrException = box(f) )
-
-            [<CompiledName("CreateFromValue")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
-            static member CreateFromValue(x:'T) : Lazy<'T> = 
-                System.Lazy<'T> (value = x, funcOrException = null)
-#else
             [<CompiledName("Create")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
             static member Create(f : unit -> 'T) : System.Lazy<'T> =
                 let creator = new System.Func<'T>(f)
@@ -6280,7 +6184,7 @@ namespace Microsoft.FSharp.Control
             [<CompiledName("CreateFromValue")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
             static member CreateFromValue(value : 'T) : System.Lazy<'T> =
                 System.Lazy<'T>.Create(fun () -> value)
-#endif
+
             [<CompiledName("IsDelayedDeprecated")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
             member x.IsDelayed = not(x.IsValueCreated)
 
