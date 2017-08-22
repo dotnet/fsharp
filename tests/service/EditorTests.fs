@@ -267,15 +267,16 @@ let date = System.DateTime.Now.ToString().PadRight(25)
 [<Test>]
 let ``Expression typing test`` () = 
 
+    printfn "------ Expression typing test -----------------"
     // Split the input & define file name
     let inputLines = input3.Split('\n')
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input3) 
     let identToken = FSharpTokenTag.IDENT
 
-    // We only expect one reported error. However,
-    // on Unix, using filenames like /home/user/Test.fsx gives a second copy of all parse errors due to the
-    // way the load closure for scripts is generated. So this returns two identical errors
+    for msg in typeCheckResults.Errors do 
+        printfn "***Expression typing test: Unexpected  error: %A" msg.Message
+
     typeCheckResults.Errors.Length |> shouldEqual 0
 
     // Get declarations (autocomplete) for a location

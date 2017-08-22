@@ -104,14 +104,13 @@ Target "Build.NetFx" (fun _ ->
 // --------------------------------------------------------------------------------------
 // Run the unit tests using test runner
 
-Target "RunTests.NetFx" (fun _ ->
+Target "Test.NetFx" (fun _ ->
     !! (releaseDir + "/fcs/net45/FSharp.Compiler.Service.Tests.dll")
-    |> NUnit (fun p ->
+    |>  Fake.Testing.NUnit3.NUnit3 (fun p ->
         { p with
-            Framework = "v4.0.30319"
-            DisableShadowCopy = true
-            TimeOut = TimeSpan.FromMinutes 20.
-            OutputFile = "TestResults.xml" })
+            ToolPath = @"..\packages\NUnit.Console.3.0.0\tools\nunit3-console.exe"
+            ShadowCopy = false
+            TimeOut = TimeSpan.FromMinutes 20. })
 )
 
 // --------------------------------------------------------------------------------------
@@ -173,7 +172,7 @@ Target "Build.NetStd" (fun _ ->
 )
 
 
-Target "RunTests.NetStd" (fun _ ->
+Target "Test.NetStd" (fun _ ->
     run false "dotnet" "run -p FSharp.Compiler.Service.Tests.netcore/FSharp.Compiler.Service.Tests.netcore.fsproj -c Release -- --result:TestResults.NetStd.xml;format=nunit3"
 )
 
@@ -219,36 +218,36 @@ Target "Clean" DoNothing
 Target "CleanDocs" DoNothing
 Target "Release" DoNothing
 Target "NuGet" DoNothing
-Target "All" DoNothing
-Target "All.NetStd" DoNothing
-Target "All.NetFx" DoNothing
+Target "Build" DoNothing
 
 "Clean"
   =?> ("BuildVersion", isAppVeyorBuild)
   ==> "CodeGen.NetStd"
   ==> "Build.NetStd"
-//  ==> "RunTests.NetStd"
-  ==> "All.NetStd"
 
 "Clean"
   =?> ("BuildVersion", isAppVeyorBuild)
   ==> "Build.NetFx"
-//  ==> "RunTests.NetFx"
-  ==> "All.NetFx"
 
-"All.NetFx"
-  =?> ("All.NetStd", isDotnetSDKInstalled)
-  ==> "All"
+"Build.NetFx"
+  ==> "Test.NetFx"
 
-"All.NetStd"
-  ==> "Nuget.AddNetStd"
+"Build.NetStd"
+  ==> "Test.NetStd"
 
-"All.NetFx"
+"Build.NetFx"
+  =?> ("Build.NetStd", isDotnetSDKInstalled)
+  ==> "Build"
+
+"Build.NetStd"
+  =?> ("Nuget.AddNetStd", isDotnetSDKInstalled)
+
+"Build.NetFx"
   ==> "NuGet.NetFx"
   =?> ("Nuget.AddNetStd", isDotnetSDKInstalled)
   ==> "NuGet"
 
-"All"
+"Build"
   ==> "NuGet"
   ==> "PublishNuGet"
   ==> "Release"
@@ -258,4 +257,4 @@ Target "All.NetFx" DoNothing
   ==> "GenerateDocs"
   ==> "Release"
 
-RunTargetOrDefault "All"
+RunTargetOrDefault "Build"

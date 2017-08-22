@@ -58,24 +58,28 @@
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.Build.Framework, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)/../fcs/dependencies/MSBuild.v12.0/Microsoft.Build.Framework.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="Microsoft.Build.Engine, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)/../fcs/dependencies/MSBuild.v12.0/Microsoft.Build.Engine.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="Microsoft.Build, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)/../fcs/dependencies/MSBuild.v12.0/Microsoft.Build.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="Microsoft.Build.Utilities.v12.0">
       <HintPath>$(FSharpSourcesRoot)/../fcs/dependencies/MSBuild.v12.0/Microsoft.Build.Utilities.v12.0.dll</HintPath>
-      <Private>true</Private>
+      <Private>false</Private>
     </Reference>
     <Reference Include="Microsoft.Build.Tasks.v12.0">
       <HintPath>$(FSharpSourcesRoot)/../fcs/dependencies/MSBuild.v12.0/Microsoft.Build.Tasks.v12.0.dll</HintPath>
-      <Private>true</Private>
+      <Private>false</Private>
     </Reference>
     <!-- we build the nuget against FSHarp.Core 4.4.0.0 instead of our latest to allow use in wider range of F# tools -->
     <Reference Include="FSharp.Core">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.Portable.FSharp.Core.4.1.20\lib\profiles\net40\FSharp.Core.dll</HintPath>
+      <Private>false</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>

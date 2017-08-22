@@ -1,18 +1,23 @@
 
 
-## The FSharp.Compiler.Service components and nuget package
+# The FSharp.Compiler.Service components and nuget package
 
 This directory contains the build, packaging, test and documentation-generation logic for the nuget package ``FSharp.Compiler.Service``.  The source for this nuget
 package is in ``..\src``.
 
+Basically we are packaging up the compiler as a DLL and publishing it as a nuget package.
+
 ## FSharp.Compiler.Service v. FSharp.Compiler.Private
 
-There are subtle differences between FSharp.Compiler.Service and FSharp.Compiler.Private
+There are subtle differences between FSharp.Compiler.Service and FSharp.Compiler.Private (shipped with the Visual F# Tools)
 
-- Public API 
-- Built against .NET 4.5 to give broader reach
-- Built against FSharp.Core 4.0.0.0 to give broader reach
-- Has .NET Standard 1.6 version 
+- FCS has a public API 
+- FCS is built against **.NET 4.5** and **FSharp.Core 4.0.0.0** to give broader reach
+- FCS has a Nuget package
+- FCS has a .NET Standard 1.6 version in the nuget package
+- FCS testing also tests the "Project Cracker" (see below)
+- FCS doesn't add the System.ValueTuple.dll reference by default, see ``#if COMPILER_SERVICE_AS_DLL`` in compiler codebase
+
 
 ## Version Numbers
 
@@ -25,56 +30,65 @@ To update the version number a global replace through fcs\... is currently neede
    nuget/FSharp.Compiler.Service.ProjectCracker.nuspec
    RELEASE_NOTES.md
 
-## Building
+## Building, Testing, Packaging, Releases
 
 To build the package use any of:
 
-  build 
+  build Build.NetFx
+  build Test.NetFx
+  build NuGet.NetFx
+
+  build Build.NetStd
+  build Test.NetStd
+  build NuGet.NetStd
+
   build Build
-  build Nuget
+  build Test
+  build NuGet
   build Release
 
-
-which does
+which does things like:
 
   .paket\paket.bootstrapper.exe
   .paket\paket.exe restore
   packages\FAKE\tools\FAKE.exe build.fsx WhateverTarget
 
+### Use of Paket and FAKE
+
+Paket is only used to get fake and formating tools.  Eventually we will likely remove this once we update the project files to .NET SDK 2.0.
+
+FAKE is only used to run build.fsx.  Eventually we will likely remove this once we update the project files to .NET SDK 2.0.
+
 ### Testing
 
-Testing reuses the test files from ..\tests\service which were originally intended as FCS tests. Test using
-
-    build RunTests.NetFx
-    build RunTests.NetCore
+Testing reuses the test files from ..\tests\service which were are also FCS tests. 
 
 
 ### Documentation Generation
 
-Use
-
     build GenerateDocs
 
-
-### Long term plans
-
-This part of this repo uses FAKE and paket for historical reasons.  There are some things we can do to simplify things:
-
-1. Move to NUnit 3.x (same as rest of repo)
-1. Remove the use of Paket and just use the other packages already restored
-1. Move to new .NET SDK project file format 
-1. Drop the explicit code generation for the .NET Core package and use standard FsLexYacc.targets etc
-1. Drop the use of ``dotnet mergenupkg`` since we should be able to use cross targeting
-
-Eventually we may unify this part of the repo with the rest of the build and make this an official component.
+Output is in ``docs``.  In the ``FSharp.Compiler.Service`` repo this is checked in and hosted as http://fsharp.github.io/FSharp.Compiler.Service.
 
 
 ## The two other nuget packages
 
-It also contains both the source, build, packaging and test logic for  the nuget packages ``FSharp.Compiler.Service.MSBuild.v12`` and
-``FSharp.Compiler.Service.ProjectCracker``.  Both of these components are gradually becoming obsolete and are now more rarely used.
-The first adds legacy MSBuild v12 support to an instance of FSharp.Compiler.Service, if exact compatibility for
-scripting references such as ``#r "Foo, Version=1.3.4"`` is required.  The second is part of ``FsAutoComplete`` and Ionide and is used to crack
-old-style project formats.
+It also contains both the source, build, packaging and test logic for 
 
-  
+* ``FSharp.Compiler.Service.MSBuild.v12`` adds legacy MSBuild v12 support to an instance of FSharp.Compiler.Service, if exact compatibility for scripting references such as ``#r "Foo, Version=1.3.4"`` is required. 
+
+* ``FSharp.Compiler.Service.ProjectCracker`` is part of ``FsAutoComplete`` and Ionide and is used to crack old-style project formats using MSBuild. It used to be part of the FCS API.
+
+Both of these components are gradually becoming obsolete
+
+## Engineering road map
+
+FSharp.Compiler.Service is a somewhat awkward component. There are some things we can do to simplify things:
+
+1. Remove the use of Paket and just get FAKE and documentation generation tools as part packages.config
+1. Move to new .NET SDK project file format 
+1. Drop the explicit code generation for the .NET Core package and use standard FsLexYacc.targets etc.
+1. Drop the use of ``dotnet mergenupkg`` since we should be able to use cross targeting
+1. Make FCS a DLL similar ot the rest of the build and make this an official component from Microsoft (signed etc.)
+1. Replace FSharp.Compiler.Private by FSharp.Compiler.Service
+
