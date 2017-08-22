@@ -86,9 +86,8 @@ Both of these components are gradually becoming obsolete
 
 FSharp.Compiler.Service is a somewhat awkward component. There are some things we can do to simplify things:
 
-1. Remove the use of Paket and just get FAKE and documentation generation tools as part packages.config
-1. Move to new .NET SDK project file format 
-1. Drop the explicit code generation for the .NET Core package and use standard FsLexYacc.targets etc.
+1. Remove the use of Paket and FAKE
+1. Move all projects under fcs\... to new .NET SDK project file format 
 1. Drop the use of ``dotnet mergenupkg`` since we should be able to use cross targeting
 1. Make FCS a DLL similar ot the rest of the build and make this an official component from Microsoft (signed etc.)
 1. Replace FSharp.Compiler.Private by FSharp.Compiler.Service
