@@ -2838,13 +2838,6 @@ namespace Microsoft.FSharp.Core
 
         let CheckedMultiplyDynamic<'T,'U,'V> x n  = CheckedMultiplyDynamicImplTable<'T,'U,'V>.Impl x n
 
-
-#if TARGET_SILVERLIGHT_5_0
-    type internal PrivateEnvironment = 
-        static member internal GetResourceString(name:string,_arguments:obj[]) = name
-        static member internal GetResourceString(name:string) = name
-
-#endif
 #if FX_NO_LAZY
 
     type internal PrivateEnvironment = 
