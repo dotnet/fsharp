@@ -2,7 +2,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26730.8
 MinimumVisualStudioVersion = 15.0.26124.0
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Service.netcore", "FSharp.Compiler.Service.netcore\FSharp.Compiler.Service.netcore.fsproj", "{36B9F520-14B1-4431-AAF2-75433B87D851}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Service.netstandard", "FSharp.Compiler.Service.netstandard\FSharp.Compiler.Service.netstandard.fsproj", "{36B9F520-14B1-4431-AAF2-75433B87D851}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FSharp.Compiler.Service.Tests.netcore", "FSharp.Compiler.Service.Tests.netcore\FSharp.Compiler.Service.Tests.netcore.fsproj", "{1004CE3D-0CCB-47F5-8DBF-657D1B9C19D7}"
 EndProject

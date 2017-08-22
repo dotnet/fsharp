@@ -84,7 +84,7 @@ let buildVersion =
     else if isAppVeyorBuild then sprintf "%s-b%s" assemblyVersion AppVeyorEnvironment.BuildNumber
     else assemblyVersion
 
-let netcoresln = gitName + ".netcore.sln";
+let netstdsln = gitName + ".netstandard.sln";
 
 Target "BuildVersion" (fun _ ->
     Shell.Exec("appveyor", sprintf "UpdateBuild -Version \"%s\"" buildVersion) |> ignore
@@ -139,7 +139,7 @@ let isDotnetSDKInstalled =
         with
         _ -> false
 
-Target "CodeGen.NetCore" (fun _ ->
+Target "CodeGen.NetStd" (fun _ ->
     let lexArgs = "--lexlib Internal.Utilities.Text.Lexing"
     let yaccArgs = "--internal --parslib Internal.Utilities.Text.Parsing"
     let module1 = "--module Microsoft.FSharp.Compiler.AbstractIL.Internal.AsciiParser"
@@ -150,7 +150,7 @@ Target "CodeGen.NetCore" (fun _ ->
     let open3 = "--open Microsoft.FSharp.Compiler"
 
     // restore all the required tools, declared in each fsproj
-    run false "dotnet" "restore %s" netcoresln
+    run false "dotnet" "restore %s" netstdsln
     run false "dotnet" "restore %s" "tools.fsproj"
 
     // run tools
@@ -158,31 +158,31 @@ Target "CodeGen.NetCore" (fun _ ->
     let fsLex fsl out = runCmdIn isMono "." (sprintf "%s/fslex.exe" toolDir) "%s --unicode %s -o %s" fsl lexArgs out
     let fsYacc fsy out m o = runCmdIn isMono "." (sprintf "%s/fsyacc.exe" toolDir) "%s %s %s %s %s -o %s" fsy lexArgs yaccArgs m o out
 
-    run false "dotnet" "fssrgen ../src/fsharp/FSComp.txt FSharp.Compiler.Service.netcore/FSComp.fs FSharp.Compiler.Service.netcore/FSComp.resx"
-    run false "dotnet" "fssrgen ../src/fsharp/fsi/FSIstrings.txt FSharp.Compiler.Service.netcore/FSIstrings.fs FSharp.Compiler.Service.netcore/FSIstrings.resx"
-    fsLex "../src/fsharp/lex.fsl" "FSharp.Compiler.Service.netcore/lex.fs"
-    fsLex "../src/fsharp/pplex.fsl" "FSharp.Compiler.Service.netcore/pplex.fs"
-    fsLex "../src/absil/illex.fsl" "FSharp.Compiler.Service.netcore/illex.fs"
-    fsYacc "../src/absil/ilpars.fsy" "FSharp.Compiler.Service.netcore/ilpars.fs" module1 open1
-    fsYacc "../src/fsharp/pars.fsy" "FSharp.Compiler.Service.netcore/pars.fs" module2 open2
-    fsYacc "../src/fsharp/pppars.fsy" "FSharp.Compiler.Service.netcore/pppars.fs" module3 open3
+    run false "dotnet" "fssrgen ../src/fsharp/FSComp.txt FSharp.Compiler.Service.netstandard/FSComp.fs FSharp.Compiler.Service.netstandard/FSComp.resx"
+    run false "dotnet" "fssrgen ../src/fsharp/fsi/FSIstrings.txt FSharp.Compiler.Service.netstandard/FSIstrings.fs FSharp.Compiler.Service.netstandard/FSIstrings.resx"
+    fsLex "../src/fsharp/lex.fsl" "FSharp.Compiler.Service.netstandard/lex.fs"
+    fsLex "../src/fsharp/pplex.fsl" "FSharp.Compiler.Service.netstandard/pplex.fs"
+    fsLex "../src/absil/illex.fsl" "FSharp.Compiler.Service.netstandard/illex.fs"
+    fsYacc "../src/absil/ilpars.fsy" "FSharp.Compiler.Service.netstandard/ilpars.fs" module1 open1
+    fsYacc "../src/fsharp/pars.fsy" "FSharp.Compiler.Service.netstandard/pars.fs" module2 open2
+    fsYacc "../src/fsharp/pppars.fsy" "FSharp.Compiler.Service.netstandard/pppars.fs" module3 open3
 )
 
-Target "Build.NetCore" (fun _ ->
-    run false "dotnet" "pack %s -v n -c Release" netcoresln
-)
-
-
-Target "RunTests.NetCore" (fun _ ->
-    run false "dotnet" "run -p FSharp.Compiler.Service.Tests.netcore/FSharp.Compiler.Service.Tests.netcore.fsproj -c Release -- --result:TestResults.NetCore.xml;format=nunit3"
+Target "Build.NetStd" (fun _ ->
+    run false "dotnet" "pack %s -v n -c Release" netstdsln
 )
 
 
-//use dotnet-mergenupkg to merge the .netcore nuget package into the default one
-Target "Nuget.AddNetCore" (fun _ ->
+Target "RunTests.NetStd" (fun _ ->
+    run false "dotnet" "run -p FSharp.Compiler.Service.Tests.netcore/FSharp.Compiler.Service.Tests.netcore.fsproj -c Release -- --result:TestResults.NetStd.xml;format=nunit3"
+)
+
+
+//use dotnet-mergenupkg to merge the .NETstandard nuget package into the default one
+Target "Nuget.AddNetStd" (fun _ ->
     do
         let nupkg = sprintf "%s/FSharp.Compiler.Service.%s.nupkg" releaseDir release.AssemblyVersion
-        let netcoreNupkg = sprintf "FSharp.Compiler.Service.netcore/bin/Release/FSharp.Compiler.Service.%s.nupkg" release.AssemblyVersion
+        let netcoreNupkg = sprintf "FSharp.Compiler.Service.netstandard/bin/Release/FSharp.Compiler.Service.%s.nupkg" release.AssemblyVersion
         runCmdIn false "." "dotnet" "mergenupkg --source %s --other %s --framework netstandard1.6" nupkg netcoreNupkg
 )
 
@@ -220,15 +220,15 @@ Target "CleanDocs" DoNothing
 Target "Release" DoNothing
 Target "NuGet" DoNothing
 Target "All" DoNothing
-Target "All.NetCore" DoNothing
+Target "All.NetStd" DoNothing
 Target "All.NetFx" DoNothing
 
 "Clean"
   =?> ("BuildVersion", isAppVeyorBuild)
-  ==> "CodeGen.NetCore"
-  ==> "Build.NetCore"
-//  ==> "RunTests.NetCore"
-  ==> "All.NetCore"
+  ==> "CodeGen.NetStd"
+  ==> "Build.NetStd"
+//  ==> "RunTests.NetStd"
+  ==> "All.NetStd"
 
 "Clean"
   =?> ("BuildVersion", isAppVeyorBuild)
@@ -237,15 +237,15 @@ Target "All.NetFx" DoNothing
   ==> "All.NetFx"
 
 "All.NetFx"
-  =?> ("All.NetCore", isDotnetSDKInstalled)
+  =?> ("All.NetStd", isDotnetSDKInstalled)
   ==> "All"
 
-"All.NetCore"
-  ==> "Nuget.AddNetCore"
+"All.NetStd"
+  ==> "Nuget.AddNetStd"
 
 "All.NetFx"
   ==> "NuGet.NetFx"
-  =?> ("Nuget.AddNetCore", isDotnetSDKInstalled)
+  =?> ("Nuget.AddNetStd", isDotnetSDKInstalled)
   ==> "NuGet"
 
 "All"

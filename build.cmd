@@ -616,19 +616,6 @@ if "%BUILD_PHASE%" == "1" (
 
 echo ---------------- Done with build, starting pack/update/prepare ---------------
 
-if "%BUILD_FCS%" == "1" (
-  echo ----------------  start package of fcs ---------------
-  echo .nuget\nuget.exe pack fcs\nuget\FSharp.Compiler.Service.nuspec -OutputDirectory release
-       .nuget\nuget.exe pack fcs\nuget\FSharp.Compiler.Service.nuspec -OutputDirectory release
-  @if ERRORLEVEL 1 echo Error: nuget pack failed  && goto :failure
-  echo .nuget\nuget.exe pack fcs\nuget\FSharp.Compiler.Service.MSBuild.v12.nuspec -OutputDirectory release
-       .nuget\nuget.exe pack fcs\nuget\FSharp.Compiler.Service.MSBuild.v12.nuspec -OutputDirectory release
-  @if ERRORLEVEL 1 echo Error: nuget pack failed  && goto :failure
-  echo .nuget\nuget.exe pack fcs\nuget\FSharp.Compiler.Service.ProjectCracker.nuspec -OutputDirectory release
-       .nuget\nuget.exe pack fcs\nuget\FSharp.Compiler.Service.ProjectCracker.nuspec -OutputDirectory release
-  @if ERRORLEVEL 1 echo Error: nuget pack failed  && goto :failure
-)
-
 if "%BUILD_NET40_FSHARP_CORE%" == "1" (
   echo ----------------  start update.cmd ---------------
   call src\update.cmd %BUILD_CONFIG% -ngen
