@@ -520,7 +520,8 @@ rule token args skip = parse
           let line,file = parseLeadingDirective 1 
 
           // Construct the new position
-          lexbuf.EndPos <- pos.ApplyLineDirective((match file with Some f -> fileIndexOfFile f | None -> pos.FileIndex), line)
+          if args.applyLineDirectives then 
+              lexbuf.EndPos <- pos.ApplyLineDirective((match file with Some f -> fileIndexOfFile f | None -> pos.FileIndex), line)
 
           token args skip lexbuf 
         else 
