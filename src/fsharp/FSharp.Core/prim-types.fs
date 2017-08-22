@@ -532,9 +532,7 @@ namespace System
 #if TUPLE_STRUXT
     // NOTE: Tuple`2 is a struct type. 
     // WARNING: If you change additional tuple types to be structs then you must change 'highestTupleStructType' in tastops.ml
-#if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("({Item1},{Item2})")>]
-#endif
     [<Struct>]
     type Tuple<'T1,'T2> = 
         new (v1,v2) = { Item1 = v1; Item2 = v2 }
@@ -549,9 +547,7 @@ namespace System
         interface IComparable 
 #endif
 
-#if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("({Item1},{Item2},{Item3})")>]
-#endif
     type Tuple<'T1,'T2,'T3>(t1:'T1,t2:'T2,t3:'T3) =       
         member t.Item1 = t1
         member t.Item2 = t2
@@ -560,9 +556,7 @@ namespace System
         interface IStructuralEquatable 
         interface IComparable 
 
-#if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("({Item1},{Item2},{Item3},{Item4})")>]
-#endif
     type Tuple<'T1,'T2,'T3,'T4>(t1:'T1,t2:'T2,t3:'T3,t4:'T4) = 
         member t.Item1 = t1
         member t.Item2 = t2
@@ -572,9 +566,7 @@ namespace System
         interface IStructuralEquatable 
         interface IComparable 
 
-#if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("({Item1},{Item2},{Item3},{Item4},{Item5})")>]
-#endif
     type Tuple<'T1,'T2,'T3,'T4,'T5>(t1:'T1,t2:'T2,t3:'T3,t4:'T4,t5:'T5) = 
         member t.Item1 = t1
         member t.Item2 = t2
@@ -585,9 +577,7 @@ namespace System
         interface IStructuralEquatable 
         interface IComparable 
 
-#if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("({Item1},{Item2},{Item3},{Item4},{Item5},{Item6})")>]
-#endif
     type Tuple<'T1,'T2,'T3,'T4,'T5,'T6>(t1:'T1,t2:'T2,t3:'T3,t4:'T4,t5:'T5,t6:'T6) = 
         member t.Item1 = t1
         member t.Item2 = t2
@@ -599,9 +589,7 @@ namespace System
         interface IStructuralEquatable 
         interface IComparable 
 
-#if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("({Item1},{Item2},{Item3},{Item4},{Item5},{Item6},{Item7})")>]
-#endif
     type Tuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7>(t1:'T1,t2:'T2,t3:'T3,t4:'T4,t5:'T5,t6:'T6,t7:'T7) = 
         member t.Item1 = t1
         member t.Item2 = t2
@@ -614,9 +602,7 @@ namespace System
         interface IStructuralEquatable 
         interface IComparable 
             
-#if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("({Item1},{Item2},{Item3},{Item4},{Item5},{Item6},{Item7},{Rest})")>]
-#endif
     type Tuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'TRest>(t1:'T1,t2:'T2,t3:'T3,t4:'T4,t5:'T5,t6:'T6,t7:'T7,rest:'TRest) = 
         member t.Item1 = t1
         member t.Item2 = t2
@@ -3389,16 +3375,12 @@ namespace Microsoft.FSharp.Core
     // Refs
     //-------------------------------------------------------------------------
 
-#if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("{contents}")>]
-#endif
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpRef`1")>]
     type Ref<'T> = 
         { 
-#if !FX_NO_DEBUG_DISPLAYS
           [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
           mutable contents: 'T }
         member x.Value 
             with get() = x.contents
@@ -3411,9 +3393,7 @@ namespace Microsoft.FSharp.Core
     //-------------------------------------------------------------------------
 
     [<DefaultAugmentation(false)>]
-#if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("Some({Value})")>]
-#endif
     [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
     [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId="Option")>]
     [<StructuralEquality; StructuralComparison>]
@@ -3425,19 +3405,13 @@ namespace Microsoft.FSharp.Core
         [<CompilationRepresentation(CompilationRepresentationFlags.Instance)>]
         member x.Value = match x with Some x -> x | None -> raise (new System.InvalidOperationException("Option.Value"))
 
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         member x.IsNone = match x with None -> true | _ -> false
 
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         member x.IsSome = match x with Some _ -> true | _ -> false
 
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         static member None : 'T option = None
 
         static member Some(x) : 'T option = Some(x)
@@ -3477,9 +3451,7 @@ namespace Microsoft.FSharp.Collections
 
     [<DefaultAugmentation(false)>]
     [<System.Diagnostics.DebuggerTypeProxyAttribute(typedefof<ListDebugView<_>>)>]
-#if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("{DebugDisplay,nq}")>]
-#endif
     [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")>]
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpList`1")>]
@@ -3508,9 +3480,7 @@ namespace Microsoft.FSharp.Collections
                | [] -> n 
                | _::t -> if n > ListDebugViewMaxLength then n else count t (n+1) 
 
-#if !FX_NO_DEBUG_DISPLAYS
            [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
-#endif
            member x.Items =
                let n = count l 0 
                let items = zeroCreate n 
@@ -3632,14 +3602,10 @@ namespace Microsoft.FSharp.Collections
             loop n l
 
     type List<'T> with
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         member l.Length = PrivateListHelpers.lengthAcc 0 l
 
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         member l.DebugDisplay = 
            let n = l.Length
            let txt = 
@@ -3650,15 +3616,11 @@ namespace Microsoft.FSharp.Collections
         member l.Head   = match l with a :: _ -> a | [] -> raise (System.InvalidOperationException(SR.GetString(SR.inputListWasEmpty)))
         member l.Tail   = match l with _ :: b -> b | [] -> raise (System.InvalidOperationException(SR.GetString(SR.inputListWasEmpty)))
 
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         member l.IsEmpty  = match l with [] -> true | _ -> false
         member l.Item with get(index) = PrivateListHelpers.nth l index
 
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         static member Empty       : 'T list = []
 
         static member Cons(head,tail) : 'T list = head::tail
