@@ -253,8 +253,8 @@ Target "Build" DoNothing
   ==> "Release"
 
 "CleanDocs"
-  ==> "GenerateDocsJa"
   ==> "GenerateDocs"
+  ==> "GenerateDocsJa"
   ==> "Release"
 
 RunTargetOrDefault "Build"
