@@ -17,7 +17,6 @@
     <ProjectGuid>{8157b50e-397d-4232-a4e0-1977afc7076d}</ProjectGuid>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <BaseAddress>0x06800000</BaseAddress>
-    <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
     <Tailcalls>true</Tailcalls>
     <FsLexUnicode>true</FsLexUnicode>
     <OtherFlags>$(OtherFlags) --times</OtherFlags>
@@ -28,10 +27,10 @@
     <ResolveNuGetPackages>false</ResolveNuGetPackages>
     <Prefer32Bit>true</Prefer32Bit>
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <DefineConstants>
-    </DefineConstants>
     <DefineConstants>$(DefineConstants);CROSS_PLATFORM_COMPILER</DefineConstants>
     <DefineConstants>$(DefineConstants);ENABLE_MONO_SUPPORT</DefineConstants>
+    <OtherFlags>$(OtherFlags) /warnon:1182</OtherFlags>
+    <OtherFlags>$(OtherFlags) --version:$(VersionPrefix).0</OtherFlags>
     <!-- We target .NET 4.5 for FSharp.Compiler.Service.dll to allow broader use of this DLL -->
     <TargetFrameworkVersion Condition=" '$(TargetFrameworkVersion)' == '' ">v4.5</TargetFrameworkVersion>
   </PropertyGroup>
