@@ -25,10 +25,8 @@ namespace Microsoft.FSharp.Control
     open ReflectionAdapters
 #endif
 
-#if !FX_NO_TASK
     open System.Threading
     open System.Threading.Tasks
-#endif
 
 #if FX_NO_OPERATION_CANCELLED
     type OperationCanceledException(s : System.String) =
@@ -1021,7 +1019,6 @@ namespace Microsoft.FSharp.Control
         let StartWithContinuations(token:CancellationToken, a:Async<'T>, cont, econt, ccont) : unit =
             startAsync token (cont >> fake) (econt >> fake) (ccont >> fake) a |> ignore
             
-#if !FX_NO_TASK
         type VolatileBarrier() =
             [<VolatileField>]
             let mutable isStopped = false
@@ -1061,9 +1058,6 @@ namespace Microsoft.FSharp.Control
                 }
             Start(token, a)
             task
-            
-#endif
-            
 
     [<Sealed>]
     [<CompiledName("FSharpAsync")>]
@@ -1131,7 +1125,6 @@ namespace Microsoft.FSharp.Control
             let token = defaultArg cancellationToken defaultCancellationTokenSource.Token
             CancellationTokenOps.Start (token, computation)
 
-#if !FX_NO_TASK
         static member StartAsTask (computation,?taskCreationOptions,?cancellationToken)=
             let token = defaultArg cancellationToken defaultCancellationTokenSource.Token        
             CancellationTokenOps.StartAsTask(token,computation,taskCreationOptions)
@@ -1139,7 +1132,6 @@ namespace Microsoft.FSharp.Control
         static member StartChildAsTask (computation,?taskCreationOptions) =
             async { let! token = getCancellationToken()  
                     return CancellationTokenOps.StartAsTask(token,computation, taskCreationOptions) }
-#endif
 
     type Async with
         static member Parallel (l: seq<Async<'T>>) =
@@ -1256,7 +1248,6 @@ namespace Microsoft.FSharp.Control
 
                         FakeUnit))
 
-#if !FX_NO_TASK
     // Contains helpers that will attach continuation to the given task.
     // Should be invoked as a part of protectedPrimitive(withResync) call
     module TaskHelpers = 
@@ -1289,7 +1280,6 @@ namespace Microsoft.FSharp.Control
                         args.cont ())) |> unfake
 
             task.ContinueWith(Action<Task>(continuation)) |> ignore |> fake
-#endif
 
 #if FX_NO_REGISTERED_WAIT_HANDLES
     [<Sealed>]
@@ -1827,7 +1817,6 @@ namespace Microsoft.FSharp.Control
         static member TryCancelled (p: Async<'T>,f) = 
             whenCancelledA f p
 
-#if !FX_NO_TASK
         static member AwaitTask (task:Task<'T>) : Async<'T> = 
             protectedPrimitiveWithResync (fun args -> 
                 TaskHelpers.continueWith(task, args, false)
@@ -1837,7 +1826,6 @@ namespace Microsoft.FSharp.Control
             protectedPrimitiveWithResync (fun args -> 
                 TaskHelpers.continueWithUnit (task, args, false)
                 )
-#endif
 
     module CommonExtensions =
 

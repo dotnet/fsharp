@@ -3,15 +3,14 @@
 namespace Microsoft.FSharp.Control
 
     open System
+    open System.Threading
+    open System.Threading.Tasks
+    open System.Runtime.CompilerServices
+
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
-    open System.Threading
-#if !FX_NO_TASK
-    open System.Runtime.CompilerServices
-    open System.Threading.Tasks
-#endif
 
 #if FX_NO_OPERATION_CANCELLED
 
@@ -73,7 +72,6 @@ namespace Microsoft.FSharp.Control
         /// If one is not supplied, the default cancellation token is used.</param>
         static member Start : computation:Async<unit> * ?cancellationToken:CancellationToken -> unit
 
-#if !FX_NO_TASK
         /// <summary>Executes a computation in the thread pool.</summary>
         /// <remarks>If no cancellation token is provided then the default cancellation token is used.</remarks>
         /// <returns>A <c>System.Threading.Tasks.Task</c> that will be completed
@@ -83,8 +81,7 @@ namespace Microsoft.FSharp.Control
 
         /// <summary>Creates an asynchronous computation which starts the given computation as a <c>System.Threading.Tasks.Task</c></summary>
         static member StartChildAsTask : computation:Async<'T> * ?taskCreationOptions:TaskCreationOptions -> Async<Task<'T>>
-#endif
-    
+
         /// <summary>Creates an asynchronous computation that executes <c>computation</c>.
         /// If this computation completes successfully then return <c>Choice1Of2</c> with the returned
         /// value. If this computation raises an exception before it completes then return <c>Choice2Of2</c>
@@ -256,14 +253,12 @@ namespace Microsoft.FSharp.Control
         /// <returns>An asynchronous computation that waits on the given <c>IAsyncResult</c>.</returns>
         static member AwaitIAsyncResult: iar: System.IAsyncResult * ?millisecondsTimeout:int -> Async<bool>
 
-#if !FX_NO_TASK
         /// Return an asynchronous computation that will wait for the given task to complete and return
         /// its result.
         static member AwaitTask: task: Task<'T> -> Async<'T>
         /// Return an asynchronous computation that will wait for the given task to complete and return
         /// its result.
         static member AwaitTask: task: Task -> Async<unit>
-#endif            
 
         /// <summary>Creates an asynchronous computation that will sleep for the given time. This is scheduled
         /// using a System.Threading.Timer object. The operation will not block operating system threads
