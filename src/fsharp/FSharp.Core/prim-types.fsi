@@ -20,34 +20,6 @@ namespace Microsoft.FSharp.Core
     and unit = Unit
 
 
-#if FX_NO_STRUCTURAL_EQUALITY
-namespace System.Collections
-    open Microsoft.FSharp.Core
-
-    //-------------------------------------------------------------------------
-    // Structural equality
-    type IStructuralEquatable =
-        /// <summary>Equality comparison against a target object with a given comparer.</summary>
-        /// <param name="obj">The target for comparison.</param>
-        /// <param name="comparer">Compares the two objects.</param>
-        /// <returns>The result of the comparer.</returns>
-        abstract Equals: obj:obj * comparer:System.Collections.IEqualityComparer -> bool
-        /// <summary>Returns a hash code for the current instance.</summary>
-        /// <param name="comparer">An object that computes the hash code of the current object.</param>
-        /// <returns>The hash code for the current instance.</returns>
-        abstract GetHashCode: comparer:System.Collections.IEqualityComparer -> int
-    
-    //-------------------------------------------------------------------------    
-    // Structural comparison
-    type IStructuralComparable =
-        /// <summary>Determines whether the current object precedes, occurs in the same position as,
-        /// or follows another object in the sort order.</summary>
-        /// <param name="obj">The object to compare with the current instance.</param>
-        /// <param name="comparer">An object that performs comparisons.</param>
-        /// <returns>An integer that indicates the relationship of the current object to the target object.</returns>
-        abstract CompareTo: obj:obj * comparer:System.Collections.IComparer -> int
-#endif    
-
 namespace Microsoft.FSharp.Core
 
     open System
