@@ -2830,17 +2830,6 @@ namespace Microsoft.FSharp.Core
         static member internal GetResourceString(name:string,_arguments:obj[]) = name
         static member internal GetResourceString(name:string) = name
 
-#if USE_FX_40_LAZY_ON_FX_20
-    type internal PrivateFunc<'T> = delegate of unit -> 'T
-    type internal PrivateFunc<'T,'TResult> = delegate of 'T -> 'TResult
-    
-
-    type internal PrivateMonitor = 
-        static member internal Enter(lockObj: obj, lockTaken: byref<bool>)  = System.Threading.Monitor.Enter(lockObj); lockTaken <- true
-        static member internal Exit(lockObj: obj)  = System.Threading.Monitor.Exit(lockObj)
-        static member internal GetResourceString(name:string) = name
-#endif
-
 #else
 #endif
 
@@ -6194,14 +6183,6 @@ namespace Microsoft.FSharp.Core
 //============================================================================
 //============================================================================
 #if FX_NO_LAZY
-#if USE_FX_40_LAZY_ON_FX_20
-namespace System.Threading
-    open System.Diagnostics
-    open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.Operators
-
-#endif
-
 namespace System
     open System.Diagnostics
     open Microsoft.FSharp.Core
