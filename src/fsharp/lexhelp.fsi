@@ -28,11 +28,12 @@ type LexResourceManager =
     new : unit -> LexResourceManager
 
 type lexargs =
-  { defines: string list;
-    ifdefStack: LexerIfdefStack;
-    resourceManager: LexResourceManager;
-    lightSyntaxStatus: LightSyntaxStatus;
-    errorLogger: ErrorLogger}
+    { defines: string list
+      ifdefStack: LexerIfdefStack
+      resourceManager: LexResourceManager
+      lightSyntaxStatus : LightSyntaxStatus
+      errorLogger: ErrorLogger
+      applyLineDirectives: bool }
 
 type LongUnicodeLexResult =
     | SurrogatePair of uint16 * uint16
