@@ -695,28 +695,26 @@ type SeqModule2() =
         
         VerifySeqsEqual expectedint resultInt
 
-#if !FX_NO_CHAR_PARSE
         // string Seq
         let funcStr (y:string) = y+"ist"
-       
+
         let resultStr = Seq.collect funcStr (seq ["L"])
-        
-        
+
         let expectedSeq = seq ['L';'i';'s';'t']
-        
+
         VerifySeqsEqual expectedSeq resultStr
-#endif        
+
         // empty Seq
         let resultEpt = Seq.collect funcInt Seq.empty
         VerifySeqsEqual Seq.empty resultEpt
 
         // null Seq
         let nullSeq:seq<'a> = null 
-       
+
         CheckThrowsArgumentNullException (fun () -> Seq.collect funcInt nullSeq |> ignore)
-        
+
         ()
-        
+
     [<Test>]
     member this.Mapi() =
 
