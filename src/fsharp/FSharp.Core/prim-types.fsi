@@ -3306,25 +3306,6 @@ namespace Microsoft.FSharp.Core
             val nanf<[<Measure>] 'Measure> : float32<'Measure>
 #endif
 
-
-#if FX_NO_LAZY
-namespace System
-    open System.Diagnostics
-    open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.Operators
-
-    /// <summary>Encapsulates a lazily computed value.</summary>
-    [<Class>]
-    [<AllowNullLiteral>]
-    type Lazy<'T> =
-        /// <summary>Is true if the value is ready to be accessed.</summary>
-        member IsValueCreated : bool 
-        /// <summary>The value contained in the Lazy.</summary>
-        member Value : 'T 
-#else
-#endif
-
-
 namespace Microsoft.FSharp.Control
     open Microsoft.FSharp.Core
 
