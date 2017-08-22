@@ -466,10 +466,7 @@ type LanguagePrimitivesModule() =
         CheckThrowsArgumentNullException2 "float32" (fun () -> float32 s |> ignore)
         CheckThrowsArgumentNullException2 "float" (fun () -> float s |> ignore)
         CheckThrowsArgumentNullException2 "decimal" (fun () -> decimal s |> ignore)
-        // SL and Portable Runtimes are compiled with FX_NO_CHAR_PARSE
-#if !FX_NO_CHAR_PARSE
         CheckThrowsArgumentNullException2 "char" (fun () -> char s |> ignore)
-#endif        
 
     [<Test>]
     member this.PhysicalEquality() =

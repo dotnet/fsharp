@@ -4067,14 +4067,6 @@ namespace Microsoft.FSharp.Core
 
         let inline castToString (x:'T) = (# "" x : string #)  // internal
 
-#if FX_NO_CHAR_PARSE
-        // replace System.Char.Parse
-        let inline charParse (s: string) =
-            if isNull s then raise (System.ArgumentNullException())
-            elif s.Length = 1 then s.[0]
-            else raise (System.FormatException "String must be exactly one character long.")
-#endif
-
         // let rec (@) x y = match x with [] -> y | (h::t) -> h :: (t @ y)
         let (@) l1 l2 = 
             match l1 with
@@ -4445,11 +4437,7 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("ToChar")>]
         let inline char (x: ^T) = 
             (^T : (static member op_Explicit: ^T -> char) (x))
-#if FX_NO_CHAR_PARSE
-             when ^T : string     = (charParse (castToString x))
-#else
              when ^T : string     = (System.Char.Parse(castToString x))
-#endif
              when ^T : float      = (# "conv.u2" x  : char #)
              when ^T : float32    = (# "conv.u2" x  : char #)
              when ^T : int64      = (# "conv.u2" x  : char #)
@@ -4889,11 +4877,7 @@ namespace Microsoft.FSharp.Core
             [<CompiledName("ToChar")>]
             let inline char (x: ^T) = 
                 (^T : (static member op_Explicit: ^T -> char) (x))
-#if FX_NO_CHAR_PARSE
-                 when ^T : string     = (charParse (castToString x))
-#else
                  when ^T : string     = (System.Char.Parse(castToString x))
-#endif
                  when ^T : float      = (# "conv.ovf.u2" x  : char #)
                  when ^T : float32    = (# "conv.ovf.u2" x  : char #)
                  when ^T : int64      = (# "conv.ovf.u2" x  : char #)
