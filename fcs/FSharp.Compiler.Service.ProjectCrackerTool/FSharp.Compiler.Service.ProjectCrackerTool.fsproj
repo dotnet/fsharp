@@ -51,15 +51,16 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Build.Framework, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <SpecificVersion>True</SpecificVersion>
+      <HintPath>$(FSharpSourcesRoot)/../fcs/dependencies/MSBuild.v14.0/Microsoft.Build.Framework.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Build.Engine, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <SpecificVersion>True</SpecificVersion>
+      <HintPath>$(FSharpSourcesRoot)/../fcs/dependencies/MSBuild.v14.0/Microsoft.Build.Engine.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Build, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <SpecificVersion>True</SpecificVersion>
+      <HintPath>$(FSharpSourcesRoot)/../fcs/dependencies/MSBuild.v14.0/Microsoft.Build.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Build.Utilities.v12.0">
+      <HintPath>$(FSharpSourcesRoot)/../fcs/dependencies/MSBuild.v12.0/Microsoft.Build.Utilities.v12.0.dll</HintPath>
     </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
