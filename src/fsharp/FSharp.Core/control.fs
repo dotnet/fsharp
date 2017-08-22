@@ -316,28 +316,22 @@ namespace Microsoft.FSharp.Control
                 // NOTE: this must be a tailcall
                 cont res
 
-#if !FX_NO_CONDITIONAL_WEAK_TABLE
         /// Global mutable state used to associate Exception
         let associationTable = System.Runtime.CompilerServices.ConditionalWeakTable<exn, ExceptionDispatchInfo>()
-#endif
 
         type ExceptionDispatchInfo with 
 
             member edi.GetAssociatedSourceException() = 
                let exn = edi.SourceException
-#if !FX_NO_CONDITIONAL_WEAK_TABLE
                // Try to store the entry in the association table to allow us to recover it later.
                try lock associationTable (fun () -> associationTable.Add(exn, edi)) with _ -> ()
-#endif
                exn
 
             // Capture, but prefer the saved information if available
             static member inline RestoreOrCapture(exn) = 
-#if !FX_NO_CONDITIONAL_WEAK_TABLE
                 match lock associationTable (fun () -> associationTable.TryGetValue(exn)) with 
                 | true, edi -> edi
                 | _ ->
-#endif
                     ExceptionDispatchInfo.Capture(exn)
 
             member inline edi.ThrowAny() = 
