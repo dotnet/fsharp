@@ -34,6 +34,7 @@ To update the version number a global replace through fcs\... is currently neede
 
 To build the package use any of:
 
+  cd fcs
   build Build.NetFx
   build Test.NetFx
   build NuGet.NetFx
