@@ -623,13 +623,11 @@ namespace Microsoft.FSharp.Control
     module WebExtensions = 
      begin
 
-#if !FX_NO_WEB_REQUESTS
         type System.Net.WebRequest with 
             /// <summary>Returns an asynchronous computation that, when run, will wait for a response to the given WebRequest.</summary>
             /// <returns>An asynchronous computation that waits for response to the <c>WebRequest</c>.</returns>
             [<CompiledName("AsyncGetResponse")>] // give the extension member a nice, unmangled compiled name, unique within this module
             member AsyncGetResponse : unit -> Async<System.Net.WebResponse>
-#endif
     
 #if !FX_NO_WEB_CLIENT
         type System.Net.WebClient with

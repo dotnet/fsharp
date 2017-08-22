@@ -135,7 +135,6 @@ namespace Microsoft.FSharp.Control
             member s.AsyncReadToEnd () = FileExtensions.UnblockViaNewThread (fun () -> s.ReadToEnd())
             member s.ReadToEndAsync () = s.AsyncReadToEnd ()
 
-#if !FX_NO_WEB_REQUESTS
     [<AutoOpen>]
     module WebRequestExtensions =
         open System
@@ -147,7 +146,6 @@ namespace Microsoft.FSharp.Control
         type System.Net.WebRequest with
             member req.AsyncGetResponse() = callFSharpCoreAsyncGetResponse req // this calls the FSharp.Core method
             member req.GetResponseAsync() = callFSharpCoreAsyncGetResponse req // this calls the FSharp.Core method
-#endif
      
 #if !FX_NO_WEB_CLIENT
     [<AutoOpen>]

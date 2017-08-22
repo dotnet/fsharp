@@ -1872,8 +1872,6 @@ namespace Microsoft.FSharp.Control
     module WebExtensions =
         open AsyncBuilderImpl
 
-#if !FX_NO_WEB_REQUESTS
-        
         type System.Net.WebRequest with
             [<CompiledName("AsyncGetResponse")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
             member req.AsyncGetResponse() : Async<System.Net.WebResponse>= 
@@ -1893,8 +1891,6 @@ namespace Microsoft.FSharp.Control
                     | _ -> 
                         edi.ThrowAny())
 
-#endif
-     
 #if !FX_NO_WEB_CLIENT
         
         type System.Net.WebClient with
