@@ -73,7 +73,6 @@ namespace Microsoft.FSharp.Control
 
         let mutable multicast : 'Delegate = Unchecked.defaultof<_>     
 
-#if !FX_NO_DELEGATE_CREATE_DELEGATE_FROM_STATIC_METHOD
         static let mi, argTypes = 
             let instanceBindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.DeclaredOnly
             let mi = typeof<'Delegate>.GetMethod("Invoke",instanceBindingFlags)
@@ -87,14 +86,10 @@ namespace Microsoft.FSharp.Control
                 (System.Delegate.CreateDelegate(typeof<EventWrapper<'Delegate,'Args>>, mi) :?> EventWrapper<'Delegate,'Args>)
             else
                 null
-#endif
 
         // For the multi-arg case, use a slower DynamicInvoke.
         static let invokeInfo =
             let instanceBindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.DeclaredOnly
-#if FX_NO_DELEGATE_CREATE_DELEGATE_FROM_STATIC_METHOD
-            typeof<EventDelegee<'Args>>.GetMethod("Invoke",instanceBindingFlags)
-#else
             let mi = 
                 typeof<EventDelegee<'Args>>.GetMethods(instanceBindingFlags)
                 |> Seq.filter(fun mi -> mi.Name = "Invoke" && mi.GetParameters().Length = argTypes.Length + 1)
@@ -102,26 +97,20 @@ namespace Microsoft.FSharp.Control
             if mi.IsGenericMethodDefinition then
                 mi.MakeGenericMethod argTypes
             else 
-                mi
-#endif
-                
+                mi                
 
         member x.Trigger(sender:obj,args: 'Args) = 
             match box multicast with 
             | null -> () 
             | _ -> 
-#if !FX_NO_DELEGATE_CREATE_DELEGATE_FROM_STATIC_METHOD
                 match invoker with 
                 | null ->  
-#endif
                     let args = Array.append [| sender |] (Microsoft.FSharp.Reflection.FSharpValue.GetTupleFields(box args))
                     multicast.DynamicInvoke(args) |> ignore
-#if !FX_NO_DELEGATE_CREATE_DELEGATE_FROM_STATIC_METHOD
                 | _ -> 
                     // For the one-argument case, use an optimization that allows a fast call. 
                     // CreateDelegate creates a delegate that is fast to invoke.
                     invoker.Invoke(multicast, sender, args) |> ignore
-#endif
 
         member x.Publish = 
             // Note, we implement each interface explicitly: this works around a bug in the CLR 
