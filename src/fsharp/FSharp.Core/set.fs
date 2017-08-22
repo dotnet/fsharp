@@ -512,9 +512,7 @@ namespace Microsoft.FSharp.Collections
 
     [<Sealed>]
     [<CompiledName("FSharpSet`1")>]
-#if !FX_NO_DEBUG_PROXIES
     [<DebuggerTypeProxy(typedefof<SetDebugView<_>>)>]
-#endif
 #if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("Count = {Count}")>]
 #endif
