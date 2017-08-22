@@ -3,11 +3,11 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
 
-    <!-- Currently we use a separate version number sequence for FSharp.Compiler.Service.dll, corresponding to the nuget package version -->
-    <StrongNames>false</StrongNames>
-    <MicroBuildAssemblyVersion>14.0.1.0</MicroBuildAssemblyVersion>
+    <VersionPrefix>14.0.1</VersionPrefix>
+    <!-- FSharp.Compiler.Tools is currently only used to get a working FSI.EXE to execute some scripts during the build -->
+    <!-- The LKG FSI.EXE requires MSBuild 15 to be installed, which is painful -->
+    <FsiToolPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.23\tools</FsiToolPath>
+    <FsiToolExe>fsi.exe</FsiToolExe>
 
-    <!-- Currently we target .NET 4.5 for FSharp.Compiler.Service.dll, corresponding to the nuget package version -->
-    <TargetFrameworkVersion Condition=" '$(TargetFrameworkVersion)' == '' ">v4.5</TargetFrameworkVersion>
   </PropertyGroup>
 </Project>

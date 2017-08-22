@@ -40,6 +40,7 @@
     <ProjectsWithNet40 Include="fcs/FSharp.Compiler.Service.MSBuild.v12/FSharp.Compiler.Service.MSBuild.v12.fsproj" />
     <ProjectsWithNet40 Include="fcs/FSharp.Compiler.Service.ProjectCracker/FSharp.Compiler.Service.ProjectCracker.fsproj" />
     <ProjectsWithNet40 Include="fcs/FSharp.Compiler.Service.ProjectCrackerTool/FSharp.Compiler.Service.ProjectCrackerTool.fsproj" />
+    <ProjectsWithNet40 Include="fcs/FSharp.Compiler.Service.Tests/FSharp.Compiler.Service.Tests.fsproj" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(BUILD_SETUP)'=='1'">

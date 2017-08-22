@@ -1,0 +1,9 @@
+frameworks: net45
+
+source https://www.nuget.org/api/v2/
+
+nuget FAKE
+nuget FSharp.Formatting
+nuget NUnit 2.6.3
+nuget NUnit.Runners 2.6.3
+

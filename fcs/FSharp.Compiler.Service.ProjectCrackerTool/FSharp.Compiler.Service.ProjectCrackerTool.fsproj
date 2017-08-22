@@ -3,7 +3,6 @@
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\src</FSharpSourcesRoot>
   </PropertyGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <Import Project="..\fcs.props" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -12,6 +11,8 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>b1bdd96d-47e1-4e65-8107-fbae23a06db4</ProjectGuid>
     <OutputType>Exe</OutputType>
+    <OutputPath>..\..\$(Configuration)\fcs\net45\</OutputPath>
+    <DocumentationFile>$(OutputPath)$(AssemblyName).xml</DocumentationFile>
     <RootNamespace>FSharp.Compiler.Service.ProjectCrackerTool</RootNamespace>
     <AssemblyName>FSharp.Compiler.Service.ProjectCrackerTool</AssemblyName>
     <Name>FSharp.Compiler.Service.ProjectCrackerTool</Name>
@@ -19,6 +20,8 @@
     <NoWarn>$(NoWarn);40;44;2011</NoWarn>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <ResolveNuGetPackages>false</ResolveNuGetPackages>
+    <!-- We target .NET 4.5 for FSharp.Compiler.Service.dll to allow broader use of this DLL -->
+    <TargetFrameworkVersion Condition=" '$(TargetFrameworkVersion)' == '' ">v4.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -76,5 +79,5 @@
     </Reference>
 
   </ItemGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
+  <Import Project="$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.23\tools\Microsoft.FSharp.Targets" />
 </Project>
