@@ -35,29 +35,6 @@ namespace Microsoft.FSharp.Core
     and unit = Unit
 
 
-#if FX_NO_STRUCTURAL_EQUALITY
-namespace System.Collections
-
-    open System
-    open Microsoft.FSharp.Core
-    
-    //-------------------------------------------------------------------------
-    // Structural equality
-    type IStructuralEquatable =
-        interface 
-            abstract Equals: o:System.Object * comp:System.Collections.IEqualityComparer -> bool
-            abstract GetHashCode: comp:System.Collections.IEqualityComparer -> int
-        end
-    
-    //-------------------------------------------------------------------------    
-    // Structural comparison
-    and IStructuralComparable =
-        interface 
-            abstract CompareTo: o:System.Object * comp:System.Collections.IComparer -> int
-        end
-#else
-#endif
-
 namespace Microsoft.FSharp.Core
 
     open System
