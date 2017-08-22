@@ -14,7 +14,9 @@ namespace Microsoft.FSharp.Control
     open System.Diagnostics.CodeAnalysis
     open System.IO
     open System.Reflection
+    open System.Runtime.ExceptionServices
     open System.Threading
+    open System.Threading.Tasks
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Core.Operators
@@ -25,26 +27,13 @@ namespace Microsoft.FSharp.Control
     open ReflectionAdapters
 #endif
 
-    open System.Threading
-    open System.Threading.Tasks
+
 
 #if FX_NO_OPERATION_CANCELLED
     type OperationCanceledException(s : System.String) =
         inherit System.Exception(s)
         new () = new OperationCanceledException("The operation has been canceled")
 #endif
-
-    
-#if FX_NO_EXCEPTIONDISPATCHINFO
-    [<AllowNullLiteral>]
-    type ExceptionDispatchInfo(exn: System.Exception) =
-        static member Capture(exn) = ExceptionDispatchInfo(exn)
-        member __.Throw() = raise exn; ()
-        member __.SourceException = exn
-#else
-    open System.Runtime.ExceptionServices
-#endif
-
 
     /// We use our own internal implementation of queues to avoid a dependency on System.dll
     type Queue<'T>() =  //: IEnumerable<T>, ICollection, IEnumerable
