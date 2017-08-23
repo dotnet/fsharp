@@ -28,13 +28,6 @@ namespace Microsoft.FSharp.Control
 #endif
 
 
-
-#if FX_NO_OPERATION_CANCELLED
-    type OperationCanceledException(s : System.String) =
-        inherit System.Exception(s)
-        new () = new OperationCanceledException("The operation has been canceled")
-#endif
-
     /// We use our own internal implementation of queues to avoid a dependency on System.dll
     type Queue<'T>() =  //: IEnumerable<T>, ICollection, IEnumerable
     
