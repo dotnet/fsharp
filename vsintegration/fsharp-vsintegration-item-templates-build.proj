@@ -11,6 +11,7 @@
     <ProjectFiles Include="ItemTemplates\SignatureFile\SignatureFile.csproj" />
     <ProjectFiles Include="ItemTemplates\TextFile\TextFile.csproj" />
     <ProjectFiles Include="ItemTemplates\XMLFile\XMLFile.csproj" />
+    <ProjectFiles Include="ItemTemplates\ResourceFile\ResourceFile.csproj" />
   </ItemGroup>
 
   <Import Project="..\src\root.traversal.targets"/>

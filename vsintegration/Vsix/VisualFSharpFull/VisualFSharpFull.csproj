@@ -223,6 +223,14 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <Private>True</Private>
     </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ItemTemplates\ResourceFile\ResourceFile.csproj">
+      <Project>{0385564F-07B4-4264-AB8A-17C393E9140C}</Project>
+      <Name>ResourceFile</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ItemTemplates\ScriptFile\ScriptFile.csproj">
       <Project>{a333b85a-dc23-49b6-9797-b89a7951e92d}</Project>
       <Name>ScriptFile</Name>
