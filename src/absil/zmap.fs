@@ -2,9 +2,7 @@
 
 namespace Microsoft.FSharp.Compiler.AbstractIL.Internal
 
-open Internal.Utilities
 open Internal.Utilities.Collections.Tagged
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open System.Collections.Generic
 
 /// Maps with a specific comparison function
@@ -37,10 +35,7 @@ module internal Zmap =
       z,m
 
     let choose f  (m:Zmap<_,_>) = m.First(f)
-      
-    let chooseL f  (m:Zmap<_,_>) =
-      m.Fold (fun k v s -> match f k v with None -> s | Some x -> x::s) []
-        
+
     let ofList m xs = List.fold (fun m (k,v) -> add k v m) (empty m) xs
 
     let keys   (m:Zmap<_,_>) = m.Fold (fun k _ s -> k::s) []
