@@ -34,25 +34,36 @@ To update the version number a global replace through fcs\... is currently neede
 
 To build the package use any of:
 
-  cd fcs
-  build Build.NetFx
-  build Test.NetFx
-  build NuGet.NetFx
+    cd fcs
+    build Build.NetFx
+    build Test.NetFx
+    build NuGet.NetFx
 
-  build Build.NetStd
-  build Test.NetStd
-  build NuGet.NetStd
+    build Build.NetStd
+    build Test.NetStd
+    build NuGet.NetStd
 
-  build Build
-  build Test
-  build NuGet
-  build Release
+    build Build
+    build Test
+    build NuGet
+    build Release
 
 which does things like:
 
-  .paket\paket.bootstrapper.exe
-  .paket\paket.exe restore
-  packages\FAKE\tools\FAKE.exe build.fsx WhateverTarget
+    .paket\paket.bootstrapper.exe
+    .paket\paket.exe restore
+    packages\FAKE\tools\FAKE.exe build.fsx WhateverTarget
+
+### Manual push of packages
+
+Yu can push the packages if you have permissions, either automatically using ``build Release`` or manually
+
+    cd fcs
+    set APIKEY=...
+    ..\.nuget\nuget.exe push ..\Release\FSharp.Compiler.Service.14.0.1.nupkg %APIKEY% -Source https://nuget.org -Timeout 500
+    ..\.nuget\nuget.exe push ..\Release\FSharp.Compiler.Service.MSBuild.v12.14.0.1.nupkg %APIKEY%  -Source https://nuget.org -Timeout 500
+    ..\.nuget\nuget.exe push ..\Release\FSharp.Compiler.Service.ProjectCracker.14.0.1.nupkg %APIKEY%  -Source https://nuget.org -Timeout 500
+    
 
 ### Use of Paket and FAKE
 
