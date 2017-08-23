@@ -3,8 +3,6 @@
 /// <summary>Types and functions related to expression quotations</summary>
 namespace Microsoft.FSharp.Quotations
 
-#if FX_MINIMAL_REFLECTION // not on Compact Framework 
-#else
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Reflection
@@ -811,5 +809,3 @@ module ExprShape =
     /// <param name="arguments">The list of arguments.</param>
     /// <returns>The rebuilt expression.</returns>
     val RebuildShapeCombination  : shape:obj * arguments:list<Expr> -> Expr
-
-#endif
