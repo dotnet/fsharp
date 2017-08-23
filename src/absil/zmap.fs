@@ -36,7 +36,7 @@ module internal Zmap =
 
     let choose f  (m:Zmap<_,_>) = m.First(f)
 
-    let ofList m xs = List.fold (fun m (k,v) -> add k v m) (empty m) xs
+    let ofList ord xs = Internal.Utilities.Collections.Tagged.Map<_,_>.FromList(ord,xs)
 
     let keys   (m:Zmap<_,_>) = m.Fold (fun k _ s -> k::s) []
     let values (m:Zmap<_,_>) = m.Fold (fun _ v s -> v::s) []
