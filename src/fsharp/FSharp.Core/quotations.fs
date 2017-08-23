@@ -1759,9 +1759,7 @@ module Patterns =
             let qdataResources = 
                 // dynamic assemblies don't support the GetManifestResourceNames 
                 match assem with 
-#if !FX_NO_REFLECTION_EMIT
                 | a when a.FullName = "System.Reflection.Emit.AssemblyBuilder" -> []
-#endif
                 | null | _ -> 
                     let resources = 
                         // This raises NotSupportedException for dynamic assemblies

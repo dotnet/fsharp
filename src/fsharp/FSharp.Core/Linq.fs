@@ -144,9 +144,6 @@ open System.Linq
 open System.Collections.Generic
 open System.Linq.Expressions
 open System.Reflection
-#if !FX_NO_REFLECTION_EMIT
-open System.Reflection.Emit
-#endif
 open Microsoft.FSharp
 open Microsoft.FSharp.Collections
 open Microsoft.FSharp.Core
