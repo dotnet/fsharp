@@ -15,8 +15,6 @@ namespace Microsoft.FSharp.Control
     open ReflectionAdapters
 #endif
 
-#if !FX_NO_DELEGATE_DYNAMIC_METHOD 
-    
     [<CompiledName("FSharpDelegateEvent`1")>]
     type DelegateEvent<'Delegate when 'Delegate :> System.Delegate>() = 
         let mutable multicast : System.Delegate = null
@@ -122,7 +120,6 @@ namespace Microsoft.FSharp.Control
                    { new System.IDisposable with 
                         member x.Dispose() = (e :?> IDelegateEvent<'Delegate>).RemoveHandler(h) } } 
 
-#endif
 
     [<CompiledName("FSharpEvent`1")>]
     type Event<'T> = 
