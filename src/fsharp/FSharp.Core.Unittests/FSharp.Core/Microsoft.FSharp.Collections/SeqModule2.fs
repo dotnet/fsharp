@@ -573,7 +573,6 @@ type SeqModule2() =
     member this.SingletonCollectWithException () =
         this.MapWithExceptionTester (fun f-> Seq.collect (f >> Seq.singleton))
 
-#if !FX_NO_LINQ
     [<Test>]
     member this.SystemLinqSelectWithSideEffects () =
         this.MapWithSideEffectsTester (fun f s -> System.Linq.Enumerable.Select(s, Func<_,_>(f))) false
@@ -581,7 +580,6 @@ type SeqModule2() =
     [<Test>]
     member this.SystemLinqSelectWithException () =
         this.MapWithExceptionTester (fun f s -> System.Linq.Enumerable.Select(s, Func<_,_>(f)))
-#endif
         
     [<Test>]
     member this.MapiWithSideEffects () =
