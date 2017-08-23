@@ -48,15 +48,11 @@ namespace Microsoft.FSharp.Control
             |   [] -> ()
             |   [cont] when reuseThread -> cont res
             |   otherwise ->
-#if FX_NO_SYNC_CONTEXT
-                    let postOrQueue cont = ThreadPool.QueueUserWorkItem(fun _ -> cont res) |> ignore
-#else
                     let synchContext = System.Threading.SynchronizationContext.Current
                     let postOrQueue =
                         match synchContext with
                         |   null -> fun cont -> ThreadPool.QueueUserWorkItem(fun _ -> cont res) |> ignore
                         |   sc -> fun cont -> sc.Post((fun _ -> cont res), state=null)
-#endif                        
                     grabbedConts |> List.iter postOrQueue
 
         /// Get the reified result 
