@@ -2312,11 +2312,7 @@ namespace Microsoft.FSharp.Core
         // and only request AllowLeadingSign.
 
         let isOXB c = 
-#if FX_NO_TO_LOWER_INVARIANT
-            let c = System.Char.ToLower c
-#else
             let c = System.Char.ToLowerInvariant c
-#endif
             charEq c 'x' || charEq c 'o' || charEq c 'b'
 
         let is0OXB (s:string) p l = 
@@ -2324,11 +2320,7 @@ namespace Microsoft.FSharp.Core
 
         let get0OXB (s:string) (p:byref<int>)  l = 
             if is0OXB s p l
-#if FX_NO_TO_LOWER_INVARIANT
-            then let r = System.Char.ToLower(s.Chars(p+1) ) in p <- p + 2;  r
-#else
             then let r = System.Char.ToLowerInvariant(s.Chars(p+1)) in p <- p + 2; r
-#endif
             else 'd' 
 
         let getSign32 (s:string) (p:byref<int>) l = 
@@ -2380,11 +2372,7 @@ namespace Microsoft.FSharp.Core
             let sign = getSign32 s &p l 
             let specifier = get0OXB s &p l 
             if p >= l then formatError() else
-#if FX_NO_TO_LOWER_INVARIANT
-            match Char.ToLower(specifier, CultureInfo.InvariantCulture(*FxCop:1304*)) with 
-#else
             match Char.ToLowerInvariant(specifier) with 
-#endif
             | 'x' -> sign * (int32OfUInt32 (Convert.ToUInt32(UInt64.Parse(s.Substring(p), NumberStyles.AllowHexSpecifier,CultureInfo.InvariantCulture))))
             | 'b' -> sign * (int32OfUInt32 (Convert.ToUInt32(parseBinaryUInt64 s p l)))
             | 'o' -> sign * (int32OfUInt32 (Convert.ToUInt32(parseOctalUInt64 s p l)))
@@ -2399,11 +2387,7 @@ namespace Microsoft.FSharp.Core
             let sign = getSign64 s &p l 
             let specifier = get0OXB s &p l 
             if p >= l then formatError() else
-#if FX_NO_TO_LOWER_INVARIANT
-            match Char.ToLower(specifier, CultureInfo.InvariantCulture(*FxCop:1304*)) with 
-#else
             match Char.ToLowerInvariant(specifier) with 
-#endif
             | 'x' -> sign *. Int64.Parse(s.Substring(p), NumberStyles.AllowHexSpecifier,CultureInfo.InvariantCulture)
             | 'b' -> sign *. (int64OfUInt64 (parseBinaryUInt64 s p l))
             | 'o' -> sign *. (int64OfUInt64 (parseOctalUInt64 s p l))

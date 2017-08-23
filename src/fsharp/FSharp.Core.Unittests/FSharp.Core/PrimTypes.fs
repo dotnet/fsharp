@@ -89,11 +89,7 @@ type LanguagePrimitivesModule() =
     member this.GuidToString() =
         let s = "F99D95E0-2A5E-47c4-9B92-6661D65AE6B3"
         let guid = new Guid(s)
-#if FX_NO_TO_LOWER_INVARIANT
-        Assert.AreEqual((string guid).ToLower(), s.ToLower())
-#else        
         Assert.AreEqual((string guid).ToLowerInvariant(), s.ToLowerInvariant())
-#endif
 
     [<Test>]
     member this.GenericComparison() =
