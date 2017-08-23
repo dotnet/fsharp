@@ -325,11 +325,7 @@ type AsyncModule() =
         try
             Async.RunSynchronously (go, cancellationToken = cts.Token)
         with
-#if FX_NO_OPERATION_CANCELLED
-            _ -> ()
-#else
             :? System.OperationCanceledException -> ()
-#endif
         Assert.AreEqual(1, !flag)
 
     [<Test>]
@@ -548,11 +544,7 @@ type AsyncModule() =
                   |> fun c -> Async.RunSynchronously(c, cancellationToken = cts.Token)
                   |> ignore
             with
-#if FX_NO_OPERATION_CANCELLED
-                _ -> ()
-#else
                 :? System.OperationCanceledException -> () // OK
-#endif
         for _ in 1..1000 do test()
 
     [<Test>]

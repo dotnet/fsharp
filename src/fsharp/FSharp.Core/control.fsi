@@ -12,13 +12,6 @@ namespace Microsoft.FSharp.Control
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
 
-#if FX_NO_OPERATION_CANCELLED
-
-    type OperationCanceledException =
-        inherit System.Exception
-        new : System.String -> OperationCanceledException
-#endif
-
 
     /// <summary>A compositional asynchronous computation, which, when run, will eventually produce a value 
     /// of type T, or else raises an exception.</summary> 
