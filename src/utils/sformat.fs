@@ -499,11 +499,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 #endif
         /// If "str" ends with "ending" then remove it from "str", otherwise no change.
         let trimEnding (ending:string) (str:string) =
-#if FX_NO_CULTURE_INFO_ARGS
-          if str.EndsWith(ending) then 
-#else
           if str.EndsWith(ending,StringComparison.Ordinal) then 
-#endif
               str.Substring(0,str.Length - ending.Length) 
           else str
 
@@ -817,11 +813,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                 raise (System.MissingMethodException(msg))
 #endif
 #else
-#if FX_NO_CULTURE_INFO_ARGS
-            ty.InvokeMember(name, (BindingFlags.GetProperty ||| BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic), null, obj, [| |])
-#else
             ty.InvokeMember(name, (BindingFlags.GetProperty ||| BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic), null, obj, [| |],CultureInfo.InvariantCulture)
-#endif
 #endif
         let getField obj (fieldInfo: FieldInfo) =
             fieldInfo.GetValue(obj)
