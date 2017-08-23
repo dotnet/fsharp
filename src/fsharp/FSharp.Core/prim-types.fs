@@ -770,12 +770,8 @@ namespace Microsoft.FSharp.Core
                 PhysicalEqualityIntrinsic x y
           
             let PhysicalHashIntrinsic (x: 'T) : int when 'T : not struct  = 
-#if FX_NO_GET_HASH_CODE_HELPER
-                (box x).GetHashCode()
-#else
                 System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(box x)
-#endif
-            
+
             let inline PhysicalHashFast (x: 'T) = 
                 PhysicalHashIntrinsic x
 
