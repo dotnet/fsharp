@@ -7,8 +7,11 @@ module public ReferenceResolver =
 #else
 module internal ReferenceResolver = 
 #endif
-
+    #if COMPILER_PUBLIC_API
+    exception ResolutionFailure 
+    #else
     exception internal ResolutionFailure
+    #endif
 
     type ResolutionEnvironment = 
         /// Indicates a script or source being compiled
