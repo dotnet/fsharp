@@ -113,18 +113,13 @@ namespace Microsoft.FSharp.Control
 
         [<Literal>]
         static let bindLimitBeforeHijack = 300 
-#if !FX_NO_THREAD_STATIC
+
         [<ThreadStatic>]
         [<DefaultValue>]
         static val mutable private thisThreadHasTrampoline : bool
-#endif
 
         static member ThisThreadHasTrampoline = 
-#if FX_NO_THREAD_STATIC
-            true
-#else
             Trampoline.thisThreadHasTrampoline
-#endif
         
         let mutable cont = None
         let mutable bindCount = 0
@@ -140,23 +135,17 @@ namespace Microsoft.FSharp.Control
                 | Some newAction -> 
                     cont <- None
                     loop newAction
-#if !FX_NO_THREAD_STATIC
             let thisIsTopTrampoline =
                 if Trampoline.thisThreadHasTrampoline then
                     false
                 else
                     Trampoline.thisThreadHasTrampoline <- true
                     true
-#endif
             try
                 loop firstAction
             finally
-#if FX_NO_THREAD_STATIC
-                ()
-#else
                 if thisIsTopTrampoline then
                     Trampoline.thisThreadHasTrampoline <- false
-#endif       
             FakeUnit
             
         // returns true if time to jump on trampoline

@@ -1262,9 +1262,7 @@ module internal PrintfImpl =
         static let get(key : string) = map.GetOrAdd(key, getOrAddFunc)
 
         [<DefaultValue>]
-#if !FX_NO_THREAD_STATIC
         [<ThreadStatic>]
-#endif
         static val mutable private last : string * CachedItem<'T, 'State, 'Residue, 'Result>
     
         static member Get(key : Format<'T, 'State, 'Residue, 'Result>) =
