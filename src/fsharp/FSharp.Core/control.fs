@@ -1253,26 +1253,6 @@ namespace Microsoft.FSharp.Control
 
             task.ContinueWith(Action<Task>(continuation)) |> ignore |> fake
 
-#if FX_NO_REGISTERED_WAIT_HANDLES
-    [<Sealed>]
-    [<AutoSerializable(false)>]
-    type internal WaitHandleIAsyncResult(wh : WaitHandle) = 
-        interface System.IAsyncResult with
-            member this.AsyncState = null
-            member this.AsyncWaitHandle = wh
-            member this.IsCompleted = 
-#if FX_NO_WAITONE_MILLISECONDS
-                wh.WaitOne(TimeSpan(0L))
-#else
-#if FX_NO_EXIT_CONTEXT_FLAGS
-                wh.WaitOne(0)
-#else
-                wh.WaitOne(0,exitContext=false)
-#endif
-#endif
-            member this.CompletedSynchronously = false // always reschedule
-#endif
-
     type Async with
 
         /// StartWithContinuations, except the exception continuation is given an ExceptionDispatchInfo
@@ -1367,61 +1347,6 @@ namespace Microsoft.FSharp.Control
 #endif
                     async.Return ok)
             else
-#if FX_NO_REGISTERED_WAIT_HANDLES
-                protectedPrimitiveWithResync(fun ({ aux = aux } as args) ->
-                    // The .NET Compact Framework doesn't support RegisterWaitForSingleObject
-                    
-                    // Latch is used to protect entrance to the cancelHandler/actual continuation/error continuation
-                    let latch = Latch()
-
-                    let scont = args.cont
-                    let ccont = aux.ccont
-
-                    // cancel action
-                    let cancel e = 
-                        if latch.Enter() then
-                            Async.Start (async { do (ccont e |> unfake) })
-
-                    // register cancellation handler
-                    let registration = aux.token.Register(fun () -> cancel (OperationCanceledException(aux.token)))
-
-                    // run actual await routine
-                    // callback will be executed on the thread pool so we need to use TrampolineHolder.Protect to install trampoline
-                    try
-                        Task.Factory.FromAsync
-                            (
-                                WaitHandleIAsyncResult(waitHandle),
-                                fun _ -> 
-                                    if latch.Enter() then
-                                        registration.Dispose()
-                                        aux.trampolineHolder.Protect(fun () -> scont true) 
-                                        |> unfake
-                            )
-                            |> ignore
-                        // if user has specified timeout different from Timeout.Infinite 
-                        // then start another async to track timeout expiration
-                        if millisecondsTimeout <> Timeout.Infinite then 
-                            Async.StartWithContinuations
-                                (
-                                    computation = (Async.Sleep millisecondsTimeout),
-                                    continuation = (fun () -> 
-                                        if latch.Enter() then 
-                                            registration.Dispose()
-                                            aux.trampolineHolder.Protect(fun () ->  scont false)
-                                            |> unfake),
-                                    exceptionContinuation = ignore, // we do not expect exceptions here
-                                    cancellationContinuation = cancel,
-                                    cancellationToken = aux.token
-                                )
-                        FakeUnit
-                    with e -> 
-                        if latch.Enter() then 
-                            registration.Dispose()
-                            reraise() // exception will be intercepted by try..with in protectedPrimitiveWithResync
-                        else FakeUnit
-                    )
-
-#else
                 protectedPrimitiveWithResync(fun ({ aux = aux } as args) ->
                     let rwh = ref (None : RegisteredWaitHandle option)
                     let latch = Latch()
@@ -1459,7 +1384,6 @@ namespace Microsoft.FSharp.Control
                             reraise() // reraise exception only if we successfully enter the latch (no other continuations were called)
                         else FakeUnit
                     )
-#endif
 
         static member AwaitIAsyncResult(iar: IAsyncResult, ?millisecondsTimeout): Async<bool> =
             async { if iar.CompletedSynchronously then 
