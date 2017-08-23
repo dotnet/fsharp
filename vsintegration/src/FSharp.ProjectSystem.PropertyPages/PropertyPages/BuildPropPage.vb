@@ -202,7 +202,7 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             resources.ApplyResources(Me.cboWarningLevel, "cboWarningLevel")
             Me.cboWarningLevel.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList
             Me.cboWarningLevel.FormattingEnabled = True
-            Me.cboWarningLevel.Items.AddRange(New Object() {"0", "1", "2", "3", "4", "5"})
+            Me.cboWarningLevel.Items.AddRange(New Object() {resources.GetString("cboWarningLevel.Items"), resources.GetString("cboWarningLevel.Items1"), resources.GetString("cboWarningLevel.Items2"), resources.GetString("cboWarningLevel.Items3"), resources.GetString("cboWarningLevel.Items4"), resources.GetString("cboWarningLevel.Items5")})
             Me.cboWarningLevel.Name = "cboWarningLevel"
             '
             'lblSupressWarnings

@@ -2,9 +2,8 @@
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System.IO
 open System.Composition
-open System.Collections.Generic
+open System.IO
 open System.Collections.Immutable
 open System.Linq
 open System.Threading
@@ -12,17 +11,17 @@ open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Editor
-open Microsoft.CodeAnalysis.Editor.Host
 open Microsoft.CodeAnalysis.Navigation
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis.FindSymbols
 
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open System
-open System.Windows.Forms
+open System.Diagnostics
 
 type internal FSharpNavigableItem(document: Document, textSpan: TextSpan) =
     interface INavigableItem with
@@ -34,7 +33,7 @@ type internal FSharpNavigableItem(document: Document, textSpan: TextSpan) =
         member this.DisplayTaggedParts = ImmutableArray<TaggedText>.Empty
         member this.ChildItems = ImmutableArray<INavigableItem>.Empty
 
-type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: ProjectInfoManager) =
+type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpProjectOptionsManager) =
 
     static let userOpName = "GoToDefinition"
 
@@ -145,21 +144,109 @@ type private StatusBar(statusBar: IVsStatusbar) =
         { new IDisposable with
             member __.Dispose() = statusBar.Animation(0, &searchIcon) |> ignore }
 
+module internal Symbol =
+
+    let fullName (root: ISymbol) : string =
+        
+        let rec inner parts (sym: ISymbol) =
+            match sym with
+            | null ->
+                parts
+            // TODO: do we have any other terminating cases?
+            | sym when sym.Kind = SymbolKind.NetModule || sym.Kind = SymbolKind.Assembly ->
+                parts
+            | sym when sym.MetadataName <> "" ->
+                inner (sym.MetadataName :: parts) sym.ContainingSymbol
+            | sym ->
+                inner parts sym.ContainingSymbol
+
+        inner [] root |> String.concat "."
+
+module internal ExternalType =
+
+    let rec tryOfRoslynType (typesym: ITypeSymbol): ExternalType option =
+        match typesym with
+        | :? IPointerTypeSymbol as ptrparam ->
+            tryOfRoslynType ptrparam.PointedAtType |> Option.map ExternalType.Pointer
+        | :? IArrayTypeSymbol as arrparam ->
+            tryOfRoslynType arrparam.ElementType |> Option.map ExternalType.Array
+        | :? ITypeParameterSymbol as typaram ->
+            Some (ExternalType.TypeVar typaram.Name)
+        | :? INamedTypeSymbol as namedTypeSym ->
+            namedTypeSym.TypeArguments
+            |> Seq.map tryOfRoslynType
+            |> List.ofSeq
+            |> Option.ofOptionList
+            |> Option.map (fun genericArgs ->
+                ExternalType.Type (Symbol.fullName typesym, genericArgs)
+                )
+        | _ ->
+            Debug.Assert(false, sprintf "GoToDefinitionService: Unexpected Roslyn type symbol subclass: %O" (typesym.GetType()))
+            None
+
+module internal ParamTypeSymbol =
+
+    let tryOfRoslynParameter (param: IParameterSymbol): ParamTypeSymbol option =
+        ExternalType.tryOfRoslynType param.Type
+        |> Option.map (
+            if param.RefKind = RefKind.None then ParamTypeSymbol.Param
+            else ParamTypeSymbol.Byref
+            )
+
+    let tryOfRoslynParameters (paramSyms: ImmutableArray<IParameterSymbol>): ParamTypeSymbol list option =
+        paramSyms |> Seq.map tryOfRoslynParameter |> Seq.toList |> Option.ofOptionList
+
+module internal ExternalSymbol =
+    
+    let rec ofRoslynSymbol (symbol: ISymbol) : (ISymbol * ExternalSymbol) list =
+        let container = Symbol.fullName symbol.ContainingSymbol
+
+        match symbol with
+        | :? INamedTypeSymbol as typesym ->
+            let fullTypeName = Symbol.fullName typesym
+
+            let constructors =
+                typesym.InstanceConstructors
+                |> Seq.choose<_,ISymbol * ExternalSymbol> (fun methsym ->
+                    ParamTypeSymbol.tryOfRoslynParameters methsym.Parameters
+                    |> Option.map (fun args -> upcast methsym, ExternalSymbol.Constructor(fullTypeName, args))
+                    )
+                |> List.ofSeq
+                
+            (symbol, ExternalSymbol.Type fullTypeName) :: constructors
+
+        | :? IMethodSymbol as methsym ->
+            ParamTypeSymbol.tryOfRoslynParameters methsym.Parameters
+            |> Option.map (fun args ->
+                symbol, ExternalSymbol.Method(container, methsym.MetadataName, args, methsym.TypeParameters.Length))
+            |> Option.toList
+
+        | :? IPropertySymbol as propsym ->
+            [upcast propsym, ExternalSymbol.Property(container, propsym.MetadataName)]
+
+        | :? IFieldSymbol as fieldsym ->
+            [upcast fieldsym, ExternalSymbol.Field(container, fieldsym.MetadataName)]
+
+        | :? IEventSymbol as eventsym ->
+            [upcast eventsym, ExternalSymbol.Event(container, eventsym.MetadataName)]
+
+        | _ -> []
+                
+
 [<ExportLanguageService(typeof<IGoToDefinitionService>, FSharpConstants.FSharpLanguageName)>]
 [<Export(typeof<FSharpGoToDefinitionService>)>]
 type internal FSharpGoToDefinitionService 
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager,
-        [<ImportMany>] _presenters: IEnumerable<INavigableItemsPresenter>
+        projectInfoManager: FSharpProjectOptionsManager
     ) =
 
     static let userOpName = "GoToDefinition"
     let gotoDefinition = GoToDefinition(checkerProvider.Checker, projectInfoManager)
     let serviceProvider =  ServiceProvider.GlobalProvider
     let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar,IVsStatusbar>())
-
+    
     let tryNavigateToItem (navigableItem: #INavigableItem option) =
         use __ = statusBar.Animate()
 
@@ -227,6 +314,25 @@ type internal FSharpGoToDefinitionService
             let! targetSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland, userOpName=userOpName)
 
             match declarations with
+            | FSharpFindDeclResult.ExternalDecl (assy, targetExternalSym) ->
+                let! project = originDocument.Project.Solution.Projects |> Seq.tryFind (fun p -> p.AssemblyName.Equals(assy, StringComparison.OrdinalIgnoreCase))
+                let! symbols = SymbolFinder.FindSourceDeclarationsAsync(project, fun _ -> true)
+
+                let roslynSymbols =
+                    symbols
+                    |> Seq.collect ExternalSymbol.ofRoslynSymbol
+                    |> Array.ofSeq
+
+                let! symbol =
+                    roslynSymbols
+                    |> Seq.tryPick (fun (sym, externalSym) ->
+                        if externalSym = targetExternalSym then Some sym
+                        else None
+                        )
+ 
+                let! location = symbol.Locations |> Seq.tryHead
+                return FSharpNavigableItem(project.GetDocument(location.SourceTree), location.SourceSpan)
+
             | FSharpFindDeclResult.DeclFound targetRange -> 
                 // if goto definition is called at we are alread at the declaration location of a symbol in
                 // either a signature or an implementation file then we jump to it's respective postion in thethe

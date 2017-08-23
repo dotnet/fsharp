@@ -2,7 +2,6 @@
 
 namespace Microsoft.FSharp.Quotations
 
-#if !FX_MINIMAL_REFLECTION
 open System
 open System.IO
 open System.Reflection
@@ -1760,9 +1759,7 @@ module Patterns =
             let qdataResources = 
                 // dynamic assemblies don't support the GetManifestResourceNames 
                 match assem with 
-#if !FX_NO_REFLECTION_EMIT
                 | a when a.FullName = "System.Reflection.Emit.AssemblyBuilder" -> []
-#endif
                 | null | _ -> 
                     let resources = 
                         // This raises NotSupportedException for dynamic assemblies
@@ -2222,5 +2219,3 @@ module ExprShape =
             | CombTerm(op,args) -> ShapeCombination(box<ExprConstInfo * Expr list> (op,expr.CustomAttributes),args)
             | HoleTerm _     -> invalidArg "expr" (SR.GetString(SR.QunexpectedHole))
         loop (e :> Expr)
-                
-#endif

@@ -163,7 +163,7 @@ module internal PrintfImpl =
     type PrintfEnv<'State, 'Residue, 'Result> =
         val State : 'State
         new(s : 'State) = { State = s }
-        abstract Finalize : unit -> 'Result
+        abstract Finish : unit -> 'Result
         abstract Write : string -> unit
         abstract WriteT : 'Residue -> unit
     
@@ -225,7 +225,7 @@ module internal PrintfImpl =
                 (fun (a : 'A) ->
                     let env = env()
                     Utils.Write(env, s0, (conv1 a), s1)
-                    env.Finalize()
+                    env.Finish()
                 )
             )
         static member Final2<'A, 'B>
@@ -236,7 +236,7 @@ module internal PrintfImpl =
                 (fun (a : 'A) (b : 'B) ->
                     let env = env()
                     Utils.Write(env, s0, (conv1 a), s1, (conv2 b), s2)
-                    env.Finalize()
+                    env.Finish()
                 )
             )
 
@@ -248,7 +248,7 @@ module internal PrintfImpl =
                 (fun (a : 'A) (b : 'B) (c : 'C) ->
                     let env = env()
                     Utils.Write(env, s0, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3)
-                    env.Finalize()
+                    env.Finish()
                 )
             )
 
@@ -260,7 +260,7 @@ module internal PrintfImpl =
                 (fun (a : 'A) (b : 'B) (c : 'C) (d : 'D)->
                     let env = env()
                     Utils.Write(env, s0, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d), s4)
-                    env.Finalize()
+                    env.Finish()
                 )
             )
         static member Final5<'A, 'B, 'C, 'D, 'E>
@@ -271,7 +271,7 @@ module internal PrintfImpl =
                 (fun (a : 'A) (b : 'B) (c : 'C) (d : 'D) (e : 'E)->
                     let env = env()
                     Utils.Write(env, s0, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d), s4, (conv5 e), s5)
-                    env.Finalize()
+                    env.Finish()
                 )
             )
         static member Chained1<'A, 'Tail>
@@ -354,7 +354,7 @@ module internal PrintfImpl =
                     env.Write(s1)
                     env.WriteT(f env.State)
                     env.Write s2
-                    env.Finalize()
+                    env.Finish()
                 )
             )
         static member TChained<'Tail>(s1 : string, next : PrintfFactory<'State, 'Residue, 'Result,'Tail>) = 
@@ -376,7 +376,7 @@ module internal PrintfImpl =
                     env.Write s1
                     env.WriteT(f env.State a)
                     env.Write s2
-                    env.Finalize()
+                    env.Finish()
                 )
             )
         static member LittleAChained<'A, 'Tail>(s1 : string, next : PrintfFactory<'State, 'Residue, 'Result,'Tail>) = 
@@ -398,7 +398,7 @@ module internal PrintfImpl =
                     env.Write s1
                     env.Write (conv a star1 : string)
                     env.Write s2
-                    env.Finalize()
+                    env.Finish()
                 )
             )   
        
@@ -409,7 +409,7 @@ module internal PrintfImpl =
                     env.Write s1
                     env.Write("%")
                     env.Write s2
-                    env.Finalize()
+                    env.Finish()
                 )
             )
 
@@ -420,7 +420,7 @@ module internal PrintfImpl =
                     env.Write s1
                     env.Write (conv a star1 star2: string)
                     env.Write s2
-                    env.Finalize()
+                    env.Finish()
                 )
             )
 
@@ -432,7 +432,7 @@ module internal PrintfImpl =
                     env.Write s1
                     env.Write("%")
                     env.Write s2
-                    env.Finalize()
+                    env.Finish()
                 )
             )
 
@@ -1234,7 +1234,7 @@ module internal PrintfImpl =
                 box (fun (env : unit -> PrintfEnv<'S, 'Re, 'Res>) -> 
                     let env = env()
                     env.Write prefix
-                    env.Finalize()
+                    env.Finish()
                     )
             else
                 let n = parseFromFormatSpecifier prefix s funcTy prefixPos
@@ -1257,39 +1257,12 @@ module internal PrintfImpl =
     /// 2nd level is global dictionary that maps format string to the corresponding PrintfFactory
     type Cache<'T, 'State, 'Residue, 'Result>() =
         static let generate(fmt) = PrintfBuilder<'State, 'Residue, 'Result>().Build<'T>(fmt)        
-#if FX_NO_CONCURRENT_DICTIONARY
-        static let mutable map = Dictionary<string, CachedItem<'T, 'State, 'Residue, 'Result>>()
-#else
         static let mutable map = System.Collections.Concurrent.ConcurrentDictionary<string, CachedItem<'T, 'State, 'Residue, 'Result>>()
         static let getOrAddFunc = Func<_, _>(generate)
-#endif
-
-        static let get(key : string) = 
-#if FX_NO_CONCURRENT_DICTIONARY
-            lock map (fun () ->
-                let mutable res = Unchecked.defaultof<_>
-                if map.TryGetValue(key, &res) then res
-                else
-                let v = 
-#if DEBUG
-                    try 
-                        generate(key)
-                    with
-                        e -> raise (ArgumentException("PRINTF::" + key, e))
-#else
-                        generate(key)
-#endif
-                map.Add(key, v)
-                v
-            )
-#else
-            map.GetOrAdd(key, getOrAddFunc)
-#endif
+        static let get(key : string) = map.GetOrAdd(key, getOrAddFunc)
 
         [<DefaultValue>]
-#if !FX_NO_THREAD_STATIC
         [<ThreadStatic>]
-#endif
         static val mutable private last : string * CachedItem<'T, 'State, 'Residue, 'Result>
     
         static member Get(key : Format<'T, 'State, 'Residue, 'Result>) =
@@ -1307,7 +1280,7 @@ module internal PrintfImpl =
         let buf : string[] = Array.zeroCreate n
         let mutable ptr = 0
 
-        override __.Finalize() : 'Result = k (String.Concat(buf))
+        override __.Finish() : 'Result = k (String.Concat(buf))
         override __.Write(s : string) = 
             buf.[ptr] <- s
             ptr <- ptr + 1
@@ -1315,13 +1288,13 @@ module internal PrintfImpl =
 
     type StringBuilderPrintfEnv<'Result>(k, buf) = 
         inherit PrintfEnv<Text.StringBuilder, unit, 'Result>(buf)
-        override __.Finalize() : 'Result = k ()
+        override __.Finish() : 'Result = k ()
         override __.Write(s : string) = ignore(buf.Append(s))
         override __.WriteT(()) = ()
 
     type TextWriterPrintfEnv<'Result>(k, tw : IO.TextWriter) =
         inherit PrintfEnv<IO.TextWriter, unit, 'Result>(tw)
-        override __.Finalize() : 'Result = k()
+        override __.Finish() : 'Result = k()
         override __.Write(s : string) = tw.Write s
         override __.WriteT(()) = ()
     

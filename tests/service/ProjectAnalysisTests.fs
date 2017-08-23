@@ -3267,9 +3267,9 @@ let ``Test Project23 property`` () =
         extensionProps
         |> Array.collect (fun f -> 
             [|  if f.HasGetterMethod then
-                    yield (f.EnclosingEntity.FullName, f.GetterMethod.CompiledName, f.GetterMethod.EnclosingEntity.FullName, attribsOfSymbol f)
+                    yield (f.EnclosingEntity.Value.FullName, f.GetterMethod.CompiledName, f.GetterMethod.EnclosingEntity.Value.FullName, attribsOfSymbol f)
                 if f.HasSetterMethod then
-                    yield (f.EnclosingEntity.FullName, f.SetterMethod.CompiledName, f.SetterMethod.EnclosingEntity.FullName, attribsOfSymbol f)
+                    yield (f.EnclosingEntity.Value.FullName, f.SetterMethod.CompiledName, f.SetterMethod.EnclosingEntity.Value.FullName, attribsOfSymbol f)
             |])
         |> Array.toList
 
@@ -3313,9 +3313,9 @@ let ``Test Project23 extension properties' getters/setters should refer to the c
         match x.Symbol with
         | :? FSharpMemberOrFunctionOrValue as f -> 
             if f.HasGetterMethod then
-                yield (f.EnclosingEntity.FullName, f.GetterMethod.EnclosingEntity.FullName, attribsOfSymbol f)
+                yield (f.EnclosingEntity.Value.FullName, f.GetterMethod.EnclosingEntity.Value.FullName, attribsOfSymbol f)
             if f.HasSetterMethod then
-                yield (f.EnclosingEntity.FullName, f.SetterMethod.EnclosingEntity.FullName, attribsOfSymbol f)
+                yield (f.EnclosingEntity.Value.FullName, f.SetterMethod.EnclosingEntity.Value.FullName, attribsOfSymbol f)
         | _ -> () 
         |])
     |> Array.toList
@@ -5132,3 +5132,45 @@ let ``Test typed AST for struct unions`` () = // See https://github.com/fsharp/F
         when uci.Name = "Ok" && obj.Equals(trueValue, true) && obj.Equals(falseValue, false) -> true
     | _ -> failwith "unexpected expression"
     |> shouldEqual true
+
+module internal ProjectLineDirectives = 
+    open System.IO
+
+    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+    let base2 = Path.GetTempFileName()
+    let dllName = Path.ChangeExtension(base2, ".dll")
+    let projFileName = Path.ChangeExtension(base2, ".fsproj")
+    let fileSource1 = """
+module M
+
+# 10 "Test.fsy"
+let x = (1 = 3.0)
+    """
+
+    File.WriteAllText(fileName1, fileSource1)
+    let fileNames = [fileName1]
+    let args = mkProjectCommandLineArgs (dllName, fileNames)
+    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+
+[<Test>]
+let ``Test line directives in foreground analysis`` () = // see https://github.com/Microsoft/visualfsharp/issues/3317
+
+    // In background analysis and normal compiler checking, the errors are reported w.r.t. the line directives
+    let wholeProjectResults = checker.ParseAndCheckProject(ProjectLineDirectives.options) |> Async.RunSynchronously
+    for e in wholeProjectResults.Errors do 
+        printfn "ProjectLineDirectives wholeProjectResults error file: <<<%s>>>" e.FileName
+
+    [ for e in wholeProjectResults.Errors -> e.StartLineAlternate, e.EndLineAlternate, e.FileName ] |> shouldEqual [(10, 10, "Test.fsy")]
+
+    // In foreground analysis routines, used by visual editing tools, the errors are reported w.r.t. the source
+    // file, which is assumed to be in the editor, not the other files referred to by line directives.
+    let checkResults1 = 
+        checker.ParseAndCheckFileInProject(ProjectLineDirectives.fileName1, 0, ProjectLineDirectives.fileSource1, ProjectLineDirectives.options) 
+        |> Async.RunSynchronously
+        |> function (_,FSharpCheckFileAnswer.Succeeded x) ->  x | _ -> failwith "unexpected aborted"
+
+    for e in checkResults1.Errors do 
+        printfn "ProjectLineDirectives checkResults1 error file: <<<%s>>>" e.FileName
+
+    [ for e in checkResults1.Errors -> e.StartLineAlternate, e.EndLineAlternate, e.FileName ] |> shouldEqual [(4, 4, ProjectLineDirectives.fileName1)]
+

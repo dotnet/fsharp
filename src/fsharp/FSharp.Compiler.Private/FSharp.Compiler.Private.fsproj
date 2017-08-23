@@ -48,7 +48,6 @@
       </FilesToSign>
     </ItemGroup>
   </Target>
-  <Import Project = "$(MSBuildThisFileDirectory)..\..\FSharpSource.Profiles.targets" />
   <ItemGroup>
     <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
       <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
@@ -594,6 +593,12 @@
     </Compile>
     <Compile Include="..\SimulatedMSBuildReferenceResolver.fs">
       <Link>Service/SimulatedMSBuildReferenceResolver.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ExternalSymbol.fsi">
+      <Link>Service/ExternalSymbol.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ExternalSymbol.fs">
+      <Link>Service/ExternalSymbol.fs</Link>
     </Compile>
     <Compile Include="..\vs\service.fsi">
       <Link>Service/service.fsi</Link>

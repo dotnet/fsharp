@@ -1,6 +1,35 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
-(* Project handling. *)
+// Project information handling.
+//
+// For the old F# project system, in a running Visual Studio, the **authoritative** view 
+// of the project information is maintained by Project.fs in FSharp.ProjectSystem. This 
+// information is conveyed to the rest of the implementation via an IProjectSite interface.
+//
+// For most purposes, an IProjectSite has to provide three main things
+//   - the source files
+//   - the compilation options
+//   - the assembly references. 
+// Project.fs collects the first two from MSBuild. For the third - assembly references - it looks
+// through the nodes of the hierarchy for the F# project. There seems to be an essentially duplicated
+// version of this code in this file.
+//
+// In our LanguageService.fs, FSharpProjectOptionsManager uses this IProjectSite information to incrementally maintain
+// a corresponding F# CompilerService FSharpProjectOptions value. 
+//
+// In our LanguageService.fs, we also use this IProjectSite information to maintain a
+// corresponding Roslyn project in the workspace. This is done by SetupProjectFile and SyncProject
+// making various calls to add/remove methods such as
+//    projectContext.AddSourceFile
+//    projectContext.RemoveSourceFile
+//    projectContext.AddMetadataReference
+//    projectContext.RemoveMetadataReference
+//    project.AddProjectReference
+// 
+// The new F# project system supplies the project information using a Roslyn project in the workspace.
+// This means a lot of the stuff above is irrelevant in that case, apart from where FSharpProjectOptionsManager
+// incrementally maintains a corresponding F# CompilerService FSharpProjectOptions value. 
+
 namespace Microsoft.VisualStudio.FSharp.LanguageService
 
 open System
@@ -24,8 +53,7 @@ type private ProjectSiteOfScriptFile(filename:string, referencedProjectFileNames
         override this.DescriptionOfProject() = sprintf "Script Closure at Root %s" filename
         override this.CompilerFlags() = checkOptions.OtherOptions
         override this.ProjectFileName() = checkOptions.ProjectFileName
-        override this.ErrorListTaskProvider() = None
-        override this.ErrorListTaskReporter() = None
+        override this.BuildErrorReporter with get() = None and set _v = ()
         override this.AdviseProjectSiteChanges(_,_) = ()
         override this.AdviseProjectSiteCleaned(_,_) = ()
         override this.AdviseProjectSiteClosed(_,_) = ()
@@ -39,6 +67,7 @@ type private ProjectSiteOfScriptFile(filename:string, referencedProjectFileNames
     interface IHaveCheckOptions with
         override this.OriginalCheckOptions() = (referencedProjectFileNames, checkOptions)
         
+    override x.ToString() = sprintf "ProjectSiteOfScriptFile(%s)" filename
         
 /// An orphan file project is a .fs, .ml, .fsi, .mli that is not associated with a .fsproj.
 /// By design, these are never going to typecheck because there is no affiliated references.
@@ -60,8 +89,7 @@ type private ProjectSiteOfSingleFile(sourceFile) =
         override this.DescriptionOfProject() = "Orphan File Project"
         override this.CompilerFlags() = compilerFlags
         override this.ProjectFileName() = projectFileName                
-        override this.ErrorListTaskProvider() = None
-        override this.ErrorListTaskReporter() = None
+        override this.BuildErrorReporter with get() = None and set _v = ()
         override this.AdviseProjectSiteChanges(_,_) = ()
         override this.AdviseProjectSiteCleaned(_,_) = ()
         override this.AdviseProjectSiteClosed(_,_) = ()
@@ -71,9 +99,11 @@ type private ProjectSiteOfSingleFile(sourceFile) =
         override this.LoadTime = new DateTime(2000,1,1)  // any constant time is fine, orphan files do not interact with reloading based on update time
         override this.ProjectProvider = None
         override this.AssemblyReferences() = [||]
+        
+    override x.ToString() = sprintf "ProjectSiteOfSingleFile(%s)" sourceFile
     
 /// Information about projects, open files and other active artifacts in visual studio.
-/// Keeps track of the relationship between IVsTextLines buffers, IFSharpSource objects, IProjectSite objects and FSharpProjectOptions
+/// Keeps track of the relationship between IVsTextLines buffers, IFSharpSource_DEPRECATED objects, IProjectSite objects and FSharpProjectOptions
 [<Sealed>]
 type internal ProjectSitesAndFiles() =
     static let sourceUserDataGuid = new Guid("{55F834FD-B950-4C61-BBAA-0511ABAF4AE2}") // Guid for source user data on text buffer
@@ -123,7 +153,7 @@ type internal ProjectSitesAndFiles() =
             | None -> ()
         }
                     
-    static let rec referencedProjectsOf (tryGetOptionsForReferencedProject, projectSite:IProjectSite, extraProjectInfo, serviceProvider:System.IServiceProvider, useUniqueStamp) =
+    static let rec referencedProjectsOf (enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite:IProjectSite, extraProjectInfo, serviceProvider:System.IServiceProvider, useUniqueStamp) =
         [| for (p,ps) in referencedProvideProjectSites (projectSite, serviceProvider) do
               match fullOutputAssemblyPath p with 
               | None -> ()
@@ -132,14 +162,16 @@ type internal ProjectSitesAndFiles() =
                       // Lookup may not succeed if the project has not been established yet
                       // In this case we go and compute the options recursively.
                       match tryGetOptionsForReferencedProject p.FileName with 
-                      | None -> getProjectOptionsForProjectSite (tryGetOptionsForReferencedProject, ps.GetProjectSite(), p.FileName, extraProjectInfo, serviceProvider, useUniqueStamp) |> snd
+                      | None -> getProjectOptionsForProjectSite (enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, ps.GetProjectSite(), p.FileName, extraProjectInfo, serviceProvider, useUniqueStamp) |> snd
                       | Some options -> options
                   yield (p.FileName, (path, referencedProjectOptions)) |]
 
-    and getProjectOptionsForProjectSite(tryGetOptionsForReferencedProject, projectSite:IProjectSite, fileName, extraProjectInfo, serviceProvider, useUniqueStamp) =            
+    and getProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite:IProjectSite, fileName, extraProjectInfo, serviceProvider, useUniqueStamp) =            
         let referencedProjectFileNames, referencedProjectOptions = 
-            referencedProjectsOf(tryGetOptionsForReferencedProject, projectSite, extraProjectInfo, serviceProvider, useUniqueStamp) 
-            |> Array.unzip
+            if enableInMemoryCrossProjectReferences then
+                referencedProjectsOf(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, extraProjectInfo, serviceProvider, useUniqueStamp) 
+                |> Array.unzip
+            else [| |], [| |]
 
         let options = 
             {ProjectFileName = projectSite.ProjectFileName()
@@ -163,16 +195,40 @@ type internal ProjectSitesAndFiles() =
 
         new ProjectSiteOfSingleFile(filename) :> IProjectSite
     
-    member art.SetSource(buffer:IVsTextLines, source:IFSharpSource) : unit =
+        
+    static member GetReferencedProjectSites(projectSite:IProjectSite, serviceProvider:System.IServiceProvider) =
+        referencedProvideProjectSites (projectSite, serviceProvider)
+        |> Seq.map (fun (_, ps) -> ps.GetProjectSite())
+        |> Seq.toArray
+
+    /// Create project options for this project site.
+    static member GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite:IProjectSite,filename,extraProjectInfo,serviceProvider:System.IServiceProvider, useUniqueStamp) =
+        match projectSite with
+        | :? IHaveCheckOptions as hco -> hco.OriginalCheckOptions()
+        | _ ->             
+            getProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, filename, extraProjectInfo, serviceProvider, useUniqueStamp)
+         
+    /// Create project site for these project options
+    static member CreateProjectSiteForScript (filename, referencedProjectFileNames, checkOptions) = 
+        ProjectSiteOfScriptFile (filename, referencedProjectFileNames, checkOptions) :> IProjectSite
+
+
+
+    //
+    // Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
+    //
+    // Note: Tests using this code should either be adjusted to test the corresponding feature in
+    // FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
+    // functionality and thus have considerable value, they should ony be deleted if we are sure this 
+    // is not the case.
+    //
+
+    member art.SetSource_DEPRECATED(buffer:IVsTextLines, source:IFSharpSource_DEPRECATED) : unit =
         let mutable guid = sourceUserDataGuid
         (buffer :?> IVsUserData).SetData(&guid, source) |> ErrorHandler.ThrowOnFailure |> ignore
 
-    member art.UnsetSource(buffer:IVsTextLines) : unit =
-        let mutable guid = sourceUserDataGuid
-        (buffer :?> IVsUserData).SetData(&guid, null) |> ErrorHandler.ThrowOnFailure |> ignore
-        
-    /// Given a filename get the corresponding Source
-    member art.TryGetSourceOfFile(rdt:IVsRunningDocumentTable, filename:string) : IFSharpSource option =
+
+    member art.TryGetSourceOfFile_DEPRECATED(rdt:IVsRunningDocumentTable, filename:string) : IFSharpSource_DEPRECATED option =
         match VsRunningDocumentTable.FindDocumentWithoutLocking(rdt,filename) with 
         | Some(_hier, textLines) ->
             match textLines with
@@ -183,12 +239,12 @@ type internal ProjectSitesAndFiles() =
                 (textLines :?> IVsUserData).GetData(&guid, &result) |> ignore
                 match result with
                 |   null -> None
-                |   source -> Some(source :?> IFSharpSource)
+                |   source -> Some(source :?> IFSharpSource_DEPRECATED)
                 
         | None -> None                
 
-    /// Get the list of Defines for a given buffer
-    member art.GetDefinesForFile(rdt:IVsRunningDocumentTable, filename : string) =
+
+    member art.GetDefinesForFile_DEPRECATED(rdt:IVsRunningDocumentTable, filename : string) =
         // The only caller of this function calls it each time it needs to colorize a line, so this call must execute very fast.  
         if SourceFile.MustBeSingleFileProject(filename) then 
             CompilerEnvironment.GetCompilationDefinesForEditing(filename,[])
@@ -205,7 +261,8 @@ type internal ProjectSitesAndFiles() =
 
             CompilerEnvironment.GetCompilationDefinesForEditing(filename,site.CompilerFlags() |> Array.toList)
 
-    member art.TryFindOwningProject(rdt:IVsRunningDocumentTable, filename) = 
+
+    member art.TryFindOwningProject_DEPRECATED(rdt:IVsRunningDocumentTable, filename) = 
         if SourceFile.MustBeSingleFileProject(filename) then None
         else
             match VsRunningDocumentTable.FindDocumentWithoutLocking(rdt,filename) with 
@@ -223,28 +280,8 @@ type internal ProjectSitesAndFiles() =
                 | None -> None
             | None -> None
                         
-    /// Find the project that "owns" this filename.  That is,
-    ///  - if the file is associated with an F# IVsHierarchy in the RDT, and
-    ///  - the .fsproj has this file in its list of <Compile> items,
-    /// then the project is considered the 'owner'.  Otherwise a 'single file project' is returned.
-    member art.FindOwningProject(rdt:IVsRunningDocumentTable, filename) = 
-        match art.TryFindOwningProject(rdt, filename) with
+
+    member art.FindOwningProject_DEPRECATED(rdt:IVsRunningDocumentTable, filename) = 
+        match art.TryFindOwningProject_DEPRECATED(rdt, filename) with
         | Some site -> site
         | None -> ProjectSitesAndFiles.ProjectSiteOfSingleFile(filename)      
-        
-    static member GetReferencedProjectSites(projectSite:IProjectSite, serviceProvider:System.IServiceProvider) =
-        referencedProvideProjectSites (projectSite, serviceProvider)
-        |> Seq.map (fun (_, ps) -> ps.GetProjectSite())
-        |> Seq.toArray
-
-    /// Create project options for this project site.
-    static member GetProjectOptionsForProjectSite(tryGetOptionsForReferencedProject, projectSite:IProjectSite,filename,extraProjectInfo,serviceProvider:System.IServiceProvider, useUniqueStamp) =
-        match projectSite with
-        | :? IHaveCheckOptions as hco -> hco.OriginalCheckOptions()
-        | _ ->             
-            getProjectOptionsForProjectSite(tryGetOptionsForReferencedProject, projectSite, filename, extraProjectInfo, serviceProvider, useUniqueStamp)
-         
-    /// Create project site for these project options
-    static member CreateProjectSiteForScript (filename, referencedProjectFileNames, checkOptions) = 
-        ProjectSiteOfScriptFile (filename, referencedProjectFileNames, checkOptions) :> IProjectSite
-

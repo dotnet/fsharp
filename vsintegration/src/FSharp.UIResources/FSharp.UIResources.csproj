@@ -55,6 +55,10 @@
     <Compile Include="CodeFixesOptionControl.xaml.cs">
       <DependentUpon>CodeFixesOptionControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="IntegerRangeValidationRule.cs" />
+    <Compile Include="LanguageServicePerformanceOptionControl.xaml.cs">
+      <DependentUpon>LanguageServicePerformanceOptionControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="IntelliSenseOptionControl.xaml.cs">
       <DependentUpon>IntelliSenseOptionControl.xaml</DependentUpon>
     </Compile>
@@ -78,6 +82,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="LanguageServicePerformanceOptionControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="IntelliSenseOptionControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -95,6 +103,7 @@
     <EmbeddedResource Include="Strings.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>Strings.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

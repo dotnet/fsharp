@@ -4385,9 +4385,12 @@ let stripTopLambda (e,ty) =
     let vs,body,rty = stripLambda (taue,tauty)
     tps,vs,body,rty
 
+[<RequireQualifiedAccess>]
+type AllowTypeDirectedDetupling = Yes | No
+
 // This is used to infer arities of expressions 
 // i.e. base the chosen arity on the syntactic expression shape and type of arguments 
-let InferArityOfExpr g ty partialArgAttribsL retAttribs e = 
+let InferArityOfExpr g allowTypeDirectedDetupling ty partialArgAttribsL retAttribs e = 
     let rec stripLambda_notypes e = 
         match e with 
         | Expr.Lambda (_,_,_,vs,b,_,_) -> 
@@ -4410,7 +4413,12 @@ let InferArityOfExpr g ty partialArgAttribsL retAttribs e =
     let curriedArgInfos =
         (List.zip vsl dtys) |> List.mapi (fun i (vs,ty) -> 
             let partialAttribs = if i < partialArgAttribsL.Length then partialArgAttribsL.[i] else []
-            let tys = if (i = 0 && isUnitTy g ty) then [] else tryDestRefTupleTy g ty
+            let tys = 
+                match allowTypeDirectedDetupling with
+                | AllowTypeDirectedDetupling.No -> [ty] 
+                | AllowTypeDirectedDetupling.Yes -> 
+                    if (i = 0 && isUnitTy g ty) then [] 
+                    else tryDestRefTupleTy g ty
             let ids = 
                 if vs.Length = tys.Length then  vs |> List.map (fun v -> Some v.Id)
                 else tys |> List.map (fun _ -> None)
@@ -4421,10 +4429,10 @@ let InferArityOfExpr g ty partialArgAttribsL retAttribs e =
     let retInfo : ArgReprInfo = { Attribs = retAttribs; Name = None }
     ValReprInfo (ValReprInfo.InferTyparInfo tps, curriedArgInfos, retInfo)
 
-let InferArityOfExprBinding g (v:Val) e = 
+let InferArityOfExprBinding g allowTypeDirectedDetupling (v:Val) e = 
     match v.ValReprInfo with
     | Some info -> info
-    | None -> InferArityOfExpr g v.Type [] [] e
+    | None -> InferArityOfExpr g allowTypeDirectedDetupling v.Type [] [] e
 
 //-------------------------------------------------------------------------
 // Check if constraints are satisfied that allow us to use more optimized
@@ -6942,8 +6950,8 @@ let LinearizeTopMatchAux g parent  (spBind,m,tree,targets,m2,ty) =
             vs |> List.mapi (fun i v -> 
                 let ty = v.Type
                 let rhs =  etaExpandTypeLambda g m  v.Typars (itemsProj vtys i tmpe, ty)
-                (* update the arity of the value *)
-                v.SetValReprInfo (Some (InferArityOfExpr g ty [] [] rhs))
+                // update the arity of the value 
+                v.SetValReprInfo (Some (InferArityOfExpr g AllowTypeDirectedDetupling.Yes ty [] [] rhs))
                 mkInvisibleBind v rhs)  in (* vi = proj tmp *)
         mkCompGenLet m
           tmp (primMkMatch (spBind,m,tree,targets,m2,tmpTy)) (* note, probably retyped match, but note, result still has same type *)

@@ -27,7 +27,7 @@ type internal FSharpCompletionProvider
         workspace: Workspace,
         serviceProvider: SVsServiceProvider,
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager,
+        projectInfoManager: FSharpProjectOptionsManager,
         assemblyContentProvider: AssemblyContentProvider
     ) =
 
@@ -47,7 +47,7 @@ type internal FSharpCompletionProvider
         |> List.filter (fun (keyword, _) -> not (PrettyNaming.IsOperatorName keyword))
         |> List.sortBy (fun (keyword, _) -> keyword)
         |> List.mapi (fun n (keyword, description) ->
-             CommonCompletionItem.Create(keyword, Nullable Glyph.Keyword, sortText = sprintf "%06d" (1000000 + n))
+             CommonCompletionItem.Create(keyword, CompletionItemRules.Default, Nullable Glyph.Keyword, sortText = sprintf "%06d" (1000000 + n))
                 .AddProperty("description", description)
                 .AddProperty(IsKeywordPropName, ""))
     
@@ -57,7 +57,7 @@ type internal FSharpCompletionProvider
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
     
     static let noCommitOnSpaceRules = 
-        CompletionItemRules.Default.WithCommitCharacterRule(CharacterSetModificationRule.Create(CharacterSetModificationKind.Remove, ' ', '.', '<', '>', '(', ')', '!', ':'))
+        CompletionItemRules.Default.WithCommitCharacterRule(CharacterSetModificationRule.Create(CharacterSetModificationKind.Remove, ' ', '=', ',', '.', '<', '>', '(', ')', '!', ':'))
     
     static let getRules() = if Settings.IntelliSense.ShowAfterCharIsTyped then noCommitOnSpaceRules else CompletionItemRules.Default
 
@@ -231,7 +231,7 @@ type internal FSharpCompletionProvider
                 let documentation = List()
                 let collector = RoslynHelpers.CollectTaggedText documentation
                 // mix main description and xmldoc by using one collector
-                XmlDocumentation.BuildDataTipText(documentationBuilder, collector, collector, description) 
+                XmlDocumentation.BuildDataTipText(documentationBuilder, collector, collector, collector, collector, collector, description) 
                 return CompletionDescription.Create(documentation.ToImmutableArray())
             else
                 return CompletionDescription.Empty

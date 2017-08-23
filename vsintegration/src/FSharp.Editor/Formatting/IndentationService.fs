@@ -18,7 +18,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 [<ExportLanguageService(typeof<ISynchronousIndentationService>, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpIndentationService
     [<ImportingConstructor>]
-    (projectInfoManager: ProjectInfoManager) =
+    (projectInfoManager: FSharpProjectOptionsManager) =
 
     static member IsSmartIndentEnabled (workspace: Workspace) =
         let options = workspace.Options

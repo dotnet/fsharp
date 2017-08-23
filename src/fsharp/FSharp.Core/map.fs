@@ -414,12 +414,8 @@ namespace Microsoft.FSharp.Collections
 
 
 
-#if !FX_NO_DEBUG_PROXIES
     [<System.Diagnostics.DebuggerTypeProxy(typedefof<MapDebugView<_,_>>)>]
-#endif
-#if !FX_NO_DEBUG_DISPLAYS
     [<System.Diagnostics.DebuggerDisplay("Count = {Count}")>]
-#endif
     [<Sealed>]
     [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")>]
     [<CompiledName("FSharpMap`2")>]
@@ -478,9 +474,7 @@ namespace Microsoft.FSharp.Collections
            let comparer = LanguagePrimitives.FastGenericComparer<'Key> 
            new Map<_,_>(comparer,MapTree.ofSeq comparer ie)
     
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         member internal m.Comparer = comparer
         //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
         member internal m.Tree = tree
@@ -495,9 +489,8 @@ namespace Microsoft.FSharp.Collections
                MapTree.largestMapStackTrace <- System.Diagnostics.StackTrace().ToString()
 #endif
             new Map<'Key,'Value>(comparer,MapTree.add comparer k v tree)
-#if !FX_NO_DEBUG_DISPLAYS
+
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         member m.IsEmpty = MapTree.isEmpty tree
         member m.Item 
          with get(k : 'Key) = 
@@ -627,8 +620,6 @@ namespace Microsoft.FSharp.Collections
            | [KeyValue h1;KeyValue h2;KeyValue h3] -> System.Text.StringBuilder().Append("map [").Append(LanguagePrimitives.anyToStringShowingNull h1).Append("; ").Append(LanguagePrimitives.anyToStringShowingNull h2).Append("; ").Append(LanguagePrimitives.anyToStringShowingNull h3).Append("]").ToString()
            | KeyValue h1 :: KeyValue h2 :: KeyValue h3 :: _ -> System.Text.StringBuilder().Append("map [").Append(LanguagePrimitives.anyToStringShowingNull h1).Append("; ").Append(LanguagePrimitives.anyToStringShowingNull h2).Append("; ").Append(LanguagePrimitives.anyToStringShowingNull h3).Append("; ... ]").ToString() 
 
-
-#if !FX_NO_DEBUG_PROXIES
     and
         [<Sealed>]
         MapDebugView<'Key,'Value when 'Key : comparison>(v: Map<'Key,'Value>)  =  
@@ -643,7 +634,6 @@ namespace Microsoft.FSharp.Collections
         
             [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
             member x.KeyValue = keyValue
-#endif
         
 
 namespace Microsoft.FSharp.Collections

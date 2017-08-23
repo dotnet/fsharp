@@ -234,9 +234,6 @@ open System.Collections
 open System.Collections.Generic
 open System.Linq.Expressions
 open System.Reflection
-#if !FX_NO_REFLECTION_EMIT
-open System.Reflection.Emit
-#endif
 open Microsoft.FSharp
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.Operators

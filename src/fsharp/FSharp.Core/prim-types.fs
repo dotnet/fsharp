@@ -35,29 +35,6 @@ namespace Microsoft.FSharp.Core
     and unit = Unit
 
 
-#if FX_NO_STRUCTURAL_EQUALITY
-namespace System.Collections
-
-    open System
-    open Microsoft.FSharp.Core
-    
-    //-------------------------------------------------------------------------
-    // Structural equality
-    type IStructuralEquatable =
-        interface 
-            abstract Equals: o:System.Object * comp:System.Collections.IEqualityComparer -> bool
-            abstract GetHashCode: comp:System.Collections.IEqualityComparer -> int
-        end
-    
-    //-------------------------------------------------------------------------    
-    // Structural comparison
-    and IStructuralComparable =
-        interface 
-            abstract CompareTo: o:System.Object * comp:System.Collections.IComparer -> int
-        end
-#else
-#endif
-
 namespace Microsoft.FSharp.Core
 
     open System
@@ -511,126 +488,7 @@ namespace Microsoft.FSharp.Core
                             num <- i
                     i <- i + 1
             combineTupleHashes (get codes 0) (get codes 1)
-   
-#if FX_NO_TUPLE
-namespace System
-    open Microsoft.FSharp.Core.BasicInlinedOperations
-    open System
-    open System.Collections
-    open System.Collections.Generic
-    open System.Diagnostics
-    open System.Globalization
-    open System.Text
 
-    
-    type Tuple<'T1>(t1:'T1) = 
-        member t.Item1 = t1
-        interface IStructuralComparable 
-        interface IStructuralEquatable 
-        interface IComparable 
-            
-#if TUPLE_STRUXT
-    // NOTE: Tuple`2 is a struct type. 
-    // WARNING: If you change additional tuple types to be structs then you must change 'highestTupleStructType' in tastops.ml
-#if !FX_NO_DEBUG_DISPLAYS
-    [<DebuggerDisplay("({Item1},{Item2})")>]
-#endif
-    [<Struct>]
-    type Tuple<'T1,'T2> = 
-        new (v1,v2) = { Item1 = v1; Item2 = v2 }
-        val Item1 : 'T1 
-        val Item2 : 'T2
-#else
-    type Tuple<'T1,'T2>(t1:'T1, t2:'T2) =  
-        member t.Item1 = t1
-        member t.Item2 = t2
-        interface IStructuralComparable 
-        interface IStructuralEquatable 
-        interface IComparable 
-#endif
-
-#if !FX_NO_DEBUG_DISPLAYS
-    [<DebuggerDisplay("({Item1},{Item2},{Item3})")>]
-#endif
-    type Tuple<'T1,'T2,'T3>(t1:'T1,t2:'T2,t3:'T3) =       
-        member t.Item1 = t1
-        member t.Item2 = t2
-        member t.Item3 = t3
-        interface IStructuralComparable 
-        interface IStructuralEquatable 
-        interface IComparable 
-
-#if !FX_NO_DEBUG_DISPLAYS
-    [<DebuggerDisplay("({Item1},{Item2},{Item3},{Item4})")>]
-#endif
-    type Tuple<'T1,'T2,'T3,'T4>(t1:'T1,t2:'T2,t3:'T3,t4:'T4) = 
-        member t.Item1 = t1
-        member t.Item2 = t2
-        member t.Item3 = t3
-        member t.Item4 = t4
-        interface IStructuralComparable 
-        interface IStructuralEquatable 
-        interface IComparable 
-
-#if !FX_NO_DEBUG_DISPLAYS
-    [<DebuggerDisplay("({Item1},{Item2},{Item3},{Item4},{Item5})")>]
-#endif
-    type Tuple<'T1,'T2,'T3,'T4,'T5>(t1:'T1,t2:'T2,t3:'T3,t4:'T4,t5:'T5) = 
-        member t.Item1 = t1
-        member t.Item2 = t2
-        member t.Item3 = t3
-        member t.Item4 = t4
-        member t.Item5 = t5
-        interface IStructuralComparable 
-        interface IStructuralEquatable 
-        interface IComparable 
-
-#if !FX_NO_DEBUG_DISPLAYS
-    [<DebuggerDisplay("({Item1},{Item2},{Item3},{Item4},{Item5},{Item6})")>]
-#endif
-    type Tuple<'T1,'T2,'T3,'T4,'T5,'T6>(t1:'T1,t2:'T2,t3:'T3,t4:'T4,t5:'T5,t6:'T6) = 
-        member t.Item1 = t1
-        member t.Item2 = t2
-        member t.Item3 = t3
-        member t.Item4 = t4
-        member t.Item5 = t5
-        member t.Item6 = t6
-        interface IStructuralComparable 
-        interface IStructuralEquatable 
-        interface IComparable 
-
-#if !FX_NO_DEBUG_DISPLAYS
-    [<DebuggerDisplay("({Item1},{Item2},{Item3},{Item4},{Item5},{Item6},{Item7})")>]
-#endif
-    type Tuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7>(t1:'T1,t2:'T2,t3:'T3,t4:'T4,t5:'T5,t6:'T6,t7:'T7) = 
-        member t.Item1 = t1
-        member t.Item2 = t2
-        member t.Item3 = t3
-        member t.Item4 = t4
-        member t.Item5 = t5
-        member t.Item6 = t6
-        member t.Item7 = t7
-        interface IStructuralComparable 
-        interface IStructuralEquatable 
-        interface IComparable 
-            
-#if !FX_NO_DEBUG_DISPLAYS
-    [<DebuggerDisplay("({Item1},{Item2},{Item3},{Item4},{Item5},{Item6},{Item7},{Rest})")>]
-#endif
-    type Tuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'TRest>(t1:'T1,t2:'T2,t3:'T3,t4:'T4,t5:'T5,t6:'T6,t7:'T7,rest:'TRest) = 
-        member t.Item1 = t1
-        member t.Item2 = t2
-        member t.Item3 = t3
-        member t.Item4 = t4
-        member t.Item5 = t5
-        member t.Item6 = t6
-        member t.Item7 = t7
-        member t.Rest = rest
-        interface IStructuralComparable 
-        interface IStructuralEquatable 
-        interface IComparable 
-#else   
-#endif
 
 namespace Microsoft.FSharp.Core
 
@@ -912,12 +770,8 @@ namespace Microsoft.FSharp.Core
                 PhysicalEqualityIntrinsic x y
           
             let PhysicalHashIntrinsic (x: 'T) : int when 'T : not struct  = 
-#if FX_NO_GET_HASH_CODE_HELPER
-                (box x).GetHashCode()
-#else
                 System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(box x)
-#endif
-            
+
             let inline PhysicalHashFast (x: 'T) = 
                 PhysicalHashIntrinsic x
 
@@ -2458,11 +2312,7 @@ namespace Microsoft.FSharp.Core
         // and only request AllowLeadingSign.
 
         let isOXB c = 
-#if FX_NO_TO_LOWER_INVARIANT
-            let c = System.Char.ToLower c
-#else
             let c = System.Char.ToLowerInvariant c
-#endif
             charEq c 'x' || charEq c 'o' || charEq c 'b'
 
         let is0OXB (s:string) p l = 
@@ -2470,11 +2320,7 @@ namespace Microsoft.FSharp.Core
 
         let get0OXB (s:string) (p:byref<int>)  l = 
             if is0OXB s p l
-#if FX_NO_TO_LOWER_INVARIANT
-            then let r = System.Char.ToLower(s.Chars(p+1) ) in p <- p + 2;  r
-#else
             then let r = System.Char.ToLowerInvariant(s.Chars(p+1)) in p <- p + 2; r
-#endif
             else 'd' 
 
         let getSign32 (s:string) (p:byref<int>) l = 
@@ -2526,11 +2372,7 @@ namespace Microsoft.FSharp.Core
             let sign = getSign32 s &p l 
             let specifier = get0OXB s &p l 
             if p >= l then formatError() else
-#if FX_NO_TO_LOWER_INVARIANT
-            match Char.ToLower(specifier, CultureInfo.InvariantCulture(*FxCop:1304*)) with 
-#else
             match Char.ToLowerInvariant(specifier) with 
-#endif
             | 'x' -> sign * (int32OfUInt32 (Convert.ToUInt32(UInt64.Parse(s.Substring(p), NumberStyles.AllowHexSpecifier,CultureInfo.InvariantCulture))))
             | 'b' -> sign * (int32OfUInt32 (Convert.ToUInt32(parseBinaryUInt64 s p l)))
             | 'o' -> sign * (int32OfUInt32 (Convert.ToUInt32(parseOctalUInt64 s p l)))
@@ -2545,11 +2387,7 @@ namespace Microsoft.FSharp.Core
             let sign = getSign64 s &p l 
             let specifier = get0OXB s &p l 
             if p >= l then formatError() else
-#if FX_NO_TO_LOWER_INVARIANT
-            match Char.ToLower(specifier, CultureInfo.InvariantCulture(*FxCop:1304*)) with 
-#else
             match Char.ToLowerInvariant(specifier) with 
-#endif
             | 'x' -> sign *. Int64.Parse(s.Substring(p), NumberStyles.AllowHexSpecifier,CultureInfo.InvariantCulture)
             | 'b' -> sign *. (int64OfUInt64 (parseBinaryUInt64 s p l))
             | 'o' -> sign *. (int64OfUInt64 (parseOctalUInt64 s p l))
@@ -2839,33 +2677,6 @@ namespace Microsoft.FSharp.Core
         let CheckedMultiplyDynamic<'T,'U,'V> x n  = CheckedMultiplyDynamicImplTable<'T,'U,'V>.Impl x n
 
 
-#if TARGET_SILVERLIGHT_5_0
-    type internal PrivateEnvironment = 
-        static member internal GetResourceString(name:string,_arguments:obj[]) = name
-        static member internal GetResourceString(name:string) = name
-
-#endif
-#if FX_NO_LAZY
-
-    type internal PrivateEnvironment = 
-        static member internal GetResourceString(name:string,_arguments:obj[]) = name
-        static member internal GetResourceString(name:string) = name
-
-#if USE_FX_40_LAZY_ON_FX_20
-    type internal PrivateFunc<'T> = delegate of unit -> 'T
-    type internal PrivateFunc<'T,'TResult> = delegate of 'T -> 'TResult
-    
-
-    type internal PrivateMonitor = 
-        static member internal Enter(lockObj: obj, lockTaken: byref<bool>)  = System.Threading.Monitor.Enter(lockObj); lockTaken <- true
-        static member internal Exit(lockObj: obj)  = System.Threading.Monitor.Exit(lockObj)
-        static member internal GetResourceString(name:string) = name
-#endif
-
-#else
-#endif
-
-
 namespace System
 
     open System
@@ -2879,287 +2690,6 @@ namespace System
     open Microsoft.FSharp.Core.LanguagePrimitives
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicFunctions
-
-#if FX_NO_TUPLE
-    type Tuple<'T1> with 
-        interface IStructuralComparable with
-            override t.CompareTo (other:obj,comparer:System.Collections.IComparer) =
-                let t2 : Tuple<'T1> = other :?> Tuple<'T1>
-                comparer.Compare((box t.Item1),(box t2.Item1))
-        interface IStructuralEquatable with
-            override t.Equals(other:obj,comparer:System.Collections.IEqualityComparer) =
-                let t2 : Tuple<'T1> = other :?> Tuple<'T1>
-                comparer.Equals((box t.Item1),(box t2.Item1))
-            override t.GetHashCode(comparer:System.Collections.IEqualityComparer) =
-                comparer.GetHashCode(t.Item1)
-        interface IComparable with
-            override t.CompareTo(other:obj) =
-                (t :> IStructuralComparable).CompareTo(other,(HashCompare.fsComparerER :> System.Collections.IComparer))
-        override t.GetHashCode() =
-            (t :> IStructuralEquatable).GetHashCode(HashCompare.fsEqualityComparerUnlimitedHashingPER)
-        override t.Equals(other:obj) =
-            (t :> IStructuralEquatable).Equals(other,HashCompare.fsEqualityComparerNoHashingPER)
-
-    type Tuple<'T1,'T2> with 
-        override x.ToString() = 
-            let sb = StringBuilder(10) in 
-            sb.Append("(").Append(box(x.Item1).ToString()).Append(",")
-                          .Append(box(x.Item2).ToString()).Append(")").ToString()
-        interface IStructuralComparable with
-            override t.CompareTo (other:obj,comparer:System.Collections.IComparer) =
-                let t2 : Tuple<'T1,'T2> = other :?> Tuple<'T1,'T2>
-                HashCompare.FastCompareTuple2 comparer (retype t : ('T1 * 'T2)) (retype t2)
-        interface IStructuralEquatable with
-            override t.Equals (other:obj,comparer:System.Collections.IEqualityComparer) =
-                let t2 : Tuple<'T1,'T2> = other :?> Tuple<'T1,'T2>
-                HashCompare.FastEqualsTuple2 comparer (retype t : ('T1 * 'T2)) (retype t2)
-            override t.GetHashCode(comparer:System.Collections.IEqualityComparer) =
-                HashCompare.FastHashTuple2 comparer (retype t : ('T1 * 'T2))
-        interface IComparable with
-            override t.CompareTo(other:obj) =
-                (t :> IStructuralComparable).CompareTo(other, (HashCompare.fsComparerER :> System.Collections.IComparer))
-        override t.GetHashCode() =
-            (t :> IStructuralEquatable).GetHashCode(HashCompare.fsEqualityComparerUnlimitedHashingPER)
-        override t.Equals(other:obj) =
-            (t :> IStructuralEquatable).Equals(other,HashCompare.fsEqualityComparerNoHashingPER)
-                    
-
-    type Tuple<'T1,'T2,'T3> with
-        override x.ToString() = 
-            let sb = StringBuilder(10) in 
-            sb.Append("(").Append(box(x.Item1).ToString()).Append(",")
-                          .Append(box(x.Item2).ToString()).Append(",")
-                          .Append(box(x.Item3).ToString()).Append(")").ToString()
-        interface IStructuralComparable with
-            override t.CompareTo (other:obj,comparer:System.Collections.IComparer) =
-                let t2 : Tuple<'T1,'T2,'T3> = other :?> Tuple<'T1,'T2,'T3>
-                HashCompare.FastCompareTuple3 comparer (retype t : ('T1 * 'T2 * 'T3)) (retype t2)
-        interface IStructuralEquatable with
-            override t.Equals (other:obj,comparer:System.Collections.IEqualityComparer) =
-                let t2 : Tuple<'T1,'T2,'T3> = other :?> Tuple<'T1,'T2,'T3>
-                HashCompare.FastEqualsTuple3 comparer (retype t : ('T1 * 'T2 * 'T3)) (retype t2)
-            override t.GetHashCode(comparer:System.Collections.IEqualityComparer) =
-                HashCompare.FastHashTuple3 comparer (retype t : ('T1 * 'T2 * 'T3))
-        interface IComparable with
-            override t.CompareTo(other:obj) =
-                (t :> IStructuralComparable).CompareTo(other, (HashCompare.fsComparerER :> System.Collections.IComparer))
-        override t.GetHashCode() =
-            (t :> IStructuralEquatable).GetHashCode(HashCompare.fsEqualityComparerUnlimitedHashingPER)
-        override t.Equals(other:obj) =
-            (t :> IStructuralEquatable).Equals(other,HashCompare.fsEqualityComparerNoHashingPER)
-            
-    type Tuple<'T1,'T2,'T3,'T4> with
-        override x.ToString() = 
-            let sb = StringBuilder(10) in 
-            sb.Append("(").Append(box(x.Item1).ToString()).Append(",")
-                          .Append(box(x.Item2).ToString()).Append(",")
-                          .Append(box(x.Item3).ToString()).Append(",")
-                          .Append(box(x.Item4).ToString()).Append(")").ToString()
-        interface IStructuralComparable with
-            override t.CompareTo (other:obj,comparer:System.Collections.IComparer) =
-                let t2 : Tuple<'T1,'T2,'T3,'T4> = other :?> Tuple<'T1,'T2,'T3,'T4>
-                HashCompare.FastCompareTuple4 comparer (retype t : ('T1 * 'T2 * 'T3 * 'T4)) (retype t2)
-        interface IStructuralEquatable with
-            override t.Equals (other:obj,comparer:System.Collections.IEqualityComparer) =
-                let t2 : Tuple<'T1,'T2,'T3,'T4> = other :?> Tuple<'T1,'T2,'T3,'T4>
-                HashCompare.FastEqualsTuple4 comparer (retype t : ('T1 * 'T2 * 'T3 * 'T4)) (retype t2)
-            override t.GetHashCode(comparer:System.Collections.IEqualityComparer) =
-                HashCompare.FastHashTuple4 comparer (retype t : ('T1 * 'T2 * 'T3 * 'T4))
-        interface IComparable with
-            override t.CompareTo(other:obj) =
-                (t :> IStructuralComparable).CompareTo(other, (HashCompare.fsComparerER :> System.Collections.IComparer))
-        override t.GetHashCode() =
-            (t :> IStructuralEquatable).GetHashCode(HashCompare.fsEqualityComparerUnlimitedHashingPER)
-        override t.Equals(other:obj) =
-            (t :> IStructuralEquatable).Equals(other,HashCompare.fsEqualityComparerNoHashingPER)
-
-    type Tuple<'T1,'T2,'T3,'T4,'T5> with
-        override x.ToString() = 
-            let sb = StringBuilder(10) in 
-            sb.Append("(").Append(box(x.Item1).ToString()).Append(",")
-                          .Append(box(x.Item2).ToString()).Append(",")
-                          .Append(box(x.Item3).ToString()).Append(",")
-                          .Append(box(x.Item4).ToString()).Append(",")
-                          .Append(box(x.Item5).ToString()).Append(")").ToString()
-        interface IStructuralComparable with
-            override t.CompareTo (other:obj,comparer:System.Collections.IComparer) =
-                let t2 : Tuple<'T1,'T2,'T3,'T4,'T5> = other :?> Tuple<'T1,'T2,'T3,'T4,'T5>
-                HashCompare.FastCompareTuple5 comparer (retype t : ('T1 * 'T2 * 'T3 * 'T4 * 'T5)) (retype t2)
-        interface IStructuralEquatable with
-            override t.Equals (other:obj,comparer:System.Collections.IEqualityComparer) =
-                let t2 : Tuple<'T1,'T2,'T3,'T4,'T5> = other :?> Tuple<'T1,'T2,'T3,'T4,'T5>
-                HashCompare.FastEqualsTuple5 comparer (retype t : ('T1 * 'T2 * 'T3 * 'T4 * 'T5)) (retype t2)
-            override t.GetHashCode(comparer:System.Collections.IEqualityComparer) =
-                HashCompare.FastHashTuple5 comparer (retype t : ('T1 * 'T2 * 'T3 * 'T4 * 'T5))
-        interface IComparable with
-            override t.CompareTo(other:obj) =
-                (t :> IStructuralComparable).CompareTo(other, (HashCompare.fsComparerER :> System.Collections.IComparer))
-        override t.GetHashCode() =
-            (t :> IStructuralEquatable).GetHashCode(HashCompare.fsEqualityComparerUnlimitedHashingPER)
-        override t.Equals(other:obj) =
-            (t :> IStructuralEquatable).Equals(other,HashCompare.fsEqualityComparerNoHashingPER)
-
-    type Tuple<'T1,'T2,'T3,'T4,'T5,'T6> with
-        override x.ToString() = 
-            let sb = StringBuilder(10) 
-            sb.Append("(").Append(box(x.Item1).ToString()).Append(",")
-                          .Append(box(x.Item2).ToString()).Append(",")
-                          .Append(box(x.Item3).ToString()).Append(",")
-                          .Append(box(x.Item4).ToString()).Append(",")
-                          .Append(box(x.Item5).ToString()).Append(",")
-                          .Append(box(x.Item6).ToString()).Append(")").ToString()
-        interface IStructuralComparable with
-            override t.CompareTo (other:obj,comparer:System.Collections.IComparer) =
-                let t2 : Tuple<'T1,'T2,'T3,'T4,'T5,'T6> = other :?> Tuple<'T1,'T2,'T3,'T4,'T5,'T6>
-                let  mutable n = comparer.Compare((box t.Item1),(box t2.Item1))
-                if n <> 0 then
-                    n
-                else
-                    n <- comparer.Compare((box t.Item2), (box t2.Item2)) ;
-                    if n <> 0 then
-                        n
-                    else
-                        n <- comparer.Compare((box t.Item3), (box t2.Item3));
-                        if n <> 0 then
-                            n
-                        else
-                            n <- comparer.Compare((box t.Item4), (box t2.Item4));
-                            if n <> 0 then
-                                n
-                            else
-                                n <- comparer.Compare((box t.Item5), (box t2.Item5));
-                                if n <> 0 then
-                                    n
-                                else
-                                    comparer.Compare((box t.Item6), (box t2.Item6))
-        interface IStructuralEquatable with
-            override t.Equals (other:obj,comparer:System.Collections.IEqualityComparer) =
-                let t2 : Tuple<'T1,'T2,'T3,'T4,'T5,'T6> = other :?> Tuple<'T1,'T2,'T3,'T4,'T5,'T6>
-                comparer.Equals((box t.Item1),(box t2.Item1)) && comparer.Equals((box t.Item2),(box t2.Item2)) && comparer.Equals((box t.Item3),(box t2.Item3)) && 
-                    comparer.Equals((box t.Item4),(box t2.Item4)) && comparer.Equals((box t.Item5),(box t2.Item5)) && comparer.Equals((box t.Item6),(box t2.Item6))
-            override t.GetHashCode(comparer:System.Collections.IEqualityComparer) =
-                TupleUtils.combineTupleHashCodes [|(comparer.GetHashCode(t.Item1))  ; (comparer.GetHashCode(t.Item2)) ; (comparer.GetHashCode(t.Item3)) ; (comparer.GetHashCode(t.Item4)) ; (comparer.GetHashCode(t.Item5)) ; (comparer.GetHashCode(t.Item6))|]
-        interface IComparable with
-            override t.CompareTo(other:obj) =
-                (t :> IStructuralComparable).CompareTo(other, (HashCompare.fsComparerER :> System.Collections.IComparer))
-        override t.GetHashCode() =
-            (t :> IStructuralEquatable).GetHashCode(HashCompare.fsEqualityComparerUnlimitedHashingPER)
-        override t.Equals(other:obj) =
-            (t :> IStructuralEquatable).Equals(other,HashCompare.fsEqualityComparerNoHashingPER)
-
-    type Tuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7> with
-        override x.ToString() = 
-            let sb = StringBuilder(10) 
-            sb.Append("(").Append(box(x.Item1).ToString()).Append(",")
-                          .Append(box(x.Item2).ToString()).Append(",")
-                          .Append(box(x.Item3).ToString()).Append(",")
-                          .Append(box(x.Item4).ToString()).Append(",")
-                          .Append(box(x.Item5).ToString()).Append(",")
-                          .Append(box(x.Item6).ToString()).Append(",")
-                          .Append(box(x.Item7).ToString()).Append(")").ToString()
-        interface IStructuralComparable with
-            override t.CompareTo (other:obj,comparer:System.Collections.IComparer) =
-                let t2 : Tuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7> = other :?> Tuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7>
-                let  mutable n = comparer.Compare((box t.Item1),(box t2.Item1))
-                if n <> 0 then
-                    n
-                else
-                    n <- comparer.Compare((box t.Item2), (box t2.Item2)) ;
-                    if n <> 0 then
-                        n
-                    else
-                        n <- comparer.Compare((box t.Item3), (box t2.Item3));
-                        if n <> 0 then
-                            n
-                        else
-                            n <- comparer.Compare((box t.Item4), (box t2.Item4));
-                            if n <> 0 then
-                                n
-                            else
-                                n <- comparer.Compare((box t.Item5), (box t2.Item5));
-                                if n <> 0 then
-                                    n
-                                else
-                                    n <- comparer.Compare((box t.Item6), (box t2.Item6));
-                                    if n <> 0 then
-                                        n
-                                    else
-                                        comparer.Compare((box t.Item7), (box t2.Item7))
-        interface IStructuralEquatable with
-            override t.Equals (other:obj,comparer:System.Collections.IEqualityComparer) =
-                let t2 : Tuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7> = other :?> Tuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7>
-                comparer.Equals((box t.Item1),(box t2.Item1)) && comparer.Equals((box t.Item2),(box t2.Item2)) && comparer.Equals((box t.Item3),(box t2.Item3)) && 
-                    comparer.Equals((box t.Item4),(box t2.Item4)) && comparer.Equals((box t.Item5),(box t2.Item5)) && comparer.Equals((box t.Item6),(box t2.Item6)) && comparer.Equals((box t.Item7),(box t2.Item7))
-            override t.GetHashCode(comparer:System.Collections.IEqualityComparer) =
-                TupleUtils.combineTupleHashCodes [|(comparer.GetHashCode(t.Item1))  ; (comparer.GetHashCode(t.Item2)) ; (comparer.GetHashCode(t.Item3)) ; (comparer.GetHashCode(t.Item4)) ; (comparer.GetHashCode(t.Item5)) ; (comparer.GetHashCode(t.Item6)) ; (comparer.GetHashCode(t.Item7))|]
-        interface IComparable with
-            override t.CompareTo(other:obj) =
-                (t :> IStructuralComparable).CompareTo(other, (HashCompare.fsComparerER :> System.Collections.IComparer))
-        override t.GetHashCode() =
-            (t :> IStructuralEquatable).GetHashCode(HashCompare.fsEqualityComparerUnlimitedHashingPER)
-        override t.Equals(other:obj) =
-            (t :> IStructuralEquatable).Equals(other,HashCompare.fsEqualityComparerNoHashingPER)
-            
-    type Tuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'TRest> with
-        override x.ToString() = 
-            let sb = StringBuilder(10) 
-            sb.Append("(").Append(box(x.Item1).ToString()).Append(",")
-                          .Append(box(x.Item2).ToString()).Append(",")
-                          .Append(box(x.Item3).ToString()).Append(",")
-                          .Append(box(x.Item4).ToString()).Append(",")
-                          .Append(box(x.Item5).ToString()).Append(",")
-                          .Append(box(x.Item6).ToString()).Append(",")
-                          .Append(box(x.Item7).ToString()).Append(",")
-                          .Append("...").Append(")").ToString()
-        interface IStructuralComparable with
-            override t.CompareTo (other:obj,comparer:System.Collections.IComparer) =
-                let t2 : Tuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'TRest> = other :?> Tuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'TRest>
-                let  mutable n = comparer.Compare((box t.Item1),(box t2.Item1))
-                if n <> 0 then
-                    n
-                else
-                    n <- comparer.Compare((box t.Item2), (box t2.Item2)) ;
-                    if n <> 0 then
-                        n
-                    else
-                        n <- comparer.Compare((box t.Item3), (box t2.Item3));
-                        if n <> 0 then
-                            n
-                        else
-                            n <- comparer.Compare((box t.Item4), (box t2.Item4));
-                            if n <> 0 then
-                                n
-                            else
-                                n <- comparer.Compare((box t.Item5), (box t2.Item5));
-                                if n <> 0 then
-                                    n
-                                else
-                                    n <- comparer.Compare((box t.Item6), (box t2.Item6));
-                                    if n <> 0 then
-                                        n
-                                    else
-                                        n <- comparer.Compare((box t.Item7), (box t2.Item7))
-                                        if n <> 0 then
-                                            n
-                                        else
-                                            comparer.Compare((box t.Rest), (box t2.Rest))
-        interface IStructuralEquatable with
-            override t.Equals (other:obj,comparer:System.Collections.IEqualityComparer) =
-                let t2 : Tuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'TRest> = other :?> Tuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'TRest>
-                comparer.Equals((box t.Item1),(box t2.Item1)) && comparer.Equals((box t.Item2),(box t2.Item2)) && comparer.Equals((box t.Item3),(box t2.Item3)) && 
-                    comparer.Equals((box t.Item4),(box t2.Item4)) && comparer.Equals((box t.Item5),(box t2.Item5)) && comparer.Equals((box t.Item6),(box t2.Item6)) && 
-                    comparer.Equals((box t.Item7),(box t2.Item7)) && comparer.Equals((box t.Rest),(box t2.Rest))
-            override t.GetHashCode(comparer:System.Collections.IEqualityComparer) =
-                TupleUtils.combineTupleHashCodes [|(comparer.GetHashCode(t.Item1))  ; (comparer.GetHashCode(t.Item2)) ; (comparer.GetHashCode(t.Item3)) ; (comparer.GetHashCode(t.Item4)) ; (comparer.GetHashCode(t.Item5)) ; (comparer.GetHashCode(t.Item6)) ; (comparer.GetHashCode(t.Item7)) ; (comparer.GetHashCode(t.Rest))|]
-        interface IComparable with
-            override t.CompareTo(other:obj) =
-                (t :> IStructuralComparable).CompareTo(other, (HashCompare.fsComparerER :> System.Collections.IComparer))
-        override t.GetHashCode() =
-            (t :> IStructuralEquatable).GetHashCode(HashCompare.fsEqualityComparerUnlimitedHashingPER)
-        override t.Equals(other:obj) =
-            (t :> IStructuralEquatable).Equals(other,HashCompare.fsEqualityComparerNoHashingPER)
-#else        
-#endif
 
 
 namespace Microsoft.FSharp.Core
@@ -3396,16 +2926,12 @@ namespace Microsoft.FSharp.Core
     // Refs
     //-------------------------------------------------------------------------
 
-#if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("{contents}")>]
-#endif
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpRef`1")>]
     type Ref<'T> = 
         { 
-#if !FX_NO_DEBUG_DISPLAYS
           [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
           mutable contents: 'T }
         member x.Value 
             with get() = x.contents
@@ -3418,9 +2944,7 @@ namespace Microsoft.FSharp.Core
     //-------------------------------------------------------------------------
 
     [<DefaultAugmentation(false)>]
-#if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("Some({Value})")>]
-#endif
     [<CompilationRepresentation(CompilationRepresentationFlags.UseNullAsTrueValue)>]
     [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId="Option")>]
     [<StructuralEquality; StructuralComparison>]
@@ -3432,19 +2956,13 @@ namespace Microsoft.FSharp.Core
         [<CompilationRepresentation(CompilationRepresentationFlags.Instance)>]
         member x.Value = match x with Some x -> x | None -> raise (new System.InvalidOperationException("Option.Value"))
 
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         member x.IsNone = match x with None -> true | _ -> false
 
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         member x.IsSome = match x with Some _ -> true | _ -> false
 
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         static member None : 'T option = None
 
         static member Some(x) : 'T option = Some(x)
@@ -3483,12 +3001,8 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core.BasicInlinedOperations
 
     [<DefaultAugmentation(false)>]
-#if !FX_NO_DEBUG_PROXIES
     [<System.Diagnostics.DebuggerTypeProxyAttribute(typedefof<ListDebugView<_>>)>]
-#endif
-#if !FX_NO_DEBUG_DISPLAYS
     [<DebuggerDisplay("{DebugDisplay,nq}")>]
-#endif
     [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")>]
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpList`1")>]
@@ -3517,9 +3031,7 @@ namespace Microsoft.FSharp.Collections
                | [] -> n 
                | _::t -> if n > ListDebugViewMaxLength then n else count t (n+1) 
 
-#if !FX_NO_DEBUG_DISPLAYS
            [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
-#endif
            member x.Items =
                let n = count l 0 
                let items = zeroCreate n 
@@ -3641,14 +3153,10 @@ namespace Microsoft.FSharp.Collections
             loop n l
 
     type List<'T> with
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         member l.Length = PrivateListHelpers.lengthAcc 0 l
 
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         member l.DebugDisplay = 
            let n = l.Length
            let txt = 
@@ -3659,15 +3167,11 @@ namespace Microsoft.FSharp.Collections
         member l.Head   = match l with a :: _ -> a | [] -> raise (System.InvalidOperationException(SR.GetString(SR.inputListWasEmpty)))
         member l.Tail   = match l with _ :: b -> b | [] -> raise (System.InvalidOperationException(SR.GetString(SR.inputListWasEmpty)))
 
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         member l.IsEmpty  = match l with [] -> true | _ -> false
         member l.Item with get(index) = PrivateListHelpers.nth l index
 
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         static member Empty       : 'T list = []
 
         static member Cons(head,tail) : 'T list = head::tail
@@ -4114,14 +3618,6 @@ namespace Microsoft.FSharp.Core
 
         let inline castToString (x:'T) = (# "" x : string #)  // internal
 
-#if FX_NO_CHAR_PARSE
-        // replace System.Char.Parse
-        let inline charParse (s: string) =
-            if isNull s then raise (System.ArgumentNullException())
-            elif s.Length = 1 then s.[0]
-            else raise (System.FormatException "String must be exactly one character long.")
-#endif
-
         // let rec (@) x y = match x with [] -> y | (h::t) -> h :: (t @ y)
         let (@) l1 l2 = 
             match l1 with
@@ -4140,10 +3636,10 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("Decrement")>]
         let decr x = x.contents <- x.contents - 1
-#if !FX_NO_EXIT
+
         [<CompiledName("Exit")>]
         let exit (n:int) = System.Environment.Exit(n); failwith "System.Environment.Exit did not exit!"
-#endif
+
         let inline parseByte (s:string)       = (# "conv.ovf.u1" (ParseUInt32 s) : byte #)
         let inline ParseSByte (s:string)      = (# "conv.ovf.i1" (ParseInt32 s)  : sbyte #)
         let inline ParseInt16 (s:string)      = (# "conv.ovf.i2" (ParseInt32 s)  : int16 #)
@@ -4492,11 +3988,7 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("ToChar")>]
         let inline char (x: ^T) = 
             (^T : (static member op_Explicit: ^T -> char) (x))
-#if FX_NO_CHAR_PARSE
-             when ^T : string     = (charParse (castToString x))
-#else
              when ^T : string     = (System.Char.Parse(castToString x))
-#endif
              when ^T : float      = (# "conv.u2" x  : char #)
              when ^T : float32    = (# "conv.u2" x  : char #)
              when ^T : int64      = (# "conv.u2" x  : char #)
@@ -4936,11 +4428,7 @@ namespace Microsoft.FSharp.Core
             [<CompiledName("ToChar")>]
             let inline char (x: ^T) = 
                 (^T : (static member op_Explicit: ^T -> char) (x))
-#if FX_NO_CHAR_PARSE
-                 when ^T : string     = (charParse (castToString x))
-#else
                  when ^T : string     = (System.Char.Parse(castToString x))
-#endif
                  when ^T : float      = (# "conv.ovf.u2" x  : char #)
                  when ^T : float32    = (# "conv.ovf.u2" x  : char #)
                  when ^T : int64      = (# "conv.ovf.u2" x  : char #)
@@ -5260,9 +4748,10 @@ namespace Microsoft.FSharp.Core
                             state.Current
 
                     { new IEnumerator<'T> with
-                        member __.Dispose () = ()
-
                         member __.Current = current ()
+
+                      interface System.IDisposable with
+                        member __.Dispose () = ()
 
                       interface IEnumerator with 
                         member __.Current = box (current ())
@@ -5317,8 +4806,10 @@ namespace Microsoft.FSharp.Core
                                 derefValue
 
                         { new IEnumerator<'T> with
-                            member __.Dispose () = ()
                             member __.Current = current ()
+
+                          interface System.IDisposable with
+                            member __.Dispose () = ()
 
                           interface IEnumerator with
                             member __.Current = box (current ())
@@ -5687,13 +5178,8 @@ namespace Microsoft.FSharp.Core
             [<NoDynamicInvocation>]
             let inline truncateImpl (x: ^T) : ^T = 
                  (^T: (static member Truncate : ^T -> ^T) (x))
-#if FX_NO_TRUNCATE
-                 when ^T : float       = 0.0
-                 when ^T : float32     = 0.0
-#else
                  when ^T : float       = System.Math.Truncate(retype x : float) 
                  when ^T : float32     = System.Math.Truncate(toFloat (retype x))  |> toFloat32
-#endif
 
             [<NoDynamicInvocation>]
             let inline roundImpl (x: ^T) : ^T = 
@@ -6246,92 +5732,6 @@ namespace Microsoft.FSharp.Core
                           if n >= 0 then PowDecimal x n else 1.0M /  PowDecimal x n)
 
 
-        
-        
-
-
-
-//============================================================================
-//============================================================================
-#if FX_NO_LAZY
-#if USE_FX_40_LAZY_ON_FX_20
-namespace System.Threading
-    open System.Diagnostics
-    open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.Operators
-
-#endif
-
-namespace System
-    open System.Diagnostics
-    open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.Operators
-
-    
-    type LazyFailure(exn:exn) =
-        static let undefined = LazyFailure(InvalidOperationException("a lazy value was accessed during its own initialization"))
-        member x.Exception = exn
-        static member Undefined = undefined
-
-    [<AllowNullLiteral>]
-    type Lazy<'T>(value : 'T, funcOrException: obj) = 
-
-        /// This field holds the result of a successful computation. It's initial value is Unchecked.defaultof
-        let mutable value = value 
-
-        /// This field holds either the function to run or a LazyFailure object recording the exception raised 
-        /// from running the function. It is null if the thunk has been evaluated successfully.
-        [<VolatileField>]
-        let mutable funcOrException = funcOrException
-
-        static member Create(f: (unit->'T)) : Lazy<'T> = 
-            Lazy<'T> (value = Unchecked.defaultof<'T>, funcOrException = box(f) )
-        static member CreateFromValue(x:'T) : Lazy<'T> = 
-            Lazy<'T> (value = x, funcOrException = null)
-        member x.IsValueCreated = (match funcOrException with null -> true | _ -> false)
-        member x.Value =  
-            match funcOrException with 
-            | null -> value 
-            | _ -> 
-                // Enter the lock in case another thread is in the process of evaluating the result
-                System.Threading.Monitor.Enter(x);
-                try 
-                    match funcOrException with 
-                    | null -> value 
-                    | :? LazyFailure as res -> 
-                          raise(res.Exception)
-                    | :? (unit -> 'T) as f -> 
-                          funcOrException <- box(LazyFailure.Undefined)
-                          try 
-                              let res = f () 
-                              value <- res; 
-                              funcOrException <- null; 
-                              res
-                          with e -> 
-                              funcOrException <- box(new LazyFailure(e)); 
-                              reraise()
-                    | _ -> 
-                        failwith "unreachable"
-                finally
-                    System.Threading.Monitor.Exit(x)
-        override x.ToString() = 
-            if x.IsValueCreated then 
-                if box x.Value = null then
-                    "<null>"
-                else
-                    x.Value.ToString()
-            else
-                match funcOrException with 
-                | :? LazyFailure as res -> 
-                    match res.Exception with 
-                    | e when System.Runtime.CompilerServices.RuntimeHelpers.Equals(e,LazyFailure.Undefined) -> "<evaluating>"
-                    | e ->  e.ToString()
-                | _ -> 
-                    "<unevaluated>"
-
-#else
-#endif
-
 namespace Microsoft.FSharp.Control
 
     open System    
@@ -6342,15 +5742,6 @@ namespace Microsoft.FSharp.Control
 
     module LazyExtensions = 
         type System.Lazy<'T> with
-#if FX_NO_LAZY
-            [<CompiledName("Create")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
-            static member Create(f : unit -> 'T) : Lazy<'T> = 
-                System.Lazy<'T> (value = Unchecked.defaultof<'T>, funcOrException = box(f) )
-
-            [<CompiledName("CreateFromValue")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
-            static member CreateFromValue(x:'T) : Lazy<'T> = 
-                System.Lazy<'T> (value = x, funcOrException = null)
-#else
             [<CompiledName("Create")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
             static member Create(f : unit -> 'T) : System.Lazy<'T> =
                 let creator = new System.Func<'T>(f)
@@ -6359,7 +5750,7 @@ namespace Microsoft.FSharp.Control
             [<CompiledName("CreateFromValue")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
             static member CreateFromValue(value : 'T) : System.Lazy<'T> =
                 System.Lazy<'T>.Create(fun () -> value)
-#endif
+
             [<CompiledName("IsDelayedDeprecated")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
             member x.IsDelayed = not(x.IsValueCreated)
 
@@ -6379,27 +5770,6 @@ namespace Microsoft.FSharp.Control
 
     type 'T ``lazy`` = Lazy<'T>       
 
-
-
-//============================================================================
-//============================================================================
-
-#if FX_NO_IOBSERVABLE
-namespace System
-
-    open Microsoft.FSharp.Core
-    
-    [<AllowNullLiteral>]
-    type IObserver<'T> =
-        abstract OnNext : value : 'T -> unit
-        abstract OnError : error : exn -> unit
-        abstract OnCompleted : unit -> unit
-
-    [<AllowNullLiteral>]
-    type IObservable<'T> =
-        abstract Subscribe : observer : IObserver<'T> -> System.IDisposable;
-#else
-#endif
 
 namespace Microsoft.FSharp.Control
 
@@ -6503,19 +5873,6 @@ namespace Microsoft.FSharp.Control
     [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Core.Choice`5+_Choice3Of5",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
     [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Collections.FSharpList`1+_Cons",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
     [<assembly: SuppressMessage("Microsoft.Design", "CA1034:NestedTypesShouldNotBeVisible", Scope="type", Target="Microsoft.FSharp.Collections.FSharpList`1+_Empty",Justification="Public discriminated unions compile to nested types with names containing underscores and are allowed in FSharp.Core.dll because they are used to implement language primitives")>]
-
-#if FX_NO_TUPLE
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="System.Tuple`1",Justification="This type matches the design of Dev10 tuples")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="System.Tuple`2",Justification="This type matches the design of Dev10 tuples")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="System.Tuple`3",Justification="This type matches the design of Dev10 tuples")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="System.Tuple`4",Justification="This type matches the design of Dev10 tuples")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="System.Tuple`5",Justification="This type matches the design of Dev10 tuples")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="System.Tuple`6",Justification="This type matches the design of Dev10 tuples")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="System.Tuple`7",Justification="This type matches the design of Dev10 tuples")>]
-    [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="System.Tuple`8",Justification="This type matches the design of Dev10 tuples")>]
-#else
-#endif
-
     [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Core.Choice`5",Justification="F# implements IComparable as a way to implement its generic equality")>]
     [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Core.MatchFailureException",Justification="F# implements IComparable as a way to implement its generic, structural equality. Corresponding relational operators are only required if the type is expected to be used directly from other .NET languages with ground comparison semantics")>]
     [<assembly: SuppressMessage("Microsoft.Design", "CA1036:OverrideMethodsOnComparableTypes", Scope="type", Target="Microsoft.FSharp.Core.Choice`4",Justification="F# implements IComparable as a way to implement its generic, structural equality. Corresponding relational operators are only required if the type is expected to be used directly from other .NET languages with ground comparison semantics")>]

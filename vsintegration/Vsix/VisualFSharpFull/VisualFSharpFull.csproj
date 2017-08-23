@@ -119,7 +119,7 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj">
       <Project>{D5870CF0-ED51-4CBC-B3D7-6F56DA84AC06}</Project>
       <Name>FSharp.Compiler.Server.Shared</Name>
-      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3bPkgDefProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <IncludeOutputGroupsInVSIX>BuiltProjectOutputGroup%3bGetCopyToOutputDirectoryItems%3bSatelliteDllsProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <Private>True</Private>
     </ProjectReference>
@@ -218,6 +218,14 @@
     <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ItemTemplates\CodeFile\CodeFile.csproj">
       <Project>{12ac2813-e895-4aaa-ae6c-94e21da09f64}</Project>
       <Name>CodeFile</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ItemTemplates\ResourceFile\ResourceFile.csproj">
+      <Project>{0385564F-07B4-4264-AB8A-17C393E9140C}</Project>
+      <Name>ResourceFile</Name>
       <VSIXSubPath>ItemTemplates</VSIXSubPath>
       <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
