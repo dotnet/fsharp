@@ -199,16 +199,13 @@ namespace Microsoft.FSharp.Control
         /// <returns>A computation that generates a new work item in the thread pool.</returns>
         static member SwitchToThreadPool :  unit -> Async<unit> 
 
-#if !FX_NO_SYNC_CONTEXT
         /// <summary>Creates an asynchronous computation that runs
         /// its continuation using syncContext.Post. If syncContext is null 
         /// then the asynchronous computation is equivalent to SwitchToThreadPool().</summary>
         /// <param name="syncContext">The synchronization context to accept the posted computation.</param>
         /// <returns>An asynchronous computation that uses the syncContext context to execute.</returns>
         static member SwitchToContext :  syncContext:System.Threading.SynchronizationContext -> Async<unit> 
-#endif
 
-                    
         /// <summary>Creates an asynchronous computation that captures the current
         /// success, exception and cancellation continuations. The callback must 
         /// eventually call exactly one of the given continuations.</summary>

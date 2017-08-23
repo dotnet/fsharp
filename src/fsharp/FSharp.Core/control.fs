@@ -193,7 +193,6 @@ namespace Microsoft.FSharp.Control
         
         static let unfake FakeUnit = ()
         // preallocate context-switching callbacks
-#if !FX_NO_SYNC_CONTEXT
         // Preallocate the delegate
         // This should be the only call to SynchronizationContext.Post in this library. We must always install a trampoline.        
         let sendOrPostCallback = 
@@ -201,7 +200,6 @@ namespace Microsoft.FSharp.Control
                     let f = unbox o : unit -> FakeUnitValue
                     this.Protect f |> unfake
                     )
-#endif
 
         // Preallocate the delegate
         // This should be the only call to QueueUserWorkItem in this library. We must always install a trampoline.
@@ -220,11 +218,9 @@ namespace Microsoft.FSharp.Control
                     )
 #endif
 
-#if !FX_NO_SYNC_CONTEXT
         member this.Post (ctxt: SynchronizationContext)  (f : unit -> FakeUnitValue) =
             ctxt.Post (sendOrPostCallback, state=(f |> box))
             FakeUnit
-#endif
 
         member this.QueueWorkItem (f: unit -> FakeUnitValue) =            
                 if not (ThreadPool.QueueUserWorkItem(waitCallbackForQueueWorkItemWithTrampoline, f |> box)) then
@@ -643,11 +639,9 @@ namespace Microsoft.FSharp.Control
         //----------------------------------
         // DERIVED SWITCH TO HELPERS
 
-#if !FX_NO_SYNC_CONTEXT
         let switchTo (ctxt: SynchronizationContext) =
             protectedPrimitive(fun ({ aux = aux } as args) ->
                 aux.trampolineHolder.Post ctxt  (fun () -> args.cont () ))
-#endif
 
         let switchToNewThread() =
             protectedPrimitive(fun ({ aux = aux } as args) ->
@@ -670,14 +664,8 @@ namespace Microsoft.FSharp.Control
                           }
             }
 
-#if FX_NO_SYNC_CONTEXT
-        let getSyncContext _ = null
-        let delimitSyncContext args = args
-        let postOrQueue _  (trampolineHolder:TrampolineHolder) f =
-            trampolineHolder.QueueWorkItem f 
-#else
         let getSyncContext () = System.Threading.SynchronizationContext.Current 
-            
+
         let postOrQueue (ctxt : SynchronizationContext) (trampolineHolder:TrampolineHolder) f =
             match ctxt with 
             | null -> trampolineHolder.QueueWorkItem f 
@@ -697,9 +685,6 @@ namespace Microsoft.FSharp.Control
                                      ccont = (fun x -> trampolineHolder.Post ctxt (fun () -> aux.ccont x))                                  
                                }
                 }
-                                    
-#endif
-
 
         // When run, ensures that each of the continuations of the process are run in the same synchronization context.
         let protectedPrimitiveWithResync f = 
@@ -730,19 +715,14 @@ namespace Microsoft.FSharp.Control
         [<AutoSerializable(false)>]        
         type SuspendedAsync<'T>(args : AsyncParams<'T>) =
             let ctxt = getSyncContext ()
-#if !FX_NO_SYNC_CONTEXT
             let thread = 
                 match ctxt with
                 |   null -> null // saving a thread-local access
                 |   _ -> Thread.CurrentThread 
-#endif
             let trampolineHolder = args.aux.trampolineHolder
             member this.ContinueImmediate res = 
                 let action () = args.cont res
                 let inline executeImmediately () = trampolineHolder.Protect action
-#if FX_NO_SYNC_CONTEXT
-                executeImmediately ()
-#else
                 let currentCtxt = System.Threading.SynchronizationContext.Current 
                 match ctxt, currentCtxt with
                 | null, null -> 
@@ -753,8 +733,7 @@ namespace Microsoft.FSharp.Control
                         executeImmediately ()
                 | _ -> 
                     postOrQueue ctxt trampolineHolder action
-#endif
-                    
+
             member this.ContinueWithPostOrQueue res =
                 postOrQueue ctxt trampolineHolder (fun () -> args.cont res)
 
@@ -1679,8 +1658,6 @@ namespace Microsoft.FSharp.Control
                                                
                 return Async.AsyncWaitAsyncWithTimeout(innerCTS, resultCell,millisecondsTimeout) }
 
-#if !FX_NO_SYNC_CONTEXT
-
         static member SwitchToContext syncContext =
             async { match syncContext with 
                     | null -> 
@@ -1689,7 +1666,6 @@ namespace Microsoft.FSharp.Control
                     | ctxt -> 
                         // post the continuation to the synchronization context
                         return! switchTo ctxt }
-#endif
 
         static member OnCancel action =
             async { let! ct = getCancellationToken ()
