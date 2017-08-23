@@ -5178,13 +5178,8 @@ namespace Microsoft.FSharp.Core
             [<NoDynamicInvocation>]
             let inline truncateImpl (x: ^T) : ^T = 
                  (^T: (static member Truncate : ^T -> ^T) (x))
-#if FX_NO_TRUNCATE
-                 when ^T : float       = 0.0
-                 when ^T : float32     = 0.0
-#else
                  when ^T : float       = System.Math.Truncate(retype x : float) 
                  when ^T : float32     = System.Math.Truncate(toFloat (retype x))  |> toFloat32
-#endif
 
             [<NoDynamicInvocation>]
             let inline roundImpl (x: ^T) : ^T = 
