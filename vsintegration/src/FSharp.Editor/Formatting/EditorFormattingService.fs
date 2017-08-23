@@ -12,7 +12,6 @@ open Microsoft.CodeAnalysis.Text
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open System.Threading
-open Microsoft.CodeAnalysis.Formatting
 
 [<Shared>]
 [<ExportLanguageService(typeof<IEditorFormattingService>, FSharpConstants.FSharpLanguageName)>]
@@ -20,7 +19,7 @@ type internal FSharpEditorFormattingService
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: FSharpProjectOptionsManager
     ) =
 
     static member GetFormattingChanges(document: Document, sourceText: SourceText, checker: FSharpChecker, optionsOpt: FSharpProjectOptions option, position: int) =
@@ -78,9 +77,10 @@ type internal FSharpEditorFormattingService
             return
                 match textChange with
                 | Some change ->
-                    List([change]) :> IList<_>
+                    ResizeArray([change]) :> IList<_>
+                
                 | None ->
-                    List() :> IList<_>
+                    ResizeArray() :> IList<_>
         }
         
     interface IEditorFormattingService with
@@ -97,9 +97,13 @@ type internal FSharpEditorFormattingService
             else
                 false
 
-        override __.GetFormattingChangesAsync (_document, _span, _cancellationToken) = null
+        override __.GetFormattingChangesAsync (_document, _span, cancellationToken) =
+            async { return ResizeArray() :> IList<_> }
+            |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
-        override __.GetFormattingChangesOnPasteAsync (_document, _span, _cancellationToken) = null
+        override __.GetFormattingChangesOnPasteAsync (_document, _span, cancellationToken) =
+            async { return ResizeArray() :> IList<_> }
+            |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
         override this.GetFormattingChangesAsync (document, _typedChar, position, cancellationToken) =
             this.GetFormattingChangesAsync (document, position, cancellationToken)
