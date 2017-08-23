@@ -217,7 +217,6 @@ namespace Microsoft.FSharp.Control
         /// <returns>An asynchronous computation that provides the callback with the current continuations.</returns>
         static member FromContinuations : callback:(('T -> unit) * (exn -> unit) * (OperationCanceledException -> unit) -> unit) -> Async<'T>
 
-#if !FX_NO_CREATE_DELEGATE
         /// <summary>Creates an asynchronous computation that waits for a single invocation of a CLI 
         /// event by adding a handler to the event. Once the computation completes or is 
         /// cancelled, the handler is removed from the event.</summary>
@@ -233,7 +232,6 @@ namespace Microsoft.FSharp.Control
         /// cancellation is issued.</param>
         /// <returns>An asynchronous computation that waits for the event to be invoked.</returns>
         static member AwaitEvent: event:IEvent<'Del,'T> * ?cancelAction : (unit -> unit) -> Async<'T> when 'Del : delegate<'T,unit> and 'Del :> System.Delegate 
-#endif
 
         /// <summary>Creates an asynchronous computation that will wait on the given WaitHandle.</summary>
         ///
