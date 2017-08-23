@@ -1451,7 +1451,7 @@ module internal SymbolHelpers =
             (fun err -> FSharpStructuredToolTipElement.CompositionError(err))
 
     /// Get rid of groups of overloads an replace them with single items.
-    let FlattenItems g m item =
+    let FlattenItems g (m: range) item =
         match item with 
         | Item.MethodGroup(nm,minfos,orig) -> minfos |> List.map (fun minfo -> Item.MethodGroup(nm,[minfo],orig))  
         | Item.CtorGroup(nm,cinfos) -> cinfos |> List.map (fun minfo -> Item.CtorGroup(nm,[minfo])) 
