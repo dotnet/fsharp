@@ -2348,13 +2348,11 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Tanh")>]
         val inline tanh     : value:^T -> ^T       when ^T : (static member Tanh     : ^T -> ^T)      and default ^T : float
 
-#if !FX_NO_TRUNCATE
         /// <summary>Overloaded truncate operator.</summary>
         /// <param name="value">The input value.</param>
         /// <returns>The truncated value.</returns>
         [<CompiledName("Truncate")>]
         val inline truncate : value:^T -> ^T       when ^T : (static member Truncate : ^T -> ^T)      and default ^T : float
-#endif
 
         /// <summary>Overloaded power operator.</summary>
         /// <param name="x">The input base.</param>
