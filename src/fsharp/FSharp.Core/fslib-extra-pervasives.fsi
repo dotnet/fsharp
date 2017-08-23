@@ -126,9 +126,6 @@ module ExtraTopLevelOperators =
     [<CompiledName("CreateArray2D")>]
     val array2D : rows:seq<#seq<'T>> -> 'T[,]
 
-
-    #if FX_MINIMAL_REFLECTION // not on Compact Framework 
-    #else
     /// <summary>Special prefix operator for splicing typed expressions into quotation holes.</summary>
     [<CompiledName("SpliceExpression")>]
     val (~%) : expression:Microsoft.FSharp.Quotations.Expr<'T> -> 'T
@@ -136,13 +133,11 @@ module ExtraTopLevelOperators =
     /// <summary>Special prefix operator for splicing untyped expressions into quotation holes.</summary>
     [<CompiledName("SpliceUntypedExpression")>]
     val (~%%) : expression:Microsoft.FSharp.Quotations.Expr -> 'T
-    #endif
 
     /// <summary>An active pattern to force the execution of values of type <c>Lazy&lt;_&gt;</c>.</summary>
     [<CompiledName("LazyPattern")>]
     val (|Lazy|) : input:Lazy<'T> -> 'T
 
-        
     /// <summary>Builds a query using query syntax and operators.</summary>
     val query : Microsoft.FSharp.Linq.QueryBuilder
 

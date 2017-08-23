@@ -2,7 +2,6 @@
 
 namespace Microsoft.FSharp.Quotations
 
-#if !FX_MINIMAL_REFLECTION
 open System
 open System.IO
 open System.Reflection
@@ -2222,5 +2221,3 @@ module ExprShape =
             | CombTerm(op,args) -> ShapeCombination(box<ExprConstInfo * Expr list> (op,expr.CustomAttributes),args)
             | HoleTerm _     -> invalidArg "expr" (SR.GetString(SR.QunexpectedHole))
         loop (e :> Expr)
-                
-#endif
