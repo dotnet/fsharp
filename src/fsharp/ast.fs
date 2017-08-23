@@ -1,6 +1,10 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
+#if COMPILER_PUBLIC_API
+module public Microsoft.FSharp.Compiler.Ast
+#else
 module internal Microsoft.FSharp.Compiler.Ast
+#endif
 
 open System.Collections.Generic
 open Internal.Utilities
@@ -61,8 +65,8 @@ type XmlDocCollector() =
         check()
         savedLines.Add(line,pos)
 
-    member x.LinesBefore(grabPointPos) =
-
+    member x.LinesBefore(grabPointPos) = 
+      try
         let lines = savedLinesAsArray.Force()
         let grabPoints = savedGrabPointsAsArray.Force()
         let firstLineIndexAfterGrabPoint = Array.findFirstIndexWhereTrue lines (fun (_,pos) -> posGeq pos grabPointPos)
@@ -76,6 +80,9 @@ type XmlDocCollector() =
                 Array.findFirstIndexWhereTrue lines (fun (_,pos) -> posGeq pos prevGrabPointPos)
         //printfn "#lines = %d, firstLineIndexAfterPrevGrabPoint = %d, firstLineIndexAfterGrabPoint = %d" lines.Length firstLineIndexAfterPrevGrabPoint  firstLineIndexAfterGrabPoint
         lines.[firstLineIndexAfterPrevGrabPoint..firstLineIndexAfterGrabPoint-1] |> Array.map fst
+      with e -> 
+          //printfn "unexpected error in LinesBefore:\n%s" (e.ToString())
+          [| |]
 
 type XmlDoc =
     | XmlDoc of string[]
@@ -95,7 +102,7 @@ type XmlDoc =
                      ["</summary>"]
 
         let lines = processLines (Array.toList lines)
-        if lines.Length = 0 then XmlDoc.Empty
+        if isNil lines then XmlDoc.Empty
         else XmlDoc (Array.ofList lines)
 
 // Discriminated unions can't contain statics, so we use a separate type
@@ -135,9 +142,9 @@ type ParserDetail =
 
 // PERFORMANCE: consider making this a struct.
 [<System.Diagnostics.DebuggerDisplay("{idText}")>]
-[<Sealed>]
+[<Struct>]
 [<NoEquality; NoComparison>]
-type Ident (text,range) =
+type Ident (text: string, range: range) =
      member x.idText = text
      member x.idRange = range
      override x.ToString() = text
@@ -529,7 +536,7 @@ and
     | ForEach of forSeqPoint:SequencePointInfoForForLoop * seqExprOnly:SeqExprOnly * isFromSource:bool * pat:SynPat * enumExpr:SynExpr * bodyExpr:SynExpr * range:range
 
     /// F# syntax: [ expr ], [| expr |]
-    | ArrayOrListOfSeqExpr of isList:bool * expr:SynExpr * range:range
+    | ArrayOrListOfSeqExpr of isArray:bool * expr:SynExpr * range:range
 
     /// CompExpr(isArrayOrList, isNotNakedRefCell, expr)
     ///
@@ -1103,7 +1110,7 @@ and
     | Member
     | PropertyGet
     | PropertySet
-    /// An artifical member kind used prior to the point where a get/set property is split into two distinct members.
+    /// An artificial member kind used prior to the point where a get/set property is split into two distinct members.
     | PropertyGetSet
 
 and
@@ -1242,7 +1249,7 @@ and
     /// The untyped, unchecked syntax tree associated with the name of a type definition or module
     /// in signature or implementation.
     ///
-    /// THis includes the name, attributes, type parameters, constraints, documentation and accessibility
+    /// This includes the name, attributes, type parameters, constraints, documentation and accessibility
     /// for a type definition or module. For modules, entries such as the type parameters are
     /// always empty.
     SynComponentInfo =
@@ -1505,11 +1512,23 @@ type QualifiedNameOfFile =
 
 [<NoEquality; NoComparison>]
 type ParsedImplFileInput =
-    | ParsedImplFileInput of fileName:string * isScript:bool * QualifiedNameOfFile * ScopedPragma list * ParsedHashDirective list * SynModuleOrNamespace list * (bool * bool)
+    | ParsedImplFileInput of 
+        fileName : string * 
+        isScript : bool * 
+        qualifiedNameOfFile : QualifiedNameOfFile * 
+        scopedPragmas : ScopedPragma list * 
+        hashDirectives : ParsedHashDirective list * 
+        modules : SynModuleOrNamespace list * 
+        ((* isLastCompiland *) bool * (* isExe *) bool)
 
 [<NoEquality; NoComparison>]
 type ParsedSigFileInput =
-    | ParsedSigFileInput of fileName:string * QualifiedNameOfFile * ScopedPragma list * ParsedHashDirective list * SynModuleOrNamespaceSig list
+    | ParsedSigFileInput of 
+        fileName : string * 
+        qualifiedNameOfFile : QualifiedNameOfFile * 
+        scopedPragmas : ScopedPragma list * 
+        hashDirectives : ParsedHashDirective list * 
+        modules : SynModuleOrNamespaceSig list
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 type ParsedInput =
@@ -1518,8 +1537,8 @@ type ParsedInput =
 
     member inp.Range =
         match inp with
-        | ParsedInput.ImplFile (ParsedImplFileInput(_,_,_,_,_,(SynModuleOrNamespace(range=m) :: _),_))
-        | ParsedInput.SigFile (ParsedSigFileInput(_,_,_,_,(SynModuleOrNamespaceSig(range=m) :: _))) -> m
+        | ParsedInput.ImplFile (ParsedImplFileInput (modules=SynModuleOrNamespace(range=m) :: _))
+        | ParsedInput.SigFile (ParsedSigFileInput (modules=SynModuleOrNamespaceSig(range=m) :: _)) -> m
         | ParsedInput.ImplFile (ParsedImplFileInput (fileName=filename))
         | ParsedInput.SigFile (ParsedSigFileInput (fileName=filename)) ->
 #if DEBUG
@@ -2130,41 +2149,41 @@ and LexCont = LexerWhitespaceContinuation
 
 /// The error raised by the parse_error_rich function, which is called by the parser engine
 /// when a syntax error occurs. The first object is the ParseErrorContext which contains a dump of
-/// information about the grammar at the point where the error occured, e.g. what tokens
+/// information about the grammar at the point where the error occurred, e.g. what tokens
 /// are valid to shift next at that point in the grammar. This information is processed in CompileOps.fs.
 [<NoEquality; NoComparison>]
 exception SyntaxError of obj (* ParseErrorContext<_> *) * range:range
 
 /// Get an F# compiler position from a lexer position
-let posOfLexPosition (p:Position) =
+let internal posOfLexPosition (p:Position) =
     mkPos p.Line p.Column
 
 /// Get an F# compiler range from a lexer range
-let mkSynRange (p1:Position) (p2: Position) =
+let internal mkSynRange (p1:Position) (p2: Position) =
     mkFileIndexRange p1.FileIndex (posOfLexPosition p1) (posOfLexPosition p2)
 
 type LexBuffer<'Char> with
-    member lexbuf.LexemeRange  = mkSynRange lexbuf.StartPos lexbuf.EndPos
+    member internal lexbuf.LexemeRange  = mkSynRange lexbuf.StartPos lexbuf.EndPos
 
 /// Get the range corresponding to the result of a grammar rule while it is being reduced
-let lhs (parseState: IParseState) =
+let internal lhs (parseState: IParseState) =
     let p1 = parseState.ResultStartPosition
     let p2 = parseState.ResultEndPosition
     mkSynRange p1 p2
 
 /// Get the range covering two of the r.h.s. symbols of a grammar rule while it is being reduced
-let rhs2 (parseState: IParseState) i j =
+let internal rhs2 (parseState: IParseState) i j = 
     let p1 = parseState.InputStartPosition i
     let p2 = parseState.InputEndPosition j
     mkSynRange p1 p2
 
 /// Get the range corresponding to one of the r.h.s. symbols of a grammar rule while it is being reduced
-let rhs parseState i = rhs2 parseState i i
+let internal rhs parseState i = rhs2 parseState i i 
 
 type IParseState with
 
     /// Get the generator used for compiler-generated argument names.
-    member x.SynArgNameGenerator =
+    member internal x.SynArgNameGenerator = 
         let key = "SynArgNameGenerator"
         let bls = x.LexBuffer.BufferLocalStore
         if not (bls.ContainsKey key) then
@@ -2172,7 +2191,7 @@ type IParseState with
         bls.[key] :?> SynArgNameGenerator
 
     /// Reset the generator used for compiler-generated argument names.
-    member x.ResetSynArgNameGenerator() = x.SynArgNameGenerator.Reset()
+    member internal x.ResetSynArgNameGenerator() = x.SynArgNameGenerator.Reset()
 
 
 /// XmlDoc F# lexer/parser state, held in the BufferLocalStore for the lexer.
@@ -2181,20 +2200,20 @@ module LexbufLocalXmlDocStore =
     // The key into the BufferLocalStore used to hold the current accumulated XmlDoc lines
     let private xmlDocKey = "XmlDoc"
 
-    let ClearXmlDoc (lexbuf:Lexbuf) =
+    let internal ClearXmlDoc (lexbuf:Lexbuf) = 
         lexbuf.BufferLocalStore.[xmlDocKey] <- box (XmlDocCollector())
 
     /// Called from the lexer to save a single line of XML doc comment.
-    let SaveXmlDocLine (lexbuf:Lexbuf, lineText, pos) =
-        if not (lexbuf.BufferLocalStore.ContainsKey(xmlDocKey)) then
+    let internal SaveXmlDocLine (lexbuf:Lexbuf, lineText, pos) = 
+        if not (lexbuf.BufferLocalStore.ContainsKey(xmlDocKey)) then 
             lexbuf.BufferLocalStore.[xmlDocKey] <- box (XmlDocCollector())
         let collector = unbox<XmlDocCollector>(lexbuf.BufferLocalStore.[xmlDocKey])
         collector.AddXmlDocLine (lineText, pos)
 
     /// Called from the parser each time we parse a construct that marks the end of an XML doc comment range,
     /// e.g. a 'type' declaration. The markerRange is the range of the keyword that delimits the construct.
-    let GrabXmlDocBeforeMarker (lexbuf:Lexbuf, markerRange:range)  =
-        if lexbuf.BufferLocalStore.ContainsKey(xmlDocKey) then
+    let internal GrabXmlDocBeforeMarker (lexbuf:Lexbuf, markerRange:range)  = 
+        if lexbuf.BufferLocalStore.ContainsKey(xmlDocKey) then 
             PreXmlDoc.CreateFromGrabPoint(unbox<XmlDocCollector>(lexbuf.BufferLocalStore.[xmlDocKey]),markerRange.End)
         else
             PreXmlDoc.Empty
@@ -2203,30 +2222,46 @@ module LexbufLocalXmlDocStore =
 
 /// Generates compiler-generated names. Each name generated also includes the StartLine number of the range passed in
 /// at the point of first generation.
+///
+/// This type may be accessed concurrently, though in practice it is only used from the compilation thread.
+/// It is made concurrency-safe since a global instance of the type is allocated in tast.fs, and it is good
+/// policy to make all globally-allocated objects concurrency safe in case future versions of the compiler
+/// are used to host multiple concurrent instances of compilation.
 type NiceNameGenerator() =
 
+    let lockObj = obj()
     let basicNameCounts = new Dictionary<string,int>(100)
 
     member x.FreshCompilerGeneratedName (name,m:range) =
+      lock lockObj (fun () -> 
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
         let n = (if basicNameCounts.ContainsKey basicName then basicNameCounts.[basicName] else 0)
         let nm = CompilerGeneratedNameSuffix basicName (string m.StartLine + (match n with 0 -> "" | n -> "-" + string n))
         basicNameCounts.[basicName] <- n+1
-        nm
+        nm)
 
-    member x.Reset () = basicNameCounts.Clear()
+    member x.Reset () = 
+      lock lockObj (fun () -> 
+        basicNameCounts.Clear()
+      )
 
 
 
 /// Generates compiler-generated names marked up with a source code location, but if given the same unique value then
 /// return precisely the same name. Each name generated also includes the StartLine number of the range passed in
 /// at the point of first generation.
+///
+/// This type may be accessed concurrently, though in practice it is only used from the compilation thread.
+/// It is made concurrency-safe since a global instance of the type is allocated in tast.fs.
 type StableNiceNameGenerator() =
+
+    let lockObj = obj()
 
     let names = new Dictionary<(string * int64),string>(100)
     let basicNameCounts = new Dictionary<string,int>(100)
 
     member x.GetUniqueCompilerGeneratedName (name,m:range,uniq) =
+      lock lockObj (fun () -> 
         let basicName = GetBasicNameOfPossibleCompilerGeneratedName name
         if names.ContainsKey (basicName,uniq) then
             names.[(basicName,uniq)]
@@ -2236,12 +2271,13 @@ type StableNiceNameGenerator() =
             names.[(basicName,uniq)] <- nm
             basicNameCounts.[basicName] <- n+1
             nm
+      )
 
     member x.Reset () =
+      lock lockObj (fun () -> 
         basicNameCounts.Clear()
         names.Clear()
-
-
+      )
 
 let rec synExprContainsError inpExpr =
     let rec walkBind (Binding(_, _, _, _, _, _, _, _, _, synExpr, _, _)) = walkExpr synExpr

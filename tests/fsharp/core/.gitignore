@@ -9,6 +9,9 @@ tmptest1.exe
 
 access/fsc.cmd.args
 
+fsi-reference/ImplementationAssembly/ReferenceAssemblyExample.dll
+fsi-reference/ReferenceAssembly/ReferenceAssemblyExample.dll
+
 forwarders/orig
 forwarders/split
 

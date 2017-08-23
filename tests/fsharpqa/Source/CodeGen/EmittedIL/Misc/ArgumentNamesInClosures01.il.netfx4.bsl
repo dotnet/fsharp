@@ -108,7 +108,7 @@
     } // end of property T::F
   } // end of class T
 
-  .class auto ansi serializable nested assembly beforefieldinit get_F@41
+  .class auto ansi serializable sealed nested assembly beforefieldinit get_F@41
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class M/C,int32>
   {
     .method assembly specialname rtspecialname 

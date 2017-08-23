@@ -270,7 +270,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
 
             IVsTextViewEx viewex = view as IVsTextViewEx;
             if (viewex  != null) {
-                return viewex.IsCompletorWindowActive() == VSConstants.S_OK;
+                return viewex.IsCompletorWindowActive() == Microsoft.VisualStudio.VSConstants.S_OK;
             }
 
             return false;
@@ -305,7 +305,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             this.view = view;
             title = path = null;
 
-            LanguageService svc = this.source.LanguageService;
+            LanguageService_DEPRECATED svc = this.source.LanguageService;
             IVsExpansionManager mgr = svc.Site.GetService(typeof(SVsExpansionManager)) as IVsExpansionManager;
             if (mgr == null) return NativeMethods.E_FAIL ;
             Guid guidLanguage = svc.GetLanguageServiceGuid();

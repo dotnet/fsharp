@@ -160,7 +160,7 @@ if (exists($ENV{PRECMD})) {
   # and it will expanded into $FSC_PIPE before invoking it
   $_ = $ENV{PRECMD};
   s/^\$FSC_PIPE/$FSC_PIPE/;
-  s/^\$FSI_PIPE/$FSI_PIPE/;
+  s/\$FSI_PIPE/$FSI_PIPE/g;
   s/^\$FSI32_PIPE/$FSI32_PIPE/;
   s/\$ISCFLAGS/$ISCFLAGS/;
   s/^\$CSC_PIPE/$CSC_PIPE/;
@@ -369,7 +369,7 @@ if ($targetType == TARGET_EXE) {
 }
 
 if ($VerifyStrongName && $targetType <= TARGET_MOD) {
-  RunExit(TEST_FAIL, "Assembly failed verification:\n") if RunCommand("VerifyStroingName","sn -q -vf $targetName",1);
+  RunExit(TEST_FAIL, "Assembly failed verification:\n") if RunCommand("VerifyStrongName","sn -q -vf $targetName",1);
 }
 
 RunExit(TEST_PASS);
@@ -420,10 +420,17 @@ sub RunCompilerCommand {
         # remainder of response is output of compiler
         @CommandOutput = <$remote>;
 
+        print "--------------------------------------------------------\n";
+        print "Error from hosted compiler\n";
+        print "Exit code: $ExitCode\n";
+        print "Error:     $Type\n";
+        print @CommandOutput;
+        print "--------------------------------------------------------\n";
+
         # still some issues with reliability of hosted compiler.
         # if compilation unexpectedly fails, try again with standard compiler
         if ($ExitCode && ($Type < TEST_SEEK_ERROR)) {
-          return RunCommand($msg, $cmd);
+                return RunCommand($msg, $cmd); 
         }
 
         return $ExitCode;

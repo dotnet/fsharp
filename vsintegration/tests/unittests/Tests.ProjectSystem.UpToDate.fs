@@ -23,7 +23,7 @@ open UnitTests.TestLib.Utils.Asserts
 open UnitTests.TestLib.Utils.FilesystemHelpers
 open UnitTests.TestLib.ProjectSystem
 
-[<TestFixture>]
+[<TestFixture>][<Category "ProjectSystem">]
 type UpToDate() = 
     inherit TheTests()
 

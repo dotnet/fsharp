@@ -92,6 +92,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 return caption;
             }
         }
+
         public override int ImageIndex
         {
             get
@@ -208,6 +209,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.HasDesigner = true;
             } 
         } 
+
+        public virtual string RelativeFilePath
+        {
+            get
+            {
+                return PackageUtilities.MakeRelativeIfRooted(this.Url, this.ProjectMgr.BaseURI);
+            }
+        }
 
         public override NodeProperties CreatePropertiesObject()
         {
@@ -466,16 +475,16 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 switch ((VsCommands)cmd)
                 {
                     case VsCommands.ViewCode:
-                        return ((FileDocumentManager)this.GetDocumentManager()).Open(false, false, VSConstants.LOGVIEWID_Code, VSConstants.LOGVIEWID_Code, out windowFrame, WindowFrameShowAction.Show);
+                        return ((FileDocumentManager)this.GetDocumentManager()).Open(false, false, VSConstants.LOGVIEWID_Code, out windowFrame, WindowFrameShowAction.Show);
 
                     case VsCommands.ViewForm:
-                        return ((FileDocumentManager)this.GetDocumentManager()).Open(false, false, VSConstants.LOGVIEWID_Designer, VSConstants.LOGVIEWID_Designer, out windowFrame, WindowFrameShowAction.Show);
+                        return ((FileDocumentManager)this.GetDocumentManager()).Open(false, false, VSConstants.LOGVIEWID_Designer, out windowFrame, WindowFrameShowAction.Show);
 
                     case VsCommands.Open:
                         return ((FileDocumentManager)this.GetDocumentManager()).Open(false, false, WindowFrameShowAction.Show);
 
                     case VsCommands.OpenWith:
-                        return ((FileDocumentManager)this.GetDocumentManager()).Open(false, true, VSConstants.LOGVIEWID_UserChooseView, VSConstants.LOGVIEWID_UserChooseView, out windowFrame, WindowFrameShowAction.Show);
+                        return ((FileDocumentManager)this.GetDocumentManager()).Open(false, true, VSConstants.LOGVIEWID_UserChooseView, out windowFrame, WindowFrameShowAction.Show);
                 }
             }
 
@@ -1070,5 +1079,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             return childNodes;
         }
+
+        public override __VSPROVISIONALVIEWINGSTATUS ProvisionalViewingStatus =>
+             IsFileOnDisk(false)
+                ? __VSPROVISIONALVIEWINGSTATUS.PVS_Enabled
+                : __VSPROVISIONALVIEWINGSTATUS.PVS_Disabled;
     }
 }

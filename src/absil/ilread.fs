@@ -14,6 +14,7 @@ open System.IO
 open System.Runtime.InteropServices
 open System.Collections.Generic
 open Internal.Utilities
+open Internal.Utilities.Collections
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 #if !FX_NO_PDB_READER
@@ -2300,6 +2301,7 @@ and seekReadMethod ctxt numtypars (idx:int) =
      let internalcall = (implflags &&& 0x1000) <> 0x0
      let synchronized = (implflags &&& 0x0020) <> 0x0
      let noinline = (implflags &&& 0x0008) <> 0x0
+     let aggressiveinline = (implflags &&& 0x0100) <> 0x0
      let mustrun = (implflags &&& 0x0040) <> 0x0
      let cctor = (nm = ".cctor")
      let ctor = (nm = ".ctor")
@@ -2337,6 +2339,7 @@ and seekReadMethod ctxt numtypars (idx:int) =
        IsUnmanagedExport=export
        IsSynchronized=synchronized
        IsNoInline=noinline
+       IsAggressiveInline=aggressiveinline
        IsMustRun=mustrun
        IsPreserveSig=preservesig
        IsManaged = not unmanaged
@@ -2354,10 +2357,10 @@ and seekReadMethod ctxt numtypars (idx:int) =
          elif pinvoke then 
            seekReadImplMap ctxt nm  idx
          elif internalcall || abstr || unmanaged || (codetype <> 0x00) then 
-           if codeRVA <> 0x0 then dprintn "non-IL or abstract method with non-zero RVA"
+           //if codeRVA <> 0x0 then dprintn "non-IL or abstract method with non-zero RVA"
            mkMethBodyLazyAux (notlazy MethodBody.Abstract)  
          else 
-           seekReadMethodRVA ctxt (idx,nm,internalcall,noinline,numtypars) codeRVA   
+           seekReadMethodRVA ctxt (idx,nm,internalcall,noinline,aggressiveinline,numtypars) codeRVA   
      }
      
      
@@ -2876,9 +2879,9 @@ and seekReadTopCode ctxt numtypars (sz:int) start seqpoints =
    instrs,rawToLabel, lab2pc, raw2nextLab
 
 #if FX_NO_PDB_READER
-and seekReadMethodRVA ctxt (_idx,nm,_internalcall,noinline,numtypars) rva = 
+and seekReadMethodRVA ctxt (_idx,nm,_internalcall,noinline,aggressiveinline,numtypars) rva = 
 #else
-and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,numtypars) rva = 
+and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,aggressiveinline,numtypars) rva = 
 #endif
   mkMethBodyLazyAux 
    (lazy
@@ -2964,6 +2967,7 @@ and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,numtypars) rva =
              { IsZeroInit=false
                MaxStack= 8
                NoInlining=noinline
+               AggressiveInlining=aggressiveinline
                Locals=List.empty
                SourceMarker=methRangePdbInfo 
                Code=code }
@@ -3089,6 +3093,7 @@ and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,numtypars) rva =
              { IsZeroInit=initlocals
                MaxStack= maxstack
                NoInlining=noinline
+               AggressiveInlining=aggressiveinline
                Locals = locals
                Code=code
                SourceMarker=methRangePdbInfo}
@@ -3964,22 +3969,28 @@ let OpenILModuleReader infile opts =
           dispose = (fun () -> 
             ClosePdbReader pdb) }
 
-// ++GLOBAL MUTABLE STATE
-let ilModuleReaderCache = 
-    new Internal.Utilities.Collections.AgedLookup<(string * System.DateTime),ILModuleReader>(0, areSame=(fun (x,y) -> x = y))
-
+// ++GLOBAL MUTABLE STATE (concurrency safe via locking)
+type ILModuleReaderCacheLockToken() = interface LockToken
+let ilModuleReaderCache = new AgedLookup<ILModuleReaderCacheLockToken, (string * System.DateTime * ILScopeRef * bool), ILModuleReader>(0, areSimilar=(fun (x,y) -> x = y))
+let ilModuleReaderCacheLock = Lock()
 
 let OpenILModuleReaderAfterReadingAllBytes infile opts = 
     // Pseudo-normalize the paths.
     let key,succeeded = 
-        try (FileSystem.GetFullPathShim(infile), FileSystem.GetLastWriteTimeShim(infile)), true
+        try 
+           (FileSystem.GetFullPathShim(infile), 
+            FileSystem.GetLastWriteTimeShim(infile), 
+            opts.ilGlobals.primaryAssemblyScopeRef,
+            opts.pdbPath.IsSome), true
         with e -> 
-            System.Diagnostics.Debug.Assert(false, "Failed to compute key in OpenILModuleReaderAfterReadingAllBytes cache. Falling back to uncached.") 
-            ("",System.DateTime.Now), false
+            System.Diagnostics.Debug.Assert(false, sprintf "Failed to compute key in OpenILModuleReaderAfterReadingAllBytes cache for '%s'. Falling back to uncached." infile) 
+            ("",System.DateTime.Now,ILScopeRef.Local,false), false
+
     let cacheResult = 
         if not succeeded then None // Fall back to uncached.
         else if opts.pdbPath.IsSome then None // can't used a cached entry when reading PDBs, since it makes the returned object IDisposable
-        else ilModuleReaderCache.TryGet(key) 
+        else ilModuleReaderCacheLock.AcquireLock (fun ltok -> ilModuleReaderCache.TryGet(ltok, key))
+
     match cacheResult with 
     | Some(ilModuleReader) -> ilModuleReader
     | None -> 
@@ -3990,7 +4001,7 @@ let OpenILModuleReaderAfterReadingAllBytes infile opts =
               ilAssemblyRefs = ilAssemblyRefs
               dispose = (fun () -> ClosePdbReader pdb) }
         if Option.isNone pdb && succeeded then 
-            ilModuleReaderCache.Put(key, ilModuleReader)
+            ilModuleReaderCacheLock.AcquireLock (fun ltok -> ilModuleReaderCache.Put(ltok, key, ilModuleReader))
         ilModuleReader
 
 let OpenILModuleReaderFromBytes fileNameForDebugOutput bytes opts = 

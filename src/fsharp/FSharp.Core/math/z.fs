@@ -105,7 +105,7 @@ namespace System.Numerics
             |  1 -> BigNatModule.toString x.V                       // positive 
             | -1 -> 
                 if BigNatModule.isZero x.V             
-                then "0"                    // not negative infact, but zero. 
+                then "0"                    // not negative in fact, but zero. 
                 else "-" + BigNatModule.toString x.V  // negative
             |  0 -> "0"
             | _ -> invalidOp "signs should be +/- 1 or 0"

@@ -24,8 +24,8 @@ type options =
    embedSourceList: string list
    sourceLink: string
    signer : ILStrongNameSigner option
-   fixupOverlappingSequencePoints : bool
    emitTailcalls: bool
+   deterministic: bool
    showTimes : bool
    dumpDebugInfo : bool }
 

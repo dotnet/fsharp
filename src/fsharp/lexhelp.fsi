@@ -8,6 +8,7 @@ open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler
 
 
@@ -27,11 +28,12 @@ type LexResourceManager =
     new : unit -> LexResourceManager
 
 type lexargs =
-  { defines: string list;
-    ifdefStack: LexerIfdefStack;
-    resourceManager: LexResourceManager;
-    lightSyntaxStatus: LightSyntaxStatus;
-    errorLogger: ErrorLogger}
+    { defines: string list
+      ifdefStack: LexerIfdefStack
+      resourceManager: LexResourceManager
+      lightSyntaxStatus : LightSyntaxStatus
+      errorLogger: ErrorLogger
+      applyLineDirectives: bool }
 
 type LongUnicodeLexResult =
     | SurrogatePair of uint16 * uint16
@@ -67,5 +69,7 @@ module Keywords =
     val KeywordOrIdentifierToken : lexargs -> UnicodeLexing.Lexbuf -> string -> Parser.token
     val IdentifierToken : lexargs -> UnicodeLexing.Lexbuf -> string -> Parser.token
     val QuoteIdentifierIfNeeded : string -> string
+    val NormalizeIdentifierBackticks : string -> string
     val keywordNames : string list
-    val keywordTypes : Set<string>
+    /// Keywords paired with their descriptions. Used in completion and quick info.
+    val keywordsWithDescription : (string * string) list

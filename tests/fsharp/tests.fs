@@ -26,7 +26,6 @@ let FSI_BASIC = FSI_FILE
 #endif
 
 module CoreTests = 
-
     // These tests are enabled for .NET Framework and .NET Core
     [<Test>]
     let ``access-FSC_BASIC``() = singleTestBuildAndRun "core/access" FSC_BASIC
@@ -226,8 +225,8 @@ module CoreTests =
     [<Test>]
     let csext () = singleTestBuildAndRun "core/csext" FSC_BASIC
 
-
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+
     [<Test>]
     let events () = 
         let cfg = testConfig "core/events"
@@ -373,8 +372,27 @@ module CoreTests =
 
         peverify cfg "test.exe"
 
+
+        // Same without the reference to lib.dll - testing an incomplete reference set, but only compiling a subset of the code
+        fsc cfg "%s --noframework --define:NO_LIB_REFERENCE -r:lib3.dll -r:lib2.dll -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
+
+        peverify cfg "test.exe"
+
         exec cfg ("." ++ "test.exe") ""
-                
+
+    [<Test>]
+    let ``fsi-reference`` () = 
+
+        let cfg = testConfig "core/fsi-reference"
+
+        begin
+            use testOkFile = fileguard cfg "test.ok"
+            fsc cfg @"--target:library -o:ImplementationAssembly\ReferenceAssemblyExample.dll" ["ImplementationAssembly.fs"]
+            fsc cfg @"--target:library -o:ReferenceAssembly\ReferenceAssemblyExample.dll" ["ReferenceAssembly.fs"]
+            fsiStdin cfg "test.fsx" "" []
+            testOkFile.CheckExists()
+        end
+
     [<Test>]
     let ``fsi-reload`` () = 
         let cfg = testConfig "core/fsi-reload"
@@ -411,7 +429,7 @@ module CoreTests =
         fsiStdin cfg "prepare.fsx" "--maxerrors:1" []
 
         use testOkFile = fileguard cfg "test.ok"
-        
+
         fsiStdin cfg "test.fsx" "--maxerrors:1"  []
 
         testOkFile.CheckExists()
@@ -481,6 +499,10 @@ module CoreTests =
                 
 
 
+    // Debug with 
+    //     ..\..\..\..\debug\net40\bin\fsi.exe --nologo < test.fsx >a.out 2>a.err
+    // then 
+    ///    windiff z.output.test.default.stdout.bsl a.out
     let printing flag diffFileOut expectedFileOut diffFileErr expectedFileErr = 
        let cfg = testConfig "core/printing"
 
@@ -636,6 +658,8 @@ module CoreTests =
 
         fsc cfg "%s -o:test.exe -r cslib.dll -g" cfg.fsc_flags ["test.fsx"]
 
+        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+
         peverify cfg "test.exe"
 
         begin
@@ -756,7 +780,41 @@ module CoreTests =
         peverify cfg "test2.exe"
 
         exec cfg ("." ++ "test2.exe") ""
- 
+
+    // Repro for https://github.com/Microsoft/visualfsharp/issues/2679
+    [<Test>]
+    let ``add files with same name from different folders`` () = 
+        let cfg = testConfig "core/samename"
+
+        log "== Compiling F# Code with files with same name in different folders"
+        fsc cfg "%s -o:test.exe" cfg.fsc_flags ["folder1/a.fs"; "folder1/b.fs"; "folder2/a.fs"; "folder2/b.fs"]
+
+        peverify cfg "test.exe"
+
+        exec cfg ("." ++ "test.exe") ""
+
+    [<Test>]
+    let ``add files with same name from different folders including signature files`` () =
+        let cfg = testConfig "core/samename"
+
+        log "== Compiling F# Code with files with same name in different folders including signature files"
+        fsc cfg "%s -o:test.exe" cfg.fsc_flags ["folder1/a.fsi"; "folder1/a.fs"; "folder1/b.fsi"; "folder1/b.fs"; "folder2/a.fsi"; "folder2/a.fs"; "folder2/b.fsi"; "folder2/b.fs"]
+
+        peverify cfg "test.exe"
+
+        exec cfg ("." ++ "test.exe") ""
+
+    [<Test>]
+    let ``add files with same name from different folders including signature files that are not synced`` () =
+        let cfg = testConfig "core/samename"
+
+        log "== Compiling F# Code with files with same name in different folders including signature files"
+        fsc cfg "%s -o:test.exe" cfg.fsc_flags ["folder1/a.fsi"; "folder1/a.fs"; "folder1/b.fs"; "folder2/a.fsi"; "folder2/a.fs"; "folder2/b.fsi"; "folder2/b.fs"]
+
+        peverify cfg "test.exe"
+
+        exec cfg ("." ++ "test.exe") ""
+
     [<Test>]
     let ``libtest-FSI_STDIN`` () = singleTestBuildAndRun "core/libtest" FSI_STDIN
 
@@ -960,6 +1018,16 @@ module CoreTests =
         fsc cfg "%s -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
    
         peverifyWithArgs cfg "/nologo /MD" "test.exe"
+                
+    [<Test>]
+    let fsi_load () = 
+        let cfg = testConfig "core/fsi-load"
+
+        use testOkFile = fileguard cfg "test.ok"
+
+        fsi cfg "%s" cfg.fsi_flags ["test.fsx"]
+
+        testOkFile.CheckExists()
                 
     [<Test>]
     let queriesLeafExpressionConvert () = 
@@ -1349,8 +1417,10 @@ module CoreTests =
         peverifyWithArgs cfg "/nologo" "xmlverify.exe"
 #endif
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
 module ToolsTests = 
 
+    // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
     [<Test>]
     let bundle () = 
         let cfg = testConfig "tools/bundle"
@@ -1370,6 +1440,7 @@ module ToolsTests =
         fsc cfg "%s -a --standalone -r:test_two_fsharp_modules_module_1.dll -o:test_two_fsharp_modules_module_2_as_dll.dll -g" cfg.fsc_flags ["test_two_fsharp_modules_module_2.fs"]
    
         peverify cfg "test_two_fsharp_modules_module_2_as_dll.dll"
+#endif
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     [<Test>]
@@ -1391,6 +1462,8 @@ module RegressionTests =
     [<Test >]
     let ``321`` () = singleTestBuildAndRun "regression/321" FSC_BASIC
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+    // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
     [<Test>]
     let ``655`` () = 
         let cfg = testConfig "regression/655"
@@ -1409,6 +1482,7 @@ module RegressionTests =
 
         testOkFile.CheckExists()
                 
+    // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
     [<Test >]
     let ``656`` () = 
         let cfg = testConfig "regression/656"
@@ -1416,6 +1490,7 @@ module RegressionTests =
         fsc cfg "%s -o:pack.exe" cfg.fsc_flags ["misc.fs mathhelper.fs filehelper.fs formshelper.fs plot.fs traj.fs playerrecord.fs trackedplayers.fs form.fs"]
 
         peverify cfg  "pack.exe"
+#endif
                 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
     // Requires WinForms
@@ -1439,6 +1514,16 @@ module RegressionTests =
     [<Test >]
     let ``struct-tuple-bug-1-FSI_BASIC`` () = singleTestBuildAndRun "regression/struct-tuple-bug-1" FSI_BASIC
 
+#if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+    // This test is disabled in coreclr builds dependent on fixing : https://github.com/Microsoft/visualfsharp/issues/2600
+    [<Test>]
+    let ``struct-measure-bug-1`` () = 
+        let cfg = testConfig "regression/struct-measure-bug-1"
+
+        fsc cfg "%s --optimize- -o:test.exe -g" cfg.fsc_flags ["test.fs"]
+
+        peverify cfg "test.exe"
+#endif
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
 module OptimizationTests =
 
@@ -1517,6 +1602,8 @@ module OptimizationTests =
 
         fsc cfg "%s -g --optimize- --target:library -o:lib.dll" cfg.fsc_flags ["lib.fs"; "lib2.fs"]
 
+        peverify cfg "lib.dll " 
+
         fsc cfg "%s -g --optimize- --target:library -o:lib3.dll -r:lib.dll " cfg.fsc_flags ["lib3.fs"]
 
         fsc cfg "%s -g --optimize- -o:test.exe -r:lib.dll -r:lib3.dll" cfg.fsc_flags ["test.fs "]
@@ -1584,6 +1671,26 @@ module TypecheckTests =
 #endif
 
 #if !FSHARP_SUITE_DRIVES_CORECLR_TESTS
+    [<Test>]
+    let ``sigs pos27`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:exe -o:pos27.exe" cfg.fsc_flags ["pos27.fs"]
+        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+
+        peverify cfg "pos27.exe"
+
+    [<Test>]
+    let ``sigs pos26`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:exe -o:pos26.exe" cfg.fsc_flags ["pos26.fsi"; "pos26.fs"]
+        peverify cfg "pos26.exe"
+
+    [<Test>]
+    let ``sigs pos25`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:exe -o:pos25.exe" cfg.fsc_flags ["pos25.fs"]
+        peverify cfg "pos25.exe"
+
     [<Test>]
     let ``sigs pos24`` () = 
         let cfg = testConfig "typecheck/sigs"
@@ -2028,6 +2135,9 @@ module TypecheckTests =
     let ``type check neg97`` () = singleNegTest (testConfig "typecheck/sigs") "neg97"
 
     [<Test>] 
+    let ``type check neg98`` () = singleNegTest (testConfig "typecheck/sigs") "neg98"
+
+    [<Test>] 
     let ``type check neg_byref_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_1"
 
     [<Test>] 
@@ -2213,7 +2323,7 @@ module GeneratedSignatureTests =
     [<Test>]
     let ``members-basics-GENERATED_SIGNATURE`` () = singleTestBuildAndRun "core/members/basics" GENERATED_SIGNATURE
 
-    [<Test>]
+    [<Test; Ignore("Flaky w.r.t. PEVerify.  https://github.com/Microsoft/visualfsharp/issues/2616")>]
     let ``access-GENERATED_SIGNATURE``() = singleTestBuildAndRun "core/access" GENERATED_SIGNATURE
 
     [<Test>]

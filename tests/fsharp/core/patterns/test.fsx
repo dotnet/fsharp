@@ -12,10 +12,18 @@ open System.Reflection
 
 #light
 
-let failures = ref false
-let report_failure s  = 
-  stderr.WriteLine ("NO: test "+s+" failed"); failures := true
-let test s b = if b then () else report_failure(s) 
+let failures = ref []
+
+let report_failure (s : string) = 
+    stderr.Write" NO: "
+    stderr.WriteLine s
+    failures := !failures @ [s]
+
+let test (s : string) b = 
+    stderr.Write(s)
+    if b then stderr.WriteLine " OK"
+    else report_failure (s)
+
 let check s x1 x2 = 
     if (x1 = x2) then 
         stderr.WriteLine ("test "+s+": ok")
@@ -857,7 +865,7 @@ module ActivePatternsFromTheHub =
     // The intention of the example appears to be that additional calling plans are given semantics
     // by new rules that resolve how they interact in a fairly adhoc way with the call data.
     // It's hard to see how you would permit "arbitrary" extensions in a modular way for
-    // this example, since the hardest part is always in the resolution of potential conflicts and
+    // this example, since the devil is always in the resolution of potential conflicts and
     // ambiguities with other rules. If I've misunderstood the kind of extensibility you require
     // then please let me know. In any case it's a great example of adhoc matching.
     type userData = 
@@ -1210,11 +1218,113 @@ module StructUnionMultiCaseLibDefns =
       /// <summary>Choice 7 of 7 choices</summary>
       | Choice7Of7 of Item7: 'T7
 
+module StructUnionsWithConflictingConstructors = 
+
+    [<StructuralEquality; StructuralComparison>]
+    [<RequireQualifiedAccess>]
+    [<Struct>]
+    type StructChoice = 
+      | Choice1Of2 of Item1: double
+      | Choice2Of2 of Item2: double
+    
+    [<StructuralEquality; StructuralComparison>]
+    [<RequireQualifiedAccess>]
+    [<Struct>]
+    type StructChoice3 = 
+      | Choice1Of3 of Item1: double
+      | Choice2Of3 of Item2: double
+      | Choice3Of3 of Item3: double
+    
+    [<StructuralEquality; StructuralComparison>]
+    [<RequireQualifiedAccess>]
+    [<Struct>]
+    type StructChoice4 = 
+      | Choice1Of4 of Item1: int
+      | Choice2Of4 of Item2: int
+      | Choice3Of4 of Item3: int
+      | Choice4Of4 of Item4: float
+    
+    [<StructuralEquality; StructuralComparison>]
+    [<RequireQualifiedAccess>]
+    [<Struct>]
+    type StructChoice5 = 
+      | Choice1Of5 of Item1: string
+      | Choice2Of5 of Item2: string
+      | Choice3Of5 of Item3: string
+      | Choice4Of5 of Item4: string
+      | Choice5Of5 of Item5: string
+    
+    [<StructuralEquality; StructuralComparison>]
+    [<RequireQualifiedAccess>]
+    [<Struct>]
+    type StructChoice6<'T1> = 
+      | Choice1Of6 of Item1: 'T1 
+      | Choice2Of6 of Item2: 'T1
+      | Choice3Of6 of Item3: 'T1
+      | Choice4Of6 of Item4: 'T1
+      | Choice5Of6 of Item5: 'T1
+      | Choice6Of6 of Item6: 'T1
+    
+    [<StructuralEquality; StructuralComparison>]
+    [<RequireQualifiedAccess>]
+    [<Struct>]
+    type StructChoice7 = 
+      | Choice1Of7 of Item1: byte 
+      | Choice2Of7 of Item2: byte
+      | Choice3Of7 of Item3: byte
+      | Choice4Of7 of Item4: byte
+      | Choice5Of7 of Item5: byte
+      | Choice6Of7 of Item6: byte
+      | Choice7Of7 of Item7: byte
+
+module StructUnionMarshalingBug = 
+    [<Struct>]
+    type Msg0 = 
+      | Zero of key :int
+
+    [<Struct>]
+    type Msg1 = 
+      | One of name :string
+      | Two of key :int
+
+    [<Struct>]
+    type Msg2 = 
+      { name :string
+        key :int
+        tag :int }
+
+    open System.Runtime.InteropServices
+
+    let msg0 = Zero 42
+    let size0 = Marshal.SizeOf(msg0)  
+    check "clcejefdw" size0 (sizeof<int>)
+
+    let msg1 = Two 42
+    let size1 = Marshal.SizeOf(msg1)  
+    check "clcejefdw2" size1 (sizeof<string> + 2*sizeof<int>) // this size may be bigger than expected
+
+    let msg2 = { name = null; key = 42; tag=1 }
+    let size2 = Marshal.SizeOf(msg2)  
+    check "clceje" size2 (sizeof<string> + 2*sizeof<int>)
+
+    // ... alternately ...
+    let buffer = Marshal.AllocHGlobal(64) // HACK: just assumed a much larger size
+    Marshal.StructureToPtr<Msg1>(msg1, buffer, false) 
+
 (* check for failure else sign off "ok" *)
 
-let aa =
-  if !failures then (stdout.WriteLine "Test Failed"; exit 1) 
 
-do (stdout.WriteLine "Test Passed"; 
-    System.IO.File.WriteAllText("test.ok","ok"); 
-    exit 0)
+#if TESTS_AS_APP
+let RUN() = !failures
+#else
+let aa =
+  match !failures with 
+  | [] -> 
+      stdout.WriteLine "Test Passed"
+      System.IO.File.WriteAllText("test.ok","ok")
+      exit 0
+  | _ -> 
+      stdout.WriteLine "Test Failed"
+      exit 1
+#endif
+

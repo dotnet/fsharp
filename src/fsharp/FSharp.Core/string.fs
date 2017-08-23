@@ -20,7 +20,7 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("Concat")>]
         let concat sep (strings : seq<string>) =  
-            String.Join(sep, Seq.toArray strings)
+            String.Join(sep, strings)
 
         [<CompiledName("Iterate")>]
         let iter (f : (char -> unit)) (str:string) =

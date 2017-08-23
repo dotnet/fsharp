@@ -11,22 +11,22 @@ open Microsoft.VisualStudio.Editor
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.Utilities
-open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.LanguageService
 open System.Runtime.InteropServices
-open EnvDTE
 
 type internal XmlDocCommandFilter 
      (
         wpfTextView: IWpfTextView, 
         filePath: string, 
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager,
+        projectInfoManager: FSharpProjectOptionsManager,
         workspace: VisualStudioWorkspaceImpl
      ) =
+
+    static let userOpName = "XmlDocCommand"
+
     let checker = checkerProvider.Checker
 
     let document =
@@ -68,8 +68,8 @@ type internal XmlDocCommandFilter
                                 let! document = document.Value
                                 let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                                 let sourceText = wpfTextView.TextBuffer.CurrentSnapshot.GetText()
-                                let! parsedInput = checker.ParseDocument(document, options, sourceText)
-                                let! xmlDocables = XmlDocParser.getXmlDocables (sourceText, Some parsedInput) |> liftAsync
+                                let! parsedInput = checker.ParseDocument(document, options, sourceText, userOpName)
+                                let xmlDocables = XmlDocParser.getXmlDocables (sourceText, Some parsedInput) 
                                 let xmlDocablesBelowThisLine = 
                                     // +1 because looking below current line for e.g. a 'member'
                                     xmlDocables |> List.filter (fun (XmlDocable(line,_indent,_paramNames)) -> line = curLineNum+1) 
@@ -112,12 +112,12 @@ type internal XmlDocCommandFilter
                 VSConstants.E_FAIL
 
 [<Export(typeof<IWpfTextViewCreationListener>)>]
-[<ContentType(FSharpCommonConstants.FSharpContentTypeName)>]
+[<ContentType(FSharpConstants.FSharpContentTypeName)>]
 [<TextViewRole(PredefinedTextViewRoles.PrimaryDocument)>]
 type internal XmlDocCommandFilterProvider 
     [<ImportingConstructor>] 
     (checkerProvider: FSharpCheckerProvider,
-     projectInfoManager: ProjectInfoManager,
+     projectInfoManager: FSharpProjectOptionsManager,
      workspace: VisualStudioWorkspaceImpl,
      textDocumentFactoryService: ITextDocumentFactoryService,
      editorFactory: IVsEditorAdaptersFactoryService) =

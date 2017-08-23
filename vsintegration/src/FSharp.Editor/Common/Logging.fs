@@ -1,17 +1,10 @@
 ﻿namespace Microsoft.VisualStudio.FSharp.Editor.Logging
 
 open System
-open System.Collections.Generic
-open System.Windows.Media
+open System.Diagnostics
 open System.ComponentModel.Composition
-open Microsoft.VisualStudio.FSharp
-open Microsoft.VisualStudio
-open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.Text.Classification
-open Microsoft.VisualStudio.Utilities
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.VisualStudio.ComponentModelHost
 open Microsoft.VisualStudio.FSharp.Editor
 
 [<RequireQualifiedAccess>]
@@ -77,6 +70,8 @@ type [<Export>] Logger [<ImportingConstructor>]
 
 [<AutoOpen>]
 module Logging =
+
+    let inline debug msg = Printf.kprintf Debug.WriteLine msg
 
     let private logger = lazy Logger(Logger.GlobalServiceProvider)
     let private log logType msg = logger.Value.Log(logType,msg)

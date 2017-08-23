@@ -17,7 +17,7 @@ using IOleServiceProvider = Microsoft.VisualStudio.OLE.Interop.IServiceProvider;
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
     [Guid(Constants.FSharpEditorFactoryIdString)]
-    [ProvideEditorFactory(typeof(FSharpEditorFactory), 101)]
+    [ProvideEditorFactory(typeof(FSharpEditorFactory), 101, CommonPhysicalViewAttributes = (int)__VSPHYSICALVIEWATTRIBUTES.PVA_SupportsPreview)]
     [ProvideEditorExtension(typeof(FSharpEditorFactory), ".fs", 32)]
     [ProvideEditorExtension(typeof(FSharpEditorFactory), ".fsi", 32)]
     [ProvideEditorExtension(typeof(FSharpEditorFactory), ".fsscript", 32)]
@@ -118,7 +118,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             pbstrPhysicalView = null; 
 
-            if(rguidLogicalView.Equals(VSConstants.LOGVIEWID.Designer_guid) || rguidLogicalView.Equals(VSConstants.LOGVIEWID.Primary_guid))
+            if(rguidLogicalView == VSConstants.LOGVIEWID.Primary_guid ||
+                rguidLogicalView == VSConstants.LOGVIEWID.Debugging_guid ||
+                rguidLogicalView == VSConstants.LOGVIEWID.Code_guid ||
+                rguidLogicalView == VSConstants.LOGVIEWID.TextView_guid)
             {
                 return VSConstants.S_OK;
             }

@@ -123,14 +123,10 @@ module internal Implementation =
     // Read the tables written by FSYACC.  
 
     type AssocTable(elemTab:uint16[], offsetTab:uint16[]) =
-#if OLD_CACHE
-        let cache = new Dictionary<int,int>(2000)
-#else
         let cacheSize = 7919 // the 1000'th prime
         // Use a simpler hash table with faster lookup, but only one
         // hash bucket per key.
         let cache = Array.zeroCreate<int> (cacheSize * 2)
-#endif
 
         member t.ReadAssoc (minElemNum,maxElemNum,defaultValueOfAssoc,keyToFind) =     
             // do a binary chop on the table 
@@ -155,29 +151,18 @@ module internal Implementation =
             assert (rowNumber < 0x10000)
             assert (keyToFind < 0x10000)
             let cacheKey = (rowNumber <<< 16) ||| keyToFind
-#if OLD_CACHE
-            let mutable res = 0 
-            let ok = cache.TryGetValue(cacheKey, &res) 
-            if ok then res 
-            else
-#else
-            let cacheIdx = int32 (uint32 cacheKey % uint32 cacheSize)
-            let cacheKey2 = cache.[cacheIdx*2]
-            let v = cache.[cacheIdx*2+1]
+            let cacheIdx = (int32 (uint32 cacheKey % uint32 cacheSize)) * 2
+            let cacheKey2 = cache.[cacheIdx]
+            let v = cache.[cacheIdx+1]
             if cacheKey = cacheKey2 then v 
             else
-#endif
                 let headOfTable = int offsetTab.[rowNumber]
                 let firstElemNumber = headOfTable + 1           
                 let numberOfElementsInAssoc = int elemTab.[headOfTable*2]
                 let defaultValueOfAssoc = int elemTab.[headOfTable*2+1]          
                 let res = t.ReadAssoc (firstElemNumber,firstElemNumber+numberOfElementsInAssoc,defaultValueOfAssoc,keyToFind)
-#if OLD_CACHE
-                cache.[cacheKey] <- res
-#else
-                cache.[cacheIdx*2] <- cacheKey
-                cache.[cacheIdx*2+1] <- res
-#endif
+                cache.[cacheIdx] <- cacheKey
+                cache.[cacheIdx+1] <- res
                 res
 
         // Read all entries in the association table

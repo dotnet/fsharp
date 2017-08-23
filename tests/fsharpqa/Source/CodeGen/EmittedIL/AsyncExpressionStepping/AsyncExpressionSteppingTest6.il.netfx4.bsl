@@ -55,7 +55,7 @@
          extends [mscorlib]System.Object
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-    .class auto ansi serializable nested assembly beforefieldinit 'f2@5-3'
+    .class auto ansi serializable sealed nested assembly beforefieldinit 'f2@5-3'
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>>
     {
       .field public class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder builder@
@@ -118,7 +118,7 @@
 
     } // end of class 'f2@5-3'
 
-    .class auto ansi serializable nested assembly beforefieldinit 'f3@19-5'
+    .class auto ansi serializable sealed nested assembly beforefieldinit 'f3@19-5'
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>>
     {
       .field public class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder builder@
@@ -179,7 +179,7 @@
 
     } // end of class 'f3@19-5'
 
-    .class auto ansi serializable nested assembly beforefieldinit 'f3@16-4'
+    .class auto ansi serializable sealed nested assembly beforefieldinit 'f3@16-4'
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>>
     {
       .field public class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder builder@
@@ -242,7 +242,7 @@
 
     } // end of class 'f3@16-4'
 
-    .class auto ansi serializable nested assembly beforefieldinit 'f3@15-3'
+    .class auto ansi serializable sealed nested assembly beforefieldinit 'f3@15-3'
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>>
     {
       .field public class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder builder@
@@ -294,7 +294,7 @@
 
     } // end of class 'f3@15-3'
 
-    .class auto ansi serializable nested assembly beforefieldinit 'f3@14-2'
+    .class auto ansi serializable sealed nested assembly beforefieldinit 'f3@14-2'
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>>
     {
       .field public class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder builder@
@@ -340,7 +340,7 @@
 
     } // end of class 'f3@14-2'
 
-    .class auto ansi serializable nested assembly beforefieldinit 'f3@13-1'
+    .class auto ansi serializable sealed nested assembly beforefieldinit 'f3@13-1'
            extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsync`1<int32>>
     {
       .field public class [FSharp.Core]Microsoft.FSharp.Control.FSharpAsyncBuilder builder@

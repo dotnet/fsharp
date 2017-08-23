@@ -21,8 +21,3 @@ do()
 [<assembly:AssemblyProduct("Microsoft\174 F#")>]
 [<assembly:ComVisible(false)>]
 do()
-
-// This Visual Studio-specific attribute is needed on this DLL because for historical reasons it shipped as part of the Visual F# IDE Tools rather than this F# SDK
-[<assembly: Microsoft.VisualStudio.Shell.ProvideCodeBase(CodeBase = @"$PackageFolder$\FSharp.Compiler.Server.Shared.dll")>]
-do()
-

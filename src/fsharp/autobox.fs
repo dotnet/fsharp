@@ -187,7 +187,7 @@ let TransformImplFile g amap implFile =
         implFile |> 
           RewriteImplFile { PreIntercept = Some(TransformExpr g nvs)
                             PreInterceptBinding = Some(TransformBinding g nvs)
-                            PostTransform= (fun _ -> None)
-                            IsUnderQuotations=false } 
+                            PostTransform = (fun _ -> None)
+                            IsUnderQuotations = false } 
 
 

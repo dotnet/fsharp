@@ -415,7 +415,7 @@
     <value>Type mismatch when building '{0}': function type doesn't match delegate type. Expected '{1}', but received type '{2}'.</value>
   </data>
   <data name="QtmmRaw" xml:space="preserve">
-    <value>Type mismatch when splicing expression into quotation literal. The type of the expression tree being inserted doesn't match the type expected by the splicing operation. Expected '{0}', but received type '{1}'. Consider type-annotating with the expected expression type, e.g., (%% x : string) or (%x : string).</value>
+    <value>Type mismatch when splicing expression into quotation literal. The type of the expression tree being inserted doesn't match the type expected by the splicing operation. Expected '{0}', but received type '{1}'. Consider type-annotating with the expected expression type, e.g., (%% x : {0}) or (%x : {0}).</value>
   </data>
   <data name="QtupleAccessOutOfRange" xml:space="preserve">
     <value>Tuple access out of range</value>

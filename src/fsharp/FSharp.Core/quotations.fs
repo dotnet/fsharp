@@ -2,8 +2,6 @@
 
 namespace Microsoft.FSharp.Quotations
 
-#if FX_MINIMAL_REFLECTION
-#else
 open System
 open System.IO
 open System.Reflection
@@ -25,7 +23,6 @@ open Microsoft.FSharp.Text.StructuredPrintfImpl.TaggedTextOps
 #if FX_RESHAPED_REFLECTION
 open PrimReflectionAdapters
 open ReflectionAdapters
-type internal BindingFlags = ReflectionAdapters.BindingFlags
 #endif
 
 //--------------------------------------------------------------------------
@@ -1109,16 +1106,21 @@ module Patterns =
         let typ = mkNamedType(tc,tyargs)
         typ.GetField(fldName,staticOrInstanceBindingFlags) |> checkNonNullResult ("fldName", SR.GetString1(SR.QfailedToBindField, fldName))  // fxcop may not see "fldName" as an arg
 
+    let bindGenericCctor (tc:Type) =
+        tc.GetConstructor(staticBindingFlags,null,[| |],null) 
+        |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))  
+
     let bindGenericCtor (tc:Type,argTypes:Instantiable<Type list>) =
         let argtyps =  instFormal (getGenericArguments tc) argTypes
 #if FX_PORTABLE_OR_NETSTANDARD
         let argTypes = Array.ofList argtyps
         tc.GetConstructor(argTypes) 
         |> bindCtorBySearchIfCandidateIsNull tc argTypes
-        |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))  // fxcop may not see "tc" as an arg
+        |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))  
 #else        
-        tc.GetConstructor(instanceBindingFlags,null,Array.ofList argtyps,null) |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))  // fxcop may not see "tc" as an arg
+        tc.GetConstructor(instanceBindingFlags,null,Array.ofList argtyps,null) |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))  
 #endif
+
     let bindCtor (tc,argTypes:Instantiable<Type list>,tyargs) =
         let typ = mkNamedType(tc,tyargs)
         let argtyps = argTypes |> inst tyargs
@@ -1126,9 +1128,9 @@ module Patterns =
         let argTypes = Array.ofList argtyps
         typ.GetConstructor(argTypes) 
         |> bindCtorBySearchIfCandidateIsNull typ argTypes
-        |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor)) // fxcop may not see "tc" as an arg
+        |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor)) 
 #else        
-        typ.GetConstructor(instanceBindingFlags,null,Array.ofList argtyps,null) |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor)) // fxcop may not see "tc" as an arg
+        typ.GetConstructor(instanceBindingFlags,null,Array.ofList argtyps,null) |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor)) 
 #endif
 
     let chop n xs =
@@ -1434,9 +1436,13 @@ module Patterns =
             | Ambiguous(_) -> raise (System.Reflection.AmbiguousMatchException())
             | _ -> failwith "unreachable"
         | 1 -> 
-            let data = u_MethodInfoData st
-            let minfo = bindGenericMeth(data) in 
-            (minfo :> MethodBase)
+            let ((tc,_,_,methName,_) as data) = u_MethodInfoData st
+            if methName = ".cctor" then 
+                let cinfo = bindGenericCctor tc
+                (cinfo :> MethodBase)
+            else
+                let minfo = bindGenericMeth(data)
+                (minfo :> MethodBase)
         | 2 -> 
             let data = u_CtorInfoData st
             let cinfo = bindGenericCtor(data) in 
@@ -1611,7 +1617,7 @@ module Patterns =
     type ReflectedDefinitionTableKey = 
         // Key is declaring type * type parameters count * name * parameter types * return type
         // Registered reflected definitions can contain generic methods or constructors in generic types,
-        // however TryGetReflectedDefinition can be queried with concrete instantiations of the same methods that doesnt contain type parameters.
+        // however TryGetReflectedDefinition can be queried with concrete instantiations of the same methods that doesn't contain type parameters.
         // To make these two cases match we apply the following transformations:
         // 1. if declaring type is generic - key will contain generic type definition, otherwise - type itself
         // 2. if method is instantiation of generic one - pick parameters from generic method definition, otherwise - from methods itself
@@ -1630,7 +1636,7 @@ module Patterns =
                 else 0
 #if FX_RESHAPED_REFLECTION
             // this is very unfortunate consequence of limited Reflection capabilities on .NETCore
-            // what we want: having MethodBase for some concrete method or constructor we would like to locate corresponding MethodInfo\ConstructorInfo from the open generic type (cannonical form).
+            // what we want: having MethodBase for some concrete method or constructor we would like to locate corresponding MethodInfo\ConstructorInfo from the open generic type (canonical form).
             // It is necessary to build the key for the table of reflected definitions: reflection definition is saved for open generic type but user may request it using
             // arbitrary instantiation.
             let findMethodInOpenGenericType (mb : ('T :> MethodBase)) : 'T = 
@@ -1753,9 +1759,7 @@ module Patterns =
             let qdataResources = 
                 // dynamic assemblies don't support the GetManifestResourceNames 
                 match assem with 
-#if !FX_NO_REFLECTION_EMIT
                 | a when a.FullName = "System.Reflection.Emit.AssemblyBuilder" -> []
-#endif
                 | null | _ -> 
                     let resources = 
                         // This raises NotSupportedException for dynamic assemblies
@@ -2173,7 +2177,7 @@ module ExprShape =
             | NewTupleOp(ty),_    -> mkNewTupleWithType(ty, args)
             | TupleGetOp(ty,i),[arg] -> mkTupleGet(ty,i,arg)
             | InstancePropGetOp(pinfo),(obj::args)    -> mkInstancePropGet(obj,pinfo,args)
-            | StaticPropGetOp(pinfo),[] -> mkStaticPropGet(pinfo,args)
+            | StaticPropGetOp(pinfo),_ -> mkStaticPropGet(pinfo,args)
             | InstancePropSetOp(pinfo),obj::(FrontAndBack(args,v)) -> mkInstancePropSet(obj,pinfo,args,v)
             | StaticPropSetOp(pinfo),(FrontAndBack(args,v)) -> mkStaticPropSet(pinfo,args,v)
             | InstanceFieldGetOp(finfo),[obj]   -> mkInstanceFieldGet(obj,finfo)
@@ -2215,5 +2219,3 @@ module ExprShape =
             | CombTerm(op,args) -> ShapeCombination(box<ExprConstInfo * Expr list> (op,expr.CustomAttributes),args)
             | HoleTerm _     -> invalidArg "expr" (SR.GetString(SR.QunexpectedHole))
         loop (e :> Expr)
-                
-#endif

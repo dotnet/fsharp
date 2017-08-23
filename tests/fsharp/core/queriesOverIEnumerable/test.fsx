@@ -11,16 +11,19 @@ open Microsoft.FSharp.Linq.RuntimeHelpers
 
 [<AutoOpen>]
 module Infrastructure =
-    let mutable failures = []
-    let reportFailure s = 
-        stderr.WriteLine " NO"; failures <- s :: failures
+    let failures = ref []
+
+    let report_failure (s : string) = 
+        stderr.Write" NO: "
+        stderr.WriteLine s
+        failures := !failures @ [s]
+
 
     let check  s v1 v2 = 
        if v1 = v2 then 
            printfn "test %s...passed " s 
        else 
-           failures <- failures @ [(s, box v1, box v2)]
-           printfn "test %s...failed, expected %A got %A" s v2 v1
+           report_failure (sprintf "test %s...failed, expected %A got %A" s v2 v1)
 
     let test s b = check s b true
 
@@ -991,8 +994,18 @@ module MiscTestsForImplicitExpressionConversion =
             pageRank ( Queryable.AsQueryable [ for i in 0 .. 100 -> Edge(source = i, target = i % 7) ], 
                        Queryable.AsQueryable [ for i in 0 .. 100 -> Rank(source = i, value = i+100) ])
 
+
+#if TESTS_AS_APP
+let RUN() = !failures
+#else
 let aa =
-  if not failures.IsEmpty then (printfn "Test Failed, failures = %A" failures; exit 1) 
-  else (stdout.WriteLine "Test Passed"; 
-        System.IO.File.WriteAllText("test.ok","ok"); 
-        exit 0)
+  match !failures with 
+  | [] -> 
+      stdout.WriteLine "Test Passed"
+      System.IO.File.WriteAllText("test.ok","ok")
+      exit 0
+  | _ -> 
+      stdout.WriteLine "Test Failed"
+      exit 1
+#endif
+

@@ -8,7 +8,7 @@ open NUnit.Framework
 
 open FSharp.Core.Unittests.LibraryTestFx
 
-[<TestFixture>]
+[<TestFixture>][<Category "Collections.Seq">][<Category "FSharp.Core.Collections">]
 type ObsoleteSeqFunctions() =
 
     [<Test>]

@@ -7,6 +7,7 @@
 #load "test-framework.fs" 
 #load "single-test.fs"
 #else
+[<NUnit.Framework.Category "Type Provider">]
 module FSharp.Test.FSharpSuite.TypeProviderTests
 #endif
 

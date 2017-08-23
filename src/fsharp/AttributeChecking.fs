@@ -138,7 +138,7 @@ let GetAttribInfosOfEntity g amap m (tcref:TyconRef) =
         //| Some args -> f3 args
         //| None -> None
 #endif
-    | ILTypeMetadata (scoref,tdef) -> 
+    | ILTypeMetadata (TILObjectReprData(scoref,_,tdef)) -> 
         tdef.CustomAttrs |> AttribInfosOfIL g amap scoref m
     | FSharpOrArrayOrByrefOrTupleOrExnTypeMetadata -> 
         tcref.Attribs |> List.map (fun a -> FSAttribInfo (g, a))
@@ -190,7 +190,7 @@ let TryBindTyconRefAttribute g m (AttribInfo (atref,_) as args) (tcref:TyconRef)
         | Some args -> f3 args
         | None -> None
 #endif
-    | ILTypeMetadata (_,tdef) -> 
+    | ILTypeMetadata (TILObjectReprData(_,_,tdef)) -> 
         match TryDecodeILAttribute g atref tdef.CustomAttrs with 
         | Some attr -> f1 attr
         | _ -> None

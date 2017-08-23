@@ -2,9 +2,13 @@
 
 namespace Microsoft.FSharp.Compiler
 
+#if COMPILER_PUBLIC_API
+module public ReferenceResolver = 
+#else
 module internal ReferenceResolver = 
+#endif
 
-    exception ResolutionFailure
+    exception internal ResolutionFailure
 
     type ResolutionEnvironment = 
         /// Indicates a script or source being compiled
@@ -30,7 +34,7 @@ module internal ReferenceResolver =
        /// This is the value passed back to Resolve if no explicit "mscorlib" has been given.
        ///
        /// Note: If an explicit "mscorlib" is given, then --noframework is being used, and the whole ReferenceResolver logic is essentially
-       /// unused.  However in the future an option may be added to allow an expicit specification of
+       /// unused.  However in the future an option may be added to allow an explicit specification of
        /// a .NET Framework version to use for scripts.
        abstract HighestInstalledNetFrameworkVersion : unit -> string
     
@@ -42,7 +46,7 @@ module internal ReferenceResolver =
        /// Perform assembly resolution on the given references under the given conditions
        abstract Resolve :
            resolutionEnvironment: ResolutionEnvironment *
-           // The actual reference paths or assemby name text, plus baggage
+           // The actual reference paths or assembly name text, plus baggage
            references:(string (* baggage *) * string)[] *  
            // e.g. v4.5.1
            targetFrameworkVersion:string *

@@ -198,6 +198,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         [<Literal>]
         let   TailcallsDescription = "TailcallsDescription"
         [<Literal>]
+        let   UseStandardResourceNames = "UseStandardResourceNames"
+        [<Literal>]
+        let   UseStandardResourceNamesDescription = "UseStandardResourceNamesDescription"
+        [<Literal>]
         let   TemplateNotFound = "TemplateNotFound"
         [<Literal>]
         let   NeedReloadToChangeTargetFx = "NeedReloadToChangeTargetFx" 
@@ -221,7 +225,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         let ComputingSourcesAndFlags = "ComputingSourcesAndFlags"
         [<Literal>]
         let UpdatingSolutionConfiguration = "UpdatingSolutionConfiguration"
-
+        [<Literal>]
+        let FileCannotBePlacedBodyAbove = "FileCannotBePlacedBodyAbove"
+        [<Literal>]
+        let FileCannotBePlacedBodyBelow = "FileCannotBePlacedBodyBelow"
+        [<Literal>]
+        let FileCannotBePlacedDifferentSubtree = "FileCannotBePlacedDifferentSubtree"
+        [<Literal>]
+        let FileCannotBePlacedMultipleFiles = "FileCannotBePlacedMultipleFiles"
 
         type private TypeInThisAssembly = class end
         let thisAssembly = typeof<TypeInThisAssembly>.Assembly 
@@ -357,3 +368,4 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         [<assembly: CLSCompliant(false)>]
 #endif
         do()
+

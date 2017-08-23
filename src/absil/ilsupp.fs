@@ -584,7 +584,7 @@ let linkNativeResources (unlinkedResources:byte[] list)  (ulLinkedResourceBaseRV
     let mutable objBytes : byte[] = [||]
     
     let unlinkedResources = unlinkedResources |> List.filter (fun arr -> arr.Length > 0)
-    if unlinkedResources.Length = 0 then // bail if there's nothing to link
+    if isNil unlinkedResources then // bail if there's nothing to link
         objBytes
     else
         // Part 1: Write unlinked resources to an object file for linking
@@ -1183,8 +1183,8 @@ let pdbReadOpen (moduleName:string) (path:string) :  PdbReader =
         with _ ->  
             { symReader = null } 
 #else 
-        let symbolBinder = new System.Diagnostics.SymbolStore.SymBinder() 
-        { symReader = symbolBinder.GetReader(importerPtr, moduleName, path) } 
+        let symbolBinder = new System.Diagnostics.SymbolStore.SymBinder()
+        { symReader = symbolBinder.GetReader(importerPtr, moduleName, path) }
 #endif
     finally
         // Marshal.GetComInterfaceForObject adds an extra ref for importerPtr

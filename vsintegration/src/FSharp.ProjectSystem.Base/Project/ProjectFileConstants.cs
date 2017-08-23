@@ -54,6 +54,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public const string Content = "Content";
         public const string None = "None";
         public const string EmbeddedResource = "EmbeddedResource";
+        public const string Resource = "Resource";
         public const string RootNamespace = "RootNamespace";
         public const string OutputType = "OutputType";
         [SuppressMessage("Microsoft.Naming", "CA1702:CompoundWordsShouldBeCasedCorrectly", MessageId = "SubType")]
@@ -121,6 +122,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public const string DebugType = "DebugType";
         public const string Optimize = "Optimize";
         public const string Tailcalls = "Tailcalls";
+        public const string UseStandardResourceNames = "UseStandardResourceNames";
         public const string Prefer32Bit = "Prefer32Bit";
         public const string OutputPath = "OutputPath";
         public const string DefineConstants = "DefineConstants";

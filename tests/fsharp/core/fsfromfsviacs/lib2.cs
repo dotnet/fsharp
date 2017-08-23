@@ -43,6 +43,18 @@ public class Lib2
 
 }
 
+
+namespace CustomExtensions
+{
+    public static class Extensions
+    {
+
+        /// Extend an F# type
+        static public int ExtendFSharpType(this Lib.recd1 recd) { return 5; }
+        static public int ExtendCSharpType(this Lib2 recd) { return 4; }
+    }
+}
+
 namespace Newtonsoft.Json.Converters
 {
     internal class SomeClass

@@ -1,5 +1,4 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 using System;
 using System.Threading;
 using System.Diagnostics;
@@ -49,10 +48,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 		private string errorString = SR.GetString(SR.Error, CultureInfo.CurrentUICulture);
 		private string warningString = SR.GetString(SR.Warning, CultureInfo.CurrentUICulture);
 		private bool isLogTaskDone;
-		private TaskProvider taskProvider;
 		private IVsHierarchy hierarchy;
 		private IServiceProvider serviceProvider;
-        private TaskReporter taskReporter;
+        private IVsLanguageServiceBuildErrorReporter2 errorReporter;
         private bool haveCachedRegistry = false;
 
 		public string WarningString
@@ -89,26 +87,23 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 			set { outputWindowPane = value; }
 		}
 
-        internal TaskReporter TaskReporter
+        public IVsLanguageServiceBuildErrorReporter2 ErrorReporter
         {
-            get { return taskReporter; }
-            set { taskReporter = value; }
+            get { return errorReporter; }
+            set { errorReporter = value; }
         }
 
-		internal IDEBuildLogger(IVsOutputWindowPane output, TaskProvider taskProvider, IVsHierarchy hierarchy)
+        internal IDEBuildLogger(IVsOutputWindowPane output, IVsHierarchy hierarchy, IVsLanguageServiceBuildErrorReporter2 errorReporter)
 		{
-			if (taskProvider == null)
-				throw new ArgumentNullException("taskProvider");
 			if (hierarchy == null)
 				throw new ArgumentNullException("hierarchy");
 
-			this.taskProvider = taskProvider;
-            this.taskReporter = null;
+			this.errorReporter = errorReporter;
 			this.outputWindowPane = output;
 			this.hierarchy = hierarchy;
 			IOleServiceProvider site;
 			Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(hierarchy.GetSite(out site));
-			this.serviceProvider = new ServiceProvider(site);
+			this.serviceProvider = new Shell.ServiceProvider (site);
 		}
 
 		public override void Initialize(IEventSource eventSource)
@@ -256,7 +251,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 file = String.Empty;
             
             bool isWarning = errorEvent is BuildWarningEventArgs;
-            TaskPriority priority = isWarning ? TaskPriority.Normal : TaskPriority.High;
+            Shell.TaskPriority priority = isWarning ? Shell.TaskPriority.Normal : Shell.TaskPriority.High;
             
             TextSpan span;
             span.iStartLine = startLine;
@@ -323,32 +318,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     span.iEndIndex -= 1;
                 }
 
-                // Add new document task to task list
-                DocumentTask task = new DocumentTask(serviceProvider,
-                    buffer, // May be null
-                    // This seems weird. Why would warning status make this a 'compile error'? 
-                    // The “code sense” errors produce red squiggles, whereas the “compile” errors produce blue squiggles.  (This is in line with C#’s pre-VS2008-SP1 behavior.)  Swapping these two gives us a look consistent with that of the language service.
-                    isWarning ? MARKERTYPE.MARKER_COMPILE_ERROR : MARKERTYPE.MARKER_CODESENSE_ERROR, 
-                    span,
-                    file,
-                    subcategory);
-
                 // Add error to task list
-                task.Text = Microsoft.FSharp.Compiler.ErrorLogger.NewlineifyErrorString(errorEvent.Message);
-                task.Priority = priority;
-                task.ErrorCategory = isWarning ? TaskErrorCategory.Warning : TaskErrorCategory.Error;
-                task.Category = TaskCategory.BuildCompile;
-                task.HierarchyItem = hierarchy;
-                task.Navigate += new EventHandler(NavigateTo);
+                var taskText = Microsoft.FSharp.Compiler.ErrorLogger.NewlineifyErrorString(errorEvent.Message);
 
-                if (null != this.TaskReporter)
+                if (errorReporter != null)
                 {
-                    this.taskReporter.AddTask(task);
+                    errorReporter.ReportError2(taskText, errorCode, (VSTASKPRIORITY) priority, span.iStartLine, span.iStartIndex, span.iEndLine, span.iEndIndex, file);
                 }
-                else
-                {
-                    this.taskProvider.Tasks.Add(task);
-                }
+
             });
 		}
 
@@ -372,62 +349,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
 		}
 
-		private void NavigateTo(object sender, EventArgs arguments)
-		{
-            try {
-                Microsoft.VisualStudio.Shell.Task task = sender as Microsoft.VisualStudio.Shell.Task;
-                if (task == null)
-                    throw new ArgumentException("sender");
-
-                // Get the doc data for the task's document
-                if (String.IsNullOrEmpty(task.Document))
-                    return;
-
-                IVsUIShellOpenDocument openDoc = serviceProvider.GetService(typeof(IVsUIShellOpenDocument)) as IVsUIShellOpenDocument;
-                if (openDoc == null)
-                    return;
-
-                IVsWindowFrame frame;
-                IOleServiceProvider sp;
-                IVsUIHierarchy hier;
-                uint itemid;
-                Guid logicalView = VSConstants.LOGVIEWID_Code;
-
-                if (Microsoft.VisualStudio.ErrorHandler.Failed(openDoc.OpenDocumentViaProject(task.Document, ref logicalView, out sp, out hier, out itemid, out frame)) || frame == null)
-                    return;
-
-                object docData;
-                frame.GetProperty((int)__VSFPROPID.VSFPROPID_DocData, out docData);
-
-                // Get the VsTextBuffer
-                VsTextBuffer buffer = docData as VsTextBuffer;
-                if (buffer == null) {
-                    IVsTextBufferProvider bufferProvider = docData as IVsTextBufferProvider;
-                    if (bufferProvider != null) {
-                        IVsTextLines lines;
-                        Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(bufferProvider.GetTextBuffer(out lines));
-                        buffer = lines as VsTextBuffer;
-                        Debug.Assert(buffer != null, "IVsTextLines does not implement IVsTextBuffer");
-                        if (buffer == null)
-                            return;
-                    }
-                }
-
-                // Finally, perform the navigation.
-                IVsTextManager mgr = serviceProvider.GetService(typeof(VsTextManagerClass)) as IVsTextManager;
-                if (mgr == null)
-                    return;
-
-                // We should use the full span information if we've been given a DocumentTask
-                bool isDocumentTask = task is DocumentTask;
-                int endLine = isDocumentTask ? ((DocumentTask)task).Span.iEndLine : task.Line;
-                int endColumn = isDocumentTask ? ((DocumentTask)task).Span.iEndIndex : task.Column;
-
-                mgr.NavigateToLineAndColumn(buffer, ref logicalView, task.Line, task.Column, endLine, endColumn);
-            } catch (Exception e) {
-                System.Diagnostics.Debug.Assert(false, "Error thrown from NavigateTo. " + e.ToString());
-            }
-		}
 
 		/// <summary>
 		/// This is the delegate for BuildStartedHandler events.
@@ -440,7 +361,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 if (LogAtImportance(MessageImportance.Low))
                 {
                     LogEvent(sender, buildEvent);
-                }       	
+                }
             }
             catch (Exception e)
             {
@@ -449,8 +370,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             }
             finally
             {
-                // remove all Project System tasks from the task list, add everything else to the task set
-                taskReporter.ClearAllTasks();
+                if (errorReporter != null) { 
+                    errorReporter.ClearErrors();
+                }
             }
 		}
 
@@ -470,17 +392,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                         Output(Environment.NewLine);
                     LogEvent(sender, buildEvent);
                 }
-                // BRIANMCN:
-                // There are two reasons to call UIThread.Run.  
-                // The obvious one is when you have to call IVsBlahBlah that must be accessed on the UI thread.  
-                // That’s not the case here, here it’s for the less obvious reason that, whereas all the events 
-                // happening in this class (that happen on the MSBuild logger thread) have a chronological 
-                // ordering, most of those events transfer to the UIThread via UIThread.Run, and so we need to 
-                // preserve the ordering.
-                UIThread.Run(delegate()
-                    {
-                        taskReporter.OutputTaskList();
-                    });
             }
             catch (Exception e)
             {

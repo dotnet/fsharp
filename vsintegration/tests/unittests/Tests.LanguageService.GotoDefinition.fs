@@ -15,6 +15,7 @@ open UnitTests.TestLib.LanguageService
 open UnitTests.TestLib.ProjectSystem
 
 [<TestFixture>]
+[<Category "LanguageService">] 
 type UsingMSBuild()  = 
     inherit LanguageServiceBaseTests()
 
@@ -34,11 +35,11 @@ type UsingMSBuild()  =
         let (_, _, file) = this.CreateSingleFileProject(fileContents, ?references = extraRefs)
         MoveCursorToStartOfMarker (file, marker)
         let result = GotoDefinitionAtCursor file
-        Assert.IsTrue(result.Success)
+        Assert.IsTrue(result.Success, "result.Success")
         let actualPos = (result.Span.iStartLine, result.Span.iStartIndex)
         let line = GetLineNumber file (result.Span.iStartLine + 1)
         printfn "Actual line:%s, actual pos:%A" line actualPos
-        Assert.AreEqual(pos, actualPos)
+        Assert.AreEqual(pos, actualPos, "pos")
                     
     //GoToDefinitionFail Helper Function
     member private this.VerifyGoToDefnFailAtStartOfMarker(fileContents : string,  marker :string,?addtlRefAssy : list<string>) =
@@ -215,7 +216,7 @@ type UsingMSBuild()  =
                 // C01234567890 """,
             "T(*GotoValDef*)",
              "// A0(*ColumnMarker*)1234567890",            
-            PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DefinitionLocationAttribute.dll"),
+            PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DefinitionLocationAttribute.dll"),
             "(*ColumnMarker*)")
 
         // This test case checks the type with space in between like N.``T T`` for GotoDefinition
@@ -227,7 +228,7 @@ type UsingMSBuild()  =
                 // C01234567890 """,
             "T``",
             "// A0(*ColumnMarker*)1234567890",
-            PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DefinitionLocationAttributeWithSpaceInTheType.dll"),
+            PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DefinitionLocationAttributeWithSpaceInTheType.dll"),
             "(*ColumnMarker*)") 
         
         // Basic scenario on a provided Constructor
@@ -240,7 +241,7 @@ type UsingMSBuild()  =
                 // C01234567890 """,
             "T(*GotoValDef*)",
              "// A0(*ColumnMarker*)1234567890",            
-            PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DefinitionLocationAttribute.dll"),
+            PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DefinitionLocationAttribute.dll"),
             "(*ColumnMarker*)")
           
         // Basic scenario on a provided Method
@@ -252,7 +253,7 @@ type UsingMSBuild()  =
                 // C01234567890 """,
             "M(*GotoValDef*)",
              "// A0(*ColumnMarker*)1234567890",            
-            PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DefinitionLocationAttribute.dll"),
+            PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DefinitionLocationAttribute.dll"),
             "(*ColumnMarker*)")
         
         // Basic scenario on a provided Property
@@ -264,7 +265,7 @@ type UsingMSBuild()  =
                 // C01234567890 """,
             "StaticProp(*GotoValDef*)",
              "// A0(*ColumnMarker*)1234567890",            
-            PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DefinitionLocationAttribute.dll"),
+            PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DefinitionLocationAttribute.dll"),
             "(*ColumnMarker*)")
         
         // Basic scenario on a provided Event
@@ -277,7 +278,7 @@ type UsingMSBuild()  =
                 // C01234567890 """,
             "Event1(*GotoValDef*)",
              "// A0(*ColumnMarker*)1234567890",            
-            PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DefinitionLocationAttribute.dll"),
+            PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DefinitionLocationAttribute.dll"),
             "(*ColumnMarker*)")
         
         // Actually execute all the scenarios...      
@@ -331,9 +332,9 @@ type UsingMSBuild()  =
                 marker = "T<",
                 f = (fun (_, result) ->
                     Assert.IsFalse(result.Success)
-                    Assert.IsTrue(result.ErrorDescription.Contains("provided type 'T'"))
+                    Assert.That(result.ErrorDescription, Does.Contain("provided type 'T'"))
                     ),
-                addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
+                addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
             )
         
     [<Test>]
@@ -361,7 +362,7 @@ type UsingMSBuild()  =
                         let expectedText = sprintf "provided member '%s'" name
                         Assert.IsTrue(result.ErrorDescription.Contains(expectedText))
                         ),
-                    addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
+                    addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
                 )
     [<Test>]
     [<Category("TypeProvider")>]
@@ -375,7 +376,7 @@ type UsingMSBuild()  =
                 // B01234567890
                 // C01234567890 """,
             marker = "T(*GotoValDef*)",
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -390,7 +391,7 @@ type UsingMSBuild()  =
                 // B01234567890
                 // C01234567890 """,
             marker = "T(*GotoValDef*)",
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DefinitionLocationAttributeLineDoesnotExist.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DefinitionLocationAttributeLineDoesnotExist.dll")])
      
     [<Test>]
     [<Category("TypeProvider")>]
@@ -404,7 +405,7 @@ type UsingMSBuild()  =
                 // B01234567890
                 // C01234567890 """,
             marker = "T(*GotoValDef*)",
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist.dll")])
 
 
          
@@ -420,7 +421,7 @@ type UsingMSBuild()  =
                 // B01234567890
                 // C01234567890  """,
             marker = "M(*GotoValDef*)",
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist.dll")])
 
     [<Test>]
     [<Category("TypeProvider")>]
@@ -434,7 +435,7 @@ type UsingMSBuild()  =
                 // B01234567890
                 // C01234567890 """,
             marker = "StaticProp(*GotoValDef*)",
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist.dll")])
     
     [<Test>]
     [<Category("TypeProvider")>]
@@ -449,7 +450,7 @@ type UsingMSBuild()  =
                 // B01234567890
                 // C01234567890 """,
             marker = "Event1(*GotoValDef*)",
-            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTestsResources\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist.dll")])
+            addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DefinitionLocationAttributeFileDoesnotExist.dll")])
 
     [<Test>]
     member public this.``ModuleDefintion``() =

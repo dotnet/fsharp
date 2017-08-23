@@ -1,5 +1,8 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
+[<NUnit.Framework.Category "FSharp.Core.Collections">]
+[<NUnit.Framework.Category "Collections.Seq">]
+[<NUnit.Framework.Category "Collections.List">]
+[<NUnit.Framework.Category "Collections.Array">]
 module FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Collections.CollectionModulesConsistency
 
 open System

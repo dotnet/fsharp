@@ -33,10 +33,14 @@ let code_instr2instrs f (code: ILCode) =
             codebuf.Add instr2
             nw <- nw + 1
         old <- old + 1
-    adjust.[old] <- nw          
+    adjust.[old] <- nw
+    let labels =
+        let dict = Dictionary.newWithSize code.Labels.Count
+        for kvp in code.Labels do dict.Add(kvp.Key, adjust.[kvp.Value])
+        dict
     { code with 
          Instrs = codebuf.ToArray()
-         Labels = Dictionary.ofList [ for kvp in code.Labels -> kvp.Key, adjust.[kvp.Value] ] }
+         Labels = labels }
 
 
 

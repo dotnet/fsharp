@@ -7,7 +7,7 @@ open System
 open FSharp.Core.Unittests.LibraryTestFx
 open NUnit.Framework
 
-[<TestFixture>]
+[<TestFixture>][<Category "Collections.List">][<Category "FSharp.Core.Collections">]
 type ObsoleteListFunctions() =        
     [<Test>]
     member this.Nth() = 
