@@ -16,15 +16,6 @@ namespace Microsoft.FSharp.Control
 #endif
 
 #if !FX_NO_DELEGATE_DYNAMIC_METHOD 
-
-#if FX_NO_DELEGATE_DYNAMIC_INVOKE 
-    module Impl = 
-        type System.Delegate with 
-            member d.DynamicInvoke(args: obj[]) =
-                d.Method.Invoke(d.Target, BindingFlags.Default |||  BindingFlags.Public ||| BindingFlags.NonPublic , null, args, null)
-
-    open Impl
-#endif
     
     [<CompiledName("FSharpDelegateEvent`1")>]
     type DelegateEvent<'Delegate when 'Delegate :> System.Delegate>() = 
