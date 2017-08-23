@@ -1691,7 +1691,6 @@ namespace Microsoft.FSharp.Control
                     let beginAction = fun (a1,callback,state) -> AsBeginEndHelpers.beginAction ((computation a1), callback, state)
                     beginAction, AsBeginEndHelpers.endAction<'T>, AsBeginEndHelpers.cancelAction<'T>
 
-#if !FX_NO_CREATE_DELEGATE
         static member AwaitEvent(event:IEvent<'Delegate,'T>, ?cancelAction) : Async<'T> =
             async { let! token = getCancellationToken()
                     let resultCell = new ResultCell<_>()
@@ -1736,7 +1735,6 @@ namespace Microsoft.FSharp.Control
 
                     // Return the async computation that allows us to await the result
                     return! Async.AwaitAndReifyResult(resultCell) }
-#endif
 
     type Async with
         static member Ignore (p: Async<'T>) = bindA p (fun _ -> doneA)
