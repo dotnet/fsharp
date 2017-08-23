@@ -41,7 +41,8 @@ type ProjectCracker =
               LoadTime = loadedTimeStamp
               UnresolvedReferences = None 
               OriginalLoadReferences = []
-              ExtraProjectInfo = None }
+              ExtraProjectInfo = None
+              Stamp = None }
 
 #if NETSTANDARD1_6
         let arguments = [|

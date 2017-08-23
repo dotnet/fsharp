@@ -1,0 +1,20 @@
+
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{4925A630-B079-445d-BCD4-3A9C94FE9307}") = "Sample_MonoDevelop_3_2_8_Console", "Sample_MonoDevelop_3_2_8_Console\Sample_MonoDevelop_3_2_8_Console.fsproj", "{6A6B7AF8-C2FB-4271-A1D1-0D16C3770949}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6A6B7AF8-C2FB-4271-A1D1-0D16C3770949}.Debug|x86.ActiveCfg = Debug|x86
+		{6A6B7AF8-C2FB-4271-A1D1-0D16C3770949}.Debug|x86.Build.0 = Debug|x86
+		{6A6B7AF8-C2FB-4271-A1D1-0D16C3770949}.Release|x86.ActiveCfg = Release|x86
+		{6A6B7AF8-C2FB-4271-A1D1-0D16C3770949}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = Sample_MonoDevelop_3_2_8_Console\Sample_MonoDevelop_3_2_8_Console.fsproj
+	EndGlobalSection
+EndGlobal

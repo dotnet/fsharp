@@ -866,6 +866,8 @@ let ``Test expressions of declarations stress big expressions`` () =
     // This should not stack overflow
     printDeclarations None (List.ofSeq file1.Declarations) |> Seq.toList |> ignore
 
+#if NOT_YET_ENABLED
+
 #if !NO_PROJECTCRACKER && !DOTNETCORE
 
 [<Test>]
@@ -1086,6 +1088,8 @@ let ``Check use of type provider that provides calls to F# code`` () =
       ]
 
 #endif
+#endif
+
 
 #if SELF_HOST_STRESS
    

@@ -1639,12 +1639,16 @@ let GetDefaultFSharpCoreReference() = typeof<list<int>>.Assembly.Location
 
 // If necessary assume a reference to the latest System.ValueTuple with which those tools are built.
 let GetDefaultSystemValueTupleReference() = 
+#if COMPILER_SERVICE_AS_DLL
+    None // TODO, right now FCS doesn't add this reference automatically
+#else
     try 
        let asm = typeof<System.ValueTuple<int,int>>.Assembly
        if asm.FullName.StartsWith "System.ValueTuple" then 
            Some asm.Location 
        else None
     with _ -> None
+#endif
 
 let GetFsiLibraryName () = "FSharp.Compiler.Interactive.Settings"  
 
@@ -4482,6 +4486,12 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         | Some assemblyResolution -> 
             ResultD [assemblyResolution]
         | None ->
+#if NO_MSBUILD_REFERENCE_RESOLUTION
+           try 
+               ResultD [tcConfig.ResolveLibWithDirectories assemblyReference]
+           with e -> 
+               ErrorD(e)
+#else                      
             // Next try to lookup up by the exact full resolved path.
             match resolutions.TryFindByResolvedPath assemblyReference.Text with 
             | Some assemblyResolution -> 
@@ -4513,7 +4523,8 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                         // Note, if mode=ResolveAssemblyReferenceMode.Speculative and the resolution failed then TryResolveLibsUsingMSBuildRules returns
                         // the empty list and we convert the failure into an AssemblyNotResolved here.
                         ErrorD(AssemblyNotResolved(assemblyReference.Text,assemblyReference.Range))
-                        
+
+#endif                        
      
 
     member tcImports.ResolveAssemblyReference(ctok, assemblyReference, mode) : AssemblyResolution list = 

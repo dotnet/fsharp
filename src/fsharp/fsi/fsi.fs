@@ -216,7 +216,6 @@ type internal FsiValuePrinterMode =
     | PrintExpr 
     | PrintDecl
 
-#if COMPILER_SERVICE_AS_DLL
 type EvaluationEventArgs(fsivalue : FsiValue option, symbolUse : FSharpSymbolUse, decl: FSharpImplementationFileDeclaration) =
     inherit EventArgs()
     member x.Name = symbolUse.Symbol.DisplayName
@@ -224,15 +223,12 @@ type EvaluationEventArgs(fsivalue : FsiValue option, symbolUse : FSharpSymbolUse
     member x.SymbolUse = symbolUse
     member x.Symbol = symbolUse.Symbol
     member x.ImplementationDeclaration = decl
-#endif
 
 [<AbstractClass>]
 /// User-configurable information that changes how F# Interactive operates, stored in the 'fsi' object
 /// and accessible via the programming model
 type FsiEvaluationSessionHostConfig () = 
-#if COMPILER_SERVICE_AS_DLL
     let evaluationEvent = new Event<EvaluationEventArgs> () 
-#endif
     /// Called by the evaluation session to ask the host for parameters to format text for output
     abstract FormatProvider: System.IFormatProvider  
     /// Called by the evaluation session to ask the host for parameters to format text for output
@@ -298,12 +294,10 @@ type FsiEvaluationSessionHostConfig () =
     /// Implicitly reference FSharp.Compiler.Interactive.Settings.dll
     abstract UseFsiAuxLib : bool
 
-#if COMPILER_SERVICE_AS_DLL
     /// Hook for listening for evaluation bindings
     member x.OnEvaluation = evaluationEvent.Publish
     member internal x.TriggerEvaluation (value, symbolUse, decl) =
         evaluationEvent.Trigger (EvaluationEventArgs (value, symbolUse, decl) )
-#endif
 
 /// Used to print value signatures along with their values, according to the current
 /// set of pretty printers installed in the system, and default printing rules.
@@ -1164,9 +1158,8 @@ type internal FsiDynamicCompiler
         let tcState = istate.tcState 
         let newState = { istate with tcState = tcState.NextStateAfterIncrementalFragment(tcEnvAtEndOfLastInput) }
 
-#if COMPILER_SERVICE_AS_DLL
         // Find all new declarations the EvaluationListener
-        begin
+        try
             let contents = FSharpAssemblyContents(tcGlobals, tcState.Ccu, tcImports, declaredImpls)
             let contentFile = contents.ImplementationFiles.[0]
             // Skip the "FSI_NNNN"
@@ -1198,10 +1191,7 @@ type internal FsiDynamicCompiler
                         // Top level 'do' bindings are not reported as incremental declarations
                         ()
             | _ -> ()
-        end
-#else
-        ignore declaredImpls
-#endif
+        with _ -> ()
 
         newState
       

@@ -21,6 +21,13 @@ open System.Runtime.InteropServices
 [<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("FSharp.ProjectSystem.PropertyPages")>]
 [<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("FSharp.Compiler.Interactive.Settings")>]
 [<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("FSharp.Compiler.Server.Shared")>]
+[<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("FSharp.Compiler.Service.Tests")>]
+[<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("FSharp.Compiler.Service.MSBuild.v12")>]
+[<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("FSharp.Compiler.Service.MSBuild.v12.Tests")>]
+[<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("FSharp.Compiler.Service.MSBuild.v14")>]
+[<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("FSharp.Compiler.Service.MSBuild.v14.Tests")>]
+[<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("FSharp.Compiler.Service.MSBuild.v15")>]
+[<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("FSharp.Compiler.Service.MSBuild.v15.Tests")>]
 
 // Note: internals visible to unit test DLLs in Retail (and all) builds.
 [<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("Test")>]
