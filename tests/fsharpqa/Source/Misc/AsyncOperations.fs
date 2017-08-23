@@ -98,35 +98,20 @@ namespace Microsoft.FSharp.Control
             static member AsyncAppendText(path) = UnblockViaNewThread (fun () -> System.IO.File.AppendText(path))
             static member AsyncOpenRead(path)   = UnblockViaNewThread (fun () -> System.IO.File.OpenRead(path))
             static member AsyncOpenWrite(path)  = UnblockViaNewThread (fun () -> System.IO.File.OpenWrite(path))
-#if FX_NO_FILE_OPTIONS
-            static member AsyncOpen(path,mode,?access,?share,?bufferSize) =
-#else
             static member AsyncOpen(path,mode,?access,?share,?bufferSize,?options) =
-#endif
                 let access = match access with Some v -> v | None -> System.IO.FileAccess.ReadWrite
                 let share = match share with Some v -> v | None -> System.IO.FileShare.None
-#if !FX_NO_FILE_OPTIONS
                 let options = match options with Some v -> v | None -> System.IO.FileOptions.None
-#endif
                 let bufferSize = match bufferSize with Some v -> v | None -> 0x1000
                 UnblockViaNewThread (fun () -> 
-#if FX_NO_FILE_OPTIONS
-                    new System.IO.FileStream(path,mode,access,share,bufferSize))
-#else
                     new System.IO.FileStream(path,mode,access,share,bufferSize, options))
-#endif
 
             static member OpenTextAsync(path)   = System.IO.File.AsyncOpenText(path)
             static member AppendTextAsync(path) = System.IO.File.AsyncAppendText(path)
             static member OpenReadAsync(path)   = System.IO.File.AsyncOpenRead(path)
             static member OpenWriteAsync(path)  = System.IO.File.AsyncOpenWrite(path)
-#if FX_NO_FILE_OPTIONS
-            static member OpenAsync(path,mode,?access,?share,?bufferSize) = 
-                System.IO.File.AsyncOpen(path, mode, ?access=access, ?share=share,?bufferSize=bufferSize)
-#else
             static member OpenAsync(path,mode,?access,?share,?bufferSize,?options) = 
                 System.IO.File.AsyncOpen(path, mode, ?access=access, ?share=share,?bufferSize=bufferSize,?options=options)
-#endif
 
     [<AutoOpen>]
     module StreamReaderExtensions =
