@@ -10,13 +10,12 @@ module internal ReferenceResolver =
 
     exception internal ResolutionFailure
 
+    [<RequireQualifiedAccess>]
     type ResolutionEnvironment = 
-        /// Indicates a script or source being compiled
-        | CompileTimeLike 
-        /// Indicates a script or source being interpreted
-        | RuntimeLike 
-        /// Indicates a script or source being edited
-        | DesignTimeLike
+        /// Indicates a script or source being compiled. Uses reference assemblies (not implementation assemblies).
+        | EditingAndCompilation of isEditing: bool
+        /// Indicates a script or source being dynamically compiled and executed. Uses implementation assemblies.
+        | CompilationAndEvaluation 
 
     type ResolvedFile = 
         { /// Item specification.
