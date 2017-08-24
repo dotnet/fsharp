@@ -71,7 +71,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         public string RootNamespace;
 
-        public bool CompilationAndEvaluation;
+        public bool CompileAndExecute;
 
         /// <devdoc>must be an int if not null.</devdoc>
         public object UserLocaleId;
