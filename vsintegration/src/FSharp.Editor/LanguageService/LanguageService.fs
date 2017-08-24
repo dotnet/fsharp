@@ -149,7 +149,7 @@ type internal FSharpProjectOptionsManager
         this.AddOrUpdateProject(projectId, (fun isRefresh -> 
             let extraProjectInfo = Some(box workspace)
             let tryGetOptionsForReferencedProject f = f |> tryGetOrCreateProjectId |> Option.bind this.TryGetOptionsForProject
-            let referencedProjects, options = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, site, site.ProjectFileName(), extraProjectInfo, serviceProvider, true)
+            let referencedProjects, options = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, site, site.ProjectFileName, extraProjectInfo, serviceProvider, true)
             let referencedProjectIds = referencedProjects |> Array.choose tryGetOrCreateProjectId
             checkerProvider.Checker.InvalidateConfiguration(options, startBackgroundCompileIfAlreadySeen = not isRefresh, userOpName= userOpName + ".UpdateProjectInfo")
             referencedProjectIds, options))
@@ -352,7 +352,9 @@ and
                         while true do
                             let! siteProvider = inbox.Receive()
                             do! Async.SwitchToContext ctx
-                            this.SetupProjectFile(siteProvider, this.Workspace, "SetupProjectsAfterSolutionOpen") }
+                            this.SetupProjectFile(siteProvider, this.Workspace, "SetupProjectsAfterSolutionOpen")
+                            do! Async.SwitchToThreadPool()
+                     }
 
                 use _ = Events.SolutionEvents.OnAfterOpenProject |> Observable.subscribe ( fun args ->
                     match args.Hierarchy with
@@ -367,41 +369,47 @@ and
         let theme = package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
         theme.SetColors()
         
-    /// Sync the information for the project 
-    member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, workspace, forceUpdate, userOpName) =
+    /// Sync the Roslyn information for the project held in 'projectContext' to match the information given by 'site'.
+    /// Also sync the info in ProjectInfoManager if necessary.
+    member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, workspace, userOpName) =
         let wellFormedFilePathSetIgnoreCase (paths: seq<string>) =
-            HashSet(paths |> Seq.filter isPathWellFormed |> Seq.map (fun s -> try System.IO.Path.GetFullPath(s) with _ -> s), StringComparer.OrdinalIgnoreCase)
+            HashSet(paths |> Seq.filter isPathWellFormed |> Seq.map (fun s -> try Path.GetFullPath(s) with _ -> s), StringComparer.OrdinalIgnoreCase)
 
-        let updatedFiles = site.SourceFilesOnDisk() |> wellFormedFilePathSetIgnoreCase
+        // Sync the source files in projectContext.  Note that these source files are __not__ maintained in order in projectContext
+        // as edits are made. It seems this is ok because the source file list is only used to drive roslyn per-file checking.
+        let updatedFiles = site.CompilationSourceFiles |> wellFormedFilePathSetIgnoreCase
         let originalFiles = project.GetCurrentDocuments() |> Seq.map (fun file -> file.FilePath) |> wellFormedFilePathSetIgnoreCase
         
-        let mutable updated = forceUpdate
-
         for file in updatedFiles do
             if not(originalFiles.Contains(file)) then
                 projectContext.AddSourceFile(file)
-                updated <- true
         
         for file in originalFiles do
             if not(updatedFiles.Contains(file)) then
                 projectContext.RemoveSourceFile(file)
-                updated <- true
         
-        let updatedRefs = site.AssemblyReferences() |> wellFormedFilePathSetIgnoreCase
+        // Update the output assembly path projectContext.
+        let updatedBinOutputPath = site.CompilationBinOutputPath |> Option.toObj
+        let originalBinOutputPath = projectContext.BinOutputPath
+        if updatedBinOutputPath <> originalBinOutputPath then 
+            projectContext.BinOutputPath <- updatedBinOutputPath
+
+        // Update the metadata/project references in projectContext. Note that AbstractProject.cs converts metadata references
+        // to project references automagically by consulting the project tracker.
+        let updatedRefs = site.CompilationReferences |> wellFormedFilePathSetIgnoreCase
         let originalRefs = project.GetCurrentMetadataReferences() |> Seq.map (fun ref -> ref.FilePath) |> wellFormedFilePathSetIgnoreCase
 
         for ref in updatedRefs do
             if not(originalRefs.Contains(ref)) then
                 projectContext.AddMetadataReference(ref, MetadataReferenceProperties.Assembly)
-                updated <- true
 
         for ref in originalRefs do
             if not(updatedRefs.Contains(ref)) then
                 projectContext.RemoveMetadataReference(ref)
-                updated <- true
 
+        // Update the project options association
         let ok,originalOptions = optionsAssociation.TryGetValue(projectContext)
-        let updatedOptions = site.CompilerFlags()
+        let updatedOptions = site.CompilationOptions
         if not ok || originalOptions <> updatedOptions then 
 
             // OK, project options have changed, try to fake out Roslyn to convince it to reparse things.
@@ -417,23 +425,19 @@ and
             if ok then optionsAssociation.Remove(projectContext) |> ignore
             optionsAssociation.Add(projectContext, updatedOptions)
 
-            updated <- true
-
         // update the cached options
-        if updated then
-            projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, project.Id, site, project.Workspace, userOpName + ".SyncProject")
+        projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, project.Id, site, project.Workspace, userOpName + ".SyncProject")
 
     member this.SetupProjectFile(siteProvider: IProvideProjectSite, workspace: VisualStudioWorkspaceImpl, userOpName) =
         let userOpName = userOpName + ".SetupProjectFile"
         let  rec setup (site: IProjectSite) =
             let projectGuid = Guid(site.ProjectGuid)
-            let projectFileName = site.ProjectFileName()
+            let projectFileName = site.ProjectFileName
             let projectDisplayName = projectDisplayNameOf projectFileName
 
             let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
 
             if isNull (workspace.ProjectTracker.GetProject projectId) then
-                projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, projectId, site, workspace, userOpName)
                 let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
                 let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
 
@@ -449,16 +453,22 @@ and
 
                 let projectContext = 
                     projectContextFactory.CreateProjectContext(
-                        FSharpConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectGuid, hierarchy, null, errorReporter)
+                        FSharpConstants.FSharpLanguageName,
+                        projectDisplayName,
+                        projectFileName,
+                        projectGuid,
+                        hierarchy,
+                        Option.toObj site.CompilationBinOutputPath,
+                        errorReporter)
 
                 let project = projectContext :?> AbstractProject
 
-                this.SyncProject(project, projectContext, site, workspace, forceUpdate=false, userOpName=userOpName)
+                this.SyncProject(project, projectContext, site, workspace, userOpName=userOpName)
 
                 site.BuildErrorReporter <- Some (errorReporter :> Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2)
 
                 site.AdviseProjectSiteChanges(FSharpConstants.FSharpLanguageServiceCallbackName, 
-                                              AdviseProjectSiteChanges(fun () -> this.SyncProject(project, projectContext, site, workspace, forceUpdate=true, userOpName="AdviseProjectSiteChanges."+userOpName)))
+                                              AdviseProjectSiteChanges(fun () -> this.SyncProject(project, projectContext, site, workspace, userOpName="AdviseProjectSiteChanges."+userOpName)))
                 site.AdviseProjectSiteClosed(FSharpConstants.FSharpLanguageServiceCallbackName, 
                                              AdviseProjectSiteChanges(fun () -> 
                                                 projectInfoManager.ClearInfoForProject(project.Id)

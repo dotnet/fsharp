@@ -99,7 +99,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                             let projectSite = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, referencedProjectFileNames, checkOptions)
                             { ProjectSite = projectSite
                               CheckOptions = checkOptions 
-                              ProjectFileName = projectSite.ProjectFileName()
+                              ProjectFileName = projectSite.ProjectFileName
                               FSharpChecker = checker
                               Colorizer = lazy getColorizer(view) } 
                     Some data
@@ -109,7 +109,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                     let projectSite = getProjectSitesAndFiles().FindOwningProject_DEPRECATED(rdt,fileName)
                     let enableInMemoryCrossProjectReferences = true
                     let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, fileName, None, getServiceProvider(), false)                            
-                    let projectFileName = projectSite.ProjectFileName()
+                    let projectFileName = projectSite.ProjectFileName
                     let data = 
                         {   ProjectSite = projectSite
                             CheckOptions = checkOptions 
