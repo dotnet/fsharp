@@ -352,7 +352,9 @@ and
                         while true do
                             let! siteProvider = inbox.Receive()
                             do! Async.SwitchToContext ctx
-                            this.SetupProjectFile(siteProvider, this.Workspace, "SetupProjectsAfterSolutionOpen") }
+                            this.SetupProjectFile(siteProvider, this.Workspace, "SetupProjectsAfterSolutionOpen")
+                            do! Async.SwitchToThreadPool()
+                    }
 
                 use _ = Events.SolutionEvents.OnAfterOpenProject |> Observable.subscribe ( fun args ->
                     match args.Hierarchy with
