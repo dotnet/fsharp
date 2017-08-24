@@ -371,9 +371,11 @@ and
         
     /// Sync the Roslyn information for the project held in 'projectContext' to match the information given by 'site'.
     /// Also sync the info in ProjectInfoManager if necessary.
-    member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, workspace, userOpName) =
+    member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, workspace, forceUpdate, userOpName) =
         let wellFormedFilePathSetIgnoreCase (paths: seq<string>) =
             HashSet(paths |> Seq.filter isPathWellFormed |> Seq.map (fun s -> try Path.GetFullPath(s) with _ -> s), StringComparer.OrdinalIgnoreCase)
+
+        let mutable updated = forceUpdate
 
         // Sync the source files in projectContext.  Note that these source files are __not__ maintained in order in projectContext
         // as edits are made. It seems this is ok because the source file list is only used to drive roslyn per-file checking.
@@ -383,16 +385,19 @@ and
         for file in updatedFiles do
             if not(originalFiles.Contains(file)) then
                 projectContext.AddSourceFile(file)
+                updated <- true
         
         for file in originalFiles do
             if not(updatedFiles.Contains(file)) then
                 projectContext.RemoveSourceFile(file)
+                updated <- true
         
         // Update the output assembly path projectContext.
         let updatedBinOutputPath = site.CompilationBinOutputPath |> Option.toObj
         let originalBinOutputPath = projectContext.BinOutputPath
         if updatedBinOutputPath <> originalBinOutputPath then 
             projectContext.BinOutputPath <- updatedBinOutputPath
+            updated <- true
 
         // Update the metadata/project references in projectContext. Note that AbstractProject.cs converts metadata references
         // to project references automagically by consulting the project tracker.
@@ -402,10 +407,12 @@ and
         for ref in updatedRefs do
             if not(originalRefs.Contains(ref)) then
                 projectContext.AddMetadataReference(ref, MetadataReferenceProperties.Assembly)
+                updated <- true
 
         for ref in originalRefs do
             if not(updatedRefs.Contains(ref)) then
                 projectContext.RemoveMetadataReference(ref)
+                updated <- true
 
         // Update the project options association
         let ok,originalOptions = optionsAssociation.TryGetValue(projectContext)
@@ -425,8 +432,11 @@ and
             if ok then optionsAssociation.Remove(projectContext) |> ignore
             optionsAssociation.Add(projectContext, updatedOptions)
 
+            updated <- true
+
         // update the cached options
-        projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, project.Id, site, project.Workspace, userOpName + ".SyncProject")
+        if updated then
+            projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, project.Id, site, project.Workspace, userOpName + ".SyncProject")
 
     member this.SetupProjectFile(siteProvider: IProvideProjectSite, workspace: VisualStudioWorkspaceImpl, userOpName) =
         let userOpName = userOpName + ".SetupProjectFile"
@@ -438,6 +448,7 @@ and
             let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
 
             if isNull (workspace.ProjectTracker.GetProject projectId) then
+
                 let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
                 let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
 
@@ -463,23 +474,25 @@ and
 
                 let project = projectContext :?> AbstractProject
 
-                this.SyncProject(project, projectContext, site, workspace, userOpName=userOpName)
+                // Sync IProjectSite --> projectContext, and IProjectSite --> ProjectInfoManage
+                this.SyncProject(project, projectContext, site, workspace, forceUpdate=true, userOpName=userOpName)
 
                 site.BuildErrorReporter <- Some (errorReporter :> Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2)
 
+                // TODO: consider forceUpdate = false here.  forceUpdate=true may be causing repeated computation?
                 site.AdviseProjectSiteChanges(FSharpConstants.FSharpLanguageServiceCallbackName, 
-                                              AdviseProjectSiteChanges(fun () -> this.SyncProject(project, projectContext, site, workspace, userOpName="AdviseProjectSiteChanges."+userOpName)))
+                                              AdviseProjectSiteChanges(fun () -> this.SyncProject(project, projectContext, site, workspace, forceUpdate=true, userOpName="AdviseProjectSiteChanges."+userOpName)))
+
                 site.AdviseProjectSiteClosed(FSharpConstants.FSharpLanguageServiceCallbackName, 
                                              AdviseProjectSiteChanges(fun () -> 
                                                 projectInfoManager.ClearInfoForProject(project.Id)
                                                 optionsAssociation.Remove(projectContext) |> ignore
                                                 project.Disconnect()))
-                for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
-                    let referencedProjectId = setup referencedSite
-                    project.AddProjectReference(ProjectReference referencedProjectId)
 
-            projectId
-        setup (siteProvider.GetProjectSite()) |> ignore
+                for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
+                    setup referencedSite
+
+        setup (siteProvider.GetProjectSite()) 
 
     member this.SetupStandAloneFile(fileName: string, fileContents: string, workspace: VisualStudioWorkspaceImpl, hier: IVsHierarchy) =
 
