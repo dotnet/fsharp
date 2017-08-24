@@ -1291,7 +1291,7 @@ type internal FsiDynamicCompiler
           let sourceFiles = sourceFiles |> List.map (fun nm -> tcConfig.ResolveSourceFile(m, nm, tcConfig.implicitIncludeDir),m) 
          
           // Close the #load graph on each file and gather the inputs from the scripts.
-          let closure = LoadClosure.ComputeClosureOfSourceFiles(ctok, TcConfig.Create(tcConfigB,validate=false), sourceFiles, CodeContext.Evaluation,lexResourceManager=lexResourceManager)
+          let closure = LoadClosure.ComputeClosureOfSourceFiles(ctok, TcConfig.Create(tcConfigB,validate=false), sourceFiles, CodeContext.CompilationAndEvaluation, lexResourceManager=lexResourceManager)
           
           // Intent "[Loading %s]\n" (String.concat "\n     and " sourceFiles)
           fsiConsoleOutput.uprintf "[%s " (FSIstrings.SR.fsiLoadingFilesPrefixText())
@@ -2459,12 +2459,12 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     let tcConfigB = TcConfigBuilder.CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir=defaultFSharpBinariesDir, optimizeForMemory=true, implicitIncludeDir=currentDirectory, isInteractive=true, isInvalidationSupported=false, defaultCopyFSharpCore=false)
     let tcConfigP = TcConfigProvider.BasedOnMutableBuilder(tcConfigB)
-    do tcConfigB.resolutionEnvironment <- ReferenceResolver.RuntimeLike // See Bug 3608
+    do tcConfigB.resolutionEnvironment <- ReferenceResolver.ResolutionEnvironment.CompilationAndEvaluation // See Bug 3608
     do tcConfigB.useFsiAuxLib <- fsi.UseFsiAuxLib
 
 #if FSI_TODO_NETCORE
-    // "RuntimeLike" assembly resolution for F# Interactive is not yet properly figured out on .NET Core
-    do tcConfigB.resolutionEnvironment <- ReferenceResolver.DesignTimeLike
+    // "CompilationAndEvaluation" assembly resolution for F# Interactive is not yet properly figured out on .NET Core
+    do tcConfigB.resolutionEnvironment <- ResolutionEnvironment.EditingAndCompilation false
     do tcConfigB.useSimpleResolution <- true
     do SetTargetProfile tcConfigB "netcore" // always assume System.Runtime codegen
     //do SetTargetProfile tcConfigB "privatecorelib" // always assume System.Private.CoreLib codegen

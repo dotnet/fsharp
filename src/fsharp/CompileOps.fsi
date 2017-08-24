@@ -761,7 +761,7 @@ val ReportWarningAsError : globalWarnLevel: int * specificWarnOff: int list * sp
 
 [<RequireQualifiedAccess>]
 type CodeContext =
-    | Evaluation
+    | CompilationAndEvaluation
     | Compilation
     | Editing
 
