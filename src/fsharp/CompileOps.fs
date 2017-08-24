@@ -2213,7 +2213,7 @@ type TcConfigBuilder =
           useFsiAuxLib=false
           implicitOpens=[]
           includes=[]
-          resolutionEnvironment=ResolutionEnvironment.EditingAndCompilation false
+          resolutionEnvironment=ResolutionEnvironment.EditingOrCompilation false
           framework=true
           implicitlyResolveAssemblies=true
           referencedDLLs = []
@@ -2825,7 +2825,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                     if Directory.Exists(runtimeRootWPF) then
                         yield runtimeRootWPF // PresentationCore.dll is in C:\Windows\Microsoft.NET\Framework\v4.0.30319\WPF
 
-                | ResolutionEnvironment.EditingAndCompilation _ ->
+                | ResolutionEnvironment.EditingOrCompilation _ ->
                     if runningOnMono then 
                         // Default compilation-time references on Mono
                         //
@@ -4914,12 +4914,12 @@ module private ScriptPreprocessClosure =
 
         tcConfigB.resolutionEnvironment <-
             match codeContext with 
-            | CodeContext.Editing -> ResolutionEnvironment.EditingAndCompilation true
-            | CodeContext.Compilation -> ResolutionEnvironment.EditingAndCompilation false
+            | CodeContext.Editing -> ResolutionEnvironment.EditingOrCompilation true
+            | CodeContext.Compilation -> ResolutionEnvironment.EditingOrCompilation false
             | CodeContext.CompilationAndEvaluation -> 
 #if FSI_TODO_NETCORE
                 // "CompilationAndEvaluation" assembly resolution for F# Interactive is not yet properly figured out on .NET Core
-                ResolutionEnvironment.EditingAndCompilation false
+                ResolutionEnvironment.EditingOrCompilation false
 #else
                 ResolutionEnvironment.CompilationAndEvaluation
 #endif

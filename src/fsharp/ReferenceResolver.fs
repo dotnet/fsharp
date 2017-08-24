@@ -12,8 +12,8 @@ module internal ReferenceResolver =
 
     [<RequireQualifiedAccess>]
     type ResolutionEnvironment = 
-        /// Indicates a script or source being compiled. Uses reference assemblies (not implementation assemblies).
-        | EditingAndCompilation of isEditing: bool
+        /// Indicates a script or source being edited or compiled. Uses reference assemblies (not implementation assemblies).
+        | EditingOrCompilation of isEditing: bool
         /// Indicates a script or source being dynamically compiled and executed. Uses implementation assemblies.
         | CompilationAndEvaluation 
 
