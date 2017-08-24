@@ -24,8 +24,8 @@ type ProjectItems() =
             project.ComputeSourcesAndFlags()
 
             let containsSystemNumerics () = 
-                project.GetCompileFlags()
-                |> Seq.exists (fun f -> f.IndexOf("System.Numerics") <> -1)
+                project.CompilationOptions
+                |> Array.exists (fun f -> f.IndexOf("System.Numerics") <> -1)
 
             let wasCalled = ref false
             Assert.IsTrue(containsSystemNumerics (), "Project should contains reference to System.Numerics")

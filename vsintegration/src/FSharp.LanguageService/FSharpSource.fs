@@ -350,7 +350,7 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                 [|
                     match iSource.ProjectSite with
                     | Some pi -> 
-                        yield! pi.CompilerFlags () |> Array.filter(fun flag -> flag.StartsWith("--define:"))
+                        yield! pi.CompilationOptions |> Array.filter(fun flag -> flag.StartsWith("--define:"))
                     | None -> ()
                     yield "--noframework"
 
