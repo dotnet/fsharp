@@ -1861,7 +1861,7 @@ namespace Microsoft.FSharp.Control
 
     [<Sealed>]
     [<AutoSerializable(false)>]        
-    type Mailbox<'Msg>() =  
+    type Mailbox<'Msg>(cancellationSupported: bool) =  
         let mutable inboxStore  = null 
         let mutable arrivals = new Queue<'Msg>()
         let syncRoot = arrivals
@@ -1871,7 +1871,11 @@ namespace Microsoft.FSharp.Control
         //     -- "cont" is non-null and the reader is "activated" by re-scheduling cont in the thread pool; or
         //     -- "pulse" is non-null and the reader is "activated" by setting this event
         let mutable savedCont : ((bool -> FakeUnitValue) * TrampolineHolder) option = None
+
+        // Readers who have a timeout use this event
         let mutable pulse : AutoResetEvent = null
+
+        // Make sure that the "pulse" value is created
         let ensurePulse() = 
             match pulse with 
             | null -> 
@@ -1880,7 +1884,7 @@ namespace Microsoft.FSharp.Control
                 ()
             pulse
                 
-        let waitOneNoTimeout = 
+        let waitOneNoTimeoutOrCancellation = 
             unprotectedPrimitive (fun ({ aux = aux } as args) -> 
                 match savedCont with 
                 | None -> 
@@ -1901,11 +1905,14 @@ namespace Microsoft.FSharp.Control
                 | Some _ -> 
                     failwith "multiple waiting reader continuations for mailbox")
 
+        let waitOneWithCancellation(timeout) = 
+            ensurePulse().AsyncWaitOne(millisecondsTimeout=timeout)
+
         let waitOne(timeout) = 
-            if timeout < 0  then 
-                waitOneNoTimeout
+            if timeout < 0 && not cancellationSupported then 
+                waitOneNoTimeoutOrCancellation
             else 
-                ensurePulse().AsyncWaitOne(millisecondsTimeout=timeout)
+                waitOneWithCancellation(timeout)
 
         member x.inbox = 
             match inboxStore with 
@@ -1921,9 +1928,10 @@ namespace Microsoft.FSharp.Control
             else let msg = arrivals.Dequeue()
                  match f msg with
                  | None -> 
-                     x.inbox.Add(msg); 
+                     x.inbox.Add(msg);
                      x.scanArrivalsUnsafe(f)
                  | res -> res
+
         // Lock the arrivals queue while we scan that
         member x.scanArrivals(f) = lock syncRoot (fun () -> x.scanArrivalsUnsafe(f))
 
@@ -1959,9 +1967,11 @@ namespace Microsoft.FSharp.Control
 
         member x.Post(msg) =
             lock syncRoot (fun () ->
-                arrivals.Enqueue(msg);
-                // This is called when we enqueue a message, within a lock
-                // We cooperatively unblock any waiting reader. If there is no waiting
+
+                // Add the message to the arrivals queue
+                arrivals.Enqueue(msg)
+
+                // Cooperatively unblock any waiting reader. If there is no waiting
                 // reader we just leave the message in the incoming queue
                 match savedCont with
                 | None -> 
@@ -1971,6 +1981,7 @@ namespace Microsoft.FSharp.Control
                     | ev -> 
                         // someone is waiting on the wait handle
                         ev.Set() |> ignore
+
                 | Some(action,trampolineHolder) -> 
                     savedCont <- None
                     trampolineHolder.QueueWorkItem(fun () -> action true) |> unfake)
@@ -1980,19 +1991,19 @@ namespace Microsoft.FSharp.Control
                 async { match x.scanArrivals(f) with
                         | None -> 
                             // Deschedule and wait for a message. When it comes, rescan the arrivals
-                            let! ok = AsyncHelpers.awaitEither waitOneNoTimeout timeoutAsync
+                            let! ok = AsyncHelpers.awaitEither waitOneNoTimeoutOrCancellation timeoutAsync
                             match ok with
                             | Choice1Of2 true -> 
                                 return! scan timeoutAsync timeoutCts
                             | Choice1Of2 false ->
-                                return failwith "should not happen - waitOneNoTimeout always returns true"
+                                return failwith "should not happen - waitOneNoTimeoutOrCancellation always returns true"
                             | Choice2Of2 () ->
                                 lock syncRoot (fun () -> 
-                                    // Cancel the outstanding wait for messages installed by waitOneNoTimeout
+                                    // Cancel the outstanding wait for messages installed by waitOneWithCancellation
                                     //
                                     // HERE BE DRAGONS. This is bestowed on us because we only support
                                     // a single mailbox reader at any one time.
-                                    // If awaitEither returned control because timeoutAsync has terminated, waitOneNoTimeout
+                                    // If awaitEither returned control because timeoutAsync has terminated, waitOneNoTimeoutOrCancellation
                                     // might still be in-flight. In practical terms, it means that the push-to-async-result-cell 
                                     // continuation that awaitEither registered on it is still pending, i.e. it is still in savedCont.
                                     // That continuation is a no-op now, but it is still a registered reader for arriving messages.
@@ -2010,7 +2021,7 @@ namespace Microsoft.FSharp.Control
                        }
             let rec scanNoTimeout () =
                 async { match x.scanArrivals(f) with
-                        |   None -> let! ok = waitOneNoTimeout
+                        |   None -> let! ok = waitOne(Timeout.Infinite)
                                     if ok then
                                         return! scanNoTimeout()
                                     else
@@ -2040,16 +2051,25 @@ namespace Microsoft.FSharp.Control
                     | None -> return raise(TimeoutException(SR.GetString(SR.mailboxScanTimedOut)))
                     | Some res -> return res }
 
-
         member x.TryReceive(timeout) =
             let rec processFirstArrival() =
                 async { match x.receiveFromArrivals() with
                         | None -> 
-                            // Wait until we have been notified about a message. When that happens, rescan the arrivals
-                            let! ok = waitOne(timeout)
-                            if ok then return! processFirstArrival()
-                            else return None
+                            // Make sure the pulse is created if it is going to be needed. 
+                            // If it isn't, then create it, and go back to the start to 
+                            // check arrivals again.
+                            match pulse with
+                            | null -> 
+                                if timeout >= 0 || cancellationSupported then 
+                                    ensurePulse() |> ignore
+                                return! processFirstArrival()
+                            | _ -> 
+                                // Wait until we have been notified about a message. When that happens, rescan the arrivals
+                                let! ok = waitOne(timeout)
+                                if ok then return! processFirstArrival()
+                                else return None
                         | res -> return res }
+
             // look in the inbox first
             async { match x.receiveFromInbox() with
                     | None -> return! processFirstArrival()
@@ -2060,11 +2080,21 @@ namespace Microsoft.FSharp.Control
             let rec processFirstArrival() =
                 async { match x.receiveFromArrivals() with
                         | None -> 
-                            // Wait until we have been notified about a message. When that happens, rescan the arrivals
-                            let! ok = waitOne(timeout)
-                            if ok then return! processFirstArrival()
-                            else return raise(TimeoutException(SR.GetString(SR.mailboxReceiveTimedOut)))
+                            // Make sure the pulse is created if it is going to be needed. 
+                            // If it isn't, then create it, and go back to the start to 
+                            // check arrivals again.
+                            match pulse with
+                            | null -> 
+                                if timeout >= 0 || cancellationSupported then 
+                                    ensurePulse() |> ignore
+                                return! processFirstArrival()
+                            | _ -> 
+                                // Wait until we have been notified about a message. When that happens, rescan the arrivals
+                                let! ok = waitOne(timeout)
+                                if ok then return! processFirstArrival()
+                                else return raise(TimeoutException(SR.GetString(SR.mailboxReceiveTimedOut)))
                         | Some res -> return res }
+
             // look in the inbox first
             async { match x.receiveFromInbox() with
                     | None -> return! processFirstArrival() 
@@ -2089,8 +2119,9 @@ namespace Microsoft.FSharp.Control
     [<AutoSerializable(false)>]
     [<CompiledName("FSharpMailboxProcessor`1")>]
     type MailboxProcessor<'Msg>(initial, ?cancellationToken) =
+        let cancellationSupported = cancellationToken.IsSome
         let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
-        let mailbox = new Mailbox<'Msg>()
+        let mailbox = new Mailbox<'Msg>(cancellationSupported)
         let mutable defaultTimeout = Threading.Timeout.Infinite
         let mutable started = false
         let errorEvent = new Event<System.Exception>()
