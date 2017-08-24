@@ -288,10 +288,10 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
             let registry = sprintf "{Registry:%s,%s,%s%s}" frameworkRegistryBase targetFrameworkVersion assemblyFoldersSuffix assemblyFoldersConditions
 
             [|  // When compiling scripts using fsc.exe, for some reason we have always historically put TargetFrameworkDirectory first
-                // It is unclear why.  This is the only place we look at the 'isdifference between ResolutionEnvironment.EditingAndCompilation and ResolutionEnvironment.EditingTime.
+                // It is unclear why.  This is the only place we look at the 'isdifference between ResolutionEnvironment.EditingOrCompilation and ResolutionEnvironment.EditingTime.
                 match resolutionEnvironment with
-                | ResolutionEnvironment.EditingAndCompilation false -> yield "{TargetFrameworkDirectory}"
-                | ResolutionEnvironment.EditingAndCompilation true
+                | ResolutionEnvironment.EditingOrCompilation false -> yield "{TargetFrameworkDirectory}"
+                | ResolutionEnvironment.EditingOrCompilation true
                 | ResolutionEnvironment.CompilationAndEvaluation -> ()
 
                 // Quick-resolve straight to filename first 
@@ -302,9 +302,9 @@ module internal Microsoft.FSharp.Compiler.MSBuildReferenceResolver
                 yield implicitIncludeDir   // Usually the project directory
 
                 match resolutionEnvironment with
-                | ResolutionEnvironment.EditingAndCompilation true
+                | ResolutionEnvironment.EditingOrCompilation true
                 | ResolutionEnvironment.CompilationAndEvaluation -> yield "{TargetFrameworkDirectory}"
-                | ResolutionEnvironment.EditingAndCompilation false -> ()
+                | ResolutionEnvironment.EditingOrCompilation false -> ()
 
                 yield registry
                 yield "{AssemblyFolders}"

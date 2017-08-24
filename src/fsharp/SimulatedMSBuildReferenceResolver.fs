@@ -208,7 +208,7 @@ let fscoreDir =
         System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
 
 let resolve s = 
-    SimulatedMSBuildResolver.Resolve(ResolutionEnvironment.EditingAndCompilation,[| for a in s -> (a, "") |],"v4.5.1", [SimulatedMSBuildResolver.DotNetFrameworkReferenceAssembliesRootDirectory + @"\v4.5.1" ],"", "", fscoreDir,[],__SOURCE_DIRECTORY__,ignore, (fun _ _ -> ()), (fun _ _-> ()))
+    SimulatedMSBuildResolver.Resolve(ResolutionEnvironment.EditingOrCompilation,[| for a in s -> (a, "") |],"v4.5.1", [SimulatedMSBuildResolver.DotNetFrameworkReferenceAssembliesRootDirectory + @"\v4.5.1" ],"", "", fscoreDir,[],__SOURCE_DIRECTORY__,ignore, (fun _ _ -> ()), (fun _ _-> ()))
 
 // Resolve partial name to something on search path
 resolve ["FSharp.Core" ]
