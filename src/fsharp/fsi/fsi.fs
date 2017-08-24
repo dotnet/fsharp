@@ -48,6 +48,7 @@ open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.FSharp.Compiler.ReferenceResolver
 
 open Internal.Utilities
 open Internal.Utilities.Collections
@@ -2459,7 +2460,7 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
 
     let tcConfigB = TcConfigBuilder.CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir=defaultFSharpBinariesDir, optimizeForMemory=true, implicitIncludeDir=currentDirectory, isInteractive=true, isInvalidationSupported=false, defaultCopyFSharpCore=false)
     let tcConfigP = TcConfigProvider.BasedOnMutableBuilder(tcConfigB)
-    do tcConfigB.resolutionEnvironment <- ReferenceResolver.ResolutionEnvironment.CompilationAndEvaluation // See Bug 3608
+    do tcConfigB.resolutionEnvironment <- ResolutionEnvironment.CompilationAndEvaluation // See Bug 3608
     do tcConfigB.useFsiAuxLib <- fsi.UseFsiAuxLib
 
 #if FSI_TODO_NETCORE

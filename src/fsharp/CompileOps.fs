@@ -2809,7 +2809,11 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                 yield tcConfig.MakePathAbsolute x
 
             | None -> 
+#if FSI_TODO_NETCORE // there is no really good notion of runtime directory on .NETCore
+                let runtimeRoot = Path.GetDirectoryName(typeof<System.Object>.Assembly.Location)
+#else
                 let runtimeRoot = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
+#endif
                 let runtimeRootWithoutSlash = runtimeRoot.TrimEnd('/', '\\')
                 let runtimeRootFacades = Path.Combine(runtimeRootWithoutSlash, "Facades")
                 let runtimeRootWPF = Path.Combine(runtimeRootWithoutSlash, "WPF")
@@ -2826,6 +2830,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                         yield runtimeRootWPF // PresentationCore.dll is in C:\Windows\Microsoft.NET\Framework\v4.0.30319\WPF
 
                 | ResolutionEnvironment.EditingOrCompilation _ ->
+#if ENABLE_MONO_SUPPORT
                     if runningOnMono then 
                         // Default compilation-time references on Mono
                         //
@@ -2844,6 +2849,7 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                         if Directory.Exists(runtimeRootApiFacades) then
                              yield runtimeRootApiFacades
                     else                                
+#endif
                         // Default compilation-time references on .NET Framework
                         //
                         // This is the normal case for "fsc.exe a.fs". We refer to the reference assemblies folder.
