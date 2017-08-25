@@ -1563,7 +1563,7 @@ namespace Microsoft.FSharp.Core
     // F# Mutable Reference Cells
 
 
-    /// <summary>The type of mutable references. Use the functions [:=] and [!] to get and
+    /// <summary>The type of mutable references. Use the functions [!] and [:=] to get and
     /// set values of this type.</summary>
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpRef`1")>]
@@ -1573,7 +1573,7 @@ namespace Microsoft.FSharp.Core
         /// <summary>The current value of the reference cell</summary>
         member Value : 'T with get,set
             
-    /// <summary>The type of mutable references. Use the functions [:=] and [!] to get and
+    /// <summary>The type of mutable references. Use the functions [!] and [:=] to get and
     /// set values of this type.</summary>
     and 'T ref = Ref<'T>
 
