@@ -143,7 +143,7 @@ Target "Nuget.AddNetStd" (fun _ ->
 // --------------------------------------------------------------------------------------
 // Generate the documentation
 
-Target "GenerateDocs" (fun _ ->
+Target "GenerateDocsEn" (fun _ ->
     executeFSIWithArgs "docsrc/tools" "generate.fsx" ["--define:RELEASE"] [] |> ignore
 )
 
@@ -169,10 +169,10 @@ Target "PublishNuGet" (fun _ ->
 // Run all targets by default. Invoke 'build <Target>' to override
 
 Target "Clean" DoNothing
-Target "CleanDocs" DoNothing
 Target "Release" DoNothing
 Target "NuGet" DoNothing
 Target "Build" DoNothing
+Target "GenerateDocs" DoNothing
 Target "TestAndNuGet" DoNothing
 
 "Clean"
@@ -215,9 +215,15 @@ Target "TestAndNuGet" DoNothing
   ==> "PublishNuGet"
   ==> "Release"
 
-"CleanDocs"
+"Build"
+  ==> "GenerateDocsEn"
   ==> "GenerateDocs"
+
+"Build"
   ==> "GenerateDocsJa"
+  ==> "GenerateDocs"
+
+"GenerateDocs"
   ==> "Release"
 
 RunTargetOrDefault "Build"

@@ -52,6 +52,9 @@ let copyFiles () =
   CopyRecursive (formatting @@ "styles") (output @@ "content") true 
     |> Log "Copying styles and scripts: "
 
+let clr =  System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
+let fsfmt =  __SOURCE_DIRECTORY__ @@ ".." @@ ".." @@ @"packages" @@ "FSharp.Formatting" @@ "lib" @@ "net40"
+
 // Build API reference from XML comments
 let buildReference () =
   CleanDir (output @@ "reference")
@@ -60,7 +63,24 @@ let buildReference () =
       ( bin @@ lib, output @@ "reference", layoutRoots, 
         parameters = ("root", root)::info,
         sourceRepo = "https://github.com/fsharp/FSharp.Compiler.Service/tree/master/src",
-        sourceFolder = @"..\..\..\src" )
+        sourceFolder = @"..\..\..\src",
+        assemblyReferences =
+             [clr @@ "System.Runtime.dll"
+              clr @@ "System.dll"
+              clr @@ "System.Core.dll"
+              clr @@ "Microsoft.CSharp.dll"
+              clr @@ "System.Linq.dll"
+              clr @@ "System.dll"
+              bin @@ "System.Reflection.Metadata.dll"
+              clr @@ "System.Numerics.dll"
+              bin @@ "System.Collections.Immutable.dll"
+              clr @@ "System.IO.dll"
+              clr @@ "mscorlib.dll"
+              fsfmt @@ "FSharp.MetadataFormat.dll"
+              fsfmt @@ "RazorEngine.dll"
+              bin @@ "FSharp.Core.dll"
+              bin @@ "FSharp.Compiler.Service.dll"
+             ] )
 
 // Build documentation from `fsx` and `md` files in `docsrc/content`
 let buildDocumentation () =
@@ -73,6 +93,6 @@ let buildDocumentation () =
 
 // Generate
 copyFiles()
-//buildDocumentation()
+buildDocumentation()
 buildReference()
 
