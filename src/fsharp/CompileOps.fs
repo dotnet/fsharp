@@ -2213,7 +2213,7 @@ type TcConfigBuilder =
           useFsiAuxLib=false
           implicitOpens=[]
           includes=[]
-          resolutionEnvironment=ReferenceResolver.CompileTimeLike
+          resolutionEnvironment=ResolutionEnvironment.EditingOrCompilation false
           framework=true
           implicitlyResolveAssemblies=true
           referencedDLLs = []
@@ -2801,46 +2801,58 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
     // This call can fail if no CLR is found (this is the path to mscorlib)
     member tcConfig.GetTargetFrameworkDirectories() = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
-        match tcConfig.clrRoot with 
-        | Some x -> 
-            [tcConfig.MakePathAbsolute x]
-        | None -> 
+        try 
+          [ 
+            // Check if we are given an explicit framework root - if so, use that
+            match tcConfig.clrRoot with 
+            | Some x -> 
+                yield tcConfig.MakePathAbsolute x
+
+            | None -> 
+#if FSI_TODO_NETCORE // there is no really good notion of runtime directory on .NETCore
+                let runtimeRoot = Path.GetDirectoryName(typeof<System.Object>.Assembly.Location)
+#else
+                let runtimeRoot = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
+#endif
+                let runtimeRootWithoutSlash = runtimeRoot.TrimEnd('/', '\\')
+                let runtimeRootFacades = Path.Combine(runtimeRootWithoutSlash, "Facades")
+                let runtimeRootWPF = Path.Combine(runtimeRootWithoutSlash, "WPF")
+
+                match tcConfig.resolutionEnvironment with
+                | ResolutionEnvironment.CompilationAndEvaluation ->
+                    // Default compilation-and-execution-time references on .NET Framework and Mono, e.g. for F# Interactive
+                    //
+                    // In the current way of doing things, F# Interactive refers to implementation assemblies.
+                    yield runtimeRoot
+                    if Directory.Exists(runtimeRootFacades) then
+                        yield runtimeRootFacades // System.Runtime.dll is in /usr/lib/mono/4.5/Facades
+                    if Directory.Exists(runtimeRootWPF) then
+                        yield runtimeRootWPF // PresentationCore.dll is in C:\Windows\Microsoft.NET\Framework\v4.0.30319\WPF
+
+                | ResolutionEnvironment.EditingOrCompilation _ ->
 #if ENABLE_MONO_SUPPORT
-            if runningOnMono then 
-                [ let runtimeRoot = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
-                  let runtimeRootWithoutSlash = runtimeRoot.TrimEnd('/', '\\')
-                  let api = runtimeRootWithoutSlash + "-api"
-                  let rootFacades = Path.Combine(runtimeRootWithoutSlash, "Facades")
-                  let apiFacades = Path.Combine(api, "Facades")
-                  match tcConfig.resolutionEnvironment with
-#if !FSI_TODO_NETCORE
-                  // For F# Interactive code we must inly reference impementation assemblies
-                  | ReferenceResolver.RuntimeLike ->
-                      yield runtimeRoot
-                      if Directory.Exists(rootFacades) then
-                          yield rootFacades // System.Runtime.dll is in /usr/lib/mono/4.5/Facades
+                    if runningOnMono then 
+                        // Default compilation-time references on Mono
+                        //
+                        // On Mono, the default references come from the implementation assemblies.
+                        // This is because we have had trouble reliably using MSBuild APIs to compute DotNetFrameworkReferenceAssembliesRootDirectory on Mono.
+                        yield runtimeRoot
+                        if Directory.Exists(runtimeRootFacades) then
+                            yield runtimeRootFacades // System.Runtime.dll is in /usr/lib/mono/4.5/Facades
+                        if Directory.Exists(runtimeRootWPF) then
+                            yield runtimeRootWPF // PresentationCore.dll is in C:\Windows\Microsoft.NET\Framework\v4.0.30319\WPF
+                        // On Mono we also add a default reference to the 4.5-api and 4.5-api/Facades directories.  
+                        let runtimeRootApi = runtimeRootWithoutSlash + "-api"
+                        let runtimeRootApiFacades = Path.Combine(runtimeRootApi, "Facades")
+                        if Directory.Exists(runtimeRootApi) then
+                            yield runtimeRootApi
+                        if Directory.Exists(runtimeRootApiFacades) then
+                             yield runtimeRootApiFacades
+                    else                                
 #endif
-                  | _ ->
-                      // The default FSharp.Core is found in lib/mono/4.5
-                      yield runtimeRoot  
-                      if Directory.Exists(rootFacades) then
-                          yield rootFacades // System.Runtime.dll is in /usr/lib/mono/4.5/Facades
-                      // It's not clear why we would need to reference the 4.5-api directory.  
-                      if Directory.Exists(api) then
-                          yield api
-                      if Directory.Exists(apiFacades) then
-                          yield apiFacades
-                ]
-            else                                
-#endif
-                try 
-                  [ 
-                    match tcConfig.resolutionEnvironment with
-#if !FSI_TODO_NETCORE
-                    | ReferenceResolver.RuntimeLike ->
-                        yield System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory() 
-#endif
-                    | _ -> 
+                        // Default compilation-time references on .NET Framework
+                        //
+                        // This is the normal case for "fsc.exe a.fs". We refer to the reference assemblies folder.
                         let frameworkRoot = tcConfig.legacyReferenceResolver.DotNetFrameworkReferenceAssembliesRootDirectory
                         let frameworkRootVersion = Path.Combine(frameworkRoot,tcConfig.targetFrameworkVersion)
                         yield frameworkRootVersion
@@ -2848,8 +2860,8 @@ type TcConfig private (data : TcConfigBuilder,validate:bool) =
                         if Directory.Exists(facades) then
                             yield facades
                   ]                    
-                with e -> 
-                    errorRecovery e range0; [] 
+        with e -> 
+            errorRecovery e range0; [] 
 
     member tcConfig.ComputeLightSyntaxInitialStatus(filename) = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
@@ -4854,7 +4866,7 @@ type LoadClosure =
 
 [<RequireQualifiedAccess>]
 type CodeContext =
-    | Evaluation // in fsi.exe
+    | CompilationAndEvaluation // in fsi.exe
     | Compilation  // in fsc.exe
     | Editing // in VS
     
@@ -4887,7 +4899,7 @@ module private ScriptPreprocessClosure =
         //     .fsx -- EDITING + !COMPILED\INTERACTIVE    
         let defines =
             match codeContext with 
-            | CodeContext.Evaluation -> ["INTERACTIVE"]
+            | CodeContext.CompilationAndEvaluation -> ["INTERACTIVE"]
             | CodeContext.Compilation -> ["COMPILED"]
             | CodeContext.Editing -> "EDITING" :: (if IsScript filename then ["INTERACTIVE"] else ["COMPILED"])
         let lexbuf = UnicodeLexing.StringAsLexbuf source 
@@ -4898,7 +4910,7 @@ module private ScriptPreprocessClosure =
     /// Create a TcConfig for load closure starting from a single .fsx file
     let CreateScriptSourceTcConfig (legacyReferenceResolver, defaultFSharpBinariesDir, filename:string, codeContext, useSimpleResolution, useFsiAuxLib, basicReferences, applyCommandLineArgs, assumeDotNetFramework) =  
         let projectDir = Path.GetDirectoryName(filename)
-        let isInteractive = (codeContext = CodeContext.Evaluation)
+        let isInteractive = (codeContext = CodeContext.CompilationAndEvaluation)
         let isInvalidationSupported = (codeContext = CodeContext.Editing)
         let tcConfigB = TcConfigBuilder.CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, true (* optimize for memory *), projectDir, isInteractive, isInvalidationSupported, defaultCopyFSharpCore=false) 
         applyCommandLineArgs tcConfigB
@@ -4908,12 +4920,14 @@ module private ScriptPreprocessClosure =
 
         tcConfigB.resolutionEnvironment <-
             match codeContext with 
-            | CodeContext.Editing -> ReferenceResolver.DesignTimeLike
+            | CodeContext.Editing -> ResolutionEnvironment.EditingOrCompilation true
+            | CodeContext.Compilation -> ResolutionEnvironment.EditingOrCompilation false
+            | CodeContext.CompilationAndEvaluation -> 
 #if FSI_TODO_NETCORE
-            // "RuntimeLike" assembly resolution for F# Interactive is not yet properly figured out on .NET Core
-            | CodeContext.Compilation | CodeContext.Evaluation -> ReferenceResolver.CompileTimeLike
+                // "CompilationAndEvaluation" assembly resolution for F# Interactive is not yet properly figured out on .NET Core
+                ResolutionEnvironment.EditingOrCompilation false
 #else
-            | CodeContext.Compilation | CodeContext.Evaluation -> ReferenceResolver.RuntimeLike
+                ResolutionEnvironment.CompilationAndEvaluation
 #endif
         tcConfigB.framework <- false 
         tcConfigB.useSimpleResolution <- useSimpleResolution

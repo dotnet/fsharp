@@ -1701,7 +1701,8 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
                 // The following uses more memory but means we don't take read-exclusions on the DLLs we reference 
                 // Could detect well-known assemblies--ie System.dll--and open them with read-locks 
                 tcConfigB.openBinariesInMemory <- true
-                tcConfigB.resolutionEnvironment <- (if useScriptResolutionRules then ReferenceResolver.DesignTimeLike else ReferenceResolver.CompileTimeLike)
+
+                tcConfigB.resolutionEnvironment <- (ReferenceResolver.ResolutionEnvironment.EditingOrCompilation true)
                 
                 tcConfigB.conditionalCompilationDefines <- 
                     let define = if useScriptResolutionRules then "INTERACTIVE" else "COMPILED"
