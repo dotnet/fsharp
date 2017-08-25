@@ -38,7 +38,7 @@
     </Compile>-->
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="../FSharp.Compiler.Service/FSharp.Compiler.Service.netcore.fsproj" />
+    <ProjectReference Include="../FSharp.Compiler.Service.netstandard/FSharp.Compiler.Service.netstandard.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.0.0" />

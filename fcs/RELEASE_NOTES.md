@@ -1,3 +1,6 @@
+#### 14.0.2
+  * Fix non-public API in .NET Standard 1.6 version
+
 #### 14.0.1
   * Integrate latest changes from visualfsharp
   * Trial release for new build in fcs\...

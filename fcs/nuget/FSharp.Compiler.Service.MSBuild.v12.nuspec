@@ -8,7 +8,7 @@
         </description>
         <language>en-US</language>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
-        <version>14.0.1</version>
+        <version>14.0.2</version>
         <authors>Microsoft Corporation and F# community contributors</authors>
         <licenseUrl>https://github.com/fsharp/FSharp.Compiler.Service/blob/master/LICENSE</licenseUrl>
         <projectUrl>https://github.com/fsharp/FSharp.Compiler.Service</projectUrl>
