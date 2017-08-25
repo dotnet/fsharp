@@ -34,35 +34,35 @@ To update the version number a global replace through fcs\... is currently neede
 
 To build the package use any of:
 
-    cd fcs
-    build Build.NetFx
-    build Test.NetFx
-    build NuGet.NetFx
+    fcs\build Build.NetFx
+    fcs\build Test.NetFx
+    fcs\build NuGet.NetFx
 
-    build Build.NetStd
-    build Test.NetStd
-    build NuGet.NetStd
+    fcs\build Build.NetStd
+    fcs\build Test.NetStd
+    fcs\build NuGet.NetStd
 
-    build Build
-    build Test
-    build NuGet
-    build Release
+    fcs\build Build
+    fcs\build Test
+    fcs\build NuGet
+    fcs\build Release
 
 which does things like:
 
+    cd fcs
     .paket\paket.bootstrapper.exe
     .paket\paket.exe restore
+    dotnet restore tools.proj
     packages\FAKE\tools\FAKE.exe build.fsx WhateverTarget
 
 ### Manual push of packages
 
 Yu can push the packages if you have permissions, either automatically using ``build Release`` or manually
 
-    cd fcs
     set APIKEY=...
-    ..\.nuget\nuget.exe push ..\Release\FSharp.Compiler.Service.14.0.1.nupkg %APIKEY% -Source https://nuget.org -Timeout 500
-    ..\.nuget\nuget.exe push ..\Release\FSharp.Compiler.Service.MSBuild.v12.14.0.1.nupkg %APIKEY%  -Source https://nuget.org -Timeout 500
-    ..\.nuget\nuget.exe push ..\Release\FSharp.Compiler.Service.ProjectCracker.14.0.1.nupkg %APIKEY%  -Source https://nuget.org -Timeout 500
+    .nuget\nuget.exe push Release\FSharp.Compiler.Service.14.0.2.nupkg %APIKEY% -Source https://nuget.org 
+    .nuget\nuget.exe push Release\FSharp.Compiler.Service.MSBuild.v12.14.0.2.nupkg %APIKEY%  -Source https://nuget.org
+    .nuget\nuget.exe push Release\FSharp.Compiler.Service.ProjectCracker.14.0.2.nupkg %APIKEY%  -Source https://nuget.org
     
 
 ### Use of Paket and FAKE
@@ -78,7 +78,7 @@ Testing reuses the test files from ..\tests\service which were are also FCS test
 
 ### Documentation Generation
 
-    build GenerateDocs
+    fcs\build GenerateDocs
 
 Output is in ``docs``.  In the ``FSharp.Compiler.Service`` repo this is checked in and hosted as http://fsharp.github.io/FSharp.Compiler.Service.
 
