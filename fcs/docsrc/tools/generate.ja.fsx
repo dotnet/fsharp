@@ -3,8 +3,6 @@
 // (the generated documentation is stored in the 'docs' directory)
 // --------------------------------------------------------------------------------------
 
-// Binaries that have XML documentation (in a corresponding generated XML file)
-let referenceBinaries = [ "FSharp.Compiler.Service.dll" ] 
 // Web site location for the generated documentation
 let website = "/FSharp.Compiler.Service/ja"
 
@@ -49,20 +47,16 @@ let root = "file://" + (__SOURCE_DIRECTORY__ @@ "../output/ja")
 // Paths with template/source/output locations
 let bin         = __SOURCE_DIRECTORY__ @@ "../../../Release/fcs/net45"
 let content     = __SOURCE_DIRECTORY__ @@ "../content/ja"
-let output      = __SOURCE_DIRECTORY__ @@ "../../docs"
-let outputJa    = __SOURCE_DIRECTORY__ @@ "../../docs/ja"
+let outputJa    = __SOURCE_DIRECTORY__ @@ "../../../docs/ja"
 let files       = __SOURCE_DIRECTORY__ @@ "../files"
 let templates   = __SOURCE_DIRECTORY__ @@ "templates/ja"
-let reference   = __SOURCE_DIRECTORY__ @@ "reference"
 let formatting  = __SOURCE_DIRECTORY__ @@ "../../packages/FSharp.Formatting/"
 let docTemplate = formatting @@ "templates/docpage.cshtml"
 
 // Where to look for *.csproj templates (in this order)
 let layoutRoots =
   [ templates
-    reference
-    formatting @@ "templates"
-    formatting @@ "templates/reference" ]
+    formatting @@ "templates"]
 
 // Copy static files and CSS + JS from F# Formatting
 // Build documentation from `fsx` and `md` files in `docsrc/content`

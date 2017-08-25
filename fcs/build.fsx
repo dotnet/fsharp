@@ -5,11 +5,10 @@
 #I "packages/FAKE/tools"
 #r "packages/FAKE/tools/FakeLib.dll"
 open System
-open Fake.AppVeyor
+open System.IO
 open Fake
-open Fake.Git
+open Fake.AppVeyor
 open Fake.ReleaseNotesHelper
-open Fake.UserInputHelper
 
 #if MONO
 // prevent incorrect output encoding (e.g. https://github.com/fsharp/FAKE/issues/1196)
@@ -21,38 +20,24 @@ System.Console.OutputEncoding <- System.Text.Encoding.UTF8
 // --------------------------------------------------------------------------------------
 
 let assertExitCodeZero x = if x = 0 then () else failwithf "Command failed with exit code %i" x
-let runCmdIn mono workDir exe = Printf.ksprintf (fun args ->
-    if mono then
-        printfn "mono %s/%s %s" workDir exe args
+let runCmdIn workDir (exe:string) = Printf.ksprintf (fun (args:string) ->
+#if MONO
+        let exe = exe.Replace("\\","/")
+        let args = args.Replace("\\","/")
+        printfn "[%s] mono %s %s" workDir exe args
         Shell.Exec("mono", sprintf "%s %s" exe args, workDir)
-        |> assertExitCodeZero
-    else
-        printfn "%s/%s %s" workDir exe args
+#else
+        printfn "[%s] %s %s" workDir exe args
         Shell.Exec(exe, args, workDir)
+#endif
         |> assertExitCodeZero
 )
-let run mono exe = runCmdIn mono "." exe
-
-// --------------------------------------------------------------------------------------
-// Information about the project to be used at NuGet 
-// --------------------------------------------------------------------------------------
-
-let project = "FSharp.Compiler.Service"
-let authors = ["Microsoft Corporation, Dave Thomas, Anh-Dung Phan, Tomas Petricek"]
-
-let gitOwner = "fsharp"
-let gitHome = "https://github.com/" + gitOwner
-
-let gitName = "FSharp.Compiler.Service"
-let gitRaw = environVarOrDefault "gitRaw" "https://raw.githubusercontent.com/fsharp"
-
-let netFrameworks = [(* "v4.0"; *) "v4.5"]
 
 // --------------------------------------------------------------------------------------
 // The rest of the code is standard F# build script
 // --------------------------------------------------------------------------------------
 
-let releaseDir = "../Release"
+let releaseDir = Path.Combine(__SOURCE_DIRECTORY__, "../Release")
 
 
 // Read release notes & version info from RELEASE_NOTES.md
@@ -84,8 +69,6 @@ let buildVersion =
     else if isAppVeyorBuild then sprintf "%s-b%s" assemblyVersion AppVeyorEnvironment.BuildNumber
     else assemblyVersion
 
-let netstdsln = gitName + ".netstandard.sln";
-
 Target "BuildVersion" (fun _ ->
     Shell.Exec("appveyor", sprintf "UpdateBuild -Version \"%s\"" buildVersion) |> ignore
 )
@@ -95,7 +78,7 @@ Target "BuildVersion" (fun _ ->
 
 
 Target "Build.NetFx" (fun _ ->
-    !! (project + ".sln")
+    !! "FSharp.Compiler.Service.sln"
     |> MSBuild "" "Build" ["Configuration","Release" ]
     |> Log (".NETFxBuild-Output: ")
 )
@@ -116,9 +99,9 @@ Target "Test.NetFx" (fun _ ->
 // --------------------------------------------------------------------------------------
 // Build a NuGet package
 Target "NuGet.NetFx" (fun _ ->
-    run false @"..\.nuget\nuget.exe" @"pack nuget\FSharp.Compiler.Service.nuspec -OutputDirectory %s" releaseDir
-    run false @"..\.nuget\nuget.exe" @"pack nuget\FSharp.Compiler.Service.MSBuild.v12.nuspec -OutputDirectory %s" releaseDir
-    run false @"..\.nuget\nuget.exe" @"pack nuget\FSharp.Compiler.Service.ProjectCracker.nuspec -OutputDirectory %s" releaseDir
+    runCmdIn __SOURCE_DIRECTORY__  @"..\.nuget\NuGet.exe" @"pack nuget\FSharp.Compiler.Service.nuspec -OutputDirectory %s" releaseDir
+    runCmdIn __SOURCE_DIRECTORY__  @"..\.nuget\NuGet.exe" @"pack nuget\FSharp.Compiler.Service.MSBuild.v12.nuspec -OutputDirectory %s" releaseDir
+    runCmdIn __SOURCE_DIRECTORY__  @"..\.nuget\NuGet.exe" @"pack nuget\FSharp.Compiler.Service.ProjectCracker.nuspec -OutputDirectory %s" releaseDir
 )
 
 
@@ -140,21 +123,20 @@ let isDotnetSDKInstalled =
 
 
 Target "Build.NetStd" (fun _ ->
-    run false "dotnet" "pack %s -v n -c Release" netstdsln
+    runCmdIn __SOURCE_DIRECTORY__  "dotnet" "pack %s -v n -c Release" "FSharp.Compiler.Service.netstandard.sln"
 )
 
 
 Target "Test.NetStd" (fun _ ->
-    run false "dotnet" "run -p FSharp.Compiler.Service.Tests.netcore/FSharp.Compiler.Service.Tests.netcore.fsproj -c Release -- --result:TestResults.NetStd.xml;format=nunit3"
+    runCmdIn __SOURCE_DIRECTORY__  "dotnet" "run -p FSharp.Compiler.Service.Tests.netcore/FSharp.Compiler.Service.Tests.netcore.fsproj -c Release -- --result:TestResults.NetStd.xml;format=nunit3"
 )
 
 
 //use dotnet-mergenupkg to merge the .NETstandard nuget package into the default one
 Target "Nuget.AddNetStd" (fun _ ->
-    do
-        let nupkg = sprintf "%s/FSharp.Compiler.Service.%s.nupkg" releaseDir release.AssemblyVersion
-        let netcoreNupkg = sprintf "FSharp.Compiler.Service.netstandard/bin/Release/FSharp.Compiler.Service.%s.nupkg" release.AssemblyVersion
-        runCmdIn false "." "dotnet" "mergenupkg --source %s --other %s --framework netstandard1.6" nupkg netcoreNupkg
+    let nupkg = sprintf "%s/FSharp.Compiler.Service.%s.nupkg" releaseDir release.AssemblyVersion
+    let netcoreNupkg = sprintf "FSharp.Compiler.Service.netstandard/bin/Release/FSharp.Compiler.Service.%s.nupkg" release.AssemblyVersion
+    runCmdIn __SOURCE_DIRECTORY__ "dotnet" "mergenupkg --source %s --other %s --framework netstandard1.6" nupkg netcoreNupkg
 )
 
 
@@ -191,6 +173,7 @@ Target "CleanDocs" DoNothing
 Target "Release" DoNothing
 Target "NuGet" DoNothing
 Target "Build" DoNothing
+Target "TestAndNuGet" DoNothing
 
 "Clean"
   =?> ("BuildVersion", isAppVeyorBuild)
@@ -217,6 +200,15 @@ Target "Build" DoNothing
   ==> "NuGet.NetFx"
   =?> ("Nuget.AddNetStd", isDotnetSDKInstalled)
   ==> "NuGet"
+
+"Test.NetFx"
+  ==> "TestAndNuGet"
+
+"NuGet"
+  ==> "TestAndNuGet"
+
+//"Test.NetStd"
+//  ==> "TestAndNuGet"
 
 "Build"
   ==> "NuGet"

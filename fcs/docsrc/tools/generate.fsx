@@ -34,7 +34,7 @@ let root = "."
 // Paths with template/source/output locations
 let bin         = __SOURCE_DIRECTORY__ @@ "../../../Release/fcs/net45"
 let content     = __SOURCE_DIRECTORY__ @@ "../content"
-let output      = __SOURCE_DIRECTORY__ @@ "../../docs"
+let output      = __SOURCE_DIRECTORY__ @@ "../../../docs"
 let files       = __SOURCE_DIRECTORY__ @@ "../files"
 let templates   = __SOURCE_DIRECTORY__ @@ "templates"
 let formatting  = __SOURCE_DIRECTORY__ @@ "../../packages/FSharp.Formatting/"
