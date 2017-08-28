@@ -87,5 +87,4 @@ modified to expose additional internals useful for creating editors and F# tools
 embedding F# interactive.
 
 The F# source code is copyright by Microsoft Corporation and contributors, the extensions have been
-implemented by Dave Thomas, Anh-Dung Phan, Tomas Petricek and other contributors. The source code
-is available under the [Apache 2.0 license](https://github.com/fsharp/FSharp.Compiler.Service/blob/master/LICENSE).
+implemented by Dave Thomas, Anh-Dung Phan, Tomas Petricek and other contributors.

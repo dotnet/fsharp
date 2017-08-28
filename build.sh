@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+# Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 # Helper function to print an error message and exit with a non-zero error code.
 failwith () {
