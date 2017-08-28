@@ -10,7 +10,7 @@ Microsoft is offering you a license to use the following components with Microso
 
 %% Visual F# Tools NOTICES AND INFORMATION BEGIN HERE
 =========================================
-Copyright (c) Microsoft.  All rights reserved.
+Copyright (c) Microsoft.  All Rights Reserved.
 Microsoft would like to thank its contributors, a list
 of whom are at https://github.com/Microsoft/visualfsharp/graphs/contributors.
 
