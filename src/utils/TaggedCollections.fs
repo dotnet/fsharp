@@ -724,12 +724,12 @@ namespace Internal.Utilities.Collections.Tagged
 #endif
           | MapNode(_,_,_,_,h) -> h
 
-        let isEmpty m = 
+        let inline isEmpty m = 
             match m with 
             | MapEmpty -> true
             | _ -> false
 
-        let mk l k v r = 
+        let inline mk l k v r = 
 #if ONE 
             match l,r with 
             | MapEmpty,MapEmpty -> MapOne(k,v)
