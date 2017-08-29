@@ -741,8 +741,9 @@ namespace Internal.Utilities.Collections.Tagged
                 MapNode(k,v,l,r,m+1)
 
         let rebalance t1 k v t2 =
-            let t1h = height t1 
-            if  height t2 > t1h + 2 then // right is heavier than left 
+            let t1h = height t1
+            let t2h = height t2
+            if t2h > t1h + 2 then // right is heavier than left 
                 match t2 with 
                 | MapNode(t2k,t2v,t2l,t2r,_) -> 
                    // one of the nodes must have height > height t1 + 1 
@@ -755,8 +756,7 @@ namespace Internal.Utilities.Collections.Tagged
                      mk (mk t1 k v t2l) t2k t2v t2r
                 | _ -> failwith "rebalance"
             else
-                let t2h = height t2 
-                if  t1h > t2h + 2 then // left is heavier than right 
+                if t1h > t2h + 2 then // left is heavier than right 
                   match t1 with 
                   | MapNode(t1k,t1v,t1l,t1r,_) -> 
                     // one of the nodes must have height > height t2 + 1 
@@ -1097,7 +1097,8 @@ namespace Internal.Utilities.Collections.Tagged
     [<Sealed>]
     type internal Map<'Key,'T,'ComparerTag> when 'ComparerTag :> IComparer<'Key>( comparer: IComparer<'Key>, tree: MapTree<'Key,'T>) =
 
-        static let refresh (m:Map<_,_,'ComparerTag>) t =    Map<_,_,'ComparerTag>(comparer=m.Comparer, tree=t)
+        static let refresh (m:Map<_,_,'ComparerTag>) t = 
+            Map<_,_,'ComparerTag>(comparer=m.Comparer, tree=t)
 
         member s.Tree = tree
         member s.Comparer : IComparer<'Key> = comparer
