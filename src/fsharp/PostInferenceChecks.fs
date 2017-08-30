@@ -874,8 +874,8 @@ and CheckExprOp cenv env (op,tyargs,args,m) context =
                 errorR(Error(FSComp.SR.chkNoAddressFieldAtThisPoint(fspec.Name), m))
             // permit byref for lhs lvalue
             CheckExprPermitByref cenv env lhs
-        | [ I_ldelema (_,isNativePtr,_,_) ],lhsArray::indices ->
-            if not(isNativePtr) && noByrefs context && cenv.reportErrors then
+        | [ I_ldelema (_,_isNativePtr,_,_) ],lhsArray::indices ->
+            if noByrefs context && cenv.reportErrors then
                 errorR(Error(FSComp.SR.chkNoAddressOfArrayElementAtThisPoint(), m))
             // permit byref for lhs lvalue 
             CheckExprPermitByref cenv env lhsArray
@@ -982,7 +982,7 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
     | _ -> 
         // Permit byrefs for let x = ...
         CheckTypePermitByrefs cenv env m ety
-        if not inlined && isByrefLikeTy cenv.g ety then
+        if not inlined && (isByrefLikeTy cenv.g ety || isNativePtrTy cenv.g ety) then
             // allow byref to occur as RHS of byref binding. 
             CheckExprPermitByref cenv env e
         else 
