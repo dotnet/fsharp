@@ -24,7 +24,7 @@ let check s v1 v2 = test s (v1 = v2)
 
 open System
 open System.IO
-
+open System.Reflection
 open System.Collections.Generic
 
 (* 'a[] :> ICollection<'a> *)
@@ -1705,6 +1705,7 @@ module InliningOnSubTypes1 =
     do check "clkewlijwlkw" (f()) (13, 17) 
 
 
+#if !FX_RESHAPED_REFLECTION
 module StructUnionSingleCase = 
     [<Struct>]
     type S = S
@@ -1732,6 +1733,7 @@ module StructUnionSingleCase =
 
     do check "wekew0ewek5" (typeof<S3>.IsValueType) true
     do check "wekew0ewek5b" (typeof<S3>.BaseType) typeof<System.ValueType>
+#endif
 
 // See https://github.com/Microsoft/visualfsharp/issues/238
 module GenericPropertyConstraintSolvedByRecord = 
