@@ -45,13 +45,13 @@
   // Offset: 0x00000610 Length: 0x00000211
 }
 .module Linq101Aggregates01.exe
-// MVID: {594BFA7F-D281-4783-A745-03837FFA4B59}
+// MVID: {59A6D79A-D281-4783-A745-03839AD7A659}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x002F0000
+// Image base: 0x001E0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -3399,7 +3399,7 @@
     } // end of method 'min@68-2'::.ctor
 
     .method assembly hidebysig instance valuetype [mscorlib]System.Decimal 
-            Invoke(class [Utils]Utils/Product arg) cil managed
+            Invoke(class [Utils]Utils/Product p) cil managed
     {
       // Code size       10 (0xa)
       .maxstack  8
