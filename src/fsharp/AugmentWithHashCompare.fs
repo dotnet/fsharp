@@ -383,7 +383,8 @@ let mkUnionCompare g tcref (tycon:Tycon) =
                tagsEqTested) 
 
     let expr = if tycon.IsStructOrEnumTycon then expr else mkBindNullComparison g m thise thataddre expr
-    thisv,thataddrv, expr
+    let thatv,expr = mkThatVarBind g m ty thataddrv expr
+    thisv,thatv, expr
 
 
 /// Build the comparison implementation for a union type when parameterized by a comparer
@@ -435,7 +436,7 @@ let mkUnionCompareWithComparer g tcref (tycon:Tycon) (_thisv,thise) (_thatobjv,t
             mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m g.int_ty  
               (mkILAsmCeq g m thistage thattage)
               expr
-              (mkAsmExpr ([ IL.AI_sub  ],[],  [thistage; thattage],[g.int_ty],m))in 
+              (mkAsmExpr ([ IL.AI_sub  ],[],  [thistage; thattage],[g.int_ty],m))
         mkCompGenLet m thistagv
           (mkUnionCaseTagGetViaExprAddr (thise,tcref,tinst,m))
           (mkCompGenLet m thattagv
