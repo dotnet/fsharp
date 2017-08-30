@@ -1,5 +1,7 @@
 module Pos28
 
+open FSharp.NativeInterop
+
 module Test1 = 
     [<Struct>]
     type Point =
@@ -17,7 +19,7 @@ module Test2 =
     type Point = { mutable x : int; mutable y : int }
 
     let fixPoint1() =
-        let mutable point = Point(1,2)
-        let p1 = &&point.X
+        let mutable point = Unchecked.defaultof<Point>
+        let p1 = &&point.x
         NativePtr.read<int> p1
 
