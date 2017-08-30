@@ -14571,6 +14571,7 @@ module EstablishTypeDefinitionCores =
         let isStructRecordOrUnionType = 
             match synTyconRepr with
             | SynTypeDefnSimpleRepr.Record _ 
+            | TyconCoreAbbrevThatIsReallyAUnion (hasMeasureAttr,envinner,id) _
             | SynTypeDefnSimpleRepr.Union _ -> 
                 HasFSharpAttribute cenv.g cenv.g.attrib_StructAttribute attrs
             | _ -> 
