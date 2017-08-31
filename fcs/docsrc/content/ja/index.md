@@ -75,4 +75,4 @@ F# インタラクティブサービスも含まれています。
 F# ソースコードの著作権はMicrosoft Corporationおよび貢献者に、
 拡張機能の著作権は Dave Thomas, Anh-Dung Phan, Tomas Petricek および
 その他の貢献者にあります。
-ソースコードは [Apache 2.0 ライセンス](https://github.com/fsharp/FSharp.Compiler.Service/blob/master/LICENSE) の元に公開されています。
+ソースコードは [MIT ライセンス](https://github.com/fsharp/FSharp.Compiler.Service/blob/master/LICENSE) の元に公開されています。
