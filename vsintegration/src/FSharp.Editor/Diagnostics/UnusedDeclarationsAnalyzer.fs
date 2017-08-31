@@ -17,7 +17,7 @@ type internal UnusedDeclarationsAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
     
     static let userOpName = "UnusedDeclarationsAnalyzer"
-    let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().FSharpProjectOptionsManager
+    let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().ProjectInfoManager
     let getChecker (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
     let [<Literal>] DescriptorId = "FS1182"
     

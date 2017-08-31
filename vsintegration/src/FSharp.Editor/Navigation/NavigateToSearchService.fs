@@ -182,7 +182,7 @@ type internal FSharpNavigateToSearchService
     [<ImportingConstructor>] 
     (
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager
+        projectInfoManager: ProjectInfoManager
     ) =
 
     let itemsByDocumentId = ConditionalWeakTable<DocumentId, (int * Index.IIndexedNavigableItems)>()

@@ -19,7 +19,7 @@ type internal FSharpRemoveUnusedOpensCodeFixProvider
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: FSharpProjectOptionsManager
+        projectInfoManager: ProjectInfoManager
     ) =
     inherit CodeFixProvider()
     let fixableDiagnosticIds = [IDEDiagnosticIds.RemoveUnnecessaryImportsDiagnosticId]

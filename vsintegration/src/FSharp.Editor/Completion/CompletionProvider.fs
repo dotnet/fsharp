@@ -27,7 +27,7 @@ type internal FSharpCompletionProvider
         workspace: Workspace,
         serviceProvider: SVsServiceProvider,
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager,
+        projectInfoManager: ProjectInfoManager,
         assemblyContentProvider: AssemblyContentProvider
     ) =
 

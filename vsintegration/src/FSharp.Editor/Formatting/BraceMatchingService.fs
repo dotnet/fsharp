@@ -12,7 +12,7 @@ type internal FSharpBraceMatchingService
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager
+        projectInfoManager: ProjectInfoManager
     ) =
 
     static let userOpName = "BraceMatching"

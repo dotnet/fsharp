@@ -18,7 +18,7 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 
 [<Shared>]
 [<ExportLanguageService(typeof<ILanguageDebugInfoService>, FSharpConstants.FSharpLanguageName)>]
-type internal FSharpLanguageDebugInfoService [<ImportingConstructor>](projectInfoManager: FSharpProjectOptionsManager) =
+type internal FSharpLanguageDebugInfoService [<ImportingConstructor>](projectInfoManager: ProjectInfoManager) =
 
     static member GetDataTipInformation(sourceText: SourceText, position: int, tokens: List<ClassifiedSpan>): TextSpan option =
         let tokenIndex = tokens |> Seq.tryFindIndex(fun t -> t.TextSpan.Contains(position))

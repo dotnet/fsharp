@@ -143,7 +143,7 @@ module private UnusedOpens =
 type internal UnusedOpensDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
     
-    let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().FSharpProjectOptionsManager
+    let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().ProjectInfoManager
     let getChecker (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
 
     static let userOpName = "UnusedOpensAnalyzer"

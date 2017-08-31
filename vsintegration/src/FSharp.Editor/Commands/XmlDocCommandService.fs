@@ -21,7 +21,7 @@ type internal XmlDocCommandFilter
         wpfTextView: IWpfTextView, 
         filePath: string, 
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager,
+        projectInfoManager: ProjectInfoManager,
         workspace: VisualStudioWorkspaceImpl
      ) =
 
@@ -117,7 +117,7 @@ type internal XmlDocCommandFilter
 type internal XmlDocCommandFilterProvider 
     [<ImportingConstructor>] 
     (checkerProvider: FSharpCheckerProvider,
-     projectInfoManager: FSharpProjectOptionsManager,
+     projectInfoManager: ProjectInfoManager,
      workspace: VisualStudioWorkspaceImpl,
      textDocumentFactoryService: ITextDocumentFactoryService,
      editorFactory: IVsEditorAdaptersFactoryService) =

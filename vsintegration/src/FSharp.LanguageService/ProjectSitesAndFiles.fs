@@ -14,7 +14,7 @@
 // through the nodes of the hierarchy for the F# project. There seems to be an essentially duplicated
 // version of this code in this file.
 //
-// In our LanguageService.fs, FSharpProjectOptionsManager uses this IProjectSite information to incrementally maintain
+// In our LanguageService.fs, ProjectInfoManager uses this IProjectSite information to incrementally maintain
 // a corresponding F# CompilerService FSharpProjectOptions value. 
 //
 // In our LanguageService.fs, we also use this IProjectSite information to maintain a
@@ -27,7 +27,7 @@
 //    project.AddProjectReference
 // 
 // The new F# project system supplies the project information using a Roslyn project in the workspace.
-// This means a lot of the stuff above is irrelevant in that case, apart from where FSharpProjectOptionsManager
+// This means a lot of the stuff above is irrelevant in that case, apart from where ProjectInfoManager
 // incrementally maintains a corresponding F# CompilerService FSharpProjectOptions value. 
 
 namespace Microsoft.VisualStudio.FSharp.LanguageService
@@ -39,6 +39,7 @@ open System.Runtime.InteropServices
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.Shell.Interop
+open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
 /// An additional interface that an IProjectSite object can implement to indicate it has an FSharpProjectOptions 
@@ -46,7 +47,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 type private IHaveCheckOptions = 
     abstract OriginalCheckOptions : unit -> string[] * FSharpProjectOptions
         
-/// Convert from FSharpProjectOptions into IProjectSite.         
+/// Convert from FSharpProjectOptions into IProjectSite.
 type private ProjectSiteOfScriptFile(filename:string, referencedProjectFileNames, checkOptions : FSharpProjectOptions) = 
     interface IProjectSite with
         override this.SourceFilesOnDisk() = checkOptions.SourceFiles
@@ -62,7 +63,8 @@ type private ProjectSiteOfScriptFile(filename:string, referencedProjectFileNames
         override this.ProjectGuid = ""
         override this.LoadTime = checkOptions.LoadTime
         override this.ProjectProvider = None
-        override this.AssemblyReferences() = [||]
+        override this.AssemblyReferences() = checkOptions.OriginalLoadReferences |> List.map(fun (_,p) -> p) |> List.toArray
+
 
     interface IHaveCheckOptions with
         override this.OriginalCheckOptions() = (referencedProjectFileNames, checkOptions)
@@ -182,7 +184,7 @@ type internal ProjectSitesAndFiles() =
              UseScriptResolutionRules = SourceFile.MustBeSingleFileProject fileName
              LoadTime = projectSite.LoadTime
              UnresolvedReferences = None
-             OriginalLoadReferences = []
+             OriginalLoadReferences =  (projectSite.AssemblyReferences() |> Array.map(fun s -> rangeCmdArgs, s) |> Array.toList)
              ExtraProjectInfo=extraProjectInfo 
              Stamp = (if useUniqueStamp then (stamp <- stamp + 1L; Some stamp) else None) }   
         referencedProjectFileNames, options
@@ -192,10 +194,8 @@ type internal ProjectSitesAndFiles() =
         if SourceFile.MustBeSingleFileProject(filename) then 
             Debug.Assert(false, ".fsx or .fsscript should have been treated as implicit project")
             failwith ".fsx or .fsscript should have been treated as implicit project"
-
         new ProjectSiteOfSingleFile(filename) :> IProjectSite
-    
-        
+
     static member GetReferencedProjectSites(projectSite:IProjectSite, serviceProvider:System.IServiceProvider) =
         referencedProvideProjectSites (projectSite, serviceProvider)
         |> Seq.map (fun (_, ps) -> ps.GetProjectSite())

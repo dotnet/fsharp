@@ -12,7 +12,7 @@ type internal FSharpProposeUpperCaseLabelCodeFixProvider
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: FSharpProjectOptionsManager
+        projectInfoManager: ProjectInfoManager
     ) =
     inherit CodeFixProvider()
     let fixableDiagnosticIds = ["FS0053"]

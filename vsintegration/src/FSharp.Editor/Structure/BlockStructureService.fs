@@ -139,7 +139,7 @@ module internal BlockStructure =
 
 open BlockStructure
  
-type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoManager: FSharpProjectOptionsManager) =
+type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoManager: ProjectInfoManager) =
     inherit BlockStructureService()
         
     static let userOpName = "BlockStructure"
@@ -158,7 +158,7 @@ type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoMan
         |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
 
 [<ExportLanguageServiceFactory(typeof<BlockStructureService>, FSharpConstants.FSharpLanguageName); Shared>]
-type internal FSharpBlockStructureServiceFactory [<ImportingConstructor>](checkerProvider: FSharpCheckerProvider, projectInfoManager: FSharpProjectOptionsManager) =
+type internal FSharpBlockStructureServiceFactory [<ImportingConstructor>](checkerProvider: FSharpCheckerProvider, projectInfoManager: ProjectInfoManager) =
     interface ILanguageServiceFactory with
         member __.CreateLanguageService(_languageServices) =
             upcast FSharpBlockStructureService(checkerProvider.Checker, projectInfoManager)

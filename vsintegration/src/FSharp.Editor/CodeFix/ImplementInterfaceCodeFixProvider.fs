@@ -29,7 +29,7 @@ type internal FSharpImplementInterfaceCodeFixProvider
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: FSharpProjectOptionsManager
+        projectInfoManager: ProjectInfoManager
     ) =
     inherit CodeFixProvider()
     let fixableDiagnosticIds = ["FS0366"]

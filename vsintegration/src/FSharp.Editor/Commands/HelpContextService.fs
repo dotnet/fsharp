@@ -19,7 +19,7 @@ type internal FSharpHelpContextService
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager
+        projectInfoManager: ProjectInfoManager
     ) =
 
     static let userOpName = "ImplementInterfaceCodeFix"

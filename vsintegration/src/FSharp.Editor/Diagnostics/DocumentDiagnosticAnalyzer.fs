@@ -30,7 +30,7 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
         document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
 
     let getProjectInfoManager(document: Document) =
-        document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().FSharpProjectOptionsManager
+        document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().ProjectInfoManager
     
     static let errorInfoEqualityComparer =
         { new IEqualityComparer<FSharpErrorInfo> with 

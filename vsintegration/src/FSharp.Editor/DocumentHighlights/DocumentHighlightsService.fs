@@ -23,7 +23,7 @@ type internal FSharpHighlightSpan =
 
 [<Shared>]
 [<ExportLanguageService(typeof<IDocumentHighlightsService>, FSharpConstants.FSharpLanguageName)>]
-type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerProvider: FSharpCheckerProvider, projectInfoManager: FSharpProjectOptionsManager) =
+type internal FSharpDocumentHighlightsService [<ImportingConstructor>] (checkerProvider: FSharpCheckerProvider, projectInfoManager: ProjectInfoManager) =
 
     static let userOpName = "DocumentHighlights"
 

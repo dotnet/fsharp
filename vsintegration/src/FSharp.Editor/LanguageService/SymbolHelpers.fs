@@ -16,7 +16,7 @@ open Microsoft.VisualStudio.FSharp.Editor.Symbols
 
 module internal SymbolHelpers =
     let getSymbolUsesInSolution (symbol: FSharpSymbol, declLoc: SymbolDeclarationLocation, checkFileResults: FSharpCheckFileResults,
-                                 projectInfoManager: FSharpProjectOptionsManager, checker: FSharpChecker, solution: Solution, userOpName) =
+                                 projectInfoManager: ProjectInfoManager, checker: FSharpChecker, solution: Solution, userOpName) =
         async {
             let! symbolUses =
                 match declLoc with
@@ -63,7 +63,7 @@ module internal SymbolHelpers =
 
     type OriginalText = string
 
-    let changeAllSymbolReferences (document: Document, symbolSpan: TextSpan, textChanger: string -> string, projectInfoManager: FSharpProjectOptionsManager, checker: FSharpChecker, userOpName)
+    let changeAllSymbolReferences (document: Document, symbolSpan: TextSpan, textChanger: string -> string, projectInfoManager: ProjectInfoManager, checker: FSharpChecker, userOpName)
         : Async<(Func<CancellationToken, Task<Solution>> * OriginalText) option> =
         asyncMaybe {
             do! Option.guard (symbolSpan.Length > 0)

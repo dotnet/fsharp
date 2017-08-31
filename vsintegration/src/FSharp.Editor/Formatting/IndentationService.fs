@@ -18,7 +18,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 [<ExportLanguageService(typeof<ISynchronousIndentationService>, FSharpConstants.FSharpLanguageName)>]
 type internal FSharpIndentationService
     [<ImportingConstructor>]
-    (projectInfoManager: FSharpProjectOptionsManager) =
+    (projectInfoManager: ProjectInfoManager) =
 
     static member GetDesiredIndentation(documentId: DocumentId, sourceText: SourceText, filePath: string, lineNumber: int, tabSize: int, optionsOpt: FSharpProjectOptions option): Option<int> =
         // Match indentation with previous line

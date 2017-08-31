@@ -23,7 +23,7 @@ type internal FSharpBreakpointResolutionService
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager
+        projectInfoManager: ProjectInfoManager
     ) =
 
     static let userOpName = "BreakpointResolution"
