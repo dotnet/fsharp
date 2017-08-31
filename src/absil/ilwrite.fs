@@ -1415,7 +1415,7 @@ and GetCustomAttrRow cenv hca attr =
     let cat = GetMethodRefAsCustomAttribType cenv attr.Method.MethodRef
     for element in attr.Elements do
         match element with
-        | ILAttribElem.Type (Some ty) -> GetTypeRefAsTypeRefIdx cenv ty.TypeRef |> ignore
+        | ILAttribElem.Type (Some ty) when ty.IsNominal -> GetTypeRefAsTypeRefIdx cenv ty.TypeRef |> ignore
         | ILAttribElem.TypeRef (Some tref) -> GetTypeRefAsTypeRefIdx cenv tref  |> ignore
         | _ -> ()
 
