@@ -114,7 +114,7 @@ let _ = CSharpOuterClass.InnerClass.StaticMember()
           [|"InnerEnum"; "CSharpOuterClass"; "field Case1"; "InnerClass";
             "CSharpOuterClass"; "member StaticMember"; "NestedEnumClass"|]
 
-[<Test; Ignore("Ignored due to fail to load CSharp_Analysis.dll")>]
+[<Test>]
 let ``Ctor test`` () =
     let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
     let content = """
