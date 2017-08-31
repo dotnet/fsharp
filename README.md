@@ -48,7 +48,7 @@ To contribute to the F# ecosystem more generally see the F# Software Foundation'
 
 ### License
 
-This project is subject to the Apache Licence, Version 2.0. A copy of the license can be found in [License.txt](License.txt) at the root of this repo.
+This project is subject to the MIT License. A copy of this license can be found in [License.txt](License.txt) at the root of this repo.
 
 
 ## Using
