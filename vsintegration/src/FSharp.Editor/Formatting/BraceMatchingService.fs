@@ -24,7 +24,9 @@ type internal FSharpBraceMatchingService
             let isPositionInRange range = 
                 match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
                 | None -> false
-                | Some range -> position - range.Start <= range.Length
+                | Some range ->
+                    let length = position - range.Start
+                    length >= 0 && length <= range.Length
             return matchedBraces |> Array.tryFind(fun (left, right) -> isPositionInRange left || isPositionInRange right)
         }
         
