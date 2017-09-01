@@ -93,6 +93,7 @@
     <Compile Include="CodeFix\RemoveUnusedOpens.fs" />
     <Compile Include="CodeFix\MissingReferenceCodeFixProvider.fs" />
     <Compile Include="CodeFix\FixIndexerAccess.fs" />
+    <Compile Include="CodeFix\RenameParamToMatchSignature.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
