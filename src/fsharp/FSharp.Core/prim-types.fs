@@ -2781,21 +2781,21 @@ namespace Microsoft.FSharp.Core
               inherit FSharpFunc<'T,('U -> 'V)>()
               abstract Invoke : 'T * 'U -> 'V
               override f.Invoke(t) = (fun u -> f.Invoke(t,u))
-              static member Adapt(f : 'T -> 'U -> 'V) = 
-                  match box f with 
+              static member Adapt(func : 'T -> 'U -> 'V) = 
+                  match box func with 
                   // Does it take two arguments without side effect?
                   | :? FSharpFunc<'T,'U,'V> as f -> f
 
                   | _ -> { new FSharpFunc<'T,'U,'V>() with 
-                              member x.Invoke(t,u) = (retype f : FSharpFunc<'T,FSharpFunc<'U,'V>>).Invoke(t).Invoke(u) }
+                              member x.Invoke(t,u) = (retype func : FSharpFunc<'T,FSharpFunc<'U,'V>>).Invoke(t).Invoke(u) }
 
           [<AbstractClass>]
           type FSharpFunc<'T,'U,'V,'W>() = 
               inherit FSharpFunc<'T,('U -> 'V -> 'W)>()
               abstract Invoke : 'T * 'U * 'V -> 'W
               override f.Invoke(t) = (fun u v -> f.Invoke(t,u,v))
-              static member Adapt(f : 'T -> 'U -> 'V -> 'W) = 
-                  match box f with 
+              static member Adapt(func : 'T -> 'U -> 'V -> 'W) = 
+                  match box func with 
                   // Does it take three arguments without side effect?
                   | :? FSharpFunc<'T,'U,'V,'W> as f -> f
 
@@ -2805,7 +2805,7 @@ namespace Microsoft.FSharp.Core
                               member x.Invoke(t,u,v) = f.Invoke(t,u).Invoke(v) }
 
                   | _ -> { new FSharpFunc<'T,'U,'V,'W>() with 
-                              member x.Invoke(t,u,v) = (retype f : FSharpFunc<'T,('U -> 'V -> 'W)>).Invoke(t) u v }
+                              member x.Invoke(t,u,v) = (retype func : FSharpFunc<'T,('U -> 'V -> 'W)>).Invoke(t) u v }
 
           [<AbstractClass>]
           type FSharpFunc<'T,'U,'V,'W,'X>() = 
