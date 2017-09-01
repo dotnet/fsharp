@@ -6,9 +6,9 @@
 #nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
 #nowarn "60" // Override implementations in augmentations are now deprecated. Override implementations should be given as part of the initial declaration of a type.
 #nowarn "61" // The containing type can use 'null' as a representation value for its nullary union case. This member will be compiled as a static member.
-#nowarn "62" // The syntax 'module ... : sig .. end' is for ML compatibility. Consider using 'module ... = begin .. end'.
 #nowarn "69" // Interface implementations in augmentations are now deprecated. Interface implementations should be given on the initial declaration of a type.
 #nowarn "77" // Member constraints with the name 'Exp' are given special status by the F# compiler as certain .NET types are implicitly augmented with this member. This may result in compilation failures if you attempt to invoke the member constraint from your own code.
+#nowarn "3218" // mismatch of parameter name for 'fst' and 'snd'
 
 namespace Microsoft.FSharp.Core
 
@@ -380,12 +380,12 @@ namespace Microsoft.FSharp.Core
             member inline this.IsGenericType = this.GetTypeInfo().IsGenericType
             member inline this.IsValueType = this.GetTypeInfo().IsValueType
             member inline this.IsSealed = this.GetTypeInfo().IsSealed
-            member inline this.IsAssignableFrom(otherTy : Type) = this.GetTypeInfo().IsAssignableFrom(otherTy.GetTypeInfo())
+            member inline this.IsAssignableFrom(otherType: Type) = this.GetTypeInfo().IsAssignableFrom(otherType.GetTypeInfo())
             member inline this.GetGenericArguments() = this.GetTypeInfo().GenericTypeArguments
             member inline this.GetProperty(name) = this.GetRuntimeProperty(name)
             member inline this.GetMethod(name, parameterTypes) = this.GetRuntimeMethod(name, parameterTypes)
-            member inline this.GetCustomAttributes(attrTy : Type, inherits : bool) : obj[] = 
-                unboxPrim<_> (box (CustomAttributeExtensions.GetCustomAttributes(this.GetTypeInfo(), attrTy, inherits).ToArray()))
+            member inline this.GetCustomAttributes(attributeType: Type, inherits: bool) : obj[] = 
+                unboxPrim<_> (box (CustomAttributeExtensions.GetCustomAttributes(this.GetTypeInfo(), attributeType, inherits).ToArray()))
 
     open PrimReflectionAdapters
 
@@ -525,11 +525,11 @@ namespace Microsoft.FSharp.Core
             //-------------------------------------------------------------------------
             // Lazy and/or.  Laziness added by the F# compiler.
             
-            let (&) x y = if x then y else false
-            let (&&) x y = if x then y else false
+            let (&) e1 e2 = if e1 then e2 else false
+            let (&&) e1 e2 = if e1 then e2 else false
             [<CompiledName("Or")>]
-            let (or) x y = if x then true else y
-            let (||) x y = if x then true else y
+            let (or) e1 e2 = if e1 then true else e2
+            let (||) e1 e2 = if e1 then true else e2
             
             //-------------------------------------------------------------------------
             // Address-of
@@ -537,14 +537,14 @@ namespace Microsoft.FSharp.Core
             // Byref usage checks prohibit type instantiations involving byrefs.
 
             [<NoDynamicInvocation>]
-            let inline (~&)  (x : 'T) : 'T byref     = 
-                ignore x // pretend the variable is used
+            let inline (~&)  (obj : 'T) : 'T byref     = 
+                ignore obj // pretend the variable is used
                 let e = new System.ArgumentException(ErrorStrings.AddressOpNotFirstClassString) 
                 (# "throw" (e :> System.Exception) : 'T byref #)
                  
             [<NoDynamicInvocation>]
-            let inline (~&&) (x : 'T) : nativeptr<'T> = 
-                ignore x // pretend the variable is used
+            let inline (~&&) (obj : 'T) : nativeptr<'T> = 
+                ignore obj // pretend the variable is used
                 let e = new System.ArgumentException(ErrorStrings.AddressOpNotFirstClassString) 
                 (# "throw" (e :> System.Exception) : nativeptr<'T> #)     
           
@@ -609,55 +609,54 @@ namespace Microsoft.FSharp.Core
             //  IL_0006:  brtrue.s   IL_000e
 
             // worst case: nothing known about source or destination
-            let UnboxGeneric<'T>(x:obj) = 
-                if notnullPrim(x) or TypeInfo<'T>.TypeInfo <> TypeNullnessSemantics_NullNotLiked then 
-                    unboxPrim<'T>(x)
+            let UnboxGeneric<'T>(source: obj) = 
+                if notnullPrim(source) or TypeInfo<'T>.TypeInfo <> TypeNullnessSemantics_NullNotLiked then 
+                    unboxPrim<'T>(source)
                 else
                     //System.Console.WriteLine("UnboxGeneric, x = {0}, 'T = {1}", x, typeof<'T>)
                     raise (System.NullReferenceException()) 
 
             // better: source is NOT TypeNullnessSemantics_NullNotLiked 
-            let inline UnboxFast<'T>(x:obj) = 
+            let inline UnboxFast<'T>(source: obj) = 
                 // assert not(TypeInfo<'T>.TypeInfo = TypeNullnessSemantics_NullNotLiked)
-                unboxPrim<'T>(x)
+                unboxPrim<'T>(source)
 
 
             // worst case: nothing known about source or destination
-            let TypeTestGeneric<'T>(x:obj) = 
-                if notnullPrim(isinstPrim<'T>(x)) then true
-                elif notnullPrim(x) then false
+            let TypeTestGeneric<'T>(source: obj) = 
+                if notnullPrim(isinstPrim<'T>(source)) then true
+                elif notnullPrim(source) then false
                 else (TypeInfo<'T>.TypeInfo = TypeNullnessSemantics_NullTrueValue)
 
             // quick entry: source is NOT TypeNullnessSemantics_NullTrueValue 
-            let inline TypeTestFast<'T>(x:obj) = 
+            let inline TypeTestFast<'T>(source: obj) = 
                 //assert not(TypeInfo<'T>.TypeInfo = TypeNullnessSemantics_NullTrueValue)
-                notnullPrim(isinstPrim<'T>(x)) 
+                notnullPrim(isinstPrim<'T>(source)) 
 
-            let Dispose<'T when 'T :> System.IDisposable >(x:'T) = 
-                match box x with 
+            let Dispose<'T when 'T :> IDisposable >(resource:'T) = 
+                match box resource with 
                 | null -> ()
-                | _ -> x.Dispose()
+                | _ -> resource.Dispose()
 
-            let FailInit() : unit = raise (System.InvalidOperationException(SR.GetString(SR.checkInit)))
+            let FailInit() : unit = raise (InvalidOperationException(SR.GetString(SR.checkInit)))
 
-            let FailStaticInit() : unit = raise (System.InvalidOperationException(SR.GetString(SR.checkStaticInit)))
+            let FailStaticInit() : unit = raise (InvalidOperationException(SR.GetString(SR.checkStaticInit)))
 
             let CheckThis (x : 'T when 'T : not struct) = 
                 match box x with 
-                | null -> raise (System.InvalidOperationException(SR.GetString(SR.checkInit)))
+                | null -> raise (InvalidOperationException(SR.GetString(SR.checkInit)))
                 | _ -> x
 
-            let inline MakeDecimal lo med hi isNegative scale =  new System.Decimal(lo,med,hi,isNegative,scale)
+            let inline MakeDecimal low medium high isNegative scale =  Decimal(low,medium,high,isNegative,scale)
 
-            let inline GetString (s: string) (n:int) =   s.Chars(n)
+            let inline GetString (source: string) (index:int) =   source.Chars(index)
 
             let inline CreateInstance<'T when 'T : (new : unit -> 'T) >() = 
                  (System.Activator.CreateInstance() : 'T)
 
+            let inline GetArray (source: 'T array) (index:int) =  (# "ldelem.any !0" type ('T) source index : 'T #)  
 
-            let inline GetArray (arr: 'T array) (n:int) =  (# "ldelem.any !0" type ('T) arr n : 'T #)  
-            let inline SetArray (arr: 'T array) (n:int) (x:'T) =  (# "stelem.any !0" type ('T) arr n x #)  
-
+            let inline SetArray (target: 'T array) (index:int) (value:'T) =  (# "stelem.any !0" type ('T) target index value #)  
 
             let inline GetArraySub arr (start:int) (len:int) =
                 let len = if len < 0 then 0 else len
@@ -671,8 +670,10 @@ namespace Microsoft.FSharp.Core
                     SetArray arr (start+i) (GetArray src i)
 
 
-            let inline GetArray2D (arr: 'T[,])  (n1:int) (n2:int)                 = (# "ldelem.multi 2 !0" type ('T) arr n1 n2 : 'T #)  
-            let inline SetArray2D (arr: 'T[,])  (n1:int) (n2:int) (x:'T)          = (# "stelem.multi 2 !0" type ('T) arr n1 n2 x #)  
+            let inline GetArray2D (source: 'T[,]) (index1: int) (index2: int) = (# "ldelem.multi 2 !0" type ('T) source index1 index2 : 'T #)  
+
+            let inline SetArray2D (target: 'T[,]) (index1: int) (index2: int) (value: 'T) = (# "stelem.multi 2 !0" type ('T) target index1 index2 value #)  
+
             let inline GetArray2DLength1 (arr: 'T[,]) =  (# "ldlen.multi 2 0" arr : int #)  
             let inline GetArray2DLength2 (arr: 'T[,]) =  (# "ldlen.multi 2 1" arr : int #)  
 
@@ -692,10 +693,16 @@ namespace Microsoft.FSharp.Core
                         SetArray2D dst (src1+i) (src2+j) (GetArray2D src i j)
 
 
-            let inline GetArray3D (arr: 'T[,,]) (n1:int) (n2:int) (n3:int)        = (# "ldelem.multi 3 !0" type ('T) arr n1 n2 n3 : 'T #)  
-            let inline SetArray3D (arr: 'T[,,]) (n1:int) (n2:int) (n3:int) (x:'T) = (# "stelem.multi 3 !0" type ('T) arr n1 n2 n3 x #)  
+            let inline GetArray3D (source: 'T[,,]) (index1: int) (index2: int) (index3: int) = 
+                (# "ldelem.multi 3 !0" type ('T) source index1 index2 index3 : 'T #)  
+
+            let inline SetArray3D (target: 'T[,,]) (index1: int) (index2: int) (index3: int) (value:'T) = 
+                (# "stelem.multi 3 !0" type ('T) target index1 index2 index3 value #)  
+
             let inline GetArray3DLength1 (arr: 'T[,,]) =  (# "ldlen.multi 3 0" arr : int #)  
+
             let inline GetArray3DLength2 (arr: 'T[,,]) =  (# "ldlen.multi 3 1" arr : int #)  
+
             let inline GetArray3DLength3 (arr: 'T[,,]) =  (# "ldlen.multi 3 2" arr : int #)  
 
             let inline Array3DZeroCreate (n1:int) (n2:int) (n3:int) = (# "newarr.multi 3 !0" type ('T) n1 n2 n3 : 'T[,,] #)
@@ -718,11 +725,18 @@ namespace Microsoft.FSharp.Core
                             SetArray3D dst (src1+i) (src2+j) (src3+k) (GetArray3D src i j k)
 
 
-            let inline GetArray4D (arr: 'T[,,,]) (n1:int) (n2:int) (n3:int) (n4:int)       = (# "ldelem.multi 4 !0" type ('T) arr n1 n2 n3 n4 : 'T #)  
-            let inline SetArray4D (arr: 'T[,,,]) (n1:int) (n2:int) (n3:int) (n4:int) (x:'T) = (# "stelem.multi 4 !0" type ('T) arr n1 n2 n3 n4 x #)  
+            let inline GetArray4D (source: 'T[,,,]) (index1: int) (index2: int) (index3: int) (index4: int) = 
+                (# "ldelem.multi 4 !0" type ('T) source index1 index2 index3 index4 : 'T #)  
+
+            let inline SetArray4D (target: 'T[,,,]) (index1: int) (index2: int) (index3: int) (index4: int) (value:'T) = 
+                (# "stelem.multi 4 !0" type ('T) target index1 index2 index3 index4 value #)  
+
             let inline Array4DLength1 (arr: 'T[,,,]) =  (# "ldlen.multi 4 0" arr : int #)  
+
             let inline Array4DLength2 (arr: 'T[,,,]) =  (# "ldlen.multi 4 1" arr : int #)  
+
             let inline Array4DLength3 (arr: 'T[,,,]) =  (# "ldlen.multi 4 2" arr : int #)  
+
             let inline Array4DLength4 (arr: 'T[,,,]) =  (# "ldlen.multi 4 3" arr : int #)  
 
             let inline Array4DZeroCreate (n1:int) (n2:int) (n3:int) (n4:int) = (# "newarr.multi 4 !0" type ('T) n1 n2 n3 n4 : 'T[,,,] #)
@@ -769,11 +783,11 @@ namespace Microsoft.FSharp.Core
             let inline PhysicalEqualityFast (x:'T) (y:'T) : bool when 'T : not struct  = 
                 PhysicalEqualityIntrinsic x y
           
-            let PhysicalHashIntrinsic (x: 'T) : int when 'T : not struct  = 
-                System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(box x)
+            let PhysicalHashIntrinsic (input: 'T) : int when 'T : not struct  = 
+                System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(box input)
 
-            let inline PhysicalHashFast (x: 'T) = 
-                PhysicalHashIntrinsic x
+            let inline PhysicalHashFast (input: 'T) = 
+                PhysicalHashIntrinsic input
 
 
             //-------------------------------------------------------------------------
@@ -1777,10 +1791,10 @@ namespace Microsoft.FSharp.Core
             //
             // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_inner_vref in opt.fs)
             // and devirtualizes calls to it based on type "T".
-            let GenericHashIntrinsic x = GenericHashParamObj fsEqualityComparerUnlimitedHashingPER (box(x))
+            let GenericHashIntrinsic input = GenericHashParamObj fsEqualityComparerUnlimitedHashingPER (box input)
 
             /// Intrinsic for calls to depth-limited structural hashing that were not optimized by static conditionals.
-            let LimitedGenericHashIntrinsic limit x = GenericHashParamObj (CountLimitedHasherPER(limit)) (box(x))
+            let LimitedGenericHashIntrinsic limit input = GenericHashParamObj (CountLimitedHasherPER(limit)) (box input)
 
             /// Intrinsic for a recursive call to structural hashing that was not optimized by static conditionals.
             //
@@ -1789,8 +1803,8 @@ namespace Microsoft.FSharp.Core
             //
             // NOTE: The compiler optimizer is aware of this function (see uses of generic_hash_withc_inner_vref in opt.fs)
             // and devirtualizes calls to it based on type "T".
-            let GenericHashWithComparerIntrinsic<'T> (iec : System.Collections.IEqualityComparer) (x : 'T) : int =
-                GenericHashParamObj iec (box(x))
+            let GenericHashWithComparerIntrinsic<'T> (comp : System.Collections.IEqualityComparer) (input : 'T) : int =
+                GenericHashParamObj comp (box input)
                 
             /// Direct call to GetHashCode on the string type
             let inline HashString (s:string) = 
@@ -1869,7 +1883,8 @@ namespace Microsoft.FSharp.Core
             // 
             // Because the function subsequently gets inlined, the calls to GenericHashWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
-            let inline FastHashTuple2 (comparer:System.Collections.IEqualityComparer) (x1,x2) = 
+            let inline FastHashTuple2 (comparer:System.Collections.IEqualityComparer) tuple = 
+                let (x1,x2) = tuple
                 TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x1) (GenericHashWithComparerFast comparer x2)
 
             /// Compiler intrinsic generated for devirtualized calls to structural hashing on tuples.  
@@ -1879,7 +1894,8 @@ namespace Microsoft.FSharp.Core
             //
             // Because the function subsequently gets inlined, the calls to GenericHashWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
-            let inline FastHashTuple3 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3) =
+            let inline FastHashTuple3 (comparer:System.Collections.IEqualityComparer) tuple =
+                let (x1,x2,x3) = tuple
                 TupleUtils.combineTupleHashes (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x1) (GenericHashWithComparerFast comparer x2)) (GenericHashWithComparerFast comparer x3)
 
             /// Compiler intrinsic generated for devirtualized calls to structural hashing on tuples.  
@@ -1889,7 +1905,8 @@ namespace Microsoft.FSharp.Core
             //
             // Because the function subsequently gets inlined, the calls to GenericHashWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
-            let inline FastHashTuple4 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3,x4) = 
+            let inline FastHashTuple4 (comparer:System.Collections.IEqualityComparer) tuple = 
+                let (x1,x2,x3,x4) = tuple
                 TupleUtils.combineTupleHashes (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x1) (GenericHashWithComparerFast comparer x2)) (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x3) (GenericHashWithComparerFast comparer x4))
 
             /// Compiler intrinsic generated for devirtualized calls to structural hashing on tuples.  
@@ -1899,7 +1916,8 @@ namespace Microsoft.FSharp.Core
             //
             // Because the function subsequently gets inlined, the calls to GenericHashWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
-            let inline FastHashTuple5 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3,x4,x5) = 
+            let inline FastHashTuple5 (comparer:System.Collections.IEqualityComparer) tuple = 
+                let (x1,x2,x3,x4,x5) = tuple
                 TupleUtils.combineTupleHashes (TupleUtils.combineTupleHashes (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x1) (GenericHashWithComparerFast comparer x2)) (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x3) (GenericHashWithComparerFast comparer x4))) (GenericHashWithComparerFast comparer x5)
 
             /// Compiler intrinsic generated for devirtualized calls to PER-semantic structural equality on tuples
@@ -1909,7 +1927,9 @@ namespace Microsoft.FSharp.Core
             // 
             // Because the function subsequently gets inlined, the calls to GenericEqualityWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
-            let inline FastEqualsTuple2 (comparer:System.Collections.IEqualityComparer) (x1,x2) (y1,y2) = 
+            let inline FastEqualsTuple2 (comparer:System.Collections.IEqualityComparer) tuple1 tuple2 = 
+                let (x1,x2) = tuple1
+                let (y1,y2) = tuple2
                 GenericEqualityWithComparerFast comparer x1 y1 &&
                 GenericEqualityWithComparerFast comparer x2 y2
 
@@ -1920,7 +1940,9 @@ namespace Microsoft.FSharp.Core
             // 
             // Because the function subsequently gets inlined, the calls to GenericEqualityWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
-            let inline FastEqualsTuple3 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3) (y1,y2,y3) = 
+            let inline FastEqualsTuple3 (comparer:System.Collections.IEqualityComparer) tuple1 tuple2 = 
+                let (x1,x2,x3) = tuple1
+                let (y1,y2,y3) = tuple2
                 GenericEqualityWithComparerFast comparer x1 y1 &&
                 GenericEqualityWithComparerFast comparer x2 y2 &&
                 GenericEqualityWithComparerFast comparer x3 y3
@@ -1932,7 +1954,9 @@ namespace Microsoft.FSharp.Core
             // 
             // Because the function subsequently gets inlined, the calls to GenericEqualityWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
-            let inline FastEqualsTuple4 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3,x4) (y1,y2,y3,y4) = 
+            let inline FastEqualsTuple4 (comparer:System.Collections.IEqualityComparer) tuple1 tuple2 = 
+                let (x1,x2,x3,x4) = tuple1
+                let (y1,y2,y3,y4) = tuple2
                 GenericEqualityWithComparerFast comparer x1 y1 &&
                 GenericEqualityWithComparerFast comparer x2 y2 &&
                 GenericEqualityWithComparerFast comparer x3 y3 &&
@@ -1945,7 +1969,9 @@ namespace Microsoft.FSharp.Core
             // 
             // Because the function subsequently gets inlined, the calls to GenericEqualityWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
-            let inline FastEqualsTuple5 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3,x4,x5) (y1,y2,y3,y4,y5) = 
+            let inline FastEqualsTuple5 (comparer:System.Collections.IEqualityComparer) tuple1 tuple2 = 
+                let (x1,x2,x3,x4,x5) = tuple1
+                let (y1,y2,y3,y4,y5) = tuple2
                 GenericEqualityWithComparerFast comparer x1 y1 &&
                 GenericEqualityWithComparerFast comparer x2 y2 &&
                 GenericEqualityWithComparerFast comparer x3 y3 &&
@@ -1959,7 +1985,9 @@ namespace Microsoft.FSharp.Core
             // 
             // Because the function subsequently gets inlined, the calls to GenericComparisonWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
-            let inline FastCompareTuple2 (comparer:System.Collections.IComparer) (x1,x2) (y1,y2) =
+            let inline FastCompareTuple2 (comparer:System.Collections.IComparer)  tuple1 tuple2 =
+                let (x1,x2) = tuple1
+                let (y1,y2) = tuple2
                 let  n = GenericComparisonWithComparerFast comparer x1 y1
                 if n <> 0 then n else
                 GenericComparisonWithComparerFast comparer x2 y2
@@ -1971,7 +1999,9 @@ namespace Microsoft.FSharp.Core
             // 
             // Because the function subsequently gets inlined, the calls to GenericComparisonWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
-            let inline FastCompareTuple3 (comparer:System.Collections.IComparer) (x1,x2,x3) (y1,y2,y3) =
+            let inline FastCompareTuple3 (comparer:System.Collections.IComparer) tuple1 tuple2 =
+                let (x1,x2,x3) = tuple1
+                let (y1,y2,y3) = tuple2
                 let  n = GenericComparisonWithComparerFast comparer x1 y1
                 if n <> 0 then n else
                 let  n = GenericComparisonWithComparerFast comparer x2 y2
@@ -1985,7 +2015,9 @@ namespace Microsoft.FSharp.Core
             // 
             // Because the function subsequently gets inlined, the calls to GenericComparisonWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
-            let inline FastCompareTuple4 (comparer:System.Collections.IComparer) (x1,x2,x3,x4) (y1,y2,y3,y4) = 
+            let inline FastCompareTuple4 (comparer:System.Collections.IComparer) tuple1 tuple2 = 
+                let (x1,x2,x3,x4) = tuple1
+                let (y1,y2,y3,y4) = tuple2
                 let  n = GenericComparisonWithComparerFast comparer x1 y1
                 if n <> 0 then n else
                 let  n = GenericComparisonWithComparerFast comparer x2 y2
@@ -2001,7 +2033,9 @@ namespace Microsoft.FSharp.Core
             // 
             // Because the function subsequently gets inlined, the calls to GenericComparisonWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
-            let inline FastCompareTuple5 (comparer:System.Collections.IComparer) (x1,x2,x3,x4,x5) (y1,y2,y3,y4,y5) =
+            let inline FastCompareTuple5 (comparer:System.Collections.IComparer) tuple1 tuple2 =
+                let (x1,x2,x3,x4,x5) = tuple1
+                let (y1,y2,y3,y4,y5) = tuple2
                 let  n = GenericComparisonWithComparerFast comparer x1 y1
                 if n <> 0 then n else
                 let  n = GenericComparisonWithComparerFast comparer x2 y2
@@ -2016,43 +2050,52 @@ namespace Microsoft.FSharp.Core
         // LanguagePrimitives: PUBLISH HASH, EQUALITY AND COMPARISON FUNCTIONS.  
         //------------------------------------------------------------------------- 
 
-
-
         // Publish the intrinsic plus the static optimization conditionals
-        let inline GenericEquality               x y = HashCompare.GenericEqualityFast               x y
+        let inline GenericEquality e1 e2 = HashCompare.GenericEqualityFast e1 e2
 
-        let inline GenericEqualityER            x y = HashCompare.GenericEqualityERFast            x y
-        let inline GenericEqualityWithComparer comp   x y = HashCompare.GenericEqualityWithComparerFast   comp x y
-        let inline GenericComparison             x y = HashCompare.GenericComparisonFast             x y
-        let inline GenericComparisonWithComparer comp x y = HashCompare.GenericComparisonWithComparerFast comp x y
-        let inline GenericLessThan               x y = HashCompare.GenericLessThanFast               x y
-        let inline GenericGreaterThan            x y = HashCompare.GenericGreaterThanFast            x y
-        let inline GenericLessOrEqual            x y = HashCompare.GenericLessOrEqualFast            x y
-        let inline GenericGreaterOrEqual         x y = HashCompare.GenericGreaterOrEqualFast         x y
+        let inline GenericEqualityER e1 e2 = HashCompare.GenericEqualityERFast e1 e2
+
+        let inline GenericEqualityWithComparer comp e1 e2 = HashCompare.GenericEqualityWithComparerFast comp e1 e2
+
+        let inline GenericComparison e1 e2 = HashCompare.GenericComparisonFast e1 e2
+
+        let inline GenericComparisonWithComparer comp e1 e2 = HashCompare.GenericComparisonWithComparerFast comp e1 e2
+
+        let inline GenericLessThan e1 e2 = HashCompare.GenericLessThanFast e1 e2
+
+        let inline GenericGreaterThan e1 e2 = HashCompare.GenericGreaterThanFast e1 e2
+
+        let inline GenericLessOrEqual e1 e2 = HashCompare.GenericLessOrEqualFast e1 e2
+
+        let inline GenericGreaterOrEqual e1 e2 = HashCompare.GenericGreaterOrEqualFast e1 e2
 
         let inline retype<'T,'U> (x:'T) : 'U = (# "" x : 'U #)
 
-        let inline GenericMinimum                (x:'T) (y:'T) = 
-                if HashCompare.GenericLessThanFast x y then x else y
-                when 'T : float         = (System.Math.Min : float * float -> float)(retype<_,float> x, retype<_,float> y)
-                when 'T : float32       = (System.Math.Min : float32 * float32 -> float32)(retype<_,float32> x, retype<_,float32> y)
+        let inline GenericMinimum (e1: 'T) (e2: 'T) = 
+            if HashCompare.GenericLessThanFast e1 e2 then e1 else e2
+            when 'T : float         = (System.Math.Min : float * float -> float)(retype<_,float> e1, retype<_,float> e2)
+            when 'T : float32       = (System.Math.Min : float32 * float32 -> float32)(retype<_,float32> e1, retype<_,float32> e2)
 
-        let inline GenericMaximum                (x:'T) (y:'T) = 
-                if HashCompare.GenericLessThanFast x y then y else x
-                when 'T : float         = (System.Math.Max : float * float -> float)(retype<_,float> x, retype<_,float> y)
-                when 'T : float32       = (System.Math.Max : float32 * float32 -> float32)(retype<_,float32> x, retype<_,float32> y)
+        let inline GenericMaximum (e1: 'T) (e2: 'T) = 
+            if HashCompare.GenericLessThanFast e1 e2 then e2 else e1
+            when 'T : float         = (System.Math.Max : float * float -> float)(retype<_,float> e1, retype<_,float> e2)
+            when 'T : float32       = (System.Math.Max : float32 * float32 -> float32)(retype<_,float32> e1, retype<_,float32> e2)
 
+        let inline PhysicalEquality e1 e2 = HashCompare.PhysicalEqualityFast e1 e2
 
-        let inline PhysicalEquality x y     = HashCompare.PhysicalEqualityFast x y
-        let inline PhysicalHash x           = HashCompare.PhysicalHashFast x
+        let inline PhysicalHash obj = HashCompare.PhysicalHashFast obj
         
-        let GenericComparer = HashCompare.fsComparerER :> System.Collections.IComparer
-        let GenericEqualityComparer = HashCompare.fsEqualityComparerUnlimitedHashingPER :> System.Collections.IEqualityComparer
-        let GenericEqualityERComparer = HashCompare.fsEqualityComparerUnlimitedHashingER :> System.Collections.IEqualityComparer
+        let GenericComparer = HashCompare.fsComparerER :> IComparer
 
-        let inline GenericHash x                = HashCompare.GenericHashFast x
-        let inline GenericLimitedHash limit x   = HashCompare.GenericLimitedHashFast limit x
-        let inline GenericHashWithComparer comp x = HashCompare.GenericHashWithComparerFast comp x
+        let GenericEqualityComparer = HashCompare.fsEqualityComparerUnlimitedHashingPER :> IEqualityComparer
+
+        let GenericEqualityERComparer = HashCompare.fsEqualityComparerUnlimitedHashingER :> IEqualityComparer
+
+        let inline GenericHash obj = HashCompare.GenericHashFast obj
+
+        let inline GenericLimitedHash limit obj = HashCompare.GenericLimitedHashFast limit obj
+
+        let inline GenericHashWithComparer comparer obj = HashCompare.GenericHashWithComparerFast comparer obj
 
         //-------------------------------------------------------------------------
         // LanguagePrimitives: PUBLISH IEqualityComparer AND IComparer OBJECTS
@@ -2269,17 +2312,17 @@ namespace Microsoft.FSharp.Core
         // LanguagePrimitives: ENUMS
         //------------------------------------------------------------------------- 
 
-        let inline EnumOfValue (u : 'T) : 'Enum when 'Enum : enum<'T> = 
-            unboxPrim<'Enum>(box u)
+        let inline EnumOfValue (value : 'T) : 'Enum when 'Enum : enum<'T> = 
+            unboxPrim<'Enum>(box value)
              // According to the somewhat subtle rules of static optimizations,
              // this condition is used whenever 'Enum is resolved to a nominal type
-            when 'Enum : 'Enum = (retype u : 'Enum)
+            when 'Enum : 'Enum = (retype value : 'Enum)
 
-        let inline EnumToValue (e : 'Enum) : 'T when 'Enum : enum<'T> = 
-            unboxPrim<'T>(box e)
+        let inline EnumToValue (enum : 'Enum) : 'T when 'Enum : enum<'T> = 
+            unboxPrim<'T>(box enum)
              // According to the somewhat subtle rules of static optimizations,
              // this condition is used whenever 'Enum is resolved to a nominal type
-            when 'Enum : 'Enum = (retype e : 'T)
+            when 'Enum : 'Enum = (retype enum : 'T)
 
         //-------------------------------------------------------------------------
         // LanguagePrimitives: MEASURES
@@ -2515,14 +2558,14 @@ namespace Microsoft.FSharp.Core
 
             static member Result : ('T -> int -> 'T) = result
 
-        let DivideByIntDynamic<'T> x n = GenericDivideByIntDynamicImplTable<('T)>.Result x n
+        let DivideByIntDynamic<'T> x y = GenericDivideByIntDynamicImplTable<('T)>.Result x y
 
-        let inline DivideByInt< ^T when ^T : (static member DivideByInt : ^T * int -> ^T) > (x:^T) (n:int) : ^T =
-            DivideByIntDynamic<'T> x n
-            when ^T : float       = (# "div" x ((# "conv.r8" (n:int)  : float #)) : float #)
-            when ^T : float32     = (# "div" x ((# "conv.r4" (n:int)  : float32 #)) : float32 #)
-            when ^T : decimal     = System.Decimal.Divide((retype x:decimal), System.Convert.ToDecimal(n))
-            when ^T : ^T = (^T : (static member DivideByInt : ^T * int -> ^T) (x, n))
+        let inline DivideByInt< ^T when ^T : (static member DivideByInt : ^T * int -> ^T) > (x:^T) (y:int) : ^T =
+            DivideByIntDynamic<'T> x y
+            when ^T : float       = (# "div" x ((# "conv.r8" (y:int)  : float #)) : float #)
+            when ^T : float32     = (# "div" x ((# "conv.r4" (y:int)  : float32 #)) : float32 #)
+            when ^T : decimal     = System.Decimal.Divide((retype x:decimal), System.Convert.ToDecimal(y))
+            when ^T : ^T = (^T : (static member DivideByInt : ^T * int -> ^T) (x, y))
 
 
         // Dynamic implementation of addition operator resolution
@@ -2560,7 +2603,7 @@ namespace Microsoft.FSharp.Core
 
             static member Impl : ('T -> 'U -> 'V) = impl
 
-        let AdditionDynamic<'T,'U,'V> x n  = AdditionDynamicImplTable<'T,'U,'V>.Impl x n
+        let AdditionDynamic<'T,'U,'V> x y  = AdditionDynamicImplTable<'T,'U,'V>.Impl x y
 
         // Dynamic implementation of checked addition operator resolution
         [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
@@ -2599,7 +2642,7 @@ namespace Microsoft.FSharp.Core
 
             static member Impl : ('T -> 'U -> 'V) = impl
 
-        let CheckedAdditionDynamic<'T,'U,'V> x n  = CheckedAdditionDynamicImplTable<'T,'U,'V>.Impl x n
+        let CheckedAdditionDynamic<'T,'U,'V> x y  = CheckedAdditionDynamicImplTable<'T,'U,'V>.Impl x y
 
 
         // Dynamic implementation of addition operator resolution
@@ -2637,7 +2680,7 @@ namespace Microsoft.FSharp.Core
 
             static member Impl : ('T -> 'U -> 'V) = impl
 
-        let MultiplyDynamic<'T,'U,'V> x n  = MultiplyDynamicImplTable<'T,'U,'V>.Impl x n
+        let MultiplyDynamic<'T,'U,'V> x y  = MultiplyDynamicImplTable<'T,'U,'V>.Impl x y
 
         // Dynamic implementation of checked addition operator resolution
         [<CodeAnalysis.SuppressMessage("Microsoft.Performance","CA1812:AvoidUninstantiatedInternalClasses")>]
@@ -2674,7 +2717,7 @@ namespace Microsoft.FSharp.Core
 
             static member Impl : ('T -> 'U -> 'V) = impl
 
-        let CheckedMultiplyDynamic<'T,'U,'V> x n  = CheckedMultiplyDynamicImplTable<'T,'U,'V>.Impl x n
+        let CheckedMultiplyDynamic<'T,'U,'V> x y  = CheckedMultiplyDynamicImplTable<'T,'U,'V>.Impl x y
 
 
 namespace System
@@ -2811,8 +2854,8 @@ namespace Microsoft.FSharp.Core
           type FSharpFunc<'T,'U,'V,'W,'X>() = 
               inherit FSharpFunc<'T,('U -> 'V -> 'W -> 'X)>()
               abstract Invoke : 'T * 'U * 'V * 'W -> 'X
-              static member Adapt(f : 'T -> 'U -> 'V -> 'W -> 'X) = 
-                  match box f with 
+              static member Adapt(func : 'T -> 'U -> 'V -> 'W -> 'X) = 
+                  match box func with 
                   // Does it take four arguments without side effect?
                   | :? FSharpFunc<'T,'U,'V,'W,'X> as f -> f
 
@@ -2827,7 +2870,7 @@ namespace Microsoft.FSharp.Core
                               member x.Invoke(t,u,v,w) = f.Invoke(t,u) v w }
 
                   | _ -> { new FSharpFunc<'T,'U,'V,'W,'X>() with 
-                              member x.Invoke(t,u,v,w) = ((retype f : FSharpFunc<'T,('U -> 'V -> 'W -> 'X)>).Invoke(t)) u v w   }
+                              member x.Invoke(t,u,v,w) = ((retype func : FSharpFunc<'T,('U -> 'V -> 'W -> 'X)>).Invoke(t)) u v w   }
               override f.Invoke(t) = (fun u v w -> f.Invoke(t,u,v,w))
 
           [<AbstractClass>]
@@ -2835,8 +2878,8 @@ namespace Microsoft.FSharp.Core
               inherit FSharpFunc<'T,('U -> 'V -> 'W -> 'X -> 'Y)>()
               abstract Invoke : 'T * 'U * 'V * 'W * 'X -> 'Y
               override f.Invoke(t) = (fun u v w x -> f.Invoke(t,u,v,w,x))
-              static member Adapt(f : 'T -> 'U -> 'V -> 'W -> 'X -> 'Y) = 
-                  match box f with 
+              static member Adapt(func : 'T -> 'U -> 'V -> 'W -> 'X -> 'Y) = 
+                  match box func with 
 
                   // Does it take five arguments without side effect?
                   | :? FSharpFunc<'T,'U,'V,'W,'X,'Y> as f -> f
@@ -2857,7 +2900,7 @@ namespace Microsoft.FSharp.Core
                               member ff.Invoke(t,u,v,w,x) = f.Invoke(t,u) v w x }
 
                   | _ -> { new FSharpFunc<'T,'U,'V,'W,'X,'Y>() with 
-                              member ff.Invoke(t,u,v,w,x) = ((retype f : FSharpFunc<'T,('U -> 'V -> 'W -> 'X -> 'Y)>).Invoke(t)) u v w x  }
+                              member ff.Invoke(t,u,v,w,x) = ((retype func : FSharpFunc<'T,('U -> 'V -> 'W -> 'X -> 'Y)>).Invoke(t)) u v w x  }
           
           let inline invokeFast2((f1 : FSharpFunc<'T,('U -> 'V)>), t,u) =
               match f1 with
@@ -2889,36 +2932,36 @@ namespace Microsoft.FSharp.Core
     type FSharpFunc<'T,'Res> with
 #if FX_NO_CONVERTER
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member op_Implicit(f : System.Func<_,_>) : ('T -> 'Res) =  (fun t -> f.Invoke(t))
+        static member op_Implicit (func : System.Func<_,_>) : ('T -> 'Res) =  (fun t -> func.Invoke(t))
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member op_Implicit( f : ('T -> 'Res) ) =  new System.Func<'T,'Res>(f)
+        static member op_Implicit (func : ('T -> 'Res) ) =  new System.Func<'T,'Res>(func)
 #else    
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member op_Implicit(f : System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> f.Invoke(t))
+        static member op_Implicit (converter : System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
         [<CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2225:OperatorOverloadsHaveNamedAlternates")>]
-        static member op_Implicit( f : ('T -> 'Res) ) =  new System.Converter<'T,'Res>(f)
+        static member op_Implicit (func : ('T -> 'Res) ) =  new System.Converter<'T,'Res>(func)
 
-        static member FromConverter(f : System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> f.Invoke(t))
-        static member ToConverter( f : ('T -> 'Res) ) =  new System.Converter<'T,'Res>(f)
+        static member FromConverter (converter : System.Converter<_,_>) : ('T -> 'Res) =  (fun t -> converter.Invoke(t))
+        static member ToConverter ( func : ('T -> 'Res) ) =  new System.Converter<'T,'Res>(func)
 #endif
-        static member InvokeFast(f:FSharpFunc<_,_>,(t:'T),(u:'Res))       = OptimizedClosures.invokeFast2(f,t,u) 
-        static member InvokeFast(f:FSharpFunc<_,_>,(t:'T),(u:'Res),v)     = OptimizedClosures.invokeFast3(f,t,u,v)
-        static member InvokeFast(f:FSharpFunc<_,_>,(t:'T),(u:'Res),v,w)   = OptimizedClosures.invokeFast4(f,t,u,v,w)
-        static member InvokeFast(f:FSharpFunc<_,_>,(t:'T),(u:'Res),v,w,x) = OptimizedClosures.invokeFast5(f,t,u,v,w,x)
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1:'T, arg2:'Res)                   = OptimizedClosures.invokeFast2(func, arg1, arg2) 
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1:'T, arg2:'Res, arg3)             = OptimizedClosures.invokeFast3(func, arg1, arg2, arg3)
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1:'T, arg2:'Res, arg3, arg4)       = OptimizedClosures.invokeFast4(func, arg1, arg2, arg3, arg4)
+        static member InvokeFast (func:FSharpFunc<_,_>, arg1:'T, arg2:'Res, arg3, arg4, arg5) = OptimizedClosures.invokeFast5(func, arg1, arg2, arg3, arg4, arg5)
 
     [<AbstractClass>]
     [<Sealed>]
     type FuncConvert = 
-        static member  ToFSharpFunc( f : Action<_>) = (fun t -> f.Invoke(t))
+        static member  ToFSharpFunc (action: Action<_>) = (fun t -> action.Invoke(t))
 #if FX_NO_CONVERTER
-        static member  ToFSharpFunc( f : System.Func<_, _>) = (fun t -> f.Invoke(t))
+        static member  ToFSharpFunc (converter: System.Func<_, _>) = (fun t -> converter.Invoke(t))
 #else        
-        static member  ToFSharpFunc( f : Converter<_,_>) = (fun t -> f.Invoke(t))
+        static member  ToFSharpFunc (converter: Converter<_,_>) = (fun t -> converter.Invoke(t))
 #endif        
-        static member FuncFromTupled (f:'T1 * 'T2 -> 'Res) = (fun a b -> f (a, b))
-        static member FuncFromTupled (f:'T1 * 'T2 * 'T3 -> 'Res) = (fun a b c -> f (a, b, c))
-        static member FuncFromTupled (f:'T1 * 'T2 * 'T3 * 'T4 -> 'Res) = (fun a b c d -> f (a, b, c, d))
-        static member FuncFromTupled (f:'T1 * 'T2 * 'T3 * 'T4 * 'T5 -> 'Res) = (fun a b c d e-> f (a, b, c, d, e))
+        static member FuncFromTupled (func:'T1 * 'T2 -> 'Res) = (fun a b -> func (a, b))
+        static member FuncFromTupled (func:'T1 * 'T2 * 'T3 -> 'Res) = (fun a b c -> func (a, b, c))
+        static member FuncFromTupled (func:'T1 * 'T2 * 'T3 * 'T4 -> 'Res) = (fun a b c d -> func (a, b, c, d))
+        static member FuncFromTupled (func:'T1 * 'T2 * 'T3 * 'T4 * 'T5 -> 'Res) = (fun a b c d e-> func (a, b, c, d, e))
 
 
 
@@ -2965,9 +3008,9 @@ namespace Microsoft.FSharp.Core
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
         static member None : 'T option = None
 
-        static member Some(x) : 'T option = Some(x)
+        static member Some (value) : 'T option = Some(value)
 
-        static member op_Implicit(x) : 'T option = Some(x)
+        static member op_Implicit (value) : 'T option = Some(value)
 
         override x.ToString() = 
            // x is non-null, hence Some
@@ -3277,17 +3320,17 @@ namespace Microsoft.FSharp.Core
 #endif
 
         [<CompiledName("CreateSequence")>]
-        let seq (x:seq<'T>) = x 
+        let seq (sequence: seq<'T>) = sequence 
 
         [<CompiledName("Unbox")>]
-        let inline unbox (x:obj) = UnboxGeneric(x)
+        let inline unbox (value: obj) = UnboxGeneric(value)
 
         [<CompiledName("Box")>]
-        let inline box   (x:'T)  = (# "box !0"       type ('T) x : obj #)
+        let inline box (value: 'T)  = (# "box !0" type ('T) value : obj #)
 
         [<CompiledName("TryUnbox")>]
-        let inline tryUnbox   (x:obj)  = 
-            match x with 
+        let inline tryUnbox (value:obj)  = 
+            match value with 
             | :? 'T as v -> Some v
             | _ -> None
 
@@ -3304,15 +3347,15 @@ namespace Microsoft.FSharp.Core
             | _ -> true
 
         [<CompiledName("Raise")>]
-        let inline raise (e: exn) = (# "throw" e : 'T #)
+        let inline raise (exn: exn) = (# "throw" exn : 'T #)
 
         let Failure message = new System.Exception(message)
         
         [<CompiledName("FailurePattern")>]
-        let (|Failure|_|) (exn:exn) = if exn.GetType().Equals(typeof<System.Exception>) then Some exn.Message else None
+        let (|Failure|_|) (error: exn) = if error.GetType().Equals(typeof<System.Exception>) then Some error.Message else None
 
         [<CompiledName("Not")>]
-        let inline not (b:bool) = (# "ceq" b false : bool #)
+        let inline not (value: bool) = (# "ceq" value false : bool #)
            
 
         let inline (<) x y = GenericLessThan x y
@@ -3323,32 +3366,26 @@ namespace Microsoft.FSharp.Core
         let inline (<>) x y = not (GenericEquality x y)
 
         [<CompiledName("Compare")>]
-        let inline compare (x:'T) (y:'T) = GenericComparison x y
+        let inline compare (e1: 'T) (e2: 'T) = GenericComparison e1 e2
 
         [<CompiledName("Max")>]
-        let inline max x y = GenericMaximum x y
+        let inline max e1 e2 = GenericMaximum e1 e2
 
         [<CompiledName("Min")>]
-        let inline min x y = GenericMinimum x y
-
-
-(*
-        [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly");  CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
-        let ``assert`` (b) = System.Diagnostics.Debug.Assert(b)
-*)
+        let inline min e1 e2 = GenericMinimum e1 e2
 
         [<CompiledName("FailWith")>]
         let inline failwith message = raise (Failure(message))
 
-
         [<CompiledName("InvalidArg")>]
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
-        let inline invalidArg (arg:string) (msg:string) = raise (new System.ArgumentException(msg,arg))
-
+        let inline invalidArg (argumentName:string) (message:string) = 
+            raise (new System.ArgumentException(message,argumentName))
 
         [<CompiledName("NullArg")>]
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
-        let inline nullArg (arg:string) = raise (new System.ArgumentNullException(arg))        
+        let inline nullArg (argumentName:string) = 
+            raise (new System.ArgumentNullException(argumentName))        
 
         [<CompiledName("InvalidOp")>]
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
@@ -3364,58 +3401,58 @@ namespace Microsoft.FSharp.Core
 
         [<CompiledName("Fst")>]
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
-        let inline fst (a,_) = a
+        let inline fst (a, _) = a
 
         [<CompiledName("Snd")>]
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
-        let inline snd (_,b) = b
+        let inline snd (_, b) = b
 
         [<CompiledName("Ignore")>]
         let inline ignore _ = ()
 
         [<CompiledName("Ref")>]
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
-        let ref x = { contents = x }
+        let ref value = { contents = value }
 
-        let (:=) x y = x.contents <- y
+        let (:=) cell value = cell.contents <- value
 
-        let (!) x = x.contents
+        let (!) cell = cell.contents
 
-        let inline (|>) x f = f x
+        let inline (|>) arg func = func arg
 
-        let inline (||>) (x1,x2) f = f x1 x2
+        let inline (||>) (arg1, arg2) func = func arg1 arg2
 
-        let inline (|||>) (x1,x2,x3) f = f x1 x2 x3
+        let inline (|||>) (arg1, arg2, arg3) func = func arg1 arg2 arg3
 
-        let inline (<|) f x = f x
+        let inline (<|) func arg1 = func arg1
 
-        let inline (<||) f (x1,x2) = f x1 x2
+        let inline (<||) func (arg1, arg2) = func arg1 arg2
 
-        let inline (<|||) f (x1,x2,x3) = f x1 x2 x3
+        let inline (<|||) func (arg1, arg2, arg3) = func arg1 arg2 arg3
 
-        let inline (>>) f g x = g(f x)
+        let inline (>>) func1 func2 x = func2 (func1 x)
 
-        let inline (<<) f g x = f(g x)
+        let inline (<<) func2 func1 x = func2 (func1 x)
 
-        let (^) (x:string) (y:string) = System.String.Concat(x,y)
+        let (^) (s1: string) (s2: string) = System.String.Concat(s1, s2)
 
 
         [<CompiledName("DefaultArg")>]
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
-        let defaultArg x y = match x with None -> y | Some v -> v
+        let defaultArg arg defaultValue = match arg with None -> defaultValue | Some v -> v
         
 
         [<NoDynamicInvocation>]
-        let inline (~-) (x: ^T) : ^T = 
-            (^T : (static member (~-) : ^T -> ^T) (x))
-             when ^T : int32     = (# "neg" x  : int32 #)
-             when ^T : float     = (# "neg" x  : float #)
-             when ^T : float32   = (# "neg" x  : float32 #)
-             when ^T : int64     = (# "neg" x  : int64 #)
-             when ^T : int16     = (# "neg" x  : int16 #)
-             when ^T : nativeint = (# "neg" x  : nativeint #)
-             when ^T : sbyte     = (# "neg" x  : sbyte #)
-             when ^T : decimal   = (# "" (System.Decimal.op_UnaryNegation((# "" x : decimal #))) : ^T #)
+        let inline (~-) (n: ^T) : ^T = 
+            (^T : (static member (~-) : ^T -> ^T) (n))
+             when ^T : int32     = (# "neg" n  : int32 #)
+             when ^T : float     = (# "neg" n  : float #)
+             when ^T : float32   = (# "neg" n  : float32 #)
+             when ^T : int64     = (# "neg" n  : int64 #)
+             when ^T : int16     = (# "neg" n  : int16 #)
+             when ^T : nativeint = (# "neg" n  : nativeint #)
+             when ^T : sbyte     = (# "neg" n  : sbyte #)
+             when ^T : decimal   = (# "" (System.Decimal.op_UnaryNegation((# "" n : decimal #))) : ^T #)
 
 
         let inline (+) (x: ^T) (y: ^U) : ^V = 
@@ -3514,51 +3551,51 @@ namespace Microsoft.FSharp.Core
              when ^T : decimal     and ^U : decimal    = (# "" (System.Decimal.op_Modulus((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
         
         [<NoDynamicInvocation>]
-        let inline (~+) (x: ^T) : ^T =
-             (^T: (static member (~+) : ^T -> ^T) (x))
-             when ^T : int32      = x
-             when ^T : float      = x
-             when ^T : float32    = x
-             when ^T : int64      = x
-             when ^T : uint64     = x
-             when ^T : uint32     = x
-             when ^T : int16      = x
-             when ^T : uint16     = x
-             when ^T : nativeint  = x
-             when ^T : unativeint = x
-             when ^T : sbyte      = x
-             when ^T : byte       = x
-             when ^T : decimal    = x
+        let inline (~+) (value: ^T) : ^T =
+             (^T: (static member (~+) : ^T -> ^T) (value))
+             when ^T : int32      = value
+             when ^T : float      = value
+             when ^T : float32    = value
+             when ^T : int64      = value
+             when ^T : uint64     = value
+             when ^T : uint32     = value
+             when ^T : int16      = value
+             when ^T : uint16     = value
+             when ^T : nativeint  = value
+             when ^T : unativeint = value
+             when ^T : sbyte      = value
+             when ^T : byte       = value
+             when ^T : decimal    = value
 
         let inline mask (n:int) (m:int) = (# "and" n m : int #)
         
         [<NoDynamicInvocation>]
-        let inline (<<<) (x: ^T) (n:int) : ^T = 
-             (^T: (static member (<<<) : ^T * int -> ^T) (x,n))
-             when ^T : int32      = (# "shl" x (mask n 31) : int #)
-             when ^T : uint32     = (# "shl" x (mask n 31) : uint32 #)
-             when ^T : int64      = (# "shl" x (mask n 63) : int64 #)
-             when ^T : uint64     = (# "shl" x (mask n 63) : uint64 #)
-             when ^T : nativeint  = (# "shl" x n : nativeint #)
-             when ^T : unativeint = (# "shl" x n : unativeint #)
-             when ^T : int16      = (# "conv.i2" (# "shl" x (mask n 15) : int32  #) : int16 #)
-             when ^T : uint16     = (# "conv.u2" (# "shl" x (mask n 15) : uint32 #) : uint16 #)
-             when ^T : sbyte      = (# "conv.i1" (# "shl" x (mask n 7 ) : int32  #) : sbyte #)
-             when ^T : byte       = (# "conv.u1" (# "shl" x (mask n 7 ) : uint32 #) : byte #)
+        let inline (<<<) (value: ^T) (shift:int) : ^T = 
+             (^T: (static member (<<<) : ^T * int -> ^T) (value,shift))
+             when ^T : int32      = (# "shl" value (mask shift 31) : int #)
+             when ^T : uint32     = (# "shl" value (mask shift 31) : uint32 #)
+             when ^T : int64      = (# "shl" value (mask shift 63) : int64 #)
+             when ^T : uint64     = (# "shl" value (mask shift 63) : uint64 #)
+             when ^T : nativeint  = (# "shl" value shift : nativeint #)
+             when ^T : unativeint = (# "shl" value shift : unativeint #)
+             when ^T : int16      = (# "conv.i2" (# "shl" value (mask shift 15) : int32  #) : int16 #)
+             when ^T : uint16     = (# "conv.u2" (# "shl" value (mask shift 15) : uint32 #) : uint16 #)
+             when ^T : sbyte      = (# "conv.i1" (# "shl" value (mask shift 7 ) : int32  #) : sbyte #)
+             when ^T : byte       = (# "conv.u1" (# "shl" value (mask shift 7 ) : uint32 #) : byte #)
 
         [<NoDynamicInvocation>]
-        let inline (>>>) (x: ^T) (n:int) : ^T = 
-             (^T: (static member (>>>) : ^T * int -> ^T) (x,n))
-             when ^T : int32      = (# "shr"    x (mask n 31) : int32 #)
-             when ^T : uint32     = (# "shr.un" x (mask n 31) : uint32 #)
-             when ^T : int64      = (# "shr"    x (mask n 63) : int64 #)
-             when ^T : uint64     = (# "shr.un" x (mask n 63) : uint64 #)
-             when ^T : nativeint  = (# "shr"    x n : nativeint #)
-             when ^T : unativeint = (# "shr.un" x n : unativeint #)
-             when ^T : int16      = (# "conv.i2" (# "shr"    x (mask n 15) : int32  #) : int16 #)
-             when ^T : uint16     = (# "conv.u2" (# "shr.un" x (mask n 15) : uint32 #) : uint16 #)
-             when ^T : sbyte      = (# "conv.i1" (# "shr"    x (mask n 7 ) : int32  #) : sbyte #)
-             when ^T : byte       = (# "conv.u1" (# "shr.un" x (mask n 7 ) : uint32 #) : byte #)
+        let inline (>>>) (value: ^T) (shift:int) : ^T = 
+             (^T: (static member (>>>) : ^T * int -> ^T) (value,shift))
+             when ^T : int32      = (# "shr"    value (mask shift 31) : int32 #)
+             when ^T : uint32     = (# "shr.un" value (mask shift 31) : uint32 #)
+             when ^T : int64      = (# "shr"    value (mask shift 63) : int64 #)
+             when ^T : uint64     = (# "shr.un" value (mask shift 63) : uint64 #)
+             when ^T : nativeint  = (# "shr"    value shift : nativeint #)
+             when ^T : unativeint = (# "shr.un" value shift : unativeint #)
+             when ^T : int16      = (# "conv.i2" (# "shr"    value (mask shift 15) : int32  #) : int16 #)
+             when ^T : uint16     = (# "conv.u2" (# "shr.un" value (mask shift 15) : uint32 #) : uint16 #)
+             when ^T : sbyte      = (# "conv.i1" (# "shr"    value (mask shift 7 ) : int32  #) : sbyte #)
+             when ^T : byte       = (# "conv.u1" (# "shr.un" value (mask shift 7 ) : uint32 #) : byte #)
 
         [<NoDynamicInvocation>]
         let inline (&&&) (x: ^T) (y: ^T) : ^T = 
@@ -3603,42 +3640,42 @@ namespace Microsoft.FSharp.Core
              when ^T : byte       = (# "xor" x y : byte #)
         
         [<NoDynamicInvocation>]
-        let inline (~~~) (x: ^T) : ^T = 
-             (^T: (static member (~~~) : ^T -> ^T) (x))
-             when ^T : int32      = (# "not" x : int32 #)
-             when ^T : int64      = (# "not" x : int64 #)
-             when ^T : uint64     = (# "not" x : uint64 #)
-             when ^T : uint32     = (# "not" x : uint32 #)
-             when ^T : nativeint  = (# "not" x : nativeint #)
-             when ^T : unativeint = (# "not" x : unativeint #)
-             when ^T : int16      = (# "conv.i2" (# "not" x : int32  #) : int16 #)
-             when ^T : uint16     = (# "conv.u2" (# "not" x : uint32 #) : uint16 #)
-             when ^T : sbyte      = (# "conv.i1" (# "not" x : int32  #) : sbyte #)
-             when ^T : byte       = (# "conv.u1" (# "not" x : uint32 #) : byte #)
+        let inline (~~~) (value: ^T) : ^T = 
+             (^T: (static member (~~~) : ^T -> ^T) (value))
+             when ^T : int32      = (# "not" value : int32 #)
+             when ^T : int64      = (# "not" value : int64 #)
+             when ^T : uint64     = (# "not" value : uint64 #)
+             when ^T : uint32     = (# "not" value : uint32 #)
+             when ^T : nativeint  = (# "not" value : nativeint #)
+             when ^T : unativeint = (# "not" value : unativeint #)
+             when ^T : int16      = (# "conv.i2" (# "not" value : int32  #) : int16 #)
+             when ^T : uint16     = (# "conv.u2" (# "not" value : uint32 #) : uint16 #)
+             when ^T : sbyte      = (# "conv.i1" (# "not" value : int32  #) : sbyte #)
+             when ^T : byte       = (# "conv.u1" (# "not" value : uint32 #) : byte #)
 
         let inline castToString (x:'T) = (# "" x : string #)  // internal
 
         // let rec (@) x y = match x with [] -> y | (h::t) -> h :: (t @ y)
-        let (@) l1 l2 = 
-            match l1 with
-            | [] -> l2
+        let (@) list1 list2 = 
+            match list1 with
+            | [] -> list2
             | (h::t) -> 
-            match l2 with
-            | [] -> l1
+            match list2 with
+            | [] -> list1
             | _ -> 
               let res = [h] 
               let lastCons = PrivateListHelpers.appendToFreshConsTail res t 
-              PrivateListHelpers.setFreshConsTail lastCons l2;
+              PrivateListHelpers.setFreshConsTail lastCons list2
               res
 
         [<CompiledName("Increment")>]
-        let incr x = x.contents <- x.contents + 1
+        let incr cell = cell.contents <- cell.contents + 1
 
         [<CompiledName("Decrement")>]
-        let decr x = x.contents <- x.contents - 1
+        let decr cell = cell.contents <- cell.contents - 1
 
         [<CompiledName("Exit")>]
-        let exit (n:int) = System.Environment.Exit(n); failwith "System.Environment.Exit did not exit!"
+        let exit (exitcode:int) = System.Environment.Exit(exitcode); failwith "System.Environment.Exit did not exit!"
 
         let inline parseByte (s:string)       = (# "conv.ovf.u1" (ParseUInt32 s) : byte #)
         let inline ParseSByte (s:string)      = (# "conv.ovf.i1" (ParseInt32 s)  : sbyte #)
@@ -3652,263 +3689,258 @@ namespace Microsoft.FSharp.Core
 
         [<NoDynamicInvocation>]
         [<CompiledName("ToByte")>]
-        let inline byte (x: ^T) = 
-            (^T : (static member op_Explicit: ^T -> byte) (x))
-             when ^T : string     = parseByte (castToString x)
-             when ^T : float      = (# "conv.u1" x  : byte #)
-             when ^T : float32    = (# "conv.u1" x  : byte #)
-             when ^T : int64      = (# "conv.u1" x  : byte #)
-             when ^T : int32      = (# "conv.u1" x  : byte #)
-             when ^T : int16      = (# "conv.u1" x  : byte #)
-             when ^T : nativeint  = (# "conv.u1" x  : byte #)
-             when ^T : sbyte      = (# "conv.u1" x  : byte #)
-             when ^T : uint64     = (# "conv.u1" x  : byte #)
-             when ^T : uint32     = (# "conv.u1" x  : byte #)
-             when ^T : uint16     = (# "conv.u1" x  : byte #)
-             when ^T : char       = (# "conv.u1" x  : byte #)
-             when ^T : unativeint = (# "conv.u1" x  : byte #)
-             when ^T : byte       = (# "conv.u1" x  : byte #)
+        let inline byte (value: ^T) = 
+            (^T : (static member op_Explicit: ^T -> byte) (value))
+             when ^T : string     = parseByte (castToString value)
+             when ^T : float      = (# "conv.u1" value  : byte #)
+             when ^T : float32    = (# "conv.u1" value  : byte #)
+             when ^T : int64      = (# "conv.u1" value  : byte #)
+             when ^T : int32      = (# "conv.u1" value  : byte #)
+             when ^T : int16      = (# "conv.u1" value  : byte #)
+             when ^T : nativeint  = (# "conv.u1" value  : byte #)
+             when ^T : sbyte      = (# "conv.u1" value  : byte #)
+             when ^T : uint64     = (# "conv.u1" value  : byte #)
+             when ^T : uint32     = (# "conv.u1" value  : byte #)
+             when ^T : uint16     = (# "conv.u1" value  : byte #)
+             when ^T : char       = (# "conv.u1" value  : byte #)
+             when ^T : unativeint = (# "conv.u1" value  : byte #)
+             when ^T : byte       = (# "conv.u1" value  : byte #)
 
         [<NoDynamicInvocation>]
         [<CompiledName("ToSByte")>]
-        let inline sbyte (x: ^T) = 
-            (^T : (static member op_Explicit: ^T -> sbyte) (x))
-             when ^T : string     = ParseSByte (castToString x)
-             when ^T : float     = (# "conv.i1" x  : sbyte #)
-             when ^T : float32   = (# "conv.i1" x  : sbyte #)
-             when ^T : int64     = (# "conv.i1" x  : sbyte #)
-             when ^T : int32     = (# "conv.i1" x  : sbyte #)
-             when ^T : int16     = (# "conv.i1" x  : sbyte #)
-             when ^T : nativeint = (# "conv.i1" x  : sbyte #)
-             when ^T : sbyte     = (# "conv.i1" x  : sbyte #)
-             when ^T : uint64     = (# "conv.i1" x  : sbyte #)
-             when ^T : uint32     = (# "conv.i1" x  : sbyte #)
-             when ^T : uint16     = (# "conv.i1" x  : sbyte #)
-             when ^T : char       = (# "conv.i1" x  : sbyte #)
-             when ^T : unativeint = (# "conv.i1" x  : sbyte #)
-             when ^T : byte     = (# "conv.i1" x  : sbyte #)
+        let inline sbyte (value: ^T) = 
+            (^T : (static member op_Explicit: ^T -> sbyte) (value))
+             when ^T : string     = ParseSByte (castToString value)
+             when ^T : float     = (# "conv.i1" value  : sbyte #)
+             when ^T : float32   = (# "conv.i1" value  : sbyte #)
+             when ^T : int64     = (# "conv.i1" value  : sbyte #)
+             when ^T : int32     = (# "conv.i1" value  : sbyte #)
+             when ^T : int16     = (# "conv.i1" value  : sbyte #)
+             when ^T : nativeint = (# "conv.i1" value  : sbyte #)
+             when ^T : sbyte     = (# "conv.i1" value  : sbyte #)
+             when ^T : uint64     = (# "conv.i1" value  : sbyte #)
+             when ^T : uint32     = (# "conv.i1" value  : sbyte #)
+             when ^T : uint16     = (# "conv.i1" value  : sbyte #)
+             when ^T : char       = (# "conv.i1" value  : sbyte #)
+             when ^T : unativeint = (# "conv.i1" value  : sbyte #)
+             when ^T : byte     = (# "conv.i1" value  : sbyte #)
 
         [<NoDynamicInvocation>]
         [<CompiledName("ToUInt16")>]
-        let inline uint16 (x: ^T) = 
-            (^T : (static member op_Explicit: ^T -> uint16) (x))
-             when ^T : string     = ParseUInt16 (castToString x)
-             when ^T : float     = (# "conv.u2" x  : uint16 #)
-             when ^T : float32   = (# "conv.u2" x  : uint16 #)
-             when ^T : int64     = (# "conv.u2" x  : uint16 #)
-             when ^T : int32     = (# "conv.u2" x  : uint16 #)
-             when ^T : int16     = (# "conv.u2" x  : uint16 #)
-             when ^T : nativeint = (# "conv.u2" x  : uint16 #)
-             when ^T : sbyte     = (# "conv.u2" x  : uint16 #)
-             when ^T : uint64     = (# "conv.u2" x  : uint16 #)
-             when ^T : uint32     = (# "conv.u2" x  : uint16 #)
-             when ^T : uint16     = (# "conv.u2" x  : uint16 #)
-             when ^T : char       = (# "conv.u2" x  : uint16 #)
-             when ^T : unativeint = (# "conv.u2" x  : uint16 #)
-             when ^T : byte     = (# "conv.u2" x  : uint16 #)
+        let inline uint16 (value: ^T) = 
+            (^T : (static member op_Explicit: ^T -> uint16) (value))
+             when ^T : string     = ParseUInt16 (castToString value)
+             when ^T : float     = (# "conv.u2" value  : uint16 #)
+             when ^T : float32   = (# "conv.u2" value  : uint16 #)
+             when ^T : int64     = (# "conv.u2" value  : uint16 #)
+             when ^T : int32     = (# "conv.u2" value  : uint16 #)
+             when ^T : int16     = (# "conv.u2" value  : uint16 #)
+             when ^T : nativeint = (# "conv.u2" value  : uint16 #)
+             when ^T : sbyte     = (# "conv.u2" value  : uint16 #)
+             when ^T : uint64     = (# "conv.u2" value  : uint16 #)
+             when ^T : uint32     = (# "conv.u2" value  : uint16 #)
+             when ^T : uint16     = (# "conv.u2" value  : uint16 #)
+             when ^T : char       = (# "conv.u2" value  : uint16 #)
+             when ^T : unativeint = (# "conv.u2" value  : uint16 #)
+             when ^T : byte     = (# "conv.u2" value  : uint16 #)
 
         [<NoDynamicInvocation>]
         [<CompiledName("ToInt16")>]
-        let inline int16 (x: ^T) = 
-            (^T : (static member op_Explicit: ^T -> int16) (x))
-             when ^T : string     = ParseInt16 (castToString x)
-             when ^T : float     = (# "conv.i2" x  : int16 #)
-             when ^T : float32   = (# "conv.i2" x  : int16 #)
-             when ^T : int64     = (# "conv.i2" x  : int16 #)
-             when ^T : int32     = (# "conv.i2" x  : int16 #)
-             when ^T : int16     = (# "conv.i2" x  : int16 #)
-             when ^T : nativeint = (# "conv.i2" x  : int16 #)
-             when ^T : sbyte     = (# "conv.i2" x  : int16 #)
-             when ^T : uint64     = (# "conv.i2" x  : int16 #)
-             when ^T : uint32     = (# "conv.i2" x  : int16 #)
-             when ^T : uint16     = (# "conv.i2" x  : int16 #)
-             when ^T : char       = (# "conv.i2" x  : int16 #)
-             when ^T : unativeint = (# "conv.i2" x  : int16 #)
-             when ^T : byte     = (# "conv.i2" x  : int16 #)
+        let inline int16 (value: ^T) = 
+            (^T : (static member op_Explicit: ^T -> int16) (value))
+             when ^T : string     = ParseInt16 (castToString value)
+             when ^T : float     = (# "conv.i2" value  : int16 #)
+             when ^T : float32   = (# "conv.i2" value  : int16 #)
+             when ^T : int64     = (# "conv.i2" value  : int16 #)
+             when ^T : int32     = (# "conv.i2" value  : int16 #)
+             when ^T : int16     = (# "conv.i2" value  : int16 #)
+             when ^T : nativeint = (# "conv.i2" value  : int16 #)
+             when ^T : sbyte     = (# "conv.i2" value  : int16 #)
+             when ^T : uint64     = (# "conv.i2" value  : int16 #)
+             when ^T : uint32     = (# "conv.i2" value  : int16 #)
+             when ^T : uint16     = (# "conv.i2" value  : int16 #)
+             when ^T : char       = (# "conv.i2" value  : int16 #)
+             when ^T : unativeint = (# "conv.i2" value  : int16 #)
+             when ^T : byte     = (# "conv.i2" value  : int16 #)
 
         [<NoDynamicInvocation>]
         [<CompiledName("ToUInt32")>]
-        let inline uint32 (x: ^T) = 
-            (^T : (static member op_Explicit: ^T -> uint32) (x))
-             when ^T : string     = ParseUInt32 (castToString x)
-             when ^T : float     = (# "conv.u4" x  : uint32 #)
-             when ^T : float32   = (# "conv.u4" x  : uint32 #)
+        let inline uint32 (value: ^T) = 
+            (^T : (static member op_Explicit: ^T -> uint32) (value))
+             when ^T : string     = ParseUInt32 (castToString value)
+             when ^T : float     = (# "conv.u4" value  : uint32 #)
+             when ^T : float32   = (# "conv.u4" value  : uint32 #)
 
-             when ^T : int64     = (# "conv.u4" x  : uint32 #)
-             when ^T : nativeint = (# "conv.u4" x  : uint32 #)
+             when ^T : int64     = (# "conv.u4" value  : uint32 #)
+             when ^T : nativeint = (# "conv.u4" value  : uint32 #)
              
              // For integers shorter that 32 bits, we must first 
              // sign-widen the signed integer to 32 bits, and then 
              // "convert" from signed int32 to unsigned int32
              // This is a no-op on IL stack (ECMA 335 Part III 1.5 Tables 8 & 9)
-             when ^T : int32     = (# "" x : uint32 #)
-             when ^T : int16     = (# "" x : uint32 #)
-             when ^T : sbyte     = (# "" x : uint32 #)             
+             when ^T : int32     = (# "" value : uint32 #)
+             when ^T : int16     = (# "" value : uint32 #)
+             when ^T : sbyte     = (# "" value : uint32 #)             
              
-             
-             when ^T : uint64     = (# "conv.u4" x  : uint32 #)
-             when ^T : uint32     = (# "conv.u4" x  : uint32 #)
-             when ^T : uint16     = (# "conv.u4" x  : uint32 #)
-             when ^T : char       = (# "conv.u4" x  : uint32 #)
-             when ^T : unativeint = (# "conv.u4" x  : uint32 #)
-             when ^T : byte     = (# "conv.u4" x  : uint32 #)
+             when ^T : uint64     = (# "conv.u4" value  : uint32 #)
+             when ^T : uint32     = (# "conv.u4" value  : uint32 #)
+             when ^T : uint16     = (# "conv.u4" value  : uint32 #)
+             when ^T : char       = (# "conv.u4" value  : uint32 #)
+             when ^T : unativeint = (# "conv.u4" value  : uint32 #)
+             when ^T : byte     = (# "conv.u4" value  : uint32 #)
 
         [<NoDynamicInvocation>]
         [<CompiledName("ToInt32")>]
-        let inline int32 (x: ^T) = 
-            (^T : (static member op_Explicit: ^T -> int32) (x))
-             when ^T : string     = ParseInt32 (castToString x)
-             when ^T : float     = (# "conv.i4" x  : int32 #)
-             when ^T : float32   = (# "conv.i4" x  : int32 #)
-             when ^T : int64     = (# "conv.i4" x  : int32 #)
-             when ^T : nativeint = (# "conv.i4" x  : int32 #)
+        let inline int32 (value: ^T) = 
+            (^T : (static member op_Explicit: ^T -> int32) (value))
+             when ^T : string     = ParseInt32 (castToString value)
+             when ^T : float     = (# "conv.i4" value  : int32 #)
+             when ^T : float32   = (# "conv.i4" value  : int32 #)
+             when ^T : int64     = (# "conv.i4" value  : int32 #)
+             when ^T : nativeint = (# "conv.i4" value  : int32 #)
              
              // For integers shorter that 32 bits, we sign-widen the signed integer to 32 bits
              // This is a no-op on IL stack (ECMA 335 Part III 1.5 Tables 8 & 9)
-             when ^T : int32     = (# "" x  : int32 #)
-             when ^T : int16     = (# "" x  : int32 #)
-             when ^T : sbyte     = (# "" x  : int32 #)
+             when ^T : int32     = (# "" value  : int32 #)
+             when ^T : int16     = (# "" value  : int32 #)
+             when ^T : sbyte     = (# "" value  : int32 #)
              
-             when ^T : uint64     = (# "conv.i4" x  : int32 #)             
-             when ^T : uint32     = (# "" x  : int32 #) // Signed<->Unsigned conversion is a no-op on IL stack
-             when ^T : uint16     = (# "conv.i4" x  : int32 #)
-             when ^T : char       = (# "conv.i4" x  : int32 #)
-             when ^T : unativeint = (# "conv.i4" x  : int32 #)
-             when ^T : byte     = (# "conv.i4" x  : int32 #)
-
-
+             when ^T : uint64     = (# "conv.i4" value  : int32 #)             
+             when ^T : uint32     = (# "" value  : int32 #) // Signed<->Unsigned conversion is a no-op on IL stack
+             when ^T : uint16     = (# "conv.i4" value  : int32 #)
+             when ^T : char       = (# "conv.i4" value  : int32 #)
+             when ^T : unativeint = (# "conv.i4" value  : int32 #)
+             when ^T : byte     = (# "conv.i4" value  : int32 #)
 
         [<CompiledName("ToInt")>]
-        let inline int    x = int32  x         
-
+        let inline int value = int32  value         
 
         [<CompiledName("ToEnum")>]
-        let inline enum< ^T when ^T : enum<int32> > (x:int32) : ^T = EnumOfValue x
+        let inline enum< ^T when ^T : enum<int32> > (value:int32) : ^T = EnumOfValue value
 
         [<CompiledName("KeyValuePattern")>]
-        let ( |KeyValue| ) (kvp : KeyValuePair<'T,'U>) = (kvp.Key, kvp.Value)
-
+        let ( |KeyValue| ) (keyValuePair : KeyValuePair<'T,'U>) = (keyValuePair.Key, keyValuePair.Value)
 
         [<CompiledName("Infinity")>]
-        let infinity     = System.Double.PositiveInfinity
+        let infinity = System.Double.PositiveInfinity
 
         [<CompiledName("NaN")>]
-        let nan          = System.Double.NaN 
+        let nan = System.Double.NaN 
 
         [<CompiledName("InfinitySingle")>]
-        let infinityf     = System.Single.PositiveInfinity
+        let infinityf = System.Single.PositiveInfinity
 
         [<CompiledName("NaNSingle")>]
-        let nanf          = System.Single.NaN 
+        let nanf = System.Single.NaN 
 
         [<NoDynamicInvocation>]
         [<CompiledName("ToUInt64")>]
-        let inline uint64 (x: ^T) = 
-            (^T : (static member op_Explicit: ^T -> uint64) (x))
-             when ^T : string     = ParseUInt64 (castToString x)
-             when ^T : float     = (# "conv.u8" x  : uint64 #)
-             when ^T : float32   = (# "conv.u8" x  : uint64 #)
+        let inline uint64 (value: ^T) = 
+            (^T : (static member op_Explicit: ^T -> uint64) (value))
+             when ^T : string     = ParseUInt64 (castToString value)
+             when ^T : float     = (# "conv.u8" value  : uint64 #)
+             when ^T : float32   = (# "conv.u8" value  : uint64 #)
                           
              // we must first sign-widen the signed integer to 64 bits, and then 
              // "convert" from signed int64 to unsigned int64             
              // conv.i8 sign-widens the input, and on IL stack, 
              // conversion from signed to unsigned is a no-op (ECMA 335 Part III 1.5 Table 8)
-             when ^T : int64     = (# "" x  : uint64 #)
-             when ^T : int32     = (# "conv.i8" x  : uint64 #)
-             when ^T : int16     = (# "conv.i8" x  : uint64 #)
-             when ^T : nativeint = (# "conv.i8" x  : uint64 #)
-             when ^T : sbyte     = (# "conv.i8" x  : uint64 #)
+             when ^T : int64     = (# "" value  : uint64 #)
+             when ^T : int32     = (# "conv.i8" value  : uint64 #)
+             when ^T : int16     = (# "conv.i8" value  : uint64 #)
+             when ^T : nativeint = (# "conv.i8" value  : uint64 #)
+             when ^T : sbyte     = (# "conv.i8" value  : uint64 #)
              
              
-             when ^T : uint64     = (# "" x  : uint64 #)
-             when ^T : uint32     = (# "conv.u8" x  : uint64 #)
-             when ^T : uint16     = (# "conv.u8" x  : uint64 #)
-             when ^T : char       = (# "conv.u8" x  : uint64 #)
-             when ^T : unativeint = (# "conv.u8" x  : uint64 #)
-             when ^T : byte     = (# "conv.u8" x  : uint64 #)
+             when ^T : uint64     = (# "" value  : uint64 #)
+             when ^T : uint32     = (# "conv.u8" value  : uint64 #)
+             when ^T : uint16     = (# "conv.u8" value  : uint64 #)
+             when ^T : char       = (# "conv.u8" value  : uint64 #)
+             when ^T : unativeint = (# "conv.u8" value  : uint64 #)
+             when ^T : byte     = (# "conv.u8" value  : uint64 #)
 
         [<NoDynamicInvocation>]
         [<CompiledName("ToInt64")>]
-        let inline int64 (x: ^T) = 
-            (^T : (static member op_Explicit: ^T -> int64) (x))
-             when ^T : string     = ParseInt64 (castToString x)
-             when ^T : float     = (# "conv.i8" x  : int64 #)
-             when ^T : float32   = (# "conv.i8" x  : int64 #)
-             when ^T : int64     = (# "conv.i8" x  : int64 #)
-             when ^T : int32     = (# "conv.i8" x  : int64 #)
-             when ^T : int16     = (# "conv.i8" x  : int64 #)
-             when ^T : nativeint = (# "conv.i8" x  : int64 #)
-             when ^T : sbyte     = (# "conv.i8" x  : int64 #)
+        let inline int64 (value: ^T) = 
+            (^T : (static member op_Explicit: ^T -> int64) (value))
+             when ^T : string     = ParseInt64 (castToString value)
+             when ^T : float     = (# "conv.i8" value  : int64 #)
+             when ^T : float32   = (# "conv.i8" value  : int64 #)
+             when ^T : int64     = (# "conv.i8" value  : int64 #)
+             when ^T : int32     = (# "conv.i8" value  : int64 #)
+             when ^T : int16     = (# "conv.i8" value  : int64 #)
+             when ^T : nativeint = (# "conv.i8" value  : int64 #)
+             when ^T : sbyte     = (# "conv.i8" value  : int64 #)
              
              // When converting unsigned integer, we should zero-widen them, NOT sign-widen 
              // No-op for uint64, conv.u8 for uint32, for smaller types conv.u8 and conv.i8 are identical.
              // For nativeint, conv.u8 works correctly both in 32 bit and 64 bit case.
-             when ^T : uint64     = (# "" x  : int64 #)             
-             when ^T : uint32     = (# "conv.u8" x  : int64 #)
-             when ^T : uint16     = (# "conv.u8" x  : int64 #)
-             when ^T : char       = (# "conv.u8" x  : int64 #)
-             when ^T : unativeint = (# "conv.u8" x  : int64 #)
-             when ^T : byte     = (# "conv.u8" x  : int64 #)
+             when ^T : uint64     = (# "" value  : int64 #)             
+             when ^T : uint32     = (# "conv.u8" value  : int64 #)
+             when ^T : uint16     = (# "conv.u8" value  : int64 #)
+             when ^T : char       = (# "conv.u8" value  : int64 #)
+             when ^T : unativeint = (# "conv.u8" value  : int64 #)
+             when ^T : byte     = (# "conv.u8" value  : int64 #)
 
         [<NoDynamicInvocation>]
         [<CompiledName("ToSingle")>]
-        let inline float32 (x: ^T) = 
-            (^T : (static member op_Explicit: ^T -> float32) (x))
-             when ^T : string     = ParseSingle (castToString x)
-             when ^T : float     = (# "conv.r4" x  : float32 #)
+        let inline float32 (value: ^T) = 
+            (^T : (static member op_Explicit: ^T -> float32) (value))
+             when ^T : string     = ParseSingle (castToString value)
+             when ^T : float     = (# "conv.r4" value  : float32 #)
              // NOTE: float32 should convert its argument to 32-bit float even when applied to a higher precision float stored in a register. See devdiv2#49888.
-             when ^T : float32   = (# "conv.r4" x  : float32 #)
-             when ^T : int64     = (# "conv.r4" x  : float32 #)
-             when ^T : int32     = (# "conv.r4" x  : float32 #)
-             when ^T : int16     = (# "conv.r4" x  : float32 #)
-             when ^T : nativeint = (# "conv.r4" x  : float32 #)
-             when ^T : sbyte     = (# "conv.r4" x  : float32 #)
-             when ^T : uint64     = (# "conv.r.un conv.r4" x  : float32 #)
-             when ^T : uint32     = (# "conv.r.un conv.r4" x  : float32 #)
-             when ^T : uint16     = (# "conv.r.un conv.r4" x  : float32 #)
-             when ^T : char       = (# "conv.r.un conv.r4" x  : float32 #)
-             when ^T : unativeint = (# "conv.r.un conv.r4" x  : float32 #)
-             when ^T : byte     = (# "conv.r.un conv.r4" x  : float32 #)
+             when ^T : float32   = (# "conv.r4" value  : float32 #)
+             when ^T : int64     = (# "conv.r4" value  : float32 #)
+             when ^T : int32     = (# "conv.r4" value  : float32 #)
+             when ^T : int16     = (# "conv.r4" value  : float32 #)
+             when ^T : nativeint = (# "conv.r4" value  : float32 #)
+             when ^T : sbyte     = (# "conv.r4" value  : float32 #)
+             when ^T : uint64     = (# "conv.r.un conv.r4" value  : float32 #)
+             when ^T : uint32     = (# "conv.r.un conv.r4" value  : float32 #)
+             when ^T : uint16     = (# "conv.r.un conv.r4" value  : float32 #)
+             when ^T : char       = (# "conv.r.un conv.r4" value  : float32 #)
+             when ^T : unativeint = (# "conv.r.un conv.r4" value  : float32 #)
+             when ^T : byte     = (# "conv.r.un conv.r4" value  : float32 #)
 
         [<NoDynamicInvocation>]
         [<CompiledName("ToDouble")>]
-        let inline float (x: ^T) = 
-            (^T : (static member op_Explicit: ^T -> float) (x))
-             when ^T : string     = ParseDouble (castToString x)
+        let inline float (value: ^T) = 
+            (^T : (static member op_Explicit: ^T -> float) (value))
+             when ^T : string     = ParseDouble (castToString value)
              // NOTE: float should convert its argument to 64-bit float even when applied to a higher precision float stored in a register. See devdiv2#49888.
-             when ^T : float     = (# "conv.r8" x  : float #)
-             when ^T : float32   = (# "conv.r8" x  : float #)
-             when ^T : int64     = (# "conv.r8" x  : float #)
-             when ^T : int32     = (# "conv.r8" x  : float #)
-             when ^T : int16     = (# "conv.r8" x  : float #)
-             when ^T : nativeint = (# "conv.r8" x  : float #)
-             when ^T : sbyte     = (# "conv.r8" x  : float #)
-             when ^T : uint64     = (# "conv.r.un conv.r8" x  : float #)
-             when ^T : uint32     = (# "conv.r.un conv.r8" x  : float #)
-             when ^T : uint16     = (# "conv.r.un conv.r8" x  : float #)
-             when ^T : char       = (# "conv.r.un conv.r8" x  : float #)
-             when ^T : unativeint = (# "conv.r.un conv.r8" x  : float #)
-             when ^T : byte       = (# "conv.r.un conv.r8" x  : float #)
-             when ^T : decimal    = (System.Convert.ToDouble((# "" x : decimal #))) 
+             when ^T : float     = (# "conv.r8" value  : float #)
+             when ^T : float32   = (# "conv.r8" value  : float #)
+             when ^T : int64     = (# "conv.r8" value  : float #)
+             when ^T : int32     = (# "conv.r8" value  : float #)
+             when ^T : int16     = (# "conv.r8" value  : float #)
+             when ^T : nativeint = (# "conv.r8" value  : float #)
+             when ^T : sbyte     = (# "conv.r8" value  : float #)
+             when ^T : uint64     = (# "conv.r.un conv.r8" value  : float #)
+             when ^T : uint32     = (# "conv.r.un conv.r8" value  : float #)
+             when ^T : uint16     = (# "conv.r.un conv.r8" value  : float #)
+             when ^T : char       = (# "conv.r.un conv.r8" value  : float #)
+             when ^T : unativeint = (# "conv.r.un conv.r8" value  : float #)
+             when ^T : byte       = (# "conv.r.un conv.r8" value  : float #)
+             when ^T : decimal    = (System.Convert.ToDouble((# "" value : decimal #))) 
 
         [<NoDynamicInvocation>]
         [<CompiledName("ToDecimal")>]
-        let inline decimal (x: ^T) = 
-            (^T : (static member op_Explicit: ^T -> decimal) (x))
-             when ^T : string     = (System.Decimal.Parse(castToString x,NumberStyles.Float,CultureInfo.InvariantCulture))
-             when ^T : float      = (System.Convert.ToDecimal((# "" x : float #))) 
-             when ^T : float32    = (System.Convert.ToDecimal((# "" x : float32 #))) 
-             when ^T : int64      = (System.Convert.ToDecimal((# "" x : int64 #))) 
-             when ^T : int32      = (System.Convert.ToDecimal((# "" x : int32 #))) 
-             when ^T : int16      = (System.Convert.ToDecimal((# "" x : int16 #))) 
-             when ^T : nativeint  = (System.Convert.ToDecimal(int64 (# "" x : nativeint #))) 
-             when ^T : sbyte      = (System.Convert.ToDecimal((# "" x : sbyte #))) 
-             when ^T : uint64     = (System.Convert.ToDecimal((# "" x : uint64 #))) 
-             when ^T : uint32     = (System.Convert.ToDecimal((# "" x : uint32 #))) 
-             when ^T : uint16     = (System.Convert.ToDecimal((# "" x : uint16 #))) 
-             when ^T : unativeint = (System.Convert.ToDecimal(uint64 (# "" x : unativeint #))) 
-             when ^T : byte       = (System.Convert.ToDecimal((# "" x : byte #))) 
-             when ^T : decimal    = (# "" x : decimal #)
+        let inline decimal (value: ^T) = 
+            (^T : (static member op_Explicit: ^T -> decimal) (value))
+             when ^T : string     = (System.Decimal.Parse(castToString value,NumberStyles.Float,CultureInfo.InvariantCulture))
+             when ^T : float      = (System.Convert.ToDecimal((# "" value : float #))) 
+             when ^T : float32    = (System.Convert.ToDecimal((# "" value : float32 #))) 
+             when ^T : int64      = (System.Convert.ToDecimal((# "" value : int64 #))) 
+             when ^T : int32      = (System.Convert.ToDecimal((# "" value : int32 #))) 
+             when ^T : int16      = (System.Convert.ToDecimal((# "" value : int16 #))) 
+             when ^T : nativeint  = (System.Convert.ToDecimal(int64 (# "" value : nativeint #))) 
+             when ^T : sbyte      = (System.Convert.ToDecimal((# "" value : sbyte #))) 
+             when ^T : uint64     = (System.Convert.ToDecimal((# "" value : uint64 #))) 
+             when ^T : uint32     = (System.Convert.ToDecimal((# "" value : uint32 #))) 
+             when ^T : uint16     = (System.Convert.ToDecimal((# "" value : uint16 #))) 
+             when ^T : unativeint = (System.Convert.ToDecimal(uint64 (# "" value : unativeint #))) 
+             when ^T : byte       = (System.Convert.ToDecimal((# "" value : byte #))) 
+             when ^T : decimal    = (# "" value : decimal #)
 
         // Recall type names.
         // Framework names:     sbyte, byte,  int16, uint16, int32, uint32, int64, uint64, single,  double.
@@ -3917,91 +3949,91 @@ namespace Microsoft.FSharp.Core
 
         [<NoDynamicInvocation>]
         [<CompiledName("ToUIntPtr")>]
-        let inline unativeint (x: ^T) = 
-            (^T : (static member op_Explicit: ^T -> unativeint) (x))
-             when ^T : string     = ParseUIntPtr (castToString x)
-             when ^T : float     = (# "conv.u" x  : unativeint #)
-             when ^T : float32   = (# "conv.u" x  : unativeint #)
+        let inline unativeint (value: ^T) = 
+            (^T : (static member op_Explicit: ^T -> unativeint) (value))
+             when ^T : string     = ParseUIntPtr (castToString value)
+             when ^T : float     = (# "conv.u" value  : unativeint #)
+             when ^T : float32   = (# "conv.u" value  : unativeint #)
              
              // Narrower signed types we sign-extend.
              // Same length signed types we leave as such (so -1 gets reinterpreted as unsigned MaxValue).
              // Wider signed types we truncate.
              // conv.i does just that for both 32 and 64 bit case of nativeint, and conversion from nativeint is no-op.
-             when ^T : int64     = (# "conv.i" x  : unativeint #)
-             when ^T : int32     = (# "conv.i" x  : unativeint #)
-             when ^T : int16     = (# "conv.i" x  : unativeint #)
-             when ^T : nativeint = (# "" x  : unativeint #)
-             when ^T : sbyte     = (# "conv.i" x  : unativeint #)
+             when ^T : int64     = (# "conv.i" value  : unativeint #)
+             when ^T : int32     = (# "conv.i" value  : unativeint #)
+             when ^T : int16     = (# "conv.i" value  : unativeint #)
+             when ^T : nativeint = (# "" value  : unativeint #)
+             when ^T : sbyte     = (# "conv.i" value  : unativeint #)
              
-             when ^T : uint64     = (# "conv.u" x  : unativeint #)
-             when ^T : uint32     = (# "conv.u" x  : unativeint #)
-             when ^T : uint16     = (# "conv.u" x  : unativeint #)
-             when ^T : char       = (# "conv.u" x  : unativeint #)
-             when ^T : unativeint = (# "" x  : unativeint #)
-             when ^T : byte       = (# "conv.u" x  : unativeint #)
+             when ^T : uint64     = (# "conv.u" value  : unativeint #)
+             when ^T : uint32     = (# "conv.u" value  : unativeint #)
+             when ^T : uint16     = (# "conv.u" value  : unativeint #)
+             when ^T : char       = (# "conv.u" value  : unativeint #)
+             when ^T : unativeint = (# "" value  : unativeint #)
+             when ^T : byte       = (# "conv.u" value  : unativeint #)
 
         [<NoDynamicInvocation>]
         [<CompiledName("ToIntPtr")>]
-        let inline nativeint (x: ^T) = 
-            (^T : (static member op_Explicit: ^T -> nativeint) (x))
-             when ^T : string     = ParseIntPtr (castToString x)
-             when ^T : float      = (# "conv.i" x  : nativeint #)
-             when ^T : float32    = (# "conv.i" x  : nativeint #)
+        let inline nativeint (value: ^T) = 
+            (^T : (static member op_Explicit: ^T -> nativeint) (value))
+             when ^T : string     = ParseIntPtr (castToString value)
+             when ^T : float      = (# "conv.i" value  : nativeint #)
+             when ^T : float32    = (# "conv.i" value  : nativeint #)
                          
-             when ^T : int64      = (# "conv.i" x  : nativeint #)
-             when ^T : int32      = (# "conv.i" x  : nativeint #)
-             when ^T : int16      = (# "conv.i" x  : nativeint #)
-             when ^T : nativeint  = (# "conv.i" x  : nativeint #)
-             when ^T : sbyte      = (# "conv.i" x  : nativeint #)
+             when ^T : int64      = (# "conv.i" value  : nativeint #)
+             when ^T : int32      = (# "conv.i" value  : nativeint #)
+             when ^T : int16      = (# "conv.i" value  : nativeint #)
+             when ^T : nativeint  = (# "conv.i" value  : nativeint #)
+             when ^T : sbyte      = (# "conv.i" value  : nativeint #)
 
              // Narrower unsigned types we zero-extend.
              // Same length unsigned types we leave as such (so unsigned MaxValue (all-bits-set) gets reinterpreted as -1).
              // Wider unsigned types we truncate.
              // conv.u does just that for both 32- and 64-bit-wide nativeint, and conversion from unativeint is no-op.
-             when ^T : uint64     = (# "conv.u" x  : nativeint #)
-             when ^T : uint32     = (# "conv.u" x  : nativeint #)
-             when ^T : uint16     = (# "conv.u" x  : nativeint #)
-             when ^T : char       = (# "conv.u" x  : nativeint #)
-             when ^T : unativeint = (# "" x  : nativeint #)
-             when ^T : byte       = (# "conv.i" x  : nativeint #)
+             when ^T : uint64     = (# "conv.u" value  : nativeint #)
+             when ^T : uint32     = (# "conv.u" value  : nativeint #)
+             when ^T : uint16     = (# "conv.u" value  : nativeint #)
+             when ^T : char       = (# "conv.u" value  : nativeint #)
+             when ^T : unativeint = (# "" value  : nativeint #)
+             when ^T : byte       = (# "conv.i" value  : nativeint #)
 
         [<CompiledName("ToString")>]
-        let inline string (x: ^T) = 
-             anyToString "" x
+        let inline string (value: ^T) = 
+             anyToString "" value
              // since we have static optimization conditionals for ints below, we need to special-case Enums.
              // This way we'll print their symbolic value, as opposed to their integral one (Eg., "A", rather than "1")
-             when ^T struct = anyToString "" x
-             when ^T : float      = (# "" x : float      #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : float32    = (# "" x : float32    #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : int64      = (# "" x : int64      #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : int32      = (# "" x : int32      #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : int16      = (# "" x : int16      #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : nativeint  = (# "" x : nativeint  #).ToString()
-             when ^T : sbyte      = (# "" x : sbyte      #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : uint64     = (# "" x : uint64     #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : uint32     = (# "" x : uint32     #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : int16      = (# "" x : int16      #).ToString("g",CultureInfo.InvariantCulture)
-             when ^T : unativeint = (# "" x : unativeint #).ToString()
-             when ^T : byte       = (# "" x : byte       #).ToString("g",CultureInfo.InvariantCulture)
+             when ^T struct = anyToString "" value
+             when ^T : float      = (# "" value : float      #).ToString("g",CultureInfo.InvariantCulture)
+             when ^T : float32    = (# "" value : float32    #).ToString("g",CultureInfo.InvariantCulture)
+             when ^T : int64      = (# "" value : int64      #).ToString("g",CultureInfo.InvariantCulture)
+             when ^T : int32      = (# "" value : int32      #).ToString("g",CultureInfo.InvariantCulture)
+             when ^T : int16      = (# "" value : int16      #).ToString("g",CultureInfo.InvariantCulture)
+             when ^T : nativeint  = (# "" value : nativeint  #).ToString()
+             when ^T : sbyte      = (# "" value : sbyte      #).ToString("g",CultureInfo.InvariantCulture)
+             when ^T : uint64     = (# "" value : uint64     #).ToString("g",CultureInfo.InvariantCulture)
+             when ^T : uint32     = (# "" value : uint32     #).ToString("g",CultureInfo.InvariantCulture)
+             when ^T : int16      = (# "" value : int16      #).ToString("g",CultureInfo.InvariantCulture)
+             when ^T : unativeint = (# "" value : unativeint #).ToString()
+             when ^T : byte       = (# "" value : byte       #).ToString("g",CultureInfo.InvariantCulture)
 
         [<NoDynamicInvocation>]
         [<CompiledName("ToChar")>]
-        let inline char (x: ^T) = 
-            (^T : (static member op_Explicit: ^T -> char) (x))
-             when ^T : string     = (System.Char.Parse(castToString x))
-             when ^T : float      = (# "conv.u2" x  : char #)
-             when ^T : float32    = (# "conv.u2" x  : char #)
-             when ^T : int64      = (# "conv.u2" x  : char #)
-             when ^T : int32      = (# "conv.u2" x  : char #)
-             when ^T : int16      = (# "conv.u2" x  : char #)
-             when ^T : nativeint  = (# "conv.u2" x  : char #)
-             when ^T : sbyte      = (# "conv.u2" x  : char #)
-             when ^T : uint64     = (# "conv.u2" x  : char #)
-             when ^T : uint32     = (# "conv.u2" x  : char #)
-             when ^T : uint16     = (# "conv.u2" x  : char #)
-             when ^T : char       = (# "conv.u2" x  : char #)
-             when ^T : unativeint = (# "conv.u2" x  : char #)
-             when ^T : byte       = (# "conv.u2" x  : char #)
+        let inline char (value: ^T) = 
+            (^T : (static member op_Explicit: ^T -> char) (value))
+             when ^T : string     = (System.Char.Parse(castToString value))
+             when ^T : float      = (# "conv.u2" value  : char #)
+             when ^T : float32    = (# "conv.u2" value  : char #)
+             when ^T : int64      = (# "conv.u2" value  : char #)
+             when ^T : int32      = (# "conv.u2" value  : char #)
+             when ^T : int16      = (# "conv.u2" value  : char #)
+             when ^T : nativeint  = (# "conv.u2" value  : char #)
+             when ^T : sbyte      = (# "conv.u2" value  : char #)
+             when ^T : uint64     = (# "conv.u2" value  : char #)
+             when ^T : uint32     = (# "conv.u2" value  : char #)
+             when ^T : uint16     = (# "conv.u2" value  : char #)
+             when ^T : char       = (# "conv.u2" value  : char #)
+             when ^T : unativeint = (# "conv.u2" value  : char #)
+             when ^T : byte       = (# "conv.u2" value  : char #)
 
         
         module NonStructuralComparison = 
@@ -4128,64 +4160,64 @@ namespace Microsoft.FSharp.Core
 
             // static comparison (ER mode) with static optimizations for some well-known cases
             [<CompiledName("Compare")>]
-            let inline compare (x:^T) (y:^T) : int = 
-                 (if x < y then -1 elif x > y then 1 else 0)
-                 when ^T : bool   = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                 when ^T : sbyte  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                 when ^T : int16  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                 when ^T : int32  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                 when ^T : int64  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                 when ^T : nativeint  = if (# "clt" x y : bool #) then (-1) else (# "cgt" x y : int #)
-                 when ^T : byte   = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
-                 when ^T : uint16 = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
-                 when ^T : uint32 = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
-                 when ^T : uint64 = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
-                 when ^T : unativeint = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
-                 when ^T : float  = if   (# "clt" x y : bool #) then (-1)
-                                    elif (# "cgt" x y : bool #) then (1)
-                                    elif (# "ceq" x y : bool #) then (0)
-                                    elif (# "ceq" y y : bool #) then (-1)
-                                    else (# "ceq" x x : int #)
-                 when ^T : float32 = if   (# "clt" x y : bool #) then (-1)
-                                     elif (# "cgt" x y : bool #) then (1)
-                                     elif (# "ceq" x y : bool #) then (1)
-                                     elif (# "ceq" y y : bool #) then (-1)
-                                     else (# "ceq" x x : int #)
-                 when ^T : char   = if (# "clt.un" x y : bool #) then (-1) else (# "cgt.un" x y : int #)
+            let inline compare (e1: ^T) (e2: ^T) : int = 
+                 (if e1 < e2 then -1 elif e1 > e2 then 1 else 0)
+                 when ^T : bool   = if (# "clt" e1 e2 : bool #) then (-1) else (# "cgt" e1 e2 : int #)
+                 when ^T : sbyte  = if (# "clt" e1 e2 : bool #) then (-1) else (# "cgt" e1 e2 : int #)
+                 when ^T : int16  = if (# "clt" e1 e2 : bool #) then (-1) else (# "cgt" e1 e2 : int #)
+                 when ^T : int32  = if (# "clt" e1 e2 : bool #) then (-1) else (# "cgt" e1 e2 : int #)
+                 when ^T : int64  = if (# "clt" e1 e2 : bool #) then (-1) else (# "cgt" e1 e2 : int #)
+                 when ^T : nativeint  = if (# "clt" e1 e2 : bool #) then (-1) else (# "cgt" e1 e2 : int #)
+                 when ^T : byte   = if (# "clt.un" e1 e2 : bool #) then (-1) else (# "cgt.un" e1 e2 : int #)
+                 when ^T : uint16 = if (# "clt.un" e1 e2 : bool #) then (-1) else (# "cgt.un" e1 e2 : int #)
+                 when ^T : uint32 = if (# "clt.un" e1 e2 : bool #) then (-1) else (# "cgt.un" e1 e2 : int #)
+                 when ^T : uint64 = if (# "clt.un" e1 e2 : bool #) then (-1) else (# "cgt.un" e1 e2 : int #)
+                 when ^T : unativeint = if (# "clt.un" e1 e2 : bool #) then (-1) else (# "cgt.un" e1 e2 : int #)
+                 when ^T : float  = if   (# "clt" e1 e2 : bool #) then (-1)
+                                    elif (# "cgt" e1 e2 : bool #) then (1)
+                                    elif (# "ceq" e1 e2 : bool #) then (0)
+                                    elif (# "ceq" e2 e2 : bool #) then (-1)
+                                    else (# "ceq" e1 e1 : int #)
+                 when ^T : float32 = if   (# "clt" e1 e2 : bool #) then (-1)
+                                     elif (# "cgt" e1 e2 : bool #) then (1)
+                                     elif (# "ceq" e1 e2 : bool #) then (1)
+                                     elif (# "ceq" e2 e2 : bool #) then (-1)
+                                     else (# "ceq" e1 e1 : int #)
+                 when ^T : char   = if (# "clt.un" e1 e2 : bool #) then (-1) else (# "cgt.un" e1 e2 : int #)
                  when ^T : string = 
                      // NOTE: we don't have to null check here because System.String.CompareOrdinal
                      // gives reliable results on null values.
-                     System.String.CompareOrdinal((# "" x : string #) ,(# "" y : string #))
-                 when ^T : decimal     = System.Decimal.Compare((# "" x:decimal #), (# "" y:decimal #))
+                     System.String.CompareOrdinal((# "" e1 : string #) ,(# "" e2 : string #))
+                 when ^T : decimal     = System.Decimal.Compare((# "" e1:decimal #), (# "" e2:decimal #))
 
             [<CompiledName("Max")>]
-            let inline max (x:^T) y = 
-                (if x < y then y else x)
-                when ^T : float         = (System.Math.Max : float * float -> float)(retype<_,float> x, retype<_,float> y)
-                when ^T : float32       = (System.Math.Max : float32 * float32 -> float32)(retype<_,float32> x, retype<_,float32> y)
+            let inline max (e1: ^T) (e2: ^T) = 
+                (if e1 < e2 then e2 else e1)
+                when ^T : float         = (System.Math.Max : float * float -> float)(retype<_,float> e1, retype<_,float> e2)
+                when ^T : float32       = (System.Math.Max : float32 * float32 -> float32)(retype<_,float32> e1, retype<_,float32> e2)
 
             [<CompiledName("Min")>]
-            let inline min (x: ^T) y = 
-                (if x < y then x else y)
-                when ^T : float         = (System.Math.Min : float * float -> float)(retype<_,float> x, retype<_,float> y)
-                when ^T : float32       = (System.Math.Min : float32 * float32 -> float32)(retype<_,float32> x, retype<_,float32> y)
+            let inline min (e1: ^T) (e2: ^T) = 
+                (if e1 < e2 then e1 else e2)
+                when ^T : float         = (System.Math.Min : float * float -> float)(retype<_,float> e1, retype<_,float> e2)
+                when ^T : float32       = (System.Math.Min : float32 * float32 -> float32)(retype<_,float32> e1, retype<_,float32> e2)
 
             [<CompiledName("Hash")>]
-            let inline hash (x:'T) = 
-                x.GetHashCode()
-                when 'T : bool   = (# "" x : int #)
-                when 'T : int32  = (# "" x : int #)
-                when 'T : byte   = (# "" x : int #)
-                when 'T : uint32 = (# "" x : int #)
-                when 'T : char = HashCompare.HashChar (# "" x : char #)
-                when 'T : sbyte = HashCompare.HashSByte (# "" x : sbyte #)
-                when 'T : int16 = HashCompare.HashInt16 (# "" x : int16 #)
-                when 'T : int64 = HashCompare.HashInt64 (# "" x : int64 #)
-                when 'T : uint64 = HashCompare.HashUInt64 (# "" x : uint64 #)
-                when 'T : nativeint = HashCompare.HashIntPtr (# "" x : nativeint #)
-                when 'T : unativeint = HashCompare.HashUIntPtr (# "" x : unativeint #)
-                when 'T : uint16 = (# "" x : int #)                    
-                when 'T : string = HashCompare.HashString  (# "" x : string #)
+            let inline hash (value:'T) = 
+                value.GetHashCode()
+                when 'T : bool   = (# "" value : int #)
+                when 'T : int32  = (# "" value : int #)
+                when 'T : byte   = (# "" value : int #)
+                when 'T : uint32 = (# "" value : int #)
+                when 'T : char = HashCompare.HashChar (# "" value : char #)
+                when 'T : sbyte = HashCompare.HashSByte (# "" value : sbyte #)
+                when 'T : int16 = HashCompare.HashInt16 (# "" value : int16 #)
+                when 'T : int64 = HashCompare.HashInt64 (# "" value : int64 #)
+                when 'T : uint64 = HashCompare.HashUInt64 (# "" value : uint64 #)
+                when 'T : nativeint = HashCompare.HashIntPtr (# "" value : nativeint #)
+                when 'T : unativeint = HashCompare.HashUIntPtr (# "" value : unativeint #)
+                when 'T : uint16 = (# "" value : int #)                    
+                when 'T : string = HashCompare.HashString  (# "" value : string #)
 
         module Attributes = 
             open System.Runtime.CompilerServices
@@ -4222,22 +4254,21 @@ namespace Microsoft.FSharp.Core
                 System.Threading.Monitor.Exit(lockobj)
 #else
         [<CompiledName("Lock")>]
-        let inline lock (lockobj : 'T when 'T : not struct) f  = 
+        let inline lock (lockObject : 'T when 'T : not struct) action  = 
             let mutable lockTaken = false
             try 
-                System.Threading.Monitor.Enter(lockobj, &lockTaken);
-                f()
+                System.Threading.Monitor.Enter(lockObject, &lockTaken);
+                action()
             finally
                 if lockTaken then
-                    System.Threading.Monitor.Exit(lockobj)
+                    System.Threading.Monitor.Exit(lockObject)
 #endif
 
 
         [<CompiledName("Using")>]
-        let using (ie : 'T when 'T :> System.IDisposable) f = 
-            try f(ie)
-            finally match (box ie) with null -> () | _ -> ie.Dispose()
-
+        let using (resource : 'T when 'T :> System.IDisposable) action = 
+            try action(resource)
+            finally match (box resource) with null -> () | _ -> resource.Dispose()
 
         [<CompiledName("TypeOf")>]
         let inline typeof<'T> = BasicInlinedOperations.typeof<'T>
@@ -4248,22 +4279,19 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("TypeDefOf")>]
         let inline typedefof<'T> = BasicInlinedOperations.typedefof<'T>
 
-
         [<CompiledName("SizeOf")>]
         let inline sizeof<'T> = BasicInlinedOperations.sizeof<'T>
 
-
         [<CompiledName("Hash")>]
-        let inline hash  (x: 'T) = LanguagePrimitives.GenericHash x
+        let inline hash (obj: 'T) = LanguagePrimitives.GenericHash obj
 
         [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly");  CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
-        let inline limitedHash (limit:int)  (x: 'T) = LanguagePrimitives.GenericLimitedHash limit x
+        let inline limitedHash (limit:int) (obj: 'T) = LanguagePrimitives.GenericLimitedHash limit obj
 
         [<CompiledName("Identity")>]
         let id x = x
 
-#if FX_NO_SYSTEM_CONSOLE
-#else
+#if !FX_NO_SYSTEM_CONSOLE
         // std* are TypeFunctions with the effect of reading the property on instantiation.
         // So, direct uses of stdout should capture the current System.Console.Out at that point.
         [<CompiledName("ConsoleIn")>]
@@ -4336,16 +4364,16 @@ namespace Microsoft.FSharp.Core
                  when ^T : decimal     and ^U : decimal    = (# "" (System.Decimal.op_Subtraction((# "" x : decimal #),(# "" y : decimal #))) : ^V #)
 
             [<NoDynamicInvocation>]
-            let inline (~-) (x: ^T) : ^T = 
-                (^T : (static member (~-) : ^T -> ^T) (x))
-                 when ^T : int32     = (# "sub.ovf" 0 x  : int32 #)
-                 when ^T : float     = (# "neg" x  : float #)
-                 when ^T : float32   = (# "neg" x  : float32 #)
-                 when ^T : int64     = (# "sub.ovf" 0L x  : int64 #)
-                 when ^T : int16     = (# "sub.ovf" 0s x  : int16 #)
-                 when ^T : nativeint = (# "sub.ovf" 0n x  : nativeint #)
-                 when ^T : sbyte     = (# "sub.ovf" 0y x  : sbyte #)
-                 when ^T : decimal   = (# "" (System.Decimal.op_UnaryNegation((# "" x : decimal #))) : ^T #)
+            let inline (~-) (value: ^T) : ^T = 
+                (^T : (static member (~-) : ^T -> ^T) (value))
+                 when ^T : int32     = (# "sub.ovf" 0 value  : int32 #)
+                 when ^T : float     = (# "neg" value  : float #)
+                 when ^T : float32   = (# "neg" value  : float32 #)
+                 when ^T : int64     = (# "sub.ovf" 0L value  : int64 #)
+                 when ^T : int16     = (# "sub.ovf" 0s value  : int16 #)
+                 when ^T : nativeint = (# "sub.ovf" 0n value  : nativeint #)
+                 when ^T : sbyte     = (# "sub.ovf" 0y value  : sbyte #)
+                 when ^T : decimal   = (# "" (System.Decimal.op_UnaryNegation((# "" value : decimal #))) : ^T #)
 
             let inline ( * ) (x: ^T) (y: ^U) : ^V = 
                  CheckedMultiplyDynamic<(^T),(^U),(^V)>  x y 
@@ -4369,216 +4397,216 @@ namespace Microsoft.FSharp.Core
 
             [<NoDynamicInvocation>]
             [<CompiledName("ToByte")>]
-            let inline byte (x: ^T) = 
-                (^T : (static member op_Explicit: ^T -> byte) (x))
-                 when ^T : string     = parseByte (castToString x)
-                 when ^T : float     = (# "conv.ovf.u1" x  : byte #)
-                 when ^T : float32   = (# "conv.ovf.u1" x  : byte #)
-                 when ^T : int64     = (# "conv.ovf.u1" x  : byte #)
-                 when ^T : int32     = (# "conv.ovf.u1" x  : byte #)
-                 when ^T : int16     = (# "conv.ovf.u1" x  : byte #)
-                 when ^T : nativeint = (# "conv.ovf.u1" x  : byte #)
-                 when ^T : sbyte     = (# "conv.ovf.u1" x  : byte #)
-                 when ^T : uint64     = (# "conv.ovf.u1.un" x  : byte #)
-                 when ^T : uint32     = (# "conv.ovf.u1.un" x  : byte #)
-                 when ^T : uint16     = (# "conv.ovf.u1.un" x  : byte #)
-                 when ^T : char       = (# "conv.ovf.u1.un" x  : byte #)
-                 when ^T : unativeint = (# "conv.ovf.u1.un" x  : byte #)
-                 when ^T : byte     = (# "conv.ovf.u1.un" x  : byte #)
+            let inline byte (value: ^T) = 
+                (^T : (static member op_Explicit: ^T -> byte) (value))
+                 when ^T : string     = parseByte (castToString value)
+                 when ^T : float     = (# "conv.ovf.u1" value  : byte #)
+                 when ^T : float32   = (# "conv.ovf.u1" value  : byte #)
+                 when ^T : int64     = (# "conv.ovf.u1" value  : byte #)
+                 when ^T : int32     = (# "conv.ovf.u1" value  : byte #)
+                 when ^T : int16     = (# "conv.ovf.u1" value  : byte #)
+                 when ^T : nativeint = (# "conv.ovf.u1" value  : byte #)
+                 when ^T : sbyte     = (# "conv.ovf.u1" value  : byte #)
+                 when ^T : uint64     = (# "conv.ovf.u1.un" value  : byte #)
+                 when ^T : uint32     = (# "conv.ovf.u1.un" value  : byte #)
+                 when ^T : uint16     = (# "conv.ovf.u1.un" value  : byte #)
+                 when ^T : char       = (# "conv.ovf.u1.un" value  : byte #)
+                 when ^T : unativeint = (# "conv.ovf.u1.un" value  : byte #)
+                 when ^T : byte     = (# "conv.ovf.u1.un" value  : byte #)
 
             [<NoDynamicInvocation>]
             [<CompiledName("ToSByte")>]
-            let inline sbyte (x: ^T) = 
-                (^T : (static member op_Explicit: ^T -> sbyte) (x))
-                 when ^T : string     = ParseSByte (castToString x)
-                 when ^T : float     = (# "conv.ovf.i1" x  : sbyte #)
-                 when ^T : float32   = (# "conv.ovf.i1" x  : sbyte #)
-                 when ^T : int64     = (# "conv.ovf.i1" x  : sbyte #)
-                 when ^T : int32     = (# "conv.ovf.i1" x  : sbyte #)
-                 when ^T : int16     = (# "conv.ovf.i1" x  : sbyte #)
-                 when ^T : nativeint = (# "conv.ovf.i1" x  : sbyte #)
-                 when ^T : sbyte     = (# "conv.ovf.i1" x  : sbyte #)
-                 when ^T : uint64     = (# "conv.ovf.i1.un" x  : sbyte #)
-                 when ^T : uint32     = (# "conv.ovf.i1.un" x  : sbyte #)
-                 when ^T : uint16     = (# "conv.ovf.i1.un" x  : sbyte #)
-                 when ^T : char       = (# "conv.ovf.i1.un" x  : sbyte #)
-                 when ^T : unativeint = (# "conv.ovf.i1.un" x  : sbyte #)
-                 when ^T : byte     = (# "conv.ovf.i1.un" x  : sbyte #)
+            let inline sbyte (value: ^T) = 
+                (^T : (static member op_Explicit: ^T -> sbyte) (value))
+                 when ^T : string     = ParseSByte (castToString value)
+                 when ^T : float     = (# "conv.ovf.i1" value  : sbyte #)
+                 when ^T : float32   = (# "conv.ovf.i1" value  : sbyte #)
+                 when ^T : int64     = (# "conv.ovf.i1" value  : sbyte #)
+                 when ^T : int32     = (# "conv.ovf.i1" value  : sbyte #)
+                 when ^T : int16     = (# "conv.ovf.i1" value  : sbyte #)
+                 when ^T : nativeint = (# "conv.ovf.i1" value  : sbyte #)
+                 when ^T : sbyte     = (# "conv.ovf.i1" value  : sbyte #)
+                 when ^T : uint64     = (# "conv.ovf.i1.un" value  : sbyte #)
+                 when ^T : uint32     = (# "conv.ovf.i1.un" value  : sbyte #)
+                 when ^T : uint16     = (# "conv.ovf.i1.un" value  : sbyte #)
+                 when ^T : char       = (# "conv.ovf.i1.un" value  : sbyte #)
+                 when ^T : unativeint = (# "conv.ovf.i1.un" value  : sbyte #)
+                 when ^T : byte     = (# "conv.ovf.i1.un" value  : sbyte #)
 
             [<NoDynamicInvocation>]
             [<CompiledName("ToUInt16")>]
-            let inline uint16 (x: ^T) = 
-                (^T : (static member op_Explicit: ^T -> uint16) (x))
-                 when ^T : string     = ParseUInt16 (castToString x)
-                 when ^T : float      = (# "conv.ovf.u2" x  : uint16 #)
-                 when ^T : float32    = (# "conv.ovf.u2" x  : uint16 #)
-                 when ^T : int64      = (# "conv.ovf.u2" x  : uint16 #)
-                 when ^T : int32      = (# "conv.ovf.u2" x  : uint16 #)
-                 when ^T : int16      = (# "conv.ovf.u2" x  : uint16 #)
-                 when ^T : nativeint  = (# "conv.ovf.u2" x  : uint16 #)
-                 when ^T : sbyte      = (# "conv.ovf.u2" x  : uint16 #)
-                 when ^T : uint64     = (# "conv.ovf.u2.un" x  : uint16 #)
-                 when ^T : uint32     = (# "conv.ovf.u2.un" x  : uint16 #)
-                 when ^T : uint16     = (# "conv.ovf.u2.un" x  : uint16 #)
-                 when ^T : char       = (# "conv.ovf.u2.un" x  : uint16 #)
-                 when ^T : unativeint = (# "conv.ovf.u2.un" x  : uint16 #)
-                 when ^T : byte       = (# "conv.ovf.u2.un" x  : uint16 #)
+            let inline uint16 (value: ^T) = 
+                (^T : (static member op_Explicit: ^T -> uint16) (value))
+                 when ^T : string     = ParseUInt16 (castToString value)
+                 when ^T : float      = (# "conv.ovf.u2" value  : uint16 #)
+                 when ^T : float32    = (# "conv.ovf.u2" value  : uint16 #)
+                 when ^T : int64      = (# "conv.ovf.u2" value  : uint16 #)
+                 when ^T : int32      = (# "conv.ovf.u2" value  : uint16 #)
+                 when ^T : int16      = (# "conv.ovf.u2" value  : uint16 #)
+                 when ^T : nativeint  = (# "conv.ovf.u2" value  : uint16 #)
+                 when ^T : sbyte      = (# "conv.ovf.u2" value  : uint16 #)
+                 when ^T : uint64     = (# "conv.ovf.u2.un" value  : uint16 #)
+                 when ^T : uint32     = (# "conv.ovf.u2.un" value  : uint16 #)
+                 when ^T : uint16     = (# "conv.ovf.u2.un" value  : uint16 #)
+                 when ^T : char       = (# "conv.ovf.u2.un" value  : uint16 #)
+                 when ^T : unativeint = (# "conv.ovf.u2.un" value  : uint16 #)
+                 when ^T : byte       = (# "conv.ovf.u2.un" value  : uint16 #)
 
             [<NoDynamicInvocation>]
             [<CompiledName("ToChar")>]
-            let inline char (x: ^T) = 
-                (^T : (static member op_Explicit: ^T -> char) (x))
-                 when ^T : string     = (System.Char.Parse(castToString x))
-                 when ^T : float      = (# "conv.ovf.u2" x  : char #)
-                 when ^T : float32    = (# "conv.ovf.u2" x  : char #)
-                 when ^T : int64      = (# "conv.ovf.u2" x  : char #)
-                 when ^T : int32      = (# "conv.ovf.u2" x  : char #)
-                 when ^T : int16      = (# "conv.ovf.u2" x  : char #)
-                 when ^T : nativeint  = (# "conv.ovf.u2" x  : char #)
-                 when ^T : sbyte      = (# "conv.ovf.u2" x  : char #)
-                 when ^T : uint64     = (# "conv.ovf.u2.un" x  : char #)
-                 when ^T : uint32     = (# "conv.ovf.u2.un" x  : char #)
-                 when ^T : uint16     = (# "conv.ovf.u2.un" x  : char #)
-                 when ^T : char       = (# "conv.ovf.u2.un" x  : char #)
-                 when ^T : unativeint = (# "conv.ovf.u2.un" x  : char #)
-                 when ^T : byte       = (# "conv.ovf.u2.un" x  : char #)
+            let inline char (value: ^T) = 
+                (^T : (static member op_Explicit: ^T -> char) (value))
+                 when ^T : string     = (System.Char.Parse(castToString value))
+                 when ^T : float      = (# "conv.ovf.u2" value  : char #)
+                 when ^T : float32    = (# "conv.ovf.u2" value  : char #)
+                 when ^T : int64      = (# "conv.ovf.u2" value  : char #)
+                 when ^T : int32      = (# "conv.ovf.u2" value  : char #)
+                 when ^T : int16      = (# "conv.ovf.u2" value  : char #)
+                 when ^T : nativeint  = (# "conv.ovf.u2" value  : char #)
+                 when ^T : sbyte      = (# "conv.ovf.u2" value  : char #)
+                 when ^T : uint64     = (# "conv.ovf.u2.un" value  : char #)
+                 when ^T : uint32     = (# "conv.ovf.u2.un" value  : char #)
+                 when ^T : uint16     = (# "conv.ovf.u2.un" value  : char #)
+                 when ^T : char       = (# "conv.ovf.u2.un" value  : char #)
+                 when ^T : unativeint = (# "conv.ovf.u2.un" value  : char #)
+                 when ^T : byte       = (# "conv.ovf.u2.un" value  : char #)
 
             [<NoDynamicInvocation>]
             [<CompiledName("ToInt16")>]
-            let inline int16 (x: ^T) = 
-                (^T : (static member op_Explicit: ^T -> int16) (x))
-                 when ^T : string     = ParseInt16 (castToString x)
-                 when ^T : float     = (# "conv.ovf.i2" x  : int16 #)
-                 when ^T : float32   = (# "conv.ovf.i2" x  : int16 #)
-                 when ^T : int64     = (# "conv.ovf.i2" x  : int16 #)
-                 when ^T : int32     = (# "conv.ovf.i2" x  : int16 #)
-                 when ^T : int16     = (# "conv.ovf.i2" x  : int16 #)
-                 when ^T : nativeint = (# "conv.ovf.i2" x  : int16 #)
-                 when ^T : sbyte     = (# "conv.ovf.i2" x  : int16 #)
-                 when ^T : uint64     = (# "conv.ovf.i2.un" x  : int16 #)
-                 when ^T : uint32     = (# "conv.ovf.i2.un" x  : int16 #)
-                 when ^T : uint16     = (# "conv.ovf.i2.un" x  : int16 #)
-                 when ^T : char       = (# "conv.ovf.i2.un" x  : int16 #)
-                 when ^T : unativeint = (# "conv.ovf.i2.un" x  : int16 #)
-                 when ^T : byte     = (# "conv.ovf.i2.un" x  : int16 #)
+            let inline int16 (value: ^T) = 
+                (^T : (static member op_Explicit: ^T -> int16) (value))
+                 when ^T : string     = ParseInt16 (castToString value)
+                 when ^T : float     = (# "conv.ovf.i2" value  : int16 #)
+                 when ^T : float32   = (# "conv.ovf.i2" value  : int16 #)
+                 when ^T : int64     = (# "conv.ovf.i2" value  : int16 #)
+                 when ^T : int32     = (# "conv.ovf.i2" value  : int16 #)
+                 when ^T : int16     = (# "conv.ovf.i2" value  : int16 #)
+                 when ^T : nativeint = (# "conv.ovf.i2" value  : int16 #)
+                 when ^T : sbyte     = (# "conv.ovf.i2" value  : int16 #)
+                 when ^T : uint64     = (# "conv.ovf.i2.un" value  : int16 #)
+                 when ^T : uint32     = (# "conv.ovf.i2.un" value  : int16 #)
+                 when ^T : uint16     = (# "conv.ovf.i2.un" value  : int16 #)
+                 when ^T : char       = (# "conv.ovf.i2.un" value  : int16 #)
+                 when ^T : unativeint = (# "conv.ovf.i2.un" value  : int16 #)
+                 when ^T : byte     = (# "conv.ovf.i2.un" value  : int16 #)
 
             [<NoDynamicInvocation>]
             [<CompiledName("ToUInt32")>]
-            let inline uint32 (x: ^T) = 
-                (^T : (static member op_Explicit: ^T -> uint32) (x))
-                 when ^T : string     = ParseUInt32 (castToString x)
-                 when ^T : float     = (# "conv.ovf.u4" x  : uint32 #)
-                 when ^T : float32   = (# "conv.ovf.u4" x  : uint32 #)
-                 when ^T : int64     = (# "conv.ovf.u4" x  : uint32 #)
-                 when ^T : int32     = (# "conv.ovf.u4" x  : uint32 #)
-                 when ^T : int16     = (# "conv.ovf.u4" x  : uint32 #)
-                 when ^T : nativeint = (# "conv.ovf.u4" x  : uint32 #)
-                 when ^T : sbyte     = (# "conv.ovf.u4" x  : uint32 #)
-                 when ^T : uint64     = (# "conv.ovf.u4.un" x  : uint32 #)
-                 when ^T : uint32     = (# "conv.ovf.u4.un" x  : uint32 #)
-                 when ^T : uint16     = (# "conv.ovf.u4.un" x  : uint32 #)
-                 when ^T : char       = (# "conv.ovf.u4.un" x  : uint32 #)
-                 when ^T : unativeint = (# "conv.ovf.u4.un" x  : uint32 #)
-                 when ^T : byte     = (# "conv.ovf.u4.un" x  : uint32 #)
+            let inline uint32 (value: ^T) = 
+                (^T : (static member op_Explicit: ^T -> uint32) (value))
+                 when ^T : string     = ParseUInt32 (castToString value)
+                 when ^T : float     = (# "conv.ovf.u4" value  : uint32 #)
+                 when ^T : float32   = (# "conv.ovf.u4" value  : uint32 #)
+                 when ^T : int64     = (# "conv.ovf.u4" value  : uint32 #)
+                 when ^T : int32     = (# "conv.ovf.u4" value  : uint32 #)
+                 when ^T : int16     = (# "conv.ovf.u4" value  : uint32 #)
+                 when ^T : nativeint = (# "conv.ovf.u4" value  : uint32 #)
+                 when ^T : sbyte     = (# "conv.ovf.u4" value  : uint32 #)
+                 when ^T : uint64     = (# "conv.ovf.u4.un" value  : uint32 #)
+                 when ^T : uint32     = (# "conv.ovf.u4.un" value  : uint32 #)
+                 when ^T : uint16     = (# "conv.ovf.u4.un" value  : uint32 #)
+                 when ^T : char       = (# "conv.ovf.u4.un" value  : uint32 #)
+                 when ^T : unativeint = (# "conv.ovf.u4.un" value  : uint32 #)
+                 when ^T : byte     = (# "conv.ovf.u4.un" value  : uint32 #)
 
             [<NoDynamicInvocation>]
             [<CompiledName("ToInt32")>]
-            let inline int32 (x: ^T) = 
-                (^T : (static member op_Explicit: ^T -> int32) (x))
-                 when ^T : string     = ParseInt32 (castToString x)
-                 when ^T : float     = (# "conv.ovf.i4" x  : int32 #)
-                 when ^T : float32   = (# "conv.ovf.i4" x  : int32 #)
-                 when ^T : int64     = (# "conv.ovf.i4" x  : int32 #)
-                 when ^T : int32     = (# "conv.ovf.i4" x  : int32 #)
-                 when ^T : int16     = (# "conv.ovf.i4" x  : int32 #)
-                 when ^T : nativeint = (# "conv.ovf.i4" x  : int32 #)
-                 when ^T : sbyte     = (# "conv.ovf.i4" x  : int32 #)
-                 when ^T : uint64     = (# "conv.ovf.i4.un" x  : int32 #)
-                 when ^T : uint32     = (# "conv.ovf.i4.un" x  : int32 #)
-                 when ^T : uint16     = (# "conv.ovf.i4.un" x  : int32 #)
-                 when ^T : char       = (# "conv.ovf.i4.un" x  : int32 #)
-                 when ^T : unativeint = (# "conv.ovf.i4.un" x  : int32 #)
-                 when ^T : byte     = (# "conv.ovf.i4.un" x  : int32 #)
+            let inline int32 (value: ^T) = 
+                (^T : (static member op_Explicit: ^T -> int32) (value))
+                 when ^T : string     = ParseInt32 (castToString value)
+                 when ^T : float     = (# "conv.ovf.i4" value  : int32 #)
+                 when ^T : float32   = (# "conv.ovf.i4" value  : int32 #)
+                 when ^T : int64     = (# "conv.ovf.i4" value  : int32 #)
+                 when ^T : int32     = (# "conv.ovf.i4" value  : int32 #)
+                 when ^T : int16     = (# "conv.ovf.i4" value  : int32 #)
+                 when ^T : nativeint = (# "conv.ovf.i4" value  : int32 #)
+                 when ^T : sbyte     = (# "conv.ovf.i4" value  : int32 #)
+                 when ^T : uint64     = (# "conv.ovf.i4.un" value  : int32 #)
+                 when ^T : uint32     = (# "conv.ovf.i4.un" value  : int32 #)
+                 when ^T : uint16     = (# "conv.ovf.i4.un" value  : int32 #)
+                 when ^T : char       = (# "conv.ovf.i4.un" value  : int32 #)
+                 when ^T : unativeint = (# "conv.ovf.i4.un" value  : int32 #)
+                 when ^T : byte     = (# "conv.ovf.i4.un" value  : int32 #)
 
 
             [<CompiledName("ToInt")>]
-            let inline int x = int32 x
+            let inline int value = int32 value
 
             [<NoDynamicInvocation>]
             [<CompiledName("ToUInt64")>]
-            let inline uint64 (x: ^T) = 
-                (^T : (static member op_Explicit: ^T -> uint64) (x))
-                 when ^T : string     = ParseUInt64 (castToString x)
-                 when ^T : float     = (# "conv.ovf.u8" x  : uint64 #)
-                 when ^T : float32   = (# "conv.ovf.u8" x  : uint64 #)
-                 when ^T : int64     = (# "conv.ovf.u8" x  : uint64 #)
-                 when ^T : int32     = (# "conv.ovf.u8" x  : uint64 #)
-                 when ^T : int16     = (# "conv.ovf.u8" x  : uint64 #)
-                 when ^T : nativeint = (# "conv.ovf.u8" x  : uint64 #)
-                 when ^T : sbyte     = (# "conv.ovf.u8" x  : uint64 #)
-                 when ^T : uint64     = (# "conv.ovf.u8.un" x  : uint64 #)
-                 when ^T : uint32     = (# "conv.ovf.u8.un" x  : uint64 #)
-                 when ^T : uint16     = (# "conv.ovf.u8.un" x  : uint64 #)
-                 when ^T : char       = (# "conv.ovf.u8.un" x  : uint64 #)
-                 when ^T : unativeint = (# "conv.ovf.u8.un" x  : uint64 #)
-                 when ^T : byte     = (# "conv.ovf.u8.un" x  : uint64 #)
+            let inline uint64 (value: ^T) = 
+                (^T : (static member op_Explicit: ^T -> uint64) (value))
+                 when ^T : string     = ParseUInt64 (castToString value)
+                 when ^T : float     = (# "conv.ovf.u8" value  : uint64 #)
+                 when ^T : float32   = (# "conv.ovf.u8" value  : uint64 #)
+                 when ^T : int64     = (# "conv.ovf.u8" value  : uint64 #)
+                 when ^T : int32     = (# "conv.ovf.u8" value  : uint64 #)
+                 when ^T : int16     = (# "conv.ovf.u8" value  : uint64 #)
+                 when ^T : nativeint = (# "conv.ovf.u8" value  : uint64 #)
+                 when ^T : sbyte     = (# "conv.ovf.u8" value  : uint64 #)
+                 when ^T : uint64     = (# "conv.ovf.u8.un" value  : uint64 #)
+                 when ^T : uint32     = (# "conv.ovf.u8.un" value  : uint64 #)
+                 when ^T : uint16     = (# "conv.ovf.u8.un" value  : uint64 #)
+                 when ^T : char       = (# "conv.ovf.u8.un" value  : uint64 #)
+                 when ^T : unativeint = (# "conv.ovf.u8.un" value  : uint64 #)
+                 when ^T : byte     = (# "conv.ovf.u8.un" value  : uint64 #)
 
             [<NoDynamicInvocation>]
             [<CompiledName("ToInt64")>]
-            let inline int64 (x: ^T) = 
-                (^T : (static member op_Explicit: ^T -> int64) (x))
-                 when ^T : string     = ParseInt64 (castToString x)
-                 when ^T : float     = (# "conv.ovf.i8" x  : int64 #)
-                 when ^T : float32   = (# "conv.ovf.i8" x  : int64 #)
-                 when ^T : int64     = (# "conv.ovf.i8" x  : int64 #)
-                 when ^T : int32     = (# "conv.ovf.i8" x  : int64 #)
-                 when ^T : int16     = (# "conv.ovf.i8" x  : int64 #)
-                 when ^T : nativeint = (# "conv.ovf.i8" x  : int64 #)
-                 when ^T : sbyte     = (# "conv.ovf.i8" x  : int64 #)
-                 when ^T : uint64     = (# "conv.ovf.i8.un" x  : int64 #)
-                 when ^T : uint32     = (# "conv.ovf.i8.un" x  : int64 #)
-                 when ^T : uint16     = (# "conv.ovf.i8.un" x  : int64 #)
-                 when ^T : char       = (# "conv.ovf.i8.un" x  : int64 #)
-                 when ^T : unativeint = (# "conv.ovf.i8.un" x  : int64 #)
-                 when ^T : byte     = (# "conv.ovf.i8.un" x  : int64 #)
+            let inline int64 (value: ^T) = 
+                (^T : (static member op_Explicit: ^T -> int64) (value))
+                 when ^T : string     = ParseInt64 (castToString value)
+                 when ^T : float     = (# "conv.ovf.i8" value  : int64 #)
+                 when ^T : float32   = (# "conv.ovf.i8" value  : int64 #)
+                 when ^T : int64     = (# "conv.ovf.i8" value  : int64 #)
+                 when ^T : int32     = (# "conv.ovf.i8" value  : int64 #)
+                 when ^T : int16     = (# "conv.ovf.i8" value  : int64 #)
+                 when ^T : nativeint = (# "conv.ovf.i8" value  : int64 #)
+                 when ^T : sbyte     = (# "conv.ovf.i8" value  : int64 #)
+                 when ^T : uint64     = (# "conv.ovf.i8.un" value  : int64 #)
+                 when ^T : uint32     = (# "conv.ovf.i8.un" value  : int64 #)
+                 when ^T : uint16     = (# "conv.ovf.i8.un" value  : int64 #)
+                 when ^T : char       = (# "conv.ovf.i8.un" value  : int64 #)
+                 when ^T : unativeint = (# "conv.ovf.i8.un" value  : int64 #)
+                 when ^T : byte     = (# "conv.ovf.i8.un" value  : int64 #)
 
             [<NoDynamicInvocation>]
             [<CompiledName("ToUIntPtr")>]
-            let inline unativeint (x: ^T) = 
-                (^T : (static member op_Explicit: ^T -> unativeint) (x))
-                 when ^T : string     = ParseUIntPtr (castToString x)
-                 when ^T : float     = (# "conv.ovf.u" x  : unativeint #)
-                 when ^T : float32   = (# "conv.ovf.u" x  : unativeint #)
-                 when ^T : int64     = (# "conv.ovf.u" x  : unativeint #)
-                 when ^T : int32     = (# "conv.ovf.u" x  : unativeint #)
-                 when ^T : int16     = (# "conv.ovf.u" x  : unativeint #)
-                 when ^T : nativeint = (# "conv.ovf.u" x  : unativeint #)
-                 when ^T : sbyte     = (# "conv.ovf.u" x  : unativeint #)
-                 when ^T : uint64     = (# "conv.ovf.u.un" x  : unativeint #)
-                 when ^T : uint32     = (# "conv.ovf.u.un" x  : unativeint #)
-                 when ^T : uint16     = (# "conv.ovf.u.un" x  : unativeint #)
-                 when ^T : char       = (# "conv.ovf.u.un" x  : unativeint #)
-                 when ^T : unativeint = (# "conv.ovf.u.un" x  : unativeint #)
-                 when ^T : byte     = (# "conv.ovf.u.un" x  : unativeint #)
+            let inline unativeint (value: ^T) = 
+                (^T : (static member op_Explicit: ^T -> unativeint) (value))
+                 when ^T : string     = ParseUIntPtr (castToString value)
+                 when ^T : float     = (# "conv.ovf.u" value  : unativeint #)
+                 when ^T : float32   = (# "conv.ovf.u" value  : unativeint #)
+                 when ^T : int64     = (# "conv.ovf.u" value  : unativeint #)
+                 when ^T : int32     = (# "conv.ovf.u" value  : unativeint #)
+                 when ^T : int16     = (# "conv.ovf.u" value  : unativeint #)
+                 when ^T : nativeint = (# "conv.ovf.u" value  : unativeint #)
+                 when ^T : sbyte     = (# "conv.ovf.u" value  : unativeint #)
+                 when ^T : uint64     = (# "conv.ovf.u.un" value  : unativeint #)
+                 when ^T : uint32     = (# "conv.ovf.u.un" value  : unativeint #)
+                 when ^T : uint16     = (# "conv.ovf.u.un" value  : unativeint #)
+                 when ^T : char       = (# "conv.ovf.u.un" value  : unativeint #)
+                 when ^T : unativeint = (# "conv.ovf.u.un" value  : unativeint #)
+                 when ^T : byte     = (# "conv.ovf.u.un" value  : unativeint #)
 
             [<NoDynamicInvocation>]
             [<CompiledName("ToIntPtr")>]
-            let inline nativeint (x: ^T) = 
-                (^T : (static member op_Explicit: ^T -> nativeint) (x))
-                 when ^T : string     = ParseIntPtr (castToString x)
-                 when ^T : float     = (# "conv.ovf.i" x  : nativeint #)
-                 when ^T : float32   = (# "conv.ovf.i" x  : nativeint #)
-                 when ^T : int64     = (# "conv.ovf.i" x  : nativeint #)
-                 when ^T : int32     = (# "conv.ovf.i" x  : nativeint #)
-                 when ^T : int16     = (# "conv.ovf.i" x  : nativeint #)
-                 when ^T : nativeint = (# "conv.ovf.i" x  : nativeint #)
-                 when ^T : sbyte     = (# "conv.ovf.i" x  : nativeint #)
-                 when ^T : uint64     = (# "conv.ovf.i.un" x  : nativeint #)
-                 when ^T : uint32     = (# "conv.ovf.i.un" x  : nativeint #)
-                 when ^T : uint16     = (# "conv.ovf.i.un" x  : nativeint #)
-                 when ^T : char       = (# "conv.ovf.i.un" x  : nativeint #)
-                 when ^T : unativeint = (# "conv.ovf.i.un" x  : nativeint #)
-                 when ^T : byte     = (# "conv.ovf.i.un" x  : nativeint #)
+            let inline nativeint (value: ^T) = 
+                (^T : (static member op_Explicit: ^T -> nativeint) (value))
+                 when ^T : string     = ParseIntPtr (castToString value)
+                 when ^T : float     = (# "conv.ovf.i" value  : nativeint #)
+                 when ^T : float32   = (# "conv.ovf.i" value  : nativeint #)
+                 when ^T : int64     = (# "conv.ovf.i" value  : nativeint #)
+                 when ^T : int32     = (# "conv.ovf.i" value  : nativeint #)
+                 when ^T : int16     = (# "conv.ovf.i" value  : nativeint #)
+                 when ^T : nativeint = (# "conv.ovf.i" value  : nativeint #)
+                 when ^T : sbyte     = (# "conv.ovf.i" value  : nativeint #)
+                 when ^T : uint64     = (# "conv.ovf.i.un" value  : nativeint #)
+                 when ^T : uint32     = (# "conv.ovf.i.un" value  : nativeint #)
+                 when ^T : uint16     = (# "conv.ovf.i.un" value  : nativeint #)
+                 when ^T : char       = (# "conv.ovf.i.un" value  : nativeint #)
+                 when ^T : unativeint = (# "conv.ovf.i.un" value  : nativeint #)
+                 when ^T : byte     = (# "conv.ovf.i.un" value  : nativeint #)
 
 #if NAN_INFINITY_MEASURES
         module Measure =
@@ -4909,22 +4937,22 @@ namespace Microsoft.FSharp.Core
                   interface System.Collections.IEnumerable with 
                       member x.GetEnumerator() = (gen() :> System.Collections.IEnumerator) }
 
-            let RangeInt32   n step m : seq<int>        = simpleIntegralRange Int32.MinValue Int32.MaxValue n step m
-            let RangeInt64   n step m : seq<int64>      = simpleIntegralRange Int64.MinValue Int64.MaxValue n step m
-            let RangeUInt64  n step m : seq<uint64>     = simpleIntegralRange UInt64.MinValue UInt64.MaxValue n step m
-            let RangeUInt32  n step m : seq<uint32>     = simpleIntegralRange UInt32.MinValue UInt32.MaxValue n step m
-            let RangeIntPtr  n step m : seq<nativeint>  = variableStepIntegralRange n step m
-            let RangeUIntPtr n step m : seq<unativeint> = variableStepIntegralRange n step m
-            let RangeInt16   n step m : seq<int16>      = simpleIntegralRange Int16.MinValue Int16.MaxValue n step m
-            let RangeUInt16  n step m : seq<uint16>     = simpleIntegralRange UInt16.MinValue UInt16.MaxValue n step m
-            let RangeSByte   n step m : seq<sbyte>      = simpleIntegralRange SByte.MinValue SByte.MaxValue n step m
-            let RangeByte    n step m : seq<byte>       = simpleIntegralRange Byte.MinValue Byte.MaxValue n step m
-            let RangeDouble  n step m : seq<float>      = floatingRange float   (n,step,m)
-            let RangeSingle  n step m : seq<float32>    = floatingRange float32 (n,step,m)
-            let RangeGeneric   one add n m : seq<'T> = integralRange (one,add,n,m)
-            let RangeStepGeneric   zero add n step m : seq<'T> = integralRangeStep zero add  (n,step,m)
-            let RangeChar (n:char) (m:char) = 
-                integralRange ((retype 1us : char),(fun (x:char) (y:char) -> retype ((retype x : uint16) + (retype y : uint16)) ),n,m)
+            let RangeInt32   start step stop : seq<int>        = simpleIntegralRange Int32.MinValue Int32.MaxValue start step stop
+            let RangeInt64   start step stop : seq<int64>      = simpleIntegralRange Int64.MinValue Int64.MaxValue start step stop
+            let RangeUInt64  start step stop : seq<uint64>     = simpleIntegralRange UInt64.MinValue UInt64.MaxValue start step stop
+            let RangeUInt32  start step stop : seq<uint32>     = simpleIntegralRange UInt32.MinValue UInt32.MaxValue start step stop
+            let RangeIntPtr  start step stop : seq<nativeint>  = variableStepIntegralRange start step stop
+            let RangeUIntPtr start step stop : seq<unativeint> = variableStepIntegralRange start step stop
+            let RangeInt16   start step stop : seq<int16>      = simpleIntegralRange Int16.MinValue Int16.MaxValue start step stop
+            let RangeUInt16  start step stop : seq<uint16>     = simpleIntegralRange UInt16.MinValue UInt16.MaxValue start step stop
+            let RangeSByte   start step stop : seq<sbyte>      = simpleIntegralRange SByte.MinValue SByte.MaxValue start step stop
+            let RangeByte    start step stop : seq<byte>       = simpleIntegralRange Byte.MinValue Byte.MaxValue start step stop
+            let RangeDouble  start step stop : seq<float>      = floatingRange float   (start,step,stop)
+            let RangeSingle  start step stop : seq<float32>    = floatingRange float32 (start,step,stop)
+            let RangeGeneric   one add start stop : seq<'T> = integralRange (one,add,start,stop)
+            let RangeStepGeneric   zero add start step stop : seq<'T> = integralRangeStep zero add  (start,step,stop)
+            let RangeChar (start:char) (stop:char) = 
+                integralRange ((retype 1us : char),(fun (x:char) (y:char) -> retype ((retype x : uint16) + (retype y : uint16)) ),start,stop)
 
 
             let inline toFloat (x:float32) = (# "conv.r8" x : float #)
@@ -4985,7 +5013,7 @@ namespace Microsoft.FSharp.Core
             let PowDecimal (x:decimal) n = ComputePowerGenericInlined  1.0M Checked.( * ) x n 
 
             [<CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1709:IdentifiersShouldBeCasedCorrectly");  CodeAnalysis.SuppressMessage("Microsoft.Naming","CA1704:IdentifiersShouldBeSpelledCorrectly")>]
-            let PowGeneric (one,mul,x:'T,n) = ComputePowerGenericInlined  one mul x n 
+            let PowGeneric (one, mul, value: 'T, exponent) = ComputePowerGenericInlined  one mul value exponent 
 
             let inline ComputeSlice bound start finish length =
                 match start, finish with
@@ -4995,126 +5023,126 @@ namespace Microsoft.FSharp.Core
                 | Some m, Some n -> m, n
                 | _ -> raise (System.IndexOutOfRangeException())
 
-            let inline GetArraySlice (arr: _[]) start finish =
-                let start, finish = ComputeSlice 0 start finish arr.Length
-                GetArraySub arr start (finish - start + 1)
+            let inline GetArraySlice (source: _[]) start finish =
+                let start, finish = ComputeSlice 0 start finish source.Length
+                GetArraySub source start (finish - start + 1)
 
-            let inline SetArraySlice (dst: _[]) start finish (src:_[]) = 
+            let inline SetArraySlice (target: _[]) start finish (source: _[]) = 
                 let start  = (match start with None -> 0 | Some n -> n) 
-                let finish = (match finish with None -> dst.Length - 1 | Some n -> n) 
-                SetArraySub dst start (finish - start + 1) src
+                let finish = (match finish with None -> target.Length - 1 | Some n -> n) 
+                SetArraySub target start (finish - start + 1) source
 
-            let GetArraySlice2D (arr: _[,]) start1 finish1 start2 finish2 =
-                let bound1 = arr.GetLowerBound(0)
-                let bound2 = arr.GetLowerBound(1)
-                let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray2DLength1 arr)
-                let start2, finish2 = ComputeSlice bound2 start2 finish2 (GetArray2DLength2 arr)
+            let GetArraySlice2D (source: _[,]) start1 finish1 start2 finish2 =
+                let bound1 = source.GetLowerBound(0)
+                let bound2 = source.GetLowerBound(1)
+                let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray2DLength1 source)
+                let start2, finish2 = ComputeSlice bound2 start2 finish2 (GetArray2DLength2 source)
                 let len1 = (finish1 - start1 + 1)
                 let len2 = (finish2 - start2 + 1)
-                GetArray2DSub arr start1 start2 len1 len2
+                GetArray2DSub source start1 start2 len1 len2
 
-            let inline GetArraySlice2DFixed1 (arr: _[,]) fixed1 start2 finish2 = 
-                let bound2 = arr.GetLowerBound(1)
-                let start2, finish2 = ComputeSlice bound2 start2 finish2 (GetArray2DLength2 arr)
+            let inline GetArraySlice2DFixed1 (source: _[,]) index1 start2 finish2 = 
+                let bound2 = source.GetLowerBound(1)
+                let start2, finish2 = ComputeSlice bound2 start2 finish2 (GetArray2DLength2 source)
                 let len2 = (finish2 - start2 + 1)
                 let dst = zeroCreate (if len2 < 0 then 0 else len2)
                 for j = 0 to len2 - 1 do 
-                    SetArray dst j (GetArray2D arr fixed1 (start2+j))
+                    SetArray dst j (GetArray2D source index1 (start2+j))
                 dst
 
-            let inline GetArraySlice2DFixed2 (arr: _[,]) start1 finish1 fixed2 =
-                let bound1 = arr.GetLowerBound(0)
-                let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray2DLength1 arr) 
+            let inline GetArraySlice2DFixed2 (source: _[,]) start1 finish1 index2 =
+                let bound1 = source.GetLowerBound(0)
+                let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray2DLength1 source) 
                 let len1 = (finish1 - start1 + 1)
                 let dst = zeroCreate (if len1 < 0 then 0 else len1)
                 for i = 0 to len1 - 1 do 
-                    SetArray dst i (GetArray2D arr (start1+i) fixed2)
+                    SetArray dst i (GetArray2D source (start1+i) index2)
                 dst
 
-            let inline SetArraySlice2DFixed1 (dst: _[,]) fixed1 start2 finish2 (src:_[]) = 
-                let bound2 = dst.GetLowerBound(1)
+            let inline SetArraySlice2DFixed1 (target: _[,]) index1 start2 finish2 (source: _[]) = 
+                let bound2 = target.GetLowerBound(1)
                 let start2  = (match start2 with None -> bound2 | Some n -> n) 
-                let finish2 = (match finish2 with None -> bound2 + GetArray2DLength2 dst - 1 | Some n -> n) 
+                let finish2 = (match finish2 with None -> bound2 + GetArray2DLength2 target - 1 | Some n -> n) 
                 let len2 = (finish2 - start2 + 1)
                 for j = 0 to len2 - 1 do
-                    SetArray2D dst fixed1 (bound2+start2+j) (GetArray src j)
+                    SetArray2D target index1 (bound2+start2+j) (GetArray source j)
 
-            let inline SetArraySlice2DFixed2 (dst: _[,]) start1 finish1 fixed2 (src:_[]) = 
-                let bound1 = dst.GetLowerBound(0)
+            let inline SetArraySlice2DFixed2 (target: _[,]) start1 finish1 index2 (source:_[]) = 
+                let bound1 = target.GetLowerBound(0)
                 let start1  = (match start1 with None -> bound1 | Some n -> n) 
-                let finish1 = (match finish1 with None -> bound1 + GetArray2DLength1 dst - 1 | Some n -> n) 
+                let finish1 = (match finish1 with None -> bound1 + GetArray2DLength1 target - 1 | Some n -> n) 
                 let len1 = (finish1 - start1 + 1)
                 for i = 0 to len1 - 1 do
-                    SetArray2D dst (bound1+start1+i) fixed2 (GetArray src i)
+                    SetArray2D target (bound1+start1+i) index2 (GetArray source i)
 
-            let SetArraySlice2D (dst: _[,]) start1 finish1 start2 finish2 (src:_[,]) = 
-                let bound1 = dst.GetLowerBound(0)
-                let bound2 = dst.GetLowerBound(1)
+            let SetArraySlice2D (target: _[,]) start1 finish1 start2 finish2 (source: _[,]) = 
+                let bound1 = target.GetLowerBound(0)
+                let bound2 = target.GetLowerBound(1)
                 let start1  = (match start1 with None -> bound1 | Some n -> n) 
                 let start2  = (match start2 with None -> bound2 | Some n -> n) 
-                let finish1 = (match finish1 with None -> bound1 + GetArray2DLength1 dst - 1 | Some n -> n) 
-                let finish2 = (match finish2 with None -> bound2 + GetArray2DLength2 dst - 1 | Some n -> n) 
-                SetArray2DSub dst start1 start2 (finish1 - start1 + 1) (finish2 - start2 + 1) src
+                let finish1 = (match finish1 with None -> bound1 + GetArray2DLength1 target - 1 | Some n -> n) 
+                let finish2 = (match finish2 with None -> bound2 + GetArray2DLength2 target - 1 | Some n -> n) 
+                SetArray2DSub target start1 start2 (finish1 - start1 + 1) (finish2 - start2 + 1) source
 
-            let GetArraySlice3D (arr: _[,,]) start1 finish1 start2 finish2 start3 finish3 =
-                let bound1 = arr.GetLowerBound(0)
-                let bound2 = arr.GetLowerBound(1)
-                let bound3 = arr.GetLowerBound(2)
-                let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray3DLength1 arr)              
-                let start2, finish2 = ComputeSlice bound2 start2 finish2 (GetArray3DLength2 arr)              
-                let start3, finish3 = ComputeSlice bound3 start3 finish3 (GetArray3DLength3 arr)              
+            let GetArraySlice3D (source: _[,,]) start1 finish1 start2 finish2 start3 finish3 =
+                let bound1 = source.GetLowerBound(0)
+                let bound2 = source.GetLowerBound(1)
+                let bound3 = source.GetLowerBound(2)
+                let start1, finish1 = ComputeSlice bound1 start1 finish1 (GetArray3DLength1 source)              
+                let start2, finish2 = ComputeSlice bound2 start2 finish2 (GetArray3DLength2 source)              
+                let start3, finish3 = ComputeSlice bound3 start3 finish3 (GetArray3DLength3 source)              
                 let len1 = (finish1 - start1 + 1)
                 let len2 = (finish2 - start2 + 1)
                 let len3 = (finish3 - start3 + 1)
-                GetArray3DSub arr start1 start2 start3 len1 len2 len3
+                GetArray3DSub source start1 start2 start3 len1 len2 len3
 
-            let SetArraySlice3D (dst: _[,,]) start1 finish1 start2 finish2 start3 finish3 (src:_[,,]) = 
-                let bound1 = dst.GetLowerBound(0)
-                let bound2 = dst.GetLowerBound(1)
-                let bound3 = dst.GetLowerBound(2)
+            let SetArraySlice3D (target: _[,,]) start1 finish1 start2 finish2 start3 finish3 (source:_[,,]) = 
+                let bound1 = target.GetLowerBound(0)
+                let bound2 = target.GetLowerBound(1)
+                let bound3 = target.GetLowerBound(2)
                 let start1  = (match start1 with None -> bound1 | Some n -> n) 
                 let start2  = (match start2 with None -> bound2 | Some n -> n) 
                 let start3  = (match start3 with None -> bound3 | Some n -> n) 
-                let finish1 = (match finish1 with None -> bound1 + GetArray3DLength1 dst - 1 | Some n -> n) 
-                let finish2 = (match finish2 with None -> bound2 + GetArray3DLength2 dst - 1 | Some n -> n) 
-                let finish3 = (match finish3 with None -> bound3 + GetArray3DLength3 dst - 1 | Some n -> n) 
-                SetArray3DSub dst start1 start2 start3 (finish1 - start1 + 1) (finish2 - start2 + 1) (finish3 - start3 + 1) src
+                let finish1 = (match finish1 with None -> bound1 + GetArray3DLength1 target - 1 | Some n -> n) 
+                let finish2 = (match finish2 with None -> bound2 + GetArray3DLength2 target - 1 | Some n -> n) 
+                let finish3 = (match finish3 with None -> bound3 + GetArray3DLength3 target - 1 | Some n -> n) 
+                SetArray3DSub target start1 start2 start3 (finish1 - start1 + 1) (finish2 - start2 + 1) (finish3 - start3 + 1) source
 
-            let GetArraySlice4D (arr: _[,,,]) start1 finish1 start2 finish2 start3 finish3 start4 finish4 = 
-                let bound1 = arr.GetLowerBound(0)
-                let bound2 = arr.GetLowerBound(1)
-                let bound3 = arr.GetLowerBound(2)
-                let bound4 = arr.GetLowerBound(3)
-                let start1, finish1 = ComputeSlice bound1 start1 finish1 (Array4DLength1 arr)              
-                let start2, finish2 = ComputeSlice bound2 start2 finish2 (Array4DLength2 arr)              
-                let start3, finish3 = ComputeSlice bound3 start3 finish3 (Array4DLength3 arr)              
-                let start4, finish4 = ComputeSlice bound4 start4 finish4 (Array4DLength4 arr)              
+            let GetArraySlice4D (source: _[,,,]) start1 finish1 start2 finish2 start3 finish3 start4 finish4 = 
+                let bound1 = source.GetLowerBound(0)
+                let bound2 = source.GetLowerBound(1)
+                let bound3 = source.GetLowerBound(2)
+                let bound4 = source.GetLowerBound(3)
+                let start1, finish1 = ComputeSlice bound1 start1 finish1 (Array4DLength1 source)              
+                let start2, finish2 = ComputeSlice bound2 start2 finish2 (Array4DLength2 source)              
+                let start3, finish3 = ComputeSlice bound3 start3 finish3 (Array4DLength3 source)              
+                let start4, finish4 = ComputeSlice bound4 start4 finish4 (Array4DLength4 source)              
                 let len1 = (finish1 - start1 + 1)
                 let len2 = (finish2 - start2 + 1)
                 let len3 = (finish3 - start3 + 1)
                 let len4 = (finish4 - start4 + 1)
-                GetArray4DSub arr start1 start2 start3 start4 len1 len2 len3 len4
+                GetArray4DSub source start1 start2 start3 start4 len1 len2 len3 len4
 
-            let SetArraySlice4D (dst: _[,,,]) start1 finish1 start2 finish2 start3 finish3 start4 finish4 (src:_[,,,]) = 
-                let bound1 = dst.GetLowerBound(0)
-                let bound2 = dst.GetLowerBound(1)
-                let bound3 = dst.GetLowerBound(2)
-                let bound4 = dst.GetLowerBound(3)
+            let SetArraySlice4D (target: _[,,,]) start1 finish1 start2 finish2 start3 finish3 start4 finish4 (source:_[,,,]) = 
+                let bound1 = target.GetLowerBound(0)
+                let bound2 = target.GetLowerBound(1)
+                let bound3 = target.GetLowerBound(2)
+                let bound4 = target.GetLowerBound(3)
                 let start1  = (match start1 with None -> bound1 | Some n -> n) 
                 let start2  = (match start2 with None -> bound2 | Some n -> n) 
                 let start3  = (match start3 with None -> bound3 | Some n -> n) 
                 let start4  = (match start4 with None -> bound4 | Some n -> n) 
-                let finish1 = (match finish1 with None -> bound1 + Array4DLength1 dst - 1 | Some n -> n) 
-                let finish2 = (match finish2 with None -> bound2 + Array4DLength2 dst - 1 | Some n -> n) 
-                let finish3 = (match finish3 with None -> bound3 + Array4DLength3 dst - 1 | Some n -> n) 
-                let finish4 = (match finish4 with None -> bound4 + Array4DLength4 dst - 1 | Some n -> n) 
-                SetArray4DSub dst start1 start2 start3 start4 (finish1 - start1 + 1) (finish2 - start2 + 1) (finish3 - start3 + 1) (finish4 - start4 + 1) src
+                let finish1 = (match finish1 with None -> bound1 + Array4DLength1 target - 1 | Some n -> n) 
+                let finish2 = (match finish2 with None -> bound2 + Array4DLength2 target - 1 | Some n -> n) 
+                let finish3 = (match finish3 with None -> bound3 + Array4DLength3 target - 1 | Some n -> n) 
+                let finish4 = (match finish4 with None -> bound4 + Array4DLength4 target - 1 | Some n -> n) 
+                SetArray4DSub target start1 start2 start3 start4 (finish1 - start1 + 1) (finish2 - start2 + 1) (finish3 - start3 + 1) (finish4 - start4 + 1) source
 
-            let inline GetStringSlice (str:string) start finish =
-                let start, finish = ComputeSlice 0 start finish str.Length
+            let inline GetStringSlice (source: string) start finish =
+                let start, finish = ComputeSlice 0 start finish source.Length
                 let len = finish-start+1
                 if len <= 0 then String.Empty
-                else str.Substring(start, len)
+                else source.Substring(start, len)
 
             [<NoDynamicInvocation>]
             let inline absImpl (x: ^T) : ^T = 
@@ -5476,7 +5504,7 @@ namespace Microsoft.FSharp.Core
             let AcosDynamic x           = AcosDynamicImplTable<_>.Result x
             let AsinDynamic x           = AsinDynamicImplTable<_>.Result x
             let AtanDynamic x           = AtanDynamicImplTable<_>.Result x
-            let Atan2Dynamic x y        = Atan2DynamicImplTable<_,_>.Result x y
+            let Atan2Dynamic y x        = Atan2DynamicImplTable<_,_>.Result y x
             let CeilingDynamic x        = CeilingDynamicImplTable<_>.Result x 
             let ExpDynamic x            = ExpDynamicImplTable<_>.Result x 
             let FloorDynamic x          = FloorDynamicImplTable<_>.Result x 
@@ -5499,36 +5527,36 @@ namespace Microsoft.FSharp.Core
         open OperatorIntrinsics
         
                    
-        let inline (..) (n:^T) (m:^T) = 
-           RangeGeneric (GenericOne< (^T) >)  Checked.(+) n m
-           when ^T : int32       = RangeInt32   (retype n) 1    (retype m)
-           when ^T : float       = RangeDouble  (retype n) 1.0  (retype m)
-           when ^T : float32     = RangeSingle  (retype n) 1.0f (retype m)
-           when ^T : int64       = RangeInt64   (retype n) 1L   (retype m)
-           when ^T : uint64      = RangeUInt64  (retype n) 1UL  (retype m)
-           when ^T : uint32      = RangeUInt32  (retype n) 1ul  (retype m)
-           when ^T : nativeint   = RangeIntPtr  (retype n) 1n   (retype m)
-           when ^T : unativeint  = RangeUIntPtr (retype n) 1un  (retype m)
-           when ^T : int16       = RangeInt16   (retype n) 1s   (retype m)
-           when ^T : uint16      = RangeUInt16  (retype n) 1us  (retype m)
-           when ^T : sbyte       = RangeSByte   (retype n) 1y   (retype m)
-           when ^T : byte        = RangeByte    (retype n) 1uy  (retype m)
-           when ^T : char        = RangeChar    (retype n) (retype m)
+        let inline (..) (start:^T) (finish:^T) = 
+           RangeGeneric (GenericOne< (^T) >)  Checked.(+) start finish
+           when ^T : int32       = RangeInt32   (retype start) 1    (retype finish)
+           when ^T : float       = RangeDouble  (retype start) 1.0  (retype finish)
+           when ^T : float32     = RangeSingle  (retype start) 1.0f (retype finish)
+           when ^T : int64       = RangeInt64   (retype start) 1L   (retype finish)
+           when ^T : uint64      = RangeUInt64  (retype start) 1UL  (retype finish)
+           when ^T : uint32      = RangeUInt32  (retype start) 1ul  (retype finish)
+           when ^T : nativeint   = RangeIntPtr  (retype start) 1n   (retype finish)
+           when ^T : unativeint  = RangeUIntPtr (retype start) 1un  (retype finish)
+           when ^T : int16       = RangeInt16   (retype start) 1s   (retype finish)
+           when ^T : uint16      = RangeUInt16  (retype start) 1us  (retype finish)
+           when ^T : sbyte       = RangeSByte   (retype start) 1y   (retype finish)
+           when ^T : byte        = RangeByte    (retype start) 1uy  (retype finish)
+           when ^T : char        = RangeChar    (retype start) (retype finish)
 
-        let inline (.. ..) (n:^T) (step:^U) (m:^T) = 
-           RangeStepGeneric (GenericZero< (^U) >) Checked.(+) n step m
-           when ^T : int32       = RangeInt32   (retype n) (retype step) (retype m)
-           when ^T : float       = RangeDouble  (retype n) (retype step) (retype m)
-           when ^T : float32     = RangeSingle  (retype n) (retype step) (retype m)
-           when ^T : int64       = RangeInt64   (retype n) (retype step) (retype m)
-           when ^T : uint64      = RangeUInt64  (retype n) (retype step) (retype m)
-           when ^T : uint32      = RangeUInt32  (retype n) (retype step) (retype m)
-           when ^T : nativeint   = RangeIntPtr  (retype n) (retype step) (retype m)
-           when ^T : unativeint  = RangeUIntPtr (retype n) (retype step) (retype m)
-           when ^T : int16       = RangeInt16   (retype n) (retype step) (retype m)
-           when ^T : uint16      = RangeUInt16  (retype n) (retype step) (retype m)
-           when ^T : sbyte       = RangeSByte   (retype n) (retype step) (retype m)
-           when ^T : byte        = RangeByte    (retype n) (retype step) (retype m)
+        let inline (.. ..) (start: ^T) (step: ^U) (finish: ^T) = 
+           RangeStepGeneric (GenericZero< (^U) >) Checked.(+) start step finish
+           when ^T : int32       = RangeInt32   (retype start) (retype step) (retype finish)
+           when ^T : float       = RangeDouble  (retype start) (retype step) (retype finish)
+           when ^T : float32     = RangeSingle  (retype start) (retype step) (retype finish)
+           when ^T : int64       = RangeInt64   (retype start) (retype step) (retype finish)
+           when ^T : uint64      = RangeUInt64  (retype start) (retype step) (retype finish)
+           when ^T : uint32      = RangeUInt32  (retype start) (retype step) (retype finish)
+           when ^T : nativeint   = RangeIntPtr  (retype start) (retype step) (retype finish)
+           when ^T : unativeint  = RangeUIntPtr (retype start) (retype step) (retype finish)
+           when ^T : int16       = RangeInt16   (retype start) (retype step) (retype finish)
+           when ^T : uint16      = RangeUInt16  (retype start) (retype step) (retype finish)
+           when ^T : sbyte       = RangeSByte   (retype start) (retype step) (retype finish)
+           when ^T : byte        = RangeByte    (retype start) (retype step) (retype finish)
         
 
         type ``[,]``<'T> with 
@@ -5539,128 +5567,108 @@ namespace Microsoft.FSharp.Core
             member arr.SetSlice(x1 : int option, x2 : int option, y : int, source:'T[]) = SetArraySlice2DFixed2 arr x1 x2 y source
 
         [<CompiledName("Abs")>]
-        let inline abs (x: ^T) : ^T = 
-             AbsDynamic x
-             when ^T : ^T = absImpl x
-
+        let inline abs (value: ^T) : ^T = 
+             AbsDynamic value
+             when ^T : ^T = absImpl value
 
         [<CompiledName("Acos")>]
-        let inline  acos(x: ^T) : ^T = 
-             AcosDynamic x
-             when ^T : ^T       = acosImpl x
-
+        let inline  acos (value: ^T) : ^T = 
+             AcosDynamic value
+             when ^T : ^T       = acosImpl value
 
         [<CompiledName("Asin")>]
-        let inline  asin(x: ^T) : ^T = 
-             AsinDynamic x
-             when ^T : ^T       = asinImpl x
-
+        let inline  asin (value: ^T) : ^T = 
+             AsinDynamic value
+             when ^T : ^T       = asinImpl value
 
         [<CompiledName("Atan")>]
-        let inline  atan(x: ^T) : ^T = 
-             AtanDynamic x
-             when ^T : ^T       = atanImpl x
-
+        let inline  atan (value: ^T) : ^T = 
+             AtanDynamic value
+             when ^T : ^T       = atanImpl value
 
         [<CompiledName("Atan2")>]
-        let inline  atan2(x: ^T) (y: ^T) : 'U = 
-             Atan2Dynamic x y
-             when ^T : ^T       = (atan2Impl x y : 'U)
-
+        let inline  atan2(y: ^T) (x: ^T) : 'U = 
+             Atan2Dynamic y x
+             when ^T : ^T       = (atan2Impl y x : 'U)
 
         [<CompiledName("Ceiling")>]
-        let inline  ceil(x: ^T) : ^T = 
-             CeilingDynamic x
-             when ^T : ^T       = ceilImpl x
-
+        let inline  ceil (value: ^T) : ^T = 
+             CeilingDynamic value
+             when ^T : ^T       = ceilImpl value
 
         [<CompiledName("Exp")>]
-        let inline  exp(x: ^T) : ^T = 
-             ExpDynamic x
-             when ^T : ^T       = expImpl x
-
+        let inline  exp(value: ^T) : ^T = 
+             ExpDynamic value
+             when ^T : ^T       = expImpl value
 
         [<CompiledName("Floor")>]
-        let inline floor (x: ^T) : ^T = 
-             FloorDynamic x
-             when ^T : ^T       = floorImpl x
-
+        let inline floor (value: ^T) : ^T = 
+             FloorDynamic value
+             when ^T : ^T       = floorImpl value
 
         [<CompiledName("Truncate")>]
-        let inline truncate (x: ^T) : ^T = 
-             TruncateDynamic x
-             when ^T : ^T       = truncateImpl x
-
+        let inline truncate (value: ^T) : ^T = 
+             TruncateDynamic value
+             when ^T : ^T       = truncateImpl value
 
         [<CompiledName("Round")>]
-        let inline round (x: ^T) : ^T = 
-             RoundDynamic x
-             when ^T : ^T       = roundImpl x
-
+        let inline round (value: ^T) : ^T = 
+             RoundDynamic value
+             when ^T : ^T       = roundImpl value
 
         [<CompiledName("Sign")>]
-        let inline sign (x: ^T) : int = 
-             SignDynamic x
-             when ^T : ^T       = signImpl x
-
+        let inline sign (value: ^T) : int = 
+             SignDynamic value
+             when ^T : ^T       = signImpl value
 
         [<CompiledName("Log")>]
-        let inline  log(x: ^T) : ^T = 
-             LogDynamic x
-             when ^T : ^T       = logImpl x
-
+        let inline  log (value: ^T) : ^T = 
+             LogDynamic value
+             when ^T : ^T       = logImpl value
 
         [<CompiledName("Log10")>]
-        let inline  log10(x: ^T) : ^T = 
-             Log10Dynamic x
-             when ^T : ^T       = log10Impl x
-
+        let inline  log10 (value: ^T) : ^T = 
+             Log10Dynamic value
+             when ^T : ^T       = log10Impl value
 
         [<CompiledName("Sqrt")>]
-        let inline  sqrt(x: ^T) : ^U = 
-             SqrtDynamic x
-             when ^T : ^T       = (sqrtImpl x : ^U)
-
+        let inline  sqrt (value: ^T) : ^U = 
+             SqrtDynamic value
+             when ^T : ^T       = (sqrtImpl value : ^U)
 
         [<CompiledName("Cos")>]
-        let inline  cos(x: ^T) : ^T = 
-             CosDynamic x
-             when ^T : ^T       = cosImpl x
-
+        let inline  cos (value: ^T) : ^T = 
+             CosDynamic value
+             when ^T : ^T       = cosImpl value
 
         [<CompiledName("Cosh")>]
-        let inline  cosh(x: ^T) : ^T = 
-             CoshDynamic x
-             when ^T : ^T       = coshImpl x
-
+        let inline cosh (value: ^T) : ^T = 
+             CoshDynamic value
+             when ^T : ^T       = coshImpl value
 
         [<CompiledName("Sin")>]
-        let inline  sin(x: ^T) : ^T = 
-             SinDynamic x
-             when ^T : ^T       = sinImpl x
-
+        let inline sin (value: ^T) : ^T = 
+             SinDynamic value
+             when ^T : ^T       = sinImpl value
 
         [<CompiledName("Sinh")>]
-        let inline  sinh(x: ^T) : ^T = 
-             SinhDynamic x
-             when ^T : ^T       = sinhImpl x
-
+        let inline sinh (value: ^T) : ^T = 
+             SinhDynamic value
+             when ^T : ^T       = sinhImpl value
 
         [<CompiledName("Tan")>]
-        let inline  tan(x: ^T) : ^T = 
-             TanDynamic x
-             when ^T : ^T       = tanImpl x
-
+        let inline tan (value: ^T) : ^T = 
+             TanDynamic value
+             when ^T : ^T       = tanImpl value
 
         [<CompiledName("Tanh")>]
-        let inline  tanh(x: ^T) : ^T = 
-             TanhDynamic x
-             when ^T : ^T       = tanhImpl x
+        let inline tanh (value: ^T) : ^T = 
+             TanhDynamic value
+             when ^T : ^T       = tanhImpl value
 
-        let inline  ( ** ) (x: ^T) (y: ^U) : ^T = 
+        let inline ( ** ) (x: ^T) (y: ^U) : ^T = 
              PowDynamic x y
              when ^T : ^T       = powImpl x y
-
 
         let inline gpown  (x: ^T) n =
             let v = PowGeneric (GenericOne< (^T) >, Checked.( * ), x,n) 
@@ -5743,13 +5751,13 @@ namespace Microsoft.FSharp.Control
     module LazyExtensions = 
         type System.Lazy<'T> with
             [<CompiledName("Create")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
-            static member Create(f : unit -> 'T) : System.Lazy<'T> =
-                let creator = new System.Func<'T>(f)
-                System.Lazy<'T>(creator, true)
+            static member Create(creator : unit -> 'T) : Lazy<'T> =
+                let creator = Func<'T>(creator)
+                Lazy<'T>(creator, true)
 
             [<CompiledName("CreateFromValue")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
-            static member CreateFromValue(value : 'T) : System.Lazy<'T> =
-                System.Lazy<'T>.Create(fun () -> value)
+            static member CreateFromValue(value : 'T) : Lazy<'T> =
+                Lazy<'T>.Create(fun () -> value)
 
             [<CompiledName("IsDelayedDeprecated")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
             member x.IsDelayed = not(x.IsValueCreated)
