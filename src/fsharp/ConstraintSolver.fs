@@ -436,9 +436,9 @@ let SubstMeasure (r:Typar) ms =
     if r.Rigidity = TyparRigidity.Rigid then error(InternalError("SubstMeasure: rigid",r.Range)); 
     if r.Kind = TyparKind.Type then error(InternalError("SubstMeasure: kind=type",r.Range));
 
-    match r.typar_solution with
-    | None -> r.typar_solution <- Some (TType_measure ms)
-    | Some _ -> error(InternalError("already solved",r.Range));
+    match box r.typar_solution with
+    | null -> r.typar_solution <- nullableSlotFull (TType_measure ms)
+    | _ -> error(InternalError("already solved",r.Range));
 
 let rec TransactStaticReq (csenv:ConstraintSolverEnv) (trace:OptionalTrace) (tpr:Typar) req = 
     let m = csenv.m
@@ -699,7 +699,7 @@ let rec SolveTyparEqualsTyp (csenv:ConstraintSolverEnv) ndeep m2 (trace:Optional
       // Record the solution before we solve the constraints, since 
       // We may need to make use of the equation when solving the constraints. 
       // Record a entry in the undo trace if one is provided 
-      trace.Exec (fun () -> r.typar_solution <- Some ty) (fun () -> r.typar_solution <- None)
+      trace.Exec (fun () -> r.typar_solution <- nullableSlotFull ty) (fun () -> r.typar_solution <- nullableSlotEmpty())
       
       (* dprintf "setting typar %d to type %s at %a\n" r.Stamp ((DebugPrint.showType ty)) outputRange m; *)
 
