@@ -1419,7 +1419,7 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
 
       | LibraryUseOnly(_) -> os.Append(LibraryUseOnlyE().Format) |> ignore
 
-      | MissingFields(sl, _) -> os.Append(MissingFieldsE().Format (String.concat ", " sl + ".")) |> ignore
+      | MissingFields(sl, _) -> os.Append(MissingFieldsE().Format (String.concat "," sl + ".")) |> ignore
 
       | ValueRestriction(denv, hassig, v, _, _) -> 
           let denv = { denv with showImperativeTyparAnnotations=true }
@@ -1642,13 +1642,13 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
                   | ErrorStyle.DefaultErrors -> 
                     let file = file.Replace('/', System.IO.Path.DirectorySeparatorChar)
                     let m = mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) m.End
-                    (sprintf "%s(%d, %d): " file m.StartLine m.StartColumn), m, file
+                    (sprintf "%s(%d,%d): " file m.StartLine m.StartColumn), m, file
 
                   // We may also want to change TestErrors to be 1-based
                   | ErrorStyle.TestErrors    -> 
                     let file = file.Replace("/", "\\")
                     let m = mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1) )
-                    sprintf "%s(%d, %d-%d, %d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn, m, file
+                    sprintf "%s(%d,%d-%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn, m, file
 
                   | ErrorStyle.GccErrors     -> 
                     let file = file.Replace('/', System.IO.Path.DirectorySeparatorChar)
@@ -1662,7 +1662,7 @@ let CollectDiagnostic (implicitIncludeDir, showFullPaths, flattenErrors, errorSt
                         if m<>range0 && m<>rangeStartup && m<>rangeCmdArgs then 
                             let file = file.Replace("/", "\\")
                             let m = mkRange m.FileName (mkPos m.StartLine (m.StartColumn + 1)) (mkPos m.EndLine (m.EndColumn + 1) )
-                            sprintf "%s(%d, %d, %d, %d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn, m, file
+                            sprintf "%s(%d,%d,%d,%d): " file m.StartLine m.StartColumn m.EndLine m.EndColumn, m, file
                         else
                             "", m, file
             { Range = m; TextRepresentation = text; IsEmpty = false; File = file }
