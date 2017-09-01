@@ -3001,7 +3001,7 @@ namespace Microsoft.FSharp.Collections
     open Microsoft.FSharp.Core.BasicInlinedOperations
 
     [<DefaultAugmentation(false)>]
-    [<System.Diagnostics.DebuggerTypeProxyAttribute(typedefof<ListDebugView<_>>)>]
+    [<DebuggerTypeProxyAttribute(typedefof<ListDebugView<_>>)>]
     [<DebuggerDisplay("{DebugDisplay,nq}")>]
     [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")>]
     [<StructuralEquality; StructuralComparison>]
@@ -3040,10 +3040,10 @@ namespace Microsoft.FSharp.Collections
                    | [] -> () 
                    | h::t -> 
                        if i < n then 
-                           SetArray items i h; 
+                           SetArray items i h
                            copy items t (i+1)
 
-               copy items l 0;
+               copy items l 0
                items
 
     type ResizeArray<'T> = System.Collections.Generic.List<'T>
