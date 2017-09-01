@@ -2143,6 +2143,12 @@ module TypecheckTests =
     let ``type check neg99`` () = singleNegTest (testConfig "typecheck/sigs") "neg99"
 
     [<Test>] 
+    let ``type check neg100`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --warnon:3218" }
+        singleNegTest cfg "neg100"
+
+    [<Test>] 
     let ``type check neg_byref_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_1"
 
     [<Test>] 
@@ -2207,6 +2213,7 @@ module TypecheckTests =
 
     [<Test>] 
     let ``type check neg_byref_23`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_23"
+
 
 module FscTests =                 
     [<Test>]
