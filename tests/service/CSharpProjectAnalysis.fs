@@ -114,9 +114,9 @@ let _ = CSharpOuterClass.InnerClass.StaticMember()
           [|"InnerEnum"; "CSharpOuterClass"; "field Case1"; "InnerClass";
             "CSharpOuterClass"; "member StaticMember"; "NestedEnumClass"|]
 
-[<Test; Ignore("Ignored due to fail to load CSharp_Analysis.dll")>]
+[<Test>]
 let ``Ctor test`` () =
-    let csharpAssembly = typeof<CSharpClass>.Assembly.Location
+    let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
     let content = """
 module CtorTest
 open FSharp.Compiler.Service.Tests

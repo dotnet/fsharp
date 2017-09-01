@@ -1413,10 +1413,17 @@ let rec GetCustomAttrDataAsBlobIdx cenv (data:byte[]) =
 
 and GetCustomAttrRow cenv hca attr = 
     let cat = GetMethodRefAsCustomAttribType cenv attr.Method.MethodRef
-    UnsharedRow 
-        [| HasCustomAttribute (fst hca, snd hca)
-           CustomAttributeType (fst cat, snd cat) 
-           Blob (GetCustomAttrDataAsBlobIdx cenv attr.Data) |]  
+    for element in attr.Elements do
+        match element with
+        | ILAttribElem.Type (Some ty) when ty.IsNominal -> GetTypeRefAsTypeRefIdx cenv ty.TypeRef |> ignore
+        | ILAttribElem.TypeRef (Some tref) -> GetTypeRefAsTypeRefIdx cenv tref  |> ignore
+        | _ -> ()
+
+    UnsharedRow
+            [| HasCustomAttribute (fst hca, snd hca);
+               CustomAttributeType (fst cat, snd cat);
+               Blob (GetCustomAttrDataAsBlobIdx cenv attr.Data)
+            |]
 
 and GenCustomAttrPass3Or4 cenv hca attr = 
     AddUnsharedRow cenv TableNames.CustomAttribute (GetCustomAttrRow cenv hca attr) |> ignore
@@ -4323,4 +4330,3 @@ let WriteILBinary (outfile, (args: options), modul) =
                                   args.ilg, args.pdbfile, args.signer, args.portablePDB, args.embeddedPDB, args.embedAllSource, 
                                   args.embedSourceList, args.sourceLink, args.emitTailcalls, args.deterministic, args.showTimes, args.dumpDebugInfo) modul
     |> ignore
-
