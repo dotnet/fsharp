@@ -1682,6 +1682,12 @@ module TypecheckTests =
         peverify cfg "pos27.exe"
 
     [<Test>]
+    let ``sigs pos28`` () = 
+        let cfg = testConfig "typecheck/sigs"
+        fsc cfg "%s --target:exe -o:pos28.exe" cfg.fsc_flags ["pos28.fs"]
+        peverify cfg "pos28.exe"
+
+    [<Test>]
     let ``sigs pos26`` () = 
         let cfg = testConfig "typecheck/sigs"
         fsc cfg "%s --target:exe -o:pos26.exe" cfg.fsc_flags ["pos26.fsi"; "pos26.fs"]
