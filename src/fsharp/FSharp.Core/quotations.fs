@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Quotations
 
@@ -285,10 +285,16 @@ and [<CompiledName("FSharpExpr")>]
         | CombTerm(TryWithOp,[e1;Lambda(v1,e2);Lambda(v2,e3)])         -> combL "TryWith" [expr e1; varL v1; expr e2; varL v2; expr e3]
         | CombTerm(SequentialOp,args)        -> combL "Sequential" (exprs args)
         | CombTerm(NewDelegateOp(ty),[e])   -> 
-            let n = (getDelegateInvoke ty).GetParameters().Length
-            match e with 
-            | NLambdas n (vs,e) -> combL "NewDelegate" ([typeL ty] @ (vs |> List.map varL) @ [expr e])
-            | _ -> combL "NewDelegate" [typeL ty; expr e]
+            let nargs = (getDelegateInvoke ty).GetParameters().Length
+            if nargs = 0 then 
+                match e with 
+                | NLambdas 1 ([_],e) -> combL "NewDelegate" ([typeL ty] @ [expr e])
+                | NLambdas 0 ([],e) -> combL "NewDelegate" ([typeL ty] @ [expr e])
+                | _ -> combL "NewDelegate" [typeL ty; expr e]
+            else
+                match e with 
+                | NLambdas nargs (vs,e) -> combL "NewDelegate" ([typeL ty] @ (vs |> List.map varL) @ [expr e])
+                | _ -> combL "NewDelegate" [typeL ty; expr e]
         //| CombTerm(_,args)   -> combL "??" (exprs args)
         | VarTerm(v)   -> wordL (tagLocal v.Name)
         | LambdaTerm(v,b)   -> combL "Lambda" [varL v; expr b]
@@ -503,10 +509,16 @@ module Patterns =
     let (|NewDelegate|_|) e  = 
         match e with 
         | Comb1(NewDelegateOp(ty),e) -> 
-            let n = (getDelegateInvoke ty).GetParameters().Length
-            match e with 
-            | NLambdas n (vs,e) -> Some(ty,vs,e) 
-            | _ -> None
+            let nargs = (getDelegateInvoke ty).GetParameters().Length
+            if nargs = 0 then 
+                match e with 
+                | NLambdas 1 ([_],e) -> Some(ty,[],e) // try to strip the unit parameter if there is one 
+                | NLambdas 0 ([],e) -> Some(ty,[],e) 
+                | _ -> None
+            else
+                match e with 
+                | NLambdas nargs (vs,e) -> Some(ty,vs,e) 
+                | _ -> None
         | _ -> None
 
     [<CompiledName("LetRecursivePattern")>]
