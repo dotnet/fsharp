@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.17376
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:3:0:0
+  .ver 4:4:1:0
 }
 .assembly DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth
 {
-  // Offset: 0x00000000 Length: 0x000002B5
+  // Offset: 0x00000000 Length: 0x00000291
 }
 .mresource public FSharpOptimizationData.DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth
 {
-  // Offset: 0x000002C0 Length: 0x000000BA
+  // Offset: 0x00000298 Length: 0x000000BA
 }
 .module DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth.exe
-// MVID: {4F20DD34-1475-D984-A745-038334DD204F}
+// MVID: {59A6D79B-1475-D984-A745-03839BD7A659}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00000031611D0000
+// Image base: 0x005A0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -66,14 +66,14 @@
     } // end of method F@6::.ctor
 
     .method assembly hidebysig instance void 
-            Invoke(object sender,
-                   int32 args) cil managed
+            Invoke(object x,
+                   int32 _arg1) cil managed
     {
       // Code size       4 (0x4)
       .maxstack  5
       .locals init ([0] int32 V_0)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 6,6 : 80,82 
+      .line 6,6 : 80,82 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\DoNotBoxStruct\\DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth.fs'
       IL_0000:  ldarg.2
       IL_0001:  stloc.0
       IL_0002:  nop
@@ -86,7 +86,7 @@
   {
     // Code size       45 (0x2d)
     .maxstack  8
-    .line 6,6 : 48,83 
+    .line 6,6 : 48,83 ''
     IL_0000:  nop
     IL_0001:  ldarg.0
     IL_0002:  ldc.i4.0

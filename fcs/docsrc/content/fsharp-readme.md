@@ -6,7 +6,7 @@ source code ([github.com/fsharp/fsharp](https://github.com/fsharp/fsharp)). This
 source, with several minor changes that expose certain services. The readme is included
 here for reference.
 
-This is the F# compiler, core library and core tools (open source edition). It uses the Apache 2.0 license.
+This is the F# compiler, core library and core tools (open source edition).
 The `master` branch is for the latest version of F# (currently F# 3.0).
 To bootstrap the compiler, binaries built from an earlier version of this project are used.
 

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 #if INTERACTIVE
 #load "../utils/ResizeArray.fs" "../absil/illib.fs" "../fsharp/ReferenceResolver.fs"
@@ -208,7 +208,7 @@ let fscoreDir =
         System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
 
 let resolve s = 
-    SimulatedMSBuildResolver.Resolve(ResolutionEnvironment.CompileTimeLike,[| for a in s -> (a, "") |],"v4.5.1", [SimulatedMSBuildResolver.DotNetFrameworkReferenceAssembliesRootDirectory + @"\v4.5.1" ],"", "", fscoreDir,[],__SOURCE_DIRECTORY__,ignore, (fun _ _ -> ()), (fun _ _-> ()))
+    SimulatedMSBuildResolver.Resolve(ResolutionEnvironment.EditingOrCompilation,[| for a in s -> (a, "") |],"v4.5.1", [SimulatedMSBuildResolver.DotNetFrameworkReferenceAssembliesRootDirectory + @"\v4.5.1" ],"", "", fscoreDir,[],__SOURCE_DIRECTORY__,ignore, (fun _ _ -> ()), (fun _ _-> ()))
 
 // Resolve partial name to something on search path
 resolve ["FSharp.Core" ]

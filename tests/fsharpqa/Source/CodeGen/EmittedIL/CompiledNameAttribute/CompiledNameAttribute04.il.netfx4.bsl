@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.17376
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:3:0:0
+  .ver 4:4:1:0
 }
 .assembly CompiledNameAttribute04
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.CompiledNameAttribute04
 {
-  // Offset: 0x00000000 Length: 0x00000D0E
+  // Offset: 0x00000000 Length: 0x00000CE9
 }
 .mresource public FSharpOptimizationData.CompiledNameAttribute04
 {
-  // Offset: 0x00000D18 Length: 0x000002CB
+  // Offset: 0x00000CF0 Length: 0x000002CB
 }
 .module CompiledNameAttribute04.exe
-// MVID: {4F20DC6A-34DF-584F-A745-03836ADC204F}
+// MVID: {59A6D79B-34DF-584F-A745-03839BD7A659}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x000000B84EEF0000
+// Image base: 0x02D50000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -74,7 +74,7 @@
       // Code size       10 (0xa)
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 20,20 : 6,7 
+      .line 20,20 : 6,7 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\CompiledNameAttribute\\CompiledNameAttribute04.fs'
       IL_0000:  ldarg.0
       IL_0001:  callvirt   instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
@@ -88,7 +88,7 @@
     {
       // Code size       3 (0x3)
       .maxstack  8
-      .line 21,21 : 19,20 
+      .line 21,21 : 19,20 ''
       IL_0000:  nop
       IL_0001:  ldc.i4.1
       IL_0002:  ret
@@ -101,7 +101,7 @@
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
       // Code size       5 (0x5)
       .maxstack  8
-      .line 22,22 : 24,29 
+      .line 22,22 : 24,29 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ldarg.2
@@ -114,7 +114,7 @@
     {
       // Code size       3 (0x3)
       .maxstack  8
-      .line 24,24 : 22,23 
+      .line 24,24 : 22,23 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ret
@@ -154,7 +154,7 @@
       // Code size       6 (0x6)
       .maxstack  3
       .locals init ([0] valuetype CompiledNameAttribute04/S& V_0)
-      .line 37,37 : 6,7 
+      .line 37,37 : 6,7 ''
       IL_0000:  nop
       IL_0001:  ldarga.s   obj
       IL_0003:  stloc.0
@@ -168,7 +168,7 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
       .maxstack  8
-      .line 37,37 : 6,7 
+      .line 37,37 : 6,7 ''
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  ldarg.1
@@ -186,7 +186,7 @@
       .maxstack  3
       .locals init ([0] valuetype CompiledNameAttribute04/S V_0,
                [1] valuetype CompiledNameAttribute04/S& V_1)
-      .line 37,37 : 6,7 
+      .line 37,37 : 6,7 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  unbox.any  CompiledNameAttribute04/S
@@ -203,7 +203,7 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       3 (0x3)
       .maxstack  8
-      .line 37,37 : 6,7 
+      .line 37,37 : 6,7 ''
       IL_0000:  nop
       IL_0001:  ldc.i4.0
       IL_0002:  ret
@@ -215,7 +215,7 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       13 (0xd)
       .maxstack  8
-      .line 37,37 : 6,7 
+      .line 37,37 : 6,7 ''
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
@@ -256,7 +256,7 @@
     {
       // Code size       3 (0x3)
       .maxstack  8
-      .line 40,40 : 24,25 
+      .line 40,40 : 24,25 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ret
@@ -269,7 +269,7 @@
       // Code size       6 (0x6)
       .maxstack  3
       .locals init ([0] valuetype CompiledNameAttribute04/S& V_0)
-      .line 37,37 : 6,7 
+      .line 37,37 : 6,7 ''
       IL_0000:  nop
       IL_0001:  ldarga.s   obj
       IL_0003:  stloc.0
@@ -334,13 +334,13 @@
     } // end of method a@49::.ctor
 
     .method private hidebysig newslot virtual final 
-            instance int32  'CompiledNameAttribute04-ITestInterface-M'(int32 A_1) cil managed
+            instance int32  'CompiledNameAttribute04-ITestInterface-M'(int32 x) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.InteropServices.PreserveSigAttribute::.ctor() = ( 01 00 00 00 ) 
       .override CompiledNameAttribute04/ITestInterface::M
       // Code size       5 (0x5)
       .maxstack  8
-      .line 51,51 : 33,38 
+      .line 51,51 : 33,38 ''
       IL_0000:  nop
       IL_0001:  ldarg.1
       IL_0002:  ldc.i4.1
@@ -356,7 +356,7 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationArgumentCountsAttribute::.ctor(int32[]) = ( 01 00 02 00 00 00 01 00 00 00 01 00 00 00 00 00 ) 
     // Code size       5 (0x5)
     .maxstack  8
-    .line 16,16 : 14,19 
+    .line 16,16 : 14,19 ''
     IL_0000:  nop
     IL_0001:  ldarg.0
     IL_0002:  ldarg.1
@@ -368,7 +368,7 @@
   {
     // Code size       3 (0x3)
     .maxstack  8
-    .line 17,17 : 12,13 
+    .line 17,17 : 12,13 ''
     IL_0000:  nop
     IL_0001:  ldarg.0
     IL_0002:  ret

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 #nowarn "35" // This construct is deprecated: the treatment of this operator is now handled directly by the F# compiler and its meaning may not be redefined.
 #nowarn "61" // The containing type can use 'null' as a representation value for its nullary union case. This member will be compiled as a static member.
@@ -1563,7 +1563,7 @@ namespace Microsoft.FSharp.Core
     // F# Mutable Reference Cells
 
 
-    /// <summary>The type of mutable references. Use the functions [:=] and [!] to get and
+    /// <summary>The type of mutable references. Use the functions [!] and [:=] to get and
     /// set values of this type.</summary>
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpRef`1")>]
@@ -1573,7 +1573,7 @@ namespace Microsoft.FSharp.Core
         /// <summary>The current value of the reference cell</summary>
         member Value : 'T with get,set
             
-    /// <summary>The type of mutable references. Use the functions [:=] and [!] to get and
+    /// <summary>The type of mutable references. Use the functions [!] and [:=] to get and
     /// set values of this type.</summary>
     and 'T ref = Ref<'T>
 

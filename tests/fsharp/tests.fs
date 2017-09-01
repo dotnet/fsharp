@@ -357,6 +357,8 @@ module CoreTests =
 
         fsc cfg "%s -a -o:lib.dll -g" cfg.fsc_flags ["lib.fs"]
 
+        copy_y cfg  (cfg.FSCBinPath ++ "System.ValueTuple.dll") ("." ++ "System.ValueTuple.dll")
+
         peverify cfg "lib.dll"
 
         csc cfg """/nologo /target:library /r:"%s" /r:lib.dll /out:lib2.dll""" cfg.FSCOREDLLPATH ["lib2.cs"]
@@ -2136,6 +2138,9 @@ module TypecheckTests =
 
     [<Test>] 
     let ``type check neg98`` () = singleNegTest (testConfig "typecheck/sigs") "neg98"
+
+    [<Test>] 
+    let ``type check neg99`` () = singleNegTest (testConfig "typecheck/sigs") "neg99"
 
     [<Test>] 
     let ``type check neg_byref_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_1"

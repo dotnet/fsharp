@@ -10,6 +10,7 @@
                 Supported Platforms:
                     .NET 4.5+           (net45)
                     netstandard1.6      (netstandard1.6)
+                    netstandard2.0      (netstandard2.0)
         </description>
         <language>en-US</language>
         <version>$version$</version>
@@ -43,6 +44,8 @@
                 <dependency id="System.Threading.Thread" version="4.0.0" />
                 <dependency id="System.Threading.ThreadPool" version="4.0.10" />
                 <dependency id="System.Threading.Timer" version="4.0.1" />
+            </group>
+            <group targetFramework=".NETStandard2.0">
             </group>
             <group targetFramework="net45">
             </group>

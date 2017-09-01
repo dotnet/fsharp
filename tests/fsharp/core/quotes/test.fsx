@@ -3106,6 +3106,32 @@ module TestStaticCtor =
     testStaticCtor()
 
 
+module TestFuncNoArgs = 
+    type SomeType() = class end
+    type Test =
+        static member ParseThis (f : System.Linq.Expressions.Expression<System.Func<SomeType>>) = f
+
+    
+    type D = delegate of unit -> int
+    type D2<'T> = delegate of unit -> 'T
+
+    let testFunc() = 
+        check "cvwenklwevpo1" (match <@ new System.Func<int>(fun () -> 3) @> with Quotations.Patterns.NewDelegate(_,[],Value _) -> true | _ -> false) true
+        check "cvwenklwevpo2" (match <@ new System.Func<int,int>(fun n -> 3) @> with Quotations.Patterns.NewDelegate(_,[_],Value _) -> true | _ -> false) true
+        check "cvwenklwevpo1d" (match <@ new D(fun () -> 3) @> with Quotations.Patterns.NewDelegate(_,[],Value _) -> true | _ -> false) true
+        check "cvwenklwevpo2d" (match <@ new D2<int>(fun () -> 3) @> with Quotations.Patterns.NewDelegate(_,[],Value _) -> true | _ -> false) true
+
+    testFunc()
+
+
+    let testFunc2() = 
+        // was raising exception
+        let foo = Test.ParseThis (fun () -> SomeType())
+        check "clew0mmlvew" (foo.ToString()) "() => new SomeType()"
+
+    testFunc2()
+    
+
 #if !FX_RESHAPED_REFLECTION
 module TestAssemblyAttributes = 
     let attributes = System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttributes(false)
