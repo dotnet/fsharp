@@ -63,6 +63,8 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
                                          portable PDB file
 --optimize[+|-]                          Enable optimizations (Short form: -O)
 --tailcalls[+|-]                         Enable or disable tailcalls
+--deterministic[+|-]                     Produce a deterministic assembly (including
+                                         module version GUID and timestamp)
 --crossoptimize[+|-]                     Enable or disable cross-module optimizations
 
 
@@ -92,6 +94,8 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
 		- ADVANCED -
 --codepage:<n>                           Specify the codepage used to read source files
 --utf8output                             Output messages in UTF-8 encoding
+--preferreduilang:<string>               Specify the preferred output language culture
+                                         name (e.g. es-ES, ja-JP)
 --fullpaths                              Output messages with fully qualified paths
 --lib:<dir;...>                          Specify a directory for the include path which
                                          is used to resolve source files and assemblies
@@ -100,8 +104,8 @@ Copyright (c) Microsoft Corporation. All Rights Reserved.
                                          directory-based rules rather than MSBuild
                                          resolution
 --targetprofile:<string>                 Specify target framework profile of this
-                                         assembly. Valid values are mscorlib or netcore.
-                                         Default - mscorlib
+                                         assembly. Valid values are mscorlib, netcore or
+                                         netstandard. Default - mscorlib
 --baseaddress:<address>                  Base address for the library to be built
 --noframework                            Do not reference the default CLI assemblies by
                                          default

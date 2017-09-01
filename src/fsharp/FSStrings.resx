@@ -138,12 +138,6 @@
   <data name="ConstraintSolverTypesNotInSubsumptionRelation" xml:space="preserve">
     <value>The type '{0}' is not compatible with the type '{1}'{2}</value>
   </data>
-  <data name="ConstraintSolverError" xml:space="preserve">
-    <value>{0}</value>
-  </data>
-  <data name="ConstraintSolverRelatedInformation" xml:space="preserve">
-    <value> {0}</value>
-  </data>
   <data name="ErrorFromAddingTypeEquation1" xml:space="preserve">
     <value>This expression was expected to have type\n    '{1}'    \nbut here has type\n    '{0}'    {2}</value>
   </data>
@@ -185,12 +179,6 @@
   </data>
   <data name="InterfaceNotRevealed" xml:space="preserve">
     <value>The type implements the interface '{0}' but this is not revealed by the signature. You should list the interface in the signature, as the interface will be discoverable via dynamic type casts and/or reflection.</value>
-  </data>
-  <data name="NotAFunction1" xml:space="preserve">
-    <value>This value is not a function and cannot be applied. Did you forget to terminate a declaration?</value>
-  </data>
-  <data name="NotAFunction2" xml:space="preserve">
-    <value>This value is not a function and cannot be applied</value>
   </data>
   <data name="TyconBadArgs" xml:space="preserve">
     <value>The type '{0}' expects {1} type argument(s) but is given {2}</value>

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 //-------------------------------------------------------------------------
 // Find unsolved, uninstantiated type variables
@@ -165,8 +165,13 @@ and accDiscrim cenv env d =
         accTypeInst cenv env tys
 
 and accAttrib cenv env (Attrib(_,_k,args,props,_,_,_m)) = 
-    args |> List.iter (fun (AttribExpr(e1,_)) -> accExpr cenv env e1)
-    props |> List.iter (fun (AttribNamedArg(_nm,_ty,_flg,AttribExpr(expr,_))) -> accExpr cenv env expr)
+    args |> List.iter (fun (AttribExpr(expr1,expr2)) -> 
+        accExpr cenv env expr1
+        accExpr cenv env expr2)
+    props |> List.iter (fun (AttribNamedArg(_nm,ty,_flg,AttribExpr(expr,expr2))) -> 
+        accExpr cenv env expr
+        accExpr cenv env expr2
+        accTy cenv env ty)
   
 and accAttribs cenv env attribs = List.iter (accAttrib cenv env) attribs
 
@@ -199,6 +204,7 @@ let accTyconRecdField cenv env _tycon (rfield:RecdField) =
 
 let accTycon cenv env (tycon:Tycon) =
     accAttribs cenv env tycon.Attribs
+    abstractSlotValsOfTycons [tycon] |> List.iter (accVal cenv env) 
     tycon.AllFieldsArray |> Array.iter (accTyconRecdField cenv env tycon)
     if tycon.IsUnionTycon then                             (* This covers finite unions. *)
       tycon.UnionCasesAsList |> List.iter (fun uc ->

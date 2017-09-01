@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Compiler
 
@@ -1442,7 +1442,7 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
                   // We return 'None' for the assembly portion of the cross-assembly reference 
                   let hasTypeProviderAssemblyAttrib = 
                       topAttrs.assemblyAttrs |> List.exists (fun (Attrib(tcref,_,_,_,_,_,_)) -> tcref.CompiledRepresentationForNamedType.BasicQualifiedName = typeof<Microsoft.FSharp.Core.CompilerServices.TypeProviderAssemblyAttribute>.FullName)
-                  if hasTypeProviderAssemblyAttrib then
+                  if tcState.CreatesGeneratedProvidedTypes || hasTypeProviderAssemblyAttrib then
                     None
                   else
                     Some  (RawFSharpAssemblyDataBackedByLanguageService (tcConfig,tcGlobals,tcState,outfile,topAttrs,assemblyName,ilAssemRef) :> IRawFSharpAssemblyData)
@@ -1701,7 +1701,8 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
                 // The following uses more memory but means we don't take read-exclusions on the DLLs we reference 
                 // Could detect well-known assemblies--ie System.dll--and open them with read-locks 
                 tcConfigB.openBinariesInMemory <- true
-                tcConfigB.resolutionEnvironment <- (if useScriptResolutionRules then ReferenceResolver.DesignTimeLike else ReferenceResolver.CompileTimeLike)
+
+                tcConfigB.resolutionEnvironment <- (ReferenceResolver.ResolutionEnvironment.EditingOrCompilation true)
                 
                 tcConfigB.conditionalCompilationDefines <- 
                     let define = if useScriptResolutionRules then "INTERACTIVE" else "COMPILED"

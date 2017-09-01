@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
@@ -26,7 +26,10 @@ type internal Reactor =
 
     /// Set the background building function, which is called repeatedly
     /// until it returns 'false'.  If None then no background operation is used.
-    member SetBackgroundOp : ( (* userOpName:*) string * (* opName: *) string * (* opArg: *) string *  (CompilationThreadToken -> bool)) option -> unit
+    member SetBackgroundOp : ( (* userOpName:*) string * (* opName: *) string * (* opArg: *) string *  (CompilationThreadToken -> CancellationToken -> bool)) option -> unit
+
+    /// Cancel any work being don by the background building function.
+    member CancelBackgroundOp : unit -> unit
 
     /// Block until the current implicit background build is complete. Unit test only.
     member WaitForBackgroundOpCompletion : unit -> unit

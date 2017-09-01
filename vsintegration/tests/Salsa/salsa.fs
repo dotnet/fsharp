@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 (*
     Simplified abstraction over visual studio.
@@ -271,31 +271,37 @@ module internal Salsa =
         override this.ToString() = projectfile
 
         interface IProjectSite with
+
           member this.SourceFilesOnDisk() = 
               let flags = GetFlags()
               flags.sources 
               |> List.map(fun s->Path.Combine(projectPath, s)) |> List.toArray 
+
           member this.DescriptionOfProject() = 
               let flags = GetFlags()
               try sprintf "MSBuild Flags:%A\n%A" ((this :> IProjectSite).CompilerFlags()) flags
               with e -> sprintf "%A" e                    
+
           member this.CompilerFlags() = 
               let flags = GetFlags()
               let result = flags.flags
               result |> List.toArray 
+
           member this.ProjectFileName() = 
               projectfile
-          member this.ErrorListTaskProvider() = None
-          member this.ErrorListTaskReporter() = None
+
+          member this.BuildErrorReporter with get() = None and set _v = ()
           member this.AdviseProjectSiteChanges(callbackOwnerKey,callback) = changeHandlers.[callbackOwnerKey] <- callback
           member this.AdviseProjectSiteCleaned(callbackOwnerKey,callback) = () // no unit testing support here
           member this.AdviseProjectSiteClosed(callbackOwnerKey,callback) = () // no unit testing support here
           member this.IsIncompleteTypeCheckEnvironment = false
           member this.TargetFrameworkMoniker = ""
           member this.LoadTime = System.DateTime(2000,1,1)
+
           member this.ProjectGuid = 
                 let projectObj, projectObjFlags = MSBuild.CrackProject(projectfile, configurationFunc(), platformFunc())
                 projectObj.GetProperty(ProjectFileConstants.ProjectGuid).EvaluatedValue
+
           member this.ProjectProvider = None
           member this.AssemblyReferences() = [||]
 
@@ -454,7 +460,7 @@ module internal Salsa =
         abstract CleanInvisibleProject : unit -> unit
         
     and TextSpan       = Microsoft.VisualStudio.TextManager.Interop.TextSpan
-    and GotoDefnResult = Microsoft.VisualStudio.FSharp.LanguageService.GotoDefinitionResult
+    and GotoDefnResult = Microsoft.VisualStudio.FSharp.LanguageService.GotoDefinitionResult_DEPRECATED
     
 
     // Result of querying the completion list
@@ -526,7 +532,7 @@ module internal Salsa =
         abstract GetMatchingBracesForPositionAtCursor: OpenFile -> (TextSpan * TextSpan)[]
         abstract GetNameOfOpenFile: OpenFile -> string
         abstract GetProjectOptionsOfScript: OpenFile -> FSharpProjectOptions
-        abstract GetParameterInfoAtCursor: OpenFile -> MethodListForAMethodTip option
+        abstract GetParameterInfoAtCursor: OpenFile -> MethodListForAMethodTip_DEPRECATED option
         abstract GetTokenTypeAtCursor: OpenFile -> TokenType
         abstract GetIdentifierAtCursor: OpenFile -> (string * int) option
         abstract GetF1KeywordAtCursor: OpenFile -> string option
@@ -542,7 +548,7 @@ module internal Salsa =
 
     [<AutoOpen>]
     module GotoDefnResultExtensions = 
-        type Microsoft.VisualStudio.FSharp.LanguageService.GotoDefinitionResult with
+        type Microsoft.VisualStudio.FSharp.LanguageService.GotoDefinitionResult_DEPRECATED with
             member this.ToOption() = if this.Success then Some(this.Span, this.Url) else None
 
 
@@ -588,14 +594,14 @@ module internal Salsa =
                 {line = returnLine; col = returnCol}
         
         /// Colorize a single line of text.
-        let ColorizeLine (colorizer:FSharpColorizer) lineNumber lineText oldState attrs = 
+        let ColorizeLine (colorizer:FSharpColorizer_DEPRECATED) lineNumber lineText oldState attrs = 
             let marshaled = Marshal.StringToCoTaskMemUni(lineText)
             let newState = colorizer.ColorizeLine(lineNumber, lineText.Length, marshaled, oldState, attrs)
             Marshal.FreeCoTaskMem(marshaled)
             newState
 
         /// Recolorize a set of lines
-        let RecolorizeLines (view:IVsTextView) (getColorizer:IVsTextView->FSharpColorizer) (lines:string[]) (linestarts:int[]) (top:int) (bottom:int) = 
+        let RecolorizeLines (view:IVsTextView) (getColorizer:IVsTextView->FSharpColorizer_DEPRECATED) (lines:string[]) (linestarts:int[]) (top:int) (bottom:int) = 
             let colorizer = getColorizer(view)
             for i in top..bottom do 
                 // let attrs = Array.create fileline.Length 0u 
@@ -695,7 +701,7 @@ module internal Salsa =
             Append otherProjMisc
 
             let t = targetsFileFolder.TrimEnd([|'\\'|])
-            Append (sprintf "    <Import Project=\"%s\\Microsoft.FSharp.targets\"/>" t)
+            Append (sprintf "    <Import Project=\"%s\\Microsoft.FSharp.Targets\"/>" t)
             Append "</Project>"
             sb.ToString()
 
@@ -739,7 +745,7 @@ module internal Salsa =
             let mutable focusFile : SimpleOpenFile option = None
             let mutable solution : SimpleOpenSolution option = None
             let mutable prevSolutions : Map<string,SimpleOpenSolution> = Map.empty
-            let mutable bufferToSource = new Dictionary<IVsTextBuffer,IFSharpSource>()
+            let mutable bufferToSource = new Dictionary<IVsTextBuffer,IFSharpSource_DEPRECATED>()
             let mutable invisibleSolution : SimpleOpenSolution option = None
             let mutable invisibleProjectFolder : string = null
             let mutable invisibleProject : SimpleOpenProject option = None
@@ -813,7 +819,7 @@ module internal Salsa =
                     solution <- None
                 | None -> failwith "there is no open solution"
             
-            member vs.AddSourceForBuffer(buffer:IVsTextBuffer,source:IFSharpSource) =
+            member vs.AddSourceForBuffer(buffer:IVsTextBuffer,source:IFSharpSource_DEPRECATED) =
                 bufferToSource.Add(buffer,source)
 
             member vs.GetSourceForBuffer(buffer:IVsTextBuffer) =
@@ -1068,10 +1074,10 @@ module internal Salsa =
                         // Create the 'Source'
                         let file = SimpleOpenFile(project,filename,lines,view,linestarts,rdtId) 
 
-                        let source = Source.CreateSourceTestable(file.RecolorizeWholeFile,file.RecolorizeLine,(fun () -> filename),file.IsClosed,project.Solution.Vs.FileChangeEx, solution.Vs.LanguageService :> IDependencyFileChangeNotify)
+                        let source = Source.CreateSourceTestable_DEPRECATED(file.RecolorizeWholeFile,file.RecolorizeLine,(fun () -> filename),file.IsClosed,project.Solution.Vs.FileChangeEx, solution.Vs.LanguageService :> IDependencyFileChangeNotify_DEPRECATED)
                         let _,buf = view.GetBuffer()
                         solution.Vs.AddSourceForBuffer(buf,source)                 
-                        let source = solution.Vs.LanguageService.CreateSource(buf)
+                        let source = solution.Vs.LanguageService.CreateSource_DEPRECATED(buf)
                         
                         // Scan all lines with the colorizer
                         let tcs:IVsTextColorState = downcast box(buf)
@@ -1121,7 +1127,7 @@ module internal Salsa =
                 if combinedLines = null then 
                     combinedLines<-String.Join("\n",lines)
                 combinedLines   
-            member file.Source : IFSharpSource = 
+            member file.Source : IFSharpSource_DEPRECATED = 
                 let _,buf = view.GetBuffer()
                 project.Solution.Vs.GetSourceForBuffer(buf)                                       
             
@@ -1155,7 +1161,7 @@ module internal Salsa =
                 // Full check.                    
                 let sink = new AuthoringSink(BackgroundRequestReason.FullTypeCheck, 0, 0, maxErrors) 
                 let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
-                let pr = project.Solution.Vs.LanguageService.BackgroundRequests.CreateBackgroundRequest(0,0,new TokenInfo(),file.CombinedLines, snapshot, MethodTipMiscellany.Typing, System.IO.Path.GetFullPath(file.Filename), BackgroundRequestReason.FullTypeCheck, view,sink,null,file.Source.ChangeCount,false)
+                let pr = project.Solution.Vs.LanguageService.BackgroundRequests.CreateBackgroundRequest(0,0,new TokenInfo(),file.CombinedLines, snapshot, MethodTipMiscellany_DEPRECATED.Typing, System.IO.Path.GetFullPath(file.Filename), BackgroundRequestReason.FullTypeCheck, view,sink,null,file.Source.ChangeCount,false)
                 pr.ResultSink.add_OnErrorAdded(
                     OnErrorAddedHandler(fun path subcategory msg context severity -> 
                                 project.Errors <- new Error(path, subcategory, msg, context, severity) :: project.Errors))
@@ -1183,7 +1189,7 @@ module internal Salsa =
                     let sink = new AuthoringSink(parseReason, cursor.line-1, cursor.col-1, maxErrors)
                     let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
                     let pr = project.Solution.Vs.LanguageService.BackgroundRequests.CreateBackgroundRequest(
-                                                    cursor.line-1, cursor.col-1, ti, file.CombinedLines, snapshot, MethodTipMiscellany.Typing,
+                                                    cursor.line-1, cursor.col-1, ti, file.CombinedLines, snapshot, MethodTipMiscellany_DEPRECATED.Typing,
                                                     System.IO.Path.GetFullPath(file.Filename),
                                                     parseReason, view, sink, null, file.Source.ChangeCount, false)
                                                    
@@ -1237,7 +1243,7 @@ module internal Salsa =
                     let sink = new AuthoringSink(BackgroundRequestReason.MatchBraces, cursor.line-1, cursor.col-1, maxErrors)
                     let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
                     let pr = project.Solution.Vs.LanguageService.BackgroundRequests.CreateBackgroundRequest(
-                                                    cursor.line-1, cursor.col-1, ti, file.CombinedLines, snapshot, MethodTipMiscellany.Typing,
+                                                    cursor.line-1, cursor.col-1, ti, file.CombinedLines, snapshot, MethodTipMiscellany_DEPRECATED.Typing,
                                                     System.IO.Path.GetFullPath(file.Filename),
                                                     BackgroundRequestReason.MatchBraces, view, sink, null, file.Source.ChangeCount, false)
                                                    
@@ -1247,7 +1253,7 @@ module internal Salsa =
                 [|
                     for o in sink.Braces do
                         match o with
-                        | (:? Microsoft.VisualStudio.FSharp.LanguageService.BraceMatch as m) -> 
+                        | (:? Microsoft.VisualStudio.FSharp.LanguageService.BraceMatch_DEPRECATED as m) -> 
                             yield (m.a, m.b)
                         | x -> failwithf "Microsoft.VisualStudio.FSharp.LanguageService.BraceMatch expected, but got %A" (if box x = null then "null" else (x.GetType()).FullName)
                 |]
@@ -1263,7 +1269,7 @@ module internal Salsa =
                         let sink = new AuthoringSink(BackgroundRequestReason.MethodTip, cursor.line-1, cursor.col-1, maxErrors)
                         let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
                         let pr = project.Solution.Vs.LanguageService.BackgroundRequests.CreateBackgroundRequest(
-                                                        cursor.line-1, cursor.col-1, ti, file.CombinedLines, snapshot, MethodTipMiscellany.ExplicitlyInvokedViaCtrlShiftSpace,
+                                                        cursor.line-1, cursor.col-1, ti, file.CombinedLines, snapshot, MethodTipMiscellany_DEPRECATED.ExplicitlyInvokedViaCtrlShiftSpace,
                                                         System.IO.Path.GetFullPath(file.Filename),
                                                         BackgroundRequestReason.MethodTip, view, sink, null, file.Source.ChangeCount, false)
                                                    
@@ -1354,9 +1360,9 @@ module internal Salsa =
                   let ti   = new TokenInfo ()
                   let sink = new AuthoringSink (BackgroundRequestReason.Goto, row, col, maxErrors)
                   let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
-                  let pr   = project.Solution.Vs.LanguageService.BackgroundRequests.CreateBackgroundRequest(row, col, ti, file.CombinedLines, snapshot, MethodTipMiscellany.Typing, System.IO.Path.GetFullPath file.Filename, BackgroundRequestReason.Goto, view, sink, null, file.Source.ChangeCount, false)
+                  let pr   = project.Solution.Vs.LanguageService.BackgroundRequests.CreateBackgroundRequest(row, col, ti, file.CombinedLines, snapshot, MethodTipMiscellany_DEPRECATED.Typing, System.IO.Path.GetFullPath file.Filename, BackgroundRequestReason.Goto, view, sink, null, file.Source.ChangeCount, false)
                   file.ExecuteBackgroundRequestForScope(pr,canRetryAfterWaiting=true)
-              (currentAuthoringScope :?> FSharpIntellisenseInfo).GotoDefinition (view, row, col)
+              (currentAuthoringScope :?> FSharpIntellisenseInfo_DEPRECATED).GotoDefinition (view, row, col)
                  
             member file.GetF1KeywordAtCursor() =
               file.EnsureInitiallyFocusedInVs()
@@ -1366,7 +1372,7 @@ module internal Salsa =
                 let ti   = new TokenInfo ()
                 let sink = new AuthoringSink (BackgroundRequestReason.Goto, row, col, maxErrors)
                 let snapshot = VsActual.createTextBuffer(file.CombinedLines).CurrentSnapshot 
-                let pr   = project.Solution.Vs.LanguageService.BackgroundRequests.CreateBackgroundRequest(row, col, ti, file.CombinedLines, snapshot, MethodTipMiscellany.Typing, System.IO.Path.GetFullPath file.Filename, BackgroundRequestReason.QuickInfo, view, sink, null, file.Source.ChangeCount, false)
+                let pr   = project.Solution.Vs.LanguageService.BackgroundRequests.CreateBackgroundRequest(row, col, ti, file.CombinedLines, snapshot, MethodTipMiscellany_DEPRECATED.Typing, System.IO.Path.GetFullPath file.Filename, BackgroundRequestReason.QuickInfo, view, sink, null, file.Source.ChangeCount, false)
                 file.ExecuteBackgroundRequestForScope(pr,canRetryAfterWaiting=true)
               let keyword = ref None
               let span = new Microsoft.VisualStudio.TextManager.Interop.TextSpan(iStartIndex=col,iStartLine=row,iEndIndex=col,iEndLine=row)
@@ -1445,7 +1451,7 @@ module internal Salsa =
             let rdt = box (VsMocks.createRdt())
             let tm = box (VsMocks.createTextManager())
             let documentationProvider = 
-                { new IDocumentationBuilder with
+                { new IDocumentationBuilder_DEPRECATED with
                     override doc.AppendDocumentationFromProcessedXML(appendTo,processedXml:string,showExceptions, showReturns, paramName) = 
                         appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.tagText processedXml)
                         appendTo.Add(Microsoft.FSharp.Compiler.Layout.TaggedTextOps.Literals.lineBreak)
@@ -1558,8 +1564,8 @@ module internal Salsa =
 
     let BuiltMSBuildBehaviourHooks() = Privates.MSBuildBehaviorHooks(false) :> ProjectBehaviorHooks
             
-    /// Salsa tests which create .fsproj files using the freshly built version of Microsoft.FSharp.targets and FSharp.Build
+    /// Salsa tests which create .fsproj files using the freshly built version of Microsoft.FSharp.Targets and FSharp.Build
     let BuiltMSBuildTestFlavour() = MSBuildTestFlavor(false) :> VsOps
 
-    /// Salsa tests which create .fsproj files using the installed version of Microsoft.FSharp.targets.
+    /// Salsa tests which create .fsproj files using the installed version of Microsoft.FSharp.Targets.
     let InstalledMSBuildTestFlavour() = MSBuildTestFlavor(true) :> VsOps

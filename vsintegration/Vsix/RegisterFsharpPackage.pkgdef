@@ -1,4 +1,4 @@
-# Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+# Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 [$RootKey$\ShellFileAssociations]
 ".fsproj"="VisualStudio.Launcher.fsproj.15.0"
@@ -7,20 +7,15 @@
 "Name"="F#"
 @="{871d2a70-12a2-4e42-9440-425dd92a4116}"
 
-[$RootKey$\RuntimeConfiguration\dependentAssembly\bindingRedirection\{e847195f-56ff-fbc3-d0f2-f7254fb9439c}]
-"Name"="FSharp.Core"
-"PublicKeyToken"="b03f5f7f11d50a3a"
-"OldVersion"="2.0.0.0-4.4.0.0"
-"NewVersion"="4.4.1.0"
-"Culture"="neutral"
-"codeBase"="$PackageFolder$\FSharp.Core.dll"
-
 [$RootKey$\Editors\{8a5aa6cf-46e3-4520-a70a-7393d15233e9}\LogicalViews]
 "{7651a700-06e5-11d1-8ebd-00a0c90f26ea}"=""
 "{7651a701-06e5-11d1-8ebd-00a0c90f26ea}"=""
 "{7651a703-06e5-11d1-8ebd-00a0c90f26ea}"=""
 
 [$RootKey$\Projects\{A1591282-1198-4647-A2B1-27E5FF5F6F3B}\LanguageTemplates]
+"{F2A71F9B-5D33-465A-A702-920D77279786}"="{76B279E8-36ED-494E-B145-5344F8DEFCB6}"
+
+[$RootKey$\Projects\{349C5851-65DF-11DA-9384-00065B846F21}\LanguageTemplates]
 "{F2A71F9B-5D33-465A-A702-920D77279786}"="{76B279E8-36ED-494E-B145-5344F8DEFCB6}"
 
 [$RootKey$\Projects\{76B279E8-36ED-494E-B145-5344F8DEFCB6}]
@@ -143,7 +138,7 @@
 @="#6003"
 
 [$RootKey$\Projects\{f2a71f9b-5d33-465a-a702-920d77279786}\AddItemTemplates\TemplateDirs\{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}\/1]
-"SortPriority"="32"
+"SortPriority"=dword:00000020
 "TemplatesDir"="\.\NullPath"
 @="#6007"
 
@@ -163,13 +158,13 @@
 [$RootKey$\AutomationProperties\TextEditor\FSharp]
 "Package"="{F5E7E720-1401-11D1-883B-0000F87579D2}"
 "Name"="F#"
-"ProfileSave"="1"
-"VSSettingsMigration"="1"
+"ProfileSave"=dword:00000001
+"VSSettingsMigration"=dword:00000001
 @="F#"
 
 [$RootKey$\Languages\Language Services\FSharpInteractive]
 "Package"="{91a04a73-4f2c-4e7c-ad38-c1a68e7da05c}"
-"NotALanguage"="1"
+"NotALanguage"=dword:00000001
 "RequestStockColors"=dword:00000001
 @="{35a5e6b8-4012-41fc-a652-2cdc56d74e9f}"
 

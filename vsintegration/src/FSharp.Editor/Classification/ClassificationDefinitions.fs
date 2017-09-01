@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -65,7 +65,7 @@ module internal ClassificationDefinitions =
         ) =
 
         let (| LightTheme | DarkTheme | UnknownTheme |) id =
-            if id = KnownColorThemes.Light || id = KnownColorThemes.Blue then LightTheme 
+            if id = KnownColorThemes.Light || id = KnownColorThemes.Blue || id = Guids.blueHighContrastThemeId then LightTheme 
             elif id = KnownColorThemes.Dark then DarkTheme
             else UnknownTheme
     

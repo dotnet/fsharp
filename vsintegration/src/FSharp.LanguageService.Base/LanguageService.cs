@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -53,7 +53,13 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
     };
 
     [CLSCompliant(false), ComVisible(true)]
-    public abstract class LanguageService : IDisposable, 
+    //
+    // Note: Tests using this code should either be adjusted to test the corresponding feature in
+    // FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
+    // functionality and thus have considerable value, they should ony be deleted if we are sure this 
+    // is not the case.
+    //
+    public abstract class LanguageService_DEPRECATED : IDisposable, 
         IVsLanguageContextProvider, IOleServiceProvider,
         IObjectWithSite, IVsDebuggerEvents,
         IVsFormatFilterProvider,
@@ -71,7 +77,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         private int lcid;
         private bool isServingBackgroundRequest; // used to stop the OnIdle thread making new background requests when a request is already running
 
-        protected LanguageService()
+        protected LanguageService_DEPRECATED()
         {
             this.codeWindowManagers = new ArrayList();
             this.sources = new ArrayList();
@@ -149,7 +155,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         /// for your package.
         internal abstract LanguagePreferences GetLanguagePreferences();
 
-        internal abstract void ExecuteBackgroundRequest(BackgroundRequest req);
+        internal abstract void ExecuteBackgroundRequest(BackgroundRequest_DEPRECATED req);
 
         /// If this returns true we can reuse a recent IntellisenseInfo if its available
         internal abstract bool IsRecentScopeSufficientForBackgroundRequest(BackgroundRequestReason req);
@@ -230,7 +236,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             return NativeMethods.E_FAIL;
 
         }
-        internal void HandleUpdateLanguageContextResponse(BackgroundRequest req)
+        internal void HandleUpdateLanguageContextResponse(BackgroundRequest_DEPRECATED req)
         {
         }
 
@@ -239,7 +245,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             ImageList ilist = new ImageList();
             ilist.ImageSize = new Size(16, 16);
             ilist.TransparentColor = Color.FromArgb(255, 0, 255);
-            Stream stream = typeof(LanguageService).Assembly.GetManifestResourceStream("Resources.completionset.bmp");
+            Stream stream = typeof(LanguageService_DEPRECATED).Assembly.GetManifestResourceStream("Resources.completionset.bmp");
             ilist.Images.AddStrip(new Bitmap(stream));
             return ilist;
         }
@@ -298,7 +304,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         internal string lastFileName;
         internal IVsTextView lastActiveView;
         // STATIC ROOT INTO PROJECT BUILD
-        internal IntellisenseInfo recentFullTypeCheckResults = null;
+        internal IntellisenseInfo_DEPRECATED recentFullTypeCheckResults = null;
         internal string recentFullTypeCheckFile = null;
 
         /// <devdoc>
@@ -313,7 +319,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         /// This is only relevant to the active text view and is cleared each time the text view is switched. If it
         /// is null we must make a background request to the language service to get the recent full typecheck results.
         /// If a file is dirty, an OnIdle call will kick in to refresh the recent results.
-        internal IntellisenseInfo RecentFullTypeCheckResults
+        internal IntellisenseInfo_DEPRECATED RecentFullTypeCheckResults
         {
             get { return this.recentFullTypeCheckResults; }
             set { this.recentFullTypeCheckResults = value; }
@@ -402,7 +408,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         }
         internal virtual void OnActiveViewLostFocus(IVsTextView textView)
         {
-            FSharpSourceBase s = (FSharpSourceBase)this.GetSource(textView);
+            FSharpSourceBase_DEPRECATED s = (FSharpSourceBase_DEPRECATED)this.GetSource(textView);
             if (s != null) s.HandleLostFocus();
         }
         internal virtual void OnCaretMoved(CodeWindowManager mgr, IVsTextView textView, int line, int col)
@@ -648,7 +654,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             NativeMethods.ThrowOnFailure(view.SetTopLine(top));
         }
 
-        internal BackgroundRequestAsyncResult BeginBackgroundRequest(BackgroundRequest request, BackgroundRequestResultHandler handler)
+        internal BackgroundRequestAsyncResult_DEPRECATED BeginBackgroundRequest(BackgroundRequest_DEPRECATED request, BackgroundRequestResultHandler handler)
         {
             EnsureBackgroundThreadStarted();
             lock (this)
@@ -659,12 +665,12 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                 this.backgroundRequestPending.Set();
                 this.backgroundRequestDone.Reset();
                 // Return a capability to wait on the completion of the background request
-                return new BackgroundRequestAsyncResult(request, this.backgroundRequestDone);
+                return new BackgroundRequestAsyncResult_DEPRECATED(request, this.backgroundRequestDone);
             }
         }
 
 
-        internal BackgroundRequest CreateBackgroundRequest(FSharpSourceBase s, int line, int idx, TokenInfo info, string sourceText, ITextSnapshot snapshot, MethodTipMiscellany methodTipMiscellany, string fname, BackgroundRequestReason reason, IVsTextView view)
+        internal BackgroundRequest_DEPRECATED CreateBackgroundRequest(FSharpSourceBase_DEPRECATED s, int line, int idx, TokenInfo info, string sourceText, ITextSnapshot snapshot, MethodTipMiscellany_DEPRECATED methodTipMiscellany, string fname, BackgroundRequestReason reason, IVsTextView view)
         {
             // We set this to "false" because we are effectively abandoning any currently executing background request, e.g. an OnIdle request
             this.isServingBackgroundRequest = false;
@@ -677,10 +683,10 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         }
 
         // Implemented in FSharpLanguageService.fs
-        internal abstract BackgroundRequest CreateBackgroundRequest(int line, int col, TokenInfo info, string sourceText, ITextSnapshot snapshot, MethodTipMiscellany methodTipMiscellany, string fname, BackgroundRequestReason reason, IVsTextView view,AuthoringSink sink, ISource source, int timestamp, bool synchronous);
+        internal abstract BackgroundRequest_DEPRECATED CreateBackgroundRequest(int line, int col, TokenInfo info, string sourceText, ITextSnapshot snapshot, MethodTipMiscellany_DEPRECATED methodTipMiscellany, string fname, BackgroundRequestReason reason, IVsTextView view,AuthoringSink sink, ISource source, int timestamp, bool synchronous);
 
 		// Implemented in FSharpLanguageService.fs
-		internal abstract void OnParseFileOrCheckFileComplete(BackgroundRequest req);
+		internal abstract void OnParseFileOrCheckFileComplete(BackgroundRequest_DEPRECATED req);
 
         internal void EnsureBackgroundThreadStarted()
         {
@@ -698,7 +704,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         {
             if (this.backgroundThread != null)
             {
-                requests.Set(new BackgroundRequest(true));
+                requests.Set(new BackgroundRequest_DEPRECATED(true));
                 ManualResetEvent ptt = this.backgroundThreadTerminated;
                 this.backgroundRequestPending.Set();
                 if (!ptt.WaitOne(10, false))
@@ -732,7 +738,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             get { return this.isServingBackgroundRequest; }
         }
 
-        internal PendingRequests requests = new PendingRequests();
+        internal PendingRequests_DEPRECATED requests = new PendingRequests_DEPRECATED();
         internal ManualResetEvent backgroundRequestPending;
         internal ManualResetEvent backgroundThreadTerminated = new ManualResetEvent(false);
         private ManualResetEvent backgroundRequestDone;
@@ -753,7 +759,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                     {
                         break;
                     }
-                    BackgroundRequest req = null;
+                    BackgroundRequest_DEPRECATED req = null;
                     lock (this)
                     {
                         req = this.requests.Dequeue();
@@ -927,12 +933,12 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
     } // end class LanguageService
 
-    internal class BackgroundRequestAsyncResult
+    internal class BackgroundRequestAsyncResult_DEPRECATED
     {
         ManualResetEvent globalRequestCompletedEvent;
-        BackgroundRequest req;
+        BackgroundRequest_DEPRECATED req;
 
-        internal BackgroundRequestAsyncResult(BackgroundRequest req, ManualResetEvent globalRequestCompletedEvent)
+        internal BackgroundRequestAsyncResult_DEPRECATED(BackgroundRequest_DEPRECATED req, ManualResetEvent globalRequestCompletedEvent)
         {
             this.globalRequestCompletedEvent = globalRequestCompletedEvent;
             this.req = req;
@@ -944,9 +950,9 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
     }
 
-    internal delegate void BackgroundRequestResultHandler(BackgroundRequest request);
+    internal delegate void BackgroundRequestResultHandler(BackgroundRequest_DEPRECATED request);
 
-    internal enum MethodTipMiscellany
+    internal enum MethodTipMiscellany_DEPRECATED
     {
         Typing,                                 // OnCommand TYPECHAR nothing special refresh already-displayed tip
         ExplicitlyInvokedViaCtrlShiftSpace,     // ViewFilter PARAMINFO
@@ -956,7 +962,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         JustPressedCloseParen,                  // OnCommand TYPECHAR TokenTriggers ParamEnd
     }
 
-    internal class BackgroundRequest
+    internal class BackgroundRequest_DEPRECATED
     {
         int line, col;
         ISource source;
@@ -969,7 +975,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         bool terminate;
         BackgroundRequestResultHandler callback;
         AuthoringSink sink;
-        IntellisenseInfo scope;
+        IntellisenseInfo_DEPRECATED scope;
         bool isFreshFullTypeCheck;
         int startTimeForOnIdleRequest;
         string quickInfoText;
@@ -979,9 +985,9 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         int resultTimestamp;
         RequireFreshResults requireFreshResults;
         bool isSynchronous;
-        internal BackgroundRequestAsyncResult result;
+        internal BackgroundRequestAsyncResult_DEPRECATED result;
 
-        internal MethodTipMiscellany MethodTipMiscellany { get; set; }
+        internal MethodTipMiscellany_DEPRECATED MethodTipMiscellany { get; set; }
 
         internal RequireFreshResults RequireFreshResults
         {
@@ -995,7 +1001,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             set { isSynchronous = value; }
         }
 
-        internal BackgroundRequestAsyncResult Result
+        internal BackgroundRequestAsyncResult_DEPRECATED Result
         {
             get { return result; }
         }
@@ -1066,7 +1072,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             set { this.sink = value; }
         }
 
-        internal IntellisenseInfo ResultIntellisenseInfo
+        internal IntellisenseInfo_DEPRECATED ResultIntellisenseInfo
         {
             get { return this.scope; }
             set { this.scope = value; }
@@ -1116,7 +1122,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             set { this.resultTimestamp = value; }
         }
 
-        internal BackgroundRequest(bool terminate)
+        internal BackgroundRequest_DEPRECATED(bool terminate)
         {
             this.Terminate = terminate;
         }
@@ -1133,7 +1139,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
         internal bool IsAborted { get; set; }
 
-        internal BackgroundRequest(int line, int col, TokenInfo info, string src, ITextSnapshot snapshot, MethodTipMiscellany methodTipMiscellany, string fname,
+        internal BackgroundRequest_DEPRECATED(int line, int col, TokenInfo info, string src, ITextSnapshot snapshot, MethodTipMiscellany_DEPRECATED methodTipMiscellany, string fname,
                                  BackgroundRequestReason reason, IVsTextView view,
                                  AuthoringSink sink, ISource source, int timestamp, bool synchronous)
         {
@@ -1161,9 +1167,9 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
     /// If Success = true, then Url\Span should be filled, ErrorDescription will be null
     /// If Success = false - then only ErrorDescription will have value, Url and Span will have default values
     /// </summary>
-    internal class GotoDefinitionResult
+    internal class GotoDefinitionResult_DEPRECATED
     {
-        private GotoDefinitionResult(bool success, string url, TextSpan span, string errorDescription)
+        private GotoDefinitionResult_DEPRECATED(bool success, string url, TextSpan span, string errorDescription)
         {
             Success = success;
             Url = url;
@@ -1182,12 +1188,12 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         /// <param name="url">Path to source file</param>
         /// <param name="span">Location in source file</param>
         /// <returns>New instance of GotoDefinitionResult</returns>
-        public static GotoDefinitionResult MakeSuccess(string url, TextSpan span)
+        public static GotoDefinitionResult_DEPRECATED MakeSuccess(string url, TextSpan span)
         {
             if (url == null)
                 throw new ArgumentNullException("url");
 
-            return new GotoDefinitionResult(true, url, span, null);
+            return new GotoDefinitionResult_DEPRECATED(true, url, span, null);
         }
 
         /// <summary>
@@ -1195,11 +1201,11 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         /// </summary>
         /// <param name="errorDescription">Error message</param>
         /// <returns>New instance of GotoDefinitionResult</returns>
-        public static GotoDefinitionResult MakeError(string errorDescription)
+        public static GotoDefinitionResult_DEPRECATED MakeError(string errorDescription)
         {
             if (String.IsNullOrWhiteSpace(errorDescription))
                 throw new ArgumentNullException("errorDescription");
-            return new GotoDefinitionResult(false, null, default(TextSpan), errorDescription);
+            return new GotoDefinitionResult_DEPRECATED(false, null, default(TextSpan), errorDescription);
         }
     }
 
@@ -1213,7 +1219,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
     /// 5. if non-UI request is enqueued after UI request -> nothing happens and they will be dequeued subsequently
     /// 
     /// </summary>
-    internal class PendingRequests
+    internal class PendingRequests_DEPRECATED
     {
         private enum RequestType
         {
@@ -1227,10 +1233,10 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         // first == null && second == null => count == 0
         // first != null && second == null => count == 1
         // first != null && second != null => count == 2
-        private BackgroundRequest first;
-        private BackgroundRequest second;
+        private BackgroundRequest_DEPRECATED first;
+        private BackgroundRequest_DEPRECATED second;
 
-        public void Enqueue(BackgroundRequest newRequest)
+        public void Enqueue(BackgroundRequest_DEPRECATED newRequest)
         {
             if (newRequest == null)
                 throw new ArgumentNullException("newRequest");
@@ -1289,7 +1295,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         /// <summary>
         /// Checks if request queue contains request similar to the given one.
         /// </summary>
-        public bool ContainsSimilarRequest(BackgroundRequest request)
+        public bool ContainsSimilarRequest(BackgroundRequest_DEPRECATED request)
         {
             var requestType = GetRequestType(request); 
             lock (syncRoot)
@@ -1316,7 +1322,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         /// Gets request from queue
         /// </summary>
         /// <returns></returns>
-        public BackgroundRequest Dequeue()
+        public BackgroundRequest_DEPRECATED Dequeue()
         {
             lock (syncRoot)
             {
@@ -1333,7 +1339,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         /// <summary>
         /// Discards all requests added so far and enqueues specified request.
         /// </summary>
-        public void Set(BackgroundRequest r)
+        public void Set(BackgroundRequest_DEPRECATED r)
         {
             lock (syncRoot)
             {
@@ -1357,7 +1363,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
             }
         }
 
-        private static RequestType GetRequestType(BackgroundRequest r)
+        private static RequestType GetRequestType(BackgroundRequest_DEPRECATED r)
         {
             switch (r.Reason)
             {
@@ -1370,22 +1376,22 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         }
     }
 
-    internal abstract class IntellisenseInfo
+    internal abstract class IntellisenseInfo_DEPRECATED
     {
         internal abstract System.Tuple<string,TextSpan> GetDataTipText(int line, int col);
 
-        internal abstract Microsoft.FSharp.Control.FSharpAsync<Declarations> GetDeclarations(ITextSnapshot textSnapshot, int line, int col, BackgroundRequestReason reason);
+        internal abstract Microsoft.FSharp.Control.FSharpAsync<Declarations_DEPRECATED> GetDeclarations(ITextSnapshot textSnapshot, int line, int col, BackgroundRequestReason reason);
 
-        internal abstract Microsoft.FSharp.Core.FSharpOption<MethodListForAMethodTip> GetMethodListForAMethodTip();
+        internal abstract Microsoft.FSharp.Core.FSharpOption<MethodListForAMethodTip_DEPRECATED> GetMethodListForAMethodTip();
 
-        internal abstract GotoDefinitionResult Goto(IVsTextView textView, int line, int col);
+        internal abstract GotoDefinitionResult_DEPRECATED Goto(IVsTextView textView, int line, int col);
 
         internal abstract void GetF1KeywordString(TextSpan span, IVsUserContext context);
     }
 
     // Note, this class is only implemented once in the F# Language Service implementation, in the F# code which implements the
     // declaration set. It would be better if all the implementation details in this code were put in the F# code.
-    internal abstract class Declarations
+    internal abstract class Declarations_DEPRECATED
     {
         internal abstract bool IsEmpty();
 
@@ -1420,8 +1426,15 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
     //-------------------------------------------------------------------------------------
 
+    // Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
+    //
+    // Note: Tests using this code should either be adjusted to test the corresponding feature in
+    // FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
+    // functionality and thus have considerable value, they should ony be deleted if we are sure this 
+    // is not the case.
+    //
     // represents all the information necessary to display and navigate withing a method tip (e.g. param info, overloads, ability to move thru overloads and params)
-    internal abstract class MethodListForAMethodTip
+    internal abstract class MethodListForAMethodTip_DEPRECATED
     {
 
         internal abstract string GetName(int index);
@@ -1482,13 +1495,13 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         }
     }
 
-    internal class BraceMatch
+    internal class BraceMatch_DEPRECATED
     {
         internal TextSpan a;
         internal TextSpan b;
         internal int priority;
 
-        internal BraceMatch(TextSpan a, TextSpan b, int priority)
+        internal BraceMatch_DEPRECATED(TextSpan a, TextSpan b, int priority)
         {
             this.a = a;
             this.b = b;
@@ -1497,7 +1510,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
 
     }
 
-    internal class TripleMatch : BraceMatch
+    internal class TripleMatch : BraceMatch_DEPRECATED
     {
         internal TextSpan c;
 
@@ -1566,13 +1579,13 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         }
 
 
-        private void AddBraces(BraceMatch b)
+        private void AddBraces(BraceMatch_DEPRECATED b)
         {
             this.foundMatchingBrace = true;
             int i = 0;
             for (int n = this.Braces.Count; i < n; i++)
             {
-                BraceMatch a = (BraceMatch)this.Braces[i];
+                BraceMatch_DEPRECATED a = (BraceMatch_DEPRECATED)this.Braces[i];
                 if (a.priority < b.priority)
                     break;
             }
@@ -1615,7 +1628,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
                 {
                     this.Spans.Add(span);
                     this.Spans.Add(endContext);
-                    AddBraces(new BraceMatch(span, endContext, priority));
+                    AddBraces(new BraceMatch_DEPRECATED(span, endContext, priority));
                 }
             }
         }

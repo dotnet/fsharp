@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Linq
 
@@ -234,9 +234,6 @@ open System.Collections
 open System.Collections.Generic
 open System.Linq.Expressions
 open System.Reflection
-#if !FX_NO_REFLECTION_EMIT
-open System.Reflection.Emit
-#endif
 open Microsoft.FSharp
 open Microsoft.FSharp.Core
 open Microsoft.FSharp.Core.Operators

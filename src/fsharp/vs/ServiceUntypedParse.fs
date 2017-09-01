@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 //----------------------------------------------------------------------------
 // Open up the compiler as an incremental service for parsing,
@@ -10,6 +10,7 @@ namespace Microsoft.FSharp.Compiler.SourceCodeServices
 open System
 open System.IO
 open System.Collections.Generic
+open System.Diagnostics
  
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library  
 open Microsoft.FSharp.Compiler 
@@ -108,7 +109,9 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
                     NavigationImpl.empty
                 | _ -> 
                     NavigationImpl.empty )
-            (fun _ -> NavigationImpl.empty)   
+            (fun err -> 
+                Trace.TraceInformation(sprintf "FCS: recovering from error in GetNavigationItemsImpl: '%s'" err)
+                NavigationImpl.empty)   
             
     member private scope.ValidateBreakpointLocationImpl(pos) =
         let isMatchRange m = rangeContainsPos m pos || m.StartLine = pos.Line
@@ -373,7 +376,9 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
                         | [] -> Seq.tryHead locations
                         | locationsAfterPos -> Seq.tryHead locationsAfterPos
                     | coveringLocations -> Seq.tryLast coveringLocations)
-            (fun _msg -> None)
+            (fun msg -> 
+                Trace.TraceInformation(sprintf "FCS: recovering from error in ValidateBreakpointLocationImpl: '%s'" msg)
+                None)
             
     /// When these files appear or disappear the configuration for the current project is invalidated.
     member scope.DependencyFiles = dependencyFiles

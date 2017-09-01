@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.QuotationPickler
 
@@ -136,9 +136,9 @@ let mkLetRec (ves,body) =
 let mkRecdMk      (n,tys,args)            = CombExpr(RecdMkOp n,tys,args)  
 let mkRecdGet     ((d1,d2),tyargs,args)   = CombExpr(RecdGetOp(d1,d2),tyargs,args)
 let mkRecdSet     ((d1,d2),tyargs,args)   = CombExpr(RecdSetOp(d1,d2),tyargs,args)
-let mkSum         ((d1,d2),tyargs,args)   = CombExpr(SumMkOp(d1,d2),tyargs,args)
-let mkSumFieldGet ((d1,d2,d3),tyargs,arg) = CombExpr(SumFieldGetOp(d1,d2,d3),tyargs,[arg])
-let mkSumTagTest  ((d1,d2),tyargs,arg)    = CombExpr(SumTagTestOp(d1,d2),tyargs,[arg])
+let mkUnion         ((d1,d2),tyargs,args)   = CombExpr(SumMkOp(d1,d2),tyargs,args)
+let mkUnionFieldGet ((d1,d2,d3),tyargs,arg) = CombExpr(SumFieldGetOp(d1,d2,d3),tyargs,[arg])
+let mkUnionCaseTagTest  ((d1,d2),tyargs,arg)    = CombExpr(SumTagTestOp(d1,d2),tyargs,[arg])
 let mkTupleGet    (ty,n,e)                = CombExpr(TupleGetOp n,[ty],[e]) 
 
 let mkCoerce  (ty,arg)        = CombExpr(CoerceOp,[ty],[arg])

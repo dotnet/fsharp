@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -182,7 +182,7 @@ type internal FSharpNavigateToSearchService
     [<ImportingConstructor>] 
     (
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: FSharpProjectOptionsManager
     ) =
 
     let itemsByDocumentId = ConditionalWeakTable<DocumentId, (int * Index.IIndexedNavigableItems)>()
@@ -196,11 +196,13 @@ type internal FSharpNavigateToSearchService
                 match parseResults.ParseTree |> Option.map NavigateTo.getNavigableItems with
                 | Some items ->
                     [| for item in items do
-                         let sourceSpan = RoslynHelpers.FSharpRangeToTextSpan(sourceText, item.Range)
-                         let glyph = Utils.navigateToItemKindToGlyph item.Kind
-                         let kind = Utils.navigateToItemKindToRoslynKind item.Kind
-                         let additionalInfo = Utils.containerToString item.Container document.Project
-                         yield NavigableItem(document, sourceSpan, glyph, item.Name, kind, additionalInfo) |]
+                         match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, item.Range) with 
+                         | None -> ()
+                         | Some sourceSpan ->
+                             let glyph = Utils.navigateToItemKindToGlyph item.Kind
+                             let kind = Utils.navigateToItemKindToRoslynKind item.Kind
+                             let additionalInfo = Utils.containerToString item.Container document.Project
+                             yield NavigableItem(document, sourceSpan, glyph, item.Name, kind, additionalInfo) |]
                 | None -> [||]
         }
 

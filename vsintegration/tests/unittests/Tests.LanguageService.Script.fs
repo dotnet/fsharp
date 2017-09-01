@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Tests.LanguageService.Script
 
@@ -1498,7 +1498,7 @@ type UsingMSBuild() as this =
                                        "Script.fsx"])           
             for line in lines do 
                 printfn "%s" line
-                AssertNotContains(line,"error MSB") // Microsoft.FSharp.targets(135,9): error MSB6006: "fsc.exe" exited with code -532462766.
+                AssertNotContains(line,"error MSB") // Microsoft.FSharp.Targets(135,9): error MSB6006: "fsc.exe" exited with code -532462766.
 
         Assert.IsTrue(not(build.BuildSucceeded), "Expected build to fail")                                  
         

@@ -1,4 +1,6 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+
+//------- DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS ---------------
 
 namespace Microsoft.VisualStudio.FSharp.LanguageService
 
@@ -16,7 +18,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 
 module internal OperatorToken =
     
-    let asIdentifier (token : TokenInfo) =
+    let asIdentifier_DEPRECATED (token : TokenInfo) =
         // Typechecker reports information about all values in the same fashion no matter whether it is named value (let binding) or operator
         // here we piggyback on this fact and just pretend that we need data time for identifier
         let tagOfIdentToken = Microsoft.FSharp.Compiler.Parser.tagOfToken(Microsoft.FSharp.Compiler.Parser.IDENT "")
@@ -25,7 +27,15 @@ module internal OperatorToken =
 
 module internal GotoDefinition =
     
-    let GotoDefinition (colourizer: FSharpColorizer, typedResults : FSharpCheckFileResults, textView : IVsTextView, line : int, col : int) : GotoDefinitionResult =
+    //
+    // Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
+    //
+    // Note: Tests using this code should either be adjusted to test the corresponding feature in
+    // FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
+    // functionality and thus have considerable value, they should ony be deleted if we are sure this 
+    // is not the case.
+    //
+    let GotoDefinition_DEPRECATED (colourizer: FSharpColorizer_DEPRECATED, typedResults : FSharpCheckFileResults, textView : IVsTextView, line : int, col : int) : GotoDefinitionResult_DEPRECATED =
         
         let ls = textView.GetBuffer() |> Com.ThrowOnFailure1
         let len = ls.GetLengthOfLine line |> Com.ThrowOnFailure1
@@ -37,7 +47,7 @@ module internal GotoDefinition =
             let token = colourizer.GetTokenInfoAt(VsTextLines.TextColorState(VsTextView.Buffer textView), line, col)
             let identInfo, makeAnotherAttempt =
                 if token.Type = TokenType.Operator && not alwaysTreatTokenAsIdentifier then
-                    let tag, _, endCol = OperatorToken.asIdentifier token
+                    let tag, _, endCol = OperatorToken.asIdentifier_DEPRECATED token
                     Some(endCol, tag, [""]), true
                 else
                     match QuickParse.GetCompleteIdentifierIsland true lineStr col with 
@@ -56,31 +66,33 @@ module internal GotoDefinition =
             match identInfo with
             | None ->
                 Strings.Errors.GotoDefinitionFailed_NotIdentifier ()
-                |> GotoDefinitionResult.MakeError
+                |> GotoDefinitionResult_DEPRECATED.MakeError
             | Some(colIdent, tag, qualId) ->
                 if typedResults.HasFullTypeCheckInfo then 
                     if Parser.tokenTagToTokenId tag <> Parser.TOKEN_IDENT then 
                         Strings.Errors.GotoDefinitionFailed_NotIdentifier ()
-                        |> GotoDefinitionResult.MakeError
+                        |> GotoDefinitionResult_DEPRECATED.MakeError
                     else
                       match typedResults.GetDeclarationLocation (line+1, colIdent, lineStr, qualId, false) |> Async.RunSynchronously with
                       | FSharpFindDeclResult.DeclFound m -> 
                           let span = TextSpan (iStartLine = m.StartLine-1, iEndLine = m.StartLine-1, iStartIndex = m.StartColumn, iEndIndex = m.StartColumn) 
-                          GotoDefinitionResult.MakeSuccess(m.FileName, span)
+                          GotoDefinitionResult_DEPRECATED.MakeSuccess(m.FileName, span)
                       | FSharpFindDeclResult.DeclNotFound(reason) ->
                           if makeAnotherAttempt then gotoDefinition true
                           else
                           Trace.Write("LanguageService", sprintf "Goto definition failed: Reason %+A" reason)
                           let text = 
                               match reason with                    
-                              | FSharpFindDeclFailureReason.Unknown -> Strings.Errors.GotoDefinitionFailed()
+                              | FSharpFindDeclFailureReason.Unknown _message -> Strings.Errors.GotoDefinitionFailed()
                               | FSharpFindDeclFailureReason.NoSourceCode -> Strings.Errors.GotoDefinitionFailed_NoSourceCode()
                               | FSharpFindDeclFailureReason.ProvidedType(typeName) -> Strings.Errors.GotoDefinitionFailed_ProvidedType(typeName)
                               | FSharpFindDeclFailureReason.ProvidedMember(name) -> Strings.Errors.GotoFailed_ProvidedMember(name)
-                          GotoDefinitionResult.MakeError text
-                else 
+                          GotoDefinitionResult_DEPRECATED.MakeError text
+                      | FSharpFindDeclResult.ExternalDecl _ -> 
+                            GotoDefinitionResult_DEPRECATED.MakeError(Strings.Errors.GotoDefinitionFailed_NoSourceCode())
+                else
                     Trace.Write("LanguageService", "Goto definition: No 'TypeCheckInfo' available")
                     Strings.Errors.GotoDefinitionFailed_NoTypecheckInfo()
-                    |> GotoDefinitionResult.MakeError
+                    |> GotoDefinitionResult_DEPRECATED.MakeError
             
         gotoDefinition false

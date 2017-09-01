@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -16,7 +16,7 @@ open Microsoft.VisualStudio.FSharp.Editor.Symbols
 
 module internal SymbolHelpers =
     let getSymbolUsesInSolution (symbol: FSharpSymbol, declLoc: SymbolDeclarationLocation, checkFileResults: FSharpCheckFileResults,
-                                 projectInfoManager: ProjectInfoManager, checker: FSharpChecker, solution: Solution, userOpName) =
+                                 projectInfoManager: FSharpProjectOptionsManager, checker: FSharpChecker, solution: Solution, userOpName) =
         async {
             let! symbolUses =
                 match declLoc with
@@ -63,7 +63,7 @@ module internal SymbolHelpers =
 
     type OriginalText = string
 
-    let changeAllSymbolReferences (document: Document, symbolSpan: TextSpan, textChanger: string -> string, projectInfoManager: ProjectInfoManager, checker: FSharpChecker, userOpName)
+    let changeAllSymbolReferences (document: Document, symbolSpan: TextSpan, textChanger: string -> string, projectInfoManager: FSharpProjectOptionsManager, checker: FSharpChecker, userOpName)
         : Async<(Func<CancellationToken, Task<Solution>> * OriginalText) option> =
         asyncMaybe {
             do! Option.guard (symbolSpan.Length > 0)
@@ -95,9 +95,12 @@ module internal SymbolHelpers =
                             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                             let mutable sourceText = sourceText
                             for symbolUse in symbolUses do
-                                let textSpan = Tokenizer.fixupSpan(sourceText, RoslynHelpers.FSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate))
-                                sourceText <- sourceText.Replace(textSpan, newText)
-                                solution <- solution.WithDocumentText(documentId, sourceText)
+                                match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, symbolUse.RangeAlternate) with 
+                                | None -> ()
+                                | Some span -> 
+                                    let textSpan = Tokenizer.fixupSpan(sourceText, span)
+                                    sourceText <- sourceText.Replace(textSpan, newText)
+                                    solution <- solution.WithDocumentText(documentId, sourceText)
                         return solution
                     } |> RoslynHelpers.StartAsyncAsTask cancellationToken),
                originalText

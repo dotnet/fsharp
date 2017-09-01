@@ -1,280 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
-#if FX_NO_CANCELLATIONTOKEN_CLASSES
-namespace System
-    open System
-    open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-    open Microsoft.FSharp.Core.Operators
-    open Microsoft.FSharp.Control
-    open Microsoft.FSharp.Collections
-
-    type [<Class>] AggregateException (exns : seq<exn>) =
-        inherit Exception()
-        let exnsList = new System.Collections.Generic.List<exn>(exns)        
-        member this.InnerExceptions = new System.Collections.ObjectModel.ReadOnlyCollection<exn>(exnsList :> System.Collections.Generic.IList<exn>)
-
-namespace System.Threading
-    #nowarn "864"   // this is for typed Equals() in CancellationTokenRegistration and CancellationToken
-
-    open System
-    open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
-    open Microsoft.FSharp.Core.Operators
-    open Microsoft.FSharp.Control
-    open Microsoft.FSharp.Collections
-    
-    
-    module internal CancellationState =
-        [<Literal>]
-        let ACTIVE = 0
-        [<Literal>]
-        let DISPOSED_ACTIVE = 1
-        [<Literal>]
-        let CANCELED = 2
-        [<Literal>]
-        let DISPOSED_CANCELED = 3
-
-    [<Struct>]
-    [<CustomEquality; NoComparison>]
-    type CancellationTokenRegistration =     
-            val private source : CancellationTokenSource             
-            val private id : int64        
-            
-            internal new(source,id) = { source = source; id = id }
-            
-            member this.Dispose() = 
-                match this.source with
-                |   null -> ()
-                |   _ -> this.source.Deregister(this.id)
-                    
-            member this.Equals(ctr:CancellationTokenRegistration) =
-                match this.source with
-                |   null -> isNull ctr.source
-                |   _ ->  this.source.Equals(ctr.source) && this.id = ctr.id
-                
-            override this.Equals(o:obj) =
-                match o with
-                | :? CancellationTokenRegistration as ctr -> this.Equals(ctr)
-                | _ -> false
-            
-            override this.GetHashCode() =
-                match this.source with
-                | null -> 0
-                | _ ->  this.source.GetHashCode()^^^this.id.GetHashCode()
-                
-            static member (=) (left:CancellationTokenRegistration,right:CancellationTokenRegistration) = left.Equals(right)
-            static member (<>) (left:CancellationTokenRegistration,right:CancellationTokenRegistration) = not (left.Equals(right))
-            
-            interface System.IDisposable with
-                member this.Dispose() = this.Dispose()                   
-                        
-    and [<Struct>]
-        [<CustomEquality; NoComparison>]
-        CancellationToken =
-        
-            val private source : CancellationTokenSource 
-            
-            internal new (source) = { source = source }
-            
-            member this.IsCancellationRequested =  
-                match this.source with
-                | null -> false
-                | source -> source.IsCancellationRequested
-                
-            member this.CanBeCanceled = this.source <> Unchecked.defaultof<_>
-            
-            member this.Register (action:Action<obj>, state:obj) = 
-                match this.source with
-                |   null -> Unchecked.defaultof<_>
-                |   source -> source.Register(action, state)
-                    
-            member this.Equals(ct:CancellationToken) =
-                match this.source with
-                |   null -> isNull ct.source
-                |   _ -> this.source.Equals(ct.source)
-                
-            override this.Equals(o:obj) =
-                match o with
-                | :? CancellationToken as ct -> this.Equals(ct)
-                | _ -> false
-            
-            override this.GetHashCode() =                
-                match this.source with
-                |   null -> 0
-                |   _ -> this.source.GetHashCode()
-                
-            static member (=) (left:CancellationToken,right:CancellationToken) = left.Equals(right)
-            static member (<>) (left:CancellationToken,right:CancellationToken) = not (left.Equals(right))
-                    
-            static member None = new CancellationToken(null)
-                
-    and [<Struct>] 
-        [<NoEquality; NoComparison>]
-        internal CallbackInfo =        
-        val private id : int64        
-        val private action : Action<obj> 
-        val private state : obj
-        
-        new (id,action,state) = { id = id; action = action; state = state }
-        
-        member this.ID = this.id
-        member this.Action = this.action
-        member this.State = this.state
-            
-    and [<Class>][<Sealed>][<AllowNullLiteral>]
-        CancellationTokenSource private (token1 : CancellationToken, token2 : CancellationToken) as this =
-                        
-            [<VolatileField>]
-            let mutable state = CancellationState.ACTIVE
-            
-            // next registration id 
-            let mutable nextID = 0L;
-            // lazily initialized list of registrations
-            let registrations = lazy (new System.Collections.Generic.List<CallbackInfo>())                
-            
-            // linking to tokens
-            
-            let mutable linkedCtr1 = Unchecked.defaultof<CancellationTokenRegistration>
-            let mutable linkedCtr2 = Unchecked.defaultof<CancellationTokenRegistration>
-            do 
-                let handler  = Action<obj>(fun _ -> 
-                        // Avoiding a race for Dispose versus Cancel for linked token sources:
-                        //  - CTS.Dispose deregisters its CTRs and sets state to DISPOSED_*
-                        //  - However if the cancellation is in progress in the source it is linked to, deregistration is a no-op and CTS may still receive cancellation notification
-                        //  - That cancellation notification arrives in disposed state
-                        // We ignore cancellation notifications from linked sources in disposed state (so if cancellation/disposal race happens, disposal wins). 
-                        this.Cancel(dontThrowIfDisposed = true)
-                    )
-                linkedCtr1 <- token1.Register(handler,null)            
-                linkedCtr2 <- token2.Register(handler,null)                
-                            
-            public new() = new CancellationTokenSource(Unchecked.defaultof<_>,Unchecked.defaultof<_>)
-            
-            member this.Token = new CancellationToken(this)
-            
-            member this.Cancel() = this.Cancel(dontThrowIfDisposed = false)
-            member private this.Cancel (dontThrowIfDisposed) : unit =
-                let oldState = Interlocked.CompareExchange(&state, CancellationState.CANCELED, CancellationState.ACTIVE)
-                match oldState with
-                | CancellationState.ACTIVE ->
-                    if registrations.IsValueCreated then // we have at least one registration
-                        let list = registrations.Value
-                        let toRun =
-                            // building a list of callback to run, in LIFO order
-                            lock list (fun () ->
-                                let toRun = list |> Seq.fold (fun l info -> (fun () -> info.Action.Invoke(info.State))::l) []                                                                
-                                list.Clear()
-                                toRun)                            
-                        let doRun l f = // run callback, add any thrown exception to the list
-                            try  f(); l 
-                            with e -> e::l 
-                        let exns = List.fold doRun [] toRun
-                        match exns with 
-                        |   [] -> ()
-                        |   _ -> 
-                            // exns are in reverse order to the callbacks in toRun
-                            // we rev here; mainline case (no exceptions at all) runs without any allocations for exception list
-                            new AggregateException(exns |> List.rev) |> raise
-                    else () // no registrations - do nothing
-                | CancellationState.CANCELED ->
-                    () // cancellation already happened
-                | _ -> 
-                    // DISPOSED_ACTIVE or DISPOSED_CANCELED
-                    if not dontThrowIfDisposed then
-                        new ObjectDisposedException(typeof<CancellationTokenSource>.FullName) |> raise
-                    else ()
-                
-            member this.Dispose() = 
-                try
-                    // Unregister from linked sources before changing state. Otherwise callback may still execute and we will be canceled in disposed state
-                    // Multiple CTR disposal is a no-op
-                    try
-                        linkedCtr2.Dispose()
-                    finally
-                        linkedCtr1.Dispose()
-                finally
-                    let disposeNow =
-                        let oldState = Interlocked.CompareExchange(&state, CancellationState.DISPOSED_ACTIVE, CancellationState.ACTIVE)
-                        if oldState = CancellationState.ACTIVE then 
-                            true // previous state was ACTIVE, now disposing
-                        else 
-                            let oldState = Interlocked.CompareExchange(&state, CancellationState.DISPOSED_CANCELED, CancellationState.CANCELED)
-                            // if previous state was CANCELED, dispose now. Otherwise previous state was one of DISPOSED_* states, so already disposed
-                            oldState = CancellationState.CANCELED 
-                    if disposeNow then
-                        if registrations.IsValueCreated then
-                            let list = registrations.Value
-                            lock list (fun () -> list.Clear())
-            
-            member private this.InternalIsCanceled throwOnDisposed = 
-                match state with
-                |   CancellationState.ACTIVE -> false
-                |   CancellationState.CANCELED -> true
-                |   CancellationState.DISPOSED_CANCELED -> 
-                        if throwOnDisposed then
-                            new ObjectDisposedException(typeof<CancellationTokenSource>.FullName) |> raise
-                        else
-                            true
-                |   _ -> 
-                        if throwOnDisposed then
-                            new ObjectDisposedException(typeof<CancellationTokenSource>.FullName) |> raise
-                        else
-                            false
-
-            
-            member internal this.IsCancellationRequested = state = CancellationState.CANCELED || state = CancellationState.DISPOSED_CANCELED
-            
-            member internal this.Register(action:Action<obj>, state:obj) =
-                if this.InternalIsCanceled true then // do not register, invoke immediately
-                    action.Invoke(state)
-                    Unchecked.defaultof<_>
-                else
-                    let list = registrations.Value
-                    let invokeNow, r =
-                        lock list (fun () ->
-                            if this.InternalIsCanceled true then
-                                true, new CancellationTokenRegistration(Unchecked.defaultof<_>, 0L)
-                            else
-                                let id = nextID
-                                nextID <- nextID + 1L
-                                list.Add(new CallbackInfo(id, action, state))
-                                false, new CancellationTokenRegistration(this, id)
-                        )           
-                    if invokeNow then action.Invoke(state)
-                    r
-            
-            member internal this.Deregister(id) =
-                if this.InternalIsCanceled false then // ok to deregister after Dispose
-                    () // After cancellation is requested no deregistration needed; 
-                else 
-                    let list = registrations.Value
-                    lock list (fun () ->
-                        if this.InternalIsCanceled false then // ok to deregister after Dispose
-                            () 
-                        else
-                            let index = 
-                                // Search backwards; we assume Register/Deregister are scoped 
-                                // so registered last will be deregistered first
-                                let rec loop i = 
-                                    if i < 0 then (-1)
-                                    else
-                                        let callbackInfo = list.[i] 
-                                        if callbackInfo.ID = id then i
-                                        else loop (i-1)
-                                loop (list.Count - 1)
-                            if index >= 0 then
-                                list.RemoveAt(index)
-                            else
-                                () // we do not punish double deregistering
-                    )
-                 
-            
-            interface System.IDisposable with
-                member this.Dispose() = this.Dispose()
-            static member CreateLinkedTokenSource (token1:CancellationToken,token2:CancellationToken) =
-                new CancellationTokenSource(token1,token2)
-#endif
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Control
 
@@ -290,7 +14,9 @@ namespace Microsoft.FSharp.Control
     open System.Diagnostics.CodeAnalysis
     open System.IO
     open System.Reflection
+    open System.Runtime.ExceptionServices
     open System.Threading
+    open System.Threading.Tasks
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators
     open Microsoft.FSharp.Core.Operators
@@ -299,28 +25,6 @@ namespace Microsoft.FSharp.Control
 
 #if FX_RESHAPED_REFLECTION
     open ReflectionAdapters
-#endif
-
-#if !FX_NO_TASK
-    open System.Threading
-    open System.Threading.Tasks
-#endif
-
-#if FX_NO_OPERATION_CANCELLED
-    type OperationCanceledException(s : System.String) =
-        inherit System.Exception(s)
-        new () = new OperationCanceledException("The operation has been canceled")
-#endif
-
-    
-#if FX_NO_EXCEPTIONDISPATCHINFO
-    [<AllowNullLiteral>]
-    type ExceptionDispatchInfo(exn: System.Exception) =
-        static member Capture(exn) = ExceptionDispatchInfo(exn)
-        member __.Throw() = raise exn; ()
-        member __.SourceException = exn
-#else
-    open System.Runtime.ExceptionServices
 #endif
 
 
@@ -402,18 +106,13 @@ namespace Microsoft.FSharp.Control
 
         [<Literal>]
         static let bindLimitBeforeHijack = 300 
-#if !FX_NO_THREAD_STATIC
+
         [<ThreadStatic>]
         [<DefaultValue>]
         static val mutable private thisThreadHasTrampoline : bool
-#endif
 
         static member ThisThreadHasTrampoline = 
-#if FX_NO_THREAD_STATIC
-            true
-#else
             Trampoline.thisThreadHasTrampoline
-#endif
         
         let mutable cont = None
         let mutable bindCount = 0
@@ -429,23 +128,17 @@ namespace Microsoft.FSharp.Control
                 | Some newAction -> 
                     cont <- None
                     loop newAction
-#if !FX_NO_THREAD_STATIC
             let thisIsTopTrampoline =
                 if Trampoline.thisThreadHasTrampoline then
                     false
                 else
                     Trampoline.thisThreadHasTrampoline <- true
                     true
-#endif
             try
                 loop firstAction
             finally
-#if FX_NO_THREAD_STATIC
-                ()
-#else
                 if thisIsTopTrampoline then
                     Trampoline.thisThreadHasTrampoline <- false
-#endif       
             FakeUnit
             
         // returns true if time to jump on trampoline
@@ -493,7 +186,6 @@ namespace Microsoft.FSharp.Control
         
         static let unfake FakeUnit = ()
         // preallocate context-switching callbacks
-#if !FX_NO_SYNC_CONTEXT
         // Preallocate the delegate
         // This should be the only call to SynchronizationContext.Post in this library. We must always install a trampoline.        
         let sendOrPostCallback = 
@@ -501,7 +193,6 @@ namespace Microsoft.FSharp.Control
                     let f = unbox o : unit -> FakeUnitValue
                     this.Protect f |> unfake
                     )
-#endif
 
         // Preallocate the delegate
         // This should be the only call to QueueUserWorkItem in this library. We must always install a trampoline.
@@ -520,11 +211,9 @@ namespace Microsoft.FSharp.Control
                     )
 #endif
 
-#if !FX_NO_SYNC_CONTEXT
         member this.Post (ctxt: SynchronizationContext)  (f : unit -> FakeUnitValue) =
             ctxt.Post (sendOrPostCallback, state=(f |> box))
             FakeUnit
-#endif
 
         member this.QueueWorkItem (f: unit -> FakeUnitValue) =            
                 if not (ThreadPool.QueueUserWorkItem(waitCallbackForQueueWorkItemWithTrampoline, f |> box)) then
@@ -605,28 +294,22 @@ namespace Microsoft.FSharp.Control
                 // NOTE: this must be a tailcall
                 cont res
 
-#if !FX_NO_CONDITIONAL_WEAK_TABLE
         /// Global mutable state used to associate Exception
         let associationTable = System.Runtime.CompilerServices.ConditionalWeakTable<exn, ExceptionDispatchInfo>()
-#endif
 
         type ExceptionDispatchInfo with 
 
             member edi.GetAssociatedSourceException() = 
                let exn = edi.SourceException
-#if !FX_NO_CONDITIONAL_WEAK_TABLE
                // Try to store the entry in the association table to allow us to recover it later.
                try lock associationTable (fun () -> associationTable.Add(exn, edi)) with _ -> ()
-#endif
                exn
 
             // Capture, but prefer the saved information if available
             static member inline RestoreOrCapture(exn) = 
-#if !FX_NO_CONDITIONAL_WEAK_TABLE
                 match lock associationTable (fun () -> associationTable.TryGetValue(exn)) with 
                 | true, edi -> edi
                 | _ ->
-#endif
                     ExceptionDispatchInfo.Capture(exn)
 
             member inline edi.ThrowAny() = 
@@ -949,11 +632,9 @@ namespace Microsoft.FSharp.Control
         //----------------------------------
         // DERIVED SWITCH TO HELPERS
 
-#if !FX_NO_SYNC_CONTEXT
         let switchTo (ctxt: SynchronizationContext) =
             protectedPrimitive(fun ({ aux = aux } as args) ->
                 aux.trampolineHolder.Post ctxt  (fun () -> args.cont () ))
-#endif
 
         let switchToNewThread() =
             protectedPrimitive(fun ({ aux = aux } as args) ->
@@ -976,14 +657,8 @@ namespace Microsoft.FSharp.Control
                           }
             }
 
-#if FX_NO_SYNC_CONTEXT
-        let getSyncContext _ = null
-        let delimitSyncContext args = args
-        let postOrQueue _  (trampolineHolder:TrampolineHolder) f =
-            trampolineHolder.QueueWorkItem f 
-#else
         let getSyncContext () = System.Threading.SynchronizationContext.Current 
-            
+
         let postOrQueue (ctxt : SynchronizationContext) (trampolineHolder:TrampolineHolder) f =
             match ctxt with 
             | null -> trampolineHolder.QueueWorkItem f 
@@ -1003,9 +678,6 @@ namespace Microsoft.FSharp.Control
                                      ccont = (fun x -> trampolineHolder.Post ctxt (fun () -> aux.ccont x))                                  
                                }
                 }
-                                    
-#endif
-
 
         // When run, ensures that each of the continuations of the process are run in the same synchronization context.
         let protectedPrimitiveWithResync f = 
@@ -1036,19 +708,14 @@ namespace Microsoft.FSharp.Control
         [<AutoSerializable(false)>]        
         type SuspendedAsync<'T>(args : AsyncParams<'T>) =
             let ctxt = getSyncContext ()
-#if !FX_NO_SYNC_CONTEXT
             let thread = 
                 match ctxt with
                 |   null -> null // saving a thread-local access
                 |   _ -> Thread.CurrentThread 
-#endif
             let trampolineHolder = args.aux.trampolineHolder
             member this.ContinueImmediate res = 
                 let action () = args.cont res
                 let inline executeImmediately () = trampolineHolder.Protect action
-#if FX_NO_SYNC_CONTEXT
-                executeImmediately ()
-#else
                 let currentCtxt = System.Threading.SynchronizationContext.Current 
                 match ctxt, currentCtxt with
                 | null, null -> 
@@ -1059,8 +726,7 @@ namespace Microsoft.FSharp.Control
                         executeImmediately ()
                 | _ -> 
                     postOrQueue ctxt trampolineHolder action
-#endif
-                    
+
             member this.ContinueWithPostOrQueue res =
                 postOrQueue ctxt trampolineHolder (fun () -> args.cont res)
 
@@ -1297,7 +963,6 @@ namespace Microsoft.FSharp.Control
         let StartWithContinuations(token:CancellationToken, a:Async<'T>, cont, econt, ccont) : unit =
             startAsync token (cont >> fake) (econt >> fake) (ccont >> fake) a |> ignore
             
-#if !FX_NO_TASK
         type VolatileBarrier() =
             [<VolatileField>]
             let mutable isStopped = false
@@ -1337,9 +1002,6 @@ namespace Microsoft.FSharp.Control
                 }
             Start(token, a)
             task
-            
-#endif
-            
 
     [<Sealed>]
     [<CompiledName("FSharpAsync")>]
@@ -1407,7 +1069,6 @@ namespace Microsoft.FSharp.Control
             let token = defaultArg cancellationToken defaultCancellationTokenSource.Token
             CancellationTokenOps.Start (token, computation)
 
-#if !FX_NO_TASK
         static member StartAsTask (computation,?taskCreationOptions,?cancellationToken)=
             let token = defaultArg cancellationToken defaultCancellationTokenSource.Token        
             CancellationTokenOps.StartAsTask(token,computation,taskCreationOptions)
@@ -1415,7 +1076,6 @@ namespace Microsoft.FSharp.Control
         static member StartChildAsTask (computation,?taskCreationOptions) =
             async { let! token = getCancellationToken()  
                     return CancellationTokenOps.StartAsTask(token,computation, taskCreationOptions) }
-#endif
 
     type Async with
         static member Parallel (l: seq<Async<'T>>) =
@@ -1532,18 +1192,9 @@ namespace Microsoft.FSharp.Control
 
                         FakeUnit))
 
-#if !FX_NO_TASK
     // Contains helpers that will attach continuation to the given task.
     // Should be invoked as a part of protectedPrimitive(withResync) call
     module TaskHelpers = 
-        let private continueWithExtra token =
-#if FSCORE_PORTABLE_OLD || FSCORE_PORTABLE_NEW
-            token |> ignore
-            TaskContinuationOptions.None
-#else
-            token
-#endif
-
         let continueWith (task : Task<'T>, args, useCcontForTaskCancellation) = 
 
             let continuation (completedTask : Task<_>) : unit =
@@ -1557,7 +1208,7 @@ namespace Microsoft.FSharp.Control
                     else
                         args.cont completedTask.Result)) |> unfake
 
-            task.ContinueWith(Action<Task<'T>>(continuation), continueWithExtra args.aux.token) |> ignore |> fake
+            task.ContinueWith(Action<Task<'T>>(continuation)) |> ignore |> fake
 
         let continueWithUnit (task : Task, args, useCcontForTaskCancellation) = 
 
@@ -1572,28 +1223,7 @@ namespace Microsoft.FSharp.Control
                     else
                         args.cont ())) |> unfake
 
-            task.ContinueWith(Action<Task>(continuation), continueWithExtra args.aux.token) |> ignore |> fake
-#endif
-
-#if FX_NO_REGISTERED_WAIT_HANDLES
-    [<Sealed>]
-    [<AutoSerializable(false)>]
-    type internal WaitHandleIAsyncResult(wh : WaitHandle) = 
-        interface System.IAsyncResult with
-            member this.AsyncState = null
-            member this.AsyncWaitHandle = wh
-            member this.IsCompleted = 
-#if FX_NO_WAITONE_MILLISECONDS
-                wh.WaitOne(TimeSpan(0L))
-#else
-#if FX_NO_EXIT_CONTEXT_FLAGS
-                wh.WaitOne(0)
-#else
-                wh.WaitOne(0,exitContext=false)
-#endif
-#endif
-            member this.CompletedSynchronously = false // always reschedule
-#endif
+            task.ContinueWith(Action<Task>(continuation)) |> ignore |> fake
 
     type Async with
 
@@ -1689,61 +1319,6 @@ namespace Microsoft.FSharp.Control
 #endif
                     async.Return ok)
             else
-#if FX_NO_REGISTERED_WAIT_HANDLES
-                protectedPrimitiveWithResync(fun ({ aux = aux } as args) ->
-                    // The .NET Compact Framework doesn't support RegisterWaitForSingleObject
-                    
-                    // Latch is used to protect entrance to the cancelHandler/actual continuation/error continuation
-                    let latch = Latch()
-
-                    let scont = args.cont
-                    let ccont = aux.ccont
-
-                    // cancel action
-                    let cancel e = 
-                        if latch.Enter() then
-                            Async.Start (async { do (ccont e |> unfake) })
-
-                    // register cancellation handler
-                    let registration = aux.token.Register(fun () -> cancel (OperationCanceledException(aux.token)))
-
-                    // run actual await routine
-                    // callback will be executed on the thread pool so we need to use TrampolineHolder.Protect to install trampoline
-                    try
-                        Task.Factory.FromAsync
-                            (
-                                WaitHandleIAsyncResult(waitHandle),
-                                fun _ -> 
-                                    if latch.Enter() then
-                                        registration.Dispose()
-                                        aux.trampolineHolder.Protect(fun () -> scont true) 
-                                        |> unfake
-                            )
-                            |> ignore
-                        // if user has specified timeout different from Timeout.Infinite 
-                        // then start another async to track timeout expiration
-                        if millisecondsTimeout <> Timeout.Infinite then 
-                            Async.StartWithContinuations
-                                (
-                                    computation = (Async.Sleep millisecondsTimeout),
-                                    continuation = (fun () -> 
-                                        if latch.Enter() then 
-                                            registration.Dispose()
-                                            aux.trampolineHolder.Protect(fun () ->  scont false)
-                                            |> unfake),
-                                    exceptionContinuation = ignore, // we do not expect exceptions here
-                                    cancellationContinuation = cancel,
-                                    cancellationToken = aux.token
-                                )
-                        FakeUnit
-                    with e -> 
-                        if latch.Enter() then 
-                            registration.Dispose()
-                            reraise() // exception will be intercepted by try..with in protectedPrimitiveWithResync
-                        else FakeUnit
-                    )
-
-#else
                 protectedPrimitiveWithResync(fun ({ aux = aux } as args) ->
                     let rwh = ref (None : RegisteredWaitHandle option)
                     let latch = Latch()
@@ -1781,7 +1356,6 @@ namespace Microsoft.FSharp.Control
                             reraise() // reraise exception only if we successfully enter the latch (no other continuations were called)
                         else FakeUnit
                     )
-#endif
 
         static member AwaitIAsyncResult(iar: IAsyncResult, ?millisecondsTimeout): Async<bool> =
             async { if iar.CompletedSynchronously then 
@@ -2002,7 +1576,6 @@ namespace Microsoft.FSharp.Control
                     let beginAction = fun (a1,callback,state) -> AsBeginEndHelpers.beginAction ((computation a1), callback, state)
                     beginAction, AsBeginEndHelpers.endAction<'T>, AsBeginEndHelpers.cancelAction<'T>
 
-#if !FX_NO_CREATE_DELEGATE
         static member AwaitEvent(event:IEvent<'Delegate,'T>, ?cancelAction) : Async<'T> =
             async { let! token = getCancellationToken()
                     let resultCell = new ResultCell<_>()
@@ -2047,7 +1620,6 @@ namespace Microsoft.FSharp.Control
 
                     // Return the async computation that allows us to await the result
                     return! Async.AwaitAndReifyResult(resultCell) }
-#endif
 
     type Async with
         static member Ignore (p: Async<'T>) = bindA p (fun _ -> doneA)
@@ -2079,8 +1651,6 @@ namespace Microsoft.FSharp.Control
                                                
                 return Async.AsyncWaitAsyncWithTimeout(innerCTS, resultCell,millisecondsTimeout) }
 
-#if !FX_NO_SYNC_CONTEXT
-
         static member SwitchToContext syncContext =
             async { match syncContext with 
                     | null -> 
@@ -2089,7 +1659,6 @@ namespace Microsoft.FSharp.Control
                     | ctxt -> 
                         // post the continuation to the synchronization context
                         return! switchTo ctxt }
-#endif
 
         static member OnCancel action =
             async { let! ct = getCancellationToken ()
@@ -2111,7 +1680,6 @@ namespace Microsoft.FSharp.Control
         static member TryCancelled (p: Async<'T>,f) = 
             whenCancelledA f p
 
-#if !FX_NO_TASK
         static member AwaitTask (task:Task<'T>) : Async<'T> = 
             protectedPrimitiveWithResync (fun args -> 
                 TaskHelpers.continueWith(task, args, false)
@@ -2121,7 +1689,6 @@ namespace Microsoft.FSharp.Control
             protectedPrimitiveWithResync (fun args -> 
                 TaskHelpers.continueWithUnit (task, args, false)
                 )
-#endif
 
     module CommonExtensions =
 
@@ -2185,8 +1752,6 @@ namespace Microsoft.FSharp.Control
     module WebExtensions =
         open AsyncBuilderImpl
 
-#if !FX_NO_WEB_REQUESTS
-        
         type System.Net.WebRequest with
             [<CompiledName("AsyncGetResponse")>] // give the extension member a 'nice', unmangled compiled name, unique within this module
             member req.AsyncGetResponse() : Async<System.Net.WebResponse>= 
@@ -2206,8 +1771,6 @@ namespace Microsoft.FSharp.Control
                     | _ -> 
                         edi.ThrowAny())
 
-#endif
-     
 #if !FX_NO_WEB_CLIENT
         
         type System.Net.WebClient with
@@ -2298,7 +1861,7 @@ namespace Microsoft.FSharp.Control
 
     [<Sealed>]
     [<AutoSerializable(false)>]        
-    type Mailbox<'Msg>() =  
+    type Mailbox<'Msg>(cancellationSupported: bool) =  
         let mutable inboxStore  = null 
         let mutable arrivals = new Queue<'Msg>()
         let syncRoot = arrivals
@@ -2308,7 +1871,11 @@ namespace Microsoft.FSharp.Control
         //     -- "cont" is non-null and the reader is "activated" by re-scheduling cont in the thread pool; or
         //     -- "pulse" is non-null and the reader is "activated" by setting this event
         let mutable savedCont : ((bool -> FakeUnitValue) * TrampolineHolder) option = None
+
+        // Readers who have a timeout use this event
         let mutable pulse : AutoResetEvent = null
+
+        // Make sure that the "pulse" value is created
         let ensurePulse() = 
             match pulse with 
             | null -> 
@@ -2317,7 +1884,7 @@ namespace Microsoft.FSharp.Control
                 ()
             pulse
                 
-        let waitOneNoTimeout = 
+        let waitOneNoTimeoutOrCancellation = 
             unprotectedPrimitive (fun ({ aux = aux } as args) -> 
                 match savedCont with 
                 | None -> 
@@ -2338,11 +1905,14 @@ namespace Microsoft.FSharp.Control
                 | Some _ -> 
                     failwith "multiple waiting reader continuations for mailbox")
 
+        let waitOneWithCancellation(timeout) = 
+            ensurePulse().AsyncWaitOne(millisecondsTimeout=timeout)
+
         let waitOne(timeout) = 
-            if timeout < 0  then 
-                waitOneNoTimeout
+            if timeout < 0 && not cancellationSupported then 
+                waitOneNoTimeoutOrCancellation
             else 
-                ensurePulse().AsyncWaitOne(millisecondsTimeout=timeout)
+                waitOneWithCancellation(timeout)
 
         member x.inbox = 
             match inboxStore with 
@@ -2358,9 +1928,10 @@ namespace Microsoft.FSharp.Control
             else let msg = arrivals.Dequeue()
                  match f msg with
                  | None -> 
-                     x.inbox.Add(msg); 
+                     x.inbox.Add(msg);
                      x.scanArrivalsUnsafe(f)
                  | res -> res
+
         // Lock the arrivals queue while we scan that
         member x.scanArrivals(f) = lock syncRoot (fun () -> x.scanArrivalsUnsafe(f))
 
@@ -2396,9 +1967,11 @@ namespace Microsoft.FSharp.Control
 
         member x.Post(msg) =
             lock syncRoot (fun () ->
-                arrivals.Enqueue(msg);
-                // This is called when we enqueue a message, within a lock
-                // We cooperatively unblock any waiting reader. If there is no waiting
+
+                // Add the message to the arrivals queue
+                arrivals.Enqueue(msg)
+
+                // Cooperatively unblock any waiting reader. If there is no waiting
                 // reader we just leave the message in the incoming queue
                 match savedCont with
                 | None -> 
@@ -2408,6 +1981,7 @@ namespace Microsoft.FSharp.Control
                     | ev -> 
                         // someone is waiting on the wait handle
                         ev.Set() |> ignore
+
                 | Some(action,trampolineHolder) -> 
                     savedCont <- None
                     trampolineHolder.QueueWorkItem(fun () -> action true) |> unfake)
@@ -2417,19 +1991,19 @@ namespace Microsoft.FSharp.Control
                 async { match x.scanArrivals(f) with
                         | None -> 
                             // Deschedule and wait for a message. When it comes, rescan the arrivals
-                            let! ok = AsyncHelpers.awaitEither waitOneNoTimeout timeoutAsync
+                            let! ok = AsyncHelpers.awaitEither waitOneNoTimeoutOrCancellation timeoutAsync
                             match ok with
                             | Choice1Of2 true -> 
                                 return! scan timeoutAsync timeoutCts
                             | Choice1Of2 false ->
-                                return failwith "should not happen - waitOneNoTimeout always returns true"
+                                return failwith "should not happen - waitOneNoTimeoutOrCancellation always returns true"
                             | Choice2Of2 () ->
                                 lock syncRoot (fun () -> 
-                                    // Cancel the outstanding wait for messages installed by waitOneNoTimeout
+                                    // Cancel the outstanding wait for messages installed by waitOneWithCancellation
                                     //
                                     // HERE BE DRAGONS. This is bestowed on us because we only support
                                     // a single mailbox reader at any one time.
-                                    // If awaitEither returned control because timeoutAsync has terminated, waitOneNoTimeout
+                                    // If awaitEither returned control because timeoutAsync has terminated, waitOneNoTimeoutOrCancellation
                                     // might still be in-flight. In practical terms, it means that the push-to-async-result-cell 
                                     // continuation that awaitEither registered on it is still pending, i.e. it is still in savedCont.
                                     // That continuation is a no-op now, but it is still a registered reader for arriving messages.
@@ -2447,7 +2021,7 @@ namespace Microsoft.FSharp.Control
                        }
             let rec scanNoTimeout () =
                 async { match x.scanArrivals(f) with
-                        |   None -> let! ok = waitOneNoTimeout
+                        |   None -> let! ok = waitOne(Timeout.Infinite)
                                     if ok then
                                         return! scanNoTimeout()
                                     else
@@ -2477,16 +2051,25 @@ namespace Microsoft.FSharp.Control
                     | None -> return raise(TimeoutException(SR.GetString(SR.mailboxScanTimedOut)))
                     | Some res -> return res }
 
-
         member x.TryReceive(timeout) =
             let rec processFirstArrival() =
                 async { match x.receiveFromArrivals() with
                         | None -> 
-                            // Wait until we have been notified about a message. When that happens, rescan the arrivals
-                            let! ok = waitOne(timeout)
-                            if ok then return! processFirstArrival()
-                            else return None
+                            // Make sure the pulse is created if it is going to be needed. 
+                            // If it isn't, then create it, and go back to the start to 
+                            // check arrivals again.
+                            match pulse with
+                            | null -> 
+                                if timeout >= 0 || cancellationSupported then 
+                                    ensurePulse() |> ignore
+                                return! processFirstArrival()
+                            | _ -> 
+                                // Wait until we have been notified about a message. When that happens, rescan the arrivals
+                                let! ok = waitOne(timeout)
+                                if ok then return! processFirstArrival()
+                                else return None
                         | res -> return res }
+
             // look in the inbox first
             async { match x.receiveFromInbox() with
                     | None -> return! processFirstArrival()
@@ -2497,11 +2080,20 @@ namespace Microsoft.FSharp.Control
             let rec processFirstArrival() =
                 async { match x.receiveFromArrivals() with
                         | None -> 
-                            // Wait until we have been notified about a message. When that happens, rescan the arrivals
-                            let! ok = waitOne(timeout)
-                            if ok then return! processFirstArrival()
-                            else return raise(TimeoutException(SR.GetString(SR.mailboxReceiveTimedOut)))
+                            // Make sure the pulse is created if it is going to be needed. 
+                            // If it isn't, then create it, and go back to the start to 
+                            // check arrivals again.
+                            match pulse with
+                            | null when timeout >= 0 || cancellationSupported ->
+                                ensurePulse() |> ignore
+                                return! processFirstArrival()
+                            | _ -> 
+                                // Wait until we have been notified about a message. When that happens, rescan the arrivals
+                                let! ok = waitOne(timeout)
+                                if ok then return! processFirstArrival()
+                                else return raise(TimeoutException(SR.GetString(SR.mailboxReceiveTimedOut)))
                         | Some res -> return res }
+
             // look in the inbox first
             async { match x.receiveFromInbox() with
                     | None -> return! processFirstArrival() 
@@ -2526,8 +2118,9 @@ namespace Microsoft.FSharp.Control
     [<AutoSerializable(false)>]
     [<CompiledName("FSharpMailboxProcessor`1")>]
     type MailboxProcessor<'Msg>(initial, ?cancellationToken) =
+        let cancellationSupported = cancellationToken.IsSome
         let cancellationToken = defaultArg cancellationToken Async.DefaultCancellationToken
-        let mailbox = new Mailbox<'Msg>()
+        let mailbox = new Mailbox<'Msg>(cancellationSupported)
         let mutable defaultTimeout = Threading.Timeout.Infinite
         let mutable started = false
         let errorEvent = new Event<System.Exception>()

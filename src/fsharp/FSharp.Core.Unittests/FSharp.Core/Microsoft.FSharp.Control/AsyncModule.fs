@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Various tests for the:
 // Microsoft.FSharp.Control.Async module
@@ -12,6 +12,12 @@ open NUnit.Framework
 #if !(FSCORE_PORTABLE_OLD || FSCORE_PORTABLE_NEW)
 open FsCheck
 #endif
+
+module Utils =
+    let internal memoizeAsync f =
+        let cache = System.Collections.Concurrent.ConcurrentDictionary<'a, System.Threading.Tasks.Task<'b>>()
+        fun (x: 'a) -> // task.Result serialization to sync after done.
+            cache.GetOrAdd(x, fun x -> f(x) |> Async.StartAsTask) |> Async.AwaitTask
 
 type [<Struct>] Dummy (x: int) =
   member this.X = x
@@ -319,11 +325,7 @@ type AsyncModule() =
         try
             Async.RunSynchronously (go, cancellationToken = cts.Token)
         with
-#if FX_NO_OPERATION_CANCELLED
-            _ -> ()
-#else
             :? System.OperationCanceledException -> ()
-#endif
         Assert.AreEqual(1, !flag)
 
     [<Test>]
@@ -542,11 +544,7 @@ type AsyncModule() =
                   |> fun c -> Async.RunSynchronously(c, cancellationToken = cts.Token)
                   |> ignore
             with
-#if FX_NO_OPERATION_CANCELLED
-                _ -> ()
-#else
                 :? System.OperationCanceledException -> () // OK
-#endif
         for _ in 1..1000 do test()
 
     [<Test>]
@@ -603,3 +601,35 @@ type AsyncModule() =
         Assert.AreEqual(0, !okCount)
         Assert.AreEqual(0, !errCount)
 #endif
+
+    [<Test>]
+    member this.``Async caching should work``() = 
+        let x = ref 0
+        let someSlowFunc _mykey = async { 
+            Console.WriteLine "Simulated downloading..."
+            do! Async.Sleep 400
+            Console.WriteLine "Simulated downloading Done."
+            x := !x + 1 // Side effect!
+            return "" }
+
+        let memFunc = Utils.memoizeAsync <| someSlowFunc
+
+        async {
+            do! memFunc "a" |> Async.Ignore
+            do! memFunc "a" |> Async.Ignore
+            do! memFunc "a" |> Async.Ignore
+            do! [|1 .. 30|] |> Seq.map(fun _ -> (memFunc "a")) 
+                |> Async.Parallel |> Async.Ignore
+            for _i = 1 to 30 do
+                Async.Start( memFunc "a" |> Async.Ignore )
+                Async.Start( memFunc "a" |> Async.Ignore )
+            do! Async.Sleep 500
+            do! memFunc "a" |> Async.Ignore
+            do! memFunc "a" |> Async.Ignore
+            for _i = 1 to 30 do
+                Async.Start( memFunc "a" |> Async.Ignore )
+
+            do! [|1 .. 30|] |> Seq.map(fun _ -> (memFunc "a")) 
+                |> Async.Parallel |> Async.Ignore
+        } |> Async.RunSynchronously
+        Assert.AreEqual(1, !x)

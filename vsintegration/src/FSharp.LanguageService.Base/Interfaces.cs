@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 using Microsoft.VisualStudio.TextManager.Interop;
 using Microsoft.VisualStudio.Shell;
@@ -28,7 +28,6 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         No = 0
     }
 
-    // The interface between FSharpSourceBase+FSharpSource and the rest of the language service.
     interface ISource : IDisposable
     {
         void Open();
@@ -48,7 +47,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         TextSpan UncommentSpan(TextSpan span);
         TextSpan CommentSpan(TextSpan span);
         ExpansionProvider GetExpansionProvider();
-        BackgroundRequest BeginBackgroundRequest(int line, int idx, TokenInfo info, BackgroundRequestReason reason, IVsTextView view, RequireFreshResults requireFreshResults, BackgroundRequestResultHandler callback, MethodTipMiscellany misc = 0);
+        BackgroundRequest_DEPRECATED BeginBackgroundRequest(int line, int idx, TokenInfo info, BackgroundRequestReason reason, IVsTextView view, RequireFreshResults requireFreshResults, BackgroundRequestResultHandler callback, MethodTipMiscellany_DEPRECATED misc = 0);
         CompletionSet CompletionSet { get; }
         void Completion(IVsTextView textView, TokenInfo info, BackgroundRequestReason reason, RequireFreshResults requireFreshResults);
         bool IsCompletorActive { get; }
@@ -64,18 +63,18 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService
         void DisableOutlining();
         void OnCommand(IVsTextView textView, Microsoft.VisualStudio.VSConstants.VSStd2KCmdID command, char ch);
         TokenInfo GetTokenInfo(int line, int col);
-        void MethodTip(IVsTextView textView, int line, int index, TokenInfo info, MethodTipMiscellany methodTipMiscellany, RequireFreshResults requireFreshResults);
+        void MethodTip(IVsTextView textView, int line, int index, TokenInfo info, MethodTipMiscellany_DEPRECATED methodTipMiscellany, RequireFreshResults requireFreshResults);
         void GetPairExtents(IVsTextView textView, int line, int col, out TextSpan span);
         bool GetWordExtent(int line, int idx, WORDEXTFLAGS flags, out int startIdx, out int endIdx);
         int GetLineCount();
-        LanguageService LanguageService { get; }
+        LanguageService_DEPRECATED LanguageService { get; }
         void Recolorize(int startLine, int endLine);
         TextSpan DirtySpan { get; }
         Colorizer GetColorizer();
         AuthoringSink CreateAuthoringSink(BackgroundRequestReason reason, int line, int col);
         string GetFilePath();
         void OnIdle(bool periodic);
-        void HandleUntypedParseOrFullTypeCheckResponse(BackgroundRequest req);
+        void HandleUntypedParseOrFullTypeCheckResponse(BackgroundRequest_DEPRECATED req);
         IVsHiddenTextSession GetHiddenTextSession();
         string GetExpressionAtPosition(int line, int column);
         DateTime OpenedTime { get; }

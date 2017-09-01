@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 //---------------------------------------------------------------------
 // The big binary reader
@@ -2301,6 +2301,7 @@ and seekReadMethod ctxt numtypars (idx:int) =
      let internalcall = (implflags &&& 0x1000) <> 0x0
      let synchronized = (implflags &&& 0x0020) <> 0x0
      let noinline = (implflags &&& 0x0008) <> 0x0
+     let aggressiveinline = (implflags &&& 0x0100) <> 0x0
      let mustrun = (implflags &&& 0x0040) <> 0x0
      let cctor = (nm = ".cctor")
      let ctor = (nm = ".ctor")
@@ -2338,6 +2339,7 @@ and seekReadMethod ctxt numtypars (idx:int) =
        IsUnmanagedExport=export
        IsSynchronized=synchronized
        IsNoInline=noinline
+       IsAggressiveInline=aggressiveinline
        IsMustRun=mustrun
        IsPreserveSig=preservesig
        IsManaged = not unmanaged
@@ -2358,7 +2360,7 @@ and seekReadMethod ctxt numtypars (idx:int) =
            //if codeRVA <> 0x0 then dprintn "non-IL or abstract method with non-zero RVA"
            mkMethBodyLazyAux (notlazy MethodBody.Abstract)  
          else 
-           seekReadMethodRVA ctxt (idx,nm,internalcall,noinline,numtypars) codeRVA   
+           seekReadMethodRVA ctxt (idx,nm,internalcall,noinline,aggressiveinline,numtypars) codeRVA   
      }
      
      
@@ -2530,7 +2532,8 @@ and seekReadCustomAttrUncached ctxtH (CustomAttrIdx (cat,idx,valIdx)) =
       Data=
         match readBlobHeapOption ctxt valIdx with
         | Some bytes -> bytes
-        | None -> Bytes.ofInt32Array [| |] }
+        | None -> Bytes.ofInt32Array [| |] 
+      Elements = [] }
 
 and seekReadSecurityDecls ctxt idx = 
    mkILLazySecurityDecls
@@ -2877,9 +2880,9 @@ and seekReadTopCode ctxt numtypars (sz:int) start seqpoints =
    instrs,rawToLabel, lab2pc, raw2nextLab
 
 #if FX_NO_PDB_READER
-and seekReadMethodRVA ctxt (_idx,nm,_internalcall,noinline,numtypars) rva = 
+and seekReadMethodRVA ctxt (_idx,nm,_internalcall,noinline,aggressiveinline,numtypars) rva = 
 #else
-and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,numtypars) rva = 
+and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,aggressiveinline,numtypars) rva = 
 #endif
   mkMethBodyLazyAux 
    (lazy
@@ -2965,6 +2968,7 @@ and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,numtypars) rva =
              { IsZeroInit=false
                MaxStack= 8
                NoInlining=noinline
+               AggressiveInlining=aggressiveinline
                Locals=List.empty
                SourceMarker=methRangePdbInfo 
                Code=code }
@@ -3090,6 +3094,7 @@ and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,numtypars) rva =
              { IsZeroInit=initlocals
                MaxStack= maxstack
                NoInlining=noinline
+               AggressiveInlining=aggressiveinline
                Locals = locals
                Code=code
                SourceMarker=methRangePdbInfo}

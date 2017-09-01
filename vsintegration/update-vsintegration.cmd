@@ -1,6 +1,6 @@
 @rem ===========================================================================================================
-@rem Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, 
-@rem               Version 2.0.  See License.txt in the project root for license information.
+@rem Copyright (c) Microsoft Corporation.  All Rights Reserved.
+@rem               See License.txt in the project root for license information.
 @rem ===========================================================================================================
 
 rem @echo off
@@ -53,8 +53,8 @@ copy /y "%BINDIR%\fsi.exe" "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\fsi.exe.config" "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\fsiAnyCpu.exe" "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\fsiAnyCpu.exe.config" "%COMPILERSDKPATH%"
-copy /y "%BINDIR%\Microsoft.FSharp.targets" "%COMPILERSDKPATH%"
-copy /y "%BINDIR%\Microsoft.Portable.FSharp.targets" "%COMPILERSDKPATH%"
+copy /y "%BINDIR%\Microsoft.FSharp.Targets" "%COMPILERSDKPATH%"
+copy /y "%BINDIR%\Microsoft.Portable.FSharp.Targets" "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\Microsoft.FSharp.NetSdk.props" "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\Microsoft.FSharp.NetSdk.targets" "%COMPILERSDKPATH%"
 copy /y "%TOPDIR%\vsintegration\src\SupportedRuntimes\SupportedRuntimes.xml" "%COMPILERSDKPATH%"

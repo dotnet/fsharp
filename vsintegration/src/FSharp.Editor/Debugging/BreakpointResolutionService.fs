@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -23,7 +23,7 @@ type internal FSharpBreakpointResolutionService
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: FSharpProjectOptionsManager
     ) =
 
     static let userOpName = "BreakpointResolution"
@@ -52,7 +52,8 @@ type internal FSharpBreakpointResolutionService
                 let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! range = FSharpBreakpointResolutionService.GetBreakpointLocation(checkerProvider.Checker, sourceText, document.Name, textSpan, options)
-                return BreakpointResolutionResult.CreateSpanResult(document, RoslynHelpers.FSharpRangeToTextSpan(sourceText, range))
+                let! span = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range)
+                return BreakpointResolutionResult.CreateSpanResult(document, span)
             } 
             |> Async.map Option.toObj 
             |> RoslynHelpers.StartAsyncAsTask cancellationToken

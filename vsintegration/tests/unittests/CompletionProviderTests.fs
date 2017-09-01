@@ -18,7 +18,7 @@
 // 
 //    Use F# Interactive.  This only works for FSharp.Compiler.Service.dll which has a public API
 
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 module Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn.CompletionProviderTests
 
 open System
@@ -116,7 +116,7 @@ System.Console.WriteLine(x + y)
 
 [<Test>]
 let ShouldNotTriggerCompletionAfterAnyTriggerOtherThanInsertion() = 
-    for triggerKind in [CompletionTriggerKind.Deletion; CompletionTriggerKind.Other; CompletionTriggerKind.Snippets ] do
+    for triggerKind in [CompletionTriggerKind.Deletion; CompletionTriggerKind.Invoke; CompletionTriggerKind.Snippets ] do
     let fileContents = "System.Console.WriteLine(123)"
     let caretPosition = fileContents.IndexOf("System.")
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Coordinating compiler operations - configuration, loading initial context, reporting errors etc.
 module internal Microsoft.FSharp.Compiler.CompileOps
@@ -342,6 +342,7 @@ type TcConfigBuilder =
       mutable optsOn        : bool 
       mutable optSettings   : Optimizer.OptimizationSettings 
       mutable emitTailcalls : bool
+      mutable deterministic : bool
 #if PREFERRED_UI_LANG
       mutable preferredUiLang: string option
 #endif
@@ -494,6 +495,7 @@ type TcConfig =
     member doFinalSimplify : bool
     member optSettings   : Optimizer.OptimizationSettings 
     member emitTailcalls : bool
+    member deterministic : bool
 #if PREFERRED_UI_LANG
     member preferredUiLang: string option
 #else
@@ -722,6 +724,8 @@ type TcState =
 
     member NextStateAfterIncrementalFragment : TcEnv -> TcState
 
+    member CreatesGeneratedProvidedTypes : bool
+
 /// Get the initial type checking state for a set of inputs
 val GetInitialTcState : 
     range * string * TcConfig * TcGlobals * TcImports * Ast.NiceNameGenerator * TcEnv -> TcState
@@ -757,7 +761,7 @@ val ReportWarningAsError : globalWarnLevel: int * specificWarnOff: int list * sp
 
 [<RequireQualifiedAccess>]
 type CodeContext =
-    | Evaluation
+    | CompilationAndEvaluation
     | Compilation
     | Editing
 

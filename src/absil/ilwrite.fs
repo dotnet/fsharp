@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.AbstractIL.ILBinaryWriter 
 
@@ -105,7 +105,8 @@ let getUncodedToken (tab:TableName) idx = ((tab.Index <<< 24) ||| idx)
 // 0x01-0x08, 0x0E-0x1F, 0x27, 0x2D,
 // 0x7F. Otherwise, it holds 0. The 1 signifies Unicode characters that require handling beyond that normally provided for 8-bit encoding sets.
 
-// HOWEVER, there is a discrepancy here between the ECMA spec and the Microsoft C# implementation. The code below follows the latter. We�ve raised the issue with both teams. See Dev10 bug 850073 for details.
+// HOWEVER, there is a discrepancy here between the ECMA spec and the Microsoft C# implementation. 
+// The code below follows the latter. We've raised the issue with both teams. See Dev10 bug 850073 for details.
 
 let markerForUnicodeBytes (b:byte[]) = 
     let len = b.Length
@@ -550,6 +551,7 @@ type MetadataTable =
 type cenv = 
     { ilg: ILGlobals
       emitTailcalls: bool
+      deterministic: bool
       showTimes: bool
       desiredMetadataVersion: ILVersionInfo
       requiredDataFixups: (int32 * (int * bool)) list ref
@@ -1411,10 +1413,17 @@ let rec GetCustomAttrDataAsBlobIdx cenv (data:byte[]) =
 
 and GetCustomAttrRow cenv hca attr = 
     let cat = GetMethodRefAsCustomAttribType cenv attr.Method.MethodRef
-    UnsharedRow 
-        [| HasCustomAttribute (fst hca, snd hca)
-           CustomAttributeType (fst cat, snd cat) 
-           Blob (GetCustomAttrDataAsBlobIdx cenv attr.Data) |]  
+    for element in attr.Elements do
+        match element with
+        | ILAttribElem.Type (Some ty) when ty.IsNominal -> GetTypeRefAsTypeRefIdx cenv ty.TypeRef |> ignore
+        | ILAttribElem.TypeRef (Some tref) -> GetTypeRefAsTypeRefIdx cenv tref  |> ignore
+        | _ -> ()
+
+    UnsharedRow
+            [| HasCustomAttribute (fst hca, snd hca);
+               CustomAttributeType (fst cat, snd cat);
+               Blob (GetCustomAttrDataAsBlobIdx cenv attr.Data)
+            |]
 
 and GenCustomAttrPass3Or4 cenv hca attr = 
     AddUnsharedRow cenv TableNames.CustomAttribute (GetCustomAttrRow cenv hca attr) |> ignore
@@ -2537,6 +2546,7 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
           | _ -> false) then 0x1000 else 0x0) ||| // RTSpecialName 
         (if md.IsReqSecObj then 0x8000 else 0x0) |||
         (if md.HasSecurity || not md.SecurityDecls.AsList.IsEmpty then 0x4000 else 0x0)
+   
     let implflags = 
         (match  md.mdCodeKind with 
          | MethodCodeKind.Native -> 0x0001
@@ -2548,7 +2558,8 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
         (if md.IsPreserveSig then 0x0080 else 0x0000) |||
         (if md.IsSynchronized then 0x0020 else 0x0000) |||
         (if md.IsMustRun then 0x0040 else 0x0000) |||
-        (if (md.IsNoInline || (match md.mdBody.Contents with MethodBody.IL il -> il.NoInlining | _ -> false)) then 0x0008 else 0x0000)
+        (if (md.IsNoInline || (match md.mdBody.Contents with MethodBody.IL il -> il.NoInlining | _ -> false)) then 0x0008 else 0x0000) |||
+        (if (md.IsAggressiveInline || (match md.mdBody.Contents with MethodBody.IL il -> il.AggressiveInlining | _ -> false)) then 0x0100 else 0x0000)
 
     if md.IsEntryPoint then 
         if cenv.entrypoint <> None then failwith "duplicate entrypoint"
@@ -2902,9 +2913,15 @@ and newGuid (modul: ILModuleDef) =
     let m2 = hash modul.Name
     [| b0 m; b1 m; b2 m; b3 m; b0 m2; b1 m2; b2 m2; b3 m2; 0xa7uy; 0x45uy; 0x03uy; 0x83uy; b0 n; b1 n; b2 n; b3 n |]
 
-and GetModuleAsRow cenv (modul: ILModuleDef) = 
+and deterministicGuid (modul: ILModuleDef) =
+    let n = 16909060
+    let m = hash n
+    let m2 = hash modul.Name
+    [| b0 m; b1 m; b2 m; b3 m; b0 m2; b1 m2; b2 m2; b3 m2; 0xa7uy; 0x45uy; 0x03uy; 0x83uy; b0 n; b1 n; b2 n; b3 n |]
+
+and GetModuleAsRow (cenv:cenv) (modul: ILModuleDef) = 
     // Store the generated MVID in the environment (needed for generating debug information)
-    let modulGuid = newGuid modul
+    let modulGuid = if cenv.deterministic then deterministicGuid modul else newGuid modul
     cenv.moduleGuid <- modulGuid
     UnsharedRow 
         [| UShort (uint16 0x0) 
@@ -2953,11 +2970,12 @@ let GenModule (cenv : cenv) (modul: ILModuleDef) =
     GenTypeDefsPass4 [] cenv tds
     reportTime cenv.showTimes "Module Generation Pass 4"
 
-let generateIL requiredDataFixups (desiredMetadataVersion,generatePdb, ilg : ILGlobals, emitTailcalls,showTimes)  (m : ILModuleDef) cilStartAddress =
+let generateIL requiredDataFixups (desiredMetadataVersion,generatePdb, ilg : ILGlobals, emitTailcalls, deterministic, showTimes)  (m : ILModuleDef) cilStartAddress =
     let isDll = m.IsDLL
 
     let cenv = 
         { emitTailcalls=emitTailcalls
+          deterministic = deterministic
           showTimes=showTimes
           ilg = ilg
           desiredMetadataVersion=desiredMetadataVersion
@@ -3097,7 +3115,7 @@ module FileSystemUtilites =
 #endif
         ()
 
-let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls,showTimes) modul cilStartAddress = 
+let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls,deterministic,showTimes) modul cilStartAddress =
 
     // When we know the real RVAs of the data section we fixup the references for the FieldRVA table. 
     // These references are stored as offsets into the metadata we return from this function 
@@ -3106,7 +3124,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
     let next = cilStartAddress
 
     let strings,userStrings,blobs,guids,tables,entryPointToken,code,requiredStringFixups,data,resources,pdbData,mappings = 
-      generateIL requiredDataFixups (desiredMetadataVersion,generatePdb,ilg,emitTailcalls,showTimes) modul cilStartAddress
+      generateIL requiredDataFixups (desiredMetadataVersion,generatePdb,ilg,emitTailcalls,deterministic,showTimes) modul cilStartAddress
 
     reportTime showTimes "Generated Tables and Code"
     let tableSize (tab: TableName) = tables.[tab.Index].Count
@@ -3403,7 +3421,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
     
     reportTime showTimes "Layout Metadata"
 
-    let metadata = 
+    let metadata, guidStart =
       let mdbuf =  ByteBuffer.Create 500000 
       mdbuf.EmitIntsAsBytes 
         [| 0x42; 0x53; 0x4a; 0x42; // Magic signature 
@@ -3461,6 +3479,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
 
       reportTime showTimes "Write Metadata User Strings";
     // The GUID stream 
+      let guidStart = mdbuf.Position
       Array.iter mdbuf.EmitBytes guids;
       
     // The blob stream 
@@ -3472,7 +3491,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
           mdbuf.EmitIntAsByte 0x00;
       reportTime showTimes "Write Blob Stream";
      // Done - close the buffer and return the result. 
-      mdbuf.Close()
+      mdbuf.Close(), guidStart
     
 
    // Now we know the user string tables etc. we can fixup the 
@@ -3487,7 +3506,7 @@ let writeILMetadataAndCode (generatePdb,desiredMetadataVersion,ilg,emitTailcalls
               applyFixup32 code locInCode token
     reportTime showTimes "Fixup Metadata";
 
-    entryPointToken,code, codePadding,metadata,data,resources,!requiredDataFixups,pdbData,mappings
+    entryPointToken,code, codePadding,metadata,data,resources,!requiredDataFixups,pdbData,mappings,guidStart
 
 //---------------------------------------------------------------------
 // PHYSICAL METADATA+BLOBS --> PHYSICAL PE FORMAT
@@ -3549,7 +3568,7 @@ let writeBytes (os: BinaryWriter) (chunk:byte[]) = os.Write(chunk,0,chunk.Length
 
 let writeBinaryAndReportMappings (outfile, 
                                   ilg: ILGlobals, pdbfile: string option, signer: ILStrongNameSigner option, portablePDB, embeddedPDB, 
-                                  embedAllSource, embedSourceList, sourceLink, emitTailcalls, showTimes, dumpDebugInfo) modul =
+                                  embedAllSource, embedSourceList, sourceLink, emitTailcalls, deterministic, showTimes, dumpDebugInfo ) modul =
     // Store the public key from the signer into the manifest.  This means it will be written 
     // to the binary and also acts as an indicator to leave space for delay sign 
 
@@ -3665,8 +3684,8 @@ let writeBinaryAndReportMappings (outfile,
                     | Some v -> v
                     | None -> failwith "Expected msorlib to have a version number"
 
-          let entryPointToken,code,codePadding,metadata,data,resources,requiredDataFixups,pdbData,mappings = 
-            writeILMetadataAndCode ((pdbfile <> None), desiredMetadataVersion, ilg,emitTailcalls,showTimes) modul next
+          let entryPointToken,code,codePadding,metadata,data,resources,requiredDataFixups,pdbData,mappings,guidStart =
+            writeILMetadataAndCode ((pdbfile <> None), desiredMetadataVersion, ilg,emitTailcalls, deterministic, showTimes) modul next
 
           reportTime showTimes "Generated IL and metadata";
           let _codeChunk,next = chunk code.Length next
@@ -3702,7 +3721,7 @@ let writeBinaryAndReportMappings (outfile,
           let pdbOpt =
             match portablePDB with
             | true  -> 
-                let (uncompressedLength, contentId, stream) as pdbStream = generatePortablePdb embedAllSource embedSourceList sourceLink showTimes pdbData 
+                let (uncompressedLength, contentId, stream) as pdbStream = generatePortablePdb embedAllSource embedSourceList sourceLink showTimes pdbData deterministic
                 if embeddedPDB then Some (compressPortablePdbStream uncompressedLength contentId stream)
                 else Some (pdbStream)
             | _ -> None
@@ -3848,7 +3867,33 @@ let writeBinaryAndReportMappings (outfile,
             writeInt32AsUInt16 os 0x014c;   // Machine - IMAGE_FILE_MACHINE_I386 
             
           writeInt32AsUInt16 os numSections;
-          writeInt32 os timestamp   // date since 1970 
+
+          let pdbData = 
+            if deterministic then
+              // Hash code, data and metadata
+              use sha = System.Security.Cryptography.SHA1.Create()    // IncrementalHash is core only
+              let hCode = sha.ComputeHash code
+              let hData = sha.ComputeHash data
+              let hMeta = sha.ComputeHash metadata
+              let final = [| hCode; hData; hMeta |] |> Array.collect id |> sha.ComputeHash
+
+              // Confirm we have found the correct data and aren't corrupting the metadata
+              if metadata.[ guidStart..guidStart+3]     <> [| 4uy; 3uy; 2uy; 1uy |] then failwith "Failed to find MVID"
+              if metadata.[ guidStart+12..guidStart+15] <> [| 4uy; 3uy; 2uy; 1uy |] then failwith "Failed to find MVID"
+
+              // Update MVID guid in metadata
+              Array.blit final 0 metadata guidStart 16
+
+              // Use last 4 bytes for timestamp - High bit set, to stop tool chains becoming confused
+              let timestamp = int final.[16] ||| (int final.[17] <<< 8) ||| (int final.[18] <<< 16) ||| (int (final.[19] ||| 128uy) <<< 24) 
+              writeInt32 os timestamp
+              // Update pdbData with new guid and timestamp.  Portable and embedded PDBs don't need the ModuleID
+              // Full and PdbOnly aren't supported under deterministic builds currently, they rely on non-determinsitic Windows native code
+              { pdbData with ModuleID = final.[0..15] ; Timestamp = timestamp }
+            else
+              writeInt32 os timestamp   // date since 1970
+              pdbData
+
           writeInt32 os 0x00; // Pointer to Symbol Table Always 0 
        // 00000090 
           writeInt32 os 0x00; // Number of Symbols Always 0 
@@ -4276,12 +4321,12 @@ type options =
      sourceLink: string
      signer: ILStrongNameSigner option
      emitTailcalls : bool
+     deterministic : bool
      showTimes: bool
      dumpDebugInfo:bool }
 
 let WriteILBinary (outfile, (args: options), modul) =
     writeBinaryAndReportMappings (outfile, 
                                   args.ilg, args.pdbfile, args.signer, args.portablePDB, args.embeddedPDB, args.embedAllSource, 
-                                  args.embedSourceList, args.sourceLink, args.emitTailcalls, args.showTimes, args.dumpDebugInfo) modul 
+                                  args.embedSourceList, args.sourceLink, args.emitTailcalls, args.deterministic, args.showTimes, args.dumpDebugInfo) modul
     |> ignore
-

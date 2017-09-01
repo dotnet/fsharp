@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
     <Identity Id="VisualFSharp" Version="42.42.42.42" Language="en-US" Publisher="Microsoft.VisualFSharpTools" />
@@ -15,7 +15,7 @@
     <Actions>
       <Action Type="Ngen" Path="fsiAnyCpu.exe" />
       <Action Type="Ngen" Path="fsi.exe" />
-      <Action Type="Ngen" Path="FSharp.Compiler.Service.dll" />
+      <Action Type="Ngen" Path="FSharp.Compiler.Private.dll" />
       <Action Type="Ngen" Path="FSharp.Compiler.Interactive.Settings.dll" />
       <Action Type="Ngen" Path="FSharp.Compiler.Server.Shared.dll" />
       <Action Type="Ngen" Path="FSharp.Core.dll" />

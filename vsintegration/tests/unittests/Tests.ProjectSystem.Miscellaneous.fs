@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Tests.ProjectSystem
 
@@ -411,7 +411,7 @@ type Miscellaneous() =
                 // ensure that <PreBuildEvent> is after <Import> declaration
                 let fsprojFileText = File.ReadAllText(projFileName)
                 printfn "%s" fsprojFileText
-                let regexStr = "<Import Project=.*?Microsoft.FSharp.targets(.|\\n)*?<PreBuildEvent>"
+                let regexStr = "<Import Project=.*?Microsoft.FSharp.Targets(.|\\n)*?<PreBuildEvent>"
                 TheTests.HelpfulAssertMatches '<' regexStr fsprojFileText
                 // ensure it runs
                 let outputWindowPaneErrors : string list ref = ref [] 
@@ -480,7 +480,7 @@ type Miscellaneous() =
     <WarningLevel>3</WarningLevel>
   </PropertyGroup>", fun project configChangeNotifier projFile -> 
             let projFileText = File.ReadAllText(projFile)
-            // We need to add text _after_ the import of Microsoft.FSharp.targets.  
+            // We need to add text _after_ the import of Microsoft.FSharp.Targets.  
             let i = projFileText.IndexOf("<Import Project=")
             let i = projFileText.IndexOf(">", i)
             let newProjFileText = projFileText.Insert(i+1, @"

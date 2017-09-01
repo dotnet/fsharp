@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 //----------------------------------------------------------------------------
 // Open up the compiler as an incremental service for parsing,
@@ -87,7 +87,7 @@ type FSharpErrorInfo(fileName, s:pos, e:pos, severity: FSharpErrorSeverity, mess
 [<Sealed>]
 type ErrorScope()  = 
     let mutable errors = [] 
-    static let mutable mostRecentError = None
+    let mutable firstError = None
     let unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
     let unwindEL =        
         PushErrorLoggerPhaseUntilUnwind (fun _oldLogger -> 
@@ -95,8 +95,8 @@ type ErrorScope()  =
                 member x.DiagnosticSink(exn, isError) = 
                       let err = FSharpErrorInfo.CreateFromException(exn,isError,false,range.Zero)
                       errors <- err :: errors
-                      if isError then 
-                          mostRecentError <- Some err
+                      if isError && firstError.IsNone then 
+                          firstError <- Some err.Message
                 member x.ErrorCount = errors.Length })
         
     member x.Errors = errors |> List.filter (fun error -> error.Severity = FSharpErrorSeverity.Error)
@@ -112,27 +112,37 @@ type ErrorScope()  =
               unwindEL.Dispose() (* unwind pushes when ErrorScope disposes *)
               unwindBP.Dispose()
 
-    static member MostRecentError = mostRecentError
+    member x.FirstError with get() = firstError and set v = firstError <- v
     
+    /// Used at entry points to FSharp.Compiler.Service (service.fsi) which manipulate symbols and
+    /// perform other operations which might expose us to either bona-fide F# error messages such 
+    /// "missing assembly" (for incomplete assembly reference sets), or, if there is a compiler bug,
+    /// may hit internal compiler failures.
+    ///
+    /// In some calling cases, we get a chance to report the error as part of user text. For example
+    /// if there is a "msising assembly" error while formatting the text of the description of an
+    /// autocomplete, then the error message is shown in replacement of the text (rather than crashing Visual
+    /// Studio, or swallowing the exception completely)
     static member Protect<'a> (m:range) (f:unit->'a) (err:string->'a): 'a = 
         use errorScope = new ErrorScope()
         let res = 
             try 
                 Some (f())
-            with e -> errorRecovery e m; None
+            with e -> 
+                // Here we only call errorRecovery to save the error message for later use by TryGetFirstErrorText.
+                try 
+                    errorRecovery e m
+                with _ -> 
+                    // If error recovery fails, then we have an internal compiler error. In this case, we show the whole stack
+                    // in the extra message, should the extra message be used.
+                    errorScope.FirstError <- Some (e.ToString())
+                None
         match res with 
-        | Some res ->res
+        | Some res -> res
         | None -> 
             match errorScope.TryGetFirstErrorText() with 
             | Some text -> err text
             | None -> err ""
-
-    static member ProtectWithDefault m f dflt = 
-        ErrorScope.Protect m f (fun _ -> dflt)
-
-    static member ProtectAndDiscard m f = 
-        ErrorScope.Protect m f (fun _ -> ())
-      
 
 /// An error logger that capture errors, filtering them according to warning levels etc.
 type internal CompilationErrorLogger (debugName:string, tcConfig:TcConfig) = 
@@ -384,11 +394,12 @@ module internal SymbolHelpers =
         | Item.SetterArg (_,item) -> rangeOfItem g preferFlag item
         | Item.ArgName (id,_, _) -> Some id.idRange
         | Item.CustomOperation (_,_,implOpt) -> implOpt |> Option.bind (rangeOfMethInfo g preferFlag)
+        | Item.ImplicitOp (_, {contents = Some(TraitConstraintSln.FSMethSln(_, vref, _))}) -> Some vref.Range
         | Item.ImplicitOp _ -> None
-        | Item.NewDef id -> Some id.idRange
         | Item.UnqualifiedType tcrefs -> tcrefs |> List.tryPick (rangeOfEntityRef preferFlag >> Some)
         | Item.DelegateCtor typ 
         | Item.FakeInterfaceCtor typ -> typ |> tryNiceEntityRefOfTy |> Option.map (rangeOfEntityRef preferFlag)
+        | Item.NewDef _ -> None
 
     // Provided type definitions do not have a useful F# CCU for the purposes of goto-definition.
     let computeCcuOfTyconRef (tcref:TyconRef) = 
@@ -719,6 +730,10 @@ module internal SymbolHelpers =
               let equalTypes(ty1, ty2) =
                   if isAppTy g ty1 && isAppTy g ty2 then tyconRefEq g (tcrefOfAppTy g ty1) (tcrefOfAppTy g ty2) 
                   else typeEquiv g ty1 ty2
+
+              ItemsAreEffectivelyEqual g item1 item2 || 
+
+              // Much of this logic is already covered by 'ItemsAreEffectivelyEqual'
               match item1,item2 with 
               | Item.DelegateCtor(ty1), Item.DelegateCtor(ty2) -> equalTypes(ty1, ty2)
               | Item.Types(dn1,[ty1]), Item.Types(dn2,[ty2]) -> 
@@ -740,15 +755,18 @@ module internal SymbolHelpers =
               | Item.MethodGroup(_, meths1,_), Item.MethodGroup(_, meths2,_) -> 
                   Seq.zip meths1 meths2 |> Seq.forall (fun (minfo1, minfo2) ->
                     MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
-              | (Item.Value vref1 | Item.CustomBuilder (_,vref1)), (Item.Value vref2 | Item.CustomBuilder (_,vref2)) -> valRefEq g vref1 vref2
+              | (Item.Value vref1 | Item.CustomBuilder (_,vref1)), (Item.Value vref2 | Item.CustomBuilder (_,vref2)) -> 
+                  valRefEq g vref1 vref2
               | Item.ActivePatternCase(APElemRef(_apinfo1, vref1, idx1)), Item.ActivePatternCase(APElemRef(_apinfo2, vref2, idx2)) ->
                   idx1 = idx2 && valRefEq g vref1 vref2
-              | Item.UnionCase(UnionCaseInfo(_, ur1),_), Item.UnionCase(UnionCaseInfo(_, ur2),_) -> g.unionCaseRefEq ur1 ur2
+              | Item.UnionCase(UnionCaseInfo(_, ur1),_), Item.UnionCase(UnionCaseInfo(_, ur2),_) -> 
+                  g.unionCaseRefEq ur1 ur2
               | Item.RecdField(RecdFieldInfo(_, RFRef(tcref1, n1))), Item.RecdField(RecdFieldInfo(_, RFRef(tcref2, n2))) -> 
                   (tyconRefEq g tcref1 tcref2) && (n1 = n2) // there is no direct function as in the previous case
               | Item.Property(_, pi1s), Item.Property(_, pi2s) -> 
                   List.zip pi1s pi2s |> List.forall(fun (pi1, pi2) -> PropInfo.PropInfosUseIdenticalDefinitions pi1 pi2)
-              | Item.Event(evt1), Item.Event(evt2) -> EventInfo.EventInfosUseIdenticalDefintions evt1 evt2
+              | Item.Event(evt1), Item.Event(evt2) -> 
+                  EventInfo.EventInfosUseIdenticalDefintions evt1 evt2
               | Item.CtorGroup(_, meths1), Item.CtorGroup(_, meths2) -> 
                   List.zip meths1 meths2 
                   |> List.forall (fun (minfo1, minfo2) -> MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
@@ -1433,7 +1451,7 @@ module internal SymbolHelpers =
             (fun err -> FSharpStructuredToolTipElement.CompositionError(err))
 
     /// Get rid of groups of overloads an replace them with single items.
-    let FlattenItems g m item =
+    let FlattenItems g (m: range) item =
         match item with 
         | Item.MethodGroup(nm,minfos,orig) -> minfos |> List.map (fun minfo -> Item.MethodGroup(nm,[minfo],orig))  
         | Item.CtorGroup(nm,cinfos) -> cinfos |> List.map (fun minfo -> Item.CtorGroup(nm,[minfo])) 

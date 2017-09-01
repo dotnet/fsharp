@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 //----------------------------------------------------------------------------
 // SourceCodeServices API to the compiler as an incremental service for parsing,
@@ -37,8 +37,8 @@ type FSharpFindDeclFailureReason =
 type internal FSharpFindDeclFailureReason = 
 #endif
 
-    /// Generic reason: no particular information about error
-    | Unknown
+    /// Generic reason: no particular information about error apart from a message
+    | Unknown of message: string
 
     /// Source code file is not available
     | NoSourceCode
@@ -59,7 +59,9 @@ type internal FSharpFindDeclResult =
     /// Indicates a declaration location was not found, with an additional reason
     | DeclNotFound of FSharpFindDeclFailureReason
     /// Indicates a declaration location was found
-    | DeclFound      of range
+    | DeclFound    of range
+    /// Indicates an external declaration was found
+    | ExternalDecl of assembly : string * externalSym : ExternalSymbol
      
 /// Represents the checking context implied by the ProjectOptions 
 [<Sealed>]

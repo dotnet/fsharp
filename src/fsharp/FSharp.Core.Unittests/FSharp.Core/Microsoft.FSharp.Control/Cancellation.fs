@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Control
 #nowarn "52"
@@ -229,7 +229,60 @@ type CancellationType() =
                     yield async { do linkedCts.Dispose() }                     
             }               
         asyncs |> Async.Parallel |> Async.RunSynchronously |> ignore
-        
+
+    [<Test>]
+    member this.AwaitTaskCancellationAfterAsyncTokenCancellation() =
+        let StartCatchCancellation cancellationToken (work) =
+            Async.FromContinuations(fun (cont, econt, _) ->
+              // When the child is cancelled, report OperationCancelled
+              // as an ordinary exception to "error continuation" rather
+              // than using "cancellation continuation"
+              let ccont e = econt e
+              // Start the workflow using a provided cancellation token
+              Async.StartWithContinuations( work, cont, econt, ccont,
+                                            ?cancellationToken=cancellationToken) )
+
+        /// Like StartAsTask but gives the computation time to so some regular cancellation work
+        let StartAsTaskProperCancel taskCreationOptions  cancellationToken (computation : Async<_>) : System.Threading.Tasks.Task<_> =
+            let token = defaultArg cancellationToken Async.DefaultCancellationToken
+            let taskCreationOptions = defaultArg taskCreationOptions System.Threading.Tasks.TaskCreationOptions.None
+            let tcs = new System.Threading.Tasks.TaskCompletionSource<_>("StartAsTaskProperCancel", taskCreationOptions)
+
+            let a =
+                async {
+                    try
+                        // To ensure we don't cancel this very async (which is required to properly forward the error condition)
+                        let! result = StartCatchCancellation (Some token) computation
+                        do
+                            tcs.SetResult(result)
+                    with exn ->
+                        tcs.SetException(exn)
+                }
+            Async.Start(a)
+            tcs.Task
+
+        let cts = new CancellationTokenSource()
+        let tcs = System.Threading.Tasks.TaskCompletionSource<_>()
+        let t =
+            async {
+                do! tcs.Task |> Async.AwaitTask
+            }
+            |> StartAsTaskProperCancel None (Some cts.Token)
+
+        // First cancel the token, then set the task as cancelled.
+        async {
+            do! Async.Sleep 100
+            cts.Cancel()
+            do! Async.Sleep 100
+            tcs.TrySetException (TimeoutException "Task timed out after token.")
+                |> ignore
+        } |> Async.Start
+
+        try
+            let res = t.Wait(1000)
+            Assert.Fail (sprintf "Excepted TimeoutException wrapped in an AggregateException, but got %A" res)
+        with :? AggregateException as agg -> ()
+
     [<Test>]
     member this.Equality() =
         let cts1 = new CancellationTokenSource()

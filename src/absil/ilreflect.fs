@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 //----------------------------------------------------------------------------
 // Write Abstract IL structures at runtime using Reflection.Emit
@@ -1466,6 +1466,7 @@ let convMethodImplFlags mdef =
     ||| flagsIf mdef.IsPreserveSig MethodImplAttributes.PreserveSig
     ||| flagsIf mdef.IsSynchronized MethodImplAttributes.Synchronized
     ||| flagsIf (match mdef.mdBody.Contents with MethodBody.IL b -> b.NoInlining | _ -> false) MethodImplAttributes.NoInlining
+    ||| flagsIf (match mdef.mdBody.Contents with MethodBody.IL b -> b.AggressiveInlining | _ -> false) MethodImplAttributes.AggressiveInlining
 
 //----------------------------------------------------------------------------
 // buildMethodPass2

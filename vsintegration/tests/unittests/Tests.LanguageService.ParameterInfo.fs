@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Tests.LanguageService.ParameterInfo
 
@@ -21,23 +21,23 @@ module ParamInfoStandardSettings =
 type UsingMSBuild()  = 
     inherit LanguageServiceBaseTests()
 
-    let GetParamDisplays(methods:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip) =
+    let GetParamDisplays(methods:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip_DEPRECATED) =
             [ for i = 0 to methods.GetCount() - 1 do
                 yield [ for j = 0 to methods.GetParameterCount(i) - 1 do
                             let (name,display,description) = methods.GetParameterInfo(i,j) 
                             yield display ] ]
       
-    let AssertEmptyMethodGroup(resultMethodGroup:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip option) =
+    let AssertEmptyMethodGroup(resultMethodGroup:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip_DEPRECATED option) =
         Assert.IsTrue(resultMethodGroup.IsNone, "Expected an empty method group")              
         
-    let AssertMethodGroupDesciptionsDoNotContain(methods:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip, expectNotToBeThere) = 
+    let AssertMethodGroupDesciptionsDoNotContain(methods:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip_DEPRECATED, expectNotToBeThere) = 
         for i = 0 to methods.GetCount() - 1 do
             let description = methods.GetDescription(i)
             if (description.Contains(expectNotToBeThere)) then
                 Console.WriteLine("Expected description {0} to not contain {1}", description, expectNotToBeThere)
                 AssertNotContains(description,expectNotToBeThere)
  
-    let AssertMethodGroup(resultMethodGroup:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip option, expectedParamNamesSet:string list list) =
+    let AssertMethodGroup(resultMethodGroup:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip_DEPRECATED option, expectedParamNamesSet:string list list) =
         Assert.IsTrue(resultMethodGroup.IsSome, "Expected a method group")
         let resultMethodGroup = resultMethodGroup.Value
         Assert.AreEqual(expectedParamNamesSet.Length, resultMethodGroup.GetCount())           
@@ -49,7 +49,7 @@ type UsingMSBuild()  =
                                        (expectedParamNames,paramDisplays) ||> List.forall2 (fun expectedParamName paramDisplay -> 
                                            paramDisplay.Contains(expectedParamName)))))
     
-    let AssertMethodGroupContain(resultMethodGroup:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip option, expectedParamNames:string list) = 
+    let AssertMethodGroupContain(resultMethodGroup:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip_DEPRECATED option, expectedParamNames:string list) = 
         Assert.IsTrue(resultMethodGroup.IsSome, "Expected a method group")
         let resultMethodGroup = resultMethodGroup.Value
         Assert.IsTrue(resultMethodGroup

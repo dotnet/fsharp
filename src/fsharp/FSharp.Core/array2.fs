@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Collections
 
@@ -51,11 +51,7 @@ namespace Microsoft.FSharp.Collections
                 (System.Array.CreateInstance(typeof<'T>, [|n1;n2|]) :?> 'T[,])
 #endif                
             else
-#if FX_NO_BASED_ARRAYS
-                raise (NotSupportedException(SR.GetString(SR.nonZeroBasedDisallowed)))
-#else
                 (Array.CreateInstance(typeof<'T>, [|n1;n2|],[|b1;b2|]) :?> 'T[,])
-#endif
 
         [<CompiledName("CreateBased")>]
         let createBased b1 b2 n m (x:'T) = 

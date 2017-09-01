@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+# Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 # Helper function to print an error message and exit with a non-zero error code.
 failwith () {
@@ -471,7 +471,7 @@ if [ "$BUILD_PROTO" = '1' ]; then
 #        { printeval "$_ngenexe install Proto/net40/bin/fsc-proto.exe /nologo"; } || failwith "NGen of proto failed"
     else
         # Build proto-compiler and libs
-        { printeval "$_msbuildexe $msbuildflags src/fsharp-proto-build.proj /p:UseMonoPackaging=true"; } || failwith "compiler proto build failed"
+        { printeval "$_msbuildexe $msbuildflags src/fsharp-proto-build.proj /p:UseMonoPackaging=true /p:Configuration=Proto"; } || failwith "compiler proto build failed"
     fi
 fi
 

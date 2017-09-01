@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation, Inc.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
@@ -478,6 +478,9 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
       if isUnresolved() then makeReadOnlyCollection[] else
       protect <| fun () -> 
         ([ let _, entityTy = generalizeTyconRef entity
+           let createMember (minfo : MethInfo) =
+               if minfo.IsConstructor then FSharpMemberOrFunctionOrValue(cenv, C minfo, Item.CtorGroup (minfo.DisplayName, [minfo]))
+               else FSharpMemberOrFunctionOrValue(cenv, M minfo, Item.MethodGroup (minfo.DisplayName, [minfo], None))
            if x.IsFSharpAbbreviation then 
                ()
            elif x.IsFSharp then 
@@ -485,14 +488,10 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
                for v in entity.MembersOfFSharpTyconSorted do 
                  // Ignore members representing the generated .cctor
                  if not v.Deref.IsClassConstructor then 
-                     let fsMeth = FSMeth (cenv.g, entityTy, v, None)
-                     let item = 
-                         if fsMeth.IsConstructor then  Item.CtorGroup (fsMeth.DisplayName, [fsMeth])                          
-                         else Item.MethodGroup (fsMeth.DisplayName, [fsMeth], None)
-                     yield FSharpMemberOrFunctionOrValue(cenv,  M fsMeth, item) 
+                     yield createMember (FSMeth(cenv.g, entityTy, v, None))
            else
                for minfo in GetImmediateIntrinsicMethInfosOfType (None, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 entityTy do
-                    yield FSharpMemberOrFunctionOrValue(cenv,  M minfo, Item.MethodGroup (minfo.DisplayName,[minfo],None))
+                    yield createMember minfo
            let props = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) cenv.g cenv.amap range0 entityTy 
            let events = cenv.infoReader.GetImmediateIntrinsicEventsOfType (None, AccessibleFromSomeFSharpCode, range0, entityTy)
            for pinfo in props do
@@ -1159,6 +1158,7 @@ and FSharpInlineAnnotation =
    | AlwaysInline 
    | OptionalInline 
    | NeverInline 
+   | AggressiveInline 
 
 and FSharpMemberOrValData = 
     | E of EventInfo
@@ -1342,13 +1342,13 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
     member __.EnclosingEntity = 
         checkIsResolved()
         match d with 
-        | E m -> FSharpEntity(cenv,  tcrefOfAppTy cenv.g m.EnclosingType)
-        | P m -> FSharpEntity(cenv,  tcrefOfAppTy cenv.g m.EnclosingType)
-        | M m | C m -> FSharpEntity(cenv,  m.DeclaringEntityRef)
+        | E m -> FSharpEntity(cenv,  tcrefOfAppTy cenv.g m.EnclosingType) |> Some
+        | P m -> FSharpEntity(cenv,  tcrefOfAppTy cenv.g m.EnclosingType) |> Some
+        | M m | C m -> FSharpEntity(cenv,  m.DeclaringEntityRef) |> Some
         | V v -> 
         match v.ActualParent with 
-        | ParentNone -> invalidOp "the value or member doesn't have an enclosing entity" 
-        | Parent p -> FSharpEntity(cenv,  p)
+        | ParentNone -> None
+        | Parent p -> FSharpEntity(cenv,  p) |> Some
 
     member __.IsCompilerGenerated = 
         if isUnresolved() then false else 
@@ -1757,7 +1757,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                 match e with 
                 | ILEvent (_,x) -> 
                     let ilAccess = AccessibilityLogic.GetILAccessOfILEventInfo x
-                    getApproxFSharpAccessibilityOfMember this.EnclosingEntity.Entity  ilAccess
+                    getApproxFSharpAccessibilityOfMember this.EnclosingEntity.Value.Entity  ilAccess
                 | _ -> taccessPublic
 
             FSharpAccessibility(access)
@@ -1768,7 +1768,7 @@ and FSharpMemberOrFunctionOrValue(cenv, d:FSharpMemberOrValData, item) =
                 match p with 
                 | ILProp (_,x) -> 
                     let ilAccess = AccessibilityLogic.GetILAccessOfILPropInfo x
-                    getApproxFSharpAccessibilityOfMember this.EnclosingEntity.Entity  ilAccess
+                    getApproxFSharpAccessibilityOfMember this.EnclosingEntity.Value.Entity  ilAccess
                 | _ -> taccessPublic
 
             FSharpAccessibility(access)
@@ -2146,6 +2146,18 @@ and FSharpAssemblySignature private (cenv, topAttribs: TypeChecker.TopAttribs op
         | Some tA ->
             tA.assemblyAttrs
             |> List.map (fun a -> FSharpAttribute(cenv,  AttribInfo.FSAttribInfo(cenv.g, a))) |> makeReadOnlyCollection
+
+    member __.FindEntityByPath path =
+        let inline findNested name = function
+            | Some (e : Entity) when e.IsModuleOrNamespace ->
+                e.ModuleOrNamespaceType.AllEntitiesByCompiledAndLogicalMangledNames.TryFind name
+            | _ -> None
+
+        match path with
+        | hd :: tl ->
+             List.fold (fun a x -> findNested x a) (mtyp.AllEntitiesByCompiledAndLogicalMangledNames.TryFind hd) tl
+             |> Option.map (fun e -> FSharpEntity(cenv, rescopeEntity optViewedCcu e))
+        | _ -> None
 
     override x.ToString() = "<assembly signature>"
 

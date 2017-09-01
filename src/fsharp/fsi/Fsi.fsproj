@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
@@ -11,8 +11,8 @@
         fsc.exe and fsi.exe only runs on x86 (emulates on ia64, x64) due to 
         Win32 DLLs and memory mapping dependencies...
         -->
-    <PlatformTarget Condition=" '$(TargetFramework)'!='coreclr'">x86</PlatformTarget>
-    <PlatformTarget Condition=" '$(TargetFramework)'=='coreclr'">AnyCPU</PlatformTarget>
+    <PlatformTarget Condition=" '$(TargetDotnetProfile)'!='coreclr'">x86</PlatformTarget>
+    <PlatformTarget Condition=" '$(TargetDotnetProfile)'=='coreclr'">AnyCPU</PlatformTarget>
     <ProjectGuid>{d0e98c0d-490b-4c61-9329-0862f6e87645}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <NoWarn>$(NoWarn);62</NoWarn>
@@ -20,12 +20,12 @@
     <BaseAddress>0x0A000000</BaseAddress>
     <DefineConstants>EXTENSIONTYPING;$(DefineConstants)</DefineConstants>
     <DefineConstants>COMPILER;$(DefineConstants)</DefineConstants>
-    <DefineConstants Condition="'$(TargetFramework)'=='net40'">FSI_SHADOW_COPY_REFERENCES;$(DefineConstants)</DefineConstants>
-    <DefineConstants Condition="'$(TargetFramework)'=='net40'">FSI_SERVER;$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition="'$(TargetDotnetProfile)'=='net40'">FSI_SHADOW_COPY_REFERENCES;$(DefineConstants)</DefineConstants>
+    <DefineConstants Condition="'$(TargetDotnetProfile)'=='net40'">FSI_SERVER;$(DefineConstants)</DefineConstants>
     <AllowCrossTargeting>true</AllowCrossTargeting>
     <OtherFlags>$(OtherFlags) --warnon:1182</OtherFlags>
     <Win32Resource>fsi.res</Win32Resource>
-    <TargetFrameworkVersion Condition="'$(TargetFramework)' != 'coreclr'">v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion Condition="'$(TargetDotnetProfile)' != 'coreclr'">v4.6</TargetFrameworkVersion>
   </PropertyGroup>
   <ItemGroup>
     <FilesToLocalize Include="$(OutDir)$(AssemblyName).exe">
@@ -34,6 +34,8 @@
       <HasLceComments>false</HasLceComments>
       <InProject>false</InProject>
     </FilesToLocalize>
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="..\..\assemblyinfo\assemblyinfo.fsi.exe.fs">
       <Link>assemblyinfo.fsi.exe.fs</Link>
     </Compile>
@@ -49,13 +51,13 @@
       <Link>fsi.exe.config</Link>
     </None>
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'coreclr'">
+  <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">
       <None Include="project.json" />
   </ItemGroup>
 
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   
-  <ItemGroup  Condition="'$(TargetFramework)' != 'coreclr'">
+  <ItemGroup  Condition="'$(TargetDotnetProfile)' != 'coreclr'">
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Drawing" />
@@ -74,7 +76,7 @@
       <Name>FSharp.Core</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' != 'coreclr'">
+  <ItemGroup Condition="'$(TargetDotnetProfile)' != 'coreclr'">
     <ProjectReference Include="..\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj">
       <Name>FSharp.Compiler.Server.Shared</Name>
       <Project>{d5870cf0-ed51-4cbc-b3d7-6f56da84ac06}</Project>

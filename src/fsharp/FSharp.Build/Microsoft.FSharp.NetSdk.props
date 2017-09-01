@@ -1,4 +1,4 @@
-<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <!--
 ***********************************************************************************************
 Microsoft.FSharp.NetSdk.props
@@ -16,14 +16,42 @@ WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and
     <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <DefineConstants>$(DefineConstants);TRACE</DefineConstants>
-    <WarningLevel Condition=" '$(WarningLevel)' == '' ">3</WarningLevel>
-  </PropertyGroup>
+  <Choose>
+    <When Condition="'$(DefineConstants)' == '' ">
+      <PropertyGroup>
+        <DefineConstants>TRACE</DefineConstants>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup>
+        <DefineConstants>$(DefineConstants);TRACE</DefineConstants>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
 
   <PropertyGroup>
     <EnableDefaultCompileItems Condition=" '$(EnableDefaultCompileItems)' == '' ">false</EnableDefaultCompileItems>                                <!--- Do not glob F# source files -->
+    <EnableDefaultNoneItems Condition=" '$(EnableDefaultNoneItems)' == '' ">false</EnableDefaultNoneItems>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <DefaultProjectTypeGuid Condition=" '$(DefaultProjectTypeGuid)' == '' ">{F2A71F9B-5D33-465A-A702-920D77279786}</DefaultProjectTypeGuid>         <!-- F# project type -->
+    <Prefer32Bit Condition="'$(Prefer32Bit)' == '' ">false</Prefer32Bit>
+    <Tailcalls Condition="'$(Tailcalls)' == '' ">true</Tailcalls>
+    <TreatWarningsAsErrors Condition="'$(TreatWarningsAsErrors)' == '' ">false</TreatWarningsAsErrors>
+    <WarningLevel Condition=" '$(WarningLevel)' == '' ">3</WarningLevel>
+    <WarningsAsErrors Condition="'$(WarningsAsErrors)' == '' " />
+    <UseStandardResourceNames Condition=" '$(UseStandardResourceNames)' == '' ">true</UseStandardResourceNames>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols Condition="'$(DebugSymbols)' == '' ">true</DebugSymbols>
+    <Optimize Condition="'$(Optimize)' == '' ">false</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugSymbols Condition="'$(DebugSymbols)' == '' ">false</DebugSymbols>
+    <Optimize Condition="'$(Optimize)' == '' ">true</Optimize>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(OS)' != 'Unix' and Exists('$(MSBuildThisFileDirectory)\RunFsc.cmd')" >

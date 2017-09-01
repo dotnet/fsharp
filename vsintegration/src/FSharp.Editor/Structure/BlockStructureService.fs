@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -139,7 +139,7 @@ module internal BlockStructure =
 
 open BlockStructure
  
-type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoManager: ProjectInfoManager) =
+type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoManager: FSharpProjectOptionsManager) =
     inherit BlockStructureService()
         
     static let userOpName = "BlockStructure"
@@ -158,7 +158,7 @@ type internal FSharpBlockStructureService(checker: FSharpChecker, projectInfoMan
         |> RoslynHelpers.StartAsyncAsTask(cancellationToken)
 
 [<ExportLanguageServiceFactory(typeof<BlockStructureService>, FSharpConstants.FSharpLanguageName); Shared>]
-type internal FSharpBlockStructureServiceFactory [<ImportingConstructor>](checkerProvider: FSharpCheckerProvider, projectInfoManager: ProjectInfoManager) =
+type internal FSharpBlockStructureServiceFactory [<ImportingConstructor>](checkerProvider: FSharpCheckerProvider, projectInfoManager: FSharpProjectOptionsManager) =
     interface ILanguageServiceFactory with
         member __.CreateLanguageService(_languageServices) =
             upcast FSharpBlockStructureService(checkerProvider.Checker, projectInfoManager)

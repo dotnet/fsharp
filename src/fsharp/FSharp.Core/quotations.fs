@@ -1,8 +1,7 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Quotations
 
-#if !FX_MINIMAL_REFLECTION
 open System
 open System.IO
 open System.Reflection
@@ -286,10 +285,16 @@ and [<CompiledName("FSharpExpr")>]
         | CombTerm(TryWithOp,[e1;Lambda(v1,e2);Lambda(v2,e3)])         -> combL "TryWith" [expr e1; varL v1; expr e2; varL v2; expr e3]
         | CombTerm(SequentialOp,args)        -> combL "Sequential" (exprs args)
         | CombTerm(NewDelegateOp(ty),[e])   -> 
-            let n = (getDelegateInvoke ty).GetParameters().Length
-            match e with 
-            | NLambdas n (vs,e) -> combL "NewDelegate" ([typeL ty] @ (vs |> List.map varL) @ [expr e])
-            | _ -> combL "NewDelegate" [typeL ty; expr e]
+            let nargs = (getDelegateInvoke ty).GetParameters().Length
+            if nargs = 0 then 
+                match e with 
+                | NLambdas 1 ([_],e) -> combL "NewDelegate" ([typeL ty] @ [expr e])
+                | NLambdas 0 ([],e) -> combL "NewDelegate" ([typeL ty] @ [expr e])
+                | _ -> combL "NewDelegate" [typeL ty; expr e]
+            else
+                match e with 
+                | NLambdas nargs (vs,e) -> combL "NewDelegate" ([typeL ty] @ (vs |> List.map varL) @ [expr e])
+                | _ -> combL "NewDelegate" [typeL ty; expr e]
         //| CombTerm(_,args)   -> combL "??" (exprs args)
         | VarTerm(v)   -> wordL (tagLocal v.Name)
         | LambdaTerm(v,b)   -> combL "Lambda" [varL v; expr b]
@@ -504,10 +509,16 @@ module Patterns =
     let (|NewDelegate|_|) e  = 
         match e with 
         | Comb1(NewDelegateOp(ty),e) -> 
-            let n = (getDelegateInvoke ty).GetParameters().Length
-            match e with 
-            | NLambdas n (vs,e) -> Some(ty,vs,e) 
-            | _ -> None
+            let nargs = (getDelegateInvoke ty).GetParameters().Length
+            if nargs = 0 then 
+                match e with 
+                | NLambdas 1 ([_],e) -> Some(ty,[],e) // try to strip the unit parameter if there is one 
+                | NLambdas 0 ([],e) -> Some(ty,[],e) 
+                | _ -> None
+            else
+                match e with 
+                | NLambdas nargs (vs,e) -> Some(ty,vs,e) 
+                | _ -> None
         | _ -> None
 
     [<CompiledName("LetRecursivePattern")>]
@@ -1107,16 +1118,21 @@ module Patterns =
         let typ = mkNamedType(tc,tyargs)
         typ.GetField(fldName,staticOrInstanceBindingFlags) |> checkNonNullResult ("fldName", SR.GetString1(SR.QfailedToBindField, fldName))  // fxcop may not see "fldName" as an arg
 
+    let bindGenericCctor (tc:Type) =
+        tc.GetConstructor(staticBindingFlags,null,[| |],null) 
+        |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))  
+
     let bindGenericCtor (tc:Type,argTypes:Instantiable<Type list>) =
         let argtyps =  instFormal (getGenericArguments tc) argTypes
 #if FX_PORTABLE_OR_NETSTANDARD
         let argTypes = Array.ofList argtyps
         tc.GetConstructor(argTypes) 
         |> bindCtorBySearchIfCandidateIsNull tc argTypes
-        |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))  // fxcop may not see "tc" as an arg
+        |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))  
 #else        
-        tc.GetConstructor(instanceBindingFlags,null,Array.ofList argtyps,null) |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))  // fxcop may not see "tc" as an arg
+        tc.GetConstructor(instanceBindingFlags,null,Array.ofList argtyps,null) |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor))  
 #endif
+
     let bindCtor (tc,argTypes:Instantiable<Type list>,tyargs) =
         let typ = mkNamedType(tc,tyargs)
         let argtyps = argTypes |> inst tyargs
@@ -1124,9 +1140,9 @@ module Patterns =
         let argTypes = Array.ofList argtyps
         typ.GetConstructor(argTypes) 
         |> bindCtorBySearchIfCandidateIsNull typ argTypes
-        |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor)) // fxcop may not see "tc" as an arg
+        |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor)) 
 #else        
-        typ.GetConstructor(instanceBindingFlags,null,Array.ofList argtyps,null) |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor)) // fxcop may not see "tc" as an arg
+        typ.GetConstructor(instanceBindingFlags,null,Array.ofList argtyps,null) |> checkNonNullResult ("tc", SR.GetString(SR.QfailedToBindConstructor)) 
 #endif
 
     let chop n xs =
@@ -1432,9 +1448,13 @@ module Patterns =
             | Ambiguous(_) -> raise (System.Reflection.AmbiguousMatchException())
             | _ -> failwith "unreachable"
         | 1 -> 
-            let data = u_MethodInfoData st
-            let minfo = bindGenericMeth(data) in 
-            (minfo :> MethodBase)
+            let ((tc,_,_,methName,_) as data) = u_MethodInfoData st
+            if methName = ".cctor" then 
+                let cinfo = bindGenericCctor tc
+                (cinfo :> MethodBase)
+            else
+                let minfo = bindGenericMeth(data)
+                (minfo :> MethodBase)
         | 2 -> 
             let data = u_CtorInfoData st
             let cinfo = bindGenericCtor(data) in 
@@ -1751,9 +1771,7 @@ module Patterns =
             let qdataResources = 
                 // dynamic assemblies don't support the GetManifestResourceNames 
                 match assem with 
-#if !FX_NO_REFLECTION_EMIT
                 | a when a.FullName = "System.Reflection.Emit.AssemblyBuilder" -> []
-#endif
                 | null | _ -> 
                     let resources = 
                         // This raises NotSupportedException for dynamic assemblies
@@ -2213,5 +2231,3 @@ module ExprShape =
             | CombTerm(op,args) -> ShapeCombination(box<ExprConstInfo * Expr list> (op,expr.CustomAttributes),args)
             | HoleTerm _     -> invalidArg "expr" (SR.GetString(SR.QunexpectedHole))
         loop (e :> Expr)
-                
-#endif

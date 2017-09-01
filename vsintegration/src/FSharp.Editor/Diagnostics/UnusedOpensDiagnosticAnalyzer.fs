@@ -1,9 +1,10 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Collections.Immutable
+open System.Diagnostics
 open System.Threading
 open System.Threading.Tasks
 
@@ -99,11 +100,11 @@ module private UnusedOpens =
                     | SymbolUse.Field f when not (isQualified f.FullName) -> 
                         Some ([f.FullName], Some f.DeclaringEntity)
                     | SymbolUse.MemberFunctionOrValue mfv when not (isQualified mfv.FullName) -> 
-                        Some ([mfv.FullName], mfv.EnclosingEntitySafe)
+                        Some ([mfv.FullName], mfv.EnclosingEntity)
                     | SymbolUse.Operator op when not (isQualified op.FullName) ->
-                        Some ([op.FullName], op.EnclosingEntitySafe)
+                        Some ([op.FullName], op.EnclosingEntity)
                     | SymbolUse.ActivePattern ap when not (isQualified ap.FullName) ->
-                        Some ([ap.FullName], ap.EnclosingEntitySafe)
+                        Some ([ap.FullName], ap.EnclosingEntity)
                     | SymbolUse.ActivePatternCase apc when not (isQualified apc.FullName) ->
                         Some ([apc.FullName], apc.Group.EnclosingEntity)
                     | SymbolUse.UnionCase uc when not (isQualified uc.FullName) ->
@@ -142,7 +143,7 @@ module private UnusedOpens =
 type internal UnusedOpensDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
     
-    let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().ProjectInfoManager
+    let getProjectInfoManager (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().FSharpProjectOptionsManager
     let getChecker (document: Document) = document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
 
     static let userOpName = "UnusedOpensAnalyzer"
@@ -170,6 +171,7 @@ type internal UnusedOpensDiagnosticAnalyzer() =
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) =
         asyncMaybe {
+            do Trace.TraceInformation("{0:n3} (start) UnusedOpensAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
             do! Async.Sleep DefaultTuning.UnusedOpensAnalyzerInitialDelay |> liftAsync // be less intrusive, give other work priority most of the time
             let! options = getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document)
             let! sourceText = document.GetTextAsync()

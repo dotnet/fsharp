@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Collections
     #nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
@@ -395,6 +395,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
             member x.GetEnumerator() = (x.GetFreshEnumerator() :> IEnumerator)
         interface IEnumerator<'T> with
             member x.Current = if redirect then redirectTo.LastGenerated else x.LastGenerated
+        interface System.IDisposable with
             member x.Dispose() = if redirect then redirectTo.Close() else x.Close()
         interface IEnumerator with
             member x.Current = box (if redirect then redirectTo.LastGenerated else x.LastGenerated)

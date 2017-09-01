@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 //----------------------------------------------------------------------------
 // Helpers for quick info and information about items
@@ -229,8 +229,6 @@ type internal ErrorScope =
     new : unit -> ErrorScope
     member Diagnostics : FSharpErrorInfo list
     static member Protect<'a> : range -> (unit->'a) -> (string->'a) -> 'a
-    static member ProtectWithDefault<'a> : range -> (unit -> 'a) -> 'a -> 'a
-    static member ProtectAndDiscard : range -> (unit -> unit) -> unit
 
 /// An error logger that capture errors, filtering them according to warning levels etc.
 type internal CompilationErrorLogger = 
