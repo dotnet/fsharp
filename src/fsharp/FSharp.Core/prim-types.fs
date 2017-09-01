@@ -1883,8 +1883,7 @@ namespace Microsoft.FSharp.Core
             // 
             // Because the function subsequently gets inlined, the calls to GenericHashWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
-            let inline FastHashTuple2 (comparer:System.Collections.IEqualityComparer) tuple = 
-                let (x1,x2) = tuple
+            let inline FastHashTuple2 (comparer:System.Collections.IEqualityComparer) (x1,x2) = 
                 TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x1) (GenericHashWithComparerFast comparer x2)
 
             /// Compiler intrinsic generated for devirtualized calls to structural hashing on tuples.  
@@ -1894,8 +1893,7 @@ namespace Microsoft.FSharp.Core
             //
             // Because the function subsequently gets inlined, the calls to GenericHashWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
-            let inline FastHashTuple3 (comparer:System.Collections.IEqualityComparer) tuple =
-                let (x1,x2,x3) = tuple
+            let inline FastHashTuple3 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3) =
                 TupleUtils.combineTupleHashes (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x1) (GenericHashWithComparerFast comparer x2)) (GenericHashWithComparerFast comparer x3)
 
             /// Compiler intrinsic generated for devirtualized calls to structural hashing on tuples.  
@@ -1905,8 +1903,7 @@ namespace Microsoft.FSharp.Core
             //
             // Because the function subsequently gets inlined, the calls to GenericHashWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
-            let inline FastHashTuple4 (comparer:System.Collections.IEqualityComparer) tuple = 
-                let (x1,x2,x3,x4) = tuple
+            let inline FastHashTuple4 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3,x4) = 
                 TupleUtils.combineTupleHashes (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x1) (GenericHashWithComparerFast comparer x2)) (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x3) (GenericHashWithComparerFast comparer x4))
 
             /// Compiler intrinsic generated for devirtualized calls to structural hashing on tuples.  
@@ -1916,8 +1913,7 @@ namespace Microsoft.FSharp.Core
             //
             // Because the function subsequently gets inlined, the calls to GenericHashWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
-            let inline FastHashTuple5 (comparer:System.Collections.IEqualityComparer) tuple = 
-                let (x1,x2,x3,x4,x5) = tuple
+            let inline FastHashTuple5 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3,x4,x5) = 
                 TupleUtils.combineTupleHashes (TupleUtils.combineTupleHashes (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x1) (GenericHashWithComparerFast comparer x2)) (TupleUtils.combineTupleHashes (GenericHashWithComparerFast comparer x3) (GenericHashWithComparerFast comparer x4))) (GenericHashWithComparerFast comparer x5)
 
             /// Compiler intrinsic generated for devirtualized calls to PER-semantic structural equality on tuples
@@ -1927,9 +1923,7 @@ namespace Microsoft.FSharp.Core
             // 
             // Because the function subsequently gets inlined, the calls to GenericEqualityWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
-            let inline FastEqualsTuple2 (comparer:System.Collections.IEqualityComparer) tuple1 tuple2 = 
-                let (x1,x2) = tuple1
-                let (y1,y2) = tuple2
+            let inline FastEqualsTuple2 (comparer:System.Collections.IEqualityComparer) (x1,x2) (y1,y2) = 
                 GenericEqualityWithComparerFast comparer x1 y1 &&
                 GenericEqualityWithComparerFast comparer x2 y2
 
@@ -1940,9 +1934,7 @@ namespace Microsoft.FSharp.Core
             // 
             // Because the function subsequently gets inlined, the calls to GenericEqualityWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
-            let inline FastEqualsTuple3 (comparer:System.Collections.IEqualityComparer) tuple1 tuple2 = 
-                let (x1,x2,x3) = tuple1
-                let (y1,y2,y3) = tuple2
+            let inline FastEqualsTuple3 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3) (y1,y2,y3) = 
                 GenericEqualityWithComparerFast comparer x1 y1 &&
                 GenericEqualityWithComparerFast comparer x2 y2 &&
                 GenericEqualityWithComparerFast comparer x3 y3
@@ -1954,9 +1946,7 @@ namespace Microsoft.FSharp.Core
             // 
             // Because the function subsequently gets inlined, the calls to GenericEqualityWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
-            let inline FastEqualsTuple4 (comparer:System.Collections.IEqualityComparer) tuple1 tuple2 = 
-                let (x1,x2,x3,x4) = tuple1
-                let (y1,y2,y3,y4) = tuple2
+            let inline FastEqualsTuple4 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3,x4) (y1,y2,y3,y4) = 
                 GenericEqualityWithComparerFast comparer x1 y1 &&
                 GenericEqualityWithComparerFast comparer x2 y2 &&
                 GenericEqualityWithComparerFast comparer x3 y3 &&
@@ -1969,9 +1959,7 @@ namespace Microsoft.FSharp.Core
             // 
             // Because the function subsequently gets inlined, the calls to GenericEqualityWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
-            let inline FastEqualsTuple5 (comparer:System.Collections.IEqualityComparer) tuple1 tuple2 = 
-                let (x1,x2,x3,x4,x5) = tuple1
-                let (y1,y2,y3,y4,y5) = tuple2
+            let inline FastEqualsTuple5 (comparer:System.Collections.IEqualityComparer) (x1,x2,x3,x4,x5) (y1,y2,y3,y4,y5) = 
                 GenericEqualityWithComparerFast comparer x1 y1 &&
                 GenericEqualityWithComparerFast comparer x2 y2 &&
                 GenericEqualityWithComparerFast comparer x3 y3 &&
@@ -1985,9 +1973,7 @@ namespace Microsoft.FSharp.Core
             // 
             // Because the function subsequently gets inlined, the calls to GenericComparisonWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
-            let inline FastCompareTuple2 (comparer:System.Collections.IComparer)  tuple1 tuple2 =
-                let (x1,x2) = tuple1
-                let (y1,y2) = tuple2
+            let inline FastCompareTuple2 (comparer:System.Collections.IComparer)  (x1,x2) (y1,y2) =
                 let  n = GenericComparisonWithComparerFast comparer x1 y1
                 if n <> 0 then n else
                 GenericComparisonWithComparerFast comparer x2 y2
@@ -1999,9 +1985,7 @@ namespace Microsoft.FSharp.Core
             // 
             // Because the function subsequently gets inlined, the calls to GenericComparisonWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
-            let inline FastCompareTuple3 (comparer:System.Collections.IComparer) tuple1 tuple2 =
-                let (x1,x2,x3) = tuple1
-                let (y1,y2,y3) = tuple2
+            let inline FastCompareTuple3 (comparer:System.Collections.IComparer) (x1,x2,x3) (y1,y2,y3) =
                 let  n = GenericComparisonWithComparerFast comparer x1 y1
                 if n <> 0 then n else
                 let  n = GenericComparisonWithComparerFast comparer x2 y2
@@ -2015,9 +1999,7 @@ namespace Microsoft.FSharp.Core
             // 
             // Because the function subsequently gets inlined, the calls to GenericComparisonWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
-            let inline FastCompareTuple4 (comparer:System.Collections.IComparer) tuple1 tuple2 = 
-                let (x1,x2,x3,x4) = tuple1
-                let (y1,y2,y3,y4) = tuple2
+            let inline FastCompareTuple4 (comparer:System.Collections.IComparer) (x1,x2,x3,x4) (y1,y2,y3,y4) = 
                 let  n = GenericComparisonWithComparerFast comparer x1 y1
                 if n <> 0 then n else
                 let  n = GenericComparisonWithComparerFast comparer x2 y2
@@ -2033,9 +2015,7 @@ namespace Microsoft.FSharp.Core
             // 
             // Because the function subsequently gets inlined, the calls to GenericComparisonWithComparerFast can be 
             // often statically optimized or devirtualized based on the statically known type.
-            let inline FastCompareTuple5 (comparer:System.Collections.IComparer) tuple1 tuple2 =
-                let (x1,x2,x3,x4,x5) = tuple1
-                let (y1,y2,y3,y4,y5) = tuple2
+            let inline FastCompareTuple5 (comparer:System.Collections.IComparer) (x1,x2,x3,x4,x5) (y1,y2,y3,y4,y5) =
                 let  n = GenericComparisonWithComparerFast comparer x1 y1
                 if n <> 0 then n else
                 let  n = GenericComparisonWithComparerFast comparer x2 y2
