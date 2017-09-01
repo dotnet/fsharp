@@ -6975,7 +6975,7 @@ let LinearizeTopMatch g parent = function
 //---------------------------------------------------------------------------
 
 
-let commaEncs strs  = String.concat ", " strs
+let commaEncs strs  = String.concat "," strs
 let angleEnc  str   = "{" ^ str ^ "}" 
 let ticksAndArgCountTextOfTyconRef (tcref:TyconRef) =
      // Generic type names are (name ^ "`" ^ digits) where name does not contain "`".
@@ -7492,6 +7492,7 @@ and rewriteExprStructure env expr =
   match expr with
   | Expr.Const _ 
   | Expr.Val _ -> expr
+
   | Expr.App(f0, f0ty, tyargs, args, m) -> 
       let f0'   = RewriteExpr env f0
       let args' = rewriteExprs env args
@@ -7500,6 +7501,7 @@ and rewriteExprStructure env expr =
 
   | Expr.Quote(ast, {contents=Some(typeDefs, argTypes, argExprs, data)}, isFromQueryExpression, m, ty) -> 
       Expr.Quote((if env.IsUnderQuotations then RewriteExpr env ast else ast), {contents=Some(typeDefs, argTypes, rewriteExprs env argExprs, data)}, isFromQueryExpression, m, ty)
+
   | Expr.Quote(ast, {contents=None}, isFromQueryExpression, m, ty) -> 
       Expr.Quote((if env.IsUnderQuotations then RewriteExpr env ast else ast), {contents=None}, isFromQueryExpression, m, ty)
 
