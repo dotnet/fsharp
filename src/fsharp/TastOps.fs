@@ -3026,7 +3026,7 @@ module DebugPrint = begin
         | LByrefSet -> wordL (tagText "LByrefSet")
 
     let angleBracketL l = leftL (tagText "<") ^^ l ^^ rightL (tagText ">")
-    let angleBracketListL l = angleBracketL (sepListL (sepL (tagText ", ")) l)
+    let angleBracketListL l = angleBracketL (sepListL (sepL (tagText ",")) l)
 
 
     let layoutMemberFlags memFlags = 
@@ -7048,7 +7048,7 @@ and tyargsEnc g (gtpsType, gtpsMethod) args =
 
 let XmlDocArgsEnc g (gtpsType, gtpsMethod) argTs =
   if isNil argTs then "" 
-  else "(" + String.concat ", " (List.map (typeEnc g (gtpsType, gtpsMethod)) argTs) + ")"
+  else "(" + String.concat "," (List.map (typeEnc g (gtpsType, gtpsMethod)) argTs) + ")"
 
 let buildAccessPath (cp : CompilationPath option) =
     match cp with

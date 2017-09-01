@@ -12322,8 +12322,8 @@ module IncrClassChecking =
                         //dprintfn 
                         //    "Representing %s as a local variable %s, staticForcedFieldVars = %s, instanceForcedFieldVars = %s" 
                         //    v.LogicalName name 
-                        //    (staticForcedFieldVars |> Seq.map (fun v -> v.LogicalName) |> String.concat ", ")
-                        //    (instanceForcedFieldVars |> Seq.map (fun v -> v.LogicalName) |> String.concat ", ")
+                        //    (staticForcedFieldVars |> Seq.map (fun v -> v.LogicalName) |> String.concat ",")
+                        //    (instanceForcedFieldVars |> Seq.map (fun v -> v.LogicalName) |> String.concat ",")
                         InVar isCtorArg
                 | topValInfo -> 
                     //dprintfn "Representing %s as a method %s" v.LogicalName name

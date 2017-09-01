@@ -1811,7 +1811,7 @@ and SolveTypChoice (csenv:ConstraintSolverEnv) ndeep m2 trace ty tys =
         AddConstraint csenv ndeep m2 trace destTypar (TyparConstraint.SimpleChoice(tys, m)) 
     | None ->
         if List.exists (typeEquivAux Erasure.EraseMeasures g ty) tys then CompleteD
-        else ErrorD (ConstraintSolverError(FSComp.SR.csTypeNotCompatibleBecauseOfPrintf((NicePrint.minimalStringOfType denv ty), (String.concat ", " (List.map (NicePrint.prettyStringOfTy denv) tys))), m, m2))
+        else ErrorD (ConstraintSolverError(FSComp.SR.csTypeNotCompatibleBecauseOfPrintf((NicePrint.minimalStringOfType denv ty), (String.concat "," (List.map (NicePrint.prettyStringOfTy denv) tys))), m, m2))
 
 
 and SolveTypIsReferenceType (csenv:ConstraintSolverEnv) ndeep m2 trace ty =
