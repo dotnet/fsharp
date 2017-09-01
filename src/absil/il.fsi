@@ -852,7 +852,8 @@ type ILAttributeNamedArg = string * ILType * bool * ILAttribElem
 /// to ILAttribElem's as best as possible.  
 type ILAttribute =
     { Method: ILMethodSpec;  
-      Data: byte[] }
+      Data: byte[] 
+      Elements: ILAttribElem list}
 
 [<NoEquality; NoComparison; Sealed>]
 type ILAttributes =

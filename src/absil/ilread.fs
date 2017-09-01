@@ -2532,7 +2532,8 @@ and seekReadCustomAttrUncached ctxtH (CustomAttrIdx (cat,idx,valIdx)) =
       Data=
         match readBlobHeapOption ctxt valIdx with
         | Some bytes -> bytes
-        | None -> Bytes.ofInt32Array [| |] }
+        | None -> Bytes.ofInt32Array [| |] 
+      Elements = [] }
 
 and seekReadSecurityDecls ctxt idx = 
    mkILLazySecurityDecls
