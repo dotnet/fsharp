@@ -4,6 +4,7 @@ namespace Microsoft.FSharp.Collections
 
     open System
     open System.Diagnostics
+    open System.Collections.Concurrent
     open System.Collections.Generic
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Collections
@@ -1259,16 +1260,20 @@ namespace Microsoft.FSharp.Collections
                 let isChosen : bool [] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked inputLength
                 let results : 'U [] = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked inputLength                
                 let mutable outputLength = 0        
-                Parallel.For(0, 
-                             inputLength, 
+                let rangePartition = Partitioner.Create(0,inputLength)
+                Parallel.ForEach(rangePartition,
                              (fun () ->0),
-                             (fun i _ count -> 
-                                match f array.[i] with 
-                                | None -> count 
-                                | Some v -> 
-                                    isChosen.[i] <- true; 
-                                    results.[i] <- v
-                                    count+1),
+                             (fun (start,finish) _ count -> 
+                                let mutable totalCount = count
+                                for i in start .. finish - 1 do
+                                    match f array.[i] with 
+                                    | None -> ()
+                                    | Some v -> 
+                                        isChosen.[i] <- true 
+                                        results.[i] <- v
+                                        totalCount <- totalCount+1
+                                totalCount
+                             ),
                              Action<int> (fun x -> System.Threading.Interlocked.Add(&outputLength,x) |> ignore )
                              ) |> ignore         
                                                                                                                                                       
@@ -1285,8 +1290,11 @@ namespace Microsoft.FSharp.Collections
                 checkNonNull "array" array
                 let inputLength = array.Length
                 let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked inputLength
-                Parallel.For(0, inputLength, 
-                    (fun i -> result.[i] <- f array.[i])) |> ignore
+                let rangePartition = Partitioner.Create(0,inputLength)
+                Parallel.ForEach(rangePartition, 
+                    fun (start,finish) _ -> 
+                        for i in start .. finish - 1 do
+                            result.[i] <- f array.[i]) |> ignore
                 concatArrays result
                 
             [<CompiledName("Map")>]
@@ -1294,8 +1302,11 @@ namespace Microsoft.FSharp.Collections
                 checkNonNull "array" array
                 let inputLength = array.Length
                 let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked inputLength
-                Parallel.For(0, inputLength, fun i ->
-                    result.[i] <- f array.[i]) |> ignore
+                let rangePartition = Partitioner.Create(0,inputLength)
+                Parallel.ForEach(rangePartition, 
+                    fun (start,finish) _  ->
+                        for i in start .. finish - 1 do
+                            result.[i] <- f array.[i]) |> ignore
                 result
                 
             [<CompiledName("MapIndexed")>]
@@ -1304,25 +1315,40 @@ namespace Microsoft.FSharp.Collections
                 let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
                 let inputLength = array.Length
                 let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked inputLength 
-                Parallel.For(0, inputLength, fun i ->
-                    result.[i] <- f.Invoke (i, array.[i])) |> ignore
+                let rangePartition = Partitioner.Create(0,inputLength)
+                Parallel.ForEach(rangePartition, 
+                    fun (start,finish) _ ->
+                        for i in start .. finish - 1 do 
+                            result.[i] <- f.Invoke (i, array.[i])) |> ignore
                 result
                 
             [<CompiledName("Iterate")>]
             let iter f (array : 'T[]) =
                 checkNonNull "array" array
-                Parallel.For (0, array.Length, fun i -> f array.[i]) |> ignore  
+                let rangePartition = Partitioner.Create(0,array.Length)
+                Parallel.ForEach (rangePartition, 
+                    fun (start,finish) _ -> 
+                        for i in start .. finish - 1 do
+                            f array.[i]) |> ignore  
                 
             [<CompiledName("IterateIndexed")>]
             let iteri f (array : 'T[]) =
                 checkNonNull "array" array
                 let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
-                Parallel.For (0, array.Length, fun i -> f.Invoke(i, array.[i])) |> ignore        
+                let rangePartition = Partitioner.Create(0,array.Length)
+                Parallel.ForEach (rangePartition, 
+                    fun (start,finish) _ -> 
+                        for i in start .. finish - 1 do
+                            f.Invoke(i, array.[i])) |> ignore        
                 
             [<CompiledName("Initialize")>]
             let init count f =
                 let result = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked count
-                Parallel.For (0, count, fun i -> result.[i] <- f i) |> ignore
+                let rangePartition = Partitioner.Create(0,count)
+                Parallel.ForEach (rangePartition,
+                 fun (start,finish) _ -> 
+                    for i in start .. finish - 1 do 
+                        result.[i] <- f i) |> ignore
                 result
                 
             [<CompiledName("Partition")>]
@@ -1331,16 +1357,17 @@ namespace Microsoft.FSharp.Collections
                 let inputLength = array.Length                
                
                 let isTrue = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked inputLength                
-                let mutable trueLength = 0                                                
-                Parallel.For(0, 
-                             inputLength, 
+                let mutable trueLength = 0     
+                let rangePartition = Partitioner.Create(0,inputLength)                                           
+                Parallel.ForEach(rangePartition, 
                              (fun () -> 0),
-                             (fun i _ trueCount -> 
-                                if predicate array.[i] then
-                                    isTrue.[i] <- true
-                                    trueCount + 1
-                                else
-                                    trueCount),                        
+                             (fun (start,finish) _ trueCount -> 
+                                let mutable totalTrueCount = trueCount
+                                for i in start .. finish - 1 do
+                                    if predicate array.[i] then
+                                        isTrue.[i] <- true
+                                        totalTrueCount <- totalTrueCount + 1
+                                totalTrueCount),                                                  
                              Action<int> (fun x -> System.Threading.Interlocked.Add(&trueLength,x) |> ignore) ) |> ignore
                                 
                 let res1 = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked trueLength
