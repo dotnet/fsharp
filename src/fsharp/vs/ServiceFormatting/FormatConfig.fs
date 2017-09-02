@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-module Microsoft.FSharp.Compiler.SourceCodeServices.ServiceFormatting.FormatConfig
+module internal Microsoft.FSharp.Compiler.SourceCodeServices.ServiceFormatting.FormatConfig
 
 open System
 open System.IO

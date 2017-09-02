@@ -319,6 +319,8 @@ let formatWith ast moduleName input config =
         raise <| FormatException "Incomplete code fragment which is most likely due to parsing errors or the use of F# constructs newer than supported."
     else formattedSourceCode
 
+let format config sourceCode filePath ast = formatWith ast (Path.GetFileNameWithoutExtension filePath) (Some sourceCode) config
+
 /// Format an abstract syntax tree using given config
 let formatAST ast fileName sourceCode config =
     let formattedSourceCode = formatWith ast fileName sourceCode config
@@ -410,7 +412,7 @@ let stringPos (r : range) (sourceCode : string) =
         if pos >= sourceCode.Length then sourceCode.Length - 1 else pos 
     (start, finish)
 
-let formatRange returnFormattedContentOnly (range : range) (lines : string[]) (sourceCode: string) config ast =
+let formatRange returnFormattedContentOnly (range : range) (lines : string[]) (sourceCode: string) config fileName ast =
     let startLine = range.StartLine
     let startCol = range.StartColumn
     let endLine = range.EndLine
@@ -448,19 +450,16 @@ let formatRange returnFormattedContentOnly (range : range) (lines : string[]) (s
     Debug.WriteLine("selection:\n'{0}'", box selection)
     Debug.WriteLine("post:\n'{0}'", box post)
 
-    let formatSelection (sourceCode: string) config =
-        async {
-            // From this point onwards, we focus on the current selection
-            let formatContext = { formatContext with Source = sourceCode }
-            let! formattedSourceCode = format config formatContext
-            // If the input is not inline, the output should not be inline as well
-            if sourceCode.EndsWith("\n") && not <| formattedSourceCode.EndsWith(Environment.NewLine) then 
-                return formattedSourceCode + Environment.NewLine
-            elif not <| sourceCode.EndsWith("\n") && formattedSourceCode.EndsWith(Environment.NewLine) then 
-                return formattedSourceCode.TrimEnd('\r', '\n') 
-            else 
-                return formattedSourceCode
-        }
+    let formatSelection (sourceCode: string) config fileName ast =
+        // From this point onwards, we focus on the current selection
+        let formattedSourceCode = format config sourceCode fileName ast
+        // If the input is not inline, the output should not be inline as well
+        if sourceCode.EndsWith("\n") && not <| formattedSourceCode.EndsWith(Environment.NewLine) then 
+            formattedSourceCode + Environment.NewLine
+        elif not <| sourceCode.EndsWith("\n") && formattedSourceCode.EndsWith(Environment.NewLine) then 
+            formattedSourceCode.TrimEnd('\r', '\n') 
+        else 
+            formattedSourceCode
 
     let reconstructSourceCode startCol formatteds pre post =
         Debug.WriteLine("Formatted parts: '{0}' at column {1}", sprintf "%A" formatteds, startCol)
@@ -473,41 +472,39 @@ let formatRange returnFormattedContentOnly (range : range) (lines : string[]) (s
         |> if returnFormattedContentOnly then str String.Empty else str post
         |> dump
 
-    async {
-        match patch with
-        | TypeMember ->
-            // Get formatted selection with "type T = \n" patch
-            let! result = formatSelection selection config
-            // Remove the patch
-            let contents = String.normalizeThenSplitNewLine result
-            if Array.isEmpty contents then
-                if returnFormattedContentOnly then 
-                    return result
-                else 
-                    return String.Join(String.Empty, pre, result, post)
-            else
-                // Due to patching, the text has at least two lines
-                let first = contents.[1]
-                let column = first.Length - first.TrimStart().Length
-                let formatteds = contents.[1..] |> Seq.map (fun s -> s.[column..])
-                return reconstructSourceCode startCol formatteds pre post
-        | RecType 
-        | RecLet ->
-            // Get formatted selection with "type" or "let rec" replacement for "and"
-            let! result = formatSelection selection config
-            // Substitute by old contents
-            let pattern = if patch = RecType then Regex("type") else Regex("let rec")
-            let formatteds = String.normalizeThenSplitNewLine (pattern.Replace(result, "and", 1))
-            return reconstructSourceCode startCol formatteds pre post
-        | Nothing ->
-            let! result = formatSelection selection config
-            let formatteds = String.normalizeThenSplitNewLine result
-            return reconstructSourceCode startCol formatteds pre post
-    }
+    match patch with
+    | TypeMember ->
+        // Get formatted selection with "type T = \n" patch
+        let result = formatSelection selection config fileName ast
+        // Remove the patch
+        let contents = String.normalizeThenSplitNewLine result
+        if Array.isEmpty contents then
+            if returnFormattedContentOnly then 
+                result
+            else 
+                String.Join(String.Empty, pre, result, post)
+        else
+            // Due to patching, the text has at least two lines
+            let first = contents.[1]
+            let column = first.Length - first.TrimStart().Length
+            let formatteds = contents.[1..] |> Seq.map (fun s -> s.[column..])
+            reconstructSourceCode startCol formatteds pre post
+    | RecType 
+    | RecLet ->
+        // Get formatted selection with "type" or "let rec" replacement for "and"
+        let result = formatSelection selection config fileName ast
+        // Substitute by old contents
+        let pattern = if patch = RecType then Regex("type") else Regex("let rec")
+        let formatteds = String.normalizeThenSplitNewLine (pattern.Replace(result, "and", 1))
+        reconstructSourceCode startCol formatteds pre post
+    | Nothing ->
+        let result = formatSelection selection config fileName ast
+        let formatteds = String.normalizeThenSplitNewLine result
+        reconstructSourceCode startCol formatteds pre post
 
 /// Format a part of source string using given config, and return the (formatted) selected part only.
 /// Beware that the range argument is inclusive. If the range has a trailing newline, it will appear in the formatted result.
-let formatSelection (range : range) config ({ Source = sourceCode; FileName =  fileName } as formatContext) =
+let formatSelection (range : range) config fileName sourceCode ast =
     let lines = String.normalizeThenSplitNewLine sourceCode
 
     // Move to the section with real contents
@@ -538,24 +535,22 @@ let formatSelection (range : range) config ({ Source = sourceCode; FileName =  f
     Debug.WriteLine("Original range: {0} --> content range: {1} --> modified range: {2}", 
         sprintf "%O" range, sprintf "%O" contentRange, sprintf "%O" modifiedRange)
 
-    async {
-        let! formatted = formatRange true modifiedRange lines config formatContext
+    let formatted = formatRange true modifiedRange lines sourceCode config ast
     
-        let (start, finish) = stringPos range sourceCode
-        let (newStart, newFinish) = stringPos modifiedRange sourceCode
-        let pre = sourceCode.[start..newStart-1].TrimEnd('\r')
-        let post = 
-            if newFinish + 1 >= sourceCode.Length || newFinish >= finish then 
-                String.Empty 
-            else 
-                sourceCode.[newFinish+1..finish].Replace("\r", "\n")
-        Debug.WriteLine("Original index: {0} --> modified index: {1}", sprintf "%O" (start, finish), sprintf "%O" (newStart, newFinish))
-        Debug.WriteLine("Join '{0}', '{1}' and '{2}'", pre, formatted, post)
-        return String.Join(String.Empty, pre, formatted, post)
-    }
+    let (start, finish) = stringPos range sourceCode
+    let (newStart, newFinish) = stringPos modifiedRange sourceCode
+    let pre = sourceCode.[start..newStart-1].TrimEnd('\r')
+    let post = 
+        if newFinish + 1 >= sourceCode.Length || newFinish >= finish then 
+            String.Empty 
+        else 
+            sourceCode.[newFinish+1..finish].Replace("\r", "\n")
+    Debug.WriteLine("Original index: {0} --> modified index: {1}", sprintf "%O" (start, finish), sprintf "%O" (newStart, newFinish))
+    Debug.WriteLine("Join '{0}', '{1}' and '{2}'", pre, formatted, post)
+    String.Join(String.Empty, pre, formatted, post)
 
  /// Format a selected part of source string using given config; expanded selected ranges to parsable ranges. 
-let formatSelectionExpanded (range : range) config ({ FileName = fileName; Source = sourceCode } as formatContext) =
+let formatSelectionExpanded (range : range) config fileName sourceCode ast =
     let lines = String.normalizeThenSplitNewLine sourceCode
     let sourceTokenizer = FSharpSourceTokenizer([], Some fileName)
 
@@ -581,17 +576,13 @@ let formatSelectionExpanded (range : range) config ({ FileName = fileName; Sourc
     let endCol = getEndCol contentRange endTokenizer (ref 0L)
 
     let expandedRange = makeRange fileName contentRange.StartLine startCol contentRange.EndLine endCol
-    async {
-        let! result = formatRange false expandedRange lines config formatContext
-        return (result, expandedRange)
-    }
+    let result = formatRange false expandedRange lines sourceCode config fileName ast
+    result, expandedRange
 
 /// Format a selected part of source string using given config; keep other parts unchanged. 
-let formatSelectionInDocument (range : range) config formatContext =
-    async {
-        let! (formatted, _) = formatSelectionExpanded range config formatContext
-        return formatted
-    }
+let formatSelectionInDocument (range : range) config fileName sourceCode ast =
+    let formatted, _ = formatSelectionExpanded range config fileName sourceCode ast
+    formatted
 
 type internal BlockType =
    | List
@@ -721,8 +712,6 @@ let inferSelectionFromCursorPos (cursorPos : pos) fileName (sourceCode : string)
             makeRange fileName startLine startCol endLine endCol
 
 /// Format around cursor delimited by '[' and ']', '{' and '}' or '(' and ')' using given config; keep other parts unchanged. 
-let formatAroundCursor (cursorPos : pos) config ({ FileName = fileName; Source = sourceCode } as formatContext) = 
-    async {
-        let selection = inferSelectionFromCursorPos cursorPos fileName sourceCode
-        return! formatSelectionInDocument selection config formatContext
-    }
+let formatAroundCursor (cursorPos : pos) config fileName sourceCode ast = 
+    let selection = inferSelectionFromCursorPos cursorPos fileName sourceCode
+    formatSelectionInDocument selection config fileName sourceCode ast
