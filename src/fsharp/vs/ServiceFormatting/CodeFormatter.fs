@@ -18,5 +18,7 @@ type internal CodeFormatter =
 
     static member FormatAST(ast, fileName, source, config) = CodeFormatterImpl.formatAST ast fileName source config
 
+    static member MakePos(line, col) = CodeFormatterImpl.makePos line col
+
     static member MakeRange(fileName, startLine, startCol, endLine, endCol) = 
         CodeFormatterImpl.makeRange fileName startLine startCol endLine endCol

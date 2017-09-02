@@ -327,6 +327,9 @@ let formatAST ast fileName sourceCode config =
     else 
         formattedSourceCode + Environment.NewLine
 
+/// Make a position at (line, col) to denote cursor position
+let makePos line col = mkPos line col
+
 /// Make a range from (startLine, startCol) to (endLine, endCol) to select some text
 let makeRange fileName startLine startCol endLine endCol =
     mkRange fileName (mkPos startLine startCol) (mkPos endLine endCol)
