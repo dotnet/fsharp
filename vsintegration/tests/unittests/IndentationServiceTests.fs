@@ -31,14 +31,11 @@ type IndentationServiceTests()  =
         Stamp = None
     }
 
-    static let makeAdhocProject () =
-        let workspace = new AdhocWorkspace()
-        let projectInfo = ProjectInfo.Create(ProjectId.CreateNewId(), VersionStamp.Create(), "NewProject", "NewProject", FSharpConstants.FSharpLanguageName)
-        workspace, workspace.AddProject(projectInfo)
+    static let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    static let tabSize = 4
+    static let indentStyle = FormattingOptions.IndentStyle.Smart
     
     static let indentComment = System.Text.RegularExpressions.Regex(@"\$\s*Indent:\s*(\d+)\s*\$")
-
-    static let tabSize = 4
 
     static let consoleProjectTemplate = "
 // Learn more about F# at http://fsharp.org
@@ -172,24 +169,18 @@ while true do
 
     [<TestCaseSource("testCases")>]
     member this.TestIndentation(expectedIndentation: Option<int>, lineNumber: int, template: string) = 
-        let workspace, project = makeAdhocProject()
         let sourceText = SourceText.From(template)
-        let document = workspace.AddDocument(project.Id, filePath, sourceText)
 
-        let actualIndentation = FSharpIndentationService.GetDesiredIndentation(document, sourceText, lineNumber, tabSize, Some options)
+        let actualIndentation = FSharpIndentationService.GetDesiredIndentation(documentId, sourceText, filePath, lineNumber, tabSize, indentStyle, Some options)
         match expectedIndentation with
         | None -> Assert.IsTrue(actualIndentation.IsNone, "No indentation was expected at line {0}", lineNumber)
         | Some indentation -> Assert.AreEqual(expectedIndentation.Value, actualIndentation.Value, "Indentation on line {0} doesn't match", lineNumber)
     
     [<TestCaseSource("autoIndentTestCases")>]
     member this.TestAutoIndentation(expectedIndentation: Option<int>, lineNumber: int, template: string) = 
-        let workspace, project = makeAdhocProject()
-        workspace.Options <-
-            workspace.Options.WithChangedOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName, FormattingOptions.IndentStyle.Smart)
         let sourceText = SourceText.From(template)
-        let document = workspace.AddDocument(project.Id, filePath, sourceText)
         
-        let actualIndentation = FSharpIndentationService.GetDesiredIndentation(document, sourceText, lineNumber, tabSize, Some options)
+        let actualIndentation = FSharpIndentationService.GetDesiredIndentation(documentId, sourceText, filePath, lineNumber, tabSize, indentStyle, Some options)
         match expectedIndentation with
         | None -> Assert.IsTrue(actualIndentation.IsNone, "No indentation was expected at line {0}", lineNumber)
         | Some indentation -> Assert.AreEqual(expectedIndentation.Value, actualIndentation.Value, "Indentation on line {0} doesn't match", lineNumber)

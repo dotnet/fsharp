@@ -7,6 +7,7 @@ open System.Collections.Generic
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Editor
+open Microsoft.CodeAnalysis.Formatting
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 
@@ -22,7 +23,7 @@ type internal FSharpEditorFormattingService
         projectInfoManager: FSharpProjectOptionsManager
     ) =
 
-    static member GetFormattingChanges(document: Document, sourceText: SourceText, checker: FSharpChecker, optionsOpt: FSharpProjectOptions option, position: int) =
+    static member GetFormattingChanges(documentId: DocumentId, sourceText: SourceText, filePath: string, checker: FSharpChecker, indentStyle: FormattingOptions.IndentStyle, projectOptions: FSharpProjectOptions option, position: int) =
         // Logic for determining formatting changes:
         // If first token on the current line is a closing brace,
         // match the indent with the indent on the line that opened it
@@ -31,15 +32,15 @@ type internal FSharpEditorFormattingService
             
             // Gate formatting on whether smart indentation is enabled
             // (this is what C# does)
-            do! Option.guard (FSharpIndentationService.IsSmartIndentEnabled document.Project.Solution.Workspace)
+            do! Option.guard (indentStyle = FormattingOptions.IndentStyle.Smart)
 
-            let! options = optionsOpt
+            let! projectOptions = projectOptions
             
             let line = sourceText.Lines.[sourceText.Lines.IndexOf position]
                 
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.FilePath, options.OtherOptions |> List.ofArray)
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(filePath, projectOptions.OtherOptions |> List.ofArray)
 
-            let tokens = Tokenizer.tokenizeLine(document.Id, sourceText, line.Start, document.FilePath, defines)
+            let tokens = Tokenizer.tokenizeLine(documentId, sourceText, line.Start, filePath, defines)
 
             let! firstMeaningfulToken = 
                 tokens
@@ -49,7 +50,7 @@ type internal FSharpEditorFormattingService
                     x.Tag <> FSharpTokenTag.LINE_COMMENT)
 
             let! (left, right) =
-                FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, document.FilePath, options, position, "FormattingService")
+                FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, filePath, projectOptions, position, "FormattingService")
 
             if right.StartColumn = firstMeaningfulToken.LeftColumn then
                 // Replace the indentation on this line with the indentation of the left bracket
@@ -71,8 +72,10 @@ type internal FSharpEditorFormattingService
     member __.GetFormattingChangesAsync (document: Document, position: int, cancellationToken: CancellationToken) =
         async {
             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
-            let optionsOpt = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
-            let! textChange = FSharpEditorFormattingService.GetFormattingChanges(document, sourceText, checkerProvider.Checker, optionsOpt, position)
+            let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
+            let indentStyle = options.GetOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName)
+            let projectOptionsOpt = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
+            let! textChange = FSharpEditorFormattingService.GetFormattingChanges(document.Id, sourceText, document.FilePath, checkerProvider.Checker, indentStyle, projectOptionsOpt, position)
                 
             return
                 match textChange with
@@ -90,7 +93,7 @@ type internal FSharpEditorFormattingService
         member val SupportsFormatOnReturn = true
 
         override __.SupportsFormattingOnTypedCharacter (document, ch) =
-            if FSharpIndentationService.IsSmartIndentEnabled document.Project.Solution.Workspace then
+            if FSharpIndentationService.IsSmartIndentEnabled document.Project.Solution.Workspace.Options then
                 match ch with
                 | ')' | ']' | '}' -> true
                 | _ -> false
