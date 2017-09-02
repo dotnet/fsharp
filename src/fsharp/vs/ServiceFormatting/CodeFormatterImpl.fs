@@ -300,9 +300,6 @@ let isValidAST ast =
     | ParsedInput.ImplFile input -> 
         validateImplFileInput input
 
-/// Check whether an input AST is invalid in F# by looking for erroneous nodes.
-let isValidFSharpCode ast = try isValidAST ast with _ -> false
-    
 let formatWith ast moduleName input config =
     // Use '\n' as the new line delimiter consistently
     // It would be easier for F# parser
@@ -320,16 +317,6 @@ let formatWith ast moduleName input config =
     else formattedSourceCode
 
 let format config sourceCode filePath ast = formatWith ast (Path.GetFileNameWithoutExtension filePath) (Some sourceCode) config
-
-/// Format an abstract syntax tree using given config
-let formatAST ast fileName sourceCode config =
-    let formattedSourceCode = formatWith ast fileName sourceCode config
-        
-    // When formatting the whole document, an EOL is required
-    if formattedSourceCode.EndsWith(Environment.NewLine) then 
-        formattedSourceCode 
-    else 
-        formattedSourceCode + Environment.NewLine
 
 /// Make a range from (startLine, startCol) to (endLine, endCol) to select some text
 let makeRange fileName startLine startCol endLine endCol =
@@ -528,14 +515,14 @@ let formatSelection (range : range) config fileName sourceCode ast =
         contentRange.StartColumn + line.Length - line.TrimStart().Length
 
     let endCol = 
-        let line = lines.[contentRange.EndLine-1].[..contentRange.EndColumn]
+        let line = lines.[contentRange.EndLine-1].[..contentRange.EndColumn-1]
         contentRange.EndColumn - line.Length + line.TrimEnd().Length
 
     let modifiedRange = makeRange fileName range.StartLine startCol range.EndLine endCol
     Debug.WriteLine("Original range: {0} --> content range: {1} --> modified range: {2}", 
         sprintf "%O" range, sprintf "%O" contentRange, sprintf "%O" modifiedRange)
 
-    let formatted = formatRange true modifiedRange lines sourceCode config ast
+    let formatted = formatRange true modifiedRange lines sourceCode config fileName ast
     
     let (start, finish) = stringPos range sourceCode
     let (newStart, newFinish) = stringPos modifiedRange sourceCode
@@ -589,9 +576,6 @@ type internal BlockType =
    | Array
    | SequenceOrRecord
    | Tuple
-
-/// Make a position at (line, col) to denote cursor position
-let makePos line col = mkPos line col
 
 /// Infer selection around cursor by looking for a pair of '[' and ']', '{' and '}' or '(' and ')'. 
 let inferSelectionFromCursorPos (cursorPos : pos) fileName (sourceCode : string) = 

@@ -2,9 +2,6 @@
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices.ServiceFormatting
 
-open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Range
-
 [<Sealed>]
 type internal CodeFormatter =
     static member FormatSelection(fileName, selection, source, config, ast) =
@@ -18,12 +15,6 @@ type internal CodeFormatter =
         
     static member internal FormatSelectionInDocument(fileName, selection, source, config, ast) =
         CodeFormatterImpl.formatSelectionInDocument selection config fileName source ast
-
-    static member FormatAST(ast, fileName, source, config) = CodeFormatterImpl.formatAST ast fileName source config
-
-    static member IsValidAST ast = CodeFormatterImpl.isValidAST ast
-    
-    static member MakePos(line, col) = CodeFormatterImpl.makePos line col
 
     static member MakeRange(fileName, startLine, startCol, endLine, endCol) = 
         CodeFormatterImpl.makeRange fileName startLine startCol endLine endCol
