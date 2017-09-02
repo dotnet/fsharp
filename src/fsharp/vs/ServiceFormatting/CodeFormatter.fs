@@ -16,5 +16,7 @@ type internal CodeFormatter =
     static member internal FormatSelectionInDocument(fileName, selection, source, config, ast) =
         CodeFormatterImpl.formatSelectionInDocument selection config fileName source ast
 
+    static member FormatAST(ast, fileName, source, config) = CodeFormatterImpl.formatAST ast fileName source config
+
     static member MakeRange(fileName, startLine, startCol, endLine, endCol) = 
         CodeFormatterImpl.makeRange fileName startLine startCol endLine endCol

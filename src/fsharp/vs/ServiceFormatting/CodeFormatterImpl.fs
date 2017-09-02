@@ -318,6 +318,15 @@ let formatWith ast moduleName input config =
 
 let format config sourceCode filePath ast = formatWith ast (Path.GetFileNameWithoutExtension filePath) (Some sourceCode) config
 
+let formatAST ast fileName sourceCode config =
+    let formattedSourceCode = formatWith ast fileName sourceCode config
+        
+    // When formatting the whole document, an EOL is required
+    if formattedSourceCode.EndsWith(Environment.NewLine) then 
+        formattedSourceCode 
+    else 
+        formattedSourceCode + Environment.NewLine
+
 /// Make a range from (startLine, startCol) to (endLine, endCol) to select some text
 let makeRange fileName startLine startCol endLine endCol =
     mkRange fileName (mkPos startLine startCol) (mkPos endLine endCol)
