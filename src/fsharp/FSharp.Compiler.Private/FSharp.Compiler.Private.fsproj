@@ -618,7 +618,33 @@
     <Compile Include="..\vs\ServiceStructure.fs">
       <Link>Service/ServiceStructure.fs</Link>
     </Compile>
-
+    <Compile Include="..\vs\ServiceFormatting\Utils.fs">
+      <Link>Service/ServiceFormatting/Utils.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceFormatting\TokenMatcher.fs">
+      <Link>Service/ServiceFormatting/TokenMatcher.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceFormatting\FormatConfig.fs">
+      <Link>Service/ServiceFormatting/FormatConfig.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceFormatting\SourceParser.fs">
+      <Link>Service/ServiceFormatting/SourceParser.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceFormatting\SourceTransformer.fs">
+      <Link>Service/ServiceFormatting/SourceTransformer.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceFormatting\CodePrinter.fs">
+      <Link>Service/ServiceFormatting/CodePrinter.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceFormatting\CodeFormatterImpl.fs">
+      <Link>Service/ServiceFormatting/CodeFormatterImpl.fs</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceFormatting\CodeFormatter.fsi">
+      <Link>Service/ServiceFormatting/CodeFormatter.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\ServiceFormatting\CodeFormatter.fs">
+      <Link>Service/ServiceFormatting/CodeFormatter.fs</Link>
+    </Compile>
     <!-- the core of the F# Interactive fsi.exe implementation -->
     <FsSrGen Include="..\fsi\FSIstrings.txt">
       <Link>FSIstrings.txt</Link>
