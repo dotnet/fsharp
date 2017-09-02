@@ -157,3 +157,26 @@ let main argv =
     (printfn "%A '%A' '%A'" (arg1) (arg2) (arg3))endBrace
     0 // return an integer exit code"""
         this.VerifyBraceMatch(code, "(printfn", ")endBrace")
+        
+    [<TestCase ("let a1 = [ 0 .. 100 ]", [|9;10;20;21|])>]
+    [<TestCase ("let a2 = [| 0 .. 100 |]", [|9;10;11;21;22;23|])>]
+    [<TestCase ("let a3 = <@ 0 @>", [|9;10;11;14;15;16|])>]
+    [<TestCase ("let a4 = <@@ 0 @@>", [|9;10;11;12;15;15;16;17|])>]
+    [<TestCase ("let a6 = (  ()  )", [|9;10;16;17|])>]
+    [<TestCase ("[<ReflectedDefinition>]\nlet a7 = 70", [|0;1;2;21;22;23|])>]
+    [<TestCase ("let a8 = seq { yield() }", [|13;14;23;24|])>]
+    member this.BraceMatchingBothSides_Bug2092(fileContents: string, matchingPositions: int[]) =
+        // https://github.com/Microsoft/visualfsharp/issues/2092
+        let sourceText = SourceText.From(fileContents)
+
+        matchingPositions
+        |> Array.iter (fun position ->
+            match FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, fileName, options, position, "UnitTest") |> Async.RunSynchronously with
+            | Some _ -> ()
+            | None ->
+                match position with
+                | 0 -> ""
+                | _ -> fileContents.[position - 1] |> sprintf " (previous character '%c')"
+                |> sprintf "Didn't find a matching brace at position '%d', character '%c'%s" position fileContents.[position]
+                |> Assert.Fail
+            )
