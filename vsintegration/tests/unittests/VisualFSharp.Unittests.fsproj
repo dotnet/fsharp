@@ -372,11 +372,11 @@
       <Private>True</Private>
       <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>
     </Reference>
-    <Reference Include="FsCheck">
+    <Reference Include="FsCheck, Version=$(FsCheckFullVersion)" Condition=" '$(TargetDotnetProfile)' != 'portable47' ">
+      <SpecificVersion>true</SpecificVersion>
       <Private>True</Private>
-      <HintPath>$(FsCheckLibDir)\FsCheck.dll</HintPath>
+      <HintPath Condition="'$(TargetDotnetProfile)' == 'net40'">$(FsCheckLibDir)\net45\FsCheck.dll</HintPath>
     </Reference>
-    
     <Reference Include="Microsoft.CodeAnalysis.Common">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.CodeAnalysis.Common.$(RoslynVersion)\lib\netstandard1.3\Microsoft.CodeAnalysis.dll</HintPath>
       <Private>True</Private>

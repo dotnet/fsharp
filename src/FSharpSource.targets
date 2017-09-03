@@ -105,7 +105,7 @@
     <NUnitToolsLibDir>$(FSharpSourcesRoot)\..\packages\NUnit.ConsoleRunner\$(NUnitVersion)\tools\</NUnitToolsLibDir>
     <FsCheckVersion>2.6.2</FsCheckVersion>
     <FsCheckFullVersion>2.6.2.0</FsCheckFullVersion>
-    <FsCheckLibDir>$(FSharpSourcesRoot)\..\packages\FsCheck.$(FsCheckVersion)\lib\net45</FsCheckLibDir>
+    <FsCheckLibDir>$(FSharpSourcesRoot)\..\packages\FsCheck.$(FsCheckVersion)\lib</FsCheckLibDir>
   </PropertyGroup>
 
   <Import Project="FSharpSource.Profiles.targets" />
