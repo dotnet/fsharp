@@ -34,7 +34,7 @@ type internal IndentedTextWriter(writer: TextWriter, tabString: string) =
     member __.TabString = tabString
  
     /// Closes the document being written to.
-    override __.Close() = writer.Close()
+    override __.Dispose(_disposing: bool) = writer.Dispose()
     override __.Flush() = writer.Flush()
  
     /// Writes a string to the text stream.
@@ -98,7 +98,7 @@ type internal IndentedTextWriter(writer: TextWriter, tabString: string) =
         writer.Write(format, arg0, arg1)
  
     /// Writes out a formatted string, using the same semantics as specified.
-    override __.Write(format: string, [<ParamArray>] arg: obj[]) =
+    override __.Write(format: string, arg: obj[]) =
         outputTabs()
         writer.Write(format, arg)
  
@@ -173,7 +173,7 @@ type internal IndentedTextWriter(writer: TextWriter, tabString: string) =
         writer.WriteLine(format, arg0, arg1)
         tabsPending <- true
  
-    override __.WriteLine(format: string, [<ParamArray>] arg: obj[]) =
+    override __.WriteLine(format: string, arg: obj[]) =
         outputTabs()
         writer.WriteLine(format, arg)
         tabsPending <- true
