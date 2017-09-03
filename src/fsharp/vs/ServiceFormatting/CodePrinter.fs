@@ -81,7 +81,7 @@ and genParsedHashDirective (ParsedHashDirective(h, s)) =
 and genModuleOrNamespace astContext (ModuleOrNamespace(ats, px, ao, s, mds, isModule)) =
     genPreXmlDoc px
     +> genAttributes astContext ats
-    +> ifElse (String.Equals(s, astContext.TopLevelModuleName, StringComparison.InvariantCultureIgnoreCase)) sepNone 
+    +> ifElse (String.Equals(s, astContext.TopLevelModuleName, StringComparison.OrdinalIgnoreCase)) sepNone 
          (ifElse isModule (!- "module ") (!- "namespace ")
             +> opt sepSpace ao genAccess +> ifElse (s = "") (!- "global") (!- s) +> rep 2 sepNln)
     +> genModuleDeclList astContext mds
@@ -89,7 +89,7 @@ and genModuleOrNamespace astContext (ModuleOrNamespace(ats, px, ao, s, mds, isMo
 and genSigModuleOrNamespace astContext (SigModuleOrNamespace(ats, px, ao, s, mds, isModule)) =
     genPreXmlDoc px
     +> genAttributes astContext ats
-    +> ifElse (String.Equals(s, astContext.TopLevelModuleName, StringComparison.InvariantCultureIgnoreCase)) sepNone 
+    +> ifElse (String.Equals(s, astContext.TopLevelModuleName, StringComparison.OrdinalIgnoreCase)) sepNone 
           (ifElse isModule (!- "module ") (!- "namespace ")
     +> opt sepSpace ao genAccess -- s +> rep 2 sepNln)
     +> genSigModuleDeclList astContext mds

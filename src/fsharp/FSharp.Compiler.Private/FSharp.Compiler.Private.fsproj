@@ -653,6 +653,9 @@
     <Compile Include="..\vs\ServiceFormatting\TokenMatcher.fs">
       <Link>Service/ServiceFormatting/TokenMatcher.fs</Link>
     </Compile>
+    <Compile Include="..\vs\ServiceFormatting\IndentedTextWriter.fs">
+      <Link>Service/ServiceFormatting/IndentedTextWriter.fs</Link>
+    </Compile>
     <Compile Include="..\vs\ServiceFormatting\FormatConfig.fs">
       <Link>Service/ServiceFormatting/FormatConfig.fs</Link>
     </Compile>
