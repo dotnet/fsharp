@@ -330,17 +330,22 @@ let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sou
                     | None -> Array.empty<PdbSequencePoint>
                     | Some (_,_) -> minfo.SequencePoints
 
-            let getDocumentHandle d =
-                if docs.Length = 0 || d < 0 || d > docs.Length then
-                    Unchecked.defaultof<DocumentHandle>
-                else 
-                    match documentIndex.TryGetValue(docs.[d].File) with
-                    | false, _ -> Unchecked.defaultof<DocumentHandle>
-                    | true, h -> h
+            let builder = new BlobBuilder()
+            builder.WriteCompressedInteger(minfo.LocalSignatureToken)
 
-            if sps.Length = 0 then
+            if sps = Array.empty then
+                builder.WriteCompressedInteger( 0 )
+                builder.WriteCompressedInteger( 0 )
                 Unchecked.defaultof<DocumentHandle>, Unchecked.defaultof<BlobHandle>
             else
+                let getDocumentHandle d =
+                    if docs.Length = 0 || d < 0 || d > docs.Length then
+                        Unchecked.defaultof<DocumentHandle>
+                    else 
+                        match documentIndex.TryGetValue(docs.[d].File) with
+                        | false, _ -> Unchecked.defaultof<DocumentHandle>
+                        | true, h -> h
+
                 // Return a document that the entire method body is declared within.
                 // If part of the method body is in another document returns nil handle.
                 let tryGetSingleDocumentIndex =
@@ -350,12 +355,8 @@ let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sou
                             singleDocumentIndex <- -1
                     singleDocumentIndex
 
-                let builder = new BlobBuilder()
-                builder.WriteCompressedInteger(minfo.LocalSignatureToken)
-
                 // Initial document:  When sp's spread over more than one document we put the initial document here.
                 let singleDocumentIndex = tryGetSingleDocumentIndex
-
                 if singleDocumentIndex = -1 then
                     builder.WriteCompressedInteger( MetadataTokens.GetRowNumber(DocumentHandle.op_Implicit(getDocumentHandle (sps.[0].Document))) )
 
