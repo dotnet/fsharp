@@ -1,4 +1,6 @@
-﻿module FSharp.Compiler.Service.Tests.ServiceFormatting.OperatorTests
+﻿// Copied from https://github.com/dungpa/fantomas and modified by Vasily Kirichenko
+
+module FSharp.Compiler.Service.Tests.ServiceFormatting.OperatorTests
 
 open NUnit.Framework
 open FsUnit

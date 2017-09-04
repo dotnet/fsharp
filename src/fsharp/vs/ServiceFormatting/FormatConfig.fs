@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
+﻿// Copied from https://github.com/dungpa/fantomas and modified by Vasily Kirichenko
 
 module internal Microsoft.FSharp.Compiler.SourceCodeServices.ServiceFormatting.FormatConfig
 
