@@ -883,7 +883,7 @@ module internal SymbolHelpers =
         | Item.ActivePatternResult(apinfo, _ty, idx, _) -> apinfo.Names.[idx]
         | Item.ActivePatternCase apref -> FullNameOfItem g (Item.Value apref.ActivePatternVal)  + "." + apref.Name 
         | Item.ExnCase ecref -> fullDisplayTextOfExnRef ecref 
-        | Item.AnonRecdField(anon, argTys, i) -> anon.Names.[i]
+        | Item.AnonRecdField(anon, _argTys, i) -> anon.Names.[i]
         | Item.RecdField rfinfo -> fullDisplayTextOfRecdFieldRef  rfinfo.RecdFieldRef
         | Item.NewDef id -> id.idText
         | Item.ILField finfo -> bufs (fun os -> NicePrint.outputILTypeRef denv os finfo.ILTypeRef; bprintf os ".%s" finfo.FieldName)
