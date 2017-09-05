@@ -767,6 +767,8 @@ module internal SymbolHelpers =
                   List.zip pi1s pi2s |> List.forall(fun (pi1, pi2) -> PropInfo.PropInfosUseIdenticalDefinitions pi1 pi2)
               | Item.Event(evt1), Item.Event(evt2) -> 
                   EventInfo.EventInfosUseIdenticalDefintions evt1 evt2
+              | Item.AnonRecdField(anon1, _, i1), Item.AnonRecdField(anon2, _, i2) ->
+                 Tastops.anonInfoEquiv anon1 anon2 && i1 = i2
               | Item.CtorGroup(_, meths1), Item.CtorGroup(_, meths2) -> 
                   List.zip meths1 meths2 
                   |> List.forall (fun (minfo1, minfo2) -> MethInfo.MethInfosUseIdenticalDefinitions minfo1 minfo2)
@@ -787,9 +789,15 @@ module internal SymbolHelpers =
                   else 1010
               | Item.ILField(ILFieldInfo(_, fld)) -> 
                   System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode fld // hash on the object identity of the AbstractIL metadata blob for the field
+<<<<<<< HEAD
               | Item.TypeVar (nm, _tp) -> hash nm
               | Item.CustomOperation (_, _, Some minfo) -> minfo.ComputeHashCode()
               | Item.CustomOperation (_, _, None) -> 1
+=======
+              | Item.TypeVar (nm,_tp) -> hash nm
+              | Item.CustomOperation (_,_,Some minfo) -> minfo.ComputeHashCode()
+              | Item.CustomOperation (_,_,None) -> 1
+>>>>>>> a5904a3fe2f556e5d1b2900e6befbd82c57e6387
               | Item.ModuleOrNamespaces(modref :: _) -> hash (fullDisplayTextOfModRef modref)          
               | Item.SetterArg(id, _) -> hash (id.idRange, id.idText)
               | Item.MethodGroup(_, meths, _) -> meths |> List.fold (fun st a -> st + a.ComputeHashCode()) 0
@@ -799,6 +807,7 @@ module internal SymbolHelpers =
               | Item.ExnCase(tcref) -> hash tcref.Stamp
               | Item.UnionCase(UnionCaseInfo(_, UCRef(tcref, n)), _) -> hash(tcref.Stamp, n)
               | Item.RecdField(RecdFieldInfo(_, RFRef(tcref, n))) -> hash(tcref.Stamp, n)
+              | Item.AnonRecdField(anon, _, i) -> hash anon.Names.[i]
               | Item.Event evt -> evt.ComputeHashCode()
               | Item.Property(_name, pis) -> hash (pis |> List.map (fun pi -> pi.ComputeHashCode()))
               | Item.UnqualifiedType(tcref :: _) -> hash tcref.Stamp
@@ -1215,6 +1224,20 @@ module internal SymbolHelpers =
             else
                 FSharpStructuredToolTipElement.Single (layout, xml)
 
+<<<<<<< HEAD
+=======
+        | Item.AnonRecdField(anon, argTys, i) -> 
+            let argTy = argTys.[i]
+            let nm = anon.Names.[i]
+            let argTy, _ = PrettyTypes.PrettifyType g argTy
+            let layout =
+                wordL (tagText (FSComp.SR.typeInfoAnonRecdField())) ^^
+                wordL (tagRecordField nm) ^^
+                RightL.colon ^^
+                NicePrint.layoutType denv argTy
+            FSharpStructuredToolTipElement.Single(layout, FSharpXmlDoc.None)
+            
+>>>>>>> a5904a3fe2f556e5d1b2900e6befbd82c57e6387
         // Named parameters
         | Item.ArgName (id, argTy, _) -> 
             let argTy, _ = PrettyTypes.PrettifyType g argTy

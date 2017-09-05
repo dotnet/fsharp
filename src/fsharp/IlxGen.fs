@@ -1207,7 +1207,7 @@ type AssemblyBuilder(cenv:cenv) as mgbuf =
 
                 let ilBaseTy = (if isStruct then cenv.g.iltyp_ValueType else cenv.g.ilg.typ_Object)
                
-                let ilCtorDef = mkILSimpleStorageCtorWithParamNames(None, (if isStruct then None else Some ilBaseTy.TypeSpec), ilTy, flds, ILMemberAccess.Public)
+                let ilCtorDef = mkILSimpleStorageCtorWithParamNames(None, (if isStruct then None else Some ilBaseTy.TypeSpec), ilTy, [], flds, ILMemberAccess.Public)
                 let ilCtorRef = mkRefToILMethod(ilTypeRef, ilCtorDef)
                 let ilMethodRefs = [| for mdef in ilMethods -> mkRefToILMethod(ilTypeRef, mdef) |]
 

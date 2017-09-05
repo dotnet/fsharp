@@ -817,7 +817,11 @@ and FSharpField(cenv: cenv, d: FSharpFieldData)  =
             | Union (v, _) -> 
                 let unionCase = UnionCaseInfo(generalizeTypars v.TyconRef.TyparsNoRange, v)
                 SymbolHelpers.GetXmlDocSigOfUnionCaseInfo unionCase
+<<<<<<< HEAD
             | ILField (_, f) -> 
+=======
+            | ILField (_,f) -> 
+>>>>>>> a5904a3fe2f556e5d1b2900e6befbd82c57e6387
                 SymbolHelpers.GetXmlDocSigOfILFieldInfo cenv.infoReader range0 f
             | AnonField _ -> None
         match xmlsig with
@@ -1980,6 +1984,7 @@ and FSharpType(cenv, typ:TType) =
             | TType_tuple (_, l1) -> 10400 + List.sumBy hashType l1
             | TType_fun (dty, rty) -> 10500 + hashType dty + hashType rty
             | TType_measure _ -> 10600 
+            | TType_anon (_,l1) -> 10800 + List.sumBy hashType l1
         hashType typ
 
     member x.Format(denv: FSharpDisplayContext) = 

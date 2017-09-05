@@ -4550,7 +4550,7 @@ and TcTypeOrMeasure optKind cenv newOk checkCxs occ env (tpenv:SyntacticUnscoped
         let anonInfo = AnonRecdTypeInfo.Create(ccuOpt, tupInfo, nms)
         args |> List.iteri (fun i (x,_) -> 
             let item = Item.AnonRecdField(anonInfo, args', i)
-            CallNameResolutionSink cenv.tcSink (x.idRange,env.NameEnv,item,item,ItemOccurence.UseInType,env.DisplayEnv,env.eAccessRights))
+            CallNameResolutionSink cenv.tcSink (x.idRange,env.NameEnv,item,item,emptyTyparInst,ItemOccurence.UseInType,env.DisplayEnv,env.eAccessRights))
         TType_anon(anonInfo,  args'),tpenv
 
     | SynType.Fun(domainTy, resultTy, _) -> 
@@ -5751,7 +5751,11 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
         let argtys = UnifyAnonRecdType env.eContextInfo cenv env.DisplayEnv m overallTy anonInfo
         args |> List.iteri (fun i (x, _) -> 
             let item = Item.AnonRecdField(anonInfo, argtys, i)
+<<<<<<< HEAD
             CallNameResolutionSink cenv.tcSink (x.idRange, env.NameEnv, item, item, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights))
+=======
+            CallNameResolutionSink cenv.tcSink (x.idRange,env.NameEnv,item,item,emptyTyparInst,ItemOccurence.Use,env.DisplayEnv,env.eAccessRights))
+>>>>>>> a5904a3fe2f556e5d1b2900e6befbd82c57e6387
         let flexes = argtys |> List.map (fun _ -> true)
         let args', tpenv = TcExprs cenv env m tpenv flexes argtys (List.map snd args)
         mkAnonRecd cenv.g m anonInfo args' argtys, tpenv
@@ -8740,14 +8744,14 @@ and TcItemThen cenv overallTy env tpenv (item, mItem, rest, afterResolution) del
             | SynExpr.Const _ 
             | SynExpr.LongIdent _ -> true
 
-            | SynExpr.Tuple(synExprs, _, _) 
-            | SynExpr.StructTuple(synExprs, _, _) 
+            | SynExpr.Tuple(_, synExprs, _, _) 
             | SynExpr.ArrayOrList(_, synExprs, _) -> synExprs |> List.forall isSimpleArgument
             | SynExpr.Record(_, copyOpt, fields, _) -> copyOpt |> Option.forall (fst >> isSimpleArgument) && fields |> List.forall (p23 >> Option.forall isSimpleArgument) 
             | SynExpr.App (_, _, synExpr, synExpr2, _) -> isSimpleArgument synExpr && isSimpleArgument synExpr2
             | SynExpr.IfThenElse(synExpr, synExpr2, synExprOpt, _, _, _, _) -> isSimpleArgument synExpr && isSimpleArgument synExpr2 && Option.forall isSimpleArgument synExprOpt
             | SynExpr.DotIndexedGet(synExpr, _, _, _) ->  isSimpleArgument synExpr 
             | SynExpr.ObjExpr _ 
+            | SynExpr.AnonRecd _
             | SynExpr.While _ 
             | SynExpr.For _ 
             | SynExpr.ForEach _ 
