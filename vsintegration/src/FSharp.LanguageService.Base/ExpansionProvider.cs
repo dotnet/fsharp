@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 using System;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -305,7 +305,7 @@ namespace Microsoft.VisualStudio.FSharp.LanguageService {
             this.view = view;
             title = path = null;
 
-            LanguageService svc = this.source.LanguageService;
+            LanguageService_DEPRECATED svc = this.source.LanguageService;
             IVsExpansionManager mgr = svc.Site.GetService(typeof(SVsExpansionManager)) as IVsExpansionManager;
             if (mgr == null) return NativeMethods.E_FAIL ;
             Guid guidLanguage = svc.GetLanguageServiceGuid();

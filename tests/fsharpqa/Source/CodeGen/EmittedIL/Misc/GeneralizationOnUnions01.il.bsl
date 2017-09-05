@@ -421,7 +421,7 @@
     } // end of property Weirdo::C
   } // end of class Weirdo
 
-  .class auto ansi serializable nested assembly beforefieldinit f@8
+  .class auto ansi serializable sealed nested assembly beforefieldinit f@8
          extends class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class GeneralizationOnUnions01/Weirdo,int32>
   {
     .field public int32 C

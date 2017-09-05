@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 using FSLib = Microsoft.FSharp.Compiler.AbstractIL.Internal.Library;
 using System;
@@ -874,7 +874,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             object otherTargetFrameworkMonikerObj;
 
-            hierarchy.GetProperty(VSConstants.VSITEMID_ROOT, (int)__VSHPROPID4.VSHPROPID_TargetFrameworkMoniker, out otherTargetFrameworkMonikerObj);
+            int hr = hierarchy.GetProperty(VSConstants.VSITEMID_ROOT, (int)__VSHPROPID4.VSHPROPID_TargetFrameworkMoniker, out otherTargetFrameworkMonikerObj);
+            if (!ErrorHandler.Succeeded(hr))
+                return null;
 
             string targetFrameworkMoniker = (string)otherTargetFrameworkMonikerObj;
             return new System.Runtime.Versioning.FrameworkName(targetFrameworkMoniker);

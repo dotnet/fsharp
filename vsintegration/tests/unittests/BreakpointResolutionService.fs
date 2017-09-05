@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
 
 open System
@@ -16,13 +16,15 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 
+open UnitTests.TestLib.LanguageService
+
 [<TestFixture>][<Category "Roslyn Services">]
 type BreakpointResolutionServiceTests()  =
 
     let fileName = "C:\\test.fs"
     let options: FSharpProjectOptions = { 
         ProjectFileName = "C:\\test.fsproj"
-        ProjectFileNames =  [| fileName |]
+        SourceFiles =  [| fileName |]
         ReferencedProjects = [| |]
         OtherOptions = [| |]
         IsIncompleteTypeCheckEnvironment = true
@@ -31,6 +33,7 @@ type BreakpointResolutionServiceTests()  =
         OriginalLoadReferences = []
         UnresolvedReferences = None
         ExtraProjectInfo = None
+        Stamp = None
     }
     let code = "
 // This is a comment
@@ -71,7 +74,7 @@ let main argv =
         
         let sourceText = SourceText.From(code)
         let searchSpan = TextSpan.FromBounds(searchPosition, searchPosition + searchToken.Length)
-        let actualResolutionOption = FSharpBreakpointResolutionService.GetBreakpointLocation(FSharpChecker.Instance, sourceText, fileName, searchSpan, options) |> Async.RunSynchronously
+        let actualResolutionOption = FSharpBreakpointResolutionService.GetBreakpointLocation(checker, sourceText, fileName, searchSpan, options) |> Async.RunSynchronously
         
         match actualResolutionOption with
         | None -> Assert.IsTrue(expectedResolution.IsNone, "BreakpointResolutionService failed to resolve breakpoint position")

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Control
 
@@ -15,17 +15,6 @@ namespace Microsoft.FSharp.Control
     open ReflectionAdapters
 #endif
 
-#if !FX_NO_DELEGATE_DYNAMIC_METHOD 
-
-#if FX_NO_DELEGATE_DYNAMIC_INVOKE 
-    module Impl = 
-        type System.Delegate with 
-            member d.DynamicInvoke(args: obj[]) =
-                d.Method.Invoke(d.Target, BindingFlags.Default |||  BindingFlags.Public ||| BindingFlags.NonPublic , null, args, null)
-
-    open Impl
-#endif
-    
     [<CompiledName("FSharpDelegateEvent`1")>]
     type DelegateEvent<'Delegate when 'Delegate :> System.Delegate>() = 
         let mutable multicast : System.Delegate = null
@@ -73,7 +62,6 @@ namespace Microsoft.FSharp.Control
 
         let mutable multicast : 'Delegate = Unchecked.defaultof<_>     
 
-#if !FX_NO_DELEGATE_CREATE_DELEGATE_FROM_STATIC_METHOD
         static let mi, argTypes = 
             let instanceBindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.DeclaredOnly
             let mi = typeof<'Delegate>.GetMethod("Invoke",instanceBindingFlags)
@@ -87,14 +75,10 @@ namespace Microsoft.FSharp.Control
                 (System.Delegate.CreateDelegate(typeof<EventWrapper<'Delegate,'Args>>, mi) :?> EventWrapper<'Delegate,'Args>)
             else
                 null
-#endif
 
         // For the multi-arg case, use a slower DynamicInvoke.
         static let invokeInfo =
             let instanceBindingFlags = BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic ||| BindingFlags.DeclaredOnly
-#if FX_NO_DELEGATE_CREATE_DELEGATE_FROM_STATIC_METHOD
-            typeof<EventDelegee<'Args>>.GetMethod("Invoke",instanceBindingFlags)
-#else
             let mi = 
                 typeof<EventDelegee<'Args>>.GetMethods(instanceBindingFlags)
                 |> Seq.filter(fun mi -> mi.Name = "Invoke" && mi.GetParameters().Length = argTypes.Length + 1)
@@ -102,26 +86,20 @@ namespace Microsoft.FSharp.Control
             if mi.IsGenericMethodDefinition then
                 mi.MakeGenericMethod argTypes
             else 
-                mi
-#endif
-                
+                mi                
 
         member x.Trigger(sender:obj,args: 'Args) = 
             match box multicast with 
             | null -> () 
             | _ -> 
-#if !FX_NO_DELEGATE_CREATE_DELEGATE_FROM_STATIC_METHOD
                 match invoker with 
                 | null ->  
-#endif
                     let args = Array.append [| sender |] (Microsoft.FSharp.Reflection.FSharpValue.GetTupleFields(box args))
                     multicast.DynamicInvoke(args) |> ignore
-#if !FX_NO_DELEGATE_CREATE_DELEGATE_FROM_STATIC_METHOD
                 | _ -> 
                     // For the one-argument case, use an optimization that allows a fast call. 
                     // CreateDelegate creates a delegate that is fast to invoke.
                     invoker.Invoke(multicast, sender, args) |> ignore
-#endif
 
         member x.Publish = 
             // Note, we implement each interface explicitly: this works around a bug in the CLR 
@@ -142,7 +120,6 @@ namespace Microsoft.FSharp.Control
                    { new System.IDisposable with 
                         member x.Dispose() = (e :?> IDelegateEvent<'Delegate>).RemoveHandler(h) } } 
 
-#endif
 
     [<CompiledName("FSharpEvent`1")>]
     type Event<'T> = 

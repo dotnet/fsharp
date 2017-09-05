@@ -1,32 +1,21 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Primary relations on types and signatures, with the exception of
 /// constraint solving and method overload resolution.
 module internal Microsoft.FSharp.Compiler.SignatureConformance
 
-open Internal.Utilities
 open System.Text
 
 open Microsoft.FSharp.Compiler 
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics 
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
-open Microsoft.FSharp.Compiler.Tastops.DebugPrint
-open Microsoft.FSharp.Compiler.TcGlobals
-open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Infos
-open Microsoft.FSharp.Compiler.PrettyNaming
-open Microsoft.FSharp.Compiler.AccessibilityLogic
-open Microsoft.FSharp.Compiler.NameResolution
-open Microsoft.FSharp.Compiler.TypeRelations
 
 #if EXTENSIONTYPING
 open Microsoft.FSharp.Compiler.ExtensionTyping
@@ -260,6 +249,11 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                   let res = 
                       (implArgInfos,sigArgInfos) ||> List.forall2 (List.forall2 (fun implArgInfo sigArgInfo -> 
                           checkAttribs aenv implArgInfo.Attribs sigArgInfo.Attribs (fun attribs -> 
+                              match implArgInfo.Name, sigArgInfo.Name with 
+                              | Some iname, Some sname when sname.idText <> iname.idText -> 
+                                   warning(Error (FSComp.SR.ArgumentsInSigAndImplMismatch(sname.idText, iname.idText),iname.idRange))
+                              | _ -> ()
+                              
                               implArgInfo.Name <- sigArgInfo.Name
                               implArgInfo.Attribs <- attribs))) && 
 

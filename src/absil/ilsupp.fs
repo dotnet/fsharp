@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.Support
 
@@ -1183,8 +1183,8 @@ let pdbReadOpen (moduleName:string) (path:string) :  PdbReader =
         with _ ->  
             { symReader = null } 
 #else 
-        let symbolBinder = new System.Diagnostics.SymbolStore.SymBinder() 
-        { symReader = symbolBinder.GetReader(importerPtr, moduleName, path) } 
+        let symbolBinder = new System.Diagnostics.SymbolStore.SymBinder()
+        { symReader = symbolBinder.GetReader(importerPtr, moduleName, path) }
 #endif
     finally
         // Marshal.GetComInterfaceForObject adds an extra ref for importerPtr

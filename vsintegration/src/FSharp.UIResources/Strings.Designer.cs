@@ -106,11 +106,47 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to _Enable in-memory cross project references.
+        /// </summary>
+        public static string Enable_in_memory_cross_project_references {
+            get {
+                return ResourceManager.GetString("Enable_in_memory_cross_project_references", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Performance.
+        /// </summary>
+        public static string Language_Service_Performance {
+            get {
+                return ResourceManager.GetString("Language_Service_Performance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Navigation links.
         /// </summary>
         public static string Navigation_links {
             get {
                 return ResourceManager.GetString("Navigation_links", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Project check cache size.
+        /// </summary>
+        public static string Project_check_cache_size {
+            get {
+                return ResourceManager.GetString("Project_check_cache_size", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Show s_ymbols in unopened namespaces.
+        /// </summary>
+        public static string Show_all_symbols {
+            get {
+                return ResourceManager.GetString("Show_all_symbols", resourceCulture);
             }
         }
         

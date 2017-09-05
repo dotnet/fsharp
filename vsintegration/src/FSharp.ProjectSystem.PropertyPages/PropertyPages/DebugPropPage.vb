@@ -1,4 +1,4 @@
-' Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+' Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 Imports System
 Imports Microsoft.VisualBasic
@@ -83,30 +83,30 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
 
         <System.Diagnostics.DebuggerStepThrough()> Private Sub InitializeComponent()
             Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(DebugPropPage))
-            Me.StartActionLabel = New System.Windows.Forms.Label
-            Me.StartActionLabelLine = New System.Windows.Forms.Label
-            Me.rbStartProject = New System.Windows.Forms.RadioButton
-            Me.rbStartProgram = New System.Windows.Forms.RadioButton
-            Me.StartProgram = New System.Windows.Forms.TextBox
-            Me.StartProgramBrowse = New System.Windows.Forms.Button
-            Me.StartOptionsLabelLine = New System.Windows.Forms.Label
-            Me.StartOptionsLabel = New System.Windows.Forms.Label
-            Me.CommandLineArgsLabel = New System.Windows.Forms.Label
-            Me.WorkingDirLabel = New System.Windows.Forms.Label
-            Me.RemoteDebugEnabled = New System.Windows.Forms.CheckBox
-            Me.StartArguments = New Microsoft.VisualStudio.Editors.PropertyPages.DebugPropPage.MultilineTextBoxRejectsEnter
-            Me.StartWorkingDirectory = New System.Windows.Forms.TextBox
-            Me.RemoteDebugMachine = New System.Windows.Forms.TextBox
-            Me.StartWorkingDirectoryBrowse = New System.Windows.Forms.Button
-            Me.EnableDebuggerLabelLine = New System.Windows.Forms.Label
-            Me.EnableDebuggerLabel = New System.Windows.Forms.Label
-            Me.EnableUnmanagedDebugging = New System.Windows.Forms.CheckBox
-            Me.UseVSHostingProcess = New System.Windows.Forms.CheckBox
-            Me.EnableSQLServerDebugging = New System.Windows.Forms.CheckBox
-            Me.overarchingTableLayoutPanel = New System.Windows.Forms.TableLayoutPanel
-            Me.startActionTableLayoutPanel = New System.Windows.Forms.TableLayoutPanel
-            Me.startOptionsTableLayoutPanel = New System.Windows.Forms.TableLayoutPanel
-            Me.enableDebuggersTableLayoutPanel = New System.Windows.Forms.TableLayoutPanel
+            Me.StartActionLabel = New System.Windows.Forms.Label()
+            Me.StartActionLabelLine = New System.Windows.Forms.Label()
+            Me.rbStartProject = New System.Windows.Forms.RadioButton()
+            Me.rbStartProgram = New System.Windows.Forms.RadioButton()
+            Me.StartProgram = New System.Windows.Forms.TextBox()
+            Me.StartProgramBrowse = New System.Windows.Forms.Button()
+            Me.StartOptionsLabelLine = New System.Windows.Forms.Label()
+            Me.StartOptionsLabel = New System.Windows.Forms.Label()
+            Me.CommandLineArgsLabel = New System.Windows.Forms.Label()
+            Me.WorkingDirLabel = New System.Windows.Forms.Label()
+            Me.RemoteDebugEnabled = New System.Windows.Forms.CheckBox()
+            Me.StartArguments = New Microsoft.VisualStudio.Editors.PropertyPages.DebugPropPage.MultilineTextBoxRejectsEnter()
+            Me.StartWorkingDirectory = New System.Windows.Forms.TextBox()
+            Me.RemoteDebugMachine = New System.Windows.Forms.TextBox()
+            Me.StartWorkingDirectoryBrowse = New System.Windows.Forms.Button()
+            Me.EnableDebuggerLabelLine = New System.Windows.Forms.Label()
+            Me.EnableDebuggerLabel = New System.Windows.Forms.Label()
+            Me.EnableUnmanagedDebugging = New System.Windows.Forms.CheckBox()
+            Me.UseVSHostingProcess = New System.Windows.Forms.CheckBox()
+            Me.EnableSQLServerDebugging = New System.Windows.Forms.CheckBox()
+            Me.overarchingTableLayoutPanel = New System.Windows.Forms.TableLayoutPanel()
+            Me.startActionTableLayoutPanel = New System.Windows.Forms.TableLayoutPanel()
+            Me.startOptionsTableLayoutPanel = New System.Windows.Forms.TableLayoutPanel()
+            Me.enableDebuggersTableLayoutPanel = New System.Windows.Forms.TableLayoutPanel()
             Me.overarchingTableLayoutPanel.SuspendLayout()
             Me.startActionTableLayoutPanel.SuspendLayout()
             Me.startOptionsTableLayoutPanel.SuspendLayout()
@@ -276,7 +276,6 @@ Namespace Microsoft.VisualStudio.Editors.PropertyPages
             '
             resources.ApplyResources(Me, "$this")
             Me.Controls.Add(Me.overarchingTableLayoutPanel)
-            Me.MaximumSize = New System.Drawing.Size(540, 0)
             Me.Name = "DebugPropPage"
             Me.overarchingTableLayoutPanel.ResumeLayout(False)
             Me.overarchingTableLayoutPanel.PerformLayout()

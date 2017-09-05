@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -25,11 +25,12 @@ type internal DiagnosticsType =
 type internal FSharpDocumentDiagnosticAnalyzer() =
     inherit DocumentDiagnosticAnalyzer()
 
+    static let userOpName = "DocumentDiagnosticAnalyzer"
     let getChecker(document: Document) =
         document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().Checker
 
     let getProjectInfoManager(document: Document) =
-        document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().ProjectInfoManager
+        document.Project.Solution.Workspace.Services.GetService<FSharpCheckerWorkspaceService>().FSharpProjectOptionsManager
     
     static let errorInfoEqualityComparer =
         { new IEqualityComparer<FSharpErrorInfo> with 
@@ -58,12 +59,12 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
 
     static member GetDiagnostics(checker: FSharpChecker, filePath: string, sourceText: SourceText, textVersionHash: int, options: FSharpProjectOptions, diagnosticType: DiagnosticsType) = 
         async {
-            let! parseResults = checker.ParseFileInProject(filePath, sourceText.ToString(), options) 
+            let! parseResults = checker.ParseFileInProject(filePath, sourceText.ToString(), options, userOpName=userOpName) 
             let! errors = 
                 async {
                     match diagnosticType with
                     | DiagnosticsType.Semantic ->
-                        let! checkResultsAnswer = checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options) 
+                        let! checkResultsAnswer = checker.CheckFileInProject(parseResults, filePath, textVersionHash, sourceText.ToString(), options, userOpName=userOpName) 
                         match checkResultsAnswer with
                         | FSharpCheckFileAnswer.Aborted -> return [||]
                         | FSharpCheckFileAnswer.Succeeded results ->

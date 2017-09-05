@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Tests.LanguageService.AutoCompletion
 
@@ -5566,18 +5566,6 @@ let x = query { for bbbb in abbbbc(*D0*) do
         
         let completions = DotCompletionAtStartOfMarker file "(*Mconstrainedtoint*)"
         AssertCompListContainsAll(completions, ["ToString"])    
-
-    [<Test>]
-    [<Ignore("TODO tao test refactor")>]
-    member this.InternalNotVisibleInDiffAssembly() =
-        let fileContents = """
-            module CodeAccessibility
-            let type1 = new InternalNotVisibleInDiffAssembly.Module1.Type1()
-            type1(*MarkerDiffAssmb*)"""
-        let (solution, project, file) = this.CreateSingleFileProject(fileContents, references = ["InternalNotVisibleDiffAssembly.Assembly.dll"])
-
-        let completions = DotCompletionAtStartOfMarker file "(*MarkerDiffAssmb*)"
-        AssertCompListDoesNotContainAny(completions, ["fieldInternal";"MethodInternal"])
 
     [<Test>]
     member this.``Literal.Float``() = 

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.EraseClosures
 
@@ -490,7 +490,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                   Implements = List.empty;
                   IsAbstract = false;
                   NestedTypes = emptyILTypeDefs;
-                  IsSealed = false;
+                  IsSealed = true;
                   IsSerializable=td.IsSerializable; 
                   IsComInterop=false;
                   IsSpecialName=false;
@@ -590,7 +590,7 @@ let rec convIlxClosureDef cenv encl (td: ILTypeDef) clo =
                       Access = td.Access;
                       Implements = []
                       IsAbstract = false;
-                      IsSealed = false;
+                      IsSealed = true;
                       IsSerializable=td.IsSerializable; 
                       IsComInterop=false;
                       IsSpecialName=false;

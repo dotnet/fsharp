@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Tests.LanguageService.ParameterInfo
 
@@ -21,23 +21,23 @@ module ParamInfoStandardSettings =
 type UsingMSBuild()  = 
     inherit LanguageServiceBaseTests()
 
-    let GetParamDisplays(methods:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip) =
+    let GetParamDisplays(methods:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip_DEPRECATED) =
             [ for i = 0 to methods.GetCount() - 1 do
                 yield [ for j = 0 to methods.GetParameterCount(i) - 1 do
                             let (name,display,description) = methods.GetParameterInfo(i,j) 
                             yield display ] ]
       
-    let AssertEmptyMethodGroup(resultMethodGroup:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip option) =
+    let AssertEmptyMethodGroup(resultMethodGroup:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip_DEPRECATED option) =
         Assert.IsTrue(resultMethodGroup.IsNone, "Expected an empty method group")              
         
-    let AssertMethodGroupDesciptionsDoNotContain(methods:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip, expectNotToBeThere) = 
+    let AssertMethodGroupDesciptionsDoNotContain(methods:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip_DEPRECATED, expectNotToBeThere) = 
         for i = 0 to methods.GetCount() - 1 do
             let description = methods.GetDescription(i)
             if (description.Contains(expectNotToBeThere)) then
                 Console.WriteLine("Expected description {0} to not contain {1}", description, expectNotToBeThere)
                 AssertNotContains(description,expectNotToBeThere)
  
-    let AssertMethodGroup(resultMethodGroup:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip option, expectedParamNamesSet:string list list) =
+    let AssertMethodGroup(resultMethodGroup:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip_DEPRECATED option, expectedParamNamesSet:string list list) =
         Assert.IsTrue(resultMethodGroup.IsSome, "Expected a method group")
         let resultMethodGroup = resultMethodGroup.Value
         Assert.AreEqual(expectedParamNamesSet.Length, resultMethodGroup.GetCount())           
@@ -49,7 +49,7 @@ type UsingMSBuild()  =
                                        (expectedParamNames,paramDisplays) ||> List.forall2 (fun expectedParamName paramDisplay -> 
                                            paramDisplay.Contains(expectedParamName)))))
     
-    let AssertMethodGroupContain(resultMethodGroup:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip option, expectedParamNames:string list) = 
+    let AssertMethodGroupContain(resultMethodGroup:Microsoft.VisualStudio.FSharp.LanguageService.MethodListForAMethodTip_DEPRECATED option, expectedParamNames:string list) = 
         Assert.IsTrue(resultMethodGroup.IsSome, "Expected a method group")
         let resultMethodGroup = resultMethodGroup.Value
         Assert.IsTrue(resultMethodGroup
@@ -107,7 +107,7 @@ type UsingMSBuild()  =
         Assert.IsTrue(methodstr.IsSome, "Expected a method group")
         let methodstr = methodstr.Value
 
-        Assert.AreEqual(expectedStr, methodstr.GetType(0)) // Expecting a method info like X(a:int,b:int) : int [used to be  X(a:int,b:int) -> int]
+        Assert.AreEqual(expectedStr, methodstr.GetReturnTypeText(0)) // Expecting a method info like X(a:int,b:int) : int [used to be  X(a:int,b:int) -> int]
 
     member private this.VerifyParameterCount(fileContents : string, marker : string, expectedCount: int) =
         let methodstr = this.GetMethodListForAMethodTip(fileContents,marker)
@@ -182,7 +182,7 @@ type UsingMSBuild()  =
         let fileContent = """
            let f x y = x + y
            f((*Mark*)"""
-        this.VerifyFirstParameterInfoColonContent(fileContent,"(*Mark*)",": int -> int ")  
+        this.VerifyFirstParameterInfoColonContent(fileContent,"(*Mark*)",": (int -> int) ")  
 
     [<Test>]
     member public this.``Regression.StaticVsInstance.Bug3626.Case1``() =
@@ -884,7 +884,7 @@ type UsingMSBuild()  =
         let info = info.Value
         AssertEqual("f1", info.GetName(0))
         // note about (5,0): service.fs adds three lines of empty text to the end of every file, so it reports the location of 'end of file' as first the char, 3 lines past the last line of the file
-        AssertEqual([|(2,10);(2,12);(2,13);(5,0)|], info.GetNoteworthyParamInfoLocations())
+        AssertEqual([|(2,10);(2,12);(2,13);(3,0)|], info.GetNoteworthyParamInfoLocations())
 
     [<Test>]
     member this.``LocationOfParams.AfterQuicklyTyping.CallConstructor``() =        
@@ -906,7 +906,7 @@ type UsingMSBuild()  =
         let info = info.Value
         AssertEqual("Foo", info.GetName(0))
         // note about (4,0): service.fs adds three lines of empty text to the end of every file, so it reports the location of 'end of file' as first the char, 3 lines past the last line of the file
-        AssertEqual([|(1,14);(1,17);(1,18);(4,0)|], info.GetNoteworthyParamInfoLocations())
+        AssertEqual([|(1,14);(1,17);(1,18);(2,0)|], info.GetNoteworthyParamInfoLocations())
 
 
 (*
@@ -970,9 +970,9 @@ We really need to rewrite some code paths here to use the real parse tree rather
             r.ToString(), locs)
         let testLines = testLinesAndLocs |> List.map fst
         let expectedLocs = testLinesAndLocs |> List.map snd |> List.collect id |> List.toArray 
-        // note: service.fs adds three lines of empty text to the end of every file, so it reports the location of 'end of file' as first the char, 3 lines past the last line of the file
+        // note: service.fs adds a new line character to the end of every file, so it reports the location of 'end of file' as first the char, 3 lines past the last line of the file
         let expectedLocs = if defaultArg markAtEOF false then 
-                                Array.append expectedLocs [| (testLines.Length-1)+3, 0 |] 
+                                Array.append expectedLocs [| (testLines.Length-1)+1, 0 |] 
                            else 
                                 expectedLocs
         let cursorPrefix = cursorPrefix.Replace("^","")

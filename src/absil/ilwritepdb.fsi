@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// The ILPdbWriter 
 module internal Microsoft.FSharp.Compiler.AbstractIL.ILPdbWriter 
@@ -82,7 +82,7 @@ type idd =
       iddData: byte[];
       iddChunk: BinaryChunk }
 
-val generatePortablePdb : embedAllSource:bool -> embedSourceList:string list -> sourceLink: string -> showTimes:bool -> info:PdbData -> (int64 * BlobContentId * MemoryStream) 
+val generatePortablePdb : embedAllSource:bool -> embedSourceList:string list -> sourceLink: string -> showTimes:bool -> info:PdbData -> isDeterministic:bool -> (int64 * BlobContentId * MemoryStream)
 val compressPortablePdbStream : uncompressedLength:int64 -> contentId:BlobContentId -> stream:MemoryStream -> (int64 * BlobContentId * MemoryStream)
 val embedPortablePdbInfo : uncompressedLength:int64 -> contentId:BlobContentId -> stream:MemoryStream -> showTimes:bool -> fpdb:string -> cvChunk:BinaryChunk -> pdbChunk:BinaryChunk -> idd[]
 val writePortablePdbInfo : contentId:BlobContentId -> stream:MemoryStream -> showTimes:bool -> fpdb:string -> cvChunk:BinaryChunk -> idd[]

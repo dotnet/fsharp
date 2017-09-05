@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -10,7 +10,6 @@ open System.Threading
 open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Completion
-open Microsoft.CodeAnalysis.Editor.Implementation.IntelliSense.Completion.FileSystem
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Classification
 
@@ -23,7 +22,7 @@ type internal Completion =
           AllowableExtensions = allowableExtensions
           UseIncludeDirectives = useIncludeDirectives }
 
-type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoManager: ProjectInfoManager, completions: Completion list) =
+type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoManager: FSharpProjectOptionsManager, completions: Completion list) =
     inherit CommonCompletionProvider()
 
     let [<Literal>] NetworkPath = "\\\\"
@@ -35,15 +34,9 @@ type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoM
 
     let getPathThroughLastSlash(text: SourceText, position: int, quotedPathGroup: Group) =
         PathCompletionUtilities.GetPathThroughLastSlash(
-            quotedPath = quotedPathGroup.Value,
-            quotedPathStart = getQuotedPathStart(text, position, quotedPathGroup),
-            position = position)
- 
-    let getTextChangeSpan(text: SourceText, position: int, quotedPathGroup: Group) =
-        PathCompletionUtilities.GetTextChangeSpan(
-            quotedPath = quotedPathGroup.Value,
-            quotedPathStart = getQuotedPathStart(text, position, quotedPathGroup),
-            position = position)
+            quotedPathGroup.Value,
+            getQuotedPathStart(text, position, quotedPathGroup),
+            position)
 
     let getFileGlyph (extention: string) =
         match extention with
@@ -117,30 +110,26 @@ type internal HashDirectiveCompletionProvider(workspace: Workspace, projectInfoM
             let snapshot = text.FindCorrespondingEditorTextSnapshot()
             
             do! Option.guard (not (isNull snapshot))
-            let fileSystem = CurrentWorkingDirectoryDiscoveryService.GetService(snapshot)
-            
+
             let extraSearchPaths =
                 if completion.UseIncludeDirectives then
                     getIncludeDirectives (text, position)
                 else []
-            
+
             let defaultSearchPath = Path.GetDirectoryName document.FilePath
             let searchPaths = defaultSearchPath :: extraSearchPaths
-            
+
             let helper = 
                 FileSystemCompletionHelper(
-                    this,
-                    getTextChangeSpan(text, position, quotedPathGroup),
-                    fileSystem,
                     Glyph.OpenFolder,
                     completion.AllowableExtensions |> List.tryPick getFileGlyph |> Option.defaultValue Glyph.None,
-                    searchPaths = Seq.toImmutableArray searchPaths,
-                    allowableExtensions = completion.AllowableExtensions,
-                    itemRules = rules)
+                    Seq.toImmutableArray searchPaths,
+                    null,
+                    completion.AllowableExtensions |> Seq.toImmutableArray,
+                    rules)
      
             let pathThroughLastSlash = getPathThroughLastSlash(text, position, quotedPathGroup)
-            let documentPath = if document.Project.IsSubmission then null else document.FilePath
-            context.AddItems(helper.GetItems(pathThroughLastSlash, documentPath))
+            context.AddItems(helper.GetItems(pathThroughLastSlash, ct))
         } 
         |> Async.Ignore
         |> RoslynHelpers.StartAsyncUnitAsTask context.CancellationToken

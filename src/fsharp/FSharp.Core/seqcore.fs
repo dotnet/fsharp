@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Collections
     #nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
@@ -166,9 +166,9 @@ namespace Microsoft.FSharp.Core.CompilerServices
         let GenerateUsing (openf : unit -> ('U :> System.IDisposable)) compute =
             Generate openf compute (fun (s:'U) -> s.Dispose())
 
-        let EnumerateFromFunctions opener moveNext current =
+        let EnumerateFromFunctions create moveNext current =
             Generate
-                opener
+                create
                 (fun x -> if moveNext x then Some(current x) else None)
                 (fun x -> match box(x) with :? System.IDisposable as id -> id.Dispose() | _ -> ())
 
@@ -299,14 +299,14 @@ namespace Microsoft.FSharp.Core.CompilerServices
                     if not finished then
                         x.Finish()
 
-        let EnumerateUsing (resource : 'T :> System.IDisposable) (rest: 'T -> #seq<'U>) =
+        let EnumerateUsing (resource : 'T :> System.IDisposable) (source: 'T -> #seq<'U>) =
             (FinallyEnumerable((fun () -> match box resource with null -> () | _ -> resource.Dispose()),
-                               (fun () -> rest resource :> seq<_>)) :> seq<_>)
+                               (fun () -> source resource :> seq<_>)) :> seq<_>)
 
         let mkConcatSeq (sources: seq<'U :> seq<'T>>) =
             mkSeq (fun () -> new ConcatEnumerator<_,_>(sources) :> IEnumerator<'T>)
 
-        let EnumerateWhile (g : unit -> bool) (b: seq<'T>) : seq<'T> =
+        let EnumerateWhile (guard: unit -> bool) (source: seq<'T>) : seq<'T> =
             let started = ref false
             let curr = ref None
             let getCurr() =
@@ -323,33 +323,33 @@ namespace Microsoft.FSharp.Core.CompilerServices
                           member x.Current = box (getCurr())
                           member x.MoveNext() =
                                start()
-                               let keepGoing = (try g() with e -> finish (); reraise ()) in
+                               let keepGoing = (try guard() with e -> finish (); reraise ()) in
                                if keepGoing then
-                                   curr := Some(b); true
+                                   curr := Some(source); true
                                else
                                    finish(); false
                           member x.Reset() = IEnumerator.noReset()
                        interface System.IDisposable with
                           member x.Dispose() = () }))
 
-        let EnumerateThenFinally (rest : seq<'T>) (compensation : unit -> unit)  =
-            (FinallyEnumerable(compensation, (fun () -> rest)) :> seq<_>)
+        let EnumerateThenFinally (source: seq<'T>) (compensation: unit -> unit)  =
+            (FinallyEnumerable(compensation, (fun () -> source)) :> seq<_>)
 
-        let CreateEvent (add : 'Delegate -> unit) (remove : 'Delegate -> unit) (create : (obj -> 'Args -> unit) -> 'Delegate ) :IEvent<'Delegate,'Args> =
+        let CreateEvent (addHandler : 'Delegate -> unit) (removeHandler : 'Delegate -> unit) (createHandler : (obj -> 'Args -> unit) -> 'Delegate ) :IEvent<'Delegate,'Args> =
             // Note, we implement each interface explicitly: this works around a bug in the CLR
             // implementation on CompactFramework 3.7, used on Windows Phone 7
             { new obj() with
                   member x.ToString() = "<published event>"
               interface IEvent<'Delegate,'Args>
               interface IDelegateEvent<'Delegate> with
-                 member x.AddHandler(h) = add h
-                 member x.RemoveHandler(h) = remove h
+                 member x.AddHandler(h) = addHandler h
+                 member x.RemoveHandler(h) = removeHandler h
               interface System.IObservable<'Args> with
                  member x.Subscribe(r:IObserver<'Args>) =
-                     let h = create (fun _ args -> r.OnNext(args))
-                     add h
+                     let h = createHandler (fun _ args -> r.OnNext(args))
+                     addHandler h
                      { new System.IDisposable with
-                          member x.Dispose() = remove h } }
+                          member x.Dispose() = removeHandler h } }
 
 
     [<AbstractClass>]
@@ -358,7 +358,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
         let mutable redirect : bool = false
 
         abstract GetFreshEnumerator : unit -> IEnumerator<'T>
-        abstract GenerateNext : next:byref<IEnumerable<'T>> -> int // 0 = Stop, 1 = Yield, 2 = Goto
+        abstract GenerateNext : result:byref<IEnumerable<'T>> -> int // 0 = Stop, 1 = Yield, 2 = Goto
         abstract Close: unit -> unit
         abstract CheckClose: bool
         abstract LastGenerated : 'T
@@ -395,6 +395,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
             member x.GetEnumerator() = (x.GetFreshEnumerator() :> IEnumerator)
         interface IEnumerator<'T> with
             member x.Current = if redirect then redirectTo.LastGenerated else x.LastGenerated
+        interface System.IDisposable with
             member x.Dispose() = if redirect then redirectTo.Close() else x.Close()
         interface IEnumerator with
             member x.Current = box (if redirect then redirectTo.LastGenerated else x.LastGenerated)

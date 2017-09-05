@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.Lexhelp
 
@@ -55,7 +55,8 @@ type lexargs =
       ifdefStack: LexerIfdefStack
       resourceManager: LexResourceManager
       lightSyntaxStatus : LightSyntaxStatus
-      errorLogger: ErrorLogger }
+      errorLogger: ErrorLogger
+      applyLineDirectives: bool }
 
 /// possible results of lexing a long unicode escape sequence in a string literal, e.g. "\UDEADBEEF"
 type LongUnicodeLexResult =
@@ -68,7 +69,8 @@ let mkLexargs (_filename,defines,lightSyntaxStatus,resourceManager,ifdefStack,er
       ifdefStack= ifdefStack
       lightSyntaxStatus=lightSyntaxStatus
       resourceManager=resourceManager
-      errorLogger=errorLogger }
+      errorLogger=errorLogger
+      applyLineDirectives=true }
 
 /// Register the lexbuf and call the given function
 let reusingLexbufForParsing lexbuf f = 

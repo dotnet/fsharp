@@ -1,6 +1,6 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace rec Microsoft.VisualStudio.FSharp.Editor
+namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
@@ -22,10 +22,12 @@ type internal FSharpAddOpenCodeFixProvider
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: ProjectInfoManager,
+        projectInfoManager: FSharpProjectOptionsManager,
         assemblyContentProvider: AssemblyContentProvider
     ) =
     inherit CodeFixProvider()
+
+    static let userOpName = "FSharpAddOpenCodeFixProvider"
     let fixableDiagnosticIds = ["FS0039"; "FS0043"]
 
     let checker = checkerProvider.Checker
@@ -36,7 +38,8 @@ type internal FSharpAddOpenCodeFixProvider
             fixUnderscoresInMenuText fullName,
             fun (cancellationToken: CancellationToken) -> 
                 async {
-                    let! sourceText = context.Document.GetTextAsync()
+                    let! cancellationToken = Async.CancellationToken
+                    let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                     return context.Document.WithText(sourceText.Replace(context.Span, qualifier))
                 } |> RoslynHelpers.StartAsyncAsTask(cancellationToken))
 
@@ -47,7 +50,8 @@ type internal FSharpAddOpenCodeFixProvider
             fixUnderscoresInMenuText displayText,
             (fun (cancellationToken: CancellationToken) -> 
                 async {
-                    let! sourceText = context.Document.GetTextAsync()
+                    let! cancellationToken = Async.CancellationToken
+                    let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                     let changedText, _ = OpenDeclarationHelper.insertOpenDeclaration sourceText ctx ns
                     return context.Document.WithText(changedText)
                 } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
@@ -94,7 +98,7 @@ type internal FSharpAddOpenCodeFixProvider
             let document = context.Document
             let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
-            let! _, parsedInput, checkResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true, sourceText = sourceText)
+            let! _, parsedInput, checkResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true, sourceText = sourceText, userOpName = userOpName)
             let line = sourceText.Lines.GetLineFromPosition(context.Span.End)
             let linePos = sourceText.Lines.GetLinePosition(context.Span.End)
             let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
@@ -102,7 +106,7 @@ type internal FSharpAddOpenCodeFixProvider
             let! symbol = 
                 asyncMaybe {
                     let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, context.Span.End, document.FilePath, defines, SymbolLookupKind.Greedy, false)
-                    return! checkResults.GetSymbolUseAtLocation(Line.fromZ linePos.Line, lexerSymbol.Ident.idRange.EndColumn, line.ToString(), lexerSymbol.FullIsland)
+                    return! checkResults.GetSymbolUseAtLocation(Line.fromZ linePos.Line, lexerSymbol.Ident.idRange.EndColumn, line.ToString(), lexerSymbol.FullIsland, userOpName=userOpName)
                 } |> liftAsync
 
             do! Option.guard symbol.IsNone

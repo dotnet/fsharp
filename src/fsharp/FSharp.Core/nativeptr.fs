@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.NativeInterop
 
@@ -19,31 +19,31 @@ module NativePtr =
 
     [<NoDynamicInvocation>]
     [<CompiledName("OfNativeIntInlined")>]
-    let inline ofNativeInt (x:nativeint)      = (# "" x : nativeptr<'T> #)
+    let inline ofNativeInt (address:nativeint)      = (# "" address : nativeptr<'T> #)
     
     [<NoDynamicInvocation>]
     [<CompiledName("ToNativeIntInlined")>]
-    let inline toNativeInt (x: nativeptr<'T>) = (# "" x : nativeint    #)
+    let inline toNativeInt (address: nativeptr<'T>) = (# "" address : nativeint    #)
 
     [<NoDynamicInvocation>]
     [<CompiledName("AddPointerInlined")>]
-    let inline add (x : nativeptr<'T>) (n:int) : nativeptr<'T> = toNativeInt x + nativeint n * (# "sizeof !0" type('T) : nativeint #) |> ofNativeInt
+    let inline add (address : nativeptr<'T>) (index:int) : nativeptr<'T> = toNativeInt address + nativeint index * (# "sizeof !0" type('T) : nativeint #) |> ofNativeInt
     
     [<NoDynamicInvocation>]
     [<CompiledName("GetPointerInlined")>]
-    let inline get (p : nativeptr<'T>) n = (# "ldobj !0" type ('T) (add p n) : 'T #) 
+    let inline get (address : nativeptr<'T>) index = (# "ldobj !0" type ('T) (add address index) : 'T #) 
     
     [<NoDynamicInvocation>]
     [<CompiledName("SetPointerInlined")>]
-    let inline set (p : nativeptr<'T>) n (x : 'T) = (# "stobj !0" type ('T) (add p n) x #)  
+    let inline set (address : nativeptr<'T>) index (value : 'T) = (# "stobj !0" type ('T) (add address index) value #)  
 
     [<NoDynamicInvocation>]
     [<CompiledName("ReadPointerInlined")>]
-    let inline read (p : nativeptr<'T>) = (# "ldobj !0" type ('T) p : 'T #) 
+    let inline read (address : nativeptr<'T>) = (# "ldobj !0" type ('T) address : 'T #) 
     
     [<NoDynamicInvocation>]
     [<CompiledName("WritePointerInlined")>]
-    let inline write (p : nativeptr<'T>) (x : 'T) = (# "stobj !0" type ('T) p x #)  
+    let inline write (address : nativeptr<'T>) (value : 'T) = (# "stobj !0" type ('T) address value #)  
     
     [<NoDynamicInvocation>]
     [<CompiledName("StackAllocate")>]

@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -8,10 +8,10 @@ open System.Composition
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.LanguageServices.Implementation.F1Help
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.SourceCodeServices
 
 [<Shared>]
 [<ExportLanguageService(typeof<IHelpContextService>, FSharpConstants.FSharpLanguageName)>]
@@ -19,12 +19,13 @@ type internal FSharpHelpContextService
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: FSharpProjectOptionsManager
     ) =
 
+    static let userOpName = "ImplementInterfaceCodeFix"
     static member GetHelpTerm(checker: FSharpChecker, sourceText : SourceText, fileName, options, span: TextSpan, tokens: List<ClassifiedSpan>, textVersion) : Async<string option> = 
         asyncMaybe {
-            let! _, _, check = checker.ParseAndCheckDocument(fileName, textVersion, sourceText.ToString(), options, allowStaleResults = true)
+            let! _, _, check = checker.ParseAndCheckDocument(fileName, textVersion, sourceText.ToString(), options, allowStaleResults = true, userOpName = userOpName)
             let textLines = sourceText.Lines
             let lineInfo = textLines.GetLineFromPosition(span.Start)
             let line = lineInfo.LineNumber
@@ -83,7 +84,7 @@ type internal FSharpHelpContextService
                         let! (s,colAtEndOfNames, _) = QuickParse.GetCompleteIdentifierIsland false lineText col
                         if check.HasFullTypeCheckInfo then 
                             let qualId = PrettyNaming.GetLongNameFromString s
-                            return! check.GetF1KeywordAlternate(Line.fromZ line, colAtEndOfNames, lineText, qualId)
+                            return! check.GetF1Keyword(Line.fromZ line, colAtEndOfNames, lineText, qualId)
                         else 
                             return! None
                     with e ->

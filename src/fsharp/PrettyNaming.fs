@@ -1,12 +1,16 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 //----------------------------------------------------------------------------
 // Some general F# utilities for mangling / unmangling / manipulating names.
 //--------------------------------------------------------------------------
 
 /// Anything to do with special names of identifiers and other lexical rules 
+#if COMPILER_PUBLIC_API
+module public Microsoft.FSharp.Compiler.PrettyNaming
+#else
 module internal Microsoft.FSharp.Compiler.PrettyNaming
-    open Internal.Utilities
+#endif
+open Internal.Utilities
     open Microsoft.FSharp.Compiler
     open Microsoft.FSharp.Compiler.AbstractIL.Internal
     open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Core
 
@@ -17,7 +17,7 @@ namespace Microsoft.FSharp.Core
         let inline isNone option = match option with None -> true | Some _ -> false
 
         [<CompiledName("DefaultValue")>]
-        let defaultValue def option = match option with None -> def | Some v -> v
+        let defaultValue value option = match option with None -> value | Some v -> v
 
         [<CompiledName("DefaultWith")>]
         let defaultWith defThunk option = match option with None -> defThunk () | Some v -> v
@@ -32,46 +32,46 @@ namespace Microsoft.FSharp.Core
         let count option = match option with None -> 0 | Some _ -> 1
 
         [<CompiledName("Fold")>]
-        let fold<'T,'State> f (s:'State) (inp: option<'T>) = match inp with None -> s | Some x -> f s x
+        let fold<'T,'State> folder (state:'State) (option: option<'T>) = match option with None -> state | Some x -> folder state x
 
         [<CompiledName("FoldBack")>]
-        let foldBack<'T,'State> f (inp: option<'T>) (s:'State) =  match inp with None -> s | Some x -> f x s
+        let foldBack<'T,'State> folder (option: option<'T>) (state:'State) =  match option with None -> state | Some x -> folder x state
 
         [<CompiledName("Exists")>]
-        let exists p inp = match inp with None -> false | Some x -> p x
+        let exists predicate option = match option with None -> false | Some x -> predicate x
 
         [<CompiledName("ForAll")>]
-        let forall p inp = match inp with None -> true | Some x -> p x
+        let forall predicate option = match option with None -> true | Some x -> predicate x
 
         [<CompiledName("Contains")>]
-        let inline contains x inp = match inp with None -> false | Some v -> v = x
+        let inline contains value option = match option with None -> false | Some v -> v = value
 
         [<CompiledName("Iterate")>]
-        let iter f inp = match inp with None -> () | Some x -> f x
+        let iter action option = match option with None -> () | Some x -> action x
 
         [<CompiledName("Map")>]
-        let map f inp = match inp with None -> None | Some x -> Some (f x)
+        let map mapping option = match option with None -> None | Some x -> Some (mapping x)
 
         [<CompiledName("Map2")>]
-        let map2 f option1 option2 = 
+        let map2 mapping option1 option2 = 
             match option1, option2 with
-            | Some x, Some y -> Some <| f x y
+            | Some x, Some y -> Some (mapping x y)
             | _ -> None
 
         [<CompiledName("Map3")>]
-        let map3 f option1 option2 option3 = 
+        let map3 mapping option1 option2 option3 = 
             match option1, option2, option3 with
-            | Some x, Some y, Some z -> Some <| f x y z
+            | Some x, Some y, Some z -> Some (mapping x y z)
             | _ -> None
 
         [<CompiledName("Bind")>]
-        let bind f inp = match inp with None -> None | Some x -> f x
+        let bind binder option = match option with None -> None | Some x -> binder x
 
         [<CompiledName("Flatten")>]
         let flatten option = match option with None -> None | Some x -> x
 
         [<CompiledName("Filter")>]
-        let filter f inp = match inp with None -> None | Some x -> if f x then Some x else None
+        let filter predicate option = match option with None -> None | Some x -> if predicate x then Some x else None
 
         [<CompiledName("ToArray")>]
         let toArray option = match option with  None -> [| |] | Some x -> [| x |]

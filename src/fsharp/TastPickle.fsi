@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Defines the framework for serializing and de-serializing TAST data structures as binary blobs for the F# metadata format.
 module internal Microsoft.FSharp.Compiler.TastPickle 
@@ -24,7 +24,6 @@ type PickledDataWithReferences<'RawData> =
     /// Like Fixup but loader may return None, in which case there is no fixup.
     member OptionalFixup: (CcuReference -> CcuThunk option) -> 'RawData
     
-#if INCLUDE_METADATA_WRITER
 /// The type of state written to by picklers
 type WriterState 
 
@@ -84,7 +83,6 @@ val internal pickleCcuInfo : pickler<PickledCcuInfo>
 
 /// Serialize an arbitrary object using the given pickler
 val pickleObjWithDanglingCcus : string -> TcGlobals -> scope:CcuThunk -> pickler<'T> -> 'T -> byte[]
-#endif
 
 /// The type of state unpicklers read from
 type ReaderState 

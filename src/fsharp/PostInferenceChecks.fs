@@ -1,18 +1,16 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Implements a set of checks on the TAST for a file that can only be performed after type inference
 /// is complete.
 module internal Microsoft.FSharp.Compiler.PostTypeCheckSemanticChecks
 
 open System.Collections.Generic
-open Internal.Utilities
 
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.IL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 
 open Microsoft.FSharp.Compiler.AccessibilityLogic
 open Microsoft.FSharp.Compiler.Ast
@@ -22,7 +20,6 @@ open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Lib
-open Microsoft.FSharp.Compiler.Layout
 open Microsoft.FSharp.Compiler.Infos
 open Microsoft.FSharp.Compiler.PrettyNaming
 open Microsoft.FSharp.Compiler.InfoReader
@@ -628,7 +625,7 @@ and CheckExpr (cenv:cenv) (env:env) expr (context:ByrefContext) =
         CheckExprsPermitByrefs cenv env rest
 
     | Expr.Op (c,tyargs,args,m) ->
-          CheckExprOp cenv env (c,tyargs,args,m) context
+          CheckExprOp cenv env (c,tyargs,args,m) context expr
 
     // Allow 'typeof<System.Void>' calls as a special case, the only accepted use of System.Void! 
     | TypeOfExpr cenv.g ty when isVoidTy cenv.g ty ->
@@ -738,7 +735,7 @@ and CheckInterfaceImpls cenv env baseValOpt l =
 and CheckInterfaceImpl cenv env baseValOpt (_ty,overrides) = 
     CheckMethods cenv env baseValOpt overrides 
 
-and CheckExprOp cenv env (op,tyargs,args,m) context =
+and CheckExprOp cenv env (op,tyargs,args,m) context expr =
     let limitedCheck() = 
         if env.limited then errorR(Error(FSComp.SR.chkObjCtorsCantUseExceptionHandling(), m))
     List.iter (CheckTypePermitByrefs cenv env m) tyargs
@@ -833,13 +830,13 @@ and CheckExprOp cenv env (op,tyargs,args,m) context =
         CheckTypeInstNoByrefs cenv env m tyargs        
 
     | TOp.ValFieldGetAddr rfref,tyargs,[] ->
-        if noByrefs context && cenv.reportErrors then
+        if noByrefs context && cenv.reportErrors && isByrefLikeTy cenv.g (tyOfExpr cenv.g expr) then
             errorR(Error(FSComp.SR.chkNoAddressStaticFieldAtThisPoint(rfref.FieldName), m)) 
         CheckTypeInstNoByrefs cenv env m tyargs
         // NOTE: there are no arg exprs to check in this case 
 
     | TOp.ValFieldGetAddr rfref,tyargs,[rx] ->
-        if noByrefs context && cenv.reportErrors then
+        if noByrefs context && cenv.reportErrors  && isByrefLikeTy cenv.g (tyOfExpr cenv.g expr) then
             errorR(Error(FSComp.SR.chkNoAddressFieldAtThisPoint(rfref.FieldName), m))
         // This construct is used for &(rx.rfield) and &(rx->rfield). Relax to permit byref types for rx. [See Bug 1263]. 
         CheckTypeInstNoByrefs cenv env m tyargs
@@ -854,7 +851,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context =
         CheckExprPermitByref cenv env arg1  // allow byref - it may be address-of-struct
 
     | TOp.UnionCaseFieldGetAddr (uref, _idx),tyargs,[rx] ->
-        if noByrefs context && cenv.reportErrors then
+        if noByrefs context && cenv.reportErrors  && isByrefLikeTy cenv.g (tyOfExpr cenv.g expr) then
           errorR(Error(FSComp.SR.chkNoAddressFieldAtThisPoint(uref.CaseName), m))
         CheckTypeInstNoByrefs cenv env m tyargs
         // allow rx to be byref here, for struct unions
@@ -875,12 +872,12 @@ and CheckExprOp cenv env (op,tyargs,args,m) context =
             // permit byref for lhs lvalue of readonly value 
             CheckExprPermitByref cenv env lhs
         | [ I_ldflda (fspec) | I_ldsflda (fspec) ],[lhs] ->
-            if noByrefs context && cenv.reportErrors then
+            if noByrefs context && cenv.reportErrors  && isByrefLikeTy cenv.g (tyOfExpr cenv.g expr) then
                 errorR(Error(FSComp.SR.chkNoAddressFieldAtThisPoint(fspec.Name), m))
             // permit byref for lhs lvalue
             CheckExprPermitByref cenv env lhs
         | [ I_ldelema (_,isNativePtr,_,_) ],lhsArray::indices ->
-            if not(isNativePtr) && noByrefs context && cenv.reportErrors then
+            if noByrefs context && cenv.reportErrors && not isNativePtr && isByrefLikeTy cenv.g (tyOfExpr cenv.g expr) then
                 errorR(Error(FSComp.SR.chkNoAddressOfArrayElementAtThisPoint(), m))
             // permit byref for lhs lvalue 
             CheckExprPermitByref cenv env lhsArray
@@ -987,7 +984,7 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
     | _ -> 
         // Permit byrefs for let x = ...
         CheckTypePermitByrefs cenv env m ety
-        if not inlined && isByrefLikeTy cenv.g ety then
+        if not inlined && (isByrefLikeTy cenv.g ety || isNativePtrTy cenv.g ety) then
             // allow byref to occur as RHS of byref binding. 
             CheckExprPermitByref cenv env e
         else 
@@ -1458,14 +1455,14 @@ let CheckEntityDefn cenv env (tycon:Entity) =
 
             if others |> List.exists (checkForDup EraseAll) then 
                 if others |> List.exists (checkForDup EraseNone) then 
-                    errorR(Error(FSComp.SR.chkDuplicateMethod(nm),m))
+                    errorR(Error(FSComp.SR.chkDuplicateMethod(nm, NicePrint.minimalStringOfType cenv.denv typ),m))
                 else
-                    errorR(Error(FSComp.SR.chkDuplicateMethodWithSuffix(nm),m))
+                    errorR(Error(FSComp.SR.chkDuplicateMethodWithSuffix(nm, NicePrint.minimalStringOfType cenv.denv typ),m))
 
             let numCurriedArgSets = minfo.NumArgs.Length
 
             if numCurriedArgSets > 1 && others |> List.exists (fun minfo2 -> not (IsAbstractDefaultPair2 minfo minfo2)) then 
-                errorR(Error(FSComp.SR.chkDuplicateMethodCurried nm,m))
+                errorR(Error(FSComp.SR.chkDuplicateMethodCurried(nm, NicePrint.minimalStringOfType cenv.denv typ),m))
 
             if numCurriedArgSets > 1 && 
                (minfo.GetParamDatas(cenv.amap, m, minfo.FormalMethodInst) 
@@ -1500,15 +1497,18 @@ let CheckEntityDefn cenv env (tycon:Entity) =
             
         for pinfo in immediateProps do
             let nm = pinfo.PropertyName
-            let m = (match pinfo.ArbitraryValRef with None -> m | Some vref -> vref.DefinitionRange)
-            if hashOfImmediateMeths.ContainsKey(nm) then 
-                errorR(Error(FSComp.SR.chkPropertySameNameMethod(nm),m))
+            let m = 
+                match pinfo.ArbitraryValRef with 
+                | None -> m 
+                | Some vref -> vref.DefinitionRange
+
+            if hashOfImmediateMeths.ContainsKey nm then 
+                errorR(Error(FSComp.SR.chkPropertySameNameMethod(nm, NicePrint.minimalStringOfType cenv.denv typ),m))
+
             let others = getHash hashOfImmediateProps nm
 
-            if pinfo.HasGetter && pinfo.HasSetter then 
-
-                if (pinfo.GetterMethod.IsVirtual <>  pinfo.SetterMethod.IsVirtual) then 
-                    errorR(Error(FSComp.SR.chkGetterSetterDoNotMatchAbstract(nm),m))
+            if pinfo.HasGetter && pinfo.HasSetter && pinfo.GetterMethod.IsVirtual <> pinfo.SetterMethod.IsVirtual then 
+                errorR(Error(FSComp.SR.chkGetterSetterDoNotMatchAbstract(nm, NicePrint.minimalStringOfType cenv.denv typ),m))
 
             let checkForDup erasureFlag pinfo2 =                         
                   // abstract/default pairs of duplicate properties are OK
@@ -1520,9 +1520,9 @@ let CheckEntityDefn cenv env (tycon:Entity) =
 
             if others |> List.exists (checkForDup EraseAll) then
                 if others |> List.exists (checkForDup EraseNone) then 
-                    errorR(Error(FSComp.SR.chkDuplicateProperty(nm) ,m))
+                    errorR(Error(FSComp.SR.chkDuplicateProperty(nm, NicePrint.minimalStringOfType cenv.denv typ) ,m))
                 else
-                    errorR(Error(FSComp.SR.chkDuplicatePropertyWithSuffix(nm) ,m))
+                    errorR(Error(FSComp.SR.chkDuplicatePropertyWithSuffix(nm, NicePrint.minimalStringOfType cenv.denv typ) ,m))
             // Check to see if one is an indexer and one is not
 
             if ( (pinfo.HasGetter && 
@@ -1534,7 +1534,7 @@ let CheckEntityDefn cenv env (tycon:Entity) =
                  (let nargs = pinfo.GetParamTypes(cenv.amap,m).Length
                   others |> List.exists (fun pinfo2 -> (isNil(pinfo2.GetParamTypes(cenv.amap,m))) <> (nargs = 0)))) then 
                   
-                  errorR(Error(FSComp.SR.chkPropertySameNameIndexer(nm),m))
+                  errorR(Error(FSComp.SR.chkPropertySameNameIndexer(nm, NicePrint.minimalStringOfType cenv.denv typ),m))
 
             // Check to see if the signatures of the both getter and the setter imply the same property type
 

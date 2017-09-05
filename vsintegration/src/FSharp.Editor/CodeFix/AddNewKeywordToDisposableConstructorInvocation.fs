@@ -1,6 +1,6 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace rec Microsoft.VisualStudio.FSharp.Editor
+namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System.Composition
 open System.Collections.Immutable
@@ -25,7 +25,8 @@ type internal FSharpAddNewKeywordCodeFixProvider() =
                     title,
                     (fun (cancellationToken: CancellationToken) ->
                         async {
-                            let! sourceText = context.Document.GetTextAsync()
+                            let! cancellationToken = Async.CancellationToken
+                            let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
                             return context.Document.WithText(sourceText.WithChanges(TextChange(TextSpan(context.Span.Start, 0), "new ")))
                         } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
                     title), context.Diagnostics |> Seq.filter (fun x -> this.FixableDiagnosticIds.Contains x.Id) |> Seq.toImmutableArray)

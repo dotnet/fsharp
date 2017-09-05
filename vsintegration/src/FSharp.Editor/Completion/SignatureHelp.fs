@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -25,9 +25,10 @@ type internal FSharpSignatureHelpProvider
     (
         serviceProvider: SVsServiceProvider,
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: FSharpProjectOptionsManager
     ) =
 
+    static let userOpName = "SignatureHelpProvider"
     let xmlMemberIndexService = serviceProvider.GetService(typeof<IVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
 
@@ -36,7 +37,7 @@ type internal FSharpSignatureHelpProvider
 
     // Unit-testable core routine
     static member internal ProvideMethodsAsyncAux(checker: FSharpChecker, documentationBuilder: IDocumentationBuilder, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, triggerIsTypedChar: char option, filePath: string, textVersionHash: int) = async {
-        let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options)
+        let! parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, textVersionHash, sourceText.ToString(), options, userOpName = userOpName)
         match checkFileAnswer with
         | FSharpCheckFileAnswer.Aborted -> return None
         | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> 
@@ -55,7 +56,7 @@ type internal FSharpSignatureHelpProvider
         let lidEnd = nwpl.LongIdEndLocation
 
         // Get the methods
-        let! methodGroup = checkFileResults.GetMethodsAlternate(lidEnd.Line, lidEnd.Column, "", Some names)
+        let! methodGroup = checkFileResults.GetMethods(lidEnd.Line, lidEnd.Column, "", Some names)
 
         let methods = methodGroup.Methods
 
@@ -152,12 +153,12 @@ type internal FSharpSignatureHelpProvider
                 None  // not a named argument
 
         // Prepare the results
-        let results = List<_>()
+        let results = ResizeArray()
 
         for method in methods do
             // Create the documentation. Note, do this on the background thread, since doing it in the documentationBuild fails to build the XML index
-            let mainDescription = List()
-            let documentation = List()
+            let mainDescription = ResizeArray()
+            let documentation = ResizeArray()
             XmlDocumentation.BuildMethodOverloadTipText(documentationBuilder, RoslynHelpers.CollectTaggedText mainDescription, RoslynHelpers.CollectTaggedText documentation, method.StructuredDescription, false)
 
             let parameters = 

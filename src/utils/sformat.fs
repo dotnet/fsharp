@@ -1,11 +1,9 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // This file is compiled 3(!) times in the codebase
-//    - as the internal implementation of printf '%A' formatting 
-//           defines: RUNTIME
-//    - as the internal implementation of structured formatting in FSharp.Compiler.dll 
+//    - as the internal implementation of printf '%A' formatting in FSharp.Core
+//    - as the internal implementation of structured formatting in the compiler and F# Interactive
 //           defines: COMPILER 
-//           NOTE: this implementation is used by fsi.exe. This is very important.
 //
 // The one implementation file is used because we very much want to keep the implementations of
 // structured formatting the same for fsi.exe and '%A' printing. However fsi.exe may have
@@ -17,17 +15,10 @@
 #nowarn "52" // The value has been copied to ensure the original is not mutated by this operation
 
 #if COMPILER
-// FSharp.Compiler-proto.dll:
-// FSharp.Compiler.dll:
 namespace Internal.Utilities.StructuredFormat
 #else
-#if RUNTIME 
 // FSharp.Core.dll:
 namespace Microsoft.FSharp.Text.StructuredPrintfImpl
-#else
-// Powerpack: 
-namespace Microsoft.FSharp.Text.StructuredFormat
-#endif
 #endif
 
     // Breakable block layout implementation.
@@ -53,11 +44,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #endif
 
     [<StructuralEquality; NoComparison>]
-#if COMPILER
-    type internal LayoutTag =
-#else
     type LayoutTag =
-#endif
         | ActivePatternCase
         | ActivePatternResult
         | Alias
@@ -92,19 +79,11 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         | UnknownType
         | UnknownEntity
 
-#if COMPILER
-    type internal TaggedText =
-#else
     type TaggedText =
-#endif
         abstract Tag: LayoutTag
         abstract Text: string
-    
-#if COMPILER
-    type internal TaggedTextWriter =
-#else
+
     type TaggedTextWriter =
-#endif
         abstract Write: t: TaggedText -> unit
         abstract WriteLine: unit -> unit
 
@@ -112,11 +91,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     ///  - unbreakable, or
     ///  - breakable, and if broken the second block has a given indentation.
     [<StructuralEquality; NoComparison>]
-#if COMPILER
-    type internal Joint =
-#else
     type Joint =
-#endif
      | Unbreakable
      | Breakable of int
      | Broken of int
@@ -126,43 +101,23 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     ///
     /// If either juxt flag is true, then no space between words.
     [<NoEquality; NoComparison>]
-#if COMPILER
-    type internal Layout =
-#else
     type Layout =
-#endif
      | ObjLeaf of bool * obj * bool
      | Leaf of bool * TaggedText * bool
      | Node of bool * layout * bool * layout * bool * joint
      | Attr of string * (string * string) list * layout
 
-#if COMPILER
-    and internal layout = Layout
-#else
     and layout = Layout
-#endif
 
-#if COMPILER
-    and internal joint = Joint
-#else
     and joint = Joint
-#endif
 
     [<NoEquality; NoComparison>]
-#if COMPILER
-    type internal IEnvironment = 
-#else
     type IEnvironment = 
-#endif
         abstract GetLayout : obj -> layout
         abstract MaxColumns : int
         abstract MaxRows : int
 
-#if COMPILER 
-    module internal TaggedTextOps =
-#else
     module TaggedTextOps =
-#endif
         let tag tag text = 
           { new TaggedText with 
             member x.Tag = tag
@@ -250,11 +205,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             let arrow = tagPunctuation "->"
             let questionMark = tagPunctuation "?"
      
-#if COMPILER
-    module internal LayoutOps = 
-#else
     module LayoutOps = 
-#endif
         open TaggedTextOps
 
         let rec juxtLeft = function
@@ -279,34 +230,39 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         // constructors
 
 
-        let objL (obj:obj) = 
-            match obj with 
+        let objL (value:obj) = 
+            match value with 
             | :? string as s -> Leaf (false, tag LayoutTag.Text s, false)
             | o -> ObjLeaf (false, o, false)
+
         let sLeaf  (l, t, r) = Leaf (l, t, r)
-        let wordL  str = sLeaf (false,str,false)
-        let sepL   str = sLeaf (true ,str,true)   
-        let rightL str = sLeaf (true ,str,false)   
-        let leftL  str = sLeaf (false,str,true)
+
+        let wordL  text = sLeaf (false,text,false)
+        let sepL   text = sLeaf (true ,text,true)   
+        let rightL text = sLeaf (true ,text,false)   
+        let leftL  text = sLeaf (false,text,true)
+
         let emptyL = sLeaf (true, tag LayoutTag.Text "",true)
-        let isEmptyL = function 
+
+        let isEmptyL layout = 
+            match layout with 
             | Leaf(true, s, true) -> s.Text = ""
             | _ -> false
 
-        let aboveL  l r = mkNode l r (Broken 0)
+        let aboveL  layout1 layout2 = mkNode layout1 layout2 (Broken 0)
 
-        let tagAttrL tag attrs l = Attr(tag,attrs,l)
+        let tagAttrL text maps layout = Attr(text,maps,layout)
 
         let apply2 f l r = if isEmptyL l then r else
                            if isEmptyL r then l else f l r
 
-        let (^^)  l r  = mkNode l r (Unbreakable)
-        let (++)  l r  = mkNode l r (Breakable 0)
-        let (--)  l r  = mkNode l r (Breakable 1)
-        let (---) l r  = mkNode l r (Breakable 2)
-        let (@@)   l r = apply2 (fun l r -> mkNode l r (Broken 0)) l r
-        let (@@-)  l r = apply2 (fun l r -> mkNode l r (Broken 1)) l r
-        let (@@--) l r = apply2 (fun l r -> mkNode l r (Broken 2)) l r
+        let (^^)  layout1 layout2  = mkNode layout1 layout2 (Unbreakable)
+        let (++)  layout1 layout2  = mkNode layout1 layout2 (Breakable 0)
+        let (--)  layout1 layout2  = mkNode layout1 layout2 (Breakable 1)
+        let (---) layout1 layout2  = mkNode layout1 layout2 (Breakable 2)
+        let (@@)   layout1 layout2 = apply2 (fun l r -> mkNode l r (Broken 0)) layout1 layout2
+        let (@@-)  layout1 layout2 = apply2 (fun l r -> mkNode l r (Broken 1)) layout1 layout2
+        let (@@--) layout1 layout2 = apply2 (fun l r -> mkNode l r (Broken 2)) layout1 layout2
         let tagListL tagger = function
             | []    -> emptyL
             | [x]   -> x
@@ -316,26 +272,28 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                   | y::ys -> process' ((tagger prefixL) ++ y) ys
                 process' x xs
             
-        let commaListL x = tagListL (fun prefixL -> prefixL ^^ rightL (Literals.comma)) x
-        let semiListL x  = tagListL (fun prefixL -> prefixL ^^ rightL (Literals.semicolon)) x
-        let spaceListL x = tagListL (fun prefixL -> prefixL) x
-        let sepListL x y = tagListL (fun prefixL -> prefixL ^^ x) y
-        let bracketL l = leftL Literals.leftParen ^^ l ^^ rightL Literals.rightParen
-        let tupleL xs = bracketL (sepListL (sepL Literals.comma) xs)
-        let aboveListL = function
-          | []    -> emptyL
-          | [x]   -> x
-          | x::ys -> List.fold (fun pre y -> pre @@ y) x ys
+        let commaListL layouts = tagListL (fun prefixL -> prefixL ^^ rightL (Literals.comma)) layouts
+        let semiListL layouts  = tagListL (fun prefixL -> prefixL ^^ rightL (Literals.semicolon)) layouts
+        let spaceListL layouts = tagListL (fun prefixL -> prefixL) layouts
+        let sepListL layout1 layouts = tagListL (fun prefixL -> prefixL ^^ layout1) layouts
+        let bracketL layout = leftL Literals.leftParen ^^ layout ^^ rightL Literals.rightParen
+        let tupleL layouts = bracketL (sepListL (sepL Literals.comma) layouts)
+        let aboveListL layouts = 
+            match layouts with
+            | []    -> emptyL
+            | [x]   -> x
+            | x::ys -> List.fold (fun pre y -> pre @@ y) x ys
 
-        let optionL xL = function
-          | None   -> wordL (tagUnionCase "None")
-          | Some x -> wordL (tagUnionCase "Some") -- (xL x)
+        let optionL selector value = 
+            match value with 
+            | None   -> wordL (tagUnionCase "None")
+            | Some x -> wordL (tagUnionCase "Some") -- (selector x)
 
-        let listL xL xs = leftL Literals.leftBracket ^^ sepListL (sepL Literals.semicolon) (List.map xL xs) ^^ rightL Literals.rightBracket
+        let listL selector value = leftL Literals.leftBracket ^^ sepListL (sepL Literals.semicolon) (List.map selector value) ^^ rightL Literals.rightBracket
 
-        let squareBracketL x = leftL Literals.leftBracket ^^ x ^^ rightL Literals.rightBracket    
+        let squareBracketL layout = leftL Literals.leftBracket ^^ layout ^^ rightL Literals.rightBracket    
 
-        let braceL         x = leftL Literals.leftBrace ^^ x ^^ rightL Literals.rightBrace
+        let braceL         layout = leftL Literals.leftBrace ^^ layout ^^ rightL Literals.rightBrace
 
         let boundedUnfoldL
                     (itemL     : 'a -> layout)
@@ -351,23 +309,16 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                       else itemL x :: consume (n-1) z  // cons recursive... 
           consume maxLength z  
 
-        let unfoldL itemL project z maxLength = boundedUnfoldL  itemL project (fun _ -> false) z maxLength
+        let unfoldL selector folder state count = boundedUnfoldL  selector folder (fun _ -> false) state count
           
     /// These are a typical set of options used to control structured formatting.
     [<NoEquality; NoComparison>]
-#if COMPILER
-    type internal FormatOptions =
-#else
     type FormatOptions =
-#endif
         { FloatingPointFormat: string;
           AttributeProcessor: (string -> (string * string) list -> bool -> unit);
-#if RUNTIME
-#else
-#if COMPILER    // FSharp.Compiler.dll: This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
+#if COMPILER // This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
           PrintIntercepts: (IEnvironment -> obj -> Layout option) list;
           StringLimit : int;
-#endif
 #endif
           FormatProvider: System.IFormatProvider;
 #if FX_RESHAPED_REFLECTION
@@ -383,12 +334,9 @@ namespace Microsoft.FSharp.Text.StructuredFormat
           ShowIEnumerable: bool; }
         static member Default =
             { FormatProvider = (System.Globalization.CultureInfo.InvariantCulture :> System.IFormatProvider);
-#if RUNTIME
-#else
-#if COMPILER    // FSharp.Compiler.dll: This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
+#if COMPILER    // This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
               PrintIntercepts = [];
               StringLimit = System.Int32.MaxValue;
-#endif
 #endif
               AttributeProcessor= (fun _ _ _ -> ());
 #if FX_RESHAPED_REFLECTION
@@ -406,11 +354,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 
 
 
-#if COMPILER
-    module internal ReflectUtils = 
-#else
     module ReflectUtils = 
-#endif
         open System
         open System.Reflection
 
@@ -538,11 +482,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                 | _ -> 
                   GetValueInfoOfObject bindingFlags (obj) 
 
-#if COMPILER
-    module internal Display = 
-#else
     module Display = 
-#endif
 
         open ReflectUtils
         open LayoutOps
@@ -568,11 +508,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
 #endif
         /// If "str" ends with "ending" then remove it from "str", otherwise no change.
         let trimEnding (ending:string) (str:string) =
-#if FX_NO_CULTURE_INFO_ARGS
-          if str.EndsWith(ending) then 
-#else
           if str.EndsWith(ending,StringComparison.Ordinal) then 
-#endif
               str.Substring(0,str.Length - ending.Length) 
           else str
 
@@ -886,11 +822,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                 raise (System.MissingMethodException(msg))
 #endif
 #else
-#if FX_NO_CULTURE_INFO_ARGS
-            ty.InvokeMember(name, (BindingFlags.GetProperty ||| BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic), null, obj, [| |])
-#else
             ty.InvokeMember(name, (BindingFlags.GetProperty ||| BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic), null, obj, [| |],CultureInfo.InvariantCulture)
-#endif
 #endif
         let getField obj (fieldInfo: FieldInfo) =
             fieldInfo.GetValue(obj)
@@ -1082,9 +1014,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                                 None
                                   // Seed with an empty layout with a space to the left for formatting purposes
                                   buildObjMessageL txt [leftL (tagText "")] 
-#if RUNTIME
-#else
-#if COMPILER    // FSharp.Compiler.dll: This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
+#if COMPILER    // This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
                         let res = 
                             match res with 
                             | Some _ -> res
@@ -1094,7 +1024,6 @@ namespace Microsoft.FSharp.Text.StructuredFormat
                                                 member env.MaxColumns = opts.PrintLength
                                                 member env.MaxRows = opts.PrintLength }
                                 opts.PrintIntercepts |> List.tryPick (fun intercept -> intercept env x)
-#endif
 #endif
                         let res = 
                             match res with 
@@ -1379,29 +1308,29 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         let output_layout opts oc l = 
             output_layout_tagged opts (asTaggedTextWriter oc) l
 
-        let layout_to_string opts l = 
-            l |> squash_layout opts 
-              |> showL opts ((leafFormatter opts) >> toText)
+        let layout_to_string options layout = 
+            layout |> squash_layout options 
+              |> showL options ((leafFormatter options) >> toText)
 
         let output_any_ex opts oc x = x |> any_to_layout opts |> output_layout opts oc
 
-        let output_any oc x = output_any_ex FormatOptions.Default oc x
+        let output_any writer x = output_any_ex FormatOptions.Default writer x
 
         let layout_as_string opts x = x |> any_to_layout opts |> layout_to_string opts
 
         let any_to_string x = layout_as_string FormatOptions.Default x
 
-#if RUNTIME
-#if FX_RESHAPED_REFLECTION
-        let internal anyToStringForPrintf opts (showNonPublicMembers : bool) x = 
-            let bindingFlags = ReflectionUtils.toBindingFlags showNonPublicMembers
-#else
-        let internal anyToStringForPrintf opts (bindingFlags:BindingFlags) x = 
-#endif
-            x |> anyL ShowAll bindingFlags opts |> layout_to_string opts
-#endif
-
 #if COMPILER
         /// Called 
         let fsi_any_to_layout opts x = anyL ShowTopLevelBinding BindingFlags.Public opts x
-#endif  
+#else
+// FSharp.Core
+#if FX_RESHAPED_REFLECTION
+        let internal anyToStringForPrintf options (showNonPublicMembers : bool) x = 
+            let bindingFlags = ReflectionUtils.toBindingFlags showNonPublicMembers
+#else
+        let internal anyToStringForPrintf options (bindingFlags:BindingFlags) x = 
+#endif
+            x |> anyL ShowAll bindingFlags options |> layout_to_string options
+#endif
+

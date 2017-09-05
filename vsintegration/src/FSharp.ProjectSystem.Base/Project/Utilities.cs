@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 extern alias Shell14;
 
 using System;
@@ -996,6 +996,30 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
             return true;
         }
+
+        /// <summary>
+        /// Retrives the configuration and the platform using the IVsSolutionBuildManager2 interface.
+        /// </summary>
+        /// <param name="serviceProvider">A service provider.</param>
+        /// <param name="hierarchy">The hierrachy whose configuration is requested.</param>
+        /// <returns>true if successfull.</returns>
+        public static bool TryGetConfigurationAndPlatform(IVsCfg config, out ConfigCanonicalName configCanonicalName)
+        {
+
+            string configName = null;
+            config.get_DisplayName(out configName);
+
+            if (configName == null)
+            {
+                configCanonicalName = new ConfigCanonicalName();
+                return false;
+            }
+
+            configCanonicalName = new ConfigCanonicalName(configName);
+
+            return true;
+        }
+
 
         /// <summary>
         /// Determines whether the shell is in command line mode.
