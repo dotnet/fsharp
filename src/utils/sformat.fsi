@@ -249,7 +249,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         val sepListL   : layout1:Layout -> layouts:Layout list -> Layout
 
         /// Wrap round brackets around Layout.
-        val bracketL   : Layout:Layout -> Layout
+        val bracketL   : layout:Layout -> Layout
         /// Wrap square brackets around layout.    
         val squareBracketL   : layout:Layout -> Layout
         /// Wrap braces around layout.        
