@@ -2526,10 +2526,7 @@ let _ = fill_u_Vals (u_list u_Val)
 //---------------------------------------------------------------------------
 
 let pickleModuleOrNamespace mspec st = p_entity_spec mspec st
-<<<<<<< HEAD
 
-=======
->>>>>>> a5904a3fe2f556e5d1b2900e6befbd82c57e6387
 let pickleCcuInfo minfo st = 
     p_tup4 pickleModuleOrNamespace p_string p_bool (p_space 3) (minfo.mspec, minfo.compileTimeWorkingDir, minfo.usesQuotations,()) st
 

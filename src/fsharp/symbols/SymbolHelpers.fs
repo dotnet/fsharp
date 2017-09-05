@@ -380,6 +380,7 @@ module internal SymbolHelpers =
         | Item.UnionCase(ucinfo, _)     -> Some (rangeOfUnionCaseInfo preferFlag ucinfo)
         | Item.ActivePatternCase apref -> Some (rangeOfValRef preferFlag apref.ActivePatternVal)
         | Item.ExnCase tcref           -> Some tcref.Range
+        | Item.AnonRecdField _         -> None // there is no declaration for these
         | Item.RecdField rfinfo        -> Some (rangeOfRecdFieldInfo preferFlag rfinfo)
         | Item.Event einfo             -> rangeOfEventInfo preferFlag einfo
         | Item.ILField _               -> None
@@ -789,15 +790,9 @@ module internal SymbolHelpers =
                   else 1010
               | Item.ILField(ILFieldInfo(_, fld)) -> 
                   System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode fld // hash on the object identity of the AbstractIL metadata blob for the field
-<<<<<<< HEAD
               | Item.TypeVar (nm, _tp) -> hash nm
               | Item.CustomOperation (_, _, Some minfo) -> minfo.ComputeHashCode()
               | Item.CustomOperation (_, _, None) -> 1
-=======
-              | Item.TypeVar (nm,_tp) -> hash nm
-              | Item.CustomOperation (_,_,Some minfo) -> minfo.ComputeHashCode()
-              | Item.CustomOperation (_,_,None) -> 1
->>>>>>> a5904a3fe2f556e5d1b2900e6befbd82c57e6387
               | Item.ModuleOrNamespaces(modref :: _) -> hash (fullDisplayTextOfModRef modref)          
               | Item.SetterArg(id, _) -> hash (id.idRange, id.idText)
               | Item.MethodGroup(_, meths, _) -> meths |> List.fold (fun st a -> st + a.ComputeHashCode()) 0
@@ -888,6 +883,7 @@ module internal SymbolHelpers =
         | Item.ActivePatternResult(apinfo, _ty, idx, _) -> apinfo.Names.[idx]
         | Item.ActivePatternCase apref -> FullNameOfItem g (Item.Value apref.ActivePatternVal)  + "." + apref.Name 
         | Item.ExnCase ecref -> fullDisplayTextOfExnRef ecref 
+        | Item.AnonRecdField(anon, argTys, i) -> anon.Names.[i]
         | Item.RecdField rfinfo -> fullDisplayTextOfRecdFieldRef  rfinfo.RecdFieldRef
         | Item.NewDef id -> id.idText
         | Item.ILField finfo -> bufs (fun os -> NicePrint.outputILTypeRef denv os finfo.ILTypeRef; bprintf os ".%s" finfo.FieldName)
@@ -1224,8 +1220,6 @@ module internal SymbolHelpers =
             else
                 FSharpStructuredToolTipElement.Single (layout, xml)
 
-<<<<<<< HEAD
-=======
         | Item.AnonRecdField(anon, argTys, i) -> 
             let argTy = argTys.[i]
             let nm = anon.Names.[i]
@@ -1235,9 +1229,8 @@ module internal SymbolHelpers =
                 wordL (tagRecordField nm) ^^
                 RightL.colon ^^
                 NicePrint.layoutType denv argTy
-            FSharpStructuredToolTipElement.Single(layout, FSharpXmlDoc.None)
+            FSharpStructuredToolTipElement.Single (layout, FSharpXmlDoc.None)
             
->>>>>>> a5904a3fe2f556e5d1b2900e6befbd82c57e6387
         // Named parameters
         | Item.ArgName (id, argTy, _) -> 
             let argTy, _ = PrettyTypes.PrettifyType g argTy
@@ -1356,6 +1349,8 @@ module internal SymbolHelpers =
 
         | Item.RecdField rfi -> 
             (rfi.TyconRef |> ticksAndArgCountTextOfTyconRef)+"."+rfi.Name |> Some
+        
+        | Item.AnonRecdField _ -> None 
         
         | Item.ILField finfo ->   
              match finfo with 

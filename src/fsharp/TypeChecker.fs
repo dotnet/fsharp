@@ -5751,11 +5751,7 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
         let argtys = UnifyAnonRecdType env.eContextInfo cenv env.DisplayEnv m overallTy anonInfo
         args |> List.iteri (fun i (x, _) -> 
             let item = Item.AnonRecdField(anonInfo, argtys, i)
-<<<<<<< HEAD
-            CallNameResolutionSink cenv.tcSink (x.idRange, env.NameEnv, item, item, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights))
-=======
-            CallNameResolutionSink cenv.tcSink (x.idRange,env.NameEnv,item,item,emptyTyparInst,ItemOccurence.Use,env.DisplayEnv,env.eAccessRights))
->>>>>>> a5904a3fe2f556e5d1b2900e6befbd82c57e6387
+            CallNameResolutionSink cenv.tcSink (x.idRange, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights))
         let flexes = argtys |> List.map (fun _ -> true)
         let args', tpenv = TcExprs cenv env m tpenv flexes argtys (List.map snd args)
         mkAnonRecd cenv.g m anonInfo args' argtys, tpenv
@@ -6144,13 +6140,13 @@ and TcIndexerThen cenv env overallTy mWholeExpr mDot tpenv wholeExpr e1 indexArg
             let sliceOpPath = ["Microsoft";"FSharp";"Core";"Operators";"OperatorIntrinsics"]
             let info = 
                 match isString, isArray, wholeExpr with 
-                | false, true, SynExpr.DotIndexedGet(_, [SynIndexerArg.One(SynExpr.Tuple (false, [_;_] as idxs, _, _))], _, _)           -> Some (indexOpPath, "GetArray2D", idxs)
-                | false, true, SynExpr.DotIndexedGet(_, [SynIndexerArg.One(SynExpr.Tuple (false, [_;_;_] as idxs, _, _))], _, _)         -> Some (indexOpPath, "GetArray3D", idxs)
-                | false, true, SynExpr.DotIndexedGet(_, [SynIndexerArg.One(SynExpr.Tuple (false, [_;_;_;_] as idxs, _, _))], _, _)       -> Some (indexOpPath, "GetArray4D", idxs)
+                | false, true, SynExpr.DotIndexedGet(_, [SynIndexerArg.One(SynExpr.Tuple (false, ([_;_] as idxs), _, _))], _, _)           -> Some (indexOpPath, "GetArray2D", idxs)
+                | false, true, SynExpr.DotIndexedGet(_, [SynIndexerArg.One(SynExpr.Tuple (false, ([_;_;_] as idxs), _, _))], _, _)         -> Some (indexOpPath, "GetArray3D", idxs)
+                | false, true, SynExpr.DotIndexedGet(_, [SynIndexerArg.One(SynExpr.Tuple (false, ([_;_;_;_] as idxs), _, _))], _, _)       -> Some (indexOpPath, "GetArray4D", idxs)
                 | false, true, SynExpr.DotIndexedGet(_, [SynIndexerArg.One idx], _, _)                                          -> Some (indexOpPath, "GetArray", [idx])
-                | false, true, SynExpr.DotIndexedSet(_, [SynIndexerArg.One(SynExpr.Tuple (false, [_;_] as idxs, _, _))] , e3, _, _, _)     -> Some (indexOpPath, "SetArray2D", (idxs @ [e3]))
-                | false, true, SynExpr.DotIndexedSet(_, [SynIndexerArg.One(SynExpr.Tuple (false, [_;_;_] as idxs, _, _))] , e3, _, _, _)   -> Some (indexOpPath, "SetArray3D", (idxs @ [e3]))
-                | false, true, SynExpr.DotIndexedSet(_, [SynIndexerArg.One(SynExpr.Tuple (false, [_;_;_;_] as idxs, _, _))] , e3, _, _, _) -> Some (indexOpPath, "SetArray4D", (idxs @ [e3]))
+                | false, true, SynExpr.DotIndexedSet(_, [SynIndexerArg.One(SynExpr.Tuple (false, ([_;_] as idxs), _, _))] , e3, _, _, _)     -> Some (indexOpPath, "SetArray2D", (idxs @ [e3]))
+                | false, true, SynExpr.DotIndexedSet(_, [SynIndexerArg.One(SynExpr.Tuple (false, ([_;_;_] as idxs), _, _))] , e3, _, _, _)   -> Some (indexOpPath, "SetArray3D", (idxs @ [e3]))
+                | false, true, SynExpr.DotIndexedSet(_, [SynIndexerArg.One(SynExpr.Tuple (false, ([_;_;_;_] as idxs), _, _))] , e3, _, _, _) -> Some (indexOpPath, "SetArray4D", (idxs @ [e3]))
                 | false, true, SynExpr.DotIndexedSet(_, [SynIndexerArg.One _], e3, _, _, _)                                       -> Some (indexOpPath, "SetArray", (GetIndexArgs indexArgs @ [e3]))
                 | true, false, SynExpr.DotIndexedGet(_, [SynIndexerArg.Two _], _, _)                                            -> Some (sliceOpPath, "GetStringSlice", GetIndexArgs indexArgs)
                 | true, false, SynExpr.DotIndexedGet(_, [SynIndexerArg.One _], _, _)                                            -> Some (indexOpPath, "GetString", GetIndexArgs indexArgs)

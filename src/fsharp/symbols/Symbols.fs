@@ -714,12 +714,12 @@ and FSharpFieldData =
         | RecdOrClass v -> v.RecdField |> Choice1Of3
         | Union (v, n) -> v.FieldByIndex(n) |> Choice1Of3
         | ILField (_, f) -> f |> Choice2Of3
-    member x.DeclaringTyconRef =
+    member x.TryDeclaringTyconRef =
         match x with 
         | AnonField _ -> None
-        | RecdOrClass v -> v.TyconRef
-        | Union (v, _) -> v.TyconRef
-        | ILField (g, f) -> tcrefOfAppTy g f.EnclosingType
+        | RecdOrClass v -> Some v.TyconRef
+        | Union (v, _) -> Some v.TyconRef
+        | ILField (g, f) -> Some (tcrefOfAppTy g f.EnclosingType)
 
 and FSharpField(cenv: cenv, d: FSharpFieldData)  =
     inherit FSharpSymbol (cenv, 
@@ -817,11 +817,7 @@ and FSharpField(cenv: cenv, d: FSharpFieldData)  =
             | Union (v, _) -> 
                 let unionCase = UnionCaseInfo(generalizeTypars v.TyconRef.TyparsNoRange, v)
                 SymbolHelpers.GetXmlDocSigOfUnionCaseInfo unionCase
-<<<<<<< HEAD
             | ILField (_, f) -> 
-=======
-            | ILField (_,f) -> 
->>>>>>> a5904a3fe2f556e5d1b2900e6befbd82c57e6387
                 SymbolHelpers.GetXmlDocSigOfILFieldInfo cenv.infoReader range0 f
             | AnonField _ -> None
         match xmlsig with

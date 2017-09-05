@@ -1420,9 +1420,6 @@ and MemberConstraintSolutionOfMethInfo css m minfo minst =
 
 #endif
 
-and MemberConstraintSolutionOfRecdFieldInfo rfinfo isSet =
-    FSRecdFieldSln(rfinfo.TypeInst, rfinfo.RecdFieldRef, isSet)
-
 /// Write into the reference cell stored in the TAST and add to the undo trace if necessary
 and TransactMemberConstraintSolution traitInfo (trace:OptionalTrace) sln  =
     let prev = traitInfo.Solution 
@@ -2663,11 +2660,11 @@ let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:Trait
                            | Some ilActualTypeRef -> 
                                let actualTyconRef = Import.ImportILTypeRef amap m ilActualTypeRef 
                                MethInfo.CreateILExtensionMeth(amap, m, typ, actualTyconRef, None, mdef)
-                       Choice1Of4 (ilMethInfo, minst)
+                       Choice1Of5 (ilMethInfo, minst)
                   | FSMethSln(typ, vref, minst) ->
-                       Choice1Of4  (FSMeth(g, typ, vref, None), minst)
+                       Choice1Of5  (FSMeth(g, typ, vref, None), minst)
                   | FSRecdFieldSln(tinst, rfref, isSetProp) ->
-                       Choice2Of4  (tinst, rfref, isSetProp)
+                       Choice2Of5  (tinst, rfref, isSetProp)
                   | FSAnonRecdFieldSln(anonInfo, tinst, i) -> 
                        Choice3Of5  (anonInfo, tinst, i)
                   | BuiltInSln -> 

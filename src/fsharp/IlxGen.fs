@@ -3689,7 +3689,7 @@ and GenObjectMethod cenv eenvinner (cgbuf:CodeGenBuffer) useMethodImpl tmethod =
         let methodParams = List.concat methodParams
         let methodParamsNonSelf = match methodParams with [] -> [] | _::t -> t // drop the 'this' arg when computing better argument names for IL parameters
         let ilParamsOfOverridingMethod,ilReturnOfOverridingMethod = GenActualSlotsig m cenv cgbuf.mgbuf eenvUnderTypars slotsig methTyparsOfOverridingMethod methodParamsNonSelf 
-        let ilAttribs = GenAttrs cenvcgbuf.mgbuf eenvinner attribs
+        let ilAttribs = GenAttrs cenv cgbuf.mgbuf eenvinner attribs
 
         // Args are stored starting at #1
         let eenvForMeth = AddStorageForLocalVals cenv.g (methodParams  |> List.mapi (fun i v -> (v,Arg i)))  eenvUnderTypars

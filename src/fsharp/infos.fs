@@ -87,21 +87,13 @@ let GetSuperTypeOfType g amap m typ =
             Some g.obj_ty
         elif isStructTupleTy g typ then 
             Some g.obj_ty
-<<<<<<< HEAD
-        elif isAnonRecdTy g typ then 
-            Some g.obj_ty
-=======
->>>>>>> a5904a3fe2f556e5d1b2900e6befbd82c57e6387
         elif isFSharpStructOrEnumTy g typ then
             if isFSharpEnumTy g typ then
                 Some(g.system_Enum_typ)
             else
                 Some (g.system_Value_typ)
-<<<<<<< HEAD
-=======
         elif isAnonRecdTy g typ then 
             Some g.obj_ty
->>>>>>> a5904a3fe2f556e5d1b2900e6befbd82c57e6387
         elif isRecdTy g typ || isUnionTy g typ then
             Some g.obj_ty
         else 

@@ -1652,8 +1652,10 @@ let isStructOrEnumTyconTy g ty =
     | Some tcref -> tcref.Deref.IsStructOrEnumTycon
     | _ -> false
 
-<<<<<<< HEAD
-let isStructTy g ty = isStructOrEnumTyconTy g ty || isStructTupleTy g ty || isStructAnonRecdTy g ty
+let isStructRecordOrUnionTyconTy g ty = 
+    match tryDestAppTy g ty with
+    | Some tcref -> tcref.Deref.IsStructRecordOrUnionTycon
+    | _ -> false
 
 let isStructTy g ty =
     match tryDestAppTy g ty with
@@ -1661,17 +1663,6 @@ let isStructTy g ty =
         let tycon = tcref.Deref
         tycon.IsStructRecordOrUnionTycon || tycon.IsStructOrEnumTycon
     | _ -> isStructAnonRecdTy g ty
-=======
-let isStructRecordOrUnionTyconTy g ty = 
-    match tryDestAppTy g ty with
-    | Some tcref -> tcref.Deref.IsStructRecordOrUnionTycon
-    | _ -> false
-
-let isStructTy g ty = 
-    isStructOrEnumTyconTy g ty || 
-    isStructTupleTy g ty || 
-    isStructAnonRecdTy g ty
->>>>>>> a5904a3fe2f556e5d1b2900e6befbd82c57e6387
 
 let isRefTy g ty = 
     not (isStructOrEnumTyconTy g ty) &&

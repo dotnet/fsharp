@@ -1976,10 +1976,6 @@ let main2b (tcImportsCapture,dynamicAssemblyCreator) (Args (ctok, tcConfig: TcCo
     // Note that SerializableAttribute may be relocated in the future but now resides in mscorlib.
     let codegenResults = GenerateIlxCode ((if Option.isSome dynamicAssemblyCreator then IlReflectBackend else IlWriteBackend), Option.isSome dynamicAssemblyCreator, false, tcConfig, topAttrs, optimizedImpls, generatedCcu.AssemblyName, ilxGenerator)
     let topAssemblyAttrs = codegenResults.topAssemblyAttrs
-<<<<<<< HEAD
-    // remove any security attributes from the top-level assembly attribute list
-=======
->>>>>>> a5904a3fe2f556e5d1b2900e6befbd82c57e6387
     let topAttrs = {topAttrs with assemblyAttrs=topAssemblyAttrs}
     let permissionSets = codegenResults.permissionSets
     let secDecls = mkILSecurityDecls permissionSets 
