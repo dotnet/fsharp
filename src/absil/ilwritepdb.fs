@@ -407,42 +407,42 @@ let generatePortablePdb (embedAllSource:bool) (embedSourceList:string list) (sou
         // Write the scopes
         let nextHandle handle = MetadataTokens.LocalVariableHandle(MetadataTokens.GetRowNumber(LocalVariableHandle.op_Implicit(handle)) + 1)
         let writeMethodScope scope =
-            match scope with
-            | Some scope ->
-                let scopeSorter (scope1:PdbMethodScope) (scope2:PdbMethodScope) =
-                    if scope1.StartOffset > scope2.StartOffset then 1
-                    elif scope1.StartOffset < scope2.StartOffset then -1
-                    elif (scope1.EndOffset - scope1.StartOffset) > (scope2.EndOffset - scope2.StartOffset) then -1
-                    elif (scope1.EndOffset - scope1.StartOffset) < (scope2.EndOffset - scope2.StartOffset) then 1
-                    else 0
+            let scopeSorter (scope1:PdbMethodScope) (scope2:PdbMethodScope) =
+                if scope1.StartOffset > scope2.StartOffset then 1
+                elif scope1.StartOffset < scope2.StartOffset then -1
+                elif (scope1.EndOffset - scope1.StartOffset) > (scope2.EndOffset - scope2.StartOffset) then -1
+                elif (scope1.EndOffset - scope1.StartOffset) < (scope2.EndOffset - scope2.StartOffset) then 1
+                else 0
 
-                let collectScopes scope =
-                    let list = new List<PdbMethodScope>()
-                    let rec toList scope =
-                        list.Add scope
-                        scope.Children |> Seq.iter(fun s -> toList s)
-                    toList scope
-                    list.ToArray() |> Array.sortWith<PdbMethodScope> scopeSorter
+            let collectScopes scope =
+                let list = new List<PdbMethodScope>()
+                let rec toList scope =
+                    list.Add scope
+                    scope.Children |> Seq.iter(fun s -> toList s)
+                toList scope
+                list.ToArray() |> Array.sortWith<PdbMethodScope> scopeSorter
 
-                collectScopes scope |> Seq.iter(fun s ->
-                                        if s.Children.Length = 0 then
-                                            metadata.AddLocalScope(MetadataTokens.MethodDefinitionHandle(minfo.MethToken),
-                                                                   Unchecked.defaultof<ImportScopeHandle>,
-                                                                   nextHandle lastLocalVariableHandle,
-                                                                   Unchecked.defaultof<LocalConstantHandle>,
-                                                                   0, s.EndOffset - s.StartOffset ) |>ignore
-                                        else
-                                            metadata.AddLocalScope(MetadataTokens.MethodDefinitionHandle(minfo.MethToken),
-                                                                   Unchecked.defaultof<ImportScopeHandle>,
-                                                                   nextHandle lastLocalVariableHandle,
-                                                                   Unchecked.defaultof<LocalConstantHandle>,
-                                                                   s.StartOffset, s.EndOffset - s.StartOffset) |>ignore
+            collectScopes scope |> Seq.iter(fun s ->
+                                    if s.Children.Length = 0 then
+                                        metadata.AddLocalScope(MetadataTokens.MethodDefinitionHandle(minfo.MethToken),
+                                                               Unchecked.defaultof<ImportScopeHandle>,
+                                                               nextHandle lastLocalVariableHandle,
+                                                               Unchecked.defaultof<LocalConstantHandle>,
+                                                               0, s.EndOffset - s.StartOffset ) |>ignore
+                                    else
+                                        metadata.AddLocalScope(MetadataTokens.MethodDefinitionHandle(minfo.MethToken),
+                                                               Unchecked.defaultof<ImportScopeHandle>,
+                                                               nextHandle lastLocalVariableHandle,
+                                                               Unchecked.defaultof<LocalConstantHandle>,
+                                                               s.StartOffset, s.EndOffset - s.StartOffset) |>ignore
 
-                                        for localVariable in s.Locals do
-                                            lastLocalVariableHandle <- metadata.AddLocalVariable(LocalVariableAttributes.None, localVariable.Index, metadata.GetOrAddString(localVariable.Name))
-                                        )
-            | None -> ()
-        writeMethodScope minfo.RootScope )
+                                    for localVariable in s.Locals do
+                                        lastLocalVariableHandle <- metadata.AddLocalVariable(LocalVariableAttributes.None, localVariable.Index, metadata.GetOrAddString(localVariable.Name))
+                                    )
+
+        match minfo.RootScope with
+        | None -> ()
+        | Some scope -> writeMethodScope scope )
 
     let entryPoint =
         match info.EntryPoint with
@@ -557,16 +557,16 @@ let writePdbInfo showTimes f fpdb info cvChunk =
 
               // Write the scopes 
               let rec writePdbScope parent sco = 
-                    if parent = None || sco.Locals.Length <> 0 || sco.Children.Length <> 0 then
-                        // Only nest scopes if the child scope is a different size from 
-                        let nested =
-                            match parent with
-                            | Some p -> sco.StartOffset <> p.StartOffset || sco.EndOffset <> p.EndOffset
-                            | None -> true
-                        if nested then pdbOpenScope !pdbw sco.StartOffset
-                        sco.Locals |> Array.iter (fun v -> pdbDefineLocalVariable !pdbw v.Name v.Signature v.Index)
-                        sco.Children |> Array.iter (writePdbScope (if nested then Some sco else parent))
-                        if nested then pdbCloseScope !pdbw sco.EndOffset
+                  if parent = None || sco.Locals.Length <> 0 || sco.Children.Length <> 0 then
+                      // Only nest scopes if the child scope is a different size from 
+                      let nested =
+                          match parent with
+                          | Some p -> sco.StartOffset <> p.StartOffset || sco.EndOffset <> p.EndOffset
+                          | None -> true
+                      if nested then pdbOpenScope !pdbw sco.StartOffset
+                      sco.Locals |> Array.iter (fun v -> pdbDefineLocalVariable !pdbw v.Name v.Signature v.Index)
+                      sco.Children |> Array.iter (writePdbScope (if nested then Some sco else parent))
+                      if nested then pdbCloseScope !pdbw sco.EndOffset
 
               match minfo.RootScope with
               | None -> ()
