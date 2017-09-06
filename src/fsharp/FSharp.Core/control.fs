@@ -974,33 +974,16 @@ namespace Microsoft.FSharp.Control
             let tcs = new TaskCompletionSource<_>(taskCreationOptions)
 
             // The contract: 
-            //      a) cancellation signal should always propagate to task
-            //      b) CancellationTokenSource that produced a token must not be disposed until the task.IsComplete
-            // We are:
-            //      1) registering for cancellation signal here so that not to miss the signal
-            //      2) disposing the registration just before setting result/exception on TaskCompletionSource -
-            //              otherwise we run a chance of disposing registration on already disposed  CancellationTokenSource
-            //              (See (b) above)
-            //      3) ensuring if reg is disposed, we do SetResult
-            let barrier = VolatileBarrier()
-            let reg = token.Register(fun _ -> if barrier.Proceed then tcs.SetCanceled())
+            //      a) cancellation signal should always propagate to the computation
+            //      b) when the task IsCompleted -> nothing is running anymore
             let task = tcs.Task
-            let disposeReg() =
-                barrier.Stop()
-                if not (task.IsCanceled) then reg.Dispose()
-
-            let a = 
-                async { 
-                    try
-                        let! result = computation
-                        do 
-                            disposeReg()
-                            tcs.TrySetResult(result) |> ignore
-                    with exn -> 
-                        disposeReg()
-                        tcs.TrySetException(exn) |> ignore
-                }
-            Start(token, a)
+            queueAsync
+                token
+                (fun r -> tcs.SetResult r |> fake)
+                (fun edi -> tcs.SetException edi.SourceException |> fake)
+                (fun _ -> tcs.SetCanceled() |> fake)
+                computation
+            |> unfake
             task
 
     [<Sealed>]
