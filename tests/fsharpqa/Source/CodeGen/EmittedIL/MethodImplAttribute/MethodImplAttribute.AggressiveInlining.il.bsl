@@ -36,13 +36,13 @@
   // Offset: 0x00000350 Length: 0x00000085
 }
 .module MethodImplAttribute.AggressiveInlining.dll
-// MVID: {59B18959-66DC-14D3-A745-03835989B159}
+// MVID: {59B1914F-66DC-14D3-A745-03834F91B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x002E0000
+// Image base: 0x002D0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

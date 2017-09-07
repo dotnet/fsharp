@@ -32,13 +32,13 @@
   // Offset: 0x00000308 Length: 0x000000F5
 }
 .module MethodImplNoInline.exe
-// MVID: {59B18959-4480-09E2-A745-03835989B159}
+// MVID: {59B1914F-4480-09E2-A745-03834F91B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00F20000
+// Image base: 0x01080000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

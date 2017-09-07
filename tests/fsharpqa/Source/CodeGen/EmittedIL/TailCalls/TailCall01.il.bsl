@@ -36,13 +36,13 @@
   // Offset: 0x00000228 Length: 0x0000007C
 }
 .module TailCall01.exe
-// MVID: {59B18964-7D8F-CF4A-A745-03836489B159}
+// MVID: {59B1915B-7D8F-CF4A-A745-03835B91B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x002D0000
+// Image base: 0x00720000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

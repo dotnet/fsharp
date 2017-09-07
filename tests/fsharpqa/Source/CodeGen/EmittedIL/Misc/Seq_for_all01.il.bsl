@@ -36,13 +36,13 @@
   // Offset: 0x000001B0 Length: 0x00000072
 }
 .module Seq_for_all01.exe
-// MVID: {59B18959-D30D-BA80-A745-03835989B159}
+// MVID: {59B1914F-D30D-BA80-A745-03834F91B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x013D0000
+// Image base: 0x01710000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

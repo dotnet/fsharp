@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.GenericTypeStaticField01
 {
-  // Offset: 0x00000000 Length: 0x0000060A
+  // Offset: 0x00000000 Length: 0x00000608
 }
 .mresource public FSharpOptimizationData.GenericTypeStaticField01
 {
   // Offset: 0x00000610 Length: 0x000001E7
 }
 .module GenericTypeStaticField01.exe
-// MVID: {59B17682-1E75-7E6B-A745-03838276B159}
+// MVID: {59B1914F-1E75-7E6B-A745-03834F91B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02760000
+// Image base: 0x00730000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -56,7 +56,7 @@
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field static assembly class GenericTypeStaticField01/Foo`1<!a> theInstance
-    .field static assembly int32 'init@2-5'
+    .field static assembly int32 init@2
     .method public specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -82,7 +82,7 @@
       IL_0005:  stsfld     class GenericTypeStaticField01/Foo`1<!0> class GenericTypeStaticField01/Foo`1<!a>::theInstance
       IL_000a:  ldc.i4.1
       IL_000b:  volatile.
-      IL_000d:  stsfld     int32 class GenericTypeStaticField01/Foo`1<!a>::'init@2-5'
+      IL_000d:  stsfld     int32 class GenericTypeStaticField01/Foo`1<!a>::init@2
       .line 2,2 : 6,9 ''
       IL_0012:  ret
     } // end of method Foo`1::.cctor
@@ -94,7 +94,7 @@
       .maxstack  8
       .line 16707566,16707566 : 0,0 ''
       IL_0000:  volatile.
-      IL_0002:  ldsfld     int32 class GenericTypeStaticField01/Foo`1<!a>::'init@2-5'
+      IL_0002:  ldsfld     int32 class GenericTypeStaticField01/Foo`1<!a>::init@2
       IL_0007:  ldc.i4.1
       IL_0008:  bge.s      IL_0013
 
@@ -124,7 +124,7 @@
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 03 00 00 00 00 00 ) 
     .field static assembly class GenericTypeStaticField01/Bar`2<!a,!b> theInstance
-    .field static assembly int32 'init@6-6'
+    .field static assembly int32 'init@6-1'
     .method public specialname rtspecialname 
             instance void  .ctor() cil managed
     {
@@ -149,7 +149,7 @@
       IL_0005:  stsfld     class GenericTypeStaticField01/Bar`2<!0,!1> class GenericTypeStaticField01/Bar`2<!a,!b>::theInstance
       IL_000a:  ldc.i4.1
       IL_000b:  volatile.
-      IL_000d:  stsfld     int32 class GenericTypeStaticField01/Bar`2<!a,!b>::'init@6-6'
+      IL_000d:  stsfld     int32 class GenericTypeStaticField01/Bar`2<!a,!b>::'init@6-1'
       .line 6,6 : 6,9 ''
       IL_0012:  ret
     } // end of method Bar`2::.cctor
@@ -161,7 +161,7 @@
       .maxstack  8
       .line 16707566,16707566 : 0,0 ''
       IL_0000:  volatile.
-      IL_0002:  ldsfld     int32 class GenericTypeStaticField01/Bar`2<!a,!b>::'init@6-6'
+      IL_0002:  ldsfld     int32 class GenericTypeStaticField01/Bar`2<!a,!b>::'init@6-1'
       IL_0007:  ldc.i4.1
       IL_0008:  bge.s      IL_0013
 

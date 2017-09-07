@@ -36,13 +36,13 @@
   // Offset: 0x00000168 Length: 0x00000056
 }
 .module Testfunction22b.exe
-// MVID: {59B18965-8504-18B7-A745-03836589B159}
+// MVID: {59B1915B-8504-18B7-A745-03835B91B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x027F0000
+// Image base: 0x002D0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
