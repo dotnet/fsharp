@@ -36,13 +36,13 @@
   // Offset: 0x00000340 Length: 0x000000AD
 }
 .module StaticInit_Class01.dll
-// MVID: {59B1915E-EC34-E66E-A745-03835E91B159}
+// MVID: {59B19250-EC34-E66E-A745-03835092B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00B40000
+// Image base: 0x00FE0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

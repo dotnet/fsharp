@@ -36,13 +36,13 @@
   // Offset: 0x00000310 Length: 0x000000B1
 }
 .module AbstractClass.exe
-// MVID: {59B1914F-333C-8BAF-A745-03834F91B159}
+// MVID: {59B19213-333C-8BAF-A745-03831392B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00830000
+// Image base: 0x010A0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

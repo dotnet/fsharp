@@ -36,7 +36,7 @@
   // Offset: 0x00000610 Length: 0x000001E7
 }
 .module GenericTypeStaticField01.exe
-// MVID: {59B1914F-1E75-7E6B-A745-03834F91B159}
+// MVID: {59B19213-1E75-7E6B-A745-03831392B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000

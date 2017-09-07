@@ -36,13 +36,13 @@
   // Offset: 0x000006A0 Length: 0x000001F4
 }
 .module GeneralizationOnUnions01.exe
-// MVID: {59B1914F-4CA2-8CD1-A745-03834F91B159}
+// MVID: {59B19213-4CA2-8CD1-A745-03831392B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02FE0000
+// Image base: 0x014C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

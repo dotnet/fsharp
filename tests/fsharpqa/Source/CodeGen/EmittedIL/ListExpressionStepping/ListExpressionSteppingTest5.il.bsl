@@ -36,13 +36,13 @@
   // Offset: 0x00000278 Length: 0x000000AF
 }
 .module ListExpressionSteppingTest5.exe
-// MVID: {59B1914F-CBE3-BFEA-A745-03834F91B159}
+// MVID: {59B1920C-CBE3-BFEA-A745-03830C92B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02F00000
+// Image base: 0x016B0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

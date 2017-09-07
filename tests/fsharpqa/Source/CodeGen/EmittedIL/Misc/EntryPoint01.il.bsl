@@ -36,13 +36,13 @@
   // Offset: 0x00000258 Length: 0x00000090
 }
 .module EntryPoint01.exe
-// MVID: {59B1914F-9846-72C1-A745-03834F91B159}
+// MVID: {59B19213-9846-72C1-A745-03831392B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x002E0000
+// Image base: 0x00680000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

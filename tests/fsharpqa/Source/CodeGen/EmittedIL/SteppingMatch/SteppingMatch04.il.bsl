@@ -36,13 +36,13 @@
   // Offset: 0x00000238 Length: 0x0000007B
 }
 .module SteppingMatch04.dll
-// MVID: {59B1915B-6D4C-8357-A745-03835B91B159}
+// MVID: {59B19213-6D4C-8357-A745-03831392B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x02B80000
+// Image base: 0x02770000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

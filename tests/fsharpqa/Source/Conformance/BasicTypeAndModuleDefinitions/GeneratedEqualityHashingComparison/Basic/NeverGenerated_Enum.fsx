@@ -16,9 +16,9 @@ let TestListOfMethods (typ : System.Type) (exp : string array) =
 type E = | E1 = 1 | E2 = 2
 
 // Determine baseline based on the runtime
-let = [|"CompareTo"; "Equals"; "GetHashCode"; "GetType"; "GetTypeCode"; "HasFlag"; "ToString"; "ToString"; "ToString"; "ToString"|]
+let netfx40 = [|"CompareTo"; "Equals"; "GetHashCode"; "GetType"; "GetTypeCode"; "HasFlag"; "ToString"; "ToString"; "ToString"; "ToString"|]
 let netfx20 = [|"CompareTo"; "Equals"; "GetHashCode"; "GetType"; "GetTypeCode";            "ToString"; "ToString"; "ToString"; "ToString"|]
-let baseline = if (System.Environment.Version.Major, System.Environment.Version.Minor) >= (4,0) then else netfx20
+let baseline = if (System.Environment.Version.Major, System.Environment.Version.Minor) >= (4,0) then netfx40 else netfx20
 
 let r = TestListOfMethods typeof<E> baseline
 

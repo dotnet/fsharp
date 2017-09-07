@@ -36,13 +36,13 @@
   // Offset: 0x00000510 Length: 0x0000004E
 }
 .module Marshal.exe
-// MVID: {59B1914F-7500-369C-A745-03834F91B159}
+// MVID: {59B19213-7500-369C-A745-03831392B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x002D0000
+// Image base: 0x01080000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

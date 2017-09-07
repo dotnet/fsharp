@@ -40,13 +40,13 @@
   // Offset: 0x00000218 Length: 0x0000007D
 }
 .module ComputationExpr06.exe
-// MVID: {59B1914F-35A8-E566-A745-03834F91B159}
+// MVID: {59B1920A-35A8-E566-A745-03830A92B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x006A0000
+// Image base: 0x02E70000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

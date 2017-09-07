@@ -36,13 +36,13 @@
   // Offset: 0x00000250 Length: 0x0000009C
 }
 .module DoNotBoxStruct_NoArray_CSInterface.exe
-// MVID: {59B1914F-5654-8082-A745-03834F91B159}
+// MVID: {59B1920A-5654-8082-A745-03830A92B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00680000
+// Image base: 0x00B50000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
