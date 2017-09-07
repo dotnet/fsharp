@@ -1,4 +1,4 @@
-// #Regression #Conformance #BasicGrammarElements #Constants #NoMono #NETFX20Only 
+// #Regression #Conformance #BasicGrammarElements #Constants #NoMono  
 #light
 
 // Negative Regressiont test for FSharp1.0: 2543 - Decimal literals do not support exponents

@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.1
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.16774
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.Tuple08
 {
-  // Offset: 0x00000000 Length: 0x00000153
+  // Offset: 0x00000000 Length: 0x00000163
 }
 .mresource public FSharpOptimizationData.Tuple08
 {
-  // Offset: 0x00000158 Length: 0x0000004E
+  // Offset: 0x00000168 Length: 0x0000004E
 }
 .module Tuple08.exe
-// MVID: {4BEB2980-E542-67B3-A745-03838029EB4B}
+// MVID: {4DAC39B0-E542-67B3-A745-0383B039AC4D}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x002F0000
+// Image base: 0x0000000001E20000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.1
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.17376
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:3:0:0
 }
 .assembly SteppingMatch07
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.SteppingMatch07
 {
-  // Offset: 0x00000000 Length: 0x00000699
+  // Offset: 0x00000000 Length: 0x000006A9
 }
 .mresource public FSharpOptimizationData.SteppingMatch07
 {
-  // Offset: 0x000006A0 Length: 0x000001D9
+  // Offset: 0x000006B0 Length: 0x000001D9
 }
 .module SteppingMatch07.dll
-// MVID: {4BEB28DA-D373-07F3-A745-0383DA28EB4B}
+// MVID: {4F20E32B-D373-07F3-A745-03832BE3204F}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00230000
+// Image base: 0x00000071F0080000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -51,7 +51,7 @@
        extends [mscorlib]System.Object
 {
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
-  .class auto autochar serializable nested public beforefieldinit Discr
+  .class auto autochar serializable sealed nested public beforefieldinit Discr
          extends [mscorlib]System.Object
          implements class [mscorlib]System.IEquatable`1<class SteppingMatch07/Discr>,
                     [mscorlib]System.Collections.IStructuralEquatable,
@@ -85,7 +85,7 @@
             void  .cctor() cil managed
     {
       // Code size       23 (0x17)
-      .maxstack  1
+      .maxstack  8
       IL_0000:  ldc.i4.0
       IL_0001:  newobj     instance void SteppingMatch07/Discr::.ctor(int32)
       IL_0006:  stsfld     class SteppingMatch07/Discr SteppingMatch07/Discr::_unique_CaseA
@@ -101,7 +101,7 @@
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
-      .maxstack  2
+      .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  call       instance void [mscorlib]System.Object::.ctor()
       IL_0006:  ldarg.0
@@ -111,46 +111,23 @@
     } // end of method Discr::.ctor
 
     .method public static class SteppingMatch07/Discr 
-            get_CaseB() cil managed
-    {
-      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
-                                                                                                  int32) = ( 01 00 08 00 00 00 01 00 00 00 00 00 ) 
-      // Code size       6 (0x6)
-      .maxstack  2
-      IL_0000:  ldsfld     class SteppingMatch07/Discr SteppingMatch07/Discr::_unique_CaseB
-      IL_0005:  ret
-    } // end of method Discr::get_CaseB
-
-    .method public instance bool  get_IsCaseB() cil managed
-    {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       10 (0xa)
-      .maxstack  4
-      IL_0000:  ldarg.0
-      IL_0001:  call       instance int32 SteppingMatch07/Discr::get_Tag()
-      IL_0006:  ldc.i4.1
-      IL_0007:  ceq
-      IL_0009:  ret
-    } // end of method Discr::get_IsCaseB
-
-    .method public static class SteppingMatch07/Discr 
             get_CaseA() cil managed
     {
       .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
                                                                                                   int32) = ( 01 00 08 00 00 00 00 00 00 00 00 00 ) 
       // Code size       6 (0x6)
-      .maxstack  2
+      .maxstack  8
       IL_0000:  ldsfld     class SteppingMatch07/Discr SteppingMatch07/Discr::_unique_CaseA
       IL_0005:  ret
     } // end of method Discr::get_CaseA
 
-    .method public instance bool  get_IsCaseA() cil managed
+    .method public hidebysig instance bool 
+            get_IsCaseA() cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       10 (0xa)
-      .maxstack  4
+      .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  call       instance int32 SteppingMatch07/Discr::get_Tag()
       IL_0006:  ldc.i4.0
@@ -158,24 +135,50 @@
       IL_0009:  ret
     } // end of method Discr::get_IsCaseA
 
-    .method public instance int32  get_Tag() cil managed
+    .method public static class SteppingMatch07/Discr 
+            get_CaseB() cil managed
+    {
+      .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags,
+                                                                                                  int32) = ( 01 00 08 00 00 00 01 00 00 00 00 00 ) 
+      // Code size       6 (0x6)
+      .maxstack  8
+      IL_0000:  ldsfld     class SteppingMatch07/Discr SteppingMatch07/Discr::_unique_CaseB
+      IL_0005:  ret
+    } // end of method Discr::get_CaseB
+
+    .method public hidebysig instance bool 
+            get_IsCaseB() cil managed
+    {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      // Code size       10 (0xa)
+      .maxstack  8
+      IL_0000:  ldarg.0
+      IL_0001:  call       instance int32 SteppingMatch07/Discr::get_Tag()
+      IL_0006:  ldc.i4.1
+      IL_0007:  ceq
+      IL_0009:  ret
+    } // end of method Discr::get_IsCaseB
+
+    .method public hidebysig instance int32 
+            get_Tag() cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       7 (0x7)
-      .maxstack  4
+      .maxstack  8
       IL_0000:  ldarg.0
       IL_0001:  ldfld      int32 SteppingMatch07/Discr::_tag
       IL_0006:  ret
     } // end of method Discr::get_Tag
 
-    .method assembly specialname instance object 
-            __DebugDisplay() cil managed
+    .method assembly hidebysig specialname 
+            instance object  __DebugDisplay() cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       22 (0x16)
-      .maxstack  4
+      .maxstack  8
       IL_0000:  ldstr      "%+0.8A"
       IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class SteppingMatch07/Discr,string>,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string,string>::.ctor(string)
       IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatToString<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<class SteppingMatch07/Discr,string>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [FSharp.Core]Microsoft.FSharp.Core.Unit,string,string>)
@@ -271,14 +274,14 @@
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       14 (0xe)
-      .maxstack  4
+      .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
       .line 4,4 : 6,11 
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  ldarg.1
       IL_0003:  unbox.any  SteppingMatch07/Discr
-      IL_0008:  call       instance int32 SteppingMatch07/Discr::CompareTo(class SteppingMatch07/Discr)
+      IL_0008:  callvirt   instance int32 SteppingMatch07/Discr::CompareTo(class SteppingMatch07/Discr)
       IL_000d:  ret
     } // end of method Discr::CompareTo
 
@@ -394,12 +397,12 @@
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
       // Code size       13 (0xd)
-      .maxstack  4
+      .maxstack  8
       .line 4,4 : 6,11 
       IL_0000:  nop
       IL_0001:  ldarg.0
       IL_0002:  call       class [mscorlib]System.Collections.IEqualityComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericEqualityComparer()
-      IL_0007:  call       instance int32 SteppingMatch07/Discr::GetHashCode(class [mscorlib]System.Collections.IEqualityComparer)
+      IL_0007:  callvirt   instance int32 SteppingMatch07/Discr::GetHashCode(class [mscorlib]System.Collections.IEqualityComparer)
       IL_000c:  ret
     } // end of method Discr::GetHashCode
 
@@ -527,7 +530,7 @@
 
       IL_000f:  ldarg.0
       IL_0010:  ldloc.0
-      IL_0011:  call       instance bool SteppingMatch07/Discr::Equals(class SteppingMatch07/Discr)
+      IL_0011:  callvirt   instance bool SteppingMatch07/Discr::Equals(class SteppingMatch07/Discr)
       IL_0016:  ret
 
       IL_0017:  ldc.i4.0
@@ -541,21 +544,6 @@
       .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
       .get instance int32 SteppingMatch07/Discr::get_Tag()
     } // end of property Discr::Tag
-    .property class SteppingMatch07/Discr
-            CaseB()
-    {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-      .get class SteppingMatch07/Discr SteppingMatch07/Discr::get_CaseB()
-    } // end of property Discr::CaseB
-    .property instance bool IsCaseB()
-    {
-      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
-      .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
-      .get instance bool SteppingMatch07/Discr::get_IsCaseB()
-    } // end of property Discr::IsCaseB
     .property class SteppingMatch07/Discr
             CaseA()
     {
@@ -571,12 +559,27 @@
       .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
       .get instance bool SteppingMatch07/Discr::get_IsCaseA()
     } // end of property Discr::IsCaseA
+    .property class SteppingMatch07/Discr
+            CaseB()
+    {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+      .get class SteppingMatch07/Discr SteppingMatch07/Discr::get_CaseB()
+    } // end of property Discr::CaseB
+    .property instance bool IsCaseB()
+    {
+      .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerNonUserCodeAttribute::.ctor() = ( 01 00 00 00 ) 
+      .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
+      .get instance bool SteppingMatch07/Discr::get_IsCaseB()
+    } // end of property Discr::IsCaseB
   } // end of class Discr
 
   .method public static void  funcE(class SteppingMatch07/Discr n) cil managed
   {
     // Code size       34 (0x22)
-    .maxstack  3
+    .maxstack  8
     .line 6,6 : 9,21 
     IL_0000:  nop
     IL_0001:  ldarg.0

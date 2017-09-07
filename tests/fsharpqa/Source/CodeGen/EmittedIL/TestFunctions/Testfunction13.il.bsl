@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.1
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:1:0
 }
 .assembly TestFunction13
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.TestFunction13
 {
-  // Offset: 0x00000000 Length: 0x00000223
+  // Offset: 0x00000000 Length: 0x0000020F
 }
 .mresource public FSharpOptimizationData.TestFunction13
 {
-  // Offset: 0x00000228 Length: 0x00000072
+  // Offset: 0x00000218 Length: 0x00000072
 }
 .module TestFunction13.exe
-// MVID: {4BEB28E6-A624-451C-A745-0383E628EB4B}
+// MVID: {59B18965-A624-451C-A745-03836589B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00430000
+// Image base: 0x00D60000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -54,24 +54,23 @@
   .method public static class [mscorlib]System.Tuple`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a>> 
           TestFunction13<a>(int32 x) cil managed
   {
-    // Code size       31 (0x1f)
-    .maxstack  5
+    // Code size       30 (0x1e)
+    .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 5,5 : 5,16 
-    IL_0000:  nop
+    .line 5,5 : 5,16 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction13.fs'
+    IL_0000:  ldarg.0
     IL_0001:  ldarg.0
     IL_0002:  ldarg.0
-    IL_0003:  ldarg.0
-    IL_0004:  add
-    IL_0005:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
-    IL_000a:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
+    IL_0003:  add
+    IL_0004:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
+    IL_0009:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-    IL_000f:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
+    IL_000e:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-    IL_0014:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a>::get_Empty()
-    IL_0019:  newobj     instance void class [mscorlib]System.Tuple`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a>>::.ctor(!0,
+    IL_0013:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a>::get_Empty()
+    IL_0018:  newobj     instance void class [mscorlib]System.Tuple`2<class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>,class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!!a>>::.ctor(!0,
                                                                                                                                                                                                                     !1)
-    IL_001e:  ret
+    IL_001d:  ret
   } // end of method TestFunction13::TestFunction13
 
 } // end of class TestFunction13
@@ -82,10 +81,9 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       2 (0x2)
-    .maxstack  2
-    IL_0000:  nop
-    IL_0001:  ret
+    // Code size       1 (0x1)
+    .maxstack  8
+    IL_0000:  ret
   } // end of method $TestFunction13::main@
 
 } // end of class '<StartupCode$TestFunction13>'.$TestFunction13
