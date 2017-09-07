@@ -81,12 +81,15 @@ type XmlDocCollector() =
         //printfn "#lines = %d, firstLineIndexAfterPrevGrabPoint = %d, firstLineIndexAfterGrabPoint = %d" lines.Length firstLineIndexAfterPrevGrabPoint  firstLineIndexAfterGrabPoint
 
         let lines = lines.[firstLineIndexAfterPrevGrabPoint..firstLineIndexAfterGrabPoint-1] |> Array.rev
-        let firstLineNumber = (snd lines.[0]).Line
-        lines 
-        |> Array.mapi (fun i x -> firstLineNumber - i, x)
-        |> Array.takeWhile (fun (sequencedLineNumber, (_, pos)) -> sequencedLineNumber = pos.Line)
-        |> Array.map (fun (_, (lineStr, _)) -> lineStr)
-        |> Array.rev
+        if lines.Length = 0 then 
+            [| |]
+        else
+            let firstLineNumber = (snd lines.[0]).Line
+            lines 
+            |> Array.mapi (fun i x -> firstLineNumber - i, x)
+            |> Array.takeWhile (fun (sequencedLineNumber, (_, pos)) -> sequencedLineNumber = pos.Line)
+            |> Array.map (fun (_, (lineStr, _)) -> lineStr)
+            |> Array.rev
       with e -> 
         //printfn "unexpected error in LinesBefore:\n%s" (e.ToString())
         [| |]

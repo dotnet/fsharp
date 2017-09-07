@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.16774
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:1:0
 }
 .assembly Hash07
 {
@@ -22,27 +22,27 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 03 00 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 00 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
 }
 .mresource public FSharpSignatureData.Hash07
 {
-  // Offset: 0x00000000 Length: 0x0000023E
+  // Offset: 0x00000000 Length: 0x0000021A
 }
 .mresource public FSharpOptimizationData.Hash07
 {
-  // Offset: 0x00000248 Length: 0x000000AA
+  // Offset: 0x00000220 Length: 0x000000AA
 }
 .module Hash07.dll
-// MVID: {4DAC3A27-9642-7811-A745-0383273AAC4D}
+// MVID: {59B18AEE-9642-7811-A745-0383EE8AB159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000000000680000
+// Image base: 0x010A0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -57,37 +57,36 @@
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
     .method public static void  f5b() cil managed
     {
-      // Code size       26 (0x1a)
+      // Code size       25 (0x19)
       .maxstack  5
       .locals init ([0] int32 x,
                [1] int32 i)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 5,5 : 8,25 
-      IL_0000:  nop
-      IL_0001:  ldc.i4.1
-      IL_0002:  stloc.0
-      .line 6,6 : 8,32 
-      IL_0003:  ldc.i4.0
-      IL_0004:  stloc.1
-      IL_0005:  br.s       IL_0011
+      .line 5,5 : 8,25 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\Optimizations\\GenericComparison\\Hash07.fsx'
+      IL_0000:  ldc.i4.1
+      IL_0001:  stloc.0
+      .line 6,6 : 8,32 ''
+      IL_0002:  ldc.i4.0
+      IL_0003:  stloc.1
+      IL_0004:  br.s       IL_0010
 
-      .line 7,7 : 12,36 
+      .line 7,7 : 12,36 ''
+      IL_0006:  ldloc.1
       IL_0007:  ldloc.1
-      IL_0008:  ldloc.1
-      IL_0009:  ldc.i4.1
+      IL_0008:  ldc.i4.1
+      IL_0009:  add
       IL_000a:  add
-      IL_000b:  add
-      IL_000c:  stloc.0
-      IL_000d:  ldloc.1
-      IL_000e:  ldc.i4.1
-      IL_000f:  add
-      IL_0010:  stloc.1
-      .line 6,6 : 8,32 
-      IL_0011:  ldloc.1
-      IL_0012:  ldc.i4     0x989681
-      IL_0017:  blt.s      IL_0007
+      IL_000b:  stloc.0
+      IL_000c:  ldloc.1
+      IL_000d:  ldc.i4.1
+      IL_000e:  add
+      IL_000f:  stloc.1
+      .line 6,6 : 8,32 ''
+      IL_0010:  ldloc.1
+      IL_0011:  ldc.i4     0x989681
+      IL_0016:  blt.s      IL_0006
 
-      IL_0019:  ret
+      IL_0018:  ret
     } // end of method HashMicroPerfAndCodeGenerationTests::f5b
 
   } // end of class HashMicroPerfAndCodeGenerationTests

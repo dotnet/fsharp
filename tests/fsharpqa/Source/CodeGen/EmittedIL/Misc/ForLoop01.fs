@@ -1,4 +1,4 @@
-// #Regression #NoMono #NoMT #CodeGen #EmittedIL #NETFX20Only #NETFX40Only 
+// #Regression #NoMono #NoMT #CodeGen #EmittedIL   
 // Regressiont test for TFS#712639
 // Incorrect span or overlapping debugging spans
 // The test will start failing once the bug is actually fixed

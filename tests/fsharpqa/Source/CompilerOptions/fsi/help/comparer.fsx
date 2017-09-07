@@ -1,4 +1,4 @@
-// #NoMT #CompilerOptions #RequiresENU #NETFX20Only #NETFX40Only 
+// #NoMT #CompilerOptions #RequiresENU   
 #light
 
 let fn1 = fsi.CommandLineArgs.[1]

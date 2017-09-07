@@ -1,4 +1,4 @@
-// #NoMono #NoMT #CodeGen #EmittedIL #NETFX20Only #NETFX40Only 
+// #NoMono #NoMT #CodeGen #EmittedIL   
 module IfThenElse01    // Regression test for F#4519
 module M =
    let m () = 

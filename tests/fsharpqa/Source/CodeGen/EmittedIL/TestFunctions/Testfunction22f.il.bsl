@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.16774
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:1:0
 }
 .assembly Testfunction22f
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.Testfunction22f
 {
-  // Offset: 0x00000000 Length: 0x00000181
+  // Offset: 0x00000000 Length: 0x0000015D
 }
 .mresource public FSharpOptimizationData.Testfunction22f
 {
-  // Offset: 0x00000188 Length: 0x00000056
+  // Offset: 0x00000168 Length: 0x00000056
 }
 .module Testfunction22f.exe
-// MVID: {4DAC30FB-C040-2523-A745-0383FB30AC4D}
+// MVID: {59B19208-C040-2523-A745-03830892B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000000000890000
+// Image base: 0x012C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -63,35 +63,34 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       39 (0x27)
+    // Code size       38 (0x26)
     .maxstack  4
     .locals init ([0] string V_0)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 3,3 : 1,15 
-    IL_0000:  nop
-    IL_0001:  ldstr      "A"
-    IL_0006:  stloc.0
-    IL_0007:  ldloc.0
-    IL_0008:  ldstr      "A"
-    IL_000d:  call       bool [mscorlib]System.String::Equals(string,
+    .line 3,3 : 1,15 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\TestFunctions\\Testfunction22f.fs'
+    IL_0000:  ldstr      "A"
+    IL_0005:  stloc.0
+    IL_0006:  ldloc.0
+    IL_0007:  ldstr      "A"
+    IL_000c:  call       bool [mscorlib]System.String::Equals(string,
                                                               string)
-    IL_0012:  brfalse.s  IL_0016
+    IL_0011:  brfalse.s  IL_0015
 
-    IL_0014:  br.s       IL_0018
+    IL_0013:  br.s       IL_0017
 
-    IL_0016:  br.s       IL_0020
+    IL_0015:  br.s       IL_001f
 
-    .line 4,4 : 12,38 
-    IL_0018:  call       void [mscorlib]System.Console::WriteLine()
-    .line 100001,100001 : 0,0 
-    IL_001d:  nop
-    IL_001e:  br.s       IL_0026
+    .line 4,4 : 12,38 ''
+    IL_0017:  call       void [mscorlib]System.Console::WriteLine()
+    .line 100001,100001 : 0,0 ''
+    IL_001c:  nop
+    IL_001d:  br.s       IL_0025
 
-    .line 5,5 : 10,36 
-    IL_0020:  call       void [mscorlib]System.Console::WriteLine()
-    .line 100001,100001 : 0,0 
-    IL_0025:  nop
-    IL_0026:  ret
+    .line 5,5 : 10,36 ''
+    IL_001f:  call       void [mscorlib]System.Console::WriteLine()
+    .line 100001,100001 : 0,0 ''
+    IL_0024:  nop
+    IL_0025:  ret
   } // end of method $Testfunction22f::main@
 
 } // end of class '<StartupCode$Testfunction22f>'.$Testfunction22f

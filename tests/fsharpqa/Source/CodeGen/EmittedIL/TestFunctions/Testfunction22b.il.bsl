@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.16774
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:1:0
 }
 .assembly Testfunction22b
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.Testfunction22b
 {
-  // Offset: 0x00000000 Length: 0x00000181
+  // Offset: 0x00000000 Length: 0x0000015D
 }
 .mresource public FSharpOptimizationData.Testfunction22b
 {
-  // Offset: 0x00000188 Length: 0x00000056
+  // Offset: 0x00000168 Length: 0x00000056
 }
 .module Testfunction22b.exe
-// MVID: {4DAC30F2-8504-18B7-A745-0383F230AC4D}
+// MVID: {59B19208-8504-18B7-A745-03830892B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000000000910000
+// Image base: 0x002D0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -63,13 +63,12 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       7 (0x7)
+    // Code size       6 (0x6)
     .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 3,3 : 9,35 
-    IL_0000:  nop
-    IL_0001:  call       void [mscorlib]System.Console::WriteLine()
-    IL_0006:  ret
+    .line 3,3 : 9,35 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\TestFunctions\\Testfunction22b.fs'
+    IL_0000:  call       void [mscorlib]System.Console::WriteLine()
+    IL_0005:  ret
   } // end of method $Testfunction22b::main@
 
 } // end of class '<StartupCode$Testfunction22b>'.$Testfunction22b

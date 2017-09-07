@@ -1,4 +1,4 @@
-// #Regression #NoMono #NoMT #CodeGen #EmittedIL #NETFX20Only #NETFX40Only 
+// #Regression #NoMono #NoMT #CodeGen #EmittedIL   
 // Regression test for FSHARP1.0:4560
 // Handling of structs as array elements
 // For functional tests, see fsharp\core\array
