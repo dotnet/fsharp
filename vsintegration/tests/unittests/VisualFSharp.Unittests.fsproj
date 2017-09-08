@@ -134,6 +134,90 @@
     <Compile Include="DocumentHighlightsServiceTests.fs">
       <Link>Roslyn\DocumentHighlightsServiceTests.fs</Link>
     </Compile>
+    <Compile Include="ServiceFormatting\FsUnit.fs">
+      <Link>ServiceFormatting\FsUnit.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\TestHelpers.fs">
+      <Link>ServiceFormatting\TestHelpers.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\StringTests.fs">
+      <Link>ServiceFormatting\StringTests.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\CommentTests.fs">
+      <Link>ServiceFormatting\CommentTests.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\OperatorTests.fs">
+      <Link>ServiceFormatting\OperatorTests.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\ComparisonTests.fs">
+      <Link>ServiceFormatting\ComparisonTests.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\ControlStructureTests.fs">
+      <Link>ServiceFormatting\ControlStructureTests.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\PipingTests.fs">
+      <Link>ServiceFormatting\PipingTests.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\ModuleTests.fs">
+      <Link>ServiceFormatting\ModuleTests.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\UnionTests.fs">
+      <Link>ServiceFormatting\UnionTests.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\RecordTests.fs">
+      <Link>ServiceFormatting\RecordTests.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\TypeDeclarationTests.fs">
+      <Link>ServiceFormatting\TypeDeclarationTests.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\InterfaceTests.fs">
+      <Link>ServiceFormatting\InterfaceTests.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\ClassTests.fs">
+      <Link>ServiceFormatting\ClassTests.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\SignatureTests.fs">
+      <Link>ServiceFormatting\SignatureTests.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\PatternMatchingTests.fs">
+      <Link>ServiceFormatting\PatternMatchingTests.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\ActivePatternTests.fs">
+      <Link>ServiceFormatting\ActivePatternTests.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\QuotationTests.fs">
+      <Link>ServiceFormatting\QuotationTests.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\FunctionDefinitionTests.fs">
+      <Link>ServiceFormatting\FunctionDefinitionTests.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\AttributeTests.fs">
+      <Link>ServiceFormatting\AttributeTests.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\DataStructureTests.fs">
+      <Link>ServiceFormatting\DataStructureTests.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\CompilerDirectivesTests.fs">
+      <Link>ServiceFormatting\CompilerDirectivesTests.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\ComputationExpressionTests.fs">
+      <Link>ServiceFormatting\ComputationExpressionTests.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\TypeProviderTests.fs">
+      <Link>ServiceFormatting\TypeProviderTests.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\VerboseSyntaxConversionTests.fs">
+      <Link>ServiceFormatting\VerboseSyntaxConversionTests.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\FormattingSelectionTests.fs">
+      <Link>ServiceFormatting\FormattingSelectionTests.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\FormattingSelectionOnlyTests.fs">
+      <Link>ServiceFormatting\FormattingSelectionOnlyTests.fs</Link>
+    </Compile>
+    <Compile Include="ServiceFormatting\FormattingPropertyTests.fs">
+      <Link>ServiceFormatting\FormattingPropertyTests.fs</Link>
+    </Compile>
     <CopyAndSubstituteText Include="VisualFSharp.Unittests.dll.config">
       <TargetFilename>VisualFSharp.Unittests.dll.config</TargetFilename>
       <Pattern1>{VisualStudioVersion}</Pattern1>
@@ -290,6 +374,11 @@
     <Reference Include="nunit.framework">
       <Private>True</Private>
       <HintPath>$(NUnitLibDir)\nunit.framework.dll</HintPath>
+    </Reference>
+    <Reference Include="FsCheck, Version=$(FsCheckFullVersion)" Condition=" '$(TargetDotnetProfile)' != 'portable47' ">
+      <SpecificVersion>true</SpecificVersion>
+      <Private>True</Private>
+      <HintPath Condition="'$(TargetDotnetProfile)' == 'net40'">$(FsCheckLibDir)\net45\FsCheck.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CodeAnalysis.Common">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.CodeAnalysis.Common.$(RoslynVersion)\lib\netstandard1.3\Microsoft.CodeAnalysis.dll</HintPath>
