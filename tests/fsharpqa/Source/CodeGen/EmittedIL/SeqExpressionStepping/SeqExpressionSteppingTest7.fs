@@ -1,4 +1,4 @@
-// #NoMono #NoMT #CodeGen #EmittedIL #Sequences #NETFX20Only #NETFX40Only 
+// #NoMono #NoMT #CodeGen #EmittedIL #Sequences   
 module SeqExpressionSteppingTest7 // Regression test for FSHARP1.0:4454
 // "Stepping into sequence expression pops up a dialog trying to located an unknown file"
 let r = ref 0

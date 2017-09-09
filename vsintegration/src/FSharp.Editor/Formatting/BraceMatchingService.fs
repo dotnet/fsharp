@@ -15,14 +15,18 @@ type internal FSharpBraceMatchingService
         projectInfoManager: ProjectInfoManager
     ) =
 
-    static let userOpName = "BraceMatching"
-    static member GetBraceMatchingResult(checker: FSharpChecker, sourceText, fileName, options, position: int) = 
+    
+    static let defaultUserOpName = "BraceMatching"
+
+    static member GetBraceMatchingResult(checker: FSharpChecker, sourceText, fileName, options, position: int, userOpName: string) = 
         async {
-            let! matchedBraces = checker.MatchBraces(fileName, sourceText.ToString(), options, userOpName = userOpName)
+            let! matchedBraces = checker.MatchBraces(fileName, sourceText.ToString(), options, userOpName)
             let isPositionInRange range = 
                 match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
                 | None -> false
-                | Some range -> range.Contains(position)
+                | Some range ->
+                    let length = position - range.Start
+                    length >= 0 && length <= range.Length
             return matchedBraces |> Array.tryFind(fun (left, right) -> isPositionInRange left || isPositionInRange right)
         }
         
@@ -31,7 +35,7 @@ type internal FSharpBraceMatchingService
             asyncMaybe {
                 let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)
-                let! (left, right) = FSharpBraceMatchingService.GetBraceMatchingResult(checkerProvider.Checker, sourceText, document.Name, options, position)
+                let! (left, right) = FSharpBraceMatchingService.GetBraceMatchingResult(checkerProvider.Checker, sourceText, document.Name, options, position, defaultUserOpName)
                 let! leftSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, left)
                 let! rightSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, right)
                 return BraceMatchingResult(leftSpan, rightSpan)

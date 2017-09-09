@@ -116,7 +116,7 @@ let _ = CSharpOuterClass.InnerClass.StaticMember()
 
 [<Test>]
 let ``Ctor test`` () =
-    let csharpAssembly = typeof<CSharpClass>.Assembly.Location
+    let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
     let content = """
 module CtorTest
 open FSharp.Compiler.Service.Tests

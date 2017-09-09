@@ -1413,10 +1413,17 @@ let rec GetCustomAttrDataAsBlobIdx cenv (data:byte[]) =
 
 and GetCustomAttrRow cenv hca attr = 
     let cat = GetMethodRefAsCustomAttribType cenv attr.Method.MethodRef
-    UnsharedRow 
-        [| HasCustomAttribute (fst hca, snd hca)
-           CustomAttributeType (fst cat, snd cat) 
-           Blob (GetCustomAttrDataAsBlobIdx cenv attr.Data) |]  
+    for element in attr.Elements do
+        match element with
+        | ILAttribElem.Type (Some ty) when ty.IsNominal -> GetTypeRefAsTypeRefIdx cenv ty.TypeRef |> ignore
+        | ILAttribElem.TypeRef (Some tref) -> GetTypeRefAsTypeRefIdx cenv tref  |> ignore
+        | _ -> ()
+
+    UnsharedRow
+            [| HasCustomAttribute (fst hca, snd hca);
+               CustomAttributeType (fst cat, snd cat);
+               Blob (GetCustomAttrDataAsBlobIdx cenv attr.Data)
+            |]
 
 and GenCustomAttrPass3Or4 cenv hca attr = 
     AddUnsharedRow cenv TableNames.CustomAttribute (GetCustomAttrRow cenv hca attr) |> ignore
@@ -2105,7 +2112,7 @@ module Codebuf =
 
     let labelsToRange (lab2pc : Dictionary<ILCodeLabel, int>) p = let (l1,l2) = p in lab2pc.[l1], lab2pc.[l2]
 
-    let lrange_inside_lrange lab2pc ls1 ls2 = 
+    let labelRangeInsideLabelRange lab2pc ls1 ls2 = 
         rangeInsideRange (labelsToRange lab2pc ls1) (labelsToRange lab2pc ls2) 
 
     let findRoots contains vs = 
@@ -2129,10 +2136,10 @@ module Codebuf =
     let rec makeSEHTree cenv env (pc2pos: int[]) (lab2pc : Dictionary<ILCodeLabel, int>) (exs : ILExceptionSpec list) = 
 
         let clause_inside_lrange cl lr =
-          List.forall (fun lr1 -> lrange_inside_lrange lab2pc lr1 lr) (lranges_of_clause cl) 
+          List.forall (fun lr1 -> labelRangeInsideLabelRange lab2pc lr1 lr) (lranges_of_clause cl) 
 
         let tryspec_inside_lrange (tryspec1: ILExceptionSpec) lr =
-          (lrange_inside_lrange lab2pc tryspec1.Range lr && clause_inside_lrange tryspec1.Clause lr) 
+          (labelRangeInsideLabelRange lab2pc tryspec1.Range lr && clause_inside_lrange tryspec1.Clause lr) 
 
         let tryspec_inside_clause tryspec1 cl =
           List.exists (fun lr -> tryspec_inside_lrange tryspec1 lr) (lranges_of_clause cl) 
@@ -2162,10 +2169,10 @@ module Codebuf =
         trees 
 
     let rec makeLocalsTree cenv localSigs (pc2pos: int[]) (lab2pc : Dictionary<ILCodeLabel, int>) (exs : ILLocalDebugInfo list) = 
-        let locspec_inside_locspec (locspec1: ILLocalDebugInfo) (locspec2: ILLocalDebugInfo) =
-          lrange_inside_lrange lab2pc locspec1.Range locspec2.Range 
+        let localInsideLocal (locspec1: ILLocalDebugInfo) (locspec2: ILLocalDebugInfo) =
+          labelRangeInsideLabelRange lab2pc locspec1.Range locspec2.Range 
 
-        let roots = findRoots locspec_inside_locspec exs
+        let roots = findRoots localInsideLocal exs
 
         let trees = 
             roots |> List.collect (fun (cl,ch) -> 
@@ -4323,4 +4330,3 @@ let WriteILBinary (outfile, (args: options), modul) =
                                   args.ilg, args.pdbfile, args.signer, args.portablePDB, args.embeddedPDB, args.embedAllSource, 
                                   args.embedSourceList, args.sourceLink, args.emitTailcalls, args.deterministic, args.showTimes, args.dumpDebugInfo) modul
     |> ignore
-
