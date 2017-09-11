@@ -35,11 +35,6 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.ComponentModelHost
 
-module LogFile =
-    let log (text:string) =
-        use logfile = File.AppendText(@"c:\temp\mylogfile.log")
-        logfile.WriteLine(text)
-
 // Exposes FSharpChecker as MEF export
 [<Export(typeof<FSharpCheckerProvider>); Composition.Shared>]
 type internal FSharpCheckerProvider 
@@ -65,21 +60,22 @@ type internal FSharpCheckerProvider
             // we request Roslyn to reanalyze that individual file.
             checker.BeforeBackgroundFileCheck.Add(fun (fileName, extraProjectInfo) ->  
                 async {
-                   try 
-                        match extraProjectInfo with 
-                        | Some (:? Workspace as workspace) -> 
-                            let solution = workspace.CurrentSolution
-                            let documentIds = solution.GetDocumentIdsWithFilePath(fileName)
-                            if not documentIds.IsEmpty then 
-                                let docuentIdsFiltered = documentIds |> Seq.filter workspace.IsDocumentOpen |> Seq.toArray
-                                for documentId in docuentIdsFiltered do
-                                    Trace.TraceInformation("{0:n3} Requesting Roslyn reanalysis of {1}", DateTime.Now.TimeOfDay.TotalSeconds, documentId)
-                                if docuentIdsFiltered.Length > 0 then 
-                                    analyzerService.Reanalyze(workspace,documentIds=docuentIdsFiltered)
-                        | _ -> ()
-                    with ex -> 
-                       Assert.Exception(ex)
-                    } |> Async.StartImmediate )
+                 try 
+                     match extraProjectInfo with 
+                     | Some (:? Workspace as workspace) -> 
+                         let solution = workspace.CurrentSolution
+                         let documentIds = solution.GetDocumentIdsWithFilePath(fileName)
+                         if not documentIds.IsEmpty then 
+                             let docuentIdsFiltered = documentIds |> Seq.filter workspace.IsDocumentOpen |> Seq.toArray
+                             for documentId in docuentIdsFiltered do
+                                 Trace.TraceInformation("{0:n3} Requesting Roslyn reanalysis of {1}", DateTime.Now.TimeOfDay.TotalSeconds, documentId)
+                             if docuentIdsFiltered.Length > 0 then 
+                                 analyzerService.Reanalyze(workspace,documentIds=docuentIdsFiltered)
+                     | _ -> ()
+                  with ex -> 
+                      Assert.Exception(ex)
+                  } |> Async.StartImmediate
+            )
             checker
 
     member this.Checker = checker.Value
@@ -109,14 +105,13 @@ type internal ProjectInfoManager
     // the original options for editing
     let singleFileProjectTable = ConcurrentDictionary<ProjectId, DateTime * FSharpProjectOptions>()
 
-    // Accumulate sorces and references for each project file
+    // Accumulate sources and references for each project file
     let projectInfo = new ConcurrentDictionary<string, string[]*string[]*string[]>()
 
     /// Clear a project from the project table
     member this.ClearInfoForProject(projectId: ProjectId) =
         projectTable.TryRemove(projectId) |> ignore
         this.RefreshInfoForProjectsThatReferenceThisProject(projectId)
-        //@@@@@@@ sourceFiles / referenceFiles / commandlineOptions
 
     member this.ClearInfoForSingleFileProject(projectId) =
         singleFileProjectTable.TryRemove(projectId) |> ignore
@@ -345,42 +340,33 @@ and
 
         {new IProvideProjectSite with
             member iProvideProjectSite.GetProjectSite() =
-                let sources () = 
-                    let items,_,_ = projectInfoManager.GetProjectInfo(project.FilePath)
-                    items
-                let references () =
-                    let _,references,_ = projectInfoManager.GetProjectInfo(project.FilePath)
-                    references
-                let options () =
-                    let _,references,options = projectInfoManager.GetProjectInfo(project.FilePath)
-                    Array.concat [options; references |> Array.map(fun r -> "-r:" + r)]
-                let caption () = project.Name
-                let projFileName () = project.FilePath
-                let targetFrameworkMoniker = ""
-                let projectGuid () = project.Id.Id.ToString()
-                let creationTime = System.DateTime.Now
+                let fst  (a, _, _) = a
+                let thrd (_, _, c) = c
                 let mutable errorReporter = 
                     let reporter = ProjectExternalErrorReporter(project.Id, "FS", this.SystemServiceProvider)
                     Some(reporter:> Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2)
 
                 {new Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite with
-                    member __.SourceFilesOnDisk() = sources ()
-                    member __.DescriptionOfProject() = caption ()
-                    member __.CompilerFlags() = options ()
-                    member __.ProjectFileName() = projFileName ()
+                    member __.SourceFilesOnDisk() = projectInfoManager.GetProjectInfo(project.FilePath) |> fst
+                    member __.DescriptionOfProject() = project.Name
+                    member __.CompilerFlags() =
+                        let _,references,options = projectInfoManager.GetProjectInfo(project.FilePath)
+                        Array.concat [options; references |> Array.map(fun r -> "-r:" + r)]
+                    member __.ProjectFileName() = project.FilePath
                     member __.AdviseProjectSiteChanges(_,_) = ()
                     member __.AdviseProjectSiteCleaned(_,_) = ()
                     member __.AdviseProjectSiteClosed(_,_) = ()
                     member __.IsIncompleteTypeCheckEnvironment = false
-                    member __.TargetFrameworkMoniker = targetFrameworkMoniker
-                    member __.ProjectGuid = projectGuid ()
-                    member __.LoadTime = creationTime
+                    member __.TargetFrameworkMoniker = ""
+                    member __.ProjectGuid =  project.Id.Id.ToString()
+                    member __.LoadTime = System.DateTime.Now
                     member __.ProjectProvider = Some iProvideProjectSite
-                    member __.AssemblyReferences() = references ()
+                    member __.AssemblyReferences() = projectInfoManager.GetProjectInfo(project.FilePath) |> thrd
                     member __.BuildErrorReporter with get () = errorReporter and 
                                                       set (v) = errorReporter <- v
                 }
 
+        // TODO:   figure out why this is necessary
         interface IVsHierarchy with
             member __.SetSite(psp)                                    = hier.SetSite(psp)
             member __.GetSite(psp)                                    = hier.GetSite(ref psp)
@@ -598,10 +584,16 @@ and
         base.SetupNewTextView(textView)
 
         let textViewAdapter = package.ComponentModel.GetService<IVsEditorAdaptersFactoryService>()
-               
+
         match textView.GetBuffer() with
         | (VSConstants.S_OK, textLines) ->
             let filename = VsTextLines.GetFilename textLines
+
+
+            // CPS projects don't implement IProvideProjectSite and IVSProjectHierarchy
+            // Simple explanation:
+            //    Legacy projects have IVSHierarchy and IPRojectSite
+            //    CPS Projects and loose script files don't
             match VsRunningDocumentTable.FindDocumentWithoutLocking(package.RunningDocumentTable,filename) with
             | Some (hier, _) ->
                 match hier with

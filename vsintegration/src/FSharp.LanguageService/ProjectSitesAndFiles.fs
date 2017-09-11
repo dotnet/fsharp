@@ -39,7 +39,6 @@ open System.Runtime.InteropServices
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
 /// An additional interface that an IProjectSite object can implement to indicate it has an FSharpProjectOptions 
@@ -63,8 +62,7 @@ type private ProjectSiteOfScriptFile(filename:string, referencedProjectFileNames
         override this.ProjectGuid = ""
         override this.LoadTime = checkOptions.LoadTime
         override this.ProjectProvider = None
-        override this.AssemblyReferences() = checkOptions.OriginalLoadReferences |> List.map(fun (_,p) -> p) |> List.toArray
-
+        override this.AssemblyReferences() = [||]
 
     interface IHaveCheckOptions with
         override this.OriginalCheckOptions() = (referencedProjectFileNames, checkOptions)
@@ -184,7 +182,7 @@ type internal ProjectSitesAndFiles() =
              UseScriptResolutionRules = SourceFile.MustBeSingleFileProject fileName
              LoadTime = projectSite.LoadTime
              UnresolvedReferences = None
-             OriginalLoadReferences =  (projectSite.AssemblyReferences() |> Array.map(fun s -> rangeCmdArgs, s) |> Array.toList)
+             OriginalLoadReferences = []
              ExtraProjectInfo=extraProjectInfo 
              Stamp = (if useUniqueStamp then (stamp <- stamp + 1L; Some stamp) else None) }   
         referencedProjectFileNames, options
