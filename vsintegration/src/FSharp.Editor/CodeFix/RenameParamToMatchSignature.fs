@@ -21,7 +21,7 @@ type internal FSharpRenameParamToMatchSignature
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider, 
-        projectInfoManager: FSharpProjectOptionsManager
+        projectInfoManager: ProjectInfoManager
     ) =
     
     inherit CodeFixProvider()

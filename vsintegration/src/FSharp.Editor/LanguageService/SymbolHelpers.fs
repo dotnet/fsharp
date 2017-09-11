@@ -21,7 +21,7 @@ module internal SymbolHelpers =
     open Microsoft.CodeAnalysis.CodeActions
 
     /// Used for local code fixes in a document, e.g. to rename local parameters
-    let getSymbolUsesOfSymbolAtLocationInDocument (document: Document, position: int, projectInfoManager: FSharpProjectOptionsManager, checker: FSharpChecker, userOpName) =
+    let getSymbolUsesOfSymbolAtLocationInDocument (document: Document, position: int, projectInfoManager: ProjectInfoManager, checker: FSharpChecker, userOpName) =
         asyncMaybe {
             let! cancellationToken = Async.CancellationToken |> liftAsync
             let! sourceText = document.GetTextAsync(cancellationToken)
@@ -95,7 +95,7 @@ module internal SymbolHelpers =
     // A better approach is to use something like createTextChangeCodeFix below, with a delayed function to compute a set of changes to be applied
     // simultaneously.  But that doesn't work for this case, as we want a set of changes to apply acrosss the whole solution.
 
-    let changeAllSymbolReferences (document: Document, symbolSpan: TextSpan, textChanger: string -> string, projectInfoManager: FSharpProjectOptionsManager, checker: FSharpChecker, userOpName)
+    let changeAllSymbolReferences (document: Document, symbolSpan: TextSpan, textChanger: string -> string, projectInfoManager: ProjectInfoManager, checker: FSharpChecker, userOpName)
         : Async<(Func<CancellationToken, Task<Solution>> * OriginalText) option> =
         asyncMaybe {
             do! Option.guard (symbolSpan.Length > 0)
