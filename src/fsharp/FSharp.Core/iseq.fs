@@ -141,7 +141,7 @@ namespace Microsoft.FSharp.Collections
         let internal empty<'T> = Microsoft.FSharp.Collections.SeqComposition.Core.EmptyEnumerable<'T>.Instance
 
         [<CompiledName("Singleton")>]
-        let internal singleton<'T> (x:'T) : ISeq<'T> = new SingletonEnumerable<_>(x) :> _
+        let internal singleton<'T> (value:'T) : ISeq<'T> = new SingletonEnumerable<_>(value) :> _
 
         /// wraps a ResizeArray in the ISeq framework. Care must be taken that the underlying ResizeArray
         /// is not modified whilst it can be accessed as the ISeq, so check on version is performed.
@@ -1018,11 +1018,11 @@ namespace Microsoft.FSharp.Collections
 
                         override this.OnDispose () = () } :> _ )
 
-            let inline byVal (keyf:'T->'Key) (source:ISeq<'T>) =
-                delay (fun () -> impl HashIdentity.Structural<'Key> keyf id source) 
+            let inline byVal (projection:'T->'Key) (source:ISeq<'T>) =
+                delay (fun () -> impl HashIdentity.Structural<'Key> projection id source) 
 
-            let inline byRef (keyf:'T->'Key) (source:ISeq<'T>) =
-                delay (fun () -> impl (valueComparer<'Key> ()) (keyf >> Value) (fun v -> v._1) source)
+            let inline byRef (projection:'T->'Key) (source:ISeq<'T>) =
+                delay (fun () -> impl (valueComparer<'Key> ()) (projection >> Value) (fun v -> v._1) source)
         
         [<CompiledName("GroupByVal")>]
         let inline internal groupByVal<'T,'Key when 'Key : equality and 'Key : struct> (keyf:'T->'Key) (source:ISeq<'T>) =
@@ -1052,11 +1052,11 @@ namespace Microsoft.FSharp.Collections
 
                         override this.OnDispose () = () } :> _ )
 
-            let inline byVal (keyf:'T->'Key) (source:ISeq<'T>) =
-                delay (fun () -> impl HashIdentity.Structural<'Key> keyf id source) 
+            let inline byVal (projection:'T->'Key) (source:ISeq<'T>) =
+                delay (fun () -> impl HashIdentity.Structural<'Key> projection id source) 
 
-            let inline byRef (keyf:'T->'Key) (source:ISeq<'T>) =
-                delay (fun () -> impl (valueComparer<'Key> ()) (keyf >> Value) (fun v -> v._1) source)
+            let inline byRef (projection:'T->'Key) (source:ISeq<'T>) =
+                delay (fun () -> impl (valueComparer<'Key> ()) (projection >> Value) (fun v -> v._1) source)
         
         [<CompiledName("CountByVal")>]
         let inline internal countByVal<'T,'Key when 'Key : equality and 'Key : struct>  (projection:'T -> 'Key) (source:ISeq<'T>) =
@@ -1087,10 +1087,10 @@ namespace Microsoft.FSharp.Collections
                     override this.OnDispose () = () } :> _ )
 
         [<CompiledName("SortBy")>]
-        let internal sortBy keyf source =
+        let internal sortBy projection source =
             delay (fun () ->
                 let array = source |> toArray
-                Array.stableSortInPlaceBy keyf array
+                Array.stableSortInPlaceBy projection array
                 ofArray array)
 
         [<CompiledName("Sort")>]
@@ -1101,10 +1101,10 @@ namespace Microsoft.FSharp.Collections
                 ofArray array)
 
         [<CompiledName("SortWith")>]
-        let sortWith f source =
+        let sortWith comparer source =
             delay (fun () ->
                 let array = source |> toArray
-                Array.stableSortInPlaceWith f array
+                Array.stableSortInPlaceWith comparer array
                 ofArray array)
 
         [<CompiledName("Reverse")>]
@@ -1115,18 +1115,18 @@ namespace Microsoft.FSharp.Collections
                 ofArray array)
 
         [<CompiledName("Permute")>]
-        let internal permute f (source:ISeq<_>) =
+        let internal permute indexMap (source:ISeq<_>) =
             delay (fun () ->
                 source
                 |> toArray
-                |> Array.permute f
+                |> Array.permute indexMap
                 |> ofArray)
 
         [<CompiledName("ScanBack")>]
-        let internal scanBack<'T,'State> f (source:ISeq<'T>) (acc:'State) : ISeq<'State> =
+        let internal scanBack<'T,'State> folder (source:ISeq<'T>) (state:'State) : ISeq<'State> =
             delay (fun () ->
                 let array = source |> toArray
-                Array.scanSubRight f array 0 (array.Length - 1) acc
+                Array.scanSubRight folder array 0 (array.Length - 1) state
                 |> ofArray)
 
         let inline internal foldArraySubRight f (arr: 'T[]) start fin acc =
@@ -1151,11 +1151,11 @@ namespace Microsoft.FSharp.Collections
             foldBack ((<||) f) zipped x
 
         [<CompiledName("ReduceBack")>]
-        let inline internal reduceBack f (source:ISeq<'T>) =
+        let inline internal reduceBack reduction (source:ISeq<'T>) =
             let arr = toArray source
             match arr.Length with
             | 0 -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
-            | len -> foldArraySubRight f arr 0 (len - 2) arr.[len - 1]
+            | len -> foldArraySubRight reduction arr 0 (len - 2) arr.[len - 1]
 
         [<Sealed>]
         type internal CachedSeq<'T>(source:ISeq<'T>) =
@@ -1254,9 +1254,9 @@ namespace Microsoft.FSharp.Collections
             | _ -> Microsoft.FSharp.Primitives.Basics.List.ofISeq source
 
         [<CompiledName("Replicate")>]
-        let replicate<'T> count (x:'T) : ISeq<'T> =
+        let replicate<'T> count (initial:'T) : ISeq<'T> =
             if count < 0 then raise (ArgumentOutOfRangeException "count")
-            new InitEnumerable<'T,'T>(Nullable count, (fun _ -> x), IdentityFactory.Instance, 1) :> _
+            new InitEnumerable<'T,'T>(Nullable count, (fun _ -> initial), IdentityFactory.Instance, 1) :> _
 
         [<CompiledName("IsEmpty")>]
         let internal isEmpty (source : ISeq<'T>)  =
@@ -1338,20 +1338,20 @@ namespace Microsoft.FSharp.Collections
             source |> toArray |> Array.findIndexBack f
 
         [<CompiledName("Pick")>]
-        let internal pick f source  =
-            match tryPick f source with
+        let internal pick chooser source  =
+            match tryPick chooser source with
             | None -> indexNotFound()
             | Some x -> x
 
         [<CompiledName("MapFold")>]
-        let internal mapFold<'T,'State,'Result> (f: 'State -> 'T -> 'Result * 'State) acc source =
-            let arr,state = source |> toArray |> Array.mapFold f acc
+        let internal mapFold<'T,'State,'Result> (mapping:'State->'T->'Result*'State) state source =
+            let arr,state = source |> toArray |> Array.mapFold mapping state
             ofArray arr, state
 
         [<CompiledName("MapFoldBack")>]
-        let internal mapFoldBack<'T,'State,'Result> (f: 'T -> 'State -> 'Result * 'State) source acc =
+        let internal mapFoldBack<'T,'State,'Result> (mapping:'T->'State->'Result*'State) source state =
             let array = source |> toArray
-            let arr,state = Array.mapFoldBack f array acc
+            let arr,state = Array.mapFoldBack mapping array state
             ofArray arr, state
 
         let rec internal nth index (e : IEnumerator<'T>) =
@@ -1375,17 +1375,17 @@ namespace Microsoft.FSharp.Collections
             sortWith compareDescending source
 
         [<CompiledName("SortByDescending")>]
-        let inline sortByDescending keyf source =
-            let inline compareDescending a b = compare (keyf b) (keyf a)
+        let inline sortByDescending projection source =
+            let inline compareDescending a b = compare (projection b) (projection a)
             sortWith compareDescending source
 
         [<CompiledName("TryFindBack")>]
-        let internal tryFindBack f (source : ISeq<'T>) =
-            source |> toArray |> Array.tryFindBack f
+        let internal tryFindBack predicate (source : ISeq<'T>) =
+            source |> toArray |> Array.tryFindBack predicate
 
         [<CompiledName("TryFindIndexBack")>]
-        let internal tryFindIndexBack f (source : ISeq<'T>) =
-            source |> toArray |> Array.tryFindIndexBack f
+        let internal tryFindIndexBack predicate (source : ISeq<'T>) =
+            source |> toArray |> Array.tryFindIndexBack predicate
 
         [<CompiledName("Zip3")>]
         let internal zip3 source1 source2  source3 =
