@@ -1025,12 +1025,12 @@ namespace Microsoft.FSharp.Collections
                 delay (fun () -> impl (valueComparer<'Key> ()) (projection >> Value) (fun v -> v._1) source)
         
         [<CompiledName("GroupByVal")>]
-        let inline internal groupByVal<'T,'Key when 'Key : equality and 'Key : struct> (keyf:'T->'Key) (source:ISeq<'T>) =
-            GroupBy.byVal keyf source
+        let inline internal groupByVal<'T,'Key when 'Key : equality and 'Key : struct> (projection:'T->'Key) (source:ISeq<'T>) =
+            GroupBy.byVal projection source
 
         [<CompiledName("GroupByRef")>]
-        let inline internal groupByRef<'T,'Key when 'Key : equality and 'Key : not struct> (keyf:'T->'Key) (source:ISeq<'T>) =
-            GroupBy.byRef keyf source
+        let inline internal groupByRef<'T,'Key when 'Key : equality and 'Key : not struct> (projection:'T->'Key) (source:ISeq<'T>) =
+            GroupBy.byRef projection source
 
         module CountBy =
             let inline private impl (comparer:IEqualityComparer<'SafeKey>) (keyf:'T->'SafeKey) (getKey:'SafeKey->'Key) (source:ISeq<'T>) =
@@ -1136,19 +1136,19 @@ namespace Microsoft.FSharp.Collections
             state
 
         [<CompiledName("FoldBack")>]
-        let inline internal foldBack<'T,'State> f (source: ISeq<'T>) (x:'State) =
+        let inline internal foldBack<'T,'State> folder (source: ISeq<'T>) (state:'State) =
             let arr = toArray source
             let len = arr.Length
-            foldArraySubRight f arr 0 (len - 1) x
+            foldArraySubRight folder arr 0 (len - 1) state
 
         [<CompiledName("Zip")>]
         let internal zip source1 source2 =
             map2 (fun x y -> x,y) source1 source2
 
         [<CompiledName("FoldBack2")>]
-        let inline internal foldBack2<'T1,'T2,'State> f (source1:ISeq<'T1>) (source2:ISeq<'T2>) (x:'State) =
+        let inline internal foldBack2<'T1,'T2,'State> folder (source1:ISeq<'T1>) (source2:ISeq<'T2>) (state:'State) =
             let zipped = zip source1 source2
-            foldBack ((<||) f) zipped x
+            foldBack ((<||) folder) zipped state
 
         [<CompiledName("ReduceBack")>]
         let inline internal reduceBack reduction (source:ISeq<'T>) =
@@ -1238,7 +1238,7 @@ namespace Microsoft.FSharp.Collections
             new CachedSeq<_> (source) :> _
 
         [<CompiledName("Collect")>]
-        let internal collect f sources = map f sources |> concat
+        let internal collect mapping source = map mapping source |> concat
 
         [<CompiledName("AllPairs")>]
         let internal allPairs (source1:ISeq<'T1>) (source2:ISeq<'T2>) : ISeq<'T1 * 'T2> =
@@ -1312,17 +1312,17 @@ namespace Microsoft.FSharp.Collections
         let inline internal indexNotFound() = raise (new System.Collections.Generic.KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
 
         [<CompiledName("Find")>]
-        let internal find f source =
-            match tryFind f source with
+        let internal find predicate source =
+            match tryFind predicate source with
             | None -> indexNotFound()
             | Some x -> x
 
         [<CompiledName("FindIndex")>]
-        let internal findIndex p (source:ISeq<_>) =
+        let internal findIndex predicate (source:ISeq<_>) =
             use ie = source.GetEnumerator()
             let rec loop i =
                 if ie.MoveNext() then
-                    if p ie.Current then
+                    if predicate ie.Current then
                         i
                     else loop (i+1)
                 else
@@ -1330,12 +1330,12 @@ namespace Microsoft.FSharp.Collections
             loop 0
 
         [<CompiledName("FindBack")>]
-        let internal findBack f source =
-            source |> toArray |> Array.findBack f
+        let internal findBack predicate source =
+            source |> toArray |> Array.findBack predicate
 
         [<CompiledName("FindIndexBack")>]
-        let internal findIndexBack f source =
-            source |> toArray |> Array.findIndexBack f
+        let internal findIndexBack predicate source =
+            source |> toArray |> Array.findIndexBack predicate
 
         [<CompiledName("Pick")>]
         let internal pick chooser source  =
@@ -1364,10 +1364,10 @@ namespace Microsoft.FSharp.Collections
             else nth (index-1) e
 
         [<CompiledName("Item")>]
-        let internal item i (source : ISeq<'T>) =
-            if i < 0 then invalidArgInputMustBeNonNegative "index" i
+        let internal item index (source : ISeq<'T>) =
+            if index < 0 then invalidArgInputMustBeNonNegative "index" index
             use e = source.GetEnumerator()
-            nth i e
+            nth index e
 
         [<CompiledName("SortDescending")>]
         let inline sortDescending source =

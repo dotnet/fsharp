@@ -163,7 +163,7 @@ namespace Microsoft.FSharp.Collections
     val inline contains : element:'T -> source:ISeq<'T> -> bool when 'T : equality
 
     [<CompiledName "ForAll">]
-    val inline internal forall : f:('T -> bool) -> source:ISeq<'T> -> bool
+    val inline internal forall : predicate:('T -> bool) -> source:ISeq<'T> -> bool
 
     [<CompiledName "ForAll2">]
     val inline internal forall2 : predicate:('T->'U->bool) -> source1:ISeq<'T> -> source2:ISeq<'U> -> bool
