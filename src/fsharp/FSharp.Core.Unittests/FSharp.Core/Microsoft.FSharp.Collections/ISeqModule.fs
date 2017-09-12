@@ -7,6 +7,8 @@ open NUnit.Framework
 
 open FSharp.Core.Unittests.LibraryTestFx
 
+#if ISeqIsPublic
+
 // Various tests for the:
 // Microsoft.FSharp.Collections.iseq type
 
@@ -1164,3 +1166,5 @@ type ISeqModule() =
         //let nullSeq:iseq<'a> = null
 
         //CheckThrowsArgumentNullException (fun () -> ISeq.contains 5 nullSeq |> ignore)
+
+#endif

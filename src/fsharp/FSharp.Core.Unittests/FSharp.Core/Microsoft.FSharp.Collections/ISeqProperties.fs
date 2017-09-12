@@ -8,6 +8,8 @@ open NUnit.Framework
 open FsCheck
 open Utils
 
+#if ISeqIsPublic
+
 let sortByStable<'a when 'a : comparison> (xs : 'a []) =
     let indexed = xs|> ISeq.ofSeq |> ISeq.indexed
     let sorted = indexed |> ISeq.sortBy snd
@@ -37,3 +39,5 @@ let distinctByStable<'a when 'a : comparison> (xs : 'a []) =
 let ``ISeq.distinctBy is stable`` () =
     Check.QuickThrowOnFailure distinctByStable<int>
     Check.QuickThrowOnFailure distinctByStable<string>
+
+#endif

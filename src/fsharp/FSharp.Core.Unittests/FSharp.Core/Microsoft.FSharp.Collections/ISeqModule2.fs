@@ -7,6 +7,8 @@ open NUnit.Framework
 
 open FSharp.Core.Unittests.LibraryTestFx
 
+#if ISeqIsPublic
+
 //type iseq<'a> = ISeq.Core.ISeq<'a>
 
 type ISeqWindowedTestInput<'t> =
@@ -1839,3 +1841,5 @@ type ISeqModule2() =
         // Index greater than length
         let resultIndexGreater = ISeq.tryItem 31 (iseq { 10..20 })
         Assert.AreEqual(None, resultIndexGreater)
+
+#endif
