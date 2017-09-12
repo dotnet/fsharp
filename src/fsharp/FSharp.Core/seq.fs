@@ -74,12 +74,12 @@ namespace Microsoft.FSharp.Collections
         let empty<'T> = (EmptyEnumerable :> seq<'T>)
 
         [<CompiledName("InitializeInfinite")>]
-        let initInfinite f =
-            ISeq.initInfinite f :> seq<_>
+        let initInfinite initializer =
+            ISeq.initInfinite initializer :> seq<_>
 
         [<CompiledName("Initialize")>]
-        let init count f =
-            ISeq.init count f :> seq<_>
+        let init count initializer =
+            ISeq.init count initializer :> seq<_>
 
         [<CompiledName("Iterate")>]
         let iter action (source:seq<'T>) =
@@ -118,24 +118,24 @@ namespace Microsoft.FSharp.Collections
                 ISeq.iteri (fun idx a -> f.Invoke (idx,a)) (rawOrOriginal raw original)
 
         [<CompiledName("Exists")>]
-        let exists f (source : seq<'T>) =
+        let exists predicate (source:seq<'T>) =
             let original = toISeq source
             match getRaw original with
-            | :? array<'T> as arr -> Array.exists f arr
-            | :? list<'T> as lst -> List.exists f lst
-            | raw -> ISeq.exists f (rawOrOriginal raw original)
+            | :? array<'T> as arr -> Array.exists predicate arr
+            | :? list<'T> as lst -> List.exists predicate lst
+            | raw -> ISeq.exists predicate (rawOrOriginal raw original)
 
         [<CompiledName("Contains")>]
         let inline contains element (source : seq<'T>) =
             ISeq.contains element (toISeq source)
 
         [<CompiledName("ForAll")>]
-        let forall f (source : seq<'T>) =
+        let forall predicate (source:seq<'T>) =
             let original = toISeq source
             match getRaw original with
-            | :? array<'T> as arr -> Array.forall f arr
-            | :? list<'T> as lst -> List.forall f lst
-            | raw -> ISeq.forall f (rawOrOriginal raw original)
+            | :? array<'T> as arr -> Array.forall predicate arr
+            | :? list<'T> as lst -> List.forall predicate lst
+            | raw -> ISeq.forall predicate (rawOrOriginal raw original)
 
         [<CompiledName("Iterate2")>]
         let iter2 action (source1:seq<_>) (source2:seq<_>)    =
@@ -148,8 +148,8 @@ namespace Microsoft.FSharp.Collections
             ISeq.iteri2 (fun idx a b -> f.Invoke(idx,a,b)) (source1 |> toISeq1) (source2 |> toISeq2)
 
         [<CompiledName("Filter")>]
-        let filter f source      =
-            ISeq.filter f (toISeq source) :> seq<_>
+        let filter predicate source =
+            ISeq.filter predicate (toISeq source) :> seq<_>
 
         [<CompiledName("Where")>]
         let where predicate source = filter predicate source
@@ -221,12 +221,12 @@ namespace Microsoft.FSharp.Collections
             | raw -> ISeq.tryFind predicate (rawOrOriginal raw original)
 
         [<CompiledName("Find")>]
-        let find f source =
+        let find predicate source =
             let original = toISeq source
             match getRaw original with
-            | :? array<'T> as arr -> Array.find f arr
-            | :? list<'T> as lst -> List.find f lst
-            | raw -> ISeq.find f (rawOrOriginal raw original)
+            | :? array<'T> as arr -> Array.find predicate arr
+            | :? list<'T> as lst -> List.find predicate lst
+            | raw -> ISeq.find predicate (rawOrOriginal raw original)
 
         [<CompiledName("Take")>]
         let take count (source : seq<'T>)    =
@@ -252,18 +252,18 @@ namespace Microsoft.FSharp.Collections
             ISeq.length (toISeq source)
 
         [<CompiledName("Fold")>]
-        let fold<'T,'State> f (x:'State) (source : seq<'T>)  =
+        let fold<'T,'State> folder (state:'State) (source:seq<'T>)  =
             let original = toISeq source
             match getRaw original with
-            | :? array<'T> as arr -> Array.fold f x arr
-            | :? list<'T> as lst -> List.fold f x lst
+            | :? array<'T> as arr -> Array.fold folder state arr
+            | :? list<'T> as lst -> List.fold folder state lst
             | raw ->
-                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
-                ISeq.fold (fun acc item -> f.Invoke (acc, item)) x (rawOrOriginal raw original)
+                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt folder
+                ISeq.fold (fun acc item -> f.Invoke (acc, item)) state (rawOrOriginal raw original)
 
         [<CompiledName("Fold2")>]
-        let fold2<'T1,'T2,'State> f (state:'State) (source1: seq<'T1>) (source2: seq<'T2>) =
-            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt f
+        let fold2<'T1,'T2,'State> folder (state:'State) (source1:seq<'T1>) (source2:seq<'T2>) =
+            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt folder
             ISeq.fold2 (fun acc item1 item2 -> f.Invoke (acc, item1, item2)) state (source1 |> toISeq1) (source2 |> toISeq2)
 
         [<CompiledName("Reduce")>]
@@ -309,12 +309,12 @@ namespace Microsoft.FSharp.Collections
             ISeq.toArray (toISeq source)
 
         [<CompiledName("FoldBack")>]
-        let foldBack<'T,'State> f (source : seq<'T>) (x:'State) =
-            ISeq.foldBack f (toISeq source) x
+        let foldBack<'T,'State> folder (source:seq<'T>) (state:'State) =
+            ISeq.foldBack folder (toISeq source) state
 
         [<CompiledName("FoldBack2")>]
-        let foldBack2<'T1,'T2,'State> f (source1 : seq<'T1>) (source2 : seq<'T2>) (x:'State) =
-            ISeq.foldBack2 f (toISeq1 source1) (toISeq2 source2) x
+        let foldBack2<'T1,'T2,'State> folder (source1:seq<'T1>) (source2:seq<'T2>) (state:'State) =
+            ISeq.foldBack2 folder (toISeq1 source1) (toISeq2 source2) state
 
         [<CompiledName("ReduceBack")>]
         let reduceBack reduction (source:seq<'T>) =
@@ -341,16 +341,16 @@ namespace Microsoft.FSharp.Collections
             ISeq.tryFindBack predicate (toISeq source)
 
         [<CompiledName("FindBack")>]
-        let findBack f source =
-            ISeq.findBack f (toISeq source)
+        let findBack predicate source =
+            ISeq.findBack predicate (toISeq source)
 
         [<CompiledName("ScanBack")>]
         let scanBack<'T,'State> folder (source:seq<'T>) (state:'State) =
             ISeq.scanBack folder (toISeq source) state :> seq<_>
 
         [<CompiledName("FindIndex")>]
-        let findIndex p (source:seq<_>) =
-            ISeq.findIndex p (toISeq source)
+        let findIndex predicate (source:seq<_>) =
+            ISeq.findIndex predicate (toISeq source)
 
         [<CompiledName("TryFindIndex")>]
         let tryFindIndex predicate (source:seq<_>) =
@@ -361,8 +361,8 @@ namespace Microsoft.FSharp.Collections
             ISeq.tryFindIndexBack predicate (toISeq source)
 
         [<CompiledName("FindIndexBack")>]
-        let findIndexBack f source =
-            ISeq.findIndexBack f (toISeq source)
+        let findIndexBack predicate source =
+            ISeq.findIndexBack predicate (toISeq source)
 
         // windowed : int -> seq<'T> -> seq<'T[]>
         [<CompiledName("Windowed")>]
@@ -384,7 +384,7 @@ namespace Microsoft.FSharp.Collections
             mkSeq (fun () -> source.GetEnumerator())
 
         [<CompiledName("GroupBy")>]
-        let groupBy (keyf:'T->'Key) (seq:seq<'T>) =
+        let groupBy (projection:'T->'Key) (source:seq<'T>) =
             delay (fun () ->
                 let grouped = 
 #if FX_RESHAPED_REFLECTION
@@ -392,8 +392,8 @@ namespace Microsoft.FSharp.Collections
 #else
                     if typeof<'Key>.IsValueType
 #endif
-                        then seq |> toISeq |> ISeq.GroupBy.byVal keyf
-                        else seq |> toISeq |> ISeq.GroupBy.byRef keyf
+                        then source |> toISeq |> ISeq.GroupBy.byVal projection
+                        else source |> toISeq |> ISeq.GroupBy.byRef projection
 
                 grouped
                 |> ISeq.map (fun (key,value) -> key, value :> seq<_>)
@@ -482,13 +482,13 @@ namespace Microsoft.FSharp.Collections
             ISeq.skipWhile predicate (toISeq source) :> seq<_>
 
         [<CompiledName("ForAll2")>]
-        let forall2 p (source1: seq<_>) (source2: seq<_>) =
-            let p = OptimizedClosures.FSharpFunc<_,_,_>.Adapt p
+        let forall2 predicate (source1:seq<_>) (source2:seq<_>) =
+            let p = OptimizedClosures.FSharpFunc<_,_,_>.Adapt predicate
             ISeq.forall2 (fun a b -> p.Invoke(a,b)) (source1 |> toISeq1) (source2 |> toISeq2)
 
         [<CompiledName("Exists2")>]
-        let exists2 p (source1: seq<_>) (source2: seq<_>) =
-            let p = OptimizedClosures.FSharpFunc<_,_,_>.Adapt p
+        let exists2 predicate (source1:seq<_>) (source2:seq<_>) =
+            let p = OptimizedClosures.FSharpFunc<_,_,_>.Adapt predicate
             ISeq.exists2 (fun a b -> p.Invoke(a,b)) (source1 |> toISeq1) (source2 |> toISeq2)
 
         [<CompiledName("Head")>]
