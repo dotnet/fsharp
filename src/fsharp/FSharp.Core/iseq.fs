@@ -110,7 +110,9 @@ namespace Microsoft.FSharp.Collections
         module internal TailCall =
             // used for performance reasons; these are not recursive calls, so should be safe
             // ** it should be noted that potential changes to the f# compiler may render this function
-            // ineffictive **
+            // ineffective - i.e. this function shouldn't do anything, it just happens to be complex
+            // enough to fool the compiler into erasing it's behaviour, but making the calling
+            // function invalid for tail call optimization (No invesigation beyond observing behaviour) **
             let inline avoid boolean = match boolean with true -> true | false -> false
 
         let inline internal valueComparer<'T when 'T : equality> () =
