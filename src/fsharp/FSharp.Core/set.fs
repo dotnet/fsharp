@@ -495,26 +495,11 @@ namespace Microsoft.FSharp.Collections
             let res = Array.zeroCreate n 
             copyToArray s res 0;
             res
-<<<<<<< HEAD
-
-
-
-        let rec mkFromEnumerator comparer acc (e: IEnumerator<_>) = 
-          if e.MoveNext() then 
-            mkFromEnumerator comparer (add comparer e.Current acc) e
-          else acc
-          
-        let ofSeq comparer (c: IEnumerable<_>) =
-          use ie = c.GetEnumerator()
-          mkFromEnumerator comparer SetEmpty ie 
-=======
           
         let ofSeq comparer (c : IEnumerable<_>) =
           Seq.fold (fun acc k -> add comparer k acc) SetEmpty c
->>>>>>> Map/Set use Seq.fold to utilize ISeq implementation
 
         let ofArray comparer l = Array.fold (fun acc k -> add comparer k acc) SetEmpty l    
-
 
     [<Sealed>]
     [<CompiledName("FSharpSet`1")>]
