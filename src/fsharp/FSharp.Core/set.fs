@@ -826,7 +826,7 @@ namespace Microsoft.FSharp.Collections
         let toSeq (set: Set<'T>) = (set:> seq<'T>)
 
         [<CompiledName("OfSeq")>]
-        let ofSeq (c : seq<_>) = new Set<_>(c)
+        let ofSeq (elements:seq<_>) = new Set<_>(elements)
 
         [<CompiledName("Difference")>]
         let difference (set1: Set<'T>) (set2: Set<'T>) = set1 - set2
