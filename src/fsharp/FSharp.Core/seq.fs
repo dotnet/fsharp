@@ -82,12 +82,12 @@ namespace Microsoft.FSharp.Collections
             ISeq.init count f :> seq<_>
 
         [<CompiledName("Iterate")>]
-        let iter f (source : seq<'T>) =
+        let iter action (source:seq<'T>) =
             let original = toISeq source
             match getRaw original with
-            | :? array<'T> as arr -> Array.iter f arr
-            | :? list<'T> as lst -> List.iter f lst
-            | raw -> ISeq.iter f (rawOrOriginal raw original)
+            | :? array<'T> as arr -> Array.iter action arr
+            | :? list<'T> as lst -> List.iter action lst
+            | raw -> ISeq.iter action (rawOrOriginal raw original)
 
         [<CompiledName("Item")>]
         let item index (source : seq<'T>) =
@@ -108,13 +108,13 @@ namespace Microsoft.FSharp.Collections
         let nth index (source : seq<'T>) = item index source
 
         [<CompiledName("IterateIndexed")>]
-        let iteri f (source : seq<'T>) =
+        let iteri action (source:seq<'T>) =
             let original = toISeq source
             match getRaw original with
-            | :? array<'T> as arr -> Array.iteri f arr
-            | :? list<'T> as lst -> List.iteri f lst
+            | :? array<'T> as arr -> Array.iteri action arr
+            | :? list<'T> as lst -> List.iteri action lst
             | raw -> 
-                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
+                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt action
                 ISeq.iteri (fun idx a -> f.Invoke (idx,a)) (rawOrOriginal raw original)
 
         [<CompiledName("Exists")>]
@@ -138,13 +138,13 @@ namespace Microsoft.FSharp.Collections
             | raw -> ISeq.forall f (rawOrOriginal raw original)
 
         [<CompiledName("Iterate2")>]
-        let iter2 f (source1 : seq<_>) (source2 : seq<_>)    =
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
+        let iter2 action (source1:seq<_>) (source2:seq<_>)    =
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt action
             ISeq.iter2 (fun a b -> f.Invoke(a,b)) (source1 |> toISeq1) (source2 |> toISeq2)
 
         [<CompiledName("IterateIndexed2")>]
-        let iteri2 f (source1 : seq<_>) (source2 : seq<_>) =
-            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt f
+        let iteri2 action (source1 : seq<_>) (source2 : seq<_>) =
+            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt action
             ISeq.iteri2 (fun idx a b -> f.Invoke(idx,a,b)) (source1 |> toISeq1) (source2 |> toISeq2)
 
         [<CompiledName("Filter")>]
@@ -155,26 +155,26 @@ namespace Microsoft.FSharp.Collections
         let where predicate source = filter predicate source
 
         [<CompiledName("Map")>]
-        let map    f source      =
-            ISeq.map f (toISeq source) :> seq<_>
+        let map mapping source =
+            ISeq.map mapping (toISeq source) :> seq<_>
 
         [<CompiledName("MapIndexed")>]
-        let mapi f source      =
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
+        let mapi mapping source =
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt mapping
             ISeq.mapi (fun idx a ->f.Invoke(idx,a)) (toISeq source) :> seq<_>
 
         [<CompiledName("MapIndexed2")>]
-        let mapi2 f source1 source2 =
-            let f = OptimizedClosures.FSharpFunc<int,'T,'U,'V>.Adapt f
+        let mapi2 mapping source1 source2 =
+            let f = OptimizedClosures.FSharpFunc<int,'T,'U,'V>.Adapt mapping
             ISeq.mapi2 (fun idx a b -> f.Invoke (idx,a,b)) (source1 |> toISeq1) (source2 |> toISeq2) :> seq<_>
 
         [<CompiledName("Map2")>]
-        let map2 f source1 source2 =
-            ISeq.map2 f (source1 |> toISeq1) (source2 |> toISeq2) :> seq<_>
+        let map2 mapping source1 source2 =
+            ISeq.map2 mapping (source1 |> toISeq1) (source2 |> toISeq2) :> seq<_>
 
         [<CompiledName("Map3")>]
-        let map3 f source1 source2 source3 =
-            ISeq.map3 f (source1 |> toISeq1) (source2 |> toISeq2) (source3 |> toISeq3) :> seq<_>
+        let map3 mapping source1 source2 source3 =
+            ISeq.map3 mapping (source1 |> toISeq1) (source2 |> toISeq2) (source3 |> toISeq3) :> seq<_>
 
         [<CompiledName("Choose")>]
         let choose f source      =
@@ -205,12 +205,12 @@ namespace Microsoft.FSharp.Collections
             | raw -> ISeq.tryPick chooser (rawOrOriginal raw original)
 
         [<CompiledName("Pick")>]
-        let pick f source  =
+        let pick chooser source  =
             let original = toISeq source
             match getRaw original with
-            | :? array<'T> as arr -> Array.pick f arr
-            | :? list<'T> as lst -> List.pick f lst
-            | raw -> ISeq.pick f (rawOrOriginal raw original)
+            | :? array<'T> as arr -> Array.pick chooser arr
+            | :? list<'T> as lst -> List.pick chooser lst
+            | raw -> ISeq.pick chooser (rawOrOriginal raw original)
 
         [<CompiledName("TryFind")>]
         let tryFind predicate (source : seq<'T>)  =
@@ -267,18 +267,18 @@ namespace Microsoft.FSharp.Collections
             ISeq.fold2 (fun acc item1 item2 -> f.Invoke (acc, item1, item2)) state (source1 |> toISeq1) (source2 |> toISeq2)
 
         [<CompiledName("Reduce")>]
-        let reduce f (source : seq<'T>)  =
+        let reduce reduction (source : seq<'T>)  =
             let original = toISeq source
             match getRaw original with
-            | :? array<'T> as arr -> Array.reduce f arr
-            | :? list<'T> as lst -> List.reduce f lst
+            | :? array<'T> as arr -> Array.reduce reduction arr
+            | :? list<'T> as lst -> List.reduce reduction lst
             | raw ->
-                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
+                let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt reduction
                 ISeq.reduce (fun acc item -> f.Invoke (acc, item)) (rawOrOriginal raw original)
 
         [<CompiledName("Replicate")>]
-        let replicate count x =
-            ISeq.replicate count x :> seq<_>
+        let replicate count initial =
+            ISeq.replicate count initial :> seq<_>
 
         [<CompiledName("Append")>]
         let append (source1: seq<'T>) (source2: seq<'T>) =
@@ -317,8 +317,8 @@ namespace Microsoft.FSharp.Collections
             ISeq.foldBack2 f (toISeq1 source1) (toISeq2 source2) x
 
         [<CompiledName("ReduceBack")>]
-        let reduceBack f (source : seq<'T>) =
-            ISeq.reduceBack f (toISeq source)
+        let reduceBack reduction (source:seq<'T>) =
+            ISeq.reduceBack reduction (toISeq source)
 
         [<CompiledName("Singleton")>]
         let singleton value =
@@ -458,16 +458,16 @@ namespace Microsoft.FSharp.Collections
             ISeq.min (toISeq source)
 
         [<CompiledName("MinBy")>]
-        let inline minBy (f : 'T -> 'U) (source: seq<'T>) : 'T =
-            ISeq.minBy f (toISeq source)
+        let inline minBy (projection:'T->'U) (source:seq<'T>) : 'T =
+            ISeq.minBy projection (toISeq source)
 
         [<CompiledName("Max")>]
         let inline max (source: seq<_>) =
             ISeq.max (toISeq source)
 
         [<CompiledName("MaxBy")>]
-        let inline maxBy (f : 'T -> 'U) (source: seq<'T>) : 'T =
-            ISeq.maxBy f (toISeq source)
+        let inline maxBy (projection:'T->'U) (source:seq<'T>) : 'T =
+            ISeq.maxBy projection (toISeq source)
 
         [<CompiledName("TakeWhile")>]
         let takeWhile predicate (source: seq<_>) =
@@ -540,16 +540,16 @@ namespace Microsoft.FSharp.Collections
             ISeq.rev (toISeq source) :> seq<_>
 
         [<CompiledName("Permute")>]
-        let permute f (source : seq<_>) =
-            ISeq.permute f (toISeq source) :> seq<_>
+        let permute indexMap (source : seq<_>) =
+            ISeq.permute indexMap (toISeq source) :> seq<_>
 
         [<CompiledName("MapFold")>]
-        let mapFold<'T,'State,'Result> (f: 'State -> 'T -> 'Result * 'State) acc source =
-            ISeq.mapFold f acc (toISeq source) |> fun (iseq, state) -> iseq :> seq<_>, state
+        let mapFold<'T,'State,'Result> (mapping:'State->'T->'Result*'State) state source =
+            ISeq.mapFold mapping state (toISeq source) |> fun (iseq, state) -> iseq :> seq<_>, state
 
         [<CompiledName("MapFoldBack")>]
-        let mapFoldBack<'T,'State,'Result> (f: 'T -> 'State -> 'Result * 'State) source acc =
-            ISeq.mapFoldBack f (toISeq source) acc |> fun (iseq, state) -> iseq :> seq<_>, state
+        let mapFoldBack<'T,'State,'Result> (mapping:'T->'State->'Result*'State) source state =
+            ISeq.mapFoldBack mapping (toISeq source) state |> fun (iseq, state) -> iseq :> seq<_>, state
 
         [<CompiledName("Except")>]
         let except (itemsToExclude: seq<'T>) (source: seq<'T>) =
