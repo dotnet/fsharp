@@ -67,8 +67,8 @@ namespace Microsoft.FSharp.Collections
         let delay generator = mkDelayedSeq generator
 
         [<CompiledName("Unfold")>]
-        let unfold f x =
-            ISeq.unfold f x :> seq<_>
+        let unfold generator state =
+            ISeq.unfold generator state :> seq<_>
 
         [<CompiledName("Empty")>]
         let empty<'T> = (EmptyEnumerable :> seq<'T>)
@@ -97,12 +97,12 @@ namespace Microsoft.FSharp.Collections
             IEnumerator.nth index e
 
         [<CompiledName("TryItem")>]
-        let tryItem i (source : seq<'T>) =
+        let tryItem index (source : seq<'T>) =
             let original = toISeq source
             match getRaw original with
-            | :? array<'T> as arr -> Array.tryItem i arr
-            | :? list<'T> as lst -> List.tryItem i lst
-            | raw -> ISeq.tryItem i (rawOrOriginal raw original)
+            | :? array<'T> as arr -> Array.tryItem index arr
+            | :? list<'T> as lst -> List.tryItem index lst
+            | raw -> ISeq.tryItem index (rawOrOriginal raw original)
 
         [<CompiledName("Get")>]
         let nth index (source : seq<'T>) = item index source
@@ -197,12 +197,12 @@ namespace Microsoft.FSharp.Collections
             source |> ISeq.cast :> seq<_>
 
         [<CompiledName("TryPick")>]
-        let tryPick f (source : seq<'T>)  =
+        let tryPick chooser (source : seq<'T>)  =
             let original = toISeq source
             match getRaw original with
-            | :? array<'T> as arr -> Array.tryPick f arr
-            | :? list<'T> as lst -> List.tryPick f lst
-            | raw -> ISeq.tryPick f (rawOrOriginal raw original)
+            | :? array<'T> as arr -> Array.tryPick chooser arr
+            | :? list<'T> as lst -> List.tryPick chooser lst
+            | raw -> ISeq.tryPick chooser (rawOrOriginal raw original)
 
         [<CompiledName("Pick")>]
         let pick f source  =
@@ -213,12 +213,12 @@ namespace Microsoft.FSharp.Collections
             | raw -> ISeq.pick f (rawOrOriginal raw original)
 
         [<CompiledName("TryFind")>]
-        let tryFind f (source : seq<'T>)  =
+        let tryFind predicate (source : seq<'T>)  =
             let original = toISeq source
             match getRaw original with
-            | :? array<'T> as arr -> Array.tryFind f arr
-            | :? list<'T> as lst -> List.tryFind f lst
-            | raw -> ISeq.tryFind f (rawOrOriginal raw original)
+            | :? array<'T> as arr -> Array.tryFind predicate arr
+            | :? list<'T> as lst -> List.tryFind predicate lst
+            | raw -> ISeq.tryFind predicate (rawOrOriginal raw original)
 
         [<CompiledName("Find")>]
         let find f source =
@@ -321,44 +321,44 @@ namespace Microsoft.FSharp.Collections
             ISeq.reduceBack f (toISeq source)
 
         [<CompiledName("Singleton")>]
-        let singleton x =
-            ISeq.singleton x :> seq<_>
+        let singleton value =
+            ISeq.singleton value :> seq<_>
 
         [<CompiledName("Truncate")>]
-        let truncate n (source: seq<'T>) =
-            ISeq.truncate n (toISeq source) :> seq<_>
+        let truncate count (source: seq<'T>) =
+            ISeq.truncate count (toISeq source) :> seq<_>
 
         [<CompiledName("Pairwise")>]
         let pairwise (source: seq<'T>) =
             ISeq.pairwise (toISeq source) :> seq<_>
 
         [<CompiledName("Scan")>]
-        let scan<'T,'State> f (z:'State) (source : seq<'T>) =
-            ISeq.scan f z (toISeq source) :> seq<_>
+        let scan<'T,'State> folder (state:'State) (source : seq<'T>) =
+            ISeq.scan folder state (toISeq source) :> seq<_>
 
         [<CompiledName("TryFindBack")>]
-        let tryFindBack f (source : seq<'T>) =
-            ISeq.tryFindBack f (toISeq source)
+        let tryFindBack predicate (source : seq<'T>) =
+            ISeq.tryFindBack predicate (toISeq source)
 
         [<CompiledName("FindBack")>]
         let findBack f source =
             ISeq.findBack f (toISeq source)
 
         [<CompiledName("ScanBack")>]
-        let scanBack<'T,'State> f (source : seq<'T>) (acc:'State) =
-            ISeq.scanBack f (toISeq source) acc :> seq<_>
+        let scanBack<'T,'State> folder (source:seq<'T>) (state:'State) =
+            ISeq.scanBack folder (toISeq source) state :> seq<_>
 
         [<CompiledName("FindIndex")>]
         let findIndex p (source:seq<_>) =
             ISeq.findIndex p (toISeq source)
 
         [<CompiledName("TryFindIndex")>]
-        let tryFindIndex p (source:seq<_>) =
-            ISeq.tryFindIndex p (toISeq source)
+        let tryFindIndex predicate (source:seq<_>) =
+            ISeq.tryFindIndex predicate (toISeq source)
 
         [<CompiledName("TryFindIndexBack")>]
-        let tryFindIndexBack f (source : seq<'T>) =
-            ISeq.tryFindIndexBack f (toISeq source)
+        let tryFindIndexBack predicate (source : seq<'T>) =
+            ISeq.tryFindIndexBack predicate (toISeq source)
 
         [<CompiledName("FindIndexBack")>]
         let findIndexBack f source =
@@ -408,20 +408,20 @@ namespace Microsoft.FSharp.Collections
             ISeq.distinctBy keyf (toISeq source) :> seq<_>
 
         [<CompiledName("SortBy")>]
-        let sortBy keyf source =
-            ISeq.sortBy keyf (toISeq source) :> seq<_>
+        let sortBy projection source =
+            ISeq.sortBy projection (toISeq source) :> seq<_>
 
         [<CompiledName("Sort")>]
         let sort source =
             ISeq.sort (toISeq source) :> seq<_>
 
         [<CompiledName("SortWith")>]
-        let sortWith f source =
-            ISeq.sortWith f (toISeq source) :> seq<_>
+        let sortWith comparer source =
+            ISeq.sortWith comparer (toISeq source) :> seq<_>
 
         [<CompiledName("SortByDescending")>]
-        let inline sortByDescending keyf source =
-            ISeq.sortByDescending keyf (toISeq source) :> seq<_>
+        let inline sortByDescending projection source =
+            ISeq.sortByDescending projection (toISeq source) :> seq<_>
 
         [<CompiledName("SortDescending")>]
         let inline sortDescending source =
@@ -442,8 +442,8 @@ namespace Microsoft.FSharp.Collections
             ISeq.sum (toISeq source)
 
         [<CompiledName("SumBy")>]
-        let inline sumBy (f : 'T -> ^U) (source: seq<'T>) : ^U =
-            ISeq.sumBy f (toISeq source)
+        let inline sumBy (projection : 'T -> ^U) (source: seq<'T>) : ^U =
+            ISeq.sumBy projection (toISeq source)
 
         [<CompiledName("Average")>]
         let inline average (source: seq< ^a>) : ^a =
@@ -470,16 +470,16 @@ namespace Microsoft.FSharp.Collections
             ISeq.maxBy f (toISeq source)
 
         [<CompiledName("TakeWhile")>]
-        let takeWhile p (source: seq<_>) =
-            ISeq.takeWhile p (toISeq source) :> seq<_>
+        let takeWhile predicate (source: seq<_>) =
+            ISeq.takeWhile predicate (toISeq source) :> seq<_>
 
         [<CompiledName("Skip")>]
         let skip count (source: seq<_>) =
             ISeq.skip count (toISeq source) :> seq<_>
 
         [<CompiledName("SkipWhile")>]
-        let skipWhile p (source: seq<_>) =
-            ISeq.skipWhile p (toISeq source) :> seq<_>
+        let skipWhile predicate (source: seq<_>) =
+            ISeq.skipWhile predicate (toISeq source) :> seq<_>
 
         [<CompiledName("ForAll2")>]
         let forall2 p (source1: seq<_>) (source2: seq<_>) =
