@@ -46,7 +46,7 @@
       <HasLceComments>false</HasLceComments>
       <InProject>false</InProject>
     </FilesToLocalize>
-    <FsSrGen Include="VFSIstrings.txt" />
+    <EmbeddedText Include="VFSIstrings.txt" />
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="srProperties.fs" />
     <Compile Include="$(FSharpSourcesRoot)\utils\CompilerLocationUtils.fs">
