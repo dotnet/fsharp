@@ -21,7 +21,7 @@ type internal FSharpColorizationService
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: FSharpProjectOptionsManager
     ) =
     static let userOpName = "SemanticColorization"
 

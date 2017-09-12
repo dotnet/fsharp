@@ -59,22 +59,22 @@ type internal FSharpCheckerProvider
             // When the F# background builder refreshes the background semantic build context for a file,
             // we request Roslyn to reanalyze that individual file.
             checker.BeforeBackgroundFileCheck.Add(fun (fileName, extraProjectInfo) ->  
-                async {
-                 try 
-                     match extraProjectInfo with 
-                     | Some (:? Workspace as workspace) -> 
-                         let solution = workspace.CurrentSolution
-                         let documentIds = solution.GetDocumentIdsWithFilePath(fileName)
-                         if not documentIds.IsEmpty then 
-                             let docuentIdsFiltered = documentIds |> Seq.filter workspace.IsDocumentOpen |> Seq.toArray
-                             for documentId in docuentIdsFiltered do
-                                 Trace.TraceInformation("{0:n3} Requesting Roslyn reanalysis of {1}", DateTime.Now.TimeOfDay.TotalSeconds, documentId)
-                             if docuentIdsFiltered.Length > 0 then 
-                                 analyzerService.Reanalyze(workspace,documentIds=docuentIdsFiltered)
-                     | _ -> ()
-                  with ex -> 
-                      Assert.Exception(ex)
-                  } |> Async.StartImmediate
+               async {
+                try 
+                    match extraProjectInfo with 
+                    | Some (:? Workspace as workspace) -> 
+                        let solution = workspace.CurrentSolution
+                        let documentIds = solution.GetDocumentIdsWithFilePath(fileName)
+                        if not documentIds.IsEmpty then 
+                            let docuentIdsFiltered = documentIds |> Seq.filter workspace.IsDocumentOpen |> Seq.toArray
+                            for documentId in docuentIdsFiltered do
+                                Trace.TraceInformation("{0:n3} Requesting Roslyn reanalysis of {1}", DateTime.Now.TimeOfDay.TotalSeconds, documentId)
+                            if docuentIdsFiltered.Length > 0 then 
+                                analyzerService.Reanalyze(workspace,documentIds=docuentIdsFiltered)
+                    | _ -> ()
+                with ex -> 
+                    Assert.Exception(ex)
+                } |> Async.StartImmediate
             )
             checker
 
@@ -91,8 +91,8 @@ type Refreshable<'T> = 'T * (bool -> 'T)
 // The main entrypoints are TryGetOptionsForDocumentOrProject and TryGetOptionsForEditingDocumentOrProject.
 
 
-[<Export(typeof<ProjectInfoManager>); Composition.Shared>]
-type internal ProjectInfoManager 
+[<Export(typeof<FSharpProjectOptionsManager>); Composition.Shared>]
+type internal FSharpProjectOptionsManager 
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
@@ -210,6 +210,7 @@ type internal ProjectInfoManager
         | _ -> this.TryGetOptionsForProject(projectId) 
 
     [<Export>]
+    /// This handles commandline change notifications from the Dotnet Project-system
     member this.HandleCommandLineChanges(path:string, sources:ImmutableArray<CommandLineSourceFile>, references:ImmutableArray<CommandLineReference>, options:ImmutableArray<string>) =
         let fullPath p =
             if Path.IsPathRooted(p) then p
@@ -230,7 +231,7 @@ type internal ProjectInfoManager
 type internal FSharpCheckerWorkspaceService =
     inherit Microsoft.CodeAnalysis.Host.IWorkspaceService
     abstract Checker: FSharpChecker
-    abstract ProjectInfoManager: ProjectInfoManager
+    abstract FSharpProjectOptionsManager: FSharpProjectOptionsManager
 
 type internal RoamingProfileStorageLocation(keyName: string) =
     inherit OptionStorageLocation()
@@ -249,13 +250,13 @@ type internal FSharpCheckerWorkspaceServiceFactory
     [<Composition.ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: FSharpProjectOptionsManager
     ) =
     interface Microsoft.CodeAnalysis.Host.Mef.IWorkspaceServiceFactory with
         member this.CreateService(_workspaceServices) =
             upcast { new FSharpCheckerWorkspaceService with
                 member this.Checker = checkerProvider.Checker
-                member this.ProjectInfoManager = projectInfoManager }
+                member this.FSharpProjectOptionsManager = projectInfoManager }
 
 type
     [<Guid(FSharpConstants.packageGuidString)>]
@@ -310,7 +311,7 @@ and
     internal FSharpLanguageService(package : FSharpPackage) =
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
 
-    let projectInfoManager = package.ComponentModel.DefaultExportProvider.GetExport<ProjectInfoManager>().Value
+    let projectInfoManager = package.ComponentModel.DefaultExportProvider.GetExport<FSharpProjectOptionsManager>().Value
 
     let projectDisplayNameOf projectFileName = 
         if String.IsNullOrWhiteSpace projectFileName then projectFileName
@@ -391,7 +392,7 @@ and
     member private this.OnProjectChanged(projectId:ProjectId, _newSolution:Solution) =
         let project = this.Workspace.CurrentSolution.GetProject(projectId)
         let siteProvider = this.ProvideProjectSiteProvider(this.Workspace, project)
-        this.SetupProjectFile(siteProvider, this.Workspace, "SetupNewTextView")
+        projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId this.Workspace, projectId, siteProvider.GetProjectSite(), this.Workspace, "OnProjectChanged")
     member private this.OnProjectAdded(projectId:ProjectId, newSolution:Solution) = this.OnProjectChanged(projectId, newSolution)
     member private this.OnProjectRemoved(_projectId:ProjectId, _newSolution:Solution) = ()
 
@@ -511,8 +512,9 @@ and
             let projectGuid = Guid(site.ProjectGuid)
             let projectFileName = site.ProjectFileName()
             let projectDisplayName = projectDisplayNameOf projectFileName
+
             let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
-    
+
             projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, projectId, site, workspace, userOpName)
             let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
 
@@ -521,13 +523,14 @@ and
                 |> Option.map (fun p -> p :?> IVsHierarchy)
                 |> Option.toObj
 
-            // Roslyn is expecting site to be an IVsHierarchy.
-            // It just so happens that the object that implements IProvideProjectSite is also
-            // an IVsHierarchy. This assertion is to ensure that the assumption holds true.
-            Debug.Assert(hierarchy <> null, "About to CreateProjectContext with a non-hierarchy site")
-
             if isNull (workspace.ProjectTracker.GetProject projectId) then
                 let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>()
+
+                // Roslyn is expecting site to be an IVsHierarchy.
+                // It just so happens that the object that implements IProvideProjectSite is also
+                // an IVsHierarchy. This assertion is to ensure that the assumption holds true.
+                Debug.Assert(hierarchy <> null, "About to CreateProjectContext with a non-hierarchy site")
+
                 let projectContext = 
                     projectContextFactory.CreateProjectContext(
                         FSharpConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectGuid, hierarchy, null, errorReporter)
@@ -535,7 +538,6 @@ and
                 let project = projectContext :?> AbstractProject
 
                 this.SyncProject(project, projectContext, site, workspace, forceUpdate=false, userOpName=userOpName)
-                site.BuildErrorReporter <- Some(errorReporter :> Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2)
                 site.AdviseProjectSiteChanges(FSharpConstants.FSharpLanguageServiceCallbackName, 
                                               AdviseProjectSiteChanges(fun () -> this.SyncProject(project, projectContext, site, workspace, forceUpdate=true, userOpName="AdviseProjectSiteChanges."+userOpName)))
                 site.AdviseProjectSiteClosed(FSharpConstants.FSharpLanguageServiceCallbackName, 
@@ -543,7 +545,6 @@ and
                                                 projectInfoManager.ClearInfoForProject(project.Id)
                                                 optionsAssociation.Remove(projectContext) |> ignore
                                                 project.Disconnect()))
-
                 for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
                     let referencedProjectId = setup referencedSite
                     project.AddProjectReference(ProjectReference referencedProjectId)
@@ -608,7 +609,7 @@ and
                     | id ->
                         let project = this.Workspace.CurrentSolution.GetProject(id.ProjectId)
                         let siteProvider = this.ProvideProjectSiteProvider(this.Workspace, project)
-                        this.SetupProjectFile(siteProvider, this.Workspace, "SetupNewTextView")
+                        projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId this.Workspace, id.ProjectId, siteProvider.GetProjectSite(), this.Workspace, "SetupNewTextView")
                 | _ ->
                     let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
                     this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)

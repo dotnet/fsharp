@@ -33,7 +33,7 @@ type internal FSharpNavigableItem(document: Document, textSpan: TextSpan) =
         member this.DisplayTaggedParts = ImmutableArray<TaggedText>.Empty
         member this.ChildItems = ImmutableArray<INavigableItem>.Empty
 
-type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: ProjectInfoManager) =
+type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpProjectOptionsManager) =
 
     static let userOpName = "GoToDefinition"
 
@@ -239,7 +239,7 @@ type internal FSharpGoToDefinitionService
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager
+        projectInfoManager: FSharpProjectOptionsManager
     ) =
 
     static let userOpName = "GoToDefinition"

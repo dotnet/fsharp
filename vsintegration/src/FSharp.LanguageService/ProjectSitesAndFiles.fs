@@ -14,7 +14,7 @@
 // through the nodes of the hierarchy for the F# project. There seems to be an essentially duplicated
 // version of this code in this file.
 //
-// In our LanguageService.fs, ProjectInfoManager uses this IProjectSite information to incrementally maintain
+// In our LanguageService.fs, FSharpProjectOptionsManager uses this IProjectSite information to incrementally maintain
 // a corresponding F# CompilerService FSharpProjectOptions value. 
 //
 // In our LanguageService.fs, we also use this IProjectSite information to maintain a
@@ -27,7 +27,7 @@
 //    project.AddProjectReference
 // 
 // The new F# project system supplies the project information using a Roslyn project in the workspace.
-// This means a lot of the stuff above is irrelevant in that case, apart from where ProjectInfoManager
+// This means a lot of the stuff above is irrelevant in that case, apart from where FSharpProjectOptionsManager
 // incrementally maintains a corresponding F# CompilerService FSharpProjectOptions value. 
 
 namespace Microsoft.VisualStudio.FSharp.LanguageService
