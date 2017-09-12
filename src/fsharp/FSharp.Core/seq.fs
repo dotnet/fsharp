@@ -126,8 +126,8 @@ namespace Microsoft.FSharp.Collections
             | raw -> ISeq.exists predicate (rawOrOriginal raw original)
 
         [<CompiledName("Contains")>]
-        let inline contains element (source : seq<'T>) =
-            ISeq.contains element (toISeq source)
+        let inline contains value (source:seq<'T>) =
+            ISeq.contains value (toISeq source)
 
         [<CompiledName("ForAll")>]
         let forall predicate (source:seq<'T>) =
@@ -177,8 +177,8 @@ namespace Microsoft.FSharp.Collections
             ISeq.map3 mapping (source1 |> toISeq1) (source2 |> toISeq2) (source3 |> toISeq3) :> seq<_>
 
         [<CompiledName("Choose")>]
-        let choose f source      =
-            ISeq.choose f (toISeq source) :> seq<_>
+        let choose chooser source =
+            ISeq.choose chooser (toISeq source) :> seq<_>
 
         [<CompiledName("Indexed")>]
         let indexed source =
@@ -288,8 +288,8 @@ namespace Microsoft.FSharp.Collections
         let collect mapping source = map mapping source |> concat
 
         [<CompiledName("CompareWith")>]
-        let compareWith (f:'T -> 'T -> int) (source1 : seq<'T>) (source2: seq<'T>) =
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt f
+        let compareWith (comparer:'T->'T->int) (source1:seq<'T>) (source2:seq<'T>) =
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt comparer
             ISeq.compareWith (fun a b -> f.Invoke(a,b)) (source1 |> toISeq1) (source2 |> toISeq2)
 
         [<CompiledName("OfList")>]
@@ -404,8 +404,8 @@ namespace Microsoft.FSharp.Collections
             ISeq.distinct (toISeq source) :> seq<_>
 
         [<CompiledName("DistinctBy")>]
-        let distinctBy keyf source =
-            ISeq.distinctBy keyf (toISeq source) :> seq<_>
+        let distinctBy projection source =
+            ISeq.distinctBy projection (toISeq source) :> seq<_>
 
         [<CompiledName("SortBy")>]
         let sortBy projection source =
@@ -428,33 +428,33 @@ namespace Microsoft.FSharp.Collections
             ISeq.sortDescending (toISeq source) :> seq<_>
 
         [<CompiledName("CountBy")>]
-        let countBy (keyf:'T->'Key) (source:seq<'T>) =
+        let countBy (projection:'T->'Key) (source:seq<'T>) =
 #if FX_RESHAPED_REFLECTION
             if (typeof<'Key>).GetTypeInfo().IsValueType
 #else
             if typeof<'Key>.IsValueType
 #endif
-                then ISeq.CountBy.byVal keyf (toISeq source) :> seq<_>
-                else ISeq.CountBy.byRef keyf (toISeq source) :> seq<_>
+                then ISeq.CountBy.byVal projection (toISeq source) :> seq<_>
+                else ISeq.CountBy.byRef projection (toISeq source) :> seq<_>
 
         [<CompiledName("Sum")>]
         let inline sum (source: seq< ^a>) : ^a =
             ISeq.sum (toISeq source)
 
         [<CompiledName("SumBy")>]
-        let inline sumBy (projection : 'T -> ^U) (source: seq<'T>) : ^U =
+        let inline sumBy (projection:'T-> ^U) (source:seq<'T>) : ^U =
             ISeq.sumBy projection (toISeq source)
 
         [<CompiledName("Average")>]
-        let inline average (source: seq< ^a>) : ^a =
+        let inline average (source:seq< ^a>) : ^a =
             ISeq.average (toISeq source)
 
         [<CompiledName("AverageBy")>]
-        let inline averageBy (f : 'T -> ^U) (source: seq< 'T >) : ^U =
-            ISeq.averageBy f (toISeq source)
+        let inline averageBy (projection:'T-> ^U) (source:seq<'T>) : ^U =
+            ISeq.averageBy projection (toISeq source)
 
         [<CompiledName("Min")>]
-        let inline min (source: seq<_>) =
+        let inline min (source:seq<_>) =
             ISeq.min (toISeq source)
 
         [<CompiledName("MinBy")>]
