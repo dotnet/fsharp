@@ -278,10 +278,10 @@ namespace Microsoft.FSharp.Collections.SeqComposition
 
         let mutable activity = Unchecked.defaultof<Activity<'T,'U>>
 
-        member __.FinaliseConstruct(activity':Activity<'T,'U>) =
+        member private __.FinaliseConstruct(activity':Activity<'T,'U>) =
             activity <- activity'
 
-        override this.Activity = upcast activity
+        override __.Activity = upcast activity
 
         member private this.MoveNext () =
             if this.HaltedIdx = 0 && source.MoveNext () then
@@ -374,9 +374,9 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         let mutable active = EmptyEnumerators.Element
         let mutable activity = Unchecked.defaultof<Activity<'T,'U>>
 
-        override this.Activity = upcast activity
+        override __.Activity = upcast activity
 
-        member __.FinaliseConstruct(activity':Activity<'T,'U>) =
+        member private __.FinaliseConstruct(activity':Activity<'T,'U>) =
             activity <- activity'
 
         member private this.MoveNext () =
@@ -536,10 +536,10 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         let mutable idx = 0
         let mutable activity = Unchecked.defaultof<Activity<'T,'U>>
 
-        member __.FinaliseConstruct(activity':Activity<'T,'U>) =
+        member private __.FinaliseConstruct(activity':Activity<'T,'U>) =
             activity <- activity'
 
-        override this.Activity = upcast activity
+        override __.Activity = upcast activity
 
         member private this.MoveNext () =
             if this.HaltedIdx = 0 && idx < array.Length then
@@ -625,10 +625,10 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         let mutable idx = 0
         let mutable activity = Unchecked.defaultof<Activity<'T,'U>>
 
-        member __.FinaliseConstruct(activity':Activity<'T,'U>) =
+        member private __.FinaliseConstruct(activity':Activity<'T,'U>) =
             activity <- activity'
 
-        override this.Activity = upcast activity
+        override __.Activity = upcast activity
 
         member private this.MoveNext () =
             if this.HaltedIdx = 0 && idx < array.Count then
@@ -688,10 +688,10 @@ namespace Microsoft.FSharp.Collections.SeqComposition
 
         let mutable activity = Unchecked.defaultof<Activity<'T,'U>>
 
-        member __.FinaliseConstruct(activity':Activity<'T,'U>) =
+        member private __.FinaliseConstruct(activity':Activity<'T,'U>) =
             activity <- activity'
 
-        override this.Activity = upcast activity
+        override __.Activity = upcast activity
 
         member private this.MoveNext () =
             if this.HaltedIdx <> 0 then
@@ -765,7 +765,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
         let mutable activity = Unchecked.defaultof<Activity<'T,'U>>
         let mutable isSkipping = Unchecked.defaultof<unit->bool>
 
-        member __.FinaliseConstruct(activity':Activity<'T,'U>) =
+        member private __.FinaliseConstruct(activity':Activity<'T,'U>) =
             activity <- activity'
 
             isSkipping <- 
@@ -773,8 +773,7 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                 | :? ISkipable as skip -> skip.CanSkip
                 | _ -> fun () -> false
 
-
-        override this.Activity = upcast activity
+        override __.Activity = upcast activity
 
         member private this.MoveNext () =
             if this.HaltedIdx = 0 && idx < terminatingIdx then
