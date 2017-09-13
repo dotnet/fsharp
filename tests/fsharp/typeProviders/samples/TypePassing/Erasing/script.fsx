@@ -10,9 +10,13 @@ type MyTpAttribute(name:string) =
 
      member x.Name with get() = name
 
-[<MyTpAttribute("Foo")>]
-type AttributedRecord = 
+
+type [<MyTpAttribute("Foo")>] AttributedRecord = 
     { Id : string }
+    member x.TestInstanceProperty = 1
+    member x.TestInstanceMethod(y:string) = y
+    static member TestStaticMethod(y:string) = y
+    static member TestStaticProperty = 2
 
 type MyRecord = 
     { Id: string }
@@ -87,7 +91,7 @@ module AttributedRecord =
     check "acnkewcwpo22" S.IsGenericType (T.IsGenericType)
     check "acnkewcwpo23" S.IsGenericTypeDefinition (T.IsGenericTypeDefinition)
     check "acnkewcwpo24" S.GetGenericArguments_Length (T.GetGenericArguments().Length)
-    check "acnkewcwpo25" S.GetCustomAttributes_Length (Seq.length T.CustomAttributes)
+    check "acnkewcwpo25" S.CustomAttributes_Length (Seq.length T.CustomAttributes)
    // TODO: rest of System.Type properties and methods
    // TODO: reset of FSharp Reflection methods 
 

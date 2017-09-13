@@ -45,7 +45,7 @@ type TypePassingTp(config: TypeProviderConfig) as this =
         rootType.AddMember(ProvidedProperty("GetPublicConstructors_Length", typeof<int>, GetterCode = (fun args -> let v = ty.GetConstructors().Length in <@@ v  @@> ), IsStatic=true))        
         rootType.AddMember(ProvidedProperty("GetPublicMethods_Length", typeof<int>, GetterCode = (fun args -> let v = ty.GetMethods().Length in <@@ v  @@> ), IsStatic=true))    
         rootType.AddMember(ProvidedProperty("GetGenericArguments_Length", typeof<int>, GetterCode = (fun args -> let v = ty.GetGenericArguments().Length in <@@ v  @@> ), IsStatic=true))         
-
+        rootType.AddMember(ProvidedProperty("CustomAttributes_Length", typeof<int>, GetterCode = (fun args -> let v = Seq.length ty.CustomAttributes in <@@ v  @@> ), IsStatic=true))
         // Raises error is used in program
         rootType.AddMember(ProvidedProperty("Assembly_CodeBase", typeof<string>, GetterCode = (fun args -> let v = ty.Assembly.CodeBase in <@@ v  @@> ), IsStatic=true))        
         
