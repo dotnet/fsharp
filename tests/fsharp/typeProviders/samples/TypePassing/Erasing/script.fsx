@@ -4,6 +4,16 @@ open System
 open FSharp.Reflection
 open Test
 
+[<AttributeUsage(AttributeTargets.Class ||| AttributeTargets.Field)>]
+type MyTpAttribute(name:string) = 
+     inherit Attribute() 
+
+     member x.Name with get() = name
+
+[<MyTpAttribute("Foo")>]
+type AttributedRecord = 
+    { Id : string }
+
 type MyRecord = 
     { Id: string }
     member x.TestInstanceProperty = 1
@@ -42,7 +52,47 @@ let inaccurate nm v1 v2 v3 =
         failures <- failures @ [nm]
         printfn "\n*** %s: FAILED, expected %A, got %A, would have accepted %A\n" nm v2 v1 v3
 
-// Check an F# record type from this assembly
+module AttributedRecord = 
+
+    let T = typeof<AttributedRecord>
+    type S = TypePassing.Summarize<AttributedRecord>
+    check "acnkewcwpo1" S.Name T.Name
+    inaccurate "acnkewcwpo2" S.Assembly_DefinedTypes_Count (Seq.length T.Assembly.DefinedTypes) 0  // INACCURACY: this is wrong value, not sure why
+    inaccurate "acnkewcwpo3" S.Assembly_FullName T.FullName "script" // INACCURACY: the full name is not returned
+    check "acnkewcwpo3" S.IsAbstract T.IsAbstract
+    check "acnkewcwpo3" S.IsAnsiClass T.IsAnsiClass
+    check "acnkewcwpo3" S.IsArray T.IsArray
+    check "acnkewcwpo4" S.IsClass T.IsClass
+    inaccurate "acnkewcwpo5a" S.IsPublic T.IsPublic true // INACCURACY: This should report "false", and IsNestedPublic should report "true"
+    inaccurate "acnkewcwpo5b" S.IsNestedPublic T.IsNestedPublic false // INACCURACY: This should report "true", and IsPublic should report "false"
+    check "acnkewcwpo6" S.IsNotPublic T.IsNotPublic
+    check "acnkewcwpo7" S.IsValueType T.IsValueType
+    check "acnkewcwpo8" S.IsInterface T.IsInterface
+    check "acnkewcwpo18"
+    inaccurate "acnkewcwpo9" S.IsRecord (FSharpType.IsRecord(T)) false // INACCURACY:  Getting FSharp.Core reflection to give the right answer here is a  tricky as it looks for attributes that aren't in the TAST
+    check "acnkewcwpo10" S.IsFunction (FSharpType.IsFunction(T))
+    check "acnkewcwpo11" S.IsModule (FSharpType.IsModule(T))
+    check "acnkewcwpo12" S.IsExceptionRepresentation (FSharpType.IsExceptionRepresentation(T))
+    check "acnkewcwpo13" S.IsTuple (FSharpType.IsTuple(T))
+    check "acnkewcwpo14" S.IsUnion (FSharpType.IsUnion(T))
+    inaccurate "acnkewcwpo15" S.GetPublicProperties_Length (T.GetProperties().Length) 2 // INACCURACY: this should also report the properties for the F# record fields (which are not in the TAST unfortunately)
+    inaccurate "acnkewcwpo16" S.GetPublicConstructors_Length (T.GetConstructors().Length)  0  // INACCURACY: this should also report the constructor for the F# record type
+    inaccurate "acnkewcwpo17" S.GetPublicMethods_Length (T.GetMethods().Length)  4 // INACCURACY: like GetProperties, this should report the getter methods for the properties for the F# record fields (which are not in the TAST unfortunately)
+#if CURRENTLY_GIVES_COMPILATION_ERROR_NEED_TO_CHECK_IF_EXPECTED
+    check "acnkewcwpo18" S.Assembly_EntryPoint_isNull true
+    check "acnkewcwpo19" S.GUID ""
+    check "acnkewcwpo20" (try S.Assembly_CodeBase; false with _ -> true) true
+    check "acnkewcwpo21" S.Assembly_CustomAttributes_Count 0
+#endif
+    check "acnkewcwpo22" S.IsGenericType (T.IsGenericType)
+    check "acnkewcwpo23" S.IsGenericTypeDefinition (T.IsGenericTypeDefinition)
+    check "acnkewcwpo24" S.GetGenericArguments_Length (T.GetGenericArguments().Length)
+    check "acnkewcwpo25" S.GetCustomAttributes_Length (Seq.length T.CustomAttributes)
+   // TODO: rest of System.Type properties and methods
+   // TODO: reset of FSharp Reflection methods 
+
+
+// Check an generic F# record type from this assembly
 module MyGenericRecord = 
     let T = typeof<MyGenericRecord<String>>
     type S = TypePassing.Summarize<MyGenericRecord<String>>
