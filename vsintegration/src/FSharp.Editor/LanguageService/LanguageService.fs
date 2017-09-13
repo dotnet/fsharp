@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.VisualStudio.FSharp.Editor
+namespace rec Microsoft.VisualStudio.FSharp.Editor
 
 #nowarn "40"
 
@@ -89,8 +89,6 @@ type Refreshable<'T> = 'T * (bool -> 'T)
 // This service allows analyzers to get an appropriate FSharpProjectOptions value for a project or single file.
 // It also allows a 'cheaper' route to get the project options relevant to parsing (e.g. the #define values).
 // The main entrypoints are TryGetOptionsForDocumentOrProject and TryGetOptionsForEditingDocumentOrProject.
-
-
 [<Export(typeof<FSharpProjectOptionsManager>); Composition.Shared>]
 type internal FSharpProjectOptionsManager 
     [<ImportingConstructor>]
@@ -98,6 +96,7 @@ type internal FSharpProjectOptionsManager
         checkerProvider: FSharpCheckerProvider,
         [<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider
     ) =
+
     // A table of information about projects, excluding single-file projects.
     let projectTable = ConcurrentDictionary<ProjectId, Refreshable<ProjectId[] * FSharpProjectOptions>>()
 
@@ -108,6 +107,11 @@ type internal FSharpProjectOptionsManager
     // Accumulate sources and references for each project file
     let projectInfo = new ConcurrentDictionary<string, string[]*string[]*string[]>()
 
+    let notify = new Event<string>()
+
+    [<CLIEvent>]
+    member this.NotifyCommandLineChanges = notify.Publish
+ 
     /// Clear a project from the project table
     member this.ClearInfoForProject(projectId: ProjectId) =
         projectTable.TryRemove(projectId) |> ignore
@@ -218,6 +222,7 @@ type internal FSharpProjectOptionsManager
         let sourcePaths = sources |> Seq.map(fun s -> fullPath s.Path) |> Seq.toArray
         let referencePaths = references |> Seq.map(fun r -> fullPath r.Reference) |> Seq.toArray
         projectInfo.[path] <- (sourcePaths,referencePaths,options.ToArray())
+        notify.Trigger(path)
         ()
 
     member __.GetProjectInfo(path:string) = 
@@ -294,7 +299,7 @@ type
     override this.CreateEditorFactories() = Seq.empty<IVsEditorFactory>
     override this.RegisterMiscellaneousFilesWorkspaceInformation(_) = ()
 
-and
+type
     [<Guid(FSharpConstants.languageServiceGuidString)>]
     [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fs")>]
     [<ProvideLanguageExtension(typeof<FSharpLanguageService>, ".fsi")>]
@@ -308,16 +313,18 @@ and
     [<ProvideEditorExtension(FSharpConstants.editorFactoryGuidString, ".fsscript", 97)>]
     [<ProvideEditorExtension(FSharpConstants.editorFactoryGuidString, ".ml", 97)>]
     [<ProvideEditorExtension(FSharpConstants.editorFactoryGuidString, ".mli", 97)>]
-    internal FSharpLanguageService(package : FSharpPackage) =
+    internal FSharpLanguageService(package : FSharpPackage)  as this =
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
 
     let projectInfoManager = package.ComponentModel.DefaultExportProvider.GetExport<FSharpProjectOptionsManager>().Value
 
-    let projectDisplayNameOf projectFileName = 
+    let projectDisplayNameOf projectFileName =
         if String.IsNullOrWhiteSpace projectFileName then projectFileName
         else Path.GetFileNameWithoutExtension projectFileName
 
     let singleFileProjects = ConcurrentDictionary<_, AbstractProject>()
+
+    do  projectInfoManager.NotifyCommandLineChanges.Add(fun path -> this.HandleCommandLineOptionsChanged(path))
 
     let tryRemoveSingleFileProject projectId =
         match singleFileProjects.TryRemove(projectId) with
@@ -334,6 +341,11 @@ and
         Some (workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName))
 
     let optionsAssociation = ConditionalWeakTable<IWorkspaceProjectContext, string[]>()
+
+    member private this.HandleCommandLineOptionsChanged (path) =
+        let projectDisplayName = projectDisplayNameOf path
+        let projectId = this.Workspace.ProjectTracker.GetOrCreateProjectIdForPath(path, projectDisplayName)
+        this.OnProjectChanged(projectId)
 
     member private this.ProvideProjectSiteProvider(workspace:Workspace, project:Project) =
         let visualStudioWorkspace = workspace :?> VisualStudioWorkspace
@@ -389,11 +401,15 @@ and
             member __.Unused4()                                       = hier.Unused4()
         }
 
-    member private this.OnProjectChanged(projectId:ProjectId, _newSolution:Solution) =
+    member private this.OnProjectChanged(projectId:ProjectId) =
         let project = this.Workspace.CurrentSolution.GetProject(projectId)
         let siteProvider = this.ProvideProjectSiteProvider(this.Workspace, project)
         projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId this.Workspace, projectId, siteProvider.GetProjectSite(), this.Workspace, "OnProjectChanged")
-    member private this.OnProjectAdded(projectId:ProjectId, newSolution:Solution) = this.OnProjectChanged(projectId, newSolution)
+
+    member private this.OnProjectChanged(projectId:ProjectId, _newSolution:Solution) = this.OnProjectChanged(projectId)
+
+    member private this.OnProjectAdded(projectId:ProjectId,   _newSolution:Solution) = this.OnProjectChanged(projectId)
+
     member private this.OnProjectRemoved(_projectId:ProjectId, _newSolution:Solution) = ()
 
     override this.Initialize() =
@@ -512,7 +528,6 @@ and
             let projectGuid = Guid(site.ProjectGuid)
             let projectFileName = site.ProjectFileName()
             let projectDisplayName = projectDisplayNameOf projectFileName
-
             let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
 
             projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, projectId, site, workspace, userOpName)
@@ -589,7 +604,6 @@ and
         match textView.GetBuffer() with
         | (VSConstants.S_OK, textLines) ->
             let filename = VsTextLines.GetFilename textLines
-
 
             // CPS projects don't implement IProvideProjectSite and IVSProjectHierarchy
             // Simple explanation:
