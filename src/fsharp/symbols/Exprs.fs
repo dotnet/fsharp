@@ -959,17 +959,16 @@ module FSharpExprConvert =
             | Const.Int32   i ->  E.Const(box i, tyR)
             | Const.UInt32  i ->  E.Const(box i, tyR)
             | Const.Int64   i ->  E.Const(box i, tyR)
-            | Const.IntPtr   i ->  E.Const(box (nativeint i), tyR)
             | Const.UInt64  i ->  E.Const(box i, tyR)
-            | Const.UIntPtr   i ->  E.Const(box (unativeint i), tyR)
-            | Const.Double   i ->  E.Const(box i, tyR)
-            | Const.Single i ->  E.Const(box i, tyR)
+            | Const.IntPtr  i ->  E.Const(box (nativeint i), tyR)
+            | Const.UIntPtr i ->  E.Const(box (unativeint i), tyR)
+            | Const.Decimal i ->  E.Const(box i, tyR)
+            | Const.Double  i ->  E.Const(box i, tyR)
+            | Const.Single  i ->  E.Const(box i, tyR)
             | Const.String  i ->  E.Const(box i, tyR)
             | Const.Char    i ->  E.Const(box i, tyR)
             | Const.Unit      ->  E.Const(box (), tyR)
             | Const.Zero      ->  E.DefaultValue (ConvType cenv ty)
-            | _ -> 
-                wfail("FSharp.Compiler.Service cannot yet return this kind of constant", m)
 
     and ConvDecisionTree cenv env dtreeRetTy x m = 
         ConvDecisionTreePrim cenv env dtreeRetTy x |> Mk cenv m dtreeRetTy
