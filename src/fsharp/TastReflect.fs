@@ -521,12 +521,12 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
             CustomAttributeTypedArgument(asm.TxTType ttype, TxConst cnst)
         | _ -> failwithf "Missing case for CustomAttributesArg %+A" v
 
-    and TxCustomAttributesDatum (Attrib(_, _, exprs,_,_,_,_)) = 
+    and TxCustomAttributesDatum (Attrib(tyconRef, _, exprs,_,_,_,_)) = 
          { new CustomAttributeData () with
             member __.Constructor =  
-                tcref.MembersOfFSharpTyconSorted 
+                tyconRef.MembersOfFSharpTyconSorted 
                 |> List.find (fun x -> x.IsConstructor)
-                |> TxConstructorDef this
+                |> TxConstructorDef (asm.TxTypeDef None tyconRef)
             member __.ConstructorArguments = [| for exp in exprs -> TxCustomAttributesArg exp |] :> IList<_>
             // Note, named arguments of custom attributes are not required by F# compiler on binding context elements.
             member __.NamedArguments = [| |] :> IList<_> 

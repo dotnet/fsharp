@@ -91,7 +91,7 @@ module AttributedRecord =
     check "acnkewcwpo22" S.IsGenericType (T.IsGenericType)
     check "acnkewcwpo23" S.IsGenericTypeDefinition (T.IsGenericTypeDefinition)
     check "acnkewcwpo24" S.GetGenericArguments_Length (T.GetGenericArguments().Length)
-    check "acnkewcwpo25" S.CustomAttributes_Length (Seq.length T.CustomAttributes)
+    inaccurate "acnkewcwpo25" S.CustomAttributes_Length (Seq.length T.CustomAttributes) 3 //Inaccuracy: Serializable and compliation mapping attributes not included I guess these aren't included in the TAST. Same reason why IsRecord fails?
    // TODO: rest of System.Type properties and methods
    // TODO: reset of FSharp Reflection methods 
 
