@@ -14,9 +14,11 @@ open System.IO
 open System.Linq
 open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
+open System.Threading
 
 open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Diagnostics
@@ -94,6 +96,7 @@ type internal FSharpProjectOptionsManager
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
+        [<Import(typeof<VisualStudioWorkspace>)>] workspace: VisualStudioWorkspaceImpl,
         [<Import(typeof<SVsServiceProvider>)>] serviceProvider: System.IServiceProvider
     ) =
 
@@ -107,11 +110,14 @@ type internal FSharpProjectOptionsManager
     // Accumulate sources and references for each project file
     let projectInfo = new ConcurrentDictionary<string, string[]*string[]*string[]>()
 
-    let notify = new Event<string>()
+    let projectDisplayNameOf projectFileName =
+        if String.IsNullOrWhiteSpace projectFileName then projectFileName
+        else Path.GetFileNameWithoutExtension projectFileName
 
-    [<CLIEvent>]
-    member this.NotifyCommandLineChanges = notify.Publish
- 
+    let tryGetOrCreateProjectId (projectFileName: string) =
+        let projectDisplayName = projectDisplayNameOf projectFileName
+        Some (workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName))
+
     /// Clear a project from the project table
     member this.ClearInfoForProject(projectId: ProjectId) =
         projectTable.TryRemove(projectId) |> ignore
@@ -133,7 +139,7 @@ type internal FSharpProjectOptionsManager
 
     member this.AddOrUpdateSingleFileProject(projectId, data) =
         singleFileProjectTable.[projectId] <- data
-        
+
     /// Get the exact options for a single-file script
     member this.ComputeSingleFileOptions (tryGetOrCreateProjectId, fileName, loadTime, fileContents, workspace: Workspace) = async {
         let extraProjectInfo = Some(box workspace)
@@ -154,17 +160,15 @@ type internal FSharpProjectOptionsManager
       }
 
     /// Update the info for a project in the project table
-    member this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId: ProjectId, site: IProjectSite, workspace: Workspace, userOpName) =
-        async {
-            this.AddOrUpdateProject(projectId, (fun isRefresh -> 
-                let extraProjectInfo = Some(box workspace)
-                let tryGetOptionsForReferencedProject f = f |> tryGetOrCreateProjectId |> Option.bind this.TryGetOptionsForProject
-                let referencedProjects, options = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, site, site.ProjectFileName(), extraProjectInfo, serviceProvider, true)
-                let referencedProjectIds = referencedProjects |> Array.choose tryGetOrCreateProjectId
-                checkerProvider.Checker.InvalidateConfiguration(options, startBackgroundCompileIfAlreadySeen = not isRefresh, userOpName= userOpName + ".UpdateProjectInfo")
-                referencedProjectIds, options))
-        } |> Async.Start
-
+    member this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId: ProjectId, site: IProjectSite, userOpName) =
+        this.AddOrUpdateProject(projectId, (fun isRefresh -> 
+            let extraProjectInfo = Some(box workspace)
+            let tryGetOptionsForReferencedProject f = f |> tryGetOrCreateProjectId |> Option.bind this.TryGetOptionsForProject
+            let referencedProjects, options = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, site, site.ProjectFileName(), extraProjectInfo, serviceProvider, true)
+            let referencedProjectIds = referencedProjects |> Array.choose tryGetOrCreateProjectId
+            checkerProvider.Checker.InvalidateConfiguration(options, startBackgroundCompileIfAlreadySeen = not isRefresh, userOpName= userOpName + ".UpdateProjectInfo")
+            referencedProjectIds, options))
+ 
     /// Get compilation defines relevant for syntax processing.  
     /// Quicker then TryGetOptionsForDocumentOrProject as it doesn't need to recompute the exact project 
     /// options for a script.
@@ -215,6 +219,68 @@ type internal FSharpProjectOptionsManager
         | true, (_loadTime, originalOptions) -> Some originalOptions
         | _ -> this.TryGetOptionsForProject(projectId) 
 
+    member this.ProvideProjectSiteProvider(project:Project) =
+        let hier = workspace.GetHierarchy(project.Id)
+
+        {new IProvideProjectSite with
+            member iProvideProjectSite.GetProjectSite() =
+                let fst  (a, _, _) = a
+                let thrd (_, _, c) = c
+                let mutable errorReporter = 
+                    let reporter = ProjectExternalErrorReporter(project.Id, "FS", serviceProvider)
+                    Some(reporter:> Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2)
+
+                {new Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite with
+                    member __.SourceFilesOnDisk() = this.GetProjectInfo(project.FilePath) |> fst
+                    member __.DescriptionOfProject() = project.Name
+                    member __.CompilerFlags() =
+                        let _,references,options = this.GetProjectInfo(project.FilePath)
+                        Array.concat [options; references |> Array.map(fun r -> "-r:" + r)]
+                    member __.ProjectFileName() = project.FilePath
+                    member __.AdviseProjectSiteChanges(_,_) = ()
+                    member __.AdviseProjectSiteCleaned(_,_) = ()
+                    member __.AdviseProjectSiteClosed(_,_) = ()
+                    member __.IsIncompleteTypeCheckEnvironment = false
+                    member __.TargetFrameworkMoniker = ""
+                    member __.ProjectGuid =  project.Id.Id.ToString()
+                    member __.LoadTime = System.DateTime.Now
+                    member __.ProjectProvider = Some iProvideProjectSite
+                    member __.AssemblyReferences() = this.GetProjectInfo(project.FilePath) |> thrd
+                    member __.BuildErrorReporter with get () = errorReporter and 
+                                                      set (v) = errorReporter <- v
+                }
+
+        // TODO:   figure out why this is necessary
+        interface IVsHierarchy with
+            member __.SetSite(psp)                                    = hier.SetSite(psp)
+            member __.GetSite(psp)                                    = hier.GetSite(ref psp)
+            member __.QueryClose(pfCanClose)                          = hier.QueryClose(ref pfCanClose)
+            member __.Close()                                         = hier.Close()
+            member __.GetGuidProperty(itemid, propid, pguid)          = hier.GetGuidProperty(itemid, propid, ref pguid)
+            member __.SetGuidProperty(itemid, propid, rguid)          = hier.SetGuidProperty(itemid, propid, ref rguid)
+            member __.GetProperty(itemid, propid, pvar)               = hier.GetProperty(itemid, propid, ref pvar) 
+            member __.SetProperty(itemid, propid, var)                = hier.SetProperty(itemid, propid, var)
+            member __.GetNestedHierarchy(itemid, iidHierarchyNested, ppHierarchyNested, pitemidNested) = hier.GetNestedHierarchy(itemid, ref iidHierarchyNested, ref ppHierarchyNested, ref pitemidNested)
+            member __.GetCanonicalName(itemid, pbstrName)             = hier.GetCanonicalName(itemid, ref pbstrName)
+            member __.ParseCanonicalName(pszName, pitemid)            = hier.ParseCanonicalName(pszName, ref pitemid)
+            member __.Unused0()                                       = hier.Unused0()
+            member __.AdviseHierarchyEvents(pEventSink, pdwCookie)    = hier.AdviseHierarchyEvents(pEventSink, ref pdwCookie)
+            member __.UnadviseHierarchyEvents(dwCookie)               = hier.UnadviseHierarchyEvents(dwCookie)
+            member __.Unused1()                                       = hier.Unused1()
+            member __.Unused2()                                       = hier.Unused2()
+            member __.Unused3()                                       = hier.Unused3()
+            member __.Unused4()                                       = hier.Unused4()
+        }
+
+    member this.UpdateProjectInfoWithProjectId(projectId:ProjectId, userOpName) =
+        let project = workspace.CurrentSolution.GetProject(projectId)
+        let siteProvider = this.ProvideProjectSiteProvider(project)
+        this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, siteProvider.GetProjectSite(), userOpName)
+
+    member this.UpdateProjectInfoWithPath(path, userOpName) =
+        let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(path, projectDisplayNameOf path)
+        this.UpdateProjectInfoWithProjectId(projectId, userOpName)
+
     [<Export>]
     /// This handles commandline change notifications from the Dotnet Project-system
     member this.HandleCommandLineChanges(path:string, sources:ImmutableArray<CommandLineSourceFile>, references:ImmutableArray<CommandLineReference>, options:ImmutableArray<string>) =
@@ -224,13 +290,12 @@ type internal FSharpProjectOptionsManager
         let sourcePaths = sources |> Seq.map(fun s -> fullPath s.Path) |> Seq.toArray
         let referencePaths = references |> Seq.map(fun r -> fullPath r.Reference) |> Seq.toArray
         projectInfo.[path] <- (sourcePaths,referencePaths,options.ToArray())
-        notify.Trigger(path)
-        ()
+        this.UpdateProjectInfoWithPath(path, "OnProjectChanged")
 
     member __.GetProjectInfo(path:string) = 
         match projectInfo.TryGetValue path with
         | true, value -> value
-        | _           -> Array.empty, Array.empty, Array.empty
+        | _ -> [||], [||], [||]
 
 // Used to expose FSharpChecker/ProjectInfo manager to diagnostic providers
 // Diagnostic providers can be executed in environment that does not use MEF so they can rely only
@@ -315,7 +380,7 @@ type
     [<ProvideEditorExtension(FSharpConstants.editorFactoryGuidString, ".fsscript", 97)>]
     [<ProvideEditorExtension(FSharpConstants.editorFactoryGuidString, ".ml", 97)>]
     [<ProvideEditorExtension(FSharpConstants.editorFactoryGuidString, ".mli", 97)>]
-    internal FSharpLanguageService(package : FSharpPackage)  as this =
+    internal FSharpLanguageService(package : FSharpPackage) =
     inherit AbstractLanguageService<FSharpPackage, FSharpLanguageService>(package)
 
     let projectInfoManager = package.ComponentModel.DefaultExportProvider.GetExport<FSharpProjectOptionsManager>().Value
@@ -325,8 +390,6 @@ type
         else Path.GetFileNameWithoutExtension projectFileName
 
     let singleFileProjects = ConcurrentDictionary<_, AbstractProject>()
-
-    do  projectInfoManager.NotifyCommandLineChanges.Add(fun path -> this.HandleCommandLineOptionsChanged(path))
 
     let tryRemoveSingleFileProject projectId =
         match singleFileProjects.TryRemove(projectId) with
@@ -344,69 +407,8 @@ type
 
     let optionsAssociation = ConditionalWeakTable<IWorkspaceProjectContext, string[]>()
 
-    member private this.HandleCommandLineOptionsChanged (path) =
-        let projectDisplayName = projectDisplayNameOf path
-        let projectId = this.Workspace.ProjectTracker.GetOrCreateProjectIdForPath(path, projectDisplayName)
-        this.OnProjectChanged(projectId)
-
-    member private this.ProvideProjectSiteProvider(workspace:Workspace, project:Project) =
-        let visualStudioWorkspace = workspace :?> VisualStudioWorkspace
-        let hier = visualStudioWorkspace.GetHierarchy(project.Id)
-
-        {new IProvideProjectSite with
-            member iProvideProjectSite.GetProjectSite() =
-                let fst  (a, _, _) = a
-                let thrd (_, _, c) = c
-                let mutable errorReporter = 
-                    let reporter = ProjectExternalErrorReporter(project.Id, "FS", this.SystemServiceProvider)
-                    Some(reporter:> Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2)
-
-                {new Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite with
-                    member __.SourceFilesOnDisk() = projectInfoManager.GetProjectInfo(project.FilePath) |> fst
-                    member __.DescriptionOfProject() = project.Name
-                    member __.CompilerFlags() =
-                        let _,references,options = projectInfoManager.GetProjectInfo(project.FilePath)
-                        Array.concat [options; references |> Array.map(fun r -> "-r:" + r)]
-                    member __.ProjectFileName() = project.FilePath
-                    member __.AdviseProjectSiteChanges(_,_) = ()
-                    member __.AdviseProjectSiteCleaned(_,_) = ()
-                    member __.AdviseProjectSiteClosed(_,_) = ()
-                    member __.IsIncompleteTypeCheckEnvironment = false
-                    member __.TargetFrameworkMoniker = ""
-                    member __.ProjectGuid =  project.Id.Id.ToString()
-                    member __.LoadTime = System.DateTime.Now
-                    member __.ProjectProvider = Some iProvideProjectSite
-                    member __.AssemblyReferences() = projectInfoManager.GetProjectInfo(project.FilePath) |> thrd
-                    member __.BuildErrorReporter with get () = errorReporter and 
-                                                      set (v) = errorReporter <- v
-                }
-
-        // TODO:   figure out why this is necessary
-        interface IVsHierarchy with
-            member __.SetSite(psp)                                    = hier.SetSite(psp)
-            member __.GetSite(psp)                                    = hier.GetSite(ref psp)
-            member __.QueryClose(pfCanClose)                          = hier.QueryClose(ref pfCanClose)
-            member __.Close()                                         = hier.Close()
-            member __.GetGuidProperty(itemid, propid, pguid)          = hier.GetGuidProperty(itemid, propid, ref pguid)
-            member __.SetGuidProperty(itemid, propid, rguid)          = hier.SetGuidProperty(itemid, propid, ref rguid)
-            member __.GetProperty(itemid, propid, pvar)               = hier.GetProperty(itemid, propid, ref pvar) 
-            member __.SetProperty(itemid, propid, var)                = hier.SetProperty(itemid, propid, var)
-            member __.GetNestedHierarchy(itemid, iidHierarchyNested, ppHierarchyNested, pitemidNested) = hier.GetNestedHierarchy(itemid, ref iidHierarchyNested, ref ppHierarchyNested, ref pitemidNested)
-            member __.GetCanonicalName(itemid, pbstrName)             = hier.GetCanonicalName(itemid, ref pbstrName)
-            member __.ParseCanonicalName(pszName, pitemid)            = hier.ParseCanonicalName(pszName, ref pitemid)
-            member __.Unused0()                                       = hier.Unused0()
-            member __.AdviseHierarchyEvents(pEventSink, pdwCookie)    = hier.AdviseHierarchyEvents(pEventSink, ref pdwCookie)
-            member __.UnadviseHierarchyEvents(dwCookie)               = hier.UnadviseHierarchyEvents(dwCookie)
-            member __.Unused1()                                       = hier.Unused1()
-            member __.Unused2()                                       = hier.Unused2()
-            member __.Unused3()                                       = hier.Unused3()
-            member __.Unused4()                                       = hier.Unused4()
-        }
-
     member private this.OnProjectChanged(projectId:ProjectId) =
-        let project = this.Workspace.CurrentSolution.GetProject(projectId)
-        let siteProvider = this.ProvideProjectSiteProvider(this.Workspace, project)
-        projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId this.Workspace, projectId, siteProvider.GetProjectSite(), this.Workspace, "OnProjectChanged")
+        projectInfoManager.UpdateProjectInfoWithProjectId(projectId, "OnProjectChanged")
 
     member private this.OnProjectChanged(projectId:ProjectId, _newSolution:Solution) = this.OnProjectChanged(projectId)
 
@@ -522,7 +524,7 @@ type
 
         // update the cached options
         if updated then
-            projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, project.Id, site, project.Workspace, userOpName + ".SyncProject")
+            projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, project.Id, site, userOpName + ".SyncProject")
 
     member this.SetupProjectFile(siteProvider: IProvideProjectSite, workspace: VisualStudioWorkspaceImpl, userOpName) =
         let userOpName = userOpName + ".SetupProjectFile"
@@ -532,7 +534,6 @@ type
             let projectDisplayName = projectDisplayNameOf projectFileName
             let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
 
-            projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, projectId, site, workspace, userOpName)
             let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
 
             let hierarchy =
@@ -570,7 +571,6 @@ type
         setup (siteProvider.GetProjectSite()) |> ignore
 
     member this.SetupStandAloneFile(fileName: string, fileContents: string, workspace: VisualStudioWorkspaceImpl, hier: IVsHierarchy) =
-
         let loadTime = DateTime.Now
         let projectFileName = fileName
         let projectDisplayName = projectDisplayNameOf projectFileName
@@ -623,9 +623,7 @@ type
                         let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
                         this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
                     | id ->
-                        let project = this.Workspace.CurrentSolution.GetProject(id.ProjectId)
-                        let siteProvider = this.ProvideProjectSiteProvider(this.Workspace, project)
-                        projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId this.Workspace, id.ProjectId, siteProvider.GetProjectSite(), this.Workspace, "SetupNewTextView")
+                        projectInfoManager.UpdateProjectInfoWithProjectId(id.ProjectId, "SetupNewTextView")
                 | _ ->
                     let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
                     this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
