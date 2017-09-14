@@ -262,7 +262,7 @@
       <Output TaskParameter="Include" ItemName="FileWrites"/>
     </CreateItem>
   </Target>
-  <Import Project="scripts\fssrgen.targets" />
+  <Import Project="$(FSharpSourcesRoot)\scripts\fssrgen.targets" Condition="'$(Configuration)' == 'Proto'" />
   <Import Project="Microbuild.Settings.targets" Condition="'$(UseMicroBuild)' == 'true'"/>
 
   <Target Name="dotnetrestore" BeforeTargets="Build" Condition=" '$(TargetDotnetProfile)' == 'coreclr' ">
@@ -355,6 +355,30 @@
       <OldBuildVersionFiles Include="$(BuildVersionFilePath)BuildVersions-*.props" Exclude="$(BuildVersionFilePath)%(BuildVersionFileItem.Filename).props" />
     </ItemGroup>
     <Delete Files="@(OldBuildVersionFiles)" TreatErrorsAsWarnings="true"/>
+  </Target>
+
+  <UsingTask TaskName="FSharpEmbedResourceText"
+             AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build-proto.dll"
+             Condition="'$(Configuration)' != 'Proto'" />
+
+  <Target Name="GenerateFSharpTextResources"
+          BeforeTargets="CoreResGen;PrepareForBuild"
+          Condition="'$(Configuration)' != 'Proto'">
+
+    <MakeDir Directories="$(IntermediateOutputPath)" />
+
+    <FSharpEmbedResourceText EmbeddedText="@(EmbeddedText)" IntermediateOutputPath="$(IntermediateOutputPath)">
+      <Output TaskParameter="GeneratedSource" ItemName="_FsGeneratedSource" />
+      <Output TaskParameter="GeneratedResx" ItemName="_FsGeneratedResx" />
+    </FSharpEmbedResourceText>
+
+    <ItemGroup>
+      <CompileBefore Include="@(_FsGeneratedSource)" />
+      <EmbeddedResource Include="@(_FsGeneratedResx)" />
+      <FileWrites Include="@(_FsGeneratedSource)" />
+      <FileWrites Include="@(_FsGeneratedResx)" />
+    </ItemGroup>
+
   </Target>
 
   <UsingTask TaskName="ReplaceFileText" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">

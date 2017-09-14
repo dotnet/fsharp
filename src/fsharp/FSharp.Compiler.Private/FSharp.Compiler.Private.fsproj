@@ -58,9 +58,9 @@
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Private.dll.fs">
       <Link>assemblyinfo.FSharp.Compiler.Private.dll.fs</Link>
     </Compile>
-    <FsSrGen Include="..\FSComp.txt">
+    <EmbeddedText Include="..\FSComp.txt">
       <Link>FSComp.txt</Link>
-    </FsSrGen>
+    </EmbeddedText>
     <EmbeddedResource Include="..\FSStrings.resx">
       <Link>FSStrings.resx</Link>
     </EmbeddedResource>
@@ -620,9 +620,9 @@
     </Compile>
 
     <!-- the core of the F# Interactive fsi.exe implementation -->
-    <FsSrGen Include="..\fsi\FSIstrings.txt">
+    <EmbeddedText Include="..\fsi\FSIstrings.txt">
       <Link>FSIstrings.txt</Link>
-    </FsSrGen>
+    </EmbeddedText>
     <Compile Include="..\fsi\fsi.fsi">
       <Link>InteractiveSession\fsi.fsi</Link>
     </Compile>
