@@ -4027,7 +4027,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         match tcImports.FindCcuInfo(ctok, m, assemblyName, lookupOnly) with
         | ResolvedImportedAssembly(importedAssembly) -> ResolvedCcu(importedAssembly.FSharpViewOfMetadata)
         | UnresolvedImportedAssembly(assemblyName) ->
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
             match ccuBeingCompiledHack with
             | Some thisCcu when thisCcu.AssemblyName = assemblyName -> ResolvedCcu(thisCcu)
             | _ ->
@@ -4037,7 +4037,7 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
     member tcImports.FindCcuFromScopeRef(ctok, m, scoref) =
         match scoref with
         | ILScopeRef.Local    ->
-#if EXTENSIONTYPING
+#if !NO_EXTENSIONTYPING
                 match ccuBeingCompiledHack with
                 | Some thisCcu -> ResolvedCcu(thisCcu)
                 | _ ->
@@ -4475,10 +4475,10 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
         let auxModuleLoader = tcImports.MkLoaderForMultiModuleILAssemblies ctok m
         let invalidateCcu = new Event<_>()
         let ccu = Import.ImportILAssembly(tcImports.GetImportMap, m, auxModuleLoader, ilScopeRef, tcConfig.implicitIncludeDir, Some filename, ilModule, invalidateCcu.Publish)
-
+#if !NO_EXTENSIONTYPING
         ccu.Deref.ReflectAssembly <- lazy (TastReflect.ReflectAssembly(tcImports.GetTcGlobals(),ccu,filename) :> _)
         ccu.Deref.GetCcuBeingCompiledHack <- (fun () -> Some ccu)
-        
+#endif
         let ilg = defaultArg ilGlobalsOpt EcmaMscorlibILGlobals
 
         let ccuinfo = 
@@ -4547,13 +4547,14 @@ type TcImports(tcConfigP:TcConfigProvider, initialResolutions:TcAssemblyResoluti
                       TypeForwarders = ImportILAssemblyTypeForwarders(tcImports.GetImportMap, m, ilModule.GetRawTypeForwarders()) }
 
                 let ccu = CcuThunk.Create(ccuName, ccuData)
+#if !NO_EXTENSIONTYPING
                 ccuData.ReflectAssembly <- lazy (TastReflect.ReflectAssembly(tcImports.GetTcGlobals(),ccu,filename)  :> _)
-
-                let optdata = 
-                    lazy 
-                        (match Map.tryFind ccuName optDatas  with 
-                         | None -> 
-                            if verbose then dprintf "*** no optimization data for CCU %s, was DLL compiled with --no-optimization-data??\n" ccuName 
+#endif
+                let optdata =
+                    lazy
+                        (match Map.tryFind ccuName optDatas  with
+                         | None ->
+                            if verbose then dprintf "*** no optimization data for CCU %s, was DLL compiled with --no-optimization-data??\n" ccuName
                             None
                          | Some info -> 
                             let data = GetOptimizationData (filename, ilScopeRef, ilModule.TryGetRawILModule(), info)
@@ -5449,13 +5450,14 @@ let GetInitialTcState(m, ccuName, tcConfig:TcConfig, tcGlobals, tcImports:TcImpo
 
     let ccu = CcuThunk.Create(ccuName, ccuData)
 
+#if !NO_EXTENSIONTYPING
     ccuData.ReflectAssembly <- lazy (TastReflect.ReflectAssembly(tcGlobals,ccu,ccuName + ".dll")  :> _)
     ccuData.GetCcuBeingCompiledHack <- (fun () -> Some ccu)
 
     tcImports.SetCcuBeingCompiledHack ccu
-
-    // OK, is this is the FSharp.Core CCU then fix it up. 
-    if tcConfig.compilingFslib then 
+#endif
+    // OK, is this is the FSharp.Core CCU then fix it up.
+    if tcConfig.compilingFslib then
         tcGlobals.fslibCcu.Fixup(ccu)
 
     let rootSigs = Zmap.empty qnameOrder
@@ -5481,7 +5483,9 @@ let TypeCheckOneInputEventually
       RequireCompilationThread ctok // Everything here requires the compilation thread since it works on the TAST
 
       CheckSimulateException(tcConfig)
+#if !NO_EXTENSIONTYPING
       tcImports.SetCcuBeingCompiledHack tcState.Ccu
+#endif
       let (RootSigsAndImpls(rootSigs, rootImpls, allSigModulTyp, allImplementedSigModulTyp)) = tcState.tcsRootSigsAndImpls
       let m = inp.Range
       let amap = tcImports.GetImportMap()

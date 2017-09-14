@@ -4924,8 +4924,8 @@ and TcProvidedTypeApp cenv env tpenv tcref args m =
         mkAppTy tcref [], tpenv
     else
         let typ = Import.ImportProvidedType cenv.amap m providedTypeAfterStaticArguments
-        typ, tpenv 
-//#endif
+        typ, tpenv
+#endif
 
 /// Typecheck an application of a generic type to type arguments.
 ///
