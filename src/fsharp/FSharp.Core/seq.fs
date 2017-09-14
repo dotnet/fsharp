@@ -285,7 +285,8 @@ namespace Microsoft.FSharp.Collections
             ISeq.append (source1 |> toISeq1) (source2 |> toISeq2) :> seq<_>
 
         [<CompiledName("Collect")>]
-        let collect mapping source = map mapping source |> concat
+        let collect mapping source =
+            map mapping source |> concat
 
         [<CompiledName("CompareWith")>]
         let compareWith (comparer:'T->'T->int) (source1:seq<'T>) (source2:seq<'T>) =
@@ -298,7 +299,11 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("ToList")>]
         let toList (source : seq<'T>) =
-            ISeq.toList (toISeq source)
+            let original = toISeq source
+            match getRaw original with
+            | :? array<'T> as arr -> Array.toList arr
+            | :? list<'T> as lst -> lst
+            | raw -> ISeq.toList (rawOrOriginal raw original)
 
         [<CompiledName("OfArray")>]
         let ofArray (source : 'T array) =
@@ -306,7 +311,11 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("ToArray")>]
         let toArray (source : seq<'T>)  =
-            ISeq.toArray (toISeq source)
+            let original = toISeq source
+            match getRaw original with
+            | :? array<'T> as arr -> Array.copy arr
+            | :? list<'T> as lst -> List.toArray lst
+            | raw -> ISeq.toArray (rawOrOriginal raw original)
 
         [<CompiledName("FoldBack")>]
         let foldBack<'T,'State> folder (source:seq<'T>) (state:'State) =
@@ -537,7 +546,12 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("Reverse")>]
         let rev source =
-            ISeq.rev (toISeq source) :> seq<_>
+            ISeq.delay (fun () ->
+                let original = toISeq source
+                match getRaw original with
+                | :? array<'T> as arr -> Array.rev arr |> ISeq.ofArray
+                | :? list<'T> as lst -> List.rev lst :> _
+                | raw -> ISeq.rev (rawOrOriginal raw original)) :> seq<_>
 
         [<CompiledName("Permute")>]
         let permute indexMap (source : seq<_>) =
