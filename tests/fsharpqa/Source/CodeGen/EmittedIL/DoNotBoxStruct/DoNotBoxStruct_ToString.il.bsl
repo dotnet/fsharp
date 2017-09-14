@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.16774
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:1:0
 }
 .assembly DoNotBoxStruct_ToString
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.DoNotBoxStruct_ToString
 {
-  // Offset: 0x00000000 Length: 0x0000022D
+  // Offset: 0x00000000 Length: 0x00000208
 }
 .mresource public FSharpOptimizationData.DoNotBoxStruct_ToString
 {
-  // Offset: 0x00000238 Length: 0x00000086
+  // Offset: 0x00000210 Length: 0x00000086
 }
 .module DoNotBoxStruct_ToString.exe
-// MVID: {4DAC079E-8D34-C606-A745-03839E07AC4D}
+// MVID: {59B1920A-8D34-C606-A745-03830A92B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000000000190000
+// Image base: 0x02CC0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -53,18 +53,17 @@
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .method public static string  F<T>(!!T x) cil managed
   {
-    // Code size       17 (0x11)
+    // Code size       16 (0x10)
     .maxstack  3
     .locals init ([0] !!T V_0)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 5,5 : 22,34 
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  stloc.0
-    IL_0003:  ldloca.s   V_0
-    IL_0005:  constrained. !!T
-    IL_000b:  callvirt   instance string [mscorlib]System.Object::ToString()
-    IL_0010:  ret
+    .line 5,5 : 22,34 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\DoNotBoxStruct\\DoNotBoxStruct_ToString.fs'
+    IL_0000:  ldarg.0
+    IL_0001:  stloc.0
+    IL_0002:  ldloca.s   V_0
+    IL_0004:  constrained. !!T
+    IL_000a:  callvirt   instance string [mscorlib]System.Object::ToString()
+    IL_000f:  ret
   } // end of method DoNotBoxStruct_ToString::F
 
 } // end of class DoNotBoxStruct_ToString
@@ -75,10 +74,9 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       2 (0x2)
+    // Code size       1 (0x1)
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ret
+    IL_0000:  ret
   } // end of method $DoNotBoxStruct_ToString::main@
 
 } // end of class '<StartupCode$DoNotBoxStruct_ToString>'.$DoNotBoxStruct_ToString

@@ -3,6 +3,7 @@
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
+open System.Collections.Generic
 open System.Collections.Immutable
 open System.Threading
 open System.Threading.Tasks
@@ -10,11 +11,34 @@ open System.Threading.Tasks
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Text
 
+open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.Editor.Symbols 
 
 
 module internal SymbolHelpers =
+    open Microsoft.CodeAnalysis.CodeFixes
+    open Microsoft.CodeAnalysis.CodeActions
+
+    /// Used for local code fixes in a document, e.g. to rename local parameters
+    let getSymbolUsesOfSymbolAtLocationInDocument (document: Document, position: int, projectInfoManager: FSharpProjectOptionsManager, checker: FSharpChecker, userOpName) =
+        asyncMaybe {
+            let! cancellationToken = Async.CancellationToken |> liftAsync
+            let! sourceText = document.GetTextAsync(cancellationToken)
+            let! textVersion = document.GetTextVersionAsync(cancellationToken) 
+            let textVersionHash = textVersion.GetHashCode()
+            let textLine = sourceText.Lines.GetLineFromPosition(position)
+            let textLinePos = sourceText.Lines.GetLinePosition(position)
+            let fcsTextLineNumber = Line.fromZ textLinePos.Line
+            let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document) 
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
+            let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document.FilePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true, userOpName = userOpName) 
+            let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, userOpName=userOpName)
+            let! symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol) |> liftAsync
+            return symbolUses
+        }
+
     let getSymbolUsesInSolution (symbol: FSharpSymbol, declLoc: SymbolDeclarationLocation, checkFileResults: FSharpCheckFileResults,
                                  projectInfoManager: FSharpProjectOptionsManager, checker: FSharpChecker, solution: Solution, userOpName) =
         async {
@@ -63,6 +87,14 @@ module internal SymbolHelpers =
 
     type OriginalText = string
 
+    // Note, this function is broken and shouldn't be used because the source text ranges to replace are applied sequentially,
+    // breaking the position computations as changes progress, especially if two changes are made on the same line.  
+    //
+    // However, it is only currently used by ProposeUpperCaseLabel code fix, where the changes to code will rarely be on the same line.
+    //
+    // A better approach is to use something like createTextChangeCodeFix below, with a delayed function to compute a set of changes to be applied
+    // simultaneously.  But that doesn't work for this case, as we want a set of changes to apply acrosss the whole solution.
+
     let changeAllSymbolReferences (document: Document, symbolSpan: TextSpan, textChanger: string -> string, projectInfoManager: FSharpProjectOptionsManager, checker: FSharpChecker, userOpName)
         : Async<(Func<CancellationToken, Task<Solution>> * OriginalText) option> =
         asyncMaybe {
@@ -77,7 +109,7 @@ module internal SymbolHelpers =
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true, userOpName = userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition(symbolSpan.Start)
             let textLinePos = sourceText.Lines.GetLinePosition(symbolSpan.Start)
-            let fcsTextLineNumber = textLinePos.Line + 1
+            let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.Text.ToString(), symbol.FullIsland, userOpName=userOpName)
             let! declLoc = symbolUse.GetDeclarationLocation(document)
             let newText = textChanger originalText
@@ -105,3 +137,18 @@ module internal SymbolHelpers =
                     } |> RoslynHelpers.StartAsyncAsTask cancellationToken),
                originalText
         }
+
+    let createTextChangeCodeFix (title: string, context: CodeFixContext, computeTextChanges: unit -> Async<TextChange[] option>) =
+        CodeAction.Create(
+            title,
+            (fun (cancellationToken: CancellationToken) ->
+                async {
+                    let! cancellationToken = Async.CancellationToken
+                    let! sourceText = context.Document.GetTextAsync(cancellationToken) |> Async.AwaitTask
+                    let! changesOpt = computeTextChanges()
+                    match changesOpt with
+                    | None -> return context.Document
+                    | Some textChanges -> return context.Document.WithText(sourceText.WithChanges(textChanges))
+                } |> RoslynHelpers.StartAsyncAsTask(cancellationToken)),
+            title)
+

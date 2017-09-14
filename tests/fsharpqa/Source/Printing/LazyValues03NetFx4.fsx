@@ -1,4 +1,4 @@
-// #Regression #NoMT #Printing #RequiresENU #NETFX40Only 
+// #Regression #NoMT #Printing #RequiresENU  
 // Regression test for FSHARP1.0:4068
 
 //<Expects status="success">val lazyExit : Lazy<string> = Value is not created\.</Expects>

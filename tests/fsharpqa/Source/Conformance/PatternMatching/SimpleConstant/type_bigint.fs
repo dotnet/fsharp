@@ -1,4 +1,4 @@
-// #Conformance #PatternMatching #Constants #NETFX20Only 
+// #Conformance #PatternMatching #Constants  
 // Pattern Matching - Simple Constants
 // Type: BigInt
 #light

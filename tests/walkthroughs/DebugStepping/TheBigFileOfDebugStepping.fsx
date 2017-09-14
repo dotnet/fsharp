@@ -1,4 +1,5 @@
 // Instructions: 
+//    Debug\net40\bin\fsc.exe --debug+ --tailcalls- --optimize- tests\walkthroughs\DebugStepping\TheBigFileOfDebugStepping.fsx
 //    Release\net40\bin\fsc.exe --debug+ --tailcalls- --optimize- tests\walkthroughs\DebugStepping\TheBigFileOfDebugStepping.fsx
 //    devenv /debugexe TheBigFileOfDebugStepping.exe
 //
@@ -10,6 +11,27 @@
 //      - Different visual debuggers
 
 open System
+
+type U2 = U2 of int * int
+
+
+let InnerRecursiveFunction (str: string) =
+    let rec even n = if n = 0 then str else odd (n-1)
+    and odd n = even (n-1)
+
+    even 6
+
+let rec TailcallRecursionTest1 n = 
+    if n = 0 then 
+        5
+    else 
+        TailcallRecursionTest1 (n-1) // check the 'n' updates correctly
+
+let rec TailcallRecursionTest2 (U2(a,b)) = 
+    if a = 0 then 
+        5
+    else 
+        TailcallRecursionTest2 (U2(a-1,b-1)) // check the 'a' and 'b' update correctly
 
 let AsyncExpressionSteppingTest1 () = 
     async { printfn "hello"
@@ -72,6 +94,29 @@ let AsyncExpressionSteppingTest6b () =
             return z }
 
 
+
+let AsyncBreakpoints1 () = 
+    async { let! res1 = 
+                f2()
+            let! res2 = 
+                match 1 with 
+                | 1 -> f2()
+                | _ -> f2()
+            let! res3 = 
+                match 1 with 
+                | 1 -> 
+                    let x = 
+                        match 4 with 
+                        | 2 -> f2()
+                        | _ -> f2()
+                    f2()
+                | _ -> 
+                    let x = 
+                        match 4 with 
+                        | 2 -> f2()
+                        | _ -> f2()
+                    f2()
+            return () }
 
 
 let ListExpressionSteppingTest1 () = 
@@ -381,8 +426,6 @@ let TestFunction20(inp) =
     printfn "d1 = %A, d2 = %A" d1 d2
 
 
-type U2 = U2 of int * int
-
 let TestFunction21(U2(a,b)) =
     printfn "a = %A, a = %A" a b
 
@@ -519,6 +562,54 @@ let TestFunction22() =
     (x1,x2,x3)
 
 
+let InnerFunctionDefinitionHadTwoBreakpoints (str: string) =
+    let isVowel (ch: char) =
+        let c = Char.ToUpper(ch)
+        c = 'A' || c = 'E' || c = 'I' || c = 'O' || c = 'U'
+
+    let firstChar = str.[0]
+
+    if isVowel firstChar then
+        str + "way"
+    else
+        str.[1..str.Length-1] + string(firstChar) + "ay"
+
+let InnerRecursiveFunctionDefinitionHadTwoBreakpoints (str: string) =
+    let firstChar = str.[0]
+
+    let rec isVowel (ch: char) =
+        let c = Char.ToUpper(ch)
+        c = 'A' || c = 'E' || c = 'I' || c = 'O' || c = 'U'
+
+    let firstChar = str.[0]
+
+    if isVowel firstChar then
+        str + "way"
+    else
+        str.[1..str.Length-1] + string(firstChar) + "ay"
+
+
+
+let LocalValueShadowsArgument1 x =
+    let x = // quick watch 1
+        if isNull(x) then 
+            printf "value is null" // quick watch 2
+            2
+        else 
+            printf "value is not null" // breakpoint 1
+            3
+    ()
+
+let LocalValueShadowsArgument2 x =
+    let x = // quick watch 3
+        if isNull(x) then 
+            null // quick watch 4
+        else 
+            null // breakpoint 2
+    ()
+
+TailcallRecursionTest1 3
+TailcallRecursionTest2 (U2(3,4))
 SteppingMatch01 (Choice1Of2 3)
 SteppingMatch01 (Choice2Of2 3)
 SteppingMatch03 (Choice1Of2 3)
@@ -570,6 +661,7 @@ TestFunction19 3
 TestFunction21(U2(3,4))
 TestFunction22()
 
+AsyncBreakpoints1() |> Async.RunSynchronously
 AsyncExpressionSteppingTest1() |> Async.RunSynchronously
 AsyncExpressionSteppingTest2() |> Async.RunSynchronously
 AsyncExpressionSteppingTest3() |> Async.RunSynchronously
@@ -588,3 +680,8 @@ SeqExpressionSteppingTest3()|> Seq.length
 SeqExpressionSteppingTest4()|> Seq.length
 SeqExpressionSteppingTest5()|> Seq.length
 SeqExpressionSteppingTest6() |> Seq.length
+InnerRecursiveFunction "cajcek" |> ignore
+InnerFunctionDefinitionHadTwoBreakpoints "aaaa" |> ignore
+InnerRecursiveFunctionDefinitionHadTwoBreakpoints "aaaa" |> ignore
+LocalValueShadowsArgument1 "123"
+LocalValueShadowsArgument2 "123"

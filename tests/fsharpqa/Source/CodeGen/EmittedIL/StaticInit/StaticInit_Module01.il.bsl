@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.1
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:1:0
 }
 .assembly StaticInit_Module01
 {
@@ -29,14 +29,14 @@
 }
 .mresource public FSharpSignatureData.StaticInit_Module01
 {
-  // Offset: 0x00000000 Length: 0x000002BB
+  // Offset: 0x00000000 Length: 0x000002A7
 }
 .mresource public FSharpOptimizationData.StaticInit_Module01
 {
-  // Offset: 0x000002C0 Length: 0x000000DF
+  // Offset: 0x000002B0 Length: 0x000000DF
 }
 .module StaticInit_Module01.dll
-// MVID: {4BEB28C7-705F-DF4F-A745-0383C728EB4B}
+// MVID: {59B19250-705F-DF4F-A745-03835092B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
@@ -63,7 +63,7 @@
               get_y() cil managed
       {
         // Code size       6 (0x6)
-        .maxstack  4
+        .maxstack  8
         IL_0000:  ldsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::y@7
         IL_0005:  ret
       } // end of method N::get_y
@@ -72,7 +72,7 @@
               get_z() cil managed
       {
         // Code size       6 (0x6)
-        .maxstack  4
+        .maxstack  8
         IL_0000:  ldsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::z@8
         IL_0005:  ret
       } // end of method N::get_z
@@ -93,8 +93,8 @@
             get_x() cil managed
     {
       // Code size       6 (0x6)
-      .maxstack  4
-      IL_0000:  ldsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::x@5
+      .maxstack  8
+      IL_0000:  ldsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::'x@5-1'
       IL_0005:  ret
     } // end of method M::get_x
 
@@ -110,7 +110,7 @@
 .class private abstract auto ansi sealed '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01
        extends [mscorlib]System.Object
 {
-  .field static assembly initonly int32 x@5
+  .field static assembly initonly int32 'x@5-1'
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly initonly int32 y@7
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -123,36 +123,35 @@
   .method private specialname rtspecialname static 
           void  .cctor() cil managed
   {
-    // Code size       65 (0x41)
+    // Code size       64 (0x40)
     .maxstack  4
     .locals init ([0] int32 x,
              [1] int32 y,
              [2] int32 z)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 5,5 : 3,21 
-    IL_0000:  nop
-    IL_0001:  ldstr      "1"
-    IL_0006:  call       instance int32 [mscorlib]System.String::get_Length()
-    IL_000b:  dup
-    IL_000c:  stsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::x@5
-    IL_0011:  stloc.0
-    .line 7,7 : 5,27 
-    IL_0012:  call       int32 StaticInit_Module01/M::get_x()
-    IL_0017:  ldstr      "2"
-    IL_001c:  call       instance int32 [mscorlib]System.String::get_Length()
-    IL_0021:  add
-    IL_0022:  dup
-    IL_0023:  stsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::y@7
-    IL_0028:  stloc.1
-    .line 8,8 : 5,27 
-    IL_0029:  call       int32 StaticInit_Module01/M/N::get_y()
-    IL_002e:  ldstr      "3"
-    IL_0033:  call       instance int32 [mscorlib]System.String::get_Length()
-    IL_0038:  add
-    IL_0039:  dup
-    IL_003a:  stsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::z@8
-    IL_003f:  stloc.2
-    IL_0040:  ret
+    .line 5,5 : 3,21 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\StaticInit\\StaticInit_Module01.fs'
+    IL_0000:  ldstr      "1"
+    IL_0005:  callvirt   instance int32 [mscorlib]System.String::get_Length()
+    IL_000a:  dup
+    IL_000b:  stsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::'x@5-1'
+    IL_0010:  stloc.0
+    .line 7,7 : 5,27 ''
+    IL_0011:  call       int32 StaticInit_Module01/M::get_x()
+    IL_0016:  ldstr      "2"
+    IL_001b:  callvirt   instance int32 [mscorlib]System.String::get_Length()
+    IL_0020:  add
+    IL_0021:  dup
+    IL_0022:  stsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::y@7
+    IL_0027:  stloc.1
+    .line 8,8 : 5,27 ''
+    IL_0028:  call       int32 StaticInit_Module01/M/N::get_y()
+    IL_002d:  ldstr      "3"
+    IL_0032:  callvirt   instance int32 [mscorlib]System.String::get_Length()
+    IL_0037:  add
+    IL_0038:  dup
+    IL_0039:  stsfld     int32 '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01::z@8
+    IL_003e:  stloc.2
+    IL_003f:  ret
   } // end of method $StaticInit_Module01::.cctor
 
 } // end of class '<StartupCode$StaticInit_Module01>'.$StaticInit_Module01

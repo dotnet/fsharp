@@ -675,27 +675,33 @@ and [<RequireQualifiedAccess; StructuralEquality; StructuralComparison>]
         
     member x.QualifiedNameWithNoShortPrimaryAssembly = 
         x.AddQualifiedNameExtensionWithNoShortPrimaryAssembly(x.BasicQualifiedName)
+
     member x.TypeSpec =
       match x with 
       | ILType.Boxed tr | ILType.Value tr -> tr
       | _ -> invalidOp "not a nominal type"
+
     member x.Boxity =
       match x with 
       | ILType.Boxed _ -> AsObject
       | ILType.Value _ -> AsValue
       | _ -> invalidOp "not a nominal type"
+
     member x.TypeRef = 
       match x with 
       | ILType.Boxed tspec | ILType.Value tspec -> tspec.TypeRef
       | _ -> invalidOp "not a nominal type"
+
     member x.IsNominal = 
       match x with 
       | ILType.Boxed _ | ILType.Value _ -> true
       | _ -> false
+
     member x.GenericArgs =
       match x with 
       | ILType.Boxed tspec | ILType.Value tspec -> tspec.GenericArgs
       | _ -> []
+
     member x.IsTyvar =
       match x with 
       | ILType.TypeVar _ -> true | _ -> false
@@ -843,9 +849,9 @@ type ILAttribute =
 
 [<NoEquality; NoComparison; Sealed>]
 type ILAttributes(f: unit -> ILAttribute[]) = 
-   let mutable array = InlineDelayInit<_>(f)
-   member x.AsArray = array.Value
-   member x.AsList = x.AsArray |> Array.toList
+    let mutable array = InlineDelayInit<_>(f)
+    member x.AsArray = array.Value
+    member x.AsList = x.AsArray |> Array.toList
 
 type ILCodeLabel = int
 

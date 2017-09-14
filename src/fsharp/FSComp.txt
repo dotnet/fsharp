@@ -1420,3 +1420,4 @@ notAFunctionButMaybeIndexerWithName,"This value is not a function and cannot be 
 notAFunctionButMaybeIndexer,"This expression is not a function and cannot be applied. Did you intend to access the indexer via expr.[index] instead?"
 3217,notAFunctionButMaybeIndexerErrorCode,""
 notAFunctionButMaybeDeclaration,"This value is not a function and cannot be applied. Did you forget to terminate a declaration?"
+3218,ArgumentsInSigAndImplMismatch,"The argument names in the signature '%s' and implementation '%s' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling."
