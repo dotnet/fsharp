@@ -2042,7 +2042,7 @@ and
     | SupportsNull               of range 
     
     /// Indicates a constraint that a type has a member with the given signature 
-    | MayResolveMember of TraitConstraintInfo * range 
+    | MayResolveMember of TraitConstraintInfo * range * ValRef list
     
     /// Indicates a constraint that a type is a non-Nullable value type 
     /// These are part of .NET's model of generic constraints, and in order to 

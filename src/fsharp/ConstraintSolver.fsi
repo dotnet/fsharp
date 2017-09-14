@@ -143,7 +143,7 @@ val AddCxTypeIsUnmanaged                      : DisplayEnv -> NameResolutionEnv 
 val AddCxTypeIsEnum                           : DisplayEnv -> NameResolutionEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> TType -> unit
 val AddCxTypeIsDelegate                       : DisplayEnv -> NameResolutionEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> TType -> TType -> unit
 
-val CodegenWitnessThatTypSupportsTraitConstraint : TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> Expr list -> OperationResult<Expr option>
+val CodegenWitnessThatTypSupportsTraitConstraint : TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> Expr list -> NameResolutionEnv -> OperationResult<Expr option>
 
 val ChooseTyparSolutionAndSolve : ConstraintSolverState -> DisplayEnv -> NameResolutionEnv -> Typar -> unit
 

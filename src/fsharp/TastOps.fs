@@ -228,8 +228,8 @@ and remapTyparConstraintsAux tyenv cs =
          match x with 
          | TyparConstraint.CoercesTo(ty,m) -> 
              Some(TyparConstraint.CoercesTo (remapTypeAux tyenv ty,m))
-         | TyparConstraint.MayResolveMember(traitInfo,m) -> 
-             Some(TyparConstraint.MayResolveMember (remapTraitAux tyenv traitInfo,m))
+         | TyparConstraint.MayResolveMember(traitInfo,m,extTys) -> 
+             Some(TyparConstraint.MayResolveMember (remapTraitAux tyenv traitInfo,m,List.map (remapValRef tyenv) extTys))
          | TyparConstraint.DefaultsTo(priority,ty,m) -> Some(TyparConstraint.DefaultsTo(priority,remapTypeAux tyenv ty,m))
          | TyparConstraint.IsEnum(uty,m) -> 
              Some(TyparConstraint.IsEnum(remapTypeAux tyenv uty,m))
@@ -370,6 +370,7 @@ let mkInstRemap tpinst =
 let instType              tpinst x = if isNil tpinst then x else remapTypeAux  (mkInstRemap tpinst) x
 let instTypes             tpinst x = if isNil tpinst then x else remapTypesAux (mkInstRemap tpinst) x
 let instTrait             tpinst x = if isNil tpinst then x else remapTraitAux (mkInstRemap tpinst) x
+let instValRef            tpinst x = if isNil tpinst then x else remapValRef (mkInstRemap tpinst) x
 let instTyparConstraints tpinst x = if isNil tpinst then x else remapTyparConstraintsAux (mkInstRemap tpinst) x
 let instSlotSig tpinst ss = remapSlotSig (fun _ -> []) (mkInstRemap tpinst) ss
 let copySlotSig ss = remapSlotSig (fun _ -> []) Remap.Empty ss
@@ -822,8 +823,8 @@ and typarConstraintsAEquivAux erasureFlag g aenv tpc1 tpc2 =
       TyparConstraint.CoercesTo(fcty,_) -> 
         typeAEquivAux erasureFlag g aenv acty fcty
 
-    | TyparConstraint.MayResolveMember(trait1,_),
-      TyparConstraint.MayResolveMember(trait2,_) -> 
+    | TyparConstraint.MayResolveMember(trait1,_,_),
+      TyparConstraint.MayResolveMember(trait2,_,_) -> 
         traitsAEquivAux erasureFlag g aenv trait1 trait2 
 
     | TyparConstraint.DefaultsTo(_,acty,_),
@@ -1888,7 +1889,7 @@ and accFreeInTyparConstraints opts cxs acc =
 and accFreeInTyparConstraint opts tpc acc =
     match tpc with 
     | TyparConstraint.CoercesTo(typ,_) -> accFreeInType opts typ acc
-    | TyparConstraint.MayResolveMember (traitInfo,_) -> accFreeInTrait opts traitInfo acc
+    | TyparConstraint.MayResolveMember (traitInfo,_,_) -> accFreeInTrait opts traitInfo acc
     | TyparConstraint.DefaultsTo(_,rty,_) -> accFreeInType opts rty acc
     | TyparConstraint.SimpleChoice(tys,_) -> accFreeInTypes opts tys acc
     | TyparConstraint.IsEnum(uty,_) -> accFreeInType opts uty acc
@@ -1993,7 +1994,7 @@ and accFreeInTyparConstraintsLeftToRight g cxFlag thruFlag acc cxs =
 and accFreeInTyparConstraintLeftToRight g cxFlag thruFlag acc tpc =
     match tpc with 
     | TyparConstraint.CoercesTo(typ,_) -> accFreeInTypeLeftToRight g cxFlag thruFlag acc typ 
-    | TyparConstraint.MayResolveMember (traitInfo,_) -> accFreeInTraitLeftToRight g cxFlag thruFlag acc traitInfo 
+    | TyparConstraint.MayResolveMember (traitInfo,_,_) -> accFreeInTraitLeftToRight g cxFlag thruFlag acc traitInfo 
     | TyparConstraint.DefaultsTo(_,rty,_) -> accFreeInTypeLeftToRight g cxFlag thruFlag acc rty 
     | TyparConstraint.SimpleChoice(tys,_) -> accFreeInTypesLeftToRight g cxFlag thruFlag acc tys 
     | TyparConstraint.IsEnum(uty,_) -> accFreeInTypeLeftToRight g cxFlag thruFlag acc uty
@@ -3151,7 +3152,7 @@ module DebugPrint = begin
         match tpc with
         | TyparConstraint.CoercesTo(typarConstrTyp,_) ->
             auxTypar2L env tp ^^ wordL (tagText ":>") --- auxTyparConstraintTypL env typarConstrTyp
-        | TyparConstraint.MayResolveMember(traitInfo,_) ->
+        | TyparConstraint.MayResolveMember(traitInfo,_,_) ->
             auxTypar2L env tp ^^ wordL (tagText ":")  --- auxTraitL env traitInfo
         | TyparConstraint.DefaultsTo(_,ty,_) ->
             wordL (tagText  "default") ^^ auxTypar2L env tp ^^ wordL (tagText ":") ^^ auxTypeL env ty

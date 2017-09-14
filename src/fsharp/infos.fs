@@ -332,8 +332,8 @@ let CopyTyparConstraints m tprefInst (tporig:Typar) =
                TyparConstraint.SimpleChoice (List.map (instType tprefInst) tys,m)
            | TyparConstraint.RequiresDefaultConstructor _ -> 
                TyparConstraint.RequiresDefaultConstructor m
-           | TyparConstraint.MayResolveMember(traitInfo,_) -> 
-               TyparConstraint.MayResolveMember (instTrait tprefInst traitInfo,m))
+           | TyparConstraint.MayResolveMember(traitInfo,_,extTys) -> 
+               TyparConstraint.MayResolveMember (instTrait tprefInst traitInfo,m,List.map (instValRef tprefInst) extTys))
 
 /// The constraints for each typar copied from another typar can only be fixed up once 
 /// we have generated all the new constraints, e.g. f<A :> List<B>, B :> List<A>> ... 

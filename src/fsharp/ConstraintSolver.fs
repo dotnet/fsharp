@@ -752,8 +752,8 @@ and solveTypMeetsTyparConstraints (csenv:ConstraintSolverEnv) ndeep m2 trace ty 
       | TyparConstraint.RequiresDefaultConstructor m2  -> SolveTypRequiresDefaultConstructor csenv ndeep m2 trace ty
       | TyparConstraint.SimpleChoice(tys,m2)           -> SolveTypChoice                     csenv ndeep m2 trace ty tys
       | TyparConstraint.CoercesTo(ty2,m2)              -> SolveTypSubsumesTypKeepAbbrevs     csenv ndeep m2 trace None ty2 ty
-      | TyparConstraint.MayResolveMember(traitInfo,m2) -> 
-          SolveMemberConstraint csenv false false ndeep m2 trace traitInfo ++ (fun _ -> CompleteD) 
+      | TyparConstraint.MayResolveMember(traitInfo,m2,extTys) -> 
+          SolveMemberConstraint csenv false false ndeep m2 trace traitInfo extTys ++ (fun _ -> CompleteD) 
     )))
 
         
@@ -945,7 +945,7 @@ and SolveDimensionlessNumericType (csenv:ConstraintSolverEnv) ndeep m2 trace ty 
 /// We pretend int and other types support a number of operators.  In the actual IL for mscorlib they 
 /// don't, however the type-directed static optimization rules in the library code that makes use of this 
 /// will deal with the problem. 
-and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload permitWeakResolution ndeep m2 trace (TTrait(tys,nm,memFlags,argtys,rty,sln)) :  OperationResult<bool> =
+and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload permitWeakResolution ndeep m2 trace (TTrait(tys,nm,memFlags,argtys,rty,sln)) exts :  OperationResult<bool> =
     // Do not re-solve if already solved
     if sln.Value.IsSome then ResultD true else
     let g = csenv.g
@@ -974,8 +974,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
     tys |> IterateD (SolveTypStaticReq csenv trace HeadTypeStaticReq)) ++ (fun () -> 
     
     let argtys = if memFlags.IsInstance then List.tail argtys else argtys
-
-    let minfos = GetRelevantMethodsForTrait csenv permitWeakResolution nm traitInfo
+    let minfos = GetRelevantMethodsForTrait csenv permitWeakResolution nm traitInfo exts
 
     match minfos,tys,memFlags.IsInstance,nm,argtys with 
       | _,_,false,("op_Division" | "op_Multiply"),[argty1;argty2]
@@ -1284,7 +1283,6 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
               | None, Some (calledMeth:CalledMeth<_>) -> 
                   // OK, the constraint is solved.
                   let minfo = calledMeth.Method
-
                   errors ++ (fun () -> 
                       let isInstance = minfo.IsInstance
                       if isInstance <> memFlags.IsInstance then 
@@ -1303,7 +1301,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
                   // If there's nothing left to learn then raise the errors 
                   (if (permitWeakResolution && isNil support) || isNil frees then errors  
                    // Otherwise re-record the trait waiting for canonicalization 
-                   else AddMemberConstraint csenv ndeep m2 trace traitInfo support frees) ++ (fun () -> 
+                   else AddMemberConstraint csenv ndeep m2 trace traitInfo support frees exts) ++ (fun () -> 
                        match errors with
                        | ErrorResult (_,UnresolvedOverloading _) when not ignoreUnresolvedOverload && (not (nm = "op_Explicit" || nm = "op_Implicit")) -> ErrorD LocallyAbortOperationThatFailsToResolveOverload
                        | _ -> ResultD TTraitUnsolved)
@@ -1384,7 +1382,15 @@ and TransactMemberConstraintSolution traitInfo (trace:OptionalTrace) sln  =
 
 /// Only consider overload resolution if canonicalizing or all the types are now nominal. 
 /// That is, don't perform resolution if more nominal information may influence the set of available overloads 
-and GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution nm (TTrait(tys,_,memFlags,argtys,rty,soln) as traitInfo) : MethInfo list =
+and GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution nm (TTrait(tys,_,memFlags,argtys,rty,soln) as traitInfo) exts : MethInfo list =
+    let rec eqTyps typ1 typ2 =
+        let g = csenv.g
+        match stripTyEqns g typ1, stripTyEqns g typ2 with 
+        | TType_app(tcref1,pars1),TType_app(tcref2,pars2) ->
+            tyconRefEq g tcref1 tcref2
+            && pars1.Length = pars2.Length
+            && List.forall2 eqTyps pars1 pars2
+        | _ -> false
     let results = 
         if permitWeakResolution || isNil (GetSupportOfMemberConstraint csenv traitInfo) then
             let m = csenv.m
@@ -1393,30 +1399,10 @@ and GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution 
                 | MemberKind.Constructor ->
                     tys |> List.map (GetIntrinsicConstructorInfosOfType csenv.SolverState.InfoReader m)
                 | _ ->
-                    let extMemberToMethInfo (_ : TType) extnMember =
-                        match extnMember with
-                        | FSExtMem (valRef, priority) ->
-                            if valRef.LogicalName = nm then
-                                Some <| FSMeth(csenv.g, valRef.Type, valRef, Some priority)
-                            else
-                                None
-                        | ILExtMem(_, methInfo, _) ->
-                            if methInfo.LogicalName = nm then
-                                Some <| methInfo
-                            else
-                                None
-                    let getExtMInfos (t : TType) : MethInfo list =
-                        if nm = "TestMethod" then
-                            List.iter (printfn "%A") csenv.NameResolutionEnv.eTyconsByAccessNames.Values
-                        csenv.NameResolutionEnv.eIndexedExtensionMembers.Contents.Contents.Values
-                        |> List.concat
-                        |> List.choose (extMemberToMethInfo t)
+ 
                     let getRelevantMethods t =
-                        let x = getExtMInfos t
-                        let y = GetIntrinsicMethInfosOfType csenv.SolverState.InfoReader (Some nm,AccessibleFromSomeFSharpCode,AllowMultiIntfInstantiations.Yes) IgnoreOverrides m t
+                        GetIntrinsicMethInfosOfType csenv.SolverState.InfoReader (Some nm,AccessibleFromSomeFSharpCode,AllowMultiIntfInstantiations.Yes) IgnoreOverrides m t
 
-                        printfn "t : %A , x : %A, y : %A" t x y
-                        y
                     tys |> List.map getRelevantMethods
             /// Merge the sets so we don't get the same minfo from each side 
             /// We merge based on whether minfos use identical metadata or not. 
@@ -1426,13 +1412,18 @@ and GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution 
             /// to a generic instantiation for an operator based on the right hand type. 
             
             let minfos = List.reduce (ListSet.unionFavourLeft MethInfo.MethInfosUseIdenticalDefinitions) minfos
-            minfos
+            let extMemberToMethInfo t (valRef : ValRef) =
+                FSMeth(csenv.g, t, valRef, Some 1uL) // TODO
+            let extMInfos : MethInfo list =
+                let allCombos = List.allPairs tys exts
+                List.map (fun (a,b) -> extMemberToMethInfo a b) allCombos
+            minfos @ extMInfos
         else 
             []
 
     // The trait name "op_Explicit" also covers "op_Implicit", so look for that one too.
     if nm = "op_Explicit" then 
-        results @ GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution "op_Implicit" (TTrait(tys,"op_Implicit",memFlags,argtys,rty,soln))
+        results @ GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution "op_Implicit" (TTrait(tys,"op_Implicit",memFlags,argtys,rty,soln)) exts
     else
         results
 
@@ -1468,17 +1459,19 @@ and SolveRelevantMemberConstraintsForTypar (csenv:ConstraintSolverEnv) ndeep per
     if isNil cxs then ResultD false else
     
     trace.Exec (fun () -> cxs |> List.iter (fun _ -> cxst.Remove tpn)) (fun () -> cxs |> List.iter (fun cx -> cxst.Add(tpn,cx)))
-    assert (isNil (cxst.FindAll tpn)) 
+    assert (isNil (cxst.FindAll tpn))
+
+
 
     cxs 
     |> AtLeastOneD (fun (traitInfo,m2) -> 
         let csenv = { csenv with m = m2 }
-        SolveMemberConstraint csenv true permitWeakResolution (ndeep+1) m2 trace traitInfo)
+        SolveMemberConstraint csenv true permitWeakResolution (ndeep+1) m2 trace traitInfo [])
 
 and CanonicalizeRelevantMemberConstraints (csenv:ConstraintSolverEnv) ndeep trace tps =
     SolveRelevantMemberConstraints csenv ndeep true trace tps
   
-and AddMemberConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace traitInfo support frees =
+and AddMemberConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace traitInfo support frees extTys =
     let g = csenv.g
     let aenv = csenv.EquivEnv
     let cxst = csenv.SolverState.ExtraCxs
@@ -1499,7 +1492,7 @@ and AddMemberConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace traitInfo sup
 
     // Associate the constraint with each type variable in the support, so if the type variable
     // gets generalized then this constraint is attached at the binding site.
-    support |> IterateD (fun tp -> AddConstraint csenv ndeep m2 trace tp (TyparConstraint.MayResolveMember(traitInfo,m2)))
+    support |> IterateD (fun tp -> AddConstraint csenv ndeep m2 trace tp (TyparConstraint.MayResolveMember(traitInfo,m2,extTys)))
 
     
 /// Record a constraint on an inference type variable. 
@@ -1517,8 +1510,8 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
     // may require type annotations. See FSharp 1.0 bug 6477.
     let consistent tpc1 tpc2 =
         match tpc1,tpc2 with           
-        | (TyparConstraint.MayResolveMember(TTrait(tys1,nm1,memFlags1,argtys1,rty1,_),_),
-           TyparConstraint.MayResolveMember(TTrait(tys2,nm2,memFlags2,argtys2,rty2,_),_))  
+        | (TyparConstraint.MayResolveMember(TTrait(tys1,nm1,memFlags1,argtys1,rty1,_),_,_),
+           TyparConstraint.MayResolveMember(TTrait(tys2,nm2,memFlags2,argtys2,rty2,_),_,_))  
               when (memFlags1 = memFlags2 &&
                     nm1 = nm2 &&
                     // Multiple op_Explicit and op_Implicit constraints can exist for the same type variable.
@@ -1584,8 +1577,8 @@ and AddConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace tp newConstraint  =
     // T2<inst2> = ty2 
     let implies tpc1 tpc2 = 
         match tpc1,tpc2 with           
-        | TyparConstraint.MayResolveMember(trait1,_),
-          TyparConstraint.MayResolveMember(trait2,_) -> 
+        | TyparConstraint.MayResolveMember(trait1,_,_),
+          TyparConstraint.MayResolveMember(trait2,_,_) -> 
             traitsAEquiv g aenv trait1 trait2
 
         | TyparConstraint.CoercesTo(ty1,_), TyparConstraint.CoercesTo(ty2,_) -> 
@@ -2569,8 +2562,17 @@ let AddCxTypeMustSubsumeType contextInfo denv nenv css m trace ty1 ty2 =
     SolveTypSubsumesTypWithReport (MakeConstraintSolverEnv contextInfo css m denv nenv) 0 m trace None ty1 ty2
     |> RaiseOperationResult
 
-let AddCxMethodConstraint denv nenv css m trace traitInfo  =
-    TryD (fun () -> SolveMemberConstraint (MakeConstraintSolverEnv ContextInfo.NoContext css m denv nenv) true false 0 m trace traitInfo ++ (fun _ -> CompleteD))
+let AddCxMethodConstraint denv nenv css m trace (traitInfo : TraitConstraintInfo) =
+    let extTys : ValRef list =
+        let extMemberToValRef = function
+            | FSExtMem (v,_) -> v
+            | ILExtMem (_,_,_) -> failwith ""
+        nenv.eIndexedExtensionMembers.Contents.Contents.Values
+        |> fun x -> x
+        |> List.concat
+        |> List.map extMemberToValRef
+        |> List.filter (fun v -> v.LogicalName = traitInfo.MemberName)
+    TryD (fun () -> SolveMemberConstraint (MakeConstraintSolverEnv ContextInfo.NoContext css m denv nenv) true false 0 m trace traitInfo extTys ++ (fun _ -> CompleteD))
          (fun res -> ErrorD (ErrorFromAddingConstraint(denv,res,m)))
     |> RaiseOperationResult
 
@@ -2619,16 +2621,24 @@ let AddCxTypeIsDelegate denv nenv css m trace ty aty bty =
          (fun res -> ErrorD (ErrorFromAddingConstraint(denv,res,m)))
     |> RaiseOperationResult
 
-let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:TraitConstraintInfo) argExprs = 
+let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:TraitConstraintInfo) argExprs nenv = 
     let css = 
         { g = g
           amap = amap
           TcVal = tcVal
           ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
           InfoReader = new InfoReader(g,amap) }
-
-    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g) (NameResolutionEnv.Empty g)
-    SolveMemberConstraint csenv true true 0 m NoTrace traitInfo ++ (fun _res -> 
+    let extTys : ValRef list =
+        let extMemberToValRef = function
+            | FSExtMem (v,_) -> v
+            | ILExtMem (_,_,_) -> failwith ""
+        nenv.eIndexedExtensionMembers.Contents.Contents.Values
+        |> fun x -> x
+        |> List.concat
+        |> List.map extMemberToValRef
+        |> List.filter (fun v -> v.LogicalName = traitInfo.MemberName)
+    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g) nenv
+    SolveMemberConstraint csenv true true 0 m NoTrace traitInfo extTys ++ (fun _res -> 
         let sln = 
               match traitInfo.Solution with 
               | None -> Choice4Of4()
