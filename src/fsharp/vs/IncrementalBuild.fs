@@ -1743,9 +1743,9 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
 
                 // Never open PDB files for the language service, even if --standalone is specified
                 tcConfigB.openDebugInformationForLaterStaticLinking <- false
-                match commandLineArgs |> Seq.tryFindIndex(fun s -> s.StartsWith(targetProfileSwitch)) with
-                | Some idx ->
-                    let profile = commandLineArgs.[idx].Substring(targetProfileSwitch.Length)
+                match commandLineArgs |> Seq.tryFind(fun s -> s.StartsWith(targetProfileSwitch)) with
+                | Some arg ->
+                    let profile = arg.Substring(targetProfileSwitch.Length)
                     CompileOptions.SetTargetProfile tcConfigB profile
                 | _ -> ()
                 tcConfigB, sourceFilesNew
