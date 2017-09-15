@@ -291,7 +291,7 @@ module internal TokenClassifications =
             (FSharpTokenColorKind.Comment,FSharpTokenCharKind.Comment,FSharpTokenTriggerClass.None)
         | LINE_COMMENT _ -> 
             (FSharpTokenColorKind.Comment,FSharpTokenCharKind.LineComment,FSharpTokenTriggerClass.None)
-        | STRING_TEXT _ -> 
+        | STRING_TEXT _ | STRING_INTERPOLATED _ -> 
             (FSharpTokenColorKind.String,FSharpTokenCharKind.String,FSharpTokenTriggerClass.None)
         | KEYWORD_STRING _ -> 
            (FSharpTokenColorKind.Keyword,FSharpTokenCharKind.Keyword,FSharpTokenTriggerClass.None)
@@ -421,6 +421,7 @@ module internal LexerStateEncoding =
             | LexCont.EndLine(LexerEndlineContinuation.Skip(ifd,n,m)) -> FSharpTokenizerColorState.EndLineThenSkip,           resize32 n, m.Start, ifd
             | LexCont.EndLine(LexerEndlineContinuation.Token(ifd))    -> FSharpTokenizerColorState.EndLineThenToken,          0L,         pos0,    ifd
             | LexCont.String (ifd,m)                                  -> FSharpTokenizerColorState.String,                    0L,         m.Start, ifd
+            | LexCont.InterpolatedString (ifd,m)                      -> FSharpTokenizerColorState.String,                    0L,         m.Start, ifd
             | LexCont.Comment (ifd,n,m)                               -> FSharpTokenizerColorState.Comment,                   resize32 n, m.Start, ifd
             | LexCont.SingleLineComment (ifd,n,m)                     -> FSharpTokenizerColorState.SingleLineComment,         resize32 n, m.Start, ifd
             | LexCont.StringInComment (ifd,n,m)                       -> FSharpTokenizerColorState.StringInComment,           resize32 n, m.Start, ifd
@@ -464,6 +465,7 @@ module internal LexerStateEncoding =
         | LexCont.IfDefSkip (ifd,n,m)                  -> Lexer.ifdefSkip n m (argsWithIfDefs ifd) skip lexbuf 
         // Q: What's this magic 100 number for? Q: it's just an initial buffer size. 
         | LexCont.String (ifd,m)                       -> Lexer.string (ByteBuffer.Create 100,defaultStringFinisher,m,(argsWithIfDefs ifd)) skip lexbuf
+        | LexCont.InterpolatedString (ifd,m)           -> Lexer.string (ByteBuffer.Create 100,defaultStringFinisher,m,(argsWithIfDefs ifd)) skip lexbuf
         | LexCont.Comment (ifd,n,m)                    -> Lexer.comment (n,m,(argsWithIfDefs ifd)) skip lexbuf
         // The first argument is 'None' because we don't need XML comments when called from VS
         | LexCont.SingleLineComment (ifd,n,m)          -> Lexer.singleLineComment (None,n,m,(argsWithIfDefs ifd)) skip lexbuf

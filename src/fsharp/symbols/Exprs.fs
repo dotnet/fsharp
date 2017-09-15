@@ -966,6 +966,7 @@ module FSharpExprConvert =
             | Const.Double  i ->  E.Const(box i, tyR)
             | Const.Single  i ->  E.Const(box i, tyR)
             | Const.String  i ->  E.Const(box i, tyR)
+            | Const.InterpolatedString  i ->  E.Const(box i, tyR)
             | Const.Char    i ->  E.Const(box i, tyR)
             | Const.Unit      ->  E.Const(box (), tyR)
             | Const.Zero      ->  E.DefaultValue (ConvType cenv ty)

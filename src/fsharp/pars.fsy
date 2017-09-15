@@ -89,6 +89,7 @@ let checkEndOfFileError t =
   match t with 
   | LexCont.IfDefSkip(_,_,m)                      -> reportParseErrorAt m (FSComp.SR.parsEofInHashIf())
   | LexCont.String (_,m)                          -> reportParseErrorAt m (FSComp.SR.parsEofInString())
+  | LexCont.InterpolatedString (_,m)                          -> reportParseErrorAt m (FSComp.SR.parsEofInString())
   | LexCont.TripleQuoteString (_,m)               -> reportParseErrorAt m (FSComp.SR.parsEofInTripleQuoteString())
   | LexCont.VerbatimString (_,m)                  -> reportParseErrorAt m (FSComp.SR.parsEofInVerbatimString())
   | LexCont.Comment (_,_,m)                       -> reportParseErrorAt m (FSComp.SR.parsEofInComment())
@@ -156,6 +157,7 @@ let rangeOfLongIdent(lid:LongIdent) =
 
 %token <byte[]> BYTEARRAY
 %token <string> STRING 
+%token <string> STRING_INTERPOLATED
 %token <string> KEYWORD_STRING // Like __SOURCE_DIRECTORY__
 %token <string> IDENT 
 %token <string> INFIX_STAR_STAR_OP 
@@ -2672,6 +2674,7 @@ rawConstant:
   | BIGNUM { SynConst.UserNum $1 } 
   | stringOrKeywordString { SynConst.String ($1,lhs parseState) } 
   | BYTEARRAY { SynConst.Bytes ($1,lhs parseState) }
+  | STRING_INTERPOLATED { SynConst.InterpolatedString ($1,lhs parseState) }
 
 rationalConstant:
   | INT32 INFIX_STAR_DIV_MOD_OP INT32
@@ -4900,6 +4903,7 @@ colonOrEquals:
 stringOrKeywordString:
   | STRING { $1 }
   | KEYWORD_STRING { $1 }
+  | STRING_INTERPOLATED { $1 }
 
 opt_HIGH_PRECEDENCE_APP:
   | HIGH_PRECEDENCE_BRACK_APP { }

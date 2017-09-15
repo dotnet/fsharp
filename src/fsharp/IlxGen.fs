@@ -2083,6 +2083,7 @@ and GenConstant cenv cgbuf eenv (c,m,ty) sequel =
           | Const.Single f -> CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (AI_ldc (DT_R4,ILConst.R4 f))
           | Const.Char(c) -> CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) ( mkLdcInt32 (int c))
           | Const.String(s) -> GenString cenv cgbuf s
+          | Const.InterpolatedString(s) -> GenString cenv cgbuf s
           | Const.Unit -> GenUnit cenv eenv m cgbuf
           | Const.Zero -> GenDefaultValue cenv cgbuf eenv (ty,m) 
           | Const.Decimal _ -> failwith "unreachable"

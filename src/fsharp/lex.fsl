@@ -111,7 +111,7 @@ let checkExprOp (lexbuf:UnicodeLexing.Lexbuf) =
 let unexpectedChar lexbuf =
     LEX_FAILURE (FSComp.SR.lexUnexpectedChar(lexeme lexbuf))
 
-let startString args (lexbuf: UnicodeLexing.Lexbuf) =
+let startString args (lexbuf: UnicodeLexing.Lexbuf) interpolated =
     let buf = ByteBuffer.Create 100 
     let m = lexbuf.LexemeRange 
     let startp = lexbuf.StartPos 
@@ -125,8 +125,10 @@ let startString args (lexbuf: UnicodeLexing.Lexbuf) =
                             fail args lexbuf (FSComp.SR.lexByteArrayCannotEncode()) ()
                             BYTEARRAY (Lexhelp.stringBufferAsBytes buf)
                         )
+                     elif not interpolated then
+                        STRING (Lexhelp.stringBufferAsString s)
                      else
-                        STRING (Lexhelp.stringBufferAsString s))  
+                        STRING_INTERPOLATED (Lexhelp.stringBufferAsString s)) 
     buf,fin,m
              
 // Utility functions for processing XML documentation 
@@ -437,18 +439,19 @@ rule token args skip = parse
        if not skip then (COMMENT (LexCont.MLOnly(!args.ifdefStack,m))) else mlOnly m args skip lexbuf }
 
  | '"' 
-     { let buf,fin,m = startString args lexbuf 
+     { let buf,fin,m = startString args lexbuf false
        if not skip then (STRING_TEXT (LexCont.String(!args.ifdefStack,m))) else string (buf,fin,m,args) skip lexbuf }
       
  | '"' '"' '"' 
-     { let buf,fin,m = startString args lexbuf 
+     { let buf,fin,m = startString args lexbuf false
        if not skip then (STRING_TEXT (LexCont.TripleQuoteString(!args.ifdefStack,m))) else tripleQuoteString (buf,fin,m,args) skip lexbuf }
       
  | '$' '"' 
-     { fail args lexbuf  (FSComp.SR.lexTokenReserved()) (WHITESPACE (LexCont.Token !args.ifdefStack)) }
+     { let buf,fin,m = startString args lexbuf true
+       if not skip then (STRING_TEXT (LexCont.InterpolatedString(!args.ifdefStack,m))) else string (buf,fin,m,args) skip lexbuf }
       
  | '@' '"' 
-     { let buf,fin,m = startString args lexbuf 
+     { let buf,fin,m = startString args lexbuf false
        if not skip then (STRING_TEXT (LexCont.VerbatimString(!args.ifdefStack,m))) else verbatimString (buf,fin,m,args) skip lexbuf }
 
  | truewhite+  

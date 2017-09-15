@@ -901,6 +901,7 @@ let TcConst cenv ty m env c =
     | SynConst.Measure(SynConst.Int64   i, _) | SynConst.Int64   i -> unif_measure_arg (i=0L)   cenv.g.pint64_tcr c; Const.Int64 i
     | SynConst.Char c       -> unif cenv.g.char_ty;       Const.Char c
     | SynConst.String (s, _) -> unif cenv.g.string_ty;     Const.String s
+    | SynConst.InterpolatedString (s, _) -> unif cenv.g.string_ty;     Const.InterpolatedString s
     | SynConst.UserNum _     -> error(InternalError(FSComp.SR.tcUnexpectedBigRationalConstant(), m))
     | SynConst.Measure _    -> error(Error(FSComp.SR.tcInvalidTypeForUnitsOfMeasure(), m))
 
@@ -5614,6 +5615,10 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
     | SynExpr.Const (SynConst.String (s, m), _) -> 
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.DisplayEnv, env.eAccessRights)
         TcConstStringExpr cenv overallTy env m tpenv s
+    
+    | SynExpr.Const (SynConst.InterpolatedString (s, m), _) -> 
+        CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.DisplayEnv, env.eAccessRights)
+        TcInterpolatedString cenv overallTy env m tpenv s
 
     | SynExpr.Const (c, m) -> 
         CallExprHasTypeSink cenv.tcSink (m, env.NameEnv, overallTy, env.DisplayEnv, env.eAccessRights)
@@ -6721,6 +6726,38 @@ and TcConstStringExpr cenv overallTy env m tpenv s  =
       else 
         UnifyTypes cenv env m overallTy cenv.g.string_ty
         mkString cenv.g m s, tpenv
+
+//-------------------------------------------------------------------------
+// TcConstStringExpr
+//------------------------------------------------------------------------- 
+
+/// Check a constant string expression. It might be a 'printf' format string 
+and TcInterpolatedString cenv _ _ m tpenv s  =
+    //let aty = NewInferenceType ()
+    //let bty = NewInferenceType ()
+    //let cty = NewInferenceType ()
+    //let dty = NewInferenceType ()
+    //let ety = NewInferenceType ()
+    //let ty' = mkPrintfFormatTy cenv.g aty bty cty dty ety
+    //if (not (isObjTy cenv.g overallTy) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy ty') then 
+    //// Parse the format string to work out the phantom types 
+    //let source = match cenv.tcSink.CurrentSink with None -> None | Some sink -> sink.CurrentSource
+    //let normalizedString = (s.Replace("\r\n", "\n").Replace("\r", "\n"))
+        
+    //let (aty', ety'), specifierLocations = (try CheckFormatStrings.ParseFormatString m cenv.g source normalizedString bty cty dty with Failure s -> error (Error(FSComp.SR.tcUnableToParseFormatString(s), m)))
+
+    //match cenv.tcSink.CurrentSink with 
+    //| None -> () 
+    //| Some sink  -> 
+    //    for specifierLocation, numArgs in specifierLocations do
+    //        sink.NotifyFormatSpecifierLocation(specifierLocation, numArgs)
+
+    //UnifyTypes cenv env m aty aty'
+    //UnifyTypes cenv env m ety ety'
+    //mkCallNewFormat cenv.g m aty bty cty dty ety (mkString cenv.g m s), tpenv
+    //else 
+    //UnifyTypes cenv env m overallTy cenv.g.string_ty
+    mkString cenv.g m s, tpenv
 
 //-------------------------------------------------------------------------
 // TcConstExpr

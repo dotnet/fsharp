@@ -247,6 +247,8 @@ type
     | UserNum of value:string * suffix:string
     /// F# syntax: verbatim or regular string, e.g. "abc"
     | String of text:string * range:range
+    /// F# syntax: verbatim or regular string, e.g. "abc"
+    | InterpolatedString of text:string * range:range
     /// F# syntax: verbatim or regular byte string, e.g. "abc"B.
     ///
     /// Also used internally in the typechecker once an array of unit16 constants
@@ -2126,6 +2128,7 @@ type LexerWhitespaceContinuation =
     | Token            of ifdef:LexerIfdefStackEntries
     | IfDefSkip        of ifdef:LexerIfdefStackEntries * int * range:range
     | String           of ifdef:LexerIfdefStackEntries * range:range
+    | InterpolatedString of ifdef:LexerIfdefStackEntries * range:range
     | VerbatimString   of ifdef:LexerIfdefStackEntries * range:range
     | TripleQuoteString of ifdef:LexerIfdefStackEntries * range:range
     | Comment          of ifdef:LexerIfdefStackEntries * int * range:range
@@ -2141,6 +2144,7 @@ type LexerWhitespaceContinuation =
         | LexCont.Token (ifdef=ifd)
         | LexCont.IfDefSkip (ifdef=ifd)
         | LexCont.String (ifdef=ifd)
+        | LexCont.InterpolatedString (ifdef=ifd)
         | LexCont.VerbatimString (ifdef=ifd)
         | LexCont.Comment (ifdef=ifd)
         | LexCont.SingleLineComment (ifdef=ifd)

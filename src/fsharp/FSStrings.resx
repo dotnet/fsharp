@@ -112,10 +112,10 @@
     <value>2.0</value>
   </resheader>
   <resheader name="reader">
-    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <resheader name="writer">
-    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="SeeAlso" xml:space="preserve">
     <value>. See also {0}.</value>
@@ -886,7 +886,7 @@
     <value>This expression is a function value, i.e. is missing arguments. Its type is {0}.</value>
   </data>
   <data name="UnitTypeExpected" xml:space="preserve">
-    <value>The result of this expression is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |> ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</value>
+    <value>The result of this expression is implicitly ignored. Consider using 'ignore' to discard this value explicitly, e.g. 'expr |&gt; ignore', or 'let' to bind the result to a name, e.g. 'let result = expr'.</value>
   </data>
   <data name="UnitTypeExpectedWithEquality" xml:space="preserve">
     <value>The result of this equality expression is implicitly discarded. Consider using 'let' to bind the result to a name, e.g. 'let result = expression'.</value>
@@ -1079,5 +1079,8 @@
   </data>
   <data name="TargetInvocationExceptionWrapper" xml:space="preserve">
     <value>internal error: {0}</value>
+  </data>
+  <data name="Parser.TOKEN.STRING.INTERPOLATED" xml:space="preserve">
+    <value>interpolated string</value>
   </data>
 </root>
