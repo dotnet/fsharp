@@ -38,7 +38,8 @@
   <Target Name="CopyAndSubstituteTextFiles" 
           BeforeTargets="Compile"
           Inputs="@(CopyAndSubstituteText)"
-          Outputs="@(CopyAndSubstituteText->'$(OutDir)%(TargetFilename)')" >
+          Outputs="@(CopyAndSubstituteText->'$(OutDir)%(TargetFilename)')"
+          Condition="'$(DesignTimeBuild)' != 'true'">
 
     <ItemGroup>
         <Results Include="@(CopyAndSubstituteText->'$(OutDir)%(TargetFilename)')">
