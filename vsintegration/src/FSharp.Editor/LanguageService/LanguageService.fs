@@ -290,7 +290,7 @@ type internal FSharpProjectOptionsManager
         let sourcePaths = sources |> Seq.map(fun s -> fullPath s.Path) |> Seq.toArray
         let referencePaths = references |> Seq.map(fun r -> fullPath r.Reference) |> Seq.toArray
         projectInfo.[path] <- (sourcePaths,referencePaths,options.ToArray())
-        this.UpdateProjectInfoWithPath(path, "OnProjectChanged")
+        this.UpdateProjectInfoWithPath(path, "HandleCommandLineChanges")
 
     member __.GetProjectInfo(path:string) = 
         match projectInfo.TryGetValue path with
