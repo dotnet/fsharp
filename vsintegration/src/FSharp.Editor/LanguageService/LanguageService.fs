@@ -407,10 +407,7 @@ type
 
     let optionsAssociation = ConditionalWeakTable<IWorkspaceProjectContext, string[]>()
 
-    member private this.OnProjectChanged(projectId:ProjectId) =
-        projectInfoManager.UpdateProjectInfoWithProjectId(projectId, "OnProjectChanged")
-
-    member private this.OnProjectChanged(projectId:ProjectId, _newSolution:Solution) = this.OnProjectChanged(projectId)
+    member private this.OnProjectAdded(projectId:ProjectId, _newSolution:Solution) = projectInfoManager.UpdateProjectInfoWithProjectId(projectId, "OnProjectAdded")
     override this.Initialize() =
         base.Initialize()
 
@@ -525,17 +522,18 @@ type
             let projectGuid = Guid(site.ProjectGuid)
             let projectFileName = site.ProjectFileName()
             let projectDisplayName = projectDisplayNameOf projectFileName
+
             let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
 
-            let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
-
-            let hierarchy =
-                site.ProjectProvider
-                |> Option.map (fun p -> p :?> IVsHierarchy)
-                |> Option.toObj
-
             if isNull (workspace.ProjectTracker.GetProject projectId) then
-                let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>()
+                projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, projectId, site, userOpName)
+                let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
+                let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
+
+                let hierarchy =
+                    site.ProjectProvider
+                    |> Option.map (fun p -> p :?> IVsHierarchy)
+                    |> Option.toObj
 
                 // Roslyn is expecting site to be an IVsHierarchy.
                 // It just so happens that the object that implements IProvideProjectSite is also
@@ -549,6 +547,9 @@ type
                 let project = projectContext :?> AbstractProject
 
                 this.SyncProject(project, projectContext, site, workspace, forceUpdate=false, userOpName=userOpName)
+
+                site.BuildErrorReporter <- Some (errorReporter :> Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2)
+
                 site.AdviseProjectSiteChanges(FSharpConstants.FSharpLanguageServiceCallbackName, 
                                               AdviseProjectSiteChanges(fun () -> this.SyncProject(project, projectContext, site, workspace, forceUpdate=true, userOpName="AdviseProjectSiteChanges."+userOpName)))
                 site.AdviseProjectSiteClosed(FSharpConstants.FSharpLanguageServiceCallbackName, 
@@ -616,9 +617,7 @@ type
                         let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
                         this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
                     | id ->
-                        let project = this.Workspace.CurrentSolution.GetProject(id.ProjectId)
-                        let siteProvider = projectInfoManager.ProvideProjectSiteProvider(project)
-                        this.SetupProjectFile(siteProvider, this.Workspace, "SetupNewTextView")
+                        projectInfoManager.UpdateProjectInfoWithProjectId(id.ProjectId, "SetupNewTextView")
                 | _ ->
                     let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
                     this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
