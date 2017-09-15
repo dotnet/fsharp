@@ -217,8 +217,14 @@
       <BuiltProjectOutputGroupKeyOutput Include="$(IntermediateOutputPath)/FSharp.Core.sigdata" />
       <BuiltProjectOutputGroupKeyOutput Include="$(IntermediateOutputPath)/FSharp.Core.optdata" />
     </ItemGroup>
-    <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.Core.sigdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
-    <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.Core.optdata" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.Core.sigdata"
+          DestinationFolder="$(OutputPath)"
+          SkipUnchangedFiles="true" 
+          Condition="Exists('$(IntermediateOutputPath)\FSharp.Core.sigdata')" />
+    <Copy SourceFiles="$(IntermediateOutputPath)\FSharp.Core.optdata"
+          DestinationFolder="$(OutputPath)"
+          SkipUnchangedFiles="true"
+          Condition="Exists('$(IntermediateOutputPath)\FSharp.Core.sigdata')" />
   </Target>
 
 </Project>

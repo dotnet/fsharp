@@ -411,19 +411,12 @@ type
         projectInfoManager.UpdateProjectInfoWithProjectId(projectId, "OnProjectChanged")
 
     member private this.OnProjectChanged(projectId:ProjectId, _newSolution:Solution) = this.OnProjectChanged(projectId)
-
-    member private this.OnProjectAdded(projectId:ProjectId,   _newSolution:Solution) = this.OnProjectChanged(projectId)
-
-    member private this.OnProjectRemoved(_projectId:ProjectId, _newSolution:Solution) = ()
-
     override this.Initialize() =
         base.Initialize()
 
         let workspaceChanged (args:WorkspaceChangeEventArgs) =
             match args.Kind with
             | WorkspaceChangeKind.ProjectAdded   -> this.OnProjectAdded(args.ProjectId,   args.NewSolution)
-            | WorkspaceChangeKind.ProjectChanged -> this.OnProjectChanged(args.ProjectId, args.NewSolution)
-            | WorkspaceChangeKind.ProjectRemoved -> this.OnProjectRemoved(args.ProjectId, args.NewSolution)
             | _ -> ()
 
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Completion.CompletionOptions.BlockForCompletionItems, FSharpConstants.FSharpLanguageName, false)
@@ -623,7 +616,9 @@ type
                         let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
                         this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
                     | id ->
-                        projectInfoManager.UpdateProjectInfoWithProjectId(id.ProjectId, "SetupNewTextView")
+                        let project = this.Workspace.CurrentSolution.GetProject(id.ProjectId)
+                        let siteProvider = projectInfoManager.ProvideProjectSiteProvider(project)
+                        this.SetupProjectFile(siteProvider, this.Workspace, "SetupNewTextView")
                 | _ ->
                     let fileContents = VsTextLines.GetFileContents(textLines, textViewAdapter)
                     this.SetupStandAloneFile(filename, fileContents, this.Workspace, hier)
