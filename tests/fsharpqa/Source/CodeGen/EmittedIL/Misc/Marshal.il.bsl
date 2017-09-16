@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.16774
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:1:0
 }
 .assembly Marshal
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.Marshal
 {
-  // Offset: 0x00000000 Length: 0x0000052F
+  // Offset: 0x00000000 Length: 0x0000050B
 }
 .mresource public FSharpOptimizationData.Marshal
 {
-  // Offset: 0x00000538 Length: 0x0000004E
+  // Offset: 0x00000510 Length: 0x0000004E
 }
 .module Marshal.exe
-// MVID: {4DAC0DF9-7500-369C-A745-0383F90DAC4D}
+// MVID: {59B19213-7500-369C-A745-03831392B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00000000008E0000
+// Image base: 0x01080000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -91,10 +91,9 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       2 (0x2)
+    // Code size       1 (0x1)
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ret
+    IL_0000:  ret
   } // end of method $Marshal::main@
 
 } // end of class '<StartupCode$Marshal>'.$Marshal

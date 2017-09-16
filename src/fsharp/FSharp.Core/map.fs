@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Collections
 
@@ -414,12 +414,8 @@ namespace Microsoft.FSharp.Collections
 
 
 
-#if !FX_NO_DEBUG_PROXIES
     [<System.Diagnostics.DebuggerTypeProxy(typedefof<MapDebugView<_,_>>)>]
-#endif
-#if !FX_NO_DEBUG_DISPLAYS
     [<System.Diagnostics.DebuggerDisplay("Count = {Count}")>]
-#endif
     [<Sealed>]
     [<CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1710:IdentifiersShouldHaveCorrectSuffix")>]
     [<CompiledName("FSharpMap`2")>]
@@ -474,17 +470,15 @@ namespace Microsoft.FSharp.Collections
     
         static member Create() : Map<'Key,'Value> = empty
 
-        new(ie : seq<_>) = 
+        new(elements : seq<_>) = 
            let comparer = LanguagePrimitives.FastGenericComparer<'Key> 
-           new Map<_,_>(comparer,MapTree.ofSeq comparer ie)
+           new Map<_,_>(comparer,MapTree.ofSeq comparer elements)
     
-#if !FX_NO_DEBUG_DISPLAYS
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         member internal m.Comparer = comparer
         //[<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
         member internal m.Tree = tree
-        member m.Add(k,v) : Map<'Key,'Value> = 
+        member m.Add(key,value) : Map<'Key,'Value> = 
 #if TRACE_SETS_AND_MAPS
             MapTree.report()
             MapTree.numAdds <- MapTree.numAdds + 1
@@ -494,19 +488,18 @@ namespace Microsoft.FSharp.Collections
                MapTree.largestMapSize <- size
                MapTree.largestMapStackTrace <- System.Diagnostics.StackTrace().ToString()
 #endif
-            new Map<'Key,'Value>(comparer,MapTree.add comparer k v tree)
-#if !FX_NO_DEBUG_DISPLAYS
+            new Map<'Key,'Value>(comparer,MapTree.add comparer key value tree)
+
         [<DebuggerBrowsable(DebuggerBrowsableState.Never)>]
-#endif
         member m.IsEmpty = MapTree.isEmpty tree
         member m.Item 
-         with get(k : 'Key) = 
+         with get(key : 'Key) = 
 #if TRACE_SETS_AND_MAPS
             MapTree.report()
             MapTree.numLookups <- MapTree.numLookups + 1
             MapTree.totalSizeOnMapLookup <- MapTree.totalSizeOnMapLookup + float (MapTree.size tree)
 #endif
-            MapTree.find comparer k tree
+            MapTree.find comparer key tree
         member m.TryPick(f) = MapTree.tryPick f tree 
         member m.Exists(f) = MapTree.exists f tree 
         member m.Filter(f)  : Map<'Key,'Value> = new Map<'Key,'Value>(comparer ,MapTree.filter comparer f tree)
@@ -527,24 +520,24 @@ namespace Microsoft.FSharp.Collections
 
         member m.Count = MapTree.size tree
 
-        member m.ContainsKey(k) = 
+        member m.ContainsKey(key) = 
 #if TRACE_SETS_AND_MAPS
             MapTree.report()
             MapTree.numLookups <- MapTree.numLookups + 1
             MapTree.totalSizeOnMapLookup <- MapTree.totalSizeOnMapLookup + float (MapTree.size tree)
 #endif
-            MapTree.mem comparer k tree
+            MapTree.mem comparer key tree
 
-        member m.Remove(k)  : Map<'Key,'Value> = 
-            new Map<'Key,'Value>(comparer,MapTree.remove comparer k tree)
+        member m.Remove(key)  : Map<'Key,'Value> = 
+            new Map<'Key,'Value>(comparer,MapTree.remove comparer key tree)
 
-        member m.TryFind(k) = 
+        member m.TryFind(key) = 
 #if TRACE_SETS_AND_MAPS
             MapTree.report()
             MapTree.numLookups <- MapTree.numLookups + 1
             MapTree.totalSizeOnMapLookup <- MapTree.totalSizeOnMapLookup + float (MapTree.size tree)
 #endif
-            MapTree.tryFind comparer k tree
+            MapTree.tryFind comparer key tree
 
         member m.ToList() = MapTree.toList tree
 
@@ -627,8 +620,6 @@ namespace Microsoft.FSharp.Collections
            | [KeyValue h1;KeyValue h2;KeyValue h3] -> System.Text.StringBuilder().Append("map [").Append(LanguagePrimitives.anyToStringShowingNull h1).Append("; ").Append(LanguagePrimitives.anyToStringShowingNull h2).Append("; ").Append(LanguagePrimitives.anyToStringShowingNull h3).Append("]").ToString()
            | KeyValue h1 :: KeyValue h2 :: KeyValue h3 :: _ -> System.Text.StringBuilder().Append("map [").Append(LanguagePrimitives.anyToStringShowingNull h1).Append("; ").Append(LanguagePrimitives.anyToStringShowingNull h2).Append("; ").Append(LanguagePrimitives.anyToStringShowingNull h3).Append("; ... ]").ToString() 
 
-
-#if !FX_NO_DEBUG_PROXIES
     and
         [<Sealed>]
         MapDebugView<'Key,'Value when 'Key : comparison>(v: Map<'Key,'Value>)  =  
@@ -643,7 +634,6 @@ namespace Microsoft.FSharp.Collections
         
             [<DebuggerBrowsable(DebuggerBrowsableState.RootHidden)>]
             member x.KeyValue = keyValue
-#endif
         
 
 namespace Microsoft.FSharp.Collections
@@ -660,83 +650,83 @@ namespace Microsoft.FSharp.Collections
     module Map = 
 
         [<CompiledName("IsEmpty")>]
-        let isEmpty (m:Map<_,_>) = m.IsEmpty
+        let isEmpty (table:Map<_,_>) = table.IsEmpty
 
         [<CompiledName("Add")>]
-        let add k v (m:Map<_,_>) = m.Add(k,v)
+        let add key value (table:Map<_,_>) = table.Add(key,value)
 
         [<CompiledName("Find")>]
-        let find k (m:Map<_,_>) = m.[k]
+        let find key (table:Map<_,_>) = table.[key]
 
         [<CompiledName("TryFind")>]
-        let tryFind k (m:Map<_,_>) = m.TryFind(k)
+        let tryFind key (table:Map<_,_>) = table.TryFind(key)
 
         [<CompiledName("Remove")>]
-        let remove k (m:Map<_,_>) = m.Remove(k)
+        let remove key (table:Map<_,_>) = table.Remove(key)
 
         [<CompiledName("ContainsKey")>]
-        let containsKey k (m:Map<_,_>) = m.ContainsKey(k)
+        let containsKey key (table:Map<_,_>) = table.ContainsKey(key)
 
         [<CompiledName("Iterate")>]
-        let iter f (m:Map<_,_>) = m.Iterate(f)
+        let iter action (table:Map<_,_>) = table.Iterate(action)
 
         [<CompiledName("TryPick")>]
-        let tryPick f (m:Map<_,_>) = m.TryPick(f)
+        let tryPick chooser (table:Map<_,_>) = table.TryPick(chooser)
 
         [<CompiledName("Pick")>]
-        let pick f (m:Map<_,_>) = match tryPick f m with None -> raise (KeyNotFoundException()) | Some res -> res
+        let pick chooser (table:Map<_,_>) = match tryPick chooser table with None -> raise (KeyNotFoundException()) | Some res -> res
 
         [<CompiledName("Exists")>]
-        let exists f (m:Map<_,_>) = m.Exists(f)
+        let exists predicate (table:Map<_,_>) = table.Exists(predicate)
 
         [<CompiledName("Filter")>]
-        let filter f (m:Map<_,_>) = m.Filter(f)
+        let filter predicate (table:Map<_,_>) = table.Filter(predicate)
 
         [<CompiledName("Partition")>]
-        let partition f (m:Map<_,_>) = m.Partition(f)
+        let partition predicate (table:Map<_,_>) = table.Partition(predicate)
 
         [<CompiledName("ForAll")>]
-        let forall f (m:Map<_,_>) = m.ForAll(f)
+        let forall predicate (table:Map<_,_>) = table.ForAll(predicate)
 
         let mapRange f (m:Map<_,_>) = m.MapRange(f)
 
         [<CompiledName("Map")>]
-        let map f (m:Map<_,_>) = m.Map(f)
+        let map mapping (table:Map<_,_>) = table.Map(mapping)
 
         [<CompiledName("Fold")>]
-        let fold<'Key,'T,'State when 'Key : comparison> f (z:'State) (m:Map<'Key,'T>) = MapTree.fold f z m.Tree
+        let fold<'Key,'T,'State when 'Key : comparison> folder (state:'State) (table:Map<'Key,'T>) = MapTree.fold folder state table.Tree
 
         [<CompiledName("FoldBack")>]
-        let foldBack<'Key,'T,'State  when 'Key : comparison> f (m:Map<'Key,'T>) (z:'State) =  MapTree.foldBack  f m.Tree z
+        let foldBack<'Key,'T,'State  when 'Key : comparison> folder (table:Map<'Key,'T>) (state:'State) =  MapTree.foldBack  folder table.Tree state
         
         [<CompiledName("ToSeq")>]
-        let toSeq (m:Map<_,_>) = m |> Seq.map (fun kvp -> kvp.Key, kvp.Value)
+        let toSeq (table:Map<_,_>) = table |> Seq.map (fun kvp -> kvp.Key, kvp.Value)
 
         [<CompiledName("FindKey")>]
-        let findKey f (m : Map<_,_>) = m |> toSeq |> Seq.pick (fun (k,v) -> if f k v then Some(k) else None)
+        let findKey predicate (table : Map<_,_>) = table |> toSeq |> Seq.pick (fun (k,v) -> if predicate k v then Some(k) else None)
 
         [<CompiledName("TryFindKey")>]
-        let tryFindKey f (m : Map<_,_>) = m |> toSeq |> Seq.tryPick (fun (k,v) -> if f k v then Some(k) else None)
+        let tryFindKey predicate (table : Map<_,_>) = table |> toSeq |> Seq.tryPick (fun (k,v) -> if predicate k v then Some(k) else None)
 
         [<CompiledName("OfList")>]
-        let ofList (l: ('Key * 'Value) list) = Map<_,_>.ofList(l)
+        let ofList (elements: ('Key * 'Value) list) = Map<_,_>.ofList(elements)
 
         [<CompiledName("OfSeq")>]
-        let ofSeq l = Map<_,_>.Create(l)
+        let ofSeq elements = Map<_,_>.Create(elements)
 
         [<CompiledName("OfArray")>]
-        let ofArray (array: ('Key * 'Value) array) = 
+        let ofArray (elements: ('Key * 'Value) array) = 
            let comparer = LanguagePrimitives.FastGenericComparer<'Key> 
-           new Map<_,_>(comparer,MapTree.ofArray comparer array)
+           new Map<_,_>(comparer,MapTree.ofArray comparer elements)
 
         [<CompiledName("ToList")>]
-        let toList (m:Map<_,_>) = m.ToList()
+        let toList (table:Map<_,_>) = table.ToList()
 
         [<CompiledName("ToArray")>]
-        let toArray (m:Map<_,_>) = m.ToArray()
+        let toArray (table:Map<_,_>) = table.ToArray()
 
         [<CompiledName("Empty")>]
         let empty<'Key,'Value  when 'Key : comparison> = Map<'Key,'Value>.Empty
 
         [<CompiledName("Count")>]
-        let count (m:Map<_,_>) = m.Count
+        let count (table:Map<_,_>) = table.Count

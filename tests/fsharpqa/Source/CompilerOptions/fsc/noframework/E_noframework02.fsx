@@ -1,4 +1,4 @@
-// #Regression #NoMT #CompilerOptions #NETFX20Only 
+// #Regression #NoMT #CompilerOptions  
 // Regression test for FSHARP1.0:5976
 // On .NET 2.0 System.Core is not in the default reference set
 //<Expects status="error" id="FS0039" span="(8,20-8,24)">The type 'Func' is not defined</Expects>

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace FSharp.Core.Unittests.FSharp_Core.Microsoft_FSharp_Collections
 
@@ -573,7 +573,6 @@ type SeqModule2() =
     member this.SingletonCollectWithException () =
         this.MapWithExceptionTester (fun f-> Seq.collect (f >> Seq.singleton))
 
-#if !FX_NO_LINQ
     [<Test>]
     member this.SystemLinqSelectWithSideEffects () =
         this.MapWithSideEffectsTester (fun f s -> System.Linq.Enumerable.Select(s, Func<_,_>(f))) false
@@ -581,7 +580,6 @@ type SeqModule2() =
     [<Test>]
     member this.SystemLinqSelectWithException () =
         this.MapWithExceptionTester (fun f s -> System.Linq.Enumerable.Select(s, Func<_,_>(f)))
-#endif
         
     [<Test>]
     member this.MapiWithSideEffects () =
@@ -695,28 +693,26 @@ type SeqModule2() =
         
         VerifySeqsEqual expectedint resultInt
 
-#if !FX_NO_CHAR_PARSE
         // string Seq
         let funcStr (y:string) = y+"ist"
-       
+
         let resultStr = Seq.collect funcStr (seq ["L"])
-        
-        
+
         let expectedSeq = seq ['L';'i';'s';'t']
-        
+
         VerifySeqsEqual expectedSeq resultStr
-#endif        
+
         // empty Seq
         let resultEpt = Seq.collect funcInt Seq.empty
         VerifySeqsEqual Seq.empty resultEpt
 
         // null Seq
         let nullSeq:seq<'a> = null 
-       
+
         CheckThrowsArgumentNullException (fun () -> Seq.collect funcInt nullSeq |> ignore)
-        
+
         ()
-        
+
     [<Test>]
     member this.Mapi() =
 

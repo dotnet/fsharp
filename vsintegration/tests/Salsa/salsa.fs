@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 (*
     Simplified abstraction over visual studio.
@@ -271,31 +271,37 @@ module internal Salsa =
         override this.ToString() = projectfile
 
         interface IProjectSite with
+
           member this.SourceFilesOnDisk() = 
               let flags = GetFlags()
               flags.sources 
               |> List.map(fun s->Path.Combine(projectPath, s)) |> List.toArray 
+
           member this.DescriptionOfProject() = 
               let flags = GetFlags()
               try sprintf "MSBuild Flags:%A\n%A" ((this :> IProjectSite).CompilerFlags()) flags
               with e -> sprintf "%A" e                    
+
           member this.CompilerFlags() = 
               let flags = GetFlags()
               let result = flags.flags
               result |> List.toArray 
+
           member this.ProjectFileName() = 
               projectfile
-          member this.ErrorListTaskProvider() = None
-          member this.ErrorListTaskReporter() = None
+
+          member this.BuildErrorReporter with get() = None and set _v = ()
           member this.AdviseProjectSiteChanges(callbackOwnerKey,callback) = changeHandlers.[callbackOwnerKey] <- callback
           member this.AdviseProjectSiteCleaned(callbackOwnerKey,callback) = () // no unit testing support here
           member this.AdviseProjectSiteClosed(callbackOwnerKey,callback) = () // no unit testing support here
           member this.IsIncompleteTypeCheckEnvironment = false
           member this.TargetFrameworkMoniker = ""
           member this.LoadTime = System.DateTime(2000,1,1)
+
           member this.ProjectGuid = 
                 let projectObj, projectObjFlags = MSBuild.CrackProject(projectfile, configurationFunc(), platformFunc())
                 projectObj.GetProperty(ProjectFileConstants.ProjectGuid).EvaluatedValue
+
           member this.ProjectProvider = None
           member this.AssemblyReferences() = [||]
 

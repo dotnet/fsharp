@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 [<AutoOpen>]
 /// Type and Module Extensions
 module internal Microsoft.VisualStudio.FSharp.Editor.Extensions
@@ -138,6 +138,14 @@ module Option =
         function
         | Some x -> x
         | None -> f()
+
+    /// Returns 'Some list' if all elements in the list are Some, otherwise None
+    let ofOptionList (xs : 'a option list) : 'a list option =
+
+        if xs |> List.forall Option.isSome then
+            xs |> List.map Option.get |> Some
+        else
+            None
 
 
 [<RequireQualifiedAccess>]

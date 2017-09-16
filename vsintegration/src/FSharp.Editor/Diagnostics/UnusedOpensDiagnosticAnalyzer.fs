@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -100,11 +100,11 @@ module private UnusedOpens =
                     | SymbolUse.Field f when not (isQualified f.FullName) -> 
                         Some ([f.FullName], Some f.DeclaringEntity)
                     | SymbolUse.MemberFunctionOrValue mfv when not (isQualified mfv.FullName) -> 
-                        Some ([mfv.FullName], mfv.EnclosingEntitySafe)
+                        Some ([mfv.FullName], mfv.EnclosingEntity)
                     | SymbolUse.Operator op when not (isQualified op.FullName) ->
-                        Some ([op.FullName], op.EnclosingEntitySafe)
+                        Some ([op.FullName], op.EnclosingEntity)
                     | SymbolUse.ActivePattern ap when not (isQualified ap.FullName) ->
-                        Some ([ap.FullName], ap.EnclosingEntitySafe)
+                        Some ([ap.FullName], ap.EnclosingEntity)
                     | SymbolUse.ActivePatternCase apc when not (isQualified apc.FullName) ->
                         Some ([apc.FullName], apc.Group.EnclosingEntity)
                     | SymbolUse.UnionCase uc when not (isQualified uc.FullName) ->

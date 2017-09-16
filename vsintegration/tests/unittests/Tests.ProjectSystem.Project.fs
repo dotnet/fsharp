@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Tests.ProjectSystem
 
@@ -758,6 +758,8 @@ type Project() =
                 if File.Exists(absFilePath) then File.Delete(absFilePath)
             ))
     
+(* Disabled for now - see https://github.com/Microsoft/visualfsharp/pull/3071 - this is testing old project system features
+
     [<Test>]
     member public this.``RenameFile.BuildActionIsResetBasedOnFilenameExtension``() =
         let GetTextFromBuildAction (action:VSLangProj.prjBuildAction) =
@@ -830,7 +832,7 @@ type Project() =
                 VsMocks.vsUIShellShowMessageBoxResult <- None
                 File.Delete(currentAbsoluteFilePath) 
         ))
-
+*)
 
 
     [<Test>]

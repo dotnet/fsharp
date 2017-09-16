@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Various tests for the:
 // Microsoft.FSharp.Collections.Array2D module
@@ -30,14 +30,12 @@ type Array2Module() =
                     if i = 0 then System.Math.Sin(arg) else System.Math.Cos(arg))
         let resultInt = Array2D.base1 intArr
         if resultInt <> 0 then Assert.Fail()
-#if FX_NO_BASED_ARRAYS
-#else
+
         // string array 
         let strArr = Array2D.createBased 0 0 2 3 "goodboy" 
         let resultStr = Array2D.base1 strArr
         if resultStr <> 0 then Assert.Fail()
-#endif
-        
+
         // empty array     
         let eptArr = Array2D.create 0 0 1
         let resultEpt = Array2D.base1  eptArr
@@ -60,13 +58,11 @@ type Array2Module() =
         let resultInt = Array2D.base2 intArr
         if resultInt <> 0 then Assert.Fail()
         
-#if !FX_NO_BASED_ARRAYS
         // string array 
         let strArr = Array2D.createBased 0 0 2 3 "goodboy" 
         let resultStr = Array2D.base2 strArr
         if resultStr <> 0 then Assert.Fail()
-#endif
-        
+
         // empty array     
         let eptArr = Array2D.create 0 0 1
         let resultEpt = Array2D.base2  eptArr
@@ -76,13 +72,11 @@ type Array2Module() =
         let nullArr = null:string[,]    
         CheckThrowsNullRefException (fun () -> Array2D.base2  nullArr |> ignore)   
 
-#if !FX_NO_BASED_ARRAYS
         // Verify printing format of non-zero based arrays
         let v : int[,] = Array2D.createBased 10 1 3 4 2
         let actual = (sprintf "%A" v).Replace("\r","").Replace("\n","")
         let expected = "[bound1=10 bound2=1 [2; 2; 2; 2] [2; 2; 2; 2] [2; 2; 2; 2]]"
         Assert.AreEqual(expected, actual)
-#endif
         ()
 
     [<Test>]
@@ -131,7 +125,6 @@ type Array2Module() =
         CheckThrowsArgumentException(fun () -> Array2D.blit  intArr 0 0 intArr2 0 10 2 2 |> ignore)  
         ()
 
-#if !FX_NO_BASED_ARRAYS
     [<Test>]
     member this.BlitWithNonZeroBase() =
         let a = Array2D.createBased 1 1 3 3 0
@@ -184,7 +177,6 @@ type Array2Module() =
         CheckThrowsArgumentException(fun () -> Array2D.blit a 1 1 b 1 1 4 4 |> ignore)
 
         ()
-#endif
 
     [<Test>]
     member this.Copy() =
@@ -230,7 +222,6 @@ type Array2Module() =
   
         ()  
 
-#if !FX_NO_BASED_ARRAYS
     [<Test>]
     member this.createBased() =
         // integer array  
@@ -249,7 +240,6 @@ type Array2Module() =
         let resultEpt = Array2D.createBased 0 0 0 0 1
         if resultEpt   <> eptArr  then Assert.Fail()
         () 
-#endif
 
     [<Test>]
     member this.Get() =
@@ -285,26 +275,21 @@ type Array2Module() =
         let intArr = Array2D.init 2 3 (fun i j -> i*100 + j)
         if intArr.[1,1] <> 101 then Assert.Fail()
 
-        
         // string array 
         let strArr = Array2D.init 2 3 (fun i j -> i.ToString() + "-" + j.ToString())
         if strArr.[1,1] <> "1-1" then Assert.Fail()
         () 
-        
-#if !FX_NO_BASED_ARRAYS
+
     [<Test>]
     member this.Init_Based() =
         // integer array  
         let intArr = Array2D.initBased 1 1 2 3 (fun i j -> i*100 + j)
         if intArr.[2,2] <> 202 then Assert.Fail()
 
-        
         // string array 
         let strArr = Array2D.initBased 1 1 2 3 (fun i j -> i.ToString() + "-" + j.ToString())
         if strArr.[2,2] <> "2-2" then Assert.Fail()        
-                
         () 
-#endif
 
     [<Test>]
     member this.Iter() =
@@ -331,7 +316,6 @@ type Array2Module() =
         CheckThrowsArgumentNullException (fun () -> Array2D.iter funStr nullArr |> ignore)   
         ()
 
-#if !FX_NO_BASED_ARRAYS
     [<Test>]
     member this.IterNonZeroBased() =
         let a = Array2D.createBased 1 5 10 10 1
@@ -342,8 +326,6 @@ type Array2Module() =
         a |> Array2D.iteri (fun i j x -> result := !result + i + j + x)
         if !result <> 1600 then Assert.Fail()
         ()
-
-#endif
 
     [<Test>]
     member this.Iteri() =
@@ -470,7 +452,6 @@ type Array2Module() =
         
         () 
 
-#if !FX_NO_BASED_ARRAYS
     [<Test>]
     member this.Rebase() =
         // integer array  
@@ -494,7 +475,6 @@ type Array2Module() =
         CheckThrowsArgumentNullException (fun () -> Array2D.rebase  nullArr |> ignore)   
         
         ()
-#endif
         
     [<Test>]
     member this.Set() =

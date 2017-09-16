@@ -3,10 +3,11 @@
 FSharp.SRGen.targets
 
 WARNING:  DO NOT MODIFY this file unless you are knowledgeable about MSBuild and have
-		  created a backup copy.  Incorrect changes to this file will make it
-		  impossible to load or build your projects from the command-line or the IDE.
+          created a backup copy.  Incorrect changes to this file will make it
+          impossible to load or build your projects from the command-line or the IDE.
 
-Copyright (C) Microsoft Corporation. Apache 2.0 License.
+See License.txt in the project root for license information.
+Copyright (C) Microsoft Corporation. All Rights Reserved.
 ***********************************************************************************************
 -->
 
@@ -17,10 +18,10 @@ Copyright (C) Microsoft Corporation. Apache 2.0 License.
 
   <!-- Build FsSrGen files. -->
   <Target
-		Name="CallFsSrGen"
-		Inputs="@(FsSrGen)"
-		Outputs="@(FsSrGen->'$(IntermediateOutputPath)%(Filename).fs');@(FsSrGen->'$(IntermediateOutputPath)%(Filename).resx')"
-		Condition="'@(FsSrGen)'!=''">
+        Name="CallFsSrGen"
+        Inputs="@(FsSrGen)"
+        Outputs="@(FsSrGen->'$(IntermediateOutputPath)%(Filename).fs');@(FsSrGen->'$(IntermediateOutputPath)%(Filename).resx')"
+        Condition="'@(FsSrGen)'!=''">
     <!-- Create the output directory in case it doesn't exist yet -->
     <MakeDir Directories="$(IntermediateOutputPath)"/>
     <!-- Run the tool -->

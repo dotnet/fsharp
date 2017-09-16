@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp
 open System.Reflection
@@ -7,7 +7,7 @@ open System.Runtime.InteropServices
 [<assembly:AssemblyDescription("FSharp.Compiler.Private.dll")>]
 [<assembly:AssemblyCompany("Microsoft Corporation")>]
 [<assembly:AssemblyTitle("FSharp.Compiler.Private.dll")>]
-[<assembly:AssemblyCopyright("\169 Microsoft Corporation.  Apache 2.0 License.")>]
+[<assembly:AssemblyCopyright("\169 Microsoft Corporation.  All Rights Reserved.")>]
 [<assembly:AssemblyProduct("Microsoft\174 F#")>]
 [<assembly:ComVisible(false)>]
 
@@ -21,6 +21,13 @@ open System.Runtime.InteropServices
 [<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("FSharp.ProjectSystem.PropertyPages")>]
 [<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("FSharp.Compiler.Interactive.Settings")>]
 [<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("FSharp.Compiler.Server.Shared")>]
+[<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("FSharp.Compiler.Service.Tests")>]
+[<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("FSharp.Compiler.Service.MSBuild.v12")>]
+[<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("FSharp.Compiler.Service.MSBuild.v12.Tests")>]
+[<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("FSharp.Compiler.Service.MSBuild.v14")>]
+[<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("FSharp.Compiler.Service.MSBuild.v14.Tests")>]
+[<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("FSharp.Compiler.Service.MSBuild.v15")>]
+[<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("FSharp.Compiler.Service.MSBuild.v15.Tests")>]
 
 // Note: internals visible to unit test DLLs in Retail (and all) builds.
 [<assembly:System.Runtime.CompilerServices.InternalsVisibleTo("Test")>]

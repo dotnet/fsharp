@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 #if COMPILER_PUBLIC_API
 module public Microsoft.FSharp.Compiler.Ast
@@ -79,10 +79,20 @@ type XmlDocCollector() =
                 let prevGrabPointPos = grabPoints.[grabPointIndex-1]
                 Array.findFirstIndexWhereTrue lines (fun (_,pos) -> posGeq pos prevGrabPointPos)
         //printfn "#lines = %d, firstLineIndexAfterPrevGrabPoint = %d, firstLineIndexAfterGrabPoint = %d" lines.Length firstLineIndexAfterPrevGrabPoint  firstLineIndexAfterGrabPoint
-        lines.[firstLineIndexAfterPrevGrabPoint..firstLineIndexAfterGrabPoint-1] |> Array.map fst
+
+        let lines = lines.[firstLineIndexAfterPrevGrabPoint..firstLineIndexAfterGrabPoint-1] |> Array.rev
+        if lines.Length = 0 then 
+            [| |]
+        else
+            let firstLineNumber = (snd lines.[0]).Line
+            lines 
+            |> Array.mapi (fun i x -> firstLineNumber - i, x)
+            |> Array.takeWhile (fun (sequencedLineNumber, (_, pos)) -> sequencedLineNumber = pos.Line)
+            |> Array.map (fun (_, (lineStr, _)) -> lineStr)
+            |> Array.rev
       with e -> 
-          //printfn "unexpected error in LinesBefore:\n%s" (e.ToString())
-          [| |]
+        //printfn "unexpected error in LinesBefore:\n%s" (e.ToString())
+        [| |]
 
 type XmlDoc =
     | XmlDoc of string[]

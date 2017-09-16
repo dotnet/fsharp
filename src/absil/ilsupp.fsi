@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Functions associated with writing binaries which 
 /// vary between supported implementations of the CLI Common Language 
@@ -73,7 +73,6 @@ val pdbDocumentGetLanguageVendor: PdbDocument -> byte[] (* guid *)
 val pdbDocumentFindClosestLine: PdbDocument -> int -> int
 
 val pdbMethodGetToken: PdbMethod -> int32
-val pdbMethodGetRootScope: PdbMethod ->  PdbMethodScope
 val pdbMethodGetSequencePoints: PdbMethod -> PdbSequencePoint array
 
 val pdbScopeGetChildren: PdbMethodScope -> PdbMethodScope array

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 //---------------------------------------------------------------------
 // The big binary reader
@@ -2532,7 +2532,8 @@ and seekReadCustomAttrUncached ctxtH (CustomAttrIdx (cat,idx,valIdx)) =
       Data=
         match readBlobHeapOption ctxt valIdx with
         | Some bytes -> bytes
-        | None -> Bytes.ofInt32Array [| |] }
+        | None -> Bytes.ofInt32Array [| |] 
+      Elements = [] }
 
 and seekReadSecurityDecls ctxt idx = 
    mkILLazySecurityDecls
@@ -2902,7 +2903,6 @@ and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,aggressiveinline,numty
                try 
 
                  let pdbm = pdbReaderGetMethod pdbr (uncodedToken TableNames.Method idx)
-                 //let rootScope = pdbMethodGetRootScope pdbm 
                  let sps = pdbMethodGetSequencePoints pdbm
                  (*dprintf "#sps for 0x%x = %d\n" (uncodedToken TableNames.Method idx) (Array.length sps)  *)
                  (* let roota,rootb = pdbScopeGetOffsets rootScope in  *)

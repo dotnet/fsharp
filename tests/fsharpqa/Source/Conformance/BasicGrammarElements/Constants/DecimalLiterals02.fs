@@ -1,4 +1,4 @@
-// #Regression #Conformance #BasicGrammarElements #Constants #NETFX40Only #NoMono #NETFX20Only 
+// #Regression #Conformance #BasicGrammarElements #Constants  #NoMono  
 // This is a positive test on Dev10, at least until
 // FSHARP1.0:4523 gets resolved.
 //<Expect status=success></Expect>
