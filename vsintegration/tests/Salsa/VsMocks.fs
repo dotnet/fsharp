@@ -1636,19 +1636,36 @@ module internal VsActual =
     open Microsoft.VisualStudio.Text
 
     let vsInstallDir =
+        
         // use the environment variable to find the VS installdir
+        let envVarName, possibleVsDirectories =
 #if VS_VERSION_DEV12
-        let vsvar = System.Environment.GetEnvironmentVariable("VS120COMNTOOLS")
-        if String.IsNullOrEmpty vsvar then failwith "VS120COMNTOOLS environment variable was not found."
+            "VS120COMNTOOLS", []
 #endif
 #if VS_VERSION_DEV14
-        let vsvar = System.Environment.GetEnvironmentVariable("VS140COMNTOOLS")
-        if String.IsNullOrEmpty vsvar then failwith "VS140COMNTOOLS environment variable was not found."
+            "VS140COMNTOOLS", []
 #endif
 #if VS_VERSION_DEV15
-        let vsvar = System.Environment.GetEnvironmentVariable("VS150COMNTOOLS")
-        if String.IsNullOrEmpty vsvar then failwith "VS150COMNTOOLS environment variable was not found."
+            "VS150COMNTOOLS"
+            , [ @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\"
+                @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional\Common7\Tools\"
+                @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\" ]
 #endif
+        let vsvar = 
+            let vsvar = System.Environment.GetEnvironmentVariable(envVarName)
+            if String.IsNullOrEmpty vsvar then
+                let maybeDirectory = 
+                    possibleVsDirectories
+                    |> Seq.tryFind System.IO.Directory.Exists
+                match maybeDirectory with
+                | Some dir ->
+                    Environment.SetEnvironmentVariable(envVarName, dir)
+                    dir
+                | None -> 
+                    // todo: check registry locations as another measure
+                    failwithf "%s environment variable was not found or VS folder couldn't be determined." envVarName
+            else
+                vsvar
         Path.Combine(vsvar, "..")
 
     let CreateEditorCatalog() =
