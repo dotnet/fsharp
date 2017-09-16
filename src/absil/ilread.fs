@@ -2903,7 +2903,6 @@ and seekReadMethodRVA ctxt (idx,nm,_internalcall,noinline,aggressiveinline,numty
                try 
 
                  let pdbm = pdbReaderGetMethod pdbr (uncodedToken TableNames.Method idx)
-                 //let rootScope = pdbMethodGetRootScope pdbm 
                  let sps = pdbMethodGetSequencePoints pdbm
                  (*dprintf "#sps for 0x%x = %d\n" (uncodedToken TableNames.Method idx) (Array.length sps)  *)
                  (* let roota,rootb = pdbScopeGetOffsets rootScope in  *)

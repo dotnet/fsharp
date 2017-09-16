@@ -73,7 +73,6 @@ val pdbDocumentGetLanguageVendor: PdbDocument -> byte[] (* guid *)
 val pdbDocumentFindClosestLine: PdbDocument -> int -> int
 
 val pdbMethodGetToken: PdbMethod -> int32
-val pdbMethodGetRootScope: PdbMethod ->  PdbMethodScope
 val pdbMethodGetSequencePoints: PdbMethod -> PdbSequencePoint array
 
 val pdbScopeGetChildren: PdbMethodScope -> PdbMethodScope array

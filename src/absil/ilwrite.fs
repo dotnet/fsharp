@@ -2577,7 +2577,7 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
                 MethName=md.Name
                 LocalSignatureToken=localToken
                 Params= [| |] (* REVIEW *)
-                RootScope = rootScope
+                RootScope = Some rootScope
                 Range=  
                   match ilmbody.SourceMarker with 
                   | Some m  when cenv.generatePdb -> 
@@ -2592,9 +2592,20 @@ let GenMethodDefAsRow cenv env midx (md: ILMethodDef) =
                               Column=m.EndColumn })
                   | _ -> None
                 SequencePoints=seqpoints }
-         
           cenv.AddCode code
-          addr 
+          addr
+      | MethodBody.Abstract ->
+          // Now record the PDB record for this method - we write this out later. 
+          if cenv.generatePdb then 
+            cenv.pdbinfo.Add  
+              { MethToken = getUncodedToken TableNames.Method midx
+                MethName = md.Name
+                LocalSignatureToken = 0x0                   // No locals it's abstract
+                Params = [| |]
+                RootScope = None
+                Range = None
+                SequencePoints = [| |] }
+          0x0000
       | MethodBody.Native -> 
           failwith "cannot write body of native method - Abstract IL cannot roundtrip mixed native/managed binaries"
       | _  -> 0x0000)
