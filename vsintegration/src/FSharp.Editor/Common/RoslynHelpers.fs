@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -129,10 +129,13 @@ module internal RoslynHelpers =
     let StartAsyncUnitAsTask cancellationToken (computation:Async<unit>) = 
         StartAsyncAsTask cancellationToken computation  :> Task
 
-    let SupportedDiagnostics() =
+    let private TheSupportedDiagnostics =
         // We are constructing our own descriptors at run-time. Compiler service is already doing error formatting and localization.
-        let dummyDescriptor = DiagnosticDescriptor("0", String.Empty, String.Empty, String.Empty, DiagnosticSeverity.Error, true, null, null)
-        ImmutableArray.Create<DiagnosticDescriptor>(dummyDescriptor)
+        let dummyDescriptors = 
+           [| for i in 0 .. 10000 -> DiagnosticDescriptor(sprintf "FS%04d" i, String.Empty, String.Empty, String.Empty, DiagnosticSeverity.Error, true, null, null) |]
+        ImmutableArray.Create<DiagnosticDescriptor>(dummyDescriptors)
+
+    let SupportedDiagnostics() = TheSupportedDiagnostics
 
     let ConvertError(error: FSharpErrorInfo, location: Location) =
         // Normalize the error message into the same format that we will receive it from the compiler.

@@ -37,6 +37,11 @@ This is for those who contributed language features, compiler improvements, or i
 
 - [Gustavo Leon](https://github.com/gmpl)
 
+
+### F# 4.2 Compiler Improvements
+
+- Deterministic compilation via `--deterministic`, by [David Glassborow](https://github.com/davidglassborow)
+
 ### FSharp.Core
 
 **Performance Improvements**
@@ -53,9 +58,9 @@ This is for those who contributed language features, compiler improvements, or i
 
 - [Eirik Tsarpalis](https://github.com/eiriktsarpalis)
 
-### F# 4.2 Compiler Improvements
+**General Improvements**
 
-- Deterministic compilation via `--deterministic`, by [David Glassborow](https://github.com/davidglassborow)
+- [Jérémie Chassaing](https://github.com/thinkbeforecoding)
 
 ## Tooling - Visual Studio and Platform Support
 
@@ -66,7 +71,7 @@ This is for those who contributed Visual Studio IDE features and platform suppor
 **Editor Features**
 
 * Semantic Colorization - [Vasily Kirichenko](https://github.com/vasily-kirichenko) and [Saul Rennison](https://github.com/saul)
-* Autocompletion - [Vasily Kirichenko](https://github.com/vasily-kirichenko)
+* Autocompletion - [Vasily Kirichenko](https://github.com/vasily-kirichenko) and [Saul Rennison](https://github.com/saul)
 * IntelliSense Filters and Glyph improvements - [Vasily Kirichenko](https://github.com/vasily-kirichenko)
 * IntelliSense accuracy Improvements - [Vasily Kirichenko](https://github.com/vasily-kirichenko)
 * Go To All - [Vasily Kirichenko](https://github.com/vasily-kirichenko) and [Jared Hester](github.com/cloudroutine)
@@ -94,13 +99,19 @@ This is for those who contributed Visual Studio IDE features and platform suppor
 * Support for Editor Settings - [Jakub Majocha](https://github.com/majocha)
 * Localized Go to Definition Status Bar - [Saul Rennison](https://github.com/saul)
 * R#-like completion for items in unopened namespaces - [Vasily Kirichenko](https://github.com/vasily-kirichenko)
-* Wrap XML docs - [Jakub Majocha](https://github.com/majocha)
+* Wrapped XML docs in QuickInfo - [Jakub Majocha](https://github.com/majocha)
+* Smart indent and de-indent - [Duc Nghiem Xuan](https://github.com/xuanduc987) and [Saul Rennison](https://github.com/saul)
+* F# to C# navigation - [Saul Rennison](https://github.com/saul) and [Vasily Kirichenko](https://github.com/vasily-kirichenko)
+* Support for Blue Theme (High Contrast) in semantic colorization - [Vasily Kirichenko](https://github.com/vasily-kirichenko)
+* Configuration-driven in-memory cross-project references and project cache size - [Vasily Kirichenko](https://github.com/vasily-kirichenko)
+
 
 **Project System**
 
 * Improved solution load time - [Saul Rennison](https://github.com/saul)
 * General improvements - [Jakub Majocha](https://github.com/majocha)
 * Move Up/Move Down on Solution folder nodes - [Saul Rennison](https://github.com/saul)
+* Folder support - [Saul Rennison](https://github.com/saul)
 
 **F# Interactive**
 

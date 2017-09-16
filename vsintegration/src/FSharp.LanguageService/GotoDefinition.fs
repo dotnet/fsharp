@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 //------- DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS ---------------
 
@@ -88,7 +88,9 @@ module internal GotoDefinition =
                               | FSharpFindDeclFailureReason.ProvidedType(typeName) -> Strings.Errors.GotoDefinitionFailed_ProvidedType(typeName)
                               | FSharpFindDeclFailureReason.ProvidedMember(name) -> Strings.Errors.GotoFailed_ProvidedMember(name)
                           GotoDefinitionResult_DEPRECATED.MakeError text
-                else 
+                      | FSharpFindDeclResult.ExternalDecl _ -> 
+                            GotoDefinitionResult_DEPRECATED.MakeError(Strings.Errors.GotoDefinitionFailed_NoSourceCode())
+                else
                     Trace.Write("LanguageService", "Goto definition: No 'TypeCheckInfo' available")
                     Strings.Errors.GotoDefinitionFailed_NoTypecheckInfo()
                     |> GotoDefinitionResult_DEPRECATED.MakeError

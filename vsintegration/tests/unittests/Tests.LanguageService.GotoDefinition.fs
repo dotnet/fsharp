@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Tests.LanguageService.GotoDefinition
 
@@ -35,11 +35,11 @@ type UsingMSBuild()  =
         let (_, _, file) = this.CreateSingleFileProject(fileContents, ?references = extraRefs)
         MoveCursorToStartOfMarker (file, marker)
         let result = GotoDefinitionAtCursor file
-        Assert.IsTrue(result.Success)
+        Assert.IsTrue(result.Success, "result.Success")
         let actualPos = (result.Span.iStartLine, result.Span.iStartIndex)
         let line = GetLineNumber file (result.Span.iStartLine + 1)
         printfn "Actual line:%s, actual pos:%A" line actualPos
-        Assert.AreEqual(pos, actualPos)
+        Assert.AreEqual(pos, actualPos, "pos")
                     
     //GoToDefinitionFail Helper Function
     member private this.VerifyGoToDefnFailAtStartOfMarker(fileContents : string,  marker :string,?addtlRefAssy : list<string>) =
@@ -332,7 +332,7 @@ type UsingMSBuild()  =
                 marker = "T<",
                 f = (fun (_, result) ->
                     Assert.IsFalse(result.Success)
-                    Assert.IsTrue(result.ErrorDescription.Contains("provided type 'T'"))
+                    Assert.That(result.ErrorDescription, Does.Contain("provided type 'T'"))
                     ),
                 addtlRefAssy = [PathRelativeToTestAssembly(@"UnitTests\MockTypeProviders\DummyProviderForLanguageServiceTesting.dll")]
             )

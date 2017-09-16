@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Core
 
@@ -6,10 +6,10 @@ namespace Microsoft.FSharp.Core
 module Result =
 
   [<CompiledName("Map")>]
-  let map f inp = match inp with Error e -> Error e | Ok x -> Ok (f x)
+  let map mapping result = match result with Error e -> Error e | Ok x -> Ok (mapping x)
 
   [<CompiledName("MapError")>]
-  let mapError f inp = match inp with Error e -> Error (f e) | Ok x -> Ok x
+  let mapError mapping result = match result with Error e -> Error (mapping e) | Ok x -> Ok x
 
   [<CompiledName("Bind")>]
-  let bind f inp = match inp with Error e -> Error e | Ok x -> f x
+  let bind binder result = match result with Error e -> Error e | Ok x -> binder x

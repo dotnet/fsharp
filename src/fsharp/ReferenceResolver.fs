@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Compiler
 
@@ -10,13 +10,12 @@ module internal ReferenceResolver =
 
     exception internal ResolutionFailure
 
+    [<RequireQualifiedAccess>]
     type ResolutionEnvironment = 
-        /// Indicates a script or source being compiled
-        | CompileTimeLike 
-        /// Indicates a script or source being interpreted
-        | RuntimeLike 
-        /// Indicates a script or source being edited
-        | DesignTimeLike
+        /// Indicates a script or source being edited or compiled. Uses reference assemblies (not implementation assemblies).
+        | EditingOrCompilation of isEditing: bool
+        /// Indicates a script or source being dynamically compiled and executed. Uses implementation assemblies.
+        | CompilationAndEvaluation 
 
     type ResolvedFile = 
         { /// Item specification.

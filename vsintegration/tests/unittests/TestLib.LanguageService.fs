@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace UnitTests.TestLib.LanguageService
 
@@ -448,10 +448,6 @@ type LanguageServiceBaseTests() =
         // help find leaks per-test
 //        System.GC.Collect()  
 //        System.GC.WaitForPendingFinalizers()
-#if DEBUG
-        if Microsoft.VisualStudio.FSharp.LanguageService.TaskReporter.AliveCount <> 0 then
-            Debug.Assert(false, sprintf "There are %d TaskReporters still alive" Microsoft.VisualStudio.FSharp.LanguageService.TaskReporter.AliveCount)
-#endif
         ()
 
 and internal SingleFileTestRunner(owner : LanguageServiceBaseTests) =

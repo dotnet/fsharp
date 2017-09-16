@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Project information handling.
 //
@@ -46,15 +46,14 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 type private IHaveCheckOptions = 
     abstract OriginalCheckOptions : unit -> string[] * FSharpProjectOptions
         
-/// Convert from FSharpProjectOptions into IProjectSite.         
+/// Convert from FSharpProjectOptions into IProjectSite.
 type private ProjectSiteOfScriptFile(filename:string, referencedProjectFileNames, checkOptions : FSharpProjectOptions) = 
     interface IProjectSite with
         override this.SourceFilesOnDisk() = checkOptions.SourceFiles
         override this.DescriptionOfProject() = sprintf "Script Closure at Root %s" filename
         override this.CompilerFlags() = checkOptions.OtherOptions
         override this.ProjectFileName() = checkOptions.ProjectFileName
-        override this.ErrorListTaskProvider() = None
-        override this.ErrorListTaskReporter() = None
+        override this.BuildErrorReporter with get() = None and set _v = ()
         override this.AdviseProjectSiteChanges(_,_) = ()
         override this.AdviseProjectSiteCleaned(_,_) = ()
         override this.AdviseProjectSiteClosed(_,_) = ()
@@ -68,6 +67,7 @@ type private ProjectSiteOfScriptFile(filename:string, referencedProjectFileNames
     interface IHaveCheckOptions with
         override this.OriginalCheckOptions() = (referencedProjectFileNames, checkOptions)
         
+    override x.ToString() = sprintf "ProjectSiteOfScriptFile(%s)" filename
         
 /// An orphan file project is a .fs, .ml, .fsi, .mli that is not associated with a .fsproj.
 /// By design, these are never going to typecheck because there is no affiliated references.
@@ -89,8 +89,7 @@ type private ProjectSiteOfSingleFile(sourceFile) =
         override this.DescriptionOfProject() = "Orphan File Project"
         override this.CompilerFlags() = compilerFlags
         override this.ProjectFileName() = projectFileName                
-        override this.ErrorListTaskProvider() = None
-        override this.ErrorListTaskReporter() = None
+        override this.BuildErrorReporter with get() = None and set _v = ()
         override this.AdviseProjectSiteChanges(_,_) = ()
         override this.AdviseProjectSiteCleaned(_,_) = ()
         override this.AdviseProjectSiteClosed(_,_) = ()
@@ -100,6 +99,8 @@ type private ProjectSiteOfSingleFile(sourceFile) =
         override this.LoadTime = new DateTime(2000,1,1)  // any constant time is fine, orphan files do not interact with reloading based on update time
         override this.ProjectProvider = None
         override this.AssemblyReferences() = [||]
+        
+    override x.ToString() = sprintf "ProjectSiteOfSingleFile(%s)" sourceFile
     
 /// Information about projects, open files and other active artifacts in visual studio.
 /// Keeps track of the relationship between IVsTextLines buffers, IFSharpSource_DEPRECATED objects, IProjectSite objects and FSharpProjectOptions
@@ -191,41 +192,27 @@ type internal ProjectSitesAndFiles() =
         if SourceFile.MustBeSingleFileProject(filename) then 
             Debug.Assert(false, ".fsx or .fsscript should have been treated as implicit project")
             failwith ".fsx or .fsscript should have been treated as implicit project"
-
         new ProjectSiteOfSingleFile(filename) :> IProjectSite
-    
-        
+
     static member GetReferencedProjectSites(projectSite:IProjectSite, serviceProvider:System.IServiceProvider) =
         referencedProvideProjectSites (projectSite, serviceProvider)
         |> Seq.map (fun (_, ps) -> ps.GetProjectSite())
         |> Seq.toArray
 
-    /// Create project options for this project site.
-    static member GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite:IProjectSite,filename,extraProjectInfo,serviceProvider:System.IServiceProvider, useUniqueStamp) =
-        match projectSite with
-        | :? IHaveCheckOptions as hco -> hco.OriginalCheckOptions()
-        | _ ->             
-            getProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, filename, extraProjectInfo, serviceProvider, useUniqueStamp)
-         
-    /// Create project site for these project options
-    static member CreateProjectSiteForScript (filename, referencedProjectFileNames, checkOptions) = 
-        ProjectSiteOfScriptFile (filename, referencedProjectFileNames, checkOptions) :> IProjectSite
-
-
-
-    //
-    // Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
-    //
-    // Note: Tests using this code should either be adjusted to test the corresponding feature in
-    // FSharp.Editor, or deleted.  However, the tests may be exercising underlying F# Compiler 
-    // functionality and thus have considerable value, they should ony be deleted if we are sure this 
-    // is not the case.
-    //
-
     member art.SetSource_DEPRECATED(buffer:IVsTextLines, source:IFSharpSource_DEPRECATED) : unit =
         let mutable guid = sourceUserDataGuid
         (buffer :?> IVsUserData).SetData(&guid, source) |> ErrorHandler.ThrowOnFailure |> ignore
 
+    /// Create project options for this project site.
+    static member GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite:IProjectSite,filename,extraProjectInfo,serviceProvider:System.IServiceProvider, useUniqueStamp) =
+        match projectSite with
+        | :? IHaveCheckOptions as hco -> hco.OriginalCheckOptions()
+        | _ ->
+            getProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, filename, extraProjectInfo, serviceProvider, useUniqueStamp)
+
+    /// Create project site for these project options
+    static member CreateProjectSiteForScript (filename, referencedProjectFileNames, checkOptions) = 
+        ProjectSiteOfScriptFile (filename, referencedProjectFileNames, checkOptions) :> IProjectSite
 
     member art.TryGetSourceOfFile_DEPRECATED(rdt:IVsRunningDocumentTable, filename:string) : IFSharpSource_DEPRECATED option =
         match VsRunningDocumentTable.FindDocumentWithoutLocking(rdt,filename) with 

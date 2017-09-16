@@ -1,4 +1,4 @@
-// #Conformance #LexicalAnalysis #Constants #NETFX20Only 
+// #Conformance #LexicalAnalysis #Constants  
 // Verify ability to write custom big num libraries
 
 type DerivedFrom = FromInt32 | FromInt64 | FromString

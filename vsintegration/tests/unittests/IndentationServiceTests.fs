@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
 
 open System
@@ -12,6 +12,7 @@ open Microsoft.CodeAnalysis.Editor
 open Microsoft.CodeAnalysis.Text
 open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.CodeAnalysis.Formatting
 
 [<TestFixture>][<Category "Roslyn Services">]
 type IndentationServiceTests()  =
@@ -29,11 +30,12 @@ type IndentationServiceTests()  =
         ExtraProjectInfo = None
         Stamp = None
     }
+
     static let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-
-    static let indentComment = System.Text.RegularExpressions.Regex(@"\$\s*Indent:\s*(\d+)\s*\$")
-
     static let tabSize = 4
+    static let indentStyle = FormattingOptions.IndentStyle.Smart
+    
+    static let indentComment = System.Text.RegularExpressions.Regex(@"\$\s*Indent:\s*(\d+)\s*\$")
 
     static let consoleProjectTemplate = "
 // Learn more about F# at http://fsharp.org
@@ -104,7 +106,8 @@ let t = seq { // $Indent: 0$
     yield 1 // $Indent: 4$
 }
 
-let g = function
+let g =
+    function
     | None -> 1 // $Indent: 4$
     | Some _ -> 0
 
@@ -166,14 +169,18 @@ while true do
 
     [<TestCaseSource("testCases")>]
     member this.TestIndentation(expectedIndentation: Option<int>, lineNumber: int, template: string) = 
-        let actualIndentation = FSharpIndentationService.GetDesiredIndentation(documentId, SourceText.From(template), filePath, lineNumber, tabSize, (Some options))
+        let sourceText = SourceText.From(template)
+
+        let actualIndentation = FSharpIndentationService.GetDesiredIndentation(documentId, sourceText, filePath, lineNumber, tabSize, indentStyle, Some options)
         match expectedIndentation with
         | None -> Assert.IsTrue(actualIndentation.IsNone, "No indentation was expected at line {0}", lineNumber)
-        | Some(indentation) -> Assert.AreEqual(expectedIndentation.Value, actualIndentation.Value, "Indentation on line {0} doesn't match", lineNumber)
+        | Some indentation -> Assert.AreEqual(expectedIndentation.Value, actualIndentation.Value, "Indentation on line {0} doesn't match", lineNumber)
     
     [<TestCaseSource("autoIndentTestCases")>]
     member this.TestAutoIndentation(expectedIndentation: Option<int>, lineNumber: int, template: string) = 
-        let actualIndentation = FSharpIndentationService.GetDesiredIndentation(documentId, SourceText.From(template), filePath, lineNumber, tabSize, (Some options))
+        let sourceText = SourceText.From(template)
+        
+        let actualIndentation = FSharpIndentationService.GetDesiredIndentation(documentId, sourceText, filePath, lineNumber, tabSize, indentStyle, Some options)
         match expectedIndentation with
         | None -> Assert.IsTrue(actualIndentation.IsNone, "No indentation was expected at line {0}", lineNumber)
-        | Some(indentation) -> Assert.AreEqual(expectedIndentation.Value, actualIndentation.Value, "Indentation on line {0} doesn't match", lineNumber)
+        | Some indentation -> Assert.AreEqual(expectedIndentation.Value, actualIndentation.Value, "Indentation on line {0} doesn't match", lineNumber)

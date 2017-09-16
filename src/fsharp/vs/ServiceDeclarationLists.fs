@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 //----------------------------------------------------------------------------
 // Open up the compiler as an incremental service for parsing,
@@ -765,7 +765,9 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
 
                         let hasStaticParameters = 
                             match flatItem with 
+#if EXTENSIONTYPING
                             | SymbolHelpers.ItemIsProvidedTypeWithStaticArguments m g _ -> false 
+#endif
                             | _ -> true
 
                         FSharpMethodGroupItem(
@@ -775,7 +777,11 @@ type FSharpMethodGroup( name: string, unsortedMethods: FSharpMethodGroupItem[] )
                           parameters = (prettyParams |> Array.ofList),
                           hasParameters = hasStaticParameters,
                           hasParamArrayArg = hasParamArrayArg,
+#if EXTENSIONTYPING
                           staticParameters = StaticParamsOfItem infoReader m denv flatItem
+#else
+                          staticParameters = [| |]
+#endif
                         ))
 #if !FX_NO_WEAKTABLE
                 methodOverloadsCache.Add(item, methods)

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Core
 
@@ -29,7 +29,7 @@ module ExtraTopLevelOperators =
         | _ -> ()
 
     [<CompiledName("CreateSet")>]
-    let set l = Collections.Set.ofSeq l
+    let set elements = Collections.Set.ofSeq elements
 
     let dummyArray = [||]
     let inline dont_tail_call f = 
@@ -101,14 +101,14 @@ module ExtraTopLevelOperators =
     let dictRefType   (l:seq<'Key*'T>) = dictImpl RuntimeHelpers.StructBox<'Key>.Comparer (fun k -> RuntimeHelpers.StructBox k) (fun sb -> sb.Value) l
 
     [<CompiledName("CreateDictionary")>]
-    let dict (l:seq<'Key*'T>) =
+    let dict (keyValuePairs:seq<'Key*'T>) =
 #if FX_RESHAPED_REFLECTION
         if (typeof<'Key>).GetTypeInfo().IsValueType
 #else
         if typeof<'Key>.IsValueType
 #endif
-            then dictValueType l
-            else dictRefType   l
+            then dictValueType keyValuePairs
+            else dictRefType   keyValuePairs
 
     let getArray (vals : seq<'T>) = 
         match vals with
@@ -142,66 +142,62 @@ module ExtraTopLevelOperators =
     // -------------------------------------------------------------------- 
 
     [<CompiledName("PrintFormatToString")>]
-    let sprintf     fp = Printf.sprintf     fp
+    let sprintf     format = Printf.sprintf     format
 
     [<CompiledName("PrintFormatToStringThenFail")>]
-    let failwithf   fp = Printf.failwithf   fp
+    let failwithf   format = Printf.failwithf   format
 
     [<CompiledName("PrintFormatToTextWriter")>]
-    let fprintf (os:TextWriter)  fp = Printf.fprintf os  fp 
+    let fprintf (textWriter:TextWriter)  format = Printf.fprintf textWriter  format 
 
     [<CompiledName("PrintFormatLineToTextWriter")>]
-    let fprintfn (os:TextWriter) fp = Printf.fprintfn os fp 
+    let fprintfn (textWriter:TextWriter) format = Printf.fprintfn textWriter format 
     
 #if !FX_NO_SYSTEM_CONSOLE
     [<CompiledName("PrintFormat")>]
-    let printf      fp = Printf.printf      fp 
+    let printf format = Printf.printf      format 
 
     [<CompiledName("PrintFormatToError")>]
-    let eprintf     fp = Printf.eprintf     fp 
+    let eprintf format = Printf.eprintf     format 
 
     [<CompiledName("PrintFormatLine")>]
-    let printfn     fp = Printf.printfn     fp 
+    let printfn format = Printf.printfn     format 
 
     [<CompiledName("PrintFormatLineToError")>]
-    let eprintfn    fp = Printf.eprintfn    fp 
+    let eprintfn format = Printf.eprintfn    format 
 #endif
 
     [<CompiledName("FailWith")>]
     let failwith s = raise (Failure s)
 
     [<CompiledName("DefaultAsyncBuilder")>]
-    let async = new Microsoft.FSharp.Control.AsyncBuilder()
+    let async = AsyncBuilder()
 
     [<CompiledName("ToSingle")>]
-    let inline single x = float32 x
+    let inline single value = float32 value
 
     [<CompiledName("ToDouble")>]
-    let inline double x = float x
+    let inline double value = float value
 
     [<CompiledName("ToByte")>]
-    let inline uint8 x = byte x
+    let inline uint8 value = byte value
 
     [<CompiledName("ToSByte")>]
-    let inline int8 x = sbyte x
+    let inline int8 value = sbyte value
 
     module Checked = 
 
         [<CompiledName("ToByte")>]
-        let inline uint8 x = Checked.byte x
+        let inline uint8 value = Checked.byte value
 
         [<CompiledName("ToSByte")>]
-        let inline int8 x = Checked.sbyte x
+        let inline int8 value = Checked.sbyte value
 
-
-    #if FX_MINIMAL_REFLECTION // not on Compact Framework 
-    #else
     [<CompiledName("SpliceExpression")>]
     let (~%) (_:Microsoft.FSharp.Quotations.Expr<'a>) : 'a = raise <| InvalidOperationException(SR.GetString(SR.firstClassUsesOfSplice)) 
 
     [<CompiledName("SpliceUntypedExpression")>]
     let (~%%) (_: Microsoft.FSharp.Quotations.Expr) : 'a = raise <| InvalidOperationException (SR.GetString(SR.firstClassUsesOfSplice)) 
-    #endif
 
     [<assembly: AutoOpen("Microsoft.FSharp")>]
     [<assembly: AutoOpen("Microsoft.FSharp.Core.LanguagePrimitives.IntrinsicOperators")>]
@@ -213,7 +209,7 @@ module ExtraTopLevelOperators =
     do()
 
     [<CompiledName("LazyPattern")>]
-    let (|Lazy|) (x:Lazy<_>) = x.Force()
+    let (|Lazy|) (input:Lazy<_>) = input.Force()
 
 
     let query = Microsoft.FSharp.Linq.QueryBuilder()

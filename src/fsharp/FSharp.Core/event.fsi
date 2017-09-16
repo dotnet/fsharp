@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Control
 
@@ -8,7 +8,7 @@ namespace Microsoft.FSharp.Control
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
 
-#if !FX_NO_DELEGATE_DYNAMIC_METHOD // not available on CompactFramework 2.0
+
     /// <summary>Event implementations for an arbitrary type of delegate.</summary>
     [<CompiledName("FSharpDelegateEvent`1")>]
     type DelegateEvent<'Delegate when 'Delegate :> System.Delegate> = 
@@ -20,7 +20,7 @@ namespace Microsoft.FSharp.Control
         member Trigger : args:obj[] -> unit
         /// <summary>Publishes the event as a first class event value.</summary>
         member Publish : IDelegateEvent<'Delegate>
-        
+
 
     /// <summary>Event implementations for a delegate types following the standard .NET Framework convention of a first 'sender' argument.</summary>
     [<CompiledName("FSharpEvent`2")>]
@@ -35,7 +35,7 @@ namespace Microsoft.FSharp.Control
         /// <summary>Publishes the event as a first class event value.</summary>
         member Publish : IEvent<'Delegate,'Args> 
 
-#endif
+
     /// <summary>Event implementations for the IEvent&lt;_&gt; type.</summary>
     [<CompiledName("FSharpEvent`1")>]
     type Event<'T> = 

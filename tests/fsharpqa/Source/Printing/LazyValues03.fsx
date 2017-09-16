@@ -1,4 +1,4 @@
-// #Regression #NoMT #Printing #NETFX20Only 
+// #Regression #NoMT #Printing  
 // Regression test for FSHARP1.0:4068
 
 //<Expects status="success">val lazyExit : Lazy<string> = <unevaluated></Expects>

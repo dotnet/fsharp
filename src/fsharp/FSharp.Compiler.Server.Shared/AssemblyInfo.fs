@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp
 
@@ -17,14 +17,7 @@ do()
 [<assembly:AssemblyDescription("FSharp.Compiler.Server.Shared.dll")>]
 [<assembly:AssemblyCompany("Microsoft Corporation")>]
 [<assembly:AssemblyTitle("FSharp.Compiler.Server.Shared.dll")>]
-[<assembly:AssemblyCopyright("\169 Microsoft Corporation.  Apache 2.0 License.")>]
+[<assembly:AssemblyCopyright("\169 Microsoft Corporation.  All Rights Reserved.")>]
 [<assembly:AssemblyProduct("Microsoft\174 F#")>]
 [<assembly:ComVisible(false)>]
 do()
-
-#if HAVE_VS_SDK
-// This Visual Studio-specific attribute is needed on this DLL because for historical reasons it shipped as part of the Visual F# IDE Tools rather than this F# SDK
-[<assembly: Microsoft.VisualStudio.Shell.ProvideCodeBase(CodeBase = @"$PackageFolder$\FSharp.Compiler.Server.Shared.dll")>]
-do()
-#endif
-

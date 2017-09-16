@@ -1,113 +1,16 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
-#if FX_NO_CANCELLATIONTOKEN_CLASSES
-namespace System
-    open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Collections
-    
-    /// <summary>Represents one or more errors that occur during application execution.</summary>
-    [<Class>]
-    type AggregateException =
-        inherit Exception
-        /// <summary>Gets a read-only collection of the <c>Exception</c> instances that caused
-        /// the current exception.</summary>
-        member InnerExceptions : System.Collections.ObjectModel.ReadOnlyCollection<exn>
-    
-namespace System.Threading
-    open System
-    open Microsoft.FSharp.Core
-    /// <summary>Represents a registration to a Cancellation token source.</summary>
-    type [<Struct>] 
-         [<CustomEquality; NoComparison>]
-         CancellationTokenRegistration =
-            val private source : CancellationTokenSource
-            val private id : int64
-            /// <summary>Equality comparison against another registration.</summary>
-            /// <param name="registration">The target for comparison.</param>
-            /// <returns>True if the two registrations are equal.</returns>
-            member Equals : registration: CancellationTokenRegistration -> bool
-            /// <summary>Equality operator for registrations.</summary>
-            /// <param name="registration1">The first input registration.</param>
-            /// <param name="registration2">The second input registration.</param>
-            /// <returns>True if the two registrations are equal.</returns>
-            static member (=) : registration1: CancellationTokenRegistration * registration2: CancellationTokenRegistration -> bool
-            /// <summary>Inequality operator for registrations.</summary>
-            /// <param name="registration1">The first input registration.</param>
-            /// <param name="registration2">The second input registration.</param>
-            /// <returns>False if the two registrations are equal.</returns>
-            static member (<>) : registration1: CancellationTokenRegistration * registration2: CancellationTokenRegistration -> bool
-            /// <summary>Frees resources associated with the registration.</summary>
-            member Dispose : unit -> unit
-            interface IDisposable
-    
-    /// <summary>Represents a capability to detect cancellation of an operation.</summary>
-    and [<Struct>] 
-        [<CustomEquality; NoComparison>]
-        CancellationToken =
-            val private source : CancellationTokenSource
-            /// <summary>Flags whether an operation should be cancelled.</summary>
-            member IsCancellationRequested : bool
-            /// <summary>Registers an action to perform with the CancellationToken.</summary>
-            /// <param name="action">The action to associate with the token.</param>
-            /// <param name="state">The state associated with the action.</param>
-            /// <returns>The created registration object.</returns>
-            member Register : action: Action<obj> * state: obj -> CancellationTokenRegistration            
-            /// <summary>Equality comparison against another token.</summary>
-            /// <param name="token">The target for comparison.</param>
-            /// <returns>True if the two tokens are equal.</returns>
-            member Equals : token: CancellationToken -> bool
-            /// <summary>Equality operator for tokens.</summary>
-            /// <param name="registration1">The first input token.</param>
-            /// <param name="registration2">The second input token.</param>
-            /// <returns>True if the two tokens are equal.</returns>
-            static member (=) : token1: CancellationToken * token2: CancellationToken -> bool
-            /// <summary>Inequality operator for tokens.</summary>
-            /// <param name="registration1">The first input token.</param>
-            /// <param name="registration2">The second input token.</param>
-            /// <returns>False if the two tokens are equal.</returns>
-            static member (<>) : token1: CancellationToken * token2: CancellationToken -> bool           
-        
-        
-    /// <summary>Signals to a <c>CancellationToken</c> that it should be cancelled.</summary>
-    and [<Class>]
-        [<Sealed>]
-        [<AllowNullLiteral>] 
-        CancellationTokenSource =
-            /// <summary>Creates a new cancellation capability.</summary>
-            new : unit -> CancellationTokenSource
-            /// <summary>Fetches the token representing the capability to detect cancellation of an operation.</summary>
-            member Token : CancellationToken
-            /// <summary>Cancels the operation.</summary>
-            member Cancel : unit -> unit
-            /// <summary>Creates a cancellation capability linking two tokens.</summary>
-            /// <param name="token1">The first input token.</param>
-            /// <param name="token2">The second input token.</param>
-            /// <returns>The created CancellationTokenSource.</returns>
-            static member CreateLinkedTokenSource : token1: CancellationToken * token2: CancellationToken -> CancellationTokenSource
-            /// <summary>Discards resources associated with this capability.</summary>
-            member Dispose : unit -> unit
-            interface IDisposable
-#endif            
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Control
 
     open System
+    open System.Threading
+    open System.Threading.Tasks
+    open System.Runtime.CompilerServices
+
     open Microsoft.FSharp.Core
     open Microsoft.FSharp.Core.Operators
     open Microsoft.FSharp.Control
     open Microsoft.FSharp.Collections
-    open System.Threading
-#if !FX_NO_TASK
-    open System.Runtime.CompilerServices
-    open System.Threading.Tasks
-#endif
-
-#if FX_NO_OPERATION_CANCELLED
-
-    type OperationCanceledException =
-        inherit System.Exception
-        new : System.String -> OperationCanceledException
-#endif
 
 
     /// <summary>A compositional asynchronous computation, which, when run, will eventually produce a value 
@@ -162,7 +65,6 @@ namespace Microsoft.FSharp.Control
         /// If one is not supplied, the default cancellation token is used.</param>
         static member Start : computation:Async<unit> * ?cancellationToken:CancellationToken -> unit
 
-#if !FX_NO_TASK
         /// <summary>Executes a computation in the thread pool.</summary>
         /// <remarks>If no cancellation token is provided then the default cancellation token is used.</remarks>
         /// <returns>A <c>System.Threading.Tasks.Task</c> that will be completed
@@ -172,8 +74,7 @@ namespace Microsoft.FSharp.Control
 
         /// <summary>Creates an asynchronous computation which starts the given computation as a <c>System.Threading.Tasks.Task</c></summary>
         static member StartChildAsTask : computation:Async<'T> * ?taskCreationOptions:TaskCreationOptions -> Async<Task<'T>>
-#endif
-    
+
         /// <summary>Creates an asynchronous computation that executes <c>computation</c>.
         /// If this computation completes successfully then return <c>Choice1Of2</c> with the returned
         /// value. If this computation raises an exception before it completes then return <c>Choice2Of2</c>
@@ -291,16 +192,13 @@ namespace Microsoft.FSharp.Control
         /// <returns>A computation that generates a new work item in the thread pool.</returns>
         static member SwitchToThreadPool :  unit -> Async<unit> 
 
-#if !FX_NO_SYNC_CONTEXT
         /// <summary>Creates an asynchronous computation that runs
         /// its continuation using syncContext.Post. If syncContext is null 
         /// then the asynchronous computation is equivalent to SwitchToThreadPool().</summary>
         /// <param name="syncContext">The synchronization context to accept the posted computation.</param>
         /// <returns>An asynchronous computation that uses the syncContext context to execute.</returns>
         static member SwitchToContext :  syncContext:System.Threading.SynchronizationContext -> Async<unit> 
-#endif
 
-                    
         /// <summary>Creates an asynchronous computation that captures the current
         /// success, exception and cancellation continuations. The callback must 
         /// eventually call exactly one of the given continuations.</summary>
@@ -309,7 +207,6 @@ namespace Microsoft.FSharp.Control
         /// <returns>An asynchronous computation that provides the callback with the current continuations.</returns>
         static member FromContinuations : callback:(('T -> unit) * (exn -> unit) * (OperationCanceledException -> unit) -> unit) -> Async<'T>
 
-#if !FX_NO_CREATE_DELEGATE
         /// <summary>Creates an asynchronous computation that waits for a single invocation of a CLI 
         /// event by adding a handler to the event. Once the computation completes or is 
         /// cancelled, the handler is removed from the event.</summary>
@@ -325,7 +222,6 @@ namespace Microsoft.FSharp.Control
         /// cancellation is issued.</param>
         /// <returns>An asynchronous computation that waits for the event to be invoked.</returns>
         static member AwaitEvent: event:IEvent<'Del,'T> * ?cancelAction : (unit -> unit) -> Async<'T> when 'Del : delegate<'T,unit> and 'Del :> System.Delegate 
-#endif
 
         /// <summary>Creates an asynchronous computation that will wait on the given WaitHandle.</summary>
         ///
@@ -345,14 +241,12 @@ namespace Microsoft.FSharp.Control
         /// <returns>An asynchronous computation that waits on the given <c>IAsyncResult</c>.</returns>
         static member AwaitIAsyncResult: iar: System.IAsyncResult * ?millisecondsTimeout:int -> Async<bool>
 
-#if !FX_NO_TASK
         /// Return an asynchronous computation that will wait for the given task to complete and return
         /// its result.
         static member AwaitTask: task: Task<'T> -> Async<'T>
         /// Return an asynchronous computation that will wait for the given task to complete and return
         /// its result.
         static member AwaitTask: task: Task -> Async<unit>
-#endif            
 
         /// <summary>Creates an asynchronous computation that will sleep for the given time. This is scheduled
         /// using a System.Threading.Timer object. The operation will not block operating system threads
@@ -717,13 +611,11 @@ namespace Microsoft.FSharp.Control
     module WebExtensions = 
      begin
 
-#if !FX_NO_WEB_REQUESTS
         type System.Net.WebRequest with 
             /// <summary>Returns an asynchronous computation that, when run, will wait for a response to the given WebRequest.</summary>
             /// <returns>An asynchronous computation that waits for response to the <c>WebRequest</c>.</returns>
             [<CompiledName("AsyncGetResponse")>] // give the extension member a nice, unmangled compiled name, unique within this module
             member AsyncGetResponse : unit -> Async<System.Net.WebResponse>
-#endif
     
 #if !FX_NO_WEB_CLIENT
         type System.Net.WebClient with

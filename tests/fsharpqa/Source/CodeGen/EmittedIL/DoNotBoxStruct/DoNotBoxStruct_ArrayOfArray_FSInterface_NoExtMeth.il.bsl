@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.17376
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:3:0:0
+  .ver 4:4:1:0
 }
 .assembly DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth
 {
-  // Offset: 0x00000000 Length: 0x000002B5
+  // Offset: 0x00000000 Length: 0x00000291
 }
 .mresource public FSharpOptimizationData.DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth
 {
-  // Offset: 0x000002C0 Length: 0x000000BA
+  // Offset: 0x00000298 Length: 0x000000BA
 }
 .module DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth.exe
-// MVID: {4F20DD34-1475-D984-A745-038334DD204F}
+// MVID: {59B1920A-1475-D984-A745-03830A92B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00000031611D0000
+// Image base: 0x015B0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -66,43 +66,42 @@
     } // end of method F@6::.ctor
 
     .method assembly hidebysig instance void 
-            Invoke(object sender,
-                   int32 args) cil managed
+            Invoke(object x,
+                   int32 _arg1) cil managed
     {
-      // Code size       4 (0x4)
+      // Code size       3 (0x3)
       .maxstack  5
       .locals init ([0] int32 V_0)
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-      .line 6,6 : 80,82 
+      .line 100001,100001 : 0,0 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\DoNotBoxStruct\\DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth.fs'
       IL_0000:  ldarg.2
       IL_0001:  stloc.0
-      IL_0002:  nop
-      IL_0003:  ret
+      .line 6,6 : 80,82 ''
+      IL_0002:  ret
     } // end of method F@6::Invoke
 
   } // end of class F@6
 
   .method public static void  F<(class [FSharp.Core]Microsoft.FSharp.Control.IEvent`2<class [FSharp.Core]Microsoft.FSharp.Control.FSharpHandler`1<int32>,int32>) T>(!!T[][] x) cil managed
   {
-    // Code size       45 (0x2d)
+    // Code size       44 (0x2c)
     .maxstack  8
-    .line 6,6 : 48,83 
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  ldc.i4.0
-    IL_0003:  ldelem     !!T[]
-    IL_0008:  ldc.i4.0
-    IL_0009:  readonly.
-    IL_000b:  ldelema    !!T
-    IL_0010:  newobj     instance void DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth/F@6::.ctor()
-    IL_0015:  ldftn      instance void DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth/F@6::Invoke(object,
+    .line 6,6 : 48,83 ''
+    IL_0000:  ldarg.0
+    IL_0001:  ldc.i4.0
+    IL_0002:  ldelem     !!T[]
+    IL_0007:  ldc.i4.0
+    IL_0008:  readonly.
+    IL_000a:  ldelema    !!T
+    IL_000f:  newobj     instance void DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth/F@6::.ctor()
+    IL_0014:  ldftn      instance void DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth/F@6::Invoke(object,
                                                                                                      int32)
-    IL_001b:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Control.FSharpHandler`1<int32>::.ctor(object,
+    IL_001a:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Control.FSharpHandler`1<int32>::.ctor(object,
                                                                                                                  native int)
-    IL_0020:  constrained. !!T
-    IL_0026:  callvirt   instance void class [FSharp.Core]Microsoft.FSharp.Control.IDelegateEvent`1<class [FSharp.Core]Microsoft.FSharp.Control.FSharpHandler`1<int32>>::AddHandler(!0)
-    IL_002b:  nop
-    IL_002c:  ret
+    IL_001f:  constrained. !!T
+    IL_0025:  callvirt   instance void class [FSharp.Core]Microsoft.FSharp.Control.IDelegateEvent`1<class [FSharp.Core]Microsoft.FSharp.Control.FSharpHandler`1<int32>>::AddHandler(!0)
+    IL_002a:  nop
+    IL_002b:  ret
   } // end of method DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth::F
 
 } // end of class DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth
@@ -113,10 +112,9 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       2 (0x2)
+    // Code size       1 (0x1)
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ret
+    IL_0000:  ret
   } // end of method $DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth::main@
 
 } // end of class '<StartupCode$DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth>'.$DoNotBoxStruct_ArrayOfArray_FSInterface_NoExtMeth

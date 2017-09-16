@@ -10,6 +10,9 @@ Provide the steps required to reproduce the problem
 
 2. Step B
 
+If possible attach a zip file with the repro case. This often makes it easier for others to reproduce.
+The zip file should ideally represent the situation just before the call/step that is problematic.
+
 #### Expected behavior
 
 Provide a description of the expected behaviour.
@@ -33,5 +36,3 @@ Provide any related information
 * Links to F# RFCs or entries on https://github.com/fsharp/fslang-suggestions
 * Links to performance testing scripts
 * Indications of severity
-
-

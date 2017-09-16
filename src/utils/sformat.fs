@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // This file is compiled 3(!) times in the codebase
 //    - as the internal implementation of printf '%A' formatting in FSharp.Core
@@ -228,34 +228,39 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         // constructors
 
 
-        let objL (obj:obj) = 
-            match obj with 
+        let objL (value:obj) = 
+            match value with 
             | :? string as s -> Leaf (false, tag LayoutTag.Text s, false)
             | o -> ObjLeaf (false, o, false)
+
         let sLeaf  (l, t, r) = Leaf (l, t, r)
-        let wordL  str = sLeaf (false,str,false)
-        let sepL   str = sLeaf (true ,str,true)   
-        let rightL str = sLeaf (true ,str,false)   
-        let leftL  str = sLeaf (false,str,true)
+
+        let wordL  text = sLeaf (false,text,false)
+        let sepL   text = sLeaf (true ,text,true)   
+        let rightL text = sLeaf (true ,text,false)   
+        let leftL  text = sLeaf (false,text,true)
+
         let emptyL = sLeaf (true, tag LayoutTag.Text "",true)
-        let isEmptyL = function 
+
+        let isEmptyL layout = 
+            match layout with 
             | Leaf(true, s, true) -> s.Text = ""
             | _ -> false
 
-        let aboveL  l r = mkNode l r (Broken 0)
+        let aboveL  layout1 layout2 = mkNode layout1 layout2 (Broken 0)
 
-        let tagAttrL tag attrs l = Attr(tag,attrs,l)
+        let tagAttrL text maps layout = Attr(text,maps,layout)
 
         let apply2 f l r = if isEmptyL l then r else
                            if isEmptyL r then l else f l r
 
-        let (^^)  l r  = mkNode l r (Unbreakable)
-        let (++)  l r  = mkNode l r (Breakable 0)
-        let (--)  l r  = mkNode l r (Breakable 1)
-        let (---) l r  = mkNode l r (Breakable 2)
-        let (@@)   l r = apply2 (fun l r -> mkNode l r (Broken 0)) l r
-        let (@@-)  l r = apply2 (fun l r -> mkNode l r (Broken 1)) l r
-        let (@@--) l r = apply2 (fun l r -> mkNode l r (Broken 2)) l r
+        let (^^)  layout1 layout2  = mkNode layout1 layout2 (Unbreakable)
+        let (++)  layout1 layout2  = mkNode layout1 layout2 (Breakable 0)
+        let (--)  layout1 layout2  = mkNode layout1 layout2 (Breakable 1)
+        let (---) layout1 layout2  = mkNode layout1 layout2 (Breakable 2)
+        let (@@)   layout1 layout2 = apply2 (fun l r -> mkNode l r (Broken 0)) layout1 layout2
+        let (@@-)  layout1 layout2 = apply2 (fun l r -> mkNode l r (Broken 1)) layout1 layout2
+        let (@@--) layout1 layout2 = apply2 (fun l r -> mkNode l r (Broken 2)) layout1 layout2
         let tagListL tagger = function
             | []    -> emptyL
             | [x]   -> x
@@ -265,26 +270,28 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                   | y::ys -> process' ((tagger prefixL) ++ y) ys
                 process' x xs
             
-        let commaListL x = tagListL (fun prefixL -> prefixL ^^ rightL (Literals.comma)) x
-        let semiListL x  = tagListL (fun prefixL -> prefixL ^^ rightL (Literals.semicolon)) x
-        let spaceListL x = tagListL (fun prefixL -> prefixL) x
-        let sepListL x y = tagListL (fun prefixL -> prefixL ^^ x) y
-        let bracketL l = leftL Literals.leftParen ^^ l ^^ rightL Literals.rightParen
-        let tupleL xs = bracketL (sepListL (sepL Literals.comma) xs)
-        let aboveListL = function
-          | []    -> emptyL
-          | [x]   -> x
-          | x::ys -> List.fold (fun pre y -> pre @@ y) x ys
+        let commaListL layouts = tagListL (fun prefixL -> prefixL ^^ rightL (Literals.comma)) layouts
+        let semiListL layouts  = tagListL (fun prefixL -> prefixL ^^ rightL (Literals.semicolon)) layouts
+        let spaceListL layouts = tagListL (fun prefixL -> prefixL) layouts
+        let sepListL layout1 layouts = tagListL (fun prefixL -> prefixL ^^ layout1) layouts
+        let bracketL layout = leftL Literals.leftParen ^^ layout ^^ rightL Literals.rightParen
+        let tupleL layouts = bracketL (sepListL (sepL Literals.comma) layouts)
+        let aboveListL layouts = 
+            match layouts with
+            | []    -> emptyL
+            | [x]   -> x
+            | x::ys -> List.fold (fun pre y -> pre @@ y) x ys
 
-        let optionL xL = function
-          | None   -> wordL (tagUnionCase "None")
-          | Some x -> wordL (tagUnionCase "Some") -- (xL x)
+        let optionL selector value = 
+            match value with 
+            | None   -> wordL (tagUnionCase "None")
+            | Some x -> wordL (tagUnionCase "Some") -- (selector x)
 
-        let listL xL xs = leftL Literals.leftBracket ^^ sepListL (sepL Literals.semicolon) (List.map xL xs) ^^ rightL Literals.rightBracket
+        let listL selector value = leftL Literals.leftBracket ^^ sepListL (sepL Literals.semicolon) (List.map selector value) ^^ rightL Literals.rightBracket
 
-        let squareBracketL x = leftL Literals.leftBracket ^^ x ^^ rightL Literals.rightBracket    
+        let squareBracketL layout = leftL Literals.leftBracket ^^ layout ^^ rightL Literals.rightBracket    
 
-        let braceL         x = leftL Literals.leftBrace ^^ x ^^ rightL Literals.rightBrace
+        let braceL         layout = leftL Literals.leftBrace ^^ layout ^^ rightL Literals.rightBrace
 
         let boundedUnfoldL
                     (itemL     : 'a -> layout)
@@ -300,7 +307,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                                       else itemL x :: consume (n-1) z  // cons recursive... 
           consume maxLength z  
 
-        let unfoldL itemL project z maxLength = boundedUnfoldL  itemL project (fun _ -> false) z maxLength
+        let unfoldL selector folder state count = boundedUnfoldL  selector folder (fun _ -> false) state count
           
     /// These are a typical set of options used to control structured formatting.
     [<NoEquality; NoComparison>]
@@ -499,11 +506,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 #endif
         /// If "str" ends with "ending" then remove it from "str", otherwise no change.
         let trimEnding (ending:string) (str:string) =
-#if FX_NO_CULTURE_INFO_ARGS
-          if str.EndsWith(ending) then 
-#else
           if str.EndsWith(ending,StringComparison.Ordinal) then 
-#endif
               str.Substring(0,str.Length - ending.Length) 
           else str
 
@@ -817,11 +820,7 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
                 raise (System.MissingMethodException(msg))
 #endif
 #else
-#if FX_NO_CULTURE_INFO_ARGS
-            ty.InvokeMember(name, (BindingFlags.GetProperty ||| BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic), null, obj, [| |])
-#else
             ty.InvokeMember(name, (BindingFlags.GetProperty ||| BindingFlags.Instance ||| BindingFlags.Public ||| BindingFlags.NonPublic), null, obj, [| |],CultureInfo.InvariantCulture)
-#endif
 #endif
         let getField obj (fieldInfo: FieldInfo) =
             fieldInfo.GetValue(obj)
@@ -1307,13 +1306,13 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
         let output_layout opts oc l = 
             output_layout_tagged opts (asTaggedTextWriter oc) l
 
-        let layout_to_string opts l = 
-            l |> squash_layout opts 
-              |> showL opts ((leafFormatter opts) >> toText)
+        let layout_to_string options layout = 
+            layout |> squash_layout options 
+              |> showL options ((leafFormatter options) >> toText)
 
         let output_any_ex opts oc x = x |> any_to_layout opts |> output_layout opts oc
 
-        let output_any oc x = output_any_ex FormatOptions.Default oc x
+        let output_any writer x = output_any_ex FormatOptions.Default writer x
 
         let layout_as_string opts x = x |> any_to_layout opts |> layout_to_string opts
 
@@ -1325,11 +1324,11 @@ namespace Microsoft.FSharp.Text.StructuredPrintfImpl
 #else
 // FSharp.Core
 #if FX_RESHAPED_REFLECTION
-        let internal anyToStringForPrintf opts (showNonPublicMembers : bool) x = 
+        let internal anyToStringForPrintf options (showNonPublicMembers : bool) x = 
             let bindingFlags = ReflectionUtils.toBindingFlags showNonPublicMembers
 #else
-        let internal anyToStringForPrintf opts (bindingFlags:BindingFlags) x = 
+        let internal anyToStringForPrintf options (bindingFlags:BindingFlags) x = 
 #endif
-            x |> anyL ShowAll bindingFlags opts |> layout_to_string opts
+            x |> anyL ShowAll bindingFlags options |> layout_to_string options
 #endif
 

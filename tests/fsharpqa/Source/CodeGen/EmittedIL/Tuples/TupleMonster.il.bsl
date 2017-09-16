@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.1
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:1:0
 }
 .assembly TupleMonster
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.TupleMonster
 {
-  // Offset: 0x00000000 Length: 0x0000015D
+  // Offset: 0x00000000 Length: 0x00000149
 }
 .mresource public FSharpOptimizationData.TupleMonster
 {
-  // Offset: 0x00000168 Length: 0x00000053
+  // Offset: 0x00000150 Length: 0x00000053
 }
 .module TupleMonster.exe
-// MVID: {4BEB2985-1552-41D8-A745-03838529EB4B}
+// MVID: {59B19208-1552-41D8-A745-03830892B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00310000
+// Image base: 0x010B0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -63,43 +63,42 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       75 (0x4b)
+    // Code size       74 (0x4a)
     .maxstack  28
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 3,3 : 9,137 
-    IL_0000:  nop
-    IL_0001:  ldc.i4.s   97
-    IL_0003:  ldc.i4.s   98
-    IL_0005:  ldc.i4.s   99
-    IL_0007:  ldc.i4.s   100
-    IL_0009:  ldc.i4.s   101
-    IL_000b:  ldc.i4.s   102
-    IL_000d:  ldc.i4.s   103
-    IL_000f:  ldc.i4.s   104
-    IL_0011:  ldc.i4.s   105
-    IL_0013:  ldc.i4.s   106
-    IL_0015:  ldc.i4.s   107
-    IL_0017:  ldc.i4.s   108
-    IL_0019:  ldc.i4.s   109
-    IL_001b:  ldc.i4.s   110
-    IL_001d:  ldc.i4.s   111
-    IL_001f:  ldc.i4.s   112
-    IL_0021:  ldc.i4.s   113
-    IL_0023:  ldc.i4.s   114
-    IL_0025:  ldc.i4.s   115
-    IL_0027:  ldc.i4.s   116
-    IL_0029:  ldc.i4.s   117
-    IL_002b:  ldc.i4.s   118
-    IL_002d:  ldc.i4.s   119
-    IL_002f:  ldc.i4.s   120
-    IL_0031:  ldc.i4.s   121
-    IL_0033:  ldc.i4.s   122
-    IL_0035:  newobj     instance void class [mscorlib]System.Tuple`5<char,char,char,char,char>::.ctor(!0,
+    .line 3,3 : 9,137 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Tuples\\TupleMonster.fs'
+    IL_0000:  ldc.i4.s   97
+    IL_0002:  ldc.i4.s   98
+    IL_0004:  ldc.i4.s   99
+    IL_0006:  ldc.i4.s   100
+    IL_0008:  ldc.i4.s   101
+    IL_000a:  ldc.i4.s   102
+    IL_000c:  ldc.i4.s   103
+    IL_000e:  ldc.i4.s   104
+    IL_0010:  ldc.i4.s   105
+    IL_0012:  ldc.i4.s   106
+    IL_0014:  ldc.i4.s   107
+    IL_0016:  ldc.i4.s   108
+    IL_0018:  ldc.i4.s   109
+    IL_001a:  ldc.i4.s   110
+    IL_001c:  ldc.i4.s   111
+    IL_001e:  ldc.i4.s   112
+    IL_0020:  ldc.i4.s   113
+    IL_0022:  ldc.i4.s   114
+    IL_0024:  ldc.i4.s   115
+    IL_0026:  ldc.i4.s   116
+    IL_0028:  ldc.i4.s   117
+    IL_002a:  ldc.i4.s   118
+    IL_002c:  ldc.i4.s   119
+    IL_002e:  ldc.i4.s   120
+    IL_0030:  ldc.i4.s   121
+    IL_0032:  ldc.i4.s   122
+    IL_0034:  newobj     instance void class [mscorlib]System.Tuple`5<char,char,char,char,char>::.ctor(!0,
                                                                                                        !1,
                                                                                                        !2,
                                                                                                        !3,
                                                                                                        !4)
-    IL_003a:  newobj     instance void class [mscorlib]System.Tuple`8<char,char,char,char,char,char,char,class [mscorlib]System.Tuple`5<char,char,char,char,char>>::.ctor(!0,
+    IL_0039:  newobj     instance void class [mscorlib]System.Tuple`8<char,char,char,char,char,char,char,class [mscorlib]System.Tuple`5<char,char,char,char,char>>::.ctor(!0,
                                                                                                                                                                           !1,
                                                                                                                                                                           !2,
                                                                                                                                                                           !3,
@@ -107,7 +106,7 @@
                                                                                                                                                                           !5,
                                                                                                                                                                           !6,
                                                                                                                                                                           !7)
-    IL_003f:  newobj     instance void class [mscorlib]System.Tuple`8<char,char,char,char,char,char,char,class [mscorlib]System.Tuple`8<char,char,char,char,char,char,char,class [mscorlib]System.Tuple`5<char,char,char,char,char>>>::.ctor(!0,
+    IL_003e:  newobj     instance void class [mscorlib]System.Tuple`8<char,char,char,char,char,char,char,class [mscorlib]System.Tuple`8<char,char,char,char,char,char,char,class [mscorlib]System.Tuple`5<char,char,char,char,char>>>::.ctor(!0,
                                                                                                                                                                                                                                              !1,
                                                                                                                                                                                                                                              !2,
                                                                                                                                                                                                                                              !3,
@@ -115,7 +114,7 @@
                                                                                                                                                                                                                                              !5,
                                                                                                                                                                                                                                              !6,
                                                                                                                                                                                                                                              !7)
-    IL_0044:  newobj     instance void class [mscorlib]System.Tuple`8<char,char,char,char,char,char,char,class [mscorlib]System.Tuple`8<char,char,char,char,char,char,char,class [mscorlib]System.Tuple`8<char,char,char,char,char,char,char,class [mscorlib]System.Tuple`5<char,char,char,char,char>>>>::.ctor(!0,
+    IL_0043:  newobj     instance void class [mscorlib]System.Tuple`8<char,char,char,char,char,char,char,class [mscorlib]System.Tuple`8<char,char,char,char,char,char,char,class [mscorlib]System.Tuple`8<char,char,char,char,char,char,char,class [mscorlib]System.Tuple`5<char,char,char,char,char>>>>::.ctor(!0,
                                                                                                                                                                                                                                                                                                                 !1,
                                                                                                                                                                                                                                                                                                                 !2,
                                                                                                                                                                                                                                                                                                                 !3,
@@ -123,8 +122,8 @@
                                                                                                                                                                                                                                                                                                                 !5,
                                                                                                                                                                                                                                                                                                                 !6,
                                                                                                                                                                                                                                                                                                                 !7)
-    IL_0049:  pop
-    IL_004a:  ret
+    IL_0048:  pop
+    IL_0049:  ret
   } // end of method $TupleMonster::main@
 
 } // end of class '<StartupCode$TupleMonster>'.$TupleMonster

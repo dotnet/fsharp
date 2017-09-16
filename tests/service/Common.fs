@@ -171,6 +171,7 @@ let parseAndCheckScript (file, input) =
 
 #else    
     let projectOptions, _diagnostics = checker.GetProjectOptionsFromScript(file, input) |> Async.RunSynchronously
+    printfn "projectOptions = %A" projectOptions
 #endif
 
     let parseResult, typedRes = checker.ParseAndCheckFileInProject(file, 0, input, projectOptions) |> Async.RunSynchronously

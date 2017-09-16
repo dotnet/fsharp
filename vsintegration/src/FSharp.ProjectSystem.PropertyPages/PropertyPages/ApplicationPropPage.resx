@@ -1,6 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
- <root>
+<root>
   <!-- 
     Microsoft ResX Schema 
     
@@ -113,16 +112,16 @@
     <value>2.0</value>
   </resheader>
   <resheader name="reader">
-    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <resheader name="writer">
-    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <assembly alias="mscorlib" name="mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <assembly alias="mscorlib" name="mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="TopHalfLayoutPanel.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
-  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="TopHalfLayoutPanel.AutoSizeMode" type="System.Windows.Forms.AutoSizeMode, System.Windows.Forms">
     <value>GrowAndShrink</value>
   </data>
@@ -135,15 +134,15 @@
   <data name="AssemblyNameLabel.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
     <value>NoControl</value>
   </data>
-  <assembly alias="System.Drawing" name="System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
+  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="AssemblyNameLabel.Location" type="System.Drawing.Point, System.Drawing">
     <value>0, 0</value>
   </data>
   <data name="AssemblyNameLabel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>0, 0, 3, 0</value>
+    <value>0, 0, 6, 0</value>
   </data>
   <data name="AssemblyNameLabel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>85, 13</value>
+    <value>172, 27</value>
   </data>
   <data name="AssemblyNameLabel.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -155,7 +154,7 @@
     <value>AssemblyNameLabel</value>
   </data>
   <data name="&gt;&gt;AssemblyNameLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;AssemblyNameLabel.Parent" xml:space="preserve">
     <value>TopHalfLayoutPanel</value>
@@ -172,17 +171,56 @@
   <data name="ResourcesGroupBox.AutoSizeMode" type="System.Windows.Forms.AutoSizeMode, System.Windows.Forms">
     <value>GrowAndShrink</value>
   </data>
+  <data name="Win32ResourceFileBrowse.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="Win32ResourceFileBrowse.AutoSizeMode" type="System.Windows.Forms.AutoSizeMode, System.Windows.Forms">
+    <value>GrowAndShrink</value>
+  </data>
+  <data name="Win32ResourceFileBrowse.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="Win32ResourceFileBrowse.Location" type="System.Drawing.Point, System.Drawing">
+    <value>838, 177</value>
+  </data>
+  <data name="Win32ResourceFileBrowse.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>4, 0, 6, 0</value>
+  </data>
+  <data name="Win32ResourceFileBrowse.Size" type="System.Drawing.Size, System.Drawing">
+    <value>43, 37</value>
+  </data>
+  <data name="Win32ResourceFileBrowse.TabIndex" type="System.Int32, mscorlib">
+    <value>12</value>
+  </data>
+  <data name="Win32ResourceFileBrowse.Text" xml:space="preserve">
+    <value>...</value>
+  </data>
+  <data name="&gt;&gt;Win32ResourceFileBrowse.Name" xml:space="preserve">
+    <value>Win32ResourceFileBrowse</value>
+  </data>
+  <data name="&gt;&gt;Win32ResourceFileBrowse.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;Win32ResourceFileBrowse.Parent" xml:space="preserve">
+    <value>ResourcesGroupBox</value>
+  </data>
+  <data name="&gt;&gt;Win32ResourceFileBrowse.ZOrder" xml:space="preserve">
+    <value>0</value>
+  </data>
+  <data name="ResourcesLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
   <data name="ResourcesLabel.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
     <value>NoControl</value>
   </data>
   <data name="ResourcesLabel.Location" type="System.Drawing.Point, System.Drawing">
-    <value>9, 18</value>
+    <value>30, 45</value>
   </data>
   <data name="ResourcesLabel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>2, 0, 0, 0</value>
+    <value>0, 0, 0, 0</value>
   </data>
   <data name="ResourcesLabel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>390, 12</value>
+    <value>780, 25</value>
   </data>
   <data name="ResourcesLabel.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -194,97 +232,28 @@
     <value>ResourcesLabel</value>
   </data>
   <data name="&gt;&gt;ResourcesLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;ResourcesLabel.Parent" xml:space="preserve">
     <value>ResourcesGroupBox</value>
   </data>
   <data name="&gt;&gt;ResourcesLabel.ZOrder" xml:space="preserve">
-    <value>0</value>
-  </data>
-  <data name="iconTableLayoutPanel.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <data name="iconTableLayoutPanel.AutoSizeMode" type="System.Windows.Forms.AutoSizeMode, System.Windows.Forms">
-    <value>GrowAndShrink</value>
-  </data>
-  <data name="iconTableLayoutPanel.ColumnCount" type="System.Int32, mscorlib">
-    <value>3</value>
-  </data>
-  <data name="Win32ResourceFileBrowse.AutoSize" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <data name="Win32ResourceFileBrowse.AutoSizeMode" type="System.Windows.Forms.AutoSizeMode, System.Windows.Forms">
-    <value>GrowAndShrink</value>
-  </data>
-  <data name="Win32ResourceFileBrowse.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
-    <value>NoControl</value>
-  </data>
-  <data name="Win32ResourceFileBrowse.Location" type="System.Drawing.Point, System.Drawing">
-    <value>313, 15</value>
-  </data>
-  <data name="Win32ResourceFileBrowse.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>2, 0, 3, 0</value>
-  </data>
-  <data name="Win32ResourceFileBrowse.Size" type="System.Drawing.Size, System.Drawing">
-    <value>29, 23</value>
-  </data>
-  <data name="Win32ResourceFileBrowse.TabIndex" type="System.Int32, mscorlib">
-    <value>10</value>
-  </data>
-  <data name="Win32ResourceFileBrowse.Text" xml:space="preserve">
-    <value>...</value>
-  </data>
-  <data name="&gt;&gt;Win32ResourceFileBrowse.Name" xml:space="preserve">
-    <value>Win32ResourceFileBrowse</value>
-  </data>
-  <data name="&gt;&gt;Win32ResourceFileBrowse.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Button, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;Win32ResourceFileBrowse.Parent" xml:space="preserve">
-    <value>iconTableLayoutPanel</value>
-  </data>
-  <data name="&gt;&gt;Win32ResourceFileBrowse.ZOrder" xml:space="preserve">
-    <value>0</value>
-  </data>
-  <data name="Win32ResourceFile.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
-    <value>Top, Left, Right</value>
-  </data>
-  <data name="Win32ResourceFile.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 15</value>
-  </data>
-  <data name="Win32ResourceFile.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>0, 0, 3, 3</value>
-  </data>
-  <data name="Win32ResourceFile.Size" type="System.Drawing.Size, System.Drawing">
-    <value>400, 21</value>
-  </data>
-  <data name="Win32ResourceFile.TabIndex" type="System.Int32, mscorlib">
-    <value>9</value>
-  </data>
-  <data name="&gt;&gt;Win32ResourceFile.Name" xml:space="preserve">
-    <value>Win32ResourceFile</value>
-  </data>
-  <data name="&gt;&gt;Win32ResourceFile.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
-  </data>
-  <data name="&gt;&gt;Win32ResourceFile.Parent" xml:space="preserve">
-    <value>iconTableLayoutPanel</value>
-  </data>
-  <data name="&gt;&gt;Win32ResourceFile.ZOrder" xml:space="preserve">
     <value>1</value>
+  </data>
+  <data name="ResourceLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
   </data>
   <data name="ResourceLabel.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
     <value>NoControl</value>
   </data>
   <data name="ResourceLabel.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 0</value>
+    <value>30, 132</value>
   </data>
   <data name="ResourceLabel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>0, 0, 0, 2</value>
+    <value>0, 0, 0, 4</value>
   </data>
   <data name="ResourceLabel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>300, 12</value>
+    <value>845, 33</value>
   </data>
   <data name="ResourceLabel.TabIndex" type="System.Int32, mscorlib">
     <value>8</value>
@@ -296,25 +265,94 @@
     <value>ResourceLabel</value>
   </data>
   <data name="&gt;&gt;ResourceLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;ResourceLabel.Parent" xml:space="preserve">
-    <value>iconTableLayoutPanel</value>
+    <value>ResourcesGroupBox</value>
   </data>
   <data name="&gt;&gt;ResourceLabel.ZOrder" xml:space="preserve">
     <value>2</value>
   </data>
+  <data name="Win32ResourceFile.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Top, Left, Right</value>
+  </data>
+  <data name="Win32ResourceFile.Location" type="System.Drawing.Point, System.Drawing">
+    <value>30, 175</value>
+  </data>
+  <data name="Win32ResourceFile.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>0, 0, 6, 6</value>
+  </data>
+  <data name="Win32ResourceFile.Size" type="System.Drawing.Size, System.Drawing">
+    <value>796, 34</value>
+  </data>
+  <data name="Win32ResourceFile.TabIndex" type="System.Int32, mscorlib">
+    <value>11</value>
+  </data>
+  <data name="&gt;&gt;Win32ResourceFile.Name" xml:space="preserve">
+    <value>Win32ResourceFile</value>
+  </data>
+  <data name="&gt;&gt;Win32ResourceFile.Type" xml:space="preserve">
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;Win32ResourceFile.Parent" xml:space="preserve">
+    <value>ResourcesGroupBox</value>
+  </data>
+  <data name="&gt;&gt;Win32ResourceFile.ZOrder" xml:space="preserve">
+    <value>3</value>
+  </data>
+  <data name="UseStandardResourceNames.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Left</value>
+  </data>
+  <data name="UseStandardResourceNames.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="UseStandardResourceNames.Location" type="System.Drawing.Point, System.Drawing">
+    <value>36, 89</value>
+  </data>
+  <data name="UseStandardResourceNames.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>46, 6, 6, 23</value>
+  </data>
+  <data name="UseStandardResourceNames.Size" type="System.Drawing.Size, System.Drawing">
+    <value>334, 31</value>
+  </data>
+  <data name="UseStandardResourceNames.TabIndex" type="System.Int32, mscorlib">
+    <value>9</value>
+  </data>
+  <data name="UseStandardResourceNames.Text" xml:space="preserve">
+    <value>U&amp;se standard resource names</value>
+  </data>
+  <data name="&gt;&gt;UseStandardResourceNames.Name" xml:space="preserve">
+    <value>UseStandardResourceNames</value>
+  </data>
+  <data name="&gt;&gt;UseStandardResourceNames.Type" xml:space="preserve">
+    <value>System.Windows.Forms.CheckBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;UseStandardResourceNames.Parent" xml:space="preserve">
+    <value>ResourcesGroupBox</value>
+  </data>
+  <data name="&gt;&gt;UseStandardResourceNames.ZOrder" xml:space="preserve">
+    <value>4</value>
+  </data>
+  <data name="iconTableLayoutPanel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="iconTableLayoutPanel.AutoSizeMode" type="System.Windows.Forms.AutoSizeMode, System.Windows.Forms">
+    <value>GrowAndShrink</value>
+  </data>
+  <data name="iconTableLayoutPanel.ColumnCount" type="System.Int32, mscorlib">
+    <value>3</value>
+  </data>
   <data name="iconTableLayoutPanel.Location" type="System.Drawing.Point, System.Drawing">
-    <value>12, 40</value>
+    <value>24, 83</value>
   </data>
   <data name="iconTableLayoutPanel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>9, 9, 9, 9</value>
+    <value>18, 19, 18, 19</value>
   </data>
   <data name="iconTableLayoutPanel.RowCount" type="System.Int32, mscorlib">
     <value>9</value>
   </data>
   <data name="iconTableLayoutPanel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>345, 39</value>
+    <value>0, 0</value>
   </data>
   <data name="iconTableLayoutPanel.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -323,28 +361,28 @@
     <value>iconTableLayoutPanel</value>
   </data>
   <data name="&gt;&gt;iconTableLayoutPanel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;iconTableLayoutPanel.Parent" xml:space="preserve">
     <value>ResourcesGroupBox</value>
   </data>
   <data name="&gt;&gt;iconTableLayoutPanel.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>5</value>
   </data>
   <data name="iconTableLayoutPanel.LayoutSettings" type="System.Windows.Forms.TableLayoutSettings, System.Windows.Forms">
-    <value>&lt;?xml version="1.0" encoding="utf-16"?&gt;&lt;TableLayoutSettings&gt;&lt;Controls&gt;&lt;Control Name="Win32ResourceFileBrowse" Row="8" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="Win32ResourceFile" Row="8" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="ResourceLabel" Row="6" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;/Controls&gt;&lt;Columns Styles="AutoSize,0,AutoSize,0,AutoSize,0" /&gt;&lt;Rows Styles="AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0" /&gt;&lt;/TableLayoutSettings&gt;</value>
+    <value>&lt;?xml version="1.0" encoding="utf-16"?&gt;&lt;TableLayoutSettings&gt;&lt;Controls /&gt;&lt;Columns Styles="AutoSize,0,AutoSize,0,AutoSize,0" /&gt;&lt;Rows Styles="AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0" /&gt;&lt;/TableLayoutSettings&gt;</value>
   </data>
   <data name="ResourcesGroupBox.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 101</value>
+    <value>0, 192</value>
   </data>
   <data name="ResourcesGroupBox.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>0, 12, 0, 0</value>
+    <value>0, 25, 0, 0</value>
   </data>
   <data name="ResourcesGroupBox.Padding" type="System.Windows.Forms.Padding, System.Windows.Forms">
     <value>0, 0, 0, 0</value>
   </data>
   <data name="ResourcesGroupBox.Size" type="System.Drawing.Size, System.Drawing">
-    <value>366, 102</value>
+    <value>897, 242</value>
   </data>
   <data name="ResourcesGroupBox.TabIndex" type="System.Int32, mscorlib">
     <value>11</value>
@@ -356,7 +394,7 @@
     <value>ResourcesGroupBox</value>
   </data>
   <data name="&gt;&gt;ResourcesGroupBox.Type" xml:space="preserve">
-    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.GroupBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;ResourcesGroupBox.Parent" xml:space="preserve">
     <value>TopHalfLayoutPanel</value>
@@ -365,13 +403,13 @@
     <value>1</value>
   </data>
   <data name="AssemblyName.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 16</value>
+    <value>0, 33</value>
   </data>
   <data name="AssemblyName.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>0, 3, 3, 3</value>
+    <value>0, 6, 6, 6</value>
   </data>
   <data name="AssemblyName.Size" type="System.Drawing.Size, System.Drawing">
-    <value>253, 21</value>
+    <value>502, 34</value>
   </data>
   <data name="AssemblyName.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -380,7 +418,7 @@
     <value>AssemblyName</value>
   </data>
   <data name="&gt;&gt;AssemblyName.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.TextBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;AssemblyName.Parent" xml:space="preserve">
     <value>TopHalfLayoutPanel</value>
@@ -395,13 +433,13 @@
     <value>NoControl</value>
   </data>
   <data name="OutputTypeLabel.Location" type="System.Drawing.Point, System.Drawing">
-    <value>265, 49</value>
+    <value>526, 93</value>
   </data>
   <data name="OutputTypeLabel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>9, 9, 0, 0</value>
+    <value>18, 19, 0, 0</value>
   </data>
   <data name="OutputTypeLabel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>70, 13</value>
+    <value>135, 27</value>
   </data>
   <data name="OutputTypeLabel.TabIndex" type="System.Int32, mscorlib">
     <value>6</value>
@@ -413,7 +451,7 @@
     <value>OutputTypeLabel</value>
   </data>
   <data name="&gt;&gt;OutputTypeLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;OutputTypeLabel.Parent" xml:space="preserve">
     <value>TopHalfLayoutPanel</value>
@@ -422,16 +460,16 @@
     <value>3</value>
   </data>
   <data name="OutputType.ItemHeight" type="System.Int32, mscorlib">
-    <value>13</value>
+    <value>27</value>
   </data>
   <data name="OutputType.Location" type="System.Drawing.Point, System.Drawing">
-    <value>265, 65</value>
+    <value>526, 126</value>
   </data>
   <data name="OutputType.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>9, 3, 0, 3</value>
+    <value>18, 6, 0, 6</value>
   </data>
   <data name="OutputType.Size" type="System.Drawing.Size, System.Drawing">
-    <value>253, 21</value>
+    <value>502, 35</value>
   </data>
   <data name="OutputType.TabIndex" type="System.Int32, mscorlib">
     <value>7</value>
@@ -440,7 +478,7 @@
     <value>OutputType</value>
   </data>
   <data name="&gt;&gt;OutputType.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;OutputType.Parent" xml:space="preserve">
     <value>TopHalfLayoutPanel</value>
@@ -455,13 +493,13 @@
     <value>NoControl</value>
   </data>
   <data name="TargetFrameworkLabel.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 49</value>
+    <value>0, 93</value>
   </data>
   <data name="TargetFrameworkLabel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>0, 9, 3, 0</value>
+    <value>0, 19, 6, 0</value>
   </data>
   <data name="TargetFrameworkLabel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>99, 13</value>
+    <value>199, 27</value>
   </data>
   <data name="TargetFrameworkLabel.TabIndex" type="System.Int32, mscorlib">
     <value>4</value>
@@ -473,7 +511,7 @@
     <value>TargetFrameworkLabel</value>
   </data>
   <data name="&gt;&gt;TargetFrameworkLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;TargetFrameworkLabel.Parent" xml:space="preserve">
     <value>TopHalfLayoutPanel</value>
@@ -482,16 +520,16 @@
     <value>5</value>
   </data>
   <data name="TargetFramework.ItemHeight" type="System.Int32, mscorlib">
-    <value>13</value>
+    <value>27</value>
   </data>
   <data name="TargetFramework.Location" type="System.Drawing.Point, System.Drawing">
-    <value>0, 65</value>
+    <value>0, 126</value>
   </data>
   <data name="TargetFramework.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>0, 3, 3, 0</value>
+    <value>0, 6, 6, 0</value>
   </data>
   <data name="TargetFramework.Size" type="System.Drawing.Size, System.Drawing">
-    <value>253, 21</value>
+    <value>502, 35</value>
   </data>
   <data name="TargetFramework.TabIndex" type="System.Int32, mscorlib">
     <value>5</value>
@@ -500,7 +538,7 @@
     <value>TargetFramework</value>
   </data>
   <data name="&gt;&gt;TargetFramework.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;TargetFramework.Parent" xml:space="preserve">
     <value>TopHalfLayoutPanel</value>
@@ -509,10 +547,13 @@
     <value>6</value>
   </data>
   <data name="TargetFSharpCoreVersion.Location" type="System.Drawing.Point, System.Drawing">
-    <value>265, 16</value>
+    <value>526, 33</value>
+  </data>
+  <data name="TargetFSharpCoreVersion.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>18, 6, 0, 6</value>
   </data>
   <data name="TargetFSharpCoreVersion.Size" type="System.Drawing.Size, System.Drawing">
-    <value>253, 21</value>
+    <value>502, 35</value>
   </data>
   <data name="TargetFSharpCoreVersion.TabIndex" type="System.Int32, mscorlib">
     <value>3</value>
@@ -521,7 +562,7 @@
     <value>TargetFSharpCoreVersion</value>
   </data>
   <data name="&gt;&gt;TargetFSharpCoreVersion.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;TargetFSharpCoreVersion.Parent" xml:space="preserve">
     <value>TopHalfLayoutPanel</value>
@@ -529,25 +570,21 @@
   <data name="&gt;&gt;TargetFSharpCoreVersion.ZOrder" xml:space="preserve">
     <value>7</value>
   </data>
-  <data name="TargetFSharpCoreVersion.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>9, 3, 0, 3</value>
-  </data>  
   <data name="TargetFSharpCoreVersionLabel.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
   </data>
-  <data name="TargetFSharpCoreVersionLabel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
-    <value>9, 0, 0, 0</value>
-  </data>  
   <data name="TargetFSharpCoreVersionLabel.Location" type="System.Drawing.Point, System.Drawing">
-    <value>265, 0</value>
+    <value>526, 0</value>
+  </data>
+  <data name="TargetFSharpCoreVersionLabel.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>18, 0, 0, 0</value>
   </data>
   <data name="TargetFSharpCoreVersionLabel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>99, 13</value>
+    <value>199, 27</value>
   </data>
   <data name="TargetFSharpCoreVersionLabel.TabIndex" type="System.Int32, mscorlib">
     <value>2</value>
   </data>
-  
   <data name="TargetFSharpCoreVersionLabel.Text" xml:space="preserve">
     <value>Target F# runtime:</value>
   </data>
@@ -555,7 +592,7 @@
     <value>TargetFSharpCoreVersionLabel</value>
   </data>
   <data name="&gt;&gt;TargetFSharpCoreVersionLabel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;TargetFSharpCoreVersionLabel.Parent" xml:space="preserve">
     <value>TopHalfLayoutPanel</value>
@@ -573,7 +610,7 @@
     <value>11</value>
   </data>
   <data name="TopHalfLayoutPanel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>518, 203</value>
+    <value>1028, 434</value>
   </data>
   <data name="TopHalfLayoutPanel.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -582,7 +619,7 @@
     <value>TopHalfLayoutPanel</value>
   </data>
   <data name="&gt;&gt;TopHalfLayoutPanel.Type" xml:space="preserve">
-    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>System.Windows.Forms.TableLayoutPanel, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </data>
   <data name="&gt;&gt;TopHalfLayoutPanel.Parent" xml:space="preserve">
     <value>$this</value>
@@ -591,13 +628,13 @@
     <value>0</value>
   </data>
   <data name="TopHalfLayoutPanel.LayoutSettings" type="System.Windows.Forms.TableLayoutSettings, System.Windows.Forms">
-    <value>&lt;?xml version="1.0" encoding="utf-16"?&gt;&lt;TableLayoutSettings&gt;&lt;Controls&gt;&lt;Control Name="AssemblyNameLabel" Row="0" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="ResourcesGroupBox" Row="8" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="AssemblyName" Row="1" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="OutputTypeLabel" Row="2" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="OutputType" Row="3" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="TargetFrameworkLabel" Row="2" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="TargetFramework" Row="3" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="TargetFSharpCoreVersion" Row="1" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="TargetFSharpCoreVersionLabel" Row="0" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;/Controls&gt;&lt;Columns Styles="AutoSize,0,AutoSize,0" /&gt;&lt;Rows Styles="AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0" /&gt;&lt;/TableLayoutSettings&gt;</value>
+    <value>&lt;?xml version="1.0" encoding="utf-16"?&gt;&lt;TableLayoutSettings&gt;&lt;Controls&gt;&lt;Control Name="AssemblyNameLabel" Row="0" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="ResourcesGroupBox" Row="8" RowSpan="1" Column="0" ColumnSpan="2" /&gt;&lt;Control Name="AssemblyName" Row="1" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="OutputTypeLabel" Row="2" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="OutputType" Row="3" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="TargetFrameworkLabel" Row="2" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="TargetFramework" Row="3" RowSpan="1" Column="0" ColumnSpan="1" /&gt;&lt;Control Name="TargetFSharpCoreVersion" Row="1" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;Control Name="TargetFSharpCoreVersionLabel" Row="0" RowSpan="1" Column="1" ColumnSpan="1" /&gt;&lt;/Controls&gt;&lt;Columns Styles="AutoSize,0,AutoSize,0" /&gt;&lt;Rows Styles="AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0,AutoSize,0" /&gt;&lt;/TableLayoutSettings&gt;</value>
   </data>
-  <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+  <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
   </metadata>
   <data name="$this.AutoScaleDimensions" type="System.Drawing.SizeF, System.Drawing">
-    <value>6, 13</value>
+    <value>12, 27</value>
   </data>
   <data name="$this.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -614,13 +651,16 @@
   <data name="$this.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
     <value>NoControl</value>
   </data>
+  <data name="$this.Margin" type="System.Windows.Forms.Padding, System.Windows.Forms">
+    <value>6, 6, 6, 6</value>
+  </data>
   <data name="$this.Size" type="System.Drawing.Size, System.Drawing">
-    <value>518, 203</value>
+    <value>1028, 434</value>
   </data>
   <data name="&gt;&gt;$this.Name" xml:space="preserve">
     <value>ApplicationPropPage</value>
   </data>
   <data name="&gt;&gt;$this.Type" xml:space="preserve">
-    <value>Microsoft.VisualStudio.Editors.PropertyPages.ApplicationPropPageBase, Microsoft.VisualStudio.Editors, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+    <value>Microsoft.VisualStudio.Editors.PropertyPages.ApplicationPropPageBase, FSharp.ProjectSystem.PropertyPages, Version=15.4.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

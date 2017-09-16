@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.16774
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:1:0
 }
 .assembly TestFunction18
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.TestFunction18
 {
-  // Offset: 0x00000000 Length: 0x00000211
+  // Offset: 0x00000000 Length: 0x000001ED
 }
 .mresource public FSharpOptimizationData.TestFunction18
 {
-  // Offset: 0x00000218 Length: 0x00000072
+  // Offset: 0x000001F8 Length: 0x00000072
 }
 .module TestFunction18.exe
-// MVID: {4DAC30EE-A624-4603-A745-0383EE30AC4D}
+// MVID: {59B19208-A624-4603-A745-03830892B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000000000470000
+// Image base: 0x019B0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -53,14 +53,13 @@
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .method public static void  TestFunction18<a>(!!a inp) cil managed
   {
-    // Code size       12 (0xc)
+    // Code size       11 (0xb)
     .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 5,5 : 5,38 
-    IL_0000:  nop
-    IL_0001:  ldstr      "hello"
-    IL_0006:  call       void [mscorlib]System.Console::WriteLine(string)
-    IL_000b:  ret
+    .line 5,5 : 5,38 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction18.fs'
+    IL_0000:  ldstr      "hello"
+    IL_0005:  call       void [mscorlib]System.Console::WriteLine(string)
+    IL_000a:  ret
   } // end of method TestFunction18::TestFunction18
 
 } // end of class TestFunction18
@@ -71,10 +70,9 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       2 (0x2)
+    // Code size       1 (0x1)
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ret
+    IL_0000:  ret
   } // end of method $TestFunction18::main@
 
 } // end of class '<StartupCode$TestFunction18>'.$TestFunction18
