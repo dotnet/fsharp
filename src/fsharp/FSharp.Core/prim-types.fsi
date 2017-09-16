@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 #nowarn "35" // This construct is deprecated: the treatment of this operator is now handled directly by the F# compiler and its meaning may not be redefined.
 #nowarn "61" // The containing type can use 'null' as a representation value for its nullary union case. This member will be compiled as a static member.
@@ -19,34 +19,6 @@ namespace Microsoft.FSharp.Core
     /// always uses the representation 'null'.</summary>
     and unit = Unit
 
-
-#if FX_NO_STRUCTURAL_EQUALITY
-namespace System.Collections
-    open Microsoft.FSharp.Core
-
-    //-------------------------------------------------------------------------
-    // Structural equality
-    type IStructuralEquatable =
-        /// <summary>Equality comparison against a target object with a given comparer.</summary>
-        /// <param name="obj">The target for comparison.</param>
-        /// <param name="comparer">Compares the two objects.</param>
-        /// <returns>The result of the comparer.</returns>
-        abstract Equals: obj:obj * comparer:System.Collections.IEqualityComparer -> bool
-        /// <summary>Returns a hash code for the current instance.</summary>
-        /// <param name="comparer">An object that computes the hash code of the current object.</param>
-        /// <returns>The hash code for the current instance.</returns>
-        abstract GetHashCode: comparer:System.Collections.IEqualityComparer -> int
-    
-    //-------------------------------------------------------------------------    
-    // Structural comparison
-    type IStructuralComparable =
-        /// <summary>Determines whether the current object precedes, occurs in the same position as,
-        /// or follows another object in the sort order.</summary>
-        /// <param name="obj">The object to compare with the current instance.</param>
-        /// <param name="comparer">An object that performs comparisons.</param>
-        /// <returns>An integer that indicates the relationship of the current object to the target object.</returns>
-        abstract CompareTo: obj:obj * comparer:System.Collections.IComparer -> int
-#endif    
 
 namespace Microsoft.FSharp.Core
 
@@ -1258,104 +1230,6 @@ namespace Microsoft.FSharp.Core
             val inline FastCompareTuple5 : comparer:System.Collections.IComparer -> tuple1:('T1 * 'T2 * 'T3 * 'T4 * 'T5) -> tuple2:('T1 * 'T2 * 'T3 * 'T4 * 'T5) -> int
 
 
-#if FX_NO_TUPLE
-namespace System
-    open Microsoft.FSharp.Core
-    open System.Collections
-
-
-    //-------------------------------------------------------------------------
-    // F# Tuple Types
-
-
-    /// <summary>Compiled versions of F# tuple types. These are not used directly, though
-    /// these compiled forms are seen by other CLI languages.</summary>
-    type Tuple<'T1> =
-        interface IStructuralEquatable
-        interface IStructuralComparable
-        interface IComparable
-        new : 'T1 -> Tuple<'T1>
-        member Item1 : 'T1 with get
-
-    type Tuple<'T1,'T2> =  
-        interface IStructuralEquatable
-        interface IStructuralComparable
-        interface IComparable
-        new : 'T1 * 'T2 -> Tuple<'T1,'T2>
-        member Item1 : 'T1 with get
-        member Item2 : 'T2 with get
-
-    type Tuple<'T1,'T2,'T3> = 
-        interface IStructuralEquatable
-        interface IStructuralComparable
-        interface IComparable
-        new : 'T1 * 'T2 * 'T3 -> Tuple<'T1,'T2,'T3>
-        member Item1 : 'T1 with get
-        member Item2 : 'T2 with get
-        member Item3 : 'T3 with get
-
-    type Tuple<'T1,'T2,'T3,'T4> = 
-        interface IStructuralEquatable
-        interface IStructuralComparable
-        interface IComparable
-        new : 'T1 * 'T2 * 'T3 * 'T4 -> Tuple<'T1,'T2,'T3,'T4>
-        member Item1 : 'T1 with get
-        member Item2 : 'T2 with get
-        member Item3 : 'T3 with get
-        member Item4 : 'T4 with get
-
-    type Tuple<'T1,'T2,'T3,'T4,'T5> = 
-        interface IStructuralEquatable
-        interface IStructuralComparable
-        interface IComparable
-        new : 'T1 * 'T2 * 'T3 * 'T4 * 'T5 -> Tuple<'T1,'T2,'T3,'T4,'T5>
-        member Item1 : 'T1 with get
-        member Item2 : 'T2 with get
-        member Item3 : 'T3 with get
-        member Item4 : 'T4 with get
-        member Item5 : 'T5 with get
-
-    type Tuple<'T1,'T2,'T3,'T4,'T5,'T6> = 
-        interface IStructuralEquatable
-        interface IStructuralComparable
-        interface IComparable
-        new : 'T1 * 'T2 * 'T3 * 'T4 * 'T5 * 'T6-> Tuple<'T1,'T2,'T3,'T4,'T5,'T6>
-        member Item1 : 'T1 with get
-        member Item2 : 'T2 with get
-        member Item3 : 'T3 with get
-        member Item4 : 'T4 with get
-        member Item5 : 'T5 with get
-        member Item6 : 'T6 with get
-
-    type Tuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7> = 
-        interface IStructuralEquatable
-        interface IStructuralComparable
-        interface IComparable
-        new : 'T1 * 'T2 * 'T3 * 'T4 * 'T5 * 'T6 * 'T7 -> Tuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7>
-        member Item1 : 'T1 with get
-        member Item2 : 'T2 with get
-        member Item3 : 'T3 with get
-        member Item4 : 'T4 with get
-        member Item5 : 'T5 with get
-        member Item6 : 'T6 with get
-        member Item7 : 'T7 with get
-        
-    type Tuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'TRest> = 
-        interface IStructuralEquatable
-        interface IStructuralComparable
-        interface IComparable
-        new : 'T1 * 'T2 * 'T3 * 'T4 * 'T5 * 'T6 * 'T7 * 'TRest -> Tuple<'T1,'T2,'T3,'T4,'T5,'T6,'T7,'TRest>
-        member Item1 : 'T1 with get
-        member Item2 : 'T2 with get
-        member Item3 : 'T3 with get
-        member Item4 : 'T4 with get
-        member Item5 : 'T5 with get
-        member Item6 : 'T6 with get
-        member Item7 : 'T7 with get
-        member Rest  : 'TRest with get
-#else
-#endif
-
 namespace Microsoft.FSharp.Core
     open System
     open Microsoft.FSharp.Core
@@ -1689,7 +1563,7 @@ namespace Microsoft.FSharp.Core
     // F# Mutable Reference Cells
 
 
-    /// <summary>The type of mutable references. Use the functions [:=] and [!] to get and
+    /// <summary>The type of mutable references. Use the functions [!] and [:=] to get and
     /// set values of this type.</summary>
     [<StructuralEquality; StructuralComparison>]
     [<CompiledName("FSharpRef`1")>]
@@ -1699,7 +1573,7 @@ namespace Microsoft.FSharp.Core
         /// <summary>The current value of the reference cell</summary>
         member Value : 'T with get,set
             
-    /// <summary>The type of mutable references. Use the functions [:=] and [!] to get and
+    /// <summary>The type of mutable references. Use the functions [!] and [:=] to get and
     /// set values of this type.</summary>
     and 'T ref = Ref<'T>
 
@@ -2235,15 +2109,12 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("CreateSequence")>]
         val seq : sequence:seq<'T> -> seq<'T>
 
-
-#if !FX_NO_EXIT
         /// <summary>Exit the current hardware isolated process, if security settings permit,
         /// otherwise raise an exception. Calls <c>System.Environment.Exit</c>.</summary>
         /// <param name="exitcode">The exit code to use.</param>
         /// <returns>The result value.</returns>
         [<CompiledName("Exit")>]
         val exit: exitcode:int -> 'T   when default 'T : obj
-#endif
 
         /// <summary>Equivalent to <c>System.Double.PositiveInfinity</c></summary>
         [<CompiledName("Infinity")>]
@@ -2477,13 +2348,11 @@ namespace Microsoft.FSharp.Core
         [<CompiledName("Tanh")>]
         val inline tanh     : value:^T -> ^T       when ^T : (static member Tanh     : ^T -> ^T)      and default ^T : float
 
-#if !FX_NO_TRUNCATE
         /// <summary>Overloaded truncate operator.</summary>
         /// <param name="value">The input value.</param>
         /// <returns>The truncated value.</returns>
         [<CompiledName("Truncate")>]
         val inline truncate : value:^T -> ^T       when ^T : (static member Truncate : ^T -> ^T)      and default ^T : float
-#endif
 
         /// <summary>Overloaded power operator.</summary>
         /// <param name="x">The input base.</param>
@@ -3309,25 +3178,6 @@ namespace Microsoft.FSharp.Core
             val nanf<[<Measure>] 'Measure> : float32<'Measure>
 #endif
 
-
-#if FX_NO_LAZY
-namespace System
-    open System.Diagnostics
-    open Microsoft.FSharp.Core
-    open Microsoft.FSharp.Core.Operators
-
-    /// <summary>Encapsulates a lazily computed value.</summary>
-    [<Class>]
-    [<AllowNullLiteral>]
-    type Lazy<'T> =
-        /// <summary>Is true if the value is ready to be accessed.</summary>
-        member IsValueCreated : bool 
-        /// <summary>The value contained in the Lazy.</summary>
-        member Value : 'T 
-#else
-#endif
-
-
 namespace Microsoft.FSharp.Control
     open Microsoft.FSharp.Core
 
@@ -3363,33 +3213,6 @@ namespace Microsoft.FSharp.Control
     and 
         [<System.Obsolete("This type is obsolete. Please use System.Lazy instead.", true)>]
         'T ``lazy`` = System.Lazy<'T>        
-    
-#if FX_NO_IOBSERVABLE
-namespace System
-
-    open Microsoft.FSharp.Core
-
-    /// <summary>A client that may be subscribed to observe the results from an IObservable.</summary>
-    [<AllowNullLiteral>]
-    type IObserver<'T> =
-        /// <summary>Notify an observer of a new result</summary>
-        /// <param name="value">The value to notify observers.</param>
-        abstract OnNext : value : 'T -> unit
-        /// <summary>Notify an observer of an error </summary>
-        /// <param name="error">The exception to notify observers.</param>
-        abstract OnError : error : exn -> unit
-        /// <summary>Notify an observer that no more results will be produced.</summary>
-        abstract OnCompleted : unit -> unit
-
-    /// <summary>A source of observable results</summary>
-    [<AllowNullLiteral>]
-    type IObservable<'T> =
-        /// <summary>Subscribe an observer to the source of results</summary>
-        /// <param name="observer">The observer to be added to those that are notified.</param>
-        /// <returns>An IDisposable to allow for unsubscription.</returns>
-        abstract Subscribe : observer : IObserver<'T> -> System.IDisposable;
-#else
-#endif        
 
 namespace Microsoft.FSharp.Control
 

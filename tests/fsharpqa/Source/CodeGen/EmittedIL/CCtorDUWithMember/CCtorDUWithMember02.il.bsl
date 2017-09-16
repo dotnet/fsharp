@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.16774
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:1:0
 }
 .assembly CCtorDUWithMember02
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.CCtorDUWithMember02
 {
-  // Offset: 0x00000000 Length: 0x00000343
+  // Offset: 0x00000000 Length: 0x0000030C
 }
 .mresource public FSharpOptimizationData.CCtorDUWithMember02
 {
-  // Offset: 0x00000348 Length: 0x000000E4
+  // Offset: 0x00000310 Length: 0x000000E4
 }
 .module CCtorDUWithMember02.exe
-// MVID: {4DAC02CE-D176-C99D-A745-0383CE02AC4D}
+// MVID: {59B1923F-D176-C99D-A745-03833F92B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000000000370000
+// Image base: 0x01380000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -63,24 +63,23 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       32 (0x20)
+    // Code size       31 (0x1f)
     .maxstack  4
     .locals init ([0] class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_0,
              [1] int32 V_1)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 2,2 : 1,40 
+    .line 2,2 : 1,17 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\CCtorDUWithMember\\CCtorDUWithMember02.fs'
     IL_0000:  ldstr      "x = %A"
     IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,int32>::.ctor(string)
     IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
     IL_000f:  stloc.0
-    IL_0010:  nop
-    IL_0011:  call       int32 CCtorDUWithMember02a::get_y()
-    IL_0016:  stloc.1
-    IL_0017:  ldloc.0
-    IL_0018:  ldloc.1
-    IL_0019:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
-    IL_001e:  pop
-    IL_001f:  ret
+    IL_0010:  call       int32 CCtorDUWithMember02a::get_y()
+    IL_0015:  stloc.1
+    IL_0016:  ldloc.0
+    IL_0017:  ldloc.1
+    IL_0018:  callvirt   instance !1 class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<int32,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::Invoke(!0)
+    IL_001d:  pop
+    IL_001e:  ret
   } // end of method $CCtorDUWithMember02::main@
 
 } // end of class '<StartupCode$CCtorDUWithMember02>'.$CCtorDUWithMember02
@@ -150,37 +149,36 @@
   .method private specialname rtspecialname static 
           void  .cctor() cil managed
   {
-    // Code size       78 (0x4e)
+    // Code size       77 (0x4d)
     .maxstack  4
     .locals init ([0] int32 y)
-    .line 3,3 : 1,17 
-    IL_0000:  nop
-    IL_0001:  ldstr      "hello1"
-    IL_0006:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-    IL_000b:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_0010:  pop
-    .line 6,6 : 5,21 
-    IL_0011:  ldstr      "hello2"
-    IL_0016:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-    IL_001b:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_0020:  pop
-    .line 7,7 : 5,33 
-    IL_0021:  ldstr      "1"
-    IL_0026:  callvirt   instance int32 [mscorlib]System.String::get_Length()
-    IL_002b:  stsfld     int32 '<StartupCode$CCtorDUWithMember02>'.$CCtorDUWithMember02a::x@7
-    .line 9,9 : 1,32 
-    IL_0030:  nop
-    .line 9,9 : 10,26 
-    IL_0031:  ldstr      "hello3"
-    IL_0036:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-    IL_003b:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_0040:  pop
-    .line 9,9 : 28,31 
-    IL_0041:  call       int32 CCtorDUWithMember02a/M::get_x()
-    IL_0046:  dup
-    IL_0047:  stsfld     int32 '<StartupCode$CCtorDUWithMember02>'.$CCtorDUWithMember02a::y@9
-    IL_004c:  stloc.0
-    IL_004d:  ret
+    .line 3,3 : 1,17 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\CCtorDUWithMember\\CCtorDUWithMember02a.fs'
+    IL_0000:  ldstr      "hello1"
+    IL_0005:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+    IL_000a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+    IL_000f:  pop
+    .line 6,6 : 5,21 ''
+    IL_0010:  ldstr      "hello2"
+    IL_0015:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+    IL_001a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+    IL_001f:  pop
+    .line 7,7 : 5,33 ''
+    IL_0020:  ldstr      "1"
+    IL_0025:  callvirt   instance int32 [mscorlib]System.String::get_Length()
+    IL_002a:  stsfld     int32 '<StartupCode$CCtorDUWithMember02>'.$CCtorDUWithMember02a::x@7
+    .line 9,9 : 1,32 ''
+    IL_002f:  nop
+    .line 9,9 : 10,26 ''
+    IL_0030:  ldstr      "hello3"
+    IL_0035:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+    IL_003a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.ExtraTopLevelOperators::PrintFormatLine<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
+    IL_003f:  pop
+    .line 9,9 : 28,31 ''
+    IL_0040:  call       int32 CCtorDUWithMember02a/M::get_x()
+    IL_0045:  dup
+    IL_0046:  stsfld     int32 '<StartupCode$CCtorDUWithMember02>'.$CCtorDUWithMember02a::y@9
+    IL_004b:  stloc.0
+    IL_004c:  ret
   } // end of method $CCtorDUWithMember02a::.cctor
 
 } // end of class '<StartupCode$CCtorDUWithMember02>'.$CCtorDUWithMember02a

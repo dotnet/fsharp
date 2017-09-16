@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// The basic logic of private/internal/protected/InternalsVisibleTo/public accessibility
 module internal Microsoft.FSharp.Compiler.AccessibilityLogic
@@ -90,7 +90,15 @@ let private IsILMemberAccessible g amap m (tcrefOfViewedItem : TyconRef) ad acce
                 (access = ILMemberAccess.Assembly || access = ILMemberAccess.FamilyOrAssembly) && 
                 canAccessFromOneOf cpaths tcrefOfViewedItem.CompilationPath
 
-            (access = ILMemberAccess.Public) || accessibleByFamily || accessibleByInternalsVisibleTo
+            let accessibleByFamilyAndAssembly =
+                access = ILMemberAccess.FamilyAndAssembly &&
+                canAccessFromOneOf cpaths tcrefOfViewedItem.CompilationPath &&
+                match tcrefViewedFromOption with 
+                | None -> false
+                | Some tcrefViewedFrom ->
+                    ExistsHeadTypeInEntireHierarchy  g amap m (generalizedTyconRef tcrefViewedFrom) tcrefOfViewedItem    
+
+            (access = ILMemberAccess.Public) || accessibleByFamily || accessibleByInternalsVisibleTo || accessibleByFamilyAndAssembly
 
     | AccessibleFromSomewhere -> 
             true

@@ -1,4 +1,4 @@
-// #Regression #Conformance #BasicGrammarElements #Constants #NETFX20Only 
+// #Regression #Conformance #BasicGrammarElements #Constants  
 // Verify the ability to specify basic constants - continued
 
 

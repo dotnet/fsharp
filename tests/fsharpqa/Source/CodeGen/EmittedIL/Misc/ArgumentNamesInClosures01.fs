@@ -1,4 +1,4 @@
-// #Regression #NoMono #NoMT #CodeGen #EmittedIL #NETFX20Only #NETFX40Only 
+// #Regression #NoMono #NoMT #CodeGen #EmittedIL   
 // Regression test for FSHARP1.0:3309
 // 
 // Make sure that argument names are preserved in some/all compiler closures

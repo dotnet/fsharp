@@ -1,4 +1,4 @@
-<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 
 <!--
 ***********************************************************************************************
@@ -22,6 +22,7 @@ this file.
     </PropertyGroup>
 
     <UsingTask TaskName="Fsc" AssemblyFile="FSharp.Build{BuildSuffix}.dll"/>
+    <UsingTask TaskName="FSharpEmbedResourceText" AssemblyFile="FSharp.Build{BuildSuffix}.dll"/>
     <UsingTask TaskName="CreateFSharpManifestResourceName" AssemblyFile="FSharp.Build{BuildSuffix}.dll"/>
 
     <PropertyGroup>
@@ -169,11 +170,30 @@ this file.
         <CoreCompileDependsOn>_ComputeNonExistentFileProperty</CoreCompileDependsOn>
     </PropertyGroup>
 
+    <Target Name="GenerateFSharpTextResources"
+            BeforeTargets="CoreResGen;PrepareForBuild">
+
+        <MakeDir Directories="$(IntermediateOutputPath)" />
+
+        <FSharpEmbedResourceText EmbeddedText="@(EmbeddedText)" IntermediateOutputPath="$(IntermediateOutputPath)">
+            <Output TaskParameter="GeneratedSource" ItemName="_FsGeneratedSource" />
+            <Output TaskParameter="GeneratedResx" ItemName="_FsGeneratedResx" />
+        </FSharpEmbedResourceText>
+
+        <ItemGroup>
+            <CompileBefore Include="@(_FsGeneratedSource)" />
+            <EmbeddedResource Include="@(_FsGeneratedResx)" />
+            <FileWrites Include="@(_FsGeneratedSource)" />
+            <FileWrites Include="@(_FsGeneratedResx)" />
+        </ItemGroup>
+
+    </Target>
+
     <Target
         Name="CoreCompile"
         Inputs="$(MSBuildAllProjects);
                 @(CompileBefore);
-                @(Compile);                               
+                @(Compile);
                 @(CompileAfter);
                 @(_CoreCompileResourceInputs);
                 @(ManifestNonResxWithNoCultureOnDisk);
@@ -189,7 +209,7 @@ this file.
                 $(KeyOriginatorFile)"
         Outputs="@(DocFileItem);
                  @(IntermediateAssembly);
-                 @(_DebugSymbolsIntermediatePath);                 
+                 @(_DebugSymbolsIntermediatePath);
                  $(NonExistentFile);
                  @(CustomAdditionalCompileOutputs)"
         Returns=""

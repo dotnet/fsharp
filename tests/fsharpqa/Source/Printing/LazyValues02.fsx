@@ -1,4 +1,4 @@
-// #Regression #NoMT #Printing #NETFX20Only 
+// #Regression #NoMT #Printing  
 // Regression test for FSHARP1.0:4068
 // Title: printing lazy property values forces the lazy value
 

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.AbstractIL.Internal.Support
 
@@ -1230,9 +1230,6 @@ let pdbMethodGetToken (meth:PdbMethod) : int32 =
     let token = meth.symMethod.Token
     token.GetToken()
   
-let pdbMethodGetRootScope (meth:PdbMethod) : PdbMethodScope = 
-    { symScope = meth.symMethod.RootScope }
-
 let pdbMethodGetSequencePoints (meth:PdbMethod) : PdbSequencePoint array =
     let  pSize = meth.symMethod.SequencePointCount
     let offsets = Array.zeroCreate pSize

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Core
 
@@ -35,6 +35,8 @@ module internal PrintfImpl =
     /// 2. we can make combinable parts independent from particular printf implementation. Thus final result can be cached and shared. 
     /// i.e when first call to printf "%s %s" will trigger creation of the specialization. Subsequent calls will pick existing specialization
     open System
+    open System.IO
+    open System.Text
 
     open System.Collections.Generic
     open System.Reflection
@@ -518,41 +520,36 @@ module internal PrintfImpl =
                     // width=*, prec=*
                     box(fun v width prec -> 
                         let fmt = getFormat (normalizePrecision prec)
-                        pad fmt width v
-                        )
+                        pad fmt width v)
                 else 
                     // width=*, prec=?
                     let prec = if spec.IsPrecisionSpecified then normalizePrecision spec.Precision else DefaultPrecision
                     let fmt = getFormat prec
                     box(fun v width -> 
-                        pad fmt width v
-                        )
+                        pad fmt width v)
+
             elif spec.IsStarPrecision then
                 if spec.IsWidthSpecified then
                     // width=val, prec=*
                     box(fun v prec -> 
                         let fmt = getFormat prec
-                        pad fmt spec.Width v
-                        )
+                        pad fmt spec.Width v)
                 else
                     // width=X, prec=*
                     box(fun v prec -> 
                         let fmt = getFormat prec
-                        basic fmt v
-                        )                        
+                        basic fmt v)                        
             else
                 let prec = if spec.IsPrecisionSpecified then normalizePrecision spec.Precision else DefaultPrecision
                 let fmt = getFormat prec
                 if spec.IsWidthSpecified then
                     // width=val, prec=*
                     box(fun v -> 
-                        pad fmt spec.Width v
-                        )
+                        pad fmt spec.Width v)
                 else
                     // width=X, prec=*
                     box(fun v -> 
-                        basic fmt v
-                        )
+                        basic fmt v)
 
         /// pad here is function that converts T to string with respect of justification
         /// basic - function that converts T to string without applying justification rules
@@ -561,19 +558,16 @@ module internal PrintfImpl =
             if spec.IsStarWidth then
                     // width=*, prec=?
                     box(fun v width -> 
-                        pad width v
-                        )
+                        pad width v)
             else
                 if spec.IsWidthSpecified then
                     // width=val, prec=*
                     box(fun v -> 
-                        pad spec.Width v
-                        )
+                        pad spec.Width v)
                 else
                     // width=X, prec=*
                     box(fun v -> 
-                        basic v
-                        )
+                        basic v)
 
         let inline withPaddingFormatted (spec : FormatSpecifier) getFormat  (defaultFormat : string) (f : string ->  'T -> string) left right =
             if not (spec.IsWidthSpecified || spec.IsPrecisionSpecified) then
@@ -1257,39 +1251,12 @@ module internal PrintfImpl =
     /// 2nd level is global dictionary that maps format string to the corresponding PrintfFactory
     type Cache<'T, 'State, 'Residue, 'Result>() =
         static let generate(fmt) = PrintfBuilder<'State, 'Residue, 'Result>().Build<'T>(fmt)        
-#if FX_NO_CONCURRENT_DICTIONARY
-        static let mutable map = Dictionary<string, CachedItem<'T, 'State, 'Residue, 'Result>>()
-#else
         static let mutable map = System.Collections.Concurrent.ConcurrentDictionary<string, CachedItem<'T, 'State, 'Residue, 'Result>>()
         static let getOrAddFunc = Func<_, _>(generate)
-#endif
-
-        static let get(key : string) = 
-#if FX_NO_CONCURRENT_DICTIONARY
-            lock map (fun () ->
-                let mutable res = Unchecked.defaultof<_>
-                if map.TryGetValue(key, &res) then res
-                else
-                let v = 
-#if DEBUG
-                    try 
-                        generate(key)
-                    with
-                        e -> raise (ArgumentException("PRINTF::" + key, e))
-#else
-                        generate(key)
-#endif
-                map.Add(key, v)
-                v
-            )
-#else
-            map.GetOrAdd(key, getOrAddFunc)
-#endif
+        static let get(key : string) = map.GetOrAdd(key, getOrAddFunc)
 
         [<DefaultValue>]
-#if !FX_NO_THREAD_STATIC
         [<ThreadStatic>]
-#endif
         static val mutable private last : string * CachedItem<'T, 'State, 'Residue, 'Result>
     
         static member Get(key : Format<'T, 'State, 'Residue, 'Result>) =
@@ -1333,11 +1300,14 @@ module internal PrintfImpl =
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Printf =
 
+    open System
+    open System.IO
+    open System.Text
     open PrintfImpl
 
-    type BuilderFormat<'T,'Result>    = Format<'T, System.Text.StringBuilder, unit, 'Result>
+    type BuilderFormat<'T,'Result>    = Format<'T, StringBuilder, unit, 'Result>
     type StringFormat<'T,'Result>     = Format<'T, unit, string, 'Result>
-    type TextWriterFormat<'T,'Result> = Format<'T, System.IO.TextWriter, unit, 'Result>
+    type TextWriterFormat<'T,'Result> = Format<'T, TextWriter, unit, 'Result>
     type BuilderFormat<'T>     = BuilderFormat<'T,unit>
     type StringFormat<'T>      = StringFormat<'T,string>
     type TextWriterFormat<'T>  = TextWriterFormat<'T,unit>
@@ -1352,56 +1322,56 @@ module Printf =
     let sprintf (format : StringFormat<'T>)  = ksprintf id format
 
     [<CompiledName("PrintFormatThen")>]
-    let kprintf f fmt = ksprintf f fmt
+    let kprintf continuation format = ksprintf continuation format
 
     [<CompiledName("PrintFormatToStringBuilderThen")>]
-    let kbprintf f (buf: System.Text.StringBuilder) fmt = 
-        doPrintf fmt (fun _ -> 
-            StringBuilderPrintfEnv(f, buf) :> PrintfEnv<_, _, _> 
+    let kbprintf continuation (builder: StringBuilder) format = 
+        doPrintf format (fun _ -> 
+            StringBuilderPrintfEnv(continuation, builder) :> PrintfEnv<_, _, _> 
         )
     
     [<CompiledName("PrintFormatToTextWriterThen")>]
-    let kfprintf f os fmt =
-        doPrintf fmt (fun _ -> 
-            TextWriterPrintfEnv(f, os) :> PrintfEnv<_, _, _>
+    let kfprintf continuation textWriter format =
+        doPrintf format (fun _ -> 
+            TextWriterPrintfEnv(continuation, textWriter) :> PrintfEnv<_, _, _>
         )
 
     [<CompiledName("PrintFormatToStringBuilder")>]
-    let bprintf buf fmt  = kbprintf ignore buf fmt 
+    let bprintf builder format  = kbprintf ignore builder format 
 
     [<CompiledName("PrintFormatToTextWriter")>]
-    let fprintf (os: System.IO.TextWriter) fmt  = kfprintf ignore os fmt 
+    let fprintf (textWriter: TextWriter) format  = kfprintf ignore textWriter format 
 
     [<CompiledName("PrintFormatLineToTextWriter")>]
-    let fprintfn (os: System.IO.TextWriter) fmt  = kfprintf (fun _ -> os.WriteLine()) os fmt
+    let fprintfn (textWriter: TextWriter) format  = kfprintf (fun _ -> textWriter.WriteLine()) textWriter format
 
     [<CompiledName("PrintFormatToStringThenFail")>]
-    let failwithf fmt = ksprintf failwith fmt
+    let failwithf format = ksprintf failwith format
 
 #if !FX_NO_SYSTEM_CONSOLE
 #if EXTRAS_FOR_SILVERLIGHT_COMPILER
     [<CompiledName("PrintFormat")>]
-    let printf fmt = fprintf (!outWriter) fmt
+    let printf format = fprintf (!outWriter) format
 
     [<CompiledName("PrintFormatToError")>]
-    let eprintf fmt = fprintf (!errorWriter) fmt
+    let eprintf format = fprintf (!errorWriter) format
 
     [<CompiledName("PrintFormatLine")>]
-    let printfn fmt = fprintfn (!outWriter) fmt
+    let printfn format = fprintfn (!outWriter) format
 
     [<CompiledName("PrintFormatLineToError")>]
-    let eprintfn fmt = fprintfn (!errorWriter) fmt
+    let eprintfn format = fprintfn (!errorWriter) format
 #else
     [<CompiledName("PrintFormat")>]
-    let printf fmt = fprintf System.Console.Out fmt
+    let printf format = fprintf Console.Out format
 
     [<CompiledName("PrintFormatToError")>]
-    let eprintf fmt = fprintf System.Console.Error fmt
+    let eprintf format = fprintf Console.Error format
 
     [<CompiledName("PrintFormatLine")>]
-    let printfn fmt = fprintfn System.Console.Out fmt
+    let printfn format = fprintfn Console.Out format
 
     [<CompiledName("PrintFormatLineToError")>]
-    let eprintfn fmt = fprintfn System.Console.Error fmt
+    let eprintfn format = fprintfn Console.Error format
 #endif
 #endif 
