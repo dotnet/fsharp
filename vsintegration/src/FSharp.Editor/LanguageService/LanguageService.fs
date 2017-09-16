@@ -231,21 +231,22 @@ type internal FSharpProjectOptionsManager
                     Some(reporter:> Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2)
 
                 {new Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite with
-                    member __.SourceFilesOnDisk() = this.GetProjectInfo(project.FilePath) |> fst
-                    member __.DescriptionOfProject() = project.Name
-                    member __.CompilerFlags() =
+                    member __.CompilationSourceFiles = this.GetProjectInfo(project.FilePath) |> fst
+                    member __.CompilationOptions =
                         let _,references,options = this.GetProjectInfo(project.FilePath)
                         Array.concat [options; references |> Array.map(fun r -> "-r:" + r)]
-                    member __.ProjectFileName() = project.FilePath
+                    member __.CompilationReferences = this.GetProjectInfo(project.FilePath) |> thrd
+                    member site.CompilationBinOutputPath = site.CompilationOptions |> Array.tryPick (fun s -> if s.StartsWith("-o:") then Some s.[3..] else None)
+                    member __.Description = project.Name
+                    member __.ProjectFileName = project.FilePath
                     member __.AdviseProjectSiteChanges(_,_) = ()
                     member __.AdviseProjectSiteCleaned(_,_) = ()
                     member __.AdviseProjectSiteClosed(_,_) = ()
                     member __.IsIncompleteTypeCheckEnvironment = false
                     member __.TargetFrameworkMoniker = ""
-                    member __.ProjectGuid =  project.Id.Id.ToString()
+                    member __.ProjectGuid = project.Id.Id.ToString()
                     member __.LoadTime = System.DateTime.Now
                     member __.ProjectProvider = Some iProvideProjectSite
-                    member __.AssemblyReferences() = this.GetProjectInfo(project.FilePath) |> thrd
                     member __.BuildErrorReporter with get () = errorReporter and 
                                                       set (v) = errorReporter <- v
                 }
@@ -483,7 +484,7 @@ type
                 projectContext.RemoveSourceFile(file)
                 updated <- true
 
-        let updatedRefs = site.AssemblyReferences() |> wellFormedFilePathSetIgnoreCase
+        let updatedRefs = site.CompilationReferences |> wellFormedFilePathSetIgnoreCase
         let originalRefs = project.GetCurrentMetadataReferences() |> Seq.map (fun ref -> ref.FilePath) |> wellFormedFilePathSetIgnoreCase
 
         for ref in updatedRefs do
