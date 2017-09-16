@@ -192,13 +192,27 @@ type internal ProjectSitesAndFiles() =
         if SourceFile.MustBeSingleFileProject(filename) then 
             Debug.Assert(false, ".fsx or .fsscript should have been treated as implicit project")
             failwith ".fsx or .fsscript should have been treated as implicit project"
-
         new ProjectSiteOfSingleFile(filename) :> IProjectSite
-    
-    member art.SetSource(buffer:IVsTextLines, source:IFSharpSource) : unit =
+
+    static member GetReferencedProjectSites(projectSite:IProjectSite, serviceProvider:System.IServiceProvider) =
+        referencedProvideProjectSites (projectSite, serviceProvider)
+        |> Seq.map (fun (_, ps) -> ps.GetProjectSite())
+        |> Seq.toArray
+
+    member art.SetSource_DEPRECATED(buffer:IVsTextLines, source:IFSharpSource_DEPRECATED) : unit =
         let mutable guid = sourceUserDataGuid
         (buffer :?> IVsUserData).SetData(&guid, source) |> ErrorHandler.ThrowOnFailure |> ignore
 
+    /// Create project options for this project site.
+    static member GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite:IProjectSite,filename,extraProjectInfo,serviceProvider:System.IServiceProvider, useUniqueStamp) =
+        match projectSite with
+        | :? IHaveCheckOptions as hco -> hco.OriginalCheckOptions()
+        | _ ->
+            getProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, projectSite, filename, extraProjectInfo, serviceProvider, useUniqueStamp)
+
+    /// Create project site for these project options
+    static member CreateProjectSiteForScript (filename, referencedProjectFileNames, checkOptions) = 
+        ProjectSiteOfScriptFile (filename, referencedProjectFileNames, checkOptions) :> IProjectSite
 
     member art.TryGetSourceOfFile_DEPRECATED(rdt:IVsRunningDocumentTable, filename:string) : IFSharpSource_DEPRECATED option =
         match VsRunningDocumentTable.FindDocumentWithoutLocking(rdt,filename) with 
