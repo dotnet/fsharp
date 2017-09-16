@@ -1,4 +1,4 @@
-// #Regression #NoMT #Printing #RequiresENU #NETFX40Only 
+// #Regression #NoMT #Printing #RequiresENU  
 // Regression test for FSharp1.0:3981 - Lazy<unit> gets NullReferenceException when displayed
 // <Expects status="success">val a : Lazy<unit> = Value is not created</Expects>
 // <Expects status="success">val b : unit list = \[\(\)\]</Expects>

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.LowerCallsAndSeqs 
 
@@ -179,6 +179,39 @@ let LowerSeqExpr g amap overallExpr =
         | Expr.App(Expr.Val (vref,_,_),_f0ty,[elemTy],[e],_m) when valRefEq g vref g.seq_vref ->  Some (e,elemTy) 
         | _ -> None
 
+    let RepresentBindingAsStateMachineLocal (bind: Binding) res2 m = 
+        // printfn "found letrec state variable %s" bind.Var.DisplayName
+        let (TBind(v,e,sp)) = bind
+        let sp,spm = 
+            match sp with 
+            | SequencePointAtBinding m -> SequencePointsAtSeq,m 
+            | _ -> SuppressSequencePointOnExprOfSequential,e.Range
+        let vref = mkLocalValRef v
+        { res2 with
+            phase2 = (fun ctxt -> 
+                let generate2,dispose2,checkDispose2 = res2.phase2 ctxt
+                let generate = 
+                    mkCompGenSequential m 
+                        (mkSequential sp m 
+                            (mkValSet spm vref e) 
+                            generate2) 
+                        // zero out the current value to free up its memory
+                        (mkValSet m vref (mkDefault (m,vref.Type)))  
+                let dispose = dispose2
+                let checkDispose = checkDispose2
+                generate,dispose,checkDispose)
+            stateVars = vref::res2.stateVars }
+
+    let RepresentBindingsAsLifted mkBinds res2 = 
+        // printfn "found top level let  "
+        { res2 with
+            phase2 = (fun ctxt -> 
+                let generate2,dispose2,checkDispose2 = res2.phase2 ctxt
+                let generate = mkBinds generate2
+                let dispose = dispose2
+                let checkDispose = checkDispose2
+                generate,dispose, checkDispose) }
+
     let rec Lower  
                  isWholeExpr 
                  isTailCall // is this sequence in tailcall position?
@@ -220,6 +253,7 @@ let LowerSeqExpr g amap overallExpr =
         | SeqDelay(e,_elemTy) -> 
             // printfn "found Seq.delay"
             Lower isWholeExpr isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel e // note, using 'isWholeExpr' here prevents 'seq { yield! e }' and 'seq { 0 .. 1000 }' from being compiled
+
         | SeqAppend(e1,e2,m) -> 
             // printfn "found Seq.append"
             match Lower false false noDisposeContinuationLabel currentDisposeContinuationLabel e1, 
@@ -239,6 +273,7 @@ let LowerSeqExpr g amap overallExpr =
                        significantClose = res1.significantClose || res2.significantClose }
             | _ -> 
                 None
+
         | SeqWhile(e1,e2,m) -> 
             // printfn "found Seq.while"
             match Lower false false noDisposeContinuationLabel currentDisposeContinuationLabel e2 with 
@@ -254,9 +289,11 @@ let LowerSeqExpr g amap overallExpr =
                        significantClose = res2.significantClose }
             | _ -> 
                 None
+
         | SeqUsing(resource,v,body,elemTy,m) -> 
             // printfn "found Seq.using"
             Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel (mkLet (SequencePointAtBinding body.Range) m v resource (mkCallSeqFinally g m elemTy body (mkUnitDelayLambda g m (mkCallDispose g m v.Type (exprForVal m v))))) 
+
         | SeqFor(inp,v,body,genElemTy,m) -> 
             // printfn "found Seq.for"
             let inpElemTy = v.Type
@@ -272,6 +309,7 @@ let LowerSeqExpr g amap overallExpr =
                        (mkCallSeqGenerated g m genElemTy (mkUnitDelayLambda g m (callNonOverloadedMethod g amap m "MoveNext" inpEnumTy [enume]))
                           (mkInvisibleLet m v (callNonOverloadedMethod g amap m "get_Current" inpEnumTy [enume])
                               body))))
+
         | SeqTryFinally(e1,compensation,m) -> 
             // printfn "found Seq.try/finally"
             let innerDisposeContinuationLabel = IL.generateCodeLabel()
@@ -318,6 +356,7 @@ let LowerSeqExpr g amap overallExpr =
                        significantClose = true }
             | _ -> 
                 None
+
         | SeqEmpty m -> 
             // printfn "found Seq.empty"
             Some { phase2 = (fun _ -> 
@@ -328,6 +367,7 @@ let LowerSeqExpr g amap overallExpr =
                    labels = []
                    stateVars = [] 
                    significantClose = false }
+
         | Expr.Sequential(x1,x2,NormalSeq,ty,m) -> 
             match Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel x2 with 
             | Some res2-> 
@@ -343,41 +383,43 @@ let LowerSeqExpr g amap overallExpr =
 
         | Expr.Let(bind,e2,m,_) 
               // Restriction: compilation of sequence expressions containing non-toplevel constrained generic functions is not supported
-              when  not bind.Var.IsCompiledAsTopLevel &&
-                    not (IsGenericValWithGenericContraints g bind.Var) -> 
+              when  bind.Var.IsCompiledAsTopLevel || not (IsGenericValWithGenericContraints g bind.Var) -> 
             match Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel e2 with 
             | Some res2 ->
                 if bind.Var.IsCompiledAsTopLevel then 
-                    // printfn "found top level let  "
-                    Some { res2 with
-                            phase2 = (fun ctxt -> 
-                                let generate2,dispose2,checkDispose2 = res2.phase2 ctxt
-                                let generate = mkLetBind m bind generate2
-                                let dispose = dispose2
-                                let checkDispose = checkDispose2
-                                generate,dispose, checkDispose) }
+                    Some (RepresentBindingsAsLifted (mkLetBind m bind) res2)
                 else
                     // printfn "found state variable %s" bind.Var.DisplayName
-                    let (TBind(v,e,sp)) = bind
-                    let sp,spm = 
-                        match sp with 
-                        | SequencePointAtBinding m -> SequencePointsAtSeq,m 
-                        | _ -> SuppressSequencePointOnExprOfSequential,e.Range
-                    let vref = mkLocalValRef v
-                    Some { res2 with
-                            phase2 = (fun ctxt -> 
-                                let generate2,dispose2,checkDispose2 = res2.phase2 ctxt
-                                let generate = 
-                                    mkCompGenSequential m 
-                                        (mkSequential sp m 
-                                            (mkValSet spm vref e) 
-                                            generate2) 
-                                        // zero out the current value to free up its memory
-                                        (mkValSet m vref (mkDefault (m,vref.Type)))  
-                                let dispose = dispose2
-                                let checkDispose = checkDispose2
-                                generate,dispose,checkDispose)
-                            stateVars = vref::res2.stateVars }
+                    Some (RepresentBindingAsStateMachineLocal bind res2 m)
+            | None -> 
+                None
+
+        | Expr.LetRec(binds,e2,m,_) 
+              when  // Restriction: only limited forms of "let rec" in sequence expressions can be handled by assignment to state local values
+
+                    (let recvars = valsOfBinds binds  |> List.map (fun v -> (v,0)) |> ValMap.OfList
+                     binds |> List.forall (fun bind -> 
+                         // Rule 1 - IsCompiledAsTopLevel require no state local value
+                         bind.Var.IsCompiledAsTopLevel || 
+                         // Rule 2 - funky constrained local funcs not allowed
+                         not (IsGenericValWithGenericContraints g bind.Var)) &&
+                     binds |> List.count (fun bind -> 
+                          // Rule 3 - Recursive non-lambda and repack values are allowed
+                          match stripExpr bind.Expr with 
+                          | Expr.Lambda _ 
+                          | Expr.TyLambda _ -> false
+                          // "let v = otherv" bindings get produced for environment packing by InnerLambdasToTopLevelFuncs.fs, we can accept and compiler these ok
+                          | Expr.Val(v,_,_) when not (recvars.ContainsVal v.Deref) -> false
+                          | _ -> true) <= 1)  -> 
+
+            match Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel e2 with 
+            | Some res2 ->
+                let topLevelBinds, nonTopLevelBinds = binds |> List.partition (fun bind -> bind.Var.IsCompiledAsTopLevel)  
+                // Represent the closure-capturing values as state machine locals. They may still be recursively-referential
+                let res3 = (res2,nonTopLevelBinds) ||> List.fold (fun acc bind -> RepresentBindingAsStateMachineLocal bind acc m)
+                // Represent the non-closure-capturing values as ordinary bindings on the expression.
+                let res4 = if topLevelBinds.IsEmpty then res3 else RepresentBindingsAsLifted (mkLetRecBinds m topLevelBinds) res3
+                Some res4
             | None -> 
                 None
 

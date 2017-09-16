@@ -44,8 +44,9 @@ let getCompiledFilenames =
         else None)
     >> Array.distinct
 
+(*
 [<Test>]
-let ``Project file parsing example 1 Default Configuration`` () = 
+  let ``Project file parsing example 1 Default Configuration`` () = 
     let projectFile = __SOURCE_DIRECTORY__ + @"/FSharp.Compiler.Service.Tests.fsproj"
     let options = ProjectCracker.GetProjectOptionsFromProjectFile(projectFile)
 
@@ -85,6 +86,7 @@ let ``Project file parsing example 1 Default configuration relative path`` () =
     checkOption options.OtherOptions "--flaterrors"
     checkOption options.OtherOptions "--simpleresolution"
     checkOption options.OtherOptions "--noframework"
+*)
 
 [<Test>]
 let ``Project file parsing VS2013_FSharp_Portable_Library_net45``() = 
@@ -149,7 +151,7 @@ let ``Project file parsing -- output file``() =
   let p = ProjectCracker.GetProjectOptionsFromProjectFile(__SOURCE_DIRECTORY__ + @"/data/Test1.fsproj")
 
   let expectedOutputPath =
-    normalizePath (__SOURCE_DIRECTORY__ + "/data/Test1/bin/Debug/Test1.dll")
+    normalizePath (__SOURCE_DIRECTORY__ + "/data/bin/Debug/Test1.dll")
 
   p.OtherOptions
   |> getOutputFile
@@ -371,6 +373,7 @@ let ``Project file parsing -- PCL profile259 project``() =
 
     checkOption options.OtherOptions "--targetprofile:netcore"
 
+(*
 [<Test>]
 let ``Project file parsing -- Exe with a PCL reference``() =
 
@@ -390,7 +393,7 @@ let ``Project file parsing -- Exe with a PCL reference``() =
     references |> should contain "mscorlib.dll"
     references |> should contain "System.Reflection.dll"
     references |> should contain "System.Reflection.Emit.Lightweight.dll"
-
+*)
 
 [<Test>]
 let ``Project file parsing -- project file contains project reference to out-of-solution project and is used in release mode``() =

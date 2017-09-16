@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.81.0
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -22,7 +22,7 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 00 01 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 01 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
@@ -36,13 +36,13 @@
   // Offset: 0x000001B0 Length: 0x00000072
 }
 .module Seq_for_all01.exe
-// MVID: {5775B182-D30D-BA80-A745-038382B17557}
+// MVID: {59B19213-D30D-BA80-A745-03831392B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00F10000
+// Image base: 0x02A60000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -73,23 +73,22 @@
       .maxstack  8
       .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
       .line 5,5 : 31,47 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Misc\\Seq_for_all01.fs'
-      IL_0000:  nop
-      IL_0001:  ldc.i4.1
-      IL_0002:  brtrue.s   IL_0006
+      IL_0000:  ldc.i4.1
+      IL_0001:  brtrue.s   IL_0005
 
-      IL_0004:  br.s       IL_0008
+      IL_0003:  br.s       IL_0007
 
-      IL_0006:  br.s       IL_000b
+      IL_0005:  br.s       IL_000b
 
-      .line 5,5 : 48,50
-      .line 100001,100001 : 0,0
+      .line 5,5 : 48,50 ''
+      IL_0007:  nop
+      .line 100001,100001 : 0,0 ''
       IL_0008:  nop
       IL_0009:  br.s       IL_000c
 
-      .line 100001,100001 : 0,0
-      .line 100001,100001 : 0,0
+      .line 100001,100001 : 0,0 ''
       IL_000b:  nop
-      .line 6,6 : 31,35
+      .line 6,6 : 31,35 ''
       IL_000c:  ldc.i4.1
       IL_000d:  ret
     } // end of method q@4::Invoke
@@ -124,22 +123,21 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       35 (0x23)
+    // Code size       29 (0x1d)
     .maxstack  5
     .locals init ([0] bool q)
-    .line 4,7 : 1,28
-    IL_0000:  nop
-    IL_0001:  newobj     instance void Seq_for_all01/q@4::.ctor()
-    IL_0006:  ldc.i4.1
-    IL_0007:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
-    IL_000c:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
+    .line 4,7 : 1,28 ''
+    IL_0000:  newobj     instance void Seq_for_all01/q@4::.ctor()
+    IL_0005:  ldc.i4.1
+    IL_0006:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::get_Empty()
+    IL_000b:  call       class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0> class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<int32>::Cons(!0,
                                                                                                                                                                     class [FSharp.Core]Microsoft.FSharp.Collections.FSharpList`1<!0>)
-    IL_0011:  call       bool [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ForAll<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>,
+    IL_0010:  call       bool [FSharp.Core]Microsoft.FSharp.Collections.SeqModule::ForAll<int32>(class [FSharp.Core]Microsoft.FSharp.Core.FSharpFunc`2<!!0,bool>,
                                                                                                  class [mscorlib]System.Collections.Generic.IEnumerable`1<!!0>)
-    IL_0016:  dup
-    IL_0017:  stsfld     bool '<StartupCode$Seq_for_all01>'.$Seq_for_all01::q@4
-    IL_001c:  stloc.0
-    IL_001d:  ret
+    IL_0015:  dup
+    IL_0016:  stsfld     bool '<StartupCode$Seq_for_all01>'.$Seq_for_all01::q@4
+    IL_001b:  stloc.0
+    IL_001c:  ret
   } // end of method $Seq_for_all01::main@
 
 } // end of class '<StartupCode$Seq_for_all01>'.$Seq_for_all01

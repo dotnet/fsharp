@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Primary relations on types and signatures, with the exception of
 /// constraint solving and method overload resolution.
@@ -249,6 +249,11 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                   let res = 
                       (implArgInfos,sigArgInfos) ||> List.forall2 (List.forall2 (fun implArgInfo sigArgInfo -> 
                           checkAttribs aenv implArgInfo.Attribs sigArgInfo.Attribs (fun attribs -> 
+                              match implArgInfo.Name, sigArgInfo.Name with 
+                              | Some iname, Some sname when sname.idText <> iname.idText -> 
+                                   warning(Error (FSComp.SR.ArgumentsInSigAndImplMismatch(sname.idText, iname.idText),iname.idRange))
+                              | _ -> ()
+                              
                               implArgInfo.Name <- sigArgInfo.Name
                               implArgInfo.Attribs <- attribs))) && 
 

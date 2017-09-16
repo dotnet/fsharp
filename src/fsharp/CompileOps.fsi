@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Coordinating compiler operations - configuration, loading initial context, reporting errors etc.
 module internal Microsoft.FSharp.Compiler.CompileOps
@@ -761,7 +761,7 @@ val ReportWarningAsError : globalWarnLevel: int * specificWarnOff: int list * sp
 
 [<RequireQualifiedAccess>]
 type CodeContext =
-    | Evaluation
+    | CompilationAndEvaluation
     | Compilation
     | Editing
 

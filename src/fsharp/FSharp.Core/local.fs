@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 
 namespace Microsoft.FSharp.Core
@@ -244,13 +244,13 @@ module internal List =
             setFreshConsTail cons cons2
             mapToFreshConsTail cons2 f t
 
-    let map f x = 
+    let map mapping x = 
         match x with
         | [] -> []
-        | [h] -> [f h]
+        | [h] -> [mapping h]
         | h::t -> 
-            let cons = freshConsNoTail (f h)
-            mapToFreshConsTail cons f t
+            let cons = freshConsNoTail (mapping h)
+            mapToFreshConsTail cons mapping t
             cons
 
     let rec mapiToFreshConsTail cons (f:OptimizedClosures.FSharpFunc<_,_,_>) x i = 
@@ -283,11 +283,11 @@ module internal List =
         | [],xs2 -> invalidArgDifferentListLength "list1" "list2" xs2.Length
         | xs1,[] -> invalidArgDifferentListLength "list2" "list1" xs1.Length
 
-    let map2 f xs1 xs2 = 
+    let map2 mapping xs1 xs2 = 
         match xs1,xs2 with
         | [],[] -> []
         | h1::t1, h2::t2 -> 
-            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+            let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(mapping)
             let cons = freshConsNoTail (f.Invoke(h1,h2))
             map2ToFreshConsTail cons f t1 t2
             cons
@@ -305,11 +305,11 @@ module internal List =
         | xs1,xs2,xs3 -> 
             invalidArg3ListsDifferent "list1" "list2" "list3" xs1.Length xs2.Length xs3.Length 
 
-    let map3 f xs1 xs2 xs3 = 
+    let map3 mapping xs1 xs2 xs3 = 
         match xs1,xs2,xs3 with
         | [],[],[] -> []
         | h1::t1, h2::t2, h3::t3 -> 
-            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
+            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(mapping)
             let cons = freshConsNoTail (f.Invoke(h1,h2,h3))
             map3ToFreshConsTail cons f t1 t2 t3
             cons
@@ -399,15 +399,15 @@ module internal List =
             let s' = mapFoldToFreshConsTail cons f s' t
             cons, s'
 
-    let rec forall f xs1 = 
+    let rec forall predicate xs1 = 
         match xs1 with 
         | [] -> true
-        | h1::t1 -> f h1 && forall f t1
+        | h1::t1 -> predicate h1 && forall predicate t1
 
-    let rec exists f xs1 = 
+    let rec exists predicate xs1 = 
         match xs1 with 
         | [] -> false
-        | h1::t1 -> f h1 || exists f t1
+        | h1::t1 -> predicate h1 || exists predicate t1
 
     let rec revAcc xs acc = 
         match xs with 
@@ -487,20 +487,20 @@ module internal List =
             else 
                 filterToFreshConsTail cons f t
       
-    let rec filter f l = 
+    let rec filter predicate l = 
         match l with 
         | [] -> l
-        | h :: ([] as nil) -> if f h then l else nil
+        | h :: ([] as nil) -> if predicate h then l else nil
         | h::t -> 
-            if f h then   
+            if predicate h then   
                 let cons = freshConsNoTail h 
-                filterToFreshConsTail cons f t
+                filterToFreshConsTail cons predicate t
                 cons
             else 
-                filter f t
+                filter predicate t
 
-    let iteri f x = 
-        let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(f)
+    let iteri action x = 
+        let f = OptimizedClosures.FSharpFunc<_,_,_>.Adapt(action)
         let rec loop n x = 
             match x with 
             | [] -> () 
@@ -675,15 +675,15 @@ module internal List =
                 setFreshConsTail consR cons'
                 partitionToFreshConsTailRight cons' p t
 
-    let partition p l = 
+    let partition predicate l = 
         match l with 
         | [] -> l,l
-        | h :: ([] as nil) -> if p h then l,nil else nil,l
+        | h :: ([] as nil) -> if predicate h then l,nil else nil,l
         | h::t -> 
             let cons = freshConsNoTail h 
-            if p h 
-            then cons, (partitionToFreshConsTailLeft cons p t)
-            else (partitionToFreshConsTailRight cons p t), cons
+            if predicate h 
+            then cons, (partitionToFreshConsTailLeft cons predicate t)
+            else (partitionToFreshConsTailRight cons predicate t), cons
 
     let rec truncateToFreshConsTail cons count list =
         if count = 0 then setFreshConsTail cons [] else
@@ -940,31 +940,31 @@ module internal Array =
 
     let inline indexNotFound() = raise (KeyNotFoundException(SR.GetString(SR.keyNotFoundAlt)))
 
-    let findBack f (array: _[]) =
+    let findBack predicate (array: _[]) =
         let rec loop i =
             if i < 0 then indexNotFound()
-            elif f array.[i] then array.[i]
+            elif predicate array.[i] then array.[i]
             else loop (i - 1)
         loop (array.Length - 1)
 
-    let tryFindBack f (array: _[]) =
+    let tryFindBack predicate (array: _[]) =
         let rec loop i =
             if i < 0 then None
-            elif f array.[i] then Some array.[i]
+            elif predicate array.[i] then Some array.[i]
             else loop (i - 1)
         loop (array.Length - 1)
 
-    let findIndexBack f (array: _[]) =
+    let findIndexBack predicate (array: _[]) =
         let rec loop i =
             if i < 0 then indexNotFound()
-            elif f array.[i] then i
+            elif predicate array.[i] then i
             else loop (i - 1)
         loop (array.Length - 1)
 
-    let tryFindIndexBack f (array: _[]) =
+    let tryFindIndexBack predicate (array: _[]) =
         let rec loop i =
             if i < 0 then None
-            elif f array.[i] then Some i
+            elif predicate array.[i] then Some i
             else loop (i - 1)
         loop (array.Length - 1)
 
@@ -1016,13 +1016,13 @@ module internal Array =
             res.[i - start] <- state
         res
 
-    let unstableSortInPlaceBy (f: 'T -> 'U) (array : array<'T>) =
+    let unstableSortInPlaceBy (projection: 'T -> 'U) (array : array<'T>) =
         let len = array.Length 
         if len < 2 then () 
         else
             let keys = zeroCreateUnchecked array.Length
             for i = 0 to array.Length - 1 do 
-                keys.[i] <- f array.[i]
+                keys.[i] <- projection array.[i]
             Array.Sort<_,_>(keys, array, fastComparerForArraySort())
 
     let unstableSortInPlace (array : array<'T>) = 
@@ -1061,14 +1061,14 @@ module internal Array =
         let c = LanguagePrimitives.FastGenericComparer<'Key>
         stableSortWithKeysAndComparer cFast c array keys
 
-    let stableSortInPlaceBy (f: 'T -> 'U) (array : array<'T>) =
+    let stableSortInPlaceBy (projection: 'T -> 'U) (array : array<'T>) =
         let len = array.Length 
         if len < 2 then () 
         else
             // 'keys' is an array storing the projected keys
             let keys = zeroCreateUnchecked array.Length
             for i = 0 to array.Length - 1 do 
-                keys.[i] <- f array.[i]
+                keys.[i] <- projection array.[i]
             stableSortWithKeys array keys
 
     let stableSortInPlace (array : array<'T>) =

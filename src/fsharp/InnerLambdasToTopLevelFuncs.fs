@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.InnerLambdasToTopLevelFuncs 
 
@@ -958,12 +958,16 @@ module Pass4_RewriteAssembly =
 #endif
        
     /// Wrap preDecs (in order) over an expr - use letrec/let as approp 
-    let MakePreDec  m (isRec,binds) expr = 
+    let MakePreDec  m (isRec,binds: Bindings) expr = 
         if isRec=IsRec then 
-            mkLetRecBinds m binds expr
+            // By definition top level bindings don't refer to non-top level bindings, so we can build them in two parts
+            let topLevelBinds, nonTopLevelBinds = binds |> List.partition (fun bind -> bind.Var.IsCompiledAsTopLevel)  
+            mkLetRecBinds m topLevelBinds (mkLetRecBinds m nonTopLevelBinds expr)
         else 
             mkLetsFromBindings  m binds expr
 
+    /// Must MakePreDecs around every construct that could do EnterInner (which filters TLR decs).
+    /// i.e. let,letrec (bind may...), ilobj, lambda, tlambda.
     let MakePreDecs m preDecs expr = List.foldBack (MakePreDec m) preDecs expr
 
     let RecursivePreDecs pdsA pdsB =
@@ -1099,11 +1103,6 @@ module Pass4_RewriteAssembly =
     // pass4: pass (over expr)
     //-------------------------------------------------------------------------
 
-    /// Must WrapPreDecs around every construct that could do EnterInner (which filters TLR decs).
-    /// i.e. let,letrec (bind may...), ilobj, lambda, tlambda.
-    let WrapPreDecs m pds x =
-        MakePreDecs m pds x
-
     /// At bindings, fixup any TLR bindings.
     /// At applications, fixup calls  if they are arity-met instances of TLR.
     /// At free vals,    fixup 0-call if it is an arity-met constant.
@@ -1146,7 +1145,7 @@ module Pass4_RewriteAssembly =
                     (tType,objExprs'),z') z iimpls   
             let expr = Expr.Obj(newUnique(),ty,basev,basecall,overrides,iimpls,m)
             let pds,z = ExtractPreDecs z
-            WrapPreDecs m pds expr,z (* if TopLevel, lift preDecs over the ilobj expr *)
+            MakePreDecs m pds expr,z (* if TopLevel, lift preDecs over the ilobj expr *)
 
         // lambda, tlambda - explicit lambda terms 
         | Expr.Lambda(_,ctorThisValOpt,baseValOpt,argvs,body,m,rty) ->
@@ -1154,14 +1153,14 @@ module Pass4_RewriteAssembly =
             let body,z = TransExpr penv z body
             let z = ExitInner z
             let pds,z = ExtractPreDecs z
-            WrapPreDecs m pds (rebuildLambda m ctorThisValOpt baseValOpt argvs (body,rty)),z
+            MakePreDecs m pds (rebuildLambda m ctorThisValOpt baseValOpt argvs (body,rty)),z
 
         | Expr.TyLambda(_,argtyvs,body,m,rty) ->
             let z = EnterInner z
             let body,z = TransExpr penv z body
             let z = ExitInner z
             let pds,z = ExtractPreDecs z
-            WrapPreDecs m pds (mkTypeLambda m argtyvs (body,rty)),z
+            MakePreDecs m pds (mkTypeLambda m argtyvs (body,rty)),z
 
         /// Lifting TLR out over constructs (disabled)
         /// Lift minimally to ensure the defn is not lifted up and over defns on which it depends (disabled)
@@ -1171,7 +1170,7 @@ module Pass4_RewriteAssembly =
             let targets,z = List.mapFold (TransDecisionTreeTarget penv) z targets
             // TransDecisionTreeTarget wraps EnterInner/exitInnter, so need to collect any top decs 
             let pds,z = ExtractPreDecs z
-            WrapPreDecs m pds (mkAndSimplifyMatch spBind exprm m ty dtree targets),z
+            MakePreDecs m pds (mkAndSimplifyMatch spBind exprm m ty dtree targets),z
 
         // all others - below - rewrite structurally - so boiler plate code after this point... 
         | Expr.Const _ -> expr,z (* constant wrt Val *)
@@ -1216,7 +1215,7 @@ module Pass4_RewriteAssembly =
              // tailcall
              TransLinearExpr penv z e (contf << (fun (e,z) -> 
                  let e = mkLetsFromBindings m rebinds e
-                 WrapPreDecs m pds (Expr.LetRec (binds,e,m,NewFreeVarsCache())),z))
+                 MakePreDecs m pds (Expr.LetRec (binds,e,m,NewFreeVarsCache())),z))
 
          // let - can consider the mu-let bindings as mu-letrec bindings - so like as above 
          | Expr.Let    (bind,e,m,_) ->
@@ -1232,7 +1231,7 @@ module Pass4_RewriteAssembly =
              // tailcall
              TransLinearExpr penv z e (contf << (fun (e,z) -> 
                  let e = mkLetsFromBindings m rebinds e
-                 WrapPreDecs m pds (mkLetsFromBindings m binds e),z))
+                 MakePreDecs m pds (mkLetsFromBindings m binds e),z))
 
          | LinearMatchExpr (spBind,exprm,dtree,tg1,e2,sp2,m2,ty) ->
              let dtree,z = TransDecisionTree penv z dtree

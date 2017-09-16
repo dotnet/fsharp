@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// The ILPdbWriter 
 module internal Microsoft.FSharp.Compiler.AbstractIL.ILPdbWriter 
@@ -44,7 +44,7 @@ type PdbMethodData =
       MethName:string
       LocalSignatureToken: int32
       Params: PdbLocalVar array
-      RootScope: PdbMethodScope
+      RootScope: PdbMethodScope option
       Range: (PdbSourceLoc * PdbSourceLoc) option
       SequencePoints: PdbSequencePoint array }
 

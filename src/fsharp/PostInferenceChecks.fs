@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Implements a set of checks on the TAST for a file that can only be performed after type inference
 /// is complete.
@@ -624,7 +624,7 @@ and CheckExpr (cenv:cenv) (env:env) expr (context:ByrefContext) =
         CheckExprsPermitByrefs cenv env rest
 
     | Expr.Op (c,tyargs,args,m) ->
-          CheckExprOp cenv env (c,tyargs,args,m) context
+          CheckExprOp cenv env (c,tyargs,args,m) context expr
 
     // Allow 'typeof<System.Void>' calls as a special case, the only accepted use of System.Void! 
     | TypeOfExpr cenv.g ty when isVoidTy cenv.g ty ->
@@ -734,7 +734,7 @@ and CheckInterfaceImpls cenv env baseValOpt l =
 and CheckInterfaceImpl cenv env baseValOpt (_ty,overrides) = 
     CheckMethods cenv env baseValOpt overrides 
 
-and CheckExprOp cenv env (op,tyargs,args,m) context =
+and CheckExprOp cenv env (op,tyargs,args,m) context expr =
     let limitedCheck() = 
         if env.limited then errorR(Error(FSComp.SR.chkObjCtorsCantUseExceptionHandling(), m))
     List.iter (CheckTypePermitByrefs cenv env m) tyargs
@@ -828,13 +828,13 @@ and CheckExprOp cenv env (op,tyargs,args,m) context =
         CheckTypeInstNoByrefs cenv env m tyargs        
 
     | TOp.ValFieldGetAddr rfref,tyargs,[] ->
-        if noByrefs context && cenv.reportErrors then
+        if noByrefs context && cenv.reportErrors && isByrefLikeTy cenv.g (tyOfExpr cenv.g expr) then
             errorR(Error(FSComp.SR.chkNoAddressStaticFieldAtThisPoint(rfref.FieldName), m)) 
         CheckTypeInstNoByrefs cenv env m tyargs
         // NOTE: there are no arg exprs to check in this case 
 
     | TOp.ValFieldGetAddr rfref,tyargs,[rx] ->
-        if noByrefs context && cenv.reportErrors then
+        if noByrefs context && cenv.reportErrors  && isByrefLikeTy cenv.g (tyOfExpr cenv.g expr) then
             errorR(Error(FSComp.SR.chkNoAddressFieldAtThisPoint(rfref.FieldName), m))
         // This construct is used for &(rx.rfield) and &(rx->rfield). Relax to permit byref types for rx. [See Bug 1263]. 
         CheckTypeInstNoByrefs cenv env m tyargs
@@ -849,7 +849,7 @@ and CheckExprOp cenv env (op,tyargs,args,m) context =
         CheckExprPermitByref cenv env arg1  // allow byref - it may be address-of-struct
 
     | TOp.UnionCaseFieldGetAddr (uref, _idx),tyargs,[rx] ->
-        if noByrefs context && cenv.reportErrors then
+        if noByrefs context && cenv.reportErrors  && isByrefLikeTy cenv.g (tyOfExpr cenv.g expr) then
           errorR(Error(FSComp.SR.chkNoAddressFieldAtThisPoint(uref.CaseName), m))
         CheckTypeInstNoByrefs cenv env m tyargs
         // allow rx to be byref here, for struct unions
@@ -870,12 +870,12 @@ and CheckExprOp cenv env (op,tyargs,args,m) context =
             // permit byref for lhs lvalue of readonly value 
             CheckExprPermitByref cenv env lhs
         | [ I_ldflda (fspec) | I_ldsflda (fspec) ],[lhs] ->
-            if noByrefs context && cenv.reportErrors then
+            if noByrefs context && cenv.reportErrors  && isByrefLikeTy cenv.g (tyOfExpr cenv.g expr) then
                 errorR(Error(FSComp.SR.chkNoAddressFieldAtThisPoint(fspec.Name), m))
             // permit byref for lhs lvalue
             CheckExprPermitByref cenv env lhs
         | [ I_ldelema (_,isNativePtr,_,_) ],lhsArray::indices ->
-            if not(isNativePtr) && noByrefs context && cenv.reportErrors then
+            if noByrefs context && cenv.reportErrors && not isNativePtr && isByrefLikeTy cenv.g (tyOfExpr cenv.g expr) then
                 errorR(Error(FSComp.SR.chkNoAddressOfArrayElementAtThisPoint(), m))
             // permit byref for lhs lvalue 
             CheckExprPermitByref cenv env lhsArray
@@ -982,7 +982,7 @@ and CheckLambdas isTop (memInfo: ValMemberInfo option) cenv env inlined topValIn
     | _ -> 
         // Permit byrefs for let x = ...
         CheckTypePermitByrefs cenv env m ety
-        if not inlined && isByrefLikeTy cenv.g ety then
+        if not inlined && (isByrefLikeTy cenv.g ety || isNativePtrTy cenv.g ety) then
             // allow byref to occur as RHS of byref binding. 
             CheckExprPermitByref cenv env e
         else 

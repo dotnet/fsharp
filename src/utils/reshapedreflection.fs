@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Core
 open System.Reflection
@@ -48,10 +48,6 @@ module internal ReflectionAdapters =
     let isStaticFlag    f    = hasFlag BindingFlags.Static f
     let isInstanceFlag  f    = hasFlag BindingFlags.Instance f
     let isNonPublicFlag f    = hasFlag BindingFlags.NonPublic f
-
-#if FX_NO_EXIT
-    let exit (_n:int) = failwith "System.Environment.Exit does not exist!"
-#endif
 
 #if FX_NO_TYPECODE
     [<System.Flags>]

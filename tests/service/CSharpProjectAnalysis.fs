@@ -113,3 +113,26 @@ let _ = CSharpOuterClass.InnerClass.StaticMember()
     |> shouldEqual 
           [|"InnerEnum"; "CSharpOuterClass"; "field Case1"; "InnerClass";
             "CSharpOuterClass"; "member StaticMember"; "NestedEnumClass"|]
+
+[<Test>]
+let ``Ctor test`` () =
+    let csharpAssembly = PathRelativeToTestAssembly "CSharp_Analysis.dll"
+    let content = """
+module CtorTest
+open FSharp.Compiler.Service.Tests
+
+let _ = CSharpClass(0)
+"""
+    let results, _ = getProjectReferences(content, [csharpAssembly], None, None)
+    let ctor =
+            results.GetAllUsesOfAllSymbols()
+            |> Async.RunSynchronously
+            |> Seq.map (fun su -> su.Symbol)
+            |> Seq.find (function :? FSharpMemberOrFunctionOrValue as mfv -> mfv.IsConstructor | _ -> false)
+    match (ctor :?> FSharpMemberOrFunctionOrValue).EnclosingEntity with 
+    | Some e ->
+        let members = e.MembersFunctionsAndValues
+        Seq.exists (fun (mfv : FSharpMemberOrFunctionOrValue) -> mfv.IsConstructor) members |> should be True
+        Seq.exists (fun (mfv : FSharpMemberOrFunctionOrValue) -> mfv.IsEffectivelySameAs ctor) members |> should be True
+    | None -> failwith "Expected Some for EnclosingEntity"
+
