@@ -20,7 +20,7 @@ if ERRORLEVEL 1 echo Error: failed  && goto :failure
 rem build and pack tools
 dotnet restore %__scriptpath%fsharp\FSharp.Compiler.nuget\FSharp.Compiler.nuget.BuildFromSource.fsproj
 if ERRORLEVEL 1 echo Error: failed  && goto :failure
-dotnet pack %__scriptpath%fsharp\FSharp.Compiler.nuget\FSharp.Compiler.nuget.BuildFromSource.fsproj -c release
+dotnet pack %__scriptpath%fsharp\FSharp.Compiler.nuget\FSharp.Compiler.nuget.BuildFromSource.fsproj -c debug
 if ERRORLEVEL 1 echo Error: failed  && goto :failure
 
 goto :success

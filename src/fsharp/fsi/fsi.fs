@@ -2468,7 +2468,6 @@ type FsiEvaluationSession (fsi: FsiEvaluationSessionHostConfig, argv:string[], i
     do tcConfigB.resolutionEnvironment <- ResolutionEnvironment.EditingOrCompilation false
     do tcConfigB.useSimpleResolution <- true
     do SetTargetProfile tcConfigB "netcore" // always assume System.Runtime codegen
-    //do SetTargetProfile tcConfigB "privatecorelib" // always assume System.Private.CoreLib codegen
 #endif
 
     // Preset: --optimize+ -g --tailcalls+ (see 4505)
