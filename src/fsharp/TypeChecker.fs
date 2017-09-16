@@ -518,7 +518,8 @@ let AddDeclaredTypars check typars env =
 
 [<NoEquality; NoComparison>]
 type StringFormatEnv =
-    { StringConcatMethod: MethInfo  }
+    {   StringConcatMethod: MethInfo  
+        ToStringMethod: MethInfo }
 
 /// Compilation environment for typechecking a single file in an assembly. Contains the
 /// F# and .NET modules loaded from disk, the search path, a table indicating
@@ -592,7 +593,11 @@ type cenv =
                             | _ -> false
                         | _ -> false
                         )
-                { StringConcatMethod = concat }
+                let tostring =
+                    AllMethInfosOfTypeInScope infoReader nenv (Some("ToString"), AccessibleFromEverywhere) PreferOverrides range.Zero g.obj_ty
+                    |> List.head
+                { StringConcatMethod    = concat 
+                  ToStringMethod        = tostring }
         { g = g
           amap = amap
           recUses = ValMultiMap<_>.Empty
@@ -6790,11 +6795,11 @@ and TcInterpolatedString cenv overallTy env m tpenv s  =
                 let tpenv, stringFragments = 
                     ((tpenv, []), fragments) ||> List.fold (fun (currentTpEnv, l) v ->
                         match v with
-                        | CheckFormatStrings.InterpolatedStringFragment.Text s -> currentTpEnv, ((mkString cenv.g m s)::l)
+                        | CheckFormatStrings.InterpolatedStringFragment.Text s -> currentTpEnv, ((mkString cenv.g m s, cenv.g.string_ty)::l)
                         | CheckFormatStrings.InterpolatedStringFragment.Expr s -> 
                             let synExpr = cenv.exprParser s
                             let expr, _ty, tpenv1 = TcExprOfUnknownType cenv env tpenv synExpr
-                            tpenv1, expr::l
+                            tpenv1, (expr, _ty)::l
                             //mkString cenv.g m s // TODO
                     )
                 
@@ -6802,7 +6807,10 @@ and TcInterpolatedString cenv overallTy env m tpenv s  =
                 let coersed = 
                     stringFragments
                     |> List.rev
-                    |> List.map (fun s -> mkCoerceIfNeeded cenv.g cenv.g.obj_ty cenv.g.string_ty s)
+                    |> List.map (fun (expr, _ty) -> 
+                        BuildPossiblyConditionalMethodCall cenv env NeverMutates m false cenv.stringFormatEnv.Value.ToStringMethod NormalValUse [] [expr] []
+                        |> (fun (expr, _ty) -> expr)
+                        )
 
                 let arr = Expr.Op(TOp.Array, [cenv.g.obj_ty], coersed, m)
                 let expr, tp  = 
