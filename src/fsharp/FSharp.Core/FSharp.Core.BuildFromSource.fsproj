@@ -13,7 +13,7 @@
     <OtherFlags>$(OtherFlags) --warnon:1182 --compiling-fslib --compiling-fslib-40 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
   </PropertyGroup>
 
-  <Import Project = "$(MSBuildThisFileDirectory)..\..\FSharpSource.BuildFromSource.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)..\..\FSharpSource.BuildFromSource.targets" />
   <ItemGroup>
     <EmbeddedResource Include="FSCore.resx">
       <Link>FSCore.resx</Link>
@@ -212,7 +212,7 @@
   <!-- NOTE: The optdata and sigdata files are no longer needed by the F# compiler (the information is -->
   <!-- integrated as resources into more recent FSharp.Core.dll's. However they are still produced to -->
   <!-- allow older versions of the F# compiler to reference more recent FSharp.Core packages -->
-  <Target Name="CopyToBuiltBin" BeforeTargets="AfterCompile" AfterTargets="CoreCompile" >
+  <Target Name="CopyToBuiltBin" BeforeTargets="AfterCompile" AfterTargets="CoreCompile" Condition="'$(DesignTimeBuild)' != 'true'">
     <ItemGroup>
       <BuiltProjectOutputGroupKeyOutput Include="$(IntermediateOutputPath)/FSharp.Core.sigdata" />
       <BuiltProjectOutputGroupKeyOutput Include="$(IntermediateOutputPath)/FSharp.Core.optdata" />

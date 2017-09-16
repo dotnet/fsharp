@@ -1,4 +1,4 @@
-// #Regression #Conformance #PatternMatching #Constants #NETFX40Only 
+// #Regression #Conformance #PatternMatching #Constants  
 // Pattern Matching - Simple Constants
 // Type: BigNum
 //<Expects id="FS0720" span="(10,7-10,13)" status="error">Non-primitive numeric literal constants.+</Expects>

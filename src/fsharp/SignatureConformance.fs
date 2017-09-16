@@ -249,6 +249,11 @@ type Checker(g, amap, denv, remapInfo: SignatureRepackageInfo, checkingSig) =
                   let res = 
                       (implArgInfos,sigArgInfos) ||> List.forall2 (List.forall2 (fun implArgInfo sigArgInfo -> 
                           checkAttribs aenv implArgInfo.Attribs sigArgInfo.Attribs (fun attribs -> 
+                              match implArgInfo.Name, sigArgInfo.Name with 
+                              | Some iname, Some sname when sname.idText <> iname.idText -> 
+                                   warning(Error (FSComp.SR.ArgumentsInSigAndImplMismatch(sname.idText, iname.idText),iname.idRange))
+                              | _ -> ()
+                              
                               implArgInfo.Name <- sigArgInfo.Name
                               implArgInfo.Attribs <- attribs))) && 
 

@@ -1,4 +1,4 @@
-// #Regression #NoMono #NoMT #CodeGen #EmittedIL #NETFX20Only #NETFX40Only 
+// #Regression #NoMono #NoMT #CodeGen #EmittedIL   
 // Regression test for FSHARP1.0:1881
 
 // Make sure that when targeting NetFx4.0, we follow the new pattern:

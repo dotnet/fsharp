@@ -101,6 +101,9 @@
     <Compile Include="HelpContextServiceTests.fs">
       <Link>Roslyn\HelpContextServiceTests.fs</Link>
     </Compile>
+    <Compile Include="EditorFormattingServiceTests.fs">
+      <Link>Roslyn\EditorFormattingServiceTests.fs</Link>
+    </Compile>
     <Compile Include="IndentationServiceTests.fs">
       <Link>Roslyn\IndentationServiceTests.fs</Link>
     </Compile>
@@ -138,9 +141,8 @@
       <Pattern2>{FinalDir}</Pattern2>
       <Replacement2>$([System.IO.Path]::GetFullPath('$(OutputPath)'))\</Replacement2>
     </CopyAndSubstituteText>
-    <None Include="app.runsettings" />    
+    <None Include="app.runsettings" />
   </ItemGroup>
-
   <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
@@ -156,7 +158,6 @@
     <Reference Include="WindowsBase" />
     <Reference Include="UIAutomationTypes" />
   </ItemGroup>
-  
   <ItemGroup>
     <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>
@@ -177,7 +178,7 @@
     <Reference Include="EnvDTE80.dll">
       <HintPath>$(FSharpSourcesRoot)\..\packages\EnvDTE80.8.0.1\lib\net10\EnvDTE80.dll</HintPath>
       <Private>True</Private>
-    </Reference>  
+    </Reference>
     <Reference Include="VSLangProj">
       <HintPath>$(FSharpSourcesRoot)\..\packages\VSSDK.VSLangProj.7.0.4\lib\net20\VSLangProj.dll</HintPath>
       <Private>True</Private>
@@ -272,7 +273,6 @@
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.TextManager.Interop.8.0.8.0.50727\lib\Microsoft.VisualStudio.TextManager.Interop.8.0.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Shell.Immutable.10.0.10.0.30319\lib\net40\Microsoft.VisualStudio.Shell.Immutable.10.0.dll</HintPath>
     </Reference>
