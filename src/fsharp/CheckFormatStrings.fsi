@@ -12,6 +12,7 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Tast 
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
+open Microsoft.FSharp.Compiler.Range
 
 type InterpolatedStringFragment =
     | Text of string
@@ -21,4 +22,4 @@ val ParseFormatString : Range.range -> TcGlobals -> source: string option -> fmt
 
 val TryCountFormatStringArguments : m:Range.range -> g:TcGlobals -> fmt:string -> bty:TType -> cty:TType -> int option
 
-val parseInterpolatedString : string -> InterpolatedStringFragment list
+val parseInterpolatedString : string -> range -> InterpolatedStringFragment list

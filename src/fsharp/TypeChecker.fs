@@ -6756,128 +6756,44 @@ and TcConstStringExpr cenv overallTy env m tpenv s  =
         mkString cenv.g m s, tpenv
 
 //-------------------------------------------------------------------------
-// TcConstStringExpr
+// TcConstInterpolatedStringExpr
 //------------------------------------------------------------------------- 
 
 /// Check a constant string expression. It might be a 'printf' format string 
 and TcInterpolatedString cenv overallTy env m tpenv s  =
-    //let aty = NewInferenceType ()
-    //let bty = NewInferenceType ()
-    //let cty = NewInferenceType ()
-    //let dty = NewInferenceType ()
-    //let ety = NewInferenceType ()
-    //let ty' = mkPrintfFormatTy cenv.g aty bty cty dty ety
-    //if (not (isObjTy cenv.g overallTy) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy ty') then 
-    //// Parse the format string to work out the phantom types 
-    //let source = match cenv.tcSink.CurrentSink with None -> None | Some sink -> sink.CurrentSource
-    //let normalizedString = (s.Replace("\r\n", "\n").Replace("\r", "\n"))
-        
-    //let (aty', ety'), specifierLocations = (try CheckFormatStrings.ParseFormatString m cenv.g source normalizedString bty cty dty with Failure s -> error (Error(FSComp.SR.tcUnableToParseFormatString(s), m)))
-
-    //match cenv.tcSink.CurrentSink with 
-    //| None -> () 
-    //| Some sink  -> 
-    //    for specifierLocation, numArgs in specifierLocations do
-    //        sink.NotifyFormatSpecifierLocation(specifierLocation, numArgs)
-
-    //UnifyTypes cenv env m aty aty'
-    //UnifyTypes cenv env m ety ety'
-    //mkCallNewFormat cenv.g m aty bty cty dty ety (mkString cenv.g m s), tpenv
-    //else 
-    //UnifyTypes cenv env m overallTy cenv.g.string_ty
     
-    if AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy cenv.g.string_ty then
-        let fragments = CheckFormatStrings.parseInterpolatedString s
-        if fragments.Length <> 0 then
-            match fragments with
-            | [CheckFormatStrings.InterpolatedStringFragment.Text s] -> mkString cenv.g m s, tpenv
-            | _ ->
-                let tpenv, stringFragments = 
-                    ((tpenv, []), fragments) ||> List.fold (fun (currentTpEnv, l) v ->
-                        match v with
-                        | CheckFormatStrings.InterpolatedStringFragment.Text s -> currentTpEnv, ((mkString cenv.g m s, cenv.g.string_ty)::l)
-                        | CheckFormatStrings.InterpolatedStringFragment.Expr s -> 
-                            let synExpr = cenv.exprParser s
-                            let expr, _ty, tpenv1 = TcExprOfUnknownType cenv env tpenv synExpr
-                            tpenv1, (expr, _ty)::l
-                            //mkString cenv.g m s // TODO
-                    )
+    if not <| AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy cenv.g.string_ty then
+        error(Error(FSComp.SR.nrInvalidExpression("Interpolated strings are not allowed in printf functions."), m))
+    match CheckFormatStrings.parseInterpolatedString s m with
+    | [CheckFormatStrings.InterpolatedStringFragment.Text s] -> mkString cenv.g m s, tpenv
+    | _ as fragments ->
+        let tpenv, stringFragments = 
+            ((tpenv, []), fragments) ||> List.fold (fun (currentTpEnv, l) v ->
+                match v with
+                | CheckFormatStrings.InterpolatedStringFragment.Text s -> currentTpEnv, ((mkString cenv.g m s, cenv.g.string_ty)::l)
+                | CheckFormatStrings.InterpolatedStringFragment.Expr s -> 
+                    let synExpr = cenv.exprParser s
+                    let expr, _ty, tpenv1 = TcExprOfUnknownType cenv env tpenv synExpr
+                    tpenv1, (expr, _ty)::l
+                    //mkString cenv.g m s // TODO
+            )
                 
-                // BuildFSharpMethodApp cenv.g m cenv.stringFormatEnv.Value.StringConcatMethod
-                let coersed = 
-                    stringFragments
-                    |> List.rev
-                    |> List.map (fun (expr, _ty) -> 
-                        BuildPossiblyConditionalMethodCall cenv env NeverMutates m false cenv.stringFormatEnv.Value.ToStringMethod NormalValUse [] [expr] []
-                        |> (fun (expr, _ty) -> expr)
-                        )
+        // BuildFSharpMethodApp cenv.g m cenv.stringFormatEnv.Value.StringConcatMethod
+        let coersed = 
+            stringFragments
+            |> List.rev
+            |> List.map (fun (expr, _ty) -> 
+                BuildPossiblyConditionalMethodCall cenv env NeverMutates m false cenv.stringFormatEnv.Value.ToStringMethod NormalValUse [] [expr] []
+                |> (fun (expr, _ty) -> expr)
+                )
 
-                let arr = Expr.Op(TOp.Array, [cenv.g.obj_ty], coersed, m)
-                let expr, tp  = 
-                        BuildPossiblyConditionalMethodCall cenv env NeverMutates m false cenv.stringFormatEnv.Value.StringConcatMethod NormalValUse [] [] [arr]
-                if AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy tp then
-                    expr, tpenv
-                else
-                    mkString cenv.g m s, tpenv
-         else
+        let arr = Expr.Op(TOp.Array, [cenv.g.obj_ty], coersed, m)
+        let expr, tp  = 
+                BuildPossiblyConditionalMethodCall cenv env NeverMutates m false cenv.stringFormatEnv.Value.StringConcatMethod NormalValUse [] [] [arr]
+        if AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy tp then
+            expr, tpenv
+        else
             mkString cenv.g m s, tpenv
-    else failwith "not supported yet"
-    //if (AddCxTypeEqualsTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy cenv.g.string_ty) then 
-    //    let fragments = CheckFormatStrings.parseInterpolatedString s
-    //    if fragments.Length <> 0 then
-    //        match fragments with
-    //        | [CheckFormatStrings.InterpolatedStringFragment.Text s] -> mkString cenv.g m s, tpenv
-    //        | _ ->
-    //            let tpenv, stringFragments = 
-    //                ((tpenv, []), fragments) ||> List.fold (fun (currentTpEnv, l) v ->
-    //                    match v with
-    //                    | CheckFormatStrings.InterpolatedStringFragment.Text s -> currentTpEnv, ((mkString cenv.g m s)::l)
-    //                    | CheckFormatStrings.InterpolatedStringFragment.Expr s -> 
-    //                        let synExpr = cenv.exprParser s
-    //                        let expr, _ty, tpenv1 = TcExprOfUnknownType cenv env tpenv synExpr
-    //                        tpenv1, expr::l
-    //                        //mkString cenv.g m s // TODO
-    //                )
-                
-    //            // BuildFSharpMethodApp cenv.g m cenv.stringFormatEnv.Value.StringConcatMethod
-    //            let coersed = 
-    //                stringFragments
-    //                |> List.rev
-    //                |> List.map (fun s -> mkCoerceIfNeeded cenv.g cenv.g.obj_ty cenv.g.string_ty s)
-
-    //            let arr = Expr.Op(TOp.Array, [cenv.g.obj_ty], coersed, m)
-    //            //let expr, _  = 
-    //            //    BuildPossiblyConditionalMethodCall cenv env NeverMutates m false cenv.stringFormatEnv.Value.StringConcatMethod NormalValUse [] [] [arr]
-    //            arr, tpenv
-    //    else mkString cenv.g m s, tpenv
-    //else 
-    //  let aty = NewInferenceType ()
-    //  let bty = NewInferenceType ()
-    //  let cty = NewInferenceType ()
-    //  let dty = NewInferenceType ()
-    //  let ety = NewInferenceType ()
-    //  let ty' = mkPrintfFormatTy cenv.g aty bty cty dty ety
-    //  if (not (isObjTy cenv.g overallTy) && AddCxTypeMustSubsumeTypeUndoIfFailed env.DisplayEnv cenv.css m overallTy ty') then 
-    //    // Parse the format string to work out the phantom types 
-    //    let source = match cenv.tcSink.CurrentSink with None -> None | Some sink -> sink.CurrentSource
-    //    let normalizedString = (s.Replace("\r\n", "\n").Replace("\r", "\n"))
-        
-    //    let (aty', ety'), specifierLocations = (try CheckFormatStrings.ParseFormatString m cenv.g source normalizedString bty cty dty with Failure s -> error (Error(FSComp.SR.tcUnableToParseFormatString(s), m)))
-
-    //    match cenv.tcSink.CurrentSink with 
-    //    | None -> () 
-    //    | Some sink  -> 
-    //        for specifierLocation, numArgs in specifierLocations do
-    //            sink.NotifyFormatSpecifierLocation(specifierLocation, numArgs)
-
-    //    UnifyTypes cenv env m aty aty'
-    //    UnifyTypes cenv env m ety ety'
-    //    mkCallNewFormat cenv.g m aty bty cty dty ety (mkString cenv.g m s), tpenv
-    //  else 
-    //    UnifyTypes cenv env m overallTy cenv.g.string_ty
-    //    mkString cenv.g m s, tpenv
-
-    
 
 //-------------------------------------------------------------------------
 // TcConstExpr

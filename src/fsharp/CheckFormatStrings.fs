@@ -303,29 +303,41 @@ let ParseFormatString m g source fmt bty cty dty =
     let ety = mkRefTupledTy g argtys
     (aty, ety), specifierLocations 
 
-let parseInterpolatedString (s:string) =
+let parseInterpolatedString (s:string) (m:range) =
     let rec parseLoop start fragments position =
         if position >= s.Length then
-            fragments
+            Text(s.Substring(start, position - start).Replace("{{", "{");) :: fragments
         else
             match s.[position] with
             | '{' ->
-                let rec findEndPos i count =
-                    if i >= s.Length then failwith "unterminated interpolated string"
-                    else
-                        match s.[i] with
-                        | '}' -> s.Substring(position + 1, count), (count + 2)
-                        | _ -> findEndPos (i + 1) (count + 1)
-                let str, length = findEndPos (position + 1) 0
-                let fragments = 
-                    if position <> 0 then
-                        let str = s.Substring(start, position - start)
-                        if str.Length <> 0 then Text(str) :: fragments
+                 // Allow brackets in interpolated strings through adding them twice
+                if position + 1 < s.Length && s.[position + 1] = '{' then
+                    parseLoop start fragments (position + 2)
+                else
+                    let rec findEndPos i count depth =
+                        if i >= s.Length then 
+                            ErrorLogger.error(ErrorLogger.Error(FSComp.SR.nrInvalidExpression("Unterminated interpolated-string"), m))
+                        else
+                            match s.[i] with
+                            | '}' -> 
+                                if depth = 0 then
+                                    s.Substring(position + 1, count), (count + 2)
+                                else
+                                    findEndPos (i + 1) (count + 1) (depth - 1)
+                            | '{' -> findEndPos (i + 1) (count + 1) (depth + 1)
+                            | _ -> findEndPos (i + 1) (count + 1) depth
+                    let str, length = findEndPos (position + 1) 0 0
+                    let fragments = 
+                        if position <> 0 then
+                            let str = s.Substring(start, position - start).Replace("{{", "{");
+                            if str.Length <> 0 then Text(str) :: fragments
+                            else fragments
                         else fragments
-                    else fragments
-                parseLoop (position + length) ((Expr str) :: fragments) (position + length)
+                    parseLoop (position + length) ((Expr str) :: fragments) (position + length)
             | _ -> parseLoop start fragments (position + 1)
-    parseLoop 0 [] 0 |> List.rev
+    match parseLoop 0 [] 0 |> List.rev with
+    | [] -> [ Text(s.Replace("{{", "{")) ]
+    | _ as res -> res
 
 let TryCountFormatStringArguments m g fmt bty cty =
     try
