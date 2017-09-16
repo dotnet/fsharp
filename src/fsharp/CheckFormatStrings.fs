@@ -14,6 +14,10 @@ open Microsoft.FSharp.Compiler.ConstraintSolver
 
 type FormatItem = Simple of TType | FuncAndVal 
 
+type InterpolatedStringFragment =
+    | Text of string
+    | Expr of string
+
 let copyAndFixupFormatTypar m tp = 
     let _,_,tinst = FreshenAndFixupTypars m TyparRigidity.Flexible [] [] [tp]
     List.head tinst
@@ -298,6 +302,30 @@ let ParseFormatString m g source fmt bty cty dty =
     let aty = List.foldBack (-->) argtys dty
     let ety = mkRefTupledTy g argtys
     (aty, ety), specifierLocations 
+
+let parseInterpolatedString (s:string) =
+    let rec parseLoop start fragments position =
+        if position >= s.Length then
+            fragments
+        else
+            match s.[position] with
+            | '{' ->
+                let rec findEndPos i count =
+                    if i >= s.Length then failwith "unterminated interpolated string"
+                    else
+                        match s.[i] with
+                        | '}' -> s.Substring(position + 1, count), (count + 2)
+                        | _ -> findEndPos (i + 1) (count + 1)
+                let str, length = findEndPos (position + 1) 0
+                let fragments = 
+                    if position <> 0 then
+                        let str = s.Substring(start, position - start)
+                        if str.Length <> 0 then Text(str) :: fragments
+                        else fragments
+                    else fragments
+                parseLoop (position + length) ((Expr str) :: fragments) (position + length)
+            | _ -> parseLoop start fragments (position + 1)
+    parseLoop 0 [] 0 |> List.rev
 
 let TryCountFormatStringArguments m g fmt bty cty =
     try
