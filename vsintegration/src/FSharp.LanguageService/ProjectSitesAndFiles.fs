@@ -46,7 +46,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 type private IHaveCheckOptions = 
     abstract OriginalCheckOptions : unit -> string[] * FSharpProjectOptions
         
-/// Convert from FSharpProjectOptions into IProjectSite.         
+/// Convert from FSharpProjectOptions into IProjectSite.
 type private ProjectSiteOfScriptFile(filename:string, referencedProjectFileNames, checkOptions : FSharpProjectOptions) = 
     interface IProjectSite with
         override this.SourceFilesOnDisk() = checkOptions.SourceFiles
@@ -192,10 +192,8 @@ type internal ProjectSitesAndFiles() =
         if SourceFile.MustBeSingleFileProject(filename) then 
             Debug.Assert(false, ".fsx or .fsscript should have been treated as implicit project")
             failwith ".fsx or .fsscript should have been treated as implicit project"
-
         new ProjectSiteOfSingleFile(filename) :> IProjectSite
-    
-        
+
     static member GetReferencedProjectSites(projectSite:IProjectSite, serviceProvider:System.IServiceProvider) =
         referencedProvideProjectSites (projectSite, serviceProvider)
         |> Seq.map (fun (_, ps) -> ps.GetProjectSite())
