@@ -1,4 +1,4 @@
-// #NoMono #NoMT #CodeGen #EmittedIL #Async #NETFX20Only #NETFX40Only 
+// #NoMono #NoMT #CodeGen #EmittedIL #Async   
 module AsyncExpressionSteppingTest6      // Regression test for FSHARP1.0:4058
 module AsyncExpressionSteppingTest6 = 
     let f2 () = 

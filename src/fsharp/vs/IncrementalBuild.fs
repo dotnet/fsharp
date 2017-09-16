@@ -1681,8 +1681,11 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
     /// CreateIncrementalBuilder (for background type checking). Note that fsc.fs also
     /// creates an incremental builder used by the command line compiler.
     static member TryCreateBackgroundBuilderForProjectOptions (ctok, legacyReferenceResolver, defaultFSharpBinariesDir, frameworkTcImportsCache: FrameworkImportsCache, loadClosureOpt:LoadClosure option, sourceFiles:string list, commandLineArgs:string list, projectReferences, projectDirectory, useScriptResolutionRules, keepAssemblyContents, keepAllBackgroundResolutions, maxTimeShareMilliseconds) =
+      let targetProfileSwitch = "--targetprofile:"
+      let useSimpleResolutionSwitch = "--simpleresolution"
+
       cancellable {
-    
+
         // Trap and report warnings and errors from creation.
         use errorScope = new ErrorScope()
         let! builderOpt = 
@@ -1695,23 +1698,38 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
 
             /// Create a type-check configuration
             let tcConfigB, sourceFilesNew = 
-                    
+
+                let getSwitchValue switchstring =
+                    match commandLineArgs |> Seq.tryFindIndex(fun s -> s.StartsWith(switchstring)) with
+                    | Some idx -> Some(commandLineArgs.[idx].Substring(switchstring.Length))
+                    | _ -> None
+
                 // see also fsc.fs:runFromCommandLineToImportingAssemblies(), as there are many similarities to where the PS creates a tcConfigB
                 let tcConfigB = TcConfigBuilder.CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, implicitIncludeDir=projectDirectory, optimizeForMemory=true, isInteractive=false, isInvalidationSupported=true, defaultCopyFSharpCore=false) 
+
                 // The following uses more memory but means we don't take read-exclusions on the DLLs we reference 
                 // Could detect well-known assemblies--ie System.dll--and open them with read-locks 
                 tcConfigB.openBinariesInMemory <- true
 
                 tcConfigB.resolutionEnvironment <- (ReferenceResolver.ResolutionEnvironment.EditingOrCompilation true)
-                
+
                 tcConfigB.conditionalCompilationDefines <- 
                     let define = if useScriptResolutionRules then "INTERACTIVE" else "COMPILED"
                     define::tcConfigB.conditionalCompilationDefines
 
                 tcConfigB.projectReferences <- projectReferences
+
 #if COMPILER_SERVICE_ASSUMES_DOTNETCORE_COMPILATION
                 tcConfigB.useSimpleResolution <- true // turn off msbuild resolution
+#else
+                tcConfigB.useSimpleResolution <- (getSwitchValue useSimpleResolutionSwitch) |> Option.isSome
 #endif
+                match (getSwitchValue targetProfileSwitch) with
+                | Some v ->
+                    let _s = v
+                    CompileOptions.SetTargetProfile tcConfigB v
+                | None -> ()
+
                 // Apply command-line arguments and collect more source files if they are in the arguments
                 let sourceFilesNew = 
                     try
@@ -1725,12 +1743,16 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
 
                 // Never open PDB files for the language service, even if --standalone is specified
                 tcConfigB.openDebugInformationForLaterStaticLinking <- false
-        
+                match commandLineArgs |> Seq.tryFind(fun s -> s.StartsWith(targetProfileSwitch)) with
+                | Some arg ->
+                    let profile = arg.Substring(targetProfileSwitch.Length)
+                    CompileOptions.SetTargetProfile tcConfigB profile
+                | _ -> ()
                 tcConfigB, sourceFilesNew
 
             match loadClosureOpt with
-            | Some loadClosure -> 
-                let dllReferences = 
+            | Some loadClosure ->
+                let dllReferences =
                     [for reference in tcConfigB.referencedDLLs do
                         // If there's (one or more) resolutions of closure references then yield them all
                         match loadClosure.References  |> List.tryFind (fun (resolved,_)->resolved=reference.Text) with

@@ -1,4 +1,4 @@
-// #Regression #NoMT #CompilerOptions #NETFX40Only #NETFX20Only 
+// #Regression #NoMT #CompilerOptions   
 // Regression test for FSHARP1.0:5976
 // See FSHARP1.0:6181 - it is no longer an error to specify --noframework and not specify -r to mscorlib/fscore
 //<Expects status="success"></Expects>

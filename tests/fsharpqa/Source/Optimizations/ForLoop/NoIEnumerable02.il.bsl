@@ -22,7 +22,7 @@
                                                                                                       int32) = ( 01 00 02 00 00 00 00 00 00 00 00 00 00 00 00 00 ) 
 
   // --- The following custom attribute is added automatically, do not uncomment -------
-  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 02 00 00 00 00 00 ) 
+  //  .custom instance void [mscorlib]System.Diagnostics.DebuggableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggableAttribute/DebuggingModes) = ( 01 00 01 00 00 00 00 00 ) 
 
   .hash algorithm 0x00008004
   .ver 0:0:0:0
@@ -36,13 +36,13 @@
   // Offset: 0x000001D8 Length: 0x0000006C
 }
 .module NoIEnumerable02.dll
-// MVID: {5772F618-5066-4012-A745-038318F67257}
+// MVID: {59B18AEE-5066-4012-A745-0383EE8AB159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x026B0000
+// Image base: 0x00720000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -53,43 +53,42 @@
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .method public static void  loop2(int32 N) cil managed
   {
-    // Code size       44 (0x2c)
+    // Code size       43 (0x2b)
     .maxstack  5
     .locals init ([0] int32 V_0,
              [1] int32 i,
              [2] class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit> V_2)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
     .line 7,7 : 4,24 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\Optimizations\\ForLoop\\NoIEnumerable02.fsx'
-    IL_0000:  nop
-    IL_0001:  ldc.i4.s   100
-    IL_0003:  stloc.1
-    IL_0004:  ldarg.0
-    IL_0005:  stloc.0
-    IL_0006:  ldloc.0
-    IL_0007:  ldloc.1
-    IL_0008:  blt.s      IL_002b
+    IL_0000:  ldc.i4.s   100
+    IL_0002:  stloc.1
+    IL_0003:  ldarg.0
+    IL_0004:  stloc.0
+    IL_0005:  ldloc.0
+    IL_0006:  ldloc.1
+    IL_0007:  blt.s      IL_002a
 
     .line 8,8 : 7,20 ''
-    IL_000a:  ldstr      "aaa"
-    IL_000f:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
-    IL_0014:  stloc.2
-    IL_0015:  call       class [mscorlib]System.IO.TextWriter [mscorlib]System.Console::get_Out()
-    IL_001a:  ldloc.2
-    IL_001b:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [mscorlib]System.IO.TextWriter,
+    IL_0009:  ldstr      "aaa"
+    IL_000e:  newobj     instance void class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`5<class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>::.ctor(string)
+    IL_0013:  stloc.2
+    IL_0014:  call       class [mscorlib]System.IO.TextWriter [mscorlib]System.Console::get_Out()
+    IL_0019:  ldloc.2
+    IL_001a:  call       !!0 [FSharp.Core]Microsoft.FSharp.Core.PrintfModule::PrintFormatLineToTextWriter<class [FSharp.Core]Microsoft.FSharp.Core.Unit>(class [mscorlib]System.IO.TextWriter,
                                                                                                                                                          class [FSharp.Core]Microsoft.FSharp.Core.PrintfFormat`4<!!0,class [mscorlib]System.IO.TextWriter,class [FSharp.Core]Microsoft.FSharp.Core.Unit,class [FSharp.Core]Microsoft.FSharp.Core.Unit>)
-    IL_0020:  pop
-    IL_0021:  ldloc.1
-    IL_0022:  ldc.i4.1
-    IL_0023:  add
-    IL_0024:  stloc.1
+    IL_001f:  pop
+    IL_0020:  ldloc.1
+    IL_0021:  ldc.i4.1
+    IL_0022:  add
+    IL_0023:  stloc.1
     .line 7,7 : 4,24 ''
-    IL_0025:  ldloc.1
-    IL_0026:  ldloc.0
-    IL_0027:  ldc.i4.1
-    IL_0028:  add
-    IL_0029:  bne.un.s   IL_000a
+    IL_0024:  ldloc.1
+    IL_0025:  ldloc.0
+    IL_0026:  ldc.i4.1
+    IL_0027:  add
+    IL_0028:  bne.un.s   IL_0009
 
-    IL_002b:  ret
+    IL_002a:  ret
   } // end of method M::loop2
 
 } // end of class M

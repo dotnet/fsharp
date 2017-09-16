@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.1
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:1:0
 }
 .assembly Tuple03
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.Tuple03
 {
-  // Offset: 0x00000000 Length: 0x00000153
+  // Offset: 0x00000000 Length: 0x0000013F
 }
 .mresource public FSharpOptimizationData.Tuple03
 {
-  // Offset: 0x00000158 Length: 0x0000004E
+  // Offset: 0x00000148 Length: 0x0000004E
 }
 .module Tuple03.exe
-// MVID: {4BEB2968-AD65-A299-A745-03836829EB4B}
+// MVID: {59B19208-AD65-A299-A745-03830892B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00480000
+// Image base: 0x00AF0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -63,19 +63,18 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       11 (0xb)
-    .maxstack  5
+    // Code size       10 (0xa)
+    .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 3,3 : 9,14 
-    IL_0000:  nop
-    IL_0001:  ldc.i4.1
-    IL_0002:  ldc.i4.2
-    IL_0003:  ldc.i4.3
-    IL_0004:  newobj     instance void class [mscorlib]System.Tuple`3<int32,int32,int32>::.ctor(!0,
+    .line 3,3 : 9,14 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Tuples\\Tuple03.fs'
+    IL_0000:  ldc.i4.1
+    IL_0001:  ldc.i4.2
+    IL_0002:  ldc.i4.3
+    IL_0003:  newobj     instance void class [mscorlib]System.Tuple`3<int32,int32,int32>::.ctor(!0,
                                                                                                 !1,
                                                                                                 !2)
-    IL_0009:  pop
-    IL_000a:  ret
+    IL_0008:  pop
+    IL_0009:  ret
   } // end of method $Tuple03::main@
 
 } // end of class '<StartupCode$Tuple03>'.$Tuple03

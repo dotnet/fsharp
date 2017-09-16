@@ -1118,24 +1118,21 @@ let mkMultiLambdaBind v letSeqPtOpt m  tps vsl (b, rty) =
 
 let mkBind seqPtOpt v e = TBind(v, e, seqPtOpt)
 
-let mkCompGenBind v e = TBind(v, e, NoSequencePointAtStickyBinding)
-
-/// Make bindings that are compiler generated (though the variables may not be - e.g. they may be lambda arguments in a beta reduction)
-let mkCompGenBinds vs es = 
-    List.map2 mkCompGenBind vs es
-
-// n.b. type gives type of body 
 let mkLetBind m bind body = Expr.Let(bind, body, m, NewFreeVarsCache())
 let mkLetsBind m binds body = List.foldBack (mkLetBind m) binds body 
 let mkLetsFromBindings m binds body = List.foldBack (mkLetBind m) binds body 
 let mkLet seqPtOpt m v x body = mkLetBind m (mkBind seqPtOpt v x) body
+
+/// Make sticky bindings that are compiler generated (though the variables may not be - e.g. they may be lambda arguments in a beta reduction)
+let mkCompGenBind v e = TBind(v, e, NoSequencePointAtStickyBinding)
+let mkCompGenBinds (vs: Val list) (es: Expr list) = List.map2 mkCompGenBind vs es
 let mkCompGenLet m v x body = mkLetBind m (mkCompGenBind v x) body
+let mkCompGenLets m vs xs body = mkLetsBind m (mkCompGenBinds vs xs) body
+let mkCompGenLetsFromBindings m vs xs body = mkLetsFromBindings m (mkCompGenBinds vs xs) body
 
 let mkInvisibleBind v e = TBind(v, e, NoSequencePointAtInvisibleBinding)
+let mkInvisibleBinds (vs: Val list) (es: Expr list) = List.map2 mkInvisibleBind vs es
 let mkInvisibleLet m v x body = mkLetBind m (mkInvisibleBind v x) body
-let mkInvisibleBinds (vs: Val list) (es: Expr list) = 
-    List.map2 mkInvisibleBind vs es
-
 let mkInvisibleLets m vs xs body = mkLetsBind m (mkInvisibleBinds vs xs) body
 let mkInvisibleLetsFromBindings m vs xs body = mkLetsFromBindings m (mkInvisibleBinds vs xs) body
 
@@ -5471,6 +5468,7 @@ let foldLinearBindingTargetsOfMatch tree (targets: _[]) =
                         // Hence the expressions in the value bindings can be remarked with the range of the target.
                         let mTarget = exprTarget.Range
                         let es = es |> List.map (remarkExpr mTarget)
+                        // These are non-sticky - any sequence point for 'exprTarget' goes on 'exprTarget' _after_ the bindings have been evaluated
                         TTarget(List.empty, mkLetsBind mTarget binds (mkInvisibleLetsFromBindings mTarget vs es exprTarget), spTarget)
                     else tg )
      
@@ -5484,6 +5482,7 @@ let rec simplifyTrivialMatch spBind exprm matchm ty tree (targets : _[]) =
         // REVIEW: should we use _spTarget here?
         let (TTarget(vs, rhs, _spTarget)) = targets.[n]
         if vs.Length <> es.Length then failwith ("simplifyTrivialMatch: invalid argument, n = "^string n^", List.length targets = "^string targets.Length);
+        // These are non-sticky - any sequence point for 'rhs' goes on 'rhs' _after_ the bindings have been made
         mkInvisibleLetsFromBindings rhs.Range vs es rhs
     | _ -> 
         primMkMatch (spBind, exprm, tree, targets, matchm, ty)
@@ -6415,6 +6414,7 @@ let untupledToRefTupled g vs =
     let m = (List.head vs).Range
     let tupledv, tuplede = mkCompGenLocal m "tupledArg" (mkRefTupledTy g untupledTys)
     let untupling_es =  List.mapi (fun i _ ->  mkTupleFieldGet g (tupInfoRef, tuplede, untupledTys, i, m)) untupledTys
+    // These are non-sticky - at the caller,any sequence point for 'body' goes on 'body' _after_ the binding has been made
     tupledv, mkInvisibleLets m vs untupling_es 
     
 // The required tupled-arity (arity) can either be 1 
@@ -6435,6 +6435,7 @@ let AdjustArityOfLambdaBody g arity (vs:Val list) body =
             untupledTys 
             |> List.mapi (fun i ty -> mkCompGenLocal v.Range (v.LogicalName ^"_"^string i) ty) 
             |> List.unzip 
+        // These are non-sticky - any sequence point for 'body' goes on 'body' _after_ the binding has been made
         let body = mkInvisibleLet v.Range v (mkRefTupled g v.Range dummyes untupledTys) body
         dummyvs, body
     else 
@@ -6795,7 +6796,7 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
                                     (mkApps g ((inpCloVarAsExpr, inpCloVarType), [], [inpsAsActualArg], appm), resTy)
                             else
                                 mkMultiLambda appm inpsAsVars 
-                                    (mkInvisibleLet appm cloVar 
+                                    (mkCompGenLet appm cloVar 
                                        (mkApps g ((inpCloVarAsExpr, inpCloVarType), [], [inpsAsActualArg], appm)) 
                                        res, 
                                      resTy)
@@ -6813,7 +6814,7 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
             let exprForAllArgs = 
 
                 if isNil argTysWithNiceNames then 
-                    mkInvisibleLet appm cloVar exprWithActualTy exprForOtherArgs
+                    mkCompGenLet appm cloVar exprWithActualTy exprForOtherArgs
                 else
                     let lambdaBuilders, binderBuilders, inpsAsArgs = 
                     
@@ -6858,7 +6859,7 @@ let AdjustPossibleSubsumptionExpr g (expr: Expr) (suppliedArgs: Expr list) : (Ex
                         if isNil argTysWithoutNiceNames then 
                             mkApps g ((exprWithActualTy, actualTy), [], inpsAsArgs, appm)
                         else
-                            mkInvisibleLet appm 
+                            mkCompGenLet appm 
                                     cloVar (mkApps g ((exprWithActualTy, actualTy), [], inpsAsArgs, appm)) 
                                     exprForOtherArgs
 
@@ -6957,6 +6958,7 @@ let LinearizeTopMatchAux g parent  (spBind, m, tree, targets, m2, ty) =
                 let rhs =  etaExpandTypeLambda g m  v.Typars (itemsProj vtys i tmpe, ty)
                 // update the arity of the value 
                 v.SetValReprInfo (Some (InferArityOfExpr g AllowTypeDirectedDetupling.Yes ty [] [] rhs))
+                // This binding is deliberately non-sticky - any sequence point for 'rhs' goes on 'rhs' _after_ the binding has been evaluated
                 mkInvisibleBind v rhs)  in (* vi = proj tmp *)
         mkCompGenLet m
           tmp (primMkMatch (spBind, m, tree, targets, m2, tmpTy)) (* note, probably retyped match, but note, result still has same type *)
@@ -7255,7 +7257,7 @@ let mkIsInstConditional g m tgty vinpe v e2 e3 =
         let tg3 = mbuilder.AddResultTarget(e3, SuppressSequencePointAtTarget)
         let dtree = TDSwitch(exprForVal m v, [TCase(DecisionTreeTest.IsNull, tg3)], Some tg2, m)
         let expr = mbuilder.Close(dtree, m, tyOfExpr g e2)
-        mkInvisibleLet m v (mkIsInst tgty vinpe m)  expr
+        mkCompGenLet m v (mkIsInst tgty vinpe m)  expr
 
     else
         let mbuilder = new MatchBuilder(NoSequencePointAtInvisibleBinding, m)

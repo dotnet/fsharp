@@ -1,4 +1,4 @@
-// #NoMono #NoMT #CodeGen #EmittedIL #NETFX20Only #NETFX40Only 
+// #NoMono #NoMT #CodeGen #EmittedIL   
 open CustomSecAttr
 open System.Security
 open System.Security.Permissions

@@ -55,6 +55,7 @@
     <Compile Include="Classification\ColorizationService.fs" />
     <Compile Include="Formatting\BraceMatchingService.fs" />
     <Compile Include="Formatting\IndentationService.fs" />
+    <Compile Include="Formatting\EditorFormattingService.fs" />
     <Compile Include="Debugging\BreakpointResolutionService.fs" />
     <Compile Include="Debugging\LanguageDebugInfoService.fs" />
     <Compile Include="Diagnostics\DocumentDiagnosticAnalyzer.fs" />
@@ -93,6 +94,7 @@
     <Compile Include="CodeFix\RemoveUnusedOpens.fs" />
     <Compile Include="CodeFix\MissingReferenceCodeFixProvider.fs" />
     <Compile Include="CodeFix\FixIndexerAccess.fs" />
+    <Compile Include="CodeFix\RenameParamToMatchSignature.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">

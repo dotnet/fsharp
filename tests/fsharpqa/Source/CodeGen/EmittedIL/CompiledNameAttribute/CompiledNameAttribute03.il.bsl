@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.16774
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:1:0
 }
 .assembly CompiledNameAttribute03
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.CompiledNameAttribute03
 {
-  // Offset: 0x00000000 Length: 0x000002A2
+  // Offset: 0x00000000 Length: 0x0000027D
 }
 .mresource public FSharpOptimizationData.CompiledNameAttribute03
 {
-  // Offset: 0x000002A8 Length: 0x00000086
+  // Offset: 0x00000288 Length: 0x00000086
 }
 .module CompiledNameAttribute03.exe
-// MVID: {4DAC0464-2CE4-60B9-A745-03836404AC4D}
+// MVID: {59B1923F-2CE4-60B9-A745-03833F92B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000000000370000
+// Image base: 0x03120000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -54,16 +54,15 @@
   .method public static !!a  SomeCompiledName<a>(int32 x) cil managed
   {
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationSourceNameAttribute::.ctor(string) = ( 01 00 01 66 00 00 )                               // ...f..
-    // Code size       8 (0x8)
+    // Code size       7 (0x7)
     .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 4,4 : 15,25 
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  ldc.i4.1
-    IL_0003:  sub
-    IL_0004:  starg.s    x
-    IL_0006:  br.s       IL_0000
+    .line 4,4 : 15,25 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\CompiledNameAttribute\\CompiledNameAttribute03.fs'
+    IL_0000:  ldarg.0
+    IL_0001:  ldc.i4.1
+    IL_0002:  sub
+    IL_0003:  starg.s    x
+    IL_0005:  br.s       IL_0000
   } // end of method CompiledNameAttribute03::SomeCompiledName
 
 } // end of class CompiledNameAttribute03
@@ -74,10 +73,9 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       2 (0x2)
+    // Code size       1 (0x1)
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ret
+    IL_0000:  ret
   } // end of method $CompiledNameAttribute03::main@
 
 } // end of class '<StartupCode$CompiledNameAttribute03>'.$CompiledNameAttribute03

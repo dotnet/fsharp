@@ -1,4 +1,4 @@
-// #Regression #NoMono #NoMT #CodeGen #EmittedIL #Lists #NETFX20Only #NETFX40Only 
+// #Regression #NoMono #NoMT #CodeGen #EmittedIL #Lists   
 // Regression test for FSHARP1.0:4058
 module ListExpressionSteppingTest3
 module ListExpressionSteppingTest3 = 
