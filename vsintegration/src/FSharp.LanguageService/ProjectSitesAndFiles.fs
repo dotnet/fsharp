@@ -49,10 +49,14 @@ type private IHaveCheckOptions =
 /// Convert from FSharpProjectOptions into IProjectSite.
 type private ProjectSiteOfScriptFile(filename:string, referencedProjectFileNames, checkOptions : FSharpProjectOptions) = 
     interface IProjectSite with
-        override this.SourceFilesOnDisk() = checkOptions.SourceFiles
-        override this.DescriptionOfProject() = sprintf "Script Closure at Root %s" filename
-        override this.CompilerFlags() = checkOptions.OtherOptions
-        override this.ProjectFileName() = checkOptions.ProjectFileName
+        override this.Description = sprintf "Script Closure at Root %s" filename
+        override this.CompilationSourceFiles = checkOptions.SourceFiles
+        override this.CompilationOptions = checkOptions.OtherOptions
+        override this.CompilationReferences = 
+             checkOptions.OtherOptions 
+             |> Array.choose (fun flag -> if flag.StartsWith("-r:") then Some flag.[3..] else None) 
+        override this.CompilationBinOutputPath = None
+        override this.ProjectFileName = checkOptions.ProjectFileName
         override this.BuildErrorReporter with get() = None and set _v = ()
         override this.AdviseProjectSiteChanges(_,_) = ()
         override this.AdviseProjectSiteCleaned(_,_) = ()
@@ -62,7 +66,6 @@ type private ProjectSiteOfScriptFile(filename:string, referencedProjectFileNames
         override this.ProjectGuid = ""
         override this.LoadTime = checkOptions.LoadTime
         override this.ProjectProvider = None
-        override this.AssemblyReferences() = [||]
 
     interface IHaveCheckOptions with
         override this.OriginalCheckOptions() = (referencedProjectFileNames, checkOptions)
@@ -73,7 +76,7 @@ type private ProjectSiteOfScriptFile(filename:string, referencedProjectFileNames
 /// By design, these are never going to typecheck because there is no affiliated references.
 /// We show many squiggles in this case because they're not particularly informational. 
 type private ProjectSiteOfSingleFile(sourceFile) =         
-    // CompilerFlags() gets called a lot, so pre-compute what we can
+    // CompilationOptions gets called a lot, so pre-compute what we can
     static let compilerFlags = 
         let flags = ["--noframework";"--warn:3"]
         let assumeDotNetFramework = true
@@ -85,10 +88,12 @@ type private ProjectSiteOfSingleFile(sourceFile) =
     let projectFileName = sourceFile + ".orphan.fsproj"
 
     interface IProjectSite with
-        override this.SourceFilesOnDisk() = [|sourceFile|]
-        override this.DescriptionOfProject() = "Orphan File Project"
-        override this.CompilerFlags() = compilerFlags
-        override this.ProjectFileName() = projectFileName                
+        override this.Description = projectFileName
+        override this.CompilationSourceFiles = [|sourceFile|]
+        override this.CompilationOptions = compilerFlags
+        override this.CompilationReferences = compilerFlags |> Array.choose (fun flag -> if flag.StartsWith("-r:") then Some flag.[3..] else None) 
+        override this.CompilationBinOutputPath = None
+        override this.ProjectFileName = projectFileName                
         override this.BuildErrorReporter with get() = None and set _v = ()
         override this.AdviseProjectSiteChanges(_,_) = ()
         override this.AdviseProjectSiteCleaned(_,_) = ()
@@ -98,7 +103,6 @@ type private ProjectSiteOfSingleFile(sourceFile) =
         override this.ProjectGuid = ""
         override this.LoadTime = new DateTime(2000,1,1)  // any constant time is fine, orphan files do not interact with reloading based on update time
         override this.ProjectProvider = None
-        override this.AssemblyReferences() = [||]
         
     override x.ToString() = sprintf "ProjectSiteOfSingleFile(%s)" sourceFile
     
@@ -174,9 +178,9 @@ type internal ProjectSitesAndFiles() =
             else [| |], [| |]
 
         let options = 
-            {ProjectFileName = projectSite.ProjectFileName()
-             SourceFiles = projectSite.SourceFilesOnDisk()
-             OtherOptions = projectSite.CompilerFlags()
+            {ProjectFileName = projectSite.ProjectFileName
+             SourceFiles = projectSite.CompilationSourceFiles
+             OtherOptions = projectSite.CompilationOptions
              ReferencedProjects = referencedProjectOptions
              IsIncompleteTypeCheckEnvironment = projectSite.IsIncompleteTypeCheckEnvironment
              UseScriptResolutionRules = SourceFile.MustBeSingleFileProject fileName
@@ -245,7 +249,7 @@ type internal ProjectSitesAndFiles() =
                | Some site -> site
                | None -> ProjectSitesAndFiles.ProjectSiteOfSingleFile(filename)
 
-            CompilerEnvironment.GetCompilationDefinesForEditing(filename,site.CompilerFlags() |> Array.toList)
+            CompilerEnvironment.GetCompilationDefinesForEditing(filename,site.CompilationOptions |> Array.toList)
 
 
     member art.TryFindOwningProject_DEPRECATED(rdt:IVsRunningDocumentTable, filename) = 
@@ -255,11 +259,7 @@ type internal ProjectSitesAndFiles() =
             | Some(hier, _textLines) ->
                 match tryGetProjectSite(hier) with
                 | Some(site) -> 
-#if DEBUG
-                    for src in site.SourceFilesOnDisk() do 
-                        Debug.Assert(Path.GetFullPath(src) = src, "SourceFilesOnDisk reported a filename that was not in canonical format")
-#endif
-                    if site.SourceFilesOnDisk() |> Array.exists (fun src -> StringComparer.OrdinalIgnoreCase.Equals(src,filename)) then
+                    if site.CompilationSourceFiles |> Array.exists (fun src -> StringComparer.OrdinalIgnoreCase.Equals(src,filename)) then
                         Some site
                     else
                         None
