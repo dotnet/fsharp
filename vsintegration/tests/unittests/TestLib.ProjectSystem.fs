@@ -296,14 +296,14 @@ type TheTests() =
             (expectation.Elements(), actual.Elements()) ||> Seq.iter2 (fun x y -> Match(x,y,initialContext+"\n"))
         Match(expectation, actual, "")
     
-    static member internal GetCompileItems (project : UnitTestingFSharpProjectNode) =
+    static member internal Sources (project : UnitTestingFSharpProjectNode) =
         let MakeRelativePath (file : string) =
             let projDir = project.ProjectFolder + "\\"
             if file.StartsWith(projDir) then 
                 file.Substring(projDir.Length)
             else
                 file
-        project.GetCompileItems() |> Array.toList |> List.map MakeRelativePath
+        project.CompilationSourceFiles |> Array.toList |> List.map MakeRelativePath
  
     member internal this.MakeProjectAndDoWithProjectFileAndConfigChangeNotifierDispose(dispose : bool, compileItems : string list, references : string list, other : string, targetFramework : string, f : UnitTestingFSharpProjectNode -> _ -> string -> unit) =
         UIStuff.SetupSynchronizationContext()
