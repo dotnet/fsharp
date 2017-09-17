@@ -1,14 +1,14 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26403.7
+VisualStudioVersion = 15.0.26730.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Private", "src\fsharp\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj", "{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.VS.FSI", "vsintegration\src\FSharp.VS.FSI\FSharp.VS.FSI.fsproj", "{991DCF75-C2EB-42B6-9A0D-AA1D2409D519}"
-ProjectSection(ProjectDependencies) = postProject
-{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3} = {2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}
-EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3} = {2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}
+	EndProjectSection
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharp.Compiler.Server.Shared", "src\fsharp\FSharp.Compiler.Server.Shared\FSharp.Compiler.Server.Shared.fsproj", "{D5870CF0-ED51-4CBC-B3D7-6F56DA84AC06}"
 EndProject
@@ -141,6 +141,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "FSharp.Compiler.Service.tests Support", "FSharp.Compiler.Service.tests Support", "{35636A82-401A-4C3A-B2AB-EB7DC5E9C268}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "TestTP", "tests\service\data\TestTP\TestTP.fsproj", "{FF76BD3C-5E0A-4752-B6C3-044F6E15719B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ResourceFile", "vsintegration\ItemTemplates\ResourceFile\ResourceFile.csproj", "{0385564F-07B4-4264-AB8A-17C393E9140C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -574,6 +576,14 @@ Global
 		{FF76BD3C-5E0A-4752-B6C3-044F6E15719B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{FF76BD3C-5E0A-4752-B6C3-044F6E15719B}.Release|x86.ActiveCfg = Release|Any CPU
 		{FF76BD3C-5E0A-4752-B6C3-044F6E15719B}.Release|x86.Build.0 = Release|Any CPU
+		{0385564F-07B4-4264-AB8A-17C393E9140C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0385564F-07B4-4264-AB8A-17C393E9140C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0385564F-07B4-4264-AB8A-17C393E9140C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{0385564F-07B4-4264-AB8A-17C393E9140C}.Debug|x86.Build.0 = Debug|Any CPU
+		{0385564F-07B4-4264-AB8A-17C393E9140C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0385564F-07B4-4264-AB8A-17C393E9140C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0385564F-07B4-4264-AB8A-17C393E9140C}.Release|x86.ActiveCfg = Release|Any CPU
+		{0385564F-07B4-4264-AB8A-17C393E9140C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -639,5 +649,9 @@ Global
 		{887630A3-4B1D-40EA-B8B3-2D842E9C40DB} = {35636A82-401A-4C3A-B2AB-EB7DC5E9C268}
 		{35636A82-401A-4C3A-B2AB-EB7DC5E9C268} = {F7876C9B-FB6A-4EFB-B058-D6967DB75FB2}
 		{FF76BD3C-5E0A-4752-B6C3-044F6E15719B} = {35636A82-401A-4C3A-B2AB-EB7DC5E9C268}
+		{0385564F-07B4-4264-AB8A-17C393E9140C} = {F6DAEE9A-8BE1-4C4A-BC83-09215517C7DA}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {48EDBBBE-C8EE-4E3C-8B19-97184A487B37}
 	EndGlobalSection
 EndGlobal

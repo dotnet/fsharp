@@ -38,7 +38,7 @@ type Config() =
             (fun project ccn projFileName ->
                 ccn((project :> IVsHierarchy), "Debug|x86")
                 project.ComputeSourcesAndFlags()
-                let flags = project.GetCompileFlags() |> List.ofArray
+                let flags = project.CompilationOptions |> List.ofArray
                 Assert.IsTrue(List.exists (fun s -> s = "--platform:x86") flags)
                 ()
         ))
