@@ -65,12 +65,12 @@ module internal GotoDefinition =
                         Some(colIdent, tag, qualId), false
             match identInfo with
             | None ->
-                Strings.Errors.GotoDefinitionFailed_NotIdentifier ()
+                Strings.GotoDefinitionFailed_NotIdentifier()
                 |> GotoDefinitionResult_DEPRECATED.MakeError
             | Some(colIdent, tag, qualId) ->
                 if typedResults.HasFullTypeCheckInfo then 
                     if Parser.tokenTagToTokenId tag <> Parser.TOKEN_IDENT then 
-                        Strings.Errors.GotoDefinitionFailed_NotIdentifier ()
+                        Strings.GotoDefinitionFailed_NotIdentifier()
                         |> GotoDefinitionResult_DEPRECATED.MakeError
                     else
                       match typedResults.GetDeclarationLocation (line+1, colIdent, lineStr, qualId, false) |> Async.RunSynchronously with
@@ -83,16 +83,16 @@ module internal GotoDefinition =
                           Trace.Write("LanguageService", sprintf "Goto definition failed: Reason %+A" reason)
                           let text = 
                               match reason with                    
-                              | FSharpFindDeclFailureReason.Unknown _message -> Strings.Errors.GotoDefinitionFailed()
-                              | FSharpFindDeclFailureReason.NoSourceCode -> Strings.Errors.GotoDefinitionFailed_NoSourceCode()
-                              | FSharpFindDeclFailureReason.ProvidedType(typeName) -> Strings.Errors.GotoDefinitionFailed_ProvidedType(typeName)
-                              | FSharpFindDeclFailureReason.ProvidedMember(name) -> Strings.Errors.GotoFailed_ProvidedMember(name)
+                              | FSharpFindDeclFailureReason.Unknown _message -> Strings.GotoDefinitionFailed_Generic()
+                              | FSharpFindDeclFailureReason.NoSourceCode -> Strings.GotoDefinitionFailed_NotSourceCode()
+                              | FSharpFindDeclFailureReason.ProvidedType(typeName) -> String.Format(Strings.GotoDefinitionFailed_ProvidedType(), typeName)
+                              | FSharpFindDeclFailureReason.ProvidedMember(name) -> String.Format(Strings.GotoDefinitionFailed_ProvidedMember(), name)
                           GotoDefinitionResult_DEPRECATED.MakeError text
                       | FSharpFindDeclResult.ExternalDecl _ -> 
-                            GotoDefinitionResult_DEPRECATED.MakeError(Strings.Errors.GotoDefinitionFailed_NoSourceCode())
+                            GotoDefinitionResult_DEPRECATED.MakeError(Strings.GotoDefinitionFailed_NotSourceCode())
                 else
                     Trace.Write("LanguageService", "Goto definition: No 'TypeCheckInfo' available")
-                    Strings.Errors.GotoDefinitionFailed_NoTypecheckInfo()
+                    Strings.GotoDefinitionFailed_NoTypecheckInfo()
                     |> GotoDefinitionResult_DEPRECATED.MakeError
             
         gotoDefinition false

@@ -23,36 +23,8 @@ module internal Error =
     let UseOfUnitializedServiceProvider = invalidOperation "ServiceProvider used before complete initialization."
     let Bug = invalidOperation "Unexpected."
 
-/// Localizable strings.
-module internal Strings = 
-
-    let private resources = new System.Resources.ResourceManager("FSLangSvcStrings", System.Reflection.Assembly.GetExecutingAssembly())
-
-    /// Exceptions:
-    let ExceptionsHeader = resources.GetString("ExceptionsHeader", System.Globalization.CultureInfo.CurrentUICulture)
-    /// (still building content cache)
-    let StillBuildingContentCache = resources.GetString("StillBuildingContentCache", System.Globalization.CultureInfo.CurrentUICulture)
-
-    let GetString(s) = resources.GetString(s, System.Globalization.CultureInfo.CurrentUICulture)
-
-    module Errors = 
-        let private Format1 id (s : string) = 
-            let format = GetString(id)
-            System.String.Format(format, s)
-
-        let GotoDefinitionFailed () = GetString "GotoDefinitionFailed_Generic"
-        let GotoDefinitionFailed_ProvidedType(typeName : string) = Format1 "GotoDefinitionFailed_ProvidedType" typeName
-        let GotoFailed_ProvidedMember(name : string) = Format1 "GotoDefinitionFailed_ProvidedMember" name
-        let GotoDefinitionFailed_NotIdentifier () = GetString "GotoDefinitionFailed_NotIdentifier"
-        let GotoDefinitionFailed_NoTypecheckInfo () = GetString "GotoDefinitionFailed_NoTypecheckInfo"
-        let GotoDefinitionFailed_NoSourceCode () = GetString "GotoDefinitionFailed_NotSourceCode"
-
 /// Assert helpers
 type internal Assert() = 
     /// Display a good exception for this error message and then rethrow.
     static member Exception(e:Exception) =  
         System.Diagnostics.Debug.Assert(false, "Unexpected exception seen in language service", e.ToString())
-    
-        
-    
-
