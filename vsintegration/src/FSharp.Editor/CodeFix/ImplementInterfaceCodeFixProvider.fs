@@ -130,8 +130,8 @@ type internal FSharpImplementInterfaceCodeFixProvider
                             title)                
                     context.RegisterCodeFix(codeAction, diagnostics)
 
-                registerCodeFix SR.ImplementInterface.Value true
-                registerCodeFix SR.ImplementInterfaceWithoutTypeAnnotation.Value false
+                registerCodeFix (SR.ImplementInterface()) true
+                registerCodeFix (SR.ImplementInterfaceWithoutTypeAnnotation()) false
             else 
                 ()
             

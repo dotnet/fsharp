@@ -150,8 +150,8 @@ type internal UnusedOpensDiagnosticAnalyzer() =
     static let Descriptor = 
         DiagnosticDescriptor(
             id = IDEDiagnosticIds.RemoveUnnecessaryImportsDiagnosticId, 
-            title = SR.RemoveUnusedOpens.Value, 
-            messageFormat = SR.UnusedOpens.Value, 
+            title = SR.RemoveUnusedOpens(),
+            messageFormat = SR.UnusedOpens(),
             category = DiagnosticCategory.Style, 
             defaultSeverity = DiagnosticSeverity.Hidden, 
             isEnabledByDefault = true, 

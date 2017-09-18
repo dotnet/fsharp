@@ -65,12 +65,12 @@ type internal FSharpRenameUnusedValueCodeFixProvider
 
                 match symbolUse.Symbol with
                 | :? FSharpMemberOrFunctionOrValue as func ->
-                    createCodeFix(context, symbolName, SR.PrefixValueNameWithUnderscore.Value, TextChange(TextSpan(context.Span.Start, 0), "_"))
+                    createCodeFix(context, symbolName, SR.PrefixValueNameWithUnderscore(), TextChange(TextSpan(context.Span.Start, 0), "_"))
 
                     if func.IsMemberThisValue then
-                        createCodeFix(context, symbolName, SR.RenameValueToDoubleUnderscore.Value, TextChange(context.Span, "__"))
+                        createCodeFix(context, symbolName, SR.RenameValueToDoubleUnderscore(), TextChange(context.Span, "__"))
                     elif not func.IsMember then
-                        createCodeFix(context, symbolName, SR.RenameValueToUnderscore.Value, TextChange(context.Span, "_"))
+                        createCodeFix(context, symbolName, SR.RenameValueToUnderscore(), TextChange(context.Span, "_"))
                 | _ -> ()
         } 
         |> Async.Ignore

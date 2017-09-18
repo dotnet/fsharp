@@ -24,8 +24,8 @@ type internal UnusedDeclarationsAnalyzer() =
     let Descriptor = 
         DiagnosticDescriptor(
             id = DescriptorId,
-            title = SR.TheValueIsUnused.Value,
-            messageFormat = SR.TheValueIsUnused.Value,
+            title = SR.TheValueIsUnused(),
+            messageFormat = SR.TheValueIsUnused(),
             category = DiagnosticCategory.Style,
             defaultSeverity = DiagnosticSeverity.Hidden,
             isEnabledByDefault = true,
