@@ -69,6 +69,9 @@ val GetCoreFscCompilerOptions     : TcConfigBuilder -> CompilerOptionBlock list
 val GetCoreFsiCompilerOptions     : TcConfigBuilder -> CompilerOptionBlock list
 val GetCoreServiceCompilerOptions : TcConfigBuilder -> CompilerOptionBlock list
 
+// Apply args to TcConfigBuilder and return new list of source files
+val ApplyCommandLineArgs: TcConfigBuilder * string list * string list -> string list
+
 // Expose the "setters" for some user switches, to enable setting of defaults
 val SetOptimizeSwitch : TcConfigBuilder -> OptionSwitch -> unit
 val SetTailcallSwitch : TcConfigBuilder -> OptionSwitch -> unit

@@ -640,3 +640,26 @@ let NormalizeErrorString (text : string) =
                 1
         i <- i + delta
     buf.ToString()
+
+#if COMPILER_PUBLIC_API
+type FSharpErrorSeverityOptions =
+#else
+type internal FSharpErrorSeverityOptions =
+#endif
+    {
+      WarnLevel: int
+      GlobalWarnAsError: bool
+      WarnOff: int list
+      WarnOn: int list
+      WarnAsError: int list
+      WarnAsWarn: int list
+    }
+    static member Default =
+        {
+          WarnLevel = 3
+          GlobalWarnAsError = false
+          WarnOff = []
+          WarnOn = []
+          WarnAsError = []
+          WarnAsWarn = []
+        }

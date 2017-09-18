@@ -24,6 +24,7 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.AccessibilityLogic
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.CompileOps
+open Microsoft.FSharp.Compiler.CompileOptions
 open Microsoft.FSharp.Compiler.Driver
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.Lib
@@ -1358,7 +1359,47 @@ type TypeCheckInfo
 
     override __.ToString() = "TypeCheckInfo(" + mainInputFileName + ")"
 
-
+type FSharpParsingOptions =
+    {
+      SourceFiles: string []
+      ConditionalCompilationDefines: string list
+      ErrorSeverityOptions: FSharpErrorSeverityOptions
+      LightSyntax: bool option
+      CompilingFsLib: bool
+      IsExe: bool
+    }
+    member x.LastFileName =
+        Debug.Assert(not (Array.isEmpty x.SourceFiles), "Parsing options don't contain any file")
+        Array.last x.SourceFiles
+    static member Default =
+        { SourceFiles = Array.empty
+          ConditionalCompilationDefines = []
+          ErrorSeverityOptions = FSharpErrorSeverityOptions.Default
+          LightSyntax = None
+          CompilingFsLib = false
+          IsExe = false
+        }
+    static member FromTcConfig(tcConfig: TcConfig, sourceFiles) =
+        {
+          SourceFiles = sourceFiles
+          ConditionalCompilationDefines = tcConfig.conditionalCompilationDefines
+          ErrorSeverityOptions = tcConfig.errorSeverityOptions
+          LightSyntax = tcConfig.light
+          CompilingFsLib = tcConfig.compilingFslib
+          IsExe = tcConfig.target.IsExe
+        }
+    static member FromTcConfigBuidler(tcConfigB: TcConfigBuilder, sourceFiles) =
+        { 
+          SourceFiles = sourceFiles
+          ConditionalCompilationDefines = tcConfigB.conditionalCompilationDefines
+          ErrorSeverityOptions = tcConfigB.errorSeverityOptions
+          LightSyntax = tcConfigB.light
+          CompilingFsLib = tcConfigB.compilingFslib
+          IsExe = tcConfigB.target.IsExe
+        }
+    /// Compare two options sets with respect to the parts of the options that are important to parsing.
+    static member AreSameForParsing(options1: FSharpParsingOptions, options2: FSharpParsingOptions) =
+        options1 = options2
 
 module internal Parser = 
 
@@ -1372,153 +1413,120 @@ module internal Parser =
          
 
     /// Error handler for parsing & type checking while processing a single file
-    type ErrorHandler(reportErrors, mainInputFileName, tcConfig: TcConfig, source: string) =
-        let mutable tcConfig = tcConfig
+    type ErrorHandler(reportErrors, mainInputFileName, errorSeverityOptions: FSharpErrorSeverityOptions, source) =
+        let mutable options = errorSeverityOptions
         let errorsAndWarningsCollector = new ResizeArray<_>()
         let mutable errorCount = 0
-         
+
         // We'll need number of lines for adjusting error messages at EOF
         let fileInfo = GetFileInfoForLastLineErrors source
-         
+
         // This function gets called whenever an error happens during parsing or checking
-        let diagnosticSink sev (exn:PhasedDiagnostic) = 
+        let diagnosticSink sev (exn: PhasedDiagnostic) =
             // Sanity check here. The phase of an error should be in a phase known to the language service.
             let exn =
                 if not(exn.IsPhaseInCompile()) then
                     // Reaching this point means that the error would be sticky if we let it prop up to the language service.
                     // Assert and recover by replacing phase with one known to the language service.
                     Trace.TraceInformation(sprintf "The subcategory '%s' seen in an error should not be seen by the language service" (exn.Subcategory()))
-                    {exn with Phase=BuildPhase.TypeCheck}
+                    { exn with Phase = BuildPhase.TypeCheck }
                 else exn
-            if reportErrors then 
-                let report exn = 
-                    for ei in ErrorHelpers.ReportError (tcConfig, false, mainInputFileName, fileInfo, (exn, sev)) do
+            if reportErrors then
+                let report exn =
+                    for ei in ErrorHelpers.ReportError (options, false, mainInputFileName, fileInfo, (exn, sev)) do
                         errorsAndWarningsCollector.Add ei
-                        if sev = FSharpErrorSeverity.Error then 
+                        if sev = FSharpErrorSeverity.Error then
                             errorCount <- errorCount + 1
-                      
+
                 match exn with
 #if EXTENSIONTYPING
-                | {Exception = (:? TypeProviderError as tpe)} ->
-                    tpe.Iter (fun e ->
-                        let newExn = {exn with Exception = e}
-                        report newExn
-                    )
+                | { Exception = (:? TypeProviderError as tpe) } -> tpe.Iter(fun e -> report { exn with Exception = e })
 #endif
                 | e -> report e
-      
-        let errorLogger = 
-            { new ErrorLogger("ErrorHandler") with 
+
+        let errorLogger =
+            { new ErrorLogger("ErrorHandler") with
                 member x.DiagnosticSink (exn, isError) = diagnosticSink (if isError then FSharpErrorSeverity.Error else FSharpErrorSeverity.Warning) exn
                 member x.ErrorCount = errorCount }
-      
-      
+
         // Public members
         member x.ErrorLogger = errorLogger
         member x.CollectedDiagnostics = errorsAndWarningsCollector.ToArray()
         member x.ErrorCount = errorCount
-        member x.TcConfig with set tc = tcConfig <- tc
+        member x.ErrorSeverityOptions with set opts = options <- opts
         member x.AnyErrors = errorCount > 0
 
+    let getLightSyntaxStatus fileName options =
+        let lower = String.lowercase fileName
+        let lightOnByDefault = List.exists (Filename.checkSuffix lower) FSharpLightSyntaxFileSuffixes
+        let lightSyntaxStatus = if lightOnByDefault then (options.LightSyntax <> Some false) else (options.LightSyntax = Some true)
+        LightSyntaxStatus(lightSyntaxStatus, true)
 
-    /// ParseOneFile builds all the information necessary to report errors, match braces and build scopes 
-    ///
-    /// projectSourceFiles is only used to compute isLastCompiland, and is ignored if Build.IsScript(mainInputFileName)  is true.
-    let ParseOneFile (ctok, source: string, matchBracesOnly: bool, reportErrors: bool, mainInputFileName: string, projectSourceFiles: string list, tcConfig: TcConfig) =
+    let createLexerFunction fileName options lexbuf (errHandler: ErrorHandler) =
+        let lightSyntaxStatus = getLightSyntaxStatus fileName options
 
-          // This function requires the compilation thread because we install error handlers, whose callbacks must
-          // be invoked on the compilation thread, no other reason known to date.
-          // We should check whether those are "real" reasons - we could for example make collecting errors thread safe.
-          RequireCompilationThread ctok 
+        // If we're editing a script then we define INTERACTIVE otherwise COMPILED.
+        // Since this parsing for intellisense we always define EDITING.
+        let defines = SourceFileImpl.AdditionalDefinesForUseInEditor(fileName) @ options.ConditionalCompilationDefines
 
-          // Initialize the error handler 
-          let errHandler = new ErrorHandler(reportErrors, mainInputFileName, tcConfig, source)
+        // Note: we don't really attempt to intern strings across a large scope.
+        let lexResourceManager = new Lexhelp.LexResourceManager()
+        
+        // When analyzing files using ParseOneFile, i.e. for the use of editing clients, we do not apply line directives.
+        let lexargs = mkLexargs(fileName, defines, lightSyntaxStatus, lexResourceManager, ref [], errHandler.ErrorLogger)
+        let lexargs = { lexargs with applyLineDirectives = false }
 
-          // Adding this new-line character at the end of the source seems odd but is required for some unit tests
-          let source = if source.Length = 0 || not (source.[source.Length - 1] = '\n') then source + "\n" else source 
-          let lexbuf = UnicodeLexing.StringAsLexbuf source
+        let tokenizer = LexFilter.LexFilter(lightSyntaxStatus, options.CompilingFsLib, Lexer.token lexargs true, lexbuf)
+        tokenizer.Lexer
 
-          // Collector for parens matching
-          let matchPairRef = new ResizeArray<_>()
+    let matchBraces(source, inputFileName, options: FSharpParsingOptions) =
+        let matchingBraces = new ResizeArray<_>()
+        Lexhelp.usingLexbufForParsing(UnicodeLexing.StringAsLexbuf(source), inputFileName) (fun lexbuf ->
+            let errHandler = ErrorHandler(false, inputFileName, options.ErrorSeverityOptions, source)
+            let lexfun = createLexerFunction inputFileName options lexbuf errHandler
+            let parenTokensBalance t1 t2 =
+                match t1, t2 with
+                | (LPAREN, RPAREN)
+                | (LPAREN, RPAREN_IS_HERE)
+                | (LBRACE, RBRACE)
+                | (LBRACE, RBRACE_IS_HERE)
+                | (SIG, END)
+                | (STRUCT, END)
+                | (LBRACK_BAR, BAR_RBRACK)
+                | (LBRACK, RBRACK)
+                | (LBRACK_LESS, GREATER_RBRACK)
+                | (BEGIN, END) -> true
+                | (LQUOTE q1, RQUOTE q2) -> q1 = q2
+                | _ -> false
+            let rec matchBraces stack =
+                match lexfun lexbuf, stack with
+                | tok2, ((tok1, m1) :: stack') when parenTokensBalance tok1 tok2 ->
+                    matchingBraces.Add(m1, lexbuf.LexemeRange)
+                    matchBraces stack'
+                | ((LPAREN | LBRACE | LBRACK | LBRACK_BAR | LQUOTE _ | LBRACK_LESS) as tok), _ ->
+                     matchBraces ((tok, lexbuf.LexemeRange) :: stack)
+                | (EOF _ | LEX_FAILURE _), _ -> ()
+                | _ -> matchBraces stack
+            matchBraces [])
+        matchingBraces.ToArray()
 
+    let parseFile(source, fileName, options: FSharpParsingOptions) =
+          let errHandler = new ErrorHandler(true, fileName, options.ErrorSeverityOptions, source)
           use unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _oldLogger -> errHandler.ErrorLogger)
           use unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.Parse
 
-          // Errors on while parsing project arguments 
-
-          let parseResult = 
-
-              // If we're editing a script then we define INTERACTIVE otherwise COMPILED. Since this parsing for intellisense we always
-              // define EDITING
-              let conditionalCompilationDefines =
-                SourceFileImpl.AdditionalDefinesForUseInEditor(mainInputFileName) @ tcConfig.conditionalCompilationDefines 
-        
-              let lightSyntaxStatusInital = tcConfig.ComputeLightSyntaxInitialStatus (mainInputFileName)
-              let lightSyntaxStatus = LightSyntaxStatus(lightSyntaxStatusInital,true)
-
-              // Note: we don't really attempt to intern strings across a large scope
-              let lexResourceManager = new Lexhelp.LexResourceManager()
-              let lexargs = mkLexargs(mainInputFileName,
-                                      conditionalCompilationDefines,
-                                      lightSyntaxStatus,
-                                      lexResourceManager,
-                                      ref [],
-                                      errHandler.ErrorLogger)
-
-              // When analyzing files using ParseOneFile, i.e. for the use of editing clients, we do not apply line directives.
-              let lexargs = { lexargs with applyLineDirectives=false }
-
-              Lexhelp.usingLexbufForParsing (lexbuf, mainInputFileName) (fun lexbuf -> 
-                  try 
-                    let skip = true
-                    let tokenizer = LexFilter.LexFilter (lightSyntaxStatus, tcConfig.compilingFslib, Lexer.token lexargs skip, lexbuf)
-                    let lexfun = tokenizer.Lexer
-                    if matchBracesOnly then 
-                        // Quick bracket matching parse  
-                        let parenTokensBalance t1 t2 = 
-                            match t1,t2 with 
-                            | (LPAREN,RPAREN) 
-                            | (LPAREN,RPAREN_IS_HERE) 
-                            | (LBRACE,RBRACE) 
-                            | (LBRACE,RBRACE_IS_HERE) 
-                            | (SIG,END) 
-                            | (STRUCT,END) 
-                            | (LBRACK_BAR,BAR_RBRACK)
-                            | (LBRACK,RBRACK)
-                            | (LBRACK_LESS,GREATER_RBRACK)
-                            | (BEGIN,END) -> true 
-                            | (LQUOTE q1,RQUOTE q2) when q1 = q2 -> true 
-                            | _ -> false
-                        let rec matchBraces stack = 
-                            match lexfun lexbuf,stack with 
-                            | tok2,((tok1,m1) :: stack') when parenTokensBalance tok1 tok2-> 
-                                if matchBracesOnly then 
-                                    matchPairRef.Add (m1, lexbuf.LexemeRange)
-                                matchBraces stack'
-                            | ((LPAREN | LBRACE | LBRACK | LBRACK_BAR | LQUOTE _ | LBRACK_LESS) as tok),_ -> matchBraces ((tok,lexbuf.LexemeRange) :: stack)
-                            | (EOF _ | LEX_FAILURE _),_ -> ()
-                            | _ -> matchBraces stack
-
-                        matchBraces []
-                        None
-                    else 
-                        let isLastCompiland = 
-                            projectSourceFiles.Length >= 1 && 
-                            System.String.Compare(projectSourceFiles.[projectSourceFiles.Length-1],mainInputFileName,StringComparison.CurrentCultureIgnoreCase)=0
-                        let isLastCompiland = isLastCompiland || CompileOps.IsScript(mainInputFileName)  
-                        let isExe = tcConfig.target.IsExe
-                        let parseResult = ParseInput(lexfun,errHandler.ErrorLogger,lexbuf,None,mainInputFileName,(isLastCompiland,isExe))
-                        Some parseResult
-                  with e -> 
-                    errHandler.ErrorLogger.ErrorR(e)
-                    None)
-                
-
-          errHandler.CollectedDiagnostics,
-          matchPairRef.ToArray(),
-          parseResult,
-          errHandler.AnyErrors
-
+          let parseResult =
+              Lexhelp.usingLexbufForParsing(UnicodeLexing.StringAsLexbuf(source), fileName) (fun lexbuf ->
+                  let lexfun = createLexerFunction fileName options lexbuf errHandler
+                  let isLastCompiland =
+                      fileName.Equals(options.LastFileName, StringComparison.CurrentCultureIgnoreCase) ||
+                      CompileOps.IsScript(fileName)
+                  let isExe = options.IsExe
+                  try Some (ParseInput(lexfun, errHandler.ErrorLogger, lexbuf, None, fileName, (isLastCompiland, isExe)))
+                  with e ->
+                      errHandler.ErrorLogger.ErrorR(e)
+                      None)
+          errHandler.CollectedDiagnostics, parseResult, errHandler.AnyErrors
 
     /// Indicates if the type check got aborted because it is no longer relevant.
     type TypeCheckAborted = Yes | No of TypeCheckInfo
@@ -1550,7 +1558,7 @@ module internal Parser =
             // Run the type checker...
             | Some parsedMainInput ->
                 // Initialize the error handler 
-                let errHandler = new ErrorHandler(true, mainInputFileName, tcConfig, source)
+                let errHandler = new ErrorHandler(true, mainInputFileName, tcConfig.errorSeverityOptions, source)
                 
                 use _unwindEL = PushErrorLoggerPhaseUntilUnwind (fun _oldLogger -> errHandler.ErrorLogger)
                 use _unwindBP = PushThreadBuildPhaseUntilUnwind BuildPhase.TypeCheck
@@ -1559,7 +1567,7 @@ module internal Parser =
                 let tcConfig = ApplyNoWarnsToTcConfig (tcConfig, parsedMainInput,Path.GetDirectoryName mainInputFileName)
                         
                 // update the error handler with the modified tcConfig
-                errHandler.TcConfig <- tcConfig
+                errHandler.ErrorSeverityOptions <- tcConfig.errorSeverityOptions
             
                 // Play background errors and warnings for this file.
                 for (err,sev) in backgroundDiagnostics do
@@ -1705,15 +1713,6 @@ type FSharpProjectOptions =
     /// Whether the two parse options refer to the same project.
     static member UseSameProjectFileName(options1,options2) =
         options1.ProjectFileName = options2.ProjectFileName          
-
-    /// Compare two options sets with respect to the parts of the options that are important to parsing.
-    static member AreSameForParsing(options1,options2) =
-        match options1.Stamp, options2.Stamp with 
-        | Some x, Some y -> (x = y)
-        | _ -> 
-        options1.ProjectFileName = options2.ProjectFileName &&
-        options1.OtherOptions = options2.OtherOptions &&
-        options1.UnresolvedReferences = options2.UnresolvedReferences
 
     /// Compare two options sets with respect to the parts of the options that are important to building.
     static member AreSameForChecking(options1,options2) =
@@ -2038,10 +2037,8 @@ module Helpers =
         && FSharpProjectOptions.UseSameProjectFileName(o1,o2)
 
     /// Determine whether two (fileName,sourceText,options) keys should be identical w.r.t. parsing
-    let AreSameForParsing3((fileName1: string, source1: string, options1: FSharpProjectOptions), (fileName2, source2, options2)) =
-        (fileName1 = fileName2) 
-        && FSharpProjectOptions.AreSameForParsing(options1,options2)
-        && (source1 = source2)
+    let AreSameForParsing((fileName1: string, source1: string, options1), (fileName2, source2, options2)) =
+        fileName1 = fileName2 && FSharpParsingOptions.AreSameForParsing(options1, options2) && (source1 = source2)
         
     /// Determine whether two (fileName,sourceText,options) keys should be identical w.r.t. checking
     let AreSameForChecking3((fileName1: string, source1: string, options1: FSharpProjectOptions), (fileName2, source2, options2)) =
@@ -2289,10 +2286,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     
 
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.parseFileInProjectCache. Most recently used cache for parsing files.
-    let parseFileInProjectCache = 
-        MruCache<ParseCacheLockToken, _, _>(parseFileInProjectCacheSize, 
-            areSame=AreSameForParsing3,
-            areSimilar=AreSubsumable3)
+    let parseFileInProjectCache = MruCache<_,_,_>(parseFileInProjectCacheSize, areSame = AreSameForParsing)
 
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.parseAndCheckFileInProjectCachePossiblyStale 
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.parseAndCheckFileInProjectCache
@@ -2352,49 +2346,20 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             foregroundTypeCheckCount <- foregroundTypeCheckCount + 1
             parseCacheLock.AcquireLock (fun ltok -> 
                 parseAndCheckFileInProjectCachePossiblyStale.Set(ltok, (filename,options),(parseResults,typedResults,fileVersion))  
-                parseAndCheckFileInProjectCache.Set(ltok, (filename,source,options),(parseResults,typedResults,fileVersion,priorTimeStamp))
-                parseFileInProjectCache.Set(ltok, (filename,source,options),parseResults))
+                parseAndCheckFileInProjectCache.Set(ltok, (filename,source,options),(parseResults,typedResults,fileVersion,priorTimeStamp)))
 
     member bc.ImplicitlyStartCheckProjectInBackground(options, userOpName) =        
         if implicitlyStartBackgroundWork then 
             bc.CheckProjectInBackground(options, userOpName + ".ImplicitlyStartCheckProjectInBackground")   
 
-    /// Parses the source file and returns untyped AST
-    member bc.ParseFileInProject(filename:string, source,options:FSharpProjectOptions, userOpName) =
-        match parseCacheLock.AcquireLock (fun ctok -> parseFileInProjectCache.TryGet (ctok, (filename, source, options))) with 
-        | Some parseResults -> async.Return parseResults
-        | None -> 
-        // Try this cache too (which might contain different entries)
-        let cachedResults = parseCacheLock.AcquireLock (fun ctok -> parseAndCheckFileInProjectCache.TryGet(ctok,(filename,source,options)))
-        match cachedResults with 
-        | Some (parseResults, _checkResults,_,_) ->  async.Return parseResults
-        | _ -> 
-        reactor.EnqueueAndAwaitOpAsync(userOpName, "ParseFileInProject", filename, fun ctok -> 
-         cancellable {
-            // Try the caches again - it may have been filled by the time this operation runs
-            match parseCacheLock.AcquireLock (fun ctok -> parseFileInProjectCache.TryGet (ctok, (filename, source, options))) with 
-            | Some parseResults -> return parseResults
-            | None -> 
-            let cachedResults = parseCacheLock.AcquireLock (fun ctok -> parseAndCheckFileInProjectCache.TryGet(ctok, (filename,source,options)))
-            match cachedResults with 
-            | Some (parseResults, _checkResults,_,_) ->  return parseResults
-            | _ -> 
-            Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "ParseFileInProject.CacheMiss", filename)
+    member bc.ParseFile(filename: string, source: string, options: FSharpParsingOptions) =
+        async {
             foregroundParseCount <- foregroundParseCount + 1
-            let! builderOpt,creationErrors,decrement = getOrCreateBuilderAndKeepAlive (ctok, options, userOpName)
-            use _unwind = decrement
-            match builderOpt with
-            | None -> return FSharpParseFileResults(List.toArray creationErrors, None, true, [])
-            | Some builder -> 
-            // Do the parsing.
-            let parseErrors, _matchPairs, inputOpt, anyErrors = 
-               Parser.ParseOneFile (ctok, source, false, true, filename, builder.SourceFiles, builder.TcConfig)
-                 
-            let res = FSharpParseFileResults(parseErrors, inputOpt, anyErrors, builder.AllDependenciesDeprecated )
-            parseCacheLock.AcquireLock (fun ctok -> parseFileInProjectCache.Set (ctok, (filename, source, options), res))
-            return res 
-          }
-        )
+            let parseErrors, inputOpt, anyErrors = Parser.parseFile(source, filename, options)
+            let res = FSharpParseFileResults(parseErrors, inputOpt, anyErrors)
+            parseCacheLock.AcquireLock(fun ctok -> parseFileInProjectCache.Set(ctok, (filename, source, options), res))
+            return res
+        }
 
     /// Fetch the parse information from the background compiler (which checks w.r.t. the FileSystem API)
     member bc.GetBackgroundParseResultsForFileInProject(filename, options, userOpName) =
@@ -2403,26 +2368,11 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             let! builderOpt, creationErrors, decrement = getOrCreateBuilderAndKeepAlive (ctok, options, userOpName)
             use _unwind = decrement
             match builderOpt with
-            | None -> return FSharpParseFileResults(List.toArray creationErrors, None, true, [])
+            | None -> return FSharpParseFileResults(List.toArray creationErrors, None, true)
             | Some builder -> 
             let! inputOpt,_,_,parseErrors = builder.GetParseResultsForFile (ctok, filename)
-            let errors = [| yield! creationErrors; yield! ErrorHelpers.CreateErrorInfos (builder.TcConfig, false, filename, parseErrors) |]
-            return FSharpParseFileResults(errors = errors, input = inputOpt, parseHadErrors = false, dependencyFiles = builder.AllDependenciesDeprecated)
-          }
-        )
-
-    member bc.MatchBraces(filename:string, source, options, userOpName) =
-        reactor.EnqueueAndAwaitOpAsync(userOpName, "MatchBraces", filename, fun ctok -> 
-          cancellable {
-            let! builderOpt,_,decrement = getOrCreateBuilderAndKeepAlive (ctok, options, userOpName)
-            use _unwind = decrement
-            match builderOpt with
-            | None -> return [| |]
-            | Some builder -> 
-            let _parseErrors, matchPairs, _inputOpt, _anyErrors = 
-               Parser.ParseOneFile (ctok, source, true, false, filename, builder.SourceFiles, builder.TcConfig)
-                 
-            return matchPairs
+            let errors = [| yield! creationErrors; yield! ErrorHelpers.CreateErrorInfos (builder.TcConfig.errorSeverityOptions, false, filename, parseErrors) |]
+            return FSharpParseFileResults(errors = errors, input = inputOpt, parseHadErrors = false)
           }
         )
 
@@ -2574,7 +2524,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 use _unwind = decrement
                 match builderOpt with
                 | None -> 
-                    let parseResults = FSharpParseFileResults(List.toArray creationErrors, None, true, [])
+                    let parseResults = FSharpParseFileResults(List.toArray creationErrors, None, true)
                     return (parseResults, FSharpCheckFileAnswer.Aborted)
 
                 | Some builder -> 
@@ -2589,11 +2539,10 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                         let! tcPrior = execWithReactorAsync <| fun ctok -> builder.GetCheckResultsBeforeFileInProject (ctok, filename) 
                     
                         // Do the parsing.
-                        let! parseErrors, _matchPairs, inputOpt, anyErrors = 
-                            execWithReactorAsync <| fun ctok ->
-                                Parser.ParseOneFile (ctok, source, false, true, filename, builder.SourceFiles, builder.TcConfig) |> cancellable.Return
+                        let parsingOptions = FSharpParsingOptions.FromTcConfig(builder.TcConfig, Array.ofList (builder.SourceFiles))
+                        let parseErrors, inputOpt, anyErrors = Parser.parseFile (source, filename, parsingOptions)
                      
-                        let parseResults = FSharpParseFileResults(parseErrors, inputOpt, anyErrors, builder.AllDependenciesDeprecated)
+                        let parseResults = FSharpParseFileResults(parseErrors, inputOpt, anyErrors)
                         let! checkResults = bc.CheckOneFileImpl(parseResults, source, filename, options, textSnapshotInfo, fileVersion, builder, tcPrior, creationErrors, userOpName)
                         return parseResults, checkResults
             finally 
@@ -2608,15 +2557,16 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             use _unwind = decrement
             match builderOpt with
             | None -> 
-                let parseResults = FSharpParseFileResults(Array.ofList creationErrors, None, true, [])
+                let parseResults = FSharpParseFileResults(Array.ofList creationErrors, None, true)
                 let typedResults = MakeCheckFileResultsEmpty(filename, creationErrors)
                 return (parseResults, typedResults)
             | Some builder -> 
                 let! (inputOpt, _, _, untypedErrors) = builder.GetParseResultsForFile (ctok, filename)
                 let! tcProj = builder.GetCheckResultsAfterFileInProject (ctok, filename)
-                let untypedErrors = [| yield! creationErrors; yield! ErrorHelpers.CreateErrorInfos (builder.TcConfig, false, filename, untypedErrors) |]
-                let tcErrors = [| yield! creationErrors; yield! ErrorHelpers.CreateErrorInfos (builder.TcConfig, false, filename, tcProj.Errors) |]
-                let parseResults = FSharpParseFileResults(errors = untypedErrors, input = inputOpt, parseHadErrors = false, dependencyFiles = builder.AllDependenciesDeprecated)
+                let errorOptions = builder.TcConfig.errorSeverityOptions
+                let untypedErrors = [| yield! creationErrors; yield! ErrorHelpers.CreateErrorInfos (errorOptions, false, filename, untypedErrors) |]
+                let tcErrors = [| yield! creationErrors; yield! ErrorHelpers.CreateErrorInfos (errorOptions, false, filename, tcProj.Errors) |]
+                let parseResults = FSharpParseFileResults(errors = untypedErrors, input = inputOpt, parseHadErrors = false)
                 let loadClosure = scriptClosureCacheLock.AcquireLock (fun ltok -> scriptClosureCache.TryGet (ltok, options) )
                 let scope = 
                     TypeCheckInfo(tcProj.TcConfig, tcProj.TcGlobals, tcProj.TcState.PartialAssemblySignature, tcProj.TcState.Ccu, tcProj.TcImports, tcProj.TcEnvAtEnd.AccessRights,
@@ -2650,7 +2600,9 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             return FSharpCheckProjectResults (options.ProjectFileName, keepAssemblyContents, Array.ofList creationErrors, None, reactorOps)
         | Some builder -> 
             let! (tcProj, ilAssemRef, tcAssemblyDataOpt, tcAssemblyExprOpt)  = builder.GetCheckResultsAndImplementationsForProject(ctok)
-            let errors = [| yield! creationErrors; yield! ErrorHelpers.CreateErrorInfos (tcProj.TcConfig, true, Microsoft.FSharp.Compiler.TcGlobals.DummyFileNameForRangesWithoutASpecificLocation, tcProj.Errors) |]
+            let errorOptions = tcProj.TcConfig.errorSeverityOptions
+            let fileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation
+            let errors = [| yield! creationErrors; yield! ErrorHelpers.CreateErrorInfos (errorOptions, true, fileName, tcProj.Errors) |]
             return FSharpCheckProjectResults (options.ProjectFileName, keepAssemblyContents, errors, Some(tcProj.TcGlobals, tcProj.TcImports, tcProj.TcState.Ccu, tcProj.TcState.PartialAssemblySignature, tcProj.TcSymbolUses, tcProj.TopAttribs, tcAssemblyDataOpt, ilAssemRef, tcProj.TcEnvAtEnd.AccessRights, tcAssemblyExprOpt, tcProj.TcDependencyFiles), reactorOps)
       }
 
@@ -2830,10 +2782,7 @@ type FSharpChecker(legacyReferenceResolver, projectCacheSize, keepAssemblyConten
     // background UI thread, not on the compiler thread.
     //
     // This cache is safe for concurrent access because there is no onDiscard action for the items in the cache.
-    let braceMatchCache = 
-        MruCache<AnyCallerThreadToken, (string*string*FSharpProjectOptions),_>(braceMatchCacheSize,
-            areSame=AreSameForParsing3,
-            areSimilar=AreSubsumable3) 
+    let braceMatchCache = MruCache<AnyCallerThreadToken,_,_>(braceMatchCacheSize, areSame = AreSameForParsing) 
 
     let mutable maxMemoryReached = false
     let mutable maxMB = maxMBDefault
@@ -2854,22 +2803,20 @@ type FSharpChecker(legacyReferenceResolver, projectCacheSize, keepAssemblyConten
 
     member ic.ReferenceResolver = legacyReferenceResolver
 
-    member ic.MatchBraces(filename, source, options, ?userOpName: string) =
-        let userOpName = defaultArg userOpName "Unknown"
-        async { 
-            match braceMatchCache.TryGet (AssumeAnyCallerThreadWithoutEvidence(), (filename, source, options)) with 
+    member ic.MatchBraces(filename, source, options: FSharpParsingOptions) =
+        async {
+            match braceMatchCache.TryGet(AssumeAnyCallerThreadWithoutEvidence(), (filename, source, options)) with
             | Some res -> return res
-            | None -> 
-                let! res = backgroundCompiler.MatchBraces(filename, source, options, userOpName)
-                braceMatchCache.Set (AssumeAnyCallerThreadWithoutEvidence(), (filename, source, options), res)
-                return res 
-         }
+            | None ->
+                let res = Parser.matchBraces(source, filename, options)
+                braceMatchCache.Set(AssumeAnyCallerThreadWithoutEvidence(), (filename, source, options), res)
+                return res
+        }
 
-    member ic.ParseFileInProject(filename, source, options, ?userOpName: string) =
-        let userOpName = defaultArg userOpName "Unknown"
+    member ic.ParseFile(filename, source, options) =
         ic.CheckMaxMemoryReached()
-        backgroundCompiler.ParseFileInProject(filename, source, options, userOpName)
-        
+        backgroundCompiler.ParseFile(filename, source, options)
+
     member ic.GetBackgroundParseResultsForFileInProject (filename,options, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
         backgroundCompiler.GetBackgroundParseResultsForFileInProject(filename, options, userOpName)
@@ -3055,6 +3002,14 @@ type FSharpChecker(legacyReferenceResolver, projectCacheSize, keepAssemblyConten
           ExtraProjectInfo=extraProjectInfo
           Stamp = None }
 
+    member ic.GetParsingOptionsFromCommandLineArgs(argv) =
+        use errorScope = new ErrorScope()
+        let tcConfigBuilder = TcConfigBuilder.Initial
+
+        // Apply command-line arguments and collect more source files if they are in the arguments
+        let sourceFilesNew = ApplyCommandLineArgs(tcConfigBuilder, [], argv)
+        FSharpParsingOptions.FromTcConfigBuidler(tcConfigBuilder, Array.ofList sourceFilesNew), errorScope.Diagnostics
+
     /// Begin background parsing the given project.
     member ic.StartBackgroundCompile(options, ?userOpName) = 
         let userOpName = defaultArg userOpName "Unknown"
@@ -3124,10 +3079,10 @@ type FsiInteractiveChecker(legacyReferenceResolver, reactorOps: IReactorOperatio
             let userOpName = defaultArg userOpName "Unknown"
             let filename = Path.Combine(tcConfig.implicitIncludeDir, "stdin.fsx")
             // Note: projectSourceFiles is only used to compute isLastCompiland, and is ignored if Build.IsScript(mainInputFileName) is true (which it is in this case).
-            let projectSourceFiles = [ ]
-            let parseErrors, _matchPairs, inputOpt, anyErrors = Parser.ParseOneFile (ctok, source, false, true, filename, projectSourceFiles, tcConfig)
+            let parsingOptions = FSharpParsingOptions.FromTcConfig(tcConfig, [| filename |])
+            let parseErrors, inputOpt, anyErrors = Parser.parseFile (source, filename, parsingOptions)
             let dependencyFiles = [] // interactions have no dependencies
-            let parseResults = FSharpParseFileResults(parseErrors, inputOpt, parseHadErrors = anyErrors, dependencyFiles = dependencyFiles)
+            let parseResults = FSharpParseFileResults(parseErrors, inputOpt, parseHadErrors = anyErrors)
             
             let backgroundDiagnostics = []
             
@@ -3140,7 +3095,7 @@ type FsiInteractiveChecker(legacyReferenceResolver, reactorOps: IReactorOperatio
             let loadClosure = LoadClosure.ComputeClosureOfSourceText(ctok, legacyReferenceResolver, defaultFSharpBinariesDir, filename, source, CodeContext.Editing, tcConfig.useSimpleResolution, tcConfig.useFsiAuxLib, new Lexhelp.LexResourceManager(), applyCompilerOptions, assumeDotNetFramework)
             let! tcErrors, tcFileResult =  Parser.CheckOneFile(parseResults, source, filename, "project", tcConfig, tcGlobals, tcImports,  tcState, Some loadClosure, backgroundDiagnostics, reactorOps, (fun () -> true), None, userOpName)
 
-            return 
+            return
                 match tcFileResult with 
                 | Parser.TypeCheckAborted.No scope ->
                     let errors = [|  yield! parseErrors; yield! tcErrors |]
