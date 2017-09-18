@@ -710,7 +710,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     )
                 try
                     let r = f()
-                    fshProjNode.ComputeSourcesAndFlags()
+                    fshProjNode.SyncWithHierarchy()
                     r
                 finally
                     addFilesNotification <- None
@@ -1323,6 +1323,26 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             member x.GetCompileItems() = let sources,_ = sourcesAndFlags.Value in sources
             member x.GetCompileFlags() = let _,flags = sourcesAndFlags.Value in flags
 
+            /// Sync the source files with what's listed in the Solution Explorer.
+            /// This is called when a file is added, moved or removed from the project.
+            member this.SyncWithHierarchy() =
+                let sources =
+                    this.AllDescendants
+                    |> Seq.choose (function
+                        | :? FileNode as fileNode when fileNode.ItemNode.ItemName = ProjectFileConstants.Compile ->
+                            Some fileNode
+                        | _ ->
+                            None
+                    )
+                    |> Seq.map (fun file -> file.Url)
+                    |> Array.ofSeq
+
+                sourcesAndFlags <-
+                    sourcesAndFlags
+                    |> Option.map (fun (_, flags) -> sources, flags)
+
+                sourcesAndFlagsNotifier.Notify()
+
             override x.ComputeSourcesAndFlags() =
 
                 if not x.IsInBatchUpdate && box x.BuildProject <> null && not inMidstOfReloading && not (VsBuildManagerAccessorExtensionMethods.IsInProgress(accessor)) then
@@ -1553,19 +1573,19 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                         match addFilesNotification with
                         | Some(f) -> f rgpszMkDocuments
                         | None -> ()
-                        x.ComputeSourcesAndFlags()
+                        x.SyncWithHierarchy()
                     VSConstants.S_OK
                 member x.OnAfterAddDirectoriesEx(_cProjects,_cDirectories, _rgpProjects,_rgFirstIndices,_rgpszMkDocuments,  _rgFlags) = 
                     VSConstants.S_OK
                 member x.OnAfterRemoveFiles(cProjects,_cFiles, rgpProjects,_rgFirstIndices,_rgpszMkDocuments,  _rgFlags) = 
                     if x.OneOfTheProjectsIsThisOne(cProjects, rgpProjects) then
-                        x.ComputeSourcesAndFlags()
+                        x.SyncWithHierarchy()
                     VSConstants.S_OK
                 member x.OnAfterRemoveDirectories(_cProjects,_cDirectories, _rgpProjects,_rgFirstIndices,_rgpszMkDocuments,  _rgFlags) = 
                     VSConstants.S_OK
                 member x.OnAfterRenameFiles(cProjects,_cFiles, rgpProjects,_rgFirstIndices,_rgszMkOldNames,_rgszMkNewNames,  _rgFlags) = 
                     if x.OneOfTheProjectsIsThisOne(cProjects, rgpProjects) then
-                        x.ComputeSourcesAndFlags()
+                        x.SyncWithHierarchy()
                     VSConstants.S_OK
                 member x.OnAfterRenameDirectories(_cProjects,_cDirs, _rgpProjects,_rgFirstIndices,_rgszMkOldNames,_rgszMkNewNames,  _rgFlags) = 
                     VSConstants.S_OK
@@ -2693,7 +2713,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     | :? FileNode -> Debug.Assert(false, "FileNode that's not FSharpFileNode"); true
                     | :? FolderNode -> Debug.Assert(false, "FolderNode that's not FSharpFolderNode"); true
                     | _ -> false   // can't move up if node above is not a file/folder node (e.g. 'References')
-
+                    
             static member MoveDown(node : HierarchyNode, root : FSharpProjectNode) =
                 Debug.Assert(FSharpFileNode.CanMoveDown(node), "Tried to MoveDown when cannot")
 
@@ -2742,7 +2762,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 | _ -> Debug.Assert(false, "should never get here"); raise <| new InvalidOperationException()
                 root.SetProjectFileDirty(true)
                 // Recompute & notify of changes
-                root.ComputeSourcesAndFlags()
+                root.SyncWithHierarchy()
 
             static member MoveUp(node : HierarchyNode, root : FSharpProjectNode) =
                 Debug.Assert(FSharpFileNode.CanMoveUp(node), "Tried to MoveUp when cannot")
@@ -2795,7 +2815,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                 | _ -> Debug.Assert(false, "should never get here"); raise <| new InvalidOperationException()
                 root.SetProjectFileDirty(true)
                 // Recompute & notify of changes
-                root.ComputeSourcesAndFlags()
+                root.SyncWithHierarchy()
                 
             member x.ServiceCreator : OleServiceProvider.ServiceCreatorCallback =
                 new OleServiceProvider.ServiceCreatorCallback(x.CreateServices)
