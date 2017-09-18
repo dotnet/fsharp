@@ -519,7 +519,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                                 VsShellUtilities.ShowMessageBox
                                     (
                                         serviceProvider = this.Site,
-                                        message = FSharpSR.GetString(FSharpSR.FSharpCoreVersionIsNotLegacyCompatible),
+                                        message = FSharpSR.FSharpCoreVersionIsNotLegacyCompatible(),
                                         title = null,
                                         icon = OLEMSGICON.OLEMSGICON_QUERY, 
                                         msgButton = OLEMSGBUTTON.OLEMSGBUTTON_YESNO, 
@@ -835,7 +835,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             /// <param name="target">Full path to destination file</param>
             override x.AddFileFromTemplate(source:string, target:string ) =
                 if not (Microsoft.FSharp.Compiler.AbstractIL.Internal.Library.Shim.FileSystem.SafeExists(source)) then
-                    raise <| new FileNotFoundException(String.Format(FSharpSR.GetString(FSharpSR.TemplateNotFound), source))
+                    raise <| new FileNotFoundException(String.Format(FSharpSR.TemplateNotFound(), source))
 
                 // We assume that there is no token inside the file because the only
                 // way to add a new element should be through the template wizard that
@@ -940,7 +940,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
             /// <param name="formatlist">The formatlist to return</param>
             override x.GetFormatList(formatlist:byref<string> ) =
                 // see docs for IPersistFileFormat.GetFormatList for correct format of this string
-                formatlist <- sprintf "%s\n*.fsproj\n" (FSharpSR.GetString(FSharpSR.ProjectFileExtensionFilter))
+                formatlist <- sprintf "%s\n*.fsproj\n" (FSharpSR.ProjectFileExtensionFilter())
                 VSConstants.S_OK
 
             member this.IsCurrentProjectDotNetPortable() = this.CheckProjectFrameworkIdentifier(".NETPortable")
@@ -986,7 +986,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     stripEndingSemicolon paths
 
                 let dialogTitle = 
-                    let text = FSharpSR.GetString(FSharpSR.AddReferenceDialogTitleDev11)
+                    let text = FSharpSR.AddReferenceDialogTitle_Dev11()
                     String.Format(text, self.VSProject.Project.Name)
 
                 let referenceContainerNode = this.GetReferenceContainer() :?> ReferenceContainerNode
@@ -1022,9 +1022,9 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                             // MSDN: Gets or sets whether the assembly is referenced implicitly
                             assemblyReferenceProviderContext.IsImplicitlyReferenced <- false
                             // MSDN: Gets or sets the message to display during retargeting.
-                            assemblyReferenceProviderContext.RetargetingMessage <- FSharpSR.GetString(FSharpSR.AddReferenceAssemblyPageDialogRetargetingText)
+                            assemblyReferenceProviderContext.RetargetingMessage <- FSharpSR.AddReferenceAssemblyPageDialogRetargetingText()
                             // MSDN: Sets the custom no items message for the specified tab.
-                            assemblyReferenceProviderContext.SetNoItemsMessageForTab(uint32 __VSASSEMBLYPROVIDERTAB.TAB_ASSEMBLY_FRAMEWORK, FSharpSR.GetString(FSharpSR.AddReferenceAssemblyPageDialogNoItemsText))
+                            assemblyReferenceProviderContext.SetNoItemsMessageForTab(uint32 __VSASSEMBLYPROVIDERTAB.TAB_ASSEMBLY_FRAMEWORK, FSharpSR.AddReferenceAssemblyPageDialogNoItemsText())
                             // we support only fixed set of portable profiles thus retargeting is prohibited
                             assemblyReferenceProviderContext.SupportsRetargeting <- false
 
@@ -1079,7 +1079,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     let c = 
                         let c = componentDialog.CreateProviderContext(VSConstants.FileReferenceProvider_Guid)
                         let fileReferenceProviderContext = c :?> IVsFileReferenceProviderContext 
-                        fileReferenceProviderContext.BrowseFilter <- sprintf "%s|*.dll;*.exe;" (FSharpSR.GetString FSharpSR.ComponentFileExtensionFilter)
+                        fileReferenceProviderContext.BrowseFilter <- sprintf "%s|*.dll;*.exe;" (FSharpSR.ComponentFileExtensionFilter())
                         c
                     yield c
                     // TODO, eventually, win8 stuff
@@ -1329,8 +1329,8 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
                     use sourcesAndFlagsWaitDialog =
                         {
-                            WaitCaption = FSharpSR.GetString FSharpSR.ProductName
-                            WaitMessage = FSharpSR.GetString FSharpSR.ComputingSourcesAndFlags
+                            WaitCaption = FSharpSR.ProductName()
+                            WaitMessage = FSharpSR.ComputingSourcesAndFlags()
                             ProgressText = Some x.ProjectFile
                             StatusBmpAnim = null
                             StatusBarText = None
@@ -1769,8 +1769,8 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     if waitCount = 0 then 
                         waitDialog <-
                             {
-                                WaitCaption = FSharpSR.GetString FSharpSR.ProductName
-                                WaitMessage = FSharpSR.GetString FSharpSR.UpdatingSolutionConfiguration
+                                WaitCaption = FSharpSR.ProductName()
+                                WaitMessage = FSharpSR.UpdatingSolutionConfiguration()
                                 ProgressText = None
                                 StatusBmpAnim = null
                                 StatusBarText = None
@@ -1932,13 +1932,13 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                             VsShellUtilities.ShowMessageBox
                                 (
                                     node.Site, 
-                                    FSharpSR.GetString(FSharpSR.Dev11SupportsOnlySilverlight5), 
+                                    FSharpSR.Dev11SupportsOnlySilverlight5(),
                                     null,
                                     OLEMSGICON.OLEMSGICON_INFO, OLEMSGBUTTON.OLEMSGBUTTON_OK, OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST
                                 ) |> ignore
                             Marshal.ThrowExceptionForHR(VSConstants.OLE_E_PROMPTSAVECANCELLED)
                         let result =
-                            VsShellUtilities.ShowMessageBox(node.Site, FSharpSR.GetStringWithCR(FSharpSR.NeedReloadToChangeTargetFx), 
+                            VsShellUtilities.ShowMessageBox(node.Site, FSharpSR.NeedReloadToChangeTargetFx().Replace("\n", Environment.NewLine),
                                                         null,
                                                         OLEMSGICON.OLEMSGICON_QUERY, OLEMSGBUTTON.OLEMSGBUTTON_YESNO, OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST) 
                         if result <> NativeMethods.IDYES then
@@ -1980,7 +1980,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     | OutputType.WinExe -> "WinExe"
                     | OutputType.Exe -> "Exe"
                     | OutputType.Library -> "Library"
-                    | _ -> raise <| ArgumentException(FSharpSR.GetString(FSharpSR.InvalidOutputType), "value")
+                    | _ -> raise <| ArgumentException(FSharpSR.InvalidOutputType(), "value")
                 this.Node.ProjectMgr.SetProjectProperty(ProjectFileConstants.OutputType, outputTypeInteger)
 
         [<Browsable(false)>]
@@ -2013,7 +2013,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     | 0 -> "Always"
                     | 1 -> "OnBuildSuccess"
                     | 2 -> "OnOutputUpdated"
-                    | _ -> raise <| ArgumentException(FSharpSR.GetString(FSharpSR.InvalidRunPostBuildEvent), "value")
+                    | _ -> raise <| ArgumentException(FSharpSR.InvalidRunPostBuildEvent(), "value")
                 this.Node.ProjectMgr.SetProjectProperty(ProjectFileConstants.RunPostBuildEvent, runPostBuildEventInteger)
         
     type internal FSharpFolderNode(root : FSharpProjectNode, relativePath : string, projectElement : ProjectElement) =
@@ -2425,11 +2425,11 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                     if fileChildren = [nodeToBeMoved] then
                         Ok siblingNode
                     else
-                        Error <| String.Format(FSharpSR.GetString(FSharpSR.FileCannotBePlacedMultipleFiles), siblingNode.VirtualNodeName)
+                        Error <| String.Format(FSharpSR.FileCannotBePlacedMultipleFiles(), siblingNode.VirtualNodeName)
                 | Some siblingNode ->
                     Ok siblingNode
                 | None ->
-                    Error <| FSharpSR.GetString(FSharpSR.FileCannotBePlacedDifferentSubtree)
+                    Error <| FSharpSR.FileCannotBePlacedDifferentSubtree()
                 |> function
                 | Ok node ->
                     unlinkFromSiblings node
@@ -2464,9 +2464,9 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
 
                         let bodyString =
                             match location with
-                            | Above -> FSharpSR.FileCannotBePlacedBodyAbove
-                            | Below -> FSharpSR.FileCannotBePlacedBodyBelow
-                            |> FSharpSR.GetStringWithCR
+                            | Above -> FSharpSR.FileCannotBePlacedBodyAbove()
+                            | Below -> FSharpSR.FileCannotBePlacedBodyBelow()
+                            |> (fun s -> s.Replace("\n", Environment.NewLine))
 
                         let entireMessage = String.Format(bodyString, relPath, relTargetPath, message)
                         VsShellUtilities.ShowMessageBox(root.Site, title, entireMessage, icon, buttons, defaultButton) |> ignore

@@ -29,7 +29,8 @@ module internal {1} =
     type private C (_dummy:System.Object) = class end
     let mutable Culture = System.Globalization.CultureInfo.CurrentUICulture
     let ResourceManager = new System.Resources.ResourceManager(""{2}"", C(null).GetType().GetTypeInfo().Assembly)
-    let GetString(name:System.String) : System.String = ResourceManager.GetString(name, Culture)"
+    let GetString(name:System.String) : System.String = ResourceManager.GetString(name, Culture)
+    let GetObject(name:System.String) : System.Object = ResourceManager.GetObject(name, Culture)"
 
     let generateSource (resx:string) (fullModuleName:string) (generateLegacy:bool) =
         try
@@ -43,24 +44,30 @@ module internal {1} =
             let sourcePath = Path.Combine(_outputPath, justFileName + ".fs")
             printMessage <| sprintf "Generating: %s" sourcePath
             let body =
-                XDocument.Load(resx).Descendants(XName.op_Implicit "data")
+                let xname = XName.op_Implicit
+                XDocument.Load(resx).Descendants(xname "data")
                 |> Seq.fold (fun (sb:StringBuilder) (node:XElement) ->
                     let name =
-                        match node.Attribute(XName.op_Implicit "name") with
+                        match node.Attribute(xname "name") with
                         | null -> failwith "Missing resource name"
                         | attr -> attr.Value
                     let docComment =
-                        match node.Elements(XName.op_Implicit "value").FirstOrDefault() with
+                        match node.Elements(xname "value").FirstOrDefault() with
                         | null -> failwith <| sprintf "Missing resource value for '%s'" name
                         | element -> element.Value.Trim()
                     let identifier = if Char.IsLetter(name.[0]) || name.[0] = '_' then name else "_" + name
                     let commentBody =
-                        XElement(XName.op_Implicit "summary", docComment).ToString().Split([|"\r\n"; "\r"; "\n"|], StringSplitOptions.None)
+                        XElement(xname "summary", docComment).ToString().Split([|"\r\n"; "\r"; "\n"|], StringSplitOptions.None)
                         |> Array.fold (fun (sb:StringBuilder) line -> sb.AppendLine("    /// " + line)) (StringBuilder())
                     // add the resource
                     let accessorBody =
                         if generateLegacy then sprintf "    let %s = \"%s\"" identifier name
-                        else sprintf "    let %s() = GetString(\"%s\")" identifier name
+                        else
+                            let accessorFunction = match node.Attribute(xname "type") with
+                                                   | null -> "GetString"
+                                                   | _ -> "GetObject"
+                            // TODO: When calling the `GetObject` version, parse the `type` attribute to discover the proper return type
+                            sprintf "    let %s() = %s(\"%s\")" identifier accessorFunction name
                     sb.AppendLine().Append(commentBody).AppendLine(accessorBody)
                 ) sb
             File.WriteAllText(sourcePath, body.ToString())
