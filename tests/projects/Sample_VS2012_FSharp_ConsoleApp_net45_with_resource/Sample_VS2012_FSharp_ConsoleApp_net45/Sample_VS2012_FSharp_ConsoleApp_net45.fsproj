@@ -137,8 +137,11 @@
 		</EmbeddedText>
 		<None Include="App.config" />
 		<EmbeddedResource Include="ExplicitCompiledResource.resources" />
-		<EmbeddedResource Include="ResxResource.resx" />
+		<EmbeddedResource Include="ResxResource.resx">
+			<GenerateSource>true</GenerateSource>
+		</EmbeddedResource>
 		<EmbeddedResource Include="ResxResourceWithLogicalName.resx">
+			<GenerateSource>true</GenerateSource>
 			<LogicalName>The.Explicit.Name.Of.ResxResourceWithLogicalName</LogicalName>
 		</EmbeddedResource>
 		<EmbeddedResource Include="NonResxResourceWithLogicalName.txt">
@@ -150,8 +153,11 @@
 		</Content>
 		<EmbeddedResource Include="SubDir\ExplicitCompiledResourceInSubDir.resources" />
 		<EmbeddedResource Include="SubDir\NonResxResourceInSubDir.txt" />
-		<EmbeddedResource Include="SubDir\ResxResourceInSubDir.resx" />
+		<EmbeddedResource Include="SubDir\ResxResourceInSubDir.resx">
+			<GenerateSource>true</GenerateSource>
+		</EmbeddedResource>
 		<EmbeddedResource Include="SubDir\ResxResourceWithLogicalNameInSubDir.resx">
+			<GenerateSource>true</GenerateSource>
 			<LogicalName>The.Explicit.Name.Of.ResxResourceWithLogicalNameInSubDir</LogicalName>
 		</EmbeddedResource>
 		<EmbeddedResource Include="SubDir\NonResxResourceWithLogicalNameInSubDir.txt">
