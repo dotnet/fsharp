@@ -1961,7 +1961,11 @@ and FSharpType(cenv, typ:TType) =
 
     member x.Format(denv: FSharpDisplayContext) = 
        protect <| fun () -> 
-        NicePrint.prettyStringOfTyNoCx (denv.Contents cenv.g) typ 
+        NicePrint.prettyStringOfTyNoCx (denv.Contents cenv.g) typ
+
+    member x.FormatLayout(denv: FSharpDisplayContext) =
+       protect <| fun () -> 
+        NicePrint.prettyLayoutOfTypeNoCx (denv.Contents cenv.g) typ
 
     override x.ToString() = 
        protect <| fun () -> 

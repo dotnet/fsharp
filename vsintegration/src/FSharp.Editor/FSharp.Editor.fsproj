@@ -28,6 +28,11 @@
     <GeneratePkgDefFile>true</GeneratePkgDefFile>
     <IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DefineConstants>DEBUG;MSBUILD_AT_LEAST_14;STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY;TRACE;;VS_VERSION_DEV15;PREFERRED_UI_LANG;ENABLE_MONO_SUPPORT;BE_SECURITY_TRANSPARENT;FX_LCIDFROMCODEPAGE</DefineConstants>
+    <Tailcalls>true</Tailcalls>
+    <Optimize>false</Optimize>
+  </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="FSharp.Editor.resx" />
     <Compile Include="srFSharp.Editor.fs" />
@@ -95,6 +100,7 @@
     <Compile Include="CodeFix\MissingReferenceCodeFixProvider.fs" />
     <Compile Include="CodeFix\FixIndexerAccess.fs" />
     <Compile Include="CodeFix\RenameParamToMatchSignature.fs" />
+    <Compile Include="CodeLens\CodeLens.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
