@@ -371,7 +371,7 @@
     <MakeDir Directories="$(IntermediateOutputPath)" />
 
     <!-- Generate source for all resx files. -->
-    <FSharpEmbedResXSource EmbeddedResource="@(EmbeddedResource)" IntermediateOutputPath="$(IntermediateOutputPath)">
+    <FSharpEmbedResXSource EmbeddedResource="@(EmbeddedResource)" IntermediateOutputPath="$(IntermediateOutputPath)" TargetFramework="$(TargetFramework)">
       <Output TaskParameter="GeneratedSource" ItemName="_FsGeneratedResXSource" />
     </FSharpEmbedResXSource>
 
