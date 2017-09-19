@@ -59,6 +59,7 @@
     <EmbeddedResource Include="FSCore.resx">
       <GenerateSource>true</GenerateSource>
       <GenerateLegacyCode>true</GenerateLegacyCode>
+      <GenerateLiterals>false</GenerateLiterals>
       <GeneratedModuleName>Microsoft.FSharp.Core.SR</GeneratedModuleName>
       <Link>FSCore.resx</Link>
     </EmbeddedResource>

@@ -11,6 +11,7 @@ open System.Runtime.InteropServices
 open System.ComponentModel.Design
 open Microsoft.Win32
 open Microsoft.VisualStudio
+open Microsoft.VisualStudio.FSharp.Interactive
 open Microsoft.VisualStudio.OLE.Interop
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
@@ -37,24 +38,24 @@ module internal ContentType =
 type FsiPropertyPage() = 
     inherit DialogPage()    
        
-    [<SRProperties.Category(SRProperties.FSharpInteractiveMisc)>]
-    [<SRProperties.DisplayName(SRProperties.FSharpInteractive64Bit)>] 
-    [<SRProperties.Description(SRProperties.FSharpInteractive64BitDescr)>] 
+    [<Category(SRProperties.FSharpInteractiveMisc)>]
+    [<DisplayName(SRProperties.FSharpInteractive64Bit)>] 
+    [<Description(SRProperties.FSharpInteractive64BitDescr)>] 
     member this.FsiPreferAnyCPUVersion with get() = SessionsProperties.useAnyCpuVersion and set (x:bool) = SessionsProperties.useAnyCpuVersion <- x
 
-    [<SRProperties.Category(SRProperties.FSharpInteractiveMisc)>]
-    [<SRProperties.DisplayName(SRProperties.FSharpInteractiveOptions)>]
-    [<SRProperties.Description(SRProperties.FSharpInteractiveOptionsDescr)>] 
+    [<Category(SRProperties.FSharpInteractiveMisc)>]
+    [<DisplayName(SRProperties.FSharpInteractiveOptions)>]
+    [<Description(SRProperties.FSharpInteractiveOptionsDescr)>] 
     member this.FsiCommandLineArgs with get() = SessionsProperties.fsiArgs and set (x:string) = SessionsProperties.fsiArgs <- x
 
-    [<SRProperties.Category(SRProperties.FSharpInteractiveMisc)>]
-    [<SRProperties.DisplayName(SRProperties.FSharpInteractiveShadowCopy)>]
-    [<SRProperties.Description(SRProperties.FSharpInteractiveShadowCopyDescr)>] 
+    [<Category(SRProperties.FSharpInteractiveMisc)>]
+    [<DisplayName(SRProperties.FSharpInteractiveShadowCopy)>]
+    [<Description(SRProperties.FSharpInteractiveShadowCopyDescr)>] 
     member this.FsiShadowCopy with get() = SessionsProperties.fsiShadowCopy and set (x:bool) = SessionsProperties.fsiShadowCopy <- x
 
-    [<SRProperties.Category(SRProperties.FSharpInteractiveDebugging)>]
-    [<SRProperties.DisplayName(SRProperties.FSharpInteractiveDebugMode)>]
-    [<SRProperties.Description(SRProperties.FSharpInteractiveDebugModeDescr)>] 
+    [<Category(SRProperties.FSharpInteractiveDebugging)>]
+    [<DisplayName(SRProperties.FSharpInteractiveDebugMode)>]
+    [<Description(SRProperties.FSharpInteractiveDebugModeDescr)>] 
     member this.FsiDebugMode with get() = SessionsProperties.fsiDebugMode and set (x:bool) = SessionsProperties.fsiDebugMode <- x
 
 // CompletionSet

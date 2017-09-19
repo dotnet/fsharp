@@ -32,7 +32,7 @@ module internal {1} =
     let GetString(name:System.String) : System.String = ResourceManager.GetString(name, Culture)
     let GetObject(name:System.String) : System.Object = ResourceManager.GetObject(name, Culture)"
 
-    let generateSource (resx:string) (fullModuleName:string) (generateLegacy:bool) =
+    let generateSource (resx:string) (fullModuleName:string) (generateLegacy:bool) (generateLiteral:bool) =
         try
             let printMessage = printfn "FSharpEmbedResXSource: %s"
             let justFileName = Path.GetFileNameWithoutExtension(resx)
@@ -61,8 +61,10 @@ module internal {1} =
                         |> Array.fold (fun (sb:StringBuilder) line -> sb.AppendLine("    /// " + line)) (StringBuilder())
                     // add the resource
                     let accessorBody =
-                        if generateLegacy then sprintf "    let %s = \"%s\"" identifier name
-                        else
+                        match (generateLegacy, generateLiteral) with
+                        | (true, true) -> sprintf "    [<Literal>]\n    let %s = \"%s\"" identifier name
+                        | (true, false) -> sprintf "    let %s = \"%s\"" identifier name // the [<Literal>] attribute can't be used for FSharp.Core
+                        | (false, _) ->
                             let accessorFunction = match node.Attribute(xname "type") with
                                                    | null -> "GetString"
                                                    | _ -> "GetObject"
@@ -99,17 +101,21 @@ module internal {1} =
             with get() = _hostObject
              and set(value) = _hostObject <- value
         member this.Execute() =
-            let getBooleanMetadata (metadataName:string) (item:ITaskItem) = String.Compare(item.GetMetadata(metadataName), "true", StringComparison.OrdinalIgnoreCase) = 0
+            let getBooleanMetadata (metadataName:string) (defaultValue:bool) (item:ITaskItem) =
+                match item.GetMetadata(metadataName) with
+                | value when String.IsNullOrWhiteSpace(value) -> defaultValue
+                | value -> String.Compare(value, "true", StringComparison.OrdinalIgnoreCase) = 0
             let generatedFiles, generatedResult =
                 this.EmbeddedResource
-                |> Array.filter (getBooleanMetadata "GenerateSource")
+                |> Array.filter (getBooleanMetadata "GenerateSource" false)
                 |> Array.fold (fun (resultList, aggregateResult) item ->
                     let moduleName =
                         match item.GetMetadata("GeneratedModuleName") with
                         | null -> Path.GetFileNameWithoutExtension(item.ItemSpec)
                         | value -> value
-                    let generateLegacy = getBooleanMetadata "GenerateLegacyCode" item
-                    match generateSource item.ItemSpec moduleName generateLegacy with
+                    let generateLegacy = getBooleanMetadata "GenerateLegacyCode" false item
+                    let generateLiteral = getBooleanMetadata "GenerateLiterals" true item
+                    match generateSource item.ItemSpec moduleName generateLegacy generateLiteral with
                     | Some (source) -> ((source :: resultList), aggregateResult)
                     | None -> (resultList, false)
                 ) ([], true)
