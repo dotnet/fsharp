@@ -274,9 +274,13 @@ type internal FSharpProjectOptionsManager
         }
 
     member this.UpdateProjectInfoWithProjectId(projectId:ProjectId, userOpName) =
-        let project = workspace.CurrentSolution.GetProject(projectId)
-        let siteProvider = this.ProvideProjectSiteProvider(project)
-        this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, siteProvider.GetProjectSite(), userOpName)
+        let hier = workspace.GetHierarchy(projectId)
+        match hier with
+        | h when (h.IsCapabilityMatch("CPS")) ->
+            let project = workspace.CurrentSolution.GetProject(projectId)
+            let siteProvider = this.ProvideProjectSiteProvider(project)
+            this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, siteProvider.GetProjectSite(), userOpName)
+        | _ -> ()
 
     member this.UpdateProjectInfoWithPath(path, userOpName) =
         let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(path, projectDisplayNameOf path)

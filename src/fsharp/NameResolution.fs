@@ -3123,21 +3123,25 @@ let private ResolveExprDotLongIdent (ncenv:NameResolver) m ad nenv typ lid findF
     let typeNameResInfo = TypeNameResolutionInfo.Default
     let adhoctDotSearchAccessible = AtMostOneResult m (ResolveLongIdentInTypePrim ncenv nenv LookupKind.Expr ResolutionInfo.Empty 1 m ad lid findFlag typeNameResInfo typ)
     match adhoctDotSearchAccessible with 
-    | Exception _ ->
+    | Exception _ -> 
         // If the dot is not resolved by adhoc overloading then look for a record field 
         // that can resolve the name. 
-        let dotFieldIdSearch = 
-            match lid with 
-            // A unique record label access, e.g  expr.field  
-            | id::rest when nenv.eFieldLabels.ContainsKey(id.idText) -> 
-                match nenv.eFieldLabels.[id.idText] with
-                | [] -> NoResultsOrUsefulErrors
-                | rfref :: _ ->
-                    // NOTE (instantiationGenerator cleanup): we need to freshen here because we don't know the type. 
-                    // But perhaps the caller should freshen?? 
-                    let item = FreshenRecdFieldRef ncenv m rfref
-                    OneSuccess (ResolutionInfo.Empty,item,rest)
-            | _ -> NoResultsOrUsefulErrors 
+        let dotFieldIdSearch =
+            // If the type is already known, we should not try to lookup a record field
+            if isAppTy ncenv.g typ then 
+                NoResultsOrUsefulErrors
+            else 
+                match lid with 
+                // A unique record label access, e.g  expr.field  
+                | id::rest when nenv.eFieldLabels.ContainsKey(id.idText) -> 
+                    match nenv.eFieldLabels.[id.idText] with
+                    | [] -> NoResultsOrUsefulErrors
+                    | rfref :: _ ->
+                        // NOTE (instantiationGenerator cleanup): we need to freshen here because we don't know the type. 
+                        // But perhaps the caller should freshen?? 
+                        let item = FreshenRecdFieldRef ncenv m rfref
+                        OneSuccess (ResolutionInfo.Empty,item,rest)
+                | _ -> NoResultsOrUsefulErrors 
         
         let search = dotFieldIdSearch 
         match AtMostOneResult m search with 
@@ -3145,8 +3149,7 @@ let private ResolveExprDotLongIdent (ncenv:NameResolver) m ad nenv typ lid findF
         | _ -> 
             let adhocDotSearchAll = ResolveLongIdentInTypePrim ncenv nenv LookupKind.Expr ResolutionInfo.Empty 1 m AccessibleFromSomeFSharpCode lid findFlag typeNameResInfo typ 
             ForceRaise (AtMostOneResult m (search +++ adhocDotSearchAll))
-
-    | Result _ -> 
+    | _ -> 
         ForceRaise adhoctDotSearchAccessible
 
 let ComputeItemRange wholem (lid: Ident list) rest =
