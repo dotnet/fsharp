@@ -49,7 +49,7 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
     let tagsChangedEvent = new Event<EventHandler<SnapshotSpanEventArgs>,SnapshotSpanEventArgs>()
 
     // Tracks the created ui elements per TrackingSpan
-    let mutable uiElements = Dictionary<_,_>()
+    let uiElements = Dictionary<_,_>()
     /// Caches the current used trackingSpans per line. One line can contain multiple trackingSpans
     let mutable trackingSpans = Dictionary<_, Generic.List<_>>()
     /// Text view for accessing the adornment layer.
@@ -64,8 +64,6 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
     let mutable layoutChangedCts = new CancellationTokenSource()
 
     let mutable currentBufferSnapshot = null
-
-    let mutex = new Mutex()
 
     /// Helper method which returns the start line number of a tracking span
     let getTrackingSpanStartLine (snapshot:ITextSnapshot) (trackingSpan:ITrackingSpan) =
@@ -131,14 +129,16 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
                 |> Option.defaultValue 0
             let realStart = line.Start.Add(offset)
             // Get the geometry which respects the changed height due to the SpaceAdornmentTag
-            let geometry = 
+            let top, left = 
                 let g = view.TextViewLines.GetCharacterBounds(realStart)
                 // WORKAROUND VS BUG, left cannot be zero if the offset is creater than zero!
                 // Calling the method twice fixes this bug and ensures that all values are correct.
-                if g.Left = 0. && offset > 0 then view.TextViewLines.GetCharacterBounds(realStart)
-                else g
-            Canvas.SetLeft(ui, geometry.Left)
-            Canvas.SetTop(ui, geometry.Top)
+                // Okay not really :(
+                if g.Left = 0. && offset > 0 then
+                    g.Top, Canvas.GetLeft ui
+                else g.Top, g.Left
+            Canvas.SetLeft(ui, left)
+            Canvas.SetTop(ui, top)
         with e -> logExceptionWithContext (e, "Error in layout ui element on line")
 
     // We update all content of our cache system with this method here
@@ -161,6 +161,7 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
             | Some view ->
                 let firstLine = view.TextViewLines.FirstVisibleLine
                 view.DisplayTextLineContainingBufferPosition (firstLine.Start, 0., ViewRelativePosition.Top)
+                self.RelayoutRequested.Enqueue(())
          with e -> logErrorf "Error in code lens provider: %A" e
 
     /// Here all layout methods for the adornments is done.
@@ -198,12 +199,11 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
                                 view.GetTextViewLineContainingBufferPosition(l.Start)
                             let tags = line.GetAdornmentTags(self)
                             match tags |> Seq.tryHead with
-                            | None -> ()
-                            | Some tag ->
-                                let uis = tag :?> StackPanel seq
+                            | Some (:? seq<StackPanel> as uis) ->
                                 for ui in uis do
-                                    if ui |> isNull |> not then
+                                    if ui <> null then
                                         ui.Visibility <- Visibility.Hidden
+                            | _ -> ()
                         with e -> logErrorf "Error in non visible lines iteration %A" e
                 for lineNumber in newVisibleLineNumbers do
                     try
@@ -212,13 +212,12 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
                                 view.GetTextViewLineContainingBufferPosition(l.Start)
                         let tags = line.GetAdornmentTags(self)
                         match tags |> Seq.tryHead with
-                        | None -> ()
-                        | Some tag ->
-                            let uis = tag :?> StackPanel seq
+                        | Some (:? seq<StackPanel> as uis) ->
                             for ui in uis do
-                                if ui |> isNull |> not then
+                                if ui <> null then
                                     ui.Visibility <- Visibility.Visible
                                     layoutUIElementOnLine view line.Extent ui
+                        | _ -> ()
                      with e -> logErrorf "Error in new visible lines iteration %A" e
             // Save the new first and last visible lines for tracking
             recentFirstVsblLineNmbr <- firstVisibleLineNumber
@@ -229,13 +228,14 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
             layoutChangedCts <- new CancellationTokenSource()
             asyncMaybe {
                 do! Async.SwitchToContext uiContext |> liftAsync
-                // Suspend 5 ms, insantly applying the layout to the adornment elements isn't needed 
+                // Suspend 5 ms, instantly applying the layout to the adornment elements isn't needed 
                 // and would consume too much performance
                 do! Async.Sleep(5) |> liftAsync
                 let! view = view
                 let! layer = codeLensLayer
                 // Now relayout the existing adornments
-                if nonVisibleLineNumbers.Count > 0 || newVisibleLineNumbers.Count > 0 then
+                if nonVisibleLineNumbers.Count > 0 || newVisibleLineNumbers.Count > 0 || self.RelayoutRequested.Count > 0 then
+                    if self.RelayoutRequested.Count > 0 then self.RelayoutRequested.Dequeue() |> ignore
                     let buffer = buffer.CurrentSnapshot
                     for lineNumber in visibleLineNumbers do
                         let line = 
@@ -243,13 +243,12 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
                             view.GetTextViewLineContainingBufferPosition(l.Start)
                         let tags = line.GetAdornmentTags(self)
                         match tags |> Seq.tryHead with
-                        | None -> ()
-                        | Some tag ->
-                            let uis = tag :?> StackPanel seq
+                        | Some (:? seq<StackPanel> as uis) ->
                             for ui in uis do
-                                if ui |> isNull |> not then
+                                if ui <> null then
                                     ui.Visibility <- Visibility.Visible
                                     layoutUIElementOnLine view line.Extent ui
+                        | _ -> ()
 
                 do! Async.Sleep(495) |> liftAsync
 
@@ -268,14 +267,13 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
                 for line in linesToProcess do
                     try
                         match line.GetAdornmentTags self |> Seq.tryHead with
-                        | None -> ()
-                        | Some tag ->
-                            let stackPanels = tag :?> StackPanel seq
+                        | Some (:? seq<StackPanel> as stackPanels) ->
                             for stackPanel in stackPanels do
                                 if stackPanel |> addedAdornments.Contains |> not then
                                     layer.AddAdornment(AdornmentPositioningBehavior.ViewportRelative, Nullable(), 
                                         self, stackPanel, AdornmentRemovedCallback(fun _ _ -> ())) |> ignore
                                     addedAdornments.Add stackPanel |> ignore
+                        | _ -> ()
                     with e -> logExceptionWithContext (e, "LayoutChanged, processing new visible lines")
             } |> Async.Ignore |> RoslynHelpers.StartAsyncSafe layoutChangedCts.Token
         with e -> logExceptionWithContext (e, "Layout changed")
@@ -284,12 +282,18 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
     // Add buffer changed event handler
     do buffer.ChangedHighPriority.Add handleBufferChanged
     
+    /// <summary>
+    /// Setting this to true signals to the tagger that all visible code lens must be layouted again,
+    /// to respect single line changes.
+    /// </summary>
+    member val RelayoutRequested : Queue = Queue() with get, set
+    
     /// Public non-thread-safe method to add code lens for a given tracking span.
     /// Returns an UIElement which can be used to add Ui elements and to remove the code lens later.
     member __.AddCodeLens (trackingSpan:ITrackingSpan) =
         if trackingSpan.TextBuffer <> buffer then failwith "TrackingSpan text buffer does not equal with CodeLens text buffer"
         let stackPanel = addTrackingSpan trackingSpan
-        // TODO: Add adornment. Not needed, autodone in layout changed.
+        self.RelayoutRequested.Enqueue(())
         stackPanel :> UIElement
     
     /// Public non-thread-safe method to remove code lens for a given tracking span.
@@ -328,8 +332,6 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
         view <- Some value
         codeLensLayer <- Some (value.GetAdornmentLayer "CodeLens")
         value.LayoutChanged.Add handleLayoutChanged
-    
-    member __.Mutex = mutex
 
     // TODO: Add ITagger interface implementation
     interface ITagger<CodeLensGeneralTag> with
@@ -340,7 +342,6 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
         /// Notice, it's asumed that the data in the collection is valid.
         override __.GetTags spans =
             try
-                // mutex.WaitOne() |> ignore
                 seq {
                     for span in spans do
                         let snapshot = span.Snapshot
@@ -369,9 +370,7 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
                             logInfof "adding tag, height %A, visible %A" height (stackPanels |> Seq.head).Visibility
                             
                             yield TagSpan(span, CodeLensGeneralTag(0., height, 0., 0., 0., PositionAffinity.Predecessor, stackPanels, self)) :> ITagSpan<CodeLensGeneralTag>
-                } |> (fun r -> 
-                        // mutex.ReleaseMutex() |> ignore
-                        r)
+                }
             with e -> 
                 logErrorf "Error in code lens get tags %A" e
                 Seq.empty
@@ -462,7 +461,6 @@ type internal FSharpCodeLensTagger
     let createTextBox (lens:CodeLens) =
         asyncMaybe {
             let! taggedText, navigation = lens.TaggedText
-            do! Async.SwitchToContext uiContext |> liftAsync
             let textBox = new TextBlock(Width = 100., Background = Brushes.Transparent, Opacity = 0.5, TextTrimming = TextTrimming.WordEllipsis)
             DependencyObjectExtensions.SetDefaultTextProperties(textBox, formatMap.Value)
             for text in taggedText do
@@ -542,57 +540,54 @@ type internal FSharpCodeLensTagger
                         return None
                 }
 
-            for symbolUse in symbolUses do
+            for symbolUse in symbolUses do 
                 if symbolUse.IsFromDefinition then
                     match symbolUse.Symbol with
                     | :? FSharpEntity as entity ->
                         for func in entity.MembersFunctionsAndValues do
                             // Regardles of whether we are in a async maybe, we don't want to abort the whole process due to a single empty option.
-                            let rawElement = visit func.DeclarationLocation.Start parsedInput
-                            match rawElement with
-                            | None -> ()
-                            | Some declarationRange ->
-                                let! declarationSpan = FSharpRangeToSpan textSnapshot declarationRange
-                                let funcID = func.FullName
-                                let fullDeclarationText = (textSnapshot.GetText declarationSpan).Replace(func.CompiledName, funcID)
-                                let fullTypeSignature = func.FullType.ToString()
-                                // Try to re-use the last results
-                                if lastResults.ContainsKey(fullDeclarationText) then
-                                    // Make sure that the results are usable
-                                    let lastTrackingSpan, codeLens = lastResults.[fullDeclarationText]
-                                    if codeLens.FullTypeSignature = fullTypeSignature then
-                                        // The results can be reused because the signature is the same
-                                        if codeLens.Computed then
-                                            // Just re-use the old results, changed nothing
-                                            newResults.[fullDeclarationText] <- (lastTrackingSpan, codeLens)
-                                            continuedAdornmentTags.[codeLens] <- ()
-                                            logInfof "Declaration %A can be reused. IdentityTag %A" fullDeclarationText codeLens
-                                            oldResults.Remove(fullDeclarationText) |> ignore // Just tracking this
-                                        else
-                                            // The old results aren't computed at all, because the line might have changed create new results
-                                            tagsToUpdate.[lastTrackingSpan] <- 
-                                                (fullDeclarationText, 
-                                                    CodeLens( Async.cache (useResults (symbolUse.DisplayContext, func)),
-                                                        false,
-                                                        fullTypeSignature,
-                                                        null))
-                                            oldResults.Remove(fullDeclarationText) |> ignore
+                            let! declarationRange = visit func.DeclarationLocation.Start parsedInput
+                            let! declarationSpan = FSharpRangeToSpan textSnapshot declarationRange
+                            let funcID = func.FullName
+                            let fullDeclarationText = (textSnapshot.GetText declarationSpan).Replace(func.CompiledName, funcID)
+                            let fullTypeSignature = func.FullType.ToString()
+                            // Try to re-use the last results
+                            if lastResults.ContainsKey(fullDeclarationText) then
+                                // Make sure that the results are usable
+                                let lastTrackingSpan, codeLens = lastResults.[fullDeclarationText]
+                                if codeLens.FullTypeSignature = fullTypeSignature then
+                                    // The results can be reused because the signature is the same
+                                    if codeLens.Computed then
+                                        // Just re-use the old results, changed nothing
+                                        newResults.[fullDeclarationText] <- (lastTrackingSpan, codeLens)
+                                        continuedAdornmentTags.[codeLens] <- ()
+                                        logInfof "Declaration %A can be reused. IdentityTag %A" fullDeclarationText codeLens
+                                        oldResults.Remove(fullDeclarationText) |> ignore // Just tracking this
                                     else
-                                        // The signature is invalid so save the invalid data to remove it later (if those is valid)
-                                        if codeLens.Computed && codeLens.UiElement |> isNull |> not then
-                                            // Track the old element for removal
-                                            outdatedAdornments.Add codeLens.UiElement
-                                            // Push back the new results
-                                            tagsToUpdate.[lastTrackingSpan] <- (fullDeclarationText,
-                                                    CodeLens( Async.cache (useResults (symbolUse.DisplayContext, func)),
-                                                        false,
-                                                        fullTypeSignature,
-                                                        null ))
-                                            oldResults.Remove(fullDeclarationText) |> ignore
+                                        // The old results aren't computed at all, because the line might have changed create new results
+                                        tagsToUpdate.[lastTrackingSpan] <- 
+                                            (fullDeclarationText, 
+                                                CodeLens( Async.cache (useResults (symbolUse.DisplayContext, func)),
+                                                    false,
+                                                    fullTypeSignature,
+                                                    null))
+                                        oldResults.Remove(fullDeclarationText) |> ignore
                                 else
-                                    // The symbol might be completely new or has slightly changed. 
-                                    // We need to track this and iterate over the left entries to ensure that there isn't anything
-                                    unattachedSymbols.Add((symbolUse, func, fullDeclarationText, fullTypeSignature))
+                                    // The signature is invalid so save the invalid data to remove it later (if those is valid)
+                                    if codeLens.Computed && codeLens.UiElement |> isNull |> not then
+                                        // Track the old element for removal
+                                        outdatedAdornments.Add codeLens.UiElement
+                                        // Push back the new results
+                                        tagsToUpdate.[lastTrackingSpan] <- (fullDeclarationText,
+                                                CodeLens( Async.cache (useResults (symbolUse.DisplayContext, func)),
+                                                    false,
+                                                    fullTypeSignature,
+                                                    null ))
+                                        oldResults.Remove(fullDeclarationText) |> ignore
+                            else
+                                // The symbol might be completely new or has slightly changed. 
+                                // We need to track this and iterate over the left entries to ensure that there isn't anything
+                                unattachedSymbols.Add((symbolUse, func, fullDeclarationText, fullTypeSignature))
                     | _ -> ()
             
             // In best case this works quite `covfefe` fine because often enough we change only a small part of the file and not the complete.
@@ -649,14 +644,15 @@ type internal FSharpCodeLensTagger
                 let trackingSpan, codeLens = value
                 let stackPanel = self.AddCodeLens trackingSpan
                 logInfof "Trackingspan %A is being added." trackingSpan 
+                
                 stackPanel.IsVisibleChanged
                 |> Event.filter (fun eventArgs -> eventArgs.NewValue :?> bool)
                 |> Event.add (fun _ ->
                     if codeLens.Computed |> not then
                         async {
+                            do! Async.SwitchToContext uiContext
                             do! createTextBox codeLens
                             let uiElement = codeLens.UiElement
-                            do! Async.SwitchToContext uiContext
                             self.AddUiElementToCodeLensOnce trackingSpan uiElement
                             logInfo "Adding text box!"
                         } |> RoslynHelpers.StartAsyncSafe CancellationToken.None
@@ -683,55 +679,7 @@ type internal FSharpCodeLensTagger
               | e -> logErrorf "Code Lens startup failed with: %A" e
                      numberOfFails <- numberOfFails + 1
        } |> Async.Start
-    
-    /// Creates the code lens ui elements for the specified text view line
-    (*
-    let getCodeLensUIElement (lens : CodeLens) (line : ITextViewLine) =
-        let uiContext = SynchronizationContext.Current
-        asyncMaybe {
-            try
-                let! view = view
-                match lens.Computed, isNull lens.UiElement with
-                // The line is already computed and has an existing UI element which is proved to be safe to use
-                | true, false -> 
-                    let textBox = lens.UiElement :?> TextBlock
-                    return Some textBox
-                // The line is already computed but the UI element hasn't been created yet
-                | _, _ ->
-                    let! taggedText, navigation = lens.TaggedText
-                    do! Async.SwitchToContext uiContext |> liftAsync
-                    let textBox = new TextBlock(Width = view.ViewportWidth, Background = Brushes.Transparent, Opacity = 0.5, TextTrimming = TextTrimming.WordEllipsis)
-                    DependencyObjectExtensions.SetDefaultTextProperties(textBox, formatMap.Value)
-                    for text in taggedText do
-                        let run = Documents.Run text.Text
-                        DependencyObjectExtensions.SetTextProperties (run, layoutTagToFormatting text.Tag)
-                        let inl =
-                            match text with
-                            | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->
-                                let h = Documents.Hyperlink(run, ToolTip = nav.Range.FileName)
-                                h.Click.Add (fun _ -> navigation.NavigateTo nav.Range)
-                                h :> Documents.Inline
-                            | _ -> run :> _
-                        textBox.Inlines.Add inl
-                    textBox.Opacity <- 0.5
-                    lens.Computed <- true
-                    lens.UiElement <- textBox
-                    if line.IsValid then
-                        let offset = 
-                            view.TextViewLines.GetCharacterBounds(line.Start).Top - view.TextViewLines.GetCharacterBounds(view.TextViewLines.FirstVisibleLine.Start).Top
-                        logInfof "Offset %A" offset
-                        view.DisplayTextLineContainingBufferPosition(line.Start, offset, ViewRelativePosition.Top);
-                    return Some textBox
-                with e -> 
-                    logErrorf "Unexpected exception occured! %A" e
-                    return None
-        } |> Async.map (fun ui ->
-               match ui with
-               | Some (Some ui) ->
-                   Some ui
-               | _ -> 
-                   None)
-    *)
+
     do buffer.Changed.AddHandler(fun _ e -> (self.BufferChanged e))
 
     member __.BufferChanged ___ =
