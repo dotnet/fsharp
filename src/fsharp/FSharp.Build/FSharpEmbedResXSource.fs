@@ -131,7 +131,11 @@ module internal {1} =
             let getBooleanMetadata (metadataName:string) (defaultValue:bool) (item:ITaskItem) =
                 match item.GetMetadata(metadataName) with
                 | value when String.IsNullOrWhiteSpace(value) -> defaultValue
-                | value -> String.Compare(value, "true", StringComparison.OrdinalIgnoreCase) = 0
+                | value ->
+                    match value.ToLowerInvariant() with
+                    | "true" -> true
+                    | "false" -> false
+                    | _ -> failwith (sprintf "Expected boolean value for '%s' found '%s'" metadataName value)
             let mutable success = true
             let generatedSource =
                 [| for item in this.EmbeddedResource do
