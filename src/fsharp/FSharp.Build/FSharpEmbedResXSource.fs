@@ -38,59 +38,66 @@ module internal {1} =
         try
             let printMessage = printfn "FSharpEmbedResXSource: %s"
             let justFileName = Path.GetFileNameWithoutExtension(resx)
-            let namespaceName, moduleName =
-                let parts = fullModuleName.Split('.')
-                if parts.Length = 1 then ("global", parts.[0])
-                else (String.Join(".", parts, 0, parts.Length - 1), parts.[parts.Length - 1])
-            let generateGetObject =
-                match _targetFramework with
-                | "netstandard1.0"
-                | "netstandard1.1"
-                | "netstandard1.2"
-                | "netstandard1.3"
-                | "netstandard1.4"
-                | "netstandard1.5"
-                | "netstandard1.6" -> false // these targets don't support the `ResourceManager.GetObject()` method
-                | _ -> true // other supported runtimes, do
-            let sb = StringBuilder().AppendLine(String.Format(boilerplate, namespaceName, moduleName, justFileName))
-            if generateGetObject then sb.AppendLine(boilerplateGetObject) |> ignore
             let sourcePath = Path.Combine(_outputPath, justFileName + ".fs")
-            printMessage <| sprintf "Generating: %s" sourcePath
-            let body =
-                let xname = XName.op_Implicit
-                XDocument.Load(resx).Descendants(xname "data")
-                |> Seq.fold (fun (sb:StringBuilder) (node:XElement) ->
-                    let name =
-                        match node.Attribute(xname "name") with
-                        | null -> failwith "Missing resource name"
-                        | attr -> attr.Value
-                    let docComment =
-                        match node.Elements(xname "value").FirstOrDefault() with
-                        | null -> failwith <| sprintf "Missing resource value for '%s'" name
-                        | element -> element.Value.Trim()
-                    let identifier = if Char.IsLetter(name.[0]) || name.[0] = '_' then name else "_" + name
-                    let commentBody =
-                        XElement(xname "summary", docComment).ToString().Split([|"\r\n"; "\r"; "\n"|], StringSplitOptions.None)
-                        |> Array.fold (fun (sb:StringBuilder) line -> sb.AppendLine("    /// " + line)) (StringBuilder())
-                    // add the resource
-                    let accessorBody =
-                        match (generateLegacy, generateLiteral) with
-                        | (true, true) -> sprintf "    [<Literal>]\n    let %s = \"%s\"" identifier name
-                        | (true, false) -> sprintf "    let %s = \"%s\"" identifier name // the [<Literal>] attribute can't be used for FSharp.Core
-                        | (false, _) ->
-                            let isStringResource = match node.Attribute(xname "type") with
-                                                   | null -> true
-                                                   | _ -> false
-                            match (isStringResource, generateGetObject) with
-                            | (true, _) -> sprintf "    let %s() = GetString(\"%s\")" identifier name
-                            | (false, true) -> sprintf "    let %s() = GetObject(\"%s\")" identifier name
-                            | (false, false) -> "" // the target runtime doesn't support non-string resources
-                            // TODO: When calling the `GetObject` version, parse the `type` attribute to discover the proper return type
-                    sb.AppendLine().Append(commentBody).AppendLine(accessorBody)
-                ) sb
-            File.WriteAllText(sourcePath, body.ToString())
-            printMessage <| sprintf "Done: %s" sourcePath
-            Some(sourcePath)
+
+            // simple up-to-date check
+            if File.Exists(resx) && File.Exists(sourcePath) &&
+                File.GetLastWriteTime(resx) <= File.GetLastWriteTime(sourcePath) then
+                printMessage (sprintf "Skipping generation: '%s' since it is up-to-date." sourcePath)
+                Some(sourcePath)
+            else
+                let namespaceName, moduleName =
+                    let parts = fullModuleName.Split('.')
+                    if parts.Length = 1 then ("global", parts.[0])
+                    else (String.Join(".", parts, 0, parts.Length - 1), parts.[parts.Length - 1])
+                let generateGetObject =
+                    match _targetFramework with
+                    | "netstandard1.0"
+                    | "netstandard1.1"
+                    | "netstandard1.2"
+                    | "netstandard1.3"
+                    | "netstandard1.4"
+                    | "netstandard1.5"
+                    | "netstandard1.6" -> false // these targets don't support the `ResourceManager.GetObject()` method
+                    | _ -> true // other supported runtimes, do
+                let sb = StringBuilder().AppendLine(String.Format(boilerplate, namespaceName, moduleName, justFileName))
+                if generateGetObject then sb.AppendLine(boilerplateGetObject) |> ignore
+                printMessage <| sprintf "Generating: %s" sourcePath
+                let body =
+                    let xname = XName.op_Implicit
+                    XDocument.Load(resx).Descendants(xname "data")
+                    |> Seq.fold (fun (sb:StringBuilder) (node:XElement) ->
+                        let name =
+                            match node.Attribute(xname "name") with
+                            | null -> failwith "Missing resource name"
+                            | attr -> attr.Value
+                        let docComment =
+                            match node.Elements(xname "value").FirstOrDefault() with
+                            | null -> failwith <| sprintf "Missing resource value for '%s'" name
+                            | element -> element.Value.Trim()
+                        let identifier = if Char.IsLetter(name.[0]) || name.[0] = '_' then name else "_" + name
+                        let commentBody =
+                            XElement(xname "summary", docComment).ToString().Split([|"\r\n"; "\r"; "\n"|], StringSplitOptions.None)
+                            |> Array.fold (fun (sb:StringBuilder) line -> sb.AppendLine("    /// " + line)) (StringBuilder())
+                        // add the resource
+                        let accessorBody =
+                            match (generateLegacy, generateLiteral) with
+                            | (true, true) -> sprintf "    [<Literal>]\n    let %s = \"%s\"" identifier name
+                            | (true, false) -> sprintf "    let %s = \"%s\"" identifier name // the [<Literal>] attribute can't be used for FSharp.Core
+                            | (false, _) ->
+                                let isStringResource = match node.Attribute(xname "type") with
+                                                       | null -> true
+                                                       | _ -> false
+                                match (isStringResource, generateGetObject) with
+                                | (true, _) -> sprintf "    let %s() = GetString(\"%s\")" identifier name
+                                | (false, true) -> sprintf "    let %s() = GetObject(\"%s\")" identifier name
+                                | (false, false) -> "" // the target runtime doesn't support non-string resources
+                                // TODO: When calling the `GetObject` version, parse the `type` attribute to discover the proper return type
+                        sb.AppendLine().Append(commentBody).AppendLine(accessorBody)
+                    ) sb
+                File.WriteAllText(sourcePath, body.ToString())
+                printMessage <| sprintf "Done: %s" sourcePath
+                Some(sourcePath)
         with e ->
             printf "An exception occurred when processing '%s'\n%s" resx (e.ToString())
             None
