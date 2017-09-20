@@ -299,10 +299,11 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
         stackPanel.Children.Clear()
         uiElements.Remove trackingSpan |> ignore
         match codeLensLayer with 
-        | Some layer -> 
-            do Async.SwitchToContext uiContext |> Async.RunSynchronously
-            layer.RemoveAdornment(stackPanel) 
-            true
+        | Some layer ->
+            try
+                layer.RemoveAdornment(stackPanel) 
+                true
+            with e -> logExceptionWithContext(e, "Removing code lens"); false
         | None -> 
             logWarningf "Adornment for tracking span %A does not exist!" trackingSpan
             false
@@ -339,11 +340,14 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
         /// Notice, it's asumed that the data in the collection is valid.
         override __.GetTags spans =
             try
-                mutex.WaitOne() |> ignore
+                // mutex.WaitOne() |> ignore
                 seq {
                     for span in spans do
                         let snapshot = span.Snapshot
-                        let lineNumber = snapshot.GetLineNumberFromPosition(span.Start.Position)
+                        let lineNumber = 
+                            try
+                                snapshot.GetLineNumberFromPosition(span.Start.Position)
+                            with e -> logExceptionWithContext (e, "line number tagging"); 0
                         if trackingSpans.ContainsKey(lineNumber) && trackingSpans.[lineNumber] |> Seq.isEmpty |> not then
                             
                             let tagSpan = snapshot.GetLineFromLineNumber(lineNumber).Extent
@@ -366,7 +370,7 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
                             
                             yield TagSpan(span, CodeLensGeneralTag(0., height, 0., 0., 0., PositionAffinity.Predecessor, stackPanels, self)) :> ITagSpan<CodeLensGeneralTag>
                 } |> (fun r -> 
-                        mutex.ReleaseMutex() |> ignore
+                        // mutex.ReleaseMutex() |> ignore
                         r)
             with e -> 
                 logErrorf "Error in code lens get tags %A" e
@@ -641,7 +645,6 @@ type internal FSharpCodeLensTagger
             lastResults <- newResults
             do! Async.SwitchToContext uiContext |> liftAsync
             
-            self.Mutex.WaitOne() |> ignore
             for value in codeLensToAdd do
                 let trackingSpan, codeLens = value
                 let stackPanel = self.AddCodeLens trackingSpan
@@ -668,7 +671,6 @@ type internal FSharpCodeLensTagger
             
             if not firstTimeChecked then
                 firstTimeChecked <- true
-            self.Mutex.ReleaseMutex()
         } |> Async.Ignore
     
     do async {
