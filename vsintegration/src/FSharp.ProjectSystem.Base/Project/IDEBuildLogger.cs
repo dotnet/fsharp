@@ -556,37 +556,37 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 		/// This method takes a MessageImportance and returns true if messages
 		/// at importance i should be loggeed.  Otherwise return false.
 		/// </summary>
-		private bool LogAtImportance(MessageImportance importance)
-		{
-			// If importance is too low for current settings, ignore the event
-			bool logIt = false;
+        private bool LogAtImportance(MessageImportance importance)
+        {
+            // If importance is too low for current settings, ignore the event
+            bool logIt = false;
 
-			this.SetVerbosity();
+            this.SetVerbosity();
 
-			switch (this.Verbosity)
-			{
-				case LoggerVerbosity.Quiet:
-					logIt = false;
-					break;
-				case LoggerVerbosity.Minimal:
-					logIt = (importance == MessageImportance.High);
-					break;
-				case LoggerVerbosity.Normal:
+            switch (this.Verbosity)
+            {
+                case LoggerVerbosity.Quiet:
+                    logIt = false;
+                    break;
+                case LoggerVerbosity.Minimal:
+                    logIt = (importance == MessageImportance.High);
+                    break;
+                case LoggerVerbosity.Normal:
                     logIt = (importance == MessageImportance.Normal) || (importance == MessageImportance.High);
                     break;
                 case LoggerVerbosity.Detailed:
-					logIt = (importance == MessageImportance.Low) || (importance == MessageImportance.Normal) || (importance == MessageImportance.High);
-					break;
-				case LoggerVerbosity.Diagnostic:
-					logIt = true;
-					break;
-				default:
-					Debug.Fail("Unknown Verbosity level. Ignoring will cause everything to be logged");
-					break;
-			}
+                    logIt = (importance == MessageImportance.Low) || (importance == MessageImportance.Normal) || (importance == MessageImportance.High);
+                    break;
+                case LoggerVerbosity.Diagnostic:
+                    logIt = true;
+                    break;
+                default:
+                    Debug.Fail("Unknown Verbosity level. Ignoring will cause everything to be logged");
+                    break;
+            }
 
-			return logIt;
-		}
+            return logIt;
+        }
 
 		/// <summary>
 		/// This is the method that does the main work of logging an event
