@@ -358,7 +358,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             try
             {
                 this.haveCachedRegistry = false;
-                if (LogAtImportance(MessageImportance.Low))
+                if (LogAtImportance(MessageImportance.Normal))
                 {
                     LogEvent(sender, buildEvent);
                 }
@@ -385,7 +385,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 		{
             try
             {
-                if (LogAtImportance(buildEvent.Succeeded ? MessageImportance.Low :
+                if (LogAtImportance(buildEvent.Succeeded ? MessageImportance.Normal :
                                                            MessageImportance.High))
                 {
                     if (this.outputWindowPane != null)
@@ -408,7 +408,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 		{
             try
             {
-                if (LogAtImportance(MessageImportance.Low))
+                if (LogAtImportance(MessageImportance.Normal))
                 {
                     LogEvent(sender, buildEvent);
                 }
@@ -427,7 +427,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 		{
             try
             {
-                if (LogAtImportance(buildEvent.Succeeded ? MessageImportance.Low
+                if (LogAtImportance(buildEvent.Succeeded ? MessageImportance.Normal
                                                          : MessageImportance.High))
                 {
                     LogEvent(sender, buildEvent);
@@ -473,7 +473,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 --this.currentIndent;
                 if ((isLogTaskDone) &&
-                    LogAtImportance(buildEvent.Succeeded ? MessageImportance.Low
+                    LogAtImportance(buildEvent.Succeeded ? MessageImportance.Normal
                                                          : MessageImportance.High))
                 {
                     LogEvent(sender, buildEvent);
@@ -572,9 +572,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 					logIt = (importance == MessageImportance.High);
 					break;
 				case LoggerVerbosity.Normal:
-				// Falling through...
-				case LoggerVerbosity.Detailed:
-					logIt = (importance != MessageImportance.Low);
+                    logIt = (importance == MessageImportance.Normal) || (importance == MessageImportance.High);
+                    break;
+                case LoggerVerbosity.Detailed:
+					logIt = (importance == MessageImportance.Low) || (importance == MessageImportance.Normal) || (importance == MessageImportance.High);
 					break;
 				case LoggerVerbosity.Diagnostic:
 					logIt = true;
