@@ -613,7 +613,103 @@ let test3 = System.Text.RegularExpressions.RegexOptions.Compiled
                            ]
         |]
 
+[<Test>]
+let ``IL enum fields should be reported`` () = 
+    let input = 
+      """
+open System
 
+let _ =
+    match ConsoleKey.Tab with
+    | ConsoleKey.OemClear -> ConsoleKey.A
+    | _ -> ConsoleKey.B
+"""
+
+    let file = "/home/user/Test.fsx"
+    let _, typeCheckResults = parseAndCheckScript(file, input) 
+    typeCheckResults.GetAllUsesOfAllSymbolsInFile()
+    |> Async.RunSynchronously
+    |> Array.map (fun su -> 
+        let r = su.RangeAlternate 
+        su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
+    |> shouldEqual 
+        [|("ConsoleKey", (5, 10, 5, 20))
+          ("field Tab", (5, 10, 5, 24))
+          ("ConsoleKey", (6, 6, 6, 16))
+          ("field OemClear", (6, 6, 6, 25))
+          ("ConsoleKey", (6, 29, 6, 39))
+          ("field A", (6, 29, 6, 41))
+          ("ConsoleKey", (7, 11, 7, 21))
+          ("field B", (7, 11, 7, 23))
+          ("Test", (1, 0, 1, 0))|]
+
+[<Test>]
+let ``Literal values should be reported`` () = 
+    let input = 
+      """
+module Module1 =
+    let [<Literal>] ModuleValue = 1
+
+    let _ =
+        match ModuleValue + 1 with
+        | ModuleValue -> ModuleValue + 2
+        | _ -> 0
+
+type Class1() =
+    let [<Literal>] ClassValue = 1
+    static let [<Literal>] StaticClassValue = 2
+    
+    let _ = ClassValue
+    let _ = StaticClassValue
+
+    let _ =
+        match ClassValue + StaticClassValue with
+        | ClassValue -> ClassValue + 1
+        | StaticClassValue -> StaticClassValue + 2
+        | _ -> 3
+"""
+
+    let file = "/home/user/Test.fsx"
+    let _, typeCheckResults = parseAndCheckScript(file, input) 
+    typeCheckResults.GetAllUsesOfAllSymbolsInFile()
+    |> Async.RunSynchronously
+    |> Array.map (fun su -> 
+        let r = su.RangeAlternate 
+        su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
+    |> shouldEqual 
+        [|("LiteralAttribute", (3, 10, 3, 17))
+          ("LiteralAttribute", (3, 10, 3, 17))
+          ("member .ctor", (3, 10, 3, 17))
+          ("val ModuleValue", (3, 20, 3, 31))
+          ("val op_Addition", (6, 26, 6, 27))
+          ("val ModuleValue", (6, 14, 6, 25))
+          ("val ModuleValue", (7, 10, 7, 21))
+          ("val op_Addition", (7, 37, 7, 38))
+          ("val ModuleValue", (7, 25, 7, 36))
+          ("Module1", (2, 7, 2, 14))
+          ("Class1", (10, 5, 10, 11))
+          ("member .ctor", (10, 5, 10, 11))
+          ("LiteralAttribute", (11, 10, 11, 17))
+          ("LiteralAttribute", (11, 10, 11, 17))
+          ("member .ctor", (11, 10, 11, 17))
+          ("val ClassValue", (11, 20, 11, 30))
+          ("LiteralAttribute", (12, 17, 12, 24))
+          ("LiteralAttribute", (12, 17, 12, 24))
+          ("member .ctor", (12, 17, 12, 24))
+          ("val StaticClassValue", (12, 27, 12, 43))
+          ("val ClassValue", (14, 12, 14, 22))
+          ("val StaticClassValue", (15, 12, 15, 28))
+          ("val op_Addition", (18, 25, 18, 26))
+          ("val ClassValue", (18, 14, 18, 24))
+          ("val StaticClassValue", (18, 27, 18, 43))
+          ("val ClassValue", (19, 10, 19, 20))
+          ("val op_Addition", (19, 35, 19, 36))
+          ("val ClassValue", (19, 24, 19, 34))
+          ("val StaticClassValue", (20, 10, 20, 26))
+          ("val op_Addition", (20, 47, 20, 48))
+          ("val StaticClassValue", (20, 30, 20, 46))
+          ("member .cctor", (10, 5, 10, 11))
+          ("Test", (1, 0, 1, 0))|]
 
 //-------------------------------------------------------------------------------
 
