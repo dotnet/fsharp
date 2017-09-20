@@ -132,20 +132,19 @@ module internal {1} =
                 match item.GetMetadata(metadataName) with
                 | value when String.IsNullOrWhiteSpace(value) -> defaultValue
                 | value -> String.Compare(value, "true", StringComparison.OrdinalIgnoreCase) = 0
-            let generatedFiles, generatedResult =
-                this.EmbeddedResource
-                |> Array.filter (getBooleanMetadata "GenerateSource" false)
-                |> Array.fold (fun (resultList, aggregateResult) item ->
-                    let moduleName =
-                        match item.GetMetadata("GeneratedModuleName") with
-                        | null -> Path.GetFileNameWithoutExtension(item.ItemSpec)
-                        | value -> value
-                    let generateLegacy = getBooleanMetadata "GenerateLegacyCode" false item
-                    let generateLiteral = getBooleanMetadata "GenerateLiterals" true item
-                    match generateSource item.ItemSpec moduleName generateLegacy generateLiteral with
-                    | Some (source) -> ((source :: resultList), aggregateResult)
-                    | None -> (resultList, false)
-                ) ([], true)
-            let generatedSources = generatedFiles |> List.map (fun item -> TaskItem(item) :> ITaskItem)
-            _generatedSource <- generatedSources |> List.rev |> List.toArray
-            generatedResult
+            let mutable success = true
+            let generatedSource =
+                [| for item in this.EmbeddedResource do
+                    if getBooleanMetadata "GenerateSource" false item then
+                        let moduleName =
+                            match item.GetMetadata("GeneratedModuleName") with
+                            | null -> Path.GetFileNameWithoutExtension(item.ItemSpec)
+                            | value -> value
+                        let generateLegacy = getBooleanMetadata "GenerateLegacyCode" false item
+                        let generateLiteral = getBooleanMetadata "GenerateLiterals" true item
+                        match generateSource item.ItemSpec moduleName generateLegacy generateLiteral with
+                        | Some (source) -> yield TaskItem(source) :> ITaskItem
+                        | None -> success <- false
+                |]
+            _generatedSource <- generatedSource
+            success
