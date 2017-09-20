@@ -1189,6 +1189,11 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
           for r in nonFrameworkResolutions do 
                 yield  r.resolvedPath  ]
 
+    let allDependencies =
+        [ yield! basicDependencies
+          for (_,f,_) in sourceFiles do
+                yield f ]
+
     // The IncrementalBuilder needs to hold up to one item that needs to be disposed, which is the tcImports for the incremental
     // build. 
     let mutable cleanupItem = None: TcImports option
@@ -1532,6 +1537,7 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
     member __.FileChecked = fileChecked.Publish
     member __.ProjectChecked = projectChecked.Publish
     member __.ImportedCcusInvalidated = importsInvalidated.Publish
+    member __.AllDependenciesDeprecated = allDependencies
 
 #if EXTENSIONTYPING
     member __.ThereAreLiveTypeProviders = 

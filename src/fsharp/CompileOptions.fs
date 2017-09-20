@@ -586,13 +586,13 @@ let errorsAndWarningsFlags (tcConfigB: TcConfigBuilder) =
             ), None, Some (FSComp.SR.optsWarn()))
 
         CompilerOption("nowarn", tagWarnList, OptionStringList (fun n ->
-            tcConfigB.TurnWarningOff(rangeCmdArgs,trimFS n)), None, Some (FSComp.SR.optsNowarn()))
+            tcConfigB.TurnWarningOff(rangeCmdArgs, trimFS n)), None, Some (FSComp.SR.optsNowarn()))
 
-        CompilerOption("warnon", tagWarnList, OptionStringList (fun n -> tcConfigB.TurnWarningOn(rangeCmdArgs, trimFS n)), None,
-                            Some(FSComp.SR.optsWarnOn()))                             
+        CompilerOption("warnon", tagWarnList, OptionStringList (fun n ->
+            tcConfigB.TurnWarningOn(rangeCmdArgs, trimFS n)), None, Some (FSComp.SR.optsWarnOn()))
         
-        CompilerOption("consolecolors", tagNone, OptionSwitch (fun switch -> enableConsoleColoring <- switch = OptionSwitch.On), None, 
-                            Some (FSComp.SR.optsConsoleColors()))
+        CompilerOption("consolecolors", tagNone, OptionSwitch (fun switch ->
+            enableConsoleColoring <- switch = OptionSwitch.On), None, Some (FSComp.SR.optsConsoleColors()))
     ]
 
 
@@ -1134,7 +1134,15 @@ let GetCoreFsiCompilerOptions (tcConfigB: TcConfigBuilder) =
                                               testingAndQAFlags       tcConfigB])
   ]
 
-
+let ApplyCommandLineArgs(tcConfigB: TcConfigBuilder, sourceFiles: string list, commandLineArgs) =
+    try
+        let sourceFilesAcc = ResizeArray(sourceFiles)
+        let collect name = if not (Filename.isDll name) then sourceFilesAcc.Add(name)
+        ParseCompilerOptions(collect, GetCoreServiceCompilerOptions tcConfigB, commandLineArgs)
+        ResizeArray.toList(sourceFilesAcc)
+    with e ->
+        errorRecovery e range0
+        sourceFiles
 
 
 //----------------------------------------------------------------------------

@@ -85,7 +85,7 @@ type CompletionContext =
 //----------------------------------------------------------------------------
 
 [<Sealed>]
-type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput option, parseHadErrors : bool) = 
+type FSharpParseFileResults(errors: FSharpErrorInfo[], input: Ast.ParsedInput option, parseHadErrors: bool, dependencyFiles: string[]) = 
 
     member scope.Errors = errors
 
@@ -379,6 +379,9 @@ type FSharpParseFileResults(errors : FSharpErrorInfo[], input : Ast.ParsedInput 
             (fun msg -> 
                 Trace.TraceInformation(sprintf "FCS: recovering from error in ValidateBreakpointLocationImpl: '%s'" msg)
                 None)
+            
+    /// When these files appear or disappear the configuration for the current project is invalidated.
+    member scope.DependencyFiles = dependencyFiles
 
     member scope.FileName =
       match input with
