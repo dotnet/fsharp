@@ -1938,7 +1938,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                                 ) |> ignore
                             Marshal.ThrowExceptionForHR(VSConstants.OLE_E_PROMPTSAVECANCELLED)
                         let result =
-                            VsShellUtilities.ShowMessageBox(node.Site, FSharpSR.NeedReloadToChangeTargetFx().Replace("\n", Environment.NewLine),
+                            VsShellUtilities.ShowMessageBox(node.Site, FSharpSR.NeedReloadToChangeTargetFx().Replace(@"\n", Environment.NewLine),
                                                         null,
                                                         OLEMSGICON.OLEMSGICON_QUERY, OLEMSGBUTTON.OLEMSGBUTTON_YESNO, OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST) 
                         if result <> NativeMethods.IDYES then
@@ -2466,7 +2466,7 @@ namespace rec Microsoft.VisualStudio.FSharp.ProjectSystem
                             match location with
                             | Above -> FSharpSR.FileCannotBePlacedBodyAbove()
                             | Below -> FSharpSR.FileCannotBePlacedBodyBelow()
-                            |> (fun s -> s.Replace("\n", Environment.NewLine))
+                            |> (fun s -> s.Replace(@"\n", Environment.NewLine))
 
                         let entireMessage = String.Format(bodyString, relPath, relTargetPath, message)
                         VsShellUtilities.ShowMessageBox(root.Site, title, entireMessage, icon, buttons, defaultButton) |> ignore
