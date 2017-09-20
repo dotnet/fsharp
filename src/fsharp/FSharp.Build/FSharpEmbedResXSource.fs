@@ -51,6 +51,7 @@ module internal {1} =
                     if parts.Length = 1 then ("global", parts.[0])
                     else (String.Join(".", parts, 0, parts.Length - 1), parts.[parts.Length - 1])
                 let generateGetObject = not (_targetFramework.StartsWith("netstandard1.") || _targetFramework.StartsWith("netcoreapp1."))
+                printMessage (sprintf "Generating code for target framework %s" _targetFramework)
                 let sb = StringBuilder().AppendLine(String.Format(boilerplate, namespaceName, moduleName, justFileName))
                 if generateGetObject then sb.AppendLine(boilerplateGetObject) |> ignore
                 printMessage <| sprintf "Generating: %s" sourcePath
