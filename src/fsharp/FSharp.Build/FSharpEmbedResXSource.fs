@@ -69,7 +69,7 @@ module internal {1} =
                     |> Seq.fold (fun (sb:StringBuilder) (node:XElement) ->
                         let name =
                             match node.Attribute(xname "name") with
-                            | null -> failwith "Missing resource name"
+                            | null -> failwith (sprintf "Missing resource name on element '%s'" (node.ToString()))
                             | attr -> attr.Value
                         let docComment =
                             match node.Elements(xname "value").FirstOrDefault() with
