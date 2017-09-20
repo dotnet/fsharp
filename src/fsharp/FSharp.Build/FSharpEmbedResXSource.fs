@@ -50,16 +50,7 @@ module internal {1} =
                     let parts = fullModuleName.Split('.')
                     if parts.Length = 1 then ("global", parts.[0])
                     else (String.Join(".", parts, 0, parts.Length - 1), parts.[parts.Length - 1])
-                let generateGetObject =
-                    match _targetFramework with
-                    | "netstandard1.0"
-                    | "netstandard1.1"
-                    | "netstandard1.2"
-                    | "netstandard1.3"
-                    | "netstandard1.4"
-                    | "netstandard1.5"
-                    | "netstandard1.6" -> false // these targets don't support the `ResourceManager.GetObject()` method
-                    | _ -> true // other supported runtimes, do
+                let generateGetObject = not (_targetFramework.StartsWith("netstandard1.") || _targetFramework.StartsWith("netcoreapp1."))
                 let sb = StringBuilder().AppendLine(String.Format(boilerplate, namespaceName, moduleName, justFileName))
                 if generateGetObject then sb.AppendLine(boilerplateGetObject) |> ignore
                 printMessage <| sprintf "Generating: %s" sourcePath
