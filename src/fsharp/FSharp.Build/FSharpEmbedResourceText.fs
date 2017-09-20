@@ -341,12 +341,21 @@ open Printf
 
     let generateResxAndSource (filename:string) =
         try
-            let printMessage message = printfn "FSharpEmbedResourceText: %s" message
-            let justfilename = Path.GetFileNameWithoutExtension(filename) // .txt
-            if justfilename |> Seq.exists (System.Char.IsLetterOrDigit >> not) then
-                Err(filename, 0, sprintf "The filename '%s' is not allowed; only letters and digits can be used, as the filename also becomes the namespace for the SR class" justfilename)
-            let outFilename = Path.Combine(_outputPath, justfilename + ".fs")
-            let outXmlFilename = Path.Combine(_outputPath, justfilename + ".resx")
+          let printMessage message = printfn "FSharpEmbedResourceText: %s" message
+          let justfilename = Path.GetFileNameWithoutExtension(filename) // .txt
+          if justfilename |> Seq.exists (System.Char.IsLetterOrDigit >> not) then
+              Err(filename, 0, sprintf "The filename '%s' is not allowed; only letters and digits can be used, as the filename also becomes the namespace for the SR class" justfilename)
+          let outFilename = Path.Combine(_outputPath, justfilename + ".fs")
+          let outXmlFilename = Path.Combine(_outputPath, justfilename + ".resx")
+
+          if File.Exists(outFilename) && 
+               File.Exists(outXmlFilename) && 
+               File.Exists(filename) && 
+               File.GetLastWriteTime(filename) <= File.GetLastWriteTime(outFilename) &&
+               File.GetLastWriteTime(filename) <= File.GetLastWriteTime(outXmlFilename) then 
+            printMessage (sprintf "Skipping generation of %s and %s since up-to-date" outFilename outXmlFilename)
+            Some (outFilename, outXmlFilename)
+          else
 
             printMessage (sprintf "Reading %s" filename)
             let lines = File.ReadAllLines(filename) 
@@ -472,27 +481,28 @@ open Printf
             with get() = _hostObject
              and set(value) = _hostObject <- value
         member this.Execute() =
-            let sourceItem (source:string) (originalItem:string) =
-                let item = TaskItem(source)
-                item.SetMetadata("AutoGen", "true")
-                item.SetMetadata("DesignTime", "true")
-                item.SetMetadata("DependentUpon", originalItem)
-                item :> ITaskItem
-            let resxItem (resx:string) =
-                let item = TaskItem(resx)
-                item.SetMetadata("ManifestResourceName", Path.GetFileNameWithoutExtension(resx))
-                item :> ITaskItem
-            let generatedFiles, generatedResult =
+
+            let generatedFiles =
                 this.EmbeddedText
-                |> Array.fold (fun (resultList, aggregateResult) item ->
-                    match generateResxAndSource item.ItemSpec with
-                    | Some (source, resx) -> (((source, resx) :: resultList), aggregateResult)
-                    | None -> (resultList, false)
-                ) ([], true)
+                |> Array.choose (fun item -> generateResxAndSource item.ItemSpec)
+
             let generatedSource, generatedResx =
-                generatedFiles
-                |> List.map (fun (source, resx) -> (sourceItem source resx, resxItem resx))
-                |> List.fold (fun (sources, resxs) (source, resx) -> (source :: sources, resx:: resxs)) ([], [])
-            _generatedSource <- generatedSource |> List.rev |> List.toArray
-            _generatedResx <- generatedResx |> List.rev |> List.toArray
+                [| for (source, resx) in generatedFiles do
+                    let sourceItem =
+                        let item = TaskItem(source)
+                        item.SetMetadata("AutoGen", "true")
+                        item.SetMetadata("DesignTime", "true")
+                        item.SetMetadata("DependentUpon", resx)
+                        item :> ITaskItem
+                    let resxItem =
+                        let item = TaskItem(resx)
+                        item.SetMetadata("ManifestResourceName", Path.GetFileNameWithoutExtension(resx))
+                        item :> ITaskItem
+                    yield (sourceItem, resxItem) |]
+                 |> Array.unzip
+
+            let generatedResult = (generatedFiles.Length = this.EmbeddedText.Length)
+
+            _generatedSource <- generatedSource
+            _generatedResx <- generatedResx
             generatedResult
