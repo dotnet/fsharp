@@ -64,6 +64,7 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
     /// Cancellation token source for the layout changed event. Needed to abort previous async-work.
     let mutable layoutChangedCts = new CancellationTokenSource()
 
+    /// Tracks the last used buffer snapshot, should be preferred used in combination with mutex.
     let mutable currentBufferSnapshot = null
 
     /// Helper method which returns the start line number of a tracking span
@@ -308,11 +309,15 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
         stackPanel :> UIElement
     
     /// Public non-thread-safe method to remove code lens for a given tracking span.
-    /// Returns nothing.
+    /// Returns whether the operation succeeded
     member __.RemoveCodeLens (trackingSpan:ITrackingSpan) =
         let stackPanel = uiElements.[trackingSpan]
         stackPanel.Children.Clear()
         uiElements.Remove trackingSpan |> ignore
+        let lineNumber = 
+            (trackingSpan.GetStartPoint currentBufferSnapshot).Position 
+            |> currentBufferSnapshot.GetLineNumberFromPosition
+        trackingSpans.Remove lineNumber |> ignore
         match codeLensLayer with 
         | Some layer ->
             try
