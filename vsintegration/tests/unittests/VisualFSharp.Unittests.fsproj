@@ -51,6 +51,9 @@
     <Compile Include="Tests.LanguageService.TimeStamp.fs" />
     <Compile Include="Tests.LanguageService.ErrorList.fs" />
     <Compile Include="Tests.LanguageService.ErrorRecovery.fs" />
+    <Compile Include="..\..\..\tests\service\FsUnit.fs">
+      <Link>FsUnit.fs</Link>
+    </Compile>
     <Compile Include="Tests.ProjectSystem.Configs.fs" />
     <Compile Include="Tests.ProjectSystem.Miscellaneous.fs" />
     <Compile Include="Tests.ProjectSystem.MultiTargeting.fs" />
@@ -59,9 +62,6 @@
     <Compile Include="Tests.ProjectSystem.References.fs" />
     <Compile Include="Tests.ProjectSystem.RoundTrip.fs" />
     <Compile Include="Tests.ProjectSystem.UpToDate.fs" />
-    <Compile Include="..\..\..\tests\service\FsUnit.fs">
-      <Link>FsUnit.fs</Link>
-    </Compile>
     <Compile Include="..\..\..\tests\service\Common.fs">
       <Link>Common.fs</Link>
     </Compile>

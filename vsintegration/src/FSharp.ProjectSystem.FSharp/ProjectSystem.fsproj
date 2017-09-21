@@ -87,6 +87,7 @@
     <Compile Include="WaitDialog.fs" />
     <Compile Include="MSBuildUtilities.fs" />
     <Compile Include="AppConfigHelper.fs" />
+    <Compile Include="SourceMovement.fs" />
     <Compile Include="Project.fs" />
   </ItemGroup>
   <ItemGroup>
