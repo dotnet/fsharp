@@ -2073,6 +2073,7 @@ and GenConstant cenv cgbuf eenv (c,m,ty) sequel =
           | Const.Int16 i -> CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (mkLdcInt32 (int32 i))
           | Const.Int32 i -> CG.EmitInstr cgbuf (pop 0) (Push [ilTy]) (mkLdcInt32 i)
           | Const.Int64 i -> 
+            // see https://github.com/Microsoft/visualfsharp/pull/3620 
             if i >= int64 System.Int32.MinValue && i <= int64 System.Int32.MaxValue then
                 CG.EmitInstrs cgbuf (pop 0) (Push [ilTy]) [ mkLdcInt32 (int32 i); AI_conv DT_I8 ]
             elif i >= int64 System.UInt32.MinValue && i <= int64 System.UInt32.MaxValue then
