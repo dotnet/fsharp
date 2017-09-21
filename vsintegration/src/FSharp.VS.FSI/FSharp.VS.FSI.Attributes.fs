@@ -2,11 +2,11 @@
 
 namespace Microsoft.VisualStudio.FSharp.Interactive
 
-type DisplayNameAttribute(resName) =
+type internal ResourceDisplayNameAttribute(resName) =
     inherit System.ComponentModel.DisplayNameAttribute(SRProperties.GetString(resName))
 
-type DescriptionAttribute(resName) =
+type internal ResourceDescriptionAttribute(resName) =
     inherit System.ComponentModel.DescriptionAttribute(SRProperties.GetString(resName))
         
-type CategoryAttribute(resName) = 
+type internal ResourceCategoryAttribute(resName) =
     inherit System.ComponentModel.CategoryAttribute(SRProperties.GetString(resName))
