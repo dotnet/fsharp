@@ -674,49 +674,49 @@ type TestSourceMovement() =
     member public this.``Test re-order with a prefix and suffix`` () =
 
         SourceMovement.newSources [|"prefix1"; "actual1"; "actual2"; "suffix1"|] [|"actual2"; "actual1"|] SourceMovement.Reorder
-        |> should equal [|"prefix1"; "actual2"; "actual1"; "suffix1"|]
+        |> should equal (Some [|"prefix1"; "actual2"; "actual1"; "suffix1"|])
         
     [<Test>]
     member public this.``Test re-order with multiple prefixes and suffixes`` () =
 
         SourceMovement.newSources [|"prefix1"; "prefix2"; "actual1"; "actual2"; "suffix1"; "suffix2"|] [|"actual2"; "actual1"|] SourceMovement.Reorder
-        |> should equal [|"prefix1"; "prefix2"; "actual2"; "actual1"; "suffix1"; "suffix2"|]
+        |> should equal (Some [|"prefix1"; "prefix2"; "actual2"; "actual1"; "suffix1"; "suffix2"|])
 
     [<Test>]
     member public this.``Test adding a file to end`` () =
 
         SourceMovement.newSources [|"prefix1"; "actual1"; "actual2"; "suffix1"|] [|"actual1"; "actual2"; "actual3"|] (SourceMovement.Add "actual3")
-        |> should equal [|"prefix1"; "actual1"; "actual2"; "actual3"; "suffix1"|]
+        |> should equal (Some [|"prefix1"; "actual1"; "actual2"; "actual3"; "suffix1"|])
 
     [<Test>]
     member public this.``Test adding a file to middle`` () =
 
         SourceMovement.newSources [|"prefix1"; "actual1"; "actual2"; "suffix1"|] [|"actual1"; "actual3"; "actual2"|] (SourceMovement.Add "actual3")
-        |> should equal [|"prefix1"; "actual1"; "actual3"; "actual2"; "suffix1"|]
+        |> should equal (Some [|"prefix1"; "actual1"; "actual3"; "actual2"; "suffix1"|])
 
     [<Test>]
     member public this.``Test adding a file to start`` () =
 
         SourceMovement.newSources [|"prefix1"; "actual1"; "actual2"; "suffix1"|] [|"actual3"; "actual1"; "actual2"|] (SourceMovement.Add "actual3")
-        |> should equal [|"prefix1"; "actual3"; "actual1"; "actual2"; "suffix1"|]
+        |> should equal (Some [|"prefix1"; "actual3"; "actual1"; "actual2"; "suffix1"|])
 
     [<Test>]
     member public this.``Test removing a file to end`` () =
 
         SourceMovement.newSources [|"prefix1"; "actual1"; "actual2"; "actual3"; "suffix1"|] [|"actual1"; "actual2"|] (SourceMovement.Remove "actual3")
-        |> should equal [|"prefix1"; "actual1"; "actual2"; "suffix1"|]
+        |> should equal (Some [|"prefix1"; "actual1"; "actual2"; "suffix1"|])
 
     [<Test>]
     member public this.``Test removing a file to middle`` () =
 
         SourceMovement.newSources [|"prefix1"; "actual1"; "actual3"; "actual2"; "suffix1"|] [|"actual1"; "actual2"|] (SourceMovement.Remove "actual3")
-        |> should equal [|"prefix1"; "actual1"; "actual2"; "suffix1"|]
+        |> should equal (Some [|"prefix1"; "actual1"; "actual2"; "suffix1"|])
 
     [<Test>]
     member public this.``Test removing a file to start`` () =
 
         SourceMovement.newSources [|"prefix1"; "actual3"; "actual1"; "actual2"; "suffix1"|] [|"actual1"; "actual2"|] (SourceMovement.Remove "actual3")
-        |> should equal [|"prefix1"; "actual1"; "actual2"; "suffix1"|]
+        |> should equal (Some [|"prefix1"; "actual1"; "actual2"; "suffix1"|])
 
 [<TestFixture>]
 type Utilities() = 
