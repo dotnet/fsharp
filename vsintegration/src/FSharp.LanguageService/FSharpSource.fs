@@ -293,7 +293,7 @@ type internal FSharpIntelliSenseToAppearAdornment_DEPRECATED(view: IWpfTextView,
                         else
                             new SnapshotSpan(view.TextSnapshot, Span.FromBounds(i-1, i))
                     let g = textViewLines.GetMarkerGeometry(span)
-                    let tb = new System.Windows.Controls.TextBlock(Text=Strings.GetString "IntelliSenseLoading", FontFamily=System.Windows.Media.FontFamily(fontFamily), FontSize=pointSize)
+                    let tb = new System.Windows.Controls.TextBlock(Text=Strings.IntelliSenseLoading(), FontFamily=System.Windows.Media.FontFamily(fontFamily), FontSize=pointSize)
                     tb.Foreground <- excludedCodeForegroundColorBrush
                     let sp = new System.Windows.Controls.StackPanel(Orientation=System.Windows.Controls.Orientation.Horizontal)
                     System.Windows.Documents.TextElement.SetForeground(sp, excludedCodeForegroundColorBrush.GetAsFrozen() :?> System.Windows.Media.Brush)

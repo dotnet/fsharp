@@ -252,7 +252,7 @@ type internal FSharpGoToDefinitionService
 
         match navigableItem with
         | Some navigableItem ->
-            statusBar.Message SR.NavigatingTo.Value
+            statusBar.Message (SR.NavigatingTo())
 
             let workspace = navigableItem.Document.Project.Solution.Workspace
             let navigationService = workspace.Services.GetService<IDocumentNavigationService>()
@@ -263,11 +263,11 @@ type internal FSharpGoToDefinitionService
             if result then 
                 statusBar.Clear()
             else 
-                statusBar.TempMessage SR.CannotNavigateUnknown.Value
+                statusBar.TempMessage (SR.CannotNavigateUnknown())
             
             result
         | None ->
-            statusBar.TempMessage SR.CannotDetermineSymbol.Value
+            statusBar.TempMessage (SR.CannotDetermineSymbol())
             true
 
     /// Navigate to the positon of the textSpan in the provided document
@@ -280,7 +280,7 @@ type internal FSharpGoToDefinitionService
         if navigationService.TryNavigateToSpan (workspace, navigableItem.Document.Id, navigableItem.SourceSpan, options) then 
             true 
         else
-            statusBar.TempMessage SR.CannotNavigateUnknown.Value
+            statusBar.TempMessage (SR.CannotNavigateUnknown())
             false
 
     /// find the declaration location (signature file/.fsi) of the target symbol if possible, fall back to definition 
@@ -405,7 +405,7 @@ type internal FSharpGoToDefinitionService
         member this.TryGoToDefinition(document: Document, position: int, cancellationToken: CancellationToken) =
             let definitionTask = this.FindDefinitionsTask (document, position, cancellationToken)
             
-            statusBar.Message SR.LocatingSymbol.Value
+            statusBar.Message (SR.LocatingSymbol())
             use __ = statusBar.Animate()
 
             // Wrap this in a try/with as if the user clicks "Cancel" on the thread dialog, we'll be cancelled
@@ -419,7 +419,7 @@ type internal FSharpGoToDefinitionService
             
             match completionError with
             | Some message ->
-                statusBar.TempMessage <| String.Format(SR.NavigateToFailed.Value, message)
+                statusBar.TempMessage <| String.Format(SR.NavigateToFailed(), message)
 
                 // Don't show the dialog box as it's most likely that the user cancelled.
                 // Don't make them click twice.
@@ -439,5 +439,5 @@ type internal FSharpGoToDefinitionService
                     //    presenter.DisplayResult(navigableItem.DisplayString, definitionTask.Result)
                     //true
                 else 
-                    statusBar.TempMessage SR.CannotDetermineSymbol.Value
+                    statusBar.TempMessage (SR.CannotDetermineSymbol())
                     false

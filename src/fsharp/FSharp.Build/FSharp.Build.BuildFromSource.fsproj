@@ -22,6 +22,7 @@
     <Compile Include="Fsc.fsi" />
     <Compile Include="Fsc.fs" />
     <Compile Include="FSharpEmbedResourceText.fs" />
+    <Compile Include="FSharpEmbedResXSource.fs" />
     <Compile Include="CreateFSharpManifestResourceName.fsi" />
     <Compile Include="CreateFSharpManifestResourceName.fs" />
     <CopyAndSubstituteText Include="Microsoft.FSharp.Targets">
