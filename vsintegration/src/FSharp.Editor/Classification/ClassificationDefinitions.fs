@@ -140,7 +140,7 @@ module internal ClassificationDefinitions =
     type internal FSharpFunctionTypeFormat() as self =
         inherit ClassificationFormatDefinition()
 
-        do self.DisplayName <- SR.FSharpFunctionsOrMethodsClassificationType.Value
+        do self.DisplayName <- SR.FSharpFunctionsOrMethodsClassificationType()
 
     [<Export(typeof<EditorFormatDefinition>)>]
     [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.MutableVar)>]
@@ -150,7 +150,7 @@ module internal ClassificationDefinitions =
     type internal FSharpMutableVarTypeFormat [<ImportingConstructor>](theme: ThemeColors) as self =
         inherit ClassificationFormatDefinition()
 
-        do self.DisplayName <- SR.FSharpMutableVarsClassificationType.Value
+        do self.DisplayName <- SR.FSharpMutableVarsClassificationType()
            self.ForegroundColor <- theme.GetColor FSharpClassificationTypes.MutableVar
 
     [<Export(typeof<EditorFormatDefinition>)>]
@@ -161,7 +161,7 @@ module internal ClassificationDefinitions =
     type internal FSharpPrintfTypeFormat [<ImportingConstructor>](theme: ThemeColors) as self =
         inherit ClassificationFormatDefinition()
 
-        do self.DisplayName <- SR.FSharpPrintfFormatClassificationType.Value
+        do self.DisplayName <- SR.FSharpPrintfFormatClassificationType()
            self.ForegroundColor <- theme.GetColor FSharpClassificationTypes.Printf
 
     [<Export(typeof<EditorFormatDefinition>)>]
@@ -172,7 +172,7 @@ module internal ClassificationDefinitions =
     type internal FSharpPropertyFormat() as self =
         inherit ClassificationFormatDefinition()
 
-        do self.DisplayName <- SR.FSharpPropertiesClassificationType.Value
+        do self.DisplayName <- SR.FSharpPropertiesClassificationType()
 
     [<Export(typeof<EditorFormatDefinition>)>]
     [<ClassificationType(ClassificationTypeNames = FSharpClassificationTypes.Disposable)>]
@@ -182,5 +182,5 @@ module internal ClassificationDefinitions =
     type internal FSharpDisposableFormat [<ImportingConstructor>](theme: ThemeColors) as self =
         inherit ClassificationFormatDefinition()
 
-        do self.DisplayName <- SR.FSharpDisposablesClassificationType.Value
+        do self.DisplayName <- SR.FSharpDisposablesClassificationType()
            self.ForegroundColor <- theme.GetColor FSharpClassificationTypes.Disposable

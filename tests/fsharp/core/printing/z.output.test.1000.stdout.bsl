@@ -1623,15 +1623,15 @@ val catch : f:(unit -> 'a) -> Either<'a,(string * string)>
 val seqFindIndexFailure : Either<int,(string * string)> =
   That
     ("System.Collections.Generic.KeyNotFoundException",
-     "Exception of type 'System.Collections.Generic.KeyNotFoundExce"+[18 chars])
+     "An index satisfying the predicate was not found in the collection.")
 val seqFindFailure : Either<int,(string * string)> =
   That
     ("System.Collections.Generic.KeyNotFoundException",
-     "Exception of type 'System.Collections.Generic.KeyNotFoundExce"+[18 chars])
+     "An index satisfying the predicate was not found in the collection.")
 val seqPickFailure : Either<int,(string * string)> =
   That
     ("System.Collections.Generic.KeyNotFoundException",
-     "Exception of type 'System.Collections.Generic.KeyNotFoundExce"+[18 chars])
+     "An index satisfying the predicate was not found in the collection.")
 module Regression5218 = begin
   val t1 : int = 1
   val t2 : int * int = (1, 2)

@@ -52,7 +52,7 @@ type internal FSharpRemoveUnusedOpensCodeFixProvider
     override __.RegisterCodeFixesAsync context : Task =
         async {
             let diagnostics = context.Diagnostics |> Seq.filter (fun x -> fixableDiagnosticIds |> List.contains x.Id) |> Seq.toImmutableArray
-            context.RegisterCodeFix(createCodeFix(SR.RemoveUnusedOpens.Value, context), diagnostics)
+            context.RegisterCodeFix(createCodeFix(SR.RemoveUnusedOpens(), context), diagnostics)
         } |> RoslynHelpers.StartAsyncUnitAsTask(context.CancellationToken)
 
     override __.GetFixAllProvider() = WellKnownFixAllProviders.BatchFixer

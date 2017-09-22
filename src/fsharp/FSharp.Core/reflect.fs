@@ -332,7 +332,7 @@ module internal Impl =
             else "New" + constrname
 
         match typ.GetMethod(methname, BindingFlags.Static  ||| bindingFlags) with
-        | null -> raise <| System.InvalidOperationException (SR.GetString1(SR.constructorForUnionCaseNotFound, methname))
+        | null -> raise <| System.InvalidOperationException (String.Format(SR.GetString(SR.constructorForUnionCaseNotFound), methname))
         | meth -> meth
 
     let getUnionCaseConstructor (typ:Type,tag:int,bindingFlags) = 
@@ -347,9 +347,9 @@ module internal Impl =
         checkNonNull "unionType" unionType;
         if not (isUnionType (unionType,bindingFlags)) then 
             if isUnionType (unionType,bindingFlags ||| BindingFlags.NonPublic) then 
-                invalidArg "unionType" (SR.GetString1(SR.privateUnionType, unionType.FullName))
+                invalidArg "unionType" (String.Format(SR.GetString(SR.privateUnionType), unionType.FullName))
             else
-                invalidArg "unionType" (SR.GetString1(SR.notAUnionType, unionType.FullName))
+                invalidArg "unionType" (String.Format(SR.GetString(SR.notAUnionType), unionType.FullName))
 
     //-----------------------------------------------------------------
     // TUPLE DECOMPILATION
@@ -435,7 +435,7 @@ module internal Impl =
         | _ -> invalidArg "tys" (SR.GetString(SR.invalidTupleTypes))
 
     let rec getTupleTypeInfo (typ:Type) = 
-      if not (isTupleType (typ) ) then invalidArg "typ" (SR.GetString1(SR.notATupleType, typ.FullName));
+      if not (isTupleType (typ) ) then invalidArg "typ" (String.Format(SR.GetString(SR.notATupleType), typ.FullName));
       let tyargs = typ.GetGenericArguments()
       if tyargs.Length = maxTuple then
           let tysA = tyargs.[0..tupleEncField-1]
@@ -507,7 +507,7 @@ module internal Impl =
                 typ.GetConstructor(BindingFlags.Instance ||| bindingFlags,null,props |> Array.map (fun p -> p.PropertyType),null)
 #endif
         match ctor with
-        | null -> raise <| ArgumentException(SR.GetString1(SR.invalidTupleTypeConstructorNotDefined, typ.FullName))
+        | null -> raise <| ArgumentException(String.Format(SR.GetString(SR.invalidTupleTypeConstructorNotDefined), typ.FullName))
         | _ -> ()
         ctor
 
@@ -561,16 +561,16 @@ module internal Impl =
             maker1,Some(etys.[tupleEncField])
 
     let getTupleReaderInfo (typ:Type,index:int) =
-        if index < 0 then invalidArg "index" (SR.GetString2(SR.tupleIndexOutOfRange, typ.FullName, index.ToString()))
+        if index < 0 then invalidArg "index" (String.Format(SR.GetString(SR.tupleIndexOutOfRange), typ.FullName, index.ToString()))
 
         let get index =
             if typ.IsValueType then
                 let props = typ.GetProperties(instancePropertyFlags ||| BindingFlags.Public) |> orderTupleProperties
-                if index >= props.Length then invalidArg "index" (SR.GetString2(SR.tupleIndexOutOfRange, typ.FullName, index.ToString()))
+                if index >= props.Length then invalidArg "index" (String.Format(SR.GetString(SR.tupleIndexOutOfRange), typ.FullName, index.ToString()))
                 props.[index]
             else
                 let props = typ.GetProperties(instancePropertyFlags ||| BindingFlags.Public) |> orderTupleProperties
-                if index >= props.Length then invalidArg "index" (SR.GetString2(SR.tupleIndexOutOfRange, typ.FullName, index.ToString()))
+                if index >= props.Length then invalidArg "index" (String.Format(SR.GetString(SR.tupleIndexOutOfRange), typ.FullName, index.ToString()))
                 props.[index]
 
         if index < tupleEncField then
@@ -584,7 +584,7 @@ module internal Impl =
     
       
     let getFunctionTypeInfo (typ:Type) =
-      if not (isFunctionType typ) then invalidArg "typ" (SR.GetString1(SR.notAFunctionType, typ.FullName))
+      if not (isFunctionType typ) then invalidArg "typ" (String.Format(SR.GetString(SR.notAFunctionType), typ.FullName))
       let tyargs = typ.GetGenericArguments()
       tyargs.[0], tyargs.[1]
 
@@ -632,7 +632,7 @@ module internal Impl =
         let ctor = typ.GetConstructor(BindingFlags.Instance ||| bindingFlags,null,props |> Array.map (fun p -> p.PropertyType),null)
 #endif        
         match ctor with
-        | null -> raise <| ArgumentException(SR.GetString1(SR.invalidRecordTypeConstructorNotDefined, typ.FullName))
+        | null -> raise <| ArgumentException(String.Format(SR.GetString(SR.invalidRecordTypeConstructorNotDefined), typ.FullName))
         | _ -> ()
         ctor
 
@@ -676,21 +676,21 @@ module internal Impl =
     let checkExnType (exceptionType, bindingFlags) =
         if not (isExceptionRepr (exceptionType,bindingFlags)) then 
             if isExceptionRepr (exceptionType,bindingFlags ||| BindingFlags.NonPublic) then 
-                invalidArg "exceptionType" (SR.GetString1(SR.privateExceptionType, exceptionType.FullName))
+                invalidArg "exceptionType" (String.Format(SR.GetString(SR.privateExceptionType), exceptionType.FullName))
             else
-                invalidArg "exceptionType" (SR.GetString1(SR.notAnExceptionType, exceptionType.FullName))
+                invalidArg "exceptionType" (String.Format(SR.GetString(SR.notAnExceptionType), exceptionType.FullName))
            
     let checkRecordType(argName,recordType,bindingFlags) =
         checkNonNull argName recordType;
         if not (isRecordType (recordType,bindingFlags) ) then 
             if isRecordType (recordType,bindingFlags ||| BindingFlags.NonPublic) then 
-                invalidArg argName (SR.GetString1(SR.privateRecordType, recordType.FullName))
+                invalidArg argName (String.Format(SR.GetString(SR.privateRecordType), recordType.FullName))
             else
-                invalidArg argName (SR.GetString1(SR.notARecordType, recordType.FullName))
+                invalidArg argName (String.Format(SR.GetString(SR.notARecordType), recordType.FullName))
         
     let checkTupleType(argName,(tupleType:Type)) =
         checkNonNull argName tupleType;
-        if not (isTupleType tupleType) then invalidArg argName (SR.GetString1(SR.notATupleType, tupleType.FullName))
+        if not (isTupleType tupleType) then invalidArg argName (String.Format(SR.GetString(SR.notATupleType), tupleType.FullName))
 
 #if FX_RESHAPED_REFLECTION
 open ReflectionAdapters
@@ -862,7 +862,7 @@ type FSharpValue =
 
     static member MakeFunction(functionType:Type,implementation:(obj->obj)) = 
         Impl.checkNonNull "functionType" functionType
-        if not (Impl.isFunctionType functionType) then invalidArg "functionType" (SR.GetString1(SR.notAFunctionType, functionType.FullName));
+        if not (Impl.isFunctionType functionType) then invalidArg "functionType" (String.Format(SR.GetString(SR.notAFunctionType), functionType.FullName));
         Impl.checkNonNull "implementation" implementation
         let domain,range = Impl.getFunctionTypeInfo functionType
         let dynCloMakerTy = typedefof<DynamicFunction<obj,obj>>
@@ -879,15 +879,15 @@ type FSharpValue =
     static member GetTupleFields(tuple:obj) = // argument name(s) used in error message
         Impl.checkNonNull "tuple" tuple
         let typ = tuple.GetType() 
-        if not (Impl.isTupleType typ ) then invalidArg "tuple" (SR.GetString1(SR.notATupleType, tuple.GetType().FullName));
+        if not (Impl.isTupleType typ ) then invalidArg "tuple" (String.Format(SR.GetString(SR.notATupleType), tuple.GetType().FullName));
         Impl.getTupleReader typ tuple
 
     static member GetTupleField(tuple:obj,index:int) = // argument name(s) used in error message
         Impl.checkNonNull "tuple" tuple
         let typ = tuple.GetType() 
-        if not (Impl.isTupleType typ ) then invalidArg "tuple" (SR.GetString1(SR.notATupleType, tuple.GetType().FullName));
+        if not (Impl.isTupleType typ ) then invalidArg "tuple" (String.Format(SR.GetString(SR.notATupleType), tuple.GetType().FullName));
         let fields = Impl.getTupleReader typ tuple
-        if index < 0 || index >= fields.Length then invalidArg "index" (SR.GetString2(SR.tupleIndexOutOfRange, tuple.GetType().FullName, index.ToString()));
+        if index < 0 || index >= fields.Length then invalidArg "index" (String.Format(SR.GetString(SR.tupleIndexOutOfRange), tuple.GetType().FullName, index.ToString()));
         fields.[index]
     
     static member PreComputeTupleReader(tupleType:Type) : (obj -> obj[])  =

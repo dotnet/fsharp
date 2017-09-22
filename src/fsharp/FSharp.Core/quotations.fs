@@ -576,13 +576,13 @@ module Patterns =
         let mems = FSharpType.GetRecordFields(ty,publicOrPrivateBindingFlags)
         match mems |> Array.tryFind (fun minfo -> minfo.Name = fieldName) with
         | Some (m) -> m
-        | _ -> invalidArg  "fieldName" (SR.GetString2(SR.QmissingRecordField, ty.FullName, fieldName))
+        | _ -> invalidArg  "fieldName" (String.Format(SR.GetString(SR.QmissingRecordField), ty.FullName, fieldName))
 
     let getUnionCaseInfo(ty,unionCaseName) =    
         let cases = FSharpType.GetUnionCases(ty,publicOrPrivateBindingFlags)
         match cases |> Array.tryFind (fun ucase -> ucase.Name = unionCaseName) with
         | Some(case) -> case
-        | _ -> invalidArg  "unionCaseName" (SR.GetString2(SR.QmissingUnionCase, ty.FullName, unionCaseName))
+        | _ -> invalidArg  "unionCaseName" (String.Format(SR.GetString(SR.QmissingUnionCase), ty.FullName, unionCaseName))
     
     let getUnionCaseInfoField(unionCase:UnionCaseInfo,index) =    
         let fields = unionCase.GetFields() 
@@ -708,7 +708,7 @@ module Patterns =
         let cases = FSharpType.GetUnionCases(ty,publicOrPrivateBindingFlags)
         match cases |> Array.tryFind (fun ucase -> ucase.Name = str) with
         | Some(case) -> case.GetFields()
-        | _ -> invalidArg  "ty" (SR.GetString1(SR.notAUnionType, ty.FullName))
+        | _ -> invalidArg  "ty" (String.Format(SR.GetString(SR.notAUnionType), ty.FullName))
   
     let checkBind(v:Var,e) = 
         let ety = typeOf e
@@ -1006,14 +1006,14 @@ module Patterns =
 
     let bindModuleProperty (ty:Type,nm) = 
         match ty.GetProperty(nm,staticBindingFlags) with
-        | null -> raise <| System.InvalidOperationException (SR.GetString2(SR.QcannotBindProperty, nm, ty.ToString()))
+        | null -> raise <| System.InvalidOperationException (String.Format(SR.GetString(SR.QcannotBindProperty), nm, ty.ToString()))
         | res -> res
     
     // tries to locate unique function in a given type
     // in case of multiple candidates returns None so bindModuleFunctionWithCallSiteArgs will be used for more precise resolution
     let bindModuleFunction (ty:Type,nm) = 
         match ty.GetMethods(staticBindingFlags) |> Array.filter (fun mi -> mi.Name = nm) with 
-        | [||] -> raise <| System.InvalidOperationException (SR.GetString2(SR.QcannotBindFunction, nm, ty.ToString()))
+        | [||] -> raise <| System.InvalidOperationException (String.Format(SR.GetString(SR.QcannotBindFunction), nm, ty.ToString()))
         | [| res |] -> Some res
         | _ -> None
     
@@ -1042,7 +1042,7 @@ module Patterns =
                     let methodTyArgCount = if mi.IsGenericMethod then mi.GetGenericArguments().Length else 0
                     methodTyArgCount = tyArgs.Length
                 )
-            let fail() = raise <| System.InvalidOperationException (SR.GetString2(SR.QcannotBindFunction, nm, ty.ToString()))
+            let fail() = raise <| System.InvalidOperationException (String.Format(SR.GetString(SR.QcannotBindFunction), nm, ty.ToString()))
             match candidates with
             | [||] -> fail()
             | [| solution |] -> solution
@@ -1150,13 +1150,13 @@ module Patterns =
             typ.GetProperty(propName, staticOrInstanceBindingFlags) 
         with :? AmbiguousMatchException -> null // more than one property found with the specified name and matching binding constraints - return null to initiate manual search
         |> bindPropBySearchIfCandidateIsNull typ propName retType (Array.ofList argtyps)
-        |> checkNonNullResult ("propName", SR.GetString1(SR.QfailedToBindProperty, propName)) // fxcop may not see "propName" as an arg
+        |> checkNonNullResult ("propName", String.Format(SR.GetString(SR.QfailedToBindProperty), propName)) // fxcop may not see "propName" as an arg
 #else        
-        typ.GetProperty(propName, staticOrInstanceBindingFlags, null, retType, Array.ofList argtyps, null) |> checkNonNullResult ("propName", SR.GetString1(SR.QfailedToBindProperty, propName)) // fxcop may not see "propName" as an arg
+        typ.GetProperty(propName, staticOrInstanceBindingFlags, null, retType, Array.ofList argtyps, null) |> checkNonNullResult ("propName", String.Format(SR.GetString(SR.QfailedToBindProperty), propName)) // fxcop may not see "propName" as an arg
 #endif
     let bindField (tc,fldName,tyargs) =
         let typ = mkNamedType(tc,tyargs)
-        typ.GetField(fldName,staticOrInstanceBindingFlags) |> checkNonNullResult ("fldName", SR.GetString1(SR.QfailedToBindField, fldName))  // fxcop may not see "fldName" as an arg
+        typ.GetField(fldName,staticOrInstanceBindingFlags) |> checkNonNullResult ("fldName", String.Format(SR.GetString(SR.QfailedToBindField), fldName))  // fxcop may not see "fldName" as an arg
 
     let bindGenericCctor (tc:Type) =
         tc.GetConstructor(staticBindingFlags,null,[| |],null) 
@@ -1328,7 +1328,7 @@ module Patterns =
             // For some reason we can get 'null' returned here even when a type with the right name exists... Hence search the slow way...
             match (ass.GetTypes() |> Array.tryFind (fun a -> a.FullName = tcName)) with 
             | Some ty -> ty
-            | None -> invalidArg "tcName" (SR.GetString2(SR.QfailedToBindTypeInAssembly, tcName, ass.FullName)) // "Available types are:\n%A" tcName ass (ass.GetTypes() |> Array.map (fun a -> a.FullName))
+            | None -> invalidArg "tcName" (String.Format(SR.GetString(SR.QfailedToBindTypeInAssembly), tcName, ass.FullName)) // "Available types are:\n%A" tcName ass (ass.GetTypes() |> Array.map (fun a -> a.FullName))
         | ty -> ty
 
     let decodeNamedTy tc tsR = mkNamedType(tc,tsR)
@@ -1344,7 +1344,7 @@ module Patterns =
 #else
             match System.Reflection.Assembly.Load(a) with 
 #endif
-            | null -> raise <| System.InvalidOperationException(SR.GetString1(SR.QfailedToBindAssembly, a.ToString()))
+            | null -> raise <| System.InvalidOperationException(String.Format(SR.GetString(SR.QfailedToBindAssembly), a.ToString()))
             | ass -> ass
         
     let u_NamedType st = 
@@ -1863,7 +1863,7 @@ module Patterns =
                  | :? MethodInfo as minfo -> if minfo.IsGenericMethod then minfo.GetGenericArguments().Length else 0
                  | _ -> 0)
             if (expectedNumTypars <> tyargs.Length) then 
-                invalidArg "tyargs" (SR.GetString3(SR.QwrongNumOfTypeArgs, methodBase.Name, expectedNumTypars.ToString(), tyargs.Length.ToString()));
+                invalidArg "tyargs" (String.Format(SR.GetString(SR.QwrongNumOfTypeArgs), methodBase.Name, expectedNumTypars.ToString(), tyargs.Length.ToString()));
             Some(exprBuilder (envClosed tyargs))
         | None -> None
 

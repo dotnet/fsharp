@@ -48,7 +48,7 @@
     </FilesToLocalize>
     <EmbeddedText Include="VFSIstrings.txt" />
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="srProperties.fs" />
+    <Compile Include="FSharp.VS.FSI.Attributes.fs" />
     <Compile Include="$(FSharpSourcesRoot)\utils\CompilerLocationUtils.fs">
       <Link>CompilerLocationUtils.fs</Link>
     </Compile>
@@ -60,7 +60,9 @@
     <Compile Include="fsiSessionToolWindow.fs" />
     <Compile Include="fsiPackageHooks.fs" />
     <Compile Include="fsiPackage.fs" />
-    <EmbeddedResource Include="Properties.resx">
+    <EmbeddedResource Include="Properties.resx" GenerateSource="true">
+      <GeneratedModuleName>Microsoft.VisualStudio.FSharp.Interactive.SRProperties</GeneratedModuleName>
+      <GenerateLegacyCode>true</GenerateLegacyCode>
       <ManifestResourceName>Properties</ManifestResourceName>
       <Link>Properties.resx</Link>
     </EmbeddedResource>

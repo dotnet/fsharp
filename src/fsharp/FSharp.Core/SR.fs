@@ -161,10 +161,3 @@ module internal SR =
     
     let GetString(name:System.String) : System.String = 
         resources.GetString(name, System.Globalization.CultureInfo.CurrentUICulture)
-    let GetString1(name:System.String, arg1:System.String) : System.String = 
-        System.String.Format(resources.GetString(name, System.Globalization.CultureInfo.CurrentUICulture), arg1)
-    let GetString2(name:System.String, arg1:System.String, arg2:System.String) : System.String = 
-        System.String.Format(resources.GetString(name, System.Globalization.CultureInfo.CurrentUICulture), arg1, arg2)
-    let GetString3(name:System.String, arg1:System.String, arg2:System.String, arg3:System.String) : System.String = 
-        System.String.Format(resources.GetString(name, System.Globalization.CultureInfo.CurrentUICulture), arg1, arg2, arg3)
-

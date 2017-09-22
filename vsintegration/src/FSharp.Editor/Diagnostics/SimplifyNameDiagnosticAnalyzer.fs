@@ -34,8 +34,8 @@ type internal SimplifyNameDiagnosticAnalyzer() =
     static let Descriptor = 
         DiagnosticDescriptor(
             id = IDEDiagnosticIds.SimplifyNamesDiagnosticId, 
-            title = SR.SimplifyName.Value, 
-            messageFormat = SR.NameCanBeSimplified.Value, 
+            title = SR.SimplifyName(),
+            messageFormat = SR.NameCanBeSimplified(),
             category = DiagnosticCategory.Style, 
             defaultSeverity = DiagnosticSeverity.Hidden, 
             isEnabledByDefault = true, 
