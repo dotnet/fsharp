@@ -639,7 +639,7 @@ if "%OSARCH%"=="AMD64" set SYSWOW64=SysWoW64
 
 if not "%OSARCH%"=="x86" set REGEXE32BIT=%WINDIR%\syswow64\reg.exe
 
-echo SDK environment vars from Registry (note: ignore "ERROR: The system was unable to find ....")
+echo SDK environment vars from Registry
 echo ==================================
 
 ::See https://stackoverflow.com/a/17113667/111575 on 2^>NUL for suppressing the error "ERROR: The system was unable to find the specified registry key or value." from reg.exe, this fixes #3619
