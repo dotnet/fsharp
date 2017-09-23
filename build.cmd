@@ -417,11 +417,12 @@ echo PUBLISH_VSIX=%PUBLISH_VSIX%
 echo MYGET_APIKEY=%MYGET_APIKEY%
 echo TEMP=%TEMP%
 
-REM load Visual Studio 2017 developer command prompt if VS150COMNTOOLS is not set
+:: load Visual Studio 2017 developer command prompt if VS150COMNTOOLS is not set
 
-REM If this is not set, VsDevCmd.bat will change %cd% to [USERPROFILE]\source, causing the build to fail.
+:: If this is not set, VsDevCmd.bat will change %cd% to [USERPROFILE]\source, causing the build to fail.
 SET VSCMD_START_DIR=%cd%
 
+:: try to find an RC or RTM edition of VS2017
 if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" (
     call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"
 )
@@ -431,6 +432,19 @@ if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Stud
 if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat" (
     call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
 )
+
+:: Allow build from Preview editions
+if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Enterprise\Common7\Tools\VsDevCmd.bat" (
+    call "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Enterprise\Common7\Tools\VsDevCmd.bat"
+)
+if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Professional\Common7\Tools\VsDevCmd.bat" (
+    call "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Enterprise\Common7\Tools\VsDevCmd.bat"
+)
+if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Community\Common7\Tools\VsDevCmd.bat" (
+    call "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Enterprise\Common7\Tools\VsDevCmd.bat"
+)
+
+:: If there's no installation of VS2017 or VS2017 Preview, use the build tools
 if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat" (
     call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat"
 )
@@ -639,7 +653,7 @@ if "%OSARCH%"=="AMD64" set SYSWOW64=SysWoW64
 
 if not "%OSARCH%"=="x86" set REGEXE32BIT=%WINDIR%\syswow64\reg.exe
 
-echo SDK environment vars from Registry (note: ignore "ERROR: The system was unable to find ....")
+echo SDK environment vars from Registry
 echo ==================================
 
 ::See https://stackoverflow.com/a/17113667/111575 on 2^>NUL for suppressing the error "ERROR: The system was unable to find the specified registry key or value." from reg.exe, this fixes #3619
