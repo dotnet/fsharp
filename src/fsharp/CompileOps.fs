@@ -2000,11 +2000,12 @@ let ResolveFileUsingPaths(paths, m, name) =
         let searchMessage = String.concat "\n " paths
         raise (FileNameNotResolved(name, searchMessage, m))            
 
-let GetWarningNumber(m, s:string) =
+let GetWarningNumber(s:string) =
     try 
-        Some (int32 s)
-    with err -> 
-        warning(Error(FSComp.SR.buildInvalidWarningNumber(s), m))
+        // Trim off leading "FS" to allow ""/warnon:FS0001;FS0002;0003; anything else we ignore
+        let number = if s.StartsWith("FS", StringComparison.InvariantCulture) = true then s.Substring(2) else s
+        Some (int32 number)
+    with err ->
         None
 
 let ComputeMakePathAbsolute implicitIncludeDir (path : string) = 
@@ -2513,18 +2514,18 @@ type TcConfigBuilder =
         tcConfigB.outputFile <- Some(outfile)
         outfile, pdbfile, assemblyName
 
-    member tcConfigB.TurnWarningOff(m, s:string) =
+    member tcConfigB.TurnWarningOff(s) =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
-        match GetWarningNumber(m, s) with 
+        match GetWarningNumber(s) with 
         | None -> ()
         | Some n -> 
             // nowarn:62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
             if n = 62 then tcConfigB.mlCompatibility <- true
             tcConfigB.specificWarnOff <- ListSet.insert (=) n tcConfigB.specificWarnOff
 
-    member tcConfigB.TurnWarningOn(m, s:string) =
+    member tcConfigB.TurnWarningOn(s) =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
-        match GetWarningNumber(m, s) with 
+        match GetWarningNumber(s) with 
         | None -> ()
         | Some n -> 
             // warnon 62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
@@ -3294,7 +3295,7 @@ let GetScopedPragmasForHashDirective hd =
     [ match hd with 
       | ParsedHashDirective("nowarn", numbers, m) ->
           for s in numbers do
-          match GetWarningNumber(m, s) with 
+          match GetWarningNumber(s) with 
             | None -> ()
             | Some n -> yield ScopedPragma.WarningOff(m, n) 
       | _ -> () ]
@@ -4947,7 +4948,7 @@ let ProcessMetaCommandsFromInput
 let ApplyNoWarnsToTcConfig (tcConfig:TcConfig, inp:ParsedInput, pathOfMetaCommandSource) = 
     // Clone
     let tcConfigB = tcConfig.CloneOfOriginalBuilder 
-    let addNoWarn = fun () (m, s) -> tcConfigB.TurnWarningOff(m, s)
+    let addNoWarn = fun () (_, s) -> tcConfigB.TurnWarningOff(s)
     let addReferencedAssemblyByPath = fun () (_m, _s) -> ()
     let addLoadedSource = fun () (_m, _s) -> ()
     ProcessMetaCommandsFromInput (addNoWarn, addReferencedAssemblyByPath, addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())

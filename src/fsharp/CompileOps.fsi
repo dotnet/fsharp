@@ -76,6 +76,8 @@ val ParseInput : (UnicodeLexing.Lexbuf -> Parser.token) * ErrorLogger * UnicodeL
 // Error and warnings
 //--------------------------------------------------------------------------
 
+val GetWarningNumber : string -> int option
+
 /// Get the location associated with an error
 val GetRangeOfDiagnostic : PhasedDiagnostic -> range option
 
@@ -381,8 +383,8 @@ type TcConfigBuilder =
         defaultCopyFSharpCore: bool -> TcConfigBuilder
 
     member DecideNames : string list -> outfile: string * pdbfile: string option * assemblyName: string 
-    member TurnWarningOff : range * string -> unit
-    member TurnWarningOn : range * string -> unit
+    member TurnWarningOff : string -> unit
+    member TurnWarningOn :  string -> unit
     member AddIncludePath : range * string * string -> unit
     member AddReferencedAssemblyByPath : range * string -> unit
     member RemoveReferencedAssemblyByPath : range * string -> unit

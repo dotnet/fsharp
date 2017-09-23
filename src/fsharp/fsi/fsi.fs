@@ -1278,8 +1278,8 @@ type internal FsiDynamicCompiler
            (tcConfigB, directoryName sourceFile) 
            (fun () ->
                ProcessMetaCommandsFromInput 
-                   ((fun st (m,nm) -> tcConfigB.TurnWarningOff(m,nm); st),
-                    (fun st (m,nm) -> snd (fsiDynamicCompiler.EvalRequireReference (ctok, st, m, nm))),
+                   ((fun st (_, nm) -> tcConfigB.TurnWarningOff(nm); st),
+                    (fun st (m, nm) -> snd (fsiDynamicCompiler.EvalRequireReference (ctok, st, m, nm))),
                     (fun _ _ -> ()))  
                    (tcConfigB, inp, Path.GetDirectoryName sourceFile, istate))
       
@@ -1301,7 +1301,7 @@ type internal FsiDynamicCompiler
               else fsiConsoleOutput.uprintnf " %s %s" (FSIstrings.SR.fsiLoadingFilesPrefixText()) input.FileName)
           fsiConsoleOutput.uprintfn "]"
 
-          closure.NoWarns |> Seq.map (fun (n,ms) -> ms |> Seq.map (fun m -> m,n)) |> Seq.concat |> Seq.iter tcConfigB.TurnWarningOff
+          closure.NoWarns |> Seq.map (fun (n,ms) -> ms |> Seq.map (fun _ -> n)) |> Seq.concat |> Seq.iter tcConfigB.TurnWarningOff
 
           // Play errors and warnings from resolution
           closure.ResolutionDiagnostics |> List.iter diagnosticSink
@@ -1956,8 +1956,8 @@ type internal FsiInteractionProcessor
                     fsiConsoleOutput.uprintnfnn "%s" (FSIstrings.SR.fsiTurnedTimingOn())
                 {istate with timing = (v = "on")},Completed None
 
-            | IHash (ParsedHashDirective("nowarn",numbers,m),_) -> 
-                List.iter (fun (d:string) -> tcConfigB.TurnWarningOff(m,d)) numbers
+            | IHash (ParsedHashDirective("nowarn",numbers,_),_) -> 
+                List.iter (fun d -> tcConfigB.TurnWarningOff(d)) numbers
                 istate,Completed None
 
             | IHash (ParsedHashDirective("terms",[],_),_) -> 

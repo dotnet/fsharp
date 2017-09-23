@@ -552,32 +552,32 @@ let inputFileFlagsFsc tcConfigB = inputFileFlagsBoth tcConfigB
 
 let errorsAndWarningsFlags (tcConfigB : TcConfigBuilder) = 
     [
-        CompilerOption("warnaserror", tagNone, OptionSwitch(fun switch   -> tcConfigB.globalWarnAsError <- switch <> OptionSwitch.Off), None,
-                            Some (FSComp.SR.optsWarnaserrorPM())); 
+        CompilerOption("warnaserror", tagNone, OptionSwitch(fun switch   ->
+            tcConfigB.globalWarnAsError <- switch <> OptionSwitch.Off), None, Some (FSComp.SR.optsWarnaserrorPM()));
 
-        CompilerOption("warnaserror", tagWarnList, OptionIntListSwitch (fun n switch -> 
-                                                                    if switch = OptionSwitch.Off then 
-                                                                        tcConfigB.specificWarnAsError <- ListSet.remove (=) n tcConfigB.specificWarnAsError ;
-                                                                        tcConfigB.specificWarnAsWarn  <- ListSet.insert (=) n tcConfigB.specificWarnAsWarn
-                                                                    else 
-                                                                        tcConfigB.specificWarnAsWarn  <- ListSet.remove (=) n tcConfigB.specificWarnAsWarn ;
-                                                                        tcConfigB.specificWarnAsError <- ListSet.insert (=) n tcConfigB.specificWarnAsError), None,
-                            Some (FSComp.SR.optsWarnaserror()));
-           
-        CompilerOption("warn", tagInt, OptionInt (fun n -> 
-                                                     tcConfigB.globalWarnLevel <- 
-                                                     if (n >= 0 && n <= 5) then n 
-                                                     else error(Error(FSComp.SR.optsInvalidWarningLevel(n),rangeCmdArgs))), None,
-                            Some (FSComp.SR.optsWarn()));
-           
-        CompilerOption("nowarn", tagWarnList, OptionStringList (fun n -> tcConfigB.TurnWarningOff(rangeCmdArgs, n)), None,
-                            Some (FSComp.SR.optsNowarn())); 
+        CompilerOption("warnaserror", tagWarnList, OptionStringListSwitch (fun n switch ->
+            match GetWarningNumber(n) with
+            | Some n ->
+                if switch = OptionSwitch.Off then
+                    tcConfigB.specificWarnAsError <- ListSet.remove (=) n tcConfigB.specificWarnAsError
+                    tcConfigB.specificWarnAsWarn  <- ListSet.insert (=) n tcConfigB.specificWarnAsWarn
+                else 
+                    tcConfigB.specificWarnAsWarn  <- ListSet.remove (=) n tcConfigB.specificWarnAsWarn
+                    tcConfigB.specificWarnAsError <- ListSet.insert (=) n tcConfigB.specificWarnAsError
+            | None -> ()
+            ), None, Some (FSComp.SR.optsWarnaserror()));
 
-        CompilerOption("warnon", tagWarnList, OptionStringList (fun n -> tcConfigB.TurnWarningOn(rangeCmdArgs,n)), None,
-                            Some(FSComp.SR.optsWarnOn()));                             
-        
-        CompilerOption("consolecolors", tagNone, OptionSwitch (fun switch -> enableConsoleColoring <- switch = OptionSwitch.On), None, 
-                            Some (FSComp.SR.optsConsoleColors()))
+        CompilerOption("warn", tagInt, OptionInt (fun n ->
+            tcConfigB.globalWarnLevel <-
+            if (n >= 0 && n <= 5) then n 
+            else error(Error(FSComp.SR.optsInvalidWarningLevel(n),rangeCmdArgs))), None,
+            Some (FSComp.SR.optsWarn()));
+
+        CompilerOption("nowarn", tagWarnList, OptionStringList (fun n -> tcConfigB.TurnWarningOff(n)), None, Some(FSComp.SR.optsNowarn())); 
+
+        CompilerOption("warnon", tagWarnList, OptionStringList (fun n -> tcConfigB.TurnWarningOn(n)),  None, Some(FSComp.SR.optsWarnOn()));
+
+        CompilerOption("consolecolors", tagNone, OptionSwitch (fun switch -> enableConsoleColoring <- switch = OptionSwitch.On), None, Some (FSComp.SR.optsConsoleColors()))
     ]
 
 
@@ -693,7 +693,7 @@ let codeGenerationFlags isFsi (tcConfigB : TcConfigBuilder) =
 let defineSymbol tcConfigB s = tcConfigB.conditionalCompilationDefines <- s :: tcConfigB.conditionalCompilationDefines
       
 let mlCompatibilityFlag (tcConfigB : TcConfigBuilder) = 
-        CompilerOption("mlcompatibility", tagNone, OptionUnit   (fun () -> tcConfigB.mlCompatibility<-true; tcConfigB.TurnWarningOff(rangeCmdArgs,"62")),  None,
+        CompilerOption("mlcompatibility", tagNone, OptionUnit   (fun () -> tcConfigB.mlCompatibility<-true; tcConfigB.TurnWarningOff("62")),  None,
                            Some (FSComp.SR.optsMlcompatibility()))
 let languageFlags tcConfigB =
     [
@@ -904,7 +904,7 @@ let internalFlags (tcConfigB:TcConfigBuilder) =
     
 let compilingFsLibFlag (tcConfigB : TcConfigBuilder) = 
         CompilerOption("compiling-fslib", tagNone, OptionUnit (fun () -> tcConfigB.compilingFslib <- true 
-                                                                         tcConfigB.TurnWarningOff(rangeStartup,"42") 
+                                                                         tcConfigB.TurnWarningOff("42") 
                                                                          ErrorLogger.reportLibraryOnlyFeatures <- false
                                                                          IlxSettings.ilxCompilingFSharpCoreLib := true), Some(InternalCommandLineOption("--compiling-fslib", rangeCmdArgs)), None)
 let compilingFsLib20Flag (tcConfigB : TcConfigBuilder) = 

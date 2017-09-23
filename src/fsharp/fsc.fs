@@ -214,7 +214,7 @@ let AdjustForScriptCompile(ctok, tcConfigB:TcConfigBuilder, commandLineSourceFil
             // are local to the scripts and not added to the tcConfigB (they are added to localized clones of the tcConfigB).
             let references = closure.References |> List.collect snd |> List.filter (fun r->r.originalReference.Range<>range0 && r.originalReference.Range<>rangeStartup)
             references |> List.iter (fun r-> tcConfigB.AddReferencedAssemblyByPath(r.originalReference.Range, r.resolvedPath))
-            closure.NoWarns |> List.collect (fun (n, ms) -> ms|>List.map(fun m->m, n)) |> List.iter (fun (x,m) -> tcConfigB.TurnWarningOff(x, m))
+            closure.NoWarns |> List.collect (fun (n, ms) -> ms |> List.map(fun m-> m, n)) |> List.iter (fun (_, m) -> tcConfigB.TurnWarningOff(m))
             closure.SourceFiles |> List.map fst |> List.iter AddIfNotPresent
             closure.AllRootFileDiagnostics |> List.iter diagnosticSink
             
