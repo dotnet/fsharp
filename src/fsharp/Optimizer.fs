@@ -2567,7 +2567,21 @@ and TryInlineApplication cenv env finfo (tyargs: TType list, args: Expr list, m)
 
 //-------------------------------------------------------------------------
 // Optimize/analyze an application of a function to type and term arguments
-//------------------------------------------------------------------------- 
+//-------------------------------------------------------------------------
+
+and IterExpression vref cenv expr =
+    match expr with
+    | Expr.App(Expr.Val(valRef,_,_rangeIter), _, [TType_app _ as elementType], appliedParams, _rangeOuter)
+       when valRefEq cenv.g valRef vref ->
+        match appliedParams with
+        | [Expr.Lambda(_,None,None,[fVal],fBody,_m1,_fRetType);
+           source] -> Some(source, elementType, fVal, fBody)
+        | _ -> None
+    | _ -> None
+
+and (|ListIterExpression|_|) cenv expr  = IterExpression cenv.g.list_iter_vref   cenv expr
+and (|SeqIterExpression|_|) cenv expr   = IterExpression cenv.g.seq_iter_vref   cenv expr
+and (|ArrayIterExpression|_|) cenv expr = IterExpression cenv.g.array_iter_vref cenv expr
 
 and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
     // trying to devirtualize
@@ -2610,6 +2624,80 @@ and OptimizeApplication cenv env (f0, f0ty, tyargs, args, m) =
        // we beta-reduced, hence reoptimize 
         OptimizeExpr cenv env newExpr
     | _ -> 
+        match newExpr with
+        // Rewrite 'List.iter (fun x -> expr) s' into 'for x in s do expr'
+        | ListIterExpression cenv (enumerableExpr, elemTy, elemVar, bodyExpr) ->
+            let g = cenv.g
+            let enumExprTy = mkListTy g elemTy
+            let zeroRange = range.Zero
+            // copy pasted from TastOps: DetectAndOptimizeForExpression
+            let IndexHead                   = 0
+            let IndexTail                   = 1
+
+            let currentVar  , currentExpr    = mkMutableCompGenLocal zeroRange "current" enumExprTy
+            let nextVar     , nextExpr       = mkMutableCompGenLocal zeroRange "next" enumExprTy
+
+            let guardExpr                   = mkNonNullTest g zeroRange nextExpr
+            let headOrDefaultExpr           = mkUnionCaseFieldGetUnprovenViaExprAddr (currentExpr, g.cons_ucref, [elemTy], IndexHead, zeroRange)
+            let tailOrNullExpr              = mkUnionCaseFieldGetUnprovenViaExprAddr (currentExpr, g.cons_ucref, [elemTy], IndexTail, zeroRange)
+            let bodyExpr                    =
+                mkCompGenLet zeroRange elemVar headOrDefaultExpr
+                    (mkCompGenSequential zeroRange
+                        bodyExpr
+                        (mkCompGenSequential zeroRange
+                            (mkValSet zeroRange (mkLocalValRef currentVar) nextExpr)
+                            (mkValSet zeroRange (mkLocalValRef nextVar) tailOrNullExpr)
+                        )
+                    )
+
+            let expr =
+               // let mutable current = enumerableExpr
+                mkLet NoSequencePointAtStickyBinding zeroRange currentVar enumerableExpr
+                    // let mutable next = current.TailOrNull
+                    (mkCompGenLet zeroRange nextVar tailOrNullExpr 
+                        // while nonNull next dp
+                       (mkWhile g (NoSequencePointAtWhileLoop, WhileLoopForCompiledForEachExprMarker, guardExpr, bodyExpr, zeroRange)))
+
+            OptimizeExpr cenv env expr
+
+
+        // Rewrite 'Seq.iter (fun x -> expr) s' into 'for x in s do expr'
+        | SeqIterExpression cenv _ when false ->
+            failwith "not implemented"
+            //let g = cenv.g
+            //let enumExprTy = mkListTy g elemTy
+            //let zeroRange = range.Zero
+
+            //let enumExpr = enumerableExpr
+            //let mForLoopStart = zeroRange
+            //let mEnumExpr = zeroRange
+            //let spForLoop = NoSequencePointAtForLoop
+            //// ---------
+            //let enumerableVar, enumerableExprInVar = mkCompGenLocal mEnumExpr "inputSequence" enumExprTy
+            //let enumeratorVar, enumeratorExpr, _, enumElemTy, getEnumExpr, getEnumTy, guardExpr, _, currentExpr = 
+            //    TypeChecker.AnalyzeArbitraryExprAsEnumerable cenv env true mEnumExpr enumExprTy enumerableExprInVar
+            //let expr =
+            //    // This compiled for must be matched EXACTLY by CompiledForEachExpr in opt.fs and creflect.fs
+            //    mkCompGenLet mForLoopStart enumerableVar enumExpr
+            //      (let cleanupE = TypeChecker.BuildDisposableCleanup cenv env mWholeExpr enumeratorVar
+            //       let spBind = match spForLoop with SequencePointAtForLoop(spStart) -> SequencePointAtBinding(spStart) | NoSequencePointAtForLoop -> NoSequencePointAtStickyBinding
+            //       (mkLet spBind mForLoopStart enumeratorVar getEnumExpr
+            //           (mkTryFinally cenv.g 
+            //               (mkWhile cenv.g 
+            //                   (NoSequencePointAtWhileLoop, 
+            //                    WhileLoopForCompiledForEachExprMarker, guardExpr, 
+            //                    mkCompGenLet mForLoopStart elemVar currentExpr bodyExpr, 
+            //                    mForLoopStart), 
+            //                cleanupE, mForLoopStart, cenv.g.unit_ty, NoSequencePointAtTry, NoSequencePointAtFinally))))
+
+            //OptimizeExpr cenv env expr
+
+        // Rewrite 'Array.iter (fun x -> expr) s' into 'for x in s do expr'
+        | ArrayIterExpression cenv _ when false ->
+            failwith "not implemented"
+
+        | _ ->
+
         // regular
 
         // Determine if this application is a critical tailcall
