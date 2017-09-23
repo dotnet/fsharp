@@ -40,7 +40,7 @@ type CodeLensGeneralTag(width, topSpace, baseline, textHeight, bottomSpace, affi
 
 /// Class which provides support for general code lens
 /// Use the methods <code>AddCodeLens</code< and <code> RemoveCodeLens</code>
-type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
+type CodeLensGeneralTagger (view, buffer:ITextBuffer) as self =
     // Custom simple tagger logic
 
     /// Saves the ui context to switch context for ui related work.
@@ -54,9 +54,9 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
     /// Caches the current used trackingSpans per line. One line can contain multiple trackingSpans
     let mutable trackingSpans = Dictionary<_, Generic.List<_>>()
     /// Text view for accessing the adornment layer.
-    let mutable view: IWpfTextView option = None
+    let mutable view: IWpfTextView = view
     /// The code lens layer for adding and removing adornments.
-    let mutable codeLensLayer: IAdornmentLayer option = None
+    let mutable codeLensLayer: IAdornmentLayer = view.GetAdornmentLayer "CodeLens"
     /// Tracks the recent first + last visible line numbers for adornment layout logic.
     let mutable recentFirstVsblLineNmbr, recentLastVsblLineNmbr = 0, 0
     /// Tracks the adornments on the layer.
@@ -99,6 +99,8 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
                 | Some newLine ->
                     if newLine <> lineNumber then
                         trackingSpans.[lineNumber].Remove(trackingSpan) |> ignore
+                        if trackingSpans.[lineNumber].Count = 0 then
+                            trackingSpans.Remove lineNumber |> ignore
                         if newLine |> trackingSpans.ContainsKey |> not then
                             trackingSpans.[newLine] <- Generic.List()
                         trackingSpans.[newLine].Add(trackingSpan)
@@ -149,6 +151,7 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
         try
             let oldSnapshot = e.Before
             let snapshot = e.After
+            currentBufferSnapshot <- snapshot
             for line in oldSnapshot.Lines do
                 let lineNumber = line.LineNumber
                 updateTrackingSpansFast snapshot lineNumber
@@ -159,12 +162,9 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
             //            snapshot.GetLineNumberFromPosition span.Start,
             //            snapshot.GetLineNumberFromPosition span.End
             //        for lineNumber in startLineNumber .. endLineNumber do updateTrackingSpansFast snapshot lineNumber
-            match view with 
-            | None -> ()
-            | Some view ->
-                let firstLine = view.TextViewLines.FirstVisibleLine
-                view.DisplayTextLineContainingBufferPosition (firstLine.Start, 0., ViewRelativePosition.Top)
-                self.RelayoutRequested.Enqueue(())
+            let firstLine = view.TextViewLines.FirstVisibleLine
+            view.DisplayTextLineContainingBufferPosition (firstLine.Start, 0., ViewRelativePosition.Top)
+            self.RelayoutRequested.Enqueue(())
          with e -> logErrorf "Error in code lens provider: %A" e
 
     /// Here all layout methods for the adornments is done.
@@ -172,20 +172,14 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
     /// others which intersect the current visible span are made visible and afterwards async layouted.
     let handleLayoutChanged (e:TextViewLayoutChangedEventArgs) =
         try
-            currentBufferSnapshot <- e.NewSnapshot
+            let buffer = e.NewSnapshot
             let recentVisibleLineNumbers = Set [recentFirstVsblLineNmbr .. recentLastVsblLineNmbr]
             let firstVisibleLineNumber, lastVisibleLineNumber =
-                match view with
-                | None -> 
-                    logWarning "View is none!"
-                    0, 0
-                | Some view ->
-                    let first, last = 
-                        view.TextViewLines.FirstVisibleLine, 
-                        view.TextViewLines.LastVisibleLine
-                    let buffer = e.NewSnapshot
-                    buffer.GetLineNumberFromPosition(first.Start.Position),
-                    buffer.GetLineNumberFromPosition(last.Start.Position)
+                let first, last = 
+                    view.TextViewLines.FirstVisibleLine, 
+                    view.TextViewLines.LastVisibleLine
+                buffer.GetLineNumberFromPosition(first.Start.Position),
+                buffer.GetLineNumberFromPosition(last.Start.Position)
             let visibleLineNumbers = Set [firstVisibleLineNumber .. lastVisibleLineNumber]
             let nonVisibleLineNumbers = Set.difference recentVisibleLineNumbers visibleLineNumbers
             let newVisibleLineNumbers = Set.difference visibleLineNumbers recentVisibleLineNumbers
@@ -203,13 +197,11 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
 
             // logInfof "nonVisibleLineNumbers = %A\newVisibleLineNumbers %A" nonVisibleLineNumbers newVisibleLineNumbers
             if nonVisibleLineNumbers.Count > 0 || newVisibleLineNumbers.Count > 0 then
-                let snapshot = buffer.CurrentSnapshot
-                let view = view.Value
                 for lineNumber in nonVisibleLineNumbers do
-                    if lineNumber > 0 && lineNumber < snapshot.LineCount then
+                    if lineNumber > 0 && lineNumber < buffer.LineCount then
                         try
                             let line = 
-                                let l = e.NewSnapshot.GetLineFromLineNumber(lineNumber)
+                                let l = buffer.GetLineFromLineNumber(lineNumber)
                                 view.GetTextViewLineContainingBufferPosition(l.Start)
                             applyFuncOnLineStackPanels line (fun ui ->
                                 ui.Visibility <- Visibility.Hidden
@@ -218,7 +210,7 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
                 for lineNumber in newVisibleLineNumbers do
                     try
                         let line = 
-                                let l = e.NewSnapshot.GetLineFromLineNumber(lineNumber)
+                                let l = buffer.GetLineFromLineNumber(lineNumber)
                                 view.GetTextViewLineContainingBufferPosition(l.Start)
                         applyFuncOnLineStackPanels line (fun ui ->
                             ui.Visibility <- Visibility.Visible
@@ -226,9 +218,7 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
                         )
                      with e -> logErrorf "Error in new visible lines iteration %A" e
             if self.RelayoutRequested.Count > 0 then
-                let view = view.Value
                 self.RelayoutRequested.Dequeue() |> ignore
-                let buffer = buffer.CurrentSnapshot
                 for lineNumber in visibleLineNumbers do
                     let line = 
                         let l = buffer.GetLineFromLineNumber(lineNumber)
@@ -249,11 +239,9 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
                 // and would consume too much performance
                 do! Async.Sleep(16) |> liftAsync // Skip at least one frames
                 do! Async.SwitchToContext uiContext |> liftAsync
-                let! view = view
-                let! layer = codeLensLayer
+                let layer = codeLensLayer
                 // Now relayout the existing adornments
                 if nonVisibleLineNumbers.Count > 0 || newVisibleLineNumbers.Count > 0 then
-                    let buffer = buffer.CurrentSnapshot
                     for lineNumber in visibleLineNumbers do
                         let line = 
                             let l = buffer.GetLineFromLineNumber(lineNumber)
@@ -292,8 +280,11 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
         ()
 
     // Add buffer changed event handler
-    do buffer.ChangedHighPriority.Add handleBufferChanged
-    
+    do (
+        buffer.Changed.Add handleBufferChanged
+        codeLensLayer <- view.GetAdornmentLayer "CodeLens"
+        view.LayoutChanged.Add handleLayoutChanged
+       )
     /// <summary>
     /// Enqueing an unit signals to the tagger that all visible code lens must be layouted again,
     /// to respect single line changes.
@@ -311,24 +302,23 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
     /// Public non-thread-safe method to remove code lens for a given tracking span.
     /// Returns whether the operation succeeded
     member __.RemoveCodeLens (trackingSpan:ITrackingSpan) =
-        let stackPanel = uiElements.[trackingSpan]
-        stackPanel.Children.Clear()
-        uiElements.Remove trackingSpan |> ignore
+        if uiElements.ContainsKey trackingSpan then
+            let stackPanel = uiElements.[trackingSpan]
+            stackPanel.Children.Clear()
+            uiElements.Remove trackingSpan |> ignore
+            try
+                codeLensLayer.RemoveAdornment(stackPanel) 
+            with e -> 
+                logExceptionWithContext(e, "Removing code lens")
+        else
+            logWarningf "No ui element is attached to this tracking span!"
         let lineNumber = 
             (trackingSpan.GetStartPoint currentBufferSnapshot).Position 
             |> currentBufferSnapshot.GetLineNumberFromPosition
-        trackingSpans.Remove lineNumber |> ignore
-        match codeLensLayer with 
-        | Some layer ->
-            try
-                layer.RemoveAdornment(stackPanel) 
-                true
-            with e -> 
-                logExceptionWithContext(e, "Removing code lens")
-                false
-        | None -> 
-            logWarningf "Adornment for tracking span %A does not exist!" trackingSpan
-            false
+        if trackingSpans.ContainsKey lineNumber then
+            trackingSpans.[lineNumber].Remove trackingSpan |> ignore
+            if trackingSpans.[lineNumber].Count = 0 then
+                trackingSpans.Remove lineNumber |> ignore
     
     member __.AddUiElementToCodeLens (trackingSpan:ITrackingSpan) (uiElement:UIElement)=
         let stackPanel = uiElements.[trackingSpan]
@@ -345,13 +335,18 @@ type CodeLensGeneralTagger (buffer:ITextBuffer) as self =
         stackPanel.Children.Remove(uiElement) |> ignore
         tagsChangedEvent.Trigger(self, SnapshotSpanEventArgs(trackingSpan.GetSpan(buffer.CurrentSnapshot))) // Need to refresh the tag.
     
-    /// This method shouldn't exist at all... 
-    /// However we still need it.
-    member __.SetView value = 
-        view <- Some value
-        codeLensLayer <- Some (value.GetAdornmentLayer "CodeLens")
-        value.LayoutChanged.Add handleLayoutChanged
-        
+    /// <summary>
+    /// Returns the current attached code lens. The key describes the line number, the value the corresponding tracking span.
+    /// </summary>
+    member val CurrentCodeLens = trackingSpans with get
+
+    /// <summary>
+    /// This is being called after the tagger has processed a buffer changed event. Please DON'T add new code lens within a buffer changed event. 
+    /// Subscribe to this event to ensure that all data is updated.
+    /// </summary>
+    //[<CLIEvent>]
+    //override __.BufferChanged = bufferChanged.Publish
+
     interface ITagger<CodeLensGeneralTag> with
         [<CLIEvent>]
         override __.TagsChanged = tagsChangedEvent.Publish
@@ -422,13 +417,14 @@ type internal FSharpCodeLensTagger
     (
         workspace: Workspace, 
         documentId: Lazy<DocumentId>,
+        view,
         buffer: ITextBuffer, 
         checker: FSharpChecker,
         projectInfoManager: FSharpProjectOptionsManager,
         typeMap: Lazy<ClassificationTypeMap>,
         gotoDefinitionService: FSharpGoToDefinitionService
      ) as self =
-    inherit CodeLensGeneralTagger(buffer)
+    inherit CodeLensGeneralTagger(view, buffer)
 
     //static let candidate = "abcdefghijklmnopqrstuvwxyz->ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     
@@ -659,15 +655,28 @@ type internal FSharpCodeLensTagger
                         newResults.[fullDeclarationText] <- (trackingSpan, res)
                     with e -> logExceptionWithContext (e, "Code Lens tracking tag span creation")
                 ()
-
-            //for tagToUpdate in tagsToUpdate do
-            //    do! removeTag(tagToUpdate.Key)
-            //    let fullDeclarationText, tag = tagToUpdate.Value
-            //    let! newTag = addTag (tagToUpdate.Key.Span) (CodeLensTag(0., GetTextBlockSize.Height, 0., 0., 0., PositionAffinity.Predecessor, tag, self))
-            //    newResults.[fullDeclarationText] <- newTag
             lastResults <- newResults
             do! Async.SwitchToContext uiContext |> liftAsync
             
+            for value in tagsToUpdate do
+                let trackingSpan, (_, codeLens) = value.Key, value.Value
+                self.RemoveCodeLens trackingSpan |> ignore
+                let stackPanel = self.AddCodeLens trackingSpan
+                // logInfof "Trackingspan %A is being added." trackingSpan 
+                
+                stackPanel.IsVisibleChanged
+                |> Event.filter (fun eventArgs -> eventArgs.NewValue :?> bool)
+                |> Event.add (fun _ ->
+                    if codeLens.Computed |> not then
+                        async {
+                            do! Async.SwitchToContext uiContext
+                            do! createTextBox codeLens
+                            let uiElement = codeLens.UiElement
+                            self.AddUiElementToCodeLensOnce trackingSpan uiElement
+                            // logInfo "Adding text box!"
+                        } |> RoslynHelpers.StartAsyncSafe CancellationToken.None
+                    )
+
             for value in codeLensToAdd do
                 let trackingSpan, codeLens = value
                 let stackPanel = self.AddCodeLens trackingSpan
@@ -717,10 +726,9 @@ type internal FSharpCodeLensTagger
         bufferChangedCts.Dispose()
         bufferChangedCts <- new CancellationTokenSource()
         executeCodeLenseAsync () |> Async.Ignore |> RoslynHelpers.StartAsyncSafe bufferChangedCts.Token
-
-[<Export(typeof<IWpfTextViewCreationListener>)>]
-[<Export(typeof<ITaggerProvider>)>]
-[<TagType(typeof<CodeLensTag>)>]
+        
+[<Export(typeof<IViewTaggerProvider>)>]
+[<TagType(typeof<CodeLensGeneralTag>)>]
 [<ContentType(FSharpConstants.FSharpContentTypeName)>]
 [<TextViewRole(PredefinedTextViewRoles.Document)>]
 type internal CodeLensProvider  
@@ -731,15 +739,14 @@ type internal CodeLensProvider
         projectInfoManager: FSharpProjectOptionsManager,
         typeMap: Lazy<ClassificationTypeMap>,
         gotoDefinitionService: FSharpGoToDefinitionService
-    ) as __ =
-
+    ) =
+        
     let taggers = ResizeArray()
-    
     let componentModel = Package.GetGlobalService(typeof<ComponentModelHost.SComponentModel>) :?> ComponentModelHost.IComponentModel
     let workspace = componentModel.GetService<VisualStudioWorkspace>()
 
     /// Returns an provider for the textView if already one has been created. Else create one.
-    let getSuitableAdornmentProvider (buffer) =
+    let getSuitableAdornmentProvider wpfView buffer =
         let res = taggers |> Seq.tryFind(fun (view, _) -> view = buffer)
         match res with
         | Some (_, res) -> res
@@ -754,24 +761,20 @@ type internal CodeLensProvider
                 )
 
 
-            let tagger = FSharpCodeLensTagger(workspace, documentId, buffer, checkerProvider.Checker, projectInfoManager, typeMap, gotoDefinitionService)
+            let tagger = FSharpCodeLensTagger(workspace, documentId, wpfView, buffer, checkerProvider.Checker, projectInfoManager, typeMap, gotoDefinitionService)
             taggers.Add((buffer, tagger))
             tagger
+    
     [<Export(typeof<AdornmentLayerDefinition>); Name("CodeLens");
       Order(Before = PredefinedAdornmentLayers.Text);
       TextViewRole(PredefinedTextViewRoles.Document)>]
-
     member val CodeLensAdornmentLayerDefinition : AdornmentLayerDefinition = null with get, set
 
-    interface IWpfTextViewCreationListener with
-        
-        override __.TextViewCreated view =
-            let tagger = getSuitableAdornmentProvider view.TextBuffer
-            tagger.SetView view
-            // The view has been initialized. Notify that we can now theoretically display CodeLens
-            // Temporarily removed, eventually needed again!  
-            ()
-             
-
-    interface ITaggerProvider with
-        override __.CreateTagger(buffer) = box (getSuitableAdornmentProvider buffer) :?> _
+    interface IViewTaggerProvider with
+        override __.CreateTagger(view, buffer) = 
+            let wpfView =
+                match view with
+                | :? IWpfTextView as view -> view
+                | _ -> failwith "error"
+            
+            box(getSuitableAdornmentProvider wpfView buffer) :?> _
