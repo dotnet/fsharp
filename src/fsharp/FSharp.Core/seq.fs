@@ -315,6 +315,12 @@ namespace Microsoft.FSharp.Collections
             match getRaw original with
             | :? array<'T> as arr -> Array.copy arr
             | :? list<'T> as lst -> List.toArray lst
+            | :? ICollection<'T> as res ->
+                // Directly create an array and copy ourselves.
+                // This avoids an extra copy if using ResizeArray in fallback below.
+                let arr = Microsoft.FSharp.Primitives.Basics.Array.zeroCreateUnchecked res.Count
+                res.CopyTo(arr, 0)
+                arr
             | raw -> ISeq.toArray (rawOrOriginal raw original)
 
         [<CompiledName("FoldBack")>]

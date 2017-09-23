@@ -479,6 +479,8 @@ namespace Microsoft.FSharp.Collections.SeqComposition
                     count <- count + 1
                 count
 
+        override __.GetRaw () = enumerable
+
         interface IEnumerable<'T> with
             member __.GetEnumerator () = enumerable.GetEnumerator ()
 
