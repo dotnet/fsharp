@@ -41,6 +41,11 @@ type LanguageServicePerformanceOptions =
     { EnableInMemoryCrossProjectReferences: bool
       ProjectCheckCacheSize: int }
 
+[<CLIMutable>]
+type CodeLensOptions =
+  { Enabled : bool
+    ReplaceWithLineLens: bool }
+
 [<Export(typeof<ISettings>)>]
 type internal Settings [<ImportingConstructor>](store: SettingsStore) =
     do  // Initialize default settings
@@ -65,12 +70,17 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
             { EnableInMemoryCrossProjectReferences = true
               ProjectCheckCacheSize = 200 }
 
+        store.RegisterDefault
+            { Enabled = true
+              ReplaceWithLineLens = true }
+
     interface ISettings
 
     static member IntelliSense : IntelliSenseOptions = getSettings()
     static member QuickInfo : QuickInfoOptions = getSettings()
     static member CodeFixes : CodeFixesOptions = getSettings()
     static member LanguageServicePerformance : LanguageServicePerformanceOptions = getSettings()
+    static member CodeLens : CodeLensOptions = getSettings()
 
 module internal OptionsUI =
 
@@ -105,3 +115,12 @@ module internal OptionsUI =
         inherit AbstractOptionPage<LanguageServicePerformanceOptions>()
         override this.CreateView() =
             upcast LanguageServicePerformanceOptionControl()
+    
+    [<Guid(Guids.codeLensOptionPageIdString)>]
+    type internal CodeLensOptionPage() =
+        inherit AbstractOptionPage<CodeLensOptions>()
+        override this.CreateView() =
+            let view = CodeLensOptionControl()
+            bindCheckBox view.replaceWithLineLens "ReplaceWithLineLens"
+            bindCheckBox view.enableCodeLens "Enabled"
+            upcast view

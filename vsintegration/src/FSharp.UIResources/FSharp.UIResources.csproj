@@ -55,6 +55,9 @@
     <Compile Include="CodeFixesOptionControl.xaml.cs">
       <DependentUpon>CodeFixesOptionControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="CodeLensOptionControl.xaml.cs">
+      <DependentUpon>CodeLensOptionControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="IntegerRangeValidationRule.cs" />
     <Compile Include="LanguageServicePerformanceOptionControl.xaml.cs">
       <DependentUpon>LanguageServicePerformanceOptionControl.xaml</DependentUpon>
@@ -77,6 +80,10 @@
     <Page Include="CodeFixesOptionControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="CodeLensOptionControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="HyperlinkStyles.xaml">
       <Generator>MSBuild:Compile</Generator>

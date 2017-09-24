@@ -19,7 +19,7 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class Strings {
@@ -79,7 +79,34 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Completion Lists.
+        ///   Sucht eine lokalisierte Zeichenfolge, die Code-Lens ähnelt.
+        /// </summary>
+        public static string Code_Lens {
+            get {
+                return ResourceManager.GetString("Code_Lens", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Replace Code-Lens with Line-Lens ähnelt.
+        /// </summary>
+        public static string Code_Lens_Replace_Line_Lens {
+            get {
+                return ResourceManager.GetString("Code_Lens_Replace_Line_Lens", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Enable Code-Lens ähnelt.
+        /// </summary>
+        public static string Code_Lens_Switch {
+            get {
+                return ResourceManager.GetString("Code_Lens_Switch", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Sucht eine lokalisierte Zeichenfolge, die Completion Lists ähnelt.
         /// </summary>
         public static string Completion_Lists {
             get {

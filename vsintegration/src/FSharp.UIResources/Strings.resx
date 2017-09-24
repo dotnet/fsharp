@@ -165,4 +165,13 @@
   <data name="Unused_opens_code_fix" xml:space="preserve">
     <value>Remove unused open statements</value>
   </data>
+  <data name="Code_Lens" xml:space="preserve">
+    <value>Code-Lens</value>
+  </data>
+  <data name="Code_Lens_Replace_Line_Lens" xml:space="preserve">
+    <value>Replace Code-Lens with Line-Lens</value>
+  </data>
+  <data name="Code_Lens_Switch" xml:space="preserve">
+    <value>Enable Code-Lens</value>
+  </data>
 </root>
