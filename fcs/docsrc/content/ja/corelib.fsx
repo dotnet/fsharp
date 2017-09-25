@@ -26,6 +26,10 @@ FSharp.Compiler.Service.dll コンポーネントは FSharp.Core 4.3.0.0 に依�
               <assemblyIdentity name="FSharp.Core" publicKeyToken="b03f5f7f11d50a3a" culture="neutral"/>
               <bindingRedirect oldVersion="2.0.0.0-4.3.0.0" newVersion="4.3.1.0"/>
             </dependentAssembly>
+            <dependentAssembly>
+              <assemblyIdentity name="System.Collections.Immutable" publicKeyToken="b03f5f7f11d50a3a" culture="neutral" />
+              <bindingRedirect oldVersion="1.0.0.0-1.2.0.0" newVersion="1.2.1.0" />
+            </dependentAssembly>
           </assemblyBinding>
         </runtime>	
     </configuration>
