@@ -128,7 +128,7 @@ type internal LineLensDisplayService (view, buffer) as self =
     let layoutUIElementOnLine (line:ITextViewLine) (ui:UIElement) =
         try
             Canvas.SetLeft(ui, line.Right + 5.0)
-            Canvas.SetTop(ui, line.Top)
+            Canvas.SetTop(ui, line.Top - 1.)
         with e -> logExceptionWithContext (e, "Error in layout ui element on line")
 
     // We update all content of our cache system with this method here
@@ -187,8 +187,8 @@ type internal LineLensDisplayService (view, buffer) as self =
                     if lineNumber > 0 && lineNumber < buffer.LineCount then
                         try
                             let line = 
-                                let l = buffer.GetLineFromLineNumber(lineNumber)
-                                view.GetTextViewLineContainingBufferPosition(l.Start)
+                                (buffer.GetLineFromLineNumber lineNumber).Start
+                                |> view.GetTextViewLineContainingBufferPosition
                             applyFuncOnLineStackPanels line (fun ui ->
                                 ui.Visibility <- Visibility.Hidden
                             )
@@ -196,8 +196,8 @@ type internal LineLensDisplayService (view, buffer) as self =
                 for lineNumber in newVisibleLineNumbers do
                     try
                         let line = 
-                                let l = buffer.GetLineFromLineNumber(lineNumber)
-                                view.GetTextViewLineContainingBufferPosition(l.Start)
+                                (buffer.GetLineFromLineNumber lineNumber).Start
+                                |> view.GetTextViewLineContainingBufferPosition
                         applyFuncOnLineStackPanels line (fun ui ->
                             ui.Visibility <- Visibility.Visible
                             layoutUIElementOnLine line ui
@@ -207,8 +207,8 @@ type internal LineLensDisplayService (view, buffer) as self =
                 self.RelayoutRequested.Dequeue() |> ignore
                 for lineNumber in visibleLineNumbers do
                     let line = 
-                        let l = buffer.GetLineFromLineNumber(lineNumber)
-                        view.GetTextViewLineContainingBufferPosition(l.Start)
+                        (buffer.GetLineFromLineNumber lineNumber).Start
+                        |> view.GetTextViewLineContainingBufferPosition
                     applyFuncOnLineStackPanels line (fun ui ->
                         ui.Visibility <- Visibility.Visible
                         layoutUIElementOnLine line ui
@@ -230,8 +230,8 @@ type internal LineLensDisplayService (view, buffer) as self =
                 if nonVisibleLineNumbers.Count > 0 || newVisibleLineNumbers.Count > 0 then
                     for lineNumber in visibleLineNumbers do
                         let line = 
-                            let l = buffer.GetLineFromLineNumber(lineNumber)
-                            view.GetTextViewLineContainingBufferPosition(l.Start)
+                            (buffer.GetLineFromLineNumber lineNumber).Start
+                            |> view.GetTextViewLineContainingBufferPosition
                         applyFuncOnLineStackPanels line (fun ui ->
                             ui.Visibility <- Visibility.Visible
                             layoutUIElementOnLine line ui
@@ -360,7 +360,7 @@ type internal FSharpCodeLensService
     let createTextBox (lens:CodeLens) =
         asyncMaybe {
             let! taggedText, navigation = lens.TaggedText
-            let textBox = new TextBlock(Width = 500., Background = Brushes.Transparent, Opacity = 0.5, TextTrimming = TextTrimming.WordEllipsis)
+            let textBox = new TextBlock(Width = 500., Background = Brushes.Transparent, Opacity = 0.1, TextTrimming = TextTrimming.None)
             DependencyObjectExtensions.SetDefaultTextProperties(textBox, formatMap.Value)
             textBox.Inlines.Add (Documents.Run Settings.CodeLens.Prefix)
             for text in taggedText do
@@ -422,8 +422,6 @@ type internal FSharpCodeLensService
                                 let taggedText = ResizeArray()
                                     
                                 Layout.renderL (Layout.taggedTextListR taggedText.Add) typeLayout |> ignore
-                                if func.IsMember || func.IsProperty then
-                                    taggedText.RemoveRange(0, taggedText.Count - 2)
                                 let navigation = QuickInfoNavigation(gotoDefinitionService, document, realPosition)
                                 // Because the data is available notify that this line should be updated, displaying the results
                                 return Some (taggedText, navigation)
@@ -449,7 +447,7 @@ type internal FSharpCodeLensService
                         let fullDeclarationText = funcID // (textSnapshot.GetText declarationSpan).Replace(func.CompiledName, funcID)
                         let fullTypeSignature = func.FullType.ToString()
                         // Try to re-use the last results
-                        if lastResults.ContainsKey(fullDeclarationText) then
+                        if lastResults.ContainsKey fullDeclarationText then
                             // Make sure that the results are usable
                             let inline setNewResultsAndWarnIfOverridenLocal value = setNewResultsAndWarnIfOverriden fullDeclarationText value
                             let lastTrackingSpan, codeLens as lastResult = lastResults.[fullDeclarationText]
@@ -457,27 +455,28 @@ type internal FSharpCodeLensService
                                 setNewResultsAndWarnIfOverridenLocal lastResult
                                 oldResults.Remove fullDeclarationText |> ignore
                             else
-                                // The signature is invalid so save the invalid data to remove it later (if those is valid)
-                                if codeLens.Computed && codeLens.UiElement |> isNull |> not then
-                                    let declarationLine, range = 
-                                        match visit func.DeclarationLocation.Start parsedInput with
-                                        | Some range -> range.StartLine - 1, range
-                                        | _ -> func.DeclarationLocation.StartLine - 1, func.DeclarationLocation
-                                    // Track the old element for removal
-                                    let declarationSpan = textSnapshot.GetLineFromLineNumber(declarationLine).Extent.Span
-                                    let newTrackingSpan = 
-                                        textSnapshot.CreateTrackingSpan(declarationSpan, SpanTrackingMode.EdgeExclusive)
-                                    // Push back the new results
-                                    let res =
-                                            CodeLens( Async.cache (useResults (symbolUse.DisplayContext, func, range)),
-                                                false,
-                                                fullTypeSignature,
-                                                null)
-                                    // The old results aren't computed at all, because the line might have changed create new results
-                                    tagsToUpdate.[lastTrackingSpan] <- (newTrackingSpan, fullDeclarationText, res)
-                                    setNewResultsAndWarnIfOverridenLocal (newTrackingSpan, res)
+                                let declarationLine, range = 
+                                    match visit func.DeclarationLocation.Start parsedInput with
+                                    | Some range -> range.StartLine - 1, range
+                                    | _ -> func.DeclarationLocation.StartLine - 1, func.DeclarationLocation
+                                // Track the old element for removal
+                                let declarationSpan = 
+                                    let line = textSnapshot.GetLineFromLineNumber declarationLine
+                                    let offset = line.GetText() |> Seq.findIndex (Char.IsWhiteSpace >> not)
+                                    SnapshotSpan(line.Start.Add offset, line.End).Span
+                                let newTrackingSpan = 
+                                    textSnapshot.CreateTrackingSpan(declarationSpan, SpanTrackingMode.EdgeExclusive)
+                                // Push back the new results
+                                let res =
+                                        CodeLens( Async.cache (useResults (symbolUse.DisplayContext, func, range)),
+                                            false,
+                                            fullTypeSignature,
+                                            null)
+                                // The old results aren't computed at all, because the line might have changed create new results
+                                tagsToUpdate.[lastTrackingSpan] <- (newTrackingSpan, fullDeclarationText, res)
+                                setNewResultsAndWarnIfOverridenLocal (newTrackingSpan, res)
                                         
-                                    oldResults.Remove fullDeclarationText |> ignore
+                                oldResults.Remove fullDeclarationText |> ignore
                         else
                             // The symbol might be completely new or has slightly changed. 
                             // We need to track this and iterate over the left entries to ensure that there isn't anything
@@ -498,7 +497,10 @@ type internal FSharpCodeLensService
                 match oldResults |> Seq.tryFind test with
                 | Some res ->
                     let (trackingSpan : ITrackingSpan), (codeLens : CodeLens) = res.Value
-                    let declarationSpan = textSnapshot.GetLineFromLineNumber(declarationLine).Extent.Span
+                    let declarationSpan = 
+                        let line = textSnapshot.GetLineFromLineNumber declarationLine
+                        let offset = line.GetText() |> Seq.findIndex (Char.IsWhiteSpace >> not)
+                        SnapshotSpan(line.Start.Add offset, line.End).Span
                     let newTrackingSpan = 
                         textSnapshot.CreateTrackingSpan(declarationSpan, SpanTrackingMode.EdgeExclusive)
                     if codeLens.Computed && (isNull codeLens.UiElement |> not) then
@@ -527,7 +529,10 @@ type internal FSharpCodeLensService
                             fullTypeSignature,
                             null)
                     try
-                        let declarationSpan = textSnapshot.GetLineFromLineNumber(declarationLine).Extent.Span
+                        let declarationSpan = 
+                            let line = textSnapshot.GetLineFromLineNumber declarationLine
+                            let offset = line.GetText() |> Seq.findIndex (Char.IsWhiteSpace >> not)
+                            SnapshotSpan(line.Start.Add offset, line.End).Span
                         let trackingSpan = 
                             textSnapshot.CreateTrackingSpan(declarationSpan, SpanTrackingMode.EdgeExclusive)
                         codeLensToAdd.Add (trackingSpan, res)
@@ -536,7 +541,31 @@ type internal FSharpCodeLensService
                 ()
             lastResults <- newResults
             do! Async.SwitchToContext uiContext |> liftAsync
-            
+            let createCodeLensUIElement (codeLens:CodeLens) trackingSpan _ =
+                if codeLens.Computed |> not then
+                    async {
+                        do! Async.SwitchToContext uiContext
+                        let! res = createTextBox codeLens
+                        if res.IsSome then
+                            let uiElement = codeLens.UiElement
+                            uiElement.Opacity <- 0.
+                            let animation = 
+                                DoubleAnimation(
+                                    To = Nullable 1.,
+                                    Duration = (TimeSpan.FromMilliseconds 800. |> Duration.op_Implicit),
+                                    EasingFunction = QuadraticEase()
+                                    )
+                            let sb = Storyboard()
+                            Storyboard.SetTarget(sb, uiElement)
+                            Storyboard.SetTargetProperty(sb, PropertyPath Control.OpacityProperty)
+                            sb.Children.Add animation
+                            lineLens.AddUiElementToCodeLensOnce trackingSpan uiElement
+                            sb.Begin()
+                        else
+                            logWarningf "Couldn't retrieve code lens information for %A" codeLens.FullTypeSignature
+                        // logInfo "Adding text box!"
+                    } |> RoslynHelpers.StartAsyncSafe CancellationToken.None
+
             for value in tagsToUpdate do
                 let trackingSpan, (newTrackingSpan, _, codeLens) = value.Key, value.Value
                 lineLens.RemoveCodeLens trackingSpan |> ignore
@@ -548,19 +577,7 @@ type internal FSharpCodeLensService
                 else
                     stackPanel.IsVisibleChanged
                     |> Event.filter (fun eventArgs -> eventArgs.NewValue :?> bool)
-                    |> Event.add (fun _ ->
-                        if codeLens.Computed |> not then
-                            async {
-                                do! Async.SwitchToContext uiContext
-                                let! res = createTextBox codeLens
-                                if res.IsSome then
-                                    let uiElement = codeLens.UiElement
-                                    lineLens.AddUiElementToCodeLensOnce newTrackingSpan uiElement
-                                else
-                                    logWarningf "Couldn't retrieve code lens information for %A" codeLens.FullTypeSignature
-                                // logInfo "Adding text box!"
-                            } |> RoslynHelpers.StartAsyncSafe CancellationToken.None
-                        )
+                    |> Event.add (createCodeLensUIElement codeLens trackingSpan)
 
             for value in codeLensToAdd do
                 let trackingSpan, codeLens = value
@@ -569,19 +586,7 @@ type internal FSharpCodeLensService
                 
                 stackPanel.IsVisibleChanged
                 |> Event.filter (fun eventArgs -> eventArgs.NewValue :?> bool)
-                |> Event.add (fun _ ->
-                    if codeLens.Computed |> not then
-                        async {
-                            do! Async.SwitchToContext uiContext
-                            let! res = createTextBox codeLens
-                            if res.IsSome then
-                                let uiElement = codeLens.UiElement
-                                lineLens.AddUiElementToCodeLensOnce trackingSpan uiElement
-                            else
-                                logWarningf "Couldn't retrieve code lens information for %A" codeLens.FullTypeSignature
-                            // logInfo "Adding text box!"
-                        } |> RoslynHelpers.StartAsyncSafe CancellationToken.None
-                    )
+                |> Event.add (createCodeLensUIElement codeLens trackingSpan)
 
             for oldResult in oldResults do
                 let trackingSpan, _ = oldResult.Value
@@ -637,7 +642,7 @@ type internal CodeLensProvider
 
     /// Returns an provider for the textView if already one has been created. Else create one.
     let addCodeLensProviderOnce wpfView buffer =
-        let res = taggers |> Seq.tryFind(fun (view, _) -> view = buffer)
+        let res = taggers |> Seq.tryFind(fun (view, _) -> view = wpfView)
         match res with
         | Some (_, (tagger, _)) -> tagger
         | None ->
@@ -652,12 +657,14 @@ type internal CodeLensProvider
 
             let tagger = CodeLensGeneralTagger(wpfView, buffer)
             let service = FSharpCodeLensService(workspace, documentId, buffer, checkerProvider.Checker, projectInfoManager, typeMap, gotoDefinitionService, tagger)
-            taggers.Add((buffer, (tagger, service)))
+            let provider = (wpfView, (tagger, service))
+            wpfView.Closed.Add (fun _ -> taggers.Remove provider |> ignore)
+            taggers.Add((wpfView, (tagger, service)))
             tagger
     
     /// Returns an provider for the textView if already one has been created. Else create one.
     let addLineLensProviderOnce wpfView buffer =
-        let res = lineLensProvider |> Seq.tryFind(fun (view, _) -> view = buffer)
+        let res = lineLensProvider |> Seq.tryFind(fun (view, _) -> view = wpfView)
         match res with
         | None ->
             let documentId = 
@@ -669,7 +676,9 @@ type internal CodeLensProvider
                     |> Option.get
                 )
             let service = FSharpCodeLensService(workspace, documentId, buffer, checkerProvider.Checker, projectInfoManager, typeMap, gotoDefinitionService, LineLensDisplayService(wpfView, buffer))
-            lineLensProvider.Add((buffer, service))
+            let provider = (wpfView, service)
+            wpfView.Closed.Add (fun _ -> lineLensProvider.Remove provider |> ignore)
+            lineLensProvider.Add(provider)
         | _ -> ()
 
     [<Export(typeof<AdornmentLayerDefinition>); Name("CodeLens");

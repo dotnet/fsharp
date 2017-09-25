@@ -28,10 +28,10 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="70" />
                             </Grid.ColumnDefinitions>
-                            <Label Grid.Column="0" x:Name="projectCheckCacheSizeLabel" Content="{x:Static local:Strings.Code_Lens_Prefix}"/>
-                            <TextBox Grid.Column="1" 
+                            <Label Grid.Column="0" Content="{x:Static local:Strings.Code_Lens_Prefix}"/>
+                            <TextBox x:Name="prefix" Grid.Column="1" 
                                 HorizontalContentAlignment="Right" 
-                                VerticalContentAlignment="Center">
+                                VerticalContentAlignment="Center" Margin="7,0,-116,0">
                                 <TextBox.Text>
                                     <Binding UpdateSourceTrigger="PropertyChanged" Path="Prefix">
                                     </Binding>
