@@ -9,6 +9,7 @@ open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Microsoft.FSharp.Compiler 
+open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.AccessibilityLogic
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
@@ -39,43 +40,45 @@ val NewInferenceTypes : 'a list -> TType list
 
 /// Given a set of formal type parameters and their constraints, make new inference type variables for
 /// each and ensure that the constraints on the new type variables are adjusted to refer to these.
-val FreshenAndFixupTypars : range -> TyparRigidity -> Typars -> TType list -> Typars -> Typars * TyparInst * TType list
+val FreshenAndFixupTypars : (TraitConstraintInfo -> PossibleExtensionMemberSolutions) option -> range -> TyparRigidity -> Typars -> TType list -> Typars -> Typars * TyparInst * TType list
 
-val FreshenTypeInst : range -> Typars -> Typars * TyparInst * TType list
+val FreshenTypeInst : (TraitConstraintInfo -> PossibleExtensionMemberSolutions) option -> range -> Typars -> Typars * TyparInst * TType list
 
-val FreshenTypars : range -> Typars -> TType list
+val FreshenTypars : (TraitConstraintInfo -> PossibleExtensionMemberSolutions) option -> range -> Typars -> TType list
 
-val FreshenMethInfo : range -> MethInfo -> TType list
+val FreshenMethInfo : (TraitConstraintInfo -> PossibleExtensionMemberSolutions) option -> range -> MethInfo -> TType list
+
+val GetRelevantPossibleExtensionSolutionsToConstraint : NameResolutionEnv -> TraitConstraintInfo -> PossibleExtensionMemberSolutions
 
 [<RequireQualifiedAccess>] 
 /// Information about the context of a type equation.
 type ContextInfo =
-/// No context was given.
-| NoContext
-/// The type equation comes from an IF expression.
-| IfExpression of range
-/// The type equation comes from an omitted else branch.
-| OmittedElseBranch of range
-/// The type equation comes from a type check of the result of an else branch.
-| ElseBranchResult of range
-/// The type equation comes from the verification of record fields.
-| RecordFields
-/// The type equation comes from the verification of a tuple in record fields.
-| TupleInRecordFields
-/// The type equation comes from a list or array constructor
-| CollectionElement of bool * range
-/// The type equation comes from a return in a computation expression.
-| ReturnInComputationExpression
-/// The type equation comes from a yield in a computation expression.
-| YieldInComputationExpression
-/// The type equation comes from a runtime type test.
-| RuntimeTypeTest of bool
-/// The type equation comes from an downcast where a upcast could be used.
-| DowncastUsedInsteadOfUpcast of bool
-/// The type equation comes from a return type of a pattern match clause (not the first clause).
-| FollowingPatternMatchClause of range
-/// The type equation comes from a pattern match guard.
-| PatternMatchGuard of range
+    /// No context was given.
+    | NoContext
+    /// The type equation comes from an IF expression.
+    | IfExpression of range
+    /// The type equation comes from an omitted else branch.
+    | OmittedElseBranch of range
+    /// The type equation comes from a type check of the result of an else branch.
+    | ElseBranchResult of range
+    /// The type equation comes from the verification of record fields.
+    | RecordFields
+    /// The type equation comes from the verification of a tuple in record fields.
+    | TupleInRecordFields
+    /// The type equation comes from a list or array constructor
+    | CollectionElement of bool * range
+    /// The type equation comes from a return in a computation expression.
+    | ReturnInComputationExpression
+    /// The type equation comes from a yield in a computation expression.
+    | YieldInComputationExpression
+    /// The type equation comes from a runtime type test.
+    | RuntimeTypeTest of bool
+    /// The type equation comes from an downcast where a upcast could be used.
+    | DowncastUsedInsteadOfUpcast of bool
+    /// The type equation comes from a return type of a pattern match clause (not the first clause).
+    | FollowingPatternMatchClause of range
+    /// The type equation comes from a pattern match guard.
+    | PatternMatchGuard of range
 
 
 exception ConstraintSolverTupleDiffLengths              of DisplayEnv * TType list * TType list * range * range
@@ -105,7 +108,7 @@ type ConstraintSolverEnv
 
 val BakedInTraitConstraintNames : Set<string>
 
-val MakeConstraintSolverEnv : ContextInfo -> ConstraintSolverState -> range -> DisplayEnv -> ConstraintSolverEnv
+val MakeConstraintSolverEnv : ContextInfo -> ConstraintSolverState -> range -> DisplayEnv -> NameResolutionEnv -> ConstraintSolverEnv
 
 [<Sealed; NoEquality; NoComparison>]
 type Trace 
@@ -122,28 +125,28 @@ val ResolveOverloading                       : ConstraintSolverEnv -> OptionalTr
 val UnifyUniqueOverloading                   : ConstraintSolverEnv -> int * int -> string -> AccessorDomain -> CalledMeth<SynExpr> list -> TType -> OperationResult<bool> 
 val EliminateConstraintsForGeneralizedTypars : ConstraintSolverEnv -> OptionalTrace -> Typars -> unit 
 
-val CheckDeclaredTypars                       : DisplayEnv -> ConstraintSolverState -> range -> Typars -> Typars -> unit 
+val CheckDeclaredTypars                       : DisplayEnv -> NameResolutionEnv -> ConstraintSolverState -> range -> Typars -> Typars -> unit 
 
 val AddConstraint                             : ConstraintSolverEnv -> int -> Range.range -> OptionalTrace -> Typar -> TyparConstraint -> OperationResult<unit>
-val AddCxTypeEqualsType                       : ContextInfo -> DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> unit
-val AddCxTypeEqualsTypeUndoIfFailed           : DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
-val AddCxTypeEqualsTypeMatchingOnlyUndoIfFailed : DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
-val AddCxTypeMustSubsumeType                  : ContextInfo -> DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> TType -> unit
-val AddCxTypeMustSubsumeTypeUndoIfFailed      : DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
-val AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed : DisplayEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
-val AddCxMethodConstraint                     : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TraitConstraintInfo -> unit
-val AddCxTypeMustSupportNull                  : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
-val AddCxTypeMustSupportComparison            : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
-val AddCxTypeMustSupportEquality              : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
-val AddCxTypeMustSupportDefaultCtor           : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
-val AddCxTypeIsReferenceType                  : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
-val AddCxTypeIsValueType                      : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
-val AddCxTypeIsUnmanaged                      : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
-val AddCxTypeIsEnum                           : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> TType -> unit
-val AddCxTypeIsDelegate                       : DisplayEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> TType -> TType -> unit
+val AddCxTypeEqualsType                       : ContextInfo -> DisplayEnv -> NameResolutionEnv -> ConstraintSolverState -> range -> TType -> TType -> unit
+val AddCxTypeEqualsTypeUndoIfFailed           : DisplayEnv -> NameResolutionEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
+val AddCxTypeEqualsTypeMatchingOnlyUndoIfFailed : DisplayEnv -> NameResolutionEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
+val AddCxTypeMustSubsumeType                  : ContextInfo -> DisplayEnv -> NameResolutionEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> TType -> unit
+val AddCxTypeMustSubsumeTypeUndoIfFailed      : DisplayEnv -> NameResolutionEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
+val AddCxTypeMustSubsumeTypeMatchingOnlyUndoIfFailed : DisplayEnv -> NameResolutionEnv -> ConstraintSolverState -> range -> TType -> TType -> bool
+val AddCxMethodConstraint                     : DisplayEnv -> NameResolutionEnv -> ConstraintSolverState -> range -> OptionalTrace -> TraitConstraintInfo -> unit
+val AddCxTypeMustSupportNull                  : DisplayEnv -> NameResolutionEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
+val AddCxTypeMustSupportComparison            : DisplayEnv -> NameResolutionEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
+val AddCxTypeMustSupportEquality              : DisplayEnv -> NameResolutionEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
+val AddCxTypeMustSupportDefaultCtor           : DisplayEnv -> NameResolutionEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
+val AddCxTypeIsReferenceType                  : DisplayEnv -> NameResolutionEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
+val AddCxTypeIsValueType                      : DisplayEnv -> NameResolutionEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
+val AddCxTypeIsUnmanaged                      : DisplayEnv -> NameResolutionEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> unit
+val AddCxTypeIsEnum                           : DisplayEnv -> NameResolutionEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> TType -> unit
+val AddCxTypeIsDelegate                       : DisplayEnv -> NameResolutionEnv -> ConstraintSolverState -> range -> OptionalTrace -> TType -> TType -> TType -> unit
 
-val CodegenWitnessThatTypSupportsTraitConstraint : TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> Expr list -> OperationResult<Expr option>
+val CodegenWitnessThatTypSupportsTraitConstraint : TcValF -> TcGlobals -> ImportMap -> range -> TraitConstraintInfo -> Expr list -> NameResolutionEnv -> OperationResult<Expr option>
 
-val ChooseTyparSolutionAndSolve : ConstraintSolverState -> DisplayEnv -> Typar -> unit
+val ChooseTyparSolutionAndSolve : ConstraintSolverState -> DisplayEnv -> NameResolutionEnv -> Typar -> unit
 
 val IsApplicableMethApprox : TcGlobals -> ImportMap -> range -> MethInfo -> TType -> bool

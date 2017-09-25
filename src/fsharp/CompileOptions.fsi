@@ -80,11 +80,11 @@ val GetGeneratedILModuleName : CompilerTarget -> string -> string
 
 val GetInitialOptimizationEnv : TcImports * TcGlobals -> IncrementalOptimizationEnv
 val AddExternalCcuToOpimizationEnv : TcGlobals -> IncrementalOptimizationEnv -> ImportedAssembly -> IncrementalOptimizationEnv
-val ApplyAllOptimizations : TcConfig * TcGlobals * ConstraintSolver.TcValF * string * ImportMap * bool * IncrementalOptimizationEnv * CcuThunk * TypedImplFile list -> TypedAssemblyAfterOptimization * Optimizer.LazyModuleInfo * IncrementalOptimizationEnv 
+val ApplyAllOptimizations : TcConfig * TcGlobals * ConstraintSolver.TcValF * string * ImportMap * bool * IncrementalOptimizationEnv * CcuThunk * TypedImplFile list * NameResolution.NameResolutionEnv -> TypedAssemblyAfterOptimization * Optimizer.LazyModuleInfo * IncrementalOptimizationEnv 
 
 val CreateIlxAssemblyGenerator : TcConfig * TcImports * TcGlobals * ConstraintSolver.TcValF * CcuThunk -> IlxGen.IlxAssemblyGenerator
 
-val GenerateIlxCode : IlxGen.IlxGenBackend * isInteractiveItExpr:bool * isInteractiveOnMono:bool * TcConfig * TypeChecker.TopAttribs * TypedAssemblyAfterOptimization * fragName:string * IlxGen.IlxAssemblyGenerator -> IlxGen.IlxGenResults
+val GenerateIlxCode : IlxGen.IlxGenBackend * isInteractiveItExpr:bool * isInteractiveOnMono:bool * TcConfig * TypeChecker.TopAttribs * TypedAssemblyAfterOptimization * fragName:string * IlxGen.IlxAssemblyGenerator * NameResolution.NameResolutionEnv -> IlxGen.IlxGenResults
 
 // Used during static linking
 val NormalizeAssemblyRefs : CompilationThreadToken * TcImports -> (AbstractIL.IL.ILScopeRef -> AbstractIL.IL.ILScopeRef)

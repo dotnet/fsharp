@@ -186,7 +186,8 @@ type cenv =
       amap: ImportMap
       intraAssemblyInfo : IlxGenIntraAssemblyInfo
       /// Cache methods with SecurityAttribute applied to them, to prevent unnecessary calls to ExistsInEntireHierarchyOfType
-      casApplied : Dictionary<Stamp,bool> 
+      casApplied : Dictionary<Stamp,bool>
+      nenv : NameResolution.NameResolutionEnv
       /// Used to apply forced inlining optimizations to witnesses generated late during codegen
       mutable optimizeDuringCodeGen : (Expr -> Expr) }
 
@@ -3326,7 +3327,7 @@ and CommitCallSequel cenv eenv m cloc cgbuf mustGenerateUnitAfterCall sequel =
 
 
 and GenTraitCall cenv cgbuf eenv (traitInfo, argExprs, m) expr sequel =
-    let minfoOpt = CommitOperationResult (ConstraintSolver.CodegenWitnessThatTypSupportsTraitConstraint cenv.TcVal cenv.g cenv.amap m traitInfo argExprs)
+    let minfoOpt = CommitOperationResult (ConstraintSolver.CodegenWitnessThatTypSupportsTraitConstraint cenv.TcVal cenv.g cenv.amap m traitInfo argExprs cenv.nenv)
     match minfoOpt with 
     | None -> 
         let replacementExpr = 
@@ -7109,7 +7110,7 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal : Constra
         ilxGenEnv <- AddIncrementalLocalAssemblyFragmentToIlxGenEnv (amap, isIncrementalFragment, tcGlobals, ccu, fragName, intraAssemblyInfo, ilxGenEnv, typedImplFiles)
 
     /// Generate ILX code for an assembly fragment
-    member __.GenerateCode (codeGenOpts, typedAssembly, assemAttribs, moduleAttribs) = 
+    member __.GenerateCode (codeGenOpts, typedAssembly, assemAttribs, moduleAttribs, nenv) = 
         let cenv : cenv = 
             { g=tcGlobals
               TcVal = tcVal
@@ -7119,6 +7120,7 @@ type IlxAssemblyGenerator(amap: ImportMap, tcGlobals: TcGlobals, tcVal : Constra
               casApplied = casApplied
               intraAssemblyInfo = intraAssemblyInfo
               opts = codeGenOpts 
+              nenv = nenv
               optimizeDuringCodeGen = (fun x -> x) }
         GenerateCode (cenv, ilxGenEnv, typedAssembly, assemAttribs, moduleAttribs)
 

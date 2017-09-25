@@ -213,7 +213,7 @@ let rec CheckTypeDeep ((visitTyp,visitTyconRefOpt,visitAppTyOpt,visitTraitSoluti
     | TType_var tp  when tp.Solution.IsSome  -> 
         tp.Constraints |> List.iter (fun cx -> 
             match cx with 
-            | TyparConstraint.MayResolveMember((TTrait(_,_,_,_,_,soln)),_) -> 
+            | TyparConstraint.MayResolveMember((TTrait(_,_,_,_,_,soln)),_,_) -> 
                  match visitTraitSolutionOpt, !soln with 
                  | Some visitTraitSolution, Some sln -> visitTraitSolution sln
                  | _ -> ()
@@ -254,7 +254,7 @@ and CheckTypesDeep f g env tys = List.iter (CheckTypeDeep f g env) tys
 and CheckTypeConstraintDeep f g env x =
      match x with 
      | TyparConstraint.CoercesTo(ty,_) -> CheckTypeDeep f g env ty
-     | TyparConstraint.MayResolveMember(traitInfo,_) -> CheckTraitInfoDeep f g env traitInfo
+     | TyparConstraint.MayResolveMember(traitInfo,_,_) -> CheckTraitInfoDeep f g env traitInfo
      | TyparConstraint.DefaultsTo(_,ty,_) -> CheckTypeDeep f g env ty
      | TyparConstraint.SimpleChoice(tys,_) -> CheckTypesDeep f g env tys
      | TyparConstraint.IsEnum(uty,_) -> CheckTypeDeep f g env uty

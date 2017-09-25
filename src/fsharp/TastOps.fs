@@ -57,7 +57,7 @@ type TyconRefMap<'T>(imap: StampMap<'T>) =
     member m.Add (v: TyconRef) x = TyconRefMap (imap.Add (v.Stamp, x))
     member m.Remove (v: TyconRef) = TyconRefMap (imap.Remove v.Stamp)
     member m.IsEmpty = imap.IsEmpty
-
+    member m.Contents = imap
     static member Empty : TyconRefMap<'T> = TyconRefMap Map.empty
     static member OfList vs = (vs, TyconRefMap<'T>.Empty) ||> List.foldBack (fun (x, y) acc -> acc.Add x y) 
 
@@ -226,16 +226,16 @@ and remapTypesAux tyenv types = List.mapq (remapTypeAux tyenv) types
 and remapTyparConstraintsAux tyenv cs =
    cs |>  List.choose (fun x -> 
          match x with 
-         | TyparConstraint.CoercesTo(ty, m) -> 
-             Some(TyparConstraint.CoercesTo (remapTypeAux tyenv ty, m))
-         | TyparConstraint.MayResolveMember(traitInfo, m) -> 
-             Some(TyparConstraint.MayResolveMember (remapTraitAux tyenv traitInfo, m))
-         | TyparConstraint.DefaultsTo(priority, ty, m) -> Some(TyparConstraint.DefaultsTo(priority, remapTypeAux tyenv ty, m))
-         | TyparConstraint.IsEnum(uty, m) -> 
-             Some(TyparConstraint.IsEnum(remapTypeAux tyenv uty, m))
-         | TyparConstraint.IsDelegate(uty1, uty2, m) -> 
-             Some(TyparConstraint.IsDelegate(remapTypeAux tyenv uty1, remapTypeAux tyenv uty2, m))
-         | TyparConstraint.SimpleChoice(tys, m) -> Some(TyparConstraint.SimpleChoice(remapTypesAux tyenv tys, m))
+         | TyparConstraint.CoercesTo(ty,m) -> 
+             Some(TyparConstraint.CoercesTo (remapTypeAux tyenv ty,m))
+         | TyparConstraint.MayResolveMember(traitInfo,m,extVals) -> 
+             Some(TyparConstraint.MayResolveMember (remapTraitAux tyenv traitInfo,m,List.map (remapValRef tyenv) extVals))
+         | TyparConstraint.DefaultsTo(priority,ty,m) -> Some(TyparConstraint.DefaultsTo(priority,remapTypeAux tyenv ty,m))
+         | TyparConstraint.IsEnum(uty,m) -> 
+             Some(TyparConstraint.IsEnum(remapTypeAux tyenv uty,m))
+         | TyparConstraint.IsDelegate(uty1,uty2,m) -> 
+             Some(TyparConstraint.IsDelegate(remapTypeAux tyenv uty1,remapTypeAux tyenv uty2,m))
+         | TyparConstraint.SimpleChoice(tys,m) -> Some(TyparConstraint.SimpleChoice(remapTypesAux tyenv tys,m))
          | TyparConstraint.SupportsComparison  _ 
          | TyparConstraint.SupportsEquality  _ 
          | TyparConstraint.SupportsNull _ 
@@ -370,6 +370,7 @@ let mkInstRemap tpinst =
 let instType              tpinst x = if isNil tpinst then x else remapTypeAux  (mkInstRemap tpinst) x
 let instTypes             tpinst x = if isNil tpinst then x else remapTypesAux (mkInstRemap tpinst) x
 let instTrait             tpinst x = if isNil tpinst then x else remapTraitAux (mkInstRemap tpinst) x
+let instValRef            tpinst x = if isNil tpinst then x else remapValRef (mkInstRemap tpinst) x
 let instTyparConstraints tpinst x = if isNil tpinst then x else remapTyparConstraintsAux (mkInstRemap tpinst) x
 let instSlotSig tpinst ss = remapSlotSig (fun _ -> []) (mkInstRemap tpinst) ss
 let copySlotSig ss = remapSlotSig (fun _ -> []) Remap.Empty ss
@@ -822,8 +823,8 @@ and typarConstraintsAEquivAux erasureFlag g aenv tpc1 tpc2 =
       TyparConstraint.CoercesTo(fcty, _) -> 
         typeAEquivAux erasureFlag g aenv acty fcty
 
-    | TyparConstraint.MayResolveMember(trait1, _), 
-      TyparConstraint.MayResolveMember(trait2, _) -> 
+    | TyparConstraint.MayResolveMember(trait1,_,_),
+      TyparConstraint.MayResolveMember(trait2,_,_) -> 
         traitsAEquivAux erasureFlag g aenv trait1 trait2 
 
     | TyparConstraint.DefaultsTo(_, acty, _), 
@@ -1298,6 +1299,7 @@ type TyconRefMultiMap<'T>(contents: TyconRefMap<'T list>) =
         | _ -> []
 
     member m.Add (v, x) = TyconRefMultiMap<'T>(contents.Add v (x :: m.Find v))
+    member m.Contents = contents
     static member Empty = TyconRefMultiMap<'T>(TyconRefMap<_>.Empty)
     static member OfList vs = (vs, TyconRefMultiMap<'T>.Empty) ||> List.foldBack (fun (x, y) acc -> acc.Add (x, y)) 
 
@@ -1515,7 +1517,7 @@ let isVoidTy     g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> 
 let isILAppTy    g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.IsILTycon                          | _ -> false) 
 let isNativePtrTy    g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g g.nativeptr_tcr tcref           | _ -> false) 
 let isByrefTy    g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tyconRefEq g g.byref_tcr tcref           | _ -> false) 
-let isByrefLikeTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isByrefLikeTyconRef g tcref          | _ -> false) 
+let isByrefLikeTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> isByrefLikeTyconRef g tcref          | _ -> false)
 #if EXTENSIONTYPING
 let extensionInfoOfTy g ty = ty |> stripTyEqns g |> (function TType_app(tcref, _) -> tcref.TypeReprInfo                | _ -> TNoRepr) 
 #endif
@@ -1884,7 +1886,7 @@ and accFreeInTyparConstraints opts cxs acc =
 and accFreeInTyparConstraint opts tpc acc =
     match tpc with 
     | TyparConstraint.CoercesTo(typ, _) -> accFreeInType opts typ acc
-    | TyparConstraint.MayResolveMember (traitInfo, _) -> accFreeInTrait opts traitInfo acc
+    | TyparConstraint.MayResolveMember (traitInfo, _, _) -> accFreeInTrait opts traitInfo acc
     | TyparConstraint.DefaultsTo(_, rty, _) -> accFreeInType opts rty acc
     | TyparConstraint.SimpleChoice(tys, _) -> accFreeInTypes opts tys acc
     | TyparConstraint.IsEnum(uty, _) -> accFreeInType opts uty acc
@@ -1989,7 +1991,7 @@ and accFreeInTyparConstraintsLeftToRight g cxFlag thruFlag acc cxs =
 and accFreeInTyparConstraintLeftToRight g cxFlag thruFlag acc tpc =
     match tpc with 
     | TyparConstraint.CoercesTo(typ, _) -> accFreeInTypeLeftToRight g cxFlag thruFlag acc typ 
-    | TyparConstraint.MayResolveMember (traitInfo, _) -> accFreeInTraitLeftToRight g cxFlag thruFlag acc traitInfo 
+    | TyparConstraint.MayResolveMember (traitInfo, _, _) -> accFreeInTraitLeftToRight g cxFlag thruFlag acc traitInfo 
     | TyparConstraint.DefaultsTo(_, rty, _) -> accFreeInTypeLeftToRight g cxFlag thruFlag acc rty 
     | TyparConstraint.SimpleChoice(tys, _) -> accFreeInTypesLeftToRight g cxFlag thruFlag acc tys 
     | TyparConstraint.IsEnum(uty, _) -> accFreeInTypeLeftToRight g cxFlag thruFlag acc uty
@@ -3147,7 +3149,7 @@ module DebugPrint = begin
         match tpc with
         | TyparConstraint.CoercesTo(typarConstrTyp, _) ->
             auxTypar2L env tp ^^ wordL (tagText ":>") --- auxTyparConstraintTypL env typarConstrTyp
-        | TyparConstraint.MayResolveMember(traitInfo, _) ->
+        | TyparConstraint.MayResolveMember(traitInfo, _, _) ->
             auxTypar2L env tp ^^ wordL (tagText ":")  --- auxTraitL env traitInfo
         | TyparConstraint.DefaultsTo(_, ty, _) ->
             wordL (tagText  "default") ^^ auxTypar2L env tp ^^ wordL (tagText ":") ^^ auxTypeL env ty
