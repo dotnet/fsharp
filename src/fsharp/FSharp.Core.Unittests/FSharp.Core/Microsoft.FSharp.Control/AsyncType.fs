@@ -177,7 +177,6 @@ type AsyncType() =
             match a.InnerException with
             | :? TaskCanceledException as t -> ()
             | _ -> reraise()
-        System.Diagnostics.Debugger.Break() |> ignore
         Assert.IsTrue (t.IsCompleted, "Task is not completed")
 
     [<Test>]
