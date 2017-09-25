@@ -362,7 +362,7 @@ type internal FSharpCodeLensService
             let! taggedText, navigation = lens.TaggedText
             let textBox = new TextBlock(Width = 500., Background = Brushes.Transparent, Opacity = 0.5, TextTrimming = TextTrimming.WordEllipsis)
             DependencyObjectExtensions.SetDefaultTextProperties(textBox, formatMap.Value)
-            textBox.Inlines.Add (Documents.Run "// ")
+            textBox.Inlines.Add (Documents.Run Settings.CodeLens.Prefix)
             for text in taggedText do
                 let run = Documents.Run text.Text
                 DependencyObjectExtensions.SetTextProperties (run, layoutTagToFormatting text.Tag)

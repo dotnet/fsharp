@@ -44,7 +44,8 @@ type LanguageServicePerformanceOptions =
 [<CLIMutable>]
 type CodeLensOptions =
   { Enabled : bool
-    ReplaceWithLineLens: bool }
+    ReplaceWithLineLens: bool 
+    Prefix : string }
 
 [<Export(typeof<ISettings>)>]
 type internal Settings [<ImportingConstructor>](store: SettingsStore) =
@@ -72,7 +73,8 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
 
         store.RegisterDefault
             { Enabled = true
-              ReplaceWithLineLens = true }
+              ReplaceWithLineLens = true 
+              Prefix = "// " }
 
     interface ISettings
 
@@ -123,4 +125,5 @@ module internal OptionsUI =
             let view = CodeLensOptionControl()
             bindCheckBox view.replaceWithLineLens "ReplaceWithLineLens"
             bindCheckBox view.enableCodeLens "Enabled"
+            bindTextBox view.prefix "Prefix"
             upcast view

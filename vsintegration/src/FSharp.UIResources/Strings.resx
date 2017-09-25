@@ -174,4 +174,7 @@
   <data name="Code_Lens_Switch" xml:space="preserve">
     <value>Enable Code-Lens</value>
   </data>
+  <data name="Code_Lens_Prefix" xml:space="preserve">
+    <value>The prefix for Code / Line -Lens</value>
+  </data>
 </root>
