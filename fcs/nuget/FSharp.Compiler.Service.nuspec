@@ -19,7 +19,7 @@
         <summary>F# compiler services for creating IDE tools, language extensions and for F# embedding.</summary>
         <dependencies>
             <group targetFramework="net45">
-                <dependency id="System.Collections.Immutable" version="1.2.0" />
+                <dependency id="System.Collections.Immutable" version="1.3.1" />
                 <dependency id="System.Reflection.Metadata" version="1.4.2" />
             </group>
         </dependencies>
