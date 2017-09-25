@@ -171,7 +171,7 @@
       </Component>
 
       <Component Id="Compiler_Redist_System.Collections.Immutable.dll" Guid="$(fsharp.guid(Compiler_Redist_System.Collections.Immutable.dll, $(var.LocaleCode)))">
-        <File Id="Compiler_Redist_System.Collections.Immutable.dll" Source="$(var.NugetPackagesDir)\System.Collections.Immutable.$(SystemCollectionsImmutableVersion)\lib\netstandard1.0\System.Collections.Immutable.dll" />
+        <File Id="Compiler_Redist_System.Collections.Immutable.dll" Source="$(var.NugetPackagesDir)\System.Collections.Immutable.1.3.1\lib\netstandard1.0\System.Collections.Immutable.dll" />
       </Component>
 
       <Component Id="Compiler_Redist_System.Reflection.Metadata.dll" Guid="$(fsharp.guid(Compiler_Redist_System.Reflection.Metadata.dll, $(var.LocaleCode)))">
