@@ -2251,7 +2251,7 @@ module GeneralizationHelpers =
                                            inlineFlag,
                                            exprOpt,
                                            allDeclaredTypars:Typars,
-                                           maxInferredTypars:ypars,
+                                           maxInferredTypars:Typars,
                                            tauTy,
                                            resultFirst) =
 

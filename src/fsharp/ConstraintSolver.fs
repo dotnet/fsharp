@@ -2723,13 +2723,8 @@ let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:Trait
 let ChooseTyparSolutionAndSolve css denv nenv tp =
     let g = css.g
     let amap = css.amap
-<<<<<<< HEAD
-    let max, m = ChooseTyparSolutionAndRange g amap tp 
-    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv
-=======
     let max,m = ChooseTyparSolutionAndRange g amap tp 
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m denv nenv
->>>>>>> 888f1cf75e729e4145ac425cfdd63133baab2a30
     TryD (fun () -> SolveTyparEqualsTyp csenv 0 m NoTrace (mkTyparTy tp) max)
          (fun err -> ErrorD(ErrorFromApplyingDefault(g, denv, tp, max, err, m)))
     |> RaiseOperationResult
@@ -2756,13 +2751,8 @@ let IsApplicableMethApprox g amap m (minfo:MethInfo) availObjTy =
               amap = amap
               TcVal = (fun _ -> failwith "should not be called")
               ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
-<<<<<<< HEAD
               InfoReader = new InfoReader(g, amap) }
-        let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
-=======
-              InfoReader = new InfoReader(g,amap) }
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g) (NameResolutionEnv.Empty g)
->>>>>>> 888f1cf75e729e4145ac425cfdd63133baab2a30
         let minst = FreshenMethInfo m minfo
         match minfo.GetObjArgTypes(amap, m, minst) with
         | [reqdObjTy] -> 
