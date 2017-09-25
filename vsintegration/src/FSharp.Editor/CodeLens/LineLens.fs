@@ -72,18 +72,6 @@ type internal LineLensDisplayService (view, buffer) as self =
         let pos = trackingSpan.GetStartPoint(snapshot).Position
         if snapshot.Length - 1 < pos then None
         else pos |> snapshot.GetLineNumberFromPosition |> Some
-
-    /// Helper method which iterates over the tracking spans for the given line number.
-    /// It checks whether the line of the tracking span changed and if so it'll move it around in the dictionary.
-    //let updateTrackingSpans lineNumber =
-    //    if lineNumber |> trackingSpans.ContainsKey then
-    //        let currentTrackingSpans = Generic.List(trackingSpans.[lineNumber])
-    //        let snapshot = buffer.CurrentSnapshot
-    //        for trackingSpan in currentTrackingSpans do
-    //            let newLine = getTrackingSpanStartLine snapshot trackingSpan
-    //            if newLine <> lineNumber then
-    //                trackingSpans.[lineNumber].Remove(trackingSpan) |> ignore
-    //                trackingSpans.[newLine].Add(trackingSpan)
     
     let updateTrackingSpansFast (snapshot:ITextSnapshot) lineNumber =
         if lineNumber |> trackingSpans.ContainsKey then
@@ -577,7 +565,7 @@ type internal FSharpCodeLensService
                 else
                     stackPanel.IsVisibleChanged
                     |> Event.filter (fun eventArgs -> eventArgs.NewValue :?> bool)
-                    |> Event.add (createCodeLensUIElement codeLens trackingSpan)
+                    |> Event.add (createCodeLensUIElement codeLens newTrackingSpan)
 
             for value in codeLensToAdd do
                 let trackingSpan, codeLens = value
