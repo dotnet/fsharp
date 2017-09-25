@@ -1010,6 +1010,7 @@ type internal FsiDynamicCompiler
         let optEnv    = istate.optEnv
         let emEnv     = istate.emEnv
         let tcState   = istate.tcState
+        let nenv      = tcState.TcEnvFromImpls.NameEnv
         let ilxGenerator = istate.ilxGenerator
         let tcConfig = TcConfig.Create(tcConfigB,validate=false)
 
@@ -1031,11 +1032,11 @@ type internal FsiDynamicCompiler
         let importMap = tcImports.GetImportMap()
 
         // optimize: note we collect the incremental optimization environment 
-        let optimizedImpls, _optData, optEnv = ApplyAllOptimizations (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile, importMap, isIncrementalFragment, optEnv, tcState.Ccu, declaredImpls)
+        let optimizedImpls, _optData, optEnv = ApplyAllOptimizations (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile, importMap, isIncrementalFragment, optEnv, tcState.Ccu, declaredImpls, nenv)
         errorLogger.AbortOnError(fsiConsoleOutput);
             
         let fragName = textOfLid prefixPath 
-        let codegenResults = GenerateIlxCode (IlReflectBackend, isInteractiveItExpr, runningOnMono, tcConfig, topCustomAttrs, optimizedImpls, fragName, ilxGenerator)
+        let codegenResults = GenerateIlxCode (IlReflectBackend, isInteractiveItExpr, runningOnMono, tcConfig, topCustomAttrs, optimizedImpls, fragName, ilxGenerator, nenv)
         errorLogger.AbortOnError(fsiConsoleOutput);
 
         // Each input is like a small separately compiled extension to a single source file. 

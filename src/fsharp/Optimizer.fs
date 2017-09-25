@@ -321,6 +321,7 @@ type cenv =
       localInternalVals: System.Collections.Generic.Dictionary<Stamp, ValInfo> 
       settings: OptimizationSettings
       emitTailcalls: bool
+      nenv : NameResolution.NameResolutionEnv
       // cache methods with SecurityAttribute applied to them, to prevent unnecessary calls to ExistsInEntireHierarchyOfType
       casApplied : Dictionary<Stamp, bool>}
 
@@ -2167,7 +2168,7 @@ and OptimizeWhileLoop cenv env  (spWhile, marker, e1, e2, m) =
 and OptimizeTraitCall cenv env   (traitInfo, args, m) =
 
     // Resolve the static overloading early (during the compulsory rewrite phase) so we can inline. 
-    match ConstraintSolver.CodegenWitnessThatTypSupportsTraitConstraint cenv.TcVal cenv.g cenv.amap m traitInfo args with
+    match ConstraintSolver.CodegenWitnessThatTypSupportsTraitConstraint cenv.TcVal cenv.g cenv.amap m traitInfo args cenv.nenv with
 
     | OkResult (_, Some expr) -> OptimizeExpr cenv env expr
 
@@ -3180,7 +3181,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment hidden (TImplFile(qn
 // Entry point
 //------------------------------------------------------------------------- 
 
-let OptimizeImplFile(settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncrementalFragment, emitTailcalls, hidden, mimpls) =
+let OptimizeImplFile(settings,ccu,tcGlobals,tcVal, importMap,optEnv,isIncrementalFragment,emitTailcalls,hidden,mimpls,nenv) =
     let cenv = 
         { settings=settings
           scope=ccu 
@@ -3190,8 +3191,9 @@ let OptimizeImplFile(settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncre
           optimizing=true
           localInternalVals=Dictionary<Stamp, ValInfo>(10000)
           emitTailcalls=emitTailcalls
-          casApplied=new Dictionary<Stamp, bool>() }
-    let (optEnvNew, _, _, _ as results) = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls  
+          nenv=nenv
+          casApplied=new Dictionary<Stamp,bool>() }
+    let (optEnvNew,_,_,_ as results) = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls  
     let optimizeDuringCodeGen expr = OptimizeExpr cenv optEnvNew expr |> fst
     results, optimizeDuringCodeGen
 

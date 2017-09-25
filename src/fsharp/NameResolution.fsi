@@ -133,8 +133,14 @@ val ItemWithNoInst : Item -> ItemWithInst
 type FieldResolution = FieldResolution of RecdFieldRef * bool
 
 /// Information about an extension member held in the name resolution environment
-[<Sealed>]
-type ExtensionMember 
+type ExtensionMember =
+   /// F#-style Extrinsic extension member, defined in F# code
+   | FSExtMem of ValRef * ExtensionMethodPriority
+
+   /// ILExtMem(declaringTyconRef, ilMetadata, pri)
+   ///
+   /// IL-style extension member, backed by some kind of method with an [<Extension>] attribute
+   | ILExtMem of TyconRef * MethInfo * ExtensionMethodPriority
 
 /// The environment of information used to resolve names
 [<NoEquality; NoComparison>]
