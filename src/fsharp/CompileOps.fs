@@ -2000,12 +2000,17 @@ let ResolveFileUsingPaths(paths, m, name) =
         let searchMessage = String.concat "\n " paths
         raise (FileNameNotResolved(name, searchMessage, m))            
 
-let GetWarningNumber(s:string) =
-    try 
-        // Trim off leading "FS" to allow ""/warnon:FS0001;FS0002;0003; anything else we ignore
-        let number = if s.StartsWith("FS", StringComparison.InvariantCulture) = true then s.Substring(2) else s
-        Some (int32 number)
+let GetWarningNumber(m, s:string) =
+    try
+        // Okay so ...
+        //      #pragma strips FS of the #pragma "FS0004" and validates thes warning number
+        //      therefore if we have warning id that starts with a number or starts with FS we do what we did before
+        //      anything else is ignored
+        if Char.IsDigit(s.[0]) then Some (int32 s)
+        elif s.StartsWith("FS", StringComparison.InvariantCulture) = true then Some (int32 (s.Substring(2)))
+        else None
     with err ->
+        warning(Error(FSComp.SR.buildInvalidWarningNumber(s), m))
         None
 
 let ComputeMakePathAbsolute implicitIncludeDir (path : string) = 
@@ -2514,18 +2519,18 @@ type TcConfigBuilder =
         tcConfigB.outputFile <- Some(outfile)
         outfile, pdbfile, assemblyName
 
-    member tcConfigB.TurnWarningOff(s) =
+    member tcConfigB.TurnWarningOff(m, s:string) =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
-        match GetWarningNumber(s) with 
+        match GetWarningNumber(m, s) with 
         | None -> ()
         | Some n -> 
             // nowarn:62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
             if n = 62 then tcConfigB.mlCompatibility <- true
             tcConfigB.specificWarnOff <- ListSet.insert (=) n tcConfigB.specificWarnOff
 
-    member tcConfigB.TurnWarningOn(s) =
+    member tcConfigB.TurnWarningOn(m, s:string) =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
-        match GetWarningNumber(s) with 
+        match GetWarningNumber(m, s) with 
         | None -> ()
         | Some n -> 
             // warnon 62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
@@ -3295,7 +3300,7 @@ let GetScopedPragmasForHashDirective hd =
     [ match hd with 
       | ParsedHashDirective("nowarn", numbers, m) ->
           for s in numbers do
-          match GetWarningNumber(s) with 
+          match GetWarningNumber(m, s) with 
             | None -> ()
             | Some n -> yield ScopedPragma.WarningOff(m, n) 
       | _ -> () ]
@@ -4948,7 +4953,7 @@ let ProcessMetaCommandsFromInput
 let ApplyNoWarnsToTcConfig (tcConfig:TcConfig, inp:ParsedInput, pathOfMetaCommandSource) = 
     // Clone
     let tcConfigB = tcConfig.CloneOfOriginalBuilder 
-    let addNoWarn = fun () (_, s) -> tcConfigB.TurnWarningOff(s)
+    let addNoWarn = fun () (m, s) -> tcConfigB.TurnWarningOff(m, s)
     let addReferencedAssemblyByPath = fun () (_m, _s) -> ()
     let addLoadedSource = fun () (_m, _s) -> ()
     ProcessMetaCommandsFromInput (addNoWarn, addReferencedAssemblyByPath, addLoadedSource) (tcConfigB, inp, pathOfMetaCommandSource, ())
@@ -5550,4 +5555,3 @@ let TypeCheckClosedInputSet (ctok, checkForErrors, tcConfig, tcImports, tcGlobal
     let (tcEnvAtEndOfLastFile, topAttrs, implFiles), tcState = TypeCheckMultipleInputs (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs)
     let tcState, declaredImpls = TypeCheckClosedInputSetFinish (implFiles, tcState)
     tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
-
