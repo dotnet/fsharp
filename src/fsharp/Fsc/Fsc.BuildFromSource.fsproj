@@ -22,10 +22,7 @@
     <Compile Include="..\fscmain.fs">
       <Link>fscmain.fs</Link>
     </Compile>
-    <None Include="fsc.exe.config">
-      <Link>fsc.exe.config</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <None Include="app.config" />
     <None Include="..\..\windows\default.win32manifest">
       <Link>default.win32manifest</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
