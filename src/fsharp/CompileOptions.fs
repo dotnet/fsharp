@@ -552,17 +552,26 @@ let inputFileFlagsFsc tcConfigB = inputFileFlagsBoth tcConfigB
 
 let errorsAndWarningsFlags (tcConfigB : TcConfigBuilder) = 
     let trimFS (s:string) = if s.StartsWith("FS", StringComparison.Ordinal) = true then s.Substring(2) else s
+    let trimFStoInt (s:string) =
+        try
+            Some (int32 (trimFS s))
+        with _ ->
+            errorR(Error(FSComp.SR.buildArgInvalidInt(s),rangeCmdArgs))
+            None
     [
         CompilerOption("warnaserror", tagNone, OptionSwitch(fun switch   -> tcConfigB.globalWarnAsError <- switch <> OptionSwitch.Off), None,
                             Some (FSComp.SR.optsWarnaserrorPM())); 
 
-        CompilerOption("warnaserror", tagWarnList, OptionIntListSwitch (fun n switch -> 
+        CompilerOption("warnaserror", tagWarnList, OptionStringListSwitch (fun n switch ->
+                                                                match trimFStoInt n with
+                                                                | Some n ->
                                                                     if switch = OptionSwitch.Off then 
-                                                                        tcConfigB.specificWarnAsError <- ListSet.remove (=) n tcConfigB.specificWarnAsError ;
+                                                                        tcConfigB.specificWarnAsError <- ListSet.remove (=) n tcConfigB.specificWarnAsError
                                                                         tcConfigB.specificWarnAsWarn  <- ListSet.insert (=) n tcConfigB.specificWarnAsWarn
                                                                     else 
-                                                                        tcConfigB.specificWarnAsWarn  <- ListSet.remove (=) n tcConfigB.specificWarnAsWarn ;
-                                                                        tcConfigB.specificWarnAsError <- ListSet.insert (=) n tcConfigB.specificWarnAsError), None,
+                                                                        tcConfigB.specificWarnAsWarn  <- ListSet.remove (=) n tcConfigB.specificWarnAsWarn
+                                                                        tcConfigB.specificWarnAsError <- ListSet.insert (=) n tcConfigB.specificWarnAsError
+                                                                | None  -> () ), None,
                             Some (FSComp.SR.optsWarnaserror()));
 
         CompilerOption("warn", tagInt, OptionInt (fun n -> 
