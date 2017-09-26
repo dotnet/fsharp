@@ -1182,39 +1182,40 @@ namespace Microsoft.FSharp.Core.CompilerServices
                 member __.CheckClose = true
                 member __.LastGenerated = e.Current }
 
-        static member Fold<'U, 'Result> (result:Folder<'U, 'Result>) (consumer:Activity<'T,'U>) (active:GeneratedSequenceBase<'T>) =
+        static member GetRedirect (target:IEnumerable<'T>) (active:GeneratedSequenceBase<'T>) =
+            match target.GetEnumerator() with
+            | :? GeneratedSequenceBase<'T> as g when not active.CheckClose -> g
+            | e -> GeneratedSequenceBase.CreateRedirect e active
+
+        static member Fold<'U, 'Result> (result:Folder<'U,'Result>) (consumer:Activity<'T,'U>) (active:GeneratedSequenceBase<'T>) =
             if result.HaltedIdx = 0 then
                 let mutable target = null
-                match active.GenerateNext(&target) with
+                match active.GenerateNext (&target) with
                 | 1 ->
                     consumer.ProcessNext active.LastGenerated |> ignore
                     GeneratedSequenceBase.Fold result consumer active
                 | 2 ->
-                    let redirect =
-                       match target.GetEnumerator() with
-                        | :? GeneratedSequenceBase<'T> as g when not active.CheckClose -> g
-                        | e -> GeneratedSequenceBase.CreateRedirect e active
-                    GeneratedSequenceBase.Fold result consumer redirect
+                    GeneratedSequenceBase.Fold result consumer (GeneratedSequenceBase.GetRedirect target active)
                 | _ (*0*) -> ()
+
+        static member Count (active:GeneratedSequenceBase<'T>) count =
+            let mutable target = null
+            match active.GenerateNext (&target) with
+            | 1 -> GeneratedSequenceBase.Count active (count+1)
+            | 2 -> GeneratedSequenceBase.Count (GeneratedSequenceBase.GetRedirect target active) count
+            | _ (*0*) -> count
 
         //[<System.Diagnostics.DebuggerNonUserCode; System.Diagnostics.DebuggerStepThroughAttribute>]
         member x.MoveNextImpl() =
-             let active =
-                 if redirect then redirectTo
-                 else x
+             let active = if redirect then redirectTo else x
              let mutable target = null
-             match active.GenerateNext(&target) with
-             | 1 ->
-                 true
+             match active.GenerateNext (&target) with
+             | 1 -> true
              | 2 ->
                  redirect <- true
-                 redirectTo <- 
-                     match target.GetEnumerator() with
-                     | :? GeneratedSequenceBase<'T> as g when not active.CheckClose -> g
-                     | e -> GeneratedSequenceBase.CreateRedirect e active
+                 redirectTo <- GeneratedSequenceBase.GetRedirect target active
                  x.MoveNextImpl()
-             | _ (* 0 *)  ->
-                 false
+             | _ (*0*) -> false
 
         interface IEnumerable<'T> with
             member x.GetEnumerator() = x.GetFreshEnumerator()
@@ -1253,15 +1254,13 @@ namespace Microsoft.FSharp.Core.CompilerServices
 
         override this.Length () =
             use maybeGeneratedSequenceBase = this.GetFreshEnumerator ()
-            let mutable count = 0
             match maybeGeneratedSequenceBase with
-            | :? GeneratedSequenceBase<'T> as e ->
-                while e.MoveNextImpl () do
-                    count <- count + 1
+            | :? GeneratedSequenceBase<'T> as e -> GeneratedSequenceBase.Count e 0
             | e ->
+                let mutable count = 0
                 while e.MoveNext () do
                     count <- count + 1
-            count
+                count
 
     and GeneratedSequenceBaseEnumerable<'T,'U>(generatedSequence:GeneratedSequenceBase<'T>, transformFactory:ITransformFactory<'T,'U>, pipeIdx:PipeIdx) =
         inherit SeqFactoryBase<'T,'U>(transformFactory, pipeIdx)
