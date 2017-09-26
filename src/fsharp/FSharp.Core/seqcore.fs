@@ -1187,11 +1187,14 @@ namespace Microsoft.FSharp.Core.CompilerServices
                 let mutable target = null
                 match active.GenerateNext(&target) with
                 | 1 ->
+                    consumer.ProcessNext active.LastGenerated |> ignore
                     GeneratedSequenceBase.Fold result consumer active
                 | 2 ->
+                    let redirect =
                        match target.GetEnumerator() with
                         | :? GeneratedSequenceBase<'T> as g when not active.CheckClose -> g
                         | e -> GeneratedSequenceBase.CreateRedirect e active
+                    GeneratedSequenceBase.Fold result consumer redirect
                 | _ (*0*) -> ()
 
         //[<System.Diagnostics.DebuggerNonUserCode; System.Diagnostics.DebuggerStepThroughAttribute>]
