@@ -551,7 +551,7 @@ let inputFileFlagsFsc tcConfigB = inputFileFlagsBoth tcConfigB
 //---------------------------------
 
 let errorsAndWarningsFlags (tcConfigB : TcConfigBuilder) = 
-    let trimFS (s:string) = if s.StartsWith("FS", StringComparison.InvariantCulture) = true then s.Substring(2) else s
+    let trimFS (s:string) = if s.StartsWith("FS", StringComparison.Ordinal) = true then s.Substring(2) else s
     [
         CompilerOption("warnaserror", tagNone, OptionSwitch(fun switch   -> tcConfigB.globalWarnAsError <- switch <> OptionSwitch.Off), None,
                             Some (FSComp.SR.optsWarnaserrorPM())); 
