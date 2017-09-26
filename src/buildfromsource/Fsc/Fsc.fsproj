@@ -13,16 +13,16 @@
     <OtherFlags>$(OtherFlags) --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
   </PropertyGroup>
 
-  <Import Project = "$(MSBuildThisFileDirectory)../../FSharpSource.BuildFromSource.targets" />
+  <Import Project="..\BuildFromSource.targets" />
   <ItemGroup>
-    <Compile Include="InternalsVisibleTo.fs" />
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\Fsc\InternalsVisibleTo.fs" />
     <Compile Include="..\..\assemblyinfo\assemblyinfo.fsc.exe.fs">
       <Link>Resources/assemblyinfo.fsc.exe.fs</Link>
     </Compile>
-    <Compile Include="..\fscmain.fs">
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\fscmain.fs">
       <Link>fscmain.fs</Link>
     </Compile>
-    <None Include="app.config" />
+    <None Include="$(FSharpSourcesRoot)\fsharp\Fsc\app.config" />
     <None Include="..\..\windows\default.win32manifest">
       <Link>default.win32manifest</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -30,9 +30,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.BuildFromSource.fsproj" />
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Build\FSharp.Build.BuildFromSource.fsproj" />
-    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Private\FSharp.Compiler.Private.BuildFromSource.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Core\FSharp.Core.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Build\FSharp.Build.fsproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\FSharp.Compiler.Private\FSharp.Compiler.Private.fsproj" />
     <PackageReference Include="System.Linq.Expressions" Version="4.3.0"></PackageReference>
     <PackageReference Include="System.Reflection.Metadata" Version="1.4.2"></PackageReference>
     <PackageReference Include="System.Runtime.Loader" Version="4.3.0"></PackageReference>
