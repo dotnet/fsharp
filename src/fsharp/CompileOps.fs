@@ -2003,11 +2003,11 @@ let ResolveFileUsingPaths(paths, m, name) =
 let GetWarningNumber(m, s:string) =
     try
         // Okay so ...
-        //      #pragma strips FS of the #pragma "FS0004" and validates thes warning number
-        //      therefore if we have warning id that starts with a number or starts with FS we do what we did before
-        //      anything else is ignored
+        //      #pragma strips FS of the #pragma "FS0004" and validates the warning number
+        //      therefore if we have warning id that starts with a numeric digit we convert it to Some (int32)
+        //      anything else is ignored None
         if Char.IsDigit(s.[0]) then Some (int32 s)
-        elif s.StartsWith("FS", StringComparison.InvariantCulture) = true then Some (int32 (s.Substring(2)))
+        elif s.StartsWith("FS", StringComparison.InvariantCulture) = true then raise (new ArgumentException())
         else None
     with err ->
         warning(Error(FSComp.SR.buildInvalidWarningNumber(s), m))

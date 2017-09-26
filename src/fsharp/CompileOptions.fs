@@ -551,6 +551,7 @@ let inputFileFlagsFsc tcConfigB = inputFileFlagsBoth tcConfigB
 //---------------------------------
 
 let errorsAndWarningsFlags (tcConfigB : TcConfigBuilder) = 
+    let trimFS (s:string) = if s.StartsWith("FS", StringComparison.InvariantCulture) = true then s.Substring(2) else s
     [
         CompilerOption("warnaserror", tagNone, OptionSwitch(fun switch   -> tcConfigB.globalWarnAsError <- switch <> OptionSwitch.Off), None,
                             Some (FSComp.SR.optsWarnaserrorPM())); 
@@ -563,19 +564,19 @@ let errorsAndWarningsFlags (tcConfigB : TcConfigBuilder) =
                                                                         tcConfigB.specificWarnAsWarn  <- ListSet.remove (=) n tcConfigB.specificWarnAsWarn ;
                                                                         tcConfigB.specificWarnAsError <- ListSet.insert (=) n tcConfigB.specificWarnAsError), None,
                             Some (FSComp.SR.optsWarnaserror()));
-           
+
         CompilerOption("warn", tagInt, OptionInt (fun n -> 
                                                      tcConfigB.globalWarnLevel <- 
                                                      if (n >= 0 && n <= 5) then n 
                                                      else error(Error(FSComp.SR.optsInvalidWarningLevel(n),rangeCmdArgs))), None,
                             Some (FSComp.SR.optsWarn()));
-           
-        CompilerOption("nowarn", tagWarnList, OptionStringList (fun n -> tcConfigB.TurnWarningOff(rangeCmdArgs, n)), None,
-                            Some (FSComp.SR.optsNowarn())); 
 
-        CompilerOption("warnon", tagWarnList, OptionStringList (fun n -> tcConfigB.TurnWarningOn(rangeCmdArgs,n)), None,
-                            Some(FSComp.SR.optsWarnOn()));                             
-        
+        CompilerOption("nowarn", tagWarnList, OptionStringList (fun n -> tcConfigB.TurnWarningOff(rangeCmdArgs, trimFS n)), None,
+                            Some (FSComp.SR.optsNowarn()));
+
+        CompilerOption("warnon", tagWarnList, OptionStringList (fun n -> tcConfigB.TurnWarningOn(rangeCmdArgs, trimFS n)), None,
+                            Some(FSComp.SR.optsWarnOn()));
+
         CompilerOption("consolecolors", tagNone, OptionSwitch (fun switch -> enableConsoleColoring <- switch = OptionSwitch.On), None, 
                             Some (FSComp.SR.optsConsoleColors()))
     ]
