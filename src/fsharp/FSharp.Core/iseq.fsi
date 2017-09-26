@@ -298,6 +298,9 @@ namespace Microsoft.FSharp.Collections
     [<CompiledName("ToArray")>]
     val internal toArray: source:ISeq<'T> -> array<'T>
 
+    [<CompiledName("ToResizeArray")>]
+    val internal toResizeArray: source:ISeq<'T> -> ResizeArray<'T>
+
     [<CompiledName("SortBy")>]
     val internal sortBy : projection:('T->'Key) -> source:ISeq<'T> -> ISeq<'T> when 'Key : comparison
 

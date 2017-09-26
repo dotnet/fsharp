@@ -1075,18 +1075,19 @@ namespace Microsoft.FSharp.Collections
             | :? list<'T> as l -> l.Length
             | _ -> Microsoft.FSharp.Primitives.Basics.ISeq.length source
 
-        [<CompiledName("ToArray")>]
-        let internal toArray (source:ISeq<'T>)  =
+        [<CompiledName("ToResizeArray")>]
+        let internal toResizeArray (source:ISeq<'T>) =
             source.Fold (fun _ ->
-                { new FolderWithPostProcessing<'T,array<'T>,_>(Unchecked.defaultof<_>,ResizeArray ()) with
+                { new Folder<'T,ResizeArray<'T>>(ResizeArray ()) with
                     override this.ProcessNext v =
-                        this.State.Add v
-                        Unchecked.defaultof<_> (* return value unused in Fold context *)
-                    
-                    override this.OnComplete _ =
-                        this.Result <- this.State.ToArray ()
-                    
-                    override this.OnDispose () = () } :> _ )
+                        this.Result.Add v
+                        Unchecked.defaultof<_> (* return value unused in Fold context *) } :> _ )
+
+        [<CompiledName("ToArray")>]
+        let internal toArray (source:ISeq<'T>) =
+            source
+            |> toResizeArray
+            |> fun a -> a.ToArray ()
 
         [<CompiledName("SortBy")>]
         let internal sortBy projection source =
@@ -1112,9 +1113,9 @@ namespace Microsoft.FSharp.Collections
         [<CompiledName("Reverse")>]
         let internal rev source =
             delay (fun () ->
-                let array = source |> toArray
-                Array.Reverse array
-                ofArray array)
+                let array = source |> toResizeArray
+                array.Reverse ()
+                ofResizeArrayUnchecked array)
 
         [<CompiledName("Permute")>]
         let internal permute indexMap (source:ISeq<_>) =
@@ -1131,7 +1132,7 @@ namespace Microsoft.FSharp.Collections
                 Array.scanSubRight folder array 0 (array.Length - 1) state
                 |> ofArray)
 
-        let inline internal foldArraySubRight f (arr: 'T[]) start fin acc =
+        let inline internal foldArraySubRight f (arr:ResizeArray<'T>) start fin acc =
             let mutable state = acc
             for i = fin downto start do
                 state <- f arr.[i] state
@@ -1139,8 +1140,8 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("FoldBack")>]
         let inline internal foldBack<'T,'State> folder (source: ISeq<'T>) (state:'State) =
-            let arr = toArray source
-            let len = arr.Length
+            let arr = toResizeArray source
+            let len = arr.Count
             foldArraySubRight folder arr 0 (len - 1) state
 
         [<CompiledName("Zip")>]
@@ -1154,8 +1155,8 @@ namespace Microsoft.FSharp.Collections
 
         [<CompiledName("ReduceBack")>]
         let inline internal reduceBack reduction (source:ISeq<'T>) =
-            let arr = toArray source
-            match arr.Length with
+            let arr = toResizeArray source
+            match arr.Count with
             | 0 -> invalidArg "source" LanguagePrimitives.ErrorStrings.InputSequenceEmptyString
             | len -> foldArraySubRight reduction arr 0 (len - 2) arr.[len - 1]
 
