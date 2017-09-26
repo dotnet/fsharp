@@ -1174,6 +1174,26 @@ namespace Microsoft.FSharp.Core.CompilerServices
         abstract CheckClose: bool
         abstract LastGenerated : 'T
 
+        static member CreateRedirect e (active:GeneratedSequenceBase<'T>) =
+            { new GeneratedSequenceBase<'T>() with
+                member __.GetFreshEnumerator() = e
+                member __.GenerateNext(_) = if e.MoveNext() then 1 else 0
+                member __.Close() = try e.Dispose() finally active.Close()
+                member __.CheckClose = true
+                member __.LastGenerated = e.Current }
+
+        static member Fold<'U, 'Result> (result:Folder<'U, 'Result>) (consumer:Activity<'T,'U>) (active:GeneratedSequenceBase<'T>) =
+            if result.HaltedIdx = 0 then
+                let mutable target = null
+                match active.GenerateNext(&target) with
+                | 1 ->
+                    GeneratedSequenceBase.Fold result consumer active
+                | 2 ->
+                       match target.GetEnumerator() with
+                        | :? GeneratedSequenceBase<'T> as g when not active.CheckClose -> g
+                        | e -> GeneratedSequenceBase.CreateRedirect e active
+                | _ (*0*) -> ()
+
         //[<System.Diagnostics.DebuggerNonUserCode; System.Diagnostics.DebuggerStepThroughAttribute>]
         member x.MoveNextImpl() =
              let active =
@@ -1184,18 +1204,11 @@ namespace Microsoft.FSharp.Core.CompilerServices
              | 1 ->
                  true
              | 2 ->
-                 match target.GetEnumerator() with
-                 | :? GeneratedSequenceBase<'T> as g when not active.CheckClose ->
-                     redirectTo <- g
-                 | e ->
-                     redirectTo <-
-                           { new GeneratedSequenceBase<'T>() with
-                                 member x.GetFreshEnumerator() = e
-                                 member x.GenerateNext(_) = if e.MoveNext() then 1 else 0
-                                 member x.Close() = try e.Dispose() finally active.Close()
-                                 member x.CheckClose = true
-                                 member x.LastGenerated = e.Current }
                  redirect <- true
+                 redirectTo <- 
+                     match target.GetEnumerator() with
+                     | :? GeneratedSequenceBase<'T> as g when not active.CheckClose -> g
+                     | e -> GeneratedSequenceBase.CreateRedirect e active
                  x.MoveNextImpl()
              | _ (* 0 *)  ->
                  false
@@ -1225,9 +1238,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
                 try
                     use maybeGeneratedSequenceBase = this.GetFreshEnumerator ()
                     match maybeGeneratedSequenceBase with
-                    | :? GeneratedSequenceBase<'T> as e -> // avoids two virtual function calls
-                        while result.HaltedIdx = 0 && e.MoveNextImpl () do
-                            result.ProcessNext (e.GetCurrent ()) |> ignore 
+                    | :? GeneratedSequenceBase<'T> as e -> GeneratedSequenceBase.Fold result result e
                     | e ->
                         while result.HaltedIdx = 0 && e.MoveNext () do
                             result.ProcessNext e.Current |> ignore
@@ -1264,9 +1275,7 @@ namespace Microsoft.FSharp.Core.CompilerServices
                 try
                     use maybeGeneratedSequenceBase = generatedSequence.GetFreshEnumerator ()
                     match maybeGeneratedSequenceBase with
-                    | :? GeneratedSequenceBase<'T> as e ->
-                        while result.HaltedIdx = 0 && e.MoveNextImpl () do
-                            consumer.ProcessNext (e.GetCurrent ()) |> ignore
+                    | :? GeneratedSequenceBase<'T> as e -> GeneratedSequenceBase.Fold result consumer e
                     | e ->
                         while result.HaltedIdx = 0 && e.MoveNext () do
                             consumer.ProcessNext e.Current |> ignore
