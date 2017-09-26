@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
@@ -115,6 +115,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public const string FileName = "FileName";
         public const string FileNameDescription = "FileNameDescription";
         public const string FileOrFolderAlreadyExists = "FileOrFolderAlreadyExists";
+        public const string FolderCannotBeRenamed = "FolderCannotBeRenamed";
         public const string FileOrFolderCannotBeFound = "FileOrFolderCannotBeFound";
         public const string FileProperties = "FileProperties";
         public const string FolderName = "FolderName";

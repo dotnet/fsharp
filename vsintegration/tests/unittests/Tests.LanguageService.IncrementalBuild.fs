@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Tests.LanguageService
 
@@ -30,9 +30,10 @@ module internal Vector =
 module internal Values = 
     let ctok = AssumeCompilationThreadWithoutEvidence()    
 
-[<TestFixture>] 
+[<TestFixture>]
+[<Category "LanguageService">] 
 [<Category("LanguageService.MSBuild")>]
-[<Category("LanguageService.ProjectSystem")>]
+[<Category "ProjectSystem">]
 type IncrementalBuild() = 
     
     let save _ctok _ = ()

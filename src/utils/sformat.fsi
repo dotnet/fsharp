@@ -1,9 +1,9 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // This file is compiled 2(!) times in the codebase
 //    - as the internal implementation of printf '%A' formatting 
-//           defines: RUNTIME
-//    - as the internal implementation of structured formatting in FSharp.Compiler.dll 
+//           defines: FSHARP_CORE
+//    - as the internal implementation of structured formatting in FSharp.Compiler.Service.dll 
 //           defines: COMPILER 
 //           NOTE: this implementation is used by fsi.exe. This is very important.
 //
@@ -15,17 +15,12 @@
 // all 4 cases the layout types are really different types.
 
 #if COMPILER
-// FSharp.Compiler-proto.dll:
-// FSharp.Compiler.dll:
+// fsc-proto.exe:
+// FSharp.Compiler.Service.dll:
 namespace Internal.Utilities.StructuredFormat
 #else
-#if RUNTIME 
 // FSharp.Core.dll:
 namespace Microsoft.FSharp.Text.StructuredPrintfImpl
-#else
-// Powerpack: 
-namespace Microsoft.FSharp.Text.StructuredFormat
-#endif
 #endif
 
     open System
@@ -35,73 +30,79 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     open Microsoft.FSharp.Primitives.Basics
 
     /// Data representing structured layouts of terms.  
-#if RUNTIME  // FSharp.Core.dll makes things internal and hides representations
+#if FSHARP_CORE  // FSharp.Core.dll makes things internal and hides representations
     type internal Layout
-    type internal TaggedText
-#else  // FSharp.Compiler.dll, FSharp.Compiler-proto.dll, FSharp.PowerPack.dll
-    // FSharp.PowerPack.dll: reveals representations
-    // FSharp.Compiler-proto.dll, FSharp.Compiler.dll: the F# compiler likes to see these representations
+    type internal LayoutTag
+    type internal TaggedText =
+        abstract Tag: LayoutTag
+        abstract Text: string
+#else  // FSharp.Compiler.Service.dll, fsc-proto.exe
 
     /// Data representing joints in structured layouts of terms.  The representation
     /// of this data type is only for the consumption of formatting engines.
     [<StructuralEquality; NoComparison>]
-#if COMPILER
-    type internal Joint =
-#else
+#if COMPILER_PUBLIC_API
     type Joint =
+#else
+    type internal Joint =
 #endif
         | Unbreakable
         | Breakable of int
         | Broken of int
     
-    [<NoEquality; NoComparison>]
-#if COMPILER
-    type internal TaggedText =
+    [<StructuralEquality; NoComparison>]
+#if COMPILER_PUBLIC_API
+    type LayoutTag =
 #else
-    type TaggedText =
+    type internal LayoutTag =
 #endif
-        | ActivePatternCase of string
-        | ActivePatternResult of string
-        | Alias of string
-        | Class of string
-        | Union of string
-        | UnionCase of string
-        | Delegate of string
-        | Enum of string
-        | Event of string
-        | Field of string
-        | Interface of string
-        | Keyword of string
-        | LineBreak of string
-        | Local of string
-        | Record of string
-        | RecordField of string
-        | Method of string
-        | Member of string
-        | ModuleBinding of string
-        | Module of string
-        | Namespace of string
-        | NumericLiteral of string
-        | Operator of string
-        | Parameter of string
-        | Property of string
-        | Space of string
-        | StringLiteral of string
-        | Struct of string
-        | TypeParameter of string
-        | Text of string
-        | Punctuation of string
-        | UnknownType of string
-        | UnknownEntity of string
-        with 
-        member Value: string
-        member Length: int
-        static member GetText: t: TaggedText -> string
-    
-#if COMPILER
-    type internal TaggedTextWriter =
+        | ActivePatternCase
+        | ActivePatternResult
+        | Alias
+        | Class
+        | Union
+        | UnionCase
+        | Delegate
+        | Enum
+        | Event
+        | Field
+        | Interface
+        | Keyword
+        | LineBreak
+        | Local
+        | Record
+        | RecordField
+        | Method
+        | Member
+        | ModuleBinding
+        | Module
+        | Namespace
+        | NumericLiteral
+        | Operator
+        | Parameter
+        | Property
+        | Space
+        | StringLiteral
+        | Struct
+        | TypeParameter
+        | Text
+        | Punctuation
+        | UnknownType
+        | UnknownEntity
+
+#if COMPILER_PUBLIC_API
+    type TaggedText =
 #else
+    type internal TaggedText =
+#endif
+        abstract Tag : LayoutTag
+        abstract Text : string
+
+    
+#if COMPILER_PUBLIC_API
     type TaggedTextWriter =
+#else
+    type internal TaggedTextWriter =
 #endif
         abstract Write: t: TaggedText -> unit
         abstract WriteLine: unit -> unit
@@ -109,10 +110,10 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     /// Data representing structured layouts of terms.  The representation
     /// of this data type is only for the consumption of formatting engines.
     [<NoEquality; NoComparison>]
-#if COMPILER
-    type internal Layout =
-#else
+#if COMPILER_PUBLIC_API
     type Layout =
+#else
+    type internal Layout = 
 #endif
      | ObjLeaf of bool * obj * bool
      | Leaf of bool * TaggedText * bool
@@ -120,12 +121,12 @@ namespace Microsoft.FSharp.Text.StructuredFormat
      | Attr of string * (string * string) list * Layout
 #endif
 
-    module
-#if RUNTIME || COMPILER
-        internal
+#if COMPILER_PUBLIC_API
+    module TaggedTextOps =
 #else
+    module internal TaggedTextOps =
 #endif
-            TaggedTextOps =
+        val tag : LayoutTag -> string -> TaggedText
         val keywordFunctions : Set<string>
         val tagAlias : string -> TaggedText
         val tagClass : string -> TaggedText
@@ -171,12 +172,11 @@ namespace Microsoft.FSharp.Text.StructuredFormat
             val arrow : TaggedText
             val questionMark : TaggedText
 
-#if RUNTIME   // FSharp.Core.dll doesn't use PrintIntercepts
-#else  // FSharp.Compiler.dll, FSharp.Compiler-proto.dll, FSharp.PowerPack.dll
-#if COMPILER
-    type internal IEnvironment = 
-#else
+#if !FSHARP_CORE   // FSharp.Core.dll doesn't use PrintIntercepts
+#if COMPILER_PUBLIC_API
     type IEnvironment = 
+#else
+    type internal IEnvironment = 
 #endif
         /// Return to the layout-generation 
         /// environment to layout any otherwise uninterpreted object
@@ -196,15 +196,11 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     /// A joint is either unbreakable, breakable or broken.
     /// If a joint is broken the RHS layout occurs on the next line with optional indentation.
     /// A layout can be squashed to for given width which forces breaks as required.
-    module
-#if RUNTIME   // FSharp.Core.dll
-      internal 
+#if COMPILER_PUBLIC_API
+    module LayoutOps =
 #else
-#if COMPILER
-      internal
+    module internal LayoutOps =
 #endif
-#endif
-         LayoutOps =
 
         /// The empty layout
         val emptyL     : Layout
@@ -253,7 +249,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         val sepListL   : layout1:Layout -> layouts:Layout list -> Layout
 
         /// Wrap round brackets around Layout.
-        val bracketL   : Layout:Layout -> Layout
+        val bracketL   : layout:Layout -> Layout
         /// Wrap square brackets around layout.    
         val squareBracketL   : layout:Layout -> Layout
         /// Wrap braces around layout.        
@@ -300,23 +296,16 @@ namespace Microsoft.FSharp.Text.StructuredFormat
     /// </pre>
     /// </example>
     [<NoEquality; NoComparison>]
-    type
-#if RUNTIME   // FSharp.Core.dll
-      internal 
+#if COMPILER_PUBLIC_API
+    type FormatOptions =
 #else
-#if COMPILER
-      internal
+    type internal FormatOptions =
 #endif
-#endif
-         FormatOptions = 
         { FloatingPointFormat: string
           AttributeProcessor: (string -> (string * string) list -> bool -> unit);
-#if RUNTIME  // FSharp.Core.dll: PrintIntercepts aren't used there
-#else
-#if COMPILER    // FSharp.Compiler.dll: This is the PrintIntercepts extensibility point currently revealed by fsi.exe's AddPrinter
+#if COMPILER  // FSharp.Core.dll: PrintIntercepts aren't used there
           PrintIntercepts: (IEnvironment -> obj -> Layout option) list;
           StringLimit: int;
-#endif
 #endif
           FormatProvider: System.IFormatProvider
 #if FX_RESHAPED_REFLECTION
@@ -332,16 +321,11 @@ namespace Microsoft.FSharp.Text.StructuredFormat
           ShowIEnumerable: bool  }
         static member Default : FormatOptions
 
-    module
-#if RUNTIME   // FSharp.Core.dll
-      internal 
+#if COMPILER_PUBLIC_API
+    module Display =
 #else
-#if COMPILER
-      internal
+    module internal Display =
 #endif
-#endif
-         Display = 
-
 
         /// Convert any value to a string using a standard formatter
         /// Data is typically formatted in a structured format, e.g.
@@ -361,7 +345,7 @@ namespace Microsoft.FSharp.Text.StructuredFormat
         /// as any_to_string
         val output_any: writer:TextWriter -> value:'T * Type -> unit
 
-#if RUNTIME   // FSharp.Core.dll: Most functions aren't needed in FSharp.Core.dll, but we add one entry for printf
+#if FSHARP_CORE   // FSharp.Core.dll: Most functions aren't needed in FSharp.Core.dll, but we add one entry for printf
 
 #if FX_RESHAPED_REFLECTION
         val anyToStringForPrintf: options:FormatOptions -> showNonPublicMembers : bool -> value:'T * Type -> string

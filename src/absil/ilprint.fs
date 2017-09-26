@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.AbstractIL.ILAsciiWriter 
 
@@ -846,10 +846,11 @@ let goutput_mdef env os md =
   output_string os " ";
   (goutput_params menv) os md.Parameters;
   output_string os " ";
-  if md.IsSynchronized then output_string os "synchronized ";
-  if md.IsMustRun then output_string os "/* mustrun */ ";
-  if md.IsPreserveSig then output_string os "preservesig ";
-  if md.IsNoInline then output_string os "noinlining ";
+  if md.IsSynchronized then output_string os "synchronized "
+  if md.IsMustRun then output_string os "/* mustrun */ "
+  if md.IsPreserveSig then output_string os "preservesig "
+  if md.IsNoInline then output_string os "noinlining "
+  if md.IsAggressiveInline then output_string os "aggressiveinlining "
   (goutput_mbody is_entrypoint menv) os md;
   output_string os "\n"
 

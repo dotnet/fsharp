@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.Detuple 
 
@@ -438,7 +438,7 @@ let sitesCPs sites = List.map siteCP sites
 type TransformedFormal =
   // Indicates that
   //    - the actual arg in this position is unchanged
-  //    - also menas that we keep the original formal arg
+  //    - also means that we keep the original formal arg
   | SameArg                          
 
   // Indicates 

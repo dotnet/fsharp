@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// LexFilter - process the token stream prior to parsing.
 /// Implements the offside rule and a copule of other lexical transformations.
@@ -685,7 +685,7 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
             | CtxtSeqBlock _, (CtxtElse _  :: (CtxtIf _ as limitCtxt) :: _rest) 
                       -> PositionWithColumn(limitCtxt.StartPos,limitCtxt.StartCol)
 
-            // Permitted inner-construct precise block alighnment: 
+            // Permitted inner-construct precise block alignment: 
             //           interface ...
             //           with ... 
             //           end 
@@ -773,14 +773,14 @@ type LexFilterImpl (lightSyntaxStatus:LightSyntaxStatus, compilingFsLib, lexer, 
                       -> PositionWithColumn(limitCtxt.StartPos,limitCtxt.StartCol + 1) 
 
             // Permitted inner-construct (e.g. "then" block and "else" block in overall 
-            // "if-then-else" block ) block alighnment: 
+            // "if-then-else" block ) block alignment: 
             //           if ... 
             //           then expr
             //           elif expr  
             //           else expr  
             | (CtxtIf   _ | CtxtElse _ | CtxtThen _), (CtxtIf _ as limitCtxt) :: _rest  
                       -> PositionWithColumn(limitCtxt.StartPos,limitCtxt.StartCol)
-            // Permitted inner-construct precise block alighnment: 
+            // Permitted inner-construct precise block alignment: 
             //           while  ... 
             //           do expr
             //           done   

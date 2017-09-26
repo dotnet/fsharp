@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 using FSLib = Microsoft.FSharp.Compiler.AbstractIL.Internal.Library;
 using System;
@@ -555,7 +555,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     while (currentItemID != VSConstants.VSITEMID_NIL)
                     {
                         variant = null;
-                        ErrorHandler.ThrowOnFailure(sourceHierarchy.GetProperty(itemId, (int)__VSHPROPID.VSHPROPID_NextVisibleSibling, out variant));
+                        ErrorHandler.ThrowOnFailure(sourceHierarchy.GetProperty(currentItemID, (int)__VSHPROPID.VSHPROPID_NextVisibleSibling, out variant));
                         currentItemID = (uint)(int)variant;
                         WalkSourceProjectAndAdd(sourceHierarchy, currentItemID, targetNode, true);
                     }
@@ -974,7 +974,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                             }
                         }
 
-                        node.Remove(true);
+                        node.Remove(removeFromStorage: true, promptSave: false);
                     }
                     else if (w != null)
                     {

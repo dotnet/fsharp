@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 using System;
 using System.Runtime.InteropServices;
@@ -394,7 +394,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return base.CanDeleteItem(deleteOperation);
         }
 
-        public override void Remove(bool removeFromStorage)
+        public override void Remove(bool removeFromStorage, bool promptSave = true)
         {
             // AssemblyReference doesn't backed by the document - its removal is simply modification of the project file
             // we disable IVsTrackProjectDocuments2 events to avoid confusing messages from SCC
@@ -403,7 +403,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 ProjectMgr.EventTriggeringFlag = oldFlag | ProjectNode.EventTriggering.DoNotTriggerTrackerEvents;
 
-                base.Remove(removeFromStorage);
+                base.Remove(removeFromStorage, promptSave);
 
                 // invoke ComputeSourcesAndFlags to refresh compiler flags
                 // it was the only useful thing performed by one of IVsTrackProjectDocuments2 listeners

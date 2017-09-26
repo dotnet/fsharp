@@ -46,3 +46,7 @@ module internal Repro3737 =
   let internalModuleNormalVal_uses_csInternalType (x : LibraryCS.AInternalClass) = 123
   let internalModuleNormalVal_uses_fsInternalType (x : Library.P.InternalClass)  = 123
   let internalModuleNormalVal_uses_fsInternalObject = Library.P.InternalObject
+
+// https://github.com/Microsoft/visualfsharp/issues/2401
+module ReproFS =
+  let c = new Repro.C( fun x -> "" )

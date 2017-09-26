@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <DefineConstants>INTERNALIZED_FSLEXYACC_RUNTIME;$(DefineConstant)</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="fsyacc.fsx" />
+  </ItemGroup>
+
+</Project>

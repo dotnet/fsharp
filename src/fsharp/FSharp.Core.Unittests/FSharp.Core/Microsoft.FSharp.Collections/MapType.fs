@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Various tests for the:
 // Microsoft.FSharp.Collections.Map type
@@ -21,7 +21,7 @@ Make sure each method works on:
 * Multi-element maps (2 - 7 elements)
 *)
 
-[<TestFixture>]
+[<TestFixture>][<Category "Collections.Map">][<Category "FSharp.Core.Collections">]
 type MapType() =
     
     // Interfaces
@@ -187,7 +187,7 @@ type MapType() =
         Assert.IsFalse( b.Equals(a) )
         Assert.IsFalse( a.Equals(b) )
         
-        // Co/contra varience not supported
+        // Co/contra variance not supported
         let a = ([] : (string*string) list) |> Map.ofList
         let b = ([] : (System.IComparable*System.IComparable) list)    |> Map.ofList
         Assert.IsFalse(a.Equals(b))

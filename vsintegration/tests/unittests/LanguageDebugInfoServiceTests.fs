@@ -1,4 +1,4 @@
- // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+ // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 namespace Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn
 
 open System
@@ -17,7 +17,7 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 
-[<TestFixture>]
+[<TestFixture>][<Category "Roslyn Services">]
 type LanguageDebugInfoServiceTests()  =
     let fileName = "C:\\test.fs"
     let defines = []
@@ -54,7 +54,7 @@ let main argv =
 
         let sourceText = SourceText.From(code)
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-        let tokens = CommonHelpers.getColorizationData(documentId, sourceText, TextSpan.FromBounds(0, sourceText.Length), Some(fileName), defines, CancellationToken.None)
+        let tokens = Tokenizer.getColorizationData(documentId, sourceText, TextSpan.FromBounds(0, sourceText.Length), Some(fileName), defines, CancellationToken.None)
         let actualDataTipSpanOption = FSharpLanguageDebugInfoService.GetDataTipInformation(sourceText, searchPosition, tokens)
         
         match actualDataTipSpanOption with

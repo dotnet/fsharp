@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 using FSLib = Microsoft.FSharp.Compiler.AbstractIL.Internal.Library;
 using System;
@@ -37,6 +37,7 @@ using System.Linq;
 using Microsoft.Build.Execution;
 
 using Microsoft.VisualStudio.FSharp.LanguageService;
+using Microsoft.VisualStudio.TextManager.Interop;
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 {
@@ -303,9 +304,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         IBuildDependencyUpdate,
         IProjectEventsListener,
         IReferenceContainerProvider,
-        IVsProjectSpecialFiles
-        , IVsDesignTimeAssemblyResolution
-        , IVsProjectUpgrade
+        IVsProjectSpecialFiles, 
+        IVsDesignTimeAssemblyResolution, 
+        IVsProjectUpgrade
     {
         /// <summary>
         /// This class stores mapping from ids -> objects. Uses as a replacement of EventSinkCollection (ESC)
@@ -482,8 +483,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         private IDEBuildLogger buildLogger;
 
-        private bool useProvidedLogger;
-
         private Microsoft.Build.Evaluation.Project buildProject;
 
         // TODO cache an instance for perf; but be sure not to be stale (correctness)
@@ -491,11 +490,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         private ConfigProvider configProvider;
 
-        private TaskProvider taskProvider;
-
-        private TaskReporter taskReporter;
-
-        private ErrorListProvider projectErrorListProvider;
+        private Shell.ErrorListProvider projectErrorListProvider;
 
         private ExtensibilityEventsHelper myExtensibilityEventsHelper;
 
@@ -614,7 +609,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         public abstract string TargetFSharpCoreVersion { get; set; }
 
-        internal ErrorListProvider ProjectErrorsTaskListProvider 
+        internal Shell.ErrorListProvider ProjectErrorsTaskListProvider 
         {
             get { return projectErrorListProvider; }
         }
@@ -1062,41 +1057,6 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         /// <summary>
-        /// Gets or sets the build logger.
-        /// </summary>
-        public IDEBuildLogger BuildLogger
-        {
-            get
-            {
-                return this.buildLogger;
-            }
-            private set
-            {
-                this.buildLogger = value;
-                this.useProvidedLogger = true;
-            }
-        }
-
-        /// <summary>
-        /// Gets the taskprovider.
-        /// </summary>
-        public TaskProvider TaskProvider
-        {
-            get
-            {
-                return this.taskProvider;
-            }
-        }
-
-        internal TaskReporter TaskReporter
-        {
-            get
-            {
-                return this.taskReporter;
-            }
-        }
-
-        /// <summary>
         /// Gets the project file name.
         /// </summary>
         public string FileName
@@ -1384,23 +1344,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             CCITracing.TraceCall();
             this.site = new ServiceProvider(site);
 
-            if (taskReporter != null)
-            {
-                taskReporter.Dispose();
-            }
-            if (taskProvider != null)
-            {
-                taskProvider.Dispose();
-            }
-            taskProvider = new TaskProvider(this.site);
-            taskReporter = new TaskReporter("Project System (ProjectNode.cs)");
-            taskReporter.TaskListProvider = new TaskListProvider(taskProvider);
             if (projectErrorListProvider != null)
             {
                 projectErrorListProvider.Dispose();
             }
 
-            projectErrorListProvider = new ErrorListProvider(this.site);
+            projectErrorListProvider = new Shell.ErrorListProvider (this.site);
 
             return VSConstants.S_OK;
         }
@@ -1521,13 +1470,15 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// Removes items from the hierarchy. 
         /// </summary>
         /// <devdoc>Project overwrites this.</devdoc>
-        public override void Remove(bool removeFromStorage)
+        public override void Remove(bool removeFromStorage, bool promptSave = true)
         {
             // the project will not be deleted from disk, just removed      
             if (removeFromStorage)
             {
                 return;
             }
+
+            Debug.Assert(promptSave, "Non-save prompting removal is not supported");
 
             // Remove the entire project from the solution
             IVsSolution solution = this.Site.GetService(typeof(SVsSolution)) as IVsSolution;
@@ -1573,22 +1524,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                             {
                                 this.projectEventsProvider.AfterProjectFileOpened -= this.OnAfterProjectOpen;
                             }
-                            if (this.taskReporter != null)
-                            {
-                                this.taskReporter.Dispose();
-                                this.taskReporter = null;                                
-                            }
                             if (projectErrorListProvider != null)
                             {
                                 projectErrorListProvider.Dispose();
                                 projectErrorListProvider = null;
-                            }
-                            if (this.taskProvider != null)
-                            {
-                                this.taskProvider.Tasks.Clear();
-                                this.taskProvider.Refresh();
-                                this.taskProvider.Dispose();
-                                this.taskProvider = null;
                             }
                             if (buildLogger != null)
                             {
@@ -3068,13 +3007,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         /// <param name="output"></param>
         public virtual void SetOutputLogger(IVsOutputWindowPane output)
         {
+            var errorReporter = this.GetBuildErrorReporter();
+
             // Create our logger, if it was not specified
-            if (!this.useProvidedLogger || this.buildLogger == null)
+            if (buildLogger == null)
             {
                 // Because we may be aggregated, we need to make sure to get the outer IVsHierarchy
                 // Create the logger
-                this.BuildLogger = new IDEBuildLogger(output, this.TaskProvider, this.InteropSafeIVsHierarchy);
-                this.buildLogger.TaskReporter = this.TaskReporter;
+                buildLogger = new IDEBuildLogger(output, this.InteropSafeIVsHierarchy, errorReporter);
 
                 // To retrive the verbosity level, the build logger depends on the registry root 
                 // (otherwise it will used an hardcoded default)
@@ -3083,18 +3023,18 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 {
                     string registryRoot;
                     registry.GetLocalRegistryRoot(out registryRoot);
-                    IDEBuildLogger logger = this.BuildLogger as IDEBuildLogger;
-                    if (!String.IsNullOrEmpty(registryRoot) && (null != logger))
+                    if (!String.IsNullOrEmpty(registryRoot) && (buildLogger != null))
                     {
-                        logger.BuildVerbosityRegistryRoot = registryRoot;
-                        logger.ErrorString = this.ErrorString;
-                        logger.WarningString = this.WarningString;
+                        buildLogger.BuildVerbosityRegistryRoot = registryRoot;
+                        buildLogger.ErrorString = this.ErrorString;
+                        buildLogger.WarningString = this.WarningString;
                     }
                 }
             }
             else
             {
-                this.BuildLogger.OutputWindowPane = output;
+                buildLogger.OutputWindowPane = output;
+                buildLogger.ErrorReporter = errorReporter;
             }
         }
 
@@ -3127,6 +3067,8 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         }
 
         public abstract void ComputeSourcesAndFlags();
+
+        public abstract IVsLanguageServiceBuildErrorReporter2 GetBuildErrorReporter();
 
         internal abstract int FixupAppConfigOnTargetFXChange(string newTargetFramework, string targetFSharpCoreVersion, bool autoGenerateBindingRedirects);
 
@@ -3295,7 +3237,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
                 // Do the actual Build
                 var loggerList = new System.Collections.Generic.List<Microsoft.Build.Framework.ILogger>(this.buildEngine.Loggers);
-                if (useProvidedLogger && buildLogger != null)
+                if (buildLogger != null)
                     loggerList.Add(buildLogger);
                 if (myDebugLogger != null)
                     loggerList.Add(myDebugLogger);
@@ -3642,7 +3584,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         {
             ProjectElement newItem;
 
-            string itemPath = PackageUtilities.MakeRelativeIfRooted(file, this.BaseURI);
+            string itemPath = PackageUtilities.MakeRelative(this.BaseURI.AbsoluteUrl, file);
             Debug.Assert(!Path.IsPathRooted(itemPath), "Cannot add item with full path.");
 
             string defaultBuildAction = this.DefaultBuildAction(itemPath);
@@ -3931,6 +3873,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             var dict = new Dictionary<Microsoft.Build.Construction.ProjectItemElement, Microsoft.Build.Evaluation.ProjectItem>();
             foreach (var item in MSBuildProject.GetStaticAndVisibleItemsInOrder(this.buildProject))
             {
+                // File with "Content" or "None" build action is not compiled, so it's safe to use wildcard
+                if (item.ItemType == "Content" || item.ItemType == "None") continue;
+
                 Microsoft.Build.Evaluation.ProjectItem previousItem;
                 var key = item.Xml;
                 if (dict.TryGetValue(key, out previousItem))
@@ -4830,7 +4775,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             return VSConstants.S_OK;
         }
 
-        public abstract void MoveFileToBottomIfNoOtherPendingMove(string relativeFilename);
+        public abstract void MoveFileToBottomIfNoOtherPendingMove(FileNode node);
 
         public int AddItem(uint itemIdLoc, VSADDITEMOPERATION op, string itemName, uint filesToOpen, string[] files, IntPtr dlgOwner, VSADDRESULT[] result)
         {
@@ -4840,37 +4785,10 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         internal int DoAddItem(uint itemIdLoc, VSADDITEMOPERATION op, string itemName, uint filesToOpen, string[] files, IntPtr dlgOwner, VSADDRESULT[] result, AddItemContext addItemContext = AddItemContext.Unknown)
         {
             // Note that when executing UI actions from the F# project system, any pending 'moves' (for add/add above/add below) are already handled at another level (in Project.fs).
-            // Calls to MoveFileToBottomIfNoOtherPendingMove() in this method are for code paths hit directly by automation APIs.
             Guid empty = Guid.Empty;
 
             // When Adding an item, pass true to let AddItemWithSpecific know to fire the tracker events.
-            var r = AddItemWithSpecific(itemIdLoc, op, itemName, filesToOpen, files, dlgOwner, 0, ref empty, null, ref empty, result, true, context: addItemContext);
-            if (op == VSADDITEMOPERATION.VSADDITEMOP_RUNWIZARD)
-            {
-                HierarchyNode n = this.NodeFromItemId(itemIdLoc);
-                string relativeFolder = Path.GetDirectoryName(n.Url);
-                string relPath = PackageUtilities.MakeRelativeIfRooted(Path.Combine(relativeFolder, Path.GetFileName(itemName)), this.BaseURI);
-                MoveFileToBottomIfNoOtherPendingMove(relPath);
-            }
-            else if (op == VSADDITEMOPERATION.VSADDITEMOP_OPENFILE)
-            {
-                foreach (string file in files)
-                {
-                    HierarchyNode n = this.NodeFromItemId(itemIdLoc);
-                    string relativeFolder = Path.GetDirectoryName(n.Url);
-                    string relPath = PackageUtilities.MakeRelativeIfRooted(Path.Combine(relativeFolder, Path.GetFileName(file)), this.BaseURI);
-                    MoveFileToBottomIfNoOtherPendingMove(relPath);
-                }
-            }
-            else if (op == VSADDITEMOPERATION.VSADDITEMOP_LINKTOFILE)
-            {
-                // This does not seem to be reachable from automation APIs, no movement needed.
-            }
-            else if (op == VSADDITEMOPERATION.VSADDITEMOP_CLONEFILE)
-            {
-                // This seems to only be called as a sub-step of RUNWIZARD, no movement needed.
-            }
-            return r;
+            return AddItemWithSpecific(itemIdLoc, op, itemName, filesToOpen, files, dlgOwner, 0, ref empty, null, ref empty, result, true, context: addItemContext);
         }
 
         /// <summary>
@@ -4988,11 +4906,22 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     case VSADDITEMOPERATION.VSADDITEMOP_OPENFILE:
                         {
                             string fileName = Path.GetFileName(file);
-                            newFileName =
+                            
+                            if (context == AddItemContext.Paste && FindChild(file) != null)
+                            {
                                 // if we are doing 'Paste' and source file belongs to current project - generate fresh unique name
-                                context == AddItemContext.Paste && FindChild(file) != null
-                                    ? GenerateCopyOfFileName(baseDir, fileName)
-                                    : Path.Combine(baseDir, fileName);
+                                newFileName = GenerateCopyOfFileName(baseDir, fileName);
+                            }
+                            else if (!IsContainedWithinProjectDirectory(file))
+                            {
+                                // if the file isn't contained within the project directory,
+                                // copy it to be a child of the node we're adding to.
+                                newFileName = Path.Combine(baseDir, fileName);
+                            }
+                            else
+                            {
+                                newFileName = file;
+                            }
                         }
                         break;
                 }
@@ -5162,6 +5091,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
             }
 
+            for (int i = 0; i < actualFilesAddedIndex; ++i)
+            {
+                string absolutePath = actualFiles[i];
+                var fileNode = this.FindChild(absolutePath) as FileNode;
+                Debug.Assert(fileNode != null, $"Unable to find added child node {absolutePath}");
+                MoveFileToBottomIfNoOtherPendingMove(fileNode);
+            }
+
             return VSConstants.S_OK;
         }
 
@@ -5173,25 +5110,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             // files[index] will be the absolute location to the linked file
             for (int index = 0; index < files.Length; index++)
             {
-                string relativeUri = PackageUtilities.GetPathDistance(this.ProjectMgr.BaseURI.Uri, new Uri(files[index]));
-                if (string.IsNullOrEmpty(relativeUri))
-                {
-                    return VSConstants.E_FAIL;
-                }
-
-                string fileName = Path.GetFileName(files[index]);
-                if (string.IsNullOrEmpty(fileName))
-                {
-                    return VSConstants.E_FAIL;
-                }
-
-                LinkedFileNode linkedNode = this.AddNewFileNodeToHierarchy(node, fileName) as LinkedFileNode;
+                LinkedFileNode linkedNode = this.AddNewFileNodeToHierarchyCore(node, files[index]) as LinkedFileNode;
                 if (linkedNode == null)
                 {
                     return VSConstants.E_FAIL;
                 }
-
-                linkedNode.ItemNode.Rename(relativeUri);
+                
                 if (node == this)
                 {
                     // parent we are adding to is project root
@@ -5205,6 +5129,12 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 }
                 linkedNode.SetIsLinkedFile(true);
                 linkedNode.OnInvalidateItems(node);
+
+                // fire the node added event now that we've set the item metadata
+                FireAddNodeEvent(files[index]);
+
+                MoveFileToBottomIfNoOtherPendingMove(linkedNode);
+
                 result[0] = VSADDRESULT.ADDRESULT_Success;
             }
             return VSConstants.S_OK;
@@ -5224,6 +5154,9 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             bool found = false;
             bool fFolderCase = false;
             HierarchyNode parent = this.NodeFromItemId(itemIdLoc);
+            
+            if (parent is FileNode)
+                parent = parent.Parent;
 
             extToUse = ext.Trim();
             if (String.Compare(extToUse, ".config", StringComparison.OrdinalIgnoreCase) == 0 ||
@@ -5402,7 +5335,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 throw new ArgumentException(SR.GetString(SR.ParameterMustBeAValidItemId, CultureInfo.CurrentUICulture), "itemId");
             }
-            n.Remove(true);
+            n.Remove(removeFromStorage: true, promptSave: false);
             result = 1;
             return VSConstants.S_OK;
         }
@@ -6395,6 +6328,15 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 CloseAllNodes(n);
             }
         }
+
+        /// <summary>
+        /// Debug method to assert that the project file and the solution explorer are in sync.
+        /// </summary>
+        [Conditional("DEBUG")]
+        public virtual void EnsureMSBuildAndSolutionExplorerAreInSync()
+        {
+        }
+
         /// <summary>
         /// Get the project extensions
         /// </summary>
@@ -6443,10 +6385,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         private bool IsTargetFrameworkInstalled()
         {
+           var targetFrameworkMoniker = new System.Runtime.Versioning.FrameworkName(GetTargetFrameworkMoniker());
+           //Only check for .NetFramework. The expectation is that other frameworks will perform any checks themselves.
+           if (targetFrameworkMoniker.Identifier != ".NetFramework")
+              return true;
+
            var multiTargeting = this.site.GetService(typeof(SVsFrameworkMultiTargeting)) as IVsFrameworkMultiTargeting;
            Array frameworks;
            Marshal.ThrowExceptionForHR(multiTargeting.GetSupportedFrameworks(out frameworks));
-           var targetFrameworkMoniker = new System.Runtime.Versioning.FrameworkName(GetTargetFrameworkMoniker());
            foreach (string fx in frameworks)
            {
                uint compat;

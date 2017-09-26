@@ -1,18 +1,21 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Compiler
 
+#if COMPILER_PUBLIC_API
+module public ReferenceResolver = 
+#else
 module internal ReferenceResolver = 
+#endif
 
-    exception ResolutionFailure
+    exception internal ResolutionFailure
 
+    [<RequireQualifiedAccess>]
     type ResolutionEnvironment = 
-        /// Indicates a script or source being compiled
-        | CompileTimeLike 
-        /// Indicates a script or source being interpreted
-        | RuntimeLike 
-        /// Indicates a script or source being edited
-        | DesignTimeLike
+        /// Indicates a script or source being edited or compiled. Uses reference assemblies (not implementation assemblies).
+        | EditingOrCompilation of isEditing: bool
+        /// Indicates a script or source being dynamically compiled and executed. Uses implementation assemblies.
+        | CompilationAndEvaluation 
 
     type ResolvedFile = 
         { /// Item specification.
@@ -30,7 +33,7 @@ module internal ReferenceResolver =
        /// This is the value passed back to Resolve if no explicit "mscorlib" has been given.
        ///
        /// Note: If an explicit "mscorlib" is given, then --noframework is being used, and the whole ReferenceResolver logic is essentially
-       /// unused.  However in the future an option may be added to allow an expicit specification of
+       /// unused.  However in the future an option may be added to allow an explicit specification of
        /// a .NET Framework version to use for scripts.
        abstract HighestInstalledNetFrameworkVersion : unit -> string
     
@@ -42,7 +45,7 @@ module internal ReferenceResolver =
        /// Perform assembly resolution on the given references under the given conditions
        abstract Resolve :
            resolutionEnvironment: ResolutionEnvironment *
-           // The actual reference paths or assemby name text, plus baggage
+           // The actual reference paths or assembly name text, plus baggage
            references:(string (* baggage *) * string)[] *  
            // e.g. v4.5.1
            targetFrameworkVersion:string *

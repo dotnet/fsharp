@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
@@ -11,6 +11,7 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
         
+#if !FX_NO_INDENTED_TEXT_WRITER
 /// Capture information about an interface in ASTs
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type internal InterfaceData =
@@ -42,3 +43,4 @@ module internal InterfaceStubGenerator =
 
     /// Find corresponding interface declaration at a given position
     val tryFindInterfaceDeclaration: pos -> parsedInput: ParsedInput -> InterfaceData option
+#endif

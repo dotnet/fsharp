@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 //----------------------------------------------------------------------------
 // Open up the compiler as an incremental service for lexing.
@@ -70,6 +70,17 @@ module FSharpTokenTag =
     let RARROW = tagOfToken RARROW
     let LARROW = tagOfToken LARROW
     let QUOTE = tagOfToken QUOTE
+    let WHITESPACE = tagOfToken (WHITESPACE Unchecked.defaultof<_>)
+    let COMMENT = tagOfToken (COMMENT Unchecked.defaultof<_>)
+    let LINE_COMMENT = tagOfToken (LINE_COMMENT Unchecked.defaultof<_>)
+    let BEGIN = tagOfToken BEGIN
+    let DO = tagOfToken DO
+    let FUNCTION = tagOfToken FUNCTION
+    let THEN = tagOfToken THEN
+    let ELSE = tagOfToken ELSE
+    let STRUCT = tagOfToken STRUCT
+    let CLASS = tagOfToken CLASS
+    let TRY = tagOfToken TRY
 
            
 /// This corresponds to a token categorization originally used in Visual Studio 2003.
@@ -495,7 +506,7 @@ type FSharpLineTokenizer(lexbuf: UnicodeLexing.Lexbuf,
     // We get the whole "   #if IDENT // .. .. " thing as a single token from the lexer,
     // so we need to split it into tokens that are used by VS for colorization
     
-    // Stack for tokens that are split during postpocessing    
+    // Stack for tokens that are split during postprocessing    
     let mutable tokenStack = new Stack<_>()
     let delayToken tok = tokenStack.Push(tok)
 
@@ -754,4 +765,11 @@ type FSharpSourceTokenizer(defineConstants : string list, filename : Option<stri
     member this.CreateBufferTokenizer(bufferFiller) = 
         let lexbuf = UnicodeLexing.FunctionAsLexbuf bufferFiller
         FSharpLineTokenizer(lexbuf, None, filename, lexArgsLightOn, lexArgsLightOff)
+
+module Keywords =
+    open Microsoft.FSharp.Compiler.Lexhelp.Keywords
+
+    let QuoteIdentifierIfNeeded s = QuoteIdentifierIfNeeded s
+    let NormalizeIdentifierBackticks s = NormalizeIdentifierBackticks s
+    let KeywordsWithDescription = keywordsWithDescription
 

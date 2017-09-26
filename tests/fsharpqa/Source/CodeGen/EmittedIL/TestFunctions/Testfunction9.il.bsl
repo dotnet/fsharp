@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.16774
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:1:0
 }
 .assembly TestFunction9
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.TestFunction9
 {
-  // Offset: 0x00000000 Length: 0x000001FA
+  // Offset: 0x00000000 Length: 0x000001D6
 }
 .mresource public FSharpOptimizationData.TestFunction9
 {
-  // Offset: 0x00000200 Length: 0x00000070
+  // Offset: 0x000001E0 Length: 0x00000070
 }
 .module TestFunction9.exe
-// MVID: {4DAC30D8-64F4-8929-A745-0383D830AC4D}
+// MVID: {59B19208-64F4-8929-A745-03830892B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000000000380000
+// Image base: 0x016E0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -53,34 +53,33 @@
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .method public static string  TestFunction9(int32 x) cil managed
   {
-    // Code size       41 (0x29)
+    // Code size       40 (0x28)
     .maxstack  8
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 5,5 : 5,17 
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  ldc.i4.3
-    IL_0003:  sub
-    IL_0004:  switch     ( 
-                          IL_0013,
-                          IL_0015)
-    IL_0011:  br.s       IL_0023
+    .line 5,5 : 5,17 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction9.fs'
+    IL_0000:  ldarg.0
+    IL_0001:  ldc.i4.3
+    IL_0002:  sub
+    IL_0003:  switch     ( 
+                          IL_0012,
+                          IL_0014)
+    IL_0010:  br.s       IL_0022
 
-    IL_0013:  br.s       IL_0017
+    IL_0012:  br.s       IL_0016
 
-    IL_0015:  br.s       IL_001d
+    IL_0014:  br.s       IL_001c
 
-    .line 6,6 : 12,19 
-    IL_0017:  ldstr      "three"
-    IL_001c:  ret
+    .line 6,6 : 12,19 ''
+    IL_0016:  ldstr      "three"
+    IL_001b:  ret
 
-    .line 7,7 : 12,18 
-    IL_001d:  ldstr      "four"
-    IL_0022:  ret
+    .line 7,7 : 12,18 ''
+    IL_001c:  ldstr      "four"
+    IL_0021:  ret
 
-    .line 8,8 : 12,18 
-    IL_0023:  ldstr      "five"
-    IL_0028:  ret
+    .line 8,8 : 12,18 ''
+    IL_0022:  ldstr      "five"
+    IL_0027:  ret
   } // end of method TestFunction9::TestFunction9
 
 } // end of class TestFunction9
@@ -91,10 +90,9 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       2 (0x2)
+    // Code size       1 (0x1)
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ret
+    IL_0000:  ret
   } // end of method $TestFunction9::main@
 
 } // end of class '<StartupCode$TestFunction9>'.$TestFunction9

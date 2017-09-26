@@ -1,29 +1,33 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
-open Microsoft.VisualStudio.Text.Editor
-open Microsoft.VisualStudio.OLE.Interop
 open System.ComponentModel.Composition
+open System.Runtime.InteropServices
+
 open Microsoft.VisualStudio
 open Microsoft.VisualStudio.Editor
+open Microsoft.VisualStudio.OLE.Interop
 open Microsoft.VisualStudio.Text
+open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.TextManager.Interop
 open Microsoft.VisualStudio.Utilities
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.FSharp.LanguageService
-open System.Runtime.InteropServices
 
 type internal XmlDocCommandFilter 
      (
         wpfTextView: IWpfTextView, 
         filePath: string, 
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: ProjectInfoManager,
+        projectInfoManager: FSharpProjectOptionsManager,
         workspace: VisualStudioWorkspaceImpl
      ) =
+
+    static let userOpName = "XmlDocCommand"
+
     let checker = checkerProvider.Checker
 
     let document =
@@ -65,7 +69,7 @@ type internal XmlDocCommandFilter
                                 let! document = document.Value
                                 let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                                 let sourceText = wpfTextView.TextBuffer.CurrentSnapshot.GetText()
-                                let! parsedInput = checker.ParseDocument(document, options, sourceText)
+                                let! parsedInput = checker.ParseDocument(document, options, sourceText, userOpName)
                                 let xmlDocables = XmlDocParser.getXmlDocables (sourceText, Some parsedInput) 
                                 let xmlDocablesBelowThisLine = 
                                     // +1 because looking below current line for e.g. a 'member'
@@ -109,12 +113,12 @@ type internal XmlDocCommandFilter
                 VSConstants.E_FAIL
 
 [<Export(typeof<IWpfTextViewCreationListener>)>]
-[<ContentType(FSharpCommonConstants.FSharpContentTypeName)>]
+[<ContentType(FSharpConstants.FSharpContentTypeName)>]
 [<TextViewRole(PredefinedTextViewRoles.PrimaryDocument)>]
 type internal XmlDocCommandFilterProvider 
     [<ImportingConstructor>] 
     (checkerProvider: FSharpCheckerProvider,
-     projectInfoManager: ProjectInfoManager,
+     projectInfoManager: FSharpProjectOptionsManager,
      workspace: VisualStudioWorkspaceImpl,
      textDocumentFactoryService: ITextDocumentFactoryService,
      editorFactory: IVsEditorAdaptersFactoryService) =

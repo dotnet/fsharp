@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.16774
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:1:0
 }
 .assembly DoNotBoxStruct_NoArray_CSInterface
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.DoNotBoxStruct_NoArray_CSInterface
 {
-  // Offset: 0x00000000 Length: 0x00000271
+  // Offset: 0x00000000 Length: 0x0000024C
 }
 .mresource public FSharpOptimizationData.DoNotBoxStruct_NoArray_CSInterface
 {
-  // Offset: 0x00000278 Length: 0x0000009C
+  // Offset: 0x00000250 Length: 0x0000009C
 }
 .module DoNotBoxStruct_NoArray_CSInterface.exe
-// MVID: {4DAC079A-5654-8082-A745-03839A07AC4D}
+// MVID: {59B1920A-5654-8082-A745-03830A92B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000000000360000
+// Image base: 0x00B50000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -53,18 +53,17 @@
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .method public static void  F<([mscorlib]System.IDisposable) T>(!!T x) cil managed
   {
-    // Code size       17 (0x11)
+    // Code size       16 (0x10)
     .maxstack  3
     .locals init ([0] !!T V_0)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 5,5 : 51,62 
-    IL_0000:  nop
-    IL_0001:  ldarg.0
-    IL_0002:  stloc.0
-    IL_0003:  ldloca.s   V_0
-    IL_0005:  constrained. !!T
-    IL_000b:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
-    IL_0010:  ret
+    .line 5,5 : 51,62 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\DoNotBoxStruct\\DoNotBoxStruct_NoArray_CSInterface.fs'
+    IL_0000:  ldarg.0
+    IL_0001:  stloc.0
+    IL_0002:  ldloca.s   V_0
+    IL_0004:  constrained. !!T
+    IL_000a:  callvirt   instance void [mscorlib]System.IDisposable::Dispose()
+    IL_000f:  ret
   } // end of method DoNotBoxStruct_NoArray_CSInterface::F
 
 } // end of class DoNotBoxStruct_NoArray_CSInterface
@@ -75,10 +74,9 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       2 (0x2)
+    // Code size       1 (0x1)
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ret
+    IL_0000:  ret
   } // end of method $DoNotBoxStruct_NoArray_CSInterface::main@
 
 } // end of class '<StartupCode$DoNotBoxStruct_NoArray_CSInterface>'.$DoNotBoxStruct_NoArray_CSInterface

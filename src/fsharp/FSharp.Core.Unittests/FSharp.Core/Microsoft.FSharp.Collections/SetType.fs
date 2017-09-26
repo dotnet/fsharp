@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Various tests for the:
 // Microsoft.FSharp.Collections.Set type
@@ -19,7 +19,7 @@ Make sure each method works on:
 * Sets with 4 more more elements
 *)
 
-[<TestFixture>]
+[<TestFixture>][<Category "Collections.Set">][<Category "FSharp.Core.Collections">]
 type SetType() =
 
     // Interfaces
@@ -146,7 +146,7 @@ type SetType() =
         Assert.IsFalse( b.Equals(a) )
         Assert.IsFalse( a.Equals(b) )
         
-        // Co/contra varience not supported
+        // Co/contra variance not supported
         let a = Set.empty<string>
         let b = Set.empty
         Assert.IsFalse(a.Equals(b))

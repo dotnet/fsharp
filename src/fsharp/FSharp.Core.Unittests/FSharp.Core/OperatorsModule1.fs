@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Various tests for the:
 // Microsoft.FSharp.Core.Operators module
@@ -901,7 +901,7 @@ type OperatorsModule1() =
         let result = inf > System.Double.MaxValue
         Assert.IsTrue(result)
         
-        // arithmatic operation
+        // arithmetic operation
         let result = infinity + 3.0
         Assert.AreEqual(result,infinity)
         let result = infinity - 3.0
@@ -923,7 +923,7 @@ type OperatorsModule1() =
         let result = inf > System.Single.MaxValue
         Assert.IsTrue(result)
         
-        // arithmatic operation
+        // arithmetic operation
         let result = infinityf + 3.0f
         Assert.AreEqual(result,infinity)
         let result = infinityf - 3.0f

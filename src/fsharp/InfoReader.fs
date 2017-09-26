@@ -1,13 +1,9 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 
 /// Select members from a type by name, searching the type hierarchy if needed
 module internal Microsoft.FSharp.Compiler.InfoReader
 
-open Internal.Utilities
-
-open Microsoft.FSharp.Compiler.AbstractIL 
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
@@ -66,7 +62,7 @@ let GetImmediateIntrinsicMethInfosOfType (optFilter,ad) g amap m typ =
                 | None -> st.PApplyArray ((fun st -> st.GetMethods()), "GetMethods", m)
             [   for mi in meths -> ProvidedMeth(amap,mi.Coerce(m),None,m) ]
 #endif
-        | ILTypeMetadata (_,tdef) -> 
+        | ILTypeMetadata (TILObjectReprData(_,_,tdef)) -> 
             let mdefs = tdef.Methods
             let mdefs = (match optFilter with None -> mdefs.AsList | Some nm -> mdefs.FindByName nm)
             mdefs |> List.map (fun mdef -> MethInfo.CreateILMeth(amap, m, typ, mdef)) 
@@ -141,7 +137,7 @@ let GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m typ =
             |> Seq.map(fun pi -> ProvidedProp(amap,pi,m)) 
             |> List.ofSeq
 #endif
-        | ILTypeMetadata (_,tdef) -> 
+        | ILTypeMetadata (TILObjectReprData(_,_,tdef)) -> 
             let tinfo = ILTypeInfo.FromType g typ
             let pdefs = tdef.Properties
             let pdefs = match optFilter with None -> pdefs.AsList | Some nm -> pdefs.LookupByName nm
@@ -158,6 +154,17 @@ let GetImmediateIntrinsicPropInfosOfType (optFilter,ad) g amap m typ =
 
     let pinfos = pinfos |> List.filter (IsPropInfoAccessible g amap m ad)
     pinfos
+
+// Checks whether the given type has an indexer property.
+let IsIndexerType g amap typ = 
+    isArray1DTy g typ ||
+    isListTy g typ ||
+    match tryDestAppTy g typ with
+    | Some tcref ->
+        let _, entityTy = generalizeTyconRef tcref
+        let props = GetImmediateIntrinsicPropInfosOfType (None, AccessibleFromSomeFSharpCode) g amap range0 entityTy 
+        props |> List.exists (fun x -> x.PropertyName = "Item")
+    | _ -> false
 
 
 /// Sets of methods up the hierarchy, ignoring duplicates by name and sig.
@@ -189,7 +196,7 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
                         |   Tainted.Null -> []
                         |   fi -> [  ProvidedField(amap,fi,m) ]
 #endif
-            | ILTypeMetadata (_,tdef) -> 
+            | ILTypeMetadata (TILObjectReprData(_,_,tdef)) -> 
                 let tinfo = ILTypeInfo.FromType g typ
                 let fdefs = tdef.Fields
                 let fdefs = match optFilter with None -> fdefs.AsList | Some nm -> fdefs.LookupByName nm
@@ -214,7 +221,7 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
                         |   Tainted.Null -> []
                         |   ei -> [  ProvidedEvent(amap,ei,m) ]
 #endif
-            | ILTypeMetadata (_,tdef) -> 
+            | ILTypeMetadata (TILObjectReprData(_,_,tdef)) -> 
                 let tinfo = ILTypeInfo.FromType g typ
                 let edefs = tdef.Events
                 let edefs = match optFilter with None -> edefs.AsList | Some nm -> edefs.LookupByName nm
@@ -414,6 +421,7 @@ type InfoReader(g:TcGlobals, amap:Import.ImportMap) =
     
 /// Get the declared constructors of any F# type
 let GetIntrinsicConstructorInfosOfType (infoReader:InfoReader) m ty = 
+  protectAssemblyExploration [] (fun () -> 
     let g = infoReader.g
     let amap = infoReader.amap 
     if isAppTy g ty then
@@ -440,7 +448,8 @@ let GetIntrinsicConstructorInfosOfType (infoReader:InfoReader) m ty =
                 | _ -> None) 
             |> List.map (fun x -> FSMeth(g,ty,x,None)) 
     else []
-    
+  )    
+
 //-------------------------------------------------------------------------
 // Collecting methods and properties taking into account hiding rules in the hierarchy
 
@@ -538,7 +547,7 @@ let private FilterOverrides findFlag (isVirt:'a->bool,isNewSlot,isDefiniteOverri
     | IgnoreOverrides ->  
         let equivNewSlots x y = isNewSlot x && isNewSlot y && equivSigs x y
         items
-          // Remove any F#-declared overrides. THese may occur in the same type as the abstract member (unlike with .NET metadata)
+          // Remove any F#-declared overrides. These may occur in the same type as the abstract member (unlike with .NET metadata)
           // Include any 'newslot' declared methods.
           |> List.map (List.filter (fun x -> not (isDefiniteOverride x))) 
 

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 /// Functions to import .NET binary metadata as TAST objects
 module internal Microsoft.FSharp.Compiler.Import
@@ -151,7 +151,7 @@ let CanImportILTypeRef (env:ImportMap) m (tref:ILTypeRef) =
 /// Prefer the F# abbreviation for some built-in types, e.g. 'string' rather than 
 /// 'System.String', since we prefer the F# abbreviation to the .NET equivalents. 
 let ImportTyconRefApp (env:ImportMap) tcref tyargs = 
-    match env.g.better_tcref_map tcref tyargs with 
+    match env.g.betterTyconRefMap tcref tyargs with 
     | Some res -> res
     | None -> TType_app (tcref,tyargs) 
 

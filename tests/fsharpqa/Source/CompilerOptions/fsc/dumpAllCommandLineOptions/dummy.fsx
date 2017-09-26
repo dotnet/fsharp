@@ -9,6 +9,7 @@
 //<Expects status="success">section='NoSection                ' ! option=script.fsx arg1 arg2 ...       kind=OptionGeneral</Expects>
 //<Expects status="success">section='NoSection                ' ! option=probeconsole                   kind=OptionSwitch</Expects>
 //<Expects status="success">section='NoSection                ' ! option=peekahead                      kind=OptionSwitch</Expects>
+//<Expects status="success">section='NoSection                ' ! option=noninteractive                 kind=OptionUnit</Expects>
 //<Expects status="success">section='- INPUT FILES -          ' ! option=reference                      kind=OptionString</Expects>
 //<Expects status="success">section='- CODE GENERATION -      ' ! option=debug                          kind=OptionSwitch</Expects>
 //<Expects status="success">section='- CODE GENERATION -      ' ! option=debug                          kind=OptionString</Expects>

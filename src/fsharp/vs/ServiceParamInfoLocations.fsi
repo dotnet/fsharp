@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 //----------------------------------------------------------------------------
 // API to the compiler as an incremental service for parsing,
@@ -11,7 +11,11 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 
 [<Sealed>]
+#if COMPILER_PUBLIC_API
+type FSharpNoteworthyParamInfoLocations =
+#else
 type internal FSharpNoteworthyParamInfoLocations =
+#endif
     member LongId : string list
     member LongIdStartLocation : pos
     member LongIdEndLocation : pos

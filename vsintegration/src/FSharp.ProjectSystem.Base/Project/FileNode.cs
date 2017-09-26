@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 using FSLib = Microsoft.FSharp.Compiler.AbstractIL.Internal.Library;
 using System;
@@ -209,6 +209,14 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 this.HasDesigner = true;
             } 
         } 
+
+        public virtual string RelativeFilePath
+        {
+            get
+            {
+                return PackageUtilities.MakeRelativeIfRooted(this.Url, this.ProjectMgr.BaseURI);
+            }
+        }
 
         public override NodeProperties CreatePropertiesObject()
         {

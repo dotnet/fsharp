@@ -1,6 +1,6 @@
 @rem ===========================================================================================================
-@rem Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, 
-@rem               Version 2.0.  See License.txt in the project root for license information.
+@rem Copyright (c) Microsoft Corporation.  All Rights Reserved.
+@rem               See License.txt in the project root for license information.
 @rem ===========================================================================================================
 
 rem @echo off
@@ -26,13 +26,14 @@ if /I "%PROCESSOR_ARCHITECTURE%"=="AMD64" set X86_PROGRAMFILES=%ProgramFiles(x86
 set REGEXE32BIT=reg.exe
 if not "%OSARCH%"=="x86" set REGEXE32BIT=%WINDIR%\syswow64\reg.exe
 
-                            FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\WOW6432Node\Microsoft\Microsoft SDKs\NETFXSDK\4.6.2\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
-if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\WOW6432Node\Microsoft\Microsoft SDKs\NETFXSDK\4.6.1\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
-if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
-if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
-if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
-if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
-if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+::See https://stackoverflow.com/a/17113667/111575 on 2^>NUL for suppressing the error "ERROR: The system was unable to find the specified registry key or value." from reg.exe, this fixes #3619
+                            FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\WOW6432Node\Microsoft\Microsoft SDKs\NETFXSDK\4.6.2\WinSDK-NetFx40Tools" /v InstallationFolder 2^>NUL') DO SET WINSDKNETFXTOOLS=%%B
+if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\WOW6432Node\Microsoft\Microsoft SDKs\NETFXSDK\4.6.1\WinSDK-NetFx40Tools" /v InstallationFolder 2^>NUL') DO SET WINSDKNETFXTOOLS=%%B
+if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" /v InstallationFolder 2^>NUL') DO SET WINSDKNETFXTOOLS=%%B
+if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" /v InstallationFolder 2^>NUL') DO SET WINSDKNETFXTOOLS=%%B
+if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools" /v InstallationFolder 2^>NUL') DO SET WINSDKNETFXTOOLS=%%B
+if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" /v InstallationFolder 2^>NUL') DO SET WINSDKNETFXTOOLS=%%B
+if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" /v InstallationFolder 2^>NUL') DO SET WINSDKNETFXTOOLS=%%B
 
 set SN32="%WINSDKNETFXTOOLS%sn.exe"
 set SN64="%WINSDKNETFXTOOLS%x64\sn.exe"
@@ -47,14 +48,16 @@ mkdir "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\fsc.exe" "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\fsc.exe.config" "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\FSharp.Build.dll" "%COMPILERSDKPATH%"
-copy /y "%BINDIR%\FSharp.Compiler.dll" "%COMPILERSDKPATH%"
+copy /y "%BINDIR%\FSharp.Compiler.Private.dll" "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\FSharp.Compiler.Interactive.Settings.dll" "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\fsi.exe" "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\fsi.exe.config" "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\fsiAnyCpu.exe" "%COMPILERSDKPATH%"
 copy /y "%BINDIR%\fsiAnyCpu.exe.config" "%COMPILERSDKPATH%"
-copy /y "%BINDIR%\Microsoft.FSharp.targets" "%COMPILERSDKPATH%"
-copy /y "%BINDIR%\Microsoft.Portable.FSharp.targets" "%COMPILERSDKPATH%"
+copy /y "%BINDIR%\Microsoft.FSharp.Targets" "%COMPILERSDKPATH%"
+copy /y "%BINDIR%\Microsoft.Portable.FSharp.Targets" "%COMPILERSDKPATH%"
+copy /y "%BINDIR%\Microsoft.FSharp.NetSdk.props" "%COMPILERSDKPATH%"
+copy /y "%BINDIR%\Microsoft.FSharp.NetSdk.targets" "%COMPILERSDKPATH%"
 copy /y "%TOPDIR%\vsintegration\src\SupportedRuntimes\SupportedRuntimes.xml" "%COMPILERSDKPATH%"
 
 set COMPILERMAINASSEMBLIESPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\FSharp\.NETFramework\v4.0\4.%FSHARPVERSION%.0
@@ -112,7 +115,6 @@ rem Disable strong-name validation for F# binaries built from open source that a
 %SN32% -Vr FSharp.Editor,b03f5f7f11d50a3a
 %SN32% -Vr FSharp.LanguageService,b03f5f7f11d50a3a
 %SN32% -Vr FSharp.LanguageService.Base,b03f5f7f11d50a3a
-%SN32% -Vr FSharp.LanguageService.Compiler,b03f5f7f11d50a3a
 %SN32% -Vr FSharp.ProjectSystem.Base,b03f5f7f11d50a3a
 %SN32% -Vr FSharp.ProjectSystem.FSharp,b03f5f7f11d50a3a
 %SN32% -Vr FSharp.ProjectSystem.PropertyPages,b03f5f7f11d50a3a
@@ -131,7 +133,6 @@ if /i "%PROCESSOR_ARCHITECTURE%"=="AMD64" (
     %SN64% -Vr FSharp.Editor,b03f5f7f11d50a3a
     %SN64% -Vr FSharp.LanguageService,b03f5f7f11d50a3a
     %SN64% -Vr FSharp.LanguageService.Base,b03f5f7f11d50a3a
-    %SN64% -Vr FSharp.LanguageService.Compiler,b03f5f7f11d50a3a
     %SN64% -Vr FSharp.ProjectSystem.Base,b03f5f7f11d50a3a
     %SN64% -Vr FSharp.ProjectSystem.FSharp,b03f5f7f11d50a3a
     %SN64% -Vr FSharp.ProjectSystem.PropertyPages,b03f5f7f11d50a3a

@@ -1,9 +1,8 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 ///  Generate the hash/compare functions we add to user-defined types by default.
 module internal Microsoft.FSharp.Compiler.AugmentWithHashCompare
  
-open Internal.Utilities
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL
@@ -13,8 +12,6 @@ open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.Tastops
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.PrettyNaming
-open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.Infos
 
@@ -386,7 +383,8 @@ let mkUnionCompare g tcref (tycon:Tycon) =
                tagsEqTested) 
 
     let expr = if tycon.IsStructOrEnumTycon then expr else mkBindNullComparison g m thise thataddre expr
-    thisv,thataddrv, expr
+    let thatv,expr = mkThatVarBind g m ty thataddrv expr
+    thisv,thatv, expr
 
 
 /// Build the comparison implementation for a union type when parameterized by a comparer
@@ -438,7 +436,7 @@ let mkUnionCompareWithComparer g tcref (tycon:Tycon) (_thisv,thise) (_thatobjv,t
             mkCond NoSequencePointAtStickyBinding SuppressSequencePointAtTarget m g.int_ty  
               (mkILAsmCeq g m thistage thattage)
               expr
-              (mkAsmExpr ([ IL.AI_sub  ],[],  [thistage; thattage],[g.int_ty],m))in 
+              (mkAsmExpr ([ IL.AI_sub  ],[],  [thistage; thattage],[g.int_ty],m))
         mkCompGenLet m thistagv
           (mkUnionCaseTagGetViaExprAddr (thise,tcref,tinst,m))
           (mkCompGenLet m thattagv
