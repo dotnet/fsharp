@@ -2007,7 +2007,7 @@ let GetWarningNumber(m, s:string) =
         //      therefore if we have warning id that starts with a numeric digit we convert it to Some (int32)
         //      anything else is ignored None
         if Char.IsDigit(s.[0]) then Some (int32 s)
-        elif s.StartsWith("FS", StringComparison.InvariantCulture) = true then raise (new ArgumentException())
+        elif s.StartsWith("FS", StringComparison.Ordinal) = true then raise (new ArgumentException())
         else None
     with err ->
         warning(Error(FSComp.SR.buildInvalidWarningNumber(s), m))
