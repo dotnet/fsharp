@@ -4,7 +4,8 @@
 
   <PropertyGroup>
     <FSCoreVersion>4.4.1.0</FSCoreVersion>
-    <OutputPath>$(MSBuildThisFileDirectory)../BuildFromSource/$(Configuration)/bin</OutputPath>
+    <OutputPath>$(MSBuildThisFileDirectory)../../BuildFromSource/$(Configuration)/bin</OutputPath>
+    <FSharpSourcesRoot>$(MSBuildThisFileDirectory)..</FSharpSourcesRoot>
 
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
@@ -12,15 +13,15 @@
 
     <!-- Signing flags currently done using OtherFlags.  Can migrate to properties once build target updated -->
     <DefineConstants>$(DefineConstants);STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY</DefineConstants>
-    <KeyFile>$(MSBuildThisFileDirectory)buildtools/keys/MSFT.snk</KeyFile>
+    <KeyFile>$(MSBuildThisFileDirectory)../buildtools/keys/MSFT.snk</KeyFile>
     <PublicSign>true</PublicSign>
     <OtherFlags>$(OtherFlags) --publicsign --keyfile:$(KeyFile)</OtherFlags>
     <OtherFlags>$(OtherFlags) --nocopyfsharpcore</OtherFlags>
 
     <DotNetExe Condition=" '$(OS)' == 'Unix' ">dotnet</DotNetExe>
     <DotNetExe Condition=" '$(OS)' != 'Unix' ">dotnet.exe</DotNetExe>
-    <DotNetExePath>$(MSBuildThisFileDirectory)../Tools/dotnet20/$(DotNetExe)</DotNetExePath>
-    <DotNetExePath Condition="!Exists($(DotNetExe))">$(MSBuildBinPath)/../../$(DotNetExe)</DotNetExePath>
+    <!-- When building from source, `dotnet` is expected to be on the path. -->
+    <DotNetExePath>$(DotNetExe)</DotNetExePath>
 
     <PreReleaseLabel></PreReleaseLabel>
     <BuildVersionFilePath Condition="'$(BuildVersionFilePath)'==''" >$(IntermediateOutputFile)\BuildVersionFile.props</BuildVersionFilePath>
@@ -32,7 +33,7 @@
     <TargetDotnetProfile  Condition=" $(TargetFramework.StartsWith('netframework')) ">net40</TargetDotnetProfile>
   </PropertyGroup>
 
-  <Import Project="FSharpSource.Profiles.targets" />
+  <Import Project="..\FSharpSource.Profiles.targets" />
   <Import Project="$(BuildVersionFilePath)" Condition="Exists('$(BuildVersionFilePath)')" />
 
   <Target Name="CopyAndSubstituteTextFiles" 
@@ -66,7 +67,7 @@
           Condition="'@(FsSrGen)' != ''">
 
     <PropertyGroup>
-      <FsSrGenPath>$(MSBuildThisFileDirectory)../Tools/fssrgen/fssrgen.dll</FsSrGenPath>
+      <FsSrGenPath>$(MSBuildThisFileDirectory)../../Tools/fssrgen/fssrgen.dll</FsSrGenPath>
     </PropertyGroup>
 
     <!-- Create the output directory in case it doesn't exist yet -->
@@ -110,7 +111,7 @@
           BeforeTargets="CoreCompile">
 
     <PropertyGroup>
-        <FsLexPath>$(MSBuildThisFileDirectory)../Tools/fslex/fslex.dll</FsLexPath>
+        <FsLexPath>$(MSBuildThisFileDirectory)../../Tools/fslex/fslex.dll</FsLexPath>
     </PropertyGroup>
 
     <!-- Create the output directory -->
@@ -133,7 +134,7 @@
           BeforeTargets="CoreCompile">
 
     <PropertyGroup>
-        <FsYaccPath>$(MSBuildThisFileDirectory)../Tools/fsyacc/fsyacc.dll</FsYaccPath>
+        <FsYaccPath>$(MSBuildThisFileDirectory)../../Tools/fsyacc/fsyacc.dll</FsYaccPath>
     </PropertyGroup>
 
     <!-- Create the output directory -->
