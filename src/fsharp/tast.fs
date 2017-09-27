@@ -2095,6 +2095,7 @@ and
     member x.Solution 
         with get() = (let (TTrait(_,_,_,_,_,sln)) = x in sln.Value)
         and set v = (let (TTrait(_,_,_,_,_,sln)) = x in sln.Value <- v)
+    override x.ToString() = "trait " + x.MemberName
     
 and 
     [<NoEquality; NoComparison>]
@@ -3534,7 +3535,7 @@ and
              + String.concat "," (List.map string tinst) + ")"
         | TType_fun (d,r) -> "(" + string d + " -> " + string r + ")"
         | TType_ucase (uc,tinst) -> "union case type " + uc.CaseName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
-        | TType_var tp -> tp.DisplayName
+        | TType_var tp -> match tp.Solution with None -> tp.DisplayName | Some sln -> "£"+sln.ToString()
         | TType_measure ms -> sprintf "%A" ms
 
     /// For now, used only as a discriminant in error message.

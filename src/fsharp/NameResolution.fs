@@ -533,9 +533,13 @@ let AddValRefToExtensionMembers pri (eIndexedExtensionMembers: TyconRefMultiMap<
         eIndexedExtensionMembers
 
 /// Add an F# value to the table of available extension members, if necessary, as an FSharp-style extension member
+let AddValRefToExtensionMembersByNameTable logicalName (eExtensionMembersByName: NameMultiMap<_>) extMemInfo =
+    NameMultiMap.add logicalName extMemInfo eExtensionMembersByName
+
+/// Add an F# value to the table of available extension members, if necessary, as an FSharp-style extension member
 let AddValRefToExtensionMembersByName pri (eExtensionMembersByName: NameMultiMap<_>) (vref:ValRef) =
     if vref.IsMember && vref.IsExtensionMember then
-        NameMultiMap.add vref.CompiledName (FSExtMem (vref,pri))  eExtensionMembersByName
+        AddValRefToExtensionMembersByNameTable vref.LogicalName eExtensionMembersByName (FSExtMem (vref,pri))
     else
         eExtensionMembersByName
 
@@ -657,8 +661,8 @@ let private AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition (g:TcGlobals) 
         let ilStyleExtensionMeths = GetCSharpStyleIndexedExtensionMembersForTyconRef amap m  tcref 
         ((nenv.eIndexedExtensionMembers, nenv.eExtensionMembersByName, nenv.eUnindexedExtensionMembers),ilStyleExtensionMeths) ||> List.fold (fun (tab1,tab2,tab3) extMemInfo -> 
             match extMemInfo with 
-            | Choice1Of2 (tcref,extMemInfo) -> tab1.Add (tcref, extMemInfo), NameMultiMap.add extMemInfo.LogicalName extMemInfo tab2, tab3
-            | Choice2Of2 extMemInfo -> tab1, NameMultiMap.add extMemInfo.LogicalName extMemInfo tab2, extMemInfo :: tab3)  
+            | Choice1Of2 (tcref,extMemInfo) -> tab1.Add (tcref, extMemInfo), AddValRefToExtensionMembersByNameTable extMemInfo.LogicalName tab2 extMemInfo, tab3
+            | Choice2Of2 extMemInfo -> tab1, AddValRefToExtensionMembersByNameTable extMemInfo.LogicalName tab2 extMemInfo, extMemInfo :: tab3)  
 
     let isILOrRequiredQualifiedAccess = isIL || (not ownDefinition && HasFSharpAttribute g g.attrib_RequireQualifiedAccessAttribute tcref.Attribs)
     let eFieldLabels = 
