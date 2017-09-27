@@ -1,5 +1,4 @@
-
-
+module Test
 
 type System.Int32 with
     static member Add(a : System.Int32, b : System.Int32) = a + b
