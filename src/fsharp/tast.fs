@@ -2029,6 +2029,8 @@ and
 
     override x.ToString() = x.Name
 
+and PossibleExtensionMemberSolutions = ValRef list 
+
 and
     [<NoEquality; NoComparison; RequireQualifiedAccess>]
     TyparConstraint = 
@@ -2042,7 +2044,8 @@ and
     | SupportsNull               of range 
     
     /// Indicates a constraint that a type has a member with the given signature 
-    | MayResolveMember of TraitConstraintInfo * range * ValRef list
+    // TODO: allow .NET-defined extension members to solve trait constraints. Currently only ValRefs indicating possible solutions are stored
+    | MayResolveMember of TraitConstraintInfo * range * possibleExtensionMemberSolutions: PossibleExtensionMemberSolutions 
     
     /// Indicates a constraint that a type is a non-Nullable value type 
     /// These are part of .NET's model of generic constraints, and in order to 

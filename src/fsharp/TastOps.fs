@@ -228,8 +228,8 @@ and remapTyparConstraintsAux tyenv cs =
          match x with 
          | TyparConstraint.CoercesTo(ty,m) -> 
              Some(TyparConstraint.CoercesTo (remapTypeAux tyenv ty,m))
-         | TyparConstraint.MayResolveMember(traitInfo,m,extTys) -> 
-             Some(TyparConstraint.MayResolveMember (remapTraitAux tyenv traitInfo,m,List.map (remapValRef tyenv) extTys))
+         | TyparConstraint.MayResolveMember(traitInfo,m,extVals) -> 
+             Some(TyparConstraint.MayResolveMember (remapTraitAux tyenv traitInfo,m,List.map (remapValRef tyenv) extVals))
          | TyparConstraint.DefaultsTo(priority,ty,m) -> Some(TyparConstraint.DefaultsTo(priority,remapTypeAux tyenv ty,m))
          | TyparConstraint.IsEnum(uty,m) -> 
              Some(TyparConstraint.IsEnum(remapTypeAux tyenv uty,m))

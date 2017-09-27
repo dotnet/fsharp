@@ -1087,7 +1087,11 @@ and FSharpGenericParameterConstraint(cenv, cx: TyparConstraint) =
 
     member __.MemberConstraintData =  
         match cx with 
+<<<<<<< HEAD
         | TyparConstraint.MayResolveMember(info, _,_) ->  FSharpGenericParameterMemberConstraint(cenv,  info) 
+=======
+        | TyparConstraint.MayResolveMember(info, _, _) ->  FSharpGenericParameterMemberConstraint(cenv,  info) 
+>>>>>>> 7121bc3927129e65b9f9abff9abf87c60dac3108
         | _ -> invalidOp "not a member constraint"
 
     member __.IsNonNullableValueTypeConstraint = 
