@@ -1408,29 +1408,17 @@ and GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution 
             /// between potential overloads because a generic instantiation derived from the left hand type differs 
             /// to a generic instantiation for an operator based on the right hand type. 
             let minfos = List.reduce (ListSet.unionFavourLeft MethInfo.MethInfosUseIdenticalDefinitions) minfos
-<<<<<<< HEAD
-            let extMemberToMethInfo t (valRef : ValRef) =
-                FSMeth(csenv.g, t, valRef, Some 1uL) // TODO
-            let extMInfos : MethInfo list =
-                let allCombos = List.allPairs tys exts
-                List.map (fun (a,b) -> extMemberToMethInfo a b) allCombos
-=======
 
             // Get the extension method that may be relevant to solving the constraint as MethInfo objects.
             let extMInfos = GetRelevantExtensionMethodsForTrait csenv.g traitInfo extVals 
 
->>>>>>> 7121bc3927129e65b9f9abff9abf87c60dac3108
             minfos @ extMInfos
         else 
             []
 
     // The trait name "op_Explicit" also covers "op_Implicit", so look for that one too.
     if nm = "op_Explicit" then 
-<<<<<<< HEAD
-        results @ GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution "op_Implicit" (TTrait(tys, "op_Implicit", memFlags, argtys, rty, soln)) exts
-=======
         results @ GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution "op_Implicit" (TTrait(tys, "op_Implicit", memFlags, argtys, rty, soln)) extVals
->>>>>>> 7121bc3927129e65b9f9abff9abf87c60dac3108
     else
         results
 
@@ -1480,20 +1468,12 @@ and SolveRelevantMemberConstraintsForTypar (csenv:ConstraintSolverEnv) ndeep per
     cxs 
     |> AtLeastOneD (fun (traitInfo, extVals, m2) -> 
         let csenv = { csenv with m = m2 }
-<<<<<<< HEAD
-        SolveMemberConstraint csenv true permitWeakResolution (ndeep+1) m2 trace traitInfo [])
-=======
         SolveMemberConstraint csenv true permitWeakResolution (ndeep+1) m2 trace traitInfo extVals)
->>>>>>> 7121bc3927129e65b9f9abff9abf87c60dac3108
 
 and CanonicalizeRelevantMemberConstraints (csenv:ConstraintSolverEnv) ndeep trace tps =
     SolveRelevantMemberConstraints csenv ndeep true trace tps
   
-<<<<<<< HEAD
-and AddMemberConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace traitInfo support frees extTys =
-=======
 and AddMemberConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace traitInfo support frees extVals =
->>>>>>> 7121bc3927129e65b9f9abff9abf87c60dac3108
     let g = csenv.g
     let aenv = csenv.EquivEnv
     let cxst = csenv.SolverState.ExtraCxs
@@ -1516,11 +1496,7 @@ and AddMemberConstraint (csenv:ConstraintSolverEnv) ndeep m2 trace traitInfo sup
 
     // Associate the constraint with each type variable in the support, so if the type variable
     // gets generalized then this constraint is attached at the binding site.
-<<<<<<< HEAD
-    support |> IterateD (fun tp -> AddConstraint csenv ndeep m2 trace tp (TyparConstraint.MayResolveMember(traitInfo, m2, extTys)))
-=======
     support |> IterateD (fun tp -> AddConstraint csenv ndeep m2 trace tp (TyparConstraint.MayResolveMember(traitInfo, m2, extVals)))
->>>>>>> 7121bc3927129e65b9f9abff9abf87c60dac3108
 
     
 /// Record a constraint on an inference type variable. 
@@ -2591,21 +2567,8 @@ let AddCxTypeMustSubsumeType contextInfo denv nenv css m trace ty1 ty2 =
     |> RaiseOperationResult
 
 let AddCxMethodConstraint denv nenv css m trace (traitInfo : TraitConstraintInfo) =
-<<<<<<< HEAD
-    let extTys : ValRef list =
-        let extMemberToValRef = function
-            | FSExtMem (v,_) -> v
-            | ILExtMem (_,_,_) -> failwith ""
-        nenv.eIndexedExtensionMembers.Contents.Contents.Values
-        |> fun x -> x
-        |> List.concat
-        |> List.map extMemberToValRef
-        |> List.filter (fun v -> v.LogicalName = traitInfo.MemberName)
-    TryD (fun () -> SolveMemberConstraint (MakeConstraintSolverEnv ContextInfo.NoContext css m denv nenv) true false 0 m trace traitInfo extTys ++ (fun _ -> CompleteD))
-=======
     let extVals = GetRelevantPossibleExtensionSolutionsToConstraint nenv traitInfo
     TryD (fun () -> SolveMemberConstraint (MakeConstraintSolverEnv ContextInfo.NoContext css m denv nenv) true false 0 m trace traitInfo extVals ++ (fun _ -> CompleteD))
->>>>>>> 7121bc3927129e65b9f9abff9abf87c60dac3108
          (fun res -> ErrorD (ErrorFromAddingConstraint(denv,res,m)))
     |> RaiseOperationResult
 
@@ -2661,23 +2624,9 @@ let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:Trait
           TcVal = tcVal
           ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
           InfoReader = new InfoReader(g,amap) }
-<<<<<<< HEAD
-    let extTys : ValRef list =
-        let extMemberToValRef = function
-            | FSExtMem (v,_) -> v
-            | ILExtMem (_,_,_) -> failwith ""
-        nenv.eIndexedExtensionMembers.Contents.Contents.Values
-        |> fun x -> x
-        |> List.concat
-        |> List.map extMemberToValRef
-        |> List.filter (fun v -> v.LogicalName = traitInfo.MemberName)
-    let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g) nenv
-    SolveMemberConstraint csenv true true 0 m NoTrace traitInfo extTys ++ (fun _res -> 
-=======
     let extVals = GetRelevantPossibleExtensionSolutionsToConstraint nenv traitInfo
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g) nenv
     SolveMemberConstraint csenv true true 0 m NoTrace traitInfo extVals ++ (fun _res -> 
->>>>>>> 7121bc3927129e65b9f9abff9abf87c60dac3108
         let sln = 
               match traitInfo.Solution with 
               | None -> Choice4Of4()
@@ -2793,11 +2742,7 @@ let IsApplicableMethApprox g amap m (minfo:MethInfo) availObjTy =
               ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
               InfoReader = new InfoReader(g, amap) }
         let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g) (NameResolutionEnv.Empty g)
-<<<<<<< HEAD
-        let minst = FreshenMethInfo m minfo
-=======
         let minst = FreshenMethInfo None m minfo
->>>>>>> 7121bc3927129e65b9f9abff9abf87c60dac3108
         match minfo.GetObjArgTypes(amap, m, minst) with
         | [reqdObjTy] -> 
             TryD (fun () -> SolveTypSubsumesTyp csenv 0 m NoTrace None reqdObjTy availObjTy ++ (fun () -> ResultD true))
