@@ -48,10 +48,6 @@ module internal ReflectionAdapters =
     let isStaticFlag    f    = hasFlag BindingFlags.Static f
     let isInstanceFlag  f    = hasFlag BindingFlags.Instance f
     let isNonPublicFlag f    = hasFlag BindingFlags.NonPublic f
- 
-    let isOldCorlib =
-        let attributes = typeof<RuntimeTypeHandle>.GetTypeInfo().Assembly.GetCustomAttributes<AssemblyFileVersionAttribute>() |> Seq.toArray
-        if attributes.Length = 0 then false else attributes.[0].Version = "4.6.24410.01"
 
 #if FX_NO_TYPECODE
     [<System.Flags>]
@@ -337,8 +333,9 @@ module internal ReflectionAdapters =
         // We need to run fsi tests on a very old version of the corclr because of an unfortunate test framework
         // This hack detects that, and uses the old code.
         // On slightly newer code  AssemblyLoadContext.Default is the way to go.
-        if isOldCorlib then new CustomAssemblyResolver() :> AssemblyLoadContext
-        else AssemblyLoadContext.Default
+        match Seq.tryHead (typeof<RuntimeTypeHandle>.GetTypeInfo().Assembly.GetCustomAttributes<AssemblyFileVersionAttribute>()) with
+        | Some a when a.Version = "4.6.24410.01" -> new CustomAssemblyResolver() :> AssemblyLoadContext
+        | _ -> AssemblyLoadContext.Default
 
 #endif
     type System.Reflection.Assembly with
