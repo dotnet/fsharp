@@ -163,7 +163,8 @@ type TypeCheckInfo
            loadClosure : LoadClosure option,
            reactorOps : IReactorOperations,
            checkAlive : (unit -> bool),
-           textSnapshotInfo:obj option) = 
+           textSnapshotInfo:obj option,
+           implementationFiles: TypedImplFile list) = 
 
     let textSnapshotInfo = defaultArg textSnapshotInfo null
     let (|CNR|) (cnr:CapturedNameResolution) =
@@ -1356,6 +1357,8 @@ type TypeCheckInfo
     /// The assembly being analyzed
     member __.ThisCcu = thisCcu
 
+    member __.ImplementationFiles = implementationFiles
+
     override __.ToString() = "TypeCheckInfo(" + mainInputFileName + ")"
 
 
@@ -1662,7 +1665,7 @@ module internal Parser =
                 let errors = errHandler.CollectedDiagnostics
                 
                 match tcEnvAtEndOpt with
-                | Some (tcEnvAtEnd, _typedImplFiles, tcState) ->
+                | Some (tcEnvAtEnd, typedImplFiles, tcState) ->
                     let scope = 
                         TypeCheckInfo(tcConfig, tcGlobals, 
                                     tcState.PartialAssemblySignature, 
@@ -1678,7 +1681,8 @@ module internal Parser =
                                     loadClosure,
                                     reactorOps,
                                     checkAlive,
-                                    textSnapshotInfo)     
+                                    textSnapshotInfo,
+                                    typedImplFiles)     
                     return errors, TypeCheckAborted.No scope
                 | None -> 
                     return errors, TypeCheckAborted.Yes
@@ -2002,6 +2006,11 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
             RequireCompilationThread ctok
             scope.IsRelativeNameResolvable(pos, plid, item))
     
+    member info.ImplementationFiles =
+        scopeOptX 
+        |> Option.map (fun scope -> 
+            let cenv = Impl.cenv(scope.TcGlobals, scope.ThisCcu, scope.TcImports)
+            [ for mimpl in scope.ImplementationFiles -> FSharpImplementationFileContents(cenv, mimpl)])
 
     override info.ToString() = "FSharpCheckFileResults(" + filename + ")"
 
@@ -2624,7 +2633,8 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                   List.last tcProj.TcResolutions, 
                                   List.last tcProj.TcSymbolUses,
                                   tcProj.TcEnvAtEnd.NameEnv,
-                                  loadClosure, reactorOps, (fun () -> builder.IsAlive), None)     
+                                  loadClosure, reactorOps, (fun () -> builder.IsAlive), None, 
+                                  tcProj.ImplementationFiles)     
                 let typedResults = MakeCheckFileResults(filename, options, builder, scope, tcProj.TcDependencyFiles, creationErrors, parseResults.Errors, tcErrors)
                 return (parseResults, typedResults)
            })

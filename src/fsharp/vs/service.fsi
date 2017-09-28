@@ -262,6 +262,8 @@ type internal FSharpCheckFileResults =
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
     member internal IsRelativeNameResolvable: cursorPos : pos * plid : string list * item: Item * ?userOpName: string -> Async<bool>
 
+    member ImplementationFiles: FSharpImplementationFileContents list option
+
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
 #if COMPILER_PUBLIC_API
