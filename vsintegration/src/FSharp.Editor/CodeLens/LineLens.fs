@@ -46,7 +46,7 @@ type internal LineLensDisplayService (view, buffer) as self =
     let bufferChangedEvent = new Event<EventHandler<TextContentChangedEventArgs>,TextContentChangedEventArgs>()
 
     // Tracks the created ui elements per TrackingSpan
-    let uiElements = Dictionary<_,_>()
+    let uiElements = Dictionary<_,StackPanel>()
     /// Caches the current used trackingSpans per line. One line can contain multiple trackingSpans
     let mutable trackingSpans = Dictionary<_, Generic.List<_>>()
     /// Text view for accessing the adornment layer.
@@ -87,7 +87,11 @@ type internal LineLensDisplayService (view, buffer) as self =
                             trackingSpans.Remove lineNumber |> ignore
                         if newLine |> trackingSpans.ContainsKey |> not then
                             trackingSpans.[newLine] <- Generic.List()
-                        trackingSpans.[newLine].Add(trackingSpan)
+                        trackingSpans.[newLine].Add trackingSpan
+                        if newLine < recentFirstVsblLineNmbr || newLine > recentLastVsblLineNmbr then
+                            if uiElements.ContainsKey trackingSpan then 
+                                let mutable element = uiElements.[trackingSpan]
+                                element.Visibility <- Visibility.Hidden
                         // tagsChangedEvent.Trigger(self, SnapshotSpanEventArgs(trackingSpan.GetSpan snapshot)) // This results in super annoying blinking
 
     let createDefaultStackPanel () = 
@@ -209,9 +213,9 @@ type internal LineLensDisplayService (view, buffer) as self =
             layoutChangedCts.Dispose()
             layoutChangedCts <- new CancellationTokenSource()
             asyncMaybe {
-                // Suspend 16 ms, instantly applying the layout to the adornment elements isn't needed 
+                // Suspend 5 ms, instantly applying the layout to the adornment elements isn't needed 
                 // and would consume too much performance
-                do! Async.Sleep(16) |> liftAsync // Skip at least one frames
+                do! Async.Sleep(5) |> liftAsync // Skip at least one frames
                 do! Async.SwitchToContext uiContext |> liftAsync
                 let layer = lineLensLayer
                 // Now relayout the existing adornments

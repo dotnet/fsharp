@@ -79,7 +79,7 @@ type CodeLensGeneralTagger (view, buffer) as self =
     let tagsChangedEvent = new Event<EventHandler<SnapshotSpanEventArgs>,SnapshotSpanEventArgs>()
 
     // Tracks the created ui elements per TrackingSpan
-    let uiElements = Dictionary<_,_>()
+    let uiElements = Dictionary<_,StackPanel>()
     /// Caches the current used trackingSpans per line. One line can contain multiple trackingSpans
     let mutable trackingSpans = Dictionary<_, Generic.List<_>>()
     /// Text view for accessing the adornment layer.
@@ -121,6 +121,10 @@ type CodeLensGeneralTagger (view, buffer) as self =
                         if newLine |> trackingSpans.ContainsKey |> not then
                             trackingSpans.[newLine] <- Generic.List()
                         trackingSpans.[newLine].Add(trackingSpan)
+                        if newLine < recentFirstVsblLineNmbr || newLine > recentLastVsblLineNmbr then
+                            if uiElements.ContainsKey trackingSpan then 
+                                let mutable element = uiElements.[trackingSpan]
+                                element.Visibility <- Visibility.Hidden
                         // tagsChangedEvent.Trigger(self, SnapshotSpanEventArgs(trackingSpan.GetSpan snapshot)) // This results in super annoying blinking
 
     let createDefaultStackPanel () = 
