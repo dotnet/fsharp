@@ -1,0 +1,33 @@
+<Project DefaultTargets="Build" TreatAsLocalProperty="SolutionPath">
+  <!--
+    Optional parameters:
+      SolutionPath     Path to the solution to build
+      Configuration    Build configuration: "Debug", "Release", etc.
+      CIBuild          "true" if building on CI server
+      Restore          "true" to restore toolset and solution
+      Build            "true" to build solution
+      Rebuild          "true" to rebuild solution
+      Deploy           "true" to deploy assets (e.g. VSIXes) built in this repo
+      DeployDeps       "true" to deploy assets (e.g. VSIXes) this repo depeends on.
+      Test             "true" to run tests
+      IntegrationTest  "true" to run integration tests
+      Sign             "true" to sign built binaries
+      Pack             "true" to build NuGet packages
+      Properties        List of properties to pass to each build phase ("Name=Value;Name=Value;...")
+  -->
+  <PropertyGroup>
+    <SolutionPath Condition="'$(SolutionPath)' == ''">$(MSBuildThisFileDirectory)..\VisualFSharp.sln</SolutionPath>
+  </PropertyGroup>
+
+  <Import Project="..\Directory.build.props"/>
+
+  <Target Name="Build">
+    <MSBuild Projects="Toolset.proj" 
+             Targets="Restore"
+             Properties="BaseIntermediateOutputPath=$(MSBuildThisFileDirectory)..\artifacts\toolset\;ExcludeRestorePackageImports=true;DeployDeps=$(DeployDeps)"
+             Condition="'$(Restore)' == 'true'"/>
+
+    <MSBuild Projects="$(RepoToolsetDir)Build.proj" 
+             Properties="SolutionPath=$(SolutionPath);Configuration=$(Configuration);CIBuild=$(CIBuild);Restore=$(Restore);Build=$(Build);Rebuild=$(Rebuild);Deploy=$(Deploy);Test=$(Test);IntegrationTest=$(IntegrationTest);Sign=$(Sign);Pack=$(Pack);Properties=$(Properties)" />
+  </Target>
+</Project>

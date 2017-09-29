@@ -1,0 +1,18 @@
+{
+  "sign": [
+    {
+      "certificate": "MicrosoftSHA2",
+      "strongName": "MsSharedLib72",
+      "values": [
+        "artifacts/release/bin/FSharp.Core/FSharp.Core.dll"
+      ]
+    },
+    {
+      "certificate": "VsixSHA2",
+      "strongName": null,
+      "values": [
+        "artifacts/insertion/VisualFSharpFull.vsix"
+      ]
+    }
+  ]
+}

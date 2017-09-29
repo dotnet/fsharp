@@ -56,6 +56,7 @@
     <StrongNames>true</StrongNames>
     <DelaySign>true</DelaySign>
   </PropertyGroup>
+  <Import Project="$(FSharpSourcesRoot)\Directory.Build.props" />
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
   
   <ItemGroup>

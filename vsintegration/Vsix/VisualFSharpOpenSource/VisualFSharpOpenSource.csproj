@@ -2,7 +2,10 @@
 <!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\..\src</FSharpSourcesRoot>
+    <FSharpSourcesRoot>$(MSBuildThisFileDirectory)..\..\..\src</FSharpSourcesRoot>
+  </PropertyGroup>
+  <Import Project="$(FSharpSourcesRoot)\Directory.Build.props" />
+  <PropertyGroup>
     <TargetDotnetProfile Condition="'$(TargetDotnetProfile)'==''">net40</TargetDotnetProfile>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">15.0</MinimumVisualStudioVersion>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">11.0</VisualStudioVersion>
@@ -50,9 +53,7 @@
     <ProjectGuid>{E6A45CDF-B408-420F-B475-74611BEFC52B}</ProjectGuid>
     <IsPackage>true</IsPackage>
     <RootNamespace>VisualFSharpOpenSource</RootNamespace>
-    <RootBinPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetDotnetProfile)\bin</RootBinPath>
     <AssemblyName>VisualFSharpOpenSource</AssemblyName>
-    <OutputPath>$(RootBinPath)</OutputPath>
     <MicroBuildAssemblyVersion>15.4.1.0</MicroBuildAssemblyVersion>
     <MicroBuildAssemblyFileLanguage>cs</MicroBuildAssemblyFileLanguage>
   </PropertyGroup>
@@ -330,12 +331,4 @@
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\..\vsintegration\src\FSharp.tools.targets" />
   <Import Project="$(FSharpSourcesRoot)\Microbuild.Settings.targets" />
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
-    <ItemGroup>
-      <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).vsix" />
-      <FilesToSign Include="@(BinariesToBeSigned)">
-        <Authenticode>VsixSHA2</Authenticode>
-      </FilesToSign>
-    </ItemGroup>
-  </Target>
 </Project>

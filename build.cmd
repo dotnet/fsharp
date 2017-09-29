@@ -209,8 +209,8 @@ if /i "%ARG%" == "microbuild" (
     set PUBLISH_VSIX=1
 
     REM redirecting TEMP directories
-    set TEMP=%~dp0%BUILD_CONFIG%\TEMP
-    set TMP=%~dp0%BUILD_CONFIG%\TEMP
+    set TEMP=%~dp0artifacts\TEMP
+    set TMP=%~dp0artifacts\TEMP
 )
 
 if /i "%ARG%" == "nuget" (
@@ -586,7 +586,7 @@ if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "1" (
 echo ---------------- Done with package restore, starting proto ------------------------
 
 rem Decide if Proto need building
-if NOT EXIST Proto\net40\bin\fsc-proto.exe (
+if NOT EXIST artifacts\Proto\bin\Fsc-proto\fsc-proto.exe (
   set BUILD_PROTO=1
 )
 
@@ -614,8 +614,8 @@ if "%BUILD_PROTO%" == "1" (
     @if ERRORLEVEL 1 echo Error: compiler proto build failed && goto :failure
   )
 
-  echo %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
-       %_ngenexe% install Proto\net40\bin\fsc-proto.exe /nologo 
+  echo %_ngenexe% install artifacts\Proto\bin\Fsc-proto\fsc-proto.exe /nologo 
+       %_ngenexe% install artifacts\Proto\bin\Fsc-proto\fsc-proto.exe /nologo 
   @if ERRORLEVEL 1 echo Error: NGen of proto failed  && goto :failure
 )
 
@@ -706,11 +706,13 @@ if not exist "%link_exe%" (
 
 if /I not "%single_threaded%" == "true" (set PARALLEL_ARG=-procs:%NUMBER_OF_PROCESSORS%) else set PARALLEL_ARG=-procs:0
 
-set FSCBINPATH=%~dp0%BUILD_CONFIG%\net40\bin
+set FSCBINPATH=%~dp0artifacts\%BUILD_CONFIG%\bin\Fsc
+set FSTESTSUITEPATH=%~dp0artifacts\%BUILD_CONFIG%\bin\FSharp.Tests.FSharpSuite
 set RESULTSDIR=%~dp0tests\TestResults
 if not exist "%RESULTSDIR%" (mkdir "%RESULTSDIR%")
 
 ECHO FSCBINPATH=%FSCBINPATH%
+ECHO FSTESTSUITEPATH=%FSTESTSUITEPATH%
 ECHO RESULTSDIR=%RESULTSDIR%
 ECHO link_exe=%link_exe%
 ECHO NUNIT3_CONSOLE=%NUNIT3_CONSOLE%
@@ -732,8 +734,8 @@ if "%TEST_NET40_FSHARP_SUITE%" == "1" (
         set ERRORARG=--err:"!ERRORFILE!" 
     )
 
-    echo "!NUNIT3_CONSOLE!" --verbose "!FSCBINPATH!\FSharp.Tests.FSharpSuite.dll" --framework:V4.0 --work:"!FSCBINPATH!"  !OUTPUTARG! !ERRORARG! --result:"!XMLFILE!;format=nunit3" !WHERE_ARG_NUNIT!
-         "!NUNIT3_CONSOLE!" --verbose "!FSCBINPATH!\FSharp.Tests.FSharpSuite.dll" --framework:V4.0 --work:"!FSCBINPATH!"  !OUTPUTARG! !ERRORARG! --result:"!XMLFILE!;format=nunit3" !WHERE_ARG_NUNIT!
+    echo "!NUNIT3_CONSOLE!" --verbose "!FSTESTSUITEPATH!\FSharp.Tests.FSharpSuite.dll" --framework:V4.0 --work:"!FSTESTSUITEPATH!"  !OUTPUTARG! !ERRORARG! --result:"!XMLFILE!;format=nunit3" !WHERE_ARG_NUNIT!
+         "!NUNIT3_CONSOLE!" --verbose "!FSTESTSUITEPATH!\FSharp.Tests.FSharpSuite.dll" --framework:V4.0 --work:"!FSTESTSUITEPATH!"  !OUTPUTARG! !ERRORARG! --result:"!XMLFILE!;format=nunit3" !WHERE_ARG_NUNIT!
 
     if errorlevel 1 (
         type "!ERRORFILE!"

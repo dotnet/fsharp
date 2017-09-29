@@ -7,6 +7,7 @@
     <DOTNET_PUBLISH_TEST>true</DOTNET_PUBLISH_TEST>
     <DOTNET_PUBLISH_COMPILERS>false</DOTNET_PUBLISH_COMPILERS>
   </PropertyGroup>
+  <Import Project="$(FSharpSourcesRoot)\Directory.Build.props" />
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>

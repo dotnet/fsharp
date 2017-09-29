@@ -126,7 +126,6 @@
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(TargetDotnetProfile)'=='coreclr' AND '$(DOTNET_PUBLISH_TEST)'=='true' ">
-    <OutputPath>bin\$(Configuration)\netcoreapp1.0</OutputPath>
     <CustomOutputPath>true</CustomOutputPath>
     <DOTNET_PUBLISH>true</DOTNET_PUBLISH>
     <DOTNET_PUBLISH_PLATFORM>win7-x64</DOTNET_PUBLISH_PLATFORM>
@@ -154,7 +153,6 @@
   <Choose>
     <When Condition="'$(BuildWith)' == 'LKG' AND '$(BUILD_PROTO_WITH_CORECLR_LKG)' == '1'">
       <PropertyGroup >
-        <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(ProtoFlavour)\bin</OutputPath>
         <!-- When using coreclr to bootstrap to proto. We acquire the FSharp.Core LKG, targets LKG, the FSharp.Build LKG from the .NET Framework compiler tools LKG package. -->
         <FSharpNetCoreLkgPath>$(FSharpSourcesRoot)\..\Tools\dotnet20\sdk\2.0.0-preview2-006502\FSharp</FSharpNetCoreLkgPath>
         <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.1.23\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
@@ -169,26 +167,23 @@
     <When Condition="'$(BuildWith)' == 'LKG' AND '$(BUILD_PROTO_WITH_CORECLR_LKG)' != '1'">
        <!-- Use .NET Framework to bootstrap to proto -->
       <PropertyGroup >
-        <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(ProtoFlavour)\bin</OutputPath>
         <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.1.23\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
       </PropertyGroup>
     </When>
     <When Condition="'$(BuildWith)' == '' AND '$(TargetDotnetProfile)'=='coreclr'">
       <!-- Compiling coreclr with Proto, currently always use a .NET Framework/Mono proto -->
       <PropertyGroup>
-        <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFrameworkOutputDirectory)\bin</OutputPath>
-        <FscToolPath>$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin</FscToolPath>
+        <FscToolPath>$(FSharpSourcesRoot)\..\artifacts\Proto\bin\Fsc-proto</FscToolPath>
         <FscToolExe>fsc-proto.exe</FscToolExe>
-        <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.Portable.FSharp-proto.targets</FSharpTargetsPath>
+        <FSharpTargetsPath>..\artifacts\Proto\bin\FSharp.Build-proto\Microsoft.FSharp-proto.targets</FSharpTargetsPath>
       </PropertyGroup>
     </When>
     <Otherwise>
       <!-- Compiling net40 with Proto -->
       <PropertyGroup>
-        <OutputPath Condition=" '$(CustomOutputPath)' != 'true' ">$(FSharpSourcesRoot)\..\$(Configuration)\$(TargetFrameworkOutputDirectory)\bin</OutputPath>
-        <FscToolPath>$(FSharpSourcesRoot)\..\Proto\$(ProtoFlavour)\bin</FscToolPath>
+        <FscToolPath>$(FSharpSourcesRoot)\..\artifacts\Proto\bin\Fsc-proto</FscToolPath>
         <FscToolExe>fsc-proto.exe</FscToolExe>
-        <FSharpTargetsPath>..\Proto\$(ProtoFlavour)\bin\Microsoft.FSharp-proto.targets</FSharpTargetsPath>
+        <FSharpTargetsPath>..\artifacts\Proto\bin\FSharp.Build-proto\Microsoft.FSharp-proto.targets</FSharpTargetsPath>
       </PropertyGroup>
     </Otherwise>
   </Choose>
