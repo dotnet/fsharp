@@ -348,7 +348,7 @@ type internal FSharpCodeLensService
     let createTextBox (lens:CodeLens) =
         asyncMaybe {
             let! taggedText, navigation = lens.TaggedText
-            let textBox = new TextBlock(Width = 500., Background = Brushes.Transparent, Opacity = 0.5, TextTrimming = TextTrimming.None)
+            let textBox = new TextBlock(Width = 500., Background = Brushes.Transparent, Opacity = 0.0, TextTrimming = TextTrimming.None)
             DependencyObjectExtensions.SetDefaultTextProperties(textBox, formatMap.Value)
             textBox.Inlines.Add (Documents.Run Settings.CodeLens.Prefix)
             for text in taggedText do
@@ -536,7 +536,6 @@ type internal FSharpCodeLensService
                         let! res = createTextBox codeLens
                         if res.IsSome then
                             let uiElement = codeLens.UiElement
-                            uiElement.Opacity <- 0.
                             let animation = 
                                 DoubleAnimation(
                                     To = Nullable 0.8,
@@ -548,6 +547,7 @@ type internal FSharpCodeLensService
                             Storyboard.SetTargetProperty(sb, PropertyPath Control.OpacityProperty)
                             sb.Children.Add animation
                             lineLens.AddUiElementToCodeLensOnce trackingSpan uiElement
+                            lineLens.RelayoutRequested.Enqueue ()
                             sb.Begin()
                         else
                             logWarningf "Couldn't retrieve code lens information for %A" codeLens.FullTypeSignature
