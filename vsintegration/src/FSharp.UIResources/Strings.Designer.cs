@@ -79,38 +79,38 @@ namespace Microsoft.VisualStudio.FSharp.UIResources {
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die Code-Lens ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die CodeLens ähnelt.
         /// </summary>
-        public static string Code_Lens {
+        public static string CodeLens {
             get {
-                return ResourceManager.GetString("Code_Lens", resourceCulture);
+                return ResourceManager.GetString("CodeLens", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die The prefix for Code / Line -Lens ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die Annotation prefix ähnelt.
         /// </summary>
-        public static string Code_Lens_Prefix {
+        public static string CodeLens_Prefix {
             get {
-                return ResourceManager.GetString("Code_Lens_Prefix", resourceCulture);
+                return ResourceManager.GetString("CodeLens_Prefix", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die Replace Code-Lens with Line-Lens ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die Show annotations to the right instead of above the line ähnelt.
         /// </summary>
-        public static string Code_Lens_Replace_Line_Lens {
+        public static string CodeLens_Replace_LineLens {
             get {
-                return ResourceManager.GetString("Code_Lens_Replace_Line_Lens", resourceCulture);
+                return ResourceManager.GetString("CodeLens_Replace_LineLens", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Sucht eine lokalisierte Zeichenfolge, die Enable Code-Lens ähnelt.
+        ///   Sucht eine lokalisierte Zeichenfolge, die Show type signature annotations in the editor ähnelt.
         /// </summary>
-        public static string Code_Lens_Switch {
+        public static string CodeLens_Switch {
             get {
-                return ResourceManager.GetString("Code_Lens_Switch", resourceCulture);
+                return ResourceManager.GetString("CodeLens_Switch", resourceCulture);
             }
         }
         

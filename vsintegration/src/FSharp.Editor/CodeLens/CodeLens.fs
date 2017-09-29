@@ -79,7 +79,7 @@ type CodeLensGeneralTagger (view, buffer) as self =
     let tagsChangedEvent = new Event<EventHandler<SnapshotSpanEventArgs>,SnapshotSpanEventArgs>()
 
     // Tracks the created ui elements per TrackingSpan
-    let uiElements = Dictionary<_,StackPanel>()
+    let uiElements = Dictionary<_,Grid>()
     /// Caches the current used trackingSpans per line. One line can contain multiple trackingSpans
     let mutable trackingSpans = Dictionary<_, Generic.List<_>>()
     /// Text view for accessing the adornment layer.
@@ -128,7 +128,7 @@ type CodeLensGeneralTagger (view, buffer) as self =
                         // tagsChangedEvent.Trigger(self, SnapshotSpanEventArgs(trackingSpan.GetSpan snapshot)) // This results in super annoying blinking
 
     let createDefaultStackPanel () = 
-        let uiElement = new StackPanel()
+        let uiElement = new Grid()
         uiElement.Visibility <- Visibility.Hidden
         uiElement
 
@@ -205,7 +205,7 @@ type CodeLensGeneralTagger (view, buffer) as self =
             let nonVisibleLineNumbers = Set.difference recentVisibleLineNumbers visibleLineNumbers
             let newVisibleLineNumbers = Set.difference visibleLineNumbers recentVisibleLineNumbers
         
-            let applyFuncOnLineStackPanels (line:IWpfTextViewLine) (func:StackPanel -> unit) =
+            let applyFuncOnLineStackPanels (line:IWpfTextViewLine) (func:Grid -> unit) =
                 let lineNumber = line.Snapshot.GetLineNumberFromPosition(line.Start.Position)
                 if trackingSpans.ContainsKey(lineNumber) && trackingSpans.[lineNumber] |> (Seq.isEmpty >> not) then
                     let stackPanels = 
@@ -238,6 +238,8 @@ type CodeLensGeneralTagger (view, buffer) as self =
                             layoutUIElementOnLine view line.Extent ui
                         )
                      with e -> logErrorf "Error in new visible lines iteration %A" e
+            if not e.VerticalTranslation && e.NewViewState.ViewportHeight <> e.OldViewState.ViewportHeight then
+                self.RelayoutRequested.Enqueue() // Unfortunately zooming requires a relayout too, to ensure that no weird layout happens due to unkown reasons.
             if self.RelayoutRequested.Count > 0 then
                 self.RelayoutRequested.Dequeue() |> ignore
                 for lineNumber in visibleLineNumbers do
@@ -262,15 +264,15 @@ type CodeLensGeneralTagger (view, buffer) as self =
                 do! Async.SwitchToContext uiContext |> liftAsync
                 let layer = codeLensLayer
                 // Now relayout the existing adornments
-                if nonVisibleLineNumbers.Count > 0 || newVisibleLineNumbers.Count > 0 then
-                    for lineNumber in visibleLineNumbers do
-                        let line = 
-                            let l = buffer.GetLineFromLineNumber(lineNumber)
-                            view.GetTextViewLineContainingBufferPosition(l.Start)
-                        applyFuncOnLineStackPanels line (fun ui ->
-                            ui.Visibility <- Visibility.Visible
-                            layoutUIElementOnLine view line.Extent ui
-                        )
+                //if nonVisibleLineNumbers.Count > 0 || newVisibleLineNumbers.Count > 0 then
+                //    for lineNumber in visibleLineNumbers do
+                //        let line = 
+                //            let l = buffer.GetLineFromLineNumber(lineNumber)
+                //            view.GetTextViewLineContainingBufferPosition(l.Start)
+                //        applyFuncOnLineStackPanels line (fun ui ->
+                //            ui.Visibility <- Visibility.Visible
+                //            layoutUIElementOnLine view line.Extent ui
+                //        )
                 do! Async.Sleep(495) |> liftAsync
 
                 // WORKAROUND FOR VS BUG
@@ -288,10 +290,10 @@ type CodeLensGeneralTagger (view, buffer) as self =
                 for line in linesToProcess do
                     try
                         match line.GetAdornmentTags self |> Seq.tryHead with
-                        | Some (:? seq<StackPanel> as stackPanels) ->
+                        | Some (:? seq<Grid> as stackPanels) ->
                             for stackPanel in stackPanels do
                                 if stackPanel |> addedAdornments.Contains |> not then
-                                    layer.AddAdornment(AdornmentPositioningBehavior.ViewportRelative, Nullable(), 
+                                    layer.AddAdornment(AdornmentPositioningBehavior.OwnerControlled, Nullable(), 
                                         self, stackPanel, AdornmentRemovedCallback(fun _ _ -> ())) |> ignore
                                     addedAdornments.Add stackPanel |> ignore
                         | _ -> ()

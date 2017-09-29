@@ -28,7 +28,7 @@ open Microsoft.CodeAnalysis.Classification
 open Internal.Utilities.StructuredFormat
 open Microsoft.VisualStudio.Text.Tagging
 open System.Collections.Concurrent
-open System.Collections
+open System.Collections.Generic
 open System.Windows.Media.Animation
 open System.Globalization
 
@@ -46,9 +46,9 @@ type internal LineLensDisplayService (view, buffer) as self =
     let bufferChangedEvent = new Event<EventHandler<TextContentChangedEventArgs>,TextContentChangedEventArgs>()
 
     // Tracks the created ui elements per TrackingSpan
-    let uiElements = Dictionary<_,StackPanel>()
+    let uiElements = Dictionary<_,Grid>()
     /// Caches the current used trackingSpans per line. One line can contain multiple trackingSpans
-    let mutable trackingSpans = Dictionary<_, Generic.List<_>>()
+    let mutable trackingSpans = Dictionary<_, ResizeArray<_>>()
     /// Text view for accessing the adornment layer.
     let mutable view: IWpfTextView = view
     /// The line lens layer for adding and removing adornments.
@@ -56,7 +56,7 @@ type internal LineLensDisplayService (view, buffer) as self =
     /// Tracks the recent first + last visible line numbers for adornment layout logic.
     let mutable recentFirstVsblLineNmbr, recentLastVsblLineNmbr = 0, 0
     /// Tracks the adornments on the layer.
-    let mutable addedAdornments = HashSet()
+    let addedAdornments = HashSet()
     /// Cancellation token source for the layout changed event. Needed to abort previous async-work.
     let mutable layoutChangedCts = new CancellationTokenSource()
 
@@ -75,7 +75,7 @@ type internal LineLensDisplayService (view, buffer) as self =
     
     let updateTrackingSpansFast (snapshot:ITextSnapshot) lineNumber =
         if lineNumber |> trackingSpans.ContainsKey then
-            let currentTrackingSpans = Generic.List(trackingSpans.[lineNumber])
+            let currentTrackingSpans = ResizeArray(trackingSpans.[lineNumber])
             for trackingSpan in currentTrackingSpans do
                 let newLineOption = tryGetTSpanStartLine snapshot trackingSpan
                 match newLineOption with 
@@ -86,7 +86,7 @@ type internal LineLensDisplayService (view, buffer) as self =
                         if trackingSpans.[lineNumber].Count = 0 then
                             trackingSpans.Remove lineNumber |> ignore
                         if newLine |> trackingSpans.ContainsKey |> not then
-                            trackingSpans.[newLine] <- Generic.List()
+                            trackingSpans.[newLine] <- ResizeArray()
                         trackingSpans.[newLine].Add trackingSpan
                         if newLine < recentFirstVsblLineNmbr || newLine > recentLastVsblLineNmbr then
                             if uiElements.ContainsKey trackingSpan then 
@@ -95,9 +95,7 @@ type internal LineLensDisplayService (view, buffer) as self =
                         // tagsChangedEvent.Trigger(self, SnapshotSpanEventArgs(trackingSpan.GetSpan snapshot)) // This results in super annoying blinking
 
     let createDefaultStackPanel () = 
-        let uiElement = new StackPanel()
-        uiElement.Visibility <- Visibility.Hidden
-        uiElement
+        new Grid(Visibility = Visibility.Hidden)
 
     /// Helper methods which invokes every action which is needed for new trackingSpans
     let addTrackingSpan trackingSpan =
@@ -106,7 +104,7 @@ type internal LineLensDisplayService (view, buffer) as self =
         if trackingSpans.ContainsKey startLineNumber then
             trackingSpans.[startLineNumber].Add trackingSpan
         else
-            trackingSpans.[startLineNumber] <- Generic.List()
+            trackingSpans.[startLineNumber] <- ResizeArray()
             trackingSpans.[startLineNumber].Add trackingSpan
         if uiElements.ContainsKey trackingSpan then
             logErrorf "Added a tracking span twice, this is not allowed and will result in invalid values! %A" (trackingSpan.GetText snapshot)
@@ -119,8 +117,9 @@ type internal LineLensDisplayService (view, buffer) as self =
     /// Layouts all stack panels on the line
     let layoutUIElementOnLine (line:ITextViewLine) (ui:UIElement) =
         try
-            Canvas.SetLeft(ui, line.Right + 5.0)
-            Canvas.SetTop(ui, line.Top - 1.)
+            let bounds = line.GetCharacterBounds(line.Start)
+            Canvas.SetLeft(ui, line.TextRight + 5.0)
+            Canvas.SetTop(ui, bounds.Top - 1.)
         with e -> logExceptionWithContext (e, "Error in layout ui element on line")
 
     // We update all content of our cache system with this method here
@@ -162,7 +161,7 @@ type internal LineLensDisplayService (view, buffer) as self =
             let nonVisibleLineNumbers = Set.difference recentVisibleLineNumbers visibleLineNumbers
             let newVisibleLineNumbers = Set.difference visibleLineNumbers recentVisibleLineNumbers
         
-            let applyFuncOnLineStackPanels (line:IWpfTextViewLine) (func:StackPanel -> unit) =
+            let applyFuncOnLineGrids (line:IWpfTextViewLine) (func:Grid -> unit) =
                 let lineNumber = line.Snapshot.GetLineNumberFromPosition(line.Start.Position)
                 if trackingSpans.ContainsKey(lineNumber) && trackingSpans.[lineNumber] |> (Seq.isEmpty >> not) then
                     let stackPanels = 
@@ -181,7 +180,7 @@ type internal LineLensDisplayService (view, buffer) as self =
                             let line = 
                                 (buffer.GetLineFromLineNumber lineNumber).Start
                                 |> view.GetTextViewLineContainingBufferPosition
-                            applyFuncOnLineStackPanels line (fun ui ->
+                            applyFuncOnLineGrids line (fun ui ->
                                 ui.Visibility <- Visibility.Hidden
                             )
                         with e -> logErrorf "Error in non visible lines iteration %A" e
@@ -190,18 +189,20 @@ type internal LineLensDisplayService (view, buffer) as self =
                         let line = 
                                 (buffer.GetLineFromLineNumber lineNumber).Start
                                 |> view.GetTextViewLineContainingBufferPosition
-                        applyFuncOnLineStackPanels line (fun ui ->
+                        applyFuncOnLineGrids line (fun ui ->
                             ui.Visibility <- Visibility.Visible
                             layoutUIElementOnLine line ui
                         )
                      with e -> logErrorf "Error in new visible lines iteration %A" e
+            if not e.VerticalTranslation && e.NewViewState.ViewportHeight <> e.OldViewState.ViewportHeight then
+                self.RelayoutRequested.Enqueue() // Unfortunately zooming requires a relayout too, to ensure that no weird layout happens due to unkown reasons.
             if self.RelayoutRequested.Count > 0 then
                 self.RelayoutRequested.Dequeue() |> ignore
                 for lineNumber in visibleLineNumbers do
                     let line = 
                         (buffer.GetLineFromLineNumber lineNumber).Start
                         |> view.GetTextViewLineContainingBufferPosition
-                    applyFuncOnLineStackPanels line (fun ui ->
+                    applyFuncOnLineGrids line (fun ui ->
                         ui.Visibility <- Visibility.Visible
                         layoutUIElementOnLine line ui
                     )
@@ -219,15 +220,15 @@ type internal LineLensDisplayService (view, buffer) as self =
                 do! Async.SwitchToContext uiContext |> liftAsync
                 let layer = lineLensLayer
                 // Now relayout the existing adornments
-                if nonVisibleLineNumbers.Count > 0 || newVisibleLineNumbers.Count > 0 then
-                    for lineNumber in visibleLineNumbers do
-                        let line = 
-                            (buffer.GetLineFromLineNumber lineNumber).Start
-                            |> view.GetTextViewLineContainingBufferPosition
-                        applyFuncOnLineStackPanels line (fun ui ->
-                            ui.Visibility <- Visibility.Visible
-                            layoutUIElementOnLine line ui
-                        )
+                //if nonVisibleLineNumbers.Count > 0 || newVisibleLineNumbers.Count > 0 then
+                //    for lineNumber in visibleLineNumbers do
+                //        let line = 
+                //            (buffer.GetLineFromLineNumber lineNumber).Start
+                //            |> view.GetTextViewLineContainingBufferPosition
+                //        applyFuncOnLineGrids line (fun ui ->
+                //            ui.Visibility <- Visibility.Visible
+                //            layoutUIElementOnLine line ui
+                //        )
                 do! Async.Sleep(495) |> liftAsync
                 try
                     for visibleLineNumber in visibleLineNumbers do
@@ -239,14 +240,14 @@ type internal LineLensDisplayService (view, buffer) as self =
                                 )
                             |> Seq.filter (isNull >> not)
                             |> Seq.filter (addedAdornments.Contains >> not)
-                            |> Seq.iter(fun stackPanel ->
-                                    layer.AddAdornment(AdornmentPositioningBehavior.ViewportRelative, Nullable(), 
-                                        self, stackPanel, AdornmentRemovedCallback(fun _ _ -> ())) |> ignore
-                                    addedAdornments.Add stackPanel |> ignore
+                            |> Seq.iter(fun grid ->
+                                    layer.AddAdornment(AdornmentPositioningBehavior.OwnerControlled, Nullable(), 
+                                        self, grid, AdornmentRemovedCallback(fun _ _ -> addedAdornments.Remove grid |> ignore)) |> ignore
+                                    addedAdornments.Add grid |> ignore
                                     let line = 
                                         let l = buffer.GetLineFromLineNumber visibleLineNumber
                                         view.GetTextViewLineContainingBufferPosition l.Start
-                                    layoutUIElementOnLine line stackPanel
+                                    layoutUIElementOnLine line grid
                                 )
                 with e -> logExceptionWithContext (e, "LayoutChanged, processing new visible lines")
             } |> Async.Ignore |> RoslynHelpers.StartAsyncSafe layoutChangedCts.Token
@@ -264,19 +265,19 @@ type internal LineLensDisplayService (view, buffer) as self =
     /// Returns an UIElement which can be used to add Ui elements and to remove the line lens later.
     override __.AddCodeLens (trackingSpan:ITrackingSpan) =
         if trackingSpan.TextBuffer <> buffer then failwith "TrackingSpan text buffer does not equal with CodeLens text buffer"
-        let stackPanel = addTrackingSpan trackingSpan
+        let Grid = addTrackingSpan trackingSpan
         self.RelayoutRequested.Enqueue(())
-        stackPanel :> UIElement
+        Grid :> UIElement
     
     /// Public non-thread-safe method to remove line lens for a given tracking span.
     /// Returns whether the operation succeeded
     override __.RemoveCodeLens (trackingSpan:ITrackingSpan) =
         if uiElements.ContainsKey trackingSpan then
-            let stackPanel = uiElements.[trackingSpan]
-            stackPanel.Children.Clear()
+            let Grid = uiElements.[trackingSpan]
+            Grid.Children.Clear()
             uiElements.Remove trackingSpan |> ignore
             try
-                lineLensLayer.RemoveAdornment(stackPanel) 
+                lineLensLayer.RemoveAdornment(Grid) 
             with e -> 
                 logExceptionWithContext(e, "Removing line lens")
         else
@@ -294,17 +295,17 @@ type internal LineLensDisplayService (view, buffer) as self =
 
     
     override __.AddUiElementToCodeLens (trackingSpan:ITrackingSpan) (uiElement:UIElement)=
-        let stackPanel = uiElements.[trackingSpan]
-        stackPanel.Children.Add(uiElement) |> ignore
+        let Grid = uiElements.[trackingSpan]
+        Grid.Children.Add uiElement |> ignore
     
     override __.AddUiElementToCodeLensOnce (trackingSpan:ITrackingSpan) (uiElement:UIElement)=
-        let stackPanel = uiElements.[trackingSpan]
-        if uiElement |> stackPanel.Children.Contains |> not then
+        let Grid = uiElements.[trackingSpan]
+        if uiElement |> Grid.Children.Contains |> not then
             self.AddUiElementToCodeLens trackingSpan uiElement
 
     override __.RemoveUiElementFromCodeLens (trackingSpan:ITrackingSpan) (uiElement:UIElement) =
-        let stackPanel = uiElements.[trackingSpan]
-        stackPanel.Children.Remove(uiElement) |> ignore
+        let Grid = uiElements.[trackingSpan]
+        Grid.Children.Remove(uiElement) |> ignore
 
 type internal FSharpCodeLensService
     (
@@ -352,7 +353,7 @@ type internal FSharpCodeLensService
     let createTextBox (lens:CodeLens) =
         asyncMaybe {
             let! taggedText, navigation = lens.TaggedText
-            let textBox = new TextBlock(Width = 500., Background = Brushes.Transparent, Opacity = 0.1, TextTrimming = TextTrimming.None)
+            let textBox = new TextBlock(Width = 500., Background = Brushes.Transparent, Opacity = 0.5, TextTrimming = TextTrimming.None)
             DependencyObjectExtensions.SetDefaultTextProperties(textBox, formatMap.Value)
             textBox.Inlines.Add (Documents.Run Settings.CodeLens.Prefix)
             for text in taggedText do
@@ -362,11 +363,11 @@ type internal FSharpCodeLensService
                     match text with
                     | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->
                         let h = Documents.Hyperlink(run, ToolTip = nav.Range.FileName)
-                        h.Click.Add (fun _ -> navigation.NavigateTo nav.Range)
+                        h.Click.Add (fun _ -> 
+                            navigation.NavigateTo nav.Range)
                         h :> Documents.Inline
                     | _ -> run :> _
                 textBox.Inlines.Add inl
-            textBox.Opacity <- 0.5
             lens.Computed <- true
             lens.UiElement <- textBox
         }  
@@ -389,10 +390,10 @@ type internal FSharpCodeLensService
 
             let newResults = Dictionary()
             // Symbols which cache wasn't found yet
-            let unattachedSymbols = Generic.List()
+            let unattachedSymbols = ResizeArray()
             // Tags which are new or need to be updated due to changes.
             let tagsToUpdate = Dictionary()
-            let codeLensToAdd = Generic.List()
+            let codeLensToAdd = ResizeArray()
 
             let useResults (displayContext: FSharpDisplayContext, func: FSharpMemberOrFunctionOrValue, realPosition: range) =
                 async {
@@ -543,7 +544,7 @@ type internal FSharpCodeLensService
                             uiElement.Opacity <- 0.
                             let animation = 
                                 DoubleAnimation(
-                                    To = Nullable 1.,
+                                    To = Nullable 0.8,
                                     Duration = (TimeSpan.FromMilliseconds 800. |> Duration.op_Implicit),
                                     EasingFunction = QuadraticEase()
                                     )
@@ -561,22 +562,22 @@ type internal FSharpCodeLensService
             for value in tagsToUpdate do
                 let trackingSpan, (newTrackingSpan, _, codeLens) = value.Key, value.Value
                 lineLens.RemoveCodeLens trackingSpan |> ignore
-                let stackPanel = lineLens.AddCodeLens newTrackingSpan
+                let Grid = lineLens.AddCodeLens newTrackingSpan
                 // logInfof "Trackingspan %A is being added." trackingSpan 
                 if codeLens.Computed && (isNull codeLens.UiElement |> not) then
                     let uiElement = codeLens.UiElement
                     lineLens.AddUiElementToCodeLensOnce newTrackingSpan uiElement
                 else
-                    stackPanel.IsVisibleChanged
+                    Grid.IsVisibleChanged
                     |> Event.filter (fun eventArgs -> eventArgs.NewValue :?> bool)
                     |> Event.add (createCodeLensUIElement codeLens newTrackingSpan)
 
             for value in codeLensToAdd do
                 let trackingSpan, codeLens = value
-                let stackPanel = lineLens.AddCodeLens trackingSpan
+                let Grid = lineLens.AddCodeLens trackingSpan
                 // logInfof "Trackingspan %A is being added." trackingSpan 
                 
-                stackPanel.IsVisibleChanged
+                Grid.IsVisibleChanged
                 |> Event.filter (fun eventArgs -> eventArgs.NewValue :?> bool)
                 |> Event.add (createCodeLensUIElement codeLens trackingSpan)
 

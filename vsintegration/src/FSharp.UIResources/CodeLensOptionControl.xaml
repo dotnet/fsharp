@@ -17,18 +17,18 @@
     <Grid>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel>
-                <GroupBox Header="{x:Static local:Strings.Code_Lens}">
+                <GroupBox Header="{x:Static local:Strings.CodeLens}">
                     <StackPanel>
                         <CheckBox x:Name="enableCodeLens" IsChecked="{Binding CodeLensSwitch}"
-                      Content="{x:Static local:Strings.Code_Lens_Switch}"/>
+                      Content="{x:Static local:Strings.CodeLens_Switch}"/>
                         <CheckBox x:Name="replaceWithLineLens" IsChecked="{Binding ReplaceWithLineLens}"
-                      Content="{x:Static local:Strings.Code_Lens_Replace_Line_Lens}"/>
+                      Content="{x:Static local:Strings.CodeLens_Replace_LineLens}"/>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="70" />
                             </Grid.ColumnDefinitions>
-                            <Label Grid.Column="0" Content="{x:Static local:Strings.Code_Lens_Prefix}"/>
+                            <Label Grid.Column="0" Content="{x:Static local:Strings.CodeLens_Prefix}"/>
                             <TextBox x:Name="prefix" Grid.Column="1" 
                                 HorizontalContentAlignment="Right" 
                                 VerticalContentAlignment="Center" Margin="7,0,-116,0">
