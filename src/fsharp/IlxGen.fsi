@@ -69,7 +69,7 @@ type public IlxAssemblyGenerator =
     member AddIncrementalLocalAssemblyFragment : isIncrementalFragment: bool * fragName:string * typedImplFiles: TypedImplFile list -> unit
 
     /// Generate ILX code for an assembly fragment
-    member GenerateCode : IlxGenOptions * TypedAssemblyAfterOptimization * Attribs * Attribs * NameResolution.NameResolutionEnv -> IlxGenResults
+    member GenerateCode : IlxGenOptions * TypedAssemblyAfterOptimization * Attribs * Attribs -> IlxGenResults
 
     /// Create the CAS permission sets for an assembly fragment
     member CreatePermissionSets : Attrib list ->  ILPermission list

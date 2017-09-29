@@ -1791,15 +1791,15 @@ let main0(ctok, argv, legacyReferenceResolver, bannerAlreadyPrinted, openBinarie
 
     // Type check the inputs
     let inputs = inputs |> List.map fst
-    let tcState, topAttrs, typedAssembly, tcEnvAtEnd = 
+    let tcState, topAttrs, typedAssembly, _tcEnvAtEnd = 
         TypeCheck(ctok, tcConfig, tcImports, tcGlobals, errorLogger, assemblyName, NiceNameGenerator(), tcEnv0, inputs, exiter)
 
     AbortOnError(errorLogger, exiter)
     ReportTime tcConfig "Typechecked"
 
-    Args (ctok, tcGlobals, tcImports, frameworkTcImports, tcState.Ccu, typedAssembly, topAttrs, tcConfig, outfile, pdbfile, assemblyName, errorLogger, exiter, tcEnvAtEnd.NameEnv)
+    Args (ctok, tcGlobals, tcImports, frameworkTcImports, tcState.Ccu, typedAssembly, topAttrs, tcConfig, outfile, pdbfile, assemblyName, errorLogger, exiter)
 
-let main1(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu, typedImplFiles, topAttrs, tcConfig: TcConfig, outfile, pdbfile, assemblyName, errorLogger, exiter: Exiter, nenv)) =
+let main1(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, generatedCcu, typedImplFiles, topAttrs, tcConfig: TcConfig, outfile, pdbfile, assemblyName, errorLogger, exiter: Exiter)) =
 
     if tcConfig.typeCheckOnly then exiter.Exit 0
     
@@ -1845,7 +1845,7 @@ let main1(Args (ctok, tcGlobals, tcImports: TcImports, frameworkTcImports, gener
     end
 
     // Pass on only the minimum information required for the next phase
-    Args (ctok, tcConfig, tcImports, frameworkTcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedImplFiles, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter, nenv)
+    Args (ctok, tcConfig, tcImports, frameworkTcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedImplFiles, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter)
 
 
 // set up typecheck for given AST without parsing any command line parameters
@@ -1895,7 +1895,7 @@ let main1OfAst (ctok, legacyReferenceResolver, openBinariesInMemory, assemblyNam
     use unwindParsePhase = PushThreadBuildPhaseUntilUnwind (BuildPhase.TypeCheck)            
     let tcEnv0 = GetInitialTcEnv (assemblyName, rangeStartup, tcConfig, tcImports, tcGlobals)
 
-    let tcState,topAttrs,typedAssembly,tcEnvAtEnd = 
+    let tcState, topAttrs, typedAssembly, _tcEnvAtEnd = 
         TypeCheck(ctok, tcConfig, tcImports, tcGlobals, errorLogger, assemblyName, NiceNameGenerator(), tcEnv0, inputs,exiter)
 
     let generatedCcu = tcState.Ccu
@@ -1915,11 +1915,11 @@ let main1OfAst (ctok, legacyReferenceResolver, openBinariesInMemory, assemblyNam
     // Pass on only the minimum information required for the next phase to ensure GC kicks in.
     // In principle the JIT should be able to do good liveness analysis to clean things up, but the
     // data structures involved here are so large we can't take the risk.
-    Args(ctok, tcConfig, tcImports, frameworkTcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedAssembly, topAttrs, pdbFile, assemblyName, assemVerFromAttrib, signingInfo ,exiter, tcEnvAtEnd.NameEnv)
+    Args(ctok, tcConfig, tcImports, frameworkTcImports, tcGlobals, errorLogger, generatedCcu, outfile, typedAssembly, topAttrs, pdbFile, assemblyName, assemVerFromAttrib, signingInfo ,exiter)
 
   
 /// Phase 2a: encode signature data, optimize, encode optimization data
-let main2a(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, errorLogger: ErrorLogger, generatedCcu: CcuThunk, outfile, typedImplFiles, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter: Exiter, nenv)) = 
+let main2a(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlobals, errorLogger: ErrorLogger, generatedCcu: CcuThunk, outfile, typedImplFiles, topAttrs, pdbfile, assemblyName, assemVerFromAttrib, signingInfo, exiter: Exiter)) = 
       
     // Encode the signature data
     ReportTime tcConfig ("Encode Interface Data")
@@ -1942,7 +1942,7 @@ let main2a(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlo
         match tcConfig.metadataVersion with
         | Some v -> v
         | _ -> match (frameworkTcImports.DllTable.TryFind tcConfig.primaryAssembly.Name) with | Some ib -> ib.RawMetadata.TryGetRawILModule().Value.MetadataVersion | _ -> ""
-    let optimizedImpls, optimizationData, _ = ApplyAllOptimizations (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile, importMap, false, optEnv0, generatedCcu, typedImplFiles, nenv)
+    let optimizedImpls, optimizationData, _ = ApplyAllOptimizations (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile, importMap, false, optEnv0, generatedCcu, typedImplFiles)
 
     AbortOnError(errorLogger, exiter)
         
@@ -1951,10 +1951,10 @@ let main2a(Args (ctok, tcConfig, tcImports, frameworkTcImports: TcImports, tcGlo
     let optDataResources = EncodeOptimizationData(tcGlobals, tcConfig, outfile, exportRemapping, (generatedCcu, optimizationData), false)
 
     // Pass on only the minimum information required for the next phase
-    Args (ctok, tcConfig, tcImports, tcGlobals, errorLogger, generatedCcu, outfile, optimizedImpls, topAttrs, pdbfile, assemblyName, (sigDataAttributes, sigDataResources), optDataResources, assemVerFromAttrib, signingInfo, metadataVersion, exiter, nenv)
+    Args (ctok, tcConfig, tcImports, tcGlobals, errorLogger, generatedCcu, outfile, optimizedImpls, topAttrs, pdbfile, assemblyName, (sigDataAttributes, sigDataResources), optDataResources, assemVerFromAttrib, signingInfo, metadataVersion, exiter)
 
 /// Phase 2b: IL code generation
-let main2b (tcImportsCapture,dynamicAssemblyCreator) (Args (ctok, tcConfig: TcConfig, tcImports, tcGlobals: TcGlobals, errorLogger, generatedCcu: CcuThunk, outfile, optimizedImpls, topAttrs, pdbfile, assemblyName, idata, optDataResources, assemVerFromAttrib, signingInfo, metadataVersion, exiter: Exiter, nenv)) = 
+let main2b (tcImportsCapture,dynamicAssemblyCreator) (Args (ctok, tcConfig: TcConfig, tcImports, tcGlobals: TcGlobals, errorLogger, generatedCcu: CcuThunk, outfile, optimizedImpls, topAttrs, pdbfile, assemblyName, idata, optDataResources, assemVerFromAttrib, signingInfo, metadataVersion, exiter: Exiter)) = 
 
     match tcImportsCapture with 
     | None -> ()
@@ -1974,7 +1974,7 @@ let main2b (tcImportsCapture,dynamicAssemblyCreator) (Args (ctok, tcConfig: TcCo
     // Check if System.SerializableAttribute exists in mscorlib.dll, 
     // so that make sure the compiler only emits "serializable" bit into IL metadata when it is available.
     // Note that SerializableAttribute may be relocated in the future but now resides in mscorlib.
-    let codegenResults = GenerateIlxCode ((if Option.isSome dynamicAssemblyCreator then IlReflectBackend else IlWriteBackend), Option.isSome dynamicAssemblyCreator, false, tcConfig, topAttrs, optimizedImpls, generatedCcu.AssemblyName, ilxGenerator, nenv)
+    let codegenResults = GenerateIlxCode ((if Option.isSome dynamicAssemblyCreator then IlReflectBackend else IlWriteBackend), Option.isSome dynamicAssemblyCreator, false, tcConfig, topAttrs, optimizedImpls, generatedCcu.AssemblyName, ilxGenerator)
     let casApplied = new Dictionary<Stamp, bool>()
     let securityAttrs, topAssemblyAttrs = topAttrs.assemblyAttrs |> List.partition (fun a -> TypeChecker.IsSecurityAttribute tcGlobals (tcImports.GetImportMap()) casApplied a rangeStartup)
     // remove any security attributes from the top-level assembly attribute list

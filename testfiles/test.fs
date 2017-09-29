@@ -1,10 +1,19 @@
 module Test
 
+(*
 module Example1 = 
     type System.Int32 with
         static member (++)(a: int, b: int) = a 
 
     let result = 1 ++ 2
+
+module Bug1 = 
+    type System.Int32 with
+        static member Add(a: int, b: int) = a 
+
+    let inline addGeneric< ^A when ^A : (static member Add : ^A * ^A -> ^A) > (a,b) : ^A =
+        (^A : (static member Add : ^A * ^A -> ^A) (a,b))
+    let result = addGeneric (1,2)
 
 
 module Example2 = 
@@ -50,10 +59,21 @@ module Example2 =
         let v2 = 1 ++++ 1
         ()  
 
+*)
 
 module Example3 = 
+    //let v = [3].Length
     type List<'T> with
-        member x.Count = x.Length
+        member x.Count = 3 //x.Length
 
-    [3].Count
+    let inline count (a : ^A  when ^A : (member Count : int)) =
+        (^A : (member Count : int) (a))
+
+    //let inline length (a : ^A  when ^A : (member Length : int)) =
+    //    (^A : (member Length : int) (a))
+
+    //let v1 = [3].Count
+    //let v3 = length [3]
+
+    let v2 = count [3]
 

@@ -90,15 +90,25 @@ let emptyTyparInst = ([] : TyparInst)
 [<NoEquality; NoComparison>]
 type Remap =
     { tpinst : TyparInst
+
+      /// Values to remap
       valRemap: ValRemap
+
+      /// TyconRefs to remap
       tyconRefRemap : TyconRefRemap
-      removeTraitSolutions: bool }
+
+      /// Remove existing trait solutions?
+      removeTraitSolutions: bool
+      
+      /// A map indicating how to fill in extSlns for traits as we copy an expression. Indexed by the member name of the trait
+      extSlnsMap: Map<string, PossibleExtensionMemberSolutions> }
 
 let emptyRemap = 
     { tpinst        = emptyTyparInst;
       tyconRefRemap = emptyTyconRefRemap
       valRemap      = ValMap.Empty
-      removeTraitSolutions = false }
+      removeTraitSolutions = false 
+      extSlnsMap = Map.empty }
 
 type Remap with 
     static member Empty = emptyRemap
@@ -228,8 +238,8 @@ and remapTyparConstraintsAux tyenv cs =
          match x with 
          | TyparConstraint.CoercesTo(ty,m) -> 
              Some(TyparConstraint.CoercesTo (remapTypeAux tyenv ty,m))
-         | TyparConstraint.MayResolveMember(traitInfo,m,extVals) -> 
-             Some(TyparConstraint.MayResolveMember (remapTraitAux tyenv traitInfo,m,List.map (remapValRef tyenv) extVals))
+         | TyparConstraint.MayResolveMember(traitInfo, m) -> 
+             Some(TyparConstraint.MayResolveMember (remapTraitAux tyenv traitInfo,m))
          | TyparConstraint.DefaultsTo(priority,ty,m) -> Some(TyparConstraint.DefaultsTo(priority,remapTypeAux tyenv ty,m))
          | TyparConstraint.IsEnum(uty,m) -> 
              Some(TyparConstraint.IsEnum(remapTypeAux tyenv uty,m))
@@ -244,7 +254,7 @@ and remapTyparConstraintsAux tyenv cs =
          | TyparConstraint.IsReferenceType _ 
          | TyparConstraint.RequiresDefaultConstructor _ -> Some(x))
 
-and remapTraitAux tyenv (TTrait(typs, nm, mf, argtys, rty, slnCell)) =
+and remapTraitAux tyenv (TTrait(typs, nm, mf, argtys, rty, slnCell, extSlns)) =
     let slnCell = 
         match !slnCell with 
         | None -> None
@@ -263,7 +273,14 @@ and remapTraitAux tyenv (TTrait(typs, nm, mf, argtys, rty, slnCell)) =
                 | ClosedExprSln e -> 
                      ClosedExprSln e // no need to remap because it is a closed expression, referring only to external types
             Some sln
-    // Note: we reallocate a new solution cell on every traversal of a trait constraint
+
+    let extSlnsNew = 
+        if tyenv.extSlnsMap.ContainsKey nm then
+            tyenv.extSlnsMap.[nm]
+        else
+            List.map (remapValRef tyenv) extSlns
+
+    // Note: we reallocate a new solution cell (though keep existing solutions unless 'removeTraitSolutions'=true) on every traversal of a trait constraint
     // This feels incorrect for trait constraints that are quantified: it seems we should have 
     // formal binders for trait constraints when they are quantified, just as
     // we have formal binders for type variables.
@@ -271,7 +288,7 @@ and remapTraitAux tyenv (TTrait(typs, nm, mf, argtys, rty, slnCell)) =
     // The danger here is that a solution for one syntactic occurrence of a trait constraint won't
     // be propagated to other, "linked" solutions. However trait constraints don't appear in any algebra
     // in the same way as types
-    TTrait(remapTypesAux tyenv typs, nm, mf, remapTypesAux tyenv argtys, Option.map (remapTypeAux tyenv) rty, ref slnCell)
+    TTrait(remapTypesAux tyenv typs, nm, mf, remapTypesAux tyenv argtys, Option.map (remapTypeAux tyenv) rty, ref slnCell, extSlnsNew)
 
 and bindTypars tps tyargs tpinst =   
     match tps with 
@@ -364,7 +381,8 @@ let mkInstRemap tpinst =
     { tyconRefRemap = emptyTyconRefRemap
       tpinst        = tpinst
       valRemap      = ValMap.Empty
-      removeTraitSolutions = false }
+      removeTraitSolutions = false
+      extSlnsMap = Map.empty }
 
 // entry points for "typar -> TType" instantiation 
 let instType              tpinst x = if isNil tpinst then x else remapTypeAux  (mkInstRemap tpinst) x
@@ -803,7 +821,7 @@ type TypeEquivEnv with
     static member FromEquivTypars tps1 tps2 = 
         TypeEquivEnv.Empty.BindEquivTypars tps1 tps2 
 
-let rec traitsAEquivAux erasureFlag g aenv (TTrait(typs1, nm, mf1, argtys, rty, _)) (TTrait(typs2, nm2, mf2, argtys2, rty2, _)) =
+let rec traitsAEquivAux erasureFlag g aenv (TTrait(typs1, nm, mf1, argtys, rty, _, _)) (TTrait(typs2, nm2, mf2, argtys2, rty2, _, _)) =
    mf1 = mf2 &&
    nm = nm2 &&
    ListSet.equals (typeAEquivAux erasureFlag g aenv) typs1 typs2 &&
@@ -823,8 +841,8 @@ and typarConstraintsAEquivAux erasureFlag g aenv tpc1 tpc2 =
       TyparConstraint.CoercesTo(fcty, _) -> 
         typeAEquivAux erasureFlag g aenv acty fcty
 
-    | TyparConstraint.MayResolveMember(trait1,_,_),
-      TyparConstraint.MayResolveMember(trait2,_,_) -> 
+    | TyparConstraint.MayResolveMember(trait1, _),
+      TyparConstraint.MayResolveMember(trait2, _) -> 
         traitsAEquivAux erasureFlag g aenv trait1 trait2 
 
     | TyparConstraint.DefaultsTo(_, acty, _), 
@@ -1886,7 +1904,7 @@ and accFreeInTyparConstraints opts cxs acc =
 and accFreeInTyparConstraint opts tpc acc =
     match tpc with 
     | TyparConstraint.CoercesTo(typ, _) -> accFreeInType opts typ acc
-    | TyparConstraint.MayResolveMember (traitInfo, _, _) -> accFreeInTrait opts traitInfo acc
+    | TyparConstraint.MayResolveMember (traitInfo, _) -> accFreeInTrait opts traitInfo acc
     | TyparConstraint.DefaultsTo(_, rty, _) -> accFreeInType opts rty acc
     | TyparConstraint.SimpleChoice(tys, _) -> accFreeInTypes opts tys acc
     | TyparConstraint.IsEnum(uty, _) -> accFreeInType opts uty acc
@@ -1899,7 +1917,7 @@ and accFreeInTyparConstraint opts tpc acc =
     | TyparConstraint.IsUnmanaged _
     | TyparConstraint.RequiresDefaultConstructor _ -> acc
 
-and accFreeInTrait opts (TTrait(typs, _, _, argtys, rty, sln)) acc = 
+and accFreeInTrait opts (TTrait(typs, _, _, argtys, rty, sln, _)) acc = 
     Option.foldBack (accFreeInTraitSln opts) sln.Value
        (accFreeInTypes opts typs 
          (accFreeInTypes opts argtys 
@@ -1991,7 +2009,7 @@ and accFreeInTyparConstraintsLeftToRight g cxFlag thruFlag acc cxs =
 and accFreeInTyparConstraintLeftToRight g cxFlag thruFlag acc tpc =
     match tpc with 
     | TyparConstraint.CoercesTo(typ, _) -> accFreeInTypeLeftToRight g cxFlag thruFlag acc typ 
-    | TyparConstraint.MayResolveMember (traitInfo, _, _) -> accFreeInTraitLeftToRight g cxFlag thruFlag acc traitInfo 
+    | TyparConstraint.MayResolveMember (traitInfo, _) -> accFreeInTraitLeftToRight g cxFlag thruFlag acc traitInfo 
     | TyparConstraint.DefaultsTo(_, rty, _) -> accFreeInTypeLeftToRight g cxFlag thruFlag acc rty 
     | TyparConstraint.SimpleChoice(tys, _) -> accFreeInTypesLeftToRight g cxFlag thruFlag acc tys 
     | TyparConstraint.IsEnum(uty, _) -> accFreeInTypeLeftToRight g cxFlag thruFlag acc uty
@@ -2004,10 +2022,11 @@ and accFreeInTyparConstraintLeftToRight g cxFlag thruFlag acc tpc =
     | TyparConstraint.IsReferenceType _ 
     | TyparConstraint.RequiresDefaultConstructor _ -> acc
 
-and accFreeInTraitLeftToRight g cxFlag thruFlag acc (TTrait(typs, _, _, argtys, rty, _))  = 
+and accFreeInTraitLeftToRight g cxFlag thruFlag acc (TTrait(typs, _, _, argtys, rty, _, _extSlns))  = 
     let acc = accFreeInTypesLeftToRight g cxFlag thruFlag acc typs
     let acc = accFreeInTypesLeftToRight g cxFlag thruFlag acc argtys
     let acc = Option.fold (accFreeInTypeLeftToRight g cxFlag thruFlag) acc rty
+    // Note, the _extSlns are _not_ considered free. 
     acc
 
 and accFreeTyparRefLeftToRight g cxFlag thruFlag acc (tp:Typar) = 
@@ -2021,7 +2040,6 @@ and accFreeTyparRefLeftToRight g cxFlag thruFlag acc (tp:Typar) =
             acc
 
 and accFreeInTypeLeftToRight g cxFlag thruFlag acc ty  = 
-    if verbose then dprintf "--> accFreeInTypeLeftToRight \n"
     match (if thruFlag then stripTyEqns g ty else stripTyparEqns ty) with 
     | TType_tuple (tupInfo, l) -> 
         let acc = accFreeInTupInfoLeftToRight g cxFlag thruFlag acc tupInfo 
@@ -2048,6 +2066,51 @@ let freeInTypesLeftToRightSkippingConstraints g ty = accFreeInTypesLeftToRight g
 
 let valOfBind (b:Binding) = b.Var
 let valsOfBinds (binds:Bindings) = binds |> List.map (fun b -> b.Var)
+
+//--------------------------------------------------------------------------
+// Collect extSlns. This is done prior to beta reduction of type parameters when inlining. We take the (solved)
+// type arguments and strip them for extSlns, and record those extSlns in the remapped/copied/instantiated body
+// of the implementation.
+//--------------------------------------------------------------------------
+
+let rec accExtSlnsInTyparConstraints acc cxs =
+    List.fold accExtSlnsInTyparConstraint acc cxs 
+
+and accExtSlnsInTyparConstraint acc tpc =
+    match tpc with 
+    | TyparConstraint.MayResolveMember (traitInfo, _) -> accExtSlnsInTrait acc traitInfo 
+    | _ -> acc
+
+and accExtSlnsInTrait acc (TTrait(_typs, nm, _, _argtys, _rty, _, extSlns))  = 
+    // We don't traverse the contents of traits, that wouldn't terminate and is not necessary since the type variables individiaull contain the extSlns we need
+    //let acc = accExtSlnsInTypes g acc typs
+    //let acc = accExtSlnsInTypes g acc argtys
+    //let acc = Option.fold (accExtSlnsInType g) acc rty
+    // Only record the extSlns if they have been solved in a useful way
+    if isNil extSlns then acc else
+    Map.add nm extSlns acc 
+
+and accExtSlnsTyparRef acc (tp:Typar) = 
+    let acc = accExtSlnsInTyparConstraints acc tp.Constraints
+    match tp.Solution with 
+    | None -> acc
+    | Some sln -> accExtSlnsInType acc sln
+
+and accExtSlnsInType acc ty  = 
+    // NOTE: Unlike almost everywhere else, we do NOT strip ANY equations here.  
+    // We _must_ traverse the solved typar containing the new extSlns for the grounded typar constraint, that's the whole point
+    match ty with 
+    | TType_tuple (_tupInfo, l) -> accExtSlnsInTypes acc l 
+    | TType_app (_, tinst) -> accExtSlnsInTypes acc tinst 
+    | TType_ucase (_, tinst) -> accExtSlnsInTypes acc tinst 
+    | TType_fun (d, r) -> accExtSlnsInType (accExtSlnsInType acc d) r
+    | TType_var r -> accExtSlnsTyparRef acc r 
+    | TType_forall (_tps, r) -> accExtSlnsInType acc r
+    | TType_measure unt -> List.foldBack (fun (tp, _) acc -> accExtSlnsTyparRef acc tp) (ListMeasureVarOccsWithNonZeroExponents unt) acc
+
+and accExtSlnsInTypes acc tys = (acc, tys) ||> List.fold accExtSlnsInType
+    
+let extSlnsInTypes tys = accExtSlnsInTypes Map.empty tys 
 
 //--------------------------------------------------------------------------
 // Values representing member functions on F# types
@@ -2322,8 +2385,6 @@ module PrettyTypes =
                     computeKeep keep (tp :: change) rest
         let keep, change = computeKeep [] [] ftps
         
-        // change |> List.iter (fun tp -> dprintf "change typar: %s %s %d\n" tp.Name (tp.DisplayName) (stamp_of_typar tp));  
-        // keep |> List.iter (fun tp -> dprintf "keep typar: %s %s %d\n" tp.Name (tp.DisplayName) (stamp_of_typar tp));  
         let alreadyInUse = keep |> List.map (fun x -> x.Name)
         let names = PrettyTyparNames (fun x -> List.memq x change) alreadyInUse ftps
 
@@ -2337,7 +2398,6 @@ module PrettyTypes =
         let tauThings = mapTys getTauStayTau things
                         
         let prettyThings = mapTys (instType renaming) tauThings
-        // niceTypars |> List.iter (fun tp -> dprintf "nice typar: %d\n" (stamp_of_typar tp)); *
         let tpconstraints  = niceTypars |> List.collect (fun tpnice -> List.map (fun tpc -> tpnice, tpc) tpnice.Constraints)
 
         prettyThings, tpconstraints
@@ -3129,7 +3189,7 @@ module DebugPrint = begin
 
     and auxTraitL env (ttrait: TraitConstraintInfo) =
 #if DEBUG
-        let (TTrait(tys, nm, memFlags, argtys, rty, _)) = ttrait 
+        let (TTrait(tys, nm, memFlags, argtys, rty, _, _extSlns)) = ttrait 
         match !global_g with
         | None -> wordL (tagText "<no global g>")
         | Some g -> 
@@ -3149,7 +3209,7 @@ module DebugPrint = begin
         match tpc with
         | TyparConstraint.CoercesTo(typarConstrTyp, _) ->
             auxTypar2L env tp ^^ wordL (tagText ":>") --- auxTyparConstraintTypL env typarConstrTyp
-        | TyparConstraint.MayResolveMember(traitInfo, _, _) ->
+        | TyparConstraint.MayResolveMember(traitInfo, _) ->
             auxTypar2L env tp ^^ wordL (tagText ":")  --- auxTraitL env traitInfo
         | TyparConstraint.DefaultsTo(_, ty, _) ->
             wordL (tagText  "default") ^^ auxTypar2L env tp ^^ wordL (tagText ":") ^^ auxTypeL env ty
@@ -3701,7 +3761,8 @@ let mkRepackageRemapping mrpi =
     { valRemap = ValMap.OfList (mrpi.mrpiVals |> List.map (fun (vref, x) -> vref.Deref, x));
       tpinst = emptyTyparInst; 
       tyconRefRemap = TyconRefMap.OfList mrpi.mrpiEntities
-      removeTraitSolutions = false }
+      removeTraitSolutions = false
+      extSlnsMap = Map.empty }
 
 //--------------------------------------------------------------------------
 // Compute instances of the above for mty -> mty
@@ -3777,7 +3838,6 @@ let accValRemap g aenv (msigty:ModuleOrNamespaceType) (implVal:Val) (mrpi, mhi) 
     let vref = mkLocalValRef implVal
     match sigValOpt with 
     | None -> 
-        if verbose then dprintf "accValRemap, hide = %s#%d\n" implVal.LogicalName implVal.Stamp
         let mhi = { mhi with mhiVals = Zset.add implVal mhi.mhiVals }
         (mrpi, mhi) 
     | Some (sigVal:Val)  -> 
@@ -3801,7 +3861,6 @@ let rec accValRemapFromModuleOrNamespaceType g aenv (mty:ModuleOrNamespaceType) 
     acc 
 
 let ComputeRemappingFromInferredSignatureToExplicitSignature g mty msigty = 
-    // dprintf "ComputeRemappingFromInferredSignatureToExplicitSignature, \nmty = %s\nmmsigty=%s\n" (showL(entityTypeL mty)) (showL(entityTypeL msigty)); 
     let ((mrpi, _) as entityRemap) = accEntityRemapFromModuleOrNamespaceType mty msigty (SignatureRepackageInfo.Empty, SignatureHidingInfo.Empty)  
     let aenv = mrpi.ImplToSigMapping
     let valAndEntityRemap = accValRemapFromModuleOrNamespaceType g aenv mty msigty entityRemap
@@ -3862,7 +3921,6 @@ and accValRemapFromModuleOrNamespaceBind g aenv msigty x acc =
 and accValRemapFromModuleOrNamespaceDefs g aenv msigty mdefs acc = List.foldBack (accValRemapFromModuleOrNamespace g aenv msigty) mdefs acc
 
 let ComputeRemappingFromImplementationToSignature g mdef msigty =  
-    //if verbose then dprintf "ComputeRemappingFromImplementationToSignature, \nmdefs = %s\nmsigty=%s\n" (showL(DebugPrint.mdefL mdef)) (showL(DebugPrint.entityTypeL msigty));
     let ((mrpi, _) as entityRemap) = accEntityRemapFromModuleOrNamespace msigty mdef (SignatureRepackageInfo.Empty, SignatureHidingInfo.Empty) 
     let aenv = mrpi.ImplToSigMapping
     
@@ -3920,16 +3978,14 @@ let rec accModuleOrNamespaceHidingInfoAtAssemblyBoundary mty acc =
     acc 
 
 let ComputeHidingInfoAtAssemblyBoundary mty acc = 
-//     dprintf "ComputeRemappingFromInferredSignatureToExplicitSignature, \nmty = %s\nmmsigty=%s\n" (showL(entityTypeL mty)) (showL(entityTypeL msigty)); 
     accModuleOrNamespaceHidingInfoAtAssemblyBoundary mty acc
 
 //--------------------------------------------------------------------------
 // Compute instances of the above for mexpr -> mty
 //--------------------------------------------------------------------------
 
-let IsHidden setF accessF remapF debugF = 
+let IsHidden setF accessF remapF = 
     let rec check mrmi x = 
-        if verbose then dprintf "IsHidden %s ??\n" (showL (debugF x));
             // Internal/private? 
         not (canAccessFromEverywhere (accessF x)) || 
         (match mrmi with 
@@ -3940,14 +3996,12 @@ let IsHidden setF accessF remapF debugF =
             // Recurse... 
             check rest (remapF rpi x))
     fun mrmi x -> 
-        let res = check mrmi x
-        if verbose then dprintf "IsHidden, #mrmi = %d, %s = %b\n" mrmi.Length (showL (debugF x)) res;
-        res
+        check mrmi x
         
-let IsHiddenTycon     mrmi x = IsHidden (fun mhi -> mhi.mhiTycons)     (fun tc -> tc.Accessibility)        (fun rpi x ->  (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) DebugPrint.tyconL mrmi x 
-let IsHiddenTyconRepr mrmi x = IsHidden (fun mhi -> mhi.mhiTyconReprs) (fun v -> v.TypeReprAccessibility)  (fun rpi x ->  (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) DebugPrint.tyconL mrmi x 
-let IsHiddenVal       mrmi x = IsHidden (fun mhi -> mhi.mhiVals)       (fun v -> v.Accessibility)          (fun rpi x ->  (remapValRef rpi (mkLocalValRef x)).Deref) DebugPrint.valL mrmi x 
-let IsHiddenRecdField mrmi x = IsHidden (fun mhi -> mhi.mhiRecdFields) (fun rfref -> rfref.RecdField.Accessibility) (fun rpi x ->  remapRecdFieldRef rpi.tyconRefRemap x) DebugPrint.recdFieldRefL mrmi x 
+let IsHiddenTycon     mrmi x = IsHidden (fun mhi -> mhi.mhiTycons)     (fun tc -> tc.Accessibility)        (fun rpi x ->  (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) mrmi x 
+let IsHiddenTyconRepr mrmi x = IsHidden (fun mhi -> mhi.mhiTyconReprs) (fun v -> v.TypeReprAccessibility)  (fun rpi x ->  (remapTyconRef rpi.tyconRefRemap (mkLocalTyconRef x)).Deref) mrmi x 
+let IsHiddenVal       mrmi x = IsHidden (fun mhi -> mhi.mhiVals)       (fun v -> v.Accessibility)          (fun rpi x ->  (remapValRef rpi (mkLocalValRef x)).Deref) mrmi x 
+let IsHiddenRecdField mrmi x = IsHidden (fun mhi -> mhi.mhiRecdFields) (fun rfref -> rfref.RecdField.Accessibility) (fun rpi x ->  remapRecdFieldRef rpi.tyconRefRemap x) mrmi x 
 
 
 //--------------------------------------------------------------------------
@@ -4295,7 +4349,7 @@ and accFreeInOp opts op acc =
     | TOp.ILAsm (_, tys) ->  accFreeVarsInTys opts tys acc
     | TOp.Reraise -> accUsesRethrow true acc
 
-    | TOp.TraitCall(TTrait(tys, _, _, argtys, rty, sln)) -> 
+    | TOp.TraitCall(TTrait(tys, _, _, argtys, rty, sln, _extSlns)) -> 
         Option.foldBack (accFreeVarsInTraitSln opts) sln.Value
            (accFreeVarsInTys opts tys 
              (accFreeVarsInTys opts argtys 
@@ -5107,7 +5161,10 @@ let copyModuleOrNamespaceType     g compgen mtyp = copyAndRemapAndBindModTy g co
 let copyExpr     g compgen e    = remapExpr g compgen Remap.Empty e    
 let copyImplFile g compgen e    = remapImplFile g compgen Remap.Empty e |> fst
 
-let instExpr g tpinst e = remapExpr g CloneAll (mkInstRemap tpinst) e
+/// Copy an expression applying a type instantiation.
+let instExpr g tpinst e = 
+    let extSlnsMap = extSlnsInTypes (List.map snd tpinst)
+    remapExpr g CloneAll { mkInstRemap tpinst with extSlnsMap = extSlnsMap } e
 
 //--------------------------------------------------------------------------
 // Replace Marks - adjust debugging marks when a lambda gets
@@ -5281,7 +5338,7 @@ let rec tyOfExpr g e =
         | TOp.LValueOp (LByrefGet, v) -> destByrefTy g v.Type
         | TOp.LValueOp (LGetAddr, v) -> mkByrefTy g v.Type
         | TOp.RefAddrGet -> (match tinst with [ty] -> mkByrefTy g ty | _ -> failwith "bad TOp.RefAddrGet node")      
-        | TOp.TraitCall (TTrait(_, _, _, _, ty, _)) -> GetFSharpViewOfReturnType g ty
+        | TOp.TraitCall (TTrait(_, _, _, _, ty, _, _)) -> GetFSharpViewOfReturnType g ty
         | TOp.Reraise -> (match tinst with [rtn_ty] -> rtn_ty | _ -> failwith "bad TOp.Reraise node")
         | TOp.Goto _ | TOp.Label _ | TOp.Return -> 
             //assert false; 
@@ -6476,7 +6533,6 @@ let MultiLambdaToTupledLambdaIfNeeded g (vs, arg) body =
 //------------------------------------------------------------------------ 
 
 let rec MakeApplicationAndBetaReduceAux g (f, fty, tyargsl : TType list list, argsl: Expr list, m) =
-  (* let verbose = true in *)
   match f with 
   | Expr.Let(bind, body, mlet, _) ->
       // Lift bindings out, i.e. (let x = e in f) y --> let x = e in f y 
@@ -6996,7 +7052,6 @@ let typarEnc _g (gtpsType, gtpsMethod) typar =
                       "``0" // REVIEW: this should be ERROR not WARNING?
 
 let rec typeEnc g (gtpsType, gtpsMethod) ty = 
-    if verbose then dprintf "--> typeEnc"
     let stripped = stripTyEqnsAndMeasureEqns g ty
     match stripped with 
     | TType_forall _ -> 

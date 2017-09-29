@@ -1229,7 +1229,7 @@ let GetInitialOptimizationEnv (tcImports:TcImports, tcGlobals:TcGlobals) =
     let optEnv = List.fold (AddExternalCcuToOpimizationEnv tcGlobals) optEnv ccuinfos 
     optEnv
    
-let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importMap, isIncrementalFragment, optEnv, ccu:CcuThunk, implFiles, nenv) =
+let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importMap, isIncrementalFragment, optEnv, ccu:CcuThunk, implFiles) =
     // NOTE: optEnv - threads through 
     //
     // Always optimize once - the results of this step give the x-module optimization 
@@ -1253,7 +1253,7 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
 
             //ReportTime tcConfig ("Initial simplify")
             let (optEnvFirstLoop,implFile,implFileOptData,hidden), optimizeDuringCodeGen = 
-                Optimizer.OptimizeImplFile(optSettings,ccu,tcGlobals,tcVal,importMap,optEnvFirstLoop,isIncrementalFragment,tcConfig.emitTailcalls,hidden,implFile,nenv)
+                Optimizer.OptimizeImplFile(optSettings,ccu,tcGlobals,tcVal,importMap,optEnvFirstLoop,isIncrementalFragment,tcConfig.emitTailcalls,hidden,implFile)
 
             let implFile = AutoBox.TransformImplFile tcGlobals importMap implFile 
                             
@@ -1266,7 +1266,7 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
             let implFile,optEnvExtraLoop = 
                 if tcConfig.extraOptimizationIterations > 0 then 
                     //ReportTime tcConfig ("Extra simplification loop")
-                    let (optEnvExtraLoop,implFile, _, _), _ = Optimizer.OptimizeImplFile(optSettings,ccu,tcGlobals,tcVal, importMap,optEnvExtraLoop,isIncrementalFragment,tcConfig.emitTailcalls,hidden,implFile,nenv)
+                    let (optEnvExtraLoop,implFile, _, _), _ = Optimizer.OptimizeImplFile(optSettings,ccu,tcGlobals,tcVal, importMap,optEnvExtraLoop,isIncrementalFragment,tcConfig.emitTailcalls,hidden,implFile)
                     //PrintWholeAssemblyImplementation tcConfig outfile (sprintf "extra-loop-%d" n) implFile
                     implFile,optEnvExtraLoop
                 else
@@ -1291,7 +1291,7 @@ let ApplyAllOptimizations (tcConfig:TcConfig, tcGlobals, tcVal, outfile, importM
             let implFile,optEnvFinalSimplify =
                 if tcConfig.doFinalSimplify then 
                     //ReportTime tcConfig ("Final simplify pass")
-                    let (optEnvFinalSimplify,implFile, _, _),_ = Optimizer.OptimizeImplFile(optSettings,ccu,tcGlobals,tcVal, importMap,optEnvFinalSimplify,isIncrementalFragment,tcConfig.emitTailcalls,hidden,implFile,nenv)
+                    let (optEnvFinalSimplify,implFile, _, _),_ = Optimizer.OptimizeImplFile(optSettings,ccu,tcGlobals,tcVal, importMap,optEnvFinalSimplify,isIncrementalFragment,tcConfig.emitTailcalls,hidden,implFile)
                     //PrintWholeAssemblyImplementation tcConfig outfile "post-rec-opt" implFile
                     implFile,optEnvFinalSimplify 
                 else 
@@ -1318,7 +1318,7 @@ let CreateIlxAssemblyGenerator (_tcConfig:TcConfig,tcImports:TcImports,tcGlobals
     ilxGenerator.AddExternalCcus ccus
     ilxGenerator
 
-let GenerateIlxCode (ilxBackend, isInteractiveItExpr, isInteractiveOnMono, tcConfig:TcConfig, topAttrs, optimizedImpls, fragName, ilxGenerator : IlxAssemblyGenerator, nenv) =
+let GenerateIlxCode (ilxBackend, isInteractiveItExpr, isInteractiveOnMono, tcConfig:TcConfig, topAttrs, optimizedImpls, fragName, ilxGenerator : IlxAssemblyGenerator) =
     if !progress then dprintf "Generating ILX code...\n"
     let ilxGenOpts : IlxGenOptions = 
         { generateFilterBlocks = tcConfig.generateFilterBlocks
@@ -1334,7 +1334,7 @@ let GenerateIlxCode (ilxBackend, isInteractiveItExpr, isInteractiveOnMono, tcCon
           isInteractiveItExpr = isInteractiveItExpr
           alwaysCallVirt = tcConfig.alwaysCallVirt }
 
-    ilxGenerator.GenerateCode (ilxGenOpts, optimizedImpls, topAttrs.assemblyAttrs,topAttrs.netModuleAttrs,nenv) 
+    ilxGenerator.GenerateCode (ilxGenOpts, optimizedImpls, topAttrs.assemblyAttrs, topAttrs.netModuleAttrs) 
 
 //----------------------------------------------------------------------------
 // Assembly ref normalization: make sure all assemblies are referred to

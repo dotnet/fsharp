@@ -339,10 +339,19 @@ type ValRemap = ValMap<ValRef>
 
 [<NoEquality; NoComparison>]
 type Remap =
-    { tpinst : TyparInst;
-      valRemap: ValRemap;
-      tyconRefRemap : TyconRefRemap;
-      removeTraitSolutions: bool }
+    { tpinst : TyparInst
+
+      /// Values to remap
+      valRemap: ValRemap
+
+      /// TyconRefs to remap
+      tyconRefRemap : TyconRefRemap
+
+      /// Remove existing trait solutions?
+      removeTraitSolutions: bool 
+
+      /// A map indicating how to fill in extSlns for traits as we copy an expression. Indexed by the member name of the trait
+      extSlnsMap: Map<string, PossibleExtensionMemberSolutions> }
 
     static member Empty : Remap
 

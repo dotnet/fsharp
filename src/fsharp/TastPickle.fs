@@ -1320,7 +1320,8 @@ let p_trait_sln sln st =
     | FSRecdFieldSln(a,b,c) ->
          p_byte 4 st; p_tup3 p_typs p_rfref p_bool (a,b,c) st
 
-let p_trait (TTrait(a,b,c,d,e,f)) st  = 
+let p_trait (TTrait(a, b, c, d, e, f, _extSlns)) st  = 
+    // The _extSlns do not get pickled. We are assuming this is a generic or solved constraint
     p_tup6 p_typs p_string p_MemberFlags p_typs (p_option p_typ) (p_option p_trait_sln) (a,b,c,d,e,!f) st
 
 // We have to store trait solutions since they can occur in optimization data
@@ -1344,7 +1345,8 @@ let u_trait_sln st =
 
 let u_trait st = 
     let a,b,c,d,e,f = u_tup6 u_typs u_string u_MemberFlags u_typs (u_option u_typ) (u_option u_trait_sln) st
-    TTrait (a,b,c,d,e,ref f)
+    // extSlns starts empty.  TODO: check the ramifications of this
+    TTrait (a, b, c, d, e, ref f, [])
 
 
 let p_rational q st = p_int32 (GetNumerator q) st; p_int32 (GetDenominator q) st
@@ -1417,25 +1419,25 @@ let rec u_measure_expr st =
 let p_typar_constraint x st = 
     match x with 
     | TyparConstraint.CoercesTo (a,_)                     -> p_byte 0 st; p_typ a st
-    | TyparConstraint.MayResolveMember(traitInfo,_,_) -> p_byte 1 st; p_trait traitInfo st
+    | TyparConstraint.MayResolveMember(traitInfo,_)       -> p_byte 1 st; p_trait traitInfo st
     | TyparConstraint.DefaultsTo(_,rty,_)                 -> p_byte 2 st; p_typ rty st
-    | TyparConstraint.SupportsNull _                          -> p_byte 3 st
-    | TyparConstraint.IsNonNullableStruct _                -> p_byte 4 st
-    | TyparConstraint.IsReferenceType _                       -> p_byte 5 st
-    | TyparConstraint.RequiresDefaultConstructor _            -> p_byte 6 st
-    | TyparConstraint.SimpleChoice(tys,_)                     -> p_byte 7 st; p_typs tys st
-    | TyparConstraint.IsEnum(ty,_)                            -> p_byte 8 st; p_typ ty st
-    | TyparConstraint.IsDelegate(aty,bty,_)                   -> p_byte 9 st; p_typ aty st; p_typ bty st
-    | TyparConstraint.SupportsComparison _                    -> p_byte 10 st
-    | TyparConstraint.SupportsEquality _                      -> p_byte 11 st
-    | TyparConstraint.IsUnmanaged _                           -> p_byte 12 st
+    | TyparConstraint.SupportsNull _                      -> p_byte 3 st
+    | TyparConstraint.IsNonNullableStruct _               -> p_byte 4 st
+    | TyparConstraint.IsReferenceType _                   -> p_byte 5 st
+    | TyparConstraint.RequiresDefaultConstructor _        -> p_byte 6 st
+    | TyparConstraint.SimpleChoice(tys,_)                 -> p_byte 7 st; p_typs tys st
+    | TyparConstraint.IsEnum(ty,_)                        -> p_byte 8 st; p_typ ty st
+    | TyparConstraint.IsDelegate(aty,bty,_)               -> p_byte 9 st; p_typ aty st; p_typ bty st
+    | TyparConstraint.SupportsComparison _                -> p_byte 10 st
+    | TyparConstraint.SupportsEquality _                  -> p_byte 11 st
+    | TyparConstraint.IsUnmanaged _                       -> p_byte 12 st
 let p_typar_constraints = (p_list p_typar_constraint)
 
 let u_typar_constraint st = 
     let tag = u_byte st
     match tag with
     | 0 -> u_typ  st             |> (fun a     _ -> TyparConstraint.CoercesTo (a,range0) )
-    | 1 -> u_trait st            |> (fun a     _ -> TyparConstraint.MayResolveMember(a,range0,[]))
+    | 1 -> u_trait st            |> (fun a     _ -> TyparConstraint.MayResolveMember(a,range0))
     | 2 -> u_typ st              |> (fun a  ridx -> TyparConstraint.DefaultsTo(ridx,a,range0))
     | 3 ->                          (fun       _ -> TyparConstraint.SupportsNull range0)
     | 4 ->                          (fun       _ -> TyparConstraint.IsNonNullableStruct range0)

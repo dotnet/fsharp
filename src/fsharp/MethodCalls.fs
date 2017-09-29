@@ -452,6 +452,9 @@ type CalledMeth<'T>
     member x.TotalNumUnnamedCallerArgs = x.ArgSets |> List.sumBy (fun x -> x.NumUnnamedCallerArgs)
     member x.TotalNumAssignedNamedArgs = x.ArgSets |> List.sumBy (fun x -> x.NumAssignedNamedArgs)
 
+    override x.ToString() = "call to " + minfo.ToString()
+
+
 let NamesOfCalledArgs (calledArgs: CalledArg list) = 
     calledArgs |> List.choose (fun x -> x.NameOpt) 
 
@@ -634,7 +637,7 @@ let BuildFSharpMethodCall g m (typ,vref:ValRef) valUseFlags minst args =
     let vexp = Expr.Val (vref,valUseFlags,m)
     let vexpty = vref.Type
     let tpsorig,tau =  vref.TypeScheme
-    let vtinst = argsOfAppTy g typ @ minst
+    let vtinst = (if vref.IsExtensionMember then [] else argsOfAppTy g typ) @ minst
     if tpsorig.Length <> vtinst.Length then error(InternalError("BuildFSharpMethodCall: unexpected List.length mismatch",m))
     let expr = mkTyAppExpr m (vexp,vexpty) vtinst
     let exprty = instType (mkTyparInst tpsorig vtinst) tau

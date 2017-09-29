@@ -296,6 +296,18 @@ let ImportReturnTypeFromMetaData amap m ty scoref tinst minst =
     | ILType.Void -> None
     | retTy ->  Some (ImportILTypeFromMetadata amap m scoref tinst minst retTy)
 
+
+/// Search for the relevant extension values again if a name resolution environment is provided
+/// Basically, if you use a generic thing, then the extension members in scope at the point of _use_
+/// are the ones available to solve the constraint
+let FillInExtSlnsForConstraint getExtSlnsOpt traitInfo =
+    let (TTrait(typs, nm, mf, argtys, rty, slnCell, extSlns)) = traitInfo
+    let extSlns2 = 
+        match getExtSlnsOpt with 
+        | None -> extSlns
+        | Some f -> f traitInfo
+    TTrait(typs, nm, mf, argtys, rty, slnCell, extSlns2)
+
 /// Copy constraints.  If the constraint comes from a type parameter associated
 /// with a type constructor then we are simply renaming type variables.  If it comes
 /// from a generic method in a generic class (e.g. typ.M<_>) then we may be both substituting the
@@ -332,15 +344,9 @@ let CopyTyparConstraints getExtSlnsOpt m tprefInst (tporig:Typar) =
                TyparConstraint.SimpleChoice (List.map (instType tprefInst) tys,m)
            | TyparConstraint.RequiresDefaultConstructor _ -> 
                TyparConstraint.RequiresDefaultConstructor m
-           | TyparConstraint.MayResolveMember(traitInfo, _, extVals) -> 
-               // Search for the relevant extension values again if a name resolution environment is provided
-               // Basically, if you use a generic thing, then the extension members in scope at the point of _use_
-               // are the ones available to solve the constraint
-               let extVals2 = 
-                   match getExtSlnsOpt with 
-                   | None -> extVals
-                   | Some f -> f traitInfo
-               TyparConstraint.MayResolveMember (instTrait tprefInst traitInfo,m,List.map (instValRef tprefInst) extVals2))
+           | TyparConstraint.MayResolveMember(traitInfo, _) -> 
+               let traitInfo2 = FillInExtSlnsForConstraint getExtSlnsOpt traitInfo 
+               TyparConstraint.MayResolveMember (instTrait tprefInst traitInfo2, m))
 
 /// The constraints for each typar copied from another typar can only be fixed up once 
 /// we have generated all the new constraints, e.g. f<A :> List<B>, B :> List<A>> ... 
@@ -850,9 +856,7 @@ type ILMethInfo =
 // MethInfo
 
 
-#if DEBUG
 [<System.Diagnostics.DebuggerDisplayAttribute("{DebuggerDisplayName}")>]
-#endif
 /// Describes an F# use of a method
 [<NoComparison; NoEquality>]
 type MethInfo = 
@@ -928,7 +932,6 @@ type MethInfo =
      /// over extension members.
     member x.ExtensionMemberPriority = defaultArg x.ExtensionMemberPriorityOption System.UInt64.MaxValue 
 
-#if DEBUG
      /// Get the method name in DebuggerDisplayForm
     member x.DebuggerDisplayName = 
         match x with 
@@ -938,7 +941,6 @@ type MethInfo =
         | ProvidedMeth(_,mi,_,m) -> "ProvidedMeth: " + mi.PUntaint((fun mi -> mi.Name),m)
 #endif
         | DefaultStructCtor _ -> ".ctor"
-#endif
 
      /// Get the method name in LogicalName form, i.e. the name as it would be stored in .NET metadata
     member x.LogicalName = 
@@ -2123,6 +2125,8 @@ type PropInfo =
         | ProvidedProp(_,pi,_) -> ProvidedPropertyInfo.TaintedGetHashCode(pi)
 #endif
 
+    override x.ToString() = "property " + x.PropertyName
+
 //-------------------------------------------------------------------------
 // ILEventInfo
 
@@ -2331,6 +2335,7 @@ type EventInfo =
 #if EXTENSIONTYPING
         | ProvidedEvent (_,ei,_) -> ProvidedEventInfo.TaintedGetHashCode(ei)
 #endif
+    override x.ToString() = "event " + x.EventName
 
 //-------------------------------------------------------------------------
 // Helpers associated with getting and comparing method signatures

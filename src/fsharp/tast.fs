@@ -2045,7 +2045,7 @@ and
     
     /// Indicates a constraint that a type has a member with the given signature 
     // TODO: allow .NET-defined extension members to solve trait constraints. Currently only ValRefs indicating possible solutions are stored
-    | MayResolveMember of TraitConstraintInfo * range * possibleExtensionMemberSolutions: PossibleExtensionMemberSolutions 
+    | MayResolveMember of TraitConstraintInfo * range
     
     /// Indicates a constraint that a type is a non-Nullable value type 
     /// These are part of .NET's model of generic constraints, and in order to 
@@ -2085,16 +2085,19 @@ and
     ///
     /// Indicates the signature of a member constraint. Contains a mutable solution cell
     /// to store the inferred solution of the constraint.
-    | TTrait of TTypes * string * MemberFlags * TTypes * TType option * TraitConstraintSln option ref 
+    | TTrait of TTypes * string * MemberFlags * TTypes * TType option * TraitConstraintSln option ref * extSlns: PossibleExtensionMemberSolutions
 
     /// Get the member name associated with the member constraint.
-    member x.MemberName = (let (TTrait(_,nm,_,_,_,_)) = x in nm)
+    member x.MemberName = (let (TTrait(_,nm,_,_,_,_,_)) = x in nm)
+
     /// Get the return type recorded in the member constraint.
-    member x.ReturnType = (let (TTrait(_,_,_,_,ty,_)) = x in ty)
+    member x.ReturnType = (let (TTrait(_,_,_,_,ty,_,_)) = x in ty)
+
     /// Get or set the solution of the member constraint during inference
     member x.Solution 
-        with get() = (let (TTrait(_,_,_,_,_,sln)) = x in sln.Value)
-        and set v = (let (TTrait(_,_,_,_,_,sln)) = x in sln.Value <- v)
+        with get() = (let (TTrait(_,_,_,_,_,sln,_)) = x in sln.Value)
+        and set v = (let (TTrait(_,_,_,_,_,sln,_)) = x in sln.Value <- v)
+
     override x.ToString() = "trait " + x.MemberName
     
 and 
@@ -4181,7 +4184,7 @@ and
     | Label of ILCodeLabel
 
     /// Pseudo method calls. This is used for overloaded operations like op_Addition. 
-    | TraitCall of TraitConstraintInfo  
+    | TraitCall of TraitConstraintInfo 
 
     /// Operation nodes representing C-style operations on byrefs and mutable vals (l-values) 
     | LValueOp of LValueOperation * ValRef 
