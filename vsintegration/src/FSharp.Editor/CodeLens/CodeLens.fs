@@ -4,38 +4,16 @@ namespace rec Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Windows.Controls
-open System.Windows.Media
 open Microsoft.VisualStudio.Text
 open Microsoft.VisualStudio.Text.Editor
 open Microsoft.VisualStudio.Text.Formatting
-open System.ComponentModel.Composition
-open Microsoft.VisualStudio.Utilities
-open Microsoft.CodeAnalysis
 open System.Threading
-open Microsoft.FSharp.Compiler.SourceCodeServices
-open Microsoft.VisualStudio.Shell
-open Microsoft.VisualStudio
-open Microsoft.VisualStudio.LanguageServices
 open System.Windows
 open System.Collections.Generic
-open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler
-open Microsoft.FSharp.Compiler.Ast
-open Microsoft.CodeAnalysis.Editor.Shared.Extensions
-open Microsoft.CodeAnalysis.Editor.Shared.Utilities
-open Microsoft.CodeAnalysis.Classification
-open Internal.Utilities.StructuredFormat
 open Microsoft.VisualStudio.Text.Tagging
-open System.Collections.Concurrent
-open System.Collections
-open System.Windows.Media.Animation
-open System.Globalization
 
 open Microsoft.VisualStudio.FSharp.Editor.Logging
-open Microsoft.CodeAnalysis.Text
-open System
-open Microsoft.VisualStudio.Text.Editor
-open Microsoft.VisualStudio.Text
 
 [<AbstractClass>]
 type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer) =
@@ -44,7 +22,7 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer) =
     /// Enqueing an unit signals to the tagger that all visible line lens must be layouted again,
     /// to respect single line changes.
     /// </summary>
-    member val RelayoutRequested : Queue = Queue() with get
+    member val RelayoutRequested : Queue<_> = Queue() with get
 
     member __.WpfView = view
 
@@ -55,7 +33,6 @@ type CodeLensDisplayService (view : IWpfTextView, buffer : ITextBuffer) =
     abstract AddCodeLens : ITrackingSpan -> UIElement
     
     /// Public non-thread-safe method to remove line lens for a given tracking span.
-    /// Returns whether the operation succeeded
     abstract RemoveCodeLens : ITrackingSpan -> unit
 
     abstract AddUiElementToCodeLens : ITrackingSpan -> UIElement -> unit
@@ -68,7 +45,7 @@ type CodeLensGeneralTag(width, topSpace, baseline, textHeight, bottomSpace, affi
     inherit SpaceNegotiatingAdornmentTag(width, topSpace, baseline, textHeight, bottomSpace, affinity, tag, providerTag)
 
 /// Class which provides support for general code lens
-/// Use the methods <code>AddCodeLens</code< and <code> RemoveCodeLens</code>
+/// Use the methods <code>AddCodeLens</code> and <code> RemoveCodeLens</code>
 type CodeLensGeneralTagger (view, buffer) as self =
     inherit CodeLensDisplayService(view, buffer)
 
@@ -81,7 +58,7 @@ type CodeLensGeneralTagger (view, buffer) as self =
     // Tracks the created ui elements per TrackingSpan
     let uiElements = Dictionary<_,Grid>()
     /// Caches the current used trackingSpans per line. One line can contain multiple trackingSpans
-    let mutable trackingSpans = Dictionary<_, Generic.List<_>>()
+    let mutable trackingSpans = Dictionary<_, ResizeArray<_>>()
     /// Text view for accessing the adornment layer.
     let mutable view: IWpfTextView = view
     /// The code lens layer for adding and removing adornments.
@@ -108,7 +85,7 @@ type CodeLensGeneralTagger (view, buffer) as self =
     
     let updateTrackingSpansFast (snapshot:ITextSnapshot) lineNumber =
         if lineNumber |> trackingSpans.ContainsKey then
-            let currentTrackingSpans = Generic.List(trackingSpans.[lineNumber])
+            let currentTrackingSpans = ResizeArray(trackingSpans.[lineNumber])
             for trackingSpan in currentTrackingSpans do
                 let newLineOption = tryGetTSpanStartLine snapshot trackingSpan
                 match newLineOption with 
@@ -119,7 +96,7 @@ type CodeLensGeneralTagger (view, buffer) as self =
                         if trackingSpans.[lineNumber].Count = 0 then
                             trackingSpans.Remove lineNumber |> ignore
                         if newLine |> trackingSpans.ContainsKey |> not then
-                            trackingSpans.[newLine] <- Generic.List()
+                            trackingSpans.[newLine] <- ResizeArray()
                         trackingSpans.[newLine].Add(trackingSpan)
                         if newLine < recentFirstVsblLineNmbr || newLine > recentLastVsblLineNmbr then
                             if uiElements.ContainsKey trackingSpan then 
@@ -139,7 +116,7 @@ type CodeLensGeneralTagger (view, buffer) as self =
         if trackingSpans.ContainsKey startLineNumber then
             trackingSpans.[startLineNumber].Add trackingSpan
         else
-            trackingSpans.[startLineNumber] <- Generic.List()
+            trackingSpans.[startLineNumber] <- ResizeArray()
             trackingSpans.[startLineNumber].Add trackingSpan
         let defaultStackPanel = createDefaultStackPanel ()
         uiElements.[trackingSpan] <- defaultStackPanel

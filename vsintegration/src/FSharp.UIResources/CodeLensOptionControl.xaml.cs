@@ -16,7 +16,7 @@ using System.Windows.Shapes;
 namespace Microsoft.VisualStudio.FSharp.UIResources
 {
     /// <summary>
-    /// Interaktionslogik für CodeLensOptionPage.xaml
+    /// Interaction logic for CodeLensOptionPage.xaml
     /// </summary>
     internal partial class CodeLensOptionControl : UserControl
     {

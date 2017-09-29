@@ -27,14 +27,9 @@ open Microsoft.CodeAnalysis.Editor.Shared.Utilities
 open Microsoft.CodeAnalysis.Classification
 open Internal.Utilities.StructuredFormat
 open Microsoft.VisualStudio.Text.Tagging
-open System.Collections.Concurrent
-open System.Collections.Generic
 open System.Windows.Media.Animation
-open System.Globalization
 
 open Microsoft.VisualStudio.FSharp.Editor.Logging
-open Microsoft.CodeAnalysis.Text
-open System
 
 type internal LineLensDisplayService (view, buffer) as self =
     // Custom simple tagger logic
@@ -323,16 +318,16 @@ type internal FSharpCodeLensService
 
     let visit pos parseTree = 
         AstTraversal.Traverse(pos, parseTree, { new AstTraversal.AstVisitorBase<_>() with 
-            member this.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
+            member __.VisitExpr(_path, traverseSynExpr, defaultTraverse, expr) =
                 defaultTraverse(expr)
             
-            override this.VisitInheritSynMemberDefn (_, _, _, _, range) = Some range
+            override __.VisitInheritSynMemberDefn (_, _, _, _, range) = Some range
 
-            override this.VisitTypeAbbrev( _, range) = Some range
+            override __.VisitTypeAbbrev( _, range) = Some range
 
-            override this.VisitLetOrUse(binding, range) = Some range
+            override __.VisitLetOrUse(binding, range) = Some range
 
-            override this.VisitBinding (fn, binding) =
+            override __.VisitBinding (fn, binding) =
                 Some binding.RangeOfBindingAndRhs
         })
 
