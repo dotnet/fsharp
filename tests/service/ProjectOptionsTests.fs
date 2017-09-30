@@ -137,8 +137,11 @@ let ``Project file parsing -- compile files 2``() =
 [<Test>]
 let ``Project file parsing -- bad project file``() =
   let f = normalizePath (__SOURCE_DIRECTORY__ + @"/data/Malformed.fsproj")
-  let log = snd (ProjectCracker.GetProjectOptionsFromProjectFileLogged(f))
-  log.[f] |> should contain "Microsoft.Build.Exceptions.InvalidProjectFileException"
+  try 
+    ProjectCracker.GetProjectOptionsFromProjectFileLogged(f) |> ignore
+    failwith "Expected exception"
+  with 
+  | e -> Assert.That(e.Message, Contains.Substring "The project file could not be loaded.")
 
 [<Test>]
 let ``Project file parsing -- non-existent project file``() =
