@@ -183,12 +183,17 @@ set COMPILER47ASSEMBLIESPATH=%X86_PROGRAMFILES%\Reference Assemblies\Microsoft\F
 
 rem Try to create target and backup folders, if needed
 set RESTOREBASE=%RESTOREDIR%
-CALL :tryCreateFolder "!RESTOREBASE!\compiler_sdk"
-CALL :tryCreateFolder "!RESTOREBASE!\main_assemblies"
-CALL :tryCreateFolder "!RESTOREBASE!\profile_7"
-CALL :tryCreateFolder "!RESTOREBASE!\profile_78"
-CALL :tryCreateFolder "!RESTOREBASE!\profile_259"
-CALL :tryCreateFolder "!RESTOREBASE!\profile_47"
+
+rem Only create backup dirs if we are backupping or restoring 
+rem (in the latter case, the directories should already be there, but if not, it prevents errors later on)
+if "!DEPLOY!" == "no" (
+    CALL :tryCreateFolder "!RESTOREBASE!\compiler_sdk"
+    CALL :tryCreateFolder "!RESTOREBASE!\main_assemblies"
+    CALL :tryCreateFolder "!RESTOREBASE!\profile_7"
+    CALL :tryCreateFolder "!RESTOREBASE!\profile_78"
+    CALL :tryCreateFolder "!RESTOREBASE!\profile_259"
+    CALL :tryCreateFolder "!RESTOREBASE!\profile_47"
+)
 CALL :tryCreateFolder "!COMPILERSDKPATH!"
 CALL :tryCreateFolder "!COMPILERMAINASSEMBLIESPATH!"
 CALL :tryCreateFolder "!COMPILER7ASSEMBLIESPATH!" & 
@@ -196,8 +201,8 @@ CALL :tryCreateFolder "!COMPILER78ASSEMBLIESPATH!"
 CALL :tryCreateFolder "!COMPILER259ASSEMBLIESPATH!"
 CALL :tryCreateFolder "!COMPILER47ASSEMBLIESPATH!"
 
-rem If one or more directories could not be created, exit early
-if "!CREATEFAILED!"=="true" CALL :exitFailDir & EXIT /B
+rem If one or more directories could not be created, exit early with a non-zero error code
+if "!CREATEFAILED!"=="true" CALL :exitFailDir & EXIT /B 1
 
 rem Deploying main files, fsi.exe and fsc.exe and related
 
@@ -618,14 +623,16 @@ if %WARNCOUNT% equ 1 CALL :colorEcho 0E "%WARNCOUNT% warning reported, see log" 
 if %WARNCOUNT% gtr 1 CALL :colorEcho 0E "%WARNCOUNT% warnings reported, see log" & echo.
 if %WARNCOUNT% equ 0 CALL :colorEcho 0A "No warnings reported" & echo.
 
+rem Return non-zero error code for use-cases where this script is called from other scripts
+if %ERRORCOUNT% gtr 0 EXIT /B 1
+EXIT /B 0
 
 GOTO :EOF
 
 :exitFailDir
 
 echo.
-CALL :colorEcho 0C "One or more directories failed to be created. No files have been copied."
-echo.
+CALL :colorEcho 0C "One or more directories failed to be created. No files have been copied." & echo.
 echo.
 echo Possible causes include:
 echo - Insufficient rights to create directories in this folder
@@ -633,7 +640,9 @@ echo - A file with that name already exists
 echo.
 echo No error is raised if the directory exists.
 echo No files were copied or backed up.
+echo.
 
+rem Return non-zero error code for use-cases where this script is called from other scripts
 EXIT /B 1
 
 :checkPrequisites
