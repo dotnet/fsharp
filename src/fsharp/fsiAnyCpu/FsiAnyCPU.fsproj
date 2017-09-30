@@ -40,10 +40,7 @@
     <Compile Include="..\fsi\fsimain.fs">
       <Link>fsimain.fs</Link>
     </Compile>
-    <None Include="..\fsi\fsiAnyCpu.exe.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>fsiAnyCpu.exe.config</Link>
-    </None>
+    <None Include="app.config" />
   </ItemGroup>
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <ItemGroup>
