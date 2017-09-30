@@ -16,11 +16,15 @@ type ProjectCracker =
         let enableLogging = defaultArg enableLogging true
         let logMap = ref Map.empty
 
-        let rec convert (opts: Microsoft.FSharp.Compiler.SourceCodeServices.ProjectCrackerTool.ProjectOptions) : FSharpProjectOptions =
+        let rec convert (opts: ProjectCrackerTool.ProjectOptions) : FSharpProjectOptions =
             let referencedProjects = Array.map (fun (a, b) -> a, convert b) opts.ReferencedProjectOptions
             
             let sourceFiles, otherOptions = 
-                opts.Options |> Array.partition (fun x -> x.IndexOfAny(Path.GetInvalidPathChars()) = -1 && Path.GetExtension(x).ToLower() = ".fs")
+                opts.Options 
+                |> Array.partition (fun x -> 
+                    let extension = Path.GetExtension(x).ToLower()
+                    x.IndexOfAny(Path.GetInvalidPathChars()) = -1 
+                    && (extension = ".fs" || extension = ".fsi"))
             
             let sepChar = Path.DirectorySeparatorChar
             

@@ -218,6 +218,19 @@ let ``Project file parsing -- Logging``() =
     Assert.That(log, Is.StringContaining("""Using "ResolveAssemblyReference" task from assembly "Microsoft.Build.Tasks.Core, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"."""))
 
 [<Test>]
+let ``Project file parsing -- FSharpProjectOptions.SourceFiles contains both fs and fsi files``() =
+  let projectFileName = normalizePath (__SOURCE_DIRECTORY__ + @"/data/FsAndFsiFiles.fsproj")
+  let options, log = ProjectCracker.GetProjectOptionsFromProjectFileLogged(projectFileName, enableLogging=true)
+  printfn "%A" log
+  let expectedSourceFiles =
+    [| "Test1File2.fsi"
+       "Test1File2.fs"
+       "Test1File1.fs"
+       "Test1File0.fsi"
+       "Test1File0.fs" |]
+  Assert.That(options.SourceFiles |> Array.map Path.GetFileName, Is.EqualTo expectedSourceFiles, "source files")
+  
+[<Test>]
 let ``Project file parsing -- Full path``() =
   let f = normalizePath (__SOURCE_DIRECTORY__ + @"/data/ToolsVersion12.fsproj")
   let p = ProjectCracker.GetProjectOptionsFromProjectFile(f)
