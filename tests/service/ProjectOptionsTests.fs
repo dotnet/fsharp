@@ -140,14 +140,16 @@ let ``Project file parsing -- bad project file``() =
   try 
     ProjectCracker.GetProjectOptionsFromProjectFileLogged(f) |> ignore
     failwith "Expected exception"
-  with 
-  | e -> Assert.That(e.Message, Contains.Substring "The project file could not be loaded.")
+  with e -> 
+    Assert.That(e.Message, Contains.Substring "The project file could not be loaded.")
 
 [<Test>]
 let ``Project file parsing -- non-existent project file``() =
   let f = normalizePath (__SOURCE_DIRECTORY__ + @"/data/DoesNotExist.fsproj")
-  let log = snd (ProjectCracker.GetProjectOptionsFromProjectFileLogged(f, enableLogging=true))
-  log.[f] |> should contain "System.IO.FileNotFoundException"
+  try
+    ProjectCracker.GetProjectOptionsFromProjectFileLogged(f, enableLogging=true) |> ignore
+  with e -> 
+    Assert.That(e.Message, Contains.Substring "Could not find file")
 
 [<Test>]
 let ``Project file parsing -- output file``() =
