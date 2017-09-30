@@ -82,9 +82,11 @@ GOTO :start
 :help
 
 echo.
-echo Clobbers existing Visual Studio installation of F# bits, like FSC compiler and FSI.
-echo After running, it will set the default FSC for use from Visual Studio 2017 to your
-echo locally built version. Requires administrator rights in most cases.
+echo Installs or restores F# SDK bits, which applies system-wide to all Visual Studio
+echo 2017 installations. After running this, each project targeting F# 4.1 will use
+echo your locally built FSC.exe. It will not update other F# tools, see remarks below.
+echo.
+echo Requires Administrator privileges for removing/restoring strong-naming.
 echo.
 echo Syntax: %0 [debug^|release^|restore^|backup]
 echo.
@@ -93,22 +95,34 @@ echo   release   integrates release builds of FSC, FSI ^& tools
 echo   restore   restores original SDK from an earlier backup
 echo   backup    backups the files that would be overwritten, does not deploy anything
 echo.
+echo Paths used:
+echo.
 echo Root location:        %TOPDIR%
 echo Debug bin location:   %TOPDIR%\debug\net40\bin
 echo Release bin location: %TOPDIR%\release\net40\bin
 echo Backup location:      %RESTOREDIR%
 echo.
+echo Remarks:
+echo.
+echo This script should only be run after build.cmd has completed successfully.
+echo.
 echo Clearing the git repository may clear the backup directory. To be on the safe
 echo side, you should place a copy of the backup dir outside of the git repo.
 echo.
-echo After installation you can check whether the installation succeeded by running the 
-echo following script in FSI in your Visual Studio 2017 installation, the output will
-echo show you the date and time the FSI executable was built.
+echo This batch script will only update the relevant SDK bits, and remove or restore
+echo strong-naming automatically. It is recommended that you also update the F# Tools
+echo by running the following two commands after a build of "build vs" or
+echo "build vs debug" has completed. More instructions in DEVGUIDE.md in the root.
 echo.
-echo ^> open System;;
-echo ^> open System.IO;;
-echo ^> open System.Reflection;;
-echo ^> printfn "%%A" (File.GetCreationTime(Assembly.GetEntryAssembly().Location));;
+echo For Release builds:
+echo.
+echo ^> VSIXInstaller.exe /u:"VisualFSharp"
+echo ^> VSIXInstaller.exe release\net40\bin\VisualFSharpOpenSource.vsix
+echo.
+echo For Debug builds:
+echo.
+echo ^> VSIXInstaller.exe /u:"VisualFSharp"
+echo ^> VSIXInstaller.exe debug\net40\bin\VisualFSharpOpenSource.vsix
 echo.
 
 exit /b 1
