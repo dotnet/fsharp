@@ -1765,7 +1765,7 @@ type FSharpCheckProjectResults(projectFileName:string, keepAssemblyContents, err
         FSharpAssemblySignature(tcGlobals, thisCcu, tcImports, topAttribs, ccuSig)
 
     member info.AssemblyContents =  
-        if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to tru on the FSharpChecker in order to access the checked contents of assemblies"
+        if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
         let (tcGlobals, tcImports, thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles) = getDetails()
         let mimpls = 
             match tcAssemblyExpr with 
@@ -2007,7 +2007,7 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
             scope.IsRelativeNameResolvable(pos, plid, item))
     
     member info.ImplementationFiles =
-        if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to tru on the FSharpChecker in order to access the checked contents of assemblies"
+        if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
         scopeOptX 
         |> Option.map (fun scope -> 
             let cenv = Impl.cenv(scope.TcGlobals, scope.ThisCcu, scope.TcImports)
