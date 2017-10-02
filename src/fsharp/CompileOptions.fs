@@ -380,9 +380,7 @@ let ParseCompilerOptions (collectOtherArgument : string -> unit, blocks: Compile
         let rest = attempt specs 
         processArg rest
   
-  let result = processArg args
-  result
-
+  processArg args
 
 //----------------------------------------------------------------------------
 // Compiler options

@@ -59,7 +59,10 @@ type internal PartialCheckResults =
       /// Represents the collected attributes to apply to the module of assuembly generates
       TopAttribs: TypeChecker.TopAttribs option
 
-      TimeStamp: DateTime }
+      TimeStamp: DateTime 
+      
+      /// Represents complete typechecked implementation files, including thier typechecked signatures if any.
+      ImplementationFiles: TypedImplFile list }
 
 /// Manages an incremental build graph for the build of an F# project
 [<Class>]

@@ -1095,7 +1095,8 @@ type PartialCheckResults =
       TcSymbolUses: TcSymbolUses list 
       TcDependencyFiles: string list 
       TopAttribs: TopAttribs option
-      TimeStamp: System.DateTime }
+      TimeStamp: System.DateTime
+      ImplementationFiles: TypedImplFile list }
 
     static member Create (tcAcc: TypeCheckAccumulator, timestamp) = 
         { TcState = tcAcc.tcState
@@ -1108,7 +1109,8 @@ type PartialCheckResults =
           TcSymbolUses = tcAcc.tcSymbolUses
           TcDependencyFiles = tcAcc.tcDependencyFiles
           TopAttribs = tcAcc.topAttribs
-          TimeStamp = timestamp }
+          TimeStamp = timestamp 
+          ImplementationFiles = tcAcc.typedImplFiles }
 
 
 [<AutoOpen>]

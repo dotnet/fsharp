@@ -28,6 +28,7 @@ and [<Class>] FSharpImplementationFileContents =
 #else
 and [<Class>] internal FSharpImplementationFileContents = 
 #endif
+    internal new : cenv: Impl.cenv * mimpl: TypedImplFile -> FSharpImplementationFileContents
 
     /// The qualified name acts to fully-qualify module specifications and implementations
     member QualifiedName: string

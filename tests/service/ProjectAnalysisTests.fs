@@ -5174,3 +5174,45 @@ let ``Test line directives in foreground analysis`` () = // see https://github.c
 
     [ for e in checkResults1.Errors -> e.StartLineAlternate, e.EndLineAlternate, e.FileName ] |> shouldEqual [(4, 4, ProjectLineDirectives.fileName1)]
 
+//------------------------------------------------------
+
+[<Test>]
+let ``ParseAndCheckFileResults contains ImplFile list if FSharpChecker is created with keepAssemblyContent flag set to true``() =
+
+    let fileName1 = Path.ChangeExtension(Path.GetTempFileName(), ".fs")
+    let base2 = Path.GetTempFileName()
+    let dllName = Path.ChangeExtension(base2, ".dll")
+    let projFileName = Path.ChangeExtension(base2, ".fsproj")
+    let fileSource1 = """
+type A(i:int) =
+    member x.Value = i
+"""
+    File.WriteAllText(fileName1, fileSource1)
+
+    let fileNames = [fileName1]
+    let args = mkProjectCommandLineArgs (dllName, fileNames)
+    let keepAssemblyContentsChecker = FSharpChecker.Create(keepAssemblyContents=true)
+    let options =  keepAssemblyContentsChecker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    
+    let fileCheckResults = 
+        keepAssemblyContentsChecker.ParseAndCheckFileInProject(fileName1, 0, fileSource1, options)  |> Async.RunSynchronously
+        |> function 
+            | _, FSharpCheckFileAnswer.Succeeded(res) -> res
+            | _ -> failwithf "Parsing aborted unexpectedly..."
+
+    let declarations =
+        match fileCheckResults.ImplementationFiles with
+        | Some (implFile :: _) ->
+            match implFile.Declarations |> List.tryHead with
+            | Some (FSharpImplementationFileDeclaration.Entity (_, subDecls)) -> subDecls
+            | _ -> failwith "unexpected declaration"
+        | Some [] | None -> failwith "File check results does not contain any `ImplementationFile`s"
+
+    match declarations |> List.tryHead with
+    | Some (FSharpImplementationFileDeclaration.Entity(entity, [])) ->
+        entity.DisplayName |> shouldEqual "A"
+        let memberNames = entity.MembersFunctionsAndValues |> Seq.map (fun x -> x.DisplayName) |> Set.ofSeq
+        Assert.That(memberNames, Contains.Item "Value")
+
+    | Some decl -> failwithf "unexpected declaration %A" decl
+    | None -> failwith "declaration list is empty"
