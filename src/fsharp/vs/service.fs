@@ -163,7 +163,8 @@ type TypeCheckInfo
            loadClosure : LoadClosure option,
            reactorOps : IReactorOperations,
            checkAlive : (unit -> bool),
-           textSnapshotInfo:obj option) = 
+           textSnapshotInfo:obj option,
+           implementationFiles: TypedImplFile list) = 
 
     let textSnapshotInfo = defaultArg textSnapshotInfo null
     let (|CNR|) (cnr:CapturedNameResolution) =
@@ -1356,6 +1357,8 @@ type TypeCheckInfo
     /// The assembly being analyzed
     member __.ThisCcu = thisCcu
 
+    member __.ImplementationFiles = implementationFiles
+
     override __.ToString() = "TypeCheckInfo(" + mainInputFileName + ")"
 
 
@@ -1662,7 +1665,7 @@ module internal Parser =
                 let errors = errHandler.CollectedDiagnostics
                 
                 match tcEnvAtEndOpt with
-                | Some (tcEnvAtEnd, _typedImplFiles, tcState) ->
+                | Some (tcEnvAtEnd, typedImplFiles, tcState) ->
                     let scope = 
                         TypeCheckInfo(tcConfig, tcGlobals, 
                                     tcState.PartialAssemblySignature, 
@@ -1678,7 +1681,8 @@ module internal Parser =
                                     loadClosure,
                                     reactorOps,
                                     checkAlive,
-                                    textSnapshotInfo)     
+                                    textSnapshotInfo,
+                                    typedImplFiles)     
                     return errors, TypeCheckAborted.No scope
                 | None -> 
                     return errors, TypeCheckAborted.Yes
@@ -1761,7 +1765,7 @@ type FSharpCheckProjectResults(projectFileName:string, keepAssemblyContents, err
         FSharpAssemblySignature(tcGlobals, thisCcu, tcImports, topAttribs, ccuSig)
 
     member info.AssemblyContents =  
-        if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to tru on the FSharpChecker in order to access the checked contents of assemblies"
+        if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
         let (tcGlobals, tcImports, thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles) = getDetails()
         let mimpls = 
             match tcAssemblyExpr with 
@@ -1817,7 +1821,7 @@ type FSharpCheckProjectResults(projectFileName:string, keepAssemblyContents, err
 //
 // There is an important property of all the objects returned by the methods of this type: they do not require 
 // the corresponding background builder to be alive. That is, they are simply plain-old-data through pre-formatting of all result text.
-type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo option, dependencyFiles: string list, builderX: IncrementalBuilder option, reactorOpsX:IReactorOperations) =
+type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOptX: TypeCheckInfo option, dependencyFiles: string list, builderX: IncrementalBuilder option, reactorOpsX:IReactorOperations, keepAssemblyContents: bool) =
 
     // This may be None initially, or may be set to None when the object is disposed or finalized
     let mutable details = match scopeOptX with None -> None | Some scopeX -> Some (scopeX, builderX, reactorOpsX)
@@ -2002,6 +2006,12 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
             RequireCompilationThread ctok
             scope.IsRelativeNameResolvable(pos, plid, item))
     
+    member info.ImplementationFiles =
+        if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
+        scopeOptX 
+        |> Option.map (fun scope -> 
+            let cenv = Impl.cenv(scope.TcGlobals, scope.ThisCcu, scope.TcImports)
+            [ for mimpl in scope.ImplementationFiles -> FSharpImplementationFileContents(cenv, mimpl)])
 
     override info.ToString() = "FSharpCheckFileResults(" + filename + ")"
 
@@ -2326,7 +2336,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     static let mutable foregroundTypeCheckCount = 0
 
     let MakeCheckFileResultsEmpty(filename, creationErrors) = 
-        FSharpCheckFileResults (filename, Array.ofList creationErrors, None, [], None, reactorOps)
+        FSharpCheckFileResults (filename, Array.ofList creationErrors, None, [], None, reactorOps, keepAssemblyContents)
 
     let MakeCheckFileResults(filename, options:FSharpProjectOptions, builder, scope, dependencyFiles, creationErrors, parseErrors, tcErrors) = 
         let errors = 
@@ -2337,7 +2347,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                else 
                     yield! tcErrors |]
                 
-        FSharpCheckFileResults (filename, errors, Some scope, dependencyFiles, Some builder, reactorOps)
+        FSharpCheckFileResults (filename, errors, Some scope, dependencyFiles, Some builder, reactorOps, keepAssemblyContents)
 
     let MakeCheckFileAnswer(filename, tcFileResult, options:FSharpProjectOptions, builder, dependencyFiles, creationErrors, parseErrors, tcErrors) = 
         match tcFileResult with 
@@ -2624,7 +2634,8 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                   List.last tcProj.TcResolutions, 
                                   List.last tcProj.TcSymbolUses,
                                   tcProj.TcEnvAtEnd.NameEnv,
-                                  loadClosure, reactorOps, (fun () -> builder.IsAlive), None)     
+                                  loadClosure, reactorOps, (fun () -> builder.IsAlive), None, 
+                                  tcProj.ImplementationFiles)     
                 let typedResults = MakeCheckFileResults(filename, options, builder, scope, tcProj.TcDependencyFiles, creationErrors, parseResults.Errors, tcErrors)
                 return (parseResults, typedResults)
            })
@@ -3144,7 +3155,7 @@ type FsiInteractiveChecker(legacyReferenceResolver, reactorOps: IReactorOperatio
                 match tcFileResult with 
                 | Parser.TypeCheckAborted.No scope ->
                     let errors = [|  yield! parseErrors; yield! tcErrors |]
-                    let typeCheckResults = FSharpCheckFileResults (filename, errors, Some scope, dependencyFiles, None, reactorOps)   
+                    let typeCheckResults = FSharpCheckFileResults (filename, errors, Some scope, dependencyFiles, None, reactorOps, false)   
                     let projectResults = FSharpCheckProjectResults (filename, keepAssemblyContents, errors, Some(tcGlobals, tcImports, scope.ThisCcu, scope.CcuSig, [scope.ScopeSymbolUses], None, None, mkSimpleAssRef "stdin", tcState.TcEnvFromImpls.AccessRights, None, dependencyFiles), reactorOps)
                     parseResults, typeCheckResults, projectResults
                 | _ -> 
