@@ -3186,7 +3186,7 @@ and OptimizeImplFileInternal cenv env isIncrementalFragment hidden (TImplFile(qn
 // Entry point
 //------------------------------------------------------------------------- 
 
-let OptimizeImplFile(settings,ccu,tcGlobals,tcVal, importMap,optEnv,isIncrementalFragment,emitTailcalls,hidden,mimpls) =
+let OptimizeImplFile(settings, ccu, tcGlobals, tcVal, importMap, optEnv, isIncrementalFragment, emitTailcalls, hidden, mimpls) =
     let cenv = 
         { settings=settings
           scope=ccu 
@@ -3197,7 +3197,7 @@ let OptimizeImplFile(settings,ccu,tcGlobals,tcVal, importMap,optEnv,isIncrementa
           localInternalVals=Dictionary<Stamp, ValInfo>(10000)
           emitTailcalls=emitTailcalls
           casApplied=new Dictionary<Stamp,bool>() }
-    let (optEnvNew,_,_,_ as results) = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls  
+    let (optEnvNew, _, _, _ as results) = OptimizeImplFileInternal cenv optEnv isIncrementalFragment hidden mimpls  
     let optimizeDuringCodeGen expr = OptimizeExpr cenv optEnvNew expr |> fst
     results, optimizeDuringCodeGen
 

@@ -1345,8 +1345,7 @@ let u_trait_sln st =
 
 let u_trait st = 
     let a,b,c,d,e,f = u_tup6 u_typs u_string u_MemberFlags u_typs (u_option u_typ) (u_option u_trait_sln) st
-    // extSlns starts empty.  TODO: check the ramifications of this
-    // ad starts as None.  TODO: check the ramifications of this
+    // extSlns starts empty.  TODO: check the ramifications of this when inlining solved trait calls from other assemblies
     TTrait (a, b, c, d, e, ref f, [], None)
 
 

@@ -2050,7 +2050,6 @@ and
     | SupportsNull               of range 
     
     /// Indicates a constraint that a type has a member with the given signature 
-    // TODO: allow .NET-defined extension members to solve trait constraints. Currently only ValRefs indicating possible solutions are stored
     | MayResolveMember of TraitConstraintInfo * range
     
     /// Indicates a constraint that a type is a non-Nullable value type 
@@ -3556,7 +3555,7 @@ and
              + String.concat "," (List.map string tinst) + ")"
         | TType_fun (d,r) -> "(" + string d + " -> " + string r + ")"
         | TType_ucase (uc,tinst) -> "union case type " + uc.CaseName + (match tinst with [] -> "" | tys -> "<" + String.concat "," (List.map string tys) + ">")
-        | TType_var tp -> match tp.Solution with None -> tp.DisplayName | Some sln -> "£"+sln.ToString()
+        | TType_var tp -> match tp.Solution with None -> tp.DisplayName | Some sln -> "ï¿½"+sln.ToString()
         | TType_measure ms -> sprintf "%A" ms
 
     /// For now, used only as a discriminant in error message.
