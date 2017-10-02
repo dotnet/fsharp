@@ -122,7 +122,7 @@ type internal FSharpCheckFileResults =
     /// Indicates the set of files which must be watched to accurately track changes that affect these results,
     /// Clients interested in reacting to updates to these files should watch these files and take actions as described
     /// in the documentation for compiler service.
-    member DependencyFiles : string list
+    member DependencyFiles : string[]
 
     /// <summary>Get the items for a declaration list</summary>
     ///
@@ -297,7 +297,7 @@ type internal FSharpCheckProjectResults =
     /// Indicates the set of files which must be watched to accurately track changes that affect these results,
     /// Clients interested in reacting to updates to these files should watch these files and take actions as described
     /// in the documentation for compiler service.
-    member DependencyFiles: string list
+    member DependencyFiles: string[]
 
 /// <summary>Unused in this API</summary>
 #if COMPILER_PUBLIC_API

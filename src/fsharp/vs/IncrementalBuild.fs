@@ -1192,9 +1192,9 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
                 yield  r.resolvedPath  ]
 
     let allDependencies =
-        [ yield! basicDependencies
-          for (_,f,_) in sourceFiles do
-                yield f ]
+        [| yield! basicDependencies
+           for (_,f,_) in sourceFiles do
+                yield f |]
 
     // The IncrementalBuilder needs to hold up to one item that needs to be disposed, which is the tcImports for the incremental
     // build. 
