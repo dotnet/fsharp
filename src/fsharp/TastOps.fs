@@ -278,7 +278,7 @@ and remapTraitAux tyenv (TTrait(typs, nm, mf, argtys, rty, slnCell, extSlns)) =
         if tyenv.extSlnsMap.ContainsKey nm then
             tyenv.extSlnsMap.[nm]
         else
-            List.map (remapValRef tyenv) extSlns
+            extSlns // TODO: do we need to remap here???
 
     // Note: we reallocate a new solution cell (though keep existing solutions unless 'removeTraitSolutions'=true) on every traversal of a trait constraint
     // This feels incorrect for trait constraints that are quantified: it seems we should have 

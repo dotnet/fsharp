@@ -142,6 +142,15 @@ type ExtensionMember =
    /// IL-style extension member, backed by some kind of method with an [<Extension>] attribute
    | ILExtMem of TyconRef * MethInfo * ExtensionMethodPriority
 
+   interface PossibleExtensionMemberSolution 
+
+   /// The logical name, e.g. for constraint solving
+   member LogicalName : string
+
+   /// Describes the sequence order of the introduction of an extension method. Extension methods that are introduced
+   /// later through 'open' get priority in overload resolution.
+   member Priority : ExtensionMethodPriority
+
 /// The environment of information used to resolve names
 [<NoEquality; NoComparison>]
 type NameResolutionEnv =
@@ -535,3 +544,5 @@ val ResolveCompletionsInType       : NameResolver -> NameResolutionEnv -> Resolv
 val GetVisibleNamespacesAndModulesAtPoint : NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> ModuleOrNamespaceRef list
 
 val IsItemResolvable : NameResolver -> NameResolutionEnv -> range -> AccessorDomain -> string list -> Item -> bool
+
+val TrySelectExtensionMethInfoOfILExtMem : range -> ImportMap -> TType -> TyconRef * MethInfo * ExtensionMethodPriority -> MethInfo option

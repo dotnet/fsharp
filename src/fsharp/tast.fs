@@ -2029,7 +2029,8 @@ and
 
     override x.ToString() = x.Name
 
-and PossibleExtensionMemberSolutions = ValRef list 
+and PossibleExtensionMemberSolutions = PossibleExtensionMemberSolution list 
+and PossibleExtensionMemberSolution = interface end // only satisfied by type 'ExtensionMember'
 
 and
     [<NoEquality; NoComparison; RequireQualifiedAccess>]

@@ -269,7 +269,7 @@ let (|ItemWithInst|) (x:ItemWithInst) = (x.Item, x.TyparInst)
 type FieldResolution = FieldResolution of RecdFieldRef * bool
 
 /// Information about an extension member held in the name resolution environment
-type ExtensionMember = 
+type ExtensionMember =
 
    /// F#-style Extrinsic extension member, defined in F# code
    | FSExtMem of ValRef * ExtensionMethodPriority
@@ -278,6 +278,8 @@ type ExtensionMember =
    ///
    /// IL-style extension member, backed by some kind of method with an [<Extension>] attribute
    | ILExtMem of TyconRef * MethInfo * ExtensionMethodPriority
+
+   interface PossibleExtensionMemberSolution 
 
    /// Check if two extension members refer to the same definition
    static member Equality g e1 e2 = 
@@ -368,7 +370,7 @@ type NameResolutionEnv =
       /// Extension members by type and name 
       eIndexedExtensionMembers: TyconRefMultiMap<ExtensionMember>
 
-      /// Extension members by name 
+      /// Extension members by name  
       eExtensionMembersByName: NameMultiMap<ExtensionMember>
 
       /// Other extension members unindexed by type
@@ -1899,6 +1901,21 @@ let IntrinsicMethInfosOfType (infoReader:InfoReader) (optFilter,ad,allowMultiInt
     let minfos = minfos |> ExcludeHiddenOfMethInfos g amap m
     minfos
 
+let TrySelectExtensionMethInfoOfILExtMem m amap apparentTy (actualParent, minfo, pri) = 
+    match minfo with 
+    | ILMeth(_,ilminfo,_) -> 
+        MethInfo.CreateILExtensionMeth (amap, m, apparentTy, actualParent, Some pri, ilminfo.RawMetadata) |> Some
+    // F#-defined IL-style extension methods are not seen as extension methods in F# code
+    | FSMeth(g,_,vref,_) -> 
+        FSMeth(g, apparentTy, vref, Some pri) |> Some
+#if EXTENSIONTYPING
+    // // Provided extension methods are not yet supported
+    | ProvidedMeth(amap,providedMeth,_,m) -> 
+        ProvidedMeth(amap, providedMeth, Some pri,m) |> Some
+#endif
+    | DefaultStructCtor _ -> 
+        None
+
 /// Select from a list of extension methods
 let SelectMethInfosFromExtMembers (infoReader:InfoReader) optFilter apparentTy m extMemInfos = 
     let g = infoReader.g
@@ -1916,20 +1933,9 @@ let SelectMethInfosFromExtMembers (infoReader:InfoReader) optFilter apparentTy m
                         | Some m -> yield m
                         | _ -> ()
                 | ILExtMem (actualParent,minfo,pri) when (match optFilter with None -> true | Some nm -> nm = minfo.LogicalName) ->
-                    // Make a reference to the type containing the extension members
-                    match minfo with 
-                    | ILMeth(_,ilminfo,_) -> 
-                         yield (MethInfo.CreateILExtensionMeth (infoReader.amap, m, apparentTy, actualParent, Some pri, ilminfo.RawMetadata))
-                    // F#-defined IL-style extension methods are not seen as extension methods in F# code
-                    | FSMeth(g,_,vref,_) -> 
-                         yield (FSMeth(g, apparentTy, vref, Some pri))
-#if EXTENSIONTYPING
-                    // // Provided extension methods are not yet supported
-                    | ProvidedMeth(amap,providedMeth,_,m) -> 
-                         yield (ProvidedMeth(amap, providedMeth, Some pri,m))
-#endif
-                    | DefaultStructCtor _ -> 
-                         ()
+                    match TrySelectExtensionMethInfoOfILExtMem m infoReader.amap apparentTy (actualParent, minfo, pri) with 
+                    | Some minfo -> yield minfo
+                    | None -> ()
                 | _ -> ()
     ]
 

@@ -271,11 +271,15 @@ let isFpTy g ty =
 let isDecimalTy g ty = 
     typeEquivAux EraseMeasures g g.decimal_ty ty 
 
-let IsNonDecimalNumericOrIntegralEnumType g ty = isIntegerOrIntegerEnumTy g ty || isFpTy g ty
-let IsNumericOrIntegralEnumType g ty = IsNonDecimalNumericOrIntegralEnumType g ty || isDecimalTy g ty
-let IsNonDecimalNumericType g ty = isIntegerTy g ty || isFpTy g ty
-let IsNumericType g ty = IsNonDecimalNumericType g ty || isDecimalTy g ty
-let IsRelationalType g ty = IsNumericType g ty || isStringTy g ty || isCharTy g ty || isBoolTy g ty
+let IsNonDecimalNumericOrIntegralEnumTy g ty = isIntegerOrIntegerEnumTy g ty || isFpTy g ty
+let IsIntegerOrEnumTy g ty = isIntegerOrIntegerEnumTy g ty || isEnumTy g ty
+let IsNumericOrIntegralEnumTy g ty = IsNonDecimalNumericOrIntegralEnumTy g ty || isDecimalTy g ty
+let IsNonDecimalNumericTy g ty = isIntegerTy g ty || isFpTy g ty
+let IsNumericTy g ty = IsNonDecimalNumericTy g ty || isDecimalTy g ty
+let IsNumericOrCharTy g ty = IsNumericTy g ty || isCharTy g ty
+let IsRelationalTy g ty = IsNumericTy g ty || isStringTy g ty || isCharTy g ty || isBoolTy g ty
+let IsFpOrDecimalTy g ty = isFpTy g ty || isDecimalTy g ty
+let IsSignedIntegerOrFpOrDecimalTy g ty = isSignedIntegerTy g ty || IsFpOrDecimalTy g ty
 
 // Get measure of type, float<_> or float32<_> or decimal<_> but not float=float<1> or float32=float32<1> or decimal=decimal<1> 
 let GetMeasureOfType g ty =
@@ -945,7 +949,7 @@ and SolveDimensionlessNumericType (csenv:ConstraintSolverEnv) ndeep m2 trace ty 
 /// will deal with the problem. 
 and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload permitWeakResolution ndeep m2 trace traitInfo : OperationResult<bool> =
     // Do not re-solve if already solved
-    let (TTrait(tys, nm, memFlags, argtys, rty, sln, extVals)) = traitInfo
+    let (TTrait(traitSupportTys, traitName, traitMemFlags, traitObjAndArgTys, traitRetTy, sln, extSlns)) = traitInfo
     if sln.Value.IsSome then ResultD true else
     let g = csenv.g
     let m = csenv.m
@@ -956,27 +960,27 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
     DepthCheck ndeep m  ++ (fun () -> 
 
     // Remove duplicates from the set of types in the support 
-    let tys = ListSet.setify (typeAEquiv g aenv) tys
+    let traitSupportTys = ListSet.setify (typeAEquiv g aenv) traitSupportTys
     // Rebuild the trait info after removing duplicates 
-    let traitInfo = TTrait(tys, nm, memFlags, argtys, rty, sln, extVals)
-    let rty = GetFSharpViewOfReturnType g rty    
+    let traitInfo = TTrait(traitSupportTys, traitName, traitMemFlags, traitObjAndArgTys, traitRetTy, sln, extSlns)
+    let traitRetTy = GetFSharpViewOfReturnType g traitRetTy    
     
     // Assert the object type if the constraint is for an instance member    
-    if memFlags.IsInstance then 
-        match tys, argtys with 
+    if traitMemFlags.IsInstance then 
+        match traitSupportTys, traitObjAndArgTys with 
         | [ty], (h :: _) -> SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace h ty
         | _ -> ErrorD (ConstraintSolverError(FSComp.SR.csExpectedArguments(), m, m2))
     else CompleteD
     ++ (fun () -> 
     
     // Trait calls are only supported on pseudo type (variables) 
-    tys |> IterateD (SolveTypStaticReq csenv trace HeadTypeStaticReq)) ++ (fun () -> 
+    traitSupportTys |> IterateD (SolveTypStaticReq csenv trace HeadTypeStaticReq)) ++ (fun () -> 
     
-    let argtys = if memFlags.IsInstance then List.tail argtys else argtys
-    let minfos = GetRelevantMethodsForTrait csenv permitWeakResolution nm traitInfo
+    let traitArgTys = if traitMemFlags.IsInstance then List.tail traitObjAndArgTys else traitObjAndArgTys
+    let minfos = GetRelevantMethodsForTrait csenv permitWeakResolution traitName traitInfo
         
-    match minfos, tys, memFlags.IsInstance, nm, argtys with 
-      | _, _, false, ("op_Division" | "op_Multiply"), [argty1;argty2]
+    match traitMemFlags.IsInstance, traitName, traitArgTys with 
+      | false, ("op_Division" | "op_Multiply"), [argty1;argty2]
           when 
                // This simulates the existence of 
                //    float * float -> float
@@ -1003,7 +1007,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
                //    decimal<'u> * 'a <---
                   (let checkRuleAppliesInPreferenceToMethods argty1 argty2 = 
                      // Check that at least one of the argument types is numeric
-                     (IsNumericOrIntegralEnumType g argty1) && 
+                     (IsNumericOrIntegralEnumTy g argty1) && 
                      // Check that the support of type variables is empty. That is, 
                      // if we're canonicalizing, then having one of the types nominal is sufficient.
                      // If not, then both must be nominal (i.e. not a type variable).
@@ -1012,7 +1016,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
                      //   - Neither type contributes any methods OR
                      //   - We have the special case "decimal<_> * decimal". In this case we have some 
                      //     possibly-relevant methods from "decimal" but we ignore them in this case.
-                     (isNil minfos || (Option.isSome (GetMeasureOfType g argty1) && isDecimalTy g argty2)) in
+                     (isNil minfos || IsNumericOrIntegralEnumTy g argty2 || (Option.isSome (GetMeasureOfType g argty1) && isDecimalTy g argty2))
 
                    checkRuleAppliesInPreferenceToMethods argty1 argty2 || 
                    checkRuleAppliesInPreferenceToMethods argty2 argty1) ->
@@ -1021,186 +1025,201 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
           | Some (tcref, ms1) ->
             let ms2 = freshMeasure ()
             SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace argty2 (mkAppTy tcref [TType_measure ms2]) ++ (fun () ->
-            SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty (mkAppTy tcref [TType_measure (Measure.Prod(ms1, if nm = "op_Multiply" then ms2 else Measure.Inv ms2))]) ++ (fun () ->
+            SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy (mkAppTy tcref [TType_measure (Measure.Prod(ms1, if traitName = "op_Multiply" then ms2 else Measure.Inv ms2))]) ++ (fun () ->
             ResultD TTraitBuiltIn))
           | _ ->
             match GetMeasureOfType g argty2 with
             | Some (tcref, ms2) ->
               let ms1 = freshMeasure ()
               SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace argty1 (mkAppTy tcref [TType_measure ms1]) ++ (fun () ->
-              SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty (mkAppTy tcref [TType_measure (Measure.Prod(ms1, if nm = "op_Multiply" then ms2 else Measure.Inv ms2))]) ++ (fun () ->
+              SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy (mkAppTy tcref [TType_measure (Measure.Prod(ms1, if traitName = "op_Multiply" then ms2 else Measure.Inv ms2))]) ++ (fun () ->
               ResultD TTraitBuiltIn))
             | _ ->
               SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace argty2 argty1 ++ (fun () -> 
-              SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty argty1 ++ (fun () -> 
+              SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy argty1 ++ (fun () -> 
               ResultD TTraitBuiltIn))
 
-      | _, _, false, ("op_Addition" | "op_Subtraction" | "op_Modulus"), [argty1;argty2] 
-          when // Ignore any explicit +/- overloads from any basic integral types
-               (minfos |> List.forall (fun minfo -> isIntegerTy g minfo.EnclosingType ) &&
-                (   (IsNumericOrIntegralEnumType g argty1 || (nm = "op_Addition" && (isCharTy g argty1 || isStringTy g argty1))) && (permitWeakResolution || not (isTyparTy g argty2))
-                 || (IsNumericOrIntegralEnumType g argty2 || (nm = "op_Addition" && (isCharTy g argty2 || isStringTy g argty2))) && (permitWeakResolution || not (isTyparTy g argty1)))) ->
+      | false, ("op_Addition" | "op_Subtraction" | "op_Modulus"), [argty1;argty2] 
+          when traitSupportTys |> List.exists (IsNumericOrIntegralEnumTy g) &&
+               (   (IsNumericOrIntegralEnumTy g argty1 || (traitName = "op_Addition" && (isCharTy g argty1 || isStringTy g argty1))) && (permitWeakResolution || not (isTyparTy g argty2))
+                || (IsNumericOrIntegralEnumTy g argty2 || (traitName = "op_Addition" && (isCharTy g argty2 || isStringTy g argty2))) && (permitWeakResolution || not (isTyparTy g argty1))) ->
           SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace argty2 argty1 ++ (fun () -> 
-          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty argty1 ++ (fun () -> 
+          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy argty1 ++ (fun () -> 
           ResultD TTraitBuiltIn))
 
-      | _, _, false, ("op_LessThan" | "op_LessThanOrEqual" | "op_GreaterThan" | "op_GreaterThanOrEqual" | "op_Equality" | "op_Inequality" ), [argty1;argty2] 
-          when // Ignore any explicit overloads from any basic integral types
-               (minfos |> List.forall (fun minfo -> isIntegerTy g minfo.EnclosingType ) &&
-                (   (IsRelationalType g argty1 && (permitWeakResolution || not (isTyparTy g argty2)))
-                 || (IsRelationalType g argty2 && (permitWeakResolution || not (isTyparTy g argty1))))) ->
+      | false, ("op_LessThan" | "op_LessThanOrEqual" | "op_GreaterThan" | "op_GreaterThanOrEqual" | "op_Equality" | "op_Inequality" ), [argty1;argty2] 
+          when traitSupportTys |> List.exists (IsRelationalTy g) &&
+                (   (IsRelationalTy g argty1 && (permitWeakResolution || not (isTyparTy g argty2)))
+                 || (IsRelationalTy g argty2 && (permitWeakResolution || not (isTyparTy g argty1)))) ->
           SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace argty2 argty1 ++ (fun () -> 
-          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty g.bool_ty ++ (fun () -> 
+          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy g.bool_ty ++ (fun () -> 
           ResultD TTraitBuiltIn))
 
       // We pretend for uniformity that the numeric types have a static property called Zero and One 
       // As with constants, only zero is polymorphic in its units
-      | [], [ty], false, "get_Zero", [] 
-          when IsNumericType g ty ->
-          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty ty ++ (fun () -> 
+      | false, "get_Zero", [] 
+          when traitSupportTys |> List.exists (IsNumericTy g) ->
+
+          let ty = traitSupportTys |> List.find (IsNumericTy g)
+          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy ty ++ (fun () -> 
           ResultD TTraitBuiltIn)
 
-      | [], [ty], false, "get_One", [] 
-          when IsNumericType g ty || isCharTy g ty ->
+      | false, "get_One", [] 
+          when traitSupportTys |> List.exists (IsNumericOrCharTy g) ->
+
+          let ty = traitSupportTys |> List.find (IsNumericOrCharTy g)
           SolveDimensionlessNumericType csenv ndeep m2 trace ty ++ (fun () -> 
-          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty ty ++ (fun () -> 
+          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy ty ++ (fun () -> 
           ResultD TTraitBuiltIn))
 
-      | [], _, false, ("DivideByInt"), [argty1;argty2] 
-          when isFpTy g argty1 || isDecimalTy g argty1 ->
+      | false, "DivideByInt", [argty1;argty2] 
+          when traitSupportTys |> List.exists (IsFpOrDecimalTy g) ->
           SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace argty2 g.int_ty ++ (fun () -> 
-          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty argty1 ++ (fun () -> 
+          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy argty1 ++ (fun () -> 
           ResultD TTraitBuiltIn))
 
-      // We pretend for uniformity that the 'string' and 'array' types have an indexer property called 'Item' 
-      | [], [ty], true, ("get_Item"), [argty1] 
-          when isStringTy g ty ->
+      // Simulate the 'string' has an indexer property called 'Item' 
+      | true, "get_Item", [argty1] 
+          when traitSupportTys |> List.exists (isStringTy g) ->
 
           SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace argty1 g.int_ty ++ (fun () -> 
-          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty g.char_ty ++ (fun () -> 
+          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy g.char_ty ++ (fun () -> 
           ResultD TTraitBuiltIn))
 
-      | [], [ty], true, ("get_Item"), argtys
-          when isArrayTy g ty ->
+      // Simulate that all array types have an indexer property called 'Item' 
+      | true, "get_Item", argtys
+          when traitSupportTys |> List.exists (isArrayTy g) ->
 
-          (if rankOfArrayTy g ty <> argtys.Length then ErrorD(ConstraintSolverError(FSComp.SR.csIndexArgumentMismatch((rankOfArrayTy g ty), argtys.Length), m, m2)) else CompleteD) ++ (fun () ->
+          let arrayTy = traitSupportTys |> List.find (isArrayTy g)
+          let rank = rankOfArrayTy g arrayTy
+          (if rank <> argtys.Length then ErrorD(ConstraintSolverError(FSComp.SR.csIndexArgumentMismatch(rank, argtys.Length), m, m2)) else CompleteD) ++ (fun () ->
           (argtys |> IterateD (fun argty -> SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace argty g.int_ty)) ++ (fun () -> 
-          let ety = destArrayTy g ty
-          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty ety ++ (fun () -> 
+          let ety = destArrayTy g arrayTy
+          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy ety ++ (fun () -> 
           ResultD TTraitBuiltIn)))
 
-      | [], [ty], true, ("set_Item"), argtys
-          when isArrayTy g ty ->
+      // Simulate that all array types have an indexer setter property called 'Item' 
+      | true, "set_Item", argtys
+          when traitSupportTys |> List.exists (isArrayTy g) ->
           
-          (if rankOfArrayTy g ty <> argtys.Length - 1 then ErrorD(ConstraintSolverError(FSComp.SR.csIndexArgumentMismatch((rankOfArrayTy g ty), (argtys.Length - 1)), m, m2)) else CompleteD) ++ (fun () ->
+          let arrayTy = traitSupportTys |> List.find (isArrayTy g)
+          let rank = rankOfArrayTy g arrayTy
+          (if rank <> argtys.Length - 1 then ErrorD(ConstraintSolverError(FSComp.SR.csIndexArgumentMismatch(rank, (argtys.Length - 1)), m, m2)) else CompleteD) ++ (fun () ->
           let argtys, ety = List.frontAndBack argtys
           (argtys |> IterateD (fun argty -> SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace argty g.int_ty)) ++ (fun () -> 
-          let etys = destArrayTy g ty
+          let etys = destArrayTy g arrayTy
           SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace ety etys ++ (fun () -> 
           ResultD TTraitBuiltIn)))
 
-      | [], _, false, ("op_BitwiseAnd" | "op_BitwiseOr" | "op_ExclusiveOr"), [argty1;argty2] 
-          when    (isIntegerOrIntegerEnumTy g argty1 || (isEnumTy g argty1)) && (permitWeakResolution || not (isTyparTy g argty2))
-               || (isIntegerOrIntegerEnumTy g argty2 || (isEnumTy g argty2)) && (permitWeakResolution || not (isTyparTy g argty1)) ->
+      | false, ("op_BitwiseAnd" | "op_BitwiseOr" | "op_ExclusiveOr"), [argty1;argty2] 
+          when traitSupportTys |> List.exists (IsIntegerOrEnumTy g) &&
+               (   IsIntegerOrEnumTy g argty1 && (permitWeakResolution || not (isTyparTy g argty2))
+                || IsIntegerOrEnumTy g argty2 && (permitWeakResolution || not (isTyparTy g argty1))) ->
 
           SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace argty2 argty1 ++ (fun () -> 
-          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty argty1 ++ (fun () -> 
-          SolveDimensionlessNumericType csenv ndeep m2 trace argty1 ++ (fun () -> 
-          ResultD TTraitBuiltIn)));
-
-      | [], _, false, ("op_LeftShift" | "op_RightShift"), [argty1;argty2] 
-          when    isIntegerOrIntegerEnumTy g argty1  ->
-
-          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace argty2 g.int_ty ++ (fun () -> 
-          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty argty1 ++ (fun () -> 
+          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy argty1 ++ (fun () -> 
           SolveDimensionlessNumericType csenv ndeep m2 trace argty1 ++ (fun () -> 
           ResultD TTraitBuiltIn)))
 
-      | _, _, false, ("op_UnaryPlus"), [argty] 
-          when IsNumericOrIntegralEnumType g argty ->  
+      | false, ("op_LeftShift" | "op_RightShift"), [argty1;argty2] 
+          when traitSupportTys |> List.exists (isIntegerOrIntegerEnumTy g) &&
+               isIntegerOrIntegerEnumTy g argty1  ->
 
-          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty argty ++ (fun () -> 
+          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace argty2 g.int_ty ++ (fun () -> 
+          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy argty1 ++ (fun () -> 
+          SolveDimensionlessNumericType csenv ndeep m2 trace argty1 ++ (fun () -> 
+          ResultD TTraitBuiltIn)))
+
+      | false, "op_UnaryPlus", [argty] 
+          when traitSupportTys |> List.exists (IsNumericOrIntegralEnumTy g) &&
+               IsNumericOrIntegralEnumTy g argty ->  
+
+          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy argty ++ (fun () -> 
           ResultD TTraitBuiltIn)
 
-      | _, _, false, ("op_UnaryNegation"), [argty] 
-          when isSignedIntegerTy g argty || isFpTy g argty || isDecimalTy g argty ->
+      | false, "op_UnaryNegation", [argty] 
+          when traitSupportTys |> List.exists (IsSignedIntegerOrFpOrDecimalTy g) &&
+               IsSignedIntegerOrFpOrDecimalTy g argty ->
 
-          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty argty ++ (fun () -> 
+          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy argty ++ (fun () -> 
           ResultD TTraitBuiltIn)
 
-      | _, _, true, ("get_Sign"), [] 
-          when (let argty = tys.Head in isSignedIntegerTy g argty || isFpTy g argty || isDecimalTy g argty) ->
+      | true, "get_Sign", [] 
+          when traitSupportTys |> List.exists (IsSignedIntegerOrFpOrDecimalTy g) ->
 
-          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty g.int32_ty ++ (fun () -> 
+          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy g.int32_ty ++ (fun () -> 
           ResultD TTraitBuiltIn)
 
-      | _, _, false, ("op_LogicalNot" | "op_OnesComplement"), [argty] 
-          when isIntegerOrIntegerEnumTy g argty  ->
+      | false, ("op_LogicalNot" | "op_OnesComplement"), [argty] 
+          when traitSupportTys |> List.exists (isIntegerOrIntegerEnumTy g) ->
 
-          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty argty ++ (fun () -> 
+          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy argty ++ (fun () -> 
           SolveDimensionlessNumericType csenv ndeep m2 trace argty ++ (fun () -> 
           ResultD TTraitBuiltIn))
 
-      | _, _, false, ("Abs"), [argty] 
-          when isSignedIntegerTy g argty || isFpTy g argty || isDecimalTy g argty ->
+      | false, "Abs", [argty] 
+          when traitSupportTys |> List.exists (IsSignedIntegerOrFpOrDecimalTy g) ->
 
-          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty argty ++ (fun () -> 
+          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy argty ++ (fun () -> 
           ResultD TTraitBuiltIn)
 
-      | _, _, false, "Sqrt", [argty1] 
-          when isFpTy g argty1 ->
-          match GetMeasureOfType g argty1 with
+      | false, "Sqrt", [argty] 
+          when traitSupportTys |> List.exists (isFpTy g) ->
+
+          match GetMeasureOfType g argty with
             | Some (tcref, _) ->
               let ms1 = freshMeasure () 
-              SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace argty1 (mkAppTy tcref [TType_measure (Measure.Prod (ms1, ms1))]) ++ (fun () ->
-              SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty (mkAppTy tcref [TType_measure ms1]) ++ (fun () ->
+              SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace argty (mkAppTy tcref [TType_measure (Measure.Prod (ms1, ms1))]) ++ (fun () ->
+              SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy (mkAppTy tcref [TType_measure ms1]) ++ (fun () ->
               ResultD TTraitBuiltIn))
             | None ->
-              SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty argty1 ++ (fun () -> 
+              SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy argty ++ (fun () -> 
               ResultD TTraitBuiltIn)
 
-      | _, _, false, ("Sin" | "Cos" | "Tan" | "Sinh" | "Cosh" | "Tanh" | "Atan" | "Acos" | "Asin" | "Exp" | "Ceiling" | "Floor" | "Round" | "Truncate" | "Log10" | "Log" | "Sqrt"), [argty] 
-          when isFpTy g argty ->
+      | false, ("Sin" | "Cos" | "Tan" | "Sinh" | "Cosh" | "Tanh" | "Atan" | "Acos" | "Asin" | "Exp" | "Ceiling" | "Floor" | "Round" | "Truncate" | "Log10" | "Log" | "Sqrt"), [argty] 
+          when traitSupportTys |> List.exists (isFpTy g) ->
 
           SolveDimensionlessNumericType csenv ndeep m2 trace argty ++ (fun () -> 
-          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty argty ++ (fun () -> 
+          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy argty ++ (fun () -> 
           ResultD TTraitBuiltIn))
 
-      | _, _, false, ("op_Explicit"), [argty] 
+      // Simulate solutions to op_Implicit and op_Explicit
+      | false, "op_Explicit", [argty] 
           when (// The input type. 
-                (IsNonDecimalNumericOrIntegralEnumType g argty || isStringTy g argty || isCharTy g argty) &&
+                (IsNonDecimalNumericOrIntegralEnumTy g argty || isStringTy g argty || isCharTy g argty) &&
                 // The output type
-                (IsNonDecimalNumericOrIntegralEnumType g rty || isCharTy g rty) && 
+                (IsNonDecimalNumericOrIntegralEnumTy g traitRetTy || isCharTy g traitRetTy) && 
                 // Exclusion: IntPtr and UIntPtr do not support .Parse() from string 
-                not (isStringTy g argty && isNativeIntegerTy g rty) &&
+                not (isStringTy g argty && isNativeIntegerTy g traitRetTy) &&
                 // Exclusion: No conversion from char to decimal
-                not (isCharTy g argty && isDecimalTy g rty)) -> 
+                not (isCharTy g argty && isDecimalTy g traitRetTy)) -> 
 
           ResultD TTraitBuiltIn
 
 
-      | _, _, false, ("op_Explicit"), [argty] 
+      | false, "op_Explicit", [argty] 
           when (// The input type. 
-                (IsNumericOrIntegralEnumType g argty || isStringTy g argty) &&
+                (IsNumericOrIntegralEnumTy g argty || isStringTy g argty) &&
                 // The output type
-                (isDecimalTy g rty)) -> 
+                (isDecimalTy g traitRetTy)) -> 
 
           ResultD TTraitBuiltIn
 
-      | [], _, false, "Pow", [argty1; argty2] 
-          when isFpTy g argty1 ->
+      | false, "Pow", [argty1; argty2] 
+          when traitSupportTys |> List.exists (isFpTy g)  ->
           
           SolveDimensionlessNumericType csenv ndeep m2 trace argty1 ++ (fun () -> 
           SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace argty2 argty1 ++ (fun () -> 
-          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty argty1 ++ (fun () -> 
+          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy argty1 ++ (fun () -> 
           ResultD TTraitBuiltIn)))
 
-      | _, _, false, ("Atan2"), [argty1; argty2] 
-          when isFpTy g argty1 ->
+      | false, "Atan2", [argty1; argty2] 
+          when traitSupportTys |> List.exists (isFpTy g) ->
+
           SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace argty2 argty1 ++ (fun () ->
           match GetMeasureOfType g argty1 with
-          | None -> SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty argty1
-          | Some (tcref, _) -> SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty (mkAppTy tcref [TType_measure Measure.One])) ++ (fun () ->
+          | None -> SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy argty1
+          | Some (tcref, _) -> SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy (mkAppTy tcref [TType_measure Measure.One])) ++ (fun () ->
           ResultD TTraitBuiltIn)
 
       | _ -> 
@@ -1209,16 +1228,16 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
 
           // First look for a solution by a record property
           let recdPropSearch = 
-              let isGetProp = nm.StartsWith "get_" 
-              let isSetProp = nm.StartsWith "set_" 
-              if argtys.IsEmpty && isGetProp || isSetProp then 
-                  let propName = nm.[4..]
+              let isGetProp = traitName.StartsWith "get_" 
+              let isSetProp = traitName.StartsWith "set_" 
+              if (traitArgTys.IsEmpty && isGetProp) || isSetProp then 
+                  let propName = traitName.[4..]
                   let props = 
-                    tys |> List.choose (fun ty -> 
+                    traitSupportTys |> List.choose (fun ty -> 
                         match TryFindIntrinsicNamedItemOfType csenv.InfoReader (propName, AccessibleFromEverywhere) FindMemberFlag.IgnoreOverrides m ty with
                         | Some (RecdFieldItem rfinfo) 
                               when (isGetProp || rfinfo.RecdField.IsMutable) && 
-                                   (rfinfo.IsStatic = not memFlags.IsInstance) && 
+                                   (rfinfo.IsStatic = not traitMemFlags.IsInstance) && 
                                    IsRecdFieldAccessible amap m AccessibleFromEverywhere rfinfo.RecdFieldRef &&
                                    not rfinfo.LiteralValue.IsSome && 
                                    not rfinfo.RecdField.IsCompilerGenerated -> 
@@ -1232,29 +1251,33 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
 
           // Now check if there are no feasible solutions at all
           match minfos, recdPropSearch with 
-          | [], None when not (tys |> List.exists (isAnyParTy g)) ->
-              if tys |> List.exists (isFunTy g) then 
-                  ErrorD (ConstraintSolverError(FSComp.SR.csExpectTypeWithOperatorButGivenFunction(DecompileOpName nm), m, m2)) 
-              elif tys |> List.exists (isAnyTupleTy g) then 
-                  ErrorD (ConstraintSolverError(FSComp.SR.csExpectTypeWithOperatorButGivenTuple(DecompileOpName nm), m, m2)) 
+          | [], None when not (traitSupportTys |> List.exists (isAnyParTy g)) ->
+
+              if traitSupportTys |> List.exists (isFunTy g) then 
+                  ErrorD (ConstraintSolverError(FSComp.SR.csExpectTypeWithOperatorButGivenFunction(DecompileOpName traitName), m, m2)) 
+
+              elif traitSupportTys |> List.exists (isAnyTupleTy g) then 
+                  ErrorD (ConstraintSolverError(FSComp.SR.csExpectTypeWithOperatorButGivenTuple(DecompileOpName traitName), m, m2)) 
+
               else
-                  match nm, argtys with 
-                  | "op_Explicit", [argty] -> ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotSupportConversion((NicePrint.prettyStringOfTy denv argty), (NicePrint.prettyStringOfTy denv rty)), m, m2))
+
+                  match traitName, traitArgTys with 
+                  | "op_Explicit", [argty] -> ErrorD (ConstraintSolverError(FSComp.SR.csTypeDoesNotSupportConversion((NicePrint.prettyStringOfTy denv argty), (NicePrint.prettyStringOfTy denv traitRetTy)), m, m2))
                   | _ -> 
                       let tyString = 
-                         match tys with 
+                         match traitSupportTys with 
                          | [ty] -> NicePrint.minimalStringOfType denv ty
-                         | _ -> tys |> List.map (NicePrint.minimalStringOfType denv) |> String.concat ", "
-                      let opName = DecompileOpName nm
+                         | _ -> traitSupportTys |> List.map (NicePrint.minimalStringOfType denv) |> String.concat ", "
+                      let opName = DecompileOpName traitName
                       let err = 
                           match opName with 
                           | "?>="  | "?>"  | "?<="  | "?<"  | "?="  | "?<>" 
                           | ">=?"  | ">?"  | "<=?"  | "<?"  | "=?"  | "<>?" 
                           | "?>=?" | "?>?" | "?<=?" | "?<?" | "?=?" | "?<>?" ->
-                             if tys.Length = 1 then FSComp.SR.csTypeDoesNotSupportOperatorNullable(tyString, opName)
+                             if traitSupportTys.Length = 1 then FSComp.SR.csTypeDoesNotSupportOperatorNullable(tyString, opName)
                              else FSComp.SR.csTypesDoNotSupportOperatorNullable(tyString, opName)
                           | _ -> 
-                             if tys.Length = 1 then FSComp.SR.csTypeDoesNotSupportOperator(tyString, opName)
+                             if traitSupportTys.Length = 1 then FSComp.SR.csTypeDoesNotSupportOperator(tyString, opName)
                              else FSComp.SR.csTypesDoNotSupportOperator(tyString, opName)
                       ErrorD(ConstraintSolverError(err, m, m2))
 
@@ -1266,30 +1289,33 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
                     // curried members may not be used to satisfy constraints
                     |> List.choose (fun minfo ->
                           if minfo.IsCurried then None else
-                          let callerArgs = argtys |> List.map (fun argty -> CallerArg(argty, m, false, dummyExpr))
+                          let callerArgs = traitArgTys |> List.map (fun argty -> CallerArg(argty, m, false, dummyExpr))
                           let minst = FreshenMethInfo None m minfo
-                          let objtys = minfo.GetObjArgTypes(amap, m, minst)
-                          Some(CalledMeth<Expr>(csenv.InfoReader, None, false, FreshenMethInfo None, m, AccessibleFromEverywhere, minfo, minst, minst, None, objtys, [(callerArgs, [])], false, false, None)))
+                          //let objtys = minfo.GetObjArgTypes(amap, m, minst)
+                          let callerObjTys = if traitMemFlags.IsInstance then [ List.head traitObjAndArgTys ] else []
+                          Some(CalledMeth<Expr>(csenv.InfoReader, None, false, FreshenMethInfo None, m, AccessibleFromEverywhere, minfo, minst, minst, None, callerObjTys, [(callerArgs, [])], false, false, None)))
               
               let methOverloadResult, errors = 
-                  trace.CollectThenUndoOrCommit (fun (a, _) -> Option.isSome a) (fun trace -> ResolveOverloading csenv (WithTrace trace) nm ndeep (Some traitInfo) (0, 0) AccessibleFromEverywhere calledMethGroup false (Some rty))
+                  trace.CollectThenUndoOrCommit (fun (a, _) -> Option.isSome a) (fun trace -> 
+                      ResolveOverloading csenv (WithTrace trace) traitName ndeep (Some traitInfo) (0, 0) AccessibleFromEverywhere calledMethGroup false (Some traitRetTy))
 
               match recdPropSearch, methOverloadResult with 
               | Some (rfinfo, isSetProp), None -> 
                   // OK, the constraint is solved by a record property. Assert that the return types match.
                   let rty2 = if isSetProp then g.unit_ty else rfinfo.FieldType
-                  SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace rty rty2 ++ (fun () -> 
+                  SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy rty2 ++ (fun () -> 
                   ResultD (TTraitSolvedRecdProp(rfinfo, isSetProp)))
+
               | None, Some (calledMeth:CalledMeth<_>) -> 
-                  // OK, the constraint is solved.
+                  // OK, the constraint is solved by a method
                   let minfo = calledMeth.Method
                   errors ++ (fun () -> 
                       let isInstance = minfo.IsInstance
-                      if isInstance <> memFlags.IsInstance then 
+                      if isInstance <> traitMemFlags.IsInstance then 
                           if isInstance then
-                              ErrorD(ConstraintSolverError(FSComp.SR.csMethodFoundButIsNotStatic((NicePrint.minimalStringOfType denv minfo.EnclosingType), (DecompileOpName nm), nm), m, m2 ))
+                              ErrorD(ConstraintSolverError(FSComp.SR.csMethodFoundButIsNotStatic((NicePrint.minimalStringOfType denv minfo.EnclosingType), (DecompileOpName traitName), traitName), m, m2 ))
                           else
-                              ErrorD(ConstraintSolverError(FSComp.SR.csMethodFoundButIsStatic((NicePrint.minimalStringOfType denv minfo.EnclosingType), (DecompileOpName nm), nm), m, m2 ))
+                              ErrorD(ConstraintSolverError(FSComp.SR.csMethodFoundButIsStatic((NicePrint.minimalStringOfType denv minfo.EnclosingType), (DecompileOpName traitName), traitName), m, m2 ))
                       else 
                           CheckMethInfoAttributes g m None minfo ++ (fun () -> 
                           ResultD (TTraitSolved (minfo, calledMeth.CalledTyArgs))))
@@ -1303,7 +1329,7 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
                    // Otherwise re-record the trait waiting for canonicalization 
                    else AddMemberConstraint csenv ndeep m2 trace traitInfo support frees) ++ (fun () -> 
                        match errors with
-                       | ErrorResult (_, UnresolvedOverloading _) when not ignoreUnresolvedOverload && (not (nm = "op_Explicit" || nm = "op_Implicit")) -> ErrorD LocallyAbortOperationThatFailsToResolveOverload
+                       | ErrorResult (_, UnresolvedOverloading _) when not ignoreUnresolvedOverload && (not (traitName = "op_Explicit" || traitName = "op_Implicit")) -> ErrorD LocallyAbortOperationThatFailsToResolveOverload
                        | _ -> ResultD TTraitUnsolved)
     ) 
     ++ 
@@ -1323,12 +1349,12 @@ and RecordMemberConstraintSolution css m trace traitInfo res =
         ResultD true
 
     | TTraitBuiltIn -> 
-        TransactMemberConstraintSolution traitInfo trace BuiltInSln;
+        TransactMemberConstraintSolution traitInfo trace BuiltInSln
         ResultD true
 
     | TTraitSolvedRecdProp (rfinfo, isSetProp) -> 
         let sln = MemberConstraintSolutionOfRecdFieldInfo rfinfo isSetProp
-        TransactMemberConstraintSolution traitInfo trace sln;
+        TransactMemberConstraintSolution traitInfo trace sln
         ResultD true
 
 /// Convert a MethInfo into the data we save in the TAST
@@ -1344,7 +1370,11 @@ and MemberConstraintSolutionOfMethInfo css m minfo minst =
        let iltref = ilMeth.DeclaringTyconRefOption |> Option.map (fun tcref -> tcref.CompiledRepresentationForNamedType)
        ILMethSln(ilMeth.ApparentEnclosingType, iltref, mref, minst)
     | FSMeth(_, typ, vref, _) ->  
-       FSMethSln(typ, vref, minst)
+#if DEBUG
+        let vtinst = minfo.DeclaringTypeInst @ minst
+        if vref.Typars.Length <> vtinst.Length then error(InternalError("MemberConstraintSolutionOfMethInfo: unexpected typar length mismatch",m))
+#endif
+        FSMethSln(typ, vref, minst)
     | MethInfo.DefaultStructCtor _ -> 
        error(InternalError("the default struct constructor was the unexpected solution to a trait constraint", m))
 #if EXTENSIONTYPING
@@ -1380,13 +1410,16 @@ and TransactMemberConstraintSolution traitInfo (trace:OptionalTrace) sln  =
     let prev = traitInfo.Solution 
     trace.Exec (fun () -> traitInfo.Solution <- Some sln) (fun () -> traitInfo.Solution <- prev)
 
-and GetRelevantExtensionMethodsForTrait g (TTrait(tys, _, _, _, _, _, extVals)) =
+and GetRelevantExtensionMethodsForTrait m (amap: Import.ImportMap) (TTrait(traitSupportTys, _, _, _, _, _, extSlns)) =
     // TODO: check the use of 'allPairs' - not all these extensions apply to each type variable.
-    (tys,extVals) ||> List.allPairs |> List.map (fun (t,vref) -> FSMeth(g, t, vref, Some 1uL) ) 
+    (traitSupportTys,extSlns) ||> List.allPairs |> List.choose (fun (traitSupportTy,extMem) -> 
+        match (extMem :?> ExtensionMember) with 
+        | FSExtMem (vref, pri) -> Some (FSMeth(amap.g, traitSupportTy, vref, Some pri) )
+        | ILExtMem (actualParent, minfo, pri) -> TrySelectExtensionMethInfoOfILExtMem m amap traitSupportTy (actualParent, minfo, pri))
 
 /// Only consider overload resolution if canonicalizing or all the types are now nominal. 
 /// That is, don't perform resolution if more nominal information may influence the set of available overloads 
-and GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution nm (TTrait(tys, _, memFlags, argtys, rty, soln, extVals) as traitInfo) : MethInfo list =
+and GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution traitName (TTrait(traitSupportTys, _, memFlags, argtys, traitRetTy, soln, extSlns) as traitInfo) : MethInfo list =
     let results = 
         let strongResolution = isNil (GetSupportOfMemberConstraint csenv traitInfo)
         if permitWeakResolution || strongResolution then
@@ -1394,9 +1427,9 @@ and GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution 
             let minfos = 
                 match memFlags.MemberKind with
                 | MemberKind.Constructor ->
-                    tys |> List.map (GetIntrinsicConstructorInfosOfType csenv.SolverState.InfoReader m)
+                    traitSupportTys |> List.map (GetIntrinsicConstructorInfosOfType csenv.SolverState.InfoReader m)
                 | _ ->
-                    tys |> List.map (GetIntrinsicMethInfosOfType csenv.SolverState.InfoReader (Some nm, AccessibleFromSomeFSharpCode, AllowMultiIntfInstantiations.Yes) IgnoreOverrides m)
+                    traitSupportTys |> List.map (GetIntrinsicMethInfosOfType csenv.SolverState.InfoReader (Some traitName, AccessibleFromSomeFSharpCode, AllowMultiIntfInstantiations.Yes) IgnoreOverrides m)
 
             /// Merge the sets so we don't get the same minfo from each side 
             /// We merge based on whether minfos use identical metadata or not. 
@@ -1405,7 +1438,7 @@ and GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution 
             // Get the extension method that may be relevant to solving the constraint as MethInfo objects.
             // Extension members are not used when canonicalizing prior to generalization (permitWeakResolution=true)
             let extMInfos = 
-                if strongResolution then GetRelevantExtensionMethodsForTrait csenv.g traitInfo
+                if strongResolution then GetRelevantExtensionMethodsForTrait csenv.m csenv.amap traitInfo
                 else []
 
             let extMInfos = extMInfos |> ListSet.setify MethInfo.MethInfosUseIdenticalDefinitions 
@@ -1418,19 +1451,19 @@ and GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution 
             []
 
     // The trait name "op_Explicit" also covers "op_Implicit", so look for that one too.
-    if nm = "op_Explicit" then 
-        results @ GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution "op_Implicit" (TTrait(tys, "op_Implicit", memFlags, argtys, rty, soln, extVals))
+    if traitName = "op_Explicit" then 
+        results @ GetRelevantMethodsForTrait (csenv:ConstraintSolverEnv) permitWeakResolution "op_Implicit" (TTrait(traitSupportTys, "op_Implicit", memFlags, argtys, traitRetTy, soln, extSlns))
     else
         results
 
 
 /// The nominal support of the member constraint 
-and GetSupportOfMemberConstraint (csenv:ConstraintSolverEnv) (TTrait(tys, _, _, _, _, _, _)) =
-    tys |> List.choose (tryAnyParTy csenv.g)
+and GetSupportOfMemberConstraint (csenv:ConstraintSolverEnv) (TTrait(traitSupportTys, _, _, _, _, _, _)) =
+    traitSupportTys |> List.choose (tryAnyParTy csenv.g)
     
 /// All the typars relevant to the member constraint *)
-and GetFreeTyparsOfMemberConstraint (csenv:ConstraintSolverEnv) (TTrait(tys, _, _, argtys, rty, _, _)) =
-    freeInTypesLeftToRightSkippingConstraints csenv.g (tys@argtys@ Option.toList rty)
+and GetFreeTyparsOfMemberConstraint (csenv:ConstraintSolverEnv) (TTrait(traitSupportTys, _, _, argtys, traitRetTy, _, _)) =
+    freeInTypesLeftToRightSkippingConstraints csenv.g (traitSupportTys@argtys@ Option.toList traitRetTy)
 
 /// Re-solve the global constraints involving any of the given type variables. 
 /// Trait constraints can't always be solved using the pessimistic rules. We only canonicalize 
@@ -1450,12 +1483,7 @@ and SolveRelevantMemberConstraints (csenv:ConstraintSolverEnv) ndeep permitWeakR
 
 and GetRelevantPossibleExtensionSolutionsToConstraint (nenv: NameResolutionEnv) (traitInfo: TraitConstraintInfo) =
     NameMultiMap.find traitInfo.MemberName nenv.eExtensionMembersByName
-    |> List.choose (function
-        | FSExtMem (v,_) -> 
-            if v.LogicalName = traitInfo.MemberName then Some v
-            else None
-        // TODO: allow .NET-defined extension members to solve trait constraints
-        | ILExtMem (_,_,_) -> None) 
+    |> List.map (fun extMem -> (extMem :> PossibleExtensionMemberSolution))
 
 and SolveRelevantMemberConstraintsForTypar (csenv:ConstraintSolverEnv) ndeep permitWeakResolution (trace:OptionalTrace) tp =
     let cxst = csenv.SolverState.ExtraCxs
@@ -2624,8 +2652,11 @@ let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:Trait
           TcVal = tcVal
           ExtraCxs = HashMultiMap(10, HashIdentity.Structural)
           InfoReader = new InfoReader(g,amap) }
+
     let csenv = MakeConstraintSolverEnv ContextInfo.NoContext css m (DisplayEnv.Empty g)
+
     SolveMemberConstraint csenv true (*permitWeakResolution*)true 0 m NoTrace traitInfo ++ (fun _res -> 
+
         let sln = 
               match traitInfo.Solution with 
               | None -> Choice4Of4()
@@ -2649,8 +2680,9 @@ let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:Trait
                        Choice4Of4 ()
                   | ClosedExprSln expr -> 
                        Choice3Of4 expr
+
         match sln with
-        | Choice1Of4(minfo, methArgTys) -> 
+        | Choice1Of4(minfo, minst) -> 
             let argExprs = 
                 // FIX for #421894 - typechecker assumes that coercion can be applied for the trait calls arguments but codegen doesn't emit coercion operations
                 // result - generation of non-verifyable code
@@ -2658,8 +2690,9 @@ let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:Trait
 
                 // flatten list of argument types (looks like trait calls with curried arguments are not supported so we can just convert argument list in straighforward way)
                 let argTypes =
-                    minfo.GetParamTypes(amap, m, methArgTys) 
+                    minfo.GetParamTypes(amap, m, minst) 
                     |> List.concat 
+
                 // do not apply coercion to the 'receiver' argument
                 let receiverArgOpt, argExprs = 
                     if minfo.IsInstance then
@@ -2667,6 +2700,7 @@ let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:Trait
                         | h::t -> Some h, t
                         | argExprs -> None, argExprs
                     else None, argExprs
+
                 let convertedArgs = (argExprs, argTypes) ||> List.map2 (fun expr expectedTy -> mkCoerceIfNeeded g expectedTy (tyOfExpr g expr) expr)
                 match receiverArgOpt with
                 | Some r -> r::convertedArgs
@@ -2679,7 +2713,7 @@ let CodegenWitnessThatTypSupportsTraitConstraint tcVal g amap m (traitInfo:Trait
                 let wrap, h' = mkExprAddrOfExpr g true false PossiblyMutates h None m 
                 ResultD (Some (wrap (Expr.Op(TOp.TraitCall(traitInfo), [], (h' :: t), m))))
             else        
-                ResultD (Some (MakeMethInfoCall amap m minfo methArgTys argExprs ))
+                ResultD (Some (MakeMethInfoCall amap m minfo minst argExprs ))
 
         | Choice2Of4 (tinst, rfref, isSet) -> 
             let res = 
