@@ -1,8 +1,6 @@
 #### 15.0.1
   * Integrate latest changes from visualfsharp
   * Add implementation file contents to CheckFileResults
-
-#### 15.0.1
   * Fix non-public API in .NET Standard 1.6 version
 
 #### 14.0.1
