@@ -14,6 +14,9 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
+
+#nowarn "44" // use of obsolete CheckFileInProjectAllowingStaleCachedResults
+
 //
 // Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
 //
@@ -191,11 +194,12 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
 
                         // Type-checking
                         let typedResults,aborted = 
-                            match interactiveChecker.CheckFileInProject(parseResults,req.FileName,req.Timestamp,req.Text,checkOptions,req.Snapshot) |> Async.RunSynchronously with 
-                            | FSharpCheckFileAnswer.Aborted -> 
+                            match interactiveChecker.CheckFileInProjectAllowingStaleCachedResults(parseResults,req.FileName,req.Timestamp,req.Text,checkOptions,req.Snapshot) |> Async.RunSynchronously with 
+                            | None -> None,false
+                            | Some FSharpCheckFileAnswer.Aborted -> 
                                 // isResultObsolete returned true during the type check.
                                 None,true
-                            | FSharpCheckFileAnswer.Succeeded results -> Some results, false
+                            | Some (FSharpCheckFileAnswer.Succeeded results) -> Some results, false
 
                         sr := None
                         parseResults,typedResults,true,aborted,req.Timestamp
