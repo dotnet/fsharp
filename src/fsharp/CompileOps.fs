@@ -2001,9 +2001,15 @@ let ResolveFileUsingPaths(paths, m, name) =
         raise (FileNameNotResolved(name, searchMessage, m))            
 
 let GetWarningNumber(m, s:string) =
-    try 
-        Some (int32 s)
-    with err -> 
+    try
+        // Okay so ...
+        //      #pragma strips FS of the #pragma "FS0004" and validates the warning number
+        //      therefore if we have warning id that starts with a numeric digit we convert it to Some (int32)
+        //      anything else is ignored None
+        if Char.IsDigit(s.[0]) then Some (int32 s)
+        elif s.StartsWith("FS", StringComparison.Ordinal) = true then raise (new ArgumentException())
+        else None
+    with err ->
         warning(Error(FSComp.SR.buildInvalidWarningNumber(s), m))
         None
 
@@ -5549,4 +5555,3 @@ let TypeCheckClosedInputSet (ctok, checkForErrors, tcConfig, tcImports, tcGlobal
     let (tcEnvAtEndOfLastFile, topAttrs, implFiles), tcState = TypeCheckMultipleInputs (ctok, checkForErrors, tcConfig, tcImports, tcGlobals, prefixPathOpt, tcState, inputs)
     let tcState, declaredImpls = TypeCheckClosedInputSetFinish (implFiles, tcState)
     tcState, topAttrs, declaredImpls, tcEnvAtEndOfLastFile
-
