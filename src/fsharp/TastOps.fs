@@ -101,7 +101,7 @@ type Remap =
       removeTraitSolutions: bool
       
       /// A map indicating how to fill in extSlns for traits as we copy an expression. Indexed by the member name of the trait
-      extSlnsMap: Map<string, PossibleExtensionMemberSolutions> }
+      extSlnsMap: Map<string, TraitPossibleExtensionMemberSolutions> }
 
 let emptyRemap = 
     { tpinst        = emptyTyparInst;
@@ -254,7 +254,7 @@ and remapTyparConstraintsAux tyenv cs =
          | TyparConstraint.IsReferenceType _ 
          | TyparConstraint.RequiresDefaultConstructor _ -> Some(x))
 
-and remapTraitAux tyenv (TTrait(typs, nm, mf, argtys, rty, slnCell, extSlns)) =
+and remapTraitAux tyenv (TTrait(typs, nm, mf, argtys, rty, slnCell, extSlns, ad)) =
     let slnCell = 
         match !slnCell with 
         | None -> None
@@ -288,7 +288,7 @@ and remapTraitAux tyenv (TTrait(typs, nm, mf, argtys, rty, slnCell, extSlns)) =
     // The danger here is that a solution for one syntactic occurrence of a trait constraint won't
     // be propagated to other, "linked" solutions. However trait constraints don't appear in any algebra
     // in the same way as types
-    TTrait(remapTypesAux tyenv typs, nm, mf, remapTypesAux tyenv argtys, Option.map (remapTypeAux tyenv) rty, ref slnCell, extSlnsNew)
+    TTrait(remapTypesAux tyenv typs, nm, mf, remapTypesAux tyenv argtys, Option.map (remapTypeAux tyenv) rty, ref slnCell, extSlnsNew, ad)
 
 and bindTypars tps tyargs tpinst =   
     match tps with 
@@ -821,7 +821,7 @@ type TypeEquivEnv with
     static member FromEquivTypars tps1 tps2 = 
         TypeEquivEnv.Empty.BindEquivTypars tps1 tps2 
 
-let rec traitsAEquivAux erasureFlag g aenv (TTrait(typs1, nm, mf1, argtys, rty, _, _)) (TTrait(typs2, nm2, mf2, argtys2, rty2, _, _)) =
+let rec traitsAEquivAux erasureFlag g aenv (TTrait(typs1, nm, mf1, argtys, rty, _, _, _)) (TTrait(typs2, nm2, mf2, argtys2, rty2, _, _, _)) =
    mf1 = mf2 &&
    nm = nm2 &&
    ListSet.equals (typeAEquivAux erasureFlag g aenv) typs1 typs2 &&
@@ -1917,7 +1917,7 @@ and accFreeInTyparConstraint opts tpc acc =
     | TyparConstraint.IsUnmanaged _
     | TyparConstraint.RequiresDefaultConstructor _ -> acc
 
-and accFreeInTrait opts (TTrait(typs, _, _, argtys, rty, sln, _)) acc = 
+and accFreeInTrait opts (TTrait(typs, _, _, argtys, rty, sln, _, _ad)) acc = 
     Option.foldBack (accFreeInTraitSln opts) sln.Value
        (accFreeInTypes opts typs 
          (accFreeInTypes opts argtys 
@@ -2022,7 +2022,7 @@ and accFreeInTyparConstraintLeftToRight g cxFlag thruFlag acc tpc =
     | TyparConstraint.IsReferenceType _ 
     | TyparConstraint.RequiresDefaultConstructor _ -> acc
 
-and accFreeInTraitLeftToRight g cxFlag thruFlag acc (TTrait(typs, _, _, argtys, rty, _, _extSlns))  = 
+and accFreeInTraitLeftToRight g cxFlag thruFlag acc (TTrait(typs, _, _, argtys, rty, _, _extSlns, _ad))  = 
     let acc = accFreeInTypesLeftToRight g cxFlag thruFlag acc typs
     let acc = accFreeInTypesLeftToRight g cxFlag thruFlag acc argtys
     let acc = Option.fold (accFreeInTypeLeftToRight g cxFlag thruFlag) acc rty
@@ -2081,7 +2081,7 @@ and accExtSlnsInTyparConstraint acc tpc =
     | TyparConstraint.MayResolveMember (traitInfo, _) -> accExtSlnsInTrait acc traitInfo 
     | _ -> acc
 
-and accExtSlnsInTrait acc (TTrait(_typs, nm, _, _argtys, _rty, _, extSlns))  = 
+and accExtSlnsInTrait acc (TTrait(_typs, nm, _, _argtys, _rty, _, extSlns, _ad))  = 
     // We don't traverse the contents of traits, that wouldn't terminate and is not necessary since the type variables individiaull contain the extSlns we need
     //let acc = accExtSlnsInTypes g acc typs
     //let acc = accExtSlnsInTypes g acc argtys
@@ -3189,7 +3189,7 @@ module DebugPrint = begin
 
     and auxTraitL env (ttrait: TraitConstraintInfo) =
 #if DEBUG
-        let (TTrait(tys, nm, memFlags, argtys, rty, _, _extSlns)) = ttrait 
+        let (TTrait(tys, nm, memFlags, argtys, rty, _, _extSlns, _ad)) = ttrait 
         match !global_g with
         | None -> wordL (tagText "<no global g>")
         | Some g -> 
@@ -4349,7 +4349,7 @@ and accFreeInOp opts op acc =
     | TOp.ILAsm (_, tys) ->  accFreeVarsInTys opts tys acc
     | TOp.Reraise -> accUsesRethrow true acc
 
-    | TOp.TraitCall(TTrait(tys, _, _, argtys, rty, sln, _extSlns)) -> 
+    | TOp.TraitCall(TTrait(tys, _, _, argtys, rty, sln, _extSlns, _ad)) -> 
         Option.foldBack (accFreeVarsInTraitSln opts) sln.Value
            (accFreeVarsInTys opts tys 
              (accFreeVarsInTys opts argtys 
@@ -5338,7 +5338,7 @@ let rec tyOfExpr g e =
         | TOp.LValueOp (LByrefGet, v) -> destByrefTy g v.Type
         | TOp.LValueOp (LGetAddr, v) -> mkByrefTy g v.Type
         | TOp.RefAddrGet -> (match tinst with [ty] -> mkByrefTy g ty | _ -> failwith "bad TOp.RefAddrGet node")      
-        | TOp.TraitCall (TTrait(_, _, _, _, ty, _, _)) -> GetFSharpViewOfReturnType g ty
+        | TOp.TraitCall traitInfo -> GetFSharpViewOfReturnType g traitInfo.ReturnType
         | TOp.Reraise -> (match tinst with [rtn_ty] -> rtn_ty | _ -> failwith "bad TOp.Reraise node")
         | TOp.Goto _ | TOp.Label _ | TOp.Return -> 
             //assert false; 

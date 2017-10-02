@@ -279,7 +279,7 @@ type ExtensionMember =
    /// IL-style extension member, backed by some kind of method with an [<Extension>] attribute
    | ILExtMem of TyconRef * MethInfo * ExtensionMethodPriority
 
-   interface PossibleExtensionMemberSolution 
+   interface TraitPossibleExtensionMemberSolution 
 
    /// Check if two extension members refer to the same definition
    static member Equality g e1 e2 = 

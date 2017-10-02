@@ -300,13 +300,18 @@ let ImportReturnTypeFromMetaData amap m ty scoref tinst minst =
 /// Search for the relevant extension values again if a name resolution environment is provided
 /// Basically, if you use a generic thing, then the extension members in scope at the point of _use_
 /// are the ones available to solve the constraint
-let FillInExtSlnsForConstraint getExtSlnsOpt traitInfo =
-    let (TTrait(typs, nm, mf, argtys, rty, slnCell, extSlns)) = traitInfo
-    let extSlns2 = 
-        match getExtSlnsOpt with 
-        | None -> extSlns
-        | Some f -> f traitInfo
-    TTrait(typs, nm, mf, argtys, rty, slnCell, extSlns2)
+let FreshenTrait traitFreshner traitInfo =
+    let (TTrait(typs, nm, mf, argtys, rty, slnCell, extSlns, ad)) = traitInfo
+
+    // Call the trait freshner if it is provided
+    let extSlns2, ad2 = 
+        match traitFreshner with 
+        | None -> extSlns, ad
+        | Some f -> 
+            let extSlns2, ad2 = f traitInfo
+            extSlns2, Some ad2
+
+    TTrait(typs, nm, mf, argtys, rty, slnCell, extSlns2, ad2)
 
 /// Copy constraints.  If the constraint comes from a type parameter associated
 /// with a type constructor then we are simply renaming type variables.  If it comes
@@ -316,7 +321,7 @@ let FillInExtSlnsForConstraint getExtSlnsOpt traitInfo =
 ///
 /// Note: this now looks identical to constraint instantiation.
 
-let CopyTyparConstraints getExtSlnsOpt m tprefInst (tporig:Typar) =
+let CopyTyparConstraints traitFreshner m tprefInst (tporig:Typar) =
     tporig.Constraints 
     |>  List.map (fun tpc -> 
            match tpc with 
@@ -345,12 +350,12 @@ let CopyTyparConstraints getExtSlnsOpt m tprefInst (tporig:Typar) =
            | TyparConstraint.RequiresDefaultConstructor _ -> 
                TyparConstraint.RequiresDefaultConstructor m
            | TyparConstraint.MayResolveMember(traitInfo, _) -> 
-               let traitInfo2 = FillInExtSlnsForConstraint getExtSlnsOpt traitInfo 
+               let traitInfo2 = FreshenTrait traitFreshner traitInfo 
                TyparConstraint.MayResolveMember (instTrait tprefInst traitInfo2, m))
 
 /// The constraints for each typar copied from another typar can only be fixed up once 
 /// we have generated all the new constraints, e.g. f<A :> List<B>, B :> List<A>> ... 
-let FixupNewTypars getExtSlnsOpt m (formalEnclosingTypars:Typars) (tinst: TType list) (tpsorig: Typars) (tps: Typars) =
+let FixupNewTypars traitFreshner m (formalEnclosingTypars:Typars) (tinst: TType list) (tpsorig: Typars) (tps: Typars) =
     // Checks.. These are defensive programming against early reported errors.
     let n0 = formalEnclosingTypars.Length
     let n1 = tinst.Length
@@ -362,7 +367,7 @@ let FixupNewTypars getExtSlnsOpt m (formalEnclosingTypars:Typars) (tinst: TType 
     // The real code.. 
     let renaming,tptys = mkTyparToTyparRenaming tpsorig tps
     let tprefInst = mkTyparInst formalEnclosingTypars tinst @ renaming
-    (tpsorig,tps) ||> List.iter2 (fun tporig tp -> tp.FixupConstraints (CopyTyparConstraints getExtSlnsOpt m tprefInst tporig)) 
+    (tpsorig,tps) ||> List.iter2 (fun tporig tp -> tp.FixupConstraints (CopyTyparConstraints traitFreshner m tprefInst tporig)) 
     renaming,tptys
 
 

@@ -213,7 +213,7 @@ let rec CheckTypeDeep ((visitTyp,visitTyconRefOpt,visitAppTyOpt,visitTraitSoluti
     | TType_var tp  when tp.Solution.IsSome  -> 
         tp.Constraints |> List.iter (fun cx -> 
             match cx with 
-            | TyparConstraint.MayResolveMember((TTrait(_, _, _, _, _, soln, _)), _) -> 
+            | TyparConstraint.MayResolveMember((TTrait(_, _, _, _, _, soln, _, _)), _) -> 
                  match visitTraitSolutionOpt, !soln with 
                  | Some visitTraitSolution, Some sln -> visitTraitSolution sln
                  | _ -> ()
@@ -267,7 +267,7 @@ and CheckTypeConstraintDeep f g env x =
      | TyparConstraint.IsReferenceType _ 
      | TyparConstraint.RequiresDefaultConstructor _ -> ()
 
-and CheckTraitInfoDeep ((_,_,_,visitTraitSolutionOpt,_) as f) g env (TTrait(typs, _, _, argtys, rty, soln, _extSlns))  = 
+and CheckTraitInfoDeep ((_,_,_,visitTraitSolutionOpt,_) as f) g env (TTrait(typs, _, _, argtys, rty, soln, _extSlns, _ad))  = 
     CheckTypesDeep f g env typs 
     CheckTypesDeep f g env argtys 
     Option.iter (CheckTypeDeep f g env) rty

@@ -142,7 +142,7 @@ type ExtensionMember =
    /// IL-style extension member, backed by some kind of method with an [<Extension>] attribute
    | ILExtMem of TyconRef * MethInfo * ExtensionMethodPriority
 
-   interface PossibleExtensionMemberSolution 
+   interface TraitPossibleExtensionMemberSolution 
 
    /// The logical name, e.g. for constraint solving
    member LogicalName : string
