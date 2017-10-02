@@ -10,6 +10,20 @@ module DotNetPrimtiveWithNewOperator =
 
     let result = 1 ++ 2
 
+/// Extending a .NET primitive type with new operator
+module DotNetPrimtiveWithAmbiguousNewOperator = 
+    [<AutoOpen>]
+    module Extensions = 
+        type System.Int32 with
+            static member (++)(a: int, b: int) = a 
+
+    [<AutoOpen>]
+    module Extensions2 = 
+        type System.Int32 with
+            static member (++)(a: int, b: string) = a 
+
+    let f x = 1 ++ x
+
 /// Extending a .NET primitive type with new _internal_ operator
 module DotNetPrimtiveWithInternalOperator1 = 
     type System.Int32 with
