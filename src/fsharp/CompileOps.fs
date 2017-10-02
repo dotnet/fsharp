@@ -4,6 +4,7 @@
 module internal Microsoft.FSharp.Compiler.CompileOps
 
 open System
+open System.Diagnostics
 open System.Text
 open System.IO
 open System.Collections.Generic
@@ -1076,9 +1077,9 @@ let OutputPhasedErrorR (os:StringBuilder) (err:PhasedDiagnostic) =
               | Parser.TOKEN_CONST -> getErrorString("Parser.TOKEN.CONST")
               | Parser.TOKEN_FIXED -> getErrorString("Parser.TOKEN.FIXED")
               | unknown ->           
-                  System.Diagnostics.Debug.Assert(false, "unknown token tag")
+                  Debug.Assert(false, "unknown token tag")
                   let result = sprintf "%+A" unknown
-                  System.Diagnostics.Debug.Assert(false, result)
+                  Debug.Assert(false, result)
                   result
 
           match ctxt.CurrentToken with 
@@ -2201,12 +2202,7 @@ type TcConfigBuilder =
       mutable useHighEntropyVA : bool
       mutable inputCodePage: int option
       mutable embedResources : string list
-      mutable globalWarnAsError: bool
-      mutable globalWarnLevel: int
-      mutable specificWarnOff: int list 
-      mutable specificWarnOn: int list 
-      mutable specificWarnAsError: int list 
-      mutable specificWarnAsWarn : int list
+      mutable errorSeverityOptions: FSharpErrorSeverityOptions
       mutable mlCompatibility: bool
       mutable checkOverflow: bool
       mutable showReferenceResolutions:bool
@@ -2330,55 +2326,47 @@ type TcConfigBuilder =
       mutable shadowCopyReferences : bool
       }
 
-    static member CreateNew (legacyReferenceResolver, defaultFSharpBinariesDir, optimizeForMemory, implicitIncludeDir, isInteractive, isInvalidationSupported, defaultCopyFSharpCore) =
-        System.Diagnostics.Debug.Assert(FileSystem.IsPathRootedShim(implicitIncludeDir), sprintf "implicitIncludeDir should be absolute: '%s'" implicitIncludeDir)
-        if (String.IsNullOrEmpty(defaultFSharpBinariesDir)) then 
-            failwith "Expected a valid defaultFSharpBinariesDir"
-        { 
+    static member Initial =
+        {
 #if COMPILER_SERVICE_ASSUMES_DOTNETCORE_COMPILATION
           primaryAssembly = PrimaryAssembly.System_Runtime // defaut value, can be overridden using the command line switch
 #else
           primaryAssembly = PrimaryAssembly.Mscorlib // defaut value, can be overridden using the command line switch
 #endif          
           light = None
-          noFeedback=false
-          stackReserveSize=None
-          conditionalCompilationDefines=[]
-          implicitIncludeDir = implicitIncludeDir
+          noFeedback = false
+          stackReserveSize = None
+          conditionalCompilationDefines = []
+          implicitIncludeDir = String.Empty
           autoResolveOpenDirectivesToDlls = false
           openBinariesInMemory = false
-          openDebugInformationForLaterStaticLinking=false
-          defaultFSharpBinariesDir=defaultFSharpBinariesDir
-          compilingFslib=false
-          compilingFslib20=None
-          compilingFslib40=false
-          compilingFslibNoBigInt=false
-          useIncrementalBuilder=false
-          useFsiAuxLib=false
-          implicitOpens=[]
-          includes=[]
-          resolutionEnvironment=ResolutionEnvironment.EditingOrCompilation false
-          framework=true
-          implicitlyResolveAssemblies=true
+          openDebugInformationForLaterStaticLinking = false
+          defaultFSharpBinariesDir = String.Empty
+          compilingFslib = false
+          compilingFslib20 = None
+          compilingFslib40 = false
+          compilingFslibNoBigInt = false
+          useIncrementalBuilder = false
+          useFsiAuxLib = false
+          implicitOpens = []
+          includes = []
+          resolutionEnvironment = ResolutionEnvironment.EditingOrCompilation false
+          framework = true
+          implicitlyResolveAssemblies = true
           referencedDLLs = []
           projectReferences = []
           knownUnresolvedReferences = []
           loadedSources = []
-          globalWarnAsError=false
-          globalWarnLevel=3
-          specificWarnOff=[] 
-          specificWarnOn=[] 
-          specificWarnAsError=[] 
-          specificWarnAsWarn=[]
+          errorSeverityOptions = FSharpErrorSeverityOptions.Default
           embedResources = []
-          inputCodePage=None
-          optimizeForMemory=optimizeForMemory
+          inputCodePage = None
+          optimizeForMemory = true
           subsystemVersion = 4, 0 // per spec for 357994
           useHighEntropyVA = false
-          mlCompatibility=false
-          checkOverflow=false
-          showReferenceResolutions=false
-          outputFile=None
+          mlCompatibility = false
+          checkOverflow = false
+          showReferenceResolutions = false
+          outputFile = None
           platform = None
           prefer32Bit = false
           useSimpleResolution = runningOnMono
@@ -2432,8 +2420,8 @@ type TcConfigBuilder =
           win32manifest = ""
           includewin32manifest = true
           linkResources = []
-          legacyReferenceResolver = legacyReferenceResolver
-          showFullPaths =false
+          legacyReferenceResolver = null
+          showFullPaths = false
           errorStyle = ErrorStyle.DefaultErrors
 
           utf8output = false
@@ -2442,14 +2430,14 @@ type TcConfigBuilder =
  #if DEBUG
           showOptimizationData = false
  #endif
-          showTerms     = false 
-          writeTermsToFiles = false 
+          showTerms = false
+          writeTermsToFiles = false
 
-          doDetuple     = false 
-          doTLR         = false 
+          doDetuple = false
+          doTLR = false
           doFinalSimplify = false
-          optsOn        = false 
-          optSettings   = Optimizer.OptimizationSettings.Defaults
+          optsOn = false
+          optSettings = Optimizer.OptimizationSettings.Defaults
           emitTailcalls = true
           deterministic = false
 #if PREFERRED_UI_LANG
@@ -2457,9 +2445,9 @@ type TcConfigBuilder =
 #endif
           lcid = None
           // See bug 6071 for product banner spec
-          productNameForBannerText = (FSComp.SR.buildProductName(FSharpEnvironment.FSharpBannerVersion))
-          showBanner  = true 
-          showTimes = false 
+          productNameForBannerText = FSComp.SR.buildProductName(FSharpEnvironment.FSharpBannerVersion)
+          showBanner = true
+          showTimes = false
           showLoadedAssemblies = false
           continueAfterParseFailure = false
 #if EXTENSIONTYPING
@@ -2468,16 +2456,31 @@ type TcConfigBuilder =
           pause = false 
           alwaysCallVirt = true
           noDebugData = false
-          isInteractive = isInteractive
-          isInvalidationSupported = isInvalidationSupported
+          isInteractive = false
+          isInvalidationSupported = false
           sqmSessionGuid = None
           sqmNumOfSourceFiles = 0
           sqmSessionStartedTime = System.DateTime.Now.Ticks
           emitDebugInfoInQuotations = false
           exename = None
-          copyFSharpCore = defaultCopyFSharpCore
+          copyFSharpCore = false
           shadowCopyReferences = false
         }
+
+    static member CreateNew(legacyReferenceResolver, defaultFSharpBinariesDir, optimizeForMemory, implicitIncludeDir,
+                                isInteractive, isInvalidationSupported, defaultCopyFSharpCore) =
+            Debug.Assert(FileSystem.IsPathRootedShim(implicitIncludeDir), sprintf "implicitIncludeDir should be absolute: '%s'" implicitIncludeDir)
+            if (String.IsNullOrEmpty(defaultFSharpBinariesDir)) then
+                failwith "Expected a valid defaultFSharpBinariesDir"
+            { TcConfigBuilder.Initial with 
+                implicitIncludeDir = implicitIncludeDir
+                defaultFSharpBinariesDir = defaultFSharpBinariesDir
+                optimizeForMemory = optimizeForMemory
+                legacyReferenceResolver = legacyReferenceResolver
+                isInteractive = isInteractive
+                isInvalidationSupported = isInvalidationSupported
+                copyFSharpCore = defaultCopyFSharpCore
+            }
 
     member tcConfigB.ResolveSourceFile(m, nm, pathLoadedFrom) = 
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
@@ -2526,7 +2529,8 @@ type TcConfigBuilder =
         | Some n -> 
             // nowarn:62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
             if n = 62 then tcConfigB.mlCompatibility <- true
-            tcConfigB.specificWarnOff <- ListSet.insert (=) n tcConfigB.specificWarnOff
+            tcConfigB.errorSeverityOptions <-
+                { tcConfigB.errorSeverityOptions with WarnOff = ListSet.insert (=) n tcConfigB.errorSeverityOptions.WarnOff }
 
     member tcConfigB.TurnWarningOn(m, s:string) =
         use unwindBuildPhase = PushThreadBuildPhaseUntilUnwind BuildPhase.Parameter
@@ -2535,7 +2539,8 @@ type TcConfigBuilder =
         | Some n -> 
             // warnon 62 turns on mlCompatibility, e.g. shows ML compat items in intellisense menus
             if n = 62 then tcConfigB.mlCompatibility <- false
-            tcConfigB.specificWarnOn <- ListSet.insert (=) n tcConfigB.specificWarnOn
+            tcConfigB.errorSeverityOptions <-
+                { tcConfigB.errorSeverityOptions with WarnOn = ListSet.insert (=) n tcConfigB.errorSeverityOptions.WarnOn }
 
     member tcConfigB.AddIncludePath (m, path, pathIncludedFrom) = 
         let absolutePath = ComputeMakePathAbsolute pathIncludedFrom path
@@ -2833,12 +2838,7 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
     member x.useHighEntropyVA = data.useHighEntropyVA
     member x.inputCodePage = data.inputCodePage
     member x.embedResources  = data.embedResources
-    member x.globalWarnAsError = data.globalWarnAsError
-    member x.globalWarnLevel = data.globalWarnLevel
-    member x.specificWarnOff = data.specificWarnOff
-    member x.specificWarnOn = data.specificWarnOn
-    member x.specificWarnAsError = data.specificWarnAsError
-    member x.specificWarnAsWarn = data.specificWarnAsWarn
+    member x.errorSeverityOptions = data.errorSeverityOptions
     member x.mlCompatibility = data.mlCompatibility
     member x.checkOverflow = data.checkOverflow
     member x.showReferenceResolutions = data.showReferenceResolutions
@@ -3282,15 +3282,14 @@ type TcConfig private (data : TcConfigBuilder, validate:bool) =
     member tcConfig.CoreLibraryDllReference() = fslibReference
                
 
-let ReportWarning (globalWarnLevel : int, specificWarnOff : int list, specificWarnOn : int list) err = 
-    let n = GetDiagnosticNumber err
-    warningOn err globalWarnLevel specificWarnOn && not (List.contains n specificWarnOff)
+let ReportWarning options err = 
+    warningOn err (options.WarnLevel) (options.WarnOn) && not (List.contains (GetDiagnosticNumber err) (options.WarnOff))
 
-let ReportWarningAsError (globalWarnLevel : int, specificWarnOff : int list, specificWarnOn : int list, specificWarnAsError : int list, specificWarnAsWarn : int list, globalWarnAsError : bool) err =
-    warningOn err globalWarnLevel specificWarnOn &&
-    not (List.contains (GetDiagnosticNumber err) specificWarnAsWarn) &&
-    ((globalWarnAsError && not (List.contains (GetDiagnosticNumber err) specificWarnOff)) ||
-     List.contains (GetDiagnosticNumber err) specificWarnAsError)
+let ReportWarningAsError options err =
+    warningOn err (options.WarnLevel) (options.WarnOn) &&
+    not (List.contains (GetDiagnosticNumber err) (options.WarnAsWarn)) &&
+    ((options.GlobalWarnAsError && not (List.contains (GetDiagnosticNumber err) options.WarnOff)) ||
+     List.contains (GetDiagnosticNumber err) (options.WarnAsError))
 
 //----------------------------------------------------------------------------
 // Scoped #nowarn pragmas

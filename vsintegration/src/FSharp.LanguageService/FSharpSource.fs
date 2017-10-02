@@ -66,7 +66,7 @@ type internal IFSharpSource_DEPRECATED =
     /// Store a ProjectSite for obtaining a task provider
     abstract ProjectSite : IProjectSite option with get,set
     /// Specify the files that should trigger a rebuild for the project behind this source
-    abstract SetDependencyFiles : string list -> bool
+    abstract SetDependencyFiles : string[] -> bool
     
     
 

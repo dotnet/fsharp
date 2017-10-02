@@ -18,7 +18,7 @@ type internal FSharpBraceMatchingService
     
     static let defaultUserOpName = "BraceMatching"
 
-    static member GetBraceMatchingResult(checker: FSharpChecker, sourceText, fileName, options, position: int, userOpName: string) = 
+    static member GetBraceMatchingResult(checker: FSharpChecker, sourceText, fileName, options: FSharpProjectOptions, position: int, userOpName: string) = 
         async {
             let! matchedBraces = checker.MatchBraces(fileName, sourceText.ToString(), options, userOpName)
             let isPositionInRange range = 

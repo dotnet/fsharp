@@ -306,6 +306,22 @@ type UnresolvedReferencesSet
 type internal UnresolvedReferencesSet 
 #endif
 
+/// Options used to determine active --define conditionals and other options relevant to parsing files in a project
+#if COMPILER_PUBLIC_API
+type FSharpParsingOptions =
+#else
+type internal FSharpParsingOptions =
+#endif
+    { 
+      SourceFiles: string[]
+      ConditionalCompilationDefines: string list
+      ErrorSeverityOptions: FSharpErrorSeverityOptions
+      LightSyntax: bool option
+      CompilingFsLib: bool
+      IsExe: bool
+    }
+    static member Default: FSharpParsingOptions
+
 /// <summary>A set of information describing a project or script build configuration.</summary>
 #if COMPILER_PUBLIC_API
 type FSharpProjectOptions = 
@@ -388,9 +404,31 @@ type internal FSharpChecker =
     ///
     /// <param name="filename">The filename for the file, used to help caching of results.</param>
     /// <param name="source">The full source for the file.</param>
-    /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
+    /// <param name="options">Parsing options for the project or script.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member MatchBraces : filename : string * source: string * options: FSharpProjectOptions * ?userOpName: string -> Async<(range * range)[]>
+    member MatchBraces: filename: string * source: string * options: FSharpParsingOptions * ?userOpName: string -> Async<(range * range)[]>
+
+    /// <summary>
+    ///   Parse a source code file, returning information about brace matching in the file.
+    ///   Return an enumeration of the matching parenthetical tokens in the file.
+    /// </summary>
+    ///
+    /// <param name="filename">The filename for the file, used to help caching of results.</param>
+    /// <param name="source">The full source for the file.</param>
+    /// <param name="options">Parsing options for the project or script.</param>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member MatchBraces: filename: string * source: string * options: FSharpProjectOptions * ?userOpName: string -> Async<(range * range)[]>
+
+    /// <summary>
+    /// <para>Parse a source code file, returning a handle that can be used for obtaining navigation bar information
+    /// To get the full information, call 'CheckFileInProject' method on the result</para>
+    /// </summary>
+    ///
+    /// <param name="filename">The filename for the file.</param>
+    /// <param name="source">The full source for the file.</param>
+    /// <param name="options">Parsing options for the project or script.</param>
+    /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
+    member ParseFile: filename: string * source: string * options: FSharpParsingOptions * ?userOpName: string -> Async<FSharpParseFileResults>
 
     /// <summary>
     /// <para>Parse a source code file, returning a handle that can be used for obtaining navigation bar information
@@ -402,7 +440,7 @@ type internal FSharpChecker =
     /// <param name="source">The full source for the file.</param>
     /// <param name="options">The options for the project or script, used to determine active --define conditionals and other options relevant to parsing.</param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member ParseFileInProject : filename: string * source: string * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpParseFileResults>
+    member ParseFileInProject: filename: string * source: string * options: FSharpProjectOptions * ?userOpName: string -> Async<FSharpParseFileResults>
 
     /// <summary>
     /// <para>Check a source code file, returning a handle to the results of the parse including
@@ -518,7 +556,22 @@ type internal FSharpChecker =
     /// so that an 'unload' and 'reload' action will cause the script to be considered as a new project,
     /// so that references are re-resolved.</param>
     member GetProjectOptionsFromCommandLineArgs : projectFileName: string * argv: string[] * ?loadedTimeStamp: DateTime * ?extraProjectInfo: obj -> FSharpProjectOptions
-           
+
+    /// <summary>
+    /// <para>Get the FSharpParsingOptions implied by a set of command line arguments and list of source files.</para>
+    /// </summary>
+    ///
+    /// <param name="sourceFiles">Initial source files list. Additional files may be added during argv evaluation.</param>
+    /// <param name="argv">The command line arguments for the project build.</param>
+    member GetParsingOptionsFromCommandLineArgs: sourceFiles: string list * argv: string list -> FSharpParsingOptions * FSharpErrorInfo list
+
+    /// <summary>
+    /// <para>Get the FSharpParsingOptions implied by a set of command line arguments.</para>
+    /// </summary>
+    ///
+    /// <param name="argv">The command line arguments for the project build.</param>
+    member GetParsingOptionsFromCommandLineArgs: argv: string list -> FSharpParsingOptions * FSharpErrorInfo list
+
     /// <summary>
     /// <para>Like ParseFileInProject, but uses results from the background builder.</para>
     /// <para>All files are read from the FileSystem API, including the file being checked.</para>
