@@ -283,6 +283,8 @@ let IsNumericOrCharTy g ty = IsNumericTy g ty || isCharTy g ty
 let IsRelationalTy g ty = IsNumericTy g ty || isStringTy g ty || isCharTy g ty || isBoolTy g ty
 let IsFpOrDecimalTy g ty = isFpTy g ty || isDecimalTy g ty
 let IsSignedIntegerOrFpOrDecimalTy g ty = isSignedIntegerTy g ty || IsFpOrDecimalTy g ty
+let IsCharOrStringTy g ty = isCharTy g ty || isStringTy g ty
+let IsNumericOrIntegralEnumOrCharOrStringTy g ty = IsNumericOrIntegralEnumTy g ty || IsCharOrStringTy g ty
 
 // Get measure of type, float<_> or float32<_> or decimal<_> but not float=float<1> or float32=float32<1> or decimal=decimal<1> 
 let GetMeasureOfType g ty =
@@ -1044,10 +1046,18 @@ and SolveMemberConstraint (csenv:ConstraintSolverEnv) ignoreUnresolvedOverload p
               SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy argty1 ++ (fun () -> 
               ResultD TTraitBuiltIn))
 
-      | false, ("op_Addition" | "op_Subtraction" | "op_Modulus"), [argty1;argty2] 
+      | false, "op_Addition", [argty1;argty2] 
+          when traitSupportTys |> List.exists (IsNumericOrIntegralEnumOrCharOrStringTy g) &&
+               (   IsNumericOrIntegralEnumOrCharOrStringTy g argty1 && (permitWeakResolution || not (isTyparTy g argty2))
+                || IsNumericOrIntegralEnumOrCharOrStringTy g argty2 && (permitWeakResolution || not (isTyparTy g argty1))) ->
+          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace argty2 argty1 ++ (fun () -> 
+          SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy argty1 ++ (fun () -> 
+          ResultD TTraitBuiltIn))
+
+      | false, ("op_Subtraction" | "op_Modulus"), [argty1;argty2] 
           when traitSupportTys |> List.exists (IsNumericOrIntegralEnumTy g) &&
-               (   (IsNumericOrIntegralEnumTy g argty1 || (traitName = "op_Addition" && (isCharTy g argty1 || isStringTy g argty1))) && (permitWeakResolution || not (isTyparTy g argty2))
-                || (IsNumericOrIntegralEnumTy g argty2 || (traitName = "op_Addition" && (isCharTy g argty2 || isStringTy g argty2))) && (permitWeakResolution || not (isTyparTy g argty1))) ->
+               (   IsNumericOrIntegralEnumTy g argty1 && (permitWeakResolution || not (isTyparTy g argty2))
+                || IsNumericOrIntegralEnumTy g argty2 && (permitWeakResolution || not (isTyparTy g argty1))) ->
           SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace argty2 argty1 ++ (fun () -> 
           SolveTypEqualsTypKeepAbbrevs csenv ndeep m2 trace traitRetTy argty1 ++ (fun () -> 
           ResultD TTraitBuiltIn))
