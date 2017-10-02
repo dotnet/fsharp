@@ -191,12 +191,11 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
 
                         // Type-checking
                         let typedResults,aborted = 
-                            match interactiveChecker.CheckFileInProjectAllowingStaleCachedResults(parseResults,req.FileName,req.Timestamp,req.Text,checkOptions,req.Snapshot) |> Async.RunSynchronously with 
-                            | None -> None,false
-                            | Some FSharpCheckFileAnswer.Aborted -> 
+                            match interactiveChecker.CheckFileInProject(parseResults,req.FileName,req.Timestamp,req.Text,checkOptions,req.Snapshot) |> Async.RunSynchronously with 
+                            | FSharpCheckFileAnswer.Aborted -> 
                                 // isResultObsolete returned true during the type check.
                                 None,true
-                            | Some (FSharpCheckFileAnswer.Succeeded results) -> Some results, false
+                            | FSharpCheckFileAnswer.Succeeded results -> Some results, false
 
                         sr := None
                         parseResults,typedResults,true,aborted,req.Timestamp
