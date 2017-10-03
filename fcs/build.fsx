@@ -99,9 +99,9 @@ Target "Test.NetFx" (fun _ ->
 // --------------------------------------------------------------------------------------
 // Build a NuGet package
 Target "NuGet.NetFx" (fun _ ->
-    runCmdIn __SOURCE_DIRECTORY__  @"..\.nuget\NuGet.exe" @"pack nuget\FSharp.Compiler.Service.nuspec -OutputDirectory %s" releaseDir
-    runCmdIn __SOURCE_DIRECTORY__  @"..\.nuget\NuGet.exe" @"pack nuget\FSharp.Compiler.Service.MSBuild.v12.nuspec -OutputDirectory %s" releaseDir
-    runCmdIn __SOURCE_DIRECTORY__  @"..\.nuget\NuGet.exe" @"pack nuget\FSharp.Compiler.Service.ProjectCracker.nuspec -OutputDirectory %s" releaseDir
+    runCmdIn __SOURCE_DIRECTORY__  "../.nuget/NuGet.exe" @"pack nuget/FSharp.Compiler.Service.nuspec -OutputDirectory %s" releaseDir
+    runCmdIn __SOURCE_DIRECTORY__  "../.nuget/NuGet.exe" @"pack nuget/FSharp.Compiler.Service.MSBuild.v12.nuspec -OutputDirectory %s" releaseDir
+    runCmdIn __SOURCE_DIRECTORY__  "../.nuget/NuGet.exe" @"pack nuget/FSharp.Compiler.Service.ProjectCracker.nuspec -OutputDirectory %s" releaseDir
 )
 
 

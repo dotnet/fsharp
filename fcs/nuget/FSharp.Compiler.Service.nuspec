@@ -2,12 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
     <metadata>
         <id>FSharp.Compiler.Service</id>
-        <description>
-    The F# compiler services package contains a custom build of the F# compiler that
-	exposes additional functionality for implementing F# language bindings, additional
-	tools based on the compiler or refactoring tools. The package also includes F# 
-	interactive service that can be used for embedding F# scripting into your applications.
-        </description>
+        <description>The F# compiler services package contains a custom build of the F# compiler that exposes additional functionality for implementing F# language bindings, additional tools based on the compiler or refactoring tools. The package also includes F# interactive service that can be used for embedding F# scripting into your applications.</description>
         <language>en-US</language>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <version>16.0.1</version>

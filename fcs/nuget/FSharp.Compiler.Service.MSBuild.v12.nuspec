@@ -2,10 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
     <metadata>
         <id>FSharp.Compiler.Service.MSBuild.v12</id>
-        <description>
-    Adds legacy MSBuild 12.0 support to the F# compiler services package for
-    resolving references such as #r "System, Version=4.1.0.0,..."
-        </description>
+        <description>Adds legacy MSBuild 12.0 support to the F# compiler services package for resolving references such as #r "System, Version=4.1.0.0,..."</description>
         <language>en-US</language>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <version>16.0.1</version>
