@@ -97,6 +97,7 @@ type XmlDocCollector() =
 type XmlDoc =
     | XmlDoc of string[]
     static member Empty = XmlDocStatics.Empty
+    member x.NonEmpty = (let (XmlDoc lines) = x in lines.Length <> 0)
     static member Merge (XmlDoc lines) (XmlDoc lines') = XmlDoc (Array.append lines lines')
     static member Process (XmlDoc lines) =
         // This code runs for .XML generation and thus influences cross-project xmldoc tooltips; for within-project tooltips, see XmlDocumentation.fs in the language service
