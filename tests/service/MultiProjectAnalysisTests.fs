@@ -150,7 +150,7 @@ let ``Test multi project 1 basic`` () =
 
 
     [ for x in wholeProjectResults.AssemblySignature.Entities.[0].MembersFunctionsAndValues -> x.DisplayName ] 
-        |> shouldEqual ["p"]
+        |> shouldEqual ["p"; "c"; "u"]
 
 [<Test>]
 let ``Test multi project 1 all symbols`` () = 
@@ -802,7 +802,7 @@ let ``Test active patterns' XmlDocSig declared in referenced projects`` () =
     divisibleBySymbol.ToString() |> shouldEqual "symbol DivisibleBy"
 
     let divisibleByActivePatternCase = divisibleBySymbol :?> FSharpActivePatternCase
-    divisibleByActivePatternCase.XmlDoc |> Seq.toList |> shouldEqual []
+    divisibleByActivePatternCase.XmlDoc |> Seq.toList |> shouldEqual [ "A parameterized active pattern of divisibility" ]
     divisibleByActivePatternCase.XmlDocSig |> shouldEqual "M:Project3A.|DivisibleBy|_|(System.Int32,System.Int32)"
     let divisibleByGroup = divisibleByActivePatternCase.Group
     divisibleByGroup.IsTotal |> shouldEqual false
