@@ -49,13 +49,13 @@ type IlxUnionRef =
 
 type IlxUnionSpec = 
     | IlxUnionSpec of IlxUnionRef * ILGenericArgs
-    member x.EnclosingType = let (IlxUnionSpec(IlxUnionRef(bx,tref,_,_,_),inst)) = x in mkILNamedTy bx tref inst
-    member x.Boxity = let (IlxUnionSpec(IlxUnionRef(bx,_,_,_,_),_)) = x in bx 
-    member x.TypeRef = let (IlxUnionSpec(IlxUnionRef(_,tref,_,_,_),_)) = x in tref
-    member x.GenericArgs = let (IlxUnionSpec(_,inst)) = x in inst
-    member x.AlternativesArray = let (IlxUnionSpec(IlxUnionRef(_,_,alts,_,_),_)) = x in alts
-    member x.IsNullPermitted = let (IlxUnionSpec(IlxUnionRef(_,_,_,np,_),_)) = x in np
-    member x.HasHelpers = let (IlxUnionSpec(IlxUnionRef(_,_,_,_,b),_)) = x in b
+    member x.EnclosingType = let (IlxUnionSpec(IlxUnionRef(bx, tref, _, _, _), inst)) = x in mkILNamedTy bx tref inst
+    member x.Boxity = let (IlxUnionSpec(IlxUnionRef(bx, _, _, _, _), _)) = x in bx 
+    member x.TypeRef = let (IlxUnionSpec(IlxUnionRef(_, tref, _, _, _), _)) = x in tref
+    member x.GenericArgs = let (IlxUnionSpec(_, inst)) = x in inst
+    member x.AlternativesArray = let (IlxUnionSpec(IlxUnionRef(_, _, alts, _, _), _)) = x in alts
+    member x.IsNullPermitted = let (IlxUnionSpec(IlxUnionRef(_, _, _, np, _), _)) = x in np
+    member x.HasHelpers = let (IlxUnionSpec(IlxUnionRef(_, _, _, _, b), _)) = x in b
     member x.Alternatives = Array.toList x.AlternativesArray
     member x.Alternative idx = x.AlternativesArray.[idx]
     member x.FieldDef idx fidx = x.Alternative(idx).FieldDef(fidx)
@@ -72,15 +72,15 @@ type IlxClosureApps =
   | Apps_done of ILType
 
 let rec instAppsAux n inst = function
-    Apps_tyapp (ty,rty) -> Apps_tyapp(instILTypeAux n inst ty, instAppsAux n inst rty)
-  | Apps_app (dty,rty) ->  Apps_app(instILTypeAux n inst dty, instAppsAux n inst rty)
+    Apps_tyapp (ty, rty) -> Apps_tyapp(instILTypeAux n inst ty, instAppsAux n inst rty)
+  | Apps_app (dty, rty) ->  Apps_app(instILTypeAux n inst dty, instAppsAux n inst rty)
   | Apps_done rty ->  Apps_done(instILTypeAux n inst rty)
 
 let rec instLambdasAux n inst = function
-  | Lambdas_forall (b,rty) -> 
+  | Lambdas_forall (b, rty) -> 
       Lambdas_forall(b, instLambdasAux n inst rty)
-  | Lambdas_lambda (p,rty) ->  
-      Lambdas_lambda({ p with Type=instILTypeAux n inst p.Type},instLambdasAux n inst rty)
+  | Lambdas_lambda (p, rty) ->  
+      Lambdas_lambda({ p with Type=instILTypeAux n inst p.Type}, instLambdasAux n inst rty)
   | Lambdas_return rty ->  Lambdas_return(instILTypeAux n inst rty)
 
 let instLambdas i t = instLambdasAux 0 i t
@@ -90,7 +90,7 @@ type IlxClosureFreeVar =
       fvCompilerGenerated:bool 
       fvType: ILType }
 
-let mkILFreeVar (name,compgen,ty) = 
+let mkILFreeVar (name, compgen, ty) = 
     { fvName=name
       fvCompilerGenerated=compgen
       fvType=ty }
@@ -101,19 +101,19 @@ type IlxClosureRef =
     
 type IlxClosureSpec = 
     | IlxClosureSpec of IlxClosureRef * ILGenericArgs * ILType
-    member x.TypeRef = let (IlxClosureRef(tref,_,_)) = x.ClosureRef in tref
-    member x.ILType = let (IlxClosureSpec(_,_,ty)) = x in ty
-    member x.ClosureRef = let (IlxClosureSpec(cloref,_,_)) = x in cloref 
-    member x.FormalFreeVars = let (IlxClosureRef(_,_,fvs)) = x.ClosureRef in fvs
-    member x.FormalLambdas = let (IlxClosureRef(_,lambdas,_)) = x.ClosureRef in lambdas
-    member x.GenericArgs = let (IlxClosureSpec(_,inst,_)) = x in inst
+    member x.TypeRef = let (IlxClosureRef(tref, _, _)) = x.ClosureRef in tref
+    member x.ILType = let (IlxClosureSpec(_, _, ty)) = x in ty
+    member x.ClosureRef = let (IlxClosureSpec(cloref, _, _)) = x in cloref 
+    member x.FormalFreeVars = let (IlxClosureRef(_, _, fvs)) = x.ClosureRef in fvs
+    member x.FormalLambdas = let (IlxClosureRef(_, lambdas, _)) = x.ClosureRef in lambdas
+    member x.GenericArgs = let (IlxClosureSpec(_, inst, _)) = x in inst
     static member Create (cloref, inst) = 
-        let (IlxClosureRef(tref,_,_)) = cloref
+        let (IlxClosureRef(tref, _, _)) = cloref
         IlxClosureSpec(cloref, inst, mkILBoxedType (mkILTySpec (tref, inst)))
     member clospec.Constructor = 
         let cloTy = clospec.ILType
         let fields = clospec.FormalFreeVars
-        mkILCtorMethSpecForTy (cloTy,fields |> Array.map (fun fv -> fv.fvType) |> Array.toList)
+        mkILCtorMethSpecForTy (cloTy, fields |> Array.map (fun fv -> fv.fvType) |> Array.toList)
 
 
 // Define an extension of the IL algebra of type definitions
@@ -141,7 +141,7 @@ type IlxUnionInfo =
 // Define these as extensions of the IL types
 // -------------------------------------------------------------------- 
 
-let destTyFuncApp = function Apps_tyapp (b,c) -> b,c | _ -> failwith "destTyFuncApp"
+let destTyFuncApp = function Apps_tyapp (b, c) -> b, c | _ -> failwith "destTyFuncApp"
 
 let mkILFormalCloRef gparams csig = IlxClosureSpec.Create(csig, mkILFormalGenericArgs 0 gparams)
 

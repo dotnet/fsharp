@@ -4,7 +4,6 @@
 /// Implements the offside rule and a copule of other lexical transformations.
 module internal Microsoft.FSharp.Compiler.LexFilter
 
-open Internal.Utilities
 open Internal.Utilities.Text.Lexing
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL
@@ -13,7 +12,6 @@ open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.ErrorLogger
-open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Parser
 open Microsoft.FSharp.Compiler.Lexhelp
 

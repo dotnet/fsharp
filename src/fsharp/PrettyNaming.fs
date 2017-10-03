@@ -10,16 +10,18 @@ module public Microsoft.FSharp.Compiler.PrettyNaming
 #else
 module internal Microsoft.FSharp.Compiler.PrettyNaming
 #endif
-open Internal.Utilities
-    open Microsoft.FSharp.Compiler
-    open Microsoft.FSharp.Compiler.AbstractIL.Internal
-    open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
-    open System.Globalization
+    open System
     open System.Collections.Generic
     open System.Collections.Concurrent
+    open System.Globalization
+    open System.Text
 
-    module TaggedTextOps = Internal.Utilities.StructuredFormat.TaggedTextOps
-    module LayoutOps = Internal.Utilities.StructuredFormat.LayoutOps
+    open Microsoft.FSharp.Compiler
+    open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
+
+    open Internal.Utilities
+    open Internal.Utilities.StructuredFormat
+    open Internal.Utilities.StructuredFormat.LayoutOps
 
 #if FX_RESHAPED_REFLECTION
     open Microsoft.FSharp.Core.ReflectionAdapters
@@ -38,89 +40,89 @@ open Internal.Utilities
     let [<Literal>] opNamePrefix = "op_"
 
     let private opNameTable = 
-     [|("[]", "op_Nil");
-       ("::", "op_ColonColon");
-       ("+", "op_Addition");
-       ("~%", "op_Splice");
-       ("~%%", "op_SpliceUntyped");
-       ("~++", "op_Increment");
-       ("~--", "op_Decrement");
-       ("-", "op_Subtraction");
-       ("*", "op_Multiply");
-       ("**", "op_Exponentiation");
-       ("/", "op_Division");
-       ("@", "op_Append");
-       ("^", "op_Concatenate");
-       ("%", "op_Modulus");
-       ("&&&", "op_BitwiseAnd");
-       ("|||", "op_BitwiseOr");
-       ("^^^", "op_ExclusiveOr");
-       ("<<<", "op_LeftShift");
-       ("~~~", "op_LogicalNot");
-       (">>>", "op_RightShift");
-       ("~+", "op_UnaryPlus");
-       ("~-", "op_UnaryNegation");
-       ("~&", "op_AddressOf");
-       ("~&&", "op_IntegerAddressOf");
-       ("&&", "op_BooleanAnd");
-       ("||", "op_BooleanOr");
-       ("<=", "op_LessThanOrEqual");
-       ("=","op_Equality");
-       ("<>","op_Inequality");
-       (">=", "op_GreaterThanOrEqual");
-       ("<", "op_LessThan");
-       (">", "op_GreaterThan");
-       ("|>", "op_PipeRight");
-       ("||>", "op_PipeRight2");
-       ("|||>", "op_PipeRight3");
-       ("<|", "op_PipeLeft");
-       ("<||", "op_PipeLeft2");
-       ("<|||", "op_PipeLeft3");
-       ("!", "op_Dereference");
-       (">>", "op_ComposeRight");
-       ("<<", "op_ComposeLeft");
-       ("<< >>", "op_TypedQuotationUnicode");
-       ("<<| |>>", "op_ChevronsBar");
-       ("<@ @>", "op_Quotation");
-       ("<@@ @@>", "op_QuotationUntyped");
-       ("+=", "op_AdditionAssignment");
-       ("-=", "op_SubtractionAssignment");
-       ("*=", "op_MultiplyAssignment");
-       ("/=", "op_DivisionAssignment");
-       ("..", "op_Range");
-       (".. ..", "op_RangeStep"); 
-       (qmark, "op_Dynamic");
-       (qmarkSet, "op_DynamicAssignment");
-       (parenGet, "op_ArrayLookup");
-       (parenSet, "op_ArrayAssign");
+     [|("[]", "op_Nil")
+       ("::", "op_ColonColon")
+       ("+", "op_Addition")
+       ("~%", "op_Splice")
+       ("~%%", "op_SpliceUntyped")
+       ("~++", "op_Increment")
+       ("~--", "op_Decrement")
+       ("-", "op_Subtraction")
+       ("*", "op_Multiply")
+       ("**", "op_Exponentiation")
+       ("/", "op_Division")
+       ("@", "op_Append")
+       ("^", "op_Concatenate")
+       ("%", "op_Modulus")
+       ("&&&", "op_BitwiseAnd")
+       ("|||", "op_BitwiseOr")
+       ("^^^", "op_ExclusiveOr")
+       ("<<<", "op_LeftShift")
+       ("~~~", "op_LogicalNot")
+       (">>>", "op_RightShift")
+       ("~+", "op_UnaryPlus")
+       ("~-", "op_UnaryNegation")
+       ("~&", "op_AddressOf")
+       ("~&&", "op_IntegerAddressOf")
+       ("&&", "op_BooleanAnd")
+       ("||", "op_BooleanOr")
+       ("<=", "op_LessThanOrEqual")
+       ("=","op_Equality")
+       ("<>","op_Inequality")
+       (">=", "op_GreaterThanOrEqual")
+       ("<", "op_LessThan")
+       (">", "op_GreaterThan")
+       ("|>", "op_PipeRight")
+       ("||>", "op_PipeRight2")
+       ("|||>", "op_PipeRight3")
+       ("<|", "op_PipeLeft")
+       ("<||", "op_PipeLeft2")
+       ("<|||", "op_PipeLeft3")
+       ("!", "op_Dereference")
+       (">>", "op_ComposeRight")
+       ("<<", "op_ComposeLeft")
+       ("<< >>", "op_TypedQuotationUnicode")
+       ("<<| |>>", "op_ChevronsBar")
+       ("<@ @>", "op_Quotation")
+       ("<@@ @@>", "op_QuotationUntyped")
+       ("+=", "op_AdditionAssignment")
+       ("-=", "op_SubtractionAssignment")
+       ("*=", "op_MultiplyAssignment")
+       ("/=", "op_DivisionAssignment")
+       ("..", "op_Range")
+       (".. ..", "op_RangeStep") 
+       (qmark, "op_Dynamic")
+       (qmarkSet, "op_DynamicAssignment")
+       (parenGet, "op_ArrayLookup")
+       (parenSet, "op_ArrayAssign")
        |]
 
     let private opCharTranslateTable =
-      [|( '>', "Greater");
-        ( '<', "Less"); 
-        ( '+', "Plus");
-        ( '-', "Minus");
-        ( '*', "Multiply");
-        ( '=', "Equals");
-        ( '~', "Twiddle");
-        ( '%', "Percent");
-        ( '.', "Dot");
-        ( '$', "Dollar");
-        ( '&', "Amp");
-        ( '|', "Bar");
-        ( '@', "At");
-        ( '#', "Hash");
-        ( '^', "Hat");
-        ( '!', "Bang");
-        ( '?', "Qmark");
-        ( '/', "Divide");
-        ( ':', "Colon");
-        ( '(', "LParen");
-        ( ',', "Comma");
-        ( ')', "RParen");
-        ( ' ', "Space");
-        ( '[', "LBrack");
-        ( ']', "RBrack"); |]
+      [|( '>', "Greater")
+        ( '<', "Less") 
+        ( '+', "Plus")
+        ( '-', "Minus")
+        ( '*', "Multiply")
+        ( '=', "Equals")
+        ( '~', "Twiddle")
+        ( '%', "Percent")
+        ( '.', "Dot")
+        ( '$', "Dollar")
+        ( '&', "Amp")
+        ( '|', "Bar")
+        ( '@', "At")
+        ( '#', "Hash")
+        ( '^', "Hat")
+        ( '!', "Bang")
+        ( '?', "Qmark")
+        ( '/', "Divide")
+        ( ':', "Colon")
+        ( '(', "LParen")
+        ( ',', "Comma")
+        ( ')', "RParen")
+        ( ' ', "Space")
+        ( '[', "LBrack")
+        ( ']', "RBrack") |]
 
     /// The set of characters usable in custom operators.
     let private opCharSet =
@@ -144,17 +146,16 @@ open Internal.Utilities
         res
 
     let IsMangledOpName (n:string) =
-        n.StartsWith (opNamePrefix, System.StringComparison.Ordinal)
+        n.StartsWith (opNamePrefix, StringComparison.Ordinal)
 
-    // +++ GLOBAL STATE
     /// Compiles a custom operator into a mangled operator name.
     /// For example, "!%" becomes "op_DereferencePercent".
-    /// This function should only be used for custom operators;
+    /// This function should only be used for custom operators
     /// if an operator is or potentially may be a built-in operator,
     /// use the 'CompileOpName' function instead.
     let private compileCustomOpName =
         let t2 =
-            let t2 = Dictionary<_,_> (opCharTranslateTable.Length)
+            let t2 = Dictionary<_, _> (opCharTranslateTable.Length)
             for x, y in opCharTranslateTable do
                 t2.Add (x, y)
             t2
@@ -168,13 +169,13 @@ open Internal.Utilities
 
         /// Memoize compilation of custom operators.
         /// They're typically used more than once so this avoids some CPU and GC overhead.
-        let compiledOperators = ConcurrentDictionary<_,string> (System.StringComparer.Ordinal)
+        let compiledOperators = ConcurrentDictionary<_, string> (StringComparer.Ordinal)
 
         fun opp ->
             // Has this operator already been compiled?
             compiledOperators.GetOrAdd(opp, fun (op:string) ->
                 let opLength = op.Length
-                let sb = new System.Text.StringBuilder (opNamePrefix, opNamePrefix.Length + (opLength * maxOperatorNameLength))
+                let sb = new Text.StringBuilder (opNamePrefix, opNamePrefix.Length + (opLength * maxOperatorNameLength))
                 for i = 0 to opLength - 1 do
                     let c = op.[i]
                     match t2.TryGetValue c with
@@ -189,14 +190,13 @@ open Internal.Utilities
                 // Cache the compiled name so it can be reused.
                 opName)
 
-    // +++ GLOBAL STATE
     /// Compiles an operator into a mangled operator name.
     /// For example, "!%" becomes "op_DereferencePercent".
     /// This function accepts both built-in and custom operators.
     let CompileOpName =
         /// Maps the built-in F# operators to their mangled operator names.
         let standardOpNames =
-            let opNames = Dictionary<_,_> (opNameTable.Length, System.StringComparer.Ordinal)
+            let opNames = Dictionary<_,  _> (opNameTable.Length, StringComparer.Ordinal)
             for x, y in opNameTable do
                 opNames.Add (x, y)
             opNames
@@ -209,16 +209,15 @@ open Internal.Utilities
                     compileCustomOpName op
                 else op
 
-    // +++ GLOBAL STATE
     /// Decompiles the mangled name of a custom operator back into an operator.
     /// For example, "op_DereferencePercent" becomes "!%".
-    /// This function should only be used for mangled names of custom operators;
+    /// This function should only be used for mangled names of custom operators
     /// if a mangled name potentially represents a built-in operator,
     /// use the 'DecompileOpName' function instead.
     let private decompileCustomOpName =
         // Memoize this operation. Custom operators are typically used more than once
         // so this avoids repeating decompilation.
-        let decompiledOperators = ConcurrentDictionary<_,_> (System.StringComparer.Ordinal)
+        let decompiledOperators = ConcurrentDictionary<_, _> (StringComparer.Ordinal)
 
         /// The minimum length of the name for a custom operator character.
         /// This value is used when initializing StringBuilders to avoid resizing.
@@ -236,9 +235,9 @@ open Internal.Utilities
                 let opNameLen = opName.Length
                 
                 /// Function which decompiles the mangled operator name back into a string of operator characters.
-                /// Returns None if the name contains text which doesn't correspond to an operator;
+                /// Returns None if the name contains text which doesn't correspond to an operator
                 /// otherwise returns Some containing the original operator. 
-                let rec decompile (sb : System.Text.StringBuilder) idx =
+                let rec decompile (sb : StringBuilder) idx =
                     // Have we reached the end of 'opName'?
                     if idx = opNameLen then
                         // Finished decompiling.
@@ -256,7 +255,7 @@ open Internal.Utilities
                                 if opNameLen - idx < opCharNameLen then false
                                 else
                                     // Does 'opCharName' match the current position in 'opName'?
-                                    System.String.Compare (opName, idx, opCharName, 0, opCharNameLen, System.StringComparison.Ordinal) = 0)
+                                    String.Compare (opName, idx, opCharName, 0, opCharNameLen, StringComparison.Ordinal) = 0)
 
                         match choice with
                         | None ->
@@ -274,19 +273,19 @@ open Internal.Utilities
                     /// The maximum number of operator characters that could be contained in the
                     /// decompiled operator given the length of the mangled custom operator name.
                     let maxPossibleOpCharCount = (opNameLen - opNamePrefixLen) / minOperatorNameLength
-                    System.Text.StringBuilder (maxPossibleOpCharCount)
+                    StringBuilder (maxPossibleOpCharCount)
 
                 // Start decompiling just after the operator prefix.
                 decompile sb opNamePrefixLen
 
-    // +++ GLOBAL STATE
+    
     /// Decompiles a mangled operator name back into an operator.
     /// For example, "op_DereferencePercent" becomes "!%".
     /// This function accepts mangled names for both built-in and custom operators.
     let DecompileOpName =
         /// Maps the mangled operator names of built-in F# operators back to the operators.
         let standardOps =
-            let ops = Dictionary<string, string> (opNameTable.Length, System.StringComparer.Ordinal)
+            let ops = Dictionary<string, string> (opNameTable.Length, StringComparer.Ordinal)
             for x, y in opNameTable do
                 ops.Add(y,x)
             ops
@@ -305,14 +304,13 @@ open Internal.Utilities
         if IsOperatorOrBacktickedName nm then "( " + nm + " )"
         else nm
     
-    open LayoutOps
-
     let DemangleOperatorNameAsLayout nonOpTagged nm =
         let nm = DecompileOpName nm
         if IsOperatorOrBacktickedName nm then wordL (TaggedTextOps.tagPunctuation "(") ^^ wordL (TaggedTextOps.tagOperator nm) ^^ wordL (TaggedTextOps.tagPunctuation ")")
-        else LayoutOps.wordL (nonOpTagged nm)
+        else wordL (nonOpTagged nm)
 
     let opNameCons = CompileOpName "::"
+
     let opNameNil = CompileOpName "[]"
     let opNameEquals = CompileOpName "="
     let opNameEqualsNullable = CompileOpName "=?"
@@ -323,7 +321,7 @@ open Internal.Utilities
     let IsIdentifierFirstCharacter c =
         if c = '_' then true
         else
-            match System.Char.GetUnicodeCategory c with
+            match Char.GetUnicodeCategory c with
             // Letters
             | UnicodeCategory.UppercaseLetter
             | UnicodeCategory.LowercaseLetter
@@ -337,7 +335,7 @@ open Internal.Utilities
     let IsIdentifierPartCharacter c =
         if c = '\'' then true   // Tick
         else
-            match System.Char.GetUnicodeCategory c with
+            match Char.GetUnicodeCategory c with
             // Letters
             | UnicodeCategory.UppercaseLetter
             | UnicodeCategory.LowercaseLetter
@@ -360,7 +358,7 @@ open Internal.Utilities
         || IsIdentifierPartCharacter c
 
     let IsValidPrefixOperatorUse s =
-        if System.String.IsNullOrEmpty s then false else
+        if String.IsNullOrEmpty s then false else
         match s with 
         | "?+" | "?-" | "+" | "-" | "+." | "-." | "%" | "%%" | "&" | "&&" -> true
         | _ ->
@@ -370,7 +368,7 @@ open Internal.Utilities
             || (s.[0] = '~' && String.forall (fun c -> c = '~') s)
     
     let IsValidPrefixOperatorDefinitionName s = 
-        if System.String.IsNullOrEmpty s then false else
+        if String.IsNullOrEmpty s then false else
         match s with 
         | "~?+" | "~?-" | "~+" | "~-" | "~+." | "~-." | "~%" | "~%%" | "~&" | "~&&" -> true
         | _ ->
@@ -380,7 +378,7 @@ open Internal.Utilities
             || (s.[0] = '~' && String.forall (fun c -> c = '~') s)
         
     let IsPrefixOperator s =
-        if System.String.IsNullOrEmpty s then false else
+        if String.IsNullOrEmpty s then false else
         let s = DecompileOpName s
         match s with 
         | "~?+" | "~?-" | "~+" | "~-" | "~+." | "~-." | "~%" | "~%%" | "~&" | "~&&" -> true
@@ -391,7 +389,7 @@ open Internal.Utilities
             || (s.[0] = '~' && String.forall (fun c -> c = '~') s)
 
     let IsPunctuation s =
-        if System.String.IsNullOrEmpty s then false else
+        if String.IsNullOrEmpty s then false else
         match s with
         | "," | ";" | "|" | ":" | "." | "*"
         | "(" | ")"
@@ -407,12 +405,16 @@ open Internal.Utilities
         (DecompileOpName s = qmarkSet)
 
     let IsInfixOperator =
+
         /// EQUALS, INFIX_COMPARE_OP, LESS, GREATER
         let relational = [| "=";"!=";"<";">";"$"|]
+
         /// INFIX_AT_HAT_OP
         let concat = [| "@";"^" |]
+
         /// PLUS_MINUS_OP, MINUS
         let plusMinus = [| "+"; "-" |]
+
         /// PERCENT_OP, STAR, INFIX_STAR_DIV_MOD_OP
         let otherMath = [| "*";"/";"%" |]
 
@@ -429,13 +431,12 @@ open Internal.Utilities
         // This function recognises these "infix operator" names.
         let s = DecompileOpName s
         let skipIgnoredChars = s.TrimStart(ignoredChars)
-        let afterSkipStartsWith prefix   = skipIgnoredChars.StartsWith(prefix,System.StringComparison.Ordinal)
+        let afterSkipStartsWith prefix   = skipIgnoredChars.StartsWith(prefix,StringComparison.Ordinal)
         let afterSkipStarts     prefixes = Array.exists afterSkipStartsWith prefixes
         // The following conditions follow the declExpr infix clauses.
         // The test corresponds to the lexer definition for the token.
         s = ":=" ||                                    // COLON_EQUALS
         afterSkipStartsWith "|" ||                     // BAR_BAR, INFIX_BAR_OP
-        (* REVIEW: OR is deadcode, now called BAR? *)  // OR
         afterSkipStartsWith "&"  ||                    // AMP, AMP_AMP, INFIX_AMP_OP
         afterSkipStarts relational ||                  // EQUALS, INFIX_COMPARE_OP, LESS, GREATER
         s = "$" ||                                     // DOLLAR
@@ -461,6 +462,7 @@ open Internal.Utilities
             Other
 
     let [<Literal>] private compilerGeneratedMarker = "@"
+
     let [<Literal>] private compilerGeneratedMarkerChar = '@'
     
     let IsCompilerGeneratedName (nm:string) =
@@ -483,6 +485,7 @@ open Internal.Utilities
     //------------------------------------------------------------------------- 
      
     let [<Literal>] private mangledGenericTypeNameSym = '`'
+
     let IsMangledGenericName (n:string) = 
         n.IndexOf mangledGenericTypeNameSym <> -1 &&
         (* check what comes after the symbol is a number *)
@@ -493,6 +496,7 @@ open Internal.Utilities
         res
 
     type NameArityPair = NameArityPair of string * int
+
     let DecodeGenericTypeName n = 
         if IsMangledGenericName n then 
             let pos = n.LastIndexOf mangledGenericTypeNameSym
@@ -507,16 +511,7 @@ open Internal.Utilities
             n.Substring(0,pos)
         else n
 
-    //-------------------------------------------------------------------------
-    // Property name mangling.
-    // Expecting s to be in the form (as returned by qualifiedMangledNameOfTyconRef) of:
-    //    get_P                         or  set_P
-    //    Names/Space/Class/NLPath-get_P  or  Names/Space/Class/NLPath.set_P
-    // Required to return "P"
-    //-------------------------------------------------------------------------
-
     let private chopStringTo (s:string) (c:char) =
-        (* chopStringTo "abcdef" 'c' --> "def" *)
         match s.IndexOf c with
         | -1 -> s
         | idx ->
@@ -527,13 +522,13 @@ open Internal.Utilities
     let TryChopPropertyName (s: string) =
         // extract the logical name from any mangled name produced by MakeMemberDataAndMangledNameForMemberVal
         if s.Length <= 4 then None else
-        if s.StartsWith("get_", System.StringComparison.Ordinal) ||
-           s.StartsWith("set_", System.StringComparison.Ordinal)
+        if s.StartsWith("get_", StringComparison.Ordinal) ||
+           s.StartsWith("set_", StringComparison.Ordinal)
         then Some (s.Substring(4, s.Length - 4))
         else
         let s = chopStringTo s '.'
-        if s.StartsWith("get_", System.StringComparison.Ordinal) ||
-           s.StartsWith("set_", System.StringComparison.Ordinal)
+        if s.StartsWith("get_", StringComparison.Ordinal) ||
+           s.StartsWith("set_", StringComparison.Ordinal)
         then Some (s.Substring(4, s.Length - 4))
         else None
 
@@ -546,11 +541,11 @@ open Internal.Utilities
         | Some res -> res
 
     let SplitNamesForILPath (s : string) : string list = 
-        if s.StartsWith("``",System.StringComparison.Ordinal) && s.EndsWith("``",System.StringComparison.Ordinal) && s.Length > 4 then [s.Substring(2, s.Length-4)] // identifier is enclosed in `` .. ``, so it is only a single element (this is very approximate)
+        if s.StartsWith("``",StringComparison.Ordinal) && s.EndsWith("``",StringComparison.Ordinal) && s.Length > 4 then [s.Substring(2, s.Length-4)] // identifier is enclosed in `` .. ``, so it is only a single element (this is very approximate)
         else s.Split [| '.' ; '`' |] |> Array.toList      // '.' chops members / namespaces / modules; '`' chops generic parameters for .NET types
         
-    // Return a string array delimited by the given separator.
-    // Note that a quoted string is not going to be mangled into pieces. 
+    /// Return a string array delimited by the given separator.
+    /// Note that a quoted string is not going to be mangled into pieces. 
     let private splitAroundQuotation (text:string) (separator:char) =
         let length = text.Length
         let isNotQuotedQuotation n = n > 0 && text.[n-1] <> '\\'
@@ -560,20 +555,20 @@ open Internal.Utilities
             // split when seeing a separator
             | c, false when c = separator -> split (i+1, "", cur::group, false)
             // keep reading if a separator is inside quotation
-            | c, true when c = separator -> split (i+1, cur+(System.Char.ToString c), group, true)
+            | c, true when c = separator -> split (i+1, cur+(Char.ToString c), group, true)
             // open or close quotation 
             | '\"', _ when isNotQuotedQuotation i -> split (i+1, cur+"\"", group, not insideQuotation) 
             // keep reading
-            | c, _ -> split (i+1, cur+(System.Char.ToString c), group, insideQuotation)
+            | c, _ -> split (i+1, cur+(Char.ToString c), group, insideQuotation)
         split (0, "", [], false) |> Array.ofList
 
-    // Return a string array delimited by the given separator up to the maximum number.
-    // Note that a quoted string is not going to be mangled into pieces.
+    /// Return a string array delimited by the given separator up to the maximum number.
+    /// Note that a quoted string is not going to be mangled into pieces.
     let private splitAroundQuotationWithCount (text:string) (separator:char) (count:int)=
         if count <= 1 then [| text |] else
         let mangledText  = splitAroundQuotation text separator
         match mangledText.Length > count with
-        | true -> Array.append (mangledText.[0..(count-2)]) ([| mangledText.[(count-1)..] |> String.concat (System.Char.ToString separator) |])
+        | true -> Array.append (mangledText.[0..(count-2)]) ([| mangledText.[(count-1)..] |> String.concat (Char.ToString separator) |])
         | false -> mangledText
 
     let [<Literal>] FSharpModuleSuffix = "Module"
@@ -606,9 +601,13 @@ open Internal.Utilities
 
     type ActivePatternInfo = 
         | APInfo of bool * (string  * Range.range) list * Range.range
+
         member x.IsTotal = let (APInfo(p,_,_)) = x in p
+
         member x.ActiveTags = let (APInfo(_,tags,_)) = x in List.map fst tags
+
         member x.ActiveTagsWithRanges = let (APInfo(_,tags,_)) = x in tags
+
         member x.Range = let (APInfo(_,_,m)) = x in m
 
     let ActivePatternInfoOfValName nm (m:Range.range) = 
@@ -646,9 +645,9 @@ open Internal.Utilities
                 Some(nm,v)
         | _ -> None
 
-    // Demangle the static parameters
     exception InvalidMangledStaticArg of string
 
+    /// Demangle the static parameters
     let demangleProvidedTypeName (typeLogicalName:string) = 
         if typeLogicalName.Contains "," then 
             let pieces = splitAroundQuotation typeLogicalName ','
@@ -663,7 +662,8 @@ open Internal.Utilities
         else 
             typeLogicalName, [| |]
 
-    let mangleProvidedTypeName (typeLogicalName,nonDefaultArgs) = 
+    /// Mangle the static parameters for a provided type or method
+    let mangleProvidedTypeName (typeLogicalName, nonDefaultArgs) = 
         let nonDefaultArgsText = 
             nonDefaultArgs
             |> Array.map mangleStaticStringArg
@@ -675,7 +675,8 @@ open Internal.Utilities
             typeLogicalName + "," + nonDefaultArgsText
 
 
-    let computeMangledNameWithoutDefaultArgValues(nm,staticArgs,defaultArgValues) =
+    /// Mangle the static parameters for a provided type or method
+    let computeMangledNameWithoutDefaultArgValues(nm, staticArgs, defaultArgValues) =
         let nonDefaultArgs = 
             (staticArgs,defaultArgValues) 
             ||> Array.zip 

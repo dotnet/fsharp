@@ -7,7 +7,6 @@ module internal Microsoft.FSharp.Compiler.Ast
 #endif
 
 open System.Collections.Generic
-open Internal.Utilities
 open Internal.Utilities.Text.Lexing
 open Internal.Utilities.Text.Parsing
 open Microsoft.FSharp.Compiler.AbstractIL
@@ -18,8 +17,6 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.UnicodeLexing
 open Microsoft.FSharp.Compiler.ErrorLogger
 open Microsoft.FSharp.Compiler.PrettyNaming
-open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
-open Microsoft.FSharp.Compiler.Lib
 open Microsoft.FSharp.Compiler.Range
 
 /// The prefix of the names used for the fake namespace path added to all dynamic code entries in FSI.EXE
