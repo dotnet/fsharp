@@ -1,13 +1,15 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.8
+VisualStudioVersion = 15.0.26730.16
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "project", "project", "{B6B68AE6-E7A4-4D43-9B34-FFA74BFE192B}"
 	ProjectSection(SolutionItems) = preProject
 		build.cmd = build.cmd
 		build.fsx = build.fsx
 		build.sh = build.sh
+		nuget\FSharp.Compiler.Service.MSBuild.v12.nuspec = nuget\FSharp.Compiler.Service.MSBuild.v12.nuspec
 		nuget\FSharp.Compiler.Service.nuspec = nuget\FSharp.Compiler.Service.nuspec
+		nuget\FSharp.Compiler.Service.ProjectCracker.nuspec = nuget\FSharp.Compiler.Service.ProjectCracker.nuspec
 		paket.dependencies = paket.dependencies
 		README.md = README.md
 		RELEASE_NOTES.md = RELEASE_NOTES.md
