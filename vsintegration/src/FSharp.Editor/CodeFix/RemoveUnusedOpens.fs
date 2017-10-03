@@ -32,8 +32,8 @@ type internal FSharpRemoveUnusedOpensCodeFixProvider
                     let document = context.Document
                     let! sourceText = document.GetTextAsync()
                     let checker = checkerProvider.Checker
-                    let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
-                    let! unusedOpens = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges(document, options, checker)
+                    let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                    let! unusedOpens = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges(document, projectOptions, checker)
                     let changes =
                         unusedOpens
                         |> List.map (fun m ->

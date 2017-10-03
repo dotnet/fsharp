@@ -66,7 +66,7 @@ type internal IFSharpSource_DEPRECATED =
     /// Store a ProjectSite for obtaining a task provider
     abstract ProjectSite : IProjectSite option with get,set
     /// Specify the files that should trigger a rebuild for the project behind this source
-    abstract SetDependencyFiles : string list -> bool
+    abstract SetDependencyFiles : string[] -> bool
     
     
 
@@ -356,7 +356,7 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
 
                 |]
             // get a sync parse of the file
-            let co = 
+            let co, _ = 
                 { ProjectFileName = fileName + ".dummy.fsproj"
                   SourceFiles = [| fileName |]
                   OtherOptions = flags
@@ -368,8 +368,9 @@ type internal FSharpSource_DEPRECATED(service:LanguageService_DEPRECATED, textLi
                   OriginalLoadReferences = []
                   ExtraProjectInfo=None 
                   Stamp = None }
+                |> ic.GetParsingOptionsFromProjectOptions
 
-            ic.ParseFileInProject(fileName, source.GetText(), co) |> Async.RunSynchronously
+            ic.ParseFile(fileName, source.GetText(), co) |> Async.RunSynchronously
 
         override source.GetCommentFormat() = 
             let mutable info = new CommentInfo()
