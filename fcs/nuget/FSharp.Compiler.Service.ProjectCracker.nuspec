@@ -17,7 +17,6 @@
         <file src="../FSharp.Compiler.Service.ProjectCrackerTool/FSharp.Compiler.Service.ProjectCracker.targets" target="build/net45" />
         <file src="../../Release/fcs/net45/FSharp.Compiler.Service.ProjectCrackerTool.exe" target="utilities/net45" />
         <file src="../../Release/fcs/net45/FSharp.Compiler.Service.ProjectCrackerTool.exe.config" target="utilities/net45" />
-        <file src="../../Release/fcs/net45/FSharp.Compiler.Service.ProjectCrackerTool.pdb" target="utilities/net45" />
         <file src="../../Release/fcs/net45/FSharp.Compiler.Service.ProjectCracker.dll" target="lib/net45" />
         <file src="../../Release/fcs/net45/FSharp.Compiler.Service.ProjectCracker.xml" target="lib/net45" />
     </files>
