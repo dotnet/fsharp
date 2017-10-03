@@ -87,7 +87,8 @@ let mmmm2 : M.CAbbrev = new M.CAbbrev() // note, these don't count as uses of C
 
     let fileNames = [fileName1; fileName2]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let parsingOptions, _ = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
     let cleanFileName a = if a = fileName1 then "file1" else if a = fileName2 then "file2" else "??"
 
 [<Test>]
@@ -534,8 +535,8 @@ let ``Test file explicit parse symbols`` () =
 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
-    let parseResults1 = checker.ParseFileInProject(Project1.fileName1, Project1.fileSource1, Project1.options)  |> Async.RunSynchronously
-    let parseResults2 = checker.ParseFileInProject(Project1.fileName2, Project1.fileSource2, Project1.options)  |> Async.RunSynchronously
+    let parseResults1 = checker.ParseFile(Project1.fileName1, Project1.fileSource1, Project1.parsingOptions)  |> Async.RunSynchronously
+    let parseResults2 = checker.ParseFile(Project1.fileName2, Project1.fileSource2, Project1.parsingOptions)  |> Async.RunSynchronously
 
     let checkResults1 = 
         checker.CheckFileInProject(parseResults1, Project1.fileName1, 0, Project1.fileSource1, Project1.options) 
@@ -580,8 +581,8 @@ let ``Test file explicit parse all symbols`` () =
 
 
     let wholeProjectResults = checker.ParseAndCheckProject(Project1.options) |> Async.RunSynchronously
-    let parseResults1 = checker.ParseFileInProject(Project1.fileName1, Project1.fileSource1, Project1.options) |> Async.RunSynchronously
-    let parseResults2 = checker.ParseFileInProject(Project1.fileName2, Project1.fileSource2, Project1.options) |> Async.RunSynchronously
+    let parseResults1 = checker.ParseFile(Project1.fileName1, Project1.fileSource1, Project1.parsingOptions) |> Async.RunSynchronously
+    let parseResults2 = checker.ParseFile(Project1.fileName2, Project1.fileSource2, Project1.parsingOptions) |> Async.RunSynchronously
 
     let checkResults1 = 
         checker.CheckFileInProject(parseResults1, Project1.fileName1, 0, Project1.fileSource1, Project1.options) 
@@ -4532,26 +4533,26 @@ let ``Test project35b Dependency files for ParseAndCheckFileInProject`` () =
             | _ -> failwithf "Parsing aborted unexpectedly..." 
     for d in checkFileResults.DependencyFiles do 
         printfn "ParseAndCheckFileInProject dependency: %s" d
-    checkFileResults.DependencyFiles |> List.exists (fun s -> s.Contains "notexist.dll") |> shouldEqual true
+    checkFileResults.DependencyFiles |> Array.exists (fun s -> s.Contains "notexist.dll") |> shouldEqual true
     // The file itself is not a dependency since it is never read from the file system when using ParseAndCheckFileInProject
-    checkFileResults.DependencyFiles |> List.exists (fun s -> s.Contains Project35b.fileName1) |> shouldEqual false
+    checkFileResults.DependencyFiles |> Array.exists (fun s -> s.Contains Project35b.fileName1) |> shouldEqual false
 
 [<Test>]
 let ``Test project35b Dependency files for GetBackgroundCheckResultsForFileInProject`` () =
     let _,checkFileResults = checker.GetBackgroundCheckResultsForFileInProject(Project35b.fileName1, Project35b.options) |> Async.RunSynchronously
     for d in checkFileResults.DependencyFiles do 
         printfn "GetBackgroundCheckResultsForFileInProject dependency: %s" d
-    checkFileResults.DependencyFiles |> List.exists (fun s -> s.Contains "notexist.dll") |> shouldEqual true
+    checkFileResults.DependencyFiles |> Array.exists (fun s -> s.Contains "notexist.dll") |> shouldEqual true
     // The file is a dependency since it is read from the file system when using GetBackgroundCheckResultsForFileInProject
-    checkFileResults.DependencyFiles |> List.exists (fun s -> s.Contains Project35b.fileName1) |> shouldEqual true
+    checkFileResults.DependencyFiles |> Array.exists (fun s -> s.Contains Project35b.fileName1) |> shouldEqual true
 
 [<Test>]
 let ``Test project35b Dependency files for check of project`` () =
     let checkResults = checker.ParseAndCheckProject(Project35b.options) |> Async.RunSynchronously
     for d in checkResults.DependencyFiles do 
         printfn "ParseAndCheckProject dependency: %s" d
-    checkResults.DependencyFiles |> List.exists (fun s -> s.Contains "notexist.dll") |> shouldEqual true
-    checkResults.DependencyFiles |> List.exists (fun s -> s.Contains Project35b.fileName1) |> shouldEqual true
+    checkResults.DependencyFiles |> Array.exists (fun s -> s.Contains "notexist.dll") |> shouldEqual true
+    checkResults.DependencyFiles |> Array.exists (fun s -> s.Contains Project35b.fileName1) |> shouldEqual true
 
 //------------------------------------------------------
 
@@ -5012,7 +5013,8 @@ module internal ProjectBig =
 
     let fileNames = [ for (_,f) in fileNamesI -> f ]
     let args = mkProjectCommandLineArgs (dllName, fileNames)
-    let options =  checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let options = checker.GetProjectOptionsFromCommandLineArgs (projFileName, args)
+    let parsingOptions, _ = checker.GetParsingOptionsFromCommandLineArgs(List.ofArray args)
 
 
 [<Test>]
@@ -5025,7 +5027,7 @@ let ``Test request for parse and check doesn't check whole project`` () =
 
     checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
     let pB, tB = FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic
-    let parseResults1 = checker.ParseFileInProject(ProjectBig.fileNames.[5], ProjectBig.fileSources2.[5], ProjectBig.options)  |> Async.RunSynchronously
+    let parseResults1 = checker.ParseFile(ProjectBig.fileNames.[5], ProjectBig.fileSources2.[5], ProjectBig.parsingOptions)  |> Async.RunSynchronously
     let pC, tC = FSharpChecker.GlobalForegroundParseCountStatistic, FSharpChecker.GlobalForegroundTypeCheckCountStatistic
     (pC - pB) |> shouldEqual 1
     (tC - tB) |> shouldEqual 0

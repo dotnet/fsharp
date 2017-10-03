@@ -1,3 +1,7 @@
+#### 16.0.1
+  * FSharpChecker provides non-reactor ParseFile instead of ParseFileInProject
+  * Add FSharpParsingOptions, GetParsingOptionsFromProjectOptions, GetParsingOptionsFromCommandLine
+
 #### 15.0.1
   * Integrate latest changes from visualfsharp
   * Add implementation file contents to CheckFileResults

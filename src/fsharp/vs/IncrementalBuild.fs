@@ -1192,9 +1192,9 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
                 yield  r.resolvedPath  ]
 
     let allDependencies =
-        [ yield! basicDependencies
-          for (_,f,_) in sourceFiles do
-                yield f ]
+        [| yield! basicDependencies
+           for (_,f,_) in sourceFiles do
+                yield f |]
 
     // The IncrementalBuilder needs to hold up to one item that needs to be disposed, which is the tcImports for the incremental
     // build. 
@@ -1238,7 +1238,7 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
         assertNotDisposed()
         DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
 
-        let errorLogger = CompilationErrorLogger("ParseTask", tcConfig)
+        let errorLogger = CompilationErrorLogger("ParseTask", tcConfig.errorSeverityOptions)
         // Return the disposable object that cleans up
         use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parse)
 
@@ -1268,7 +1268,7 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
     let CombineImportedAssembliesTask ctok _ : Cancellable<TypeCheckAccumulator> =
       cancellable {
         assertNotDisposed()
-        let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig)
+        let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig.errorSeverityOptions)
         // Return the disposable object that cleans up
         use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter)
 
@@ -1332,7 +1332,7 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
         match input with 
         | Some input, _sourceRange, filename, parseErrors->
             IncrementalBuilderEventTesting.MRU.Add(IncrementalBuilderEventTesting.IBETypechecked filename)
-            let capturingErrorLogger = CompilationErrorLogger("TypeCheckTask", tcConfig)
+            let capturingErrorLogger = CompilationErrorLogger("TypeCheckTask", tcConfig.errorSeverityOptions)
             let errorLogger = GetErrorLoggerFilteringByScopedPragmas(false,GetScopedPragmasForInput(input),capturingErrorLogger)
             let fullComputation = 
                 eventually {
@@ -1397,7 +1397,7 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
         assertNotDisposed()
         DoesNotRequireCompilerThreadTokenAndCouldPossiblyBeMadeConcurrent  ctok
 
-        let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig)
+        let errorLogger = CompilationErrorLogger("CombineImportedAssembliesTask", tcConfig.errorSeverityOptions)
         use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.TypeCheck)
 
         // Get the state at the end of the type-checking of the last file
@@ -1539,7 +1539,7 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
     member __.FileChecked = fileChecked.Publish
     member __.ProjectChecked = projectChecked.Publish
     member __.ImportedCcusInvalidated = importsInvalidated.Publish
-    member __.AllDependenciesDeprecated = allDependencies 
+    member __.AllDependenciesDeprecated = allDependencies
 
 #if EXTENSIONTYPING
     member __.ThereAreLiveTypeProviders = 
@@ -1733,15 +1733,7 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
                 | None -> ()
 
                 // Apply command-line arguments and collect more source files if they are in the arguments
-                let sourceFilesNew = 
-                    try
-                        let sourceFilesAcc = ResizeArray(sourceFiles)
-                        let collect name = if not (Filename.isDll name) then sourceFilesAcc.Add name
-                        ParseCompilerOptions (collect, GetCoreServiceCompilerOptions tcConfigB, commandLineArgs)
-                        sourceFilesAcc |> ResizeArray.toList
-                    with e ->
-                        errorRecovery e range0
-                        sourceFiles
+                let sourceFilesNew = ApplyCommandLineArgs(tcConfigB, sourceFiles, commandLineArgs)
 
                 // Never open PDB files for the language service, even if --standalone is specified
                 tcConfigB.openDebugInformationForLaterStaticLinking <- false
@@ -1782,7 +1774,8 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
 
             // Note we are not calling errorLogger.GetErrors() anywhere for this task. 
             // This is ok because not much can actually go wrong here.
-            let errorLogger = CompilationErrorLogger("nonFrameworkAssemblyInputs", tcConfig)
+            let errorOptions = tcConfig.errorSeverityOptions
+            let errorLogger = CompilationErrorLogger("nonFrameworkAssemblyInputs", errorOptions)
             // Return the disposable object that cleans up
             use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter) 
 
@@ -1793,7 +1786,7 @@ type IncrementalBuilder(tcGlobals,frameworkTcImports, nonFrameworkAssemblyInputs
             let nonFrameworkAssemblyInputs = 
                 // Note we are not calling errorLogger.GetErrors() anywhere for this task. 
                 // This is ok because not much can actually go wrong here.
-                let errorLogger = CompilationErrorLogger("nonFrameworkAssemblyInputs", tcConfig)
+                let errorLogger = CompilationErrorLogger("nonFrameworkAssemblyInputs", errorOptions)
                 // Return the disposable object that cleans up
                 use _holder = new CompilationGlobalsScope(errorLogger, BuildPhase.Parameter) 
 

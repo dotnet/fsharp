@@ -58,20 +58,22 @@ let file = "/home/user/Test.fsx"
 
 let projOptions = checker.GetProjectOptionsFromScript(file, input) |> Async.RunSynchronously
 
+let parsingOptions, _errors = checker.GetParsingOptionsFromProjectOptions(projOptions)
+
 (**
 
-型チェックを実行するには、まず `ParseFileInProject` を使って
+型チェックを実行するには、まず `ParseFile` を使って
 入力値をパースする必要があります。
 このメソッドを使うと [型無しAST](untypedtree.html) にアクセスできるようになります。
 しかし今回は完全な型チェックを実行するため、続けて `CheckFileInProject`
 を呼び出す必要があります。
-このメソッドは `ParseFileInProject` の結果も必要とするため、
+このメソッドは `ParseFile` の結果も必要とするため、
 たいていの場合にはこれら2つのメソッドをセットで呼び出すことになります。
 
 *)
 // パースを実行
 let parseFileResults =
-    checker.ParseFileInProject(file, input, projOptions)
+    checker.ParseFile(file, input, parsingOptions)
     |> Async.RunSynchronously
 (**
 `TypeCheckResults` に備えられた興味深い機能の紹介に入る前に、
