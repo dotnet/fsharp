@@ -17,8 +17,8 @@ open Microsoft.CodeAnalysis.Formatting
 [<TestFixture>]
 [<Category "Roslyn Services">]
 type EditorFormattingServiceTests()  =
-    static let filePath = "C:\\test.fs"
-    static let options: FSharpProjectOptions = { 
+    let filePath = "C:\\test.fs"
+    let projectOptions : FSharpProjectOptions = { 
         ProjectFileName = "C:\\test.fsproj"
         SourceFiles =  [| filePath |]
         ReferencedProjects = [| |]
@@ -31,11 +31,12 @@ type EditorFormattingServiceTests()  =
         ExtraProjectInfo = None
         Stamp = None
     }
+    //let parsingOptions: FSharpParsingOptions = 
 
-    static let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-    static let indentStyle = FormattingOptions.IndentStyle.Smart
+    let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
+    let indentStyle = FormattingOptions.IndentStyle.Smart
     
-    static let template = """
+    let template = """
 let foo = [
     15
     ]marker1
@@ -66,8 +67,9 @@ let def =
 
         let sourceText = SourceText.From(template)
         let lineNumber = sourceText.Lines |> Seq.findIndex (fun line -> line.Span.Contains position)
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
         
-        let changesOpt = FSharpEditorFormattingService.GetFormattingChanges(documentId, sourceText, filePath, checker, indentStyle, Some options, position) |> Async.RunSynchronously
+        let changesOpt = FSharpEditorFormattingService.GetFormattingChanges(documentId, sourceText, filePath, checker, indentStyle, Some (parsingOptions, projectOptions), position) |> Async.RunSynchronously
         match changesOpt with
         | None -> Assert.Fail("Expected a text change, but got None")
         | Some change ->

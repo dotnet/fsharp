@@ -73,9 +73,11 @@ let getUntypedTree (file, input) =
       checker.GetProjectOptionsFromScript(file, input) 
       |> Async.RunSynchronously
 
+  let parsingOptions, _errors = checker.GetParsingOptionsFromProjectOptions(projOptions)
+
   // コンパイラの第1フェーズを実行する
   let untypedRes = 
-      checker.ParseFileInProject(file, input, projectOptions) 
+      checker.ParseFile(file, input, parsingOptions) 
       |> Async.RunSynchronously
 
   match untypedRes.ParseTree with

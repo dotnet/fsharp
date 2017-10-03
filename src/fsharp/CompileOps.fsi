@@ -268,12 +268,7 @@ type TcConfigBuilder =
       mutable useHighEntropyVA : bool
       mutable inputCodePage: int option
       mutable embedResources : string list
-      mutable globalWarnAsError: bool
-      mutable globalWarnLevel: int
-      mutable specificWarnOff: int list 
-      mutable specificWarnOn: int list 
-      mutable specificWarnAsError: int list 
-      mutable specificWarnAsWarn : int list
+      mutable errorSeverityOptions: FSharpErrorSeverityOptions
       mutable mlCompatibility:bool
       mutable checkOverflow:bool
       mutable showReferenceResolutions:bool
@@ -371,6 +366,8 @@ type TcConfigBuilder =
       mutable shadowCopyReferences : bool
     }
 
+    static member Initial: TcConfigBuilder
+
     static member CreateNew : 
         legacyReferenceResolver: ReferenceResolver.Resolver *
         defaultFSharpBinariesDir: string * 
@@ -423,12 +420,7 @@ type TcConfig =
     member optimizeForMemory: bool
     member inputCodePage: int option
     member embedResources : string list
-    member globalWarnAsError: bool
-    member globalWarnLevel: int
-    member specificWarnOn: int list 
-    member specificWarnOff: int list 
-    member specificWarnAsError: int list 
-    member specificWarnAsWarn : int list
+    member errorSeverityOptions: FSharpErrorSeverityOptions
     member mlCompatibility:bool
     member checkOverflow:bool
     member showReferenceResolutions:bool
@@ -750,10 +742,10 @@ val TypeCheckOneInputAndFinishEventually :
         -> Eventually<(TcEnv * TopAttribs * TypedImplFile list) * TcState>
 
 /// Indicates if we should report a warning
-val ReportWarning : globalWarnLevel: int * specificWarnOff: int list * specificWarnOn: int list -> PhasedDiagnostic -> bool
+val ReportWarning: FSharpErrorSeverityOptions -> PhasedDiagnostic -> bool
 
 /// Indicates if we should report a warning as an error
-val ReportWarningAsError : globalWarnLevel: int * specificWarnOff: int list * specificWarnOn: int list * specificWarnAsError: int list * specificWarnAsWarn: int list * globalWarnAsError: bool -> PhasedDiagnostic -> bool
+val ReportWarningAsError: FSharpErrorSeverityOptions -> PhasedDiagnostic -> bool
 
 //----------------------------------------------------------------------------
 // #load closure

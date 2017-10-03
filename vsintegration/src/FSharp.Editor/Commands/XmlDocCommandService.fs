@@ -67,9 +67,9 @@ type internal XmlDocCommandFilter
                                 // XmlDocable line #1 are 1-based, editor is 0-based
                                 let curLineNum = wpfTextView.Caret.Position.BufferPosition.GetContainingLine().LineNumber + 1
                                 let! document = document.Value
-                                let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                                 let sourceText = wpfTextView.TextBuffer.CurrentSnapshot.GetText()
-                                let! parsedInput = checker.ParseDocument(document, options, sourceText, userOpName)
+                                let! parsedInput = checker.ParseDocument(document, parsingOptions, sourceText, userOpName)
                                 let xmlDocables = XmlDocParser.getXmlDocables (sourceText, Some parsedInput) 
                                 let xmlDocablesBelowThisLine = 
                                     // +1 because looking below current line for e.g. a 'member'

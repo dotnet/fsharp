@@ -49,7 +49,7 @@ To get the AST, we define a function that takes file name and the source code
 (the file is only used for location information and does not have to exist).
 We first need to get "interactive checker options" which represents the context.
 For simple tasks, you can use `GetProjectOptionsFromScriptRoot` which infers
-the context for a script file. Then we use the `ParseFileInProject` method and
+the context for a script file. Then we use the `ParseFile` method and
 return the `ParseTree` property:
 
 *)
@@ -60,9 +60,11 @@ let getUntypedTree (file, input) =
       checker.GetProjectOptionsFromScript(file, input)
       |> Async.RunSynchronously
 
+  let parsingOptions, _errors = checker.GetParsingOptionsFromProjectOptions(projOptions)
+
   // Run the first phase (untyped parsing) of the compiler
   let parseFileResults = 
-      checker.ParseFileInProject(file, input, projOptions) 
+      checker.ParseFile(file, input, parsingOptions) 
       |> Async.RunSynchronously
 
   match parseFileResults.ParseTree with

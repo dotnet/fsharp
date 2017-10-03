@@ -21,18 +21,13 @@ Each FSharpChecker object maintains a set of caches.  These are
 
 * ``braceMatchCache`` - an MRU cache of size ``braceMatchCacheSize`` (default = 5) keeping the results of calls to MatchBraces, keyed by filename, source and project options.
 
-* ``parseFileInProjectCache`` - an MRU cache of size ``parseFileInProjectCacheSize`` (default = 2) keeping the results of ParseFileInProject, 
+* ``parseFileCache`` - an MRU cache of size ``parseFileCacheSize`` (default = 2) keeping the results of ParseFile, 
   keyed by filename, source and project options.
 
-* ``parseAndCheckFileInProjectCache`` - an MRU cache of size ``incrementalTypeCheckCacheSize`` (default = 5) keeping the results of 
+* ``checkFileInProjectCache`` - an MRU cache of size ``incrementalTypeCheckCacheSize`` (default = 5) keeping the results of 
   ParseAndCheckFileInProject, CheckFileInProject and/or CheckFileInProjectIfReady. This is keyed by filename, file source 
   and project options.  The results held in this cache are only returned if they would reflect an accurate parse and check of the
   file.
-
-* ``parseAndCheckFileInProjectCachePossiblyStale`` - a somewhat peculiar MRU cache of size ``incrementalTypeCheckCacheSize`` (default = 5) 
-  keeping the results of ParseAndCheckFileInProject, CheckFileInProject and CheckFileInProjectIfReady, 
-  keyed by filename and project options. This cache is accessed by TryGetRecentTypeCheckResultsForFile. Because the results
-  are accessed regardless of the content of the file, the checking results returned may be "stale".
 
 * ``getToolTipTextCache`` - an aged lookup cache of strong size ``getToolTipTextSize`` (default = 5) computing the results of GetToolTipText.
 
