@@ -12,6 +12,11 @@
         <iconUrl>https://raw.github.com/fsharp/FSharp.Compiler.Service/master/misc/logo.png</iconUrl>
         <tags>F#, fsharp, interactive, compiler, editor</tags>
         <summary>F# compiler services for creating IDE tools, language extensions and for F# embedding.</summary>
+        <dependencies>
+            <group targetFramework="net45">
+                <dependency id="FSharp.Compiler.Service" version="16.0.1" />
+            </group>
+        </dependencies>
     </metadata>
     <files>
         <file src="../FSharp.Compiler.Service.ProjectCrackerTool/FSharp.Compiler.Service.ProjectCracker.targets" target="build/net45" />
