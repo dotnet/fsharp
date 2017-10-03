@@ -1,6 +1,6 @@
 ﻿
 #if INTERACTIVE
-#r "../../Debug/net40/bin/FSharp.Compiler.Service.dll" // note, run 'build fcs' to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../Debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
 #r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
@@ -38,13 +38,24 @@ module internal Project1A =
     let fileSource1 = """
 module Project1A
 
+/// This is type C
 type C() = 
     static member M(arg1: int, arg2: int, ?arg3 : int) = arg1 + arg2 + defaultArg arg3 4
 
+/// This is x1
 let x1 = C.M(arg1 = 3, arg2 = 4, arg3 = 5)
 
+/// This is x2
 let x2 = C.M(arg1 = 3, arg2 = 4, ?arg3 = Some 5)
 
+/// This is type U
+type U = 
+
+   /// This is Case1
+   | Case1 of int
+
+   /// This is Case2
+   | Case2 of string
     """
     File.WriteAllText(fileName1, fileSource1)
 
@@ -100,7 +111,8 @@ open Project1A
 open Project1B
 
 let p = (Project1A.x1, Project1B.b)
-
+let c = C()
+let u = Case1 3
     """
     File.WriteAllText(fileName1, fileSource1)
 
@@ -138,7 +150,7 @@ let ``Test multi project 1 basic`` () =
 
 
     [ for x in wholeProjectResults.AssemblySignature.Entities.[0].MembersFunctionsAndValues -> x.DisplayName ] 
-        |> shouldEqual ["p"]
+        |> shouldEqual ["p"; "c"; "u"]
 
 [<Test>]
 let ``Test multi project 1 all symbols`` () = 
@@ -179,6 +191,54 @@ let ``Test multi project 1 all symbols`` () =
             |> Array.map (fun s -> s.Symbol.DisplayName, MultiProject1.cleanFileName  s.FileName, tups s.Symbol.DeclarationLocation.Value) 
 
     usesOfx1FromProject1AInMultiProject1 |> shouldEqual usesOfx1FromMultiProject1InMultiProject1
+
+[<Test>]
+let ``Test multi project 1 xmldoc`` () = 
+
+    let p1A = checker.ParseAndCheckProject(Project1A.options) |> Async.RunSynchronously
+    let p1B = checker.ParseAndCheckProject(Project1B.options) |> Async.RunSynchronously
+    let mp = checker.ParseAndCheckProject(MultiProject1.options) |> Async.RunSynchronously
+
+    let x1FromProject1A = 
+        [ for s in p1A.GetAllUsesOfAllSymbols() |> Async.RunSynchronously do
+             if  s.Symbol.DisplayName = "x1" then 
+                 yield s.Symbol ]   |> List.head
+
+    let x1FromProjectMultiProject = 
+        [ for s in mp.GetAllUsesOfAllSymbols() |> Async.RunSynchronously do
+             if  s.Symbol.DisplayName = "x1" then 
+                 yield s.Symbol ]   |> List.head
+
+    let ctorFromProjectMultiProject = 
+        [ for s in mp.GetAllUsesOfAllSymbols() |> Async.RunSynchronously do
+             if  s.Symbol.DisplayName = "C" then 
+                 yield s.Symbol ]   |> List.head
+
+    let case1FromProjectMultiProject = 
+        [ for s in mp.GetAllUsesOfAllSymbols() |> Async.RunSynchronously do
+             if  s.Symbol.DisplayName = "Case1" then 
+                 yield s.Symbol ]   |> List.head
+
+
+    match x1FromProject1A with 
+    | :? FSharpMemberOrFunctionOrValue as v -> v.XmlDoc.Count |> shouldEqual 1
+    | _ -> failwith "odd symbol!"
+
+    match x1FromProjectMultiProject with 
+    | :? FSharpMemberOrFunctionOrValue as v -> v.XmlDoc.Count |> shouldEqual 1
+    | _ -> failwith "odd symbol!"
+
+    match ctorFromProjectMultiProject with 
+    | :? FSharpMemberOrFunctionOrValue as c -> c.XmlDoc.Count |> shouldEqual 0
+    | _ -> failwith "odd symbol!"
+
+    match ctorFromProjectMultiProject with 
+    | :? FSharpMemberOrFunctionOrValue as c -> c.EnclosingEntity.Value.XmlDoc.Count |> shouldEqual 1
+    | _ -> failwith "odd symbol!"
+
+    match case1FromProjectMultiProject with 
+    | :? FSharpUnionCase as c -> c.XmlDoc.Count |> shouldEqual 1
+    | _ -> failwith "odd symbol!"
 
 //------------------------------------------------------------------------------------
 
@@ -742,7 +802,7 @@ let ``Test active patterns' XmlDocSig declared in referenced projects`` () =
     divisibleBySymbol.ToString() |> shouldEqual "symbol DivisibleBy"
 
     let divisibleByActivePatternCase = divisibleBySymbol :?> FSharpActivePatternCase
-    divisibleByActivePatternCase.XmlDoc |> Seq.toList |> shouldEqual []
+    divisibleByActivePatternCase.XmlDoc |> Seq.toList |> shouldEqual [ "A parameterized active pattern of divisibility" ]
     divisibleByActivePatternCase.XmlDocSig |> shouldEqual "M:Project3A.|DivisibleBy|_|(System.Int32,System.Int32)"
     let divisibleByGroup = divisibleByActivePatternCase.Group
     divisibleByGroup.IsTotal |> shouldEqual false
