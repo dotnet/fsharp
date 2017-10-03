@@ -27,25 +27,37 @@ type internal FSharpDeclarationListItem =
 #endif
     /// Get the display name for the declaration.
     member Name : string
+
     /// Get the name for the declaration as it's presented in source code.
     member NameInCode : string
+
     /// Get the description text for the declaration. Computing this property may require using compiler
     /// resources and may trigger execution of a type provider method to retrieve documentation.
     ///
     /// May return "Loading..." if timeout occurs
     member StructuredDescriptionText : FSharpStructuredToolTipText
+
     member DescriptionText : FSharpToolTipText
 
     /// Get the description text, asynchronously.  Never returns "Loading...".
     member StructuredDescriptionTextAsync : Async<FSharpStructuredToolTipText>
+
     member DescriptionTextAsync : Async<FSharpToolTipText>
+
     member Glyph : FSharpGlyph
+
     member Accessibility : FSharpAccessibility option
+
     member Kind : CompletionItemKind
+
     member IsOwnMember : bool
+
     member MinorPriority : int
+
     member FullName : string
+
     member IsResolved : bool
+
     member NamespaceToOpen : string option
 
 
@@ -59,13 +71,18 @@ type FSharpDeclarationListInfo =
 #else
 type internal FSharpDeclarationListInfo =
 #endif
+
     member Items : FSharpDeclarationListItem[]
+
     member IsForType : bool
+
     member IsError : bool
 
     // Implementation details used by other code in the compiler    
     static member internal Create : infoReader:InfoReader * m:range * denv:DisplayEnv * getAccessibility:(Item -> FSharpAccessibility option) * items:CompletionItem list * reactor:IReactorOperations * currentNamespace:string[] option * isAttributeApplicationContex:bool * checkAlive:(unit -> bool) -> FSharpDeclarationListInfo
+
     static member internal Error : message:string -> FSharpDeclarationListInfo
+
     static member Empty : FSharpDeclarationListInfo
 
 /// Represents one parameter for one method (or other item) in a group. 
