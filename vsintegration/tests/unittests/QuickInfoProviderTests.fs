@@ -34,7 +34,7 @@ open UnitTests.TestLib.LanguageService
 
 let filePath = "C:\\test.fs"
 
-let internal options = { 
+let internal projectOptions = { 
     ProjectFileName = "C:\\test.fsproj"
     SourceFiles =  [| filePath |]
     ReferencedProjects = [| |]
@@ -97,8 +97,9 @@ Full name: System.Console"
         let caretPosition = fileContents.IndexOf(symbol)
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
         
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
         let quickInfo =
-            FSharpQuickInfoProvider.ProvideQuickInfo(checker, documentId, SourceText.From(fileContents), filePath, caretPosition, options, 0)
+            FSharpQuickInfoProvider.ProvideQuickInfo(checker, documentId, SourceText.From(fileContents), filePath, caretPosition, parsingOptions, projectOptions, 0)
             |> Async.RunSynchronously
         
         let actual = quickInfo |> Option.map (fun (text, _, _, _) -> getQuickInfoText text)
@@ -227,8 +228,9 @@ let res8 = abs 5.0<kg>
         let caretPosition = fileContents.IndexOf(symbol) + symbol.Length - 1
         let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
         
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
         let quickInfo =
-            FSharpQuickInfoProvider.ProvideQuickInfo(checker, documentId, SourceText.From(fileContents), filePath, caretPosition, options, 0)
+            FSharpQuickInfoProvider.ProvideQuickInfo(checker, documentId, SourceText.From(fileContents), filePath, caretPosition, parsingOptions, projectOptions, 0)
             |> Async.RunSynchronously
         
         let actual = quickInfo |> Option.map (fun (text, _, _, _) -> getQuickInfoText text)

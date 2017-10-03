@@ -18,9 +18,9 @@ type internal FSharpBraceMatchingService
     
     static let defaultUserOpName = "BraceMatching"
 
-    static member GetBraceMatchingResult(checker: FSharpChecker, sourceText, fileName, options: FSharpProjectOptions, position: int, userOpName: string) = 
+    static member GetBraceMatchingResult(checker: FSharpChecker, sourceText, fileName, parsingOptions: FSharpParsingOptions, position: int, userOpName: string) = 
         async {
-            let! matchedBraces = checker.MatchBraces(fileName, sourceText.ToString(), options, userOpName)
+            let! matchedBraces = checker.MatchBraces(fileName, sourceText.ToString(), parsingOptions, userOpName)
             let isPositionInRange range = 
                 match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
                 | None -> false
@@ -33,9 +33,9 @@ type internal FSharpBraceMatchingService
     interface IBraceMatcher with
         member this.FindBracesAsync(document, position, cancellationToken) = 
             asyncMaybe {
-                let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)
-                let! (left, right) = FSharpBraceMatchingService.GetBraceMatchingResult(checkerProvider.Checker, sourceText, document.Name, options, position, defaultUserOpName)
+                let! (left, right) = FSharpBraceMatchingService.GetBraceMatchingResult(checkerProvider.Checker, sourceText, document.Name, parsingOptions, position, defaultUserOpName)
                 let! leftSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, left)
                 let! rightSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, right)
                 return BraceMatchingResult(leftSpan, rightSpan)

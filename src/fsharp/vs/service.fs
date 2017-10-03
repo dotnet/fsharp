@@ -54,11 +54,11 @@ type internal Layout = StructuredFormat.Layout
 
 [<AutoOpen>]
 module EnvMisc =
-    let getToolTipTextSize = GetEnvInteger "FCS_RecentForegroundTypeCheckCacheSize" 5
+    let getToolTipTextSize = GetEnvInteger "FCS_GetToolTipTextCacheSize" 5
     let maxTypeCheckErrorsOutOfProjectContext = GetEnvInteger "FCS_MaxErrorsOutOfProjectContext" 3
     let braceMatchCacheSize = GetEnvInteger "FCS_BraceMatchCacheSize" 5
-    let parseFileInProjectCacheSize = GetEnvInteger "FCS_ParseFileInProjectCacheSize" 2
-    let incrementalTypeCheckCacheSize = GetEnvInteger "FCS_IncrementalTypeCheckCacheSize" 5
+    let parseFileCacheSize = GetEnvInteger "FCS_ParseFileCacheSize" 2
+    let checkFileInProjectCacheSize = GetEnvInteger "FCS_CheckFileInProjectCacheSize" 5
 
     let projectCacheSizeDefault   = GetEnvInteger "FCS_ProjectCacheSizeDefault" 3
     let frameworkTcImportsCacheStrongSize = GetEnvInteger "FCS_frameworkTcImportsCacheStrongSizeDefault" 8
@@ -2307,26 +2307,26 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     
 
     // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.parseFileInProjectCache. Most recently used cache for parsing files.
-    let parseFileCache = MruCache<ParseCacheLockToken,_,_>(parseFileInProjectCacheSize, areSimilar = AreSimilarForParsing, areSame = AreSameForParsing)
+    let parseFileCache = MruCache<ParseCacheLockToken,_,_>(parseFileCacheSize, areSimilar = AreSimilarForParsing, areSame = AreSameForParsing)
 
-    // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.parseAndCheckFileInProjectCachePossiblyStale 
-    // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.parseAndCheckFileInProjectCache
+    // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.checkFileInProjectCachePossiblyStale 
+    // STATIC ROOT: FSharpLanguageServiceTestable.FSharpChecker.checkFileInProjectCache
     //
     /// Cache which holds recently seen type-checks.
     /// This cache may hold out-of-date entries, in two senses
     ///    - there may be a more recent antecedent state available because the background build has made it available
     ///    - the source for the file may have changed
     
-    let parseAndCheckFileInProjectCachePossiblyStale = 
+    let checkFileInProjectCachePossiblyStale = 
         MruCache<ParseCacheLockToken,string * FSharpProjectOptions, FSharpParseFileResults * FSharpCheckFileResults * int>
-            (keepStrongly=incrementalTypeCheckCacheSize,
+            (keepStrongly=checkFileInProjectCacheSize,
              areSame=AreSameForChecking2,
              areSimilar=AreSubsumable2)
 
     // Also keyed on source. This can only be out of date if the antecedent is out of date
-    let parseAndCheckFileInProjectCache = 
+    let checkFileInProjectCache = 
         MruCache<ParseCacheLockToken,FileName * Source * FSharpProjectOptions, FSharpParseFileResults * FSharpCheckFileResults * FileVersion * DateTime>
-            (keepStrongly=incrementalTypeCheckCacheSize,
+            (keepStrongly=checkFileInProjectCacheSize,
              areSame=AreSameForChecking3,
              areSimilar=AreSubsumable3)
 
@@ -2366,8 +2366,8 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         | Some (FSharpCheckFileAnswer.Succeeded typedResults) -> 
             foregroundTypeCheckCount <- foregroundTypeCheckCount + 1
             parseCacheLock.AcquireLock (fun ltok -> 
-                parseAndCheckFileInProjectCachePossiblyStale.Set(ltok, (filename,options),(parseResults,typedResults,fileVersion))  
-                parseAndCheckFileInProjectCache.Set(ltok, (filename,source,options),(parseResults,typedResults,fileVersion,priorTimeStamp))
+                checkFileInProjectCachePossiblyStale.Set(ltok, (filename,options),(parseResults,typedResults,fileVersion))  
+                checkFileInProjectCache.Set(ltok, (filename,source,options),(parseResults,typedResults,fileVersion,priorTimeStamp))
                 parseFileCache.Set(ltok, (filename, source, parsingOptions), parseResults))
 
     member bc.ImplicitlyStartCheckProjectInBackground(options, userOpName) =        
@@ -2403,7 +2403,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
 
     member bc.GetCachedCheckFileResult(builder: IncrementalBuilder,filename,source,options) =
             // Check the cache. We can only use cached results when there is no work to do to bring the background builder up-to-date
-            let cachedResults = parseCacheLock.AcquireLock (fun ltok -> parseAndCheckFileInProjectCache.TryGet(ltok, (filename,source,options)))
+            let cachedResults = parseCacheLock.AcquireLock (fun ltok -> checkFileInProjectCache.TryGet(ltok, (filename,source,options)))
 
             match cachedResults with 
 //            | Some (parseResults, checkResults, _, _) when builder.AreCheckResultsBeforeFileInProjectReady(filename) -> 
@@ -2620,10 +2620,10 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
         match source with 
         | Some sourceText -> 
             parseCacheLock.AcquireLock (fun ltok -> 
-                match parseAndCheckFileInProjectCache.TryGet(ltok,(filename,sourceText,options)) with
+                match checkFileInProjectCache.TryGet(ltok,(filename,sourceText,options)) with
                 | Some (a,b,c,_) -> Some (a,b,c)
                 | None -> None)
-        | None -> parseCacheLock.AcquireLock (fun ltok -> parseAndCheckFileInProjectCachePossiblyStale.TryGet(ltok,(filename,options)))
+        | None -> parseCacheLock.AcquireLock (fun ltok -> checkFileInProjectCachePossiblyStale.TryGet(ltok,(filename,options)))
 
     /// Parse and typecheck the whole project (the implementation, called recursively as project graph is evaluated)
     member private bc.ParseAndCheckProjectImpl(options, ctok, userOpName) : Cancellable<FSharpCheckProjectResults> =
@@ -2774,8 +2774,8 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     member bc.ClearCachesAsync (userOpName) =
         reactor.EnqueueAndAwaitOpAsync (userOpName, "ClearCachesAsync", "", fun ctok -> 
             parseCacheLock.AcquireLock (fun ltok -> 
-                parseAndCheckFileInProjectCachePossiblyStale.Clear ltok
-                parseAndCheckFileInProjectCache.Clear ltok
+                checkFileInProjectCachePossiblyStale.Clear ltok
+                checkFileInProjectCache.Clear ltok
                 parseFileCache.Clear(ltok))
             incrementalBuildersCache.Clear ctok
             frameworkTcImportsCache.Clear ctok
@@ -2785,8 +2785,8 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     member bc.DownsizeCaches(userOpName) =
         reactor.EnqueueAndAwaitOpAsync (userOpName, "DownsizeCaches", "", fun ctok -> 
             parseCacheLock.AcquireLock (fun ltok -> 
-                parseAndCheckFileInProjectCachePossiblyStale.Resize(ltok, keepStrongly=1)
-                parseAndCheckFileInProjectCache.Resize(ltok, keepStrongly=1)
+                checkFileInProjectCachePossiblyStale.Resize(ltok, keepStrongly=1)
+                checkFileInProjectCache.Resize(ltok, keepStrongly=1)
                 parseFileCache.Resize(ltok, keepStrongly=1))
             incrementalBuildersCache.Resize(ctok, keepStrongly=1, keepMax=1)
             frameworkTcImportsCache.Downsize(ctok)
@@ -2849,15 +2849,15 @@ type FSharpChecker(legacyReferenceResolver, projectCacheSize, keepAssemblyConten
                 return res
         }
 
-    member ic.GetParsingOptionsFromProjectOptions(options): FSharpParsingOptions =
+    member ic.GetParsingOptionsFromProjectOptions(options): FSharpParsingOptions * _ =
         let sourceFiles = List.ofArray options.SourceFiles
         let argv = List.ofArray options.OtherOptions
-        let parsingOptions, _ = ic.GetParsingOptionsFromCommandLineArgs(sourceFiles, argv)
-        parsingOptions
+        ic.GetParsingOptionsFromCommandLineArgs(sourceFiles, argv)
 
     member ic.MatchBraces(filename, source, options: FSharpProjectOptions, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
-        ic.MatchBraces(filename, source, ic.GetParsingOptionsFromProjectOptions(options), userOpName)
+        let parsingOptions, _ = ic.GetParsingOptionsFromProjectOptions(options)
+        ic.MatchBraces(filename, source, parsingOptions, userOpName)
 
     member ic.ParseFile(filename, source, options, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
@@ -2867,7 +2867,8 @@ type FSharpChecker(legacyReferenceResolver, projectCacheSize, keepAssemblyConten
 
     member ic.ParseFileInProject(filename, source, options, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
-        ic.ParseFile(filename, source, ic.GetParsingOptionsFromProjectOptions(options), userOpName)
+        let parsingOptions, _ = ic.GetParsingOptionsFromProjectOptions(options)
+        ic.ParseFile(filename, source, parsingOptions, userOpName)
 
     member ic.GetBackgroundParseResultsForFileInProject (filename,options, ?userOpName: string) =
         let userOpName = defaultArg userOpName "Unknown"
@@ -3177,21 +3178,9 @@ module CompilerEnvironment =
     let DefaultReferencesForOrphanSources(assumeDotNetFramework) = DefaultReferencesForScriptsAndOutOfProjectSources(assumeDotNetFramework)
     
     /// Publish compiler-flags parsing logic. Must be fast because its used by the colorizer.
-    let GetCompilationDefinesForEditing(filename:string, compilerFlags : string list) =
-        let defines = ref(SourceFileImpl.AdditionalDefinesForUseInEditor(filename))
-        let MatchAndExtract(flag:string,prefix:string) =
-            if flag.StartsWith(prefix) then 
-                let sub = flag.Substring(prefix.Length)
-                let trimmed = sub.Trim()
-                defines := trimmed :: !defines
-        let rec QuickParseDefines = function
-            | hd :: tail ->
-               MatchAndExtract(hd,"-d:")
-               MatchAndExtract(hd,"--define:")
-               QuickParseDefines tail
-            | _ -> ()
-        QuickParseDefines compilerFlags
-        !defines
+    let GetCompilationDefinesForEditing(filename:string, parsingOptions: FSharpParsingOptions) =
+        SourceFileImpl.AdditionalDefinesForUseInEditor(filename) @
+        parsingOptions.ConditionalCompilationDefines
             
     /// Return true if this is a subcategory of error or warning message that the language service can emit
     let IsCheckerSupportedSubcategory(subcategory:string) =

@@ -15,14 +15,14 @@ type CheckResults =
     | StillRunning of Async<(FSharpParseFileResults * FSharpCheckFileResults) option>
     
 type FSharpChecker with
-    member checker.ParseDocument(document: Document, options: FSharpProjectOptions, sourceText: string, userOpName: string) =
+    member checker.ParseDocument(document: Document, parsingOptions: FSharpParsingOptions, sourceText: string, userOpName: string) =
         asyncMaybe {
-            let! fileParseResults = checker.ParseFileInProject(document.FilePath, sourceText, options, userOpName=userOpName) |> liftAsync
+            let! fileParseResults = checker.ParseFile(document.FilePath, sourceText, parsingOptions, userOpName=userOpName) |> liftAsync
             return! fileParseResults.ParseTree
         }
 
-    member checker.ParseDocument(document: Document, options: FSharpProjectOptions, sourceText: SourceText, userOpName: string) =
-        checker.ParseDocument(document, options, sourceText=sourceText.ToString(), userOpName=userOpName)
+    member checker.ParseDocument(document: Document, parsingOptions: FSharpParsingOptions, sourceText: SourceText, userOpName: string) =
+        checker.ParseDocument(document, parsingOptions, sourceText=sourceText.ToString(), userOpName=userOpName)
 
     member checker.ParseAndCheckDocument(filePath: string, textVersionHash: int, sourceText: string, options: FSharpProjectOptions, allowStaleResults: bool, userOpName: string) =
         let parseAndCheckFile =
