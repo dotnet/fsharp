@@ -173,10 +173,10 @@ type internal UnusedOpensDiagnosticAnalyzer() =
         asyncMaybe {
             do Trace.TraceInformation("{0:n3} (start) UnusedOpensAnalyzer", DateTime.Now.TimeOfDay.TotalSeconds)
             do! Async.Sleep DefaultTuning.UnusedOpensAnalyzerInitialDelay |> liftAsync // be less intrusive, give other work priority most of the time
-            let! options = getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document)
+            let! _parsingOptions, projectOptions = getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document)
             let! sourceText = document.GetTextAsync()
             let checker = getChecker document
-            let! unusedOpens = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges(document, options, checker)
+            let! unusedOpens = UnusedOpensDiagnosticAnalyzer.GetUnusedOpenRanges(document, projectOptions, checker)
             
             return 
                 unusedOpens

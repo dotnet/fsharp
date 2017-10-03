@@ -14,6 +14,9 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
+
+#nowarn "44" // use of obsolete CheckFileInProjectAllowingStaleCachedResults
+
 //
 // Note: DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS. 
 //
@@ -204,7 +207,12 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                 // Now that we have the parseResults, we can SetDependencyFiles().
                 // 
                 // If the set of dependencies changes, the file needs to be re-checked
-                let anyDependenciesChanged = source.SetDependencyFiles(parseResults.DependencyFiles)
+                let dependencyFiles = 
+                    match typedResults with 
+                    | None -> parseResults.DependencyFiles
+                    | Some r -> r.DependencyFiles
+                
+                let anyDependenciesChanged = source.SetDependencyFiles(dependencyFiles)
                 if anyDependenciesChanged then
                     req.ResultClearsDirtinessOfFile <- false
                     // Furthermore, if the project is out-of-date behave just as if we were notified dependency files changed.  
