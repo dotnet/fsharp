@@ -188,6 +188,7 @@ let p_space n () st =
     for i = 0 to n - 1 do 
         p_byte 0 st
 
+/// Represents space that was reserved but is now possibly used
 let p_used_space1 f st = 
     p_byte 1 st
     f st
@@ -302,15 +303,17 @@ let u_space n st =
         if b <> 0 then 
             warning(Error(FSComp.SR.pickleUnexpectedNonZero st.ifile, range0))
         
+/// Represents space that was reserved but is now possibly used
 let u_used_space1 f st = 
     let b = u_byte st
     match b with 
     | 0 -> None
-    | 1 -> let x = f st 
-           // read additional space
-           u_space 1 st
-           Some x
-    | _ -> warning(Error(FSComp.SR.pickleUnexpectedNonZero st.ifile, range0)); None
+    | 1 -> 
+        let x = f st 
+        u_space 1 st
+        Some x
+    | _ -> 
+        warning(Error(FSComp.SR.pickleUnexpectedNonZero st.ifile, range0)); None
 
 
 let inline  u_tup2 p1 p2 (st:ReaderState) = let a = p1 st in let b = p2 st in (a,b)
@@ -425,21 +428,24 @@ let lookup_uniq st tbl n =
 // between internal representations relatively easily
 //------------------------------------------------------------------------- 
  
-let p_array f (x: 'T[]) st =
-    p_int x.Length st
+let p_array_core f (x: 'T[]) st =
     for i = 0 to x.Length-1 do
         f x.[i] st
 
+let p_array f (x: 'T[]) st =
+    p_int x.Length st
+    p_array_core f x st
+
+// Optionally encode an extra item using a marker bit.
+// When extraf is None, the marker bit is not set, and this is identical to p_array.
 let p_array_ext extraf f (x: 'T[]) st =
     let n = x.Length
-    // The XmlDoc are only written for the extended in-memory format. We encode their presence using a marker bit here
     let n = if Option.isSome extraf then n ||| 0x80000000 else n
     p_int n st
     match extraf with 
     | None -> ()
     | Some f -> f st
-    for i = 0 to x.Length-1 do
-        f x.[i] st
+    p_array_core f x st
 
  
 let p_list f x st = p_array f (Array.ofList x) st
@@ -502,25 +508,27 @@ let p_hole () =
     let h = ref (None : 'T pickler option)
     (fun f -> h := Some f),(fun x st -> match !h with Some f -> f x st | None -> pfailwith st "p_hole: unfilled hole")
 
-let u_array f st =
-    let n = u_int st
+let u_array_core f n st =
     let res = Array.zeroCreate n
     for i = 0 to n-1 do
         res.[i] <- f st
     res
 
-let u_array_ext extra f st =
+let u_array f st =
     let n = u_int st
-    let v = 
+    u_array_core f n st
+
+// Optionally decode an extra item if a marker bit is present.
+// When the marker bit is not set this is identical to u_array, and extraf is not called
+let u_array_ext extraf f st =
+    let n = u_int st
+    let extraItem = 
         if n &&& 0x80000000 = 0x80000000 then 
-            Some (extra st)
+            Some (extraf st)
         else
             None
-    let n = n &&& 0x7FFFFFFF 
-    let res = Array.zeroCreate n
-    for i = 0 to n-1 do
-        res.[i] <- f st
-    v, res
+    let arr = u_array_core f (n &&& 0x7FFFFFFF) st
+    extraItem, arr
 
 let u_list f st = Array.toList (u_array f st)
 let u_list_ext extra f st = let v, res = u_array_ext extra f st in v, Array.toList res
@@ -1662,7 +1670,7 @@ and p_unioncase_spec x st =
     p_string x.CompiledName st
     p_ident x.Id st
     // The XmlDoc are only written for the extended in-memory format. We encode their presence using a marker bit here
-    p_attribs_ext (if st.oInMem then Some (p_used_space1 (p_xmldoc x.XmlDoc)) else None)  x.Attribs st
+    p_attribs_ext (if st.oInMem then Some (p_xmldoc x.XmlDoc) else None)  x.Attribs st
     p_string x.XmlDocSig st
     p_access x.Accessibility st
 
@@ -1687,7 +1695,7 @@ and p_recdfield_spec x st =
     p_bool x.rfield_secret st
     p_option p_const x.rfield_const st
     p_ident x.rfield_id st 
-    p_attribs_ext (if st.oInMem then Some (p_used_space1 (p_xmldoc x.XmlDoc)) else None) x.rfield_pattribs st
+    p_attribs_ext (if st.oInMem then Some (p_xmldoc x.XmlDoc) else None) x.rfield_pattribs st
     p_attribs x.rfield_fattribs st
     p_string x.rfield_xmldocsig st
     p_access x.rfield_access st
@@ -2254,7 +2262,7 @@ and u_lval_op_kind st =
   
 and p_op x st = 
     match x with 
-    | TOp.UnionCase c                   -> p_byte 0 st; p_ucref c st
+    | TOp.UnionCase c               -> p_byte 0 st; p_ucref c st
     | TOp.ExnConstr c               -> p_byte 1 st; p_tcref "op"  c st
     | TOp.Tuple tupInfo             -> 
          if evalTupInfoIsStruct tupInfo then 
