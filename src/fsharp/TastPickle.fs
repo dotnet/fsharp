@@ -122,6 +122,8 @@ type WriterState =
     osimpletyps: Table<int>
     oglobals : TcGlobals
     ofile : string
+    /// Indicates if we are using in-memory format, where we store XML docs as well
+    oInMem : bool
   }
 let pfailwith st str = ffailwith st.ofile str
     
@@ -185,6 +187,13 @@ let space = ()
 let p_space n () st = 
     for i = 0 to n - 1 do 
         p_byte 0 st
+
+/// Represents space that was reserved but is now possibly used
+let p_used_space1 f st = 
+    p_byte 1 st
+    f st
+    // leave more space
+    p_space 1 space st
 
 let p_bytes (s:byte[]) st = 
     let len = s.Length
@@ -290,8 +299,21 @@ let u_ieee64 st = float_of_bits (u_int64 st)
 let u_char st = char (int32 (u_uint16 st))
 let u_space n st = 
     for i = 0 to n - 1 do 
-        u_byte st |> ignore
+        let b = u_byte st
+        if b <> 0 then 
+            warning(Error(FSComp.SR.pickleUnexpectedNonZero st.ifile, range0))
         
+/// Represents space that was reserved but is now possibly used
+let u_used_space1 f st = 
+    let b = u_byte st
+    match b with 
+    | 0 -> None
+    | 1 -> 
+        let x = f st 
+        u_space 1 st
+        Some x
+    | _ -> 
+        warning(Error(FSComp.SR.pickleUnexpectedNonZero st.ifile, range0)); None
 
 
 let inline  u_tup2 p1 p2 (st:ReaderState) = let a = p1 st in let b = p2 st in (a,b)
@@ -406,13 +428,28 @@ let lookup_uniq st tbl n =
 // between internal representations relatively easily
 //------------------------------------------------------------------------- 
  
-let p_array f (x: 'T[]) st =
-    p_int x.Length st
+let p_array_core f (x: 'T[]) st =
     for i = 0 to x.Length-1 do
         f x.[i] st
 
+let p_array f (x: 'T[]) st =
+    p_int x.Length st
+    p_array_core f x st
+
+// Optionally encode an extra item using a marker bit.
+// When extraf is None, the marker bit is not set, and this is identical to p_array.
+let p_array_ext extraf f (x: 'T[]) st =
+    let n = x.Length
+    let n = if Option.isSome extraf then n ||| 0x80000000 else n
+    p_int n st
+    match extraf with 
+    | None -> ()
+    | Some f -> f st
+    p_array_core f x st
+
  
 let p_list f x st = p_array f (Array.ofList x) st
+let p_list_ext extraf f x st = p_array_ext extraf f (Array.ofList x) st
 
 let p_List f (x: 'T list) st = p_list f x st 
 
@@ -471,14 +508,30 @@ let p_hole () =
     let h = ref (None : 'T pickler option)
     (fun f -> h := Some f),(fun x st -> match !h with Some f -> f x st | None -> pfailwith st "p_hole: unfilled hole")
 
-let u_array f st =
-    let n = u_int st
+let u_array_core f n st =
     let res = Array.zeroCreate n
     for i = 0 to n-1 do
         res.[i] <- f st
     res
 
+let u_array f st =
+    let n = u_int st
+    u_array_core f n st
+
+// Optionally decode an extra item if a marker bit is present.
+// When the marker bit is not set this is identical to u_array, and extraf is not called
+let u_array_ext extraf f st =
+    let n = u_int st
+    let extraItem = 
+        if n &&& 0x80000000 = 0x80000000 then 
+            Some (extraf st)
+        else
+            None
+    let arr = u_array_core f (n &&& 0x7FFFFFFF) st
+    extraItem, arr
+
 let u_list f st = Array.toList (u_array f st)
+let u_list_ext extra f st = let v, res = u_array_ext extra f st in v, Array.toList res
 
 #if FLAT_LIST_AS_LIST
 #else
@@ -641,7 +694,7 @@ let p_encoded_simpletyp x st = p_int x st
 let p_simpletyp x st = p_int (encode_simpletyp st.occus st.ostrings st.onlerefs st.osimpletyps st.oscope x) st
 
 type sizes = int * int * int 
-let pickleObjWithDanglingCcus file g scope p x =
+let pickleObjWithDanglingCcus inMem file g scope p x =
   let ccuNameTab,(sizes: sizes),stringTab,pubpathTab,nlerefTab,simpletypTab,phase1bytes =
     let st1 = 
       { os = ByteBuffer.Create 100000 
@@ -656,7 +709,7 @@ let pickleObjWithDanglingCcus file g scope p x =
         osimpletyps=Table<_>.Create "osimpletyps"  
         oglobals=g
         ofile=file
-        (* REINSTATE: odecomps=NodeOutTable.Create stamp_of_decomp name_of_decomp "odecomps" *) }
+        oInMem=inMem }
     p x st1
     let sizes = 
       st1.otycons.Size,
@@ -677,7 +730,8 @@ let pickleObjWithDanglingCcus file g scope p x =
        onlerefs=Table<_>.Create "onlerefs (fake)"
        osimpletyps=Table<_>.Create "osimpletyps (fake)"
        oglobals=g
-       ofile=file }
+       ofile=file
+       oInMem=inMem }
     p_tup7
       (p_array p_encoded_ccuref) 
       (p_tup3 p_int p_int p_int) 
@@ -1159,12 +1213,10 @@ let u_ILInstr st =
 // Pickle/unpickle for F# types and module signatures
 //---------------------------------------------------------------------------
 
-// TODO: remove all pickling of maps
 let p_Map pk pv = p_wrap Map.toList (p_list (p_tup2 pk pv))
 let p_qlist pv = p_wrap QueueList.toList (p_list pv)
 let p_namemap p = p_Map p_string p
 
-// TODO: remove all pickling of maps
 let u_Map uk uv = u_wrap Map.ofList (u_list (u_tup2 uk uv))
 let u_qlist uv = u_wrap QueueList.ofList (u_list uv)
 let u_namemap u = u_Map u_string u
@@ -1610,10 +1662,17 @@ and p_tycon_objmodel_data x st =
   p_tup3 p_tycon_objmodel_kind (p_vrefs "vslots") p_rfield_table 
     (x.fsobjmodel_kind, x.fsobjmodel_vslots, x.fsobjmodel_rfields) st
 
+and p_attribs_ext f x st = p_list_ext f p_attrib x st
+
 and p_unioncase_spec x st =                     
-    p_tup7 
-        p_rfield_table p_typ p_string p_ident p_attribs p_string p_access
-        (x.FieldTable,x.ReturnType,x.CompiledName,x.Id,x.Attribs,x.XmlDocSig,x.Accessibility) st
+    p_rfield_table x.FieldTable st
+    p_typ x.ReturnType st
+    p_string x.CompiledName st
+    p_ident x.Id st
+    // The XmlDoc are only written for the extended in-memory format. We encode their presence using a marker bit here
+    p_attribs_ext (if st.oInMem then Some (p_xmldoc x.XmlDoc) else None)  x.Attribs st
+    p_string x.XmlDocSig st
+    p_access x.Accessibility st
 
 and p_exnc_spec_data x st = p_entity_spec_data x st
 
@@ -1629,32 +1688,44 @@ and p_exnc_spec x st = p_tycon_spec x st
 and p_access (TAccess n) st = p_list p_cpath n st
 
 and p_recdfield_spec x st = 
-    p_tup11
-      p_bool p_bool p_typ p_bool p_bool (p_option p_const) p_ident p_attribs p_attribs p_string p_access 
-      (x.rfield_mutable,x.rfield_volatile,x.rfield_type,x.rfield_static,x.rfield_secret,x.rfield_const,x.rfield_id,x.rfield_pattribs,x.rfield_fattribs,x.rfield_xmldocsig,x.rfield_access) st
+    p_bool x.rfield_mutable st
+    p_bool x.rfield_volatile st
+    p_typ x.rfield_type st
+    p_bool x.rfield_static st
+    p_bool x.rfield_secret st
+    p_option p_const x.rfield_const st
+    p_ident x.rfield_id st 
+    p_attribs_ext (if st.oInMem then Some (p_xmldoc x.XmlDoc) else None) x.rfield_pattribs st
+    p_attribs x.rfield_fattribs st
+    p_string x.rfield_xmldocsig st
+    p_access x.rfield_access st
 
 and p_rfield_table x st = 
     p_list p_recdfield_spec (Array.toList x.FieldsByIndex) st
 
 and p_entity_spec_data (x:Entity) st = 
-      p_typar_specs (x.entity_typars.Force(x.entity_range)) st 
-      p_string x.entity_logical_name st
-      p_option p_string x.entity_compiled_name st
-      p_range  x.entity_range st
-      p_option p_pubpath x.entity_pubpath st
-      p_access x.entity_accessiblity st
-      p_access  x.entity_tycon_repr_accessibility st
-      p_attribs x.entity_attribs st
-      let flagBit = p_tycon_repr x.entity_tycon_repr st
-      p_option p_typ x.entity_tycon_abbrev st
-      p_tcaug x.entity_tycon_tcaug st
-      p_string x.entity_xmldocsig st
-      p_kind x.entity_kind st
-      p_int64 (x.entity_flags.PickledBits ||| (if flagBit then EntityFlags.ReservedBitForPickleFormatTyconReprFlag else 0L)) st
-      p_option p_cpath x.entity_cpath st
-      p_maybe_lazy p_modul_typ x.entity_modul_contents st
-      p_exnc_repr x.entity_exn_info st
-      p_space 1 space st
+    p_typar_specs (x.entity_typars.Force(x.entity_range)) st 
+    p_string x.entity_logical_name st
+    p_option p_string x.entity_compiled_name st
+    p_range  x.entity_range st
+    p_option p_pubpath x.entity_pubpath st
+    p_access x.entity_accessiblity st
+    p_access  x.entity_tycon_repr_accessibility st
+    p_attribs x.entity_attribs st
+    let flagBit = p_tycon_repr x.entity_tycon_repr st
+    p_option p_typ x.entity_tycon_abbrev st
+    p_tcaug x.entity_tycon_tcaug st
+    p_string x.entity_xmldocsig st
+    p_kind x.entity_kind st
+    p_int64 (x.entity_flags.PickledBits ||| (if flagBit then EntityFlags.ReservedBitForPickleFormatTyconReprFlag else 0L)) st
+    p_option p_cpath x.entity_cpath st
+    p_maybe_lazy p_modul_typ x.entity_modul_contents st
+    p_exnc_repr x.entity_exn_info st
+    if st.oInMem then
+        p_used_space1 (p_xmldoc x.entity_xmldoc) st
+    else
+        p_space 1 () st
+
 
 and p_tcaug p st = 
     p_tup9
@@ -1740,35 +1811,23 @@ and p_vrefFlags x st =
     | VSlotDirectCall -> p_byte 4 st
 
 and p_ValData x st =
-    //if verbose then dprintf "p_ValData, nm = %s, stamp #%d, ty = %s\n" x.val_name x.val_stamp (DebugPrint.showType x.val_type);
-    p_tup13
-      p_string
-      (p_option p_string)
-      p_ranges
-      p_typ 
-      p_int64 
-      (p_option p_member_info) 
-      p_attribs 
-      (p_option p_ValReprInfo)
-      p_string
-      p_access
-      p_parentref
-      (p_option p_const)
-      (p_space 1)
-      ( x.val_logical_name,
-        x.val_compiled_name,
-        // only keep range information on published values, not on optimization data
-        (if x.val_repr_info.IsSome then Some(x.val_range, x.DefinitionRange) else None),
-        x.val_type,
-        x.val_flags.PickledBits,
-        x.val_member_info,
-        x.val_attribs,
-        x.val_repr_info,
-        x.val_xmldocsig,
-        x.val_access,
-        x.val_actual_parent,
-        x.val_const,
-        space) st
+    p_string x.val_logical_name st
+    p_option p_string x.val_compiled_name st
+    // only keep range information on published values, not on optimization data
+    p_ranges (if x.val_repr_info.IsSome then Some(x.val_range, x.DefinitionRange) else None) st
+    p_typ x.val_type st
+    p_int64 x.val_flags.PickledBits st
+    p_option p_member_info x.val_member_info st
+    p_attribs x.val_attribs st
+    p_option p_ValReprInfo x.val_repr_info st
+    p_string x.val_xmldocsig st
+    p_access x.val_access st
+    p_parentref x.val_actual_parent st
+    p_option p_const x.val_const st
+    if st.oInMem then
+        p_used_space1 (p_xmldoc x.val_xmldoc) st
+    else
+        p_space 1 () st
       
 and p_Val x st = 
     p_osgn_decl st.ovals p_ValData x st
@@ -1831,16 +1890,25 @@ and u_tycon_objmodel_data st =
     let x1,x2,x3 = u_tup3 u_tycon_objmodel_kind u_vrefs u_rfield_table st
     {fsobjmodel_kind=x1; fsobjmodel_vslots=x2; fsobjmodel_rfields=x3 }
   
+and u_attribs_ext extraf st = u_list_ext extraf u_attrib st
 and u_unioncase_spec st = 
-    let a,b,c,d,e,f,i = u_tup7 u_rfield_table u_typ u_string u_ident u_attribs u_string u_access st
-    {FieldTable=a 
-     ReturnType=b 
-     CompiledName=c 
-     Id=d 
-     Attribs=e
-     XmlDoc=XmlDoc.Empty
-     XmlDocSig=f;Accessibility=i 
-     OtherRangeOpt=None }
+    let a = u_rfield_table  st
+    let b = u_typ st
+    let c = u_string st
+    let d = u_ident  st
+    // The XmlDoc is only present in the extended in-memory format. We detect its presence using a marker bit here
+    let xmldoc, e = u_attribs_ext u_xmldoc st
+    let f = u_string st
+    let i = u_access st
+    { FieldTable=a 
+      ReturnType=b 
+      CompiledName=c 
+      Id=d 
+      Attribs=e
+      XmlDoc= defaultArg xmldoc XmlDoc.Empty
+      XmlDocSig=f
+      Accessibility=i 
+      OtherRangeOpt=None }
     
 and u_exnc_spec_data st = u_entity_spec_data st 
 
@@ -1861,20 +1929,18 @@ and u_access st =
     | res -> TAccess res
 
 and u_recdfield_spec st = 
-    let a,b,c1,c2,c2b,c3,d,e1,e2,f,g = 
-        u_tup11 
-            u_bool 
-            u_bool 
-            u_typ 
-            u_bool 
-            u_bool 
-            (u_option u_const) 
-            u_ident 
-            u_attribs 
-            u_attribs 
-            u_string
-            u_access 
-            st
+    let a = u_bool st
+    let b = u_bool st
+    let c1 = u_typ st
+    let c2 = u_bool st
+    let c2b = u_bool st
+    let c3 = u_option u_const st
+    let d = u_ident st
+    // The XmlDoc is only present in the extended in-memory format. We detect its presence using a marker bit here
+    let xmldoc, e1 = u_attribs_ext u_xmldoc st
+    let e2 = u_attribs st
+    let f = u_string st
+    let g = u_access st
     { rfield_mutable=a  
       rfield_volatile=b  
       rfield_type=c1 
@@ -1884,7 +1950,7 @@ and u_recdfield_spec st =
       rfield_id=d 
       rfield_pattribs=e1
       rfield_fattribs=e2
-      rfield_xmldoc=XmlDoc.Empty
+      rfield_xmldoc= defaultArg xmldoc XmlDoc.Empty
       rfield_xmldocsig=f 
       rfield_access=g
       rfield_other_range = None }
@@ -1892,7 +1958,7 @@ and u_recdfield_spec st =
 and u_rfield_table st = MakeRecdFieldsTable (u_list u_recdfield_spec st)
 
 and u_entity_spec_data st : Entity = 
-    let x1,x2a,x2b,x2c,x3,(x4a,x4b),x6,x7f,x8,x9,x10,x10b,x11,x12,x13,x14,_space = 
+    let x1,x2a,x2b,x2c,x3,(x4a,x4b),x6,x7f,x8,x9,x10,x10b,x11,x12,x13,x14,x15 = 
        u_tup17
           u_typar_specs
           u_string
@@ -1910,7 +1976,7 @@ and u_entity_spec_data st : Entity =
           (u_option u_cpath )
           (u_lazy u_modul_typ) 
           u_exnc_repr 
-          (u_space 1)
+          (u_used_space1 u_xmldoc)
           st
     // We use a bit that was unused in the F# 2.0 format to indicate two possible representations in the F# 3.0 tycon_repr format
     let x7 = x7f (x11 &&& EntityFlags.ReservedBitForPickleFormatTyconReprFlag <> 0L)
@@ -1929,7 +1995,7 @@ and u_entity_spec_data st : Entity =
       entity_tycon_repr=x7
       entity_tycon_abbrev=x8
       entity_tycon_tcaug=x9
-      entity_xmldoc=XmlDoc.Empty
+      entity_xmldoc= defaultArg x15 XmlDoc.Empty
       entity_xmldocsig=x10
       entity_kind=x10b
       entity_flags=EntityFlags(x11)
@@ -2038,7 +2104,7 @@ and u_vrefFlags st =
     | _ -> ufailwith st "u_vrefFlags"
 
 and u_ValData st =
-    let x1,x1z,x1a,x2,x4,x8,x9,x10,x12,x13,x13b,x14,_space = 
+    let x1,x1z,x1a,x2,x4,x8,x9,x10,x12,x13,x13b,x14,x15 = 
       u_tup13
         u_string
         (u_option u_string)
@@ -2052,7 +2118,8 @@ and u_ValData st =
         u_access
         u_parentref
         (u_option u_const) 
-        (u_space 1) st
+        (u_used_space1 u_xmldoc)
+        st
     { val_logical_name=x1
       val_compiled_name=x1z
       val_range=(match x1a with None -> range0 | Some(a,_) -> a)
@@ -2064,7 +2131,7 @@ and u_ValData st =
       val_member_info=x8
       val_attribs=x9
       val_repr_info=x10
-      val_xmldoc=XmlDoc.Empty
+      val_xmldoc= defaultArg x15 XmlDoc.Empty
       val_xmldocsig=x12
       val_access=x13
       val_actual_parent=x13b
@@ -2195,7 +2262,7 @@ and u_lval_op_kind st =
   
 and p_op x st = 
     match x with 
-    | TOp.UnionCase c                   -> p_byte 0 st; p_ucref c st
+    | TOp.UnionCase c               -> p_byte 0 st; p_ucref c st
     | TOp.ExnConstr c               -> p_byte 1 st; p_tcref "op"  c st
     | TOp.Tuple tupInfo             -> 
          if evalTupInfoIsStruct tupInfo then 
