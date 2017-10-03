@@ -16,7 +16,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <FsSrGen Include="..\FSInteractiveSettings.txt" />
+    <EmbeddedText Include="..\FSInteractiveSettings.txt" />
     <Compile Include="InternalsVisibleTo.fs" />
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Interactive.Settings.dll.fs" />
     <Compile Include="..\..\utils\reshapedreflection.fs" />

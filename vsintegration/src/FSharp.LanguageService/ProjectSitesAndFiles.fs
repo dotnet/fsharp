@@ -46,7 +46,7 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 type private IHaveCheckOptions = 
     abstract OriginalCheckOptions : unit -> string[] * FSharpProjectOptions
         
-/// Convert from FSharpProjectOptions into IProjectSite.         
+/// Convert from FSharpProjectOptions into IProjectSite.
 type private ProjectSiteOfScriptFile(filename:string, referencedProjectFileNames, checkOptions : FSharpProjectOptions) = 
     interface IProjectSite with
         override this.SourceFilesOnDisk() = checkOptions.SourceFiles
@@ -192,10 +192,8 @@ type internal ProjectSitesAndFiles() =
         if SourceFile.MustBeSingleFileProject(filename) then 
             Debug.Assert(false, ".fsx or .fsscript should have been treated as implicit project")
             failwith ".fsx or .fsscript should have been treated as implicit project"
-
         new ProjectSiteOfSingleFile(filename) :> IProjectSite
-    
-        
+
     static member GetReferencedProjectSites(projectSite:IProjectSite, serviceProvider:System.IServiceProvider) =
         referencedProvideProjectSites (projectSite, serviceProvider)
         |> Seq.map (fun (_, ps) -> ps.GetProjectSite())
@@ -244,10 +242,10 @@ type internal ProjectSitesAndFiles() =
         | None -> None                
 
 
-    member art.GetDefinesForFile_DEPRECATED(rdt:IVsRunningDocumentTable, filename : string) =
+    member art.GetDefinesForFile_DEPRECATED(rdt:IVsRunningDocumentTable, filename : string, checker:FSharpChecker) =
         // The only caller of this function calls it each time it needs to colorize a line, so this call must execute very fast.  
         if SourceFile.MustBeSingleFileProject(filename) then 
-            CompilerEnvironment.GetCompilationDefinesForEditing(filename,[])
+            CompilerEnvironment.GetCompilationDefinesForEditing(filename,FSharpParsingOptions.Default)
         else 
             let siteOpt = 
                 match VsRunningDocumentTable.FindDocumentWithoutLocking(rdt,filename) with 
@@ -259,7 +257,8 @@ type internal ProjectSitesAndFiles() =
                | Some site -> site
                | None -> ProjectSitesAndFiles.ProjectSiteOfSingleFile(filename)
 
-            CompilerEnvironment.GetCompilationDefinesForEditing(filename,site.CompilerFlags() |> Array.toList)
+            let parsingOptions,_ = checker.GetParsingOptionsFromCommandLineArgs(site.CompilerFlags() |> Array.toList)
+            CompilerEnvironment.GetCompilationDefinesForEditing(filename,parsingOptions)
 
 
     member art.TryFindOwningProject_DEPRECATED(rdt:IVsRunningDocumentTable, filename) = 

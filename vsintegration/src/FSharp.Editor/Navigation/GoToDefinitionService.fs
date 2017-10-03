@@ -57,8 +57,8 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
     /// Helper function that is used to determine the navigation strategy to apply, can be tuned towards signatures or implementation files.
     let findSymbolHelper (originDocument: Document, originRange: range, sourceText: SourceText, preferSignature: bool) : Async<FSharpNavigableItem option> =
         asyncMaybe {
-            let! projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject originDocument
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing (originDocument.FilePath, projectOptions.OtherOptions |> Seq.toList)
+            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject originDocument
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing (originDocument.FilePath, parsingOptions)
             let! originTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sourceText, originRange)
             let position = originTextSpan.Start
             let! lexerSymbol = Tokenizer.getSymbolAtPosition (originDocument.Id, sourceText, position, originDocument.FilePath, defines, SymbolLookupKind.Greedy, false)
@@ -67,7 +67,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()  
             
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument (originDocument,projectOptions,allowStaleResults=true,sourceText=sourceText, userOpName = userOpName)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument (originDocument, projectOptions, allowStaleResults=true,sourceText=sourceText, userOpName = userOpName)
             let idRange = lexerSymbol.Ident.idRange
             let! fsSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland, userOpName=userOpName)
             let symbol = fsSymbolUse.Symbol
@@ -79,7 +79,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                 if not (File.Exists fsfilePath) then return! None else
                 let! implDoc = originDocument.Project.Solution.TryGetDocumentFromPath fsfilePath
                 let! implSourceText = implDoc.GetTextAsync ()
-                let! projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject implDoc
+                let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject implDoc
                 let! _, _, checkFileResults = checker.ParseAndCheckDocument (implDoc, projectOptions, allowStaleResults=true, sourceText=implSourceText, userOpName = userOpName)
                 let! symbolUses = checkFileResults.GetUsesOfSymbolInFile symbol |> liftAsync
                 let! implSymbol  = symbolUses |> Array.tryHead 
@@ -252,7 +252,7 @@ type internal FSharpGoToDefinitionService
 
         match navigableItem with
         | Some navigableItem ->
-            statusBar.Message SR.NavigatingTo.Value
+            statusBar.Message (SR.NavigatingTo())
 
             let workspace = navigableItem.Document.Project.Solution.Workspace
             let navigationService = workspace.Services.GetService<IDocumentNavigationService>()
@@ -263,11 +263,11 @@ type internal FSharpGoToDefinitionService
             if result then 
                 statusBar.Clear()
             else 
-                statusBar.TempMessage SR.CannotNavigateUnknown.Value
+                statusBar.TempMessage (SR.CannotNavigateUnknown())
             
             result
         | None ->
-            statusBar.TempMessage SR.CannotDetermineSymbol.Value
+            statusBar.TempMessage (SR.CannotDetermineSymbol())
             true
 
     /// Navigate to the positon of the textSpan in the provided document
@@ -280,7 +280,7 @@ type internal FSharpGoToDefinitionService
         if navigationService.TryNavigateToSpan (workspace, navigableItem.Document.Id, navigableItem.SourceSpan, options) then 
             true 
         else
-            statusBar.TempMessage SR.CannotNavigateUnknown.Value
+            statusBar.TempMessage (SR.CannotNavigateUnknown())
             false
 
     /// find the declaration location (signature file/.fsi) of the target symbol if possible, fall back to definition 
@@ -295,9 +295,9 @@ type internal FSharpGoToDefinitionService
     /// at the provided position in the document.
     member __.FindDefinitionsTask(originDocument: Document, position: int, cancellationToken: CancellationToken) =
         asyncMaybe {
-            let! projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject originDocument
+            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject originDocument
             let! sourceText = originDocument.GetTextAsync () |> liftTaskAsync
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing (originDocument.FilePath, projectOptions.OtherOptions |> Seq.toList)
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing (originDocument.FilePath, parsingOptions)
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
@@ -382,7 +382,7 @@ type internal FSharpGoToDefinitionService
                         let! implDocument = originDocument.Project.Solution.TryGetDocumentFromPath implFilePath
                         let! implVersion = implDocument.GetTextVersionAsync () |> liftTaskAsync
                         let! implSourceText = implDocument.GetTextAsync () |> liftTaskAsync
-                        let! projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject implDocument
+                        let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject implDocument
                         
                         let! targetRange = 
                             gotoDefinition.FindSymbolDeclarationInFile(targetSymbolUse, implFilePath, implSourceText.ToString(), projectOptions, implVersion.GetHashCode())                               
@@ -405,7 +405,7 @@ type internal FSharpGoToDefinitionService
         member this.TryGoToDefinition(document: Document, position: int, cancellationToken: CancellationToken) =
             let definitionTask = this.FindDefinitionsTask (document, position, cancellationToken)
             
-            statusBar.Message SR.LocatingSymbol.Value
+            statusBar.Message (SR.LocatingSymbol())
             use __ = statusBar.Animate()
 
             // Wrap this in a try/with as if the user clicks "Cancel" on the thread dialog, we'll be cancelled
@@ -419,7 +419,7 @@ type internal FSharpGoToDefinitionService
             
             match completionError with
             | Some message ->
-                statusBar.TempMessage <| String.Format(SR.NavigateToFailed.Value, message)
+                statusBar.TempMessage <| String.Format(SR.NavigateToFailed(), message)
 
                 // Don't show the dialog box as it's most likely that the user cancelled.
                 // Don't make them click twice.
@@ -439,5 +439,5 @@ type internal FSharpGoToDefinitionService
                     //    presenter.DisplayResult(navigableItem.DisplayString, definitionTask.Result)
                     //true
                 else 
-                    statusBar.TempMessage SR.CannotDetermineSymbol.Value
+                    statusBar.TempMessage (SR.CannotDetermineSymbol())
                     false

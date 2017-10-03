@@ -8,14 +8,12 @@
 module internal Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.EraseUnions
 
 open System.Collections.Generic
-open Internal.Utilities
+
 open Microsoft.FSharp.Compiler.AbstractIL 
 open Microsoft.FSharp.Compiler.AbstractIL.IL 
-open Microsoft.FSharp.Compiler.AbstractIL.Internal 
 open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX
 open Microsoft.FSharp.Compiler.AbstractIL.Extensions.ILX.Types
-open Microsoft.FSharp.Compiler.AbstractIL.Morphs 
 
 
 [<Literal>]
@@ -584,7 +582,7 @@ let emitDataSwitch ilg (cg: ICodeGen<'Mark>) (avoidHelpers, cuspec, cases) =
         | [] -> cg.EmitInstrs  [ AI_pop ]
         | _ ->
         // Use a dictionary to avoid quadratic lookup in case list
-        let dict = System.Collections.Generic.Dictionary<int,_>()
+        let dict = Dictionary<int,_>()
         for (i,case) in cases do dict.[i] <- case
         let failLab = cg.GenerateDelayMark ()
         let emitCase i _ = 

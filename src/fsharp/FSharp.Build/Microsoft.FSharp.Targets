@@ -22,6 +22,8 @@ this file.
     </PropertyGroup>
 
     <UsingTask TaskName="Fsc" AssemblyFile="FSharp.Build{BuildSuffix}.dll"/>
+    <UsingTask TaskName="FSharpEmbedResourceText" AssemblyFile="FSharp.Build{BuildSuffix}.dll"/>
+    <UsingTask TaskName="FSharpEmbedResXSource" AssemblyFile="FSharp.Build{BuildSuffix}.dll"/>
     <UsingTask TaskName="CreateFSharpManifestResourceName" AssemblyFile="FSharp.Build{BuildSuffix}.dll"/>
 
     <PropertyGroup>
@@ -169,11 +171,41 @@ this file.
         <CoreCompileDependsOn>_ComputeNonExistentFileProperty</CoreCompileDependsOn>
     </PropertyGroup>
 
+    <Target Name="GenerateFSharpTextResources"
+            BeforeTargets="CoreResGen;PrepareForBuild">
+
+        <MakeDir Directories="$(IntermediateOutputPath)" />
+
+        <!-- Generate source for all resx files. -->
+        <FSharpEmbedResXSource EmbeddedResource="@(EmbeddedResource)" IntermediateOutputPath="$(IntermediateOutputPath)" TargetFramework="$(TargetFramework)">
+            <Output TaskParameter="GeneratedSource" ItemName="_FsGeneratedResXSource" />
+        </FSharpEmbedResXSource>
+
+        <ItemGroup>
+            <CompileBefore Include="@(_FsGeneratedResXSource)" />
+            <FileWrites Include="@(_FsGeneratedResXSource)" />
+        </ItemGroup>
+
+        <!-- Generate resx and source for all txt files. -->
+        <FSharpEmbedResourceText EmbeddedText="@(EmbeddedText)" IntermediateOutputPath="$(IntermediateOutputPath)">
+            <Output TaskParameter="GeneratedSource" ItemName="_FsGeneratedTxtSource" />
+            <Output TaskParameter="GeneratedResx" ItemName="_FsGeneratedResx" />
+        </FSharpEmbedResourceText>
+
+        <ItemGroup>
+            <CompileBefore Include="@(_FsGeneratedTxtSource)" />
+            <EmbeddedResource Include="@(_FsGeneratedResx)" />
+            <FileWrites Include="@(_FsGeneratedTxtSource)" />
+            <FileWrites Include="@(_FsGeneratedResx)" />
+        </ItemGroup>
+
+    </Target>
+
     <Target
         Name="CoreCompile"
         Inputs="$(MSBuildAllProjects);
                 @(CompileBefore);
-                @(Compile);                               
+                @(Compile);
                 @(CompileAfter);
                 @(_CoreCompileResourceInputs);
                 @(ManifestNonResxWithNoCultureOnDisk);
@@ -189,7 +221,7 @@ this file.
                 $(KeyOriginatorFile)"
         Outputs="@(DocFileItem);
                  @(IntermediateAssembly);
-                 @(_DebugSymbolsIntermediatePath);                 
+                 @(_DebugSymbolsIntermediatePath);
                  $(NonExistentFile);
                  @(CustomAdditionalCompileOutputs)"
         Returns=""

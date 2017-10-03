@@ -25,7 +25,7 @@ type internal FSharpEditorFormattingService
     ) =
 
     static let userOpName = "Formatting"
-    static let getFormattingChanges(documentId: DocumentId, sourceText: SourceText, filePath: string, checker: FSharpChecker, indentStyle: FormattingOptions.IndentStyle, projectOptions: FSharpProjectOptions option, position: int) =
+    static let getFormattingChanges(documentId: DocumentId, sourceText: SourceText, filePath: string, checker: FSharpChecker, indentStyle: FormattingOptions.IndentStyle, options: (FSharpParsingOptions * FSharpProjectOptions) option, position: int) =
         // Logic for determining formatting changes:
         // If first token on the current line is a closing brace,
         // match the indent with the indent on the line that opened it
@@ -36,11 +36,11 @@ type internal FSharpEditorFormattingService
             // (this is what C# does)
             do! Option.guard (indentStyle = FormattingOptions.IndentStyle.Smart)
 
-            let! projectOptions = projectOptions
+            let! parsingOptions, _projectOptions = options
             
             let line = sourceText.Lines.[sourceText.Lines.IndexOf position]
                 
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(filePath, projectOptions.OtherOptions |> List.ofArray)
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(filePath, parsingOptions)
 
             let tokens = Tokenizer.tokenizeLine(documentId, sourceText, line.Start, filePath, defines)
 
@@ -52,7 +52,7 @@ type internal FSharpEditorFormattingService
                     x.Tag <> FSharpTokenTag.LINE_COMMENT)
 
             let! (left, right) =
-                FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, filePath, projectOptions, position, "FormattingService")
+                FSharpBraceMatchingService.GetBraceMatchingResult(checker, sourceText, filePath, parsingOptions, position, "FormattingService")
 
             if right.StartColumn = firstMeaningfulToken.LeftColumn then
                 // Replace the indentation on this line with the indentation of the left bracket

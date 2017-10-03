@@ -804,7 +804,7 @@ namespace Microsoft.FSharp.Core
             //------------------------------------------------------------------------- 
 
             let FailGenericComparison (obj: obj)  = 
-                raise (new System.ArgumentException(SR.GetString1(SR.genericCompareFail1, obj.GetType().ToString())))
+                raise (new System.ArgumentException(String.Format(SR.GetString(SR.genericCompareFail1), obj.GetType().ToString())))
             
                
             /// This type has two instances - fsComparerER and fsComparerThrow.

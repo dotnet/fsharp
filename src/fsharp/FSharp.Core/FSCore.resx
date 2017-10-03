@@ -501,7 +501,7 @@
   <data name="QtypeArgumentOutOfRange" xml:space="preserve">
     <value>type argument out of range</value>
   </data>
-  <data name="ThisValueCannotBeMutated" xml:space="preserve">
+  <data name="thisValueCannotBeMutated" xml:space="preserve">
     <value>This value cannot be mutated</value>
   </data>
   <data name="optionValueWasNone" xml:space="preserve">

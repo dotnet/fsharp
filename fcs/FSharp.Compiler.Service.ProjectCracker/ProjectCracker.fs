@@ -16,11 +16,17 @@ type ProjectCracker =
         let enableLogging = defaultArg enableLogging true
         let logMap = ref Map.empty
 
-        let rec convert (opts: Microsoft.FSharp.Compiler.SourceCodeServices.ProjectCrackerTool.ProjectOptions) : FSharpProjectOptions =
+        let rec convert (opts: ProjectCrackerTool.ProjectOptions) : FSharpProjectOptions =
+            if not (isNull opts.Error) then failwith opts.Error
+
             let referencedProjects = Array.map (fun (a, b) -> a, convert b) opts.ReferencedProjectOptions
             
             let sourceFiles, otherOptions = 
-                opts.Options |> Array.partition (fun x -> x.IndexOfAny(Path.GetInvalidPathChars()) = -1 && Path.GetExtension(x).ToLower() = ".fs")
+                opts.Options 
+                |> Array.partition (fun x -> 
+                    let extension = Path.GetExtension(x).ToLower()
+                    x.IndexOfAny(Path.GetInvalidPathChars()) = -1 
+                    && (extension = ".fs" || extension = ".fsi"))
             
             let sepChar = Path.DirectorySeparatorChar
             
@@ -73,8 +79,8 @@ type ProjectCracker =
         p.StartInfo.RedirectStandardOutput <- true
         ignore <| p.Start()
     
-        let ser = new System.Runtime.Serialization.Json.DataContractJsonSerializer(typeof<Microsoft.FSharp.Compiler.SourceCodeServices.ProjectCrackerTool.ProjectOptions>)
-        let opts = ser.ReadObject(p.StandardOutput.BaseStream) :?> Microsoft.FSharp.Compiler.SourceCodeServices.ProjectCrackerTool.ProjectOptions
+        let ser = new DataContractJsonSerializer(typeof<ProjectCrackerTool.ProjectOptions>)
+        let opts = ser.ReadObject(p.StandardOutput.BaseStream) :?> ProjectCrackerTool.ProjectOptions
 #endif
         
         convert opts, !logMap

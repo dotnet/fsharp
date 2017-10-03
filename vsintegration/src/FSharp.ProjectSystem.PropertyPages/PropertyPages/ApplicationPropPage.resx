@@ -207,6 +207,9 @@
   <data name="&gt;&gt;Win32ResourceFileBrowse.ZOrder" xml:space="preserve">
     <value>0</value>
   </data>
+  <data name="ResourcesLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
   <data name="ResourcesLabel.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
     <value>NoControl</value>
   </data>
@@ -236,6 +239,9 @@
   </data>
   <data name="&gt;&gt;ResourcesLabel.ZOrder" xml:space="preserve">
     <value>1</value>
+  </data>
+  <data name="ResourceLabel.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
   </data>
   <data name="ResourceLabel.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
     <value>NoControl</value>

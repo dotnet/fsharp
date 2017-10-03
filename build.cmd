@@ -60,7 +60,7 @@ set BUILD_PHASE=1
 set BUILD_NET40=0
 set BUILD_NET40_FSHARP_CORE=0
 set BUILD_CORECLR=0
-set BUILD_BUILDFROMSOURCE=0
+set BUILD_FROMSOURCE=0
 set BUILD_VS=0
 set BUILD_FCS=0
 set BUILD_CONFIG=release
@@ -396,7 +396,7 @@ echo BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG%
 echo BUILD_NET40=%BUILD_NET40%
 echo BUILD_NET40_FSHARP_CORE=%BUILD_NET40_FSHARP_CORE%
 echo BUILD_CORECLR=%BUILD_CORECLR%
-echo BUILD_BUILDFROMSOURCE=%BUILD_BUILDFROMSOURCE%
+echo BUILD_FROMSOURCE=%BUILD_FROMSOURCE%
 echo BUILD_VS=%BUILD_VS%
 echo BUILD_FCS=%BUILD_FCS%
 echo BUILD_SETUP=%BUILD_SETUP%
@@ -417,11 +417,12 @@ echo PUBLISH_VSIX=%PUBLISH_VSIX%
 echo MYGET_APIKEY=%MYGET_APIKEY%
 echo TEMP=%TEMP%
 
-REM load Visual Studio 2017 developer command prompt if VS150COMNTOOLS is not set
+:: load Visual Studio 2017 developer command prompt if VS150COMNTOOLS is not set
 
-REM If this is not set, VsDevCmd.bat will change %cd% to [USERPROFILE]\source, causing the build to fail.
+:: If this is not set, VsDevCmd.bat will change %cd% to [USERPROFILE]\source, causing the build to fail.
 SET VSCMD_START_DIR=%cd%
 
+:: try to find an RC or RTM edition of VS2017
 if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" (
     call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"
 )
@@ -431,15 +432,28 @@ if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Stud
 if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat" (
     call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat"
 )
+
+:: Allow build from Preview editions
+if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Enterprise\Common7\Tools\VsDevCmd.bat" (
+    call "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Enterprise\Common7\Tools\VsDevCmd.bat"
+)
+if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Professional\Common7\Tools\VsDevCmd.bat" (
+    call "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Enterprise\Common7\Tools\VsDevCmd.bat"
+)
+if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Community\Common7\Tools\VsDevCmd.bat" (
+    call "%ProgramFiles(x86)%\Microsoft Visual Studio\Preview\Enterprise\Common7\Tools\VsDevCmd.bat"
+)
+
+:: If there's no installation of VS2017 or VS2017 Preview, use the build tools
 if "%VS150COMNTOOLS%" EQU "" if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat" (
     call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\Common7\Tools\VsDevCmd.bat"
 )
 
-echo .
+echo.
 echo Environment
 set
-echo .
-echo .
+echo.
+echo.
 
 echo ---------------- Done with arguments, starting preparation -----------------
 
@@ -641,13 +655,15 @@ if not "%OSARCH%"=="x86" set REGEXE32BIT=%WINDIR%\syswow64\reg.exe
 
 echo SDK environment vars from Registry
 echo ==================================
-                            FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\WOW6432Node\Microsoft\Microsoft SDKs\NETFXSDK\4.6.2\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
-if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\WOW6432Node\Microsoft\Microsoft SDKs\NETFXSDK\4.6.1\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
-if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
-if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
-if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
-if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
-if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" /v InstallationFolder') DO SET WINSDKNETFXTOOLS=%%B
+
+::See https://stackoverflow.com/a/17113667/111575 on 2^>NUL for suppressing the error "ERROR: The system was unable to find the specified registry key or value." from reg.exe, this fixes #3619
+                            FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\WOW6432Node\Microsoft\Microsoft SDKs\NETFXSDK\4.6.2\WinSDK-NetFx40Tools" /v InstallationFolder 2^>NUL') DO SET WINSDKNETFXTOOLS=%%B
+if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\WOW6432Node\Microsoft\Microsoft SDKs\NETFXSDK\4.6.1\WinSDK-NetFx40Tools" /v InstallationFolder 2^>NUL') DO SET WINSDKNETFXTOOLS=%%B
+if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\NETFXSDK\4.6\WinSDK-NetFx40Tools" /v InstallationFolder 2^>NUL') DO SET WINSDKNETFXTOOLS=%%B
+if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.1A\WinSDK-NetFx40Tools" /v InstallationFolder 2^>NUL') DO SET WINSDKNETFXTOOLS=%%B
+if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v8.0A\WinSDK-NetFx40Tools" /v InstallationFolder 2^>NUL') DO SET WINSDKNETFXTOOLS=%%B
+if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.1\WinSDK-NetFx40Tools" /v InstallationFolder 2^>NUL') DO SET WINSDKNETFXTOOLS=%%B
+if "%WINSDKNETFXTOOLS%"=="" FOR /F "tokens=2* delims=	 " %%A IN ('%REGEXE32BIT% QUERY "HKLM\Software\Microsoft\Microsoft SDKs\Windows\v7.0A\WinSDK-NetFx40Tools" /v InstallationFolder 2^>NUL') DO SET WINSDKNETFXTOOLS=%%B
 
 set PATH=%PATH%;%WINSDKNETFXTOOLS%
 for /d %%i in (%WINDIR%\Microsoft.NET\Framework\v4.0.?????) do set CORDIR=%%i
@@ -659,7 +675,7 @@ IF NOT DEFINED SNEXE32  IF EXIST "%WINSDKNETFXTOOLS%\sn.exe"                set 
 IF NOT DEFINED SNEXE64  IF EXIST "%WINSDKNETFXTOOLS%x64\sn.exe"             set SNEXE64=%WINSDKNETFXTOOLS%x64\sn.exe
 IF NOT DEFINED ildasm   IF EXIST "%WINSDKNETFXTOOLS%\ildasm.exe"            set ildasm=%WINSDKNETFXTOOLS%ildasm.exe
 
-echo .
+echo.
 echo SDK environment vars
 echo =======================
 echo WINSDKNETFXTOOLS:  %WINSDKNETFXTOOLS%

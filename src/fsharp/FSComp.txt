@@ -1421,3 +1421,4 @@ notAFunctionButMaybeIndexer,"This expression is not a function and cannot be app
 3217,notAFunctionButMaybeIndexerErrorCode,""
 notAFunctionButMaybeDeclaration,"This value is not a function and cannot be applied. Did you forget to terminate a declaration?"
 3218,ArgumentsInSigAndImplMismatch,"The argument names in the signature '%s' and implementation '%s' do not match. The argument name from the signature file will be used. This may cause problems when debugging or profiling."
+3219,pickleUnexpectedNonZero,"An error occurred while reading the F# metadata of assembly '%s'. A reserved construct was utilized. You may need to upgrade your F# compiler or use an earlier version of the assembly that doesn't make use of a specific construct."

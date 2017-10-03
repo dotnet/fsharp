@@ -44,7 +44,7 @@ type PdbMethodData =
       MethName:string
       LocalSignatureToken: int32
       Params: PdbLocalVar array
-      RootScope: PdbMethodScope
+      RootScope: PdbMethodScope option
       Range: (PdbSourceLoc * PdbSourceLoc) option
       SequencePoints: PdbSequencePoint array }
 
