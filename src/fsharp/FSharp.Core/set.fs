@@ -69,8 +69,7 @@ namespace Microsoft.FSharp.Collections
         
     #endif
     
-
-        let height t = 
+        let inline height t = 
             match t with 
             | SetEmpty -> 0
             | SetOne _ -> 1
@@ -87,48 +86,51 @@ namespace Microsoft.FSharp.Collections
                 let h2 = height t2 
                 (-2 <= (h1 - h2) && (h1 - h2) <= 2) && checkInvariant t1 && checkInvariant t2
     #endif
-
-        let tolerance = 2
-
-        let mk l k r = 
+    
+        let inline mk l hl k r hr = 
             match l,r with 
             | SetEmpty,SetEmpty -> SetOne (k)
             | _ -> 
-              let hl = height l 
-              let hr = height r 
               let m = if hl < hr then hr else hl 
               SetNode(k,l,r,m+1)
 
         let rebalance t1 k t2 =
             let t1h = height t1 
             let t2h = height t2 
-            if  t2h > t1h + tolerance then // right is heavier than left 
+            if t2h > t1h + 2 then // right is heavier than left 
                 match t2 with 
                 | SetNode(t2k,t2l,t2r,_) -> 
                     // one of the nodes must have height > height t1 + 1 
-                    if height t2l > t1h + 1 then  // balance left: combination 
+                    let t2lh = height t2l
+                    if t2lh > t1h + 1 then  // balance left: combination 
                         match t2l with 
                         | SetNode(t2lk,t2ll,t2lr,_) ->
-                            mk (mk t1 k t2ll) t2lk (mk t2lr t2k t2r) 
+                            let l = mk t1 t1h k t2ll (height t2ll)
+                            let r = mk t2lr (height t2lr) t2k t2r (height t2r) 
+                            mk l (height l) t2lk r (height r) 
                         | _ -> failwith "rebalance"
-                    else // rotate left 
-                        mk (mk t1 k t2l) t2k t2r
+                    else // rotate left
+                        let l = mk t1 t1h k t2l t2lh
+                        mk l (height l) t2k t2r (height t2r)
                 | _ -> failwith "rebalance"
             else
-                if  t1h > t2h + tolerance then // left is heavier than right 
+                if t1h > t2h + 2 then // left is heavier than right 
                     match t1 with 
                     | SetNode(t1k,t1l,t1r,_) -> 
-                        // one of the nodes must have height > height t2 + 1 
-                        if height t1r > t2h + 1 then 
-                            // balance right: combination 
+                        // one of the nodes must have height > height t2 + 1
+                        let t1rh = height t1r
+                        if t1rh > t2h + 1 then // balance right: combination 
                             match t1r with 
                             | SetNode(t1rk,t1rl,t1rr,_) ->
-                                mk (mk t1l t1k t1rl) t1rk (mk t1rr k t2)
+                                let l = mk t1l (height t1l) t1k t1rl (height t1rl)
+                                let r = mk t1rr (height t1rr) k t2 t2h
+                                mk l (height l) t1rk r (height r)
                             | _ -> failwith "rebalance"
                         else
-                            mk t1l t1k (mk t1r k t2)
+                            let r = mk t1r t1rh k t2 t2h
+                            mk t1l (height t1l) t1k r (height r)
                     | _ -> failwith "rebalance"
-                else mk t1 k t2
+                else mk t1 t1h k t2 t2h
 
         let rec add (comparer: IComparer<'T>) k t = 
             match t with 
@@ -159,17 +161,17 @@ namespace Microsoft.FSharp.Collections
                 // Either (a) h1,h2 differ by at most 2 - no rebalance needed.
                 //        (b) h1 too small, i.e. h1+2 < h2
                 //        (c) h2 too small, i.e. h2+2 < h1 
-                if   h1+tolerance < h2 then
+                if h1 + 2 < h2 then
                     // case: b, h1 too small 
                     // push t1 into low side of t2, may increase height by 1 so rebalance 
                     rebalance (balance comparer t1 k t21) k2 t22
-                elif h2+tolerance < h1 then
+                elif h2 + 2 < h1 then
                     // case: c, h2 too small 
                     // push t2 into high side of t1, may increase height by 1 so rebalance 
                     rebalance t11 k1 (balance comparer t12 k t2)
                 else
                     // case: a, h1 and h2 meet balance requirement 
-                    mk t1 k t2
+                    mk t1 (height t1) k t2 (height t2)
 
         let rec split (comparer: IComparer<'T>) pivot t =
             // Given a pivot and a set t
@@ -200,7 +202,9 @@ namespace Microsoft.FSharp.Collections
             | SetNode (k2,l,r,_) ->
                 match l with 
                 | SetEmpty -> k2,r
-                | _ -> let k3,l' = spliceOutSuccessor l in k3,mk l' k2 r
+                | _ -> 
+                    let k3,l' = spliceOutSuccessor l
+                    k3,mk l' (height l') k2 r (height r)
 
         let rec remove (comparer: IComparer<'T>) k t = 
             match t with 
@@ -218,7 +222,7 @@ namespace Microsoft.FSharp.Collections
                   | _,SetEmpty -> l
                   | _ -> 
                       let sk,r' = spliceOutSuccessor r 
-                      mk l sk r'
+                      mk l (height l) sk r' (height r')
                 else rebalance l k2 (remove comparer k r) 
 
         let rec mem (comparer: IComparer<'T>) k t = 
