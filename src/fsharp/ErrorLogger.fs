@@ -6,7 +6,6 @@ module public Microsoft.FSharp.Compiler.ErrorLogger
 module internal Microsoft.FSharp.Compiler.ErrorLogger
 #endif
 
-
 open Internal.Utilities
 open Microsoft.FSharp.Compiler 
 open Microsoft.FSharp.Compiler.AbstractIL.Diagnostics
@@ -52,7 +51,7 @@ exception ReportedError of exn option with
 let rec findOriginalException err = 
     match err with 
     | ReportedError (Some err) -> err
-    | WrappedError(err,_)  -> findOriginalException err
+    | WrappedError(err, _)  -> findOriginalException err
     | _ -> err
 
 type Suggestions = unit -> Set<string>
@@ -75,20 +74,20 @@ let StopProcessing<'T> = StopProcessingExn None
 exception NumberedError of (int * string) * range with   // int is e.g. 191 in FS0191
     override this.Message =
         match this :> exn with
-        | NumberedError((_,msg),_) -> msg
+        | NumberedError((_, msg), _) -> msg
         | _ -> "impossible"
 
 exception Error of (int * string) * range with   // int is e.g. 191 in FS0191  // eventually remove this type, it is a transitional artifact of the old unnumbered error style
     override this.Message =
         match this :> exn with
-        | Error((_,msg),_) -> msg
+        | Error((_, msg), _) -> msg
         | _ -> "impossible"
 
 
 exception InternalError of msg: string * range with 
     override this.Message = 
         match this :> exn with 
-        | InternalError(msg,m) -> msg + m.ToString()
+        | InternalError(msg, m) -> msg + m.ToString()
         | _ -> "impossible"
 
 exception UserCompilerMessage of string * int * range
@@ -107,7 +106,7 @@ exception UnresolvedPathReference of (*assemblyname*) string * (*path*) string *
 exception ErrorWithSuggestions of (int * string) * range * string * Suggestions with   // int is e.g. 191 in FS0191 
     override this.Message =
         match this :> exn with
-        | ErrorWithSuggestions((_,msg),_,_,_) -> msg
+        | ErrorWithSuggestions((_, msg), _, _, _) -> msg
         | _ -> "impossible"
 
 
@@ -122,7 +121,7 @@ let inline protectAssemblyExplorationF dflt f =
     try 
        f()
      with 
-        | UnresolvedPathReferenceNoRange (asmName, path) -> dflt(asmName,path)
+        | UnresolvedPathReferenceNoRange (asmName, path) -> dflt(asmName, path)
         | _ -> reraise()
 
 let inline protectAssemblyExplorationNoReraise dflt1 dflt2 f  = 
@@ -139,10 +138,10 @@ let rec AttachRange m (exn:exn) =
         match exn with
         // Strip TargetInvocationException wrappers
         | :? System.Reflection.TargetInvocationException -> AttachRange m exn.InnerException
-        | UnresolvedReferenceNoRange(a) -> UnresolvedReferenceError(a,m)
-        | UnresolvedPathReferenceNoRange(a,p) -> UnresolvedPathReference(a,p,m)
-        | Failure(msg) -> InternalError(msg^" (Failure)",m)
-        | :? System.ArgumentException as exn -> InternalError(exn.Message + " (ArgumentException)",m)
+        | UnresolvedReferenceNoRange(a) -> UnresolvedReferenceError(a, m)
+        | UnresolvedPathReferenceNoRange(a, p) -> UnresolvedPathReference(a, p, m)
+        | Failure(msg) -> InternalError(msg^" (Failure)", m)
+        | :? System.ArgumentException as exn -> InternalError(exn.Message + " (ArgumentException)", m)
         | notARangeDual -> notARangeDual
 
 
@@ -203,7 +202,7 @@ type PhasedDiagnostic =
     { Exception:exn; Phase:BuildPhase }
 
     /// Construct a phased error
-    static member Create(exn:exn,phase:BuildPhase) : PhasedDiagnostic =
+    static member Create(exn:exn, phase:BuildPhase) : PhasedDiagnostic =
         // FUTURE: renable this assert, which has historically triggered in some compiler service scenarios
         // System.Diagnostics.Debug.Assert(phase<>BuildPhase.DefaultPhase, sprintf "Compile error seen with no phase to attribute it to.%A %s %s" phase exn.Message exn.StackTrace )        
         {Exception = exn; Phase=phase}
@@ -283,13 +282,13 @@ type ErrorLogger(nameForDebugging:string) =
 
 let DiscardErrorsLogger = 
     { new ErrorLogger("DiscardErrorsLogger") with 
-            member x.DiagnosticSink(phasedError,isError) = ()
+            member x.DiagnosticSink(phasedError, isError) = ()
             member x.ErrorCount = 0 }
 
 let AssertFalseErrorLogger =
     { new ErrorLogger("AssertFalseErrorLogger") with 
             // TODO: renable these asserts in the compiler service
-            member x.DiagnosticSink(phasedError,isError) = (* assert false; *) ()
+            member x.DiagnosticSink(phasedError, isError) = (* assert false; *) ()
             member x.ErrorCount = (* assert false; *) 0 
     }
 
@@ -371,8 +370,8 @@ module ErrorLoggerExtensions =
 
         member x.ErrorR  exn = 
             match exn with 
-            | InternalError (s,_) 
-            | Failure s  as exn -> System.Diagnostics.Debug.Assert(false,sprintf "Unexpected exception raised in compiler: %s\n%s" s (exn.ToString()))
+            | InternalError (s, _) 
+            | Failure s  as exn -> System.Diagnostics.Debug.Assert(false, sprintf "Unexpected exception raised in compiler: %s\n%s" s (exn.ToString()))
             | _ -> ()
 
             match exn with 
@@ -380,7 +379,7 @@ module ErrorLoggerExtensions =
             | ReportedError _ -> 
                 PreserveStackTrace(exn)
                 raise exn 
-            | _ -> x.DiagnosticSink(PhasedDiagnostic.Create(exn,CompileThreadStatic.BuildPhase), true)
+            | _ -> x.DiagnosticSink(PhasedDiagnostic.Create(exn, CompileThreadStatic.BuildPhase), true)
 
         member x.Warning exn = 
             match exn with 
@@ -388,7 +387,7 @@ module ErrorLoggerExtensions =
             | ReportedError _ -> 
                 PreserveStackTrace(exn)
                 raise exn 
-            | _ -> x.DiagnosticSink(PhasedDiagnostic.Create(exn,CompileThreadStatic.BuildPhase), false)
+            | _ -> x.DiagnosticSink(PhasedDiagnostic.Create(exn, CompileThreadStatic.BuildPhase), false)
 
         member x.Error   exn = 
             x.ErrorR exn
@@ -405,10 +404,10 @@ module ErrorLoggerExtensions =
             (* Don't send ThreadAbortException down the error channel *)
 #if FX_REDUCED_EXCEPTIONS
 #else
-            | :? System.Threading.ThreadAbortException | WrappedError((:? System.Threading.ThreadAbortException),_) ->  ()
+            | :? System.Threading.ThreadAbortException | WrappedError((:? System.Threading.ThreadAbortException), _) ->  ()
 #endif
-            | ReportedError _  | WrappedError(ReportedError _,_)  -> ()
-            | StopProcessing | WrappedError(StopProcessing,_) -> 
+            | ReportedError _  | WrappedError(ReportedError _, _)  -> ()
+            | StopProcessing | WrappedError(StopProcessing, _) -> 
                 PreserveStackTrace(exn)
                 raise exn
             | _ ->
@@ -416,7 +415,7 @@ module ErrorLoggerExtensions =
                     x.ErrorR (AttachRange m exn) // may raise exceptions, e.g. an fsi error sink raises StopProcessing.
                     ReraiseIfWatsonable(exn)
                 with
-                  | ReportedError _ | WrappedError(ReportedError _,_)  -> ()
+                  | ReportedError _ | WrappedError(ReportedError _, _)  -> ()
 
         member x.StopProcessingRecovery (exn:exn) (m:range) =
             // Do standard error recovery.
@@ -424,12 +423,12 @@ module ErrorLoggerExtensions =
             // Additionally ignore/catch ReportedError.
             // Can throw other exceptions raised by the DiagnosticSink(exn) handler.         
             match exn with
-            | StopProcessing | WrappedError(StopProcessing,_) -> () // suppress, so skip error recovery.
+            | StopProcessing | WrappedError(StopProcessing, _) -> () // suppress, so skip error recovery.
             | _ ->
                 try  x.ErrorRecovery exn m
                 with
-                  | StopProcessing | WrappedError(StopProcessing,_) -> () // catch, e.g. raised by DiagnosticSink.
-                  | ReportedError _ | WrappedError(ReportedError _,_)  -> () // catch, but not expected unless ErrorRecovery is changed.
+                  | StopProcessing | WrappedError(StopProcessing, _) -> () // catch, e.g. raised by DiagnosticSink.
+                  | ReportedError _ | WrappedError(ReportedError _, _)  -> () // catch, but not expected unless ErrorRecovery is changed.
 
         member x.ErrorRecoveryNoRange (exn:exn) =
             x.ErrorRecovery exn range0
@@ -488,7 +487,7 @@ let errorRecoveryNoRange exn = CompileThreadStatic.ErrorLogger.ErrorRecoveryNoRa
 let report f = 
     f() 
 
-let deprecatedWithError s m = errorR(Deprecated(s,m))
+let deprecatedWithError s m = errorR(Deprecated(s, m))
 
 // Note: global state, but only for compiling FSharp.Core.dll
 let mutable reportLibraryOnlyFeatures = true
@@ -502,7 +501,7 @@ let suppressErrorReporting f =
     try
         let errorLogger = 
             { new ErrorLogger("suppressErrorReporting") with 
-                member x.DiagnosticSink(_phasedError,_isError) = ()
+                member x.DiagnosticSink(_phasedError, _isError) = ()
                 member x.ErrorCount = 0 }
         SetThreadErrorLoggerNoUnwind(errorLogger)
         f()
@@ -530,30 +529,30 @@ let ReportWarnings warns =
 
 let CommitOperationResult res = 
     match res with 
-    | OkResult (warns,res) -> ReportWarnings warns; res
-    | ErrorResult (warns,err) -> ReportWarnings warns; error err
+    | OkResult (warns, res) -> ReportWarnings warns; res
+    | ErrorResult (warns, err) -> ReportWarnings warns; error err
 
 let RaiseOperationResult res : unit = CommitOperationResult res
 
-let ErrorD err = ErrorResult([],err)
-let WarnD err = OkResult([err],())
-let CompleteD = OkResult([],())
-let ResultD x = OkResult([],x)
+let ErrorD err = ErrorResult([], err)
+let WarnD err = OkResult([err], ())
+let CompleteD = OkResult([], ())
+let ResultD x = OkResult([], x)
 let CheckNoErrorsAndGetWarnings res = 
     match res with 
-    | OkResult (warns,_) -> Some warns
+    | OkResult (warns, _) -> Some warns
     | ErrorResult _ -> None 
 
 /// The bind in the monad. Stop on first error. Accumulate warnings and continue. 
 let (++) res f = 
     match res with 
-    | OkResult([],res) -> (* tailcall *) f res 
-    | OkResult(warns,res) -> 
+    | OkResult([], res) -> (* tailcall *) f res 
+    | OkResult(warns, res) -> 
         match f res with 
-        | OkResult(warns2,res2) -> OkResult(warns@warns2, res2)
-        | ErrorResult(warns2,err) -> ErrorResult(warns@warns2, err)
-    | ErrorResult(warns,err) -> 
-        ErrorResult(warns,err)
+        | OkResult(warns2, res2) -> OkResult(warns@warns2, res2)
+        | ErrorResult(warns2, err) -> ErrorResult(warns@warns2, err)
+    | ErrorResult(warns, err) -> 
+        ErrorResult(warns, err)
         
 /// Stop on first error. Accumulate warnings and continue. 
 let rec IterateD f xs = 
@@ -572,11 +571,11 @@ let MapD f xs =
     loop [] xs
 
 type TrackErrorsBuilder() =
-    member x.Bind(res,k) = res ++ k
+    member x.Bind(res, k) = res ++ k
     member x.Return res = ResultD res
     member x.ReturnFrom res = res
-    member x.For(seq,k) = IterateD k seq
-    member x.While(gd,k) = WhileD gd k
+    member x.For(seq, k) = IterateD k seq
+    member x.While(gd, k) = WhileD gd k
     member x.Zero()  = CompleteD
 
 let trackErrors = TrackErrorsBuilder()
@@ -594,14 +593,14 @@ let IterateIdxD f xs =
 
 /// Stop on first error. Accumulate warnings and continue. 
 let rec Iterate2D f xs ys = 
-    match xs,ys with 
-    | [],[] -> CompleteD 
+    match xs, ys with 
+    | [], [] -> CompleteD 
     | h1 :: t1, h2::t2 -> f h1 h2 ++ (fun () -> Iterate2D f t1 t2) 
     | _ -> failwith "Iterate2D"
 
 let TryD f g = 
     match f() with
-    | ErrorResult(warns,err) ->  (OkResult(warns,())) ++ (fun () -> g err)
+    | ErrorResult(warns, err) ->  (OkResult(warns, ())) ++ (fun () -> g err)
     | res -> res
 
 let rec RepeatWhileD ndeep body = body ndeep ++ (fun x -> if x then RepeatWhileD (ndeep+1) body else CompleteD) 
