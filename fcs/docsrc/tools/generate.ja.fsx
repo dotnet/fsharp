@@ -38,11 +38,7 @@ open FSharp.MetadataFormat
 
 // When called from 'build.fsx', use the public project URL as <root>
 // otherwise, use the current 'output' directory.
-#if RELEASE
-let root = website
-#else
-let root = "file://" + (__SOURCE_DIRECTORY__ @@ "../output/ja")
-#endif
+let root = "."
 
 // Paths with template/source/output locations
 let bin         = __SOURCE_DIRECTORY__ @@ "../../../Release/fcs/net45"
@@ -56,15 +52,15 @@ let docTemplate = formatting @@ "templates/docpage.cshtml"
 // Where to look for *.csproj templates (in this order)
 let layoutRoots =
   [ templates
-    formatting @@ "templates"]
+    formatting @@ "templates"
+    formatting @@ "templates/reference"]
 
 // Copy static files and CSS + JS from F# Formatting
 // Build documentation from `fsx` and `md` files in `docsrc/content`
 let buildDocumentation () =
-  let subdirs = Directory.EnumerateDirectories(content, "*", SearchOption.AllDirectories)
-                |> Seq.filter (fun x -> x.Contains "ja")
-  for dir in Seq.append [content] subdirs do
+  for dir in [content] do
     let sub = if dir.Length > content.Length then dir.Substring(content.Length + 1) else "."
+    printfn "root = %s" root
     Literate.ProcessDirectory
       ( dir, docTemplate, outputJa @@ sub, replacements = ("root", root)::info,
         layoutRoots = layoutRoots, generateAnchors = true )
