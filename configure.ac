@@ -46,93 +46,17 @@ MONOPREFIX=$(cd `$PKG_CONFIG --variable=prefix mono` && pwd)
 MONOBINDIR="$MONOPREFIX"/bin
 MONOLIBDIR="$MONOPREFIX"/lib
 
-AC_PATH_PROG(XBUILD, xbuild, no)
-xbuild_from_pkg_config="$MONOBINDIR"/xbuild
-if test -e $xbuild_from_pkg_config; then
-    XBUILD=$xbuild_from_pkg_config
-elif test "x$XBUILD" == "xno"; then
-    AC_MSG_ERROR([Could not find xbuild])
+AC_PATH_PROG(MSBUILD, msbuild, no)
+msbuild_from_pkg_config="$MONOBINDIR"/msbuild
+if test -e $msbuild_from_pkg_config; then
+    MSBUILD=$msbuild_from_pkg_config
+elif test "x$MSBUILD" == "xno"; then
+    AC_MSG_ERROR([Could not find msbuild])
 fi
-AC_MSG_NOTICE(xbuild: $XBUILD)
-
-MONOGACDIR="$MONOLIBDIR"/mono
-if ! test "x$with_gacdir" = "xno"; then
-	MONOGACDIR=$(cd "$with_gacdir/.." && pwd)
-fi
-
-MONOGACDIR40="$MONOGACDIR"/4.0
-MONOGACDIR45="$MONOGACDIR"/4.5
-
-if ! test -e $MONOGACDIR45/mscorlib.dll; then
-	AC_ERROR(Couldn't find the mono gac directory or mscorlib.dll in the usual places. Set --with-gacdir=<path>)
-fi
-
-if test -e $MONOLIBDIR/mono/xbuild-frameworks/.NETPortable/v4.0/Profile/Profile47/mscorlib.dll; then
-   PCLENABLED47=yes
-else
-   PCLENABLED47=no
-fi
-AC_MSG_NOTICE(PCL Reference Assemblies for Profile 47 found: $PCLENABLED47)
-
-AC_SUBST(PCLENABLED47)
-
-
-if test -e $MONOLIBDIR/mono/xbuild-frameworks/.NETPortable/v4.0/Profile/Profile47/mscorlib.dll; then
-   PCLENABLED47=yes
-else
-   PCLENABLED47=no
-fi
-AC_MSG_NOTICE(PCL Reference Assemblies for Profile 47 found: $PCLENABLED47)
-
-AC_SUBST(PCLENABLED47)
-
-
-if test -e $MONOLIBDIR/mono/xbuild-frameworks/.NETPortable/v4.5/Profile/Profile7/System.Runtime.dll; then
-   PCLENABLED7=yes
-else
-   PCLENABLED7=no
-fi
-AC_MSG_NOTICE(PCL Reference Assemblies for Profile 7 found: $PCLENABLED7)
-
-AC_SUBST(PCLENABLED7)
-
-if test -e $MONOLIBDIR/mono/xbuild-frameworks/.NETPortable/v4.5/Profile/Profile78/System.Runtime.dll; then
-   PCLENABLED78=yes
-else
-   PCLENABLED78=no
-fi
-AC_MSG_NOTICE(PCL Reference Assemblies for Profile 78 found: $PCLENABLED78)
-
-AC_SUBST(PCLENABLED78)
-
-if test -e $MONOLIBDIR/mono/xbuild-frameworks/.NETPortable/v4.5/Profile/Profile259/System.Runtime.dll; then
-   PCLENABLED259=yes
-else
-   PCLENABLED259=no
-fi
-AC_MSG_NOTICE(PCL Reference Assemblies for Profile 259 found: $PCLENABLED259)
-
-AC_SUBST(PCLENABLED259)
-
-# We enable MonoTouch and MonoDroid builds if PCL components are available.
-# These build using binaries from dependencies/mono/2.1, but see
-# https://github.com/fsharp/fsharp/issues/391 where PCL is a requirement of
-# Microsoft.Common.targets when used in this configuration
-MONOTOUCHENABLED=$PCLENABLED78
-MONODROIDENABLED=$PCLENABLED78
-XAMARINMACENABLED=$PCLENABLED78
-
-AC_SUBST(MONOTOUCHENABLED)
-AC_SUBST(MONODROIDENABLED)
-AC_SUBST(XAMARINMACENABLED)
+AC_MSG_NOTICE(msbuild: $MSBUILD)
 
 AC_SUBST(MONOBINDIR)
 AC_SUBST(MONOLIBDIR)
-AC_SUBST(MONOGACDIR)
-
-AC_SUBST(MONOGACDIR20)
-AC_SUBST(MONOGACDIR35)
-AC_SUBST(MONOGACDIR40)
 
 AC_CONFIG_FILES([
 mono/launcher
