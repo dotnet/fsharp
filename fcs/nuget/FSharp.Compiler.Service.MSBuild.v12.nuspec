@@ -14,7 +14,7 @@
         <summary>F# compiler services for creating IDE tools, language extensions and for F# embedding.</summary>
         <dependencies>
             <group targetFramework="net45">
-                <dependency id="FSharp.Compiler.Service" version="2" />
+                <dependency id="FSharp.Compiler.Service" version="16.0.2" />
             </group>
         </dependencies>
     </metadata>
