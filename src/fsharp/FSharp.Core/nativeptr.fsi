@@ -81,3 +81,11 @@ namespace Microsoft.FSharp.NativeInterop
         [<NoDynamicInvocation>]
         [<CompiledName("StackAllocate")>]
         val inline stackalloc : count:int -> nativeptr<'T>
+
+        /// <summary>Converts a given typed native pointer to a managed pointer.</summary>
+        /// <param name="address">The input pointer.</param>
+        /// <returns>The managed pointer.</returns>
+        [<Unverifiable>]
+        [<NoDynamicInvocation>]
+        [<CompiledName("ToByrefInlined")>]
+        val inline toByref : nativeptr<'T> -> byref<'T>        
