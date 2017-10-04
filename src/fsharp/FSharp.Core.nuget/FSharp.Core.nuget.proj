@@ -5,6 +5,7 @@
     <BuildVersionFilePath Condition="'$(BuildVersionFilePath)'==''" >obj\BuildVersionFile.props</BuildVersionFilePath>
   </PropertyGroup>
 
+  <Import Project="$(FSharpSourcesRoot)\Directory.Build.props" />
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
 
   <PropertyGroup>

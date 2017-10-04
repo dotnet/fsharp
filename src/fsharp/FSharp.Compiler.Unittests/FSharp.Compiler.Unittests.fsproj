@@ -5,6 +5,7 @@
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..</FSharpSourcesRoot>
     <ProjectGuid>{a8d9641a-9170-4cf4-8fe0-6db8c134e1b5}</ProjectGuid>
   </PropertyGroup>
+  <Import Project="$(FSharpSourcesRoot)\Directory.Build.props" />
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>

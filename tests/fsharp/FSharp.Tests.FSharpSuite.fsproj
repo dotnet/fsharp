@@ -4,6 +4,7 @@
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\src</FSharpSourcesRoot>
     <ProjectGuid>{C163E892-5BF7-4B59-AA99-B0E8079C67C4}</ProjectGuid>
   </PropertyGroup>
+  <Import Project="$(FSharpSourcesRoot)\Directory.Build.props" />
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.Settings.targets" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>

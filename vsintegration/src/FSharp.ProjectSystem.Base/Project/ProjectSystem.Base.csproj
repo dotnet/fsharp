@@ -44,6 +44,7 @@
       <InProject>false</InProject>
     </FilesToLocalize>
   </ItemGroup>
+  <Import Project="$(FSharpSourcesRoot)\Directory.Build.props" />
   <Import Project="$(FSharpSourcesRoot)\FSharpSource.settings.targets" />
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>

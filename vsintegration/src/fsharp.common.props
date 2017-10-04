@@ -4,7 +4,9 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-  </PropertyGroup>  
+  </PropertyGroup>
+
+  <Import Project="..\..\Directory.Build.props" />
 
   <!-- Use standard VS for Open Build. -->
   <Import Project="..\..\..\src\FSharp.Common.props" Condition="Exists('..\..\..\src\FSharp.Common.props') AND $(_NTROOT) != ''" />

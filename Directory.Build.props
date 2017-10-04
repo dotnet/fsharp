@@ -1,0 +1,24 @@
+<!-- Copyright (c)  Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="build\NuGet.props" />
+  <Import Project="build\Versions.props" />
+
+  <ItemGroup>
+    <PackageReference Include="RoslynTools.Microsoft.RepoToolset" Version="$(RoslynToolsMicrosoftRepoToolsetVersion)" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
+
+    <RepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)\'))</RepoRoot>
+    <FSharpSourcesRoot>$(RepoRoot)\src</FSharpSourcesRoot>
+    <SignToolDataPath>$(RepoRoot)build\SignToolData.json</SignToolDataPath>
+    <VersionsPropsPath>$(RepoRoot)build\Versions.props</VersionsPropsPath>
+    <RepoToolsetDir>$(NuGetPackageRoot)RoslynTools.Microsoft.RepoToolset.$(RoslynToolsMicrosoftRepoToolsetVersion)\tools\</RepoToolsetDir>
+    
+    <RepositoryUrl>https://github.com/Microsoft/visualfsharp</RepositoryUrl>
+    <PackageProjectUrl>$(RepositoryUrl)</PackageProjectUrl>
+
+    <VSSDKTargetPlatformRegRootSuffix>IW</VSSDKTargetPlatformRegRootSuffix>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,21 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Import Project="..\Directory.Build.props" />
+  <Import Project="$(RepoToolsetDir)Settings.props" />
+
+  <PropertyGroup>
+    <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
+    <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <OtherFlags>$(OtherFlags) --nocopyfsharpcore</OtherFlags>
+
+    <BuildToolsDir>$(MSBuildThisFileDirectory)buildtools</BuildToolsDir>
+    <DotNetExe Condition=" '$(OS)' == 'Unix' ">dotnet</DotNetExe>
+    <DotNetExe Condition=" '$(OS)' != 'Unix' ">dotnet.exe</DotNetExe>
+    <ToolsDir>$(MSBuildThisFileDirectory)../Tools</ToolsDir>
+    <DotNetExePath>$(ToolsDir)/dotnet/$(DotNetExe)</DotNetExePath>
+    <DotNetExePath Condition="!Exists($(DotNetExePath))">$(ToolsDir)/dotnet20/$(DotNetExe)</DotNetExePath>
+    <DotNetExePath Condition="!Exists($(DotNetExePath))">$(MSBuildBinPath)/../../$(DotNetExe)</DotNetExePath>
+  </PropertyGroup>
+
+</Project>
