@@ -144,11 +144,11 @@ Target "Nuget.AddNetStd" (fun _ ->
 // Generate the documentation
 
 Target "GenerateDocsEn" (fun _ ->
-    executeFSIWithArgs "docsrc/tools" "generate.fsx" ["--define:RELEASE"] [] |> ignore
+    executeFSIWithArgs "docsrc/tools" "generate.fsx" [] [] |> ignore
 )
 
 Target "GenerateDocsJa" (fun _ ->
-    executeFSIWithArgs "docsrc/tools" "generate.ja.fsx" ["--define:RELEASE"] [] |> ignore
+    executeFSIWithArgs "docsrc/tools" "generate.ja.fsx" [] [] |> ignore
 )
 
 // --------------------------------------------------------------------------------------
