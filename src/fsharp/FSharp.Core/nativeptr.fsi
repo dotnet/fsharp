@@ -87,5 +87,5 @@ namespace Microsoft.FSharp.NativeInterop
         /// <returns>The managed pointer.</returns>
         [<Unverifiable>]
         [<NoDynamicInvocation>]
-        [<CompiledName("ToByrefInlined")>]
-        val inline toByref : nativeptr<'T> -> byref<'T>        
+        [<CompiledName("ToByRefInlined")>]
+        val inline toByRef : nativeptr<'T> -> byref<'T>        
