@@ -12,8 +12,13 @@
         <iconUrl>https://raw.github.com/fsharp/FSharp.Compiler.Service/master/misc/logo.png</iconUrl>
         <tags>F#, fsharp, interactive, compiler, editor</tags>
         <summary>F# compiler services for creating IDE tools, language extensions and for F# embedding.</summary>
+        <dependencies>
+            <group targetFramework="net45">
+                <dependency id="FSharp.Compiler.Service" version="16.0.1" />
+            </group>
+        </dependencies>
     </metadata>
     <files>
-        <file src="..\..\Release\fcs\net45\FSharp.Compiler.Service.MSBuild.v12.dll" target="lib\net45" />
+        <file src="../../Release/fcs/net45/FSharp.Compiler.Service.MSBuild.v12.dll" target="lib/net45" />
     </files>
 </package>
