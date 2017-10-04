@@ -49,3 +49,6 @@ module NativePtr =
     [<CompiledName("StackAllocate")>]
     let inline stackalloc (count:int) : nativeptr<'T> = (# "localloc" (count * sizeof<'T>) : nativeptr<'T> #)
 
+    [<NoDynamicInvocation>]
+    [<CompiledName("ToByrefInlined")>]
+    let inline toByref (address: nativeptr<'T>) : byref<'T> = (# "" address : 'T byref  #)
