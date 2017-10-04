@@ -46,14 +46,14 @@ MONOPREFIX=$(cd `$PKG_CONFIG --variable=prefix mono` && pwd)
 MONOBINDIR="$MONOPREFIX"/bin
 MONOLIBDIR="$MONOPREFIX"/lib
 
-AC_PATH_PROG(XBUILD, xbuild, no)
-xbuild_from_pkg_config="$MONOBINDIR"/xbuild
-if test -e $xbuild_from_pkg_config; then
-    XBUILD=$xbuild_from_pkg_config
-elif test "x$XBUILD" == "xno"; then
-    AC_MSG_ERROR([Could not find xbuild])
+AC_PATH_PROG(MSBUILD, msbuild, no)
+msbuild_from_pkg_config="$MONOBINDIR"/msbuild
+if test -e $msbuild_from_pkg_config; then
+    MSBUILD=$msbuild_from_pkg_config
+elif test "x$MSBUILD" == "xno"; then
+    AC_MSG_ERROR([Could not find msbuild])
 fi
-AC_MSG_NOTICE(xbuild: $XBUILD)
+AC_MSG_NOTICE(msbuild: $MSBUILD)
 
 AC_SUBST(MONOBINDIR)
 AC_SUBST(MONOLIBDIR)
