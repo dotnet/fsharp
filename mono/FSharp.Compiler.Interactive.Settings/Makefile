@@ -4,7 +4,7 @@ TOKEN=$(SIGN_TOKEN)
 
 include ../config.make
 
-install: install-sdk-lib install-gac-lib
+install: install-sdk-lib
 
 
 

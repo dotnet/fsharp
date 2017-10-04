@@ -568,7 +568,7 @@ set _dotnet20exe=%~dp0Tools\dotnet20\dotnet.exe
 set NUGET_PACKAGES=%~dp0Packages
 set path=%~dp0Tools\dotnet20\;%path%
 
-set _fsiexe="packages\FSharp.Compiler.Tools.4.1.23\tools\fsi.exe"
+set _fsiexe="packages\FSharp.Compiler.Tools.4.1.27\tools\fsi.exe"
 if not exist %_fsiexe% echo Error: Could not find %_fsiexe% && goto :failure
 %_ngenexe% install %_fsiexe% /nologo 
 
@@ -606,8 +606,8 @@ if "%BUILD_PROTO%" == "1" (
 
   if "%BUILD_PROTO_WITH_CORECLR_LKG%" == "0" (
 
-    echo %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.23\tools\fsc.exe /nologo 
-         %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.23\tools\fsc.exe /nologo 
+    echo %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.27\tools\fsc.exe /nologo 
+         %_ngenexe% install packages\FSharp.Compiler.Tools.4.1.27\tools\fsc.exe /nologo 
 
     echo %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto
          %_msbuildexe% %msbuildflags% src\fsharp-proto-build.proj /p:BUILD_PROTO_WITH_CORECLR_LKG=%BUILD_PROTO_WITH_CORECLR_LKG% /p:Configuration=Proto

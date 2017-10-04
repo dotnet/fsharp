@@ -71,11 +71,11 @@
     <Compile Include="$(FSharpSourcesRoot)\..\tests\service\ProjectOptionsTests.fs">
       <Link>ProjectOptionsTests.fs</Link>
     </Compile>
-    <None Include="$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.23\tools\FSharp.Core.optdata">
+    <None Include="$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools\FSharp.Core.optdata">
       <Link>FSharp.Core.optdata</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.23\tools\FSharp.Core.sigdata">
+    <None Include="$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools\FSharp.Core.sigdata">
       <Link>FSharp.Core.sigdata</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -109,7 +109,7 @@
     </Reference>
     <!-- we test against FSharp.Core 4.4.1.0 -->
     <Reference Include="FSharp.Core">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.23\tools\FSharp.Core.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools\FSharp.Core.dll</HintPath>
       <Private>true</Private>
     </Reference>
 
@@ -129,5 +129,5 @@
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
-  <Import Project="$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.23\tools\Microsoft.FSharp.Targets" />
+  <Import Project="$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets" />
 </Project>
