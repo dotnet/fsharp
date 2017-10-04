@@ -16,6 +16,7 @@
 		<TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
 		<LkgPath>$(MSBuildProjectDirectory)\..\..\..\..\packages\FSharp.Compiler.Tools\tools</LkgPath>
 		<LkgPath>$(MSBuildProjectDirectory)\..\..\..\..\packages\FSharp.Compiler.Tools.4.1.5\tools</LkgPath>
+		<LkgPath>$(MSBuildProjectDirectory)\..\..\..\..\packages\FSharp.Compiler.Tools.4.1.27\tools</LkgPath>
 	</PropertyGroup>
 	<PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
 		<DebugSymbols>True</DebugSymbols>
