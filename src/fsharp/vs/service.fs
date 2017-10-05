@@ -2380,8 +2380,8 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             | Some res -> return res
             | None ->
                 foregroundParseCount <- foregroundParseCount + 1
-                let parseErrors, inputOpt, anyErrors = Parser.parseFile(source, filename, options, userOpName)
-                let res = FSharpParseFileResults(parseErrors, inputOpt, anyErrors, options.SourceFiles)
+                let parseErrors, parseTreeOpt, anyErrors = Parser.parseFile(source, filename, options, userOpName)
+                let res = FSharpParseFileResults(parseErrors, parseTreeOpt, anyErrors, options.SourceFiles)
                 parseCacheLock.AcquireLock(fun ltok -> parseFileCache.Set(ltok, (filename, source, options), res))
                 return res
         }
@@ -2395,9 +2395,9 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
             match builderOpt with
             | None -> return FSharpParseFileResults(List.toArray creationErrors, None, true, [| |])
             | Some builder -> 
-            let! inputOpt,_,_,parseErrors = builder.GetParseResultsForFile (ctok, filename)
+            let! parseTreeOpt,_,_,parseErrors = builder.GetParseResultsForFile (ctok, filename)
             let errors = [| yield! creationErrors; yield! ErrorHelpers.CreateErrorInfos (builder.TcConfig.errorSeverityOptions, false, filename, parseErrors) |]
-            return FSharpParseFileResults(errors = errors, input = inputOpt, parseHadErrors = false, dependencyFiles = builder.AllDependenciesDeprecated)
+            return FSharpParseFileResults(errors = errors, input = parseTreeOpt, parseHadErrors = false, dependencyFiles = builder.AllDependenciesDeprecated)
           }
         )
 
@@ -2541,7 +2541,9 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     | _ ->
                         Trace.TraceInformation("FCS: {0}.{1} ({2})", userOpName, "CheckFileInProject.CacheMiss", filename)
                         let! tcPrior = execWithReactorAsync <| fun ctok -> builder.GetCheckResultsBeforeFileInProject (ctok, filename)
-                        let! checkAnswer = bc.CheckOneFileImpl(parseResults, source, filename, options, textSnapshotInfo, fileVersion, builder, tcPrior, creationErrors, userOpName)
+                        let parseTreeOpt = parseResults.ParseTree |> Option.map builder.DeduplicateParsedInputModuleNameInProject
+                        let parseResultsAterDeDuplication = FSharpParseFileResults(parseResults.Errors, parseTreeOpt, parseResults.ParseHadErrors, parseResults.DependencyFiles)
+                        let! checkAnswer = bc.CheckOneFileImpl(parseResultsAterDeDuplication, source, filename, options, textSnapshotInfo, fileVersion, builder, tcPrior, creationErrors, userOpName)
                         return checkAnswer
             finally 
                 bc.ImplicitlyStartCheckProjectInBackground(options, userOpName)
@@ -2574,9 +2576,9 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                     
                         // Do the parsing.
                         let parsingOptions = FSharpParsingOptions.FromTcConfig(builder.TcConfig, Array.ofList (builder.SourceFiles))
-                        let parseErrors, inputOpt, anyErrors = Parser.parseFile (source, filename, parsingOptions, userOpName)
-                     
-                        let parseResults = FSharpParseFileResults(parseErrors, inputOpt, anyErrors, builder.AllDependenciesDeprecated)
+                        let parseErrors, parseTreeOpt, anyErrors = Parser.parseFile (source, filename, parsingOptions, userOpName)
+                        let parseTreeOpt = parseTreeOpt |> Option.map builder.DeduplicateParsedInputModuleNameInProject
+                        let parseResults = FSharpParseFileResults(parseErrors, parseTreeOpt, anyErrors, builder.AllDependenciesDeprecated)
                         let! checkResults = bc.CheckOneFileImpl(parseResults, source, filename, options, textSnapshotInfo, fileVersion, builder, tcPrior, creationErrors, userOpName)
                         return parseResults, checkResults
             finally 
@@ -2595,12 +2597,12 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                 let typedResults = MakeCheckFileResultsEmpty(filename, creationErrors)
                 return (parseResults, typedResults)
             | Some builder -> 
-                let! (inputOpt, _, _, untypedErrors) = builder.GetParseResultsForFile (ctok, filename)
+                let! (parseTreeOpt, _, _, untypedErrors) = builder.GetParseResultsForFile (ctok, filename)
                 let! tcProj = builder.GetCheckResultsAfterFileInProject (ctok, filename)
                 let errorOptions = builder.TcConfig.errorSeverityOptions
                 let untypedErrors = [| yield! creationErrors; yield! ErrorHelpers.CreateErrorInfos (errorOptions, false, filename, untypedErrors) |]
                 let tcErrors = [| yield! creationErrors; yield! ErrorHelpers.CreateErrorInfos (errorOptions, false, filename, tcProj.Errors) |]
-                let parseResults = FSharpParseFileResults(errors = untypedErrors, input = inputOpt, parseHadErrors = false, dependencyFiles = builder.AllDependenciesDeprecated)
+                let parseResults = FSharpParseFileResults(errors = untypedErrors, input = parseTreeOpt, parseHadErrors = false, dependencyFiles = builder.AllDependenciesDeprecated)
                 let loadClosure = scriptClosureCacheLock.AcquireLock (fun ltok -> scriptClosureCache.TryGet (ltok, options) )
                 let scope = 
                     TypeCheckInfo(tcProj.TcConfig, tcProj.TcGlobals, tcProj.TcState.PartialAssemblySignature, tcProj.TcState.Ccu, tcProj.TcImports, tcProj.TcEnvAtEnd.AccessRights,
@@ -3136,9 +3138,9 @@ type FsiInteractiveChecker(legacyReferenceResolver, reactorOps: IReactorOperatio
             let filename = Path.Combine(tcConfig.implicitIncludeDir, "stdin.fsx")
             // Note: projectSourceFiles is only used to compute isLastCompiland, and is ignored if Build.IsScript(mainInputFileName) is true (which it is in this case).
             let parsingOptions = FSharpParsingOptions.FromTcConfig(tcConfig, [| filename |])
-            let parseErrors, inputOpt, anyErrors = Parser.parseFile (source, filename, parsingOptions, userOpName)
+            let parseErrors, parseTreeOpt, anyErrors = Parser.parseFile (source, filename, parsingOptions, userOpName)
             let dependencyFiles = [| |] // interactions have no dependencies
-            let parseResults = FSharpParseFileResults(parseErrors, inputOpt, parseHadErrors = anyErrors, dependencyFiles = dependencyFiles)
+            let parseResults = FSharpParseFileResults(parseErrors, parseTreeOpt, parseHadErrors = anyErrors, dependencyFiles = dependencyFiles)
             
             let backgroundDiagnostics = []
             
