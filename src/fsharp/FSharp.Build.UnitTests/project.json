@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0-*",
+  "name": "FSharp.Build.UnitTests",
+  "buildOptions": {
+    "debugType": "portable",
+    "emitEntryPoint": true
+  },
+  "dependencies": {
+    "nunit": "3.5.0",
+    "nunitlite": "3.5.0",
+    "Microsoft.Build": "15.1.548",
+    "Microsoft.Build.Framework": "15.1.548",
+    "Microsoft.Build.Tasks.Core": "15.1.548",
+    "Microsoft.Build.Utilities.Core": "15.1.548"
+  },
+  "runtimes": {
+    "win7-x86": {},
+    "win7-x64": {},
+    "osx.10.11-x64": {},
+    "ubuntu.14.04-x64": {}
+  },
+  "frameworks": {
+    "netcoreapp1.0": {
+      "dependencies": {
+        "Microsoft.NETCore.App": {
+          "type": "platform",
+          "version": "1.0.1"
+        }
+      },
+      "imports": [ "netstandard1.1", "netstandard1.6", "portable-net45+win8+wp8+wpa81" ]
+    }
+  }
+}
