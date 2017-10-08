@@ -140,13 +140,7 @@ type SemanticClassificationType =
     | TypeArgument
     | Operator
     | Disposable
-
-type PartialLongName =
-    { QualifyingIdents: string list
-      PartialIdent: string
-      LastDotPos: int option }
-    static member Default = { QualifyingIdents = []; PartialIdent = ""; LastDotPos = None }
-
+    
 /// A TypeCheckInfo represents everything we get back from the typecheck of a file.
 /// It acts like an in-memory database about the file.
 /// It is effectively immutable and not updated: when we re-typecheck we just drop the previous

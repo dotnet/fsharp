@@ -99,16 +99,6 @@ type internal SemanticClassificationType =
     | Operator
     | Disposable
 
-#if COMPILER_PUBLIC_API
-type PartialLongName =
-#else
-type internal PartialLongName =
-#endif
-    { QualifyingIdents: string list
-      PartialIdent: string
-      LastDotPos: int option }
-    static member Default : PartialLongName
-
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
 #if COMPILER_PUBLIC_API

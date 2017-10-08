@@ -3,9 +3,8 @@
 namespace Tests.LanguageService
 
 open System
-open System.IO
 open NUnit.Framework
-open Microsoft.VisualStudio.FSharp.LanguageService
+open Microsoft.FSharp.Compiler
 
 [<TestFixture>]
 [<Category "LanguageService">] 

@@ -600,6 +600,12 @@
     <Compile Include="..\vs\ExternalSymbol.fs">
       <Link>Service/ExternalSymbol.fs</Link>
     </Compile>
+    <Compile Include="..\vs\QuickParse.fsi">
+      <Link>Service/QuickParse.fsi</Link>
+    </Compile>
+    <Compile Include="..\vs\QuickParse.fs">
+      <Link>Service/QuickParse.fs</Link>
+    </Compile>
     <Compile Include="..\vs\service.fsi">
       <Link>Service/service.fsi</Link>
     </Compile>

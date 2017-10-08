@@ -1,10 +1,15 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace Microsoft.VisualStudio.FSharp.LanguageService
+namespace Microsoft.FSharp.Compiler
 
 open System
-open System.Globalization
 open Microsoft.FSharp.Compiler.SourceCodeServices
+
+type PartialLongName =
+    { QualifyingIdents: string list
+      PartialIdent: string
+      LastDotPos: int option }
+    static member Default = { QualifyingIdents = []; PartialIdent = ""; LastDotPos = None }
 
 /// Methods for cheaply and innacurately parsing F#.
 ///
@@ -22,10 +27,10 @@ open Microsoft.FSharp.Compiler.SourceCodeServices
 /// It's also surprising how hard even the job of getting long identifier islands can be. For example the code 
 /// below is inaccurate for long identifier chains involving ``...`` identifiers.  And there are special cases
 /// for active pattern names and so on.
-module internal QuickParse =
-    open Microsoft.FSharp.Compiler.SourceCodeServices.PrettyNaming
+module QuickParse =
+    open PrettyNaming
   
-    let magicalAdjustmentConstant = 1 // 0 puts us immediately *before* the last character; 1 puts us after the last character
+    let MagicalAdjustmentConstant = 1 // 0 puts us immediately *before* the last character; 1 puts us after the last character
 
     // Adjusts the token tag for the given identifier
     // - if we're inside active pattern name (at the bar), correct the token TAG to be an identifier
@@ -134,7 +139,7 @@ module internal QuickParse =
             match tickColsOpt with
             | Some (prevTickTick, idxTickTick) ->
                 // inside ``identifier`` (which can contain any characters!) so we try returning its location
-                let pos = idxTickTick + 1 + magicalAdjustmentConstant
+                let pos = idxTickTick + 1 + MagicalAdjustmentConstant
                 let ident = s.Substring(prevTickTick, idxTickTick - prevTickTick + 2)
                 Some(ident, pos, true)
             | _ ->
@@ -144,7 +149,7 @@ module internal QuickParse =
                     let r = searchRight p
                     let ident = s.Substring (l, r - l + 1)
                     if ident.IndexOf('|') <> -1 && not(isValidActivePatternName(ident)) then None else
-                        let pos = r + magicalAdjustmentConstant 
+                        let pos = r + MagicalAdjustmentConstant 
                         Some(ident, pos, false)
                     )
 
@@ -318,7 +323,7 @@ module internal QuickParse =
     let private expected = [ [|"dot"|]; [|"ident"|]; [|"member"; "override"|] ]
 
     /// Tests whether the user is typing something like "member x." or "override (*comment*) x."
-    let internal TestMemberOrOverrideDeclaration (tokens:FSharpTokenInfo[]) =
+    let TestMemberOrOverrideDeclaration (tokens:FSharpTokenInfo[]) =
         let filteredReversed = 
             tokens 
             |> Array.filter (fun tok ->

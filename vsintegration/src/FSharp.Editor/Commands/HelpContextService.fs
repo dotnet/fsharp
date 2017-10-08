@@ -10,6 +10,7 @@ open Microsoft.CodeAnalysis.Classification
 open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.LanguageServices.Implementation.F1Help
 open Microsoft.CodeAnalysis.Host.Mef
+open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
