@@ -532,7 +532,7 @@ module internal Tokenizer =
             | _ -> false) 
         |> Option.orElseWith (fun _ -> tokensUnderCursor |> List.tryFind (fun { DraftToken.Kind = k } -> k = LexerSymbolKind.Operator))
         |> Option.map (fun token ->
-            let plid, _ = QuickParse.GetPartialLongNameEx(lineStr, token.RightColumn)
+            let plid, _, _ = QuickParse.GetPartialLongNameEx(lineStr, token.RightColumn)
             let identStr = lineStr.Substring(token.Token.LeftColumn, token.Token.FullMatchedLength)
             {   Kind = token.Kind
                 Ident = 

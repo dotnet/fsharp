@@ -158,6 +158,7 @@ module internal QuickParse =
                 directResult
 
     let private defaultName = [],""
+    let private defaultNameAndLastDot = [],"",None
 
     /// Get the partial long name of the identifier to the left of index.
     let GetPartialLongName(line:string,index) =
@@ -198,11 +199,11 @@ module internal QuickParse =
         | StartIdentifier of string list * bool
 
     /// Get the partial long name of the identifier to the left of index.
-    /// For example, for `System.DateTime.Now` it returns ([|"System"; "DateTime"|], "Now").
-    let GetPartialLongNameEx(line:string,index) : (string list * string) =
-        if isNull line then defaultName
-        elif index < 0 then defaultName
-        elif index >= line.Length then defaultName
+    /// For example, for `System.DateTime.Now` it returns ([|"System"; "DateTime"|], "Now", Some 32), where "32" pos of the last dot.
+    let GetPartialLongNameEx(line:string,index) : (string list * string * int option) =
+        if isNull line then defaultNameAndLastDot
+        elif index < 0 then defaultNameAndLastDot
+        elif index >= line.Length then defaultNameAndLastDot
         else
             let IsIdentifierPartCharacter pos = IsIdentifierPartCharacter line.[pos]
             let IsIdentifierStartCharacter pos = IsIdentifierPartCharacter pos
@@ -212,71 +213,71 @@ module internal QuickParse =
             let IsStartOfComment pos = pos < index - 1 && line.[pos] = '(' && line.[pos + 1] = '*'
             let IsWhitespace pos = Char.IsWhiteSpace(line.[pos])
 
-            let rec SkipWhitespaceBeforeDotIdentifier(pos, ident, current,throwAwayNext) =
-                if pos > index then defaultName  // we're in whitespace after an identifier, if this is where the cursor is, there is no PLID here
-                elif IsWhitespace pos then SkipWhitespaceBeforeDotIdentifier(pos+1,ident,current,throwAwayNext)
-                elif IsDot pos then AtStartOfIdentifier(pos+1,ident::current,throwAwayNext)
-                elif IsStartOfComment pos then EatComment(1, pos + 1, EatCommentCallContext.SkipWhiteSpaces(ident, current, throwAwayNext))
-                else AtStartOfIdentifier(pos,[],false) // Throw away what we have and start over.
+            let rec SkipWhitespaceBeforeDotIdentifier(pos, ident, current, throwAwayNext, lastDotPos) =
+                if pos > index then defaultNameAndLastDot  // we're in whitespace after an identifier, if this is where the cursor is, there is no PLID here
+                elif IsWhitespace pos then SkipWhitespaceBeforeDotIdentifier(pos+1,ident,current,throwAwayNext,lastDotPos)
+                elif IsDot pos then AtStartOfIdentifier(pos+1,ident::current,throwAwayNext, Some pos)
+                elif IsStartOfComment pos then EatComment(1, pos + 1, EatCommentCallContext.SkipWhiteSpaces(ident, current, throwAwayNext), lastDotPos)
+                else AtStartOfIdentifier(pos,[],false,lastDotPos) // Throw away what we have and start over.
 
-            and EatComment (nesting, pos, callContext) = 
-                if pos > index then defaultName else
+            and EatComment (nesting, pos, callContext,lastDotPos) = 
+                if pos > index then defaultNameAndLastDot else
                 if IsStartOfComment pos then
                     // track balance of closing '*)'
-                    EatComment(nesting + 1, pos + 2, callContext)
+                    EatComment(nesting + 1, pos + 2, callContext,lastDotPos)
                 else
                 if IsEndOfComment pos then
                     if nesting = 1 then 
                         // all right, we are at the end of comment, jump outside
                         match callContext with
                         | EatCommentCallContext.SkipWhiteSpaces(ident, current, throwAway) ->
-                            SkipWhitespaceBeforeDotIdentifier(pos + 2, ident, current, throwAway)
+                            SkipWhitespaceBeforeDotIdentifier(pos + 2, ident, current, throwAway,lastDotPos)
                         | EatCommentCallContext.StartIdentifier(current, throwAway) ->
-                            AtStartOfIdentifier(pos + 2, current, throwAway)
+                            AtStartOfIdentifier(pos + 2, current, throwAway,lastDotPos)
                     else 
                         // reduce level of nesting and continue
-                        EatComment(nesting - 1, pos + 2, callContext)
+                        EatComment(nesting - 1, pos + 2, callContext, lastDotPos)
                 else
                     // eat next char
-                    EatComment(nesting, pos + 1, callContext)
+                    EatComment(nesting, pos + 1, callContext, lastDotPos)
 
-            and InUnquotedIdentifier(left:int,pos:int,current,throwAwayNext) =
+            and InUnquotedIdentifier(left:int,pos:int,current,throwAwayNext,lastDotPos) =
                 if pos > index then 
-                    if throwAwayNext then defaultName else current,line.Substring(left,pos-left)
+                    if throwAwayNext then defaultNameAndLastDot else current,line.Substring(left,pos-left),lastDotPos
                 else
-                    if IsIdentifierPartCharacter pos then InUnquotedIdentifier(left,pos+1,current,throwAwayNext)
+                    if IsIdentifierPartCharacter pos then InUnquotedIdentifier(left,pos+1,current,throwAwayNext,lastDotPos)
                     elif IsDot pos then 
                         let ident = line.Substring(left,pos-left)
-                        AtStartOfIdentifier(pos+1,ident::current,throwAwayNext)
+                        AtStartOfIdentifier(pos+1,ident::current,throwAwayNext, Some pos)
                     elif IsWhitespace pos || IsStartOfComment pos then 
                         let ident = line.Substring(left,pos-left)
-                        SkipWhitespaceBeforeDotIdentifier(pos, ident, current,throwAwayNext)
-                    else AtStartOfIdentifier(pos,[],false) // Throw away what we have and start over.
+                        SkipWhitespaceBeforeDotIdentifier(pos, ident, current, throwAwayNext, lastDotPos)
+                    else AtStartOfIdentifier(pos,[],false,lastDotPos) // Throw away what we have and start over.
 
-            and InQuotedIdentifier(left:int,pos:int, current,throwAwayNext) =
+            and InQuotedIdentifier(left:int,pos:int, current,throwAwayNext,lastDotPos) =
                 if pos > index then 
-                    if throwAwayNext then defaultName else current,line.Substring(left,pos-left)
+                    if throwAwayNext then defaultNameAndLastDot else current,line.Substring(left,pos-left),lastDotPos
                 else
                     let remainingLength = line.Length - pos
                     if IsTick pos && remainingLength > 1 && IsTick(pos+1) then 
                         let ident = line.Substring(left, pos-left)
-                        SkipWhitespaceBeforeDotIdentifier(pos+2,ident,current,throwAwayNext) 
-                    else InQuotedIdentifier(left,pos+1,current,throwAwayNext)                    
+                        SkipWhitespaceBeforeDotIdentifier(pos+2,ident,current,throwAwayNext,lastDotPos) 
+                    else InQuotedIdentifier(left,pos+1,current,throwAwayNext,lastDotPos)                    
 
-            and AtStartOfIdentifier(pos:int, current, throwAwayNext) =
+            and AtStartOfIdentifier(pos:int, current, throwAwayNext, lastDotPos: int option) =
                 if pos > index then 
-                    if throwAwayNext then defaultName else current,""
+                    if throwAwayNext then defaultNameAndLastDot else current,"",lastDotPos
                 else
-                    if IsWhitespace pos then AtStartOfIdentifier(pos+1,current,throwAwayNext)
+                    if IsWhitespace pos then AtStartOfIdentifier(pos+1,current,throwAwayNext, lastDotPos)
                     else
                         let remainingLength = line.Length - pos
-                        if IsTick pos && remainingLength > 1 && IsTick(pos+1) then InQuotedIdentifier(pos+2,pos+2,current,throwAwayNext)
-                        elif IsStartOfComment pos then EatComment(1, pos + 1, EatCommentCallContext.StartIdentifier(current, throwAwayNext))
-                        elif IsIdentifierStartCharacter pos then InUnquotedIdentifier(pos,pos+1,current,throwAwayNext)
+                        if IsTick pos && remainingLength > 1 && IsTick(pos+1) then InQuotedIdentifier(pos+2,pos+2,current,throwAwayNext,lastDotPos)
+                        elif IsStartOfComment pos then EatComment(1, pos + 1, EatCommentCallContext.StartIdentifier(current, throwAwayNext), lastDotPos)
+                        elif IsIdentifierStartCharacter pos then InUnquotedIdentifier(pos,pos+1,current,throwAwayNext,lastDotPos)
                         elif IsDot pos then 
                             if pos = 0 then
                                 // dot on first char of line, currently treat it like empty identifier to the left
-                                AtStartOfIdentifier(pos+1,""::current,throwAwayNext)                            
+                                AtStartOfIdentifier(pos+1,""::current,throwAwayNext, Some pos)                            
                             elif not (pos > 0 && (IsIdentifierPartCharacter(pos-1) || IsWhitespace(pos-1))) then
                                 // it's not dots as part.of.a.long.ident, it's e.g. the range operator (..), or some other multi-char operator ending in dot
                                 if line.[pos-1] = ')' then
@@ -284,17 +285,17 @@ module internal QuickParse =
                                     // without special logic, we will decide that ). is an operator and parse Name as the plid
                                     // but in fact this is an expression tail, and we don't want a plid, rather we need to use expression typings at that location
                                     // so be sure not to treat the name here as a plid
-                                    AtStartOfIdentifier(pos+1,[],true) // Throw away what we have, and the next apparent plid, and start over.
+                                    AtStartOfIdentifier(pos+1,[],true, Some pos) // Throw away what we have, and the next apparent plid, and start over.
                                 else
-                                    AtStartOfIdentifier(pos+1,[],false) // Throw away what we have and start over.
+                                    AtStartOfIdentifier(pos+1,[],false, Some pos) // Throw away what we have and start over.
                             else
-                                AtStartOfIdentifier(pos+1,""::current,throwAwayNext)                            
-                        else AtStartOfIdentifier(pos+1,[],throwAwayNext)
-            let plid, residue = AtStartOfIdentifier(0,[],false)
+                                AtStartOfIdentifier(pos+1,""::current,throwAwayNext, Some pos)                            
+                        else AtStartOfIdentifier(pos+1,[],throwAwayNext, lastDotPos)
+            let plid, residue, lastDotPos = AtStartOfIdentifier(0,[],false,None)
             let plid = List.rev plid
             match plid with
-            | s::_rest when s.Length > 0 && Char.IsDigit(s.[0]) -> defaultName  // "2.0" is not a longId (this might not be right for ``2.0`` but good enough for common case)
-            | _ -> plid, residue
+            | s::_rest when s.Length > 0 && Char.IsDigit(s.[0]) -> defaultNameAndLastDot  // "2.0" is not a longId (this might not be right for ``2.0`` but good enough for common case)
+            | _ -> plid, residue, lastDotPos
     
     let TokenNameEquals (tokenInfo : FSharpTokenInfo) token2 = 
         String.Compare(tokenInfo .TokenName, token2, StringComparison.OrdinalIgnoreCase) = 0  
