@@ -309,7 +309,7 @@ module QuickParse =
                                     AtStartOfIdentifier(pos+1,[],false,None) // Throw away what we have and start over.
                             else
                                 AtStartOfIdentifier(pos+1,""::current,throwAwayNext, Some pos)
-                        else AtStartOfIdentifier(pos+1,[],throwAwayNext, lastDotPos)
+                        else AtStartOfIdentifier(pos+1,[],throwAwayNext, None)
             let partialLongName = AtStartOfIdentifier(0, [], false, None) 
             
             match List.rev partialLongName.QualifyingIdents with
