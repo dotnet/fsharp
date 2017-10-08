@@ -24,7 +24,7 @@ type QuickParse() =
     member public qp.CheckGetPartialLongName() = 
         let CheckAt(line,index,expected) = 
             let actual = QuickParse.GetPartialLongNameEx(line,index)
-            if actual <> expected then
+            if (actual.QualifyingIdents, actual.PartialIdent) <> expected then
                 failwithf "Expected %A but got %A" expected actual
             
         let Check(line,expected) = 

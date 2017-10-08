@@ -99,6 +99,16 @@ type internal SemanticClassificationType =
     | Operator
     | Disposable
 
+#if COMPILER_PUBLIC_API
+type PartialLongName =
+#else
+type internal PartialLongName =
+#endif
+    { QualifyingIdents: string list
+      PartialIdent: string
+      LastDotPos: int option }
+    static member Default : PartialLongName
+
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
 #if COMPILER_PUBLIC_API
@@ -146,7 +156,7 @@ type internal FSharpCheckFileResults =
     ///    and assume that we're going to repeat the operation later on.
     /// </param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member GetDeclarationListInfo : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * colAtEndOfPartialName: int * lineText:string * qualifyingNames: string list * partialName: string * lastDotPos: int option * getAllSymbols: (unit -> AssemblySymbol list) * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) * ?userOpName: string -> Async<FSharpDeclarationListInfo>
+    member GetDeclarationListInfo : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * colAtEndOfPartialName: int * lineText:string * partialName: PartialLongName * getAllSymbols: (unit -> AssemblySymbol list) * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) * ?userOpName: string -> Async<FSharpDeclarationListInfo>
 
     /// <summary>Get the items for a declaration list in FSharpSymbol format</summary>
     ///
@@ -170,7 +180,7 @@ type internal FSharpCheckFileResults =
     ///    and assume that we're going to repeat the operation later on.
     /// </param>
     /// <param name="userOpName">An optional string used for tracing compiler operations associated with this request.</param>
-    member GetDeclarationListSymbols : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * colAtEndOfPartialName: int * lineText:string * qualifyingNames: string list * partialName: string * lastDotPos: int option * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) * ?userOpName: string -> Async<FSharpSymbolUse list list>
+    member GetDeclarationListSymbols : ParsedFileResultsOpt:FSharpParseFileResults option * line: int * colAtEndOfPartialName: int * lineText:string * partialName: PartialLongName * ?hasTextChangedSinceLastTypecheck: (obj * range -> bool) * ?userOpName: string -> Async<FSharpSymbolUse list list>
 
 
     /// <summary>Compute a formatted tooltip for the given location</summary>

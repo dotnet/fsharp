@@ -158,7 +158,6 @@ module internal QuickParse =
                 directResult
 
     let private defaultName = [],""
-    let private defaultNameAndLastDot = [],"",None
 
     /// Get the partial long name of the identifier to the left of index.
     let GetPartialLongName(line:string,index) =
@@ -199,11 +198,11 @@ module internal QuickParse =
         | StartIdentifier of string list * bool
 
     /// Get the partial long name of the identifier to the left of index.
-    /// For example, for `System.DateTime.Now` it returns ([|"System"; "DateTime"|], "Now", Some 32), where "32" pos of the last dot.
-    let GetPartialLongNameEx(line:string,index) : (string list * string * int option) =
-        if isNull line then defaultNameAndLastDot
-        elif index < 0 then defaultNameAndLastDot
-        elif index >= line.Length then defaultNameAndLastDot
+    /// For example, for `System.DateTime.Now` it returns PartialLongName ([|"System"; "DateTime"|], "Now", Some 32), where "32" pos of the last dot.
+    let GetPartialLongNameEx(line:string,index) : PartialLongName =
+        if isNull line then PartialLongName.Default
+        elif index < 0 then PartialLongName.Default
+        elif index >= line.Length then PartialLongName.Default
         else
             let IsIdentifierPartCharacter pos = IsIdentifierPartCharacter line.[pos]
             let IsIdentifierStartCharacter pos = IsIdentifierPartCharacter pos
@@ -214,14 +213,14 @@ module internal QuickParse =
             let IsWhitespace pos = Char.IsWhiteSpace(line.[pos])
 
             let rec SkipWhitespaceBeforeDotIdentifier(pos, ident, current, throwAwayNext, lastDotPos) =
-                if pos > index then defaultNameAndLastDot  // we're in whitespace after an identifier, if this is where the cursor is, there is no PLID here
+                if pos > index then PartialLongName.Default  // we're in whitespace after an identifier, if this is where the cursor is, there is no PLID here
                 elif IsWhitespace pos then SkipWhitespaceBeforeDotIdentifier(pos+1,ident,current,throwAwayNext,lastDotPos)
                 elif IsDot pos then AtStartOfIdentifier(pos+1,ident::current,throwAwayNext, Some pos)
                 elif IsStartOfComment pos then EatComment(1, pos + 1, EatCommentCallContext.SkipWhiteSpaces(ident, current, throwAwayNext), lastDotPos)
                 else AtStartOfIdentifier(pos,[],false,lastDotPos) // Throw away what we have and start over.
 
             and EatComment (nesting, pos, callContext,lastDotPos) = 
-                if pos > index then defaultNameAndLastDot else
+                if pos > index then PartialLongName.Default else
                 if IsStartOfComment pos then
                     // track balance of closing '*)'
                     EatComment(nesting + 1, pos + 2, callContext,lastDotPos)
@@ -243,7 +242,12 @@ module internal QuickParse =
 
             and InUnquotedIdentifier(left:int,pos:int,current,throwAwayNext,lastDotPos) =
                 if pos > index then 
-                    if throwAwayNext then defaultNameAndLastDot else current,line.Substring(left,pos-left),lastDotPos
+                    if throwAwayNext then 
+                        PartialLongName.Default 
+                    else
+                        { QualifyingIdents = current
+                          PartialIdent = line.Substring(left,pos-left)
+                          LastDotPos = lastDotPos }
                 else
                     if IsIdentifierPartCharacter pos then InUnquotedIdentifier(left,pos+1,current,throwAwayNext,lastDotPos)
                     elif IsDot pos then 
@@ -256,7 +260,12 @@ module internal QuickParse =
 
             and InQuotedIdentifier(left:int,pos:int, current,throwAwayNext,lastDotPos) =
                 if pos > index then 
-                    if throwAwayNext then defaultNameAndLastDot else current,line.Substring(left,pos-left),lastDotPos
+                    if throwAwayNext then 
+                        PartialLongName.Default 
+                    else 
+                        { QualifyingIdents = current
+                          PartialIdent = line.Substring(left,pos-left)
+                          LastDotPos = lastDotPos }
                 else
                     let remainingLength = line.Length - pos
                     if IsTick pos && remainingLength > 1 && IsTick(pos+1) then 
@@ -266,7 +275,12 @@ module internal QuickParse =
 
             and AtStartOfIdentifier(pos:int, current, throwAwayNext, lastDotPos: int option) =
                 if pos > index then 
-                    if throwAwayNext then defaultNameAndLastDot else current,"",lastDotPos
+                    if throwAwayNext then 
+                        PartialLongName.Default
+                    else 
+                        { QualifyingIdents = current
+                          PartialIdent = ""
+                          LastDotPos = lastDotPos }
                 else
                     if IsWhitespace pos then AtStartOfIdentifier(pos+1,current,throwAwayNext, lastDotPos)
                     else
@@ -291,11 +305,11 @@ module internal QuickParse =
                             else
                                 AtStartOfIdentifier(pos+1,""::current,throwAwayNext, Some pos)                            
                         else AtStartOfIdentifier(pos+1,[],throwAwayNext, lastDotPos)
-            let plid, residue, lastDotPos = AtStartOfIdentifier(0,[],false,None)
-            let plid = List.rev plid
-            match plid with
-            | s::_rest when s.Length > 0 && Char.IsDigit(s.[0]) -> defaultNameAndLastDot  // "2.0" is not a longId (this might not be right for ``2.0`` but good enough for common case)
-            | _ -> plid, residue, lastDotPos
+            let partialLongName = AtStartOfIdentifier(0, [], false, None) 
+            
+            match List.rev partialLongName.QualifyingIdents with
+            | s :: _ when s.Length > 0 && Char.IsDigit(s.[0]) -> PartialLongName.Default  // "2.0" is not a longId (this might not be right for ``2.0`` but good enough for common case)
+            | plid -> { partialLongName with QualifyingIdents = plid }
     
     let TokenNameEquals (tokenInfo : FSharpTokenInfo) token2 = 
         String.Compare(tokenInfo .TokenName, token2, StringComparison.OrdinalIgnoreCase) = 0  

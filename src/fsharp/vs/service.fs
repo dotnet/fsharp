@@ -141,6 +141,12 @@ type SemanticClassificationType =
     | Operator
     | Disposable
 
+type PartialLongName =
+    { QualifyingIdents: string list
+      PartialIdent: string
+      LastDotPos: int option }
+    static member Default = { QualifyingIdents = []; PartialIdent = ""; LastDotPos = None }
+
 /// A TypeCheckInfo represents everything we get back from the typecheck of a file.
 /// It acts like an in-memory database about the file.
 /// It is effectively immutable and not updated: when we re-typecheck we just drop the previous
@@ -896,11 +902,11 @@ type TypeCheckInfo
                 false)
         
     /// Get the auto-complete items at a location
-    member __.GetDeclarations (ctok, parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, lastDotPos, getAllSymbols, hasTextChangedSinceLastTypecheck) =
+    member __.GetDeclarations (ctok, parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, partialName: PartialLongName, getAllSymbols, hasTextChangedSinceLastTypecheck) =
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
         ErrorScope.Protect Range.range0 
             (fun () -> 
-                match GetDeclItemsForNamesAtPosition(ctok, parseResultsOpt, Some qualifyingNames, Some partialName, lastDotPos, line, lineStr, colAtEndOfNamesAndResidue, ResolveTypeNamesToCtors, ResolveOverloads.Yes, getAllSymbols, hasTextChangedSinceLastTypecheck) with
+                match GetDeclItemsForNamesAtPosition(ctok, parseResultsOpt, Some partialName.QualifyingIdents, Some partialName.PartialIdent, partialName.LastDotPos, line, lineStr, colAtEndOfNamesAndResidue, ResolveTypeNamesToCtors, ResolveOverloads.Yes, getAllSymbols, hasTextChangedSinceLastTypecheck) with
                 | None -> FSharpDeclarationListInfo.Empty  
                 | Some (items, denv, ctx, m) -> 
                     let items = if isInterfaceFile then items |> List.filter (fun x -> IsValidSignatureFileItem x.Item) else items
@@ -916,11 +922,11 @@ type TypeCheckInfo
                 FSharpDeclarationListInfo.Error msg)
 
     /// Get the symbols for auto-complete items at a location
-    member __.GetDeclarationListSymbols (ctok, parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, lastDotPos, hasTextChangedSinceLastTypecheck) =
+    member __.GetDeclarationListSymbols (ctok, parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, partialName: PartialLongName, hasTextChangedSinceLastTypecheck) =
         let isInterfaceFile = SourceFileImpl.IsInterfaceFile mainInputFileName
         ErrorScope.Protect Range.range0 
             (fun () -> 
-                match GetDeclItemsForNamesAtPosition(ctok, parseResultsOpt, Some qualifyingNames, Some partialName, lastDotPos, line, lineStr, colAtEndOfNamesAndResidue, ResolveTypeNamesToCtors, ResolveOverloads.Yes, (fun () -> []), hasTextChangedSinceLastTypecheck) with
+                match GetDeclItemsForNamesAtPosition(ctok, parseResultsOpt, Some partialName.QualifyingIdents, Some partialName.PartialIdent, partialName.LastDotPos, line, lineStr, colAtEndOfNamesAndResidue, ResolveTypeNamesToCtors, ResolveOverloads.Yes, (fun () -> []), hasTextChangedSinceLastTypecheck) with
                 | None -> List.Empty  
                 | Some (items, denv, _, m) -> 
                     let items = if isInterfaceFile then items |> List.filter (fun x -> IsValidSignatureFileItem x.Item) else items
@@ -1879,16 +1885,16 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
     member info.HasFullTypeCheckInfo = details.IsSome
     
     /// Intellisense autocompletions
-    member info.GetDeclarationListInfo(parseResultsOpt, line, colAtEndOfNamesAndResidue, lineStr, qualifyingNames, partialName, lastDotPos, getAllEntities, ?hasTextChangedSinceLastTypecheck, ?userOpName: string) = 
+    member info.GetDeclarationListInfo(parseResultsOpt, line, colAtEndOfNamesAndResidue, lineStr, partialName: PartialLongName, getAllEntities, ?hasTextChangedSinceLastTypecheck, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
         let hasTextChangedSinceLastTypecheck = defaultArg hasTextChangedSinceLastTypecheck (fun _ -> false)
         reactorOp userOpName "GetDeclarations" FSharpDeclarationListInfo.Empty (fun ctok scope -> 
-            scope.GetDeclarations(ctok, parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, lastDotPos, getAllEntities, hasTextChangedSinceLastTypecheck))
+            scope.GetDeclarations(ctok, parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, partialName, getAllEntities, hasTextChangedSinceLastTypecheck))
 
-    member info.GetDeclarationListSymbols(parseResultsOpt, line, colAtEndOfNamesAndResidue, lineStr, qualifyingNames, partialName, lastDotPos, ?hasTextChangedSinceLastTypecheck, ?userOpName: string) = 
+    member info.GetDeclarationListSymbols(parseResultsOpt, line, colAtEndOfNamesAndResidue, lineStr, partialName, ?hasTextChangedSinceLastTypecheck, ?userOpName: string) = 
         let userOpName = defaultArg userOpName "Unknown"
         let hasTextChangedSinceLastTypecheck = defaultArg hasTextChangedSinceLastTypecheck (fun _ -> false)
-        reactorOp userOpName "GetDeclarationListSymbols" List.empty (fun ctok scope -> scope.GetDeclarationListSymbols(ctok, parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, lastDotPos, hasTextChangedSinceLastTypecheck))
+        reactorOp userOpName "GetDeclarationListSymbols" List.empty (fun ctok scope -> scope.GetDeclarationListSymbols(ctok, parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, partialName, hasTextChangedSinceLastTypecheck))
 
     /// Resolve the names at the given location to give a data tip 
     member info.GetStructuredToolTipText(line, colAtEndOfNames, lineStr, names, tokenTag, ?userOpName: string) = 

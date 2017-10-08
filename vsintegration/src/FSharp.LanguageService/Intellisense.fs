@@ -526,14 +526,14 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                                 else
                                     None
                             // TODO don't use QuickParse below, we have parse info available
-                            let qname, pname, lastDotPos = QuickParse.GetPartialLongNameEx(lineText, col-1) 
+                            let pname = QuickParse.GetPartialLongNameEx(lineText, col-1) 
                             let _x = 1 // for breakpoint
 
                             let detectTextChange (oldTextSnapshotInfo: obj, range) = 
                                 let oldTextSnapshot = oldTextSnapshotInfo :?> ITextSnapshot
                                 hasTextChangedSinceLastTypecheck (textSnapshot, oldTextSnapshot, Range.Range.toZ range)
 
-                            let! decls = typedResults.GetDeclarationListInfo(untypedParseInfoOpt, Range.Line.fromZ line, col, lineText, qname, pname, lastDotPos, (fun() -> []), detectTextChange) 
+                            let! decls = typedResults.GetDeclarationListInfo(untypedParseInfoOpt, Range.Line.fromZ line, col, lineText, pname, (fun() -> []), detectTextChange) 
                             return (new FSharpDeclarations_DEPRECATED(documentationBuilder, decls.Items, reason) :> Declarations_DEPRECATED) 
                     else
                         // no TypeCheckInfo in ParseResult.

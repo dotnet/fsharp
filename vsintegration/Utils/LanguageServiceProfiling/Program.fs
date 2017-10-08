@@ -166,8 +166,9 @@ let main argv =
                                 completion.Position.Line,
                                 completion.Position.Column,
                                 getLine (completion.Position.Line),
-                                completion.QualifyingNames,
-                                completion.PartialName,
+                                { QualifyingIdents = completion.QualifyingNames
+                                  PartialIdent = completion.PartialName
+                                  LastDotPos = None },
                                 fun() -> [])
                            
                         for i in listInfo.Items do
