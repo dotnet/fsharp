@@ -164,10 +164,10 @@ let main argv =
                             fileResults.GetDeclarationListInfo(
                                 Some parseResult,
                                 completion.Position.Line,
-                                completion.Position.Column,
                                 getLine (completion.Position.Line),
                                 { QualifyingIdents = completion.QualifyingNames
                                   PartialIdent = completion.PartialName
+                                  EndColumn = completion.Position.Column - 1
                                   LastDotPos = None },
                                 fun() -> [])
                            

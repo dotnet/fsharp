@@ -106,7 +106,7 @@ type internal FSharpCompletionProvider
                 getAllSymbols() 
                 |> List.filter (fun entity -> entity.FullName.Contains "." && not (PrettyNaming.IsOperatorName entity.Symbol.DisplayName))
 
-            let! declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLineColumn, caretLine.ToString(), 
+            let! declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLine.ToString(), 
                                                                         partialName, getAllSymbols, userOpName=userOpName) |> liftAsync
             let results = List<Completion.CompletionItem>()
             

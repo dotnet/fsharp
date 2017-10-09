@@ -533,7 +533,7 @@ type internal FSharpIntellisenseInfo_DEPRECATED
                                 let oldTextSnapshot = oldTextSnapshotInfo :?> ITextSnapshot
                                 hasTextChangedSinceLastTypecheck (textSnapshot, oldTextSnapshot, Range.Range.toZ range)
 
-                            let! decls = typedResults.GetDeclarationListInfo(untypedParseInfoOpt, Range.Line.fromZ line, col, lineText, pname, (fun() -> []), detectTextChange) 
+                            let! decls = typedResults.GetDeclarationListInfo(untypedParseInfoOpt, Range.Line.fromZ line, lineText, pname, (fun() -> []), detectTextChange) 
                             return (new FSharpDeclarations_DEPRECATED(documentationBuilder, decls.Items, reason) :> Declarations_DEPRECATED) 
                     else
                         // no TypeCheckInfo in ParseResult.

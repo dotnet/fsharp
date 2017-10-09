@@ -17,11 +17,14 @@ type internal PartialLongName =
       /// Last part of long ident.
       PartialIdent: string
 
+      /// The column number at the end of full partial name.
+      EndColumn: int
+
       /// Position of the last dot.
       LastDotPos: int option }
     
     /// Empty patial long name.
-    static member Empty: PartialLongName
+    static member Empty: endColumn: int -> PartialLongName
 
 /// Methods for cheaply and innacurately parsing F#.
 ///
