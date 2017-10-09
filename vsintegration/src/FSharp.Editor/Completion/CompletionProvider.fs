@@ -21,6 +21,7 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open XmlDocumentation
 
 type internal FSharpCompletionProvider
     (
@@ -55,9 +56,23 @@ type internal FSharpCompletionProvider
 
     let xmlMemberIndexService = serviceProvider.GetService(typeof<IVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
-    
+        
     static let noCommitOnSpaceRules = 
-        CompletionItemRules.Default.WithCommitCharacterRule(CharacterSetModificationRule.Create(CharacterSetModificationKind.Remove, ' ', '=', ',', '.', '<', '>', '(', ')', '!', ':'))
+        // These are important.  They make sure we don't _commit_ autocompletion when people don't expect them to.  Some examples:
+        //
+        // * type Foo() =
+        //       member val a = 12 with get, <<---- Don't commit autocomplete!
+        //
+        // * type MyRecord = { name: <<---- Don't commit autocomplete!
+        //
+        // * type My< <<---- Don't commit autocomplete!
+        //
+        // * let myClassInstance = MyClass(Date= <<---- Don't commit autocomplete!
+        //
+        // * let xs = [1..10] <<---- Don't commit autocomplete! (same for arrays)
+        let noCommitChars = [|' '; '='; ','; '.'; '<'; '>'; '('; ')'; '!'; ':'; '['; ']'; '|'|].ToImmutableArray()
+
+        CompletionItemRules.Default.WithCommitCharacterRule(CharacterSetModificationRule.Create(CharacterSetModificationKind.Remove, noCommitChars))
     
     static let getRules() = if Settings.IntelliSense.ShowAfterCharIsTyped then noCommitOnSpaceRules else CompletionItemRules.Default
 
