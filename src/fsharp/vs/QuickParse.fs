@@ -5,11 +5,19 @@ namespace Microsoft.FSharp.Compiler
 open System
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
+/// Qualified long name.
 type PartialLongName =
-    { QualifyingIdents: string list
+    { /// Qualifying idents, prior to the last dot, not including the last part.
+      QualifyingIdents: string list
+      
+      /// Last part of long ident.
       PartialIdent: string
+      
+      /// Position of the last dot.
       LastDotPos: int option }
-    static member Default = { QualifyingIdents = []; PartialIdent = ""; LastDotPos = None }
+    
+    /// Empty patial long name.
+    static member Empty = { QualifyingIdents = []; PartialIdent = ""; LastDotPos = None }
 
 /// Methods for cheaply and innacurately parsing F#.
 ///
@@ -29,13 +37,13 @@ type PartialLongName =
 /// for active pattern names and so on.
 module QuickParse =
     open PrettyNaming
-  
-    let MagicalAdjustmentConstant = 1 // 0 puts us immediately *before* the last character; 1 puts us after the last character
+    /// Puts us after the last character.
+    let MagicalAdjustmentConstant = 1
 
     // Adjusts the token tag for the given identifier
     // - if we're inside active pattern name (at the bar), correct the token TAG to be an identifier
-    let CorrectIdentifierToken (s:string) tokenTag = 
-        if s.EndsWith "|" then Microsoft.FSharp.Compiler.Parser.tagOfToken (Microsoft.FSharp.Compiler.Parser.token.IDENT s)
+    let CorrectIdentifierToken (tokenText: string) (tokenTag: int) = 
+        if tokenText.EndsWith "|" then Microsoft.FSharp.Compiler.Parser.tagOfToken (Microsoft.FSharp.Compiler.Parser.token.IDENT tokenText)
         else tokenTag
 
     let rec isValidStrippedName (name:string) idx = 
@@ -47,7 +55,7 @@ module QuickParse =
     // Extracts the 'core' part without surrounding bars and checks whether it contains some identifier
     // (Note, this doesn't have to be precise, because this is checked by backround compiler,
     // but it has to be good enough to distinguish operators and active pattern names)
-    let private isValidActivePatternName (name:string) = 
+    let private isValidActivePatternName (name: string) = 
 
       // Strip the surrounding bars (e.g. from "|xyz|_|") to get "xyz"
       match name.StartsWith("|", System.StringComparison.Ordinal), 
@@ -57,40 +65,17 @@ module QuickParse =
       | true, _, true when name.Length > 2 -> isValidStrippedName (name.Substring(1, name.Length - 2)) 0
       | _ -> false
     
-    /// Given a string and a position in that string, find an identifier as
-    /// expected by `GotoDefinition`. This will work when the cursor is
-    /// immediately before the identifier, within the identifier, or immediately
-    /// after the identifier.
-    ///
-    /// 'tolerateJustAfter' indicates that we tolerate being one character after the identifier, used
-    /// for goto-definition
-    
-    /// In general, only identifiers composed from upper/lower letters and '.' are supported, but there
-    /// are a couple of explicitly handled exceptions to allow some common scenarios:
-    /// - When the name contains only letters and '|' symbol, it may be an active pattern, so we 
-    ///   treat it as a valid identifier - e.g. let ( |Identitiy| ) a = a
-    ///   (but other identifiers that include '|' are not allowed - e.g. '||' operator)
-    /// - It searches for double tick (``) to see if the identifier could be something like ``a b``
-
-    /// REVIEW: Also support, e.g., operators, performing the necessary mangling.
-    /// (i.e., I would like that the name returned here can be passed as-is
-    /// (post `.`-chopping) to `GetDeclarationLocation.)
-        
-    /// In addition, return the position where a `.` would go if we were making
-    /// a call to `DeclItemsForNamesAtPosition` for intellisense. This will
-    /// allow us to use find the correct qualified items rather than resorting
-    /// to the more expensive and less accurate environment lookup.
-    let GetCompleteIdentifierIslandImpl (s : string) (p : int) : (string*int*bool) option =
-        if p < 0 || isNull s || p >= s.Length then None 
+    let GetCompleteIdentifierIslandImpl (lineStr: string) (index: int) : (string * int * bool) option =
+        if index < 0 || isNull lineStr || index >= lineStr.Length then None 
         else
             let fixup =
                 match () with
                 // at a valid position, on a valid character
-                | _ when (p < s.Length) && (s.[p] = '|' || IsIdentifierPartCharacter s.[p]) -> Some p
+                | _ when (index < lineStr.Length) && (lineStr.[index] = '|' || IsIdentifierPartCharacter lineStr.[index]) -> Some index
                 | _ -> None // not on a word or '.'
             
             
-            let (|Char|_|) p = if p >=0 && p < s.Length then Some(s.[p]) else None   
+            let (|Char|_|) p = if p >=0 && p < lineStr.Length then Some(lineStr.[p]) else None   
             let (|IsLongIdentifierPartChar|_|) c = if IsLongIdentifierPartCharacter c then Some () else None           
             let (|IsIdentifierPartChar|_|) c = if IsIdentifierPartCharacter c then Some () else None
 
@@ -110,7 +95,7 @@ module QuickParse =
             
             let tickColsOpt = 
                 let rec walkOutsideBackticks i =
-                    if i >= s.Length then None 
+                    if i >= lineStr.Length then None 
                     else
                     match i, i + 1 with
                     | Char '`', Char '`' ->
@@ -118,19 +103,19 @@ module QuickParse =
                         // if pos = i then it will be included in backticked range ($``identifier``)
                         walkInsideBackticks (i + 2) i
                     | _, _ -> 
-                        if i >= p then None
+                        if i >= index then None
                         else
                             // we still not reached position p - continue walking 
                             walkOutsideBackticks (i + 1)
                 and walkInsideBackticks i start = 
-                    if i >= s.Length then None // non-closed backticks
+                    if i >= lineStr.Length then None // non-closed backticks
                     else
                     match i, i + 1 with
                     | Char '`', Char '`' ->
                         // found closing pair of backticks
                         // if target position is between start and current pos + 1 (entire range of escaped identifier including backticks) - return success
                         // else climb outside and continue walking
-                        if p >= start && p < (i + 2) then Some (start, i)
+                        if index >= start && index < (i + 2) then Some (start, i)
                         else walkOutsideBackticks (i + 2)
                     | _, _ -> walkInsideBackticks (i + 1) start                    
 
@@ -140,42 +125,65 @@ module QuickParse =
             | Some (prevTickTick, idxTickTick) ->
                 // inside ``identifier`` (which can contain any characters!) so we try returning its location
                 let pos = idxTickTick + 1 + MagicalAdjustmentConstant
-                let ident = s.Substring(prevTickTick, idxTickTick - prevTickTick + 2)
+                let ident = lineStr.Substring(prevTickTick, idxTickTick - prevTickTick + 2)
                 Some(ident, pos, true)
             | _ ->
                 // find location of an ordinary identifier
                 fixup |> Option.bind (fun p ->
                     let l = searchLeft p
                     let r = searchRight p
-                    let ident = s.Substring (l, r - l + 1)
+                    let ident = lineStr.Substring (l, r - l + 1)
                     if ident.IndexOf('|') <> -1 && not(isValidActivePatternName(ident)) then None else
                         let pos = r + MagicalAdjustmentConstant 
                         Some(ident, pos, false)
                     )
 
-    let GetCompleteIdentifierIsland (tolerateJustAfter:bool) (s : string) (p : int) : (string*int*bool) option =
-        if String.IsNullOrEmpty s then None
+    /// Given a string and a position in that string, find an identifier as
+    /// expected by `GotoDefinition`. This will work when the cursor is
+    /// immediately before the identifier, within the identifier, or immediately
+    /// after the identifier.
+    ///
+    /// 'tolerateJustAfter' indicates that we tolerate being one character after the identifier, used
+    /// for goto-definition
+    ///
+    /// In general, only identifiers composed from upper/lower letters and '.' are supported, but there
+    /// are a couple of explicitly handled exceptions to allow some common scenarios:
+    /// - When the name contains only letters and '|' symbol, it may be an active pattern, so we 
+    ///   treat it as a valid identifier - e.g. let ( |Identitiy| ) a = a
+    ///   (but other identifiers that include '|' are not allowed - e.g. '||' operator)
+    /// - It searches for double tick (``) to see if the identifier could be something like ``a b``
+    ///
+    /// REVIEW: Also support, e.g., operators, performing the necessary mangling.
+    /// (i.e., I would like that the name returned here can be passed as-is
+    /// (post `.`-chopping) to `GetDeclarationLocation.)
+    /// 
+    /// In addition, return the position where a `.` would go if we were making
+    /// a call to `DeclItemsForNamesAtPosition` for intellisense. This will
+    /// allow us to use find the correct qualified items rather than resorting
+    /// to the more expensive and less accurate environment lookup.
+    let GetCompleteIdentifierIsland (tolerateJustAfter: bool) (lineStr: string) (index: int) : (string * int * bool) option =
+        if String.IsNullOrEmpty lineStr then None
         else     
-            let directResult = GetCompleteIdentifierIslandImpl s p
+            let directResult = GetCompleteIdentifierIslandImpl lineStr index
             if tolerateJustAfter && directResult = None then 
-                GetCompleteIdentifierIslandImpl s (p-1)
+                GetCompleteIdentifierIslandImpl lineStr (index - 1)
             else 
                 directResult
 
-    let private defaultName = [],""
+    let private defaultName = [], ""
 
     /// Get the partial long name of the identifier to the left of index.
-    let GetPartialLongName(line:string,index) =
-        if isNull line then defaultName
+    let GetPartialLongName(lineStr: string, index: int) =
+        if isNull lineStr then defaultName
         elif index < 0 then defaultName
-        elif index >= line.Length then defaultName
+        elif index >= lineStr.Length then defaultName
         else
-            let IsIdentifierPartCharacter pos = IsIdentifierPartCharacter line.[pos]
-            let IsLongIdentifierPartCharacter pos = IsLongIdentifierPartCharacter line.[pos]
-            let IsDot pos = line.[pos] = '.'
+            let IsIdentifierPartCharacter pos = IsIdentifierPartCharacter lineStr.[pos]
+            let IsLongIdentifierPartCharacter pos = IsLongIdentifierPartCharacter lineStr.[pos]
+            let IsDot pos = lineStr.[pos] = '.'
 
             let rec InLeadingIdentifier(pos,right,(prior,residue)) = 
-                let PushName() = ((line.Substring(pos+1,right-pos-1))::prior),residue
+                let PushName() = ((lineStr.Substring(pos+1,right-pos-1))::prior),residue
                 if pos < 0 then PushName()
                 elif IsIdentifierPartCharacter pos then InLeadingIdentifier(pos-1,right,(prior,residue))
                 elif IsDot pos then InLeadingIdentifier(pos-1,pos,PushName())
@@ -183,49 +191,49 @@ module QuickParse =
 
             let rec InName(pos,startResidue,right) =
                 let NameAndResidue() = 
-                    [line.Substring(pos+1,startResidue-pos-1)],(line.Substring(startResidue+1,right-startResidue))
-                if pos < 0 then [line.Substring(pos+1,startResidue-pos-1)],(line.Substring(startResidue+1,right-startResidue))
+                    [lineStr.Substring(pos+1,startResidue-pos-1)],(lineStr.Substring(startResidue+1,right-startResidue))
+                if pos < 0 then [lineStr.Substring(pos+1,startResidue-pos-1)],(lineStr.Substring(startResidue+1,right-startResidue))
                 elif IsIdentifierPartCharacter pos then InName(pos-1,startResidue,right) 
                 elif IsDot pos then InLeadingIdentifier(pos-1,pos,NameAndResidue())
                 else NameAndResidue()
 
             let rec InResidue(pos,right) =
-                if pos < 0 then [],line.Substring(pos+1,right-pos)
+                if pos < 0 then [],lineStr.Substring(pos+1,right-pos)
                 elif IsDot pos then InName(pos-1,pos,right)
                 elif IsLongIdentifierPartCharacter pos then InResidue(pos-1, right)
-                else [],line.Substring(pos+1,right-pos)
+                else [],lineStr.Substring(pos+1,right-pos)
                 
             let result = InResidue(index,index)
             result
     
     type private EatCommentCallContext =
-        | SkipWhiteSpaces of string * string list * bool
-        | StartIdentifier of string list * bool
+        | SkipWhiteSpaces of ident: string * current: string list * throwAwayNext: bool
+        | StartIdentifier of current: string list * throwAway: bool
 
     /// Get the partial long name of the identifier to the left of index.
     /// For example, for `System.DateTime.Now` it returns PartialLongName ([|"System"; "DateTime"|], "Now", Some 32), where "32" pos of the last dot.
-    let GetPartialLongNameEx(line:string,index) : PartialLongName =
-        if isNull line then PartialLongName.Default
-        elif index < 0 then PartialLongName.Default
-        elif index >= line.Length then PartialLongName.Default
+    let GetPartialLongNameEx(lineStr: string, index: int) : PartialLongName =
+        if isNull lineStr then PartialLongName.Empty
+        elif index < 0 then PartialLongName.Empty
+        elif index >= lineStr.Length then PartialLongName.Empty
         else
-            let IsIdentifierPartCharacter pos = IsIdentifierPartCharacter line.[pos]
+            let IsIdentifierPartCharacter pos = IsIdentifierPartCharacter lineStr.[pos]
             let IsIdentifierStartCharacter pos = IsIdentifierPartCharacter pos
-            let IsDot pos = line.[pos] = '.'
-            let IsTick pos = line.[pos] = '`'
-            let IsEndOfComment pos = pos < index - 1 && line.[pos] = '*' && line.[pos + 1] = ')'
-            let IsStartOfComment pos = pos < index - 1 && line.[pos] = '(' && line.[pos + 1] = '*'
-            let IsWhitespace pos = Char.IsWhiteSpace(line.[pos])
+            let IsDot pos = lineStr.[pos] = '.'
+            let IsTick pos = lineStr.[pos] = '`'
+            let IsEndOfComment pos = pos < index - 1 && lineStr.[pos] = '*' && lineStr.[pos + 1] = ')'
+            let IsStartOfComment pos = pos < index - 1 && lineStr.[pos] = '(' && lineStr.[pos + 1] = '*'
+            let IsWhitespace pos = Char.IsWhiteSpace(lineStr.[pos])
 
             let rec SkipWhitespaceBeforeDotIdentifier(pos, ident, current, throwAwayNext, lastDotPos) =
-                if pos > index then PartialLongName.Default  // we're in whitespace after an identifier, if this is where the cursor is, there is no PLID here
+                if pos > index then PartialLongName.Empty  // we're in whitespace after an identifier, if this is where the cursor is, there is no PLID here
                 elif IsWhitespace pos then SkipWhitespaceBeforeDotIdentifier(pos+1,ident,current,throwAwayNext,lastDotPos)
                 elif IsDot pos then AtStartOfIdentifier(pos+1,ident::current,throwAwayNext, Some pos)
                 elif IsStartOfComment pos then EatComment(1, pos + 1, EatCommentCallContext.SkipWhiteSpaces(ident, current, throwAwayNext), lastDotPos)
                 else AtStartOfIdentifier(pos,[],false,None) // Throw away what we have and start over.
 
             and EatComment (nesting, pos, callContext,lastDotPos) = 
-                if pos > index then PartialLongName.Default else
+                if pos > index then PartialLongName.Empty else
                 if IsStartOfComment pos then
                     // track balance of closing '*)'
                     EatComment(nesting + 1, pos + 2, callContext,lastDotPos)
@@ -248,40 +256,40 @@ module QuickParse =
             and InUnquotedIdentifier(left:int,pos:int,current,throwAwayNext,lastDotPos) =
                 if pos > index then 
                     if throwAwayNext then 
-                        PartialLongName.Default 
+                        PartialLongName.Empty 
                     else
                         { QualifyingIdents = current
-                          PartialIdent = line.Substring(left,pos-left)
+                          PartialIdent = lineStr.Substring(left,pos-left)
                           LastDotPos = lastDotPos }
                 else
                     if IsIdentifierPartCharacter pos then InUnquotedIdentifier(left,pos+1,current,throwAwayNext,lastDotPos)
                     elif IsDot pos then 
-                        let ident = line.Substring(left,pos-left)
+                        let ident = lineStr.Substring(left,pos-left)
                         AtStartOfIdentifier(pos+1,ident::current,throwAwayNext, Some pos)
                     elif IsWhitespace pos || IsStartOfComment pos then 
-                        let ident = line.Substring(left,pos-left)
+                        let ident = lineStr.Substring(left,pos-left)
                         SkipWhitespaceBeforeDotIdentifier(pos, ident, current, throwAwayNext, lastDotPos)
                     else AtStartOfIdentifier(pos,[],false,None) // Throw away what we have and start over.
 
             and InQuotedIdentifier(left:int,pos:int, current,throwAwayNext,lastDotPos) =
                 if pos > index then 
                     if throwAwayNext then 
-                        PartialLongName.Default 
+                        PartialLongName.Empty 
                     else 
                         { QualifyingIdents = current
-                          PartialIdent = line.Substring(left,pos-left)
+                          PartialIdent = lineStr.Substring(left,pos-left)
                           LastDotPos = lastDotPos }
                 else
-                    let remainingLength = line.Length - pos
+                    let remainingLength = lineStr.Length - pos
                     if IsTick pos && remainingLength > 1 && IsTick(pos+1) then 
-                        let ident = line.Substring(left, pos-left)
+                        let ident = lineStr.Substring(left, pos-left)
                         SkipWhitespaceBeforeDotIdentifier(pos+2,ident,current,throwAwayNext,lastDotPos) 
                     else InQuotedIdentifier(left,pos+1,current,throwAwayNext,lastDotPos)                    
 
             and AtStartOfIdentifier(pos:int, current, throwAwayNext, lastDotPos: int option) =
                 if pos > index then 
                     if throwAwayNext then 
-                        PartialLongName.Default
+                        PartialLongName.Empty
                     else 
                         { QualifyingIdents = current
                           PartialIdent = ""
@@ -289,7 +297,7 @@ module QuickParse =
                 else
                     if IsWhitespace pos then AtStartOfIdentifier(pos+1,current,throwAwayNext, lastDotPos)
                     else
-                        let remainingLength = line.Length - pos
+                        let remainingLength = lineStr.Length - pos
                         if IsTick pos && remainingLength > 1 && IsTick(pos+1) then InQuotedIdentifier(pos+2,pos+2,current,throwAwayNext,lastDotPos)
                         elif IsStartOfComment pos then EatComment(1, pos + 1, EatCommentCallContext.StartIdentifier(current, throwAwayNext), lastDotPos)
                         elif IsIdentifierStartCharacter pos then InUnquotedIdentifier(pos,pos+1,current,throwAwayNext,lastDotPos)
@@ -299,7 +307,7 @@ module QuickParse =
                                 AtStartOfIdentifier(pos+1,""::current,throwAwayNext, Some pos)
                             elif not (pos > 0 && (IsIdentifierPartCharacter(pos-1) || IsWhitespace(pos-1))) then
                                 // it's not dots as part.of.a.long.ident, it's e.g. the range operator (..), or some other multi-char operator ending in dot
-                                if line.[pos-1] = ')' then
+                                if lineStr.[pos-1] = ')' then
                                     // one very problematic case is someCall(args).Name
                                     // without special logic, we will decide that ). is an operator and parse Name as the plid
                                     // but in fact this is an expression tail, and we don't want a plid, rather we need to use expression typings at that location
@@ -313,17 +321,17 @@ module QuickParse =
             let partialLongName = AtStartOfIdentifier(0, [], false, None) 
             
             match List.rev partialLongName.QualifyingIdents with
-            | s :: _ when s.Length > 0 && Char.IsDigit(s.[0]) -> PartialLongName.Default  // "2.0" is not a longId (this might not be right for ``2.0`` but good enough for common case)
+            | s :: _ when s.Length > 0 && Char.IsDigit(s.[0]) -> PartialLongName.Empty  // "2.0" is not a longId (this might not be right for ``2.0`` but good enough for common case)
             | plid -> { partialLongName with QualifyingIdents = plid }
     
-    let TokenNameEquals (tokenInfo : FSharpTokenInfo) token2 = 
+    let TokenNameEquals (tokenInfo: FSharpTokenInfo) (token2: string) = 
         String.Compare(tokenInfo .TokenName, token2, StringComparison.OrdinalIgnoreCase) = 0  
     
     // The prefix of the sequence of token names to look for in TestMemberOrOverrideDeclaration, in reverse order
     let private expected = [ [|"dot"|]; [|"ident"|]; [|"member"; "override"|] ]
 
     /// Tests whether the user is typing something like "member x." or "override (*comment*) x."
-    let TestMemberOrOverrideDeclaration (tokens:FSharpTokenInfo[]) =
+    let TestMemberOrOverrideDeclaration (tokens: FSharpTokenInfo[]) =
         let filteredReversed = 
             tokens 
             |> Array.filter (fun tok ->
