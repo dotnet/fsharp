@@ -21,7 +21,6 @@ open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open XmlDocumentation
 
 type internal FSharpCompletionProvider
     (
