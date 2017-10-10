@@ -236,21 +236,22 @@ type internal FSharpProjectOptionsManager
                     Some(reporter:> Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2)
 
                 {new Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite with
-                    member __.SourceFilesOnDisk() = this.GetProjectInfo(project.FilePath) |> fst
-                    member __.DescriptionOfProject() = project.Name
-                    member __.CompilerFlags() =
+                    member __.CompilationSourceFiles = this.GetProjectInfo(project.FilePath) |> fst
+                    member __.CompilationOptions =
                         let _,references,options = this.GetProjectInfo(project.FilePath)
                         Array.concat [options; references |> Array.map(fun r -> "-r:" + r)]
-                    member __.ProjectFileName() = project.FilePath
+                    member __.CompilationReferences = this.GetProjectInfo(project.FilePath) |> thrd
+                    member site.CompilationBinOutputPath = site.CompilationOptions |> Array.tryPick (fun s -> if s.StartsWith("-o:") then Some s.[3..] else None)
+                    member __.Description = project.Name
+                    member __.ProjectFileName = project.FilePath
                     member __.AdviseProjectSiteChanges(_,_) = ()
                     member __.AdviseProjectSiteCleaned(_,_) = ()
                     member __.AdviseProjectSiteClosed(_,_) = ()
                     member __.IsIncompleteTypeCheckEnvironment = false
                     member __.TargetFrameworkMoniker = ""
-                    member __.ProjectGuid =  project.Id.Id.ToString()
+                    member __.ProjectGuid = project.Id.Id.ToString()
                     member __.LoadTime = System.DateTime.Now
                     member __.ProjectProvider = Some iProvideProjectSite
-                    member __.AssemblyReferences() = this.GetProjectInfo(project.FilePath) |> thrd
                     member __.BuildErrorReporter with get () = errorReporter and 
                                                       set (v) = errorReporter <- v
                 }
@@ -470,17 +471,20 @@ type
 
         let theme = package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
         theme.SetColors()
-
-    /// Sync the information for the project 
-    member __.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, workspace, forceUpdate, userOpName) =
+        
+    /// Sync the Roslyn information for the project held in 'projectContext' to match the information given by 'site'.
+    /// Also sync the info in ProjectInfoManager if necessary.
+    member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, workspace, forceUpdate, userOpName) =
         let wellFormedFilePathSetIgnoreCase (paths: seq<string>) =
-            HashSet(paths |> Seq.filter isPathWellFormed |> Seq.map (fun s -> try System.IO.Path.GetFullPath(s) with _ -> s), StringComparer.OrdinalIgnoreCase)
-
-        let updatedFiles = site.SourceFilesOnDisk() |> wellFormedFilePathSetIgnoreCase
-        let originalFiles = project.GetCurrentDocuments() |> Seq.map (fun file -> file.FilePath) |> wellFormedFilePathSetIgnoreCase
+            HashSet(paths |> Seq.filter isPathWellFormed |> Seq.map (fun s -> try Path.GetFullPath(s) with _ -> s), StringComparer.OrdinalIgnoreCase)
 
         let mutable updated = forceUpdate
 
+        // Sync the source files in projectContext.  Note that these source files are __not__ maintained in order in projectContext
+        // as edits are made. It seems this is ok because the source file list is only used to drive roslyn per-file checking.
+        let updatedFiles = site.CompilationSourceFiles |> wellFormedFilePathSetIgnoreCase
+        let originalFiles = project.GetCurrentDocuments() |> Seq.map (fun file -> file.FilePath) |> wellFormedFilePathSetIgnoreCase
+        
         for file in updatedFiles do
             if not(originalFiles.Contains(file)) then
                 projectContext.AddSourceFile(file)
@@ -491,7 +495,7 @@ type
                 projectContext.RemoveSourceFile(file)
                 updated <- true
 
-        let updatedRefs = site.AssemblyReferences() |> wellFormedFilePathSetIgnoreCase
+        let updatedRefs = site.CompilationReferences |> wellFormedFilePathSetIgnoreCase
         let originalRefs = project.GetCurrentMetadataReferences() |> Seq.map (fun ref -> ref.FilePath) |> wellFormedFilePathSetIgnoreCase
 
         for ref in updatedRefs do
@@ -504,8 +508,9 @@ type
                 projectContext.RemoveMetadataReference(ref)
                 updated <- true
 
+        // Update the project options association
         let ok,originalOptions = optionsAssociation.TryGetValue(projectContext)
-        let updatedOptions = site.CompilerFlags()
+        let updatedOptions = site.CompilationOptions
         if not ok || originalOptions <> updatedOptions then 
 
             // OK, project options have changed, try to fake out Roslyn to convince it to reparse things.
@@ -531,13 +536,12 @@ type
         let userOpName = userOpName + ".SetupProjectFile"
         let  rec setup (site: IProjectSite) =
             let projectGuid = Guid(site.ProjectGuid)
-            let projectFileName = site.ProjectFileName()
+            let projectFileName = site.ProjectFileName
             let projectDisplayName = projectDisplayNameOf projectFileName
 
             let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
 
             if isNull (workspace.ProjectTracker.GetProject projectId) then
-                projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, projectId, site, userOpName)
                 let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
                 let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
 
@@ -553,27 +557,35 @@ type
 
                 let projectContext = 
                     projectContextFactory.CreateProjectContext(
-                        FSharpConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectGuid, hierarchy, null, errorReporter)
+                        FSharpConstants.FSharpLanguageName,
+                        projectDisplayName,
+                        projectFileName,
+                        projectGuid,
+                        hierarchy,
+                        Option.toObj site.CompilationBinOutputPath,
+                        errorReporter)
 
                 let project = projectContext :?> AbstractProject
 
-                this.SyncProject(project, projectContext, site, workspace, forceUpdate=false, userOpName=userOpName)
+                // Sync IProjectSite --> projectContext, and IProjectSite --> ProjectInfoManage
+                this.SyncProject(project, projectContext, site, workspace, forceUpdate=true, userOpName=userOpName)
 
                 site.BuildErrorReporter <- Some (errorReporter :> Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2)
 
+                // TODO: consider forceUpdate = false here.  forceUpdate=true may be causing repeated computation?
                 site.AdviseProjectSiteChanges(FSharpConstants.FSharpLanguageServiceCallbackName, 
                                               AdviseProjectSiteChanges(fun () -> this.SyncProject(project, projectContext, site, workspace, forceUpdate=true, userOpName="AdviseProjectSiteChanges."+userOpName)))
+
                 site.AdviseProjectSiteClosed(FSharpConstants.FSharpLanguageServiceCallbackName, 
                                              AdviseProjectSiteChanges(fun () -> 
                                                 projectInfoManager.ClearInfoForProject(project.Id)
                                                 optionsAssociation.Remove(projectContext) |> ignore
                                                 project.Disconnect()))
-                for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
-                    let referencedProjectId = setup referencedSite
-                    project.AddProjectReference(ProjectReference referencedProjectId)
 
-            projectId
-        setup (siteProvider.GetProjectSite()) |> ignore
+                for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
+                    setup referencedSite
+
+        setup (siteProvider.GetProjectSite()) 
 
     member this.SetupStandAloneFile(fileName: string, fileContents: string, workspace: VisualStudioWorkspaceImpl, hier: IVsHierarchy) =
         let loadTime = DateTime.Now
