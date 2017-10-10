@@ -900,9 +900,10 @@ type TypeCheckInfo
             (fun msg -> 
                 Trace.TraceInformation(sprintf "FCS: recovering from error in IsRelativeNameResolvable: '%s'" msg)
                 false)
+
     /// Determines if a long ident is resolvable at a specific point.
     member scope.IsRelativeNameResolvableFromSymbol(cursorPos: pos, plid: string list, symbol: FSharpSymbol) : bool =
-        scope.IsRelativeNameResolvable(pos, plid, symbol.Item)
+        scope.IsRelativeNameResolvable(cursorPos, plid, symbol.Item)
         
     /// Get the auto-complete items at a location
     member __.GetDeclarations (ctok, parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, getAllSymbols, hasTextChangedSinceLastTypecheck) =
@@ -2015,6 +2016,12 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
         reactorOp userOpName "IsRelativeNameResolvable" true (fun ctok scope -> 
             RequireCompilationThread ctok
             scope.IsRelativeNameResolvable(pos, plid, item))
+
+    member info.IsRelativeNameResolvableFromSymbol(pos: pos, plid: string list, symbol: FSharpSymbol, ?userOpName: string) = 
+        let userOpName = defaultArg userOpName "Unknown"
+        reactorOp userOpName "IsRelativeNameResolvableFromSymbol" true (fun ctok scope -> 
+            RequireCompilationThread ctok
+            scope.IsRelativeNameResolvableFromSymbol(pos, plid, symbol))
     
     member info.ImplementationFiles =
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
