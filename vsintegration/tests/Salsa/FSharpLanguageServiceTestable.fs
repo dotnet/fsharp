@@ -210,7 +210,7 @@ type internal FSharpLanguageServiceTestable() as this =
                     // So this is not ideal from a perf perspective, but it is easy to reason about the correctness.
                     let filename = VsTextLines.GetFilename buffer
                     let rdt = this.ServiceProvider.RunningDocumentTable
-                    let defines = this.ProjectSitesAndFiles.GetDefinesForFile_DEPRECATED(rdt, filename)
+                    let defines = this.ProjectSitesAndFiles.GetDefinesForFile_DEPRECATED(rdt, filename, this.FSharpChecker)
                     let sourceTokenizer = FSharpSourceTokenizer(defines,Some(filename))
                     sourceTokenizer.CreateLineTokenizer(source))
 

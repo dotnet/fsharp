@@ -8,7 +8,8 @@ let checker = FSharpChecker.Create()
 
 let parseWithTypeInfo (file, input) = 
     let checkOptions, _errors = checker.GetProjectOptionsFromScript(file, input) |> Async.RunSynchronously
-    let untypedRes = checker.ParseFileInProject(file, input, checkOptions) |> Async.RunSynchronously
+    let parsingOptions, _errors = checker.GetParsingOptionsFromProjectOptions(checkOptions)
+    let untypedRes = checker.ParseFile(file, input, parsingOptions) |> Async.RunSynchronously
     
     match checker.CheckFileInProject(untypedRes, file, 0, input, checkOptions) |> Async.RunSynchronously with 
     | FSharpCheckFileAnswer.Succeeded(res) -> untypedRes, res

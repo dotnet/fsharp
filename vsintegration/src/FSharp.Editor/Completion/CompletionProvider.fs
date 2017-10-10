@@ -210,15 +210,15 @@ type internal FSharpCompletionProvider
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
             let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
             do! Option.guard (CompletionUtils.shouldProvideCompletion(document.Id, document.FilePath, defines, sourceText, context.Position))
-            let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+            let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
             let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken)
-            let! _, _, fileCheckResults = checker.ParseAndCheckDocument(document, options, true, userOpName=userOpName)
+            let! _, _, fileCheckResults = checker.ParseAndCheckDocument(document, projectOptions, true, userOpName=userOpName)
             let getAllSymbols() =
                 if Settings.IntelliSense.ShowAllSymbols
                 then assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies(fileCheckResults)
                 else []
             let! results = 
-                FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, sourceText, context.Position, options, 
+                FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, sourceText, context.Position, projectOptions, 
                                                                     document.FilePath, textVersion.GetHashCode(), getAllSymbols)
             context.AddItems(results)
         } |> Async.Ignore |> RoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
@@ -268,8 +268,8 @@ type internal FSharpCompletionProvider
                     let! sourceText = document.GetTextAsync(cancellationToken)
                     let textWithItemCommitted = sourceText.WithChanges(TextChange(item.Span, nameInCode))
                     let line = sourceText.Lines.GetLineFromPosition(item.Span.Start)
-                    let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
-                    let! parsedInput = checker.ParseDocument(document, options, sourceText, userOpName)
+                    let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                    let! parsedInput = checker.ParseDocument(document, parsingOptions, sourceText, userOpName)
                     let fullNameIdents = fullName |> Option.map (fun x -> x.Split '.') |> Option.defaultValue [||]
                     
                     let insertionPoint = 

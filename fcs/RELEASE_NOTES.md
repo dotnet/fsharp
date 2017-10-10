@@ -1,4 +1,15 @@
-#### 14.0.2
+#### 16.0.2
+  * [ProjectCracker returns *.fsi files in FSharpProjectOptions.SourceFiles array](https://github.com/fsharp/FSharp.Compiler.Service/pull/812)
+  
+  * [Fix line endings in the Nuget packages descriptions](https://github.com/fsharp/FSharp.Compiler.Service/pull/811)
+
+#### 16.0.1
+  * FSharpChecker provides non-reactor ParseFile instead of ParseFileInProject
+  * Add FSharpParsingOptions, GetParsingOptionsFromProjectOptions, GetParsingOptionsFromCommandLine
+
+#### 15.0.1
+  * Integrate latest changes from visualfsharp
+  * Add implementation file contents to CheckFileResults
   * Fix non-public API in .NET Standard 1.6 version
 
 #### 14.0.1

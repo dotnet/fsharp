@@ -157,7 +157,7 @@
         <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(ProtoFlavour)\bin</OutputPath>
         <!-- When using coreclr to bootstrap to proto. We acquire the FSharp.Core LKG, targets LKG, the FSharp.Build LKG from the .NET Framework compiler tools LKG package. -->
         <FSharpNetCoreLkgPath>$(FSharpSourcesRoot)\..\Tools\dotnet20\sdk\2.0.0-preview2-006502\FSharp</FSharpNetCoreLkgPath>
-        <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.1.23\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
+        <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
 
         <!-- When using coreclr to bootstrap, the compiler binary comes from the coreclr LKG, invoked using corehost.exe -->
         <FscToolPath>$(FSharpSourcesRoot)\..\Tools\dotnet20</FscToolPath>
@@ -170,7 +170,7 @@
        <!-- Use .NET Framework to bootstrap to proto -->
       <PropertyGroup >
         <OutputPath>$(FSharpSourcesRoot)\..\$(Configuration)\$(ProtoFlavour)\bin</OutputPath>
-        <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.1.23\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
+        <FSharpTargetsPath>..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets</FSharpTargetsPath>
       </PropertyGroup>
     </When>
     <When Condition="'$(BuildWith)' == '' AND '$(TargetDotnetProfile)'=='coreclr'">
@@ -360,6 +360,9 @@
   <UsingTask TaskName="FSharpEmbedResourceText"
              AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build-proto.dll"
              Condition="'$(Configuration)' != 'Proto'" />
+  <UsingTask TaskName="FSharpEmbedResXSource"
+             AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build-proto.dll"
+             Condition="'$(Configuration)' != 'Proto'" />
 
   <Target Name="GenerateFSharpTextResources"
           BeforeTargets="CoreResGen;PrepareForBuild"
@@ -367,15 +370,26 @@
 
     <MakeDir Directories="$(IntermediateOutputPath)" />
 
+    <!-- Generate source for all resx files. -->
+    <FSharpEmbedResXSource EmbeddedResource="@(EmbeddedResource)" IntermediateOutputPath="$(IntermediateOutputPath)" TargetFramework="$(TargetFramework)">
+      <Output TaskParameter="GeneratedSource" ItemName="_FsGeneratedResXSource" />
+    </FSharpEmbedResXSource>
+
+    <ItemGroup>
+      <CompileBefore Include="@(_FsGeneratedResXSource)" />
+      <FileWrites Include="@(_FsGeneratedResXSource)" />
+    </ItemGroup>
+
+    <!-- Generate resx and source for all txt files. -->
     <FSharpEmbedResourceText EmbeddedText="@(EmbeddedText)" IntermediateOutputPath="$(IntermediateOutputPath)">
-      <Output TaskParameter="GeneratedSource" ItemName="_FsGeneratedSource" />
+      <Output TaskParameter="GeneratedSource" ItemName="_FsGeneratedTxtSource" />
       <Output TaskParameter="GeneratedResx" ItemName="_FsGeneratedResx" />
     </FSharpEmbedResourceText>
 
     <ItemGroup>
-      <CompileBefore Include="@(_FsGeneratedSource)" />
+      <CompileBefore Include="@(_FsGeneratedTxtSource)" />
       <EmbeddedResource Include="@(_FsGeneratedResx)" />
-      <FileWrites Include="@(_FsGeneratedSource)" />
+      <FileWrites Include="@(_FsGeneratedTxtSource)" />
       <FileWrites Include="@(_FsGeneratedResx)" />
     </ItemGroup>
 
