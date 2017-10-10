@@ -900,6 +900,9 @@ type TypeCheckInfo
             (fun msg -> 
                 Trace.TraceInformation(sprintf "FCS: recovering from error in IsRelativeNameResolvable: '%s'" msg)
                 false)
+    /// Determines if a long ident is resolvable at a specific point.
+    member scope.IsRelativeNameResolvableFromSymbol(cursorPos: pos, plid: string list, symbol: FSharpSymbol) : bool =
+        scope.IsRelativeNameResolvable(pos, plid, symbol.Item)
         
     /// Get the auto-complete items at a location
     member __.GetDeclarations (ctok, parseResultsOpt, line, lineStr, colAtEndOfNamesAndResidue, qualifyingNames, partialName, getAllSymbols, hasTextChangedSinceLastTypecheck) =
