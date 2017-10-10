@@ -10298,6 +10298,7 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
 
 /// Typecheck and compile pattern-matching constructs
 and TcAndPatternCompileMatchClauses mExpr matchm actionOnFailure cenv inputTy resultTy env tpenv clauses =
+    let env = { env with eNameResEnv = { env.eNameResEnv with eIsMethodBody = false } }
     let tclauses, tpenv = TcMatchClauses cenv inputTy resultTy env tpenv clauses
     let v, expr = CompilePatternForMatchClauses cenv env mExpr matchm true actionOnFailure inputTy resultTy tclauses
     v, expr, tpenv
@@ -10323,7 +10324,10 @@ and TcMatchClauses cenv inputTy resultTy env tpenv clauses =
 
 and TcMatchClause cenv inputTy resultTy env isFirst tpenv (Clause(pat, optWhenExpr, e, patm, spTgt)) =
     let pat', optWhenExpr', vspecs, envinner, tpenv = TcMatchPattern cenv inputTy env tpenv (pat, optWhenExpr)
-    let envinner = { envinner with eNameResEnv = { envinner.eNameResEnv with eIsMethodBody = true } }
+    let envinner = 
+        match e with 
+        | SynExpr.Match _ -> { envinner with eNameResEnv = { envinner.eNameResEnv with eIsMethodBody = false } }
+        |  _ -> { envinner with eNameResEnv = { envinner.eNameResEnv with eIsMethodBody = true } }
     let resultEnv = if isFirst then envinner else { envinner with eContextInfo = ContextInfo.FollowingPatternMatchClause e.Range }
     let e', tpenv = TcExprThatCanBeCtorBody cenv resultTy resultEnv tpenv e
     TClause(pat', optWhenExpr', TTarget(vspecs, e', spTgt), patm), tpenv
