@@ -58,7 +58,7 @@ fi)
 fi)
 
 #TODO: work out how to avoid the need for this
-chmod u+x packages/FSharp.Compiler.Tools.4.1.23/tools/fsi.exe 
+chmod u+x packages/FSharp.Compiler.Tools.4.1.27/tools/fsi.exe 
 chmod u+x packages/FsLexYacc.7.0.6/build/fslex.exe
 chmod u+x packages/FsLexYacc.7.0.6/build/fsyacc.exe
 

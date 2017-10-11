@@ -51,15 +51,19 @@
 
   <ItemGroup>
     <EmbeddedResource Include="FSCore.resx">
+      <GenerateSource>true</GenerateSource>
+      <GenerateLegacyCode>true</GenerateLegacyCode>
+      <GenerateLiterals>false</GenerateLiterals>
+      <GeneratedModuleName>Microsoft.FSharp.Core.SR</GeneratedModuleName>
       <Link>FSCore.resx</Link>
     </EmbeddedResource>
-    <Compile Include="prim-types-prelude.fsi">
+    <CompileBefore Include="prim-types-prelude.fsi">
       <Link>Primitives/prim-types-prelude.fsi</Link>
-    </Compile>
-    <Compile Include="prim-types-prelude.fs">
+    </CompileBefore>
+    <CompileBefore Include="prim-types-prelude.fs">
       <Link>Primitives/prim-types-prelude.fs</Link>
-    </Compile>
-    <Compile Include="SR.fs">
+    </CompileBefore>
+    <Compile Include="SR.fs" Condition="'$(Configuration)' == 'Proto'">
       <Link>Primitives/SR.fs</Link>
     </Compile>
     <Compile Include="prim-types.fsi">

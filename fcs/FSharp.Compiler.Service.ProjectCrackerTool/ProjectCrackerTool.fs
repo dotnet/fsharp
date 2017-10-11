@@ -420,7 +420,8 @@ module internal ProjectCrackerTool =
       let options = { ProjectFile = file
                       Options = Array.ofSeq (parsedProject.Options @ referencedProjectOutputs)
                       ReferencedProjectOptions = referencedProjectOptions
-                      LogOutput = parsedProject.LogOutput }
+                      LogOutput = parsedProject.LogOutput 
+                      Error = null }
 
       parsedProject.OutputFile, options
 
@@ -465,9 +466,11 @@ module internal ProjectCrackerTool =
               2, { ProjectFile = projectFile;
                    Options = [||];
                    ReferencedProjectOptions = [||];
-                   LogOutput = e.ToString() }
+                   LogOutput = e.ToString() 
+                   Error = e.Message }
       else
           1, { ProjectFile = "";
                Options = [||];
                ReferencedProjectOptions = [||];
-               LogOutput = "At least two arguments required." }
+               LogOutput = "At least two arguments required." 
+               Error = null }

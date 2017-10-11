@@ -19,11 +19,13 @@ an FSharp.Core.optdata and FSharp.Core.sigdata, see below for guidance.
 Binding redirects for your application
 --------------------------------------
 
-The FSharp.Compiler.Service.dll component depends on FSharp.Core 4.3.0.0.  Normally your application will target
+The FSharp.Compiler.Service.dll component depends on FSharp.Core 4.4.0.0.  Normally your application will target
 a later version of FSharp.Core, and you will need a [binding redirect](http://msdn.microsoft.com/en-us/library/7wd6ex19(v=vs.110).aspx) to ensure
-that FSharp.Core 4.3.0.0 forwards to which the final version of FSharp.Core.dll your application uses.
+that other versions of FSharp.Core forward to the final version of FSharp.Core.dll your application uses.
 Binding redirect files are normally generated automatically by build tools. If not, you can use one like this
 (if your tool is called ``HostedCompiler.exe``, the binding redirect file is called ``HostedCompiler.exe.config``)
+
+Some other dependencies may also need to be reconciled and forwarded.
 
     <?xml version="1.0" encoding="utf-8" ?>
     <configuration>
@@ -31,7 +33,11 @@ Binding redirect files are normally generated automatically by build tools. If n
           <assemblyBinding xmlns="urn:schemas-microsoft-com:asm.v1">
             <dependentAssembly>
               <assemblyIdentity name="FSharp.Core" publicKeyToken="b03f5f7f11d50a3a" culture="neutral"/>
-              <bindingRedirect oldVersion="2.0.0.0-4.3.0.0" newVersion="4.3.1.0"/>
+              <bindingRedirect oldVersion="2.0.0.0-4.4.0.0" newVersion="4.4.1.0"/>
+            </dependentAssembly>
+            <dependentAssembly>
+              <assemblyIdentity name="System.Collections.Immutable" publicKeyToken="b03f5f7f11d50a3a" culture="neutral" />
+              <bindingRedirect oldVersion="1.0.0.0-1.2.0.0" newVersion="1.2.1.0" />
             </dependentAssembly>
           </assemblyBinding>
         </runtime>	

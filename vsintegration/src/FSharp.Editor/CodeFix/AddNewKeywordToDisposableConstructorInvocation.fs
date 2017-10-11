@@ -19,7 +19,7 @@ type internal FSharpAddNewKeywordCodeFixProvider() =
 
     override this.RegisterCodeFixesAsync context : Task =
         async {
-            let title = SR.AddNewKeyword.Value
+            let title = SR.AddNewKeyword()
             context.RegisterCodeFix(
                 CodeAction.Create(
                     title,

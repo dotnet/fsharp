@@ -167,10 +167,10 @@ type internal InlineRenameService
     interface IEditorInlineRenameService with
         member __.GetRenameInfoAsync(document: Document, position: int, cancellationToken: CancellationToken) : Task<IInlineRenameInfo> =
             asyncMaybe {
-                let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)
-                let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
-                return! InlineRenameService.GetInlineRenameInfo(checkerProvider.Checker, projectInfoManager, document, sourceText, position, defines, options)
+                let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, parsingOptions)
+                return! InlineRenameService.GetInlineRenameInfo(checkerProvider.Checker, projectInfoManager, document, sourceText, position, defines, projectOptions)
             }
             |> Async.map (Option.defaultValue FailureInlineRenameInfo.Instance)
             |> RoslynHelpers.StartAsyncAsTask(cancellationToken)

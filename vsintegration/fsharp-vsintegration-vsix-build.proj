@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <VsixProjects Include="Vsix\VisualFSharpFull\VisualFSharpFull.csproj" />
+    <VsixProjects Include="Vsix\VisualFSharpTemplates\VisualFSharpTemplates.csproj" />
     <VsixProjects Include="Vsix\VisualFSharpOpenSource\VisualFSharpOpenSource.csproj" />
   </ItemGroup>
 

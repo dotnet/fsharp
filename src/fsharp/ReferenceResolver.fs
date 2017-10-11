@@ -28,6 +28,7 @@ module internal ReferenceResolver =
 
         override this.ToString() = sprintf "ResolvedFile(%s)" this.itemSpec
 
+    [<AllowNullLiteral>]
     type Resolver =
        /// Get the "v4.5.1"-style moniker for the highest installed .NET Framework version.
        /// This is the value passed back to Resolve if no explicit "mscorlib" has been given.

@@ -1418,41 +1418,41 @@ module Query =
             TransInnerResult.Source(expr), NoConv
 
         | Call (_, meth, _) when check -> 
-            raise (NotSupportedException (SR.GetString1(SR.unsupportedQueryCall,meth.ToString())))
+            raise (NotSupportedException (String.Format(SR.GetString(SR.unsupportedQueryCall),meth.ToString())))
 
         | PropertyGet (_, pinfo, _) when check -> 
-            raise (NotSupportedException (SR.GetString1(SR.unsupportedQueryProperty,pinfo.ToString())))
+            raise (NotSupportedException (String.Format(SR.GetString(SR.unsupportedQueryProperty),pinfo.ToString())))
 
         | NewObject(ty,_) when check -> 
-            raise (NotSupportedException (SR.GetString1(SR.unsupportedQueryConstructKind,"new " + ty.ToString())))
+            raise (NotSupportedException (String.Format(SR.GetString(SR.unsupportedQueryConstructKind),"new " + ty.ToString())))
 
         | NewArray(ty,_) when check -> 
-            raise (NotSupportedException (SR.GetString1(SR.unsupportedQueryConstructKind,"NewArray(" + ty.Name + ",...)")))
+            raise (NotSupportedException (String.Format(SR.GetString(SR.unsupportedQueryConstructKind),"NewArray(" + ty.Name + ",...)")))
 
         | NewTuple _  when check -> 
-            raise (NotSupportedException (SR.GetString1(SR.unsupportedQueryConstructKind,"NewTuple(...)")))
+            raise (NotSupportedException (String.Format(SR.GetString(SR.unsupportedQueryConstructKind),"NewTuple(...)")))
 
         | FieldGet (_,field)  when check -> 
-            raise (NotSupportedException (SR.GetString1(SR.unsupportedQueryConstructKind,"FieldGet(" + field.Name + ",...)")))
+            raise (NotSupportedException (String.Format(SR.GetString(SR.unsupportedQueryConstructKind),"FieldGet(" + field.Name + ",...)")))
 
         | LetRecursive _ when check  -> 
-            raise (NotSupportedException (SR.GetString1(SR.unsupportedQueryConstruct,"LetRecursive(...)")))
+            raise (NotSupportedException (String.Format(SR.GetString(SR.unsupportedQueryConstruct),"LetRecursive(...)")))
 
         | NewRecord _ when check  -> 
-            raise (NotSupportedException (SR.GetString1(SR.unsupportedQueryConstruct,"NewRecord(...)")))
+            raise (NotSupportedException (String.Format(SR.GetString(SR.unsupportedQueryConstruct),"NewRecord(...)")))
 
         | NewDelegate _  when check  -> 
-            raise (NotSupportedException (SR.GetString1(SR.unsupportedQueryConstruct,"NewDelegate(...)")))
+            raise (NotSupportedException (String.Format(SR.GetString(SR.unsupportedQueryConstruct),"NewDelegate(...)")))
 
         | NewTuple _  when check  -> 
-            raise (NotSupportedException (SR.GetString1(SR.unsupportedQueryConstruct,"NewTuple(...)")))
+            raise (NotSupportedException (String.Format(SR.GetString(SR.unsupportedQueryConstruct),"NewTuple(...)")))
 
         | NewUnionCase (ucase,_)  when check  -> 
-            raise (NotSupportedException (SR.GetString1(SR.unsupportedQueryConstruct,"NewUnionCase(" + ucase.Name + "...)")))
+            raise (NotSupportedException (String.Format(SR.GetString(SR.unsupportedQueryConstruct),"NewUnionCase(" + ucase.Name + "...)")))
 
         // Error cases
         | e -> 
-            if check then raise (NotSupportedException (SR.GetString1(SR.unsupportedQueryConstruct,immutQuery.ToString())))
+            if check then raise (NotSupportedException (String.Format(SR.GetString(SR.unsupportedQueryConstruct),immutQuery.ToString())))
             else TransInnerResult.Source(e),NoConv
 
 

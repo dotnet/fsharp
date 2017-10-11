@@ -24,7 +24,7 @@
 //<Expects status="success">section='- CODE GENERATION -      ' ! option=tailcalls                      kind=OptionSwitch</Expects>
 //<Expects status="success">section='- CODE GENERATION -      ' ! option=crossoptimize                  kind=OptionSwitch</Expects>
 //<Expects status="success">section='- ERRORS AND WARNINGS -  ' ! option=warnaserror                    kind=OptionSwitch</Expects>
-//<Expects status="success">section='- ERRORS AND WARNINGS -  ' ! option=warnaserror                    kind=OptionIntListSwitch</Expects>
+//<Expects status="success">section='- ERRORS AND WARNINGS -  ' ! option=warnaserror                    kind=OptionStringListSwitch</Expects>
 //<Expects status="success">section='- ERRORS AND WARNINGS -  ' ! option=warn                           kind=OptionInt</Expects>
 //<Expects status="success">section='- ERRORS AND WARNINGS -  ' ! option=nowarn                         kind=OptionStringList</Expects>
 //<Expects status="success">section='- ERRORS AND WARNINGS -  ' ! option=warnon                         kind=OptionStringList</Expects>
