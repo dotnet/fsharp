@@ -249,7 +249,7 @@ type internal ProjectSitesAndFiles() =
                | Some site -> site
                | None -> ProjectSitesAndFiles.ProjectSiteOfSingleFile(filename)
 
-            let parsingOptions,_ = checker.GetParsingOptionsFromCommandLineArgs(site.CompilerFlags() |> Array.toList)
+            let parsingOptions,_ = checker.GetParsingOptionsFromCommandLineArgs(site.CompilationOptions() |> Array.toList)
             CompilerEnvironment.GetCompilationDefinesForEditing(filename,parsingOptions)
 
 
