@@ -34,8 +34,8 @@ type internal SimplifyNameDiagnosticAnalyzer() =
     static let Descriptor = 
         DiagnosticDescriptor(
             id = IDEDiagnosticIds.SimplifyNamesDiagnosticId, 
-            title = SR.SimplifyName.Value, 
-            messageFormat = SR.NameCanBeSimplified.Value, 
+            title = SR.SimplifyName(),
+            messageFormat = SR.NameCanBeSimplified(),
             category = DiagnosticCategory.Style, 
             defaultSeverity = DiagnosticSeverity.Hidden, 
             isEnabledByDefault = true, 
@@ -51,7 +51,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
             do! Option.guard Settings.CodeFixes.SimplifyName
             do Trace.TraceInformation("{0:n3} (start) SimplifyName", DateTime.Now.TimeOfDay.TotalSeconds)
             do! Async.Sleep DefaultTuning.SimplifyNameInitialDelay |> liftAsync 
-            let! options = getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document)
+            let! _parsingOptions, projectOptions = getProjectInfoManager(document).TryGetOptionsForEditingDocumentOrProject(document)
             let! textVersion = document.GetTextVersionAsync(cancellationToken)
             let textVersionHash = textVersion.GetHashCode()
             let! _ = guard.WaitAsync(cancellationToken) |> Async.AwaitTask |> liftAsync
@@ -61,7 +61,7 @@ type internal SimplifyNameDiagnosticAnalyzer() =
                 | _ ->
                     let! sourceText = document.GetTextAsync()
                     let checker = getChecker document
-                    let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true, userOpName=userOpName)
+                    let! _, _, checkResults = checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, allowStaleResults = true, userOpName=userOpName)
                     let! symbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
                     let mutable result = ResizeArray()
                     let symbolUses =

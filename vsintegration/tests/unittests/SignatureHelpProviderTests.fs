@@ -34,7 +34,7 @@ let filePath = "C:\\test.fs"
 
 let PathRelativeToTestAssembly p = Path.Combine(Path.GetDirectoryName(Uri( System.Reflection.Assembly.GetExecutingAssembly().CodeBase).LocalPath), p)
 
-let internal options = { 
+let internal projectOptions = { 
     ProjectFileName = "C:\\test.fsproj"
     SourceFiles =  [| filePath |]
     ReferencedProjects = [| |]
@@ -145,7 +145,7 @@ type foo5 = N1.T<Param1=1,ParamIgnored= >
                 } 
 
             let triggerChar = if marker = "," then Some ',' elif marker = "(" then Some '(' elif marker = "<" then Some '<' else None
-            let triggered = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(checker, documentationProvider, SourceText.From(fileContents), caretPosition, options, triggerChar, filePath, 0) |> Async.RunSynchronously
+            let triggered = FSharpSignatureHelpProvider.ProvideMethodsAsyncAux(checker, documentationProvider, SourceText.From(fileContents), caretPosition, projectOptions, triggerChar, filePath, 0) |> Async.RunSynchronously
             checker.ClearLanguageServiceRootCachesAndCollectAndFinalizeAllTransients()
             let actual = 
                 match triggered with 

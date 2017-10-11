@@ -59,7 +59,10 @@ type internal PartialCheckResults =
       /// Represents the collected attributes to apply to the module of assuembly generates
       TopAttribs: TypeChecker.TopAttribs option
 
-      TimeStamp: DateTime }
+      TimeStamp: DateTime 
+      
+      /// Represents complete typechecked implementation files, including thier typechecked signatures if any.
+      ImplementationFiles: TypedImplFile list }
 
 /// Manages an incremental build graph for the build of an F# project
 [<Class>]
@@ -93,7 +96,7 @@ type internal IncrementalBuilder =
       member ImportedCcusInvalidated : IEvent<string>
 
       /// The list of files the build depends on
-      member AllDependenciesDeprecated : string list
+      member AllDependenciesDeprecated : string[]
 #if EXTENSIONTYPING
       /// Whether there are any 'live' type providers that may need a refresh when a project is Cleaned
       member ThereAreLiveTypeProviders : bool

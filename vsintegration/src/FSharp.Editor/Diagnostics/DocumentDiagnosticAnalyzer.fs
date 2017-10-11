@@ -57,9 +57,9 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
                 hash 
         }
 
-    static member GetDiagnostics(checker: FSharpChecker, filePath: string, sourceText: SourceText, textVersionHash: int, options: FSharpProjectOptions, diagnosticType: DiagnosticsType) = 
+    static member GetDiagnostics(checker: FSharpChecker, filePath: string, sourceText: SourceText, textVersionHash: int, parsingOptions: FSharpParsingOptions, options: FSharpProjectOptions, diagnosticType: DiagnosticsType) = 
         async {
-            let! parseResults = checker.ParseFileInProject(filePath, sourceText.ToString(), options, userOpName=userOpName) 
+            let! parseResults = checker.ParseFile(filePath, sourceText.ToString(), parsingOptions, userOpName=userOpName) 
             let! errors = 
                 async {
                     match diagnosticType with
@@ -109,11 +109,11 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
     override this.AnalyzeSyntaxAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
         let projectInfoManager = getProjectInfoManager document
         asyncMaybe {
-            let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
             let! sourceText = document.GetTextAsync(cancellationToken)
             let! textVersion = document.GetTextVersionAsync(cancellationToken)
             return! 
-                FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), options, DiagnosticsType.Syntax)
+                FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), parsingOptions, projectOptions, DiagnosticsType.Syntax)
                 |> liftAsync
         } 
         |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
@@ -122,11 +122,11 @@ type internal FSharpDocumentDiagnosticAnalyzer() =
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken): Task<ImmutableArray<Diagnostic>> =
         let projectInfoManager = getProjectInfoManager document
         asyncMaybe {
-            let! options = projectInfoManager.TryGetOptionsForDocumentOrProject(document) 
+            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document) 
             let! sourceText = document.GetTextAsync(cancellationToken)
             let! textVersion = document.GetTextVersionAsync(cancellationToken)
             return! 
-                FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), options, DiagnosticsType.Semantic)
+                FSharpDocumentDiagnosticAnalyzer.GetDiagnostics(getChecker document, document.FilePath, sourceText, textVersion.GetHashCode(), parsingOptions, projectOptions, DiagnosticsType.Semantic)
                 |> liftAsync
         }
         |> Async.map (Option.defaultValue ImmutableArray<Diagnostic>.Empty)
