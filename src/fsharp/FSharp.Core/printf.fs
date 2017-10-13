@@ -1327,10 +1327,16 @@ module Printf =
         )
 
     [<CompiledName("PrintFormatToStringThen")>]
-    let sprintf (format : StringFormat<'T>)  = ksprintf id format
+    let sprintf (format : StringFormat<'T>) = 
+        doPrintf format (fun n -> 
+            StringPrintfEnv(id, n) :> PrintfEnv<_, _, _>
+        )
 
     [<CompiledName("PrintFormatThen")>]
-    let kprintf continuation format = ksprintf continuation format
+    let kprintf continuation format =
+        doPrintf format (fun n -> 
+            StringPrintfEnv(continuation, n) :> PrintfEnv<_, _, _>
+        )
 
     [<CompiledName("PrintFormatToStringBuilderThen")>]
     let kbprintf continuation (builder: StringBuilder) format = 
@@ -1345,7 +1351,11 @@ module Printf =
         )
 
     [<CompiledName("PrintFormatToStringBuilder")>]
-    let bprintf builder format  = kbprintf ignore builder format 
+    let bprintf builder format =
+        doPrintf format (fun _ -> 
+            StringBuilderPrintfEnv(ignore, builder) :> PrintfEnv<_, _, _> 
+        )
+        
 
     [<CompiledName("PrintFormatToTextWriter")>]
     let fprintf (textWriter: TextWriter) format  = 
@@ -1360,7 +1370,10 @@ module Printf =
         )
 
     [<CompiledName("PrintFormatToStringThenFail")>]
-    let failwithf format = ksprintf failwith format
+    let failwithf format =
+        doPrintf format (fun n -> 
+            StringPrintfEnv(failwith, n) :> PrintfEnv<_, _, _>
+        )
 
 #if !FX_NO_SYSTEM_CONSOLE
 #if EXTRAS_FOR_SILVERLIGHT_COMPILER
@@ -1377,15 +1390,27 @@ module Printf =
     let eprintfn format = fprintfn (!errorWriter) format
 #else
     [<CompiledName("PrintFormat")>]
-    let printf format = fprintf Console.Out format
+    let printf format =
+        doPrintf format (fun _ -> 
+            TextWriterPrintfEnv(id, Console.Out) :> PrintfEnv<_, _, _>
+        )
 
     [<CompiledName("PrintFormatToError")>]
-    let eprintf format = fprintf Console.Error format
+    let eprintf format =
+        doPrintf format (fun _ -> 
+            TextWriterPrintfEnv(id, Console.Error) :> PrintfEnv<_, _, _>
+        )
 
     [<CompiledName("PrintFormatLine")>]
-    let printfn format = fprintfn Console.Out format
+    let printfn format =
+        doPrintf format (fun _ -> 
+            TextWriterPrintfnEnv(id, Console.Out) :> PrintfEnv<_, _, _>
+        )
 
     [<CompiledName("PrintFormatLineToError")>]
-    let eprintfn format = fprintfn Console.Error format
+    let eprintfn format =
+        doPrintf format (fun _ -> 
+            TextWriterPrintfnEnv(id, Console.Error) :> PrintfEnv<_, _, _>
+        )
 #endif
 #endif 
