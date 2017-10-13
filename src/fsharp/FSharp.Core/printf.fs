@@ -1295,17 +1295,15 @@ module internal PrintfImpl =
 
     type TextWriterPrintfnEnv<'Result>(k, tw : IO.TextWriter) =
         inherit PrintfEnv<IO.TextWriter, unit, 'Result>(tw)
-        let mutable last : string = null
+        let mutable sb : StringBuilder = null
         override __.Finish() : 'Result = 
-            if isNull last then
-                tw.WriteLine()
-            else
-                tw.WriteLine last 
+            tw.WriteLine(sb.ToString()) 
             k()
         override __.Write(s : string) =
-            if not(isNull last) then
-                tw.Write last
-            last <- s
+            if isNull sb then
+                sb <- new StringBuilder(s)
+            else
+                sb.Append s |> ignore
         override __.WriteT(()) = ()
     
     let inline doPrintf fmt f = 
