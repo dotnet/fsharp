@@ -43,6 +43,7 @@
     <Win32Resource>$(IntermediateOutputPath)\ProjectResources.rc.res</Win32Resource>
   </PropertyGroup>
   <Target Name="BeforeBuild" Condition="!Exists('$(IntermediateOutputPath)$(RCResourceFile).res')">
+    <Exec Command="&quot;$(ProgramFiles)\Windows Kits\10\bin\$(UCRTVersion)\x86\rc.exe&quot; /fo $(IntermediateOutputPath)$(RCResourceFile).res $(RCResourceFile)" Condition="Exists('$(ProgramFiles)\Windows Kits\10\bin\$(UCRTVersion)\x86\rc.exe')" />
     <Exec Command="&quot;$(ProgramFiles)\Windows Kits\8.1\bin\x86\rc.exe&quot; /fo $(IntermediateOutputPath)$(RCResourceFile).res $(RCResourceFile)" Condition="Exists('$(ProgramFiles)\Windows Kits\8.1\bin\x86\rc.exe')" />
     <Exec Command="&quot;$(ProgramFiles)\Windows Kits\10\bin\x86\rc.exe&quot; /fo $(IntermediateOutputPath)$(RCResourceFile).res $(RCResourceFile)" Condition="Exists('$(ProgramFiles)\Windows Kits\10\bin\x86\rc.exe')" />
     <Exec Command="&quot;$(ProgramFiles)\Windows Kits\10\bin\10.0.15063.0\x86\rc.exe&quot; /fo $(IntermediateOutputPath)$(RCResourceFile).res $(RCResourceFile)" Condition="Exists('$(ProgramFiles)\Windows Kits\10\bin\10.0.15063.0\x86\rc.exe')" />
