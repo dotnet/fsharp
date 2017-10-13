@@ -394,6 +394,7 @@ let LowerSeqExpr g amap overallExpr =
             | None -> 
                 None
 
+(*
         | Expr.LetRec(binds,e2,m,_) 
               when  // Restriction: only limited forms of "let rec" in sequence expressions can be handled by assignment to state local values
 
@@ -422,7 +423,7 @@ let LowerSeqExpr g amap overallExpr =
                 Some res4
             | None -> 
                 None
-
+*)
         | Expr.Match (spBind,exprm,pt,targets,m,ty) when targets |> Array.forall (fun (TTarget(vs,_e,_spTarget)) -> isNil vs) ->
             // lower all the targets. abandon if any fail to lower
             let tgl = targets |> Array.map (fun (TTarget(_vs,e,_spTarget)) -> Lower false isTailCall noDisposeContinuationLabel currentDisposeContinuationLabel e) |> Array.toList

@@ -572,6 +572,7 @@ module InfiniteSequenceExpressionsExecuteWithFiniteResources =
             yield! seqThreeRecCapturingOne r
     }
 
+    //
     // These tests will stackoverflow or out-of-memory if the above functions are not compiled to "sequence epression tailcalls",
     // i.e. by compiling them to a state machine
     let tests() = 
@@ -697,8 +698,22 @@ module InfiniteSequenceExpressionsExecuteWithFiniteResources =
 
     *)
 
-InfiniteSequenceExpressionsExecuteWithFiniteResources.tests()
+// Tests disabled due to bug https://github.com/Microsoft/visualfsharp/issues/3743
+//InfiniteSequenceExpressionsExecuteWithFiniteResources.tests()
 
+    // This is the additional test case related to bug https://github.com/Microsoft/visualfsharp/issues/3743
+    let TestRecFuncInSeq() = 
+        let factorials =
+            [ for x in 0..10 do
+                let rec factorial x =
+                    match x with
+                    | 0 -> 1
+                    | x -> x * factorial(x - 1)
+                yield factorial x
+            ]
+
+        for f in factorials do printf "%i" f
+    TestRecFuncInSeq()
 
 (*---------------------------------------------------------------------------
 !* wrap up
