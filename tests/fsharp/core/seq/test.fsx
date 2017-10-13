@@ -701,6 +701,19 @@ module InfiniteSequenceExpressionsExecuteWithFiniteResources =
 // Tests disabled due to bug https://github.com/Microsoft/visualfsharp/issues/3743
 //InfiniteSequenceExpressionsExecuteWithFiniteResources.tests()
 
+    // This is the additional test case related to bug https://github.com/Microsoft/visualfsharp/issues/3743
+    let TestRecFuncInSeq() = 
+        let factorials =
+            [ for x in 0..10 do
+                let rec factorial x =
+                    match x with
+                    | 0 -> 1
+                    | x -> x * factorial(x - 1)
+                yield factorial x
+            ]
+
+        for f in factorials do printf "%i" f
+    TestRecFuncInSeq()
 
 (*---------------------------------------------------------------------------
 !* wrap up
