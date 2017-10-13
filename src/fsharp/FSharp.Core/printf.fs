@@ -1286,14 +1286,18 @@ module internal PrintfImpl =
         override __.Write(s : string) = ignore(buf.Append(s))
         override __.WriteT(()) = ()
 
-    type TextWriterPrintfEnv<'Result>(writeLine,k, tw : IO.TextWriter) =
+    type TextWriterPrintfEnv<'Result>(k, tw : IO.TextWriter) =
         inherit PrintfEnv<IO.TextWriter, unit, 'Result>(tw)
         override __.Finish() : 'Result = k()
         override __.Write(s : string) = 
-            if writeLine then 
-                tw.WriteLine s
-            else
-                tw.Write s
+            tw.Write s
+        override __.WriteT(()) = ()
+
+    type TextWriterPrintfnEnv<'Result>(k, tw : IO.TextWriter) =
+        inherit PrintfEnv<IO.TextWriter, unit, 'Result>(tw)
+        override __.Finish() : 'Result = k()
+        override __.Write(s : string) = 
+            tw.WriteLine s
         override __.WriteT(()) = ()
     
     let inline doPrintf fmt f = 
@@ -1337,19 +1341,22 @@ module Printf =
     [<CompiledName("PrintFormatToTextWriterThen")>]
     let kfprintf continuation textWriter format =
         doPrintf format (fun _ -> 
-            TextWriterPrintfEnv(false, continuation, textWriter) :> PrintfEnv<_, _, _>
+            TextWriterPrintfEnv(continuation, textWriter) :> PrintfEnv<_, _, _>
         )
 
     [<CompiledName("PrintFormatToStringBuilder")>]
     let bprintf builder format  = kbprintf ignore builder format 
 
     [<CompiledName("PrintFormatToTextWriter")>]
-    let fprintf (textWriter: TextWriter) format  = kfprintf ignore textWriter format 
+    let fprintf (textWriter: TextWriter) format  = 
+        doPrintf format (fun _ -> 
+            TextWriterPrintfEnv(id, textWriter) :> PrintfEnv<_, _, _>
+        )
 
     [<CompiledName("PrintFormatLineToTextWriter")>]
     let fprintfn (textWriter: TextWriter) format  = 
         doPrintf format (fun _ -> 
-            TextWriterPrintfEnv(true, id, textWriter) :> PrintfEnv<_, _, _>
+            TextWriterPrintfnEnv(id, textWriter) :> PrintfEnv<_, _, _>
         )
 
     [<CompiledName("PrintFormatToStringThenFail")>]
