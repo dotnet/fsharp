@@ -1293,17 +1293,21 @@ module internal PrintfImpl =
             tw.Write s
         override __.WriteT(()) = ()
 
-    type TextWriterPrintfnEnv<'Result>(k, tw : IO.TextWriter) =
+    type TextWriterPrintfnEnv<'Result>(k, n, tw : IO.TextWriter) =
         inherit PrintfEnv<IO.TextWriter, unit, 'Result>(tw)
-        let mutable sb : StringBuilder = null
-        override __.Finish() : 'Result = 
-            tw.WriteLine(sb.ToString()) 
-            k()
-        override __.Write(s : string) =
-            if isNull sb then
-                sb <- new StringBuilder(s)
-            else
-                sb.Append s |> ignore
+
+        let buf : string[] = Array.zeroCreate n
+        let mutable ptr = 0
+
+        override __.Finish() = 
+            let s = String.Concat(buf)
+            tw.WriteLine s
+            k ()
+
+        override __.Write(s : string) = 
+            buf.[ptr] <- s
+            ptr <- ptr + 1
+
         override __.WriteT(()) = ()
     
     let inline doPrintf fmt f = 
@@ -1371,8 +1375,8 @@ module Printf =
 
     [<CompiledName("PrintFormatLineToTextWriter")>]
     let fprintfn (textWriter: TextWriter) format  = 
-        doPrintf format (fun _ -> 
-            TextWriterPrintfnEnv(id, textWriter) :> PrintfEnv<_, _, _>
+        doPrintf format (fun n -> 
+            TextWriterPrintfnEnv(id, n, textWriter) :> PrintfEnv<_, _, _>
         )
 
     [<CompiledName("PrintFormatToStringThenFail")>]
@@ -1409,14 +1413,14 @@ module Printf =
 
     [<CompiledName("PrintFormatLine")>]
     let printfn format =
-        doPrintf format (fun _ -> 
-            TextWriterPrintfnEnv(id, Console.Out) :> PrintfEnv<_, _, _>
+        doPrintf format (fun n -> 
+            TextWriterPrintfnEnv(id, n, Console.Out) :> PrintfEnv<_, _, _>
         )
 
     [<CompiledName("PrintFormatLineToError")>]
     let eprintfn format =
-        doPrintf format (fun _ -> 
-            TextWriterPrintfnEnv(id, Console.Error) :> PrintfEnv<_, _, _>
+        doPrintf format (fun n -> 
+            TextWriterPrintfnEnv(id, n, Console.Error) :> PrintfEnv<_, _, _>
         )
 #endif
 #endif 
