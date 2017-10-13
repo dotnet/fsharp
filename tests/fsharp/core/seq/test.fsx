@@ -572,6 +572,7 @@ module InfiniteSequenceExpressionsExecuteWithFiniteResources =
             yield! seqThreeRecCapturingOne r
     }
 
+    //
     // These tests will stackoverflow or out-of-memory if the above functions are not compiled to "sequence epression tailcalls",
     // i.e. by compiling them to a state machine
     let tests() = 
@@ -697,7 +698,8 @@ module InfiniteSequenceExpressionsExecuteWithFiniteResources =
 
     *)
 
-InfiniteSequenceExpressionsExecuteWithFiniteResources.tests()
+// Tests disabled due to bug https://github.com/Microsoft/visualfsharp/issues/3743
+//InfiniteSequenceExpressionsExecuteWithFiniteResources.tests()
 
 
 (*---------------------------------------------------------------------------
