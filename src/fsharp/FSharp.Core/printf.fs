@@ -1290,7 +1290,7 @@ module internal PrintfImpl =
                 else
                     new StringBuilder(max capacity MIN_BUILDER_CAPACITY)
             else
-                new StringBuilder(max capacity MIN_BUILDER_CAPACITY)
+                new StringBuilder(capacity)
  
         static member Release(sb:StringBuilder) =
             if sb.Capacity <= MAX_BUILDER_SIZE then
