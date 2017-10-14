@@ -567,14 +567,17 @@ type TypeCheckInfo
             | Item.Value _ -> CompletionItemKind.Field
             | _ -> CompletionItemKind.Other
 
+        let getNamespace (idents: Idents) = 
+            if idents.Length > 1 then Some idents.[..idents.Length - 2] else None
+
         let unresolved =
             unresolvedEntity
             |> Option.map (fun x ->
-                let ns =
-                    match x.TopRequireQualifiedAccessParent with
-                    | Some parent when not (Array.isEmpty parent) -> 
-                        parent.[..parent.Length - 2]
-                    | _ -> x.CleanedIdents.[..x.CleanedIdents.Length - 2]
+                let ns = 
+                    x.TopRequireQualifiedAccessParent 
+                    |> Option.bind getNamespace 
+                    |> Option.orElseWith (fun () -> getNamespace x.CleanedIdents)
+                    |> Option.defaultValue [||]
 
                 let displayName = x.CleanedIdents |> Array.skip ns.Length |> String.concat "."
                 
