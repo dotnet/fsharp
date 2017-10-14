@@ -1312,7 +1312,8 @@ module internal PrintfImpl =
         override __.Write(s : string) = 
             sb.Append s |> ignore
 
-        override this.WriteT(s) = this.Write s
+        override this.WriteT(s) = 
+            sb.Append s |> ignore
 
     type StringBuilderPrintfEnv<'Result>(k, buf) = 
         inherit PrintfEnv<Text.StringBuilder, unit, 'Result>(buf)
