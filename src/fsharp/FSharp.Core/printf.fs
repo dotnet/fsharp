@@ -1267,17 +1267,51 @@ module internal PrintfImpl =
                 let v = get(key.Value)
                 Cache<'T, 'State, 'Residue, 'Result>.last <- (key.Value, v)
                 v
+    
+    let [<Literal>] MAX_BUILDER_SIZE = 360
+    type StringBuilderCache() =
+        // The value 360 was chosen in discussion with performance experts as a compromise between using
+        // as litle memory (per thread) as possible and still covering a large part of short-lived
+        // StringBuilder creations on the startup path of VS designers.
+       
+        [<ThreadStatic; DefaultValue>]
+        static val mutable private CachedInstance: StringBuilder
+ 
+        static member Acquire(capacity) =
+            if capacity <= MAX_BUILDER_SIZE then
+                let sb = StringBuilderCache.CachedInstance
+                if not (isNull sb) then
+                    // Avoid stringbuilder block fragmentation by getting a new StringBuilder
+                    // when the requested size is larger than the current capacity
+                    if capacity <= sb.Capacity then
+                        StringBuilderCache.CachedInstance <- null
+                        sb.Clear() |> ignore
+                        sb
+                    else
+                        new StringBuilder(capacity)
+                else
+                    new StringBuilder(capacity)
+            else
+                new StringBuilder(capacity)
+ 
+        static member Release(sb:StringBuilder) =
+            if sb.Capacity <= MAX_BUILDER_SIZE then
+                StringBuilderCache.CachedInstance <- sb
+ 
+        static member GetStringAndRelease(sb:StringBuilder) : string =
+            let result = sb.ToString()
+            StringBuilderCache.Release(sb)
+            result
 
     type StringPrintfEnv<'Result>(k, n) = 
         inherit PrintfEnv<unit, string, 'Result>(())
 
-        let buf : string[] = Array.zeroCreate n
-        let mutable ptr = 0
+        let sb = StringBuilderCache.Acquire n
 
-        override __.Finish() : 'Result = k (String.Concat(buf))
+        override __.Finish() : 'Result = k (StringBuilderCache.GetStringAndRelease sb)
         override __.Write(s : string) = 
-            buf.[ptr] <- s
-            ptr <- ptr + 1
+            sb.Append s |> ignore
+
         override this.WriteT(s) = this.Write s
 
     type StringBuilderPrintfEnv<'Result>(k, buf) = 
