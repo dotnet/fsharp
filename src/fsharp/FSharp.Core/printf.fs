@@ -1281,16 +1281,12 @@ module internal PrintfImpl =
         static member Acquire(capacity) =
             if capacity <= MAX_BUILDER_SIZE then
                 let sb = StringBuilderCache.CachedInstance
-                if not (isNull sb) then
+                if not (isNull sb) && capacity <= sb.Capacity then
                     // Avoid stringbuilder block fragmentation by getting a new StringBuilder
                     // when the requested size is larger than the current capacity
-                    if capacity <= sb.Capacity then
-                        StringBuilderCache.CachedInstance <- null
-                        sb.Clear() |> ignore
-                        sb
-                    else
-                       let capacity = max capacity MIN_BUILDER_CAPACITY
-                       new StringBuilder(capacity)
+                    StringBuilderCache.CachedInstance <- null
+                    sb.Clear() |> ignore
+                    sb
                 else
                     let capacity = max capacity MIN_BUILDER_CAPACITY
                     new StringBuilder(capacity)
