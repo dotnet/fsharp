@@ -1270,7 +1270,7 @@ module internal PrintfImpl =
     
     let [<Literal>] MAX_BUILDER_SIZE = 360
     let [<Literal>] MIN_BUILDER_CAPACITY = 128
-    type StringBuilderCache() =
+    type StringBuilderCache =
         // The value 360 was chosen in discussion with performance experts as a compromise between using
         // as litle memory (per thread) as possible and still covering a large part of short-lived
         // StringBuilder creations on the startup path of VS designers.
@@ -1288,11 +1288,9 @@ module internal PrintfImpl =
                     sb.Clear() |> ignore
                     sb
                 else
-                    let capacity = max capacity MIN_BUILDER_CAPACITY
-                    new StringBuilder(capacity)
+                    new StringBuilder(max capacity MIN_BUILDER_CAPACITY)
             else
-                let capacity = max capacity MIN_BUILDER_CAPACITY
-                new StringBuilder(capacity)
+                new StringBuilder(max capacity MIN_BUILDER_CAPACITY)
  
         static member Release(sb:StringBuilder) =
             if sb.Capacity <= MAX_BUILDER_SIZE then
