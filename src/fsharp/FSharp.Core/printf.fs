@@ -1286,7 +1286,11 @@ module internal PrintfImpl =
                     if capacity <= sb.Capacity then
                         StringBuilderCache.CachedInstance <- null
                         sb.Clear() |> ignore
-                sb
+                        sb
+                    else
+                       new StringBuilder(capacity)
+                else
+                    new StringBuilder(capacity)
             else
                 new StringBuilder(capacity)
  
