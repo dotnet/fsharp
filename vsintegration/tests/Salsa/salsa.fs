@@ -25,7 +25,7 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.TextManager.Interop
 open UnitTests.TestLib.Utils.FilesystemHelpers
 open Microsoft.Build.Framework
-open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
 open Microsoft.Build.Evaluation

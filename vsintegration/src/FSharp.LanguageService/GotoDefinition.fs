@@ -57,7 +57,7 @@ module internal GotoDefinition =
                     | Some (s, colIdent, isQuoted) -> 
                         let qualId  = if isQuoted then [s] else s.Split '.' |> Array.toList // chop it up (in case it's a qualified ident)
                         // this is a bit irratiting: `GetTokenInfoAt` won't handle just-past-the-end, so we take the just-past-the-end position and adjust it by the `magicalAdjustmentConstant` to just-*at*-the-end
-                        let colIdentAdjusted = colIdent - QuickParse.magicalAdjustmentConstant
+                        let colIdentAdjusted = colIdent - QuickParse.MagicalAdjustmentConstant
             
                         // Corrrect the identifier (e.g. to correctly handle active pattern names that end with "BAR" token)
                         let tag = colourizer.GetTokenInfoAt(VsTextLines.TextColorState(VsTextView.Buffer textView), line, colIdentAdjusted).Token
