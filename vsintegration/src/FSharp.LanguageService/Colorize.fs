@@ -2,6 +2,8 @@
 
 //------- DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS ---------------
 
+//------- DEPRECATED CODE ONLY ACTIVE IN UNIT TESTING VIA "UNROSLYNIZED" UNIT TESTS ---------------
+
 namespace Microsoft.VisualStudio.FSharp.LanguageService
 
 open System.Collections.Generic

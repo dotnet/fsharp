@@ -56,16 +56,19 @@ let projOptions =
     checker.GetProjectOptionsFromScript(file, input)
     |> Async.RunSynchronously
 
+let parsingOptions, _errors = checker.GetParsingOptionsFromProjectOptions(projOptions)
+
 (**
 To perform type checking, we first need to parse the input using 
-`ParseFileInProject`, which gives us access to the [untyped AST](untypedtree.html). However,
+`ParseFile`, which gives us access to the [untyped AST](untypedtree.html). However,
 then we need to call `CheckFileInProject` to perform the full type checking. This function
 also requires the result of `ParseFileInProject`, so the two functions are often called 
 together. 
 *)
 // Perform parsing  
+
 let parseFileResults = 
-    checker.ParseFileInProject(file, input, projOptions) 
+    checker.ParseFile(file, input, parsingOptions) 
     |> Async.RunSynchronously
 (**
 Before we look at the interesting operations provided by `TypeCheckResults`, we 

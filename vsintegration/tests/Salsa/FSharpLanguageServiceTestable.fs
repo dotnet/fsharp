@@ -115,8 +115,8 @@ type internal FSharpLanguageServiceTestable() as this =
     member this.OnProjectSettingsChanged(site:IProjectSite) = 
         // The project may have changed its references.  These would be represented as 'dependency files' of each source file.  Each source file will eventually start listening
         // for changes to those dependencies, at which point we'll get OnDependencyFileCreateOrDelete notifications.  Until then, though, we just 'make a note' that this project is out of date.
-        bgRequests.AddOutOfDateProjectFileName(site.ProjectFileName()) 
-        for filename in site.SourceFilesOnDisk() do
+        bgRequests.AddOutOfDateProjectFileName(site.ProjectFileName) 
+        for filename in site.CompilationSourceFiles do
             let rdt = this.ServiceProvider.RunningDocumentTable
             match this.ProjectSitesAndFiles.TryGetSourceOfFile_DEPRECATED(rdt,filename) with
             | Some source -> 
@@ -210,7 +210,7 @@ type internal FSharpLanguageServiceTestable() as this =
                     // So this is not ideal from a perf perspective, but it is easy to reason about the correctness.
                     let filename = VsTextLines.GetFilename buffer
                     let rdt = this.ServiceProvider.RunningDocumentTable
-                    let defines = this.ProjectSitesAndFiles.GetDefinesForFile_DEPRECATED(rdt, filename)
+                    let defines = this.ProjectSitesAndFiles.GetDefinesForFile_DEPRECATED(rdt, filename, this.FSharpChecker)
                     let sourceTokenizer = FSharpSourceTokenizer(defines,Some(filename))
                     sourceTokenizer.CreateLineTokenizer(source))
 

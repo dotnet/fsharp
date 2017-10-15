@@ -40,11 +40,24 @@ module EnvMisc3 =
 
 
 [<Sealed>]
+/// Represents one parameter for one method (or other item) in a group. 
 type FSharpMethodGroupItemParameter(name: string, canonicalTypeTextForSorting: string, display: layout, isOptional: bool) = 
+
+    /// The name of the parameter.
     member __.ParameterName = name
+
+    /// A key that can be used for sorting the parameters, used to help sort overloads.
     member __.CanonicalTypeTextForSorting = canonicalTypeTextForSorting
+
+    /// The structured representation for the parameter including its name, its type and visual indicators of other
+    /// information such as whether it is optional.
     member __.StructuredDisplay = display
+
+    /// The text to display for the parameter including its name, its type and visual indicators of other
+    /// information such as whether it is optional.
     member __.Display = showL display
+
+    /// Is the parameter optional
     member __.IsOptional = isOptional
 
 [<AutoOpen>]
@@ -688,19 +701,37 @@ type FSharpDeclarationListInfo(declarations: FSharpDeclarationListItem[], isForT
 
 
 
-/// A single method for Intellisense completion
-[<Sealed; NoEquality; NoComparison>]
+/// Represents one method (or other item) in a method group. The item may represent either a method or 
+/// a single, non-overloaded item such as union case or a named function value.
 // Note: instances of this type do not hold any references to any compiler resources.
+[<Sealed; NoEquality; NoComparison>]
 type FSharpMethodGroupItem(description: FSharpToolTipText<layout>, xmlDoc: FSharpXmlDoc, returnType: layout, parameters: FSharpMethodGroupItemParameter[], hasParameters: bool, hasParamArrayArg: bool, staticParameters: FSharpMethodGroupItemParameter[]) = 
+
+    /// The structured description representation for the method (or other item)
     member __.StructuredDescription = description
+
+    /// The formatted description text for the method (or other item)
     member __.Description = Tooltips.ToFSharpToolTipText description
+
+    /// The documentation for the item
     member __.XmlDoc = xmlDoc
+
+    /// The The structured description representation for the method (or other item)
     member __.StructuredReturnTypeText = returnType
+
+    /// The formatted type text for the method (or other item)
     member __.ReturnTypeText = showL returnType
+
+    /// The parameters of the method in the overload set
     member __.Parameters = parameters
+
+    /// Does the method support an arguments list?  This is always true except for static type instantiations like TP<42,"foo">.
     member __.HasParameters = hasParameters
+
+    /// Does the method support a params list arg?
     member __.HasParamArrayArg = hasParamArrayArg
-    // Does the type name or method support a static arguments list, like TP<42,"foo"> or conn.CreateCommand<42, "foo">(arg1, arg2)?
+
+    /// Does the type name or method support a static arguments list, like TP<42,"foo"> or conn.CreateCommand<42, "foo">(arg1, arg2)?
     member __.StaticParameters = staticParameters
 
 

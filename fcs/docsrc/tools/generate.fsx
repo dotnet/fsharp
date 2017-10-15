@@ -42,7 +42,8 @@ let docTemplate = formatting @@ "templates/docpage.cshtml"
 
 // Where to look for *.csproj templates (in this order)
 let layoutRoots =
-  [ templates; formatting @@ "templates"
+  [ templates; 
+    formatting @@ "templates"
     formatting @@ "templates/reference" ]
 
 // Copy static files and CSS + JS from F# Formatting
@@ -84,12 +85,11 @@ let buildReference () =
 
 // Build documentation from `fsx` and `md` files in `docsrc/content`
 let buildDocumentation () =
-  let subdirs = Directory.EnumerateDirectories(content, "*", SearchOption.AllDirectories)
-  for dir in Seq.append [content] subdirs do
+  for dir in [content] do
     let sub = if dir.Length > content.Length then dir.Substring(content.Length + 1) else "."
     Literate.ProcessDirectory
       ( dir, docTemplate, output @@ sub, replacements = ("root", root)::info,
-        layoutRoots = layoutRoots, generateAnchors = true )
+        layoutRoots = layoutRoots, generateAnchors = true, processRecursive=false )
 
 // Generate
 copyFiles()

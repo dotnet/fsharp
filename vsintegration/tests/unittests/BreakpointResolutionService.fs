@@ -22,7 +22,7 @@ open UnitTests.TestLib.LanguageService
 type BreakpointResolutionServiceTests()  =
 
     let fileName = "C:\\test.fs"
-    let options: FSharpProjectOptions = { 
+    let projectOptions: FSharpProjectOptions = { 
         ProjectFileName = "C:\\test.fsproj"
         SourceFiles =  [| fileName |]
         ReferencedProjects = [| |]
@@ -74,7 +74,8 @@ let main argv =
         
         let sourceText = SourceText.From(code)
         let searchSpan = TextSpan.FromBounds(searchPosition, searchPosition + searchToken.Length)
-        let actualResolutionOption = FSharpBreakpointResolutionService.GetBreakpointLocation(checker, sourceText, fileName, searchSpan, options) |> Async.RunSynchronously
+        let parsingOptions, _ = checker.GetParsingOptionsFromProjectOptions projectOptions
+        let actualResolutionOption = FSharpBreakpointResolutionService.GetBreakpointLocation(checker, sourceText, fileName, searchSpan, parsingOptions) |> Async.RunSynchronously
         
         match actualResolutionOption with
         | None -> Assert.IsTrue(expectedResolution.IsNone, "BreakpointResolutionService failed to resolve breakpoint position")

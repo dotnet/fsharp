@@ -101,11 +101,11 @@ type internal FSharpProjectOptionsManager
     ) =
 
     // A table of information about projects, excluding single-file projects.
-    let projectTable = ConcurrentDictionary<ProjectId, Refreshable<ProjectId[] * FSharpProjectOptions>>()
+    let projectTable = ConcurrentDictionary<ProjectId, Refreshable<ProjectId[] * FSharpParsingOptions * FSharpProjectOptions>>()
 
     // A table of information about single-file projects.  Currently we only need the load time of each such file, plus
     // the original options for editing
-    let singleFileProjectTable = ConcurrentDictionary<ProjectId, DateTime * FSharpProjectOptions>()
+    let singleFileProjectTable = ConcurrentDictionary<ProjectId, DateTime * FSharpParsingOptions * FSharpProjectOptions>()
 
     // Accumulate sources and references for each project file
     let projectInfo = new ConcurrentDictionary<string, string[]*string[]*string[]>()
@@ -128,7 +128,7 @@ type internal FSharpProjectOptionsManager
 
     member this.RefreshInfoForProjectsThatReferenceThisProject(projectId: ProjectId) =
         // Search the projectTable for things to refresh
-        for KeyValue(otherProjectId, ((referencedProjectIds, _options), refresh)) in projectTable.ToArray() do
+        for KeyValue(otherProjectId, ((referencedProjectIds, _parsingOptions, _options), refresh)) in projectTable.ToArray() do
            for referencedProjectId in referencedProjectIds do
               if referencedProjectId = projectId then 
                   projectTable.[otherProjectId] <- (refresh true, refresh)
@@ -143,7 +143,7 @@ type internal FSharpProjectOptionsManager
     /// Get the exact options for a single-file script
     member this.ComputeSingleFileOptions (tryGetOrCreateProjectId, fileName, loadTime, fileContents, workspace: Workspace) = async {
         let extraProjectInfo = Some(box workspace)
-        let tryGetOptionsForReferencedProject f = f |> tryGetOrCreateProjectId |> Option.bind this.TryGetOptionsForProject
+        let tryGetOptionsForReferencedProject f = f |> tryGetOrCreateProjectId |> Option.bind this.TryGetOptionsForProject |> Option.map snd
         if SourceFile.MustBeSingleFileProject(fileName) then 
             // NOTE: we don't use a unique stamp for single files, instead comparing options structurally.
             // This is because we repeatedly recompute the options.
@@ -153,37 +153,42 @@ type internal FSharpProjectOptionsManager
             // compiled and #r will refer to files on disk
             let referencedProjectFileNames = [| |] 
             let site = ProjectSitesAndFiles.CreateProjectSiteForScript(fileName, referencedProjectFileNames, options)
-            return ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject,site,fileName,options.ExtraProjectInfo,serviceProvider, true)
+            let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject,site,fileName,options.ExtraProjectInfo,serviceProvider, true)
+            let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
+            return (deps, parsingOptions, projectOptions)
         else
             let site = ProjectSitesAndFiles.ProjectSiteOfSingleFile(fileName)
-            return ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject,site,fileName,extraProjectInfo,serviceProvider, true)
+            let deps, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject,site,fileName,extraProjectInfo,serviceProvider, true)
+            let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
+            return (deps, parsingOptions, projectOptions)
       }
 
     /// Update the info for a project in the project table
     member this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId: ProjectId, site: IProjectSite, userOpName) =
         this.AddOrUpdateProject(projectId, (fun isRefresh -> 
             let extraProjectInfo = Some(box workspace)
-            let tryGetOptionsForReferencedProject f = f |> tryGetOrCreateProjectId |> Option.bind this.TryGetOptionsForProject
-            let referencedProjects, options = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, site, site.ProjectFileName(), extraProjectInfo, serviceProvider, true)
+            let tryGetOptionsForReferencedProject f = f |> tryGetOrCreateProjectId |> Option.bind this.TryGetOptionsForProject |> Option.map snd
+            let referencedProjects, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, site, site.ProjectFileName, extraProjectInfo, serviceProvider, true)
             let referencedProjectIds = referencedProjects |> Array.choose tryGetOrCreateProjectId
-            checkerProvider.Checker.InvalidateConfiguration(options, startBackgroundCompileIfAlreadySeen = not isRefresh, userOpName= userOpName + ".UpdateProjectInfo")
-            referencedProjectIds, options))
+            checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompileIfAlreadySeen = not isRefresh, userOpName= userOpName + ".UpdateProjectInfo")
+            let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
+            referencedProjectIds, parsingOptions, projectOptions))
  
     /// Get compilation defines relevant for syntax processing.  
     /// Quicker then TryGetOptionsForDocumentOrProject as it doesn't need to recompute the exact project 
     /// options for a script.
     member this.GetCompilationDefinesForEditingDocument(document: Document) = 
         let projectOptionsOpt = this.TryGetOptionsForProject(document.Project.Id)  
-        let otherOptions = 
+        let parsingOptions = 
             match projectOptionsOpt with 
-            | None -> []
-            | Some options -> options.OtherOptions |> Array.toList
-        CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, otherOptions)
+            | None -> FSharpParsingOptions.Default
+            | Some (parsingOptions, _projectOptions) -> parsingOptions
+        CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, parsingOptions)
 
     /// Get the options for a project
     member this.TryGetOptionsForProject(projectId: ProjectId) = 
         match projectTable.TryGetValue(projectId) with
-        | true, ((_referencedProjects, options), _) -> Some options 
+        | true, ((_referencedProjects, parsingOptions, projectOptions), _) -> Some (parsingOptions, projectOptions)
         | _ -> None
 
     /// Get the exact options for a document or project
@@ -194,7 +199,7 @@ type internal FSharpProjectOptionsManager
         // single-file project may contain #load and #r references which are changing as the user edits, and we may need to re-analyze
         // to determine the latest settings.  FCS keeps a cache to help ensure these are up-to-date.
         match singleFileProjectTable.TryGetValue(projectId) with
-        | true, (loadTime, _) ->
+        | true, (loadTime, _, _) ->
           try
             let fileName = document.FilePath
             let! cancellationToken = Async.CancellationToken
@@ -202,9 +207,9 @@ type internal FSharpProjectOptionsManager
             // NOTE: we don't use FCS cross-project references from scripts to projects.  The projects must have been
             // compiled and #r will refer to files on disk.
             let tryGetOrCreateProjectId _ = None 
-            let! _referencedProjectFileNames, options = this.ComputeSingleFileOptions (tryGetOrCreateProjectId, fileName, loadTime, sourceText.ToString(), document.Project.Solution.Workspace)
-            this.AddOrUpdateSingleFileProject(projectId, (loadTime, options))
-            return Some options
+            let! _referencedProjectFileNames, parsingOptions, projectOptions = this.ComputeSingleFileOptions (tryGetOrCreateProjectId, fileName, loadTime, sourceText.ToString(), document.Project.Solution.Workspace)
+            this.AddOrUpdateSingleFileProject(projectId, (loadTime, parsingOptions, projectOptions))
+            return Some (parsingOptions, projectOptions)
           with ex -> 
             Assert.Exception(ex)
             return None
@@ -216,7 +221,7 @@ type internal FSharpProjectOptionsManager
     member this.TryGetOptionsForEditingDocumentOrProject(document: Document) = 
         let projectId = document.Project.Id
         match singleFileProjectTable.TryGetValue(projectId) with 
-        | true, (_loadTime, originalOptions) -> Some originalOptions
+        | true, (_loadTime, parsingOptions, originalOptions) -> Some (parsingOptions, originalOptions)
         | _ -> this.TryGetOptionsForProject(projectId) 
 
     member this.ProvideProjectSiteProvider(project:Project) =
@@ -231,21 +236,22 @@ type internal FSharpProjectOptionsManager
                     Some(reporter:> Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2)
 
                 {new Microsoft.VisualStudio.FSharp.LanguageService.IProjectSite with
-                    member __.SourceFilesOnDisk() = this.GetProjectInfo(project.FilePath) |> fst
-                    member __.DescriptionOfProject() = project.Name
-                    member __.CompilerFlags() =
+                    member __.CompilationSourceFiles = this.GetProjectInfo(project.FilePath) |> fst
+                    member __.CompilationOptions =
                         let _,references,options = this.GetProjectInfo(project.FilePath)
                         Array.concat [options; references |> Array.map(fun r -> "-r:" + r)]
-                    member __.ProjectFileName() = project.FilePath
+                    member __.CompilationReferences = this.GetProjectInfo(project.FilePath) |> thrd
+                    member site.CompilationBinOutputPath = site.CompilationOptions |> Array.tryPick (fun s -> if s.StartsWith("-o:") then Some s.[3..] else None)
+                    member __.Description = project.Name
+                    member __.ProjectFileName = project.FilePath
                     member __.AdviseProjectSiteChanges(_,_) = ()
                     member __.AdviseProjectSiteCleaned(_,_) = ()
                     member __.AdviseProjectSiteClosed(_,_) = ()
                     member __.IsIncompleteTypeCheckEnvironment = false
                     member __.TargetFrameworkMoniker = ""
-                    member __.ProjectGuid =  project.Id.Id.ToString()
+                    member __.ProjectGuid = project.Id.Id.ToString()
                     member __.LoadTime = System.DateTime.Now
                     member __.ProjectProvider = Some iProvideProjectSite
-                    member __.AssemblyReferences() = this.GetProjectInfo(project.FilePath) |> thrd
                     member __.BuildErrorReporter with get () = errorReporter and 
                                                       set (v) = errorReporter <- v
                 }
@@ -273,9 +279,13 @@ type internal FSharpProjectOptionsManager
         }
 
     member this.UpdateProjectInfoWithProjectId(projectId:ProjectId, userOpName) =
-        let project = workspace.CurrentSolution.GetProject(projectId)
-        let siteProvider = this.ProvideProjectSiteProvider(project)
-        this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, siteProvider.GetProjectSite(), userOpName)
+        let hier = workspace.GetHierarchy(projectId)
+        match hier with
+        | h when (h.IsCapabilityMatch("CPS")) ->
+            let project = workspace.CurrentSolution.GetProject(projectId)
+            let siteProvider = this.ProvideProjectSiteProvider(project)
+            this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, siteProvider.GetProjectSite(), userOpName)
+        | _ -> ()
 
     member this.UpdateProjectInfoWithPath(path, userOpName) =
         let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(path, projectDisplayNameOf path)
@@ -296,6 +306,8 @@ type internal FSharpProjectOptionsManager
         match projectInfo.TryGetValue path with
         | true, value -> value
         | _ -> [||], [||], [||]
+
+    member __.Checker = checkerProvider.Checker
 
 // Used to expose FSharpChecker/ProjectInfo manager to diagnostic providers
 // Diagnostic providers can be executed in environment that does not use MEF so they can rely only
@@ -460,17 +472,20 @@ type
 
         let theme = package.ComponentModel.DefaultExportProvider.GetExport<ISetThemeColors>().Value
         theme.SetColors()
-
-    /// Sync the information for the project 
-    member __.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, workspace, forceUpdate, userOpName) =
+        
+    /// Sync the Roslyn information for the project held in 'projectContext' to match the information given by 'site'.
+    /// Also sync the info in ProjectInfoManager if necessary.
+    member this.SyncProject(project: AbstractProject, projectContext: IWorkspaceProjectContext, site: IProjectSite, workspace, forceUpdate, userOpName) =
         let wellFormedFilePathSetIgnoreCase (paths: seq<string>) =
-            HashSet(paths |> Seq.filter isPathWellFormed |> Seq.map (fun s -> try System.IO.Path.GetFullPath(s) with _ -> s), StringComparer.OrdinalIgnoreCase)
-
-        let updatedFiles = site.SourceFilesOnDisk() |> wellFormedFilePathSetIgnoreCase
-        let originalFiles = project.GetCurrentDocuments() |> Seq.map (fun file -> file.FilePath) |> wellFormedFilePathSetIgnoreCase
+            HashSet(paths |> Seq.filter isPathWellFormed |> Seq.map (fun s -> try Path.GetFullPath(s) with _ -> s), StringComparer.OrdinalIgnoreCase)
 
         let mutable updated = forceUpdate
 
+        // Sync the source files in projectContext.  Note that these source files are __not__ maintained in order in projectContext
+        // as edits are made. It seems this is ok because the source file list is only used to drive roslyn per-file checking.
+        let updatedFiles = site.CompilationSourceFiles |> wellFormedFilePathSetIgnoreCase
+        let originalFiles = project.GetCurrentDocuments() |> Seq.map (fun file -> file.FilePath) |> wellFormedFilePathSetIgnoreCase
+        
         for file in updatedFiles do
             if not(originalFiles.Contains(file)) then
                 projectContext.AddSourceFile(file)
@@ -481,7 +496,7 @@ type
                 projectContext.RemoveSourceFile(file)
                 updated <- true
 
-        let updatedRefs = site.AssemblyReferences() |> wellFormedFilePathSetIgnoreCase
+        let updatedRefs = site.CompilationReferences |> wellFormedFilePathSetIgnoreCase
         let originalRefs = project.GetCurrentMetadataReferences() |> Seq.map (fun ref -> ref.FilePath) |> wellFormedFilePathSetIgnoreCase
 
         for ref in updatedRefs do
@@ -494,8 +509,9 @@ type
                 projectContext.RemoveMetadataReference(ref)
                 updated <- true
 
+        // Update the project options association
         let ok,originalOptions = optionsAssociation.TryGetValue(projectContext)
-        let updatedOptions = site.CompilerFlags()
+        let updatedOptions = site.CompilationOptions
         if not ok || originalOptions <> updatedOptions then 
 
             // OK, project options have changed, try to fake out Roslyn to convince it to reparse things.
@@ -521,13 +537,12 @@ type
         let userOpName = userOpName + ".SetupProjectFile"
         let  rec setup (site: IProjectSite) =
             let projectGuid = Guid(site.ProjectGuid)
-            let projectFileName = site.ProjectFileName()
+            let projectFileName = site.ProjectFileName
             let projectDisplayName = projectDisplayNameOf projectFileName
 
             let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
 
             if isNull (workspace.ProjectTracker.GetProject projectId) then
-                projectInfoManager.UpdateProjectInfo(tryGetOrCreateProjectId workspace, projectId, site, userOpName)
                 let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();
                 let errorReporter = ProjectExternalErrorReporter(projectId, "FS", this.SystemServiceProvider)
 
@@ -543,27 +558,35 @@ type
 
                 let projectContext = 
                     projectContextFactory.CreateProjectContext(
-                        FSharpConstants.FSharpLanguageName, projectDisplayName, projectFileName, projectGuid, hierarchy, null, errorReporter)
+                        FSharpConstants.FSharpLanguageName,
+                        projectDisplayName,
+                        projectFileName,
+                        projectGuid,
+                        hierarchy,
+                        Option.toObj site.CompilationBinOutputPath,
+                        errorReporter)
 
                 let project = projectContext :?> AbstractProject
 
-                this.SyncProject(project, projectContext, site, workspace, forceUpdate=false, userOpName=userOpName)
+                // Sync IProjectSite --> projectContext, and IProjectSite --> ProjectInfoManage
+                this.SyncProject(project, projectContext, site, workspace, forceUpdate=true, userOpName=userOpName)
 
                 site.BuildErrorReporter <- Some (errorReporter :> Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2)
 
+                // TODO: consider forceUpdate = false here.  forceUpdate=true may be causing repeated computation?
                 site.AdviseProjectSiteChanges(FSharpConstants.FSharpLanguageServiceCallbackName, 
                                               AdviseProjectSiteChanges(fun () -> this.SyncProject(project, projectContext, site, workspace, forceUpdate=true, userOpName="AdviseProjectSiteChanges."+userOpName)))
+
                 site.AdviseProjectSiteClosed(FSharpConstants.FSharpLanguageServiceCallbackName, 
                                              AdviseProjectSiteChanges(fun () -> 
                                                 projectInfoManager.ClearInfoForProject(project.Id)
                                                 optionsAssociation.Remove(projectContext) |> ignore
                                                 project.Disconnect()))
-                for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
-                    let referencedProjectId = setup referencedSite
-                    project.AddProjectReference(ProjectReference referencedProjectId)
 
-            projectId
-        setup (siteProvider.GetProjectSite()) |> ignore
+                for referencedSite in ProjectSitesAndFiles.GetReferencedProjectSites (site, this.SystemServiceProvider) do
+                    setup referencedSite
+
+        setup (siteProvider.GetProjectSite()) 
 
     member this.SetupStandAloneFile(fileName: string, fileContents: string, workspace: VisualStudioWorkspaceImpl, hier: IVsHierarchy) =
         let loadTime = DateTime.Now
@@ -571,8 +594,8 @@ type
         let projectDisplayName = projectDisplayNameOf projectFileName
 
         let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(projectFileName, projectDisplayName)
-        let _referencedProjectFileNames, options = projectInfoManager.ComputeSingleFileOptions (tryGetOrCreateProjectId workspace, fileName, loadTime, fileContents, workspace) |> Async.RunSynchronously
-        projectInfoManager.AddOrUpdateSingleFileProject(projectId, (loadTime, options))
+        let _referencedProjectFileNames, parsingOptions, projectOptions = projectInfoManager.ComputeSingleFileOptions (tryGetOrCreateProjectId workspace, fileName, loadTime, fileContents, workspace) |> Async.RunSynchronously
+        projectInfoManager.AddOrUpdateSingleFileProject(projectId, (loadTime, parsingOptions, projectOptions))
 
         if isNull (workspace.ProjectTracker.GetProject projectId) then
             let projectContextFactory = package.ComponentModel.GetService<IWorkspaceProjectContextFactory>();

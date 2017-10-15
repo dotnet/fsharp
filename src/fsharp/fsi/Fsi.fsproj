@@ -46,9 +46,7 @@
     <Compile Include="fsimain.fs">
       <Link>fsimain.fs</Link>
     </Compile>
-    <None Include="fsi.exe.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>fsi.exe.config</Link>
+    <None Include="app.config">
     </None>
   </ItemGroup>
   <ItemGroup Condition="'$(TargetDotnetProfile)' == 'coreclr'">

@@ -13,7 +13,15 @@ Follow the instructions below to build and develop the F# Compiler, Core Library
 Install
 
 - [.NET 4.5.1](http://www.microsoft.com/en-us/download/details.aspx?id=40779)
-- [MSBuild 12.0](http://www.microsoft.com/en-us/download/details.aspx?id=40760)
+- [MSBuild 12.0](http://www.microsoft.com/en-us/download/details.aspx?id=40760) or Visual Studio 2013 (or later)
+
+**NOTE on Windows:**
+1. It is recommended to run the build.cmd and the qualifiers below on a command prompt with path set to have the location of MSBuild. If we have Visual Studio, we can also run using `Developer Command Prompt for Visual Studio 20xx` (depends on Visual Studio version). This developer command prompt is easier to use than normal command prompt, because it already has the correct path of Visual Studio and .NET's tooling set for us to use (including MSBuild).
+2. The running command prompt must be run under Administrator right (`Run as Administrator`).
+
+Before running the build scripts, ensure that you have cleaned up the visualfsharp repo by running this git command:
+
+    git clean -xfd
 
 On Windows you can build the F# compiler for .NET Framework as follows:
 

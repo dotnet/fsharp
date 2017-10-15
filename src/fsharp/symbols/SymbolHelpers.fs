@@ -145,17 +145,17 @@ type ErrorScope()  =
             | None -> err ""
 
 /// An error logger that capture errors, filtering them according to warning levels etc.
-type internal CompilationErrorLogger (debugName:string, tcConfig:TcConfig) = 
+type internal CompilationErrorLogger (debugName: string, options: FSharpErrorSeverityOptions) = 
     inherit ErrorLogger("CompilationErrorLogger("+debugName+")")
             
     let mutable errorCount = 0
     let diagnostics = new ResizeArray<_>()
 
     override x.DiagnosticSink(exn, isError) = 
-        if isError || ReportWarningAsError (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn, tcConfig.specificWarnAsError, tcConfig.specificWarnAsWarn, tcConfig.globalWarnAsError) exn then
+        if isError || ReportWarningAsError options exn then
             diagnostics.Add(exn, isError)
             errorCount <- errorCount + 1
-        else if ReportWarning (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn) exn then 
+        else if ReportWarning options exn then
             diagnostics.Add(exn, isError)
 
     override x.ErrorCount = errorCount
@@ -177,26 +177,26 @@ type CompilationGlobalsScope(errorLogger:ErrorLogger, phase: BuildPhase) =
             unwindEL.Dispose()
 
 module ErrorHelpers =                            
-    let ReportError (tcConfig:TcConfig, allErrors, mainInputFileName, fileInfo, (exn, sev)) = 
-        [ let isError = (sev = FSharpErrorSeverity.Error) || ReportWarningAsError (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn, tcConfig.specificWarnAsError, tcConfig.specificWarnAsWarn, tcConfig.globalWarnAsError) exn                
-          if (isError || ReportWarning (tcConfig.globalWarnLevel, tcConfig.specificWarnOff, tcConfig.specificWarnOn) exn) then 
+    let ReportError (options, allErrors, mainInputFileName, fileInfo, (exn, sev)) = 
+        [ let isError = (sev = FSharpErrorSeverity.Error) || ReportWarningAsError options exn                
+          if (isError || ReportWarning options exn) then 
             let oneError trim exn = 
                 [ // We use the first line of the file as a fallbackRange for reporting unexpected errors.
                   // Not ideal, but it's hard to see what else to do.
                   let fallbackRange = rangeN mainInputFileName 1
                   let ei = FSharpErrorInfo.CreateFromExceptionAndAdjustEof (exn, isError, trim, fallbackRange, fileInfo)
-                  if allErrors || (ei.FileName=mainInputFileName) || (ei.FileName=Microsoft.FSharp.Compiler.TcGlobals.DummyFileNameForRangesWithoutASpecificLocation) then
+                  if allErrors || (ei.FileName = mainInputFileName) || (ei.FileName = TcGlobals.DummyFileNameForRangesWithoutASpecificLocation) then
                       yield ei ]
-                      
+
             let mainError, relatedErrors = SplitRelatedDiagnostics exn 
             yield! oneError false mainError
             for e in relatedErrors do 
                 yield! oneError true e ]
 
-    let CreateErrorInfos (tcConfig:TcConfig, allErrors, mainInputFileName, errors) = 
+    let CreateErrorInfos (options, allErrors, mainInputFileName, errors) = 
         let fileInfo = (Int32.MaxValue, Int32.MaxValue)
         [| for (exn, isError) in errors do 
-              yield! ReportError (tcConfig, allErrors, mainInputFileName, fileInfo, (exn, isError)) |]
+              yield! ReportError (options, allErrors, mainInputFileName, fileInfo, (exn, isError)) |]
                             
 
 //----------------------------------------------------------------------------
@@ -661,7 +661,7 @@ module internal SymbolHelpers =
     let mutable ToolTipFault  = None
     
     let GetXmlCommentForMethInfoItem infoReader m d (minfo: MethInfo) = 
-        GetXmlCommentForItemAux (if minfo.HasDirectXmlComment then Some minfo.XmlDoc else None) infoReader m d 
+        GetXmlCommentForItemAux (if minfo.HasDirectXmlComment || minfo.XmlDoc.NonEmpty then Some minfo.XmlDoc else None) infoReader m d 
 
     let FormatTyparMapping denv (prettyTyparInst: TyparInst) = 
         [ for (tp, ty) in prettyTyparInst -> 
@@ -918,26 +918,26 @@ module internal SymbolHelpers =
             GetXmlCommentForItem infoReader m (Item.Value vref)
 
         | Item.Value vref | Item.CustomBuilder (_, vref) ->            
-            GetXmlCommentForItemAux (if valRefInThisAssembly g.compilingFslib vref then Some vref.XmlDoc else None) infoReader m item 
+            GetXmlCommentForItemAux (if valRefInThisAssembly g.compilingFslib vref || vref.XmlDoc.NonEmpty then Some vref.XmlDoc else None) infoReader m item 
 
         | Item.UnionCase(ucinfo, _) -> 
-            GetXmlCommentForItemAux (if tyconRefUsesLocalXmlDoc g.compilingFslib ucinfo.TyconRef then Some ucinfo.UnionCase .XmlDoc else None) infoReader m item 
+            GetXmlCommentForItemAux (if tyconRefUsesLocalXmlDoc g.compilingFslib ucinfo.TyconRef || ucinfo.UnionCase.XmlDoc.NonEmpty then Some ucinfo.UnionCase.XmlDoc else None) infoReader m item 
 
         | Item.ActivePatternCase apref -> 
             GetXmlCommentForItemAux (Some apref.ActivePatternVal.XmlDoc) infoReader m item 
 
         | Item.ExnCase ecref -> 
-            GetXmlCommentForItemAux (if tyconRefUsesLocalXmlDoc g.compilingFslib ecref then Some ecref.XmlDoc else None) infoReader m item 
+            GetXmlCommentForItemAux (if tyconRefUsesLocalXmlDoc g.compilingFslib ecref || ecref.XmlDoc.NonEmpty then Some ecref.XmlDoc else None) infoReader m item 
 
         | Item.RecdField rfinfo ->
-            GetXmlCommentForItemAux (if tyconRefUsesLocalXmlDoc g.compilingFslib rfinfo.TyconRef then Some rfinfo.RecdField.XmlDoc else None) infoReader m item 
+            GetXmlCommentForItemAux (if tyconRefUsesLocalXmlDoc g.compilingFslib rfinfo.TyconRef || rfinfo.TyconRef.XmlDoc.NonEmpty then Some rfinfo.RecdField.XmlDoc else None) infoReader m item 
 
         | Item.Event einfo ->
-            GetXmlCommentForItemAux (if einfo.HasDirectXmlComment  then Some einfo.XmlDoc else None) infoReader m item 
+            GetXmlCommentForItemAux (if einfo.HasDirectXmlComment || einfo.XmlDoc.NonEmpty then Some einfo.XmlDoc else None) infoReader m item 
 
         | Item.Property(_, pinfos) -> 
             let pinfo = pinfos.Head
-            GetXmlCommentForItemAux (if pinfo.HasDirectXmlComment then Some pinfo.XmlDoc else None) infoReader m item 
+            GetXmlCommentForItemAux (if pinfo.HasDirectXmlComment || pinfo.XmlDoc.NonEmpty then Some pinfo.XmlDoc else None) infoReader m item 
 
         | Item.CustomOperation (_, _, Some minfo) 
         | Item.CtorGroup(_, minfo :: _) 
@@ -945,12 +945,12 @@ module internal SymbolHelpers =
             GetXmlCommentForMethInfoItem infoReader m item minfo
 
         | Item.Types(_, ((TType_app(tcref, _)):: _)) -> 
-            GetXmlCommentForItemAux (if tyconRefUsesLocalXmlDoc g.compilingFslib tcref then Some tcref.XmlDoc else None) infoReader m item 
+            GetXmlCommentForItemAux (if tyconRefUsesLocalXmlDoc g.compilingFslib tcref  || tcref.XmlDoc.NonEmpty then Some tcref.XmlDoc else None) infoReader m item 
 
         | Item.ModuleOrNamespaces((modref :: _) as modrefs) -> 
             let definiteNamespace = modrefs |> List.forall (fun modref -> modref.IsNamespace)
             if not definiteNamespace then
-                GetXmlCommentForItemAux (if entityRefInThisAssembly g.compilingFslib modref then Some modref.XmlDoc else None) infoReader m item 
+                GetXmlCommentForItemAux (if entityRefInThisAssembly g.compilingFslib modref || modref.XmlDoc.NonEmpty  then Some modref.XmlDoc else None) infoReader m item 
             else
                 GetXmlCommentForItemAux None infoReader m item
 
@@ -958,11 +958,11 @@ module internal SymbolHelpers =
             let xmldoc = 
                 match argContainer with
                 | Some(ArgumentContainer.Method (minfo)) ->
-                    if minfo.HasDirectXmlComment then Some minfo.XmlDoc else None 
+                    if minfo.HasDirectXmlComment || minfo.XmlDoc.NonEmpty  then Some minfo.XmlDoc else None 
                 | Some(ArgumentContainer.Type(tcref)) ->
-                    if (tyconRefUsesLocalXmlDoc g.compilingFslib tcref) then Some tcref.XmlDoc else None
+                    if tyconRefUsesLocalXmlDoc g.compilingFslib tcref || tcref.XmlDoc.NonEmpty  then Some tcref.XmlDoc else None
                 | Some(ArgumentContainer.UnionCase(ucinfo)) ->
-                    if (tyconRefUsesLocalXmlDoc g.compilingFslib ucinfo.TyconRef) then Some ucinfo.UnionCase.XmlDoc else None
+                    if tyconRefUsesLocalXmlDoc g.compilingFslib ucinfo.TyconRef || ucinfo.UnionCase.XmlDoc.NonEmpty then Some ucinfo.UnionCase.XmlDoc else None
                 | _ -> None
             GetXmlCommentForItemAux xmldoc infoReader m item
 

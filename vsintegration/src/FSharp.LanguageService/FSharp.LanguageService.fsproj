@@ -50,10 +50,11 @@
       <InProject>false</InProject>
     </FilesToLocalize>
     <EmbeddedResource Include="VSPackage.resx" />
-    <EmbeddedResource Include="FSLangSvcStrings.resx" />
+    <EmbeddedResource Include="FSLangSvcStrings.resx" GenerateSource="true">
+      <GeneratedModuleName>Microsoft.VisualStudio.FSharp.LanguageService.Strings</GeneratedModuleName>
+    </EmbeddedResource>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Error.fs" />
-    <Compile Include="Quickparse.fs" />
     <Compile Include="Vs.fs" />
     <Compile Include="Colorize.fs" />
     <Compile Include="GotoDefinition.fs" />
@@ -64,7 +65,6 @@
     <Compile Include="Intellisense.fs" />
     <Compile Include="BackgroundRequests.fs" />
   </ItemGroup>
-  
   <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
@@ -81,7 +81,6 @@
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.ComponentModel.Composition" />
   </ItemGroup>
-
   <ItemGroup>
     <Reference Include="Microsoft.Build.Framework, Version=$(VisualStudioVersion).0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualFSharp.Msbuild.15.0.1.0.1\lib\net45\Microsoft.Build.Framework.dll</HintPath>
@@ -93,7 +92,7 @@
     <Reference Include="EnvDTE80">
       <HintPath>$(FSharpSourcesRoot)\..\packages\EnvDTE80.8.0.1\lib\net10\EnvDTE80.dll</HintPath>
       <Private>True</Private>
-    </Reference>  
+    </Reference>
     <Reference Include="VSLangProj">
       <HintPath>$(FSharpSourcesRoot)\..\packages\VSSDK.VSLangProj.7.0.4\lib\net20\VSLangProj.dll</HintPath>
       <Private>True</Private>
@@ -147,7 +146,7 @@
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Designer.Interfaces">
       <HintPath>$(FSharpSourcesRoot)\..\packages\Microsoft.VisualStudio.Designer.Interfaces.1.1.4322\lib\microsoft.visualstudio.designer.interfaces.dll</HintPath>
-    </Reference>    
+    </Reference>
     <Reference Include="Microsoft.VisualStudio.VSHelp">
       <HintPath>$(FSharpSourcesRoot)\..\packages\VSSDK.VSHelp.7.0.4\lib\net20\Microsoft.VisualStudio.VSHelp.dll</HintPath>
       <Private>True</Private>
@@ -237,7 +236,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System.Collections.Immutable">
-      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.1.2.0\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
+      <HintPath>$(FSharpSourcesRoot)\..\packages\System.Collections.Immutable.$(SystemCollectionsImmutableVersion)\lib\portable-net45+win8+wp8+wpa81\System.Collections.Immutable.dll</HintPath>
       <Private>True</Private>
     </Reference>
   </ItemGroup>
