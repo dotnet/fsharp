@@ -742,10 +742,15 @@ and ReflectTypeDefinition (asm: ReflectAssembly, declTyOpt: Type option, tcref: 
         { new FieldInfo() with 
 
             override __.Name = inp.Name 
-            override __.Attributes = FieldAttributes.Static ||| FieldAttributes.Literal ||| FieldAttributes.Public 
+            override __.Attributes = 
+                [|
+                    yield if inp.rfield_static then Some FieldAttributes.Static else None
+                    yield if inp.rfield_const.IsSome then Some FieldAttributes.Literal else None
+                |] 
+                |> Array.choose id
+                |> Array.fold (|||) (if inp.rfield_secret then FieldAttributes.Public else FieldAttributes.Private)
             override __.MemberType = MemberTypes.Field 
             override __.DeclaringType = declTy
-
             override __.FieldType = inp.FormalType |> asm.TxTType
             override __.GetRawConstantValue()  = match inp.LiteralValue with None -> null | Some v -> TxConst v
             override __.GetCustomAttributesData() = [| |] :> IList<_> // notRequired "CustomAttribute data" // inp.FieldAttribs |> TxCustomAttributesData
