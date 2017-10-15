@@ -349,9 +349,9 @@ neg20.fs(319,8,319,17): typecheck error FS3132: This type definition may not hav
 
 neg20.fs(322,8,322,18): typecheck error FS3132: This type definition may not have the 'CLIMutable' attribute. Only record types may have this attribute.
 
-neg20.fs(335,11,335,24): typecheck error FS0041: A unique overload for method 'String' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: System.String(value: char []) : unit, System.String(value: nativeptr<char>) : unit, System.String(value: nativeptr<sbyte>) : unit
+neg20.fs(335,11,335,24): typecheck error FS0041: A unique overload for method 'String' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: System.String(value: char []) : System.String, System.String(value: nativeptr<char>) : System.String, System.String(value: nativeptr<sbyte>) : System.String
 
-neg20.fs(336,11,336,22): typecheck error FS0041: A unique overload for method 'Guid' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: System.Guid(b: byte []) : unit, System.Guid(g: string) : unit
+neg20.fs(336,11,336,22): typecheck error FS0041: A unique overload for method 'Guid' could not be determined based on type information prior to this program point. A type annotation may be needed. Candidates: System.Guid(b: byte []) : System.Guid, System.Guid(g: string) : System.Guid
 
 neg20.fs(355,19,355,38): typecheck error FS1124: Multiple types exist called 'OverloadedClassName', taking different numbers of generic parameters. Provide a type instantiation to disambiguate the type resolution, e.g. 'OverloadedClassName<_>'.
 
