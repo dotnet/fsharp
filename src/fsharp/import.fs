@@ -88,12 +88,16 @@ let ImportTypeRefData (env:ImportMap) m (scoref,path,typeName) =
     let fakeTyconRef = mkNonLocalTyconRef (mkNonLocalEntityRef ccu path) typeName
     let (wasReflectResolved, tycon) =
         try
+#if !NO_EXTENSIONTYPING
             match fakeTyconRef.TryDeref with
             | VSome r -> false, r
             | VNone ->
                 let asm = ccu.ReflectAssembly :?> TastReflect.ReflectAssembly
                 let typ = asm.GetType(String.concat "." (Array.toList path@[typeName])) :?> TastReflect.ReflectTypeDefinition
                 true, typ.Metadata.Deref
+#else
+            false, fakeTyconRef.Deref
+#endif
         with _ ->
             error (Error(FSComp.SR.impReferencedTypeCouldNotBeFoundInAssembly(String.concat "." (Array.append path  [| typeName |]), ccu.AssemblyName),m))
 
