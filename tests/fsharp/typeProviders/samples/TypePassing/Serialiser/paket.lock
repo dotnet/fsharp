@@ -1,0 +1,12 @@
+RESTRICTION: >= net452
+NUGET
+  remote: https://www.nuget.org/api/v2
+    FAKE (4.63.2)
+    FSharp.Core (4.2.3)
+
+GROUP SourceFiles
+
+GITHUB
+  remote: fsprojects/FSharp.TypeProviders.StarterPack
+    src/ProvidedTypes.fs (1341256f7cc11f09feb74edde028aa0513c53afd)
+    src/ProvidedTypes.fsi (1341256f7cc11f09feb74edde028aa0513c53afd)

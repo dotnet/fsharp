@@ -1,0 +1,4 @@
+packages/**
+paket-files/**
+.paket/**
+script.exe
