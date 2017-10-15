@@ -21,30 +21,7 @@
     <Win32Resource>..\fsi\fsi.res</Win32Resource>
     <TargetFrameworkVersion Condition="'$(TargetDotnetProfile)' != 'coreclr'">v4.6</TargetFrameworkVersion>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <StartArguments>C:\Appdev\visualfsharp\tests\fsharp\typeProviders\samples\TypePassing\Erasing\script.1.fsx</StartArguments>
-  </PropertyGroup>
-  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
-  <Target Name="GatherBinariesToBeSigned" AfterTargets="Localize" Condition="'$(UseGatherBinaries)' == 'true'">
-    <ItemGroup>
-      <BinariesToBeSigned Include="$(OutDir)$(AssemblyName).exe" />
-      <BinariesToBeSigned Include="$(OutDir)localize\**\$(AssemblyName).resources.dll" />
-      <FilesToSign Include="@(BinariesToBeSigned)">
-        <Authenticode>Microsoft</Authenticode>
-        <StrongName>StrongName</StrongName>
-      </FilesToSign>
-    </ItemGroup>
-  </Target>
   <ItemGroup>
-    <FilesToLocalize Include="$(OutDir)$(AssemblyName).exe">
-      <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).exe.lcl</TranslationFile>
-      <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(AssemblyName).exe.lci</LciCommentFile>
-      <HasLceComments>false</HasLceComments>
-      <InProject>false</InProject>
-    </FilesToLocalize>
-    <Compile Include="..\..\assemblyinfo\assemblyinfo.fsi.exe.fs">
-      <Link>assemblyinfo.fsi.exe.fs</Link>
-    </Compile>
     <Compile Include="..\fsi\console.fs">
       <Link>console.fs</Link>
     </Compile>
@@ -53,6 +30,7 @@
     </Compile>
     <None Include="app.config" />
   </ItemGroup>
+  <Import Project="$(FSharpSourcesRoot)\FSharpSource.targets" />
   <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="System" />
@@ -70,7 +48,7 @@
       <Project>{2E4D67B4-522D-4CF7-97E4-BA940F0B18F3}</Project>
       <Name>FSharp.Compiler.Private</Name>
     </ProjectReference>
-    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj">
+    <ProjectReference Include="$(FSharpSourcesRoot)\fsharp\FSharp.Core\FSharp.Core.fsproj" >
       <Project>{DED3BBD7-53F4-428A-8C9F-27968E768605}</Project>
       <Name>FSharp.Core</Name>
     </ProjectReference>

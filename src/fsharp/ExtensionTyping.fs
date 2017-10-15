@@ -787,7 +787,7 @@ module internal ExtensionTyping =
     /// Detect a provided constant expression 
     let (|ProvidedConstantExpr|_|) (x:ProvidedExpr) = 
         match x.Handle with 
-        |  Quotations.Patterns.Value(obj, ty)   -> Some (obj, ProvidedType.Create x.Context ty)
+        |  Quotations.Patterns.Value(obj, ty) -> Some (obj, ProvidedType.Create x.Context ty)
         | _ -> None
 
     /// Detect a provided type-as expression 

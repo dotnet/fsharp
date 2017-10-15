@@ -3838,7 +3838,7 @@ and [<RequireQualifiedAccess>]
     | Double   of double
     | Char     of char
     | String   of string // in unicode 
-    | Decimal  of Decimal 
+    | Decimal  of Decimal
     | Unit
     | Zero // null/zero-bit-pattern 
   

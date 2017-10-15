@@ -84,13 +84,21 @@ let ImportTypeRefData (env:ImportMap) m (scoref,path,typeName) =
         | ResolvedCcu ccu->ccu
         | UnresolvedCcu ccuName -> 
             error (Error(FSComp.SR.impTypeRequiredUnavailable(typeName, ccuName),m))
+
     let fakeTyconRef = mkNonLocalTyconRef (mkNonLocalEntityRef ccu path) typeName
-    let tycon = 
-        try   
-            fakeTyconRef.Deref
+    let (wasReflectResolved, tycon) =
+        try
+            match fakeTyconRef.TryDeref with
+            | VSome r -> false, r
+            | VNone ->
+                let asm = ccu.ReflectAssembly :?> TastReflect.ReflectAssembly
+                let typ = asm.GetType(String.concat "." (Array.toList path@[typeName])) :?> TastReflect.ReflectTypeDefinition
+                true, typ.Metadata.Deref
         with _ ->
             error (Error(FSComp.SR.impReferencedTypeCouldNotBeFoundInAssembly(String.concat "." (Array.append path  [| typeName |]), ccu.AssemblyName),m))
+
 #if !NO_EXTENSIONTYPING
+
     // Validate (once because of caching)
     match tycon.TypeReprInfo with
     | TProvidedTypeExtensionPoint info ->
@@ -99,10 +107,13 @@ let ImportTypeRefData (env:ImportMap) m (scoref,path,typeName) =
     | _ -> 
             ()
 #endif
-    match tryRescopeEntity ccu tycon with 
-    | None -> error (Error(FSComp.SR.impImportedAssemblyUsesNotPublicType(String.concat "." (Array.toList path@[typeName])),m))
-    | Some tcref -> tcref
-    
+    if wasReflectResolved
+    then mkLocalEntityRef tycon
+    else
+        match tryRescopeEntity ccu tycon with
+        | None -> error (Error(FSComp.SR.impImportedAssemblyUsesNotPublicType(String.concat "." (Array.toList path@[typeName])),m))
+        | Some tcref -> tcref
+
 
 /// Import a reference to a type definition, given an AbstractIL ILTypeRef, without caching
 //

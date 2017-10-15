@@ -839,7 +839,7 @@ module ProvidedMethodCalls =
             let fail() = raise (TypeProviderError(FSComp.SR.etUnsupportedConstantType(v.GetType().ToString()), constant.TypeProviderDesignation, m))
             try 
                 if isNull v then mkNull m ty else
-                let c = 
+                let c =
                     match v with
                     | _ when typeEquiv g normTy g.bool_ty -> Const.Bool(v :?> bool)
                     | _ when typeEquiv g normTy g.sbyte_ty -> Const.SByte(v :?> sbyte)
