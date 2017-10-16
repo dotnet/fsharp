@@ -602,6 +602,27 @@ type AsyncModule() =
         Assert.AreEqual(0, !errCount)
 #endif
 
+
+    [<TestCase(10)>]
+    [<TestCase(100)>]
+    [<TestCase(1000)>]
+    [<TestCase(10000)>]
+    member this.``Async parallel sprintf should work`` n = 
+        let parallelS =
+            [| for i in 1..n do
+                  yield async { 
+                            let s = sprintf "%s %s" "hello" "world"
+                            return sprintf "%s %d" s i
+                        }  
+            |] 
+            |> Async.Parallel 
+            |> Async.RunSynchronously
+
+        let simpleS =
+            [| for i in 1..n -> "hello world " + i.ToString() |]
+
+        Assert.AreEqual(simpleS, parallelS)    
+
     [<Test>]
     member this.``Async caching should work``() = 
         let x = ref 0

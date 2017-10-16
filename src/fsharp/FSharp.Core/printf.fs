@@ -1267,18 +1267,49 @@ module internal PrintfImpl =
                 let v = get(key.Value)
                 Cache<'T, 'State, 'Residue, 'Result>.last <- (key.Value, v)
                 v
+    
+    let [<Literal>] MAX_BUILDER_SIZE = 360
+    type StringBuilderCache =
+        // The value 360 was chosen in discussion with performance experts as a compromise between using
+        // as litle memory (per thread) as possible and still covering a large part of short-lived
+        // StringBuilder creations on the startup path of VS designers.
+       
+        [<ThreadStatic; DefaultValue>]
+        static val mutable private CachedInstance: StringBuilder
+ 
+        static member Acquire(capacity) =
+            if capacity < MAX_BUILDER_SIZE then
+                let sb = StringBuilderCache.CachedInstance
+                if not (isNull sb) && capacity <= sb.Capacity then
+                    // Avoid stringbuilder block fragmentation by getting a new StringBuilder
+                    // when the requested size is larger than the current capacity
+                    StringBuilderCache.CachedInstance <- null
+                    sb.Clear()
+                else
+                    new StringBuilder(capacity)
+            else
+                new StringBuilder(capacity)
+            
+        static member Release(sb:StringBuilder) =
+            if sb.Capacity < MAX_BUILDER_SIZE then
+                StringBuilderCache.CachedInstance <- sb
+ 
 
     type StringPrintfEnv<'Result>(k, n) = 
         inherit PrintfEnv<unit, string, 'Result>(())
 
-        let buf : string[] = Array.zeroCreate n
-        let mutable ptr = 0
+        let sb = StringBuilderCache.Acquire n
 
-        override __.Finish() : 'Result = k (String.Concat(buf))
+        override __.Finish() : 'Result = 
+            let result = sb.ToString()
+            StringBuilderCache.Release(sb)
+            k result
+            
         override __.Write(s : string) = 
-            buf.[ptr] <- s
-            ptr <- ptr + 1
-        override this.WriteT(s) = this.Write s
+            sb.Append s |> ignore
+
+        override __.WriteT(s) = 
+            sb.Append s |> ignore
 
     type StringBuilderPrintfEnv<'Result>(k, buf) = 
         inherit PrintfEnv<Text.StringBuilder, unit, 'Result>(buf)
@@ -1319,7 +1350,10 @@ module Printf =
         )
 
     [<CompiledName("PrintFormatToStringThen")>]
-    let sprintf (format : StringFormat<'T>)  = ksprintf id format
+    let sprintf (format : StringFormat<'T>)  =
+        doPrintf format (fun n -> 
+            StringPrintfEnv(id, n) :> PrintfEnv<_, _, _>
+        )
 
     [<CompiledName("PrintFormatThen")>]
     let kprintf continuation format = ksprintf continuation format
