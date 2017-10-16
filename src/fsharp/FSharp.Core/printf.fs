@@ -1120,7 +1120,7 @@ module internal PrintfImpl =
     type private PrintfBuilder<'S, 'Re, 'Res>() =
     
         let mutable count = 0
-        let mutable argCount = 0
+        let mutable optimizedArgCount = 0
 #if DEBUG
         let verifyMethodInfoWasTaken (mi : System.Reflection.MemberInfo) =
             if isNull mi then 
@@ -1225,7 +1225,8 @@ module internal PrintfImpl =
 #endif
                     let mi = mi.MakeGenericMethod(argTypes)
                     let args = Array.sub args 1 (argsCount - 2)
-                    mi.Invoke(null, args), argsCount - 2
+                    optimizedArgCount <- optimizedArgCount + 2
+                    mi.Invoke(null, args)
                 else
                     let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("FinalFastStart" + count, NonPublicStatics)
 #if DEBUG
@@ -1233,7 +1234,8 @@ module internal PrintfImpl =
 #else
 #endif
                     let mi = mi.MakeGenericMethod(argTypes)
-                    mi.Invoke(null, args |> Array.skip 1), argsCount - 1
+                    optimizedArgCount <- optimizedArgCount + 1
+                    mi.Invoke(null, args |> Array.skip 1)
             else
                 let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("Final" + count, NonPublicStatics)
 #if DEBUG
@@ -1241,17 +1243,17 @@ module internal PrintfImpl =
 #else
 #endif
                 let mi = mi.MakeGenericMethod(argTypes)
-                mi.Invoke(null, args), argsCount
+                mi.Invoke(null, args)
     
         let buildPlainChained(args : obj[], argTypes : Type[]) = 
-            let argsCount = args.Length
-            let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("Chained" + (let x = (argTypes.Length - 1) in x.ToString()), NonPublicStatics)
+            let count = let x = argTypes.Length in x.ToString()
+            let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("Chained" + count, NonPublicStatics)
 #if DEBUG
             verifyMethodInfoWasTaken mi
 #else
 #endif
             let mi = mi.MakeGenericMethod(argTypes)
-            mi.Invoke(null, args), argsCount
+            mi.Invoke(null, args)
 
         let builderStack = PrintfBuilderStack()
 
@@ -1326,8 +1328,6 @@ module internal PrintfImpl =
                         builderStack.PushContinuationWithType(currentCont, funcTy)
                         ContinuationOnStack
                     else
-                        
-                        
                         let hasCont = builderStack.HasContinuationOnStack(numberOfArgs)
                         
                         let expectedNumberOfItemsOnStack = numberOfArgs * 2
@@ -1371,27 +1371,28 @@ module internal PrintfImpl =
                         numberOfArgs + 1
 
         let parseFormatString (s : string) (funcTy : System.Type) : obj = 
-            let prefixPos, prefix = FormatString.findNextFormatSpecifier s 0
-            if prefixPos = s.Length then
-                argCount <- 2 * count + 1
-                box (fun (env : unit -> PrintfEnv<'S, 'Re, 'Res>) -> 
-                    let env = env()
-                    env.Write prefix
-                    env.Finish()
-                    )
-            else
-                let n = parseFromFormatSpecifier prefix s funcTy prefixPos
-                
-                if n = ContinuationOnStack || n = 0 then
-                    argCount <- 2 * count + 1
-                    builderStack.PopValueUnsafe()
+            try
+                optimizedArgCount <- 0
+                let prefixPos, prefix = FormatString.findNextFormatSpecifier s 0
+                if prefixPos = s.Length then
+                    box (fun (env : unit -> PrintfEnv<'S, 'Re, 'Res>) -> 
+                        let env = env()
+                        env.Write prefix
+                        env.Finish()
+                        )
                 else
-                    let o,argN = buildPlain n prefix
-                    argCount <- argN
-                    o
-                            
+                    let n = parseFromFormatSpecifier prefix s funcTy prefixPos
+                
+                    if n = ContinuationOnStack || n = 0 then
+                        builderStack.PopValueUnsafe()
+                    else
+                        let o = buildPlain n prefix
+                        o
+            with
+            | exn -> raise (new Exception("Parsing of " + s + " failed.", exn))
+
         member __.Build<'T>(s : string) : PrintfFactory<'S, 'Re, 'Res, 'T> * int = 
-            parseFormatString s typeof<'T> :?> _, argCount // second component is used in SprintfEnv as value for internal buffer
+            parseFormatString s typeof<'T> :?> _, 2 * count + 1 - optimizedArgCount // second component is used in SprintfEnv as value for internal buffer
 
     /// Type of element that is stored in cache 
     /// Pair: factory for the printer + number of text blocks that printer will produce (used to preallocate buffers)
