@@ -19,23 +19,28 @@ type Serialiser(config: TypeProviderConfig) as this =
         let rootType = ProvidedTypeDefinition(runtimeAssembly,ns,typeName,baseType= (Some typeof<obj>), HideObjectMethods=true)
         let fields = ty.GetFields() //Because IsRecord is false here due to missing attrs in TAST, we cant use FSharp Reflection atm.
         let typName = ty.Name
+        let toString x = <@@ (%%x : obj).ToString() @@>
         let fieldGetters = 
-            (fun x -> Expr.NewArray(typeof<obj>, fields |> Array.map(fun f -> Expr.Coerce(Expr.FieldGet(x,f),typeof<obj>)) |> Array.toList))
-
-        
+            (fun x -> Expr.NewArray(typeof<string>, fields |> Array.map(fun f -> toString(Expr.Coerce(Expr.FieldGet(x,f), typeof<obj>))) |> Array.toList))
 
         let headers = 
             fields |> Array.map (fun x -> x.Name)
 
+        let toJson x = 
+            <@@ 
+                let values =  (%%x : string[])
+                let jProps = Array.zip headers values |> Array.map (fun (h,v) -> sprintf "%A=%A" h v)
+                sprintf "{%s}" (String.Join(",", jProps))
+            @@>
 
         rootType.AddMember(ProvidedProperty("Headers", typeof<string[]>, IsStatic = true, GetterCode = (fun x -> <@@ headers @@>)))
 
         rootType.AddMember(
              ProvidedMethod("Serialise", 
                             [ProvidedParameter("obj", ty)], 
-                            typeof<obj[]>, 
+                            typeof<string>, 
                             IsStaticMethod = true, 
-                            InvokeCode = (fun x -> fieldGetters (Expr.Coerce(x.[0], ty)) )
+                            InvokeCode = (fun x -> toJson (fieldGetters (Expr.Coerce(x.[0], ty))) )
                            )
                           )
 

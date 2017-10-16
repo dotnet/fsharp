@@ -9,13 +9,10 @@ type MyRecord = {
     Value : int
 }
 
-
 let instance = { Id = "Foo"; Value = 1 }
-
-<@@ instance.Id @@>
 
 type MyRecordSerialiser = Serialiser.SourceType<MyRecord> 
 
-printfn "%A" MyRecordSerialiser.Headers
+printfn "Headers: %A" MyRecordSerialiser.Headers
 
-printfn "%A" (MyRecordSerialiser.Serialise(instance))
+printfn "Instance as JSON %s" (MyRecordSerialiser.Serialise(instance))
