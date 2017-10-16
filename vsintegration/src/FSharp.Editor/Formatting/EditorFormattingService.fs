@@ -12,6 +12,7 @@ open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
 
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.FSharp.Compiler.SourceCodeServices.ServiceFormatting
 open System.Threading
 
 [<Shared>]
@@ -23,7 +24,8 @@ type internal FSharpEditorFormattingService
         projectInfoManager: FSharpProjectOptionsManager
     ) =
 
-    static member GetFormattingChanges(documentId: DocumentId, sourceText: SourceText, filePath: string, checker: FSharpChecker, indentStyle: FormattingOptions.IndentStyle, options: (FSharpParsingOptions * FSharpProjectOptions) option, position: int) =
+    static let userOpName = "Formatting"
+    static let getFormattingChanges(documentId: DocumentId, sourceText: SourceText, filePath: string, checker: FSharpChecker, indentStyle: FormattingOptions.IndentStyle, options: (FSharpParsingOptions * FSharpProjectOptions) option, position: int) =
         // Logic for determining formatting changes:
         // If first token on the current line is a closing brace,
         // match the indent with the indent on the line that opened it
@@ -69,13 +71,13 @@ type internal FSharpEditorFormattingService
                 return! None
         }
 
-    member __.GetFormattingChangesAsync (document: Document, position: int, cancellationToken: CancellationToken) =
+    let getFormattingChangesAsync (document: Document, position: int, cancellationToken: CancellationToken) =
         async {
             let! sourceText = document.GetTextAsync(cancellationToken) |> Async.AwaitTask
             let! options = document.GetOptionsAsync(cancellationToken) |> Async.AwaitTask
             let indentStyle = options.GetOption(FormattingOptions.SmartIndent, FSharpConstants.FSharpLanguageName)
             let projectOptionsOpt = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
-            let! textChange = FSharpEditorFormattingService.GetFormattingChanges(document.Id, sourceText, document.FilePath, checkerProvider.Checker, indentStyle, projectOptionsOpt, position)
+            let! textChange = getFormattingChanges(document.Id, sourceText, document.FilePath, checkerProvider.Checker, indentStyle, projectOptionsOpt, position)
                 
             return
                 match textChange with
@@ -87,10 +89,10 @@ type internal FSharpEditorFormattingService
         }
         
     interface IEditorFormattingService with
-        member val SupportsFormatDocument = false
-        member val SupportsFormatSelection = false
-        member val SupportsFormatOnPaste = false
-        member val SupportsFormatOnReturn = true
+        member __.SupportsFormatDocument = true
+        member __.SupportsFormatSelection = false
+        member __.SupportsFormatOnPaste = false
+        member __.SupportsFormatOnReturn = true
 
         override __.SupportsFormattingOnTypedCharacter (document, ch) =
             if FSharpIndentationService.IsSmartIndentEnabled document.Project.Solution.Workspace.Options then
@@ -100,18 +102,33 @@ type internal FSharpEditorFormattingService
             else
                 false
 
-        override __.GetFormattingChangesAsync (_document, _span, cancellationToken) =
-            async { return ResizeArray() :> IList<_> }
+        // On 'dormat document' or 'format span'
+        member __.GetFormattingChangesAsync (document, textSpan, cancellationToken) =
+            asyncMaybe {
+                match Option.ofNullable textSpan with
+                | None -> 
+                    let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                    let! sourceText = document.GetTextAsync(cancellationToken)
+                    let! parsedInput = checkerProvider.Checker.ParseDocument(document, options, sourceText, userOpName)
+                    let changedSource = CodeFormatter.FormatAST(parsedInput, document.FilePath, Some (sourceText.ToString()), FormatConfig.FormatConfig.Default)
+                    return [| TextChange(TextSpan(0, sourceText.Length), changedSource) |]
+                | Some _ -> 
+                    return [||]
+            }
+            |> Async.map (fun xs -> (match xs with Some changes -> changes | None -> [||]) :> IList<TextChange>)
             |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
+        // On 'paste'
         override __.GetFormattingChangesOnPasteAsync (_document, _span, cancellationToken) =
             async { return ResizeArray() :> IList<_> }
             |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
+        // On typed character
         override this.GetFormattingChangesAsync (document, _typedChar, position, cancellationToken) =
-            this.GetFormattingChangesAsync (document, position, cancellationToken)
+            getFormattingChangesAsync (document, position, cancellationToken)
             |> RoslynHelpers.StartAsyncAsTask cancellationToken
 
+        // On 'return'
         override this.GetFormattingChangesOnReturnAsync (document, position, cancellationToken) =
-            this.GetFormattingChangesAsync (document, position, cancellationToken)
+            getFormattingChangesAsync (document, position, cancellationToken)
             |> RoslynHelpers.StartAsyncAsTask cancellationToken
