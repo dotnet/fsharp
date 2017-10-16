@@ -1430,7 +1430,18 @@ module internal PrintfImpl =
         override __.Write(s : string) = 
             buf.[ptr] <- s
             ptr <- ptr + 1
-        override this.WriteT(s) = this.Write s
+        override __.WriteT(s) =
+            buf.[ptr] <- s
+            ptr <- ptr + 1
+
+    type SingleStringPrintfEnv<'Result>(k) = 
+        inherit PrintfEnv<unit, string, 'Result>(())
+
+        let mutable c = null
+
+        override __.Finish() : 'Result = k c
+        override __.Write(s : string) = c <- s
+        override __.WriteT(s) = c <- s
 
     type StringBuilderPrintfEnv<'Result>(k, buf) = 
         inherit PrintfEnv<Text.StringBuilder, unit, 'Result>(buf)
@@ -1466,8 +1477,11 @@ module Printf =
 
     [<CompiledName("PrintFormatToStringThen")>]
     let ksprintf continuation (format : StringFormat<'T, 'Result>) : 'T = 
-        doPrintf format (fun n -> 
-            StringPrintfEnv(continuation, n) :> PrintfEnv<_, _, _>
+        doPrintf format (fun n ->
+            if n = 1 then
+                SingleStringPrintfEnv(continuation) :> PrintfEnv<_, _, _>
+            else
+                StringPrintfEnv(continuation, n) :> PrintfEnv<_, _, _>
         )
 
     [<CompiledName("PrintFormatToStringThen")>]
