@@ -778,6 +778,12 @@ module internal ExtensionTyping =
                   [| for a in args -> ProvidedExpr.Create  x.Context a |])
         | _ -> None
 
+    let (|ProvidedFieldGetExpr|_|) (x:ProvidedExpr) = 
+        match x.Handle with 
+        | Quotations.Patterns.FieldGet(objOpt, fieldInfo) ->
+            Some ((match objOpt with None -> None | Some obj -> Some (ProvidedExpr.Create x.Context obj)), ProvidedFieldInfo.Create x.Context fieldInfo)
+        | _ -> None
+
     /// Detect a provided default-value expression 
     let (|ProvidedDefaultExpr|_|) (x:ProvidedExpr) = 
         match x.Handle with 
@@ -1105,7 +1111,8 @@ module internal ExtensionTyping =
             let typeName = st.PUntaint((fun st -> st.Name), m)
             match st.PApply((fun st -> st.DeclaringType), m) with 
             | Tainted.Null -> 
-               match st.PUntaint((fun st -> st.Namespace), m) with 
+               //TODO: FIX me.. see serailiser TP example..
+               match (try st.PUntaint((fun st -> st.Namespace), m) with _ -> null) with 
                | null -> typeName
                | ns -> ns + "." + typeName
             | _ -> typeName

@@ -1000,6 +1000,18 @@ module ProvidedMethodCalls =
                 let exprT = mkTupleFieldGet g (tupInfo, inpT, tysT, n.PUntaint(id,m), m)
                 None, (exprT, tyOfExpr g exprT)
             | None -> 
+            match ea.PApplyOption((function ProvidedFieldGetExpr x -> Some x | _ -> None), m) with 
+            | Some info -> 
+                let (obj,fieldInfo) = info.PApply2(id, m)
+                let fieldInfo = fieldInfo.PUntaint(id,m)
+                let objExpr = (match obj.PApplyOption(id, m) with | None -> fail() | Some obj -> exprToExpr obj)
+                let typeOfExpr = tyOfExpr g objExpr
+                let tycon, tyinst = destAppTy g typeOfExpr
+                let recdFieldRef = mkRecdFieldRef tycon fieldInfo.Name
+                let recdExpr = mkRecdFieldGet g (objExpr, recdFieldRef, tyinst, m)
+                let _ = tyOfExpr g recdExpr
+                None, (recdExpr, typeOfExpr)
+            | None -> 
             match ea.PApplyOption((function ProvidedLambdaExpr x -> Some x | _ -> None), m) with
             | Some info -> 
                 let v,b = info.PApply2(id, m)

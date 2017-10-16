@@ -304,6 +304,8 @@ module internal ExtensionTyping =
     /// Detect a provided tuple-get expression 
     val (|ProvidedTupleGetExpr|_|)   : ProvidedExpr -> (ProvidedExpr * int) option
 
+    val (|ProvidedFieldGetExpr|_|)   : ProvidedExpr -> (ProvidedExpr option * ProvidedFieldInfo) option
+
     /// Detect a provided type-as expression 
     val (|ProvidedTypeAsExpr|_|)      : ProvidedExpr -> (ProvidedExpr * ProvidedType) option
 
