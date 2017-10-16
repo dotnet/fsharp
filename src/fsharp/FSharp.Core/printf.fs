@@ -231,6 +231,18 @@ module internal PrintfImpl =
                 )
             )
 
+        static member FinalFastEnd1<'A>
+            (
+                s0, conv1
+            ) =
+            (fun (env : unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (a : 'A) ->
+                    let env = env()
+                    Utils.Write(env, s0, (conv1 a))
+                    env.Finish()
+                )
+            )
+
         static member FinalFastStart1<'A>
             (
                 conv1, s1
@@ -255,7 +267,6 @@ module internal PrintfImpl =
                 )
             )
 
-
         static member Final2<'A, 'B>
             (
                 s0, conv1, s1, conv2, s2
@@ -264,6 +275,18 @@ module internal PrintfImpl =
                 (fun (a : 'A) (b : 'B) ->
                     let env = env()
                     Utils.Write(env, s0, (conv1 a), s1, (conv2 b), s2)
+                    env.Finish()
+                )
+            )
+
+        static member FinalFastEnd2<'A, 'B>
+            (
+                s0, conv1, s1, conv2
+            ) =
+            (fun (env : unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (a : 'A) (b : 'B) ->
+                    let env = env()
+                    Utils.Write(env, s0, (conv1 a), s1, (conv2 b))
                     env.Finish()
                 )
             )
@@ -304,6 +327,18 @@ module internal PrintfImpl =
                 )
             )
 
+        static member FinalFastEnd3<'A, 'B, 'C>
+            (
+                s0, conv1, s1, conv2, s2, conv3
+            ) =
+            (fun (env : unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (a : 'A) (b : 'B) (c : 'C) ->
+                    let env = env()
+                    Utils.Write(env, s0, (conv1 a), s1, (conv2 b), s2, (conv3 c))
+                    env.Finish()
+                )
+            )
+
         static member FinalFastStart3<'A, 'B, 'C>
             (
                 conv1, s1, conv2, s2, conv3, s3
@@ -340,6 +375,18 @@ module internal PrintfImpl =
                 )
             )
 
+        static member FinalFastEnd4<'A, 'B, 'C, 'D>
+            (
+                s0, conv1, s1, conv2, s2, conv3, s3, conv4
+            ) =
+            (fun (env : unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (a : 'A) (b : 'B) (c : 'C) (d : 'D)->
+                    let env = env()
+                    Utils.Write(env, s0, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d))
+                    env.Finish()
+                )
+            )
+
         static member FinalFastStart4<'A, 'B, 'C, 'D>
             (
                 conv1, s1, conv2, s2, conv3, s3, conv4, s4
@@ -372,6 +419,18 @@ module internal PrintfImpl =
                 (fun (a : 'A) (b : 'B) (c : 'C) (d : 'D) (e : 'E)->
                     let env = env()
                     Utils.Write(env, s0, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d), s4, (conv5 e), s5)
+                    env.Finish()
+                )
+            )
+
+        static member FinalFastEnd5<'A, 'B, 'C, 'D, 'E>
+            (
+                s0, conv1, s1, conv2, s2, conv3, s3, conv4, s4, conv5
+            ) =
+            (fun (env : unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (a : 'A) (b : 'B) (c : 'C) (d : 'D) (e : 'E)->
+                    let env = env()
+                    Utils.Write(env, s0, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d), s4, (conv5 e))
                     env.Finish()
                 )
             )
@@ -1236,6 +1295,16 @@ module internal PrintfImpl =
                     let mi = mi.MakeGenericMethod(argTypes)
                     optimizedArgCount <- optimizedArgCount + 1
                     mi.Invoke(null, args |> Array.skip 1)
+            elif argsCount > 0 && args.[argsCount - 1].ToString() = "" then
+                let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("FinalFastEnd" + count, NonPublicStatics)
+#if DEBUG
+                verifyMethodInfoWasTaken mi
+#else
+#endif
+                let mi = mi.MakeGenericMethod(argTypes)
+                let args = Array.sub args 0 (argsCount - 1)
+                optimizedArgCount <- optimizedArgCount + 1
+                mi.Invoke(null, args)                
             else
                 let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("Final" + count, NonPublicStatics)
 #if DEBUG
@@ -1389,7 +1458,7 @@ module internal PrintfImpl =
                         let o = buildPlain n prefix
                         o
             with
-            | exn -> raise (new Exception("Parsing of " + s + " failed.", exn))
+            | exn -> raise (new Exception("Parsing of \"" + s + "\" failed.", exn))
 
         member __.Build<'T>(s : string) : PrintfFactory<'S, 'Re, 'Res, 'T> * int = 
             parseFormatString s typeof<'T> :?> _, 2 * count + 1 - optimizedArgCount // second component is used in SprintfEnv as value for internal buffer
