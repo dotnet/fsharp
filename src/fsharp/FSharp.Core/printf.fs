@@ -230,6 +230,32 @@ module internal PrintfImpl =
                     env.Finish()
                 )
             )
+
+        static member FinalFastStart1<'A>
+            (
+                conv1, s1
+            ) =
+            (fun (env : unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (a : 'A) ->
+                    let env = env()
+                    Utils.Write(env, (conv1 a), s1)
+                    env.Finish()
+                )
+            )
+
+        static member FinalFast1<'A>
+            (
+                conv1
+            ) =
+            (fun (env : unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (a : 'A) ->
+                    let env = env()
+                    env.Write (conv1 a)
+                    env.Finish()
+                )
+            )
+
+
         static member Final2<'A, 'B>
             (
                 s0, conv1, s1, conv2, s2
@@ -238,6 +264,30 @@ module internal PrintfImpl =
                 (fun (a : 'A) (b : 'B) ->
                     let env = env()
                     Utils.Write(env, s0, (conv1 a), s1, (conv2 b), s2)
+                    env.Finish()
+                )
+            )
+
+        static member FinalFastStart2<'A, 'B>
+            (
+                conv1, s1, conv2, s2
+            ) =
+            (fun (env : unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (a : 'A) (b : 'B) ->
+                    let env = env()
+                    Utils.Write(env, (conv1 a), s1, (conv2 b), s2)
+                    env.Finish()
+                )
+            )
+
+        static member FinalFast2<'A, 'B>
+            (
+                conv1, s1, conv2
+            ) =
+            (fun (env : unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (a : 'A) (b : 'B) ->
+                    let env = env()
+                    Utils.Write(env, (conv1 a), s1, (conv2 b))
                     env.Finish()
                 )
             )
@@ -254,6 +304,30 @@ module internal PrintfImpl =
                 )
             )
 
+        static member FinalFastStart3<'A, 'B, 'C>
+            (
+                conv1, s1, conv2, s2, conv3, s3
+            ) =
+            (fun (env : unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (a : 'A) (b : 'B) (c : 'C) ->
+                    let env = env()
+                    Utils.Write(env, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3)
+                    env.Finish()
+                )
+            )
+
+        static member FinalFast3<'A, 'B, 'C>
+            (
+                conv1, s1, conv2, s2, conv3
+            ) =
+            (fun (env : unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (a : 'A) (b : 'B) (c : 'C) ->
+                    let env = env()
+                    Utils.Write(env, (conv1 a), s1, (conv2 b), s2, (conv3 c))
+                    env.Finish()
+                )
+            )
+
         static member Final4<'A, 'B, 'C, 'D>
             (
                 s0, conv1, s1, conv2, s2, conv3, s3, conv4, s4
@@ -265,6 +339,31 @@ module internal PrintfImpl =
                     env.Finish()
                 )
             )
+
+        static member FinalFastStart4<'A, 'B, 'C, 'D>
+            (
+                conv1, s1, conv2, s2, conv3, s3, conv4, s4
+            ) =
+            (fun (env : unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (a : 'A) (b : 'B) (c : 'C) (d : 'D)->
+                    let env = env()
+                    Utils.Write(env, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d), s4)
+                    env.Finish()
+                )
+            )
+
+        static member FinalFast4<'A, 'B, 'C, 'D>
+            (
+                conv1, s1, conv2, s2, conv3, s3, conv4
+            ) =
+            (fun (env : unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (a : 'A) (b : 'B) (c : 'C) (d : 'D)->
+                    let env = env()
+                    Utils.Write(env, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d))
+                    env.Finish()
+                )
+            )
+
         static member Final5<'A, 'B, 'C, 'D, 'E>
             (
                 s0, conv1, s1, conv2, s2, conv3, s3, conv4, s4, conv5, s5
@@ -276,6 +375,32 @@ module internal PrintfImpl =
                     env.Finish()
                 )
             )
+
+        static member FinalFastStart5<'A, 'B, 'C, 'D, 'E>
+            (
+                conv1, s1, conv2, s2, conv3, s3, conv4, s4, conv5, s5
+            ) =
+            (fun (env : unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (a : 'A) (b : 'B) (c : 'C) (d : 'D) (e : 'E)->
+                    let env = env()
+                    Utils.Write(env, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d), s4, (conv5 e), s5)
+                    env.Finish()
+                )
+            )
+
+        static member FinalFast5<'A, 'B, 'C, 'D, 'E>
+            (
+                conv1, s1, conv2, s2, conv3, s3, conv4, s4, conv5
+            ) =
+            (fun (env : unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (a : 'A) (b : 'B) (c : 'C) (d : 'D) (e : 'E)->
+                    let env = env()
+                    Utils.Write(env, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d), s4, (conv5 e))
+                    env.Finish()
+                )
+            )
+
+
         static member Chained1<'A, 'Tail>
             (
                 s0, conv1,
@@ -995,6 +1120,7 @@ module internal PrintfImpl =
     type private PrintfBuilder<'S, 'Re, 'Res>() =
     
         let mutable count = 0
+        let mutable argCount = 0
 #if DEBUG
         let verifyMethodInfoWasTaken (mi : System.Reflection.MemberInfo) =
             if isNull mi then 
@@ -1087,23 +1213,45 @@ module internal PrintfImpl =
 
                 mi.Invoke(null, args)
 
-        let buildPlainFinal(args : obj[], argTypes : Type[]) = 
-            let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("Final" + (let x = argTypes.Length in x.ToString()), NonPublicStatics)
+        let buildPlainFinal(args : obj[], argTypes : Type[]) =
+            let argsCount = args.Length
+            let count = let x = argTypes.Length in x.ToString()
+            if argsCount > 0 && args.[0].ToString() = "" then
+                if argsCount > 1 && args.[argsCount - 1].ToString() = "" then
+                    let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("FinalFast" + count, NonPublicStatics)
 #if DEBUG
-            verifyMethodInfoWasTaken mi
+                    verifyMethodInfoWasTaken mi
 #else
 #endif
-            let mi = mi.MakeGenericMethod(argTypes)
-            mi.Invoke(null, args)
+                    let mi = mi.MakeGenericMethod(argTypes)
+                    let args = Array.sub args 1 (argsCount - 2)
+                    mi.Invoke(null, args), argsCount - 2
+                else
+                    let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("FinalFastStart" + count, NonPublicStatics)
+#if DEBUG
+                    verifyMethodInfoWasTaken mi
+#else
+#endif
+                    let mi = mi.MakeGenericMethod(argTypes)
+                    mi.Invoke(null, args |> Array.skip 1), argsCount - 1
+            else
+                let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("Final" + count, NonPublicStatics)
+#if DEBUG
+                verifyMethodInfoWasTaken mi
+#else
+#endif
+                let mi = mi.MakeGenericMethod(argTypes)
+                mi.Invoke(null, args), argsCount
     
         let buildPlainChained(args : obj[], argTypes : Type[]) = 
+            let argsCount = args.Length
             let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("Chained" + (let x = (argTypes.Length - 1) in x.ToString()), NonPublicStatics)
 #if DEBUG
             verifyMethodInfoWasTaken mi
 #else
 #endif
             let mi = mi.MakeGenericMethod(argTypes)
-            mi.Invoke(null, args)   
+            mi.Invoke(null, args), argsCount
 
         let builderStack = PrintfBuilderStack()
 
@@ -1224,7 +1372,8 @@ module internal PrintfImpl =
 
         let parseFormatString (s : string) (funcTy : System.Type) : obj = 
             let prefixPos, prefix = FormatString.findNextFormatSpecifier s 0
-            if prefixPos = s.Length then 
+            if prefixPos = s.Length then
+                argCount <- 2 * count + 1
                 box (fun (env : unit -> PrintfEnv<'S, 'Re, 'Res>) -> 
                     let env = env()
                     env.Write prefix
@@ -1234,12 +1383,15 @@ module internal PrintfImpl =
                 let n = parseFromFormatSpecifier prefix s funcTy prefixPos
                 
                 if n = ContinuationOnStack || n = 0 then
+                    argCount <- 2 * count + 1
                     builderStack.PopValueUnsafe()
                 else
-                    buildPlain n prefix
+                    let o,argN = buildPlain n prefix
+                    argCount <- argN
+                    o
                             
         member __.Build<'T>(s : string) : PrintfFactory<'S, 'Re, 'Res, 'T> * int = 
-            parseFormatString s typeof<'T> :?> _, (2 * count + 1) // second component is used in SprintfEnv as value for internal buffer
+            parseFormatString s typeof<'T> :?> _, argCount // second component is used in SprintfEnv as value for internal buffer
 
     /// Type of element that is stored in cache 
     /// Pair: factory for the printer + number of text blocks that printer will produce (used to preallocate buffers)
