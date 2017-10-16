@@ -1315,8 +1315,7 @@ module internal PrintfImpl =
                 mi.Invoke(null, args)
     
         let buildPlainChained(args : obj[], argTypes : Type[]) = 
-            let count = let x = argTypes.Length in x.ToString()
-            let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("Chained" + count, NonPublicStatics)
+            let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("Chained" + (let x = (argTypes.Length - 1) in x.ToString()), NonPublicStatics)
 #if DEBUG
             verifyMethodInfoWasTaken mi
 #else
@@ -1440,28 +1439,24 @@ module internal PrintfImpl =
                         numberOfArgs + 1
 
         let parseFormatString (s : string) (funcTy : System.Type) : obj = 
-            try
-                optimizedArgCount <- 0
-                let prefixPos, prefix = FormatString.findNextFormatSpecifier s 0
-                if prefixPos = s.Length then
-                    box (fun (env : unit -> PrintfEnv<'S, 'Re, 'Res>) -> 
-                        let env = env()
-                        env.Write prefix
-                        env.Finish()
-                        )
-                else
-                    let n = parseFromFormatSpecifier prefix s funcTy prefixPos
+            optimizedArgCount <- 0
+            let prefixPos, prefix = FormatString.findNextFormatSpecifier s 0
+            if prefixPos = s.Length then 
+                box (fun (env : unit -> PrintfEnv<'S, 'Re, 'Res>) -> 
+                    let env = env()
+                    env.Write prefix
+                    env.Finish()
+                    )
+            else
+                let n = parseFromFormatSpecifier prefix s funcTy prefixPos
                 
-                    if n = ContinuationOnStack || n = 0 then
-                        builderStack.PopValueUnsafe()
-                    else
-                        let o = buildPlain n prefix
-                        o
-            with
-            | exn -> raise (new Exception("Parsing of \"" + s + "\" failed.", exn))
+                if n = ContinuationOnStack || n = 0 then
+                    builderStack.PopValueUnsafe()
+                else
+                    buildPlain n prefix
 
         member __.Build<'T>(s : string) : PrintfFactory<'S, 'Re, 'Res, 'T> * int = 
-            parseFormatString s typeof<'T> :?> _, 2 * count + 1 - optimizedArgCount // second component is used in SprintfEnv as value for internal buffer
+            parseFormatString s typeof<'T> :?> _, (2 * count + 1) - optimizedArgCount // second component is used in SprintfEnv as value for internal buffer
 
     /// Type of element that is stored in cache 
     /// Pair: factory for the printer + number of text blocks that printer will produce (used to preallocate buffers)
