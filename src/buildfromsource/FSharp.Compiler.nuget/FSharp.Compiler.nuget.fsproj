@@ -8,7 +8,6 @@
     <AssemblyName>Microsoft.FSharp.Compiler</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <DefineConstants>$(DefineConstants);BUILD_FROM_SOURCE</DefineConstants>
     <OtherFlags>$(OtherFlags) --warnon:1182 --maxerrors:20</OtherFlags>
   </PropertyGroup>
 

@@ -10,9 +10,9 @@
     <DisableImplicitSystemValueTupleReference>true</DisableImplicitSystemValueTupleReference>
     <DisableImplicitFSharpCoreReference>true</DisableImplicitFSharpCoreReference>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <DefineConstants>$(DefineConstants);BUILD_FROM_SOURCE</DefineConstants>
 
     <!-- Signing flags currently done using OtherFlags.  Can migrate to properties once build target updated -->
-    <DefineConstants>$(DefineConstants);STRONG_NAME_AND_DELAY_SIGN_FSHARP_COMPILER_WITH_MSFT_KEY</DefineConstants>
     <KeyFile>$(MSBuildThisFileDirectory)../buildtools/keys/MSFT.snk</KeyFile>
     <PublicSign>true</PublicSign>
     <OtherFlags>$(OtherFlags) --publicsign --keyfile:$(KeyFile)</OtherFlags>

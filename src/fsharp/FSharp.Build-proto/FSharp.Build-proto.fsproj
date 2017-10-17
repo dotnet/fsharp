@@ -40,6 +40,9 @@
     <Compile Include="..\FSharp.Build\FSharpEmbedResXSource.fs">
       <Link>FSharpEmbedResXSource.fs</Link>
     </Compile>
+    <Compile Include="..\FSharp.Build\WriteCodeFragment.fs">
+      <Link>WriteCodeFragment.fs</Link>
+    </Compile>
     <CopyAndSubstituteText Include="..\FSharp.Build\Microsoft.FSharp.Targets">
       <Link>Microsoft.FSharp-proto.targets</Link>
       <TargetFilename>Microsoft.FSharp-proto.targets</TargetFilename>
