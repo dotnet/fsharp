@@ -10108,11 +10108,11 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
     | SynExpr.Sequential (sp, true, e1, e2, m) when not isCompExpr ->
         let e1', _ = TcStmtThatCantBeCtorBody cenv env tpenv e1
         // tailcall
+        let env = ShrinkContext env m e2.Range
         TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr e2 (fun (e2', tpenv) -> 
             cont (Expr.Sequential(e1', e2', NormalSeq, sp, m), tpenv))
 
     | SynExpr.LetOrUse (isRec, isUse, binds, body, m) when not (isUse && isCompExpr) ->
-                
         if isRec then 
             // TcLinearExprs processes at most one recursive binding, this is not tailcalling
             CheckRecursiveBindingIds binds
@@ -10125,6 +10125,7 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
         else 
             // TcLinearExprs processes multiple 'let' bindings in a tail recursive way
             let mkf, envinner, tpenv = TcLetBinding cenv isUse env ExprContainerInfo ExpressionBinding tpenv (binds, m, body.Range)
+            let envinner = ShrinkContext envinner m body.Range
             TcLinearExprs bodyChecker cenv envinner overallTy tpenv isCompExpr body (fun (x, tpenv) -> 
                 cont (fst (mkf (x, overallTy)), tpenv))
     | _ -> 
