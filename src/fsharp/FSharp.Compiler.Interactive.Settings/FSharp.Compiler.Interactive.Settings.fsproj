@@ -16,8 +16,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="fsi" />
+    <InternalsVisibleTo Include="fsiAnyCpu" />
+    <InternalsVisibleTo Include="FSharp.Compiler" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedText Include="..\FSInteractiveSettings.txt" />
-    <Compile Include="InternalsVisibleTo.fs" />
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Interactive.Settings.dll.fs" />
     <Compile Include="..\..\utils\reshapedreflection.fs" />
     <Compile Include="..\fsiattrs.fs" />

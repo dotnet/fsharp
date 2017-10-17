@@ -23,8 +23,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="VisualFSharp.Unittests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedText Include="FSBuild.txt" />
-    <Compile Include="InternalsVisibleTo.fs" />
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Build.dll.fs" />
     <Compile Include="..\..\utils\CompilerLocationUtils.fs" />
     <Compile Include="..\..\utils\reshapedreflection.fs" />
@@ -32,6 +35,7 @@
     <Compile Include="Fsc.fs" />
     <Compile Include="FSharpEmbedResourceText.fs" />
     <Compile Include="FSharpEmbedResXSource.fs" />
+    <Compile Include="WriteCodeFragment.fs" />
     <Compile Include="CreateFSharpManifestResourceName.fsi" />
     <Compile Include="CreateFSharpManifestResourceName.fs" />
     <CopyAndSubstituteText Include="Microsoft.FSharp.Targets">
