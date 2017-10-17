@@ -142,6 +142,8 @@ type internal IncrementalBuilder =
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
       member GetCheckResultsAndImplementationsForProject : CompilationThreadToken -> Cancellable<PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option>
 
+      member DeduplicateParsedInputModuleNameInProject: Ast.ParsedInput -> Ast.ParsedInput
+
       /// Get the logical time stamp that is associated with the output of the project if it were gully built immediately
       member GetLogicalTimeStampForProject: TimeStampCache * CompilationThreadToken -> DateTime
 
