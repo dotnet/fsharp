@@ -1622,6 +1622,9 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
     member builder.GetCheckResultsAfterLastFileInProject (ctok: CompilationThreadToken) = 
         builder.GetCheckResultsBeforeSlotInProject(ctok, builder.GetSlotsCount()) 
 
+    member builder.DeduplicateParsedInputModuleNameInProject (input) = 
+        DeduplicateParsedInputModuleName moduleNamesDict input
+
     member __.GetCheckResultsAndImplementationsForProject(ctok: CompilationThreadToken) = 
       cancellable {
         let cache = TimeStampCache(defaultTimeStamp)
