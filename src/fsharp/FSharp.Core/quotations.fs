@@ -643,8 +643,8 @@ module Patterns =
             | WhileLoopOp,_ 
             | VarSetOp,_
             | AddressSetOp,_ -> typeof<Unit> 
-            | AddressOfOp,_ -> raise <| System.InvalidOperationException (SR.GetString(SR.QcannotTakeAddress))
-            | (QuoteOp _ | SequentialOp | TryWithOp | TryFinallyOp | IfThenElseOp | AppOp),_ -> failwith "unreachable"
+            | AddressOfOp,[expr]-> (typeOf expr).MakeByRefType()
+            | (AddressOfOp | QuoteOp _ | SequentialOp | TryWithOp | TryFinallyOp | IfThenElseOp | AppOp),_ -> failwith "unreachable"
 
 
     //--------------------------------------------------------------------------
