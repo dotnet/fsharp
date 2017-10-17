@@ -144,8 +144,7 @@ type internal InlineRenameService
     [<ImportingConstructor>]
     (
         projectInfoManager: FSharpProjectOptionsManager,
-        checkerProvider: FSharpCheckerProvider,
-        [<ImportMany>] _refactorNotifyServices: seq<IRefactorNotifyService>
+        checkerProvider: FSharpCheckerProvider
     ) =
 
     static let userOpName = "InlineRename"
