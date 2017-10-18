@@ -1997,7 +1997,10 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
         threadSafeOp 
             (fun () -> [| |]) 
             (fun scope -> 
-                [| for (itemOcc,denv,m) in scope.ScopeSymbolUses.GetUsesOfSymbol(symbol.Item) |> Seq.distinctBy (fun (itemOcc,_denv,m) -> itemOcc, m) do
+                [| let sus = scope.ScopeSymbolUses.GetUsesOfSymbol(symbol.Item) 
+                   let dsus = sus |> Array.distinctBy (fun (itemOcc,_denv,m) -> itemOcc, m)
+                   let _x = dsus
+                   for (itemOcc,denv,m) in sus do
                      if itemOcc <> ItemOccurence.RelatedText then
                       yield FSharpSymbolUse(scope.TcGlobals, denv, symbol, itemOcc, m) |])
          |> async.Return 
