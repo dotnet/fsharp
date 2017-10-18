@@ -459,7 +459,6 @@ module internal PrintfImpl =
                 )
             )
 
-
         static member Chained1<'A, 'Tail>
             (
                 s0, conv1,
@@ -474,6 +473,22 @@ module internal PrintfImpl =
                     next env : 'Tail
                 )
             )
+
+         static member ChainedFastStart1<'A, 'Tail>
+            (
+                conv1,
+                next
+            ) =
+            (fun (env : unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (a : 'A) ->
+                    let env() = 
+                        let env = env()
+                        env.Write(conv1 a)
+                        env
+                    next env : 'Tail
+                )
+            )
+
         static member Chained2<'A, 'B, 'Tail>
             (
                 s0, conv1, s1, conv2,
@@ -484,6 +499,21 @@ module internal PrintfImpl =
                     let env() = 
                         let env = env()
                         Utils.Write(env, s0, (conv1 a), s1, (conv2 b))
+                        env
+                    next env : 'Tail
+                )
+            )
+
+        static member ChainedFastStart2<'A, 'B, 'Tail>
+            (
+                conv1, s1, conv2,
+                next
+            ) =
+            (fun (env : unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (a : 'A) (b : 'B) ->
+                    let env() = 
+                        let env = env()
+                        Utils.Write(env, (conv1 a), s1, (conv2 b))
                         env
                     next env : 'Tail
                 )
@@ -504,6 +534,21 @@ module internal PrintfImpl =
                 )
             )
 
+        static member ChainedFastStart3<'A, 'B, 'C, 'Tail>
+            (
+                conv1, s1, conv2, s2, conv3,
+                next
+            ) =
+            (fun (env : unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (a : 'A) (b : 'B) (c : 'C) ->
+                    let env() = 
+                        let env = env()
+                        Utils.Write(env, (conv1 a), s1, (conv2 b), s2, (conv3 c))
+                        env
+                    next env : 'Tail
+                )
+            )
+
         static member Chained4<'A, 'B, 'C, 'D, 'Tail>
             (
                 s0, conv1, s1, conv2, s2, conv3, s3, conv4,
@@ -518,6 +563,22 @@ module internal PrintfImpl =
                     next env : 'Tail
                 )
             )
+
+        static member ChainedFastStart4<'A, 'B, 'C, 'D, 'Tail>
+            (
+                conv1, s1, conv2, s2, conv3, s3, conv4,
+                next
+            ) =
+            (fun (env : unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (a : 'A) (b : 'B) (c : 'C) (d : 'D)->
+                    let env() = 
+                        let env = env()
+                        Utils.Write(env, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d))
+                        env
+                    next env : 'Tail
+                )
+            )
+
         static member Chained5<'A, 'B, 'C, 'D, 'E, 'Tail>
             (
                 s0, conv1, s1, conv2, s2, conv3, s3, conv4, s4, conv5,
@@ -528,6 +589,21 @@ module internal PrintfImpl =
                     let env() = 
                         let env = env()
                         Utils.Write(env, s0, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d), s4, (conv5 e))
+                        env
+                    next env : 'Tail
+                )
+            )
+
+        static member ChainedFastStart5<'A, 'B, 'C, 'D, 'E, 'Tail>
+            (
+                conv1, s1, conv2, s2, conv3, s3, conv4, s4, conv5,
+                next
+            ) =
+            (fun (env : unit -> PrintfEnv<'State, 'Residue, 'Result>) ->
+                (fun (a : 'A) (b : 'B) (c : 'C) (d : 'D) (e : 'E)->
+                    let env() = 
+                        let env = env()
+                        Utils.Write(env, (conv1 a), s1, (conv2 b), s2, (conv3 c), s3, (conv4 d), s4, (conv5 e))
                         env
                     next env : 'Tail
                 )
@@ -1290,8 +1366,16 @@ module internal PrintfImpl =
             let mi = mi.MakeGenericMethod(argTypes)
             mi.Invoke(null, args)
     
-        let buildPlainChained(args : obj[], argTypes : Type[]) = 
-            let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("Chained" + (let x = (argTypes.Length - 1) in x.ToString()), NonPublicStatics)
+        let buildPlainChained(args : obj[], argTypes : Type[]) =
+            let argsCount = args.Length
+            let methodName,args =
+                if argsCount > 0 && args.[0].ToString() = "" then
+                    optimizedArgCount <- optimizedArgCount + 1
+                    "ChainedFastStart", args |> Array.skip 1
+                else
+                    "Chained", args
+
+            let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod(methodName + (argTypes.Length - 1).ToString(), NonPublicStatics)
 #if DEBUG
             verifyMethodInfoWasTaken mi
 #endif
