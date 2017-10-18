@@ -1499,16 +1499,7 @@ module internal PrintfImpl =
             buf.[ptr] <- s
             ptr <- ptr + 1
 
-    type SingleStringPrintfEnv<'Result>(k) = 
-        inherit PrintfEnv<unit, string, 'Result>(())
-
-        let mutable c = null
-
-        override __.Finish() : 'Result = k c
-        override __.Write(s : string) = c <- s
-        override __.WriteT(s) = c <- s
-
-    type DoubleStringPrintfEnv<'Result>(k) = 
+    type SmallStringPrintfEnv<'Result>(k) = 
         inherit PrintfEnv<unit, string, 'Result>(())
         
         let mutable c = null
@@ -1552,19 +1543,19 @@ module Printf =
     [<CompiledName("PrintFormatToStringThen")>]
     let ksprintf continuation (format : StringFormat<'T, 'Result>) : 'T = 
         doPrintf format (fun n ->
-            match n with
-            | 1 -> SingleStringPrintfEnv(continuation) :> PrintfEnv<_, _, _>
-            | 2 -> DoubleStringPrintfEnv(continuation) :> PrintfEnv<_, _, _>
-            | _ -> StringPrintfEnv(continuation, n) :> PrintfEnv<_, _, _>
+            if n <= 2 then
+                SmallStringPrintfEnv(continuation) :> PrintfEnv<_, _, _>
+            else
+                StringPrintfEnv(continuation, n) :> PrintfEnv<_, _, _>
         )
 
     [<CompiledName("PrintFormatToStringThen")>]
     let sprintf (format : StringFormat<'T>) =
         doPrintf format (fun n ->
-            match n with
-            | 1 -> SingleStringPrintfEnv(id) :> PrintfEnv<_, _, _>
-            | 2 -> DoubleStringPrintfEnv(id) :> PrintfEnv<_, _, _>
-            | _ -> StringPrintfEnv(id, n) :> PrintfEnv<_, _, _>
+            if n <= 2 then
+                SmallStringPrintfEnv(id) :> PrintfEnv<_, _, _>
+            else
+                StringPrintfEnv(id, n) :> PrintfEnv<_, _, _>
         )
 
     [<CompiledName("PrintFormatThen")>]
