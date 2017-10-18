@@ -1267,42 +1267,28 @@ module internal PrintfImpl =
 
         let buildPlainFinal(args : obj[], argTypes : Type[]) =
             let argsCount = args.Length
-            let count = let x = argTypes.Length in x.ToString()
-            if argsCount > 0 && args.[0].ToString() = "" then
-                if argsCount > 1 && args.[argsCount - 1].ToString() = "" then
-                    let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("FinalFast" + count, NonPublicStatics)
-#if DEBUG
-                    verifyMethodInfoWasTaken mi
-#endif
-                    let mi = mi.MakeGenericMethod(argTypes)
-                    let args = Array.sub args 1 (argsCount - 2)
-                    optimizedArgCount <- optimizedArgCount + 2
-                    mi.Invoke(null, args)
-                else
-                    let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("FinalFastStart" + count, NonPublicStatics)
-#if DEBUG
-                    verifyMethodInfoWasTaken mi
-#else
-#endif
-                    let mi = mi.MakeGenericMethod(argTypes)
+            let methodName,args =
+                if argsCount > 0 && args.[0].ToString() = "" then
+                    if argsCount > 1 && args.[argsCount - 1].ToString() = "" then
+                        let args = Array.sub args 1 (argsCount - 2)
+                        optimizedArgCount <- optimizedArgCount + 2
+                        "FinalFast", args
+                    else
+                        optimizedArgCount <- optimizedArgCount + 1
+                        "FinalFastStart", args |> Array.skip 1
+                elif argsCount > 0 && args.[argsCount - 1].ToString() = "" then
+                    let args = Array.sub args 0 (argsCount - 1)
                     optimizedArgCount <- optimizedArgCount + 1
-                    mi.Invoke(null, args |> Array.skip 1)
-            elif argsCount > 0 && args.[argsCount - 1].ToString() = "" then
-                let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("FinalFastEnd" + count, NonPublicStatics)
+                    "FinalFastEnd", args
+                else
+                    "Final",args
+
+            let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod(methodName + argTypes.Length.ToString(), NonPublicStatics)
 #if DEBUG
-                verifyMethodInfoWasTaken mi
+            verifyMethodInfoWasTaken mi
 #endif
-                let mi = mi.MakeGenericMethod(argTypes)
-                let args = Array.sub args 0 (argsCount - 1)
-                optimizedArgCount <- optimizedArgCount + 1
-                mi.Invoke(null, args)                
-            else
-                let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("Final" + count, NonPublicStatics)
-#if DEBUG
-                verifyMethodInfoWasTaken mi
-#endif
-                let mi = mi.MakeGenericMethod(argTypes)
-                mi.Invoke(null, args)
+            let mi = mi.MakeGenericMethod(argTypes)
+            mi.Invoke(null, args)
     
         let buildPlainChained(args : obj[], argTypes : Type[]) = 
             let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("Chained" + (let x = (argTypes.Length - 1) in x.ToString()), NonPublicStatics)
