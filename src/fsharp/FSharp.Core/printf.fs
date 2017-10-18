@@ -1184,7 +1184,6 @@ module internal PrintfImpl =
         let verifyMethodInfoWasTaken (mi : System.Reflection.MemberInfo) =
             if isNull mi then 
                 ignore (System.Diagnostics.Debugger.Launch())
-#else
 #endif
             
         let buildSpecialChained(spec : FormatSpecifier, argTys : Type[], prefix : string, tail : obj, retTy) = 
@@ -1192,7 +1191,6 @@ module internal PrintfImpl =
                 let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("LittleAChained", NonPublicStatics)
 #if DEBUG
                 verifyMethodInfoWasTaken mi
-#else
 #endif
 
                 let mi = mi.MakeGenericMethod([| argTys.[1];  retTy |])
@@ -1202,7 +1200,6 @@ module internal PrintfImpl =
                 let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("TChained", NonPublicStatics)
 #if DEBUG
                 verifyMethodInfoWasTaken mi
-#else
 #endif
                 let mi = mi.MakeGenericMethod([| retTy |])
                 let args = [| box prefix; tail |]
@@ -1217,7 +1214,6 @@ module internal PrintfImpl =
                     typeof<Specializations<'S, 'Re, 'Res>>.GetMethod(name, NonPublicStatics)
 #if DEBUG                
                 verifyMethodInfoWasTaken mi
-#else
 #endif                
                 let argTypes, args =
                     if spec.TypeChar = '%' then
@@ -1235,7 +1231,6 @@ module internal PrintfImpl =
                 let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("LittleAFinal", NonPublicStatics)
 #if DEBUG
                 verifyMethodInfoWasTaken mi
-#else
 #endif
                 let mi = mi.MakeGenericMethod(argTys.[1] : Type)
                 let args = [| box prefix; box suffix |]
@@ -1244,7 +1239,6 @@ module internal PrintfImpl =
                 let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("TFinal", NonPublicStatics)
 #if DEBUG
                 verifyMethodInfoWasTaken mi
-#else
 #endif
                 let args = [| box prefix; box suffix |]
                 mi.Invoke(null, args)
@@ -1258,7 +1252,6 @@ module internal PrintfImpl =
                     typeof<Specializations<'S, 'Re, 'Res>>.GetMethod(name, NonPublicStatics)
 #if DEBUG
                 verifyMethodInfoWasTaken mi
-#else
 #endif
 
                 let mi, args = 
@@ -1280,7 +1273,6 @@ module internal PrintfImpl =
                     let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("FinalFast" + count, NonPublicStatics)
 #if DEBUG
                     verifyMethodInfoWasTaken mi
-#else
 #endif
                     let mi = mi.MakeGenericMethod(argTypes)
                     let args = Array.sub args 1 (argsCount - 2)
@@ -1299,7 +1291,6 @@ module internal PrintfImpl =
                 let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("FinalFastEnd" + count, NonPublicStatics)
 #if DEBUG
                 verifyMethodInfoWasTaken mi
-#else
 #endif
                 let mi = mi.MakeGenericMethod(argTypes)
                 let args = Array.sub args 0 (argsCount - 1)
@@ -1309,7 +1300,6 @@ module internal PrintfImpl =
                 let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("Final" + count, NonPublicStatics)
 #if DEBUG
                 verifyMethodInfoWasTaken mi
-#else
 #endif
                 let mi = mi.MakeGenericMethod(argTypes)
                 mi.Invoke(null, args)
@@ -1318,7 +1308,6 @@ module internal PrintfImpl =
             let mi = typeof<Specializations<'S, 'Re, 'Res>>.GetMethod("Chained" + (let x = (argTypes.Length - 1) in x.ToString()), NonPublicStatics)
 #if DEBUG
             verifyMethodInfoWasTaken mi
-#else
 #endif
             let mi = mi.MakeGenericMethod(argTypes)
             mi.Invoke(null, args)
