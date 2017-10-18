@@ -1228,7 +1228,12 @@ let p_ident (x: Ident) st = p_tup2 p_string p_range (x.idText,x.idRange) st
 let p_xmldoc (XmlDoc x) st = p_array p_string x st
 
 let u_pos st = let a = u_int st in let b = u_int st in mkPos a b
-let u_range st = let a = u_string st in let b = u_pos st in let c = u_pos st in mkRange a b c
+
+let u_range st = 
+    let a = u_string st 
+    let b = u_pos st 
+    let c = u_pos st 
+    mkRange (if isNull a then null else try System.IO.Path.GetFullPath a with _ -> a) b c
 
 // Most ranges (e.g. on optimization expressions) can be elided from stored data 
 let u_dummy_range : range unpickler = fun _st -> range0
