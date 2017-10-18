@@ -1438,11 +1438,7 @@ type TcSymbolUses(g, capturedNameResolutions : ResizeArray<CapturedNameResolutio
 
     member this.GetUsesOfSymbol(item) = 
         [| for cnr in cnrs do
-               if protectAssemblyExploration false (fun () -> 
-                                                        let r = ItemsAreEffectivelyEqual g item cnr.Item
-                                                        System.IO.File.AppendAllText(@"k:\_lll.txt", sprintf "\n%s => %b" cnr.Item.DisplayName r)
-                                                        r
-                                                   ) then
+               if protectAssemblyExploration false (fun () -> ItemsAreEffectivelyEqual g item cnr.Item) then
                   yield (cnr.ItemOccurence, cnr.DisplayEnv, cnr.Range) |]
 
     member this.GetAllUsesOfSymbols() = 
