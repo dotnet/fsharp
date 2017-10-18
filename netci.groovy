@@ -12,7 +12,7 @@ def static getBuildJobName(def configuration, def os) {
 
 [true, false].each { isPullRequest ->
     osList.each { os ->
-        def configurations = ['Debug', 'Release_ci_part1', 'Release_ci_part2', 'Release_ci_part3', 'Release_net40_no_vs' ];
+        def configurations = ['Debug', 'Release_ci_part1', 'Release_ci_part2', 'Release_ci_part3', 'Release_net40_no_vs', 'Release_fcs' ];
         if (os != 'Windows_NT') {
             // Only build one configuration on Linux/... so far
             configurations = ['Release'];
@@ -27,48 +27,78 @@ def static getBuildJobName(def configuration, def os) {
             def buildCommand = '';
 
             def buildFlavor= '';
-            if (configuration == "Debug") {
-                buildFlavor = "debug"
-                build_args = ""
-            }
-            else {
+            if (configuration == "Release_fcs") {
                 buildFlavor = "release"
-                if (configuration == "Release_ci_part1") {
-                    build_args = "ci_part1"
-                }
-                else if (configuration == "Release_ci_part2") {
-                    build_args = "ci_part2"
-                }
-                else if (configuration == "Release_ci_part3") {
-                    build_args = "ci_part3"
-                }
-                else if (configuration == "Release_net40_no_vs") {
-                    build_args = "net40"
+                build_args = ""
+
+                if (os == 'Windows_NT') {
+                    buildCommand = ".\\fcs\\build.cmd ${buildFlavor} ${build_args}"
                 }
                 else {
-                    build_args = "ci"
+                    buildCommand = "./fsc/build.sh ${buildFlavor} ${build_args}"
                 }
-            }
 
-            if (os == 'Windows_NT') {
-                buildCommand = ".\\build.cmd ${buildFlavor} ${build_args}"
+                def newJobName = Utilities.getFullJobName(project, jobName, isPullRequest)
+                def newJob = job(newJobName) {
+                    steps {
+                        if (os == 'Windows_NT') {
+                            batchFile("""
+echo *** Build Visual F# Tools ***
+
+cd fcs
+.\\build.cmd ${buildFlavor} ${build_args}""")
+                        }
+                        else {
+                            // Shell
+                            shell(buildCommand)
+                        }
+                    }
+                }                
             }
             else {
-                buildCommand = "./build.sh ${buildFlavor} ${build_args}"
-            }
+                if (configuration == "Debug") {
+                    buildFlavor = "debug"
+                    build_args = ""
+                }
+                else {
+                    buildFlavor = "release"
+                    if (configuration == "Release_ci_part1") {
+                        build_args = "ci_part1"
+                    }
+                    else if (configuration == "Release_ci_part2") {
+                        build_args = "ci_part2"
+                    }
+                    else if (configuration == "Release_ci_part3") {
+                        build_args = "ci_part3"
+                    }
+                    else if (configuration == "Release_net40_no_vs") {
+                        build_args = "net40"
+                    }
+                    else {
+                        build_args = "ci"
+                    }
+                }
 
-            def newJobName = Utilities.getFullJobName(project, jobName, isPullRequest)
-            def newJob = job(newJobName) {
-                steps {
-                    if (os == 'Windows_NT') {
-                        batchFile("""
+                if (os == 'Windows_NT') {
+                    buildCommand = ".\\build.cmd ${buildFlavor} ${build_args}"
+                }
+                else {
+                    buildCommand = "./build.sh ${buildFlavor} ${build_args}"
+                }
+
+                def newJobName = Utilities.getFullJobName(project, jobName, isPullRequest)
+                def newJob = job(newJobName) {
+                    steps {
+                        if (os == 'Windows_NT') {
+                            batchFile("""
 echo *** Build Visual F# Tools ***
 
 .\\build.cmd ${buildFlavor} ${build_args}""")
-                    }
-                    else {
-                        // Shell
-                        shell(buildCommand)
+                        }
+                        else {
+                            // Shell
+                            shell(buildCommand)
+                        }
                     }
                 }
             }
