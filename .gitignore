@@ -119,3 +119,4 @@ source_link.json
 System.ValueTuple.dll
 tests/fsharpqa/testenv/bin/System.ValueTuple.dll
 /*/.fake
+/fcs/packages/
