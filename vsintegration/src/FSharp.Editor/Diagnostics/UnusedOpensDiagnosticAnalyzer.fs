@@ -74,11 +74,9 @@ module private UnusedOpens =
         | None -> []
 
     let symbolIsFullyQualified (sourceText: SourceText) (sym: FSharpSymbolUse) (fullName: string) =
-        match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, sym.RangeAlternate) with
-        | Some span // check that the symbol hasn't provided an invalid span
-            when sourceText.Length < span.Start 
-              || sourceText.Length < span.End -> false
-        | Some span -> sourceText.ToString span = fullName
+        let lineStr = sourceText.Lines.[Line.toZ sym.RangeAlternate.StartLine].ToString()
+        match QuickParse.GetCompleteIdentifierIsland true lineStr sym.RangeAlternate.EndColumn with
+        | Some (island, _, _) -> island = fullName
         | None -> false
 
     let getUnusedOpens (sourceText: SourceText) (parsedInput: ParsedInput) (symbolUses: FSharpSymbolUse[]) =
