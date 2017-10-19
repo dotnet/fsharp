@@ -164,10 +164,11 @@ let main argv =
                             fileResults.GetDeclarationListInfo(
                                 Some parseResult,
                                 completion.Position.Line,
-                                completion.Position.Column,
                                 getLine (completion.Position.Line),
-                                completion.QualifyingNames,
-                                completion.PartialName,
+                                { QualifyingIdents = completion.QualifyingNames
+                                  PartialIdent = completion.PartialName
+                                  EndColumn = completion.Position.Column - 1
+                                  LastDotPos = None },
                                 fun() -> [])
                            
                         for i in listInfo.Items do
