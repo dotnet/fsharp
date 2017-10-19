@@ -17,28 +17,39 @@ open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Symbols
 
-
 module private UnusedOpens =
-    
+    /// Represents single open statement.
+    type OpenStatement =
+        { /// Open namespace or module effective names.
+          Names: Set<string>
+          /// Range of open statement itself.
+          Range: range
+          /// Enclosing module or namespace range (that is, the scope on in which this open statement is visible).
+          ModuleRange: range }
 
-    let rec visitSynModuleOrNamespaceDecls (parent: Ast.LongIdent) decls : (Set<string> * range) list =
+    let rec visitSynModuleOrNamespaceDecls (parent: Ast.LongIdent) (decls: SynModuleDecls) (moduleRange: range) : OpenStatement list =
         [ for decl in decls do
             match decl with
             | SynModuleDecl.Open(LongIdentWithDots.LongIdentWithDots(id = longId), range) ->
                 yield
-                    set [ yield (longId |> List.map(fun l -> l.idText) |> String.concat ".")
-                          // `open N.M` can open N.M module from parent module as well, if it's non empty
-                          if not (List.isEmpty parent) then
-                            yield (parent @ longId |> List.map(fun l -> l.idText) |> String.concat ".") ], range
-            | SynModuleDecl.NestedModule(SynComponentInfo.ComponentInfo(longId = longId),_, decls,_,_) ->
-                yield! visitSynModuleOrNamespaceDecls longId decls
+                    { Names = 
+                          set [ yield (longId |> List.map(fun l -> l.idText) |> String.concat ".")
+                                // `open N.M` can open N.M module from parent module as well, if it's non empty
+                                if not (List.isEmpty parent) then
+                                    yield (parent @ longId |> List.map(fun l -> l.idText) |> String.concat ".") ]
+                      Range = range
+                      ModuleRange = moduleRange }
+
+            | SynModuleDecl.NestedModule(SynComponentInfo.ComponentInfo(longId = longId),_, decls,_,moduleRange) ->
+                yield! visitSynModuleOrNamespaceDecls longId decls moduleRange
             | _ -> () ]
 
-    let getOpenStatements = function
+    let getOpenStatements (parsedInput: ParsedInput) : OpenStatement list = 
+        match parsedInput with
         | ParsedInput.ImplFile (ParsedImplFileInput(modules = modules)) ->
             [ for md in modules do
-                let SynModuleOrNamespace(longId = longId; decls = decls) = md
-                yield! visitSynModuleOrNamespaceDecls longId decls ]
+                let SynModuleOrNamespace(longId = longId; decls = decls; range = moduleRange) = md
+                yield! visitSynModuleOrNamespaceDecls longId decls moduleRange ]
         | _ -> []
 
     let getAutoOpenAccessPath (ent:FSharpEntity) =
@@ -79,7 +90,11 @@ module private UnusedOpens =
         | Some (island, _, _) -> island = fullName
         | None -> false
 
-    let getUnusedOpens (sourceText: SourceText) (parsedInput: ParsedInput) (symbolUses: FSharpSymbolUse[]) =
+    type NamespaceUse =
+        { Ident: string
+          Location: range }
+
+    let getUnusedOpens (sourceText: SourceText) (parsedInput: ParsedInput) (symbolUses: FSharpSymbolUse[]) : range list =
 
         let getPartNamespace (symbolUse: FSharpSymbolUse) (fullName: string) =
             // given a symbol range such as `Text.ISegment` and a full name of `MonoDevelop.Core.Text.ISegment`, return `MonoDevelop.Core`
@@ -117,25 +132,32 @@ module private UnusedOpens =
                       yield! entityNamespace declaringEntity ]
             } |> Option.toList |> List.concat |> List.choose id
 
-        let namespacesInUse =
+        let namespacesInUse : NamespaceUse list =
             symbolUses
-            |> Seq.filter (fun (s: FSharpSymbolUse) -> not s.IsFromDefinition)
-            |> Seq.collect getPossibleNamespaces
-            |> Set.ofSeq
+            |> Array.filter (fun (s: FSharpSymbolUse) -> not s.IsFromDefinition)
+            |> Array.toList
+            |> List.collect (fun x -> 
+                getPossibleNamespaces x 
+                |> List.distinct 
+                |> List.map (fun ns -> { Ident = ns; Location = x.RangeAlternate }))
 
-        let filter list: (Set<string> * range) list =
-            let rec filterInner acc list (seenNamespaces: Set<string>) = 
-                let notUsed ns = not (namespacesInUse.Contains ns) || seenNamespaces.Contains ns
+        let filter list: OpenStatement list =
+            let rec filterInner acc (list: OpenStatement list) (seenOpenStatements: OpenStatement list) = 
+                
+                let notUsed (os: OpenStatement) = 
+                    not (namespacesInUse |> List.exists (fun nsu -> rangeContainsRange os.ModuleRange nsu.Location && os.Names |> Set.contains nsu.Ident))
+                    || seenOpenStatements |> List.contains os
+                
                 match list with 
-                | (ns, range) :: xs when ns |> Set.forall notUsed -> 
-                    filterInner ((ns, range) :: acc) xs (seenNamespaces |> Set.union ns)
-                | (ns, _) :: xs ->
-                    filterInner acc xs (seenNamespaces |> Set.union ns)
+                | os :: xs when notUsed os -> 
+                    filterInner (os :: acc) xs (os :: seenOpenStatements)
+                | os :: xs ->
+                    filterInner acc xs (os :: seenOpenStatements)
                 | [] -> List.rev acc
-            filterInner [] list Set.empty
+            
+            filterInner [] list []
 
-        let openStatements = getOpenStatements parsedInput
-        openStatements |> filter |> List.map snd
+        parsedInput |> getOpenStatements |> filter |> List.map (fun os -> os.Range)
 
 [<DiagnosticAnalyzer(FSharpConstants.FSharpLanguageName)>]
 type internal UnusedOpensDiagnosticAnalyzer() =
@@ -158,7 +180,7 @@ type internal UnusedOpensDiagnosticAnalyzer() =
     override __.SupportedDiagnostics = ImmutableArray.Create Descriptor
     override this.AnalyzeSyntaxAsync(_, _) = Task.FromResult ImmutableArray<Diagnostic>.Empty
 
-    static member GetUnusedOpenRanges(document: Document, options, checker: FSharpChecker) =
+    static member GetUnusedOpenRanges(document: Document, options, checker: FSharpChecker) : Async<Option<range list>> =
         asyncMaybe {
             do! Option.guard Settings.CodeFixes.UnusedOpens
             let! sourceText = document.GetTextAsync()
@@ -178,10 +200,10 @@ type internal UnusedOpensDiagnosticAnalyzer() =
             
             return 
                 unusedOpens
-                |> List.map (fun m ->
+                |> List.map (fun range ->
                       Diagnostic.Create(
                          Descriptor,
-                         RoslynHelpers.RangeToLocation(m, sourceText, document.FilePath)))
+                         RoslynHelpers.RangeToLocation(range, sourceText, document.FilePath)))
                 |> Seq.toImmutableArray
         } 
         |> Async.map (Option.defaultValue ImmutableArray.Empty)
