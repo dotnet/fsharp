@@ -40,7 +40,7 @@ type internal FSharpColorizationService
             asyncMaybe {
                 do Trace.TraceInformation("{0:n3} (start) SemanticColorization", DateTime.Now.TimeOfDay.TotalSeconds)
                 do! Async.Sleep DefaultTuning.SemanticColorizationInitialDelay |> liftAsync // be less intrusive, give other work priority most of the time
-                let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
+                let! _, _, projectOptions = projectInfoManager.TryGetOptionsForDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! _, _, checkResults = checkerProvider.Checker.ParseAndCheckDocument(document, projectOptions, sourceText = sourceText, allowStaleResults = false, userOpName=userOpName) 
                 // it's crucial to not return duplicated or overlapping `ClassifiedSpan`s because Find Usages service crashes.

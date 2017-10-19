@@ -1373,8 +1373,8 @@ type FSharpParsingOptions =
     }
 
     member x.LastFileName =
-        Debug.Assert(not (Array.isEmpty x.SourceFiles), "Parsing options don't contain any file")
-        Array.last x.SourceFiles
+        if x.SourceFiles.Length = 0 then ""
+        else Array.last x.SourceFiles
 
     static member Default =
         { SourceFiles = Array.empty
@@ -1724,7 +1724,7 @@ type FSharpProjectOptions =
     member x.ProjectOptions = x.OtherOptions
     /// Whether the two parse options refer to the same project.
     static member UseSameProjectFileName(options1,options2) =
-        options1.ProjectFileName = options2.ProjectFileName          
+        options1.ProjectFileName = options2.ProjectFileName
 
     /// Compare two options sets with respect to the parts of the options that are important to building.
     static member AreSameForChecking(options1,options2) =
@@ -1737,7 +1737,9 @@ type FSharpProjectOptions =
         options1.UnresolvedReferences = options2.UnresolvedReferences &&
         options1.OriginalLoadReferences = options2.OriginalLoadReferences &&
         options1.ReferencedProjects.Length = options2.ReferencedProjects.Length &&
-        Array.forall2 (fun (n1,a) (n2,b) -> n1 = n2 && FSharpProjectOptions.AreSameForChecking(a,b)) options1.ReferencedProjects options2.ReferencedProjects &&
+        Array.forall2 (fun (n1,a) (n2,b) ->
+            n1 = n2 && 
+            FSharpProjectOptions.AreSameForChecking(a,b)) options1.ReferencedProjects options2.ReferencedProjects &&
         options1.LoadTime = options2.LoadTime
 
     /// Compute the project directory.
@@ -2043,11 +2045,11 @@ module Helpers =
 
     // Look for DLLs in the location of the service DLL first.
     let defaultFSharpBinariesDir = FSharpEnvironment.BinFolderOfDefaultFSharpCompiler(Some(typeof<FSharpCheckFileAnswer>.Assembly.Location)).Value
-    
+
     /// Determine whether two (fileName,options) keys are identical w.r.t. affect on checking
-    let AreSameForChecking2((fileName1: string, options1: FSharpProjectOptions), (fileName2, o2)) =
+    let AreSameForChecking2((fileName1: string, options1: FSharpProjectOptions), (fileName2, options2)) =
         (fileName1 = fileName2) 
-        && FSharpProjectOptions.AreSameForChecking(options1,o2)
+        && FSharpProjectOptions.AreSameForChecking(options1,options2)
         
     /// Determine whether two (fileName,options) keys should be identical w.r.t. resource usage
     let AreSubsumable2((fileName1:string,o1:FSharpProjectOptions),(fileName2:string,o2:FSharpProjectOptions)) =
