@@ -134,6 +134,9 @@
     <Compile Include="DocumentHighlightsServiceTests.fs">
       <Link>Roslyn\DocumentHighlightsServiceTests.fs</Link>
     </Compile>
+    <Compile Include="UnusedOpensDiagnosticAnalyzerTests.fs">
+      <Link>Roslyn\UnusedOpensDiagnosticAnalyzerTests.fs</Link>
+    </Compile>
     <CopyAndSubstituteText Include="VisualFSharp.Unittests.dll.config">
       <TargetFilename>VisualFSharp.Unittests.dll.config</TargetFilename>
       <Pattern1>{VisualStudioVersion}</Pattern1>
