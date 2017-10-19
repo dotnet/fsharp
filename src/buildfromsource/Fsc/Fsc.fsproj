@@ -15,6 +15,7 @@
 
   <Import Project="..\BuildFromSource.targets" />
   <ItemGroup>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\Fsc\InternalsVisibleTo.fs" />
     <Compile Include="..\..\assemblyinfo\assemblyinfo.fsc.exe.fs">
       <Link>Resources/assemblyinfo.fsc.exe.fs</Link>
     </Compile>
