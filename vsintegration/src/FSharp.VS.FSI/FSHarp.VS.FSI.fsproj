@@ -68,7 +68,8 @@
     <Compile Include="fsiSessionToolWindow.fs" />
     <Compile Include="fsiPackageHooks.fs" />
     <Compile Include="fsiPackage.fs" />
-    <EmbeddedResource Include="Properties.resx" GenerateSource="true">
+    <EmbeddedResource Include="Properties.resx">
+      <GenerateSource>true</GenerateSource>
       <GeneratedModuleName>Microsoft.VisualStudio.FSharp.Interactive.SRProperties</GeneratedModuleName>
       <GenerateLegacyCode>true</GenerateLegacyCode>
       <ManifestResourceName>Properties</ManifestResourceName>

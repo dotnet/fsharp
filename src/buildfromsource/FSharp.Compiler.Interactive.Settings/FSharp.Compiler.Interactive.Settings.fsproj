@@ -16,6 +16,7 @@
   <Import Project="..\BuildFromSource.targets" />
   <ItemGroup>
     <FsSrGen Include="$(FSharpSourcesRoot)\fsharp\FSInteractiveSettings.txt" />
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Compiler.Interactive.Settings\InternalsVisibleTo.fs" />
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Interactive.Settings.dll.fs" />
     <Compile Include="InternalsVisibleTo.fs" />
     <Compile Include="..\..\utils\reshapedreflection.fs" />
