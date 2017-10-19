@@ -171,7 +171,7 @@ type internal FSharpLanguageServiceTestable() as this =
         member this.DependencyFileCreated projectSite = 
             let enableInMemoryCrossProjectReferences = true
             // Invalidate the configuration if we notice any add for any DependencyFiles 
-            let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, serviceProvider.Value, "" ,None, None, false)
+            let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, serviceProvider.Value, None(*projectId*),"" ,None, None, false)
             this.FSharpChecker.InvalidateConfiguration(checkOptions)
 
         member this.DependencyFileChanged (filename) = 
