@@ -145,8 +145,17 @@ module private UnusedOpens =
             let rec filterInner acc (list: OpenStatement list) (seenOpenStatements: OpenStatement list) = 
                 
                 let notUsed (os: OpenStatement) = 
-                    not (namespacesInUse |> List.exists (fun nsu -> rangeContainsRange os.ModuleRange nsu.Location && os.Names |> Set.contains nsu.Ident))
-                    || seenOpenStatements |> List.contains os
+                    let notUsedAnywhere = not (namespacesInUse |> List.exists (fun nsu -> rangeContainsRange os.ModuleRange nsu.Location && os.Names |> Set.contains nsu.Ident))
+                    if notUsedAnywhere then true
+                    else
+                        let alreadySeen =
+                            seenOpenStatements
+                            |> List.exists (fun seenNs ->
+                                // if such open statement has already been marked as used in this or outer module, we skip it 
+                                // (that is, do not mark as used so far)
+                                (seenNs.ModuleRange = os.ModuleRange || rangeContainsRange seenNs.ModuleRange os.ModuleRange) &&
+                                not (os.Names |> Set.intersect seenNs.Names |> Set.isEmpty))
+                        alreadySeen
                 
                 match list with 
                 | os :: xs when notUsed os -> 
