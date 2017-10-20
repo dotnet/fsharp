@@ -1809,31 +1809,29 @@ type FSharpCheckProjectResults(projectFileName:string, tcConfigOption, keepAssem
     member info.AssemblySignature =  
         let (tcGlobals, tcImports, thisCcu, ccuSig, _tcSymbolUses, topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
         FSharpAssemblySignature(tcGlobals, thisCcu, tcImports, topAttribs, ccuSig)
-
-    member info.AssemblyContents =  
+    
+    member info.TypedImplementionFiles =
         if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
         let (tcGlobals, tcImports, thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles) = getDetails()
         let mimpls = 
             match tcAssemblyExpr with 
             | None -> []
             | Some mimpls -> mimpls
-        FSharpAssemblyContents(tcGlobals, thisCcu, tcImports, mimpls)
+        tcGlobals, thisCcu, tcImports, mimpls
+
+    member info.AssemblyContents = FSharpAssemblyContents(info.TypedImplementionFiles)
 
 
     member info.OptimizedAssemblyContents =  
-        if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
-        let (tcGlobals, tcImports, thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles) = getDetails()
-        let mimpls = 
-            match tcAssemblyExpr with 
-            | None -> []
-            | Some mimpls ->
-                let outfile = null
-                let importMap = tcImports.GetImportMap()
-                let optEnv0 = GetInitialOptimizationEnv (tcImports, tcGlobals)
-                let optimizedImpls, _optimizationData, _ = ApplyAllOptimizations (tcConfig(), tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile, importMap, false, optEnv0, thisCcu, mimpls)                
-                match optimizedImpls with
-                | TypedAssemblyAfterOptimization files ->
-                    files |> List.map fst
+        let tcGlobals, thisCcu, tcImports, mimpls = info.TypedImplementionFiles
+        let outfile = null
+        let importMap = tcImports.GetImportMap()
+        let optEnv0 = GetInitialOptimizationEnv (tcImports, tcGlobals)
+        let optimizedImpls, _optimizationData, _ = ApplyAllOptimizations (tcConfig(), tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile, importMap, false, optEnv0, thisCcu, mimpls)                
+        let mimpls =
+            match optimizedImpls with
+            | TypedAssemblyAfterOptimization files ->
+                files |> List.map fst
 
         FSharpAssemblyContents(tcGlobals, thisCcu, tcImports, mimpls)
 
