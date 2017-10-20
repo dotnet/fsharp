@@ -26,7 +26,7 @@ let private projectOptions : FSharpProjectOptions =
 let private checker = FSharpChecker.Create()
 
 let (=>) (source: string) (expectedRanges: ((*line*)int * ((*start column*)int * (*end column*)int)) list) =
-    let sourceLines = source.Split ([|"\n\r"; "\n"; "\r"|], StringSplitOptions.None)
+    let sourceLines = source.Split ([|"\r\n"; "\n"; "\r"|], StringSplitOptions.None)
 
     let parsedInput, checkFileResults =
         let parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, 0, source, projectOptions) |> Async.RunSynchronously
