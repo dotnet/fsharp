@@ -1814,6 +1814,23 @@ type FSharpCheckProjectResults(projectFileName:string, keepAssemblyContents, err
             | Some mimpls -> mimpls
         FSharpAssemblyContents(tcGlobals, thisCcu, tcImports, mimpls)
 
+
+    member info.GetOptimizedAssemblyContents(tcConfig, outfile) =  
+        if not keepAssemblyContents then invalidOp "The 'keepAssemblyContents' flag must be set to true on the FSharpChecker in order to access the checked contents of assemblies"
+        let (tcGlobals, tcImports, thisCcu, _ccuSig, _tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, tcAssemblyExpr, _dependencyFiles) = getDetails()
+        let mimpls = 
+            match tcAssemblyExpr with 
+            | None -> []
+            | Some mimpls ->
+                let importMap = tcImports.GetImportMap()
+                let optEnv0 = GetInitialOptimizationEnv (tcImports, tcGlobals)
+                let optimizedImpls, _optimizationData, _ = ApplyAllOptimizations (tcConfig, tcGlobals, (LightweightTcValForUsingInBuildMethodCall tcGlobals), outfile, importMap, false, optEnv0, thisCcu, mimpls)                
+                match optimizedImpls with
+                | TypedAssemblyAfterOptimization files ->
+                    files |> List.map fst
+
+        FSharpAssemblyContents(tcGlobals, thisCcu, tcImports, mimpls)
+
     // Not, this does not have to be a SyncOp, it can be called from any thread
     member info.GetUsesOfSymbol(symbol:FSharpSymbol) = 
         let (tcGlobals, _tcImports, _thisCcu, _ccuSig, tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
