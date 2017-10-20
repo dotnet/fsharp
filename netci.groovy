@@ -35,6 +35,7 @@ def static getBuildJobName(def configuration, def os) {
             def buildFlavor= '';
 
             if (configuration == "Release_fcs") {
+                // Build FCS
                 if (os == 'Windows_NT') {
                     buildPath = ".\\fcs\\"
                 }
