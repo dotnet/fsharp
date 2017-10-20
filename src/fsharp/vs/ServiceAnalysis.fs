@@ -6,9 +6,9 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Range
 
-module internal UnusedOpens =
+module UnusedOpens =
     /// Represents single open statement.
-    type private OpenStatement =
+    type OpenStatement =
         { /// Full namespace or module identifier as it's presented in source code.
           LiteralIdent: string
           /// All possible namespace or module identifiers, including the literal one.
@@ -18,7 +18,7 @@ module internal UnusedOpens =
           /// Enclosing module or namespace range (that is, the scope on in which this open statement is visible).
           ModuleRange: range }
 
-    let rec private visitSynModuleOrNamespaceDecls (parent: Ast.LongIdent) (decls: SynModuleDecls) (moduleRange: range) : OpenStatement list =
+    let rec visitSynModuleOrNamespaceDecls (parent: Ast.LongIdent) (decls: SynModuleDecls) (moduleRange: range) : OpenStatement list =
         [ for decl in decls do
             match decl with
             | SynModuleDecl.Open(LongIdentWithDots.LongIdentWithDots(id = longId), range) ->
@@ -37,7 +37,7 @@ module internal UnusedOpens =
                 yield! visitSynModuleOrNamespaceDecls longId decls moduleRange
             | _ -> () ]
 
-    let private getOpenStatements (parsedInput: ParsedInput) : OpenStatement list = 
+    let getOpenStatements (parsedInput: ParsedInput) : OpenStatement list = 
         match parsedInput with
         | ParsedInput.ImplFile (ParsedImplFileInput(modules = modules)) ->
             [ for md in modules do
@@ -45,7 +45,7 @@ module internal UnusedOpens =
                 yield! visitSynModuleOrNamespaceDecls longId decls moduleRange ]
         | _ -> []
 
-    let private getAutoOpenAccessPath (ent:FSharpEntity) =
+    let getAutoOpenAccessPath (ent:FSharpEntity) =
         // Some.Namespace+AutoOpenedModule+Entity
 
         // HACK: I can't see a way to get the EnclosingEntity of an Entity
@@ -56,7 +56,7 @@ module internal UnusedOpens =
             else
                 None)
 
-    let private entityNamespace (entOpt: FSharpEntity option) =
+    let entityNamespace (entOpt: FSharpEntity option) =
         match entOpt with
         | Some ent ->
             if ent.IsFSharpModule then
@@ -77,13 +77,13 @@ module internal UnusedOpens =
                 ]
         | None -> []
 
-    let private symbolIsFullyQualified (getSourceLineStr: int -> string) (sym: FSharpSymbolUse) (fullName: string) =
+    let symbolIsFullyQualified (getSourceLineStr: int -> string) (sym: FSharpSymbolUse) (fullName: string) =
         let lineStr = getSourceLineStr sym.RangeAlternate.StartLine
         match QuickParse.GetCompleteIdentifierIsland true lineStr sym.RangeAlternate.EndColumn with
         | Some (island, _, _) -> island = fullName
         | None -> false
 
-    type private NamespaceUse =
+    type NamespaceUse =
         { Ident: string
           Location: range }
 
