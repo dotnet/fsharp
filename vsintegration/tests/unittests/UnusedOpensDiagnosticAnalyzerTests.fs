@@ -272,6 +272,7 @@ type Site (x: int -> unit) = class end
     => [ 4, (5, 6) ]
 
 [<Test>]
+[<Ignore "Relative open statements are not supported yet">]
 let ``static extension method applied to a type results that both namespaces /where the type is declared and where the extension is declared/ is not marked as unused``() =
     """
 module Extensions =
@@ -284,6 +285,7 @@ let _ = DateTime.ExtensionMethod
     => []
     
 [<Test>]
+[<Ignore "Relative open statements are not supported yet">]
 let ``static extension property applied to a type results that both namespaces /where the type is declared and where the extension is declared/ is not marked as unused``() =
     """
 module Extensions =
@@ -594,6 +596,7 @@ module Module =
     => [ 3, (9, 26) ]
 
 [<Test>]
+[<Ignore "Relative open statements are not supported yet">]
 let ``record fields should be taken into account``() = 
     """
 module M1 =
@@ -605,6 +608,7 @@ module M2 =
     => []
 
 [<Test>]
+[<Ignore "Relative open statements are not supported yet">]
 let ``handle type alias``() = 
     """
 module TypeAlias =

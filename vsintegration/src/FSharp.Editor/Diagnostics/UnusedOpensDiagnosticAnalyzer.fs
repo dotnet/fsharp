@@ -166,21 +166,23 @@ module internal UnusedOpens =
         let filter list: OpenStatement list =
             let rec filterInner acc (list: OpenStatement list) (seenOpenStatements: OpenStatement list) = 
                 
-                let notUsed (os: OpenStatement) = 
-                    let notUsedAnywhere = 
-                        not (namespacesInUse |> List.exists (fun nsu -> 
-                            rangeContainsRange os.ModuleRange nsu.Location && os.AllPossibleIdents |> Set.contains nsu.Ident))
-                    if notUsedAnywhere then true
+                let notUsed (os: OpenStatement) =
+                    if os.LiteralIdent.StartsWith "`global`" then false
                     else
-                        let alreadySeen =
-                            seenOpenStatements
-                            |> List.exists (fun seenNs ->
-                                // if such open statement has already been marked as used in this or outer module, we skip it 
-                                // (that is, do not mark as used so far)
-                                rangeContainsRange seenNs.ModuleRange os.ModuleRange && os.LiteralIdent = seenNs.LiteralIdent)
-                        alreadySeen
+                        let notUsedAnywhere = 
+                            not (namespacesInUse |> List.exists (fun nsu -> 
+                                rangeContainsRange os.ModuleRange nsu.Location && os.AllPossibleIdents |> Set.contains nsu.Ident))
+                        if notUsedAnywhere then true
+                        else
+                            let alreadySeen =
+                                seenOpenStatements
+                                |> List.exists (fun seenNs ->
+                                    // if such open statement has already been marked as used in this or outer module, we skip it 
+                                    // (that is, do not mark as used so far)
+                                    rangeContainsRange seenNs.ModuleRange os.ModuleRange && os.LiteralIdent = seenNs.LiteralIdent)
+                            alreadySeen
                 
-                match list with 
+                match list with
                 | os :: xs when notUsed os -> 
                     filterInner (os :: acc) xs (os :: seenOpenStatements)
                 | os :: xs ->
