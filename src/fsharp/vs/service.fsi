@@ -273,6 +273,9 @@ type internal FSharpCheckFileResults =
     /// Represents complete typechecked implementation files, including thier typechecked signatures if any.
     member ImplementationFiles: FSharpImplementationFileContents list option
 
+    /// Open declarations in the file, including auto open modules.
+    member OpenDeclarations: OpenDeclaration list option
+
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]
 #if COMPILER_PUBLIC_API

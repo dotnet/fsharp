@@ -165,7 +165,8 @@ type TypeCheckInfo
            reactorOps : IReactorOperations,
            checkAlive : (unit -> bool),
            textSnapshotInfo:obj option,
-           implementationFiles: TypedImplFile list) = 
+           implementationFiles: TypedImplFile list,
+           openDeclarations: OpenDeclaration list) = 
 
     let textSnapshotInfo = defaultArg textSnapshotInfo null
     let (|CNR|) (cnr:CapturedNameResolution) =
@@ -1361,6 +1362,9 @@ type TypeCheckInfo
 
     member __.ImplementationFiles = implementationFiles
 
+    /// All open declarations in the file, including auto open modules
+    member __.OpenDeclarations = openDeclarations
+
     override __.ToString() = "TypeCheckInfo(" + mainInputFileName + ")"
 
 type FSharpParsingOptions =
@@ -1693,13 +1697,14 @@ module internal Parser =
                                     projectFileName, 
                                     mainInputFileName, 
                                     sink.GetResolutions(), 
-                                    sink.GetSymbolUses(), 
+                                    sink.GetSymbolUses(),
                                     tcEnvAtEnd.NameEnv,
                                     loadClosure,
                                     reactorOps,
                                     checkAlive,
                                     textSnapshotInfo,
-                                    typedImplFiles)     
+                                    typedImplFiles,
+                                    sink.OpenDeclarations)     
                     return errors, TypeCheckAborted.No scope
                 | None -> 
                     return errors, TypeCheckAborted.Yes
@@ -2026,6 +2031,9 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
         |> Option.map (fun scope -> 
             let cenv = Impl.cenv(scope.TcGlobals, scope.ThisCcu, scope.TcImports)
             [ for mimpl in scope.ImplementationFiles -> FSharpImplementationFileContents(cenv, mimpl)])
+
+    member info.OpenDeclarations =
+        scopeOptX |> Option.map (fun scope -> scope.OpenDeclarations)
 
     override info.ToString() = "FSharpCheckFileResults(" + filename + ")"
 
@@ -2618,7 +2626,8 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                   List.last tcProj.TcSymbolUses,
                                   tcProj.TcEnvAtEnd.NameEnv,
                                   loadClosure, reactorOps, (fun () -> builder.IsAlive), None, 
-                                  tcProj.ImplementationFiles)     
+                                  tcProj.ImplementationFiles,
+                                  tcProj.TcOpenDeclarations)     
                 let typedResults = MakeCheckFileResults(filename, options, builder, scope, Array.ofList tcProj.TcDependencyFiles, creationErrors, parseResults.Errors, tcErrors)
                 return (parseResults, typedResults)
            })
