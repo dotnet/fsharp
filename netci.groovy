@@ -12,10 +12,14 @@ def static getBuildJobName(def configuration, def os) {
 
 [true, false].each { isPullRequest ->
     osList.each { os ->
-        def configurations = ['Debug', 'Release_ci_part1', 'Release_ci_part2', 'Release_ci_part3', 'Release_net40_no_vs', 'Release_fcs' ];
-        if (os != 'Windows_NT') {
-            // Only build one configuration on Linux/... so far
-            configurations = ['Release'];
+        def configurations = [];
+        if (os == 'Windows_NT') {
+        }
+            configurations = ['Debug', 'Release_ci_part1', 'Release_ci_part2', 'Release_ci_part3', 'Release_net40_no_vs', 'Release_fcs' ];
+        else
+        {
+            // Linux
+            configurations = ['Release', 'Release_fcs' ];
         }
         configurations.each { configuration ->
 
@@ -35,12 +39,8 @@ def static getBuildJobName(def configuration, def os) {
             def buildFlavor= '';
 
             if (configuration == "Release_fcs") {
-                if (os == 'Windows_NT') {
-                    buildPath = ".\\fcs\\"
-                }
-                else {
-                    buildPath = "./fcs/"
-                }
+                // Build FCS
+                buildPath = "./fcs/"
                 buildFlavor = ""
                 build_args = "TestAndNuget"
             }
