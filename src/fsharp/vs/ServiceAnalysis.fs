@@ -3,47 +3,36 @@
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
 open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Range
 
 module UnusedOpens =
+    open Microsoft.FSharp.Compiler.PrettyNaming
+
     /// Represents single open statement.
     type OpenStatement =
         { /// Full namespace or module identifier as it's presented in source code.
-          LiteralIdent: string
-          /// All possible namespace or module identifiers, including the literal one.
-          AllPossibleIdents: Set<string>
+          Idents: Set<string>
           /// Range of open statement itself.
           Range: range
           /// Enclosing module or namespace range (that is, the scope on in which this open statement is visible).
           ModuleRange: range }
 
-    let rec visitSynModuleOrNamespaceDecls (parent: Ast.LongIdent) (decls: SynModuleDecls) (moduleRange: range) : OpenStatement list =
-        [ for decl in decls do
-            match decl with
-            | SynModuleDecl.Open(LongIdentWithDots.LongIdentWithDots(id = longId), range) ->
-                let literalIdent = longId |> List.map(fun l -> l.idText) |> String.concat "."
-                yield
-                    { LiteralIdent = literalIdent
-                      AllPossibleIdents = 
-                          set [ yield literalIdent
-                                // `open N.M` can open N.M module from parent module as well, if it's non empty
-                                if not (List.isEmpty parent) then
-                                    yield (parent @ longId |> List.map(fun l -> l.idText) |> String.concat ".") ]
-                      Range = range
-                      ModuleRange = moduleRange }
-
-            | SynModuleDecl.NestedModule(SynComponentInfo.ComponentInfo(longId = longId),_, decls,_,moduleRange) ->
-                yield! visitSynModuleOrNamespaceDecls longId decls moduleRange
-            | _ -> () ]
-
-    let getOpenStatements (parsedInput: ParsedInput) : OpenStatement list = 
-        match parsedInput with
-        | ParsedInput.ImplFile (ParsedImplFileInput(modules = modules)) ->
-            [ for md in modules do
-                let SynModuleOrNamespace(longId = longId; decls = decls; range = moduleRange) = md
-                yield! visitSynModuleOrNamespaceDecls longId decls moduleRange ]
-        | _ -> []
+    let getOpenStatements (openDeclarations: OpenDeclaration list) : OpenStatement list = 
+        openDeclarations
+        |> List.choose (fun openDeclaration ->
+             match openDeclaration with
+             | OpenDeclaration.Open (longId, moduleRefs, scopem) when not (List.isEmpty longId) ->
+                 
+                 Some { Idents = moduleRefs |> List.map (fun x -> x.DisplayName) |> Set.ofList
+                        Range =
+                            let first = List.head longId
+                            let last = List.last longId
+                            mkRange scopem.FileName first.idRange.Start last.idRange.End
+                        ModuleRange = scopem }
+             | _ -> None // for now
+           )
 
     let getAutoOpenAccessPath (ent:FSharpEntity) =
         // Some.Namespace+AutoOpenedModule+Entity
@@ -87,7 +76,7 @@ module UnusedOpens =
         { Ident: string
           Location: range }
 
-    let getUnusedOpens (symbolUses: FSharpSymbolUse[], parsedInput: ParsedInput, getSourceLineStr: int -> string) : range list =
+    let getUnusedOpens (symbolUses: FSharpSymbolUse[], openDeclarations: OpenDeclaration list, getSourceLineStr: int -> string) : range list =
         let getPartNamespace (symbolUse: FSharpSymbolUse) (fullName: string) =
             // given a symbol range such as `Text.ISegment` and a full name of `MonoDevelop.Core.Text.ISegment`, return `MonoDevelop.Core`
             let length = symbolUse.RangeAlternate.EndColumn - symbolUse.RangeAlternate.StartColumn
@@ -156,11 +145,11 @@ module UnusedOpens =
             let rec filterInner acc (list: OpenStatement list) (seenOpenStatements: OpenStatement list) = 
                 
                 let notUsed (os: OpenStatement) =
-                    if os.LiteralIdent.StartsWith "`global`" then false
+                    if os.Idents |> Set.exists (fun x -> x.StartsWith MangledGlobalName) then false
                     else
                         let notUsedAnywhere = 
                             not (namespacesInUse |> List.exists (fun nsu -> 
-                                rangeContainsRange os.ModuleRange nsu.Location && os.AllPossibleIdents |> Set.contains nsu.Ident))
+                                rangeContainsRange os.ModuleRange nsu.Location && os.Idents |> Set.contains nsu.Ident))
                         if notUsedAnywhere then true
                         else
                             let alreadySeen =
@@ -168,7 +157,8 @@ module UnusedOpens =
                                 |> List.exists (fun seenNs ->
                                     // if such open statement has already been marked as used in this or outer module, we skip it 
                                     // (that is, do not mark as used so far)
-                                    rangeContainsRange seenNs.ModuleRange os.ModuleRange && os.LiteralIdent = seenNs.LiteralIdent)
+                                    rangeContainsRange seenNs.ModuleRange os.ModuleRange && 
+                                    not (os.Idents |> Set.intersect seenNs.Idents |> Set.isEmpty))
                             alreadySeen
                 
                 match list with
@@ -180,4 +170,4 @@ module UnusedOpens =
             
             filterInner [] list []
 
-        parsedInput |> getOpenStatements |> filter |> List.map (fun os -> os.Range)
+        openDeclarations |> getOpenStatements |> filter |> List.map (fun os -> os.Range)

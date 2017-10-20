@@ -1028,6 +1028,7 @@ type TypeCheckAccumulator =
       tcEnvAtEndOfFile: TcEnv
       tcResolutions: TcResolutions list
       tcSymbolUses: TcSymbolUses list
+      tcOpenDeclarations: OpenDeclaration list
       topAttribs:TopAttribs option
       typedImplFiles:TypedImplFile list
       tcDependencyFiles: string list
@@ -1102,6 +1103,7 @@ type PartialCheckResults =
       Errors: (PhasedDiagnostic * FSharpErrorSeverity) list 
       TcResolutions: TcResolutions list 
       TcSymbolUses: TcSymbolUses list 
+      TcOpenDeclarations: OpenDeclaration list
       TcDependencyFiles: string list 
       TopAttribs: TopAttribs option
       TimeStamp: System.DateTime
@@ -1116,6 +1118,7 @@ type PartialCheckResults =
           Errors = tcAcc.tcErrors
           TcResolutions = tcAcc.tcResolutions
           TcSymbolUses = tcAcc.tcSymbolUses
+          TcOpenDeclarations = tcAcc.tcOpenDeclarations
           TcDependencyFiles = tcAcc.tcDependencyFiles
           TopAttribs = tcAcc.topAttribs
           TimeStamp = timestamp 
@@ -1327,6 +1330,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
               tcEnvAtEndOfFile=tcInitial
               tcResolutions=[]
               tcSymbolUses=[]
+              tcOpenDeclarations=[]
               topAttribs=None
               typedImplFiles=[]
               tcDependencyFiles=basicDependencies
@@ -1375,6 +1379,7 @@ type IncrementalBuilder(tcGlobals, frameworkTcImports, nonFrameworkAssemblyInput
                                        typedImplFiles=typedImplFiles
                                        tcResolutions=tcAcc.tcResolutions @ [tcResolutions]
                                        tcSymbolUses=tcAcc.tcSymbolUses @ [tcSymbolUses]
+                                       tcOpenDeclarations=tcAcc.tcOpenDeclarations @ sink.OpenDeclarations
                                        tcErrors = tcAcc.tcErrors @ parseErrors @ capturingErrorLogger.GetErrors() 
                                        tcDependencyFiles = filename :: tcAcc.tcDependencyFiles } 
                 }

@@ -3,6 +3,7 @@
 namespace Microsoft.FSharp.Compiler.SourceCodeServices
 
 open Microsoft.FSharp.Compiler.Ast
+open Microsoft.FSharp.Compiler.NameResolution
 open Microsoft.FSharp.Compiler.Range
 
 #if COMPILER_PUBLIC_API
@@ -10,4 +11,4 @@ module UnusedOpens =
 #else
 module internal UnusedOpens =
 #endif
-    val getUnusedOpens : symbolUses: FSharpSymbolUse[] * parsedInput: ParsedInput * getSourceLineStr: (int -> string) -> range list
+    val getUnusedOpens : symbolUses: FSharpSymbolUse[] * openDeclarations: OpenDeclaration list * getSourceLineStr: (int -> string) -> range list
