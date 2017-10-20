@@ -2722,7 +2722,7 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
     member bc.InvalidateConfiguration(options : FSharpProjectOptions, startBackgroundCompileIfAlreadySeen, userOpName) =
         let startBackgroundCompileIfAlreadySeen = defaultArg startBackgroundCompileIfAlreadySeen implicitlyStartBackgroundWork
         // This operation can't currently be cancelled nor awaited
-        reactor.EnqueueOp(userOpName, "InvalidateConfiguration", options.ProjectFileName, fun ctok -> 
+        reactor.EnqueueOp(userOpName, "InvalidateConfiguration: Stamp(" + (options.Stamp |> Option.defaultValue 0L).ToString() + ")", options.ProjectFileName, fun ctok -> 
             // If there was a similar entry then re-establish an empty builder .  This is a somewhat arbitrary choice - it
             // will have the effect of releasing memory associated with the previous builder, but costs some time.
             if incrementalBuildersCache.ContainsSimilarKey (ctok, options) then

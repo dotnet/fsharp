@@ -61,21 +61,21 @@ type internal FSharpCheckerProvider
             // When the F# background builder refreshes the background semantic build context for a file,
             // we request Roslyn to reanalyze that individual file.
             checker.BeforeBackgroundFileCheck.Add(fun (fileName, extraProjectInfo) ->  
-               async {
-                try 
-                    match extraProjectInfo with 
-                    | Some (:? Workspace as workspace) -> 
-                        let solution = workspace.CurrentSolution
-                        let documentIds = solution.GetDocumentIdsWithFilePath(fileName)
-                        if not documentIds.IsEmpty then 
-                            let docuentIdsFiltered = documentIds |> Seq.filter workspace.IsDocumentOpen |> Seq.toArray
-                            for documentId in docuentIdsFiltered do
-                                Trace.TraceInformation("{0:n3} Requesting Roslyn reanalysis of {1}", DateTime.Now.TimeOfDay.TotalSeconds, documentId)
-                            if docuentIdsFiltered.Length > 0 then 
-                                analyzerService.Reanalyze(workspace,documentIds=docuentIdsFiltered)
-                    | _ -> ()
-                with ex -> 
-                    Assert.Exception(ex)
+                async {
+                    try 
+                        match extraProjectInfo with 
+                        | Some (:? Workspace as workspace) -> 
+                            let solution = workspace.CurrentSolution
+                            let documentIds = solution.GetDocumentIdsWithFilePath(fileName)
+                            if not documentIds.IsEmpty then 
+                                let documentIdsFiltered = documentIds |> Seq.filter workspace.IsDocumentOpen |> Seq.toArray
+                                for documentId in documentIdsFiltered do
+                                    Trace.TraceInformation("{0:n3} Requesting Roslyn reanalysis of {1}", DateTime.Now.TimeOfDay.TotalSeconds, documentId)
+                                if documentIdsFiltered.Length > 0 then 
+                                    analyzerService.Reanalyze(workspace,documentIds=documentIdsFiltered)
+                        | _ -> ()
+                    with ex -> 
+                        Assert.Exception(ex)
                 } |> Async.StartImmediate
             )
             checker
@@ -214,6 +214,21 @@ type internal FSharpProjectOptionsManager
                 this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, siteProvider.GetProjectSite(), userOpName)
         | _ -> ()
 
+    /// Tell the checker to update the project info for the specified project id
+    member this.UpdateDocumenttInfoWithProjectId(projectId:ProjectId, documentId:DocumentId, userOpName) =
+        let hier = workspace.GetHierarchy(projectId)
+        match hier with
+        | null -> ()
+        | h when (h.IsCapabilityMatch("CPS")) ->
+            if workspace.IsDocumentOpen(documentId) then
+                if not (isNull workspace.CurrentSolution) then
+                    let project = workspace.CurrentSolution.GetProject(projectId)
+                    if not (isNull project) then
+                            let siteProvider = provideProjectSiteProvider(workspace, project, serviceProvider, Some projectOptionsTable)
+                            this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, siteProvider.GetProjectSite(), userOpName)
+        | _ -> ()
+ 
+
     [<Export>]
     /// This handles commandline change notifications from the Dotnet Project-system
     member this.HandleCommandLineChanges(path:string, sources:ImmutableArray<CommandLineSourceFile>, references:ImmutableArray<CommandLineReference>, options:ImmutableArray<string>) =
@@ -339,8 +354,10 @@ type
     let optionsAssociation = ConditionalWeakTable<IWorkspaceProjectContext, string[]>()
 
     member private this.OnProjectAdded(projectId:ProjectId)    = projectInfoManager.UpdateProjectInfoWithProjectId(projectId, "OnProjectAdded")
-    member private this.OnProjectChanged(projectId:ProjectId)  = projectInfoManager.UpdateProjectInfoWithProjectId(projectId, "OnProjectChanged")
     member private this.OnProjectReloaded(projectId:ProjectId) = projectInfoManager.UpdateProjectInfoWithProjectId(projectId, "OnProjectReloaded")
+    member private this.OnDocumentAdded(projectId:ProjectId, documentId:DocumentId)    = projectInfoManager.UpdateDocumenttInfoWithProjectId(projectId, documentId, "OnDocumentAdded")
+    member private this.OnDocumentChanged(projectId:ProjectId, documentId:DocumentId)  = projectInfoManager.UpdateDocumenttInfoWithProjectId(projectId, documentId, "OnDocumentChanged")
+    member private this.OnDocumentReloaded(projectId:ProjectId, documentId:DocumentId) = projectInfoManager.UpdateDocumenttInfoWithProjectId(projectId, documentId, "OnDocumentReloaded")
 
     override this.Initialize() = 
         base.Initialize()
@@ -348,8 +365,23 @@ type
         let workspaceChanged (args:WorkspaceChangeEventArgs) =
             match args.Kind with
             | WorkspaceChangeKind.ProjectAdded    -> this.OnProjectAdded(args.ProjectId)
-            | WorkspaceChangeKind.ProjectChanged  -> this.OnProjectChanged(args.ProjectId)
             | WorkspaceChangeKind.ProjectReloaded -> this.OnProjectReloaded(args.ProjectId)
+            | WorkspaceChangeKind.DocumentAdded ->   this.OnDocumentAdded(args.ProjectId, args.DocumentId)
+            | WorkspaceChangeKind.DocumentRemoved -> this.OnDocumentAdded(args.ProjectId, args.DocumentId)
+            | WorkspaceChangeKind.ProjectRemoved
+            | WorkspaceChangeKind.DocumentAdded
+            | WorkspaceChangeKind.DocumentReloaded
+            | WorkspaceChangeKind.DocumentRemoved
+            | WorkspaceChangeKind.DocumentInfoChanged
+            | WorkspaceChangeKind.DocumentChanged
+            | WorkspaceChangeKind.AdditionalDocumentAdded
+            | WorkspaceChangeKind.AdditionalDocumentReloaded
+            | WorkspaceChangeKind.AdditionalDocumentRemoved
+            | WorkspaceChangeKind.AdditionalDocumentChanged
+            | WorkspaceChangeKind.SolutionAdded
+            | WorkspaceChangeKind.SolutionChanged
+            | WorkspaceChangeKind.SolutionReloaded
+            | WorkspaceChangeKind.SolutionCleared
             | _ -> ()
 
         this.Workspace.Options <- this.Workspace.Options.WithChangedOption(Completion.CompletionOptions.BlockForCompletionItems, FSharpConstants.FSharpLanguageName, false)
