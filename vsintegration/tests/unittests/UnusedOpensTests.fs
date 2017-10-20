@@ -1,12 +1,9 @@
 // Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 [<NUnit.Framework.TestFixture>]
-[<NUnit.Framework.Category "Roslyn Services">]
-module Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn.UnusedOpensDiagnosticAnalyzer
+module Tests.ServiceAnalysis.UnusedOpens
 
 open System
 open NUnit.Framework
-open Microsoft.CodeAnalysis.Text
-open Microsoft.VisualStudio.FSharp.Editor
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.FSharp.Compiler.Range
 open FsUnit
@@ -29,7 +26,7 @@ let private projectOptions : FSharpProjectOptions =
 let private checker = FSharpChecker.Create()
 
 let (=>) (source: string) (expectedRanges: ((*line*)int * ((*start column*)int * (*end column*)int)) list) =
-    let sourceText = SourceText.From(source)
+    let sourceLines = source.Split ([|"\n\r"; "\n"; "\r"|], StringSplitOptions.None)
 
     let parsedInput, checkFileResults =
         let parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, 0, source, projectOptions) |> Async.RunSynchronously
@@ -41,7 +38,7 @@ let (=>) (source: string) (expectedRanges: ((*line*)int * ((*start column*)int *
             | Some parsedInput -> parsedInput, checkFileResults
 
     let allSymbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile() |> Async.RunSynchronously
-    let unusedOpenRanges = UnusedOpens.getUnusedOpens sourceText parsedInput allSymbolUses
+    let unusedOpenRanges = UnusedOpens.getUnusedOpens (allSymbolUses, parsedInput, fun lineNum -> sourceLines.[Line.toZ lineNum])
     
     unusedOpenRanges 
     |> List.map (fun x -> x.StartLine, (x.StartColumn, x.EndColumn))
