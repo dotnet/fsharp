@@ -39,7 +39,7 @@ def static getBuildJobName(def configuration, def os) {
             def buildFlavor= '';
 
             if (configuration == "Release_fcs") {
-                // Build FCS
+                // Build and test FCS
                 buildPath = "./fcs/"
                 buildFlavor = ""
                 build_args = "TestAndNuget"
