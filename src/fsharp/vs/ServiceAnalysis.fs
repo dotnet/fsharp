@@ -24,8 +24,10 @@ module UnusedOpens =
         |> List.choose (fun openDeclaration ->
              match openDeclaration with
              | OpenDeclaration.Open (longId, moduleRefs, scopem) when not (List.isEmpty longId) ->
-                 
-                 Some { Idents = moduleRefs |> List.map (fun x -> x.CompiledName) |> Set.ofList
+                 Some { Idents = 
+                            moduleRefs 
+                            |> List.choose (fun x -> x.PublicPath |> Option.map (fun (Tast.PublicPath.PubPath path) -> path |> String.concat ".")) 
+                            |> Set.ofList
                         Range =
                             let first = List.head longId
                             let last = List.last longId
