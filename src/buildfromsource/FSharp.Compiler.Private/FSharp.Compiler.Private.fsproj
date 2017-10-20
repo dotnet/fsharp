@@ -613,6 +613,7 @@
       <Link>Misc/LegacyHostedCompilerForTesting.fs</Link>
     </Compile>
   </ItemGroup>
+  <Import Project = "..\BuildFromSource.targets" />
 
 <!--
     "System.Collections.Immutable":"1.3.1",
