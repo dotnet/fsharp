@@ -1,7 +1,6 @@
 @echo off
 
 dotnet --version
-
 .nuget\NuGet.exe restore -PackagesDirectory packages
 setlocal
 cd fcs
