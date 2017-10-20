@@ -43,13 +43,13 @@ type internal UnusedOpensDiagnosticAnalyzer() =
             do! Option.guard Settings.CodeFixes.UnusedOpens
             let! sourceText = document.GetTextAsync()
             let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true, userOpName = userOpName)
-            
+            let! openDeclarations = checkResults.OpenDeclarations
 
-            Logging.Logging.logInfof "*** OpenDeclarations: %+A" checkResults.OpenDeclarations
+            Logging.Logging.logInfof "*** OpenDeclarations: %+A" openDeclarations
             
             
             let! symbolUses = checkResults.GetAllUsesOfAllSymbolsInFile() |> liftAsync
-            return UnusedOpens.getUnusedOpens(symbolUses, checkResults.OpenDeclarations, fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString())
+            return UnusedOpens.getUnusedOpens(symbolUses, openDeclarations, fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString())
         } 
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) =
