@@ -20,8 +20,10 @@ open Symbols
 module internal UnusedOpens =
     /// Represents single open statement.
     type private OpenStatement =
-        { /// Open namespace or module effective names.
-          Names: Set<string>
+        { /// Full namespace or module identifier as it's presented in source code.
+          LiteralIdent: string
+          /// All possible namespace or module identifiers, including the literal one.
+          AllPossibleIdents: Set<string>
           /// Range of open statement itself.
           Range: range
           /// Enclosing module or namespace range (that is, the scope on in which this open statement is visible).
@@ -31,9 +33,11 @@ module internal UnusedOpens =
         [ for decl in decls do
             match decl with
             | SynModuleDecl.Open(LongIdentWithDots.LongIdentWithDots(id = longId), range) ->
+                let literalIdent = longId |> List.map(fun l -> l.idText) |> String.concat "."
                 yield
-                    { Names = 
-                          set [ yield (longId |> List.map(fun l -> l.idText) |> String.concat ".")
+                    { LiteralIdent = literalIdent
+                      AllPossibleIdents = 
+                          set [ yield literalIdent
                                 // `open N.M` can open N.M module from parent module as well, if it's non empty
                                 if not (List.isEmpty parent) then
                                     yield (parent @ longId |> List.map(fun l -> l.idText) |> String.concat ".") ]
@@ -127,24 +131,45 @@ module internal UnusedOpens =
 
                 return
                     [ for name in fullNames do
-                        yield getPartNamespace symbolUse name
+                        let partNamespace = getPartNamespace symbolUse name
+                        yield partNamespace
                       yield! entityNamespace declaringEntity ]
             } |> Option.toList |> List.concat |> List.choose id
 
         let namespacesInUse : NamespaceUse list =
-            symbolUses
-            |> Array.filter (fun (s: FSharpSymbolUse) -> not s.IsFromDefinition)
+            let importantSymbolUses =
+                symbolUses
+                |> Array.filter (fun (symbolUse: FSharpSymbolUse) -> 
+                     not symbolUse.IsFromDefinition &&
+                     match symbolUse.Symbol with
+                     | :? FSharpEntity as e -> not e.IsNamespace
+                     | _ -> true
+                   )
+
+            importantSymbolUses
             |> Array.toList
-            |> List.collect (fun x -> 
-                getPossibleNamespaces x 
-                |> List.distinct 
-                |> List.map (fun ns -> { Ident = ns; Location = x.RangeAlternate }))
+            |> List.collect (fun su ->
+                let lineStr = sourceText.Lines.[Line.toZ su.RangeAlternate.StartLine].ToString()
+                let partialName = QuickParse.GetPartialLongNameEx(lineStr, su.RangeAlternate.EndColumn - 1)
+                let qualifier = partialName.QualifyingIdents |> String.concat "."
+                getPossibleNamespaces su 
+                |> List.distinct
+                |> List.choose (fun ns ->
+                     if qualifier = "" then Some ns
+                     elif ns = qualifier then None
+                     elif ns.EndsWith qualifier then Some ns.[..(ns.Length - qualifier.Length) - 2]
+                     else None)
+                |> List.map (fun ns ->
+                     { Ident = ns
+                       Location = su.RangeAlternate }))
 
         let filter list: OpenStatement list =
             let rec filterInner acc (list: OpenStatement list) (seenOpenStatements: OpenStatement list) = 
                 
                 let notUsed (os: OpenStatement) = 
-                    let notUsedAnywhere = not (namespacesInUse |> List.exists (fun nsu -> rangeContainsRange os.ModuleRange nsu.Location && os.Names |> Set.contains nsu.Ident))
+                    let notUsedAnywhere = 
+                        not (namespacesInUse |> List.exists (fun nsu -> 
+                            rangeContainsRange os.ModuleRange nsu.Location && os.AllPossibleIdents |> Set.contains nsu.Ident))
                     if notUsedAnywhere then true
                     else
                         let alreadySeen =
@@ -152,8 +177,7 @@ module internal UnusedOpens =
                             |> List.exists (fun seenNs ->
                                 // if such open statement has already been marked as used in this or outer module, we skip it 
                                 // (that is, do not mark as used so far)
-                                (seenNs.ModuleRange = os.ModuleRange || rangeContainsRange seenNs.ModuleRange os.ModuleRange) &&
-                                not (os.Names |> Set.intersect seenNs.Names |> Set.isEmpty))
+                                rangeContainsRange seenNs.ModuleRange os.ModuleRange && os.LiteralIdent = seenNs.LiteralIdent)
                         alreadySeen
                 
                 match list with 
