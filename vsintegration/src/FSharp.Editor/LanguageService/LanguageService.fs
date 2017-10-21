@@ -284,7 +284,9 @@ type internal FSharpProjectOptionsManager
         | h when (h.IsCapabilityMatch("CPS")) ->
             let project = workspace.CurrentSolution.GetProject(projectId)
             let siteProvider = this.ProvideProjectSiteProvider(project)
-            this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, siteProvider.GetProjectSite(), userOpName)
+            let projectSite = siteProvider.GetProjectSite()
+            if projectSite.CompilationSourceFiles.Length <> 0 then
+                this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, projectSite, userOpName)
         | _ -> ()
 
     member this.UpdateProjectInfoWithPath(path, userOpName) =
