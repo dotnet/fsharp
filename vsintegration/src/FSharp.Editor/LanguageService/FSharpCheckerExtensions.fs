@@ -8,7 +8,6 @@ open Microsoft.CodeAnalysis.Text
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.SourceCodeServices
-open TypedAstUtils
 
 type CheckResults =
     | Ready of (FSharpParseFileResults * FSharpCheckFileResults) option
