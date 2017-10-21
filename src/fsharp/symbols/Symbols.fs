@@ -310,7 +310,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
         #else
         elif entity.IsTypeAbbrev then None
 #endif
-        elif entity.IsNamespace  then Some entity.DemangledModuleOrNamespaceName 
+        elif entity.IsNamespace  then Some (entity.ToString())
         else
             match entity.CompiledRepresentation with 
             | CompiledTypeRepr.ILAsmNamed(tref, _, _) -> Some tref.FullName

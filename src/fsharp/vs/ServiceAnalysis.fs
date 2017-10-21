@@ -17,19 +17,21 @@ module UnusedOpens =
           /// Range of open statement itself.
           Range: range
           /// Scope on which this open declaration is applied.
-          AppliedScope: range }
+          AppliedScope: range
+          /// If it's prefixed with the special "global" namespace.
+          IsGlobal: bool }
 
     let getOpenStatements (openDeclarations: FSharpOpenDeclaration list) : OpenStatement list = 
         openDeclarations
         |> List.choose (fun openDeclaration ->
              match openDeclaration with
-             | FSharpOpenDeclaration.Open (longId, modules, appliedScope) when not (List.isEmpty longId) ->
+             | FSharpOpenDeclaration.Open ((firstId :: _) as longId, modules, appliedScope) ->
                  Some { Idents = modules |> List.choose (fun x -> x.TryFullName) |> Set.ofList
                         Range =
-                            let first = List.head longId
-                            let last = List.last longId
-                            mkRange appliedScope.FileName first.idRange.Start last.idRange.End
-                        AppliedScope = appliedScope }
+                            let lastId = List.last longId
+                            mkRange appliedScope.FileName firstId.idRange.Start lastId.idRange.End
+                        AppliedScope = appliedScope
+                        IsGlobal = firstId.idText = MangledGlobalName  }
              | _ -> None // for now
            )
 
@@ -73,7 +75,7 @@ module UnusedOpens =
 
     type NamespaceUse =
         { Ident: string
-          Location: range }
+          SymbolLocation: range }
     
     let getPartNamespace (symbolUse: FSharpSymbolUse) (fullName: string) =
         // given a symbol range such as `Text.ISegment` and a full name of `MonoDevelop.Core.Text.ISegment`, return `MonoDevelop.Core`
@@ -137,32 +139,38 @@ module UnusedOpens =
                  else None)
             |> List.map (fun ns ->
                  { Ident = ns
-                   Location = su.RangeAlternate }))
+                   SymbolLocation = su.RangeAlternate }))
 
     let getUnusedOpens (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string) : Async<range list> =
         
         let filter (openStatements: OpenStatement list) (namespacesInUse: NamespaceUse list) : OpenStatement list =
             let rec filterInner acc (openStatements: OpenStatement list) (seenOpenStatements: OpenStatement list) = 
                 
-                let notUsed (os: OpenStatement) =
-                    if os.Idents |> Set.exists (fun x -> x.StartsWith MangledGlobalName) then false
+                let isUsed (openStatement: OpenStatement) =
+                    if openStatement.IsGlobal then true
                     else
-                        let notUsedAnywhere = 
-                            not (namespacesInUse |> List.exists (fun nsu -> 
-                                rangeContainsRange os.AppliedScope nsu.Location && os.Idents |> Set.contains nsu.Ident))
-                        if notUsedAnywhere then true
+                        let usedSomewhere = 
+                            namespacesInUse 
+                            |> List.exists (fun namespaceUse -> 
+                                let inScope = rangeContainsRange openStatement.AppliedScope namespaceUse.SymbolLocation 
+                                if not inScope then false
+                                else
+                                    let identMatches = openStatement.Idents |> Set.contains namespaceUse.Ident
+                                    identMatches)
+
+                        if not usedSomewhere then false
                         else
                             let alreadySeen =
                                 seenOpenStatements
                                 |> List.exists (fun seenNs ->
                                     // if such open statement has already been marked as used in this or outer module, we skip it 
                                     // (that is, do not mark as used so far)
-                                    rangeContainsRange seenNs.AppliedScope os.AppliedScope && 
-                                    not (os.Idents |> Set.intersect seenNs.Idents |> Set.isEmpty))
-                            alreadySeen
+                                    rangeContainsRange seenNs.AppliedScope openStatement.AppliedScope && 
+                                    not (openStatement.Idents |> Set.intersect seenNs.Idents |> Set.isEmpty))
+                            not alreadySeen
                 
                 match openStatements with
-                | os :: xs when notUsed os -> 
+                | os :: xs when not (isUsed os) -> 
                     filterInner (os :: acc) xs (os :: seenOpenStatements)
                 | os :: xs ->
                     filterInner acc xs (os :: seenOpenStatements)
