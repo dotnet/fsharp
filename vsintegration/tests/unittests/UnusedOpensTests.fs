@@ -581,15 +581,6 @@ module Module =
     => []
 
 [<Test>]
-let ``should mark open declaration with global prefix in double backticks``() =
-    """
-module Module =
-    open ``global``.Namesp
-    let _ = System.String("")
-"""
-    => [ 3, (9, 26) ]
-
-[<Test>]
 [<Ignore "Relative open statements are not supported yet">]
 let ``record fields should be taken into account``() = 
     """
