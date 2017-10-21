@@ -114,6 +114,10 @@ module UnusedOpens =
         |> List.concat
         |> List.choose id
 
+    type SymbolUseWithFullNames =
+        { SymbolUse: FSharpSymbolUse
+          FullNames: string[][] }
+
     let getNamespacesInUse (getSourceLineStr: int -> string) (symbolUses: FSharpSymbolUse[]) : NamespaceUse list =
         let importantSymbolUses =
             symbolUses
@@ -124,8 +128,106 @@ module UnusedOpens =
                  | _ -> true
                )
 
-        importantSymbolUses
-        |> Array.toList
+        let symbolUsesWithFullNames : SymbolUseWithFullNames [] =
+            importantSymbolUses
+            |> Array.map (fun symbolUse -> 
+                  let fullNames : string[][] = 
+                      match symbolUse.Symbol with
+                      | Symbol.MemberFunctionOrValue func when func.IsExtensionMember ->
+                          if func.IsProperty then
+                              let fullNames =
+                                  [|
+                                      if func.HasGetterMethod then
+                                          yield try func.GetterMethod.EnclosingEntity |> Option.map (fun x -> x.FullName) with _ -> None
+                                      if func.HasSetterMethod then
+                                          yield try func.SetterMethod.EnclosingEntity |> Option.map (fun x -> x.FullName) with _ -> None
+                                  |]
+                                  |> Array.choose id
+                              match fullNames with
+                              | [||] -> None 
+                              | _ -> Some fullNames
+                          else 
+                              match func.EnclosingEntity with
+                              // C# extension method
+                              | Some (Symbol.FSharpEntity Symbol.Class) ->
+                                  let fullName = symbolUse.Symbol.FullName.Split '.'
+                                  if fullName.Length > 2 then
+                                      (* For C# extension methods FCS returns full name including the class name, like:
+                                          Namespace.StaticClass.ExtensionMethod
+                                          So, in order to properly detect that "open Namespace" actually opens ExtensionMethod,
+                                          we remove "StaticClass" part. This makes C# extension methods looks identically 
+                                          with F# extension members.
+                                      *)
+                                      let fullNameWithoutClassName =
+                                          Array.append fullName.[0..fullName.Length - 3] fullName.[fullName.Length - 1..]
+                                      Some [|fullNameWithoutClassName |> String.concat "."|]
+                                  else None
+                              | _ -> None
+                      // Operators
+                      | Symbol.MemberFunctionOrValue func ->
+                          match func with
+                          | Symbol.Constructor _ ->
+                              // full name of a constructor looks like "UnusedSymbolClassifierTests.PrivateClass.( .ctor )"
+                              // to make well formed full name parts we cut "( .ctor )" from the tail.
+                              let fullName = func.FullName
+                              let ctorSuffix = ".( .ctor )"
+                              let fullName =
+                                  if fullName.EndsWith ctorSuffix then 
+                                     fullName.[0..fullName.Length - ctorSuffix.Length - 1]
+                                  else fullName
+                              Some [| fullName |]
+                          | _ -> 
+                              Some [| yield func.FullName 
+                                      match func.TryGetFullCompiledOperatorNameIdents() with
+                                      | Some idents -> yield String.concat "." idents
+                                      | None -> ()
+                                   |]
+                      | Symbol.FSharpEntity e ->
+                          match e with
+                          | e, Symbol.Attribute, _ ->
+                              e.TryGetFullName()
+                              |> Option.map (fun fullName ->
+                                  [| fullName; fullName.Substring(0, fullName.Length - "Attribute".Length) |])
+                          | e, _, _ -> 
+                              e.TryGetFullName() |> Option.map (fun fullName -> [| fullName |])
+                      //| SymbolUse.RecordField _
+                      | Symbol.UnionCase _ as symbol ->
+                          Some [| let fullName = symbol.FullName
+                                  yield fullName
+                                  let idents = fullName.Split '.'
+                                  // Union cases/Record fields can be accessible without mentioning the enclosing type. 
+                                    // So we add a FullName without having the type part.
+                                  if idents.Length > 1 then
+                                      yield Array.append idents.[0..idents.Length - 3] idents.[idents.Length - 1..] |> String.concat "."
+                               |]
+                      |  _ -> None
+                      |> Option.defaultValue [|symbolUse.Symbol.FullName|]
+                      |> Array.map (fun fullName -> fullName.Split '.')
+                  
+                  { SymbolUse = symbolUse
+                    FullNames = fullNames })
+
+        let outerSymbolUses =
+            symbolUsesWithFullNames
+            |> Seq.sortBy (fun x -> -x.SymbolUse.RangeAlternate.EndColumn)
+            |> Seq.fold (fun (prev, acc) next ->
+                 match prev with
+                 | Some prev -> 
+                    if prev.FullNames
+                       |> Array.exists (fun prevFullName ->
+                            next.FullNames
+                            |> Array.exists (fun nextFullName ->
+                                 nextFullName.Length < prevFullName.Length
+                                 && prevFullName |> Microsoft.FSharp.Compiler.AbstractIL.Internal.Library.Array.startsWith nextFullName)) then 
+                        Some prev, acc
+                    else Some next, next :: acc
+                 | None -> Some next, next :: acc)
+               (None, [])
+            |> snd
+            |> List.map (fun x -> x.SymbolUse)
+            |> List.rev
+
+        outerSymbolUses
         |> List.collect (fun su ->
             let lineStr = getSourceLineStr su.RangeAlternate.StartLine
             let partialName = QuickParse.GetPartialLongNameEx(lineStr, su.RangeAlternate.EndColumn - 1)

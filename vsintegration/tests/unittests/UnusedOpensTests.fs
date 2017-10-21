@@ -136,7 +136,7 @@ module M2 =
     => []
 
 [<Test>]
-[<Ignore "Relative open statements are not supported yet">]
+//[<Ignore "Relative open statements are not supported yet">]
 let ``open a nested module inside another one is not unused, complex hierarchy``() =
     """
 module Top =
@@ -151,7 +151,7 @@ module Top =
     => []
 
 [<Test>]
-[<Ignore "Relative open statements are not supported yet">]
+//[<Ignore "Relative open statements are not supported yet">]
 let ``open a nested module inside another one is not unused, even more complex hierarchy``() =
     """
 module Top =
@@ -168,7 +168,7 @@ module Top =
     => []
 
 [<Test>]
-[<Ignore "Relative open statements are not supported yet">]
+[<Ignore "Auto open modules are not supported yet">]
 let ``last of several equivalent open declarations is market as used, the rest of them are marked as unused``() =
     """
 module NormalModule =
@@ -197,7 +197,7 @@ type Class() = class end
     => []
     
 [<Test>]
-[<Ignore "Relative open statements are not supported yet">]
+[<Ignore "Extensions are not supported yet">]
 let ``open declaration is not marked as unused if an extension property is used``() =
     """
 module Module =
@@ -220,7 +220,7 @@ let _ = "a long string".Trim()
     => [ 5, (5, 11) ]
 
 [<Test>]
-[<Ignore "Relative open statements are not supported yet">]
+[<Ignore "Extensions are not supported yet">]
 let ``open declaration is not marked as unused if an extension method is used``() =
     """
 type Class() = class end
@@ -266,7 +266,7 @@ type Site (x: int -> unit) = class end
     => [ 4, (5, 6) ]
 
 [<Test>]
-[<Ignore "Relative open statements are not supported yet">]
+[<Ignore "Extensions are not supported yet">]
 let ``static extension method applied to a type results that both namespaces /where the type is declared and where the extension is declared/ is not marked as unused``() =
     """
 module Extensions =
@@ -279,7 +279,7 @@ let _ = DateTime.ExtensionMethod
     => []
     
 [<Test>]
-[<Ignore "Relative open statements are not supported yet">]
+//[<Ignore "Relative open statements are not supported yet">]
 let ``static extension property applied to a type results that both namespaces /where the type is declared and where the extension is declared/ is not marked as unused``() =
     """
 module Extensions =
@@ -328,7 +328,7 @@ let _ = func()
     => []
 
 [<Test>]
-[<Ignore "Relative open statements are not supported yet">]
+//[<Ignore "Relative open statements are not supported yet">]
 let ``open module all of which symbols are used by qualifier is marked as unused``() =
     """
 module M =
@@ -383,7 +383,7 @@ let _ = Func<int, int>(fun _ -> 1)
     => []
 
 [<Test>]
-[<Ignore "Relative open statements are not supported yet">]
+//[<Ignore "Relative open statements are not supported yet">]
 let ``open declaration is not marked as unused if a unit of measure defined in it is used``() =
     """
 module M = 
@@ -425,7 +425,7 @@ File.ReadAllLines ""
     => []
 
 [<Test>]
-[<Ignore "Relative open statements are not supported yet">]
+//[<Ignore "Relative open statements are not supported yet">]
 let ``redundant opening a module with ModuleSuffix attribute value is marks as unused``() =
     """
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -438,7 +438,7 @@ module M =
     => [ 6, (9, 33) ]
     
 [<Test>]
-[<Ignore "Relative open statements are not supported yet">]
+//[<Ignore "Relative open statements are not supported yet">]
 let ``redundant opening a module is marks as unused``() =
     """
 module InternalModuleWithSuffix =
@@ -550,7 +550,7 @@ open System
     => []
 
 [<Test>]
-[<Ignore "Relative open statements are not supported yet">]
+[<Ignore "Extensions are not supported yet">]
 let ``open declaration is not marked as unused if a related type extension is used``() =
     """
 module Module =
@@ -581,7 +581,7 @@ module Module =
     => []
 
 [<Test>]
-[<Ignore "Relative open statements are not supported yet">]
+//[<Ignore "Relative open statements are not supported yet">]
 let ``record fields should be taken into account``() = 
     """
 module M1 =
@@ -593,7 +593,6 @@ module M2 =
     => []
 
 [<Test>]
-[<Ignore "Relative open statements are not supported yet">]
 let ``handle type alias``() = 
     """
 module TypeAlias =
