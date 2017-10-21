@@ -9,13 +9,13 @@ def osList = ['Windows_NT', 'Ubuntu14.04']  //, 'OSX'], 'CentOS7.1'
 def static getBuildJobName(def configuration, def os) {
     return configuration.toLowerCase() + '_' + os.toLowerCase()
 }
- 
+
 [true, false].each { isPullRequest ->
     osList.each { os ->
         def configurations = [];
         if (os == 'Windows_NT') {
-        }
             configurations = ['Debug', 'Release_ci_part1', 'Release_ci_part2', 'Release_ci_part3', 'Release_net40_no_vs', 'Release_fcs' ];
+        }
         else
         {
             // Linux
