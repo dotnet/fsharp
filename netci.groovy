@@ -105,7 +105,7 @@ ${buildPath}build.cmd ${buildFlavor} ${build_args}""")
             
             Utilities.addArchival(newJob, "tests/TestResults/*.*", "", skipIfNoTestFiles, false)
             if (configuration == "Release_fcs") {
-                Utilities.addArchival(newJob, "Release/fcs/**")
+                Utilities.addArchival(newJob, "Release/**")
             }
             else {
                 Utilities.addArchival(newJob, "${buildFlavor}/**")
