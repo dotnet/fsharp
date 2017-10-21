@@ -2259,6 +2259,13 @@ type FSharpSymbol with
         | :? FSharpMemberFunctionOrValue as x -> Some x.Accessibility
         | _ -> None
 
+/// Represents open declaration in F# code.
+type FSharpOpenDeclaration =
+      /// Ordinary open declaration, i.e. one which opens a namespace or module.
+    | Open of longId: Ident list * modules: FSharpEntity list * appliedScope: range
+      /// Syntethic open declaration generated for auto open modules.
+    | AutoOpenModule of idents: string list * modul: FSharpEntity * appliedScope: range
+
 [<Sealed>]
 type FSharpSymbolUse(g:TcGlobals, denv: DisplayEnv, symbol:FSharpSymbol, itemOcc, range: range) = 
     member __.Symbol  = symbol

@@ -2033,7 +2033,15 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
             [ for mimpl in scope.ImplementationFiles -> FSharpImplementationFileContents(cenv, mimpl)])
 
     member info.OpenDeclarations =
-        scopeOptX |> Option.map (fun scope -> scope.OpenDeclarations)
+        scopeOptX 
+        |> Option.map (fun scope -> 
+            let cenv = Impl.cenv(scope.TcGlobals, scope.ThisCcu, scope.TcImports)
+            scope.OpenDeclarations |> List.map (function
+                | OpenDeclaration.Open (id, mods, appliedScope) -> 
+                    FSharpOpenDeclaration.Open(id, mods |> List.map (fun x -> FSharpEntity(cenv, x)), appliedScope)
+                | OpenDeclaration.AutoOpenModule (ids, modul, appliedScope) ->
+                    FSharpOpenDeclaration.AutoOpenModule (ids, FSharpEntity(cenv, modul), appliedScope)))
+        |> Option.defaultValue []
 
     override info.ToString() = "FSharpCheckFileResults(" + filename + ")"
 
