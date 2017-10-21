@@ -274,7 +274,7 @@ type internal FSharpCheckFileResults =
     member ImplementationFiles: FSharpImplementationFileContents list option
 
     /// Open declarations in the file, including auto open modules.
-    member OpenDeclarations: OpenDeclaration list option
+    member OpenDeclarations: FSharpOpenDeclaration list
 
 /// A handle to the results of CheckFileInProject.
 [<Sealed>]

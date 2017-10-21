@@ -11,4 +11,5 @@ module UnusedOpens =
 #else
 module internal UnusedOpens =
 #endif
-    val getUnusedOpens : symbolUses: FSharpSymbolUse[] * openDeclarations: OpenDeclaration list * getSourceLineStr: (int -> string) -> range list
+    /// Get all unused open declarations in a file
+    val getUnusedOpens : checkFileResults: FSharpCheckFileResults * getSourceLineStr: (int -> string) -> Async<range list>

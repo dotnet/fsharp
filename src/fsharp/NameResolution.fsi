@@ -308,15 +308,11 @@ type internal TcSymbolUses =
     member GetFormatSpecifierLocationsAndArity : unit -> (range * int)[]
 
 /// Represents open declaration statement.
-#if COMPILER_PUBLIC_API
-type OpenDeclaration =
-#else
 type internal OpenDeclaration =
-#endif
       /// Ordinary open declaration, i.e. one which opens a namespace or module.
-    | Open of longId: Ident list * moduleRefs: ModuleOrNamespaceRef list * scopem: range
+    | Open of longId: Ident list * moduleRefs: ModuleOrNamespaceRef list * appliedScope: range
       /// Syntethic open declaration generated for auto open modules.
-    | AutoOpenModule of idents: string list * moduleRef: ModuleOrNamespaceRef * scopem: range
+    | AutoOpenModule of idents: string list * moduleRef: ModuleOrNamespaceRef * appliedScope: range
 
 /// An abstract type for reporting the results of name resolution and type checking
 type ITypecheckResultsSink =
