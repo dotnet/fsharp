@@ -168,7 +168,6 @@ module Top =
     => []
 
 [<Test>]
-[<Ignore "Auto open modules are not supported yet">]
 let ``last of several equivalent open declarations is market as used, the rest of them are marked as unused``() =
     """
 module NormalModule =
@@ -197,7 +196,6 @@ type Class() = class end
     => []
     
 [<Test>]
-[<Ignore "Extensions are not supported yet">]
 let ``open declaration is not marked as unused if an extension property is used``() =
     """
 module Module =
@@ -220,7 +218,6 @@ let _ = "a long string".Trim()
     => [ 5, (5, 11) ]
 
 [<Test>]
-[<Ignore "Extensions are not supported yet">]
 let ``open declaration is not marked as unused if an extension method is used``() =
     """
 type Class() = class end
@@ -550,7 +547,6 @@ open System
     => []
 
 [<Test>]
-[<Ignore "Extensions are not supported yet">]
 let ``open declaration is not marked as unused if a related type extension is used``() =
     """
 module Module =
