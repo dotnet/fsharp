@@ -85,7 +85,8 @@
       <Parser>210</Parser>
     </FilesToLocalize>
     <VSCTCompile Include="MenusAndCommands.vsct" />
-    <EmbeddedResource Include="VSPackage.resx" GenerateSource="true">
+    <EmbeddedResource Include="VSPackage.resx">
+      <GenerateSource>true</GenerateSource>
       <GeneratedModuleName>Microsoft.VisualStudio.FSharp.ProjectSystem.FSharpSR</GeneratedModuleName>
       <MergeWithCTO>true</MergeWithCTO>
     </EmbeddedResource>
