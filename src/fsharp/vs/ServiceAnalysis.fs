@@ -9,11 +9,14 @@ open Microsoft.FSharp.Compiler.Range
 
 module UnusedOpens =
     open Microsoft.FSharp.Compiler.PrettyNaming
+    open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library
 
     /// Represents single open statement.
     type OpenStatement =
         { /// Full namespace or module identifier as it's presented in source code.
           Idents: Set<string>
+          /// Modules.
+          Modules: FSharpEntity list
           /// Range of open statement itself.
           Range: range
           /// Scope on which this open declaration is applied.
@@ -27,6 +30,7 @@ module UnusedOpens =
              match openDeclaration with
              | FSharpOpenDeclaration.Open ((firstId :: _) as longId, modules, appliedScope) ->
                  Some { Idents = modules |> List.choose (fun x -> x.TryFullName) |> Set.ofList
+                        Modules = modules
                         Range =
                             let lastId = List.last longId
                             mkRange appliedScope.FileName firstId.idRange.Start lastId.idRange.End
@@ -118,14 +122,18 @@ module UnusedOpens =
         { SymbolUse: FSharpSymbolUse
           FullNames: string[][] }
 
-    let getNamespacesInUse (getSourceLineStr: int -> string) (symbolUses: FSharpSymbolUse[]) : NamespaceUse list =
+    type SymbolUse =
+        { SymbolUse: FSharpSymbolUse
+          RequiredPrefix: string }
+
+    let getSymbolUses (getSourceLineStr: int -> string) (symbolUses: FSharpSymbolUse[]) : SymbolUse[] =
         let importantSymbolUses =
             symbolUses
             |> Array.filter (fun (symbolUse: FSharpSymbolUse) -> 
-                 not symbolUse.IsFromDefinition &&
-                 match symbolUse.Symbol with
-                 | :? FSharpEntity as e -> not e.IsNamespace
-                 | _ -> true
+                 not symbolUse.IsFromDefinition
+                 //&& match symbolUse.Symbol with
+                 //| :? FSharpEntity as e -> not e.IsNamespace
+                 //| _ -> true
                )
 
         let symbolUsesWithFullNames : SymbolUseWithFullNames [] =
@@ -207,58 +215,59 @@ module UnusedOpens =
                   { SymbolUse = symbolUse
                     FullNames = fullNames })
 
-        let outerSymbolUses =
-            symbolUsesWithFullNames
-            |> Seq.sortBy (fun x -> -x.SymbolUse.RangeAlternate.EndColumn)
-            |> Seq.fold (fun (prev, acc) next ->
-                 match prev with
-                 | Some prev -> 
-                    if prev.FullNames
-                       |> Array.exists (fun prevFullName ->
-                            next.FullNames
-                            |> Array.exists (fun nextFullName ->
-                                 nextFullName.Length < prevFullName.Length
-                                 && prevFullName |> Microsoft.FSharp.Compiler.AbstractIL.Internal.Library.Array.startsWith nextFullName)) then 
-                        Some prev, acc
-                    else Some next, next :: acc
-                 | None -> Some next, next :: acc)
-               (None, [])
-            |> snd
-            |> List.map (fun x -> x.SymbolUse)
-            |> List.rev
+        //let outerSymbolUses =
+        //    symbolUsesWithFullNames
+        //    |> Seq.sortBy (fun x -> -x.SymbolUse.RangeAlternate.EndColumn)
+        //    |> Seq.fold (fun (prev, acc) next ->
+        //         match prev with
+        //         | Some prev -> 
+        //            if prev.FullNames
+        //               |> Array.exists (fun prevFullName ->
+        //                    next.FullNames
+        //                    |> Array.exists (fun nextFullName ->
+        //                         nextFullName.Length < prevFullName.Length
+        //                         && prevFullName |> Microsoft.FSharp.Compiler.AbstractIL.Internal.Library.Array.startsWith nextFullName)) then 
+        //                Some prev, acc
+        //            else Some next, next :: acc
+        //         | None -> Some next, next :: acc)
+        //       (None, [])
+        //    |> snd
+        //    |> List.map (fun x -> x.SymbolUse)
+        //    |> List.rev
 
-        outerSymbolUses
-        |> List.collect (fun su ->
-            let lineStr = getSourceLineStr su.RangeAlternate.StartLine
-            let partialName = QuickParse.GetPartialLongNameEx(lineStr, su.RangeAlternate.EndColumn - 1)
-            let qualifier = partialName.QualifyingIdents |> String.concat "."
-            getPossibleNamespaces getSourceLineStr su 
-            |> List.distinct
-            |> List.choose (fun ns ->
-                 if qualifier = "" then Some ns
-                 elif ns = qualifier then None
-                 elif ns.EndsWith qualifier then Some ns.[..(ns.Length - qualifier.Length) - 2]
-                 else None)
-            |> List.map (fun ns ->
-                 { Ident = ns
-                   SymbolLocation = su.RangeAlternate }))
+        symbolUsesWithFullNames
+        |> Array.collect (fun su ->
+            let lineStr = getSourceLineStr su.SymbolUse.RangeAlternate.StartLine
+            let partialName = QuickParse.GetPartialLongNameEx(lineStr, su.SymbolUse.RangeAlternate.EndColumn - 1)
+            let suffix = partialName.QualifyingIdents @ [partialName.PartialIdent] |> List.toArray
+            su.FullNames
+            |> Array.choose (fun fullName -> 
+                if fullName = suffix then None
+                elif fullName |> Array.endsWith suffix then Some(su.SymbolUse, fullName.[..(fullName.Length - suffix.Length) - 2])
+                else None)
+            |> Array.map (fun (su, prefix) ->
+                 { SymbolUse = su
+                   RequiredPrefix = prefix |> String.concat "." }))
 
     let getUnusedOpens (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string) : Async<range list> =
         
-        let filter (openStatements: OpenStatement list) (namespacesInUse: NamespaceUse list) : OpenStatement list =
+        let filter (openStatements: OpenStatement list) (symbolUses: SymbolUse[]) : OpenStatement list =
             let rec filterInner acc (openStatements: OpenStatement list) (seenOpenStatements: OpenStatement list) = 
                 
                 let isUsed (openStatement: OpenStatement) =
                     if openStatement.IsGlobal then true
                     else
-                        let usedSomewhere = 
-                            namespacesInUse 
-                            |> List.exists (fun namespaceUse -> 
-                                let inScope = rangeContainsRange openStatement.AppliedScope namespaceUse.SymbolLocation 
+                        let usedSomewhere =
+                            symbolUses
+                            |> Array.exists (fun symbolUse -> 
+                                let inScope = rangeContainsRange openStatement.AppliedScope symbolUse.SymbolUse.RangeAlternate
                                 if not inScope then false
+                                elif not (openStatement.Idents |> Set.contains symbolUse.RequiredPrefix) then false
                                 else
-                                    let identMatches = openStatement.Idents |> Set.contains namespaceUse.Ident
-                                    identMatches)
+                                    openStatement.Modules
+                                    |> List.exists (fun m ->
+                                        m.PublicNestedEntities
+                                        |> Seq.exists (fun ent -> ent.IsEffectivelySameAs symbolUse.SymbolUse.Symbol)))
 
                         if not usedSomewhere then false
                         else
@@ -281,8 +290,9 @@ module UnusedOpens =
             filterInner [] openStatements []
 
         async {
-            let! symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile()
-            let namespacesInUse = getNamespacesInUse getSourceLineStr symbolUses
+            let! fsharpSymbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile()
+            let symbolUses = getSymbolUses getSourceLineStr fsharpSymbolUses
+            //let namespacesInUse = getNamespacesInUse getSourceLineStr symbolUses
             let openStatements = getOpenStatements checkFileResults.OpenDeclarations
-            return filter openStatements namespacesInUse |> List.map (fun os -> os.Range)
+            return filter openStatements symbolUses |> List.map (fun os -> os.Range)
         }
