@@ -29,7 +29,15 @@ module UnusedOpens =
         |> List.choose (fun openDeclaration ->
              match openDeclaration with
              | FSharpOpenDeclaration.Open ((firstId :: _) as longId, modules, appliedScope) ->
-                 Some { Idents = modules |> List.choose (fun x -> x.TryFullName) |> Set.ofList
+                 Some { Idents = 
+                            modules 
+                            |> List.choose (fun x -> x.TryFullName |> Option.map (fun fullName -> x, fullName)) 
+                            |> List.collect (fun (modul, fullName) -> 
+                                 [ yield fullName
+                                   if modul.HasFSharpModuleSuffix then
+                                     yield fullName.[..fullName.Length - 7] // "Module" length plus zero indexign correction
+                                 ])
+                            |> Set.ofList
                         Modules = modules
                         Range =
                             let lastId = List.last longId
