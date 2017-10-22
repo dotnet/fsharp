@@ -310,7 +310,9 @@ type FullyQualifiedFlag =
     /// Resolve any paths accessible via 'open'
     | OpenQualified 
 
-
+type OpenDeclaration =
+    | Open of longId: Ident list * moduleRefs: ModuleOrNamespaceRef list * appliedScope: range
+    | AutoOpenModule of idents: string list * moduleRef: ModuleOrNamespaceRef * appliedScope: range
 
 [<NoEquality; NoComparison>]
 /// The environment of information used to resolve names
@@ -319,10 +321,10 @@ type NameResolutionEnv =
       eDisplayEnv: DisplayEnv 
 
       /// Values and Data Tags available by unqualified name 
-      eUnqualifiedItems: LayeredMap<string,Item>
+      eUnqualifiedItems: LayeredMap<string,Item * OpenDeclaration>
 
       /// Data Tags and Active Pattern Tags available by unqualified name 
-      ePatItems: NameMap<Item>
+      ePatItems: NameMap<Item * OpenDeclaration>
 
       /// Modules accessible via "." notation. Note this is a multi-map. 
       /// Adding a module abbreviation adds it a local entry to this List.map. 
@@ -337,38 +339,38 @@ type NameResolutionEnv =
       ///    open Collections                            <--- give a warning 
       ///    let v = new Collections.Generic.List<int>() <--- give a warning" 
       
-      eModulesAndNamespaces:  NameMultiMap<Tast.ModuleOrNamespaceRef>
+      eModulesAndNamespaces:  NameMultiMap<Tast.ModuleOrNamespaceRef * OpenDeclaration>
       
       /// Fully qualified modules and namespaces. 'open' does not change this. 
-      eFullyQualifiedModulesAndNamespaces:  NameMultiMap<Tast.ModuleOrNamespaceRef>
+      eFullyQualifiedModulesAndNamespaces:  NameMultiMap<Tast.ModuleOrNamespaceRef * OpenDeclaration>
       
       /// RecdField labels in scope.  RecdField labels are those where type are inferred 
       /// by label rather than by known type annotation. 
       /// Bools indicate if from a record, where no warning is given on indeterminate lookup 
-      eFieldLabels: NameMultiMap<Tast.RecdFieldRef>
+      eFieldLabels: NameMultiMap<Tast.RecdFieldRef * OpenDeclaration>
 
       /// Tycons indexed by the various names that may be used to access them, e.g. 
       ///     "List" --> multiple TyconRef's for the various tycons accessible by this name. 
       ///     "List`1" --> TyconRef 
-      eTyconsByAccessNames: LayeredMultiMap<string,TyconRef>
+      eTyconsByAccessNames: LayeredMultiMap<string,TyconRef * OpenDeclaration>
 
-      eFullyQualifiedTyconsByAccessNames: LayeredMultiMap<string,TyconRef>
-
-      /// Tycons available by unqualified, demangled names (i.e. (List,1) --> TyconRef) 
-      eTyconsByDemangledNameAndArity: LayeredMap<NameArityPair,TyconRef>
+      eFullyQualifiedTyconsByAccessNames: LayeredMultiMap<string,TyconRef * OpenDeclaration>
 
       /// Tycons available by unqualified, demangled names (i.e. (List,1) --> TyconRef) 
-      eFullyQualifiedTyconsByDemangledNameAndArity: LayeredMap<NameArityPair,TyconRef>
+      eTyconsByDemangledNameAndArity: LayeredMap<NameArityPair,TyconRef * OpenDeclaration>
+
+      /// Tycons available by unqualified, demangled names (i.e. (List,1) --> TyconRef) 
+      eFullyQualifiedTyconsByDemangledNameAndArity: LayeredMap<NameArityPair,TyconRef * OpenDeclaration>
 
       /// Extension members by type and name 
-      eIndexedExtensionMembers: TyconRefMultiMap<ExtensionMember>
+      eIndexedExtensionMembers: TyconRefMultiMap<ExtensionMember * OpenDeclaration>
 
       /// Other extension members unindexed by type
-      eUnindexedExtensionMembers: ExtensionMember list
+      eUnindexedExtensionMembers: (ExtensionMember  * OpenDeclaration) list
 
       /// Typars (always available by unqualified names). Further typars can be 
       /// in the tpenv, a structure folded through each top-level definition. 
-      eTypars: NameMap<Typar>
+      eTypars: NameMap<Typar * OpenDeclaration>
 
     } 
 
@@ -498,7 +500,6 @@ let private GetCSharpStyleIndexedExtensionMembersForTyconRef (amap:Import.Import
 /// of opens will collapse the maps and build the backing dictionary. 
 [<RequireQualifiedAccess>]
 type BulkAdd = Yes | No
-
 
 /// bulkAddMode: true when adding the values from the 'open' of a namespace
 /// or module, when we collapse the value table down to a dictionary.
@@ -699,7 +700,7 @@ let TryFindPatternByName name {ePatItems = patternMap} =
     NameMap.tryFind name patternMap
 
 /// Add a set of type definitions to the name resolution environment 
-let AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap m root nenv tcrefs =
+let AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap m root nenv tcrefs openDecl =
     if isNil tcrefs then nenv else
     let env = List.fold (AddPartsOfTyconRefToNameEnv bulkAddMode ownDefinition g amap m) nenv tcrefs
     // Add most of the contents of the tycons en-masse, then flatten the tables if we're opening a module or namespace
@@ -721,16 +722,16 @@ let AddTyconRefsToNameEnv bulkAddMode ownDefinition g amap m root nenv tcrefs =
             AddTyconByAccessNames bulkAddMode tcrefs nenv.eTyconsByAccessNames } 
 
 /// Add an F# exception definition to the name resolution environment 
-let AddExceptionDeclsToNameEnv bulkAddMode nenv (ecref:TyconRef) = 
+let AddExceptionDeclsToNameEnv bulkAddMode nenv (ecref:TyconRef) (openDecl: OpenDeclaration) = 
     assert ecref.IsExceptionDecl
     let item = Item.ExnCase ecref
     {nenv with 
        eUnqualifiedItems =
             match bulkAddMode with 
             | BulkAdd.Yes -> 
-                nenv.eUnqualifiedItems.AddAndMarkAsCollapsible [| KeyValuePair(ecref.LogicalName, item) |]
+                nenv.eUnqualifiedItems.AddAndMarkAsCollapsible [| KeyValuePair(ecref.LogicalName, item, openDecl) |]
             | BulkAdd.No -> 
-                nenv.eUnqualifiedItems.Add (ecref.LogicalName, item)
+                nenv.eUnqualifiedItems.Add (ecref.LogicalName, item, openDecl)
                 
        ePatItems = nenv.ePatItems.Add (ecref.LogicalName, item) }
 
@@ -753,7 +754,7 @@ let MakeNestedModuleRefs (modref: ModuleOrNamespaceRef) =
 /// Add a set of module or namespace to the name resolution environment, including any sub-modules marked 'AutoOpen'
 //
 // Recursive because of "AutoOpen", i.e. adding a module reference may automatically open further modules
-let rec AddModuleOrNamespaceRefsToNameEnv g amap m root ad nenv (modrefs: ModuleOrNamespaceRef list) =
+let rec AddModuleOrNamespaceRefsToNameEnv g amap m root ad nenv (modrefs: ModuleOrNamespaceRef list) openDecl =
     if isNil modrefs then nenv else
     let modrefsMap = modrefs |> NameMap.ofKeyedList (fun modref -> modref.DemangledModuleOrNamespaceName)
     let addModrefs tab = 
@@ -774,13 +775,13 @@ let rec AddModuleOrNamespaceRefsToNameEnv g amap m root ad nenv (modrefs: Module
     let nenv = 
         (nenv,modrefs) ||> List.fold (fun nenv modref ->  
             if modref.IsModule && TryFindFSharpBoolAttribute g g.attrib_AutoOpenAttribute modref.Attribs = Some true then
-                AddModuleOrNamespaceContentsToNameEnv g amap ad m false nenv modref 
+                AddModuleOrNamespaceContentsToNameEnv g amap ad m false nenv modref openDecl
             else
                 nenv)
     nenv
 
 /// Add the contents of a module or namespace to the name resolution environment
-and AddModuleOrNamespaceContentsToNameEnv (g:TcGlobals) amap (ad:AccessorDomain) m root nenv (modref:ModuleOrNamespaceRef) = 
+and AddModuleOrNamespaceContentsToNameEnv (g:TcGlobals) amap (ad:AccessorDomain) m root nenv (modref:ModuleOrNamespaceRef) (openDecl: OpenDeclaration) = 
     let pri = NextExtensionMethodPriority()
     let mty = modref.ModuleOrNamespaceType
      
@@ -790,7 +791,7 @@ and AddModuleOrNamespaceContentsToNameEnv (g:TcGlobals) amap (ad:AccessorDomain)
         for exnc in mty.ExceptionDefinitions do
            let tcref = modref.NestedTyconRef exnc
            if IsEntityAccessible amap m ad tcref then 
-               state <- AddExceptionDeclsToNameEnv BulkAdd.Yes state tcref
+               state <- AddExceptionDeclsToNameEnv BulkAdd.Yes state tcref openDecl
 
         state
 
@@ -800,14 +801,14 @@ and AddModuleOrNamespaceContentsToNameEnv (g:TcGlobals) amap (ad:AccessorDomain)
            let tcref = modref.NestedTyconRef tycon
            if IsEntityAccessible amap m ad tcref then Some(tcref) else None)
 
-    let nenv = (nenv,tcrefs) ||> AddTyconRefsToNameEnv BulkAdd.Yes false g amap m false 
+    let nenv = (nenv,tcrefs) ||> AddTyconRefsToNameEnv BulkAdd.Yes false g amap m false openDecl
     let vrefs = 
         mty.AllValsAndMembers.ToList() 
         |> List.choose (fun x -> if IsAccessible ad x.Accessibility then TryMkValRefInModRef modref x else None)
         |> List.toArray
-    let nenv = AddValRefsToNameEnvWithPriority BulkAdd.Yes pri nenv vrefs
+    let nenv = AddValRefsToNameEnvWithPriority BulkAdd.Yes pri nenv vrefs openDecl
     let nestedModules = MakeNestedModuleRefs modref
-    let nenv = (nenv,nestedModules) ||> AddModuleOrNamespaceRefsToNameEnv g amap m root ad 
+    let nenv = (nenv,nestedModules) ||> AddModuleOrNamespaceRefsToNameEnv g amap m root ad openDecl
     nenv
 
 /// Add a set of modules or namespaces to the name resolution environment
@@ -818,8 +819,8 @@ and AddModuleOrNamespaceContentsToNameEnv (g:TcGlobals) amap (ad:AccessorDomain)
 //    open M1
 // 
 // The list contains [M1b; M1a]
-and AddModulesAndNamespacesContentsToNameEnv g amap ad m root nenv modrefs =
-   (modrefs, nenv) ||> List.foldBack (fun modref acc -> AddModuleOrNamespaceContentsToNameEnv g amap ad m root acc modref)
+and AddModulesAndNamespacesContentsToNameEnv g amap ad m root nenv modrefs openDecl =
+   (modrefs, nenv) ||> List.foldBack (fun modref acc -> AddModuleOrNamespaceContentsToNameEnv g amap ad m root acc modref openDecl)
 
 /// Add a single modules or namespace to the name resolution environment
 let AddModuleOrNamespaceRefToNameEnv g amap m root ad nenv (modref:EntityRef) =  
@@ -1222,15 +1223,11 @@ type ItemOccurence =
     /// Result gets suppressed over this text range
     | RelatedText
   
-type OpenDeclaration =
-    | Open of longId: Ident list * moduleRefs: ModuleOrNamespaceRef list * appliedScope: range
-    | AutoOpenModule of idents: string list * moduleRef: ModuleOrNamespaceRef * appliedScope: range
-
 /// An abstract type for reporting the results of name resolution and type checking.
 type ITypecheckResultsSink =
     abstract NotifyEnvWithScope : range * NameResolutionEnv * AccessorDomain -> unit
     abstract NotifyExprHasType : pos * TType * Tastops.DisplayEnv * NameResolutionEnv * AccessorDomain * range -> unit
-    abstract NotifyNameResolution : pos * Item * Item * TyparInst * ItemOccurence * Tastops.DisplayEnv * NameResolutionEnv * AccessorDomain * range * bool -> unit
+    abstract NotifyNameResolution : pos * Item * Item * TyparInst * ItemOccurence * Tastops.DisplayEnv * NameResolutionEnv * AccessorDomain * range * bool * OpenDeclaration -> unit
     abstract NotifyFormatSpecifierLocation : range * int -> unit
     abstract NotifyOpenDeclaration : OpenDeclaration -> unit
     abstract CurrentSource : string option
@@ -1398,7 +1395,7 @@ let ItemsAreEffectivelyEqual g orig other =
     | _ -> false
 
 [<System.Diagnostics.DebuggerDisplay("{DebugToString()}")>]
-type CapturedNameResolution(p:pos, i:Item, tpinst, io:ItemOccurence, de:DisplayEnv, nre:NameResolutionEnv, ad:AccessorDomain, m:range) =
+type CapturedNameResolution(p:pos, i:Item, tpinst, io:ItemOccurence, de:DisplayEnv, nre:NameResolutionEnv, ad:AccessorDomain, od: OpenDeclaration, m:range) =
     member this.Pos = p
     member this.Item = i
     member this.ItemWithInst = ({ Item = i; TyparInst = tpinst } : ItemWithInst)
@@ -1406,6 +1403,7 @@ type CapturedNameResolution(p:pos, i:Item, tpinst, io:ItemOccurence, de:DisplayE
     member this.DisplayEnv = de
     member this.NameResolutionEnv = nre
     member this.AccessorDomain = ad
+    member this.OpenDeclaration = od
     member this.Range = m
     member this.DebugToString() = 
         sprintf "%A: %+A" (p.Line, p.Column) i
@@ -1431,13 +1429,14 @@ type TcSymbolUseData =
    { Item: Item
      ItemOccurence: ItemOccurence
      DisplayEnv: DisplayEnv
+     OpenDeclaration: OpenDeclaration
      Range: range }
 
 /// Represents container for all name resolutions that were met so far when typechecking some particular file
 type TcSymbolUses(g, capturedNameResolutions : ResizeArray<CapturedNameResolution>, formatSpecifierLocations: (range * int)[]) = 
     
     // Make sure we only capture the information we really need to report symbol uses
-    let cnrs = [| for cnr in capturedNameResolutions  ->  { Item=cnr.Item; ItemOccurence=cnr.ItemOccurence; DisplayEnv=cnr.DisplayEnv; Range=cnr.Range } |]
+    let cnrs = [| for cnr in capturedNameResolutions -> { Item=cnr.Item; ItemOccurence=cnr.ItemOccurence; DisplayEnv=cnr.DisplayEnv; Range=cnr.Range; OpenDeclaration=cnr.OpenDeclaration } |]
     let capturedNameResolutions = () 
     do ignore capturedNameResolutions // don't capture this!
 
@@ -1448,7 +1447,7 @@ type TcSymbolUses(g, capturedNameResolutions : ResizeArray<CapturedNameResolutio
 
     member this.GetAllUsesOfSymbols() = 
         [| for cnr in cnrs do
-              yield (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.Range)  |]
+              yield (cnr.Item, cnr.ItemOccurence, cnr.DisplayEnv, cnr.OpenDeclaration, cnr.Range)  |]
 
     member this.GetFormatSpecifierLocationsAndArity() =  formatSpecifierLocations
 
@@ -1485,7 +1484,7 @@ type TcResultsSinkImpl(g, ?source: string) =
             if allowedRange m then 
                 capturedExprTypings.Add((endPos,ty,denv,nenv,ad,m))
 
-        member sink.NotifyNameResolution(endPos,item,itemMethodGroup,tpinst,occurenceType,denv,nenv,ad,m,replace) = 
+        member sink.NotifyNameResolution(endPos,item,itemMethodGroup,tpinst,occurenceType,denv,nenv,ad,m,replace,openDecl) = 
             // Desugaring some F# constructs (notably computation expressions with custom operators)
             // results in duplication of textual variables. So we ensure we never record two name resolutions 
             // for the same identifier at the same location.
@@ -1506,8 +1505,8 @@ type TcResultsSinkImpl(g, ?source: string) =
                     capturedMethodGroupResolutions.RemoveAll(fun cnr -> cnr.Range = m) |> ignore
 
                 if not alreadyDone then 
-                    capturedNameResolutions.Add(CapturedNameResolution(endPos,item,tpinst,occurenceType,denv,nenv,ad,m)) 
-                    capturedMethodGroupResolutions.Add(CapturedNameResolution(endPos,itemMethodGroup,[],occurenceType,denv,nenv,ad,m)) 
+                    capturedNameResolutions.Add(CapturedNameResolution(endPos,item,tpinst,occurenceType,denv,nenv,ad,openDecl,m)) 
+                    capturedMethodGroupResolutions.Add(CapturedNameResolution(endPos,itemMethodGroup,[],occurenceType,denv,nenv,ad,openDecl,m)) 
 
         member sink.NotifyFormatSpecifierLocation(m, numArgs) = 
             capturedFormatSpecifierLocations.Add((m, numArgs))
@@ -1545,15 +1544,15 @@ let CallEnvSink (sink:TcResultsSink) (scopem,nenv,ad) =
     | Some sink -> sink.NotifyEnvWithScope(scopem,nenv,ad)
 
 /// Report a specific name resolution at a source range
-let CallNameResolutionSink (sink:TcResultsSink) (m:range,nenv,item,itemMethodGroup,tpinst,occurenceType,denv,ad) = 
+let CallNameResolutionSink (sink:TcResultsSink) (m:range,nenv,item,itemMethodGroup,tpinst,occurenceType,denv,ad,openDecl) = 
     match sink.CurrentSink with 
     | None -> () 
-    | Some sink -> sink.NotifyNameResolution(m.End,item,itemMethodGroup,tpinst,occurenceType,denv,nenv,ad,m,false)  
+    | Some sink -> sink.NotifyNameResolution(m.End,item,itemMethodGroup,tpinst,occurenceType,denv,nenv,ad,m,false,openDecl)  
 
-let CallNameResolutionSinkReplacing (sink:TcResultsSink) (m:range,nenv,item,itemMethodGroup,tpinst,occurenceType,denv,ad) = 
+let CallNameResolutionSinkReplacing (sink:TcResultsSink) (m:range,nenv,item,itemMethodGroup,tpinst,occurenceType,denv,ad,openDecl) = 
     match sink.CurrentSink with 
     | None -> () 
-    | Some sink -> sink.NotifyNameResolution(m.End,item,itemMethodGroup,tpinst,occurenceType,denv,nenv,ad,m,true)  
+    | Some sink -> sink.NotifyNameResolution(m.End,item,itemMethodGroup,tpinst,occurenceType,denv,nenv,ad,m,true,openDecl)  
 
 /// Report a specific expression typing at a source range
 let CallExprHasTypeSink (sink:TcResultsSink) (m:range,nenv,typ,denv,ad) = 

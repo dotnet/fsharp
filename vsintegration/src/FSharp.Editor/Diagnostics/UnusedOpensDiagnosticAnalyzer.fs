@@ -42,12 +42,12 @@ type internal UnusedOpensDiagnosticAnalyzer() =
         asyncMaybe {
             do! Option.guard Settings.CodeFixes.UnusedOpens
             let! sourceText = document.GetTextAsync()
-            let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true, userOpName = userOpName)
+            let! _, parsedInput, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true, userOpName = userOpName)
             let openDeclarations = checkResults.OpenDeclarations
 
             Logging.Logging.logInfof "*** OpenDeclarations: %+A" openDeclarations
             
-            return! UnusedOpens.getUnusedOpens(checkResults, fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()) |> liftAsync
+            return! UnusedOpens.getUnusedOpens(parsedInput, checkResults, fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()) |> liftAsync
         } 
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) =

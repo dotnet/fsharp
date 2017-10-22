@@ -28,14 +28,16 @@ let private checker = FSharpChecker.Create()
 let (=>) (source: string) (expectedRanges: ((*line*)int * ((*start column*)int * (*end column*)int)) list) =
     let sourceLines = source.Split ([|"\r\n"; "\n"; "\r"|], StringSplitOptions.None)
 
-    let _, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, 0, source, projectOptions) |> Async.RunSynchronously
-    
-    let checkFileResults =
+    let parsedInput, checkFileResults =
+        let parseResults, checkFileAnswer = checker.ParseAndCheckFileInProject(filePath, 0, source, projectOptions) |> Async.RunSynchronously
         match checkFileAnswer with
         | FSharpCheckFileAnswer.Aborted -> failwithf "ParseAndCheckFileInProject aborted"
-        | FSharpCheckFileAnswer.Succeeded(checkFileResults) -> checkFileResults
+        | FSharpCheckFileAnswer.Succeeded checkFileResults ->
+            match parseResults.ParseTree with
+            | None -> failwith "Parse returns None ParseTree"
+            | Some parsedInput -> parsedInput, checkFileResults
 
-    let unusedOpenRanges = UnusedOpens.getUnusedOpens (checkFileResults, fun lineNum -> sourceLines.[Line.toZ lineNum]) |> Async.RunSynchronously
+    let unusedOpenRanges = UnusedOpens.getUnusedOpens (parsedInput, checkFileResults, fun lineNum -> sourceLines.[Line.toZ lineNum]) |> Async.RunSynchronously
     
     unusedOpenRanges 
     |> List.map (fun x -> x.StartLine, (x.StartColumn, x.EndColumn))

@@ -2266,6 +2266,13 @@ type FSharpOpenDeclaration =
       /// Syntethic open declaration generated for auto open modules.
     | AutoOpenModule of idents: string list * modul: FSharpEntity * appliedScope: range
 
+    static member Create(cenv: cenv, openDeclaration: OpenDeclaration) =
+        match openDeclaration with
+        | OpenDeclaration.Open (id, mods, appliedScope) -> 
+            FSharpOpenDeclaration.Open(id, mods |> List.map (fun x -> FSharpEntity(cenv, x)), appliedScope)
+        | OpenDeclaration.AutoOpenModule (ids, modul, appliedScope) ->
+            FSharpOpenDeclaration.AutoOpenModule (ids, FSharpEntity(cenv, modul), appliedScope)
+
 [<Sealed>]
 type FSharpSymbolUse(g:TcGlobals, denv: DisplayEnv, symbol:FSharpSymbol, itemOcc, range: range) = 
     member __.Symbol  = symbol
@@ -2287,4 +2294,3 @@ type FSharpSymbolUse(g:TcGlobals, denv: DisplayEnv, symbol:FSharpSymbol, itemOcc
     member __.FileName = range.FileName
     member __.Range = Range.toZ range
     member __.RangeAlternate = range
-

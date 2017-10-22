@@ -136,21 +136,28 @@ type FieldResolution = FieldResolution of RecdFieldRef * bool
 [<Sealed>]
 type ExtensionMember 
 
+/// Represents open declaration statement.
+type internal OpenDeclaration =
+      /// Ordinary open declaration, i.e. one which opens a namespace or module.
+    | Open of longId: Ident list * moduleRefs: ModuleOrNamespaceRef list * appliedScope: range
+      /// Syntethic open declaration generated for auto open modules.
+    | AutoOpenModule of idents: string list * moduleRef: ModuleOrNamespaceRef * appliedScope: range
+
 /// The environment of information used to resolve names
 [<NoEquality; NoComparison>]
 type NameResolutionEnv =
     {eDisplayEnv: DisplayEnv
-     eUnqualifiedItems: LayeredMap<string,Item>
-     ePatItems: NameMap<Item>
-     eModulesAndNamespaces: NameMultiMap<ModuleOrNamespaceRef>
-     eFullyQualifiedModulesAndNamespaces: NameMultiMap<ModuleOrNamespaceRef>
-     eFieldLabels: NameMultiMap<RecdFieldRef>
-     eTyconsByAccessNames: LayeredMultiMap<string,TyconRef>
-     eFullyQualifiedTyconsByAccessNames: LayeredMultiMap<string,TyconRef>
-     eTyconsByDemangledNameAndArity: LayeredMap<NameArityPair,TyconRef>
-     eFullyQualifiedTyconsByDemangledNameAndArity: LayeredMap<NameArityPair,TyconRef>
-     eIndexedExtensionMembers: TyconRefMultiMap<ExtensionMember>
-     eUnindexedExtensionMembers: ExtensionMember list
+     eUnqualifiedItems: LayeredMap<string,Item*OpenDeclaration>
+     ePatItems: NameMap<Item*OpenDeclaration>
+     eModulesAndNamespaces: NameMultiMap<ModuleOrNamespaceRef*OpenDeclaration>
+     eFullyQualifiedModulesAndNamespaces: NameMultiMap<ModuleOrNamespaceRef*OpenDeclaration>
+     eFieldLabels: NameMultiMap<RecdFieldRef * OpenDeclaration>
+     eTyconsByAccessNames: LayeredMultiMap<string,TyconRef * OpenDeclaration>
+     eFullyQualifiedTyconsByAccessNames: LayeredMultiMap<string,TyconRef * OpenDeclaration>
+     eTyconsByDemangledNameAndArity: LayeredMap<NameArityPair,TyconRef * OpenDeclaration>
+     eFullyQualifiedTyconsByDemangledNameAndArity: LayeredMap<NameArityPair,TyconRef * OpenDeclaration>
+     eIndexedExtensionMembers: TyconRefMultiMap<ExtensionMember * OpenDeclaration>
+     eUnindexedExtensionMembers: (ExtensionMember * OpenDeclaration) list
      eTypars: NameMap<Typar> }
     static member Empty : g:TcGlobals -> NameResolutionEnv
     member DisplayEnv : DisplayEnv
@@ -179,7 +186,7 @@ val internal AddValRefToNameEnv                    : NameResolutionEnv -> ValRef
 val internal AddActivePatternResultTagsToNameEnv   : ActivePatternInfo -> NameResolutionEnv -> TType -> range -> NameResolutionEnv
 
 /// Add a list of type definitions to the name resolution environment 
-val internal AddTyconRefsToNameEnv                 : BulkAdd -> bool -> TcGlobals -> ImportMap -> range -> bool -> NameResolutionEnv -> TyconRef list -> NameResolutionEnv
+val internal AddTyconRefsToNameEnv                 : BulkAdd -> bool -> TcGlobals -> ImportMap -> range -> bool -> NameResolutionEnv -> TyconRef list -> OpenDeclaration -> NameResolutionEnv
 
 /// Add an F# exception definition to the name resolution environment 
 val internal AddExceptionDeclsToNameEnv            : BulkAdd -> NameResolutionEnv -> TyconRef -> NameResolutionEnv
@@ -188,13 +195,13 @@ val internal AddExceptionDeclsToNameEnv            : BulkAdd -> NameResolutionEn
 val internal AddModuleAbbrevToNameEnv              : Ident -> NameResolutionEnv -> ModuleOrNamespaceRef list -> NameResolutionEnv
 
 /// Add a list of module or namespace to the name resolution environment, including any sub-modules marked 'AutoOpen'
-val internal AddModuleOrNamespaceRefsToNameEnv                   : TcGlobals -> ImportMap -> range -> bool -> AccessorDomain -> NameResolutionEnv -> ModuleOrNamespaceRef list -> NameResolutionEnv
+val internal AddModuleOrNamespaceRefsToNameEnv : TcGlobals -> ImportMap -> range -> bool -> AccessorDomain -> NameResolutionEnv -> ModuleOrNamespaceRef list -> OpenDeclaration -> NameResolutionEnv
 
 /// Add a single modules or namespace to the name resolution environment
 val internal AddModuleOrNamespaceRefToNameEnv                    : TcGlobals -> ImportMap -> range -> bool -> AccessorDomain -> NameResolutionEnv -> ModuleOrNamespaceRef -> NameResolutionEnv
 
 /// Add a list of modules or namespaces to the name resolution environment
-val internal AddModulesAndNamespacesContentsToNameEnv : TcGlobals -> ImportMap -> AccessorDomain -> range -> bool -> NameResolutionEnv -> ModuleOrNamespaceRef list -> NameResolutionEnv
+val internal AddModulesAndNamespacesContentsToNameEnv : TcGlobals -> ImportMap -> AccessorDomain -> range -> bool -> NameResolutionEnv -> ModuleOrNamespaceRef list -> OpenDeclaration -> NameResolutionEnv
 
 /// A flag which indicates if it is an error to have two declared type parameters with identical names
 /// in the name resolution environment.
@@ -270,6 +277,9 @@ type internal CapturedNameResolution =
     /// The access rights of code at the location
     member AccessorDomain : AccessorDomain
 
+    /// Open declaration that brings this item into the scope
+    member OpenDeclaration : OpenDeclaration
+
     /// The starting and ending position
     member Range : range
 
@@ -302,17 +312,11 @@ type internal TcSymbolUses =
     member GetUsesOfSymbol : Item -> (ItemOccurence * DisplayEnv * range)[]
 
     /// Get all the uses of all items within the file
-    member GetAllUsesOfSymbols : unit -> (Item * ItemOccurence * DisplayEnv * range)[]
+    member GetAllUsesOfSymbols : unit -> (Item * ItemOccurence * DisplayEnv * OpenDeclaration * range)[]
 
     /// Get the locations of all the printf format specifiers in the file
     member GetFormatSpecifierLocationsAndArity : unit -> (range * int)[]
 
-/// Represents open declaration statement.
-type internal OpenDeclaration =
-      /// Ordinary open declaration, i.e. one which opens a namespace or module.
-    | Open of longId: Ident list * moduleRefs: ModuleOrNamespaceRef list * appliedScope: range
-      /// Syntethic open declaration generated for auto open modules.
-    | AutoOpenModule of idents: string list * moduleRef: ModuleOrNamespaceRef * appliedScope: range
 
 /// An abstract type for reporting the results of name resolution and type checking
 type ITypecheckResultsSink =
@@ -324,7 +328,7 @@ type ITypecheckResultsSink =
     abstract NotifyExprHasType    : pos * TType * DisplayEnv * NameResolutionEnv * AccessorDomain * range -> unit
 
     /// Record that a name resolution occurred at a specific location in the source
-    abstract NotifyNameResolution : pos * Item * Item * TyparInst * ItemOccurence * DisplayEnv * NameResolutionEnv * AccessorDomain * range * bool -> unit
+    abstract NotifyNameResolution : pos * Item * Item * TyparInst * ItemOccurence * DisplayEnv * NameResolutionEnv * AccessorDomain * range * bool * OpenDeclaration -> unit
 
     /// Record that a printf format specifier occurred at a specific location in the source
     abstract NotifyFormatSpecifierLocation : range * int -> unit

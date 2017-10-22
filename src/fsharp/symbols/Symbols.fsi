@@ -1076,6 +1076,7 @@ type internal FSharpOpenDeclaration =
     | Open of longId: Ident list * modules: FSharpEntity list * appliedScope: range
       /// Syntethic open declaration generated for auto open modules.
     | AutoOpenModule of idents: string list * modul: FSharpEntity * appliedScope: range
+    static member Create : Impl.cenv * OpenDeclaration -> FSharpOpenDeclaration
 
 /// Represents the use of an F# symbol from F# source code
 [<Sealed>]
@@ -1117,4 +1118,3 @@ type internal FSharpSymbolUse =
 
     /// The range of text representing the reference to the symbol
     member RangeAlternate: range
-

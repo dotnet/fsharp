@@ -1791,9 +1791,9 @@ type FSharpCheckProjectResults(projectFileName:string, keepAssemblyContents, err
         let (tcGlobals, _tcImports, _thisCcu, _ccuSig, tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
 
         [| for r in tcSymbolUses do yield! r.GetUsesOfSymbol(symbol.Item) |] 
-        |> Seq.distinctBy (fun (itemOcc,_denv,m) -> itemOcc, m) 
-        |> Seq.filter (fun (itemOcc,_,_) -> itemOcc <> ItemOccurence.RelatedText) 
-        |> Seq.map (fun (itemOcc,denv,m) -> FSharpSymbolUse(tcGlobals, denv, symbol, itemOcc, m)) 
+        |> Seq.distinctBy (fun (itemOcc,_denv,_,m) -> itemOcc, m) 
+        |> Seq.filter (fun (itemOcc,_,_,_) -> itemOcc <> ItemOccurence.RelatedText) 
+        |> Seq.map (fun (itemOcc,denv,openDecl,m) -> FSharpSymbolUse(tcGlobals, denv, symbol, itemOcc, openDecl, m)) 
         |> Seq.toArray
         |> async.Return
 
@@ -1802,7 +1802,7 @@ type FSharpCheckProjectResults(projectFileName:string, keepAssemblyContents, err
         let (tcGlobals, tcImports, thisCcu, _ccuSig, tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
 
         [| for r in tcSymbolUses do 
-             for (item,itemOcc,denv,m) in r.GetAllUsesOfSymbols() do
+             for (item,itemOcc,denv,openDecl,m) in r.GetAllUsesOfSymbols() do
                 if itemOcc <> ItemOccurence.RelatedText then
                   let symbol = FSharpSymbol.Create(tcGlobals, thisCcu, tcImports, item)
                   yield FSharpSymbolUse(tcGlobals, denv, symbol, itemOcc, m) |]

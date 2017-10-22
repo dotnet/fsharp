@@ -442,12 +442,12 @@ let AddLocalTyconsAndReport tcSink scopem g amap m tycons env =
 //------------------------------------------------------------------------- 
 
 let OpenModulesOrNamespaces tcSink g amap scopem root env mvvs openDeclaration =
-    let env =
+    let newEnv =
         if isNil mvvs then env else
-        ModifyNameResEnv (fun nenv -> AddModulesAndNamespacesContentsToNameEnv g amap env.eAccessRights scopem root nenv mvvs) env
-    CallEnvSink tcSink (scopem, env.NameEnv, env.eAccessRights)
-    CallOpenDeclarationSink tcSink openDeclaration
-    env
+        ModifyNameResEnv (fun nenv -> AddModulesAndNamespacesContentsToNameEnv g amap env.eAccessRights scopem root nenv mvvs openDeclaration) env
+    CallEnvSink tcSink (scopem, newEnv.NameEnv, newEnv.eAccessRights)
+    CallOpenDeclarationSink tcSink openDeclaration (newEnv.NameEnv.)
+    newEnv
 
 let AddRootModuleOrNamespaceRefs g amap m env modrefs =
     if isNil modrefs then env else
@@ -1835,9 +1835,9 @@ let MakeAndPublishSimpleVals cenv env m names mergeNamesInOneNameresEnv =
                 let sink =
                     { new ITypecheckResultsSink with
                         member this.NotifyEnvWithScope(_, _, _) = () // ignore EnvWithScope reports
-                        member this.NotifyNameResolution(pos, item, itemGroup, itemTyparInst, occurence, denv, nenv, ad, m, replacing) = 
+                        member this.NotifyNameResolution(pos, item, itemGroup, itemTyparInst, occurence, denv, nenv, ad, m, replacing, openDecl) = 
                             if not m.IsSynthetic then
-                                nameResolutions.Add(pos, item, itemGroup, itemTyparInst, occurence, denv, nenv, ad, m, replacing)
+                                nameResolutions.Add(pos, item, itemGroup, itemTyparInst, occurence, denv, nenv, ad, m, replacing, openDecl)
                         member this.NotifyExprHasType(_, _, _, _, _, _) = assert false // no expr typings in MakeSimpleVals
                         member this.NotifyFormatSpecifierLocation(_, _) = ()
                         member this.NotifyOpenDeclaration(_) = ()
@@ -1847,11 +1847,11 @@ let MakeAndPublishSimpleVals cenv env m names mergeNamesInOneNameresEnv =
                 MakeSimpleVals cenv env names
     
             if nameResolutions.Count <> 0 then 
-                let (_, _, _, _, _, _, _, ad, m1, _replacing) = nameResolutions.[0]
+                let (_, _, _, _, _, _, _, ad, m1, _replacing, _) = nameResolutions.[0]
                 // mergedNameEnv - name resolution env that contains all names
                 // mergedRange - union of ranges of names
                 let mergedNameEnv, mergedRange = 
-                    ((env.NameEnv, m1), nameResolutions) ||> Seq.fold (fun (nenv, merged) (_, item, _, _, _, _, _, _, m, _) ->
+                    ((env.NameEnv, m1), nameResolutions) ||> Seq.fold (fun (nenv, merged) (_, item, _, _, _, _, _, _, m, _, _) ->
                         // MakeAndPublishVal creates only Item.Value
                         let item = match item with Item.Value(item) -> item | _ -> failwith "impossible"
                         (AddFakeNamedValRefToNameEnv item.DisplayName nenv item), (unionRanges m merged)
@@ -1859,8 +1859,8 @@ let MakeAndPublishSimpleVals cenv env m names mergeNamesInOneNameresEnv =
                 // send notification about mergedNameEnv
                 CallEnvSink cenv.tcSink (mergedRange, mergedNameEnv, ad)
                 // call CallNameResolutionSink for all captured name resolutions using mergedNameEnv
-                for (_, item, itemGroup, itemTyparInst, occurence, denv, _nenv, ad, m, _replacing) in nameResolutions do
-                    CallNameResolutionSink cenv.tcSink (m, mergedNameEnv, item, itemGroup, itemTyparInst, occurence, denv, ad)
+                for (_, item, itemGroup, itemTyparInst, occurence, denv, _nenv, ad, m, _replacing, openDecl) in nameResolutions do
+                    CallNameResolutionSink cenv.tcSink (m, mergedNameEnv, item, itemGroup, itemTyparInst, occurence, denv, ad, openDecl)
 
             values, vspecMap
 
