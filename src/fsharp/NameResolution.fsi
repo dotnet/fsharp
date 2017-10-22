@@ -146,18 +146,19 @@ type internal OpenDeclaration =
 /// The environment of information used to resolve names
 [<NoEquality; NoComparison>]
 type NameResolutionEnv =
-    {eDisplayEnv: DisplayEnv
-     eUnqualifiedItems: LayeredMap<string,Item*OpenDeclaration>
-     ePatItems: NameMap<Item*OpenDeclaration>
-     eModulesAndNamespaces: NameMultiMap<ModuleOrNamespaceRef*OpenDeclaration>
-     eFullyQualifiedModulesAndNamespaces: NameMultiMap<ModuleOrNamespaceRef*OpenDeclaration>
-     eFieldLabels: NameMultiMap<RecdFieldRef * OpenDeclaration>
-     eTyconsByAccessNames: LayeredMultiMap<string,TyconRef * OpenDeclaration>
-     eFullyQualifiedTyconsByAccessNames: LayeredMultiMap<string,TyconRef * OpenDeclaration>
-     eTyconsByDemangledNameAndArity: LayeredMap<NameArityPair,TyconRef * OpenDeclaration>
-     eFullyQualifiedTyconsByDemangledNameAndArity: LayeredMap<NameArityPair,TyconRef * OpenDeclaration>
-     eIndexedExtensionMembers: TyconRefMultiMap<ExtensionMember * OpenDeclaration>
-     eUnindexedExtensionMembers: (ExtensionMember * OpenDeclaration) list
+    {eOpenDecl: OpenDeclaration option
+     eDisplayEnv: DisplayEnv
+     eUnqualifiedItems: LayeredMap<string, Item * OpenDeclaration option>
+     ePatItems: NameMap<Item * OpenDeclaration option>
+     eModulesAndNamespaces: NameMultiMap<ModuleOrNamespaceRef * OpenDeclaration option>
+     eFullyQualifiedModulesAndNamespaces: NameMultiMap<ModuleOrNamespaceRef * OpenDeclaration option>
+     eFieldLabels: NameMultiMap<RecdFieldRef * OpenDeclaration option>
+     eTyconsByAccessNames: LayeredMultiMap<string,TyconRef * OpenDeclaration option>
+     eFullyQualifiedTyconsByAccessNames: LayeredMultiMap<string,TyconRef * OpenDeclaration option>
+     eTyconsByDemangledNameAndArity: LayeredMap<NameArityPair,TyconRef * OpenDeclaration option>
+     eFullyQualifiedTyconsByDemangledNameAndArity: LayeredMap<NameArityPair,TyconRef * OpenDeclaration option>
+     eIndexedExtensionMembers: TyconRefMultiMap<ExtensionMember * OpenDeclaration option>
+     eUnindexedExtensionMembers: (ExtensionMember * OpenDeclaration option) list
      eTypars: NameMap<Typar> }
     static member Empty : g:TcGlobals -> NameResolutionEnv
     member DisplayEnv : DisplayEnv
@@ -278,7 +279,7 @@ type internal CapturedNameResolution =
     member AccessorDomain : AccessorDomain
 
     /// Open declaration that brings this item into the scope
-    member OpenDeclaration : OpenDeclaration
+    member OpenDeclaration : OpenDeclaration list
 
     /// The starting and ending position
     member Range : range
@@ -431,7 +432,7 @@ type ResultCollectionSettings =
 | AtMostOneResult
 
 /// Resolve a long identifier to a namespace or module.
-val internal ResolveLongIndentAsModuleOrNamespace   : ResultCollectionSettings -> Import.ImportMap -> range -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident list -> ResultOrException<(int * ModuleOrNamespaceRef * ModuleOrNamespaceType) list >
+val internal ResolveLongIndentAsModuleOrNamespace   : ResultCollectionSettings -> Import.ImportMap -> range -> FullyQualifiedFlag -> NameResolutionEnv -> AccessorDomain -> Ident list -> ResultOrException<(int * ModuleOrNamespaceRef * ModuleOrNamespaceType * OpenDeclaration option) list >
 
 /// Resolve a long identifier to an object constructor.
 val internal ResolveObjectConstructor               : NameResolver -> DisplayEnv -> range -> AccessorDomain -> TType -> ResultOrException<Item>

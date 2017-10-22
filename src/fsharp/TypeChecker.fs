@@ -441,12 +441,14 @@ let AddLocalTyconsAndReport tcSink scopem g amap m tycons env =
 // Open a structure or an IL namespace 
 //------------------------------------------------------------------------- 
 
-let OpenModulesOrNamespaces tcSink g amap scopem root env mvvs openDeclaration =
+let OpenModulesOrNamespaces tcSink g amap scopem root env mvvs openDecl =
     let newEnv =
         if isNil mvvs then env else
-        ModifyNameResEnv (fun nenv -> AddModulesAndNamespacesContentsToNameEnv g amap env.eAccessRights scopem root nenv mvvs openDeclaration) env
+        ModifyNameResEnv (fun nenv ->
+            let nenv = { nenv with eOpenDecl = Some openDecl }
+            AddModulesAndNamespacesContentsToNameEnv g amap env.eAccessRights scopem root nenv mvvs) env
     CallEnvSink tcSink (scopem, newEnv.NameEnv, newEnv.eAccessRights)
-    CallOpenDeclarationSink tcSink openDeclaration (newEnv.NameEnv.)
+    CallOpenDeclarationSink tcSink openDecl
     newEnv
 
 let AddRootModuleOrNamespaceRefs g amap m env modrefs =
