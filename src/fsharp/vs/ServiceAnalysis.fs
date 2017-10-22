@@ -251,7 +251,7 @@ module UnusedOpens =
             su.FullNames
             |> Array.choose (fun fullName -> 
                 if fullName = suffix then None
-                elif fullName |> Array.endsWith suffix then Some(su.SymbolUse, fullName.[..(fullName.Length - suffix.Length) - 2])
+                elif fullName |> Array.endsWith suffix then Some(su.SymbolUse, fullName.[..(fullName.Length - suffix.Length) - 1])
                 else None)
             |> Array.map (fun (su, prefix) ->
                  { SymbolUse = su
@@ -274,8 +274,13 @@ module UnusedOpens =
                                 else
                                     openStatement.Modules
                                     |> List.exists (fun m ->
-                                        m.PublicNestedEntities
-                                        |> Seq.exists (fun ent -> ent.IsEffectivelySameAs symbolUse.SymbolUse.Symbol)))
+                                        let entities = Seq.toList m.NestedEntities
+                                        entities |> List.exists (fun x -> x.IsEffectivelySameAs symbolUse.SymbolUse.Symbol)
+                                        ||
+                                        (
+                                            let functions = m.MembersFunctionsAndValues |> Seq.map (fun x -> x :> FSharpSymbol) |> Seq.toList
+                                            functions |> List.exists (fun x -> x.IsEffectivelySameAs symbolUse.SymbolUse.Symbol)
+                                        )))
 
                         if not usedSomewhere then false
                         else
