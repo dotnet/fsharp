@@ -521,7 +521,7 @@ module ParsedInput =
         | SynConstructorArgs.NamePatPairs(xs, _) -> List.map snd xs
 
     /// Returns all `Ident`s and `LongIdent`s found in an untyped AST.
-    let getLongIdents (input: ParsedInput option) : IDictionary<Range.pos, LongIdent> =
+    let getLongIdents (input: ParsedInput) : IDictionary<Range.pos, LongIdent> =
         let identsByEndPos = Dictionary<Range.pos, LongIdent>()
     
         let addLongIdent (longIdent: LongIdent) =
@@ -851,14 +851,14 @@ module ParsedInput =
             | _ -> ()
     
         match input with
-        | Some (ParsedInput.ImplFile input) ->
+        | ParsedInput.ImplFile input ->
              walkImplFileInput input
         | _ -> ()
         //debug "%A" idents
         upcast identsByEndPos
     
     let getLongIdentAt ast pos =
-        let idents = getLongIdents (Some ast)
+        let idents = getLongIdents ast
         match idents.TryGetValue pos with
         | true, idents -> Some idents
         | _ -> None

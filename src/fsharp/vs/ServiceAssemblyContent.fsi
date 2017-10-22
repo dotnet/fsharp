@@ -6,7 +6,8 @@ namespace Microsoft.FSharp.Compiler.SourceCodeServices
 open System
 open System.Collections.Generic
 
-open Microsoft.FSharp.Compiler 
+open Microsoft.FSharp.Compiler
+open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Range
 
 /// Assembly content type.
@@ -214,6 +215,9 @@ module internal ParsedInput =
     
     /// Returns `InsertContext` based on current position and symbol idents.
     val tryFindNearestPointToInsertOpenDeclaration : currentLine: int -> ast: Ast.ParsedInput -> entity: Idents -> insertionPoint: OpenStatementInsertionPoint -> InsertContext option
+
+    /// Returns all `Ident`s and `LongIdent`s found in an untyped AST.
+    val getLongIdents : ast: Ast.ParsedInput -> IDictionary<Range.pos, LongIdent>
 
     /// Returns lond identifier at position.
     val getLongIdentAt : ast: Ast.ParsedInput -> pos: Range.pos -> Ast.LongIdent option

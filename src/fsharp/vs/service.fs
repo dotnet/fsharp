@@ -165,7 +165,8 @@ type TypeCheckInfo
            reactorOps : IReactorOperations,
            checkAlive : (unit -> bool),
            textSnapshotInfo:obj option,
-           implementationFiles: TypedImplFile list) = 
+           implementationFiles: TypedImplFile list,
+           openDeclarations: OpenDeclaration list) = 
 
     let textSnapshotInfo = defaultArg textSnapshotInfo null
     let (|CNR|) (cnr:CapturedNameResolution) =
@@ -1361,6 +1362,9 @@ type TypeCheckInfo
 
     member __.ImplementationFiles = implementationFiles
 
+    /// All open declarations in the file, including auto open modules
+    member __.OpenDeclarations = openDeclarations
+
     override __.ToString() = "TypeCheckInfo(" + mainInputFileName + ")"
 
 type FSharpParsingOptions =
@@ -1693,13 +1697,14 @@ module internal Parser =
                                     projectFileName, 
                                     mainInputFileName, 
                                     sink.GetResolutions(), 
-                                    sink.GetSymbolUses(), 
+                                    sink.GetSymbolUses(),
                                     tcEnvAtEnd.NameEnv,
                                     loadClosure,
                                     reactorOps,
                                     checkAlive,
                                     textSnapshotInfo,
-                                    typedImplFiles)     
+                                    typedImplFiles,
+                                    sink.OpenDeclarations)     
                     return errors, TypeCheckAborted.No scope
                 | None -> 
                     return errors, TypeCheckAborted.Yes
@@ -1786,9 +1791,9 @@ type FSharpCheckProjectResults(projectFileName:string, keepAssemblyContents, err
         let (tcGlobals, _tcImports, _thisCcu, _ccuSig, tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
 
         [| for r in tcSymbolUses do yield! r.GetUsesOfSymbol(symbol.Item) |] 
-        |> Seq.distinctBy (fun (itemOcc,_denv,m) -> itemOcc, m) 
-        |> Seq.filter (fun (itemOcc,_,_) -> itemOcc <> ItemOccurence.RelatedText) 
-        |> Seq.map (fun (itemOcc,denv,m) -> FSharpSymbolUse(tcGlobals, denv, symbol, itemOcc, m)) 
+        |> Seq.distinctBy (fun (itemOcc,_denv,_,m) -> itemOcc, m) 
+        |> Seq.filter (fun (itemOcc,_,_,_) -> itemOcc <> ItemOccurence.RelatedText) 
+        |> Seq.map (fun (itemOcc,denv,openDecl,m) -> FSharpSymbolUse(tcGlobals, denv, symbol, itemOcc, openDecl, m)) 
         |> Seq.toArray
         |> async.Return
 
@@ -1797,7 +1802,7 @@ type FSharpCheckProjectResults(projectFileName:string, keepAssemblyContents, err
         let (tcGlobals, tcImports, thisCcu, _ccuSig, tcSymbolUses, _topAttribs, _tcAssemblyData, _ilAssemRef, _ad, _tcAssemblyExpr, _dependencyFiles) = getDetails()
 
         [| for r in tcSymbolUses do 
-             for (item,itemOcc,denv,m) in r.GetAllUsesOfSymbols() do
+             for (item,itemOcc,denv,openDecl,m) in r.GetAllUsesOfSymbols() do
                 if itemOcc <> ItemOccurence.RelatedText then
                   let symbol = FSharpSymbol.Create(tcGlobals, thisCcu, tcImports, item)
                   yield FSharpSymbolUse(tcGlobals, denv, symbol, itemOcc, m) |]
@@ -2026,6 +2031,17 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
         |> Option.map (fun scope -> 
             let cenv = Impl.cenv(scope.TcGlobals, scope.ThisCcu, scope.TcImports)
             [ for mimpl in scope.ImplementationFiles -> FSharpImplementationFileContents(cenv, mimpl)])
+
+    member info.OpenDeclarations =
+        scopeOptX 
+        |> Option.map (fun scope -> 
+            let cenv = Impl.cenv(scope.TcGlobals, scope.ThisCcu, scope.TcImports)
+            scope.OpenDeclarations |> List.map (function
+                | OpenDeclaration.Open (id, mods, appliedScope) -> 
+                    FSharpOpenDeclaration.Open(id, mods |> List.map (fun x -> FSharpEntity(cenv, x)), appliedScope)
+                | OpenDeclaration.AutoOpenModule (ids, modul, appliedScope) ->
+                    FSharpOpenDeclaration.AutoOpenModule (ids, FSharpEntity(cenv, modul), appliedScope)))
+        |> Option.defaultValue []
 
     override info.ToString() = "FSharpCheckFileResults(" + filename + ")"
 
@@ -2618,7 +2634,8 @@ type BackgroundCompiler(legacyReferenceResolver, projectCacheSize, keepAssemblyC
                                   List.last tcProj.TcSymbolUses,
                                   tcProj.TcEnvAtEnd.NameEnv,
                                   loadClosure, reactorOps, (fun () -> builder.IsAlive), None, 
-                                  tcProj.ImplementationFiles)     
+                                  tcProj.ImplementationFiles,
+                                  tcProj.TcOpenDeclarations)     
                 let typedResults = MakeCheckFileResults(filename, options, builder, scope, Array.ofList tcProj.TcDependencyFiles, creationErrors, parseResults.Errors, tcErrors)
                 return (parseResults, typedResults)
            })

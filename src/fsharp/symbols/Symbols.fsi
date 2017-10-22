@@ -7,6 +7,7 @@ open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AccessibilityLogic
 open Microsoft.FSharp.Compiler.CompileOps
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.Ast
 open Microsoft.FSharp.Compiler.Tast
 open Microsoft.FSharp.Compiler.TcGlobals
 open Microsoft.FSharp.Compiler.NameResolution
@@ -1065,7 +1066,17 @@ and [<Class>] internal FSharpAttribute =
     /// Format the attribute using the rules of the given display context
     member Format : context: FSharpDisplayContext -> string
 
-
+/// Represents open declaration in F# code.
+#if COMPILER_PUBLIC_API
+type FSharpOpenDeclaration =
+#else
+type internal FSharpOpenDeclaration =
+#endif
+      /// Ordinary open declaration, i.e. one which opens a namespace or module.
+    | Open of longId: Ident list * modules: FSharpEntity list * appliedScope: range
+      /// Syntethic open declaration generated for auto open modules.
+    | AutoOpenModule of idents: string list * modul: FSharpEntity * appliedScope: range
+    static member Create : Impl.cenv * OpenDeclaration -> FSharpOpenDeclaration
 
 /// Represents the use of an F# symbol from F# source code
 [<Sealed>]
@@ -1107,4 +1118,3 @@ type internal FSharpSymbolUse =
 
     /// The range of text representing the reference to the symbol
     member RangeAlternate: range
-

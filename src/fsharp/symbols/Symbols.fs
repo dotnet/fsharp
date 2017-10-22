@@ -310,7 +310,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
         #else
         elif entity.IsTypeAbbrev then None
 #endif
-        elif entity.IsNamespace  then Some entity.DemangledModuleOrNamespaceName 
+        elif entity.IsNamespace  then Some (entity.ToString())
         else
             match entity.CompiledRepresentation with 
             | CompiledTypeRepr.ILAsmNamed(tref, _, _) -> Some tref.FullName
@@ -2259,6 +2259,20 @@ type FSharpSymbol with
         | :? FSharpMemberFunctionOrValue as x -> Some x.Accessibility
         | _ -> None
 
+/// Represents open declaration in F# code.
+type FSharpOpenDeclaration =
+      /// Ordinary open declaration, i.e. one which opens a namespace or module.
+    | Open of longId: Ident list * modules: FSharpEntity list * appliedScope: range
+      /// Syntethic open declaration generated for auto open modules.
+    | AutoOpenModule of idents: string list * modul: FSharpEntity * appliedScope: range
+
+    static member Create(cenv: cenv, openDeclaration: OpenDeclaration) =
+        match openDeclaration with
+        | OpenDeclaration.Open (id, mods, appliedScope) -> 
+            FSharpOpenDeclaration.Open(id, mods |> List.map (fun x -> FSharpEntity(cenv, x)), appliedScope)
+        | OpenDeclaration.AutoOpenModule (ids, modul, appliedScope) ->
+            FSharpOpenDeclaration.AutoOpenModule (ids, FSharpEntity(cenv, modul), appliedScope)
+
 [<Sealed>]
 type FSharpSymbolUse(g:TcGlobals, denv: DisplayEnv, symbol:FSharpSymbol, itemOcc, range: range) = 
     member __.Symbol  = symbol
@@ -2280,4 +2294,3 @@ type FSharpSymbolUse(g:TcGlobals, denv: DisplayEnv, symbol:FSharpSymbol, itemOcc
     member __.FileName = range.FileName
     member __.Range = Range.toZ range
     member __.RangeAlternate = range
-
