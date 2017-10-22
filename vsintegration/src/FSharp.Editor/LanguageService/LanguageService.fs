@@ -143,20 +143,20 @@ type internal FSharpProjectOptionsManager
       }
 
     /// Update the info for a project in the project table
-    member this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId: ProjectId, site:IProjectSite, userOpName) =
+    member this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, site, userOpName) =
         projectOptionsTable.AddOrUpdateProject(projectId, (fun isRefresh ->
             let extraProjectInfo = Some(box workspace)
             let tryGetOptionsForReferencedProject f = f |> tryGetOrCreateProjectId |> Option.bind this.TryGetOptionsForProject |> Option.map(fun (_, _, projectOptions) -> projectOptions)
             let referencedProjects, projectOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(Settings.LanguageServicePerformance.EnableInMemoryCrossProjectReferences, tryGetOptionsForReferencedProject, site, serviceProvider, (tryGetOrCreateProjectId (site.ProjectFileName)), site.ProjectFileName, extraProjectInfo,  Some projectOptionsTable, true)
-            let referencedProjectIds = referencedProjects |> Array.choose tryGetOrCreateProjectId
             checkerProvider.Checker.InvalidateConfiguration(projectOptions, startBackgroundCompileIfAlreadySeen = not isRefresh, userOpName = userOpName + ".UpdateProjectInfo")
+            let referencedProjectIds = referencedProjects |> Array.choose tryGetOrCreateProjectId
             let parsingOptions, _ = checkerProvider.Checker.GetParsingOptionsFromProjectOptions(projectOptions)
             referencedProjectIds, parsingOptions, Some site, projectOptions))
 
     /// Get compilation defines relevant for syntax processing.  
     /// Quicker then TryGetOptionsForDocumentOrProject as it doesn't need to recompute the exact project 
     /// options for a script.
-    member this.GetCompilationDefinesForEditingDocument(document: Document) = 
+    member this.GetCompilationDefinesForEditingDocument(document:Document) = 
         let projectOptionsOpt = this.TryGetOptionsForProject(document.Project.Id)  
         let parsingOptions = 
             match projectOptionsOpt with 
@@ -193,7 +193,7 @@ type internal FSharpProjectOptionsManager
 
     /// Get the options for a document or project relevant for syntax processing.
     /// Quicker then TryGetOptionsForDocumentOrProject as it doesn't need to recompute the exact project options for a script.
-    member this.TryGetOptionsForEditingDocumentOrProject(document: Document) = 
+    member this.TryGetOptionsForEditingDocumentOrProject(document:Document) = 
         let projectId = document.Project.Id
         match singleFileProjectTable.TryGetValue(projectId) with 
         | true, (_loadTime, parsingOptions, originalOptions) -> Some (parsingOptions, originalOptions)
@@ -211,7 +211,9 @@ type internal FSharpProjectOptionsManager
             let project = workspace.CurrentSolution.GetProject(projectId)
             if not (isNull project) then
                 let siteProvider = provideProjectSiteProvider(workspace, project, serviceProvider, Some projectOptionsTable)
-                this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, siteProvider.GetProjectSite(), userOpName)
+                let projectSite = siteProvider.GetProjectSite()
+                if projectSite.CompilationSourceFiles.Length <> 0 then
+                    this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, projectSite, userOpName)
         | _ -> ()
 
     /// Tell the checker to update the project info for the specified project id
@@ -238,8 +240,8 @@ type internal FSharpProjectOptionsManager
         let sourcePaths = sources |> Seq.map(fun s -> fullPath s.Path) |> Seq.toArray
         let referencePaths = references |> Seq.map(fun r -> fullPath r.Reference) |> Seq.toArray
         let projectId = workspace.ProjectTracker.GetOrCreateProjectIdForPath(path, projectDisplayNameOf path)
-        if projectOptionsTable.SetOptionsWithProjectId(projectId, sourcePaths,referencePaths,options.ToArray()) then
-            this.UpdateProjectInfoWithProjectId(projectId, "HandleCommandLineChanges")
+        projectOptionsTable.SetOptionsWithProjectId(projectId, sourcePaths, referencePaths, options.ToArray())
+        this.UpdateProjectInfoWithProjectId(projectId, "HandleCommandLineChanges")
 
     member __.Checker = checkerProvider.Checker
 
@@ -353,10 +355,10 @@ type
 
     let optionsAssociation = ConditionalWeakTable<IWorkspaceProjectContext, string[]>()
 
-    member private this.OnProjectAdded(projectId:ProjectId)    = projectInfoManager.UpdateProjectInfoWithProjectId(projectId, "OnProjectAdded")
+    member private this.OnProjectAdded(projectId:ProjectId) = projectInfoManager.UpdateProjectInfoWithProjectId(projectId, "OnProjectAdded")
     member private this.OnProjectReloaded(projectId:ProjectId) = projectInfoManager.UpdateProjectInfoWithProjectId(projectId, "OnProjectReloaded")
-    member private this.OnDocumentAdded(projectId:ProjectId, documentId:DocumentId)    = projectInfoManager.UpdateDocumenttInfoWithProjectId(projectId, documentId, "OnDocumentAdded")
-    member private this.OnDocumentChanged(projectId:ProjectId, documentId:DocumentId)  = projectInfoManager.UpdateDocumenttInfoWithProjectId(projectId, documentId, "OnDocumentChanged")
+    member private this.OnDocumentAdded(projectId:ProjectId, documentId:DocumentId) = projectInfoManager.UpdateDocumenttInfoWithProjectId(projectId, documentId, "OnDocumentAdded")
+    member private this.OnDocumentChanged(projectId:ProjectId, documentId:DocumentId) = projectInfoManager.UpdateDocumenttInfoWithProjectId(projectId, documentId, "OnDocumentChanged")
     member private this.OnDocumentReloaded(projectId:ProjectId, documentId:DocumentId) = projectInfoManager.UpdateDocumenttInfoWithProjectId(projectId, documentId, "OnDocumentReloaded")
 
     override this.Initialize() = 
@@ -364,20 +366,19 @@ type
 
         let workspaceChanged (args:WorkspaceChangeEventArgs) =
             match args.Kind with
-            | WorkspaceChangeKind.ProjectAdded    -> this.OnProjectAdded(args.ProjectId)
-            | WorkspaceChangeKind.ProjectReloaded -> this.OnProjectReloaded(args.ProjectId)
-            | WorkspaceChangeKind.DocumentAdded ->   this.OnDocumentAdded(args.ProjectId, args.DocumentId)
-            | WorkspaceChangeKind.DocumentRemoved -> this.OnDocumentAdded(args.ProjectId, args.DocumentId)
-            | WorkspaceChangeKind.ProjectRemoved
-            | WorkspaceChangeKind.DocumentAdded
-            | WorkspaceChangeKind.DocumentReloaded
+            | WorkspaceChangeKind.ProjectAdded     -> this.OnProjectAdded(args.ProjectId)
+            | WorkspaceChangeKind.ProjectReloaded  -> this.OnProjectReloaded(args.ProjectId)
+            | WorkspaceChangeKind.DocumentAdded    -> this.OnDocumentAdded(args.ProjectId, args.DocumentId)
+            | WorkspaceChangeKind.DocumentChanged  -> this.OnDocumentChanged(args.ProjectId, args.DocumentId)
+            | WorkspaceChangeKind.DocumentReloaded -> this.OnDocumentReloaded(args.ProjectId, args.DocumentId)
             | WorkspaceChangeKind.DocumentRemoved
-            | WorkspaceChangeKind.DocumentInfoChanged
-            | WorkspaceChangeKind.DocumentChanged
+            | WorkspaceChangeKind.ProjectRemoved
             | WorkspaceChangeKind.AdditionalDocumentAdded
             | WorkspaceChangeKind.AdditionalDocumentReloaded
             | WorkspaceChangeKind.AdditionalDocumentRemoved
             | WorkspaceChangeKind.AdditionalDocumentChanged
+            | WorkspaceChangeKind.DocumentInfoChanged
+            | WorkspaceChangeKind.DocumentChanged
             | WorkspaceChangeKind.SolutionAdded
             | WorkspaceChangeKind.SolutionChanged
             | WorkspaceChangeKind.SolutionReloaded

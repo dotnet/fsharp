@@ -161,15 +161,8 @@ type internal FSharpProjectOptionsTable () =
         | true, (sources, references, options) -> sources, references, options
         | _ -> [||], [||], [||]
 
-    member this.SetOptionsWithProjectId(projectId:ProjectId, sourcePaths:string[], referencePaths:string[], options:string[]):bool =
-        match commandLineOptions.TryGetValue projectId with
-        | true, (existingSourcePaths, existingReferences, existingOptions) ->
-            not(Array.forall2(fun s1 s2 -> s1 = s2) sourcePaths existingSourcePaths ||
-                Array.forall2(fun r1 r2 -> r1 = r2) referencePaths existingReferences ||
-                Array.forall2(fun o1 o2 -> o1 = o2) options existingOptions)
-        | _ ->
-            commandLineOptions.[projectId] <- (sourcePaths, referencePaths, options)
-            true
+    member this.SetOptionsWithProjectId(projectId:ProjectId, sourcePaths:string[], referencePaths:string[], options:string[]) =
+        commandLineOptions.[projectId] <- (sourcePaths, referencePaths, options)
 
 let internal provideProjectSiteProvider(workspace:VisualStudioWorkspaceImpl, project:Project, serviceProvider:System.IServiceProvider, projectOptionsTable:FSharpProjectOptionsTable option) =
     let hier = workspace.GetHierarchy(project.Id)
