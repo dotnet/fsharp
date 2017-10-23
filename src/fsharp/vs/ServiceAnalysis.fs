@@ -22,6 +22,14 @@ module UnusedOpens =
           /// If it's prefixed with the special "global" namespace.
           IsGlobal: bool }
 
+        member this.AllChildSymbols =
+            seq { for modul in this.Modules do
+                    for ent in modul.NestedEntities do
+                        yield ent :> FSharpSymbol
+                    for fv in modul.MembersFunctionsAndValues do 
+                        yield fv :> FSharpSymbol
+            } |> Seq.cache
+
     let getOpenStatements (openDeclarations: FSharpOpenDeclaration list) : OpenStatement list = 
         openDeclarations
         |> List.choose (fun openDeclaration ->
@@ -160,15 +168,9 @@ module UnusedOpens =
                                 if not inScope then false
                                 elif openStatement.Idents |> Set.intersect symbolUse.PossibleNamespaces |> Set.isEmpty then false
                                 else
-                                    openStatement.Modules
-                                    |> List.exists (fun m ->
-                                        let entities = Seq.toList m.NestedEntities
-                                        entities |> List.exists (fun x -> x.IsEffectivelySameAs symbolUse.SymbolUse.Symbol)
-                                        ||
-                                        (
-                                            let functions = m.MembersFunctionsAndValues |> Seq.map (fun x -> x :> FSharpSymbol) |> Seq.toList
-                                            functions |> List.exists (fun x -> x.IsEffectivelySameAs symbolUse.SymbolUse.Symbol)
-                                        )))
+                                    let moduleSymbols = openStatement.AllChildSymbols |> Seq.toList
+                                    moduleSymbols
+                                    |> List.exists (fun x -> x.IsEffectivelySameAs symbolUse.SymbolUse.Symbol))
 
                         if not usedSomewhere then false
                         else
