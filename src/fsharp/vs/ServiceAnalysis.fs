@@ -26,8 +26,12 @@ module UnusedOpens =
             seq { for modul in this.Modules do
                     for ent in modul.NestedEntities do
                         yield ent :> FSharpSymbol
+                        if ent.IsFSharpRecord then
+                            for rf in ent.FSharpFields do
+                                yield upcast rf
+
                     for fv in modul.MembersFunctionsAndValues do 
-                        yield fv :> FSharpSymbol
+                        yield upcast fv
             } |> Seq.cache
 
     let getOpenStatements (openDeclarations: FSharpOpenDeclaration list) : OpenStatement list = 
