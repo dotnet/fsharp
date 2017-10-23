@@ -104,18 +104,28 @@ module UnusedOpens =
 
     type NamespaceUse =
         { Ident: string
-          SymbolLocation: range }
+          ExtraNamespaces: string[] }
     
-    let getPartNamespace (fullIsland: string) (fullName: string) =
+    let getNamespaceInUse (fullIsland: string) (fullName: string) : NamespaceUse option =
         // given a full island such as `Text.ISegment` and a full name of `MonoDevelop.Core.Text.ISegment`, return `MonoDevelop.Core`
         let lengthDiff = fullName.Length - fullIsland.Length - 2
         if lengthDiff <= 0 || lengthDiff > fullName.Length - 1 then None
-        else Some fullName.[0..lengthDiff]
+        else 
+            let requiredOpenNamespace = fullName.[0..lengthDiff]
+            let rest = fullName.[lengthDiff + 1..]
+            let extraNamespaces =
+                match rest.Split '.' with
+                | [||] | [|_|] -> [||]
+                | rest -> rest.[..rest.Length - 2]
+            Some { Ident = requiredOpenNamespace; ExtraNamespaces = extraNamespaces }
 
-    let getPossibleNamespaces (getSourceLineStr: int -> string) (symbolUse: FSharpSymbolUse) : Set<string> =
+    let getPossibleNamespaces (getSourceLineStr: int -> string) (symbolUse: FSharpSymbolUse) : NamespaceUse[] =
         let lineStr = getSourceLineStr symbolUse.RangeAlternate.StartLine
-        match QuickParse.GetCompleteIdentifierIsland true lineStr symbolUse.RangeAlternate.EndColumn with
-        | Some(fullIsland, _, _) ->
+        let partialName = QuickParse.GetPartialLongNameEx (lineStr, symbolUse.RangeAlternate.EndColumn - 1)
+        if partialName.PartialIdent = "" then [||]
+        else
+            let qualifyingIsland = partialName.QualifyingIdents |> String.concat "."
+            let fullIsland = qualifyingIsland + partialName.PartialIdent
             let isQualified fullName = fullName = fullIsland
 
             (match symbolUse with
@@ -138,14 +148,16 @@ module UnusedOpens =
              | _ -> None)
             |> Option.map (fun (fullNames, declaringEntity) ->
                  [| for name in fullNames do
-                      let partNamespace = getPartNamespace fullIsland name
+                      let partNamespace = getNamespaceInUse fullIsland name
                       yield partNamespace
-                    yield! entityNamespace declaringEntity |])
+                    yield! 
+                        entityNamespace declaringEntity
+                        |> List.map (Option.bind (getNamespaceInUse qualifyingIsland))
+                 |])
             |> Option.toArray
             |> Array.concat
             |> Array.choose id
-            |> set
-        | None -> Set.empty
+            |> Array.distinct
 
     type SymbolUseWithFullNames =
         { SymbolUse: FSharpSymbolUse
@@ -153,15 +165,15 @@ module UnusedOpens =
 
     type SymbolUse =
         { SymbolUse: FSharpSymbolUse
-          PossibleNamespaces: Set<string> }
+          PossibleNamespaces: NamespaceUse[] }
 
     let getSymbolUses (getSourceLineStr: int -> string) (symbolUses: FSharpSymbolUse[]) : SymbolUse[] =
         symbolUses
         |> Array.filter (fun (symbolUse: FSharpSymbolUse) -> 
-             not symbolUse.IsFromDefinition && 
-             match symbolUse.Symbol with
-             | :? FSharpEntity as e -> not e.IsNamespace
-             | _ -> true
+             not symbolUse.IsFromDefinition //&& 
+             //match symbolUse.Symbol with
+             //| :? FSharpEntity as e -> not e.IsNamespace
+             //| _ -> true
            )
         |> Array.map (fun su ->
             { SymbolUse = su
