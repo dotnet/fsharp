@@ -263,7 +263,6 @@ type Site (x: int -> unit) = class end
     => [ 4, (5, 6) ]
 
 [<Test>]
-[<Ignore "Extensions are not supported yet">]
 let ``static extension method applied to a type results that both namespaces /where the type is declared and where the extension is declared/ is not marked as unused``() =
     """
 module Extensions =
