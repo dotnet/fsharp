@@ -11,10 +11,7 @@ module UnusedOpens =
 
     /// Represents single open statement.
     type OpenStatement =
-        { /// Full namespace or module identifier as it's presented in source code.
-          Idents: Set<string>
-          /// Modules.
-          Modules: FSharpEntity list
+        { Modules: FSharpEntity list
           /// Range of open statement itself.
           Range: range
           /// Scope on which this open declaration is applied.
@@ -23,8 +20,7 @@ module UnusedOpens =
           IsGlobal: bool }
 
         member this.AllChildSymbols =
-            let rec getAllChildSymbolsInModule (modul: FSharpEntity) =
-                seq {
+            seq { for modul in this.Modules do
                     for ent in modul.NestedEntities do
                         yield ent :> FSharpSymbol
                         
@@ -35,36 +31,26 @@ module UnusedOpens =
                         if ent.IsFSharpUnion && not (hasAttribute<RequireQualifiedAccessAttribute> ent.Attributes) then
                             for unionCase in ent.UnionCases do
                                 yield upcast unionCase
-
-                        if ent.IsFSharpModule && hasAttribute<AutoOpenAttribute> ent.Attributes then
-                            yield! getAllChildSymbolsInModule ent
-
+                    
                     for fv in modul.MembersFunctionsAndValues do 
                         yield upcast fv
                         
                     for apCase in modul.ActivePatternCases do
-                        yield upcast apCase
-                }
-
-            seq { for modul in this.Modules do
-                    yield! getAllChildSymbolsInModule modul
+                        yield upcast apCase                    
             } |> Seq.cache
+
+    let rec getModuleAndItsAutoOpens (modul: FSharpEntity) =
+        [ yield modul
+          for ent in modul.NestedEntities do
+            if ent.IsFSharpModule && hasAttribute<AutoOpenAttribute> ent.Attributes then
+              yield! getModuleAndItsAutoOpens ent ]
 
     let getOpenStatements (openDeclarations: FSharpOpenDeclaration list) : OpenStatement list = 
         openDeclarations
         |> List.choose (fun openDecl ->
              match openDecl.LongId, openDecl.Range with
              | firstId :: _, Some range ->
-                 Some { Idents = 
-                            openDecl.Modules
-                            |> List.choose (fun x -> x.TryFullName |> Option.map (fun fullName -> x, fullName)) 
-                            |> List.collect (fun (modul, fullName) -> 
-                                 [ yield fullName
-                                   if modul.HasFSharpModuleSuffix then
-                                     yield fullName.[..fullName.Length - 7] // "Module" length plus zero index correction
-                                 ])
-                            |> Set.ofList
-                        Modules = openDecl.Modules
+                 Some { Modules = openDecl.Modules |> List.collect getModuleAndItsAutoOpens
                         Range = range
                         AppliedScope = openDecl.AppliedScope
                         IsGlobal = firstId.idText = MangledGlobalName  }
@@ -93,7 +79,6 @@ module UnusedOpens =
                             |> Array.exists (fun symbolUse -> 
                                 let inScope = rangeContainsRange openStatement.AppliedScope symbolUse.RangeAlternate
                                 if not inScope then false
-                                //elif openStatement.Idents |> Set.intersect symbolUse.PossibleNamespaces |> Set.isEmpty then false
                                 else
                                     let moduleSymbols = openStatement.AllChildSymbols |> Seq.toList
                                     moduleSymbols
@@ -107,7 +92,7 @@ module UnusedOpens =
                                     // if such open statement has already been marked as used in this or outer module, we skip it 
                                     // (that is, do not mark as used so far)
                                     rangeContainsRange seenNs.AppliedScope openStatement.AppliedScope && 
-                                    not (openStatement.Idents |> Set.intersect seenNs.Idents |> Set.isEmpty))
+                                    openStatement.Modules |> List.exists (fun x -> seenNs.Modules |> List.exists (fun s -> s.IsEffectivelySameAs x)))
                             not alreadySeen
                 
                 match openStatements with
