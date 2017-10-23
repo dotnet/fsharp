@@ -81,7 +81,7 @@ module UnusedOpens =
              | :? FSharpMemberOrFunctionOrValue as fv when fv.IsExtensionMember -> true
              | _ -> 
                 let partialName = QuickParse.GetPartialLongNameEx (getSourceLineStr su.RangeAlternate.StartLine, su.RangeAlternate.EndColumn - 1)
-                partialName.PartialIdent <> "" && partialName.QualifyingIdents = [])
+                partialName.QualifyingIdents = [])
 
     let getUnusedOpens (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string) : Async<range list> =
         
