@@ -52,11 +52,11 @@ module UnusedOpens =
 
     let getOpenStatements (openDeclarations: FSharpOpenDeclaration list) : OpenStatement list = 
         openDeclarations
-        |> List.choose (fun openDeclaration ->
-             match openDeclaration with
-             | FSharpOpenDeclaration.Open ((firstId :: _) as longId, modules, appliedScope) ->
+        |> List.choose (fun openDecl ->
+             match openDecl.LongId, openDecl.Range with
+             | firstId :: _, Some range ->
                  Some { Idents = 
-                            modules 
+                            openDecl.Modules
                             |> List.choose (fun x -> x.TryFullName |> Option.map (fun fullName -> x, fullName)) 
                             |> List.collect (fun (modul, fullName) -> 
                                  [ yield fullName
@@ -64,14 +64,11 @@ module UnusedOpens =
                                      yield fullName.[..fullName.Length - 7] // "Module" length plus zero index correction
                                  ])
                             |> Set.ofList
-                        Modules = modules
-                        Range =
-                            let lastId = List.last longId
-                            mkRange appliedScope.FileName firstId.idRange.Start lastId.idRange.End
-                        AppliedScope = appliedScope
+                        Modules = openDecl.Modules
+                        Range = range
+                        AppliedScope = openDecl.AppliedScope
                         IsGlobal = firstId.idText = MangledGlobalName  }
-             | _ -> None // for now
-           )
+             | _ -> None)
 
     let filterSymbolUses (getSourceLineStr: int -> string) (symbolUses: FSharpSymbolUse[]) : FSharpSymbolUse[] =
         symbolUses
