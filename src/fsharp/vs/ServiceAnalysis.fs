@@ -26,9 +26,14 @@ module UnusedOpens =
             seq { for modul in this.Modules do
                     for ent in modul.NestedEntities do
                         yield ent :> FSharpSymbol
+                        
                         if ent.IsFSharpRecord then
                             for rf in ent.FSharpFields do
                                 yield upcast rf
+                        
+                        if ent.IsFSharpUnion && not (hasAttribute<RequireQualifiedAccessAttribute> ent.Attributes) then
+                            for unionCase in ent.UnionCases do
+                                yield upcast unionCase
 
                     for fv in modul.MembersFunctionsAndValues do 
                         yield upcast fv
