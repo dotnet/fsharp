@@ -184,7 +184,7 @@ open NormalModule.AutoOpenModule1.NestedNormalModule.AutoOpenModule2
 open NormalModule.AutoOpenModule1.NestedNormalModule
 let _ = Class()
 """
-    => [ 12, (5, 68) ]
+    => [ 13, (5, 52) ]
     
 [<Test>]
 let ``open declaration is not marked as unused if there is a shortened attribute symbol from it``() =
