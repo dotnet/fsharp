@@ -312,10 +312,17 @@ type internal TcSymbolUses =
 
 /// Represents open declaration statement.
 type internal OpenDeclaration =
-      /// Ordinary open declaration, i.e. one which opens a namespace or module.
-    | Open of longId: Ident list * moduleRefs: ModuleOrNamespaceRef list * appliedScope: range
-      /// Syntethic open declaration generated for auto open modules.
-    | AutoOpenModule of idents: string list * moduleRef: ModuleOrNamespaceRef * appliedScope: range
+    { /// Idents.
+      Idents: Ident list
+      
+      /// Modules or namespaces which is opened with this declaration.
+      ModuleRefs: ModuleOrNamespaceRef list 
+      
+      /// Scope in which open declaration is visible.
+      AppliedScope: range }
+    
+    /// Range of the open declaration.
+    member Range : range option
 
 /// An abstract type for reporting the results of name resolution and type checking
 type ITypecheckResultsSink =

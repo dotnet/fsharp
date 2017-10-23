@@ -1223,8 +1223,15 @@ type ItemOccurence =
     | RelatedText
   
 type OpenDeclaration =
-    | Open of longId: Ident list * moduleRefs: ModuleOrNamespaceRef list * appliedScope: range
-    | AutoOpenModule of idents: string list * moduleRef: ModuleOrNamespaceRef * appliedScope: range
+    { Idents: Ident list
+      ModuleRefs: ModuleOrNamespaceRef list 
+      AppliedScope: range }
+    member this.Range =
+        match this.Idents with
+        | [] -> None
+        | first :: rest ->
+            let last = rest |> List.tryLast |> Option.defaultValue first
+            Some (mkRange this.AppliedScope.FileName first.idRange.Start last.idRange.End)
 
 /// An abstract type for reporting the results of name resolution and type checking.
 type ITypecheckResultsSink =

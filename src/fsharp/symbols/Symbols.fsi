@@ -1075,10 +1075,17 @@ type FSharpOpenDeclaration =
 #else
 type internal FSharpOpenDeclaration =
 #endif
-      /// Ordinary open declaration, i.e. one which opens a namespace or module.
-    | Open of longId: Ident list * modules: FSharpEntity list * appliedScope: range
-      /// Syntethic open declaration generated for auto open modules.
-    | AutoOpenModule of idents: string list * modul: FSharpEntity * appliedScope: range
+    { /// Idents.
+      LongId: Ident list 
+      
+      /// Range of the open declaration.
+      Range: range option
+
+      /// Modules or namespaces which is opened with this declaration.
+      Modules: FSharpEntity list 
+      
+      /// Scope in which open declaration is visible.
+      AppliedScope: range }
 
 /// Represents the use of an F# symbol from F# source code
 [<Sealed>]
