@@ -42,7 +42,12 @@ def static getBuildJobName(def configuration, def os) {
                 // Build and test FCS
                 buildPath = "./fcs/"
                 buildFlavor = ""
-                build_args = "TestAndNuget"
+                if (os == 'Windows_NT') {
+                    build_args = "TestAndNuget"
+                }
+                else {
+                    build_args = "Build"
+                }
             }
             else if (configuration == "Debug") {
                 buildFlavor = "debug"
