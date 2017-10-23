@@ -22,6 +22,9 @@ type NameResolver =
     member amap : ImportMap
     member g : TcGlobals
 
+/// Try to find a type with a record field of the given name
+val ActivePatternElemsOfModuleOrNamespace : ModuleOrNamespaceRef -> NameMap<ActivePatternElemRef>
+
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
 /// Represents the item with which a named argument is associated.
 type ArgumentContainer =

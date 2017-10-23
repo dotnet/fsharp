@@ -619,6 +619,14 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
                 yield! walkParts parts ]
         res
 
+    member x.ActivePatternCases =
+        protect <| fun () -> 
+            ActivePatternElemsOfModuleOrNamespace x.Entity
+            |> Map.toList
+            |> List.map (fun (_, apref) ->
+                let item = Item.ActivePatternCase apref
+                FSharpActivePatternCase(cenv, apref.ActivePatternInfo, apref.ActivePatternVal.Type, apref.CaseIndex, Some apref.ActivePatternVal, item))
+
     override x.Equals(other: obj) =
         box x === other ||
         match other with

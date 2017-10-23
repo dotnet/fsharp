@@ -38,9 +38,12 @@ module UnusedOpens =
 
                         if ent.IsFSharpModule && hasAttribute<AutoOpenAttribute> ent.Attributes then
                             yield! getAllChildSymbolsInModule ent
-                    
+
                     for fv in modul.MembersFunctionsAndValues do 
                         yield upcast fv
+                        
+                    for apCase in modul.ActivePatternCases do
+                        yield upcast apCase
                 }
 
             seq { for modul in this.Modules do
