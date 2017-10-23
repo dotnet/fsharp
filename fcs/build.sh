@@ -1,4 +1,7 @@
 #!/bin/bash
+# remove this to build fcs
+exit 0
+
 if test "$OS" = "Windows_NT"
 then
   # use .Net

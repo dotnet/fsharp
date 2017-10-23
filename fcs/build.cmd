@@ -1,5 +1,8 @@
 @echo off
 
+rem Remove this line to start building fcs
+exit /b 0
+
 dotnet --version
 .nuget\NuGet.exe restore -PackagesDirectory packages
 setlocal
