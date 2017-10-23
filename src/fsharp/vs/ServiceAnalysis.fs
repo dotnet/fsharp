@@ -102,53 +102,50 @@ module UnusedOpens =
                 ]
         | None -> []
 
-    let symbolIsFullyQualified (getSourceLineStr: int -> string) (sym: FSharpSymbolUse) (fullName: string) =
-        let lineStr = getSourceLineStr sym.RangeAlternate.StartLine
-        match QuickParse.GetCompleteIdentifierIsland true lineStr sym.RangeAlternate.EndColumn with
-        | Some (island, _, _) -> island = fullName
-        | None -> false
-
     type NamespaceUse =
         { Ident: string
           SymbolLocation: range }
     
-    let getPartNamespace (symbolUse: FSharpSymbolUse) (fullName: string) =
-        // given a symbol range such as `Text.ISegment` and a full name of `MonoDevelop.Core.Text.ISegment`, return `MonoDevelop.Core`
-        let length = symbolUse.RangeAlternate.EndColumn - symbolUse.RangeAlternate.StartColumn
-        let lengthDiff = fullName.Length - length - 2
+    let getPartNamespace (fullIsland: string) (fullName: string) =
+        // given a full island such as `Text.ISegment` and a full name of `MonoDevelop.Core.Text.ISegment`, return `MonoDevelop.Core`
+        let lengthDiff = fullName.Length - fullIsland.Length - 2
         if lengthDiff <= 0 || lengthDiff > fullName.Length - 1 then None
         else Some fullName.[0..lengthDiff]
 
     let getPossibleNamespaces (getSourceLineStr: int -> string) (symbolUse: FSharpSymbolUse) : Set<string> =
-        let isQualified = symbolIsFullyQualified getSourceLineStr symbolUse
+        let lineStr = getSourceLineStr symbolUse.RangeAlternate.StartLine
+        match QuickParse.GetCompleteIdentifierIsland true lineStr symbolUse.RangeAlternate.EndColumn with
+        | Some(fullIsland, _, _) ->
+            let isQualified fullName = fullName = fullIsland
 
-        (match symbolUse with
-         | SymbolUse.Entity (ent, cleanFullNames) when not (cleanFullNames |> List.exists isQualified) ->
-             Some (cleanFullNames, Some ent)
-         | SymbolUse.Field f when not (isQualified f.FullName) ->
-             Some ([f.FullName], Some f.DeclaringEntity)
-         | SymbolUse.MemberFunctionOrValue mfv when not (isQualified mfv.FullName) ->
-             Some ([mfv.FullName], mfv.EnclosingEntity)
-         | SymbolUse.Operator op when not (isQualified op.FullName) ->
-             Some ([op.FullName], op.EnclosingEntity)
-         | SymbolUse.ActivePattern ap when not (isQualified ap.FullName) ->
-             Some ([ap.FullName], ap.EnclosingEntity)
-         | SymbolUse.ActivePatternCase apc when not (isQualified apc.FullName) ->
-             Some ([apc.FullName], apc.Group.EnclosingEntity)
-         | SymbolUse.UnionCase uc when not (isQualified uc.FullName) ->
-             Some ([uc.FullName], Some uc.ReturnType.TypeDefinition)
-         | SymbolUse.Parameter p when not (isQualified p.FullName) && p.Type.HasTypeDefinition ->
-             Some ([p.FullName], Some p.Type.TypeDefinition)
-         | _ -> None)
-        |> Option.map (fun (fullNames, declaringEntity) ->
-             [| for name in fullNames do
-                  let partNamespace = getPartNamespace symbolUse name
-                  yield partNamespace
-                yield! entityNamespace declaringEntity |])
-        |> Option.toArray
-        |> Array.concat
-        |> Array.choose id
-        |> set
+            (match symbolUse with
+             | SymbolUse.Entity (ent, cleanFullNames) when not (cleanFullNames |> List.exists isQualified) ->
+                 Some (cleanFullNames, Some ent)
+             | SymbolUse.Field f when not (isQualified f.FullName) ->
+                 Some ([f.FullName], Some f.DeclaringEntity)
+             | SymbolUse.MemberFunctionOrValue mfv when not (isQualified mfv.FullName) ->
+                 Some ([mfv.FullName], mfv.EnclosingEntity)
+             | SymbolUse.Operator op when not (isQualified op.FullName) ->
+                 Some ([op.FullName], op.EnclosingEntity)
+             | SymbolUse.ActivePattern ap when not (isQualified ap.FullName) ->
+                 Some ([ap.FullName], ap.EnclosingEntity)
+             | SymbolUse.ActivePatternCase apc when not (isQualified apc.FullName) ->
+                 Some ([apc.FullName], apc.Group.EnclosingEntity)
+             | SymbolUse.UnionCase uc when not (isQualified uc.FullName) ->
+                 Some ([uc.FullName], Some uc.ReturnType.TypeDefinition)
+             | SymbolUse.Parameter p when not (isQualified p.FullName) && p.Type.HasTypeDefinition ->
+                 Some ([p.FullName], Some p.Type.TypeDefinition)
+             | _ -> None)
+            |> Option.map (fun (fullNames, declaringEntity) ->
+                 [| for name in fullNames do
+                      let partNamespace = getPartNamespace fullIsland name
+                      yield partNamespace
+                    yield! entityNamespace declaringEntity |])
+            |> Option.toArray
+            |> Array.concat
+            |> Array.choose id
+            |> set
+        | None -> Set.empty
 
     type SymbolUseWithFullNames =
         { SymbolUse: FSharpSymbolUse
@@ -161,10 +158,10 @@ module UnusedOpens =
     let getSymbolUses (getSourceLineStr: int -> string) (symbolUses: FSharpSymbolUse[]) : SymbolUse[] =
         symbolUses
         |> Array.filter (fun (symbolUse: FSharpSymbolUse) -> 
-             not symbolUse.IsFromDefinition
-             //&& match symbolUse.Symbol with
-             //| :? FSharpEntity as e -> not e.IsNamespace
-             //| _ -> true
+             not symbolUse.IsFromDefinition && 
+             match symbolUse.Symbol with
+             | :? FSharpEntity as e -> not e.IsNamespace
+             | _ -> true
            )
         |> Array.map (fun su ->
             { SymbolUse = su
