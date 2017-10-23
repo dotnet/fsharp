@@ -330,6 +330,9 @@ and [<Class>] internal FSharpEntity =
     /// Get all compilation paths, taking `Module` suffixes into account.
     member AllCompilationPaths : string list
 
+    /// Get all active pattern cases defined in all active patterns in the module.
+    member ActivePatternCases : FSharpActivePatternCase list
+
 /// Represents a delegate signature in an F# symbol
 #if COMPILER_PUBLIC_API
 and [<Class>] FSharpDelegateSignature =
