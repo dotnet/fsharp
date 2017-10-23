@@ -23,7 +23,8 @@ module UnusedOpens =
           IsGlobal: bool }
 
         member this.AllChildSymbols =
-            seq { for modul in this.Modules do
+            let rec getAllChildSymbolsInModule (modul: FSharpEntity) =
+                seq {
                     for ent in modul.NestedEntities do
                         yield ent :> FSharpSymbol
                         
@@ -35,8 +36,15 @@ module UnusedOpens =
                             for unionCase in ent.UnionCases do
                                 yield upcast unionCase
 
+                        if ent.IsFSharpModule && hasAttribute<AutoOpenAttribute> ent.Attributes then
+                            yield! getAllChildSymbolsInModule ent
+                    
                     for fv in modul.MembersFunctionsAndValues do 
                         yield upcast fv
+                }
+
+            seq { for modul in this.Modules do
+                    yield! getAllChildSymbolsInModule modul
             } |> Seq.cache
 
     let getOpenStatements (openDeclarations: FSharpOpenDeclaration list) : OpenStatement list = 
