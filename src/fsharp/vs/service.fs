@@ -1374,8 +1374,8 @@ type FSharpParsingOptions =
     }
 
     member x.LastFileName =
-        if x.SourceFiles.Length = 0 then ""
-        else Array.last x.SourceFiles
+        Debug.Assert(not (Array.isEmpty x.SourceFiles), "Parsing options don't contain any file")
+        Array.last x.SourceFiles
 
     static member Default =
         { SourceFiles = Array.empty
@@ -1397,7 +1397,7 @@ type FSharpParsingOptions =
         }
 
     static member FromTcConfigBuidler(tcConfigB: TcConfigBuilder, sourceFiles) =
-        { 
+        {
           SourceFiles = sourceFiles
           ConditionalCompilationDefines = tcConfigB.conditionalCompilationDefines
           ErrorSeverityOptions = tcConfigB.errorSeverityOptions
