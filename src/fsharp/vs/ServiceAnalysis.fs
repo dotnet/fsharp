@@ -13,42 +13,44 @@ module UnusedOpens =
         { Entity: FSharpEntity
           IsNestedAutoOpen: bool }
 
+        member this.ChildSymbols =
+            seq { for ent in this.Entity.NestedEntities do
+                      yield ent :> FSharpSymbol
+                      
+                      if ent.IsFSharpRecord then
+                          for rf in ent.FSharpFields do
+                              yield upcast rf
+                      
+                      if ent.IsFSharpUnion && not (Symbol.hasAttribute<RequireQualifiedAccessAttribute> ent.Attributes) then
+                          for unionCase in ent.UnionCases do
+                              yield upcast unionCase
+                  
+                  for fv in this.Entity.MembersFunctionsAndValues do 
+                      yield upcast fv
+                      
+                  for apCase in this.Entity.ActivePatternCases do
+                      yield upcast apCase                    
+            } |> Seq.cache
+
+    type ModuleGroup = 
+        { Modules: Module list }
+        
+        static member Create (modul: FSharpEntity) =
+            let rec getModuleAndItsAutoOpens (isNestedAutoOpen: bool) (modul: FSharpEntity) =
+                [ yield { Entity = modul; IsNestedAutoOpen = isNestedAutoOpen }
+                  for ent in modul.NestedEntities do
+                    if ent.IsFSharpModule && Symbol.hasAttribute<AutoOpenAttribute> ent.Attributes then
+                      yield! getModuleAndItsAutoOpens true ent ]
+            { Modules = getModuleAndItsAutoOpens false modul }
+
     /// Represents single open statement.
     type OpenStatement =
-        { /// All modules which this open declaration effectively opens, including all auto open ones, recursively.
-          Modules: Module list
+        { /// All modules which this open declaration effectively opens, _not_ including auto open ones.
+          Modules: ModuleGroup list
           /// Range of open statement itself.
           Range: range
           /// Scope on which this open declaration is applied.
-          AppliedScope: range
-          /// If it's prefixed with the special "global" namespace.
-          IsGlobal: bool }
-
-        member this.AllChildSymbols =
-            seq { for modul in this.Modules |> List.map (fun x -> x.Entity) do
-                    for ent in modul.NestedEntities do
-                        yield ent :> FSharpSymbol
-                        
-                        if ent.IsFSharpRecord then
-                            for rf in ent.FSharpFields do
-                                yield upcast rf
-                        
-                        if ent.IsFSharpUnion && not (Symbol.hasAttribute<RequireQualifiedAccessAttribute> ent.Attributes) then
-                            for unionCase in ent.UnionCases do
-                                yield upcast unionCase
-                    
-                    for fv in modul.MembersFunctionsAndValues do 
-                        yield upcast fv
-                        
-                    for apCase in modul.ActivePatternCases do
-                        yield upcast apCase                    
-            } |> Seq.cache
-
-    let rec getModuleAndItsAutoOpens (isNestedAutoOpen: bool) (modul: FSharpEntity) =
-        [ yield { Entity = modul; IsNestedAutoOpen = isNestedAutoOpen }
-          for ent in modul.NestedEntities do
-            if ent.IsFSharpModule && Symbol.hasAttribute<AutoOpenAttribute> ent.Attributes then
-              yield! getModuleAndItsAutoOpens true ent ]
+          AppliedScope: range }
 
     let getOpenStatements (openDeclarations: FSharpOpenDeclaration list) : OpenStatement list = 
         openDeclarations
@@ -56,10 +58,12 @@ module UnusedOpens =
         |> List.choose (fun openDecl ->
              match openDecl.LongId, openDecl.Range with
              | firstId :: _, Some range ->
-                 Some { Modules = openDecl.Modules |> List.collect (getModuleAndItsAutoOpens false)
-                        Range = range
-                        AppliedScope = openDecl.AppliedScope
-                        IsGlobal = firstId.idText = MangledGlobalName  }
+                 if firstId.idText = MangledGlobalName then 
+                     None
+                 else
+                     Some { Modules = openDecl.Modules |> List.map ModuleGroup.Create
+                            Range = range
+                            AppliedScope = openDecl.AppliedScope }
              | _ -> None)
 
     let filterSymbolUses (getSourceLineStr: int -> string) (symbolUses: FSharpSymbolUse[]) : FSharpSymbolUse[] =
@@ -76,44 +80,45 @@ module UnusedOpens =
                 // it's `open System` which really brings it into scope.
                 partialName.QualifyingIdents = [])
 
+    type UsedModule =
+        { Module: FSharpEntity
+          AppliedScope: range }
+
     let getUnusedOpens (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string) : Async<range list> =
         
         let filterOpenStatements (openStatements: OpenStatement list) (symbolUses: FSharpSymbolUse[]) : OpenStatement list =
-            let rec filterInner acc (openStatements: OpenStatement list) (seenOpenStatements: OpenStatement list) = 
-                
-                let isUsed (openStatement: OpenStatement) =
-                    if openStatement.IsGlobal then true
-                    else
-                        let usedSomewhere =
-                            symbolUses
-                            |> Array.exists (fun symbolUse -> 
-                                let inScope = rangeContainsRange openStatement.AppliedScope symbolUse.RangeAlternate
-                                if not inScope then false
-                                else
-                                    openStatement.AllChildSymbols
-                                    |> Seq.exists (fun x -> x.IsEffectivelySameAs symbolUse.Symbol))
+            
+            let rec filterInner acc (openStatements: OpenStatement list) (usedModules: UsedModule list) = 
+            
+                let getUsedModules (openStatement: OpenStatement) =
+                    let notAlreadyUsedModuleGroups =
+                        openStatement.Modules
+                        |> List.filter (fun x ->
+                             not (usedModules
+                                 |> List.exists (fun used ->
+                                      rangeContainsRange used.AppliedScope openStatement.AppliedScope &&
+                                      x.Modules |> List.exists (fun x -> not x.IsNestedAutoOpen && used.Module.IsEffectivelySameAs x.Entity))))
 
-                        if not usedSomewhere then false
-                        else
-                            let alreadySeen =
-                                seenOpenStatements
-                                |> List.exists (fun seenNs ->
-                                    // if such open statement has already been marked as used in this or outer module, we skip it 
-                                    // (that is, do not mark as used so far)
-                                    rangeContainsRange seenNs.AppliedScope openStatement.AppliedScope && 
-                                    openStatement.Modules 
-                                    |> List.exists (fun x ->
-                                        // do not check if any of auto open nested modules has already been seen,
-                                        // current open statement should be seen itself or as an auto open module of its outer module.
-                                        not x.IsNestedAutoOpen && 
-                                        seenNs.Modules |> List.exists (fun s -> s.Entity.IsEffectivelySameAs x.Entity)))
-                            not alreadySeen
-                
+                    match notAlreadyUsedModuleGroups with
+                    | [] -> []
+                    | _ ->
+                        let symbolUsesInScope = symbolUses |> Array.filter (fun symbolUse -> rangeContainsRange openStatement.AppliedScope symbolUse.RangeAlternate)
+                        notAlreadyUsedModuleGroups
+                        |> List.filter (fun modulGroup ->
+                             modulGroup.Modules
+                             |> List.exists (fun modul ->
+                                  symbolUsesInScope
+                                  |> Array.exists (fun symbolUse -> 
+                                       modul.ChildSymbols
+                                       |> Seq.exists (fun x -> x.IsEffectivelySameAs symbolUse.Symbol))))
+                        |> List.collect (fun mg -> 
+                            mg.Modules |> List.map (fun x -> { Module = x.Entity; AppliedScope = openStatement.AppliedScope }))
+                                          
                 match openStatements with
-                | os :: xs when not (isUsed os) -> 
-                    filterInner (os :: acc) xs (os :: seenOpenStatements)
                 | os :: xs ->
-                    filterInner acc xs (os :: seenOpenStatements)
+                    match getUsedModules os with
+                    | [] -> filterInner (os :: acc) xs usedModules
+                    | um -> filterInner acc xs (um @ usedModules)
                 | [] -> List.rev acc
             
             filterInner [] openStatements []

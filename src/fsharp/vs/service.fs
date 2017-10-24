@@ -1993,9 +1993,9 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
             (fun () -> [| |]) 
             (fun scope -> 
                  [| for (item,itemOcc,denv,m) in scope.ScopeSymbolUses.GetAllUsesOfSymbols() do
-                     if itemOcc <> ItemOccurence.RelatedText then
-                      let symbol = FSharpSymbol.Create(scope.TcGlobals, scope.ThisCcu, scope.TcImports, item)
-                      yield FSharpSymbolUse(scope.TcGlobals, denv, symbol, itemOcc, m) |])
+                      if itemOcc <> ItemOccurence.RelatedText then
+                        let symbol = FSharpSymbol.Create(scope.TcGlobals, scope.ThisCcu, scope.TcImports, item)
+                        yield FSharpSymbolUse(scope.TcGlobals, denv, symbol, itemOcc, m) |])
          |> async.Return 
 
     member info.GetUsesOfSymbolInFile(symbol:FSharpSymbol) = 

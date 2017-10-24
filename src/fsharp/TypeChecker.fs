@@ -450,8 +450,9 @@ let OpenModulesOrNamespaces tcSink g amap scopem root env mvvs openDeclaration =
     match openDeclaration.Range with
     | None -> ()
     | Some range ->
-        let item = Item.ModuleOrNamespaces mvvs
-        CallNameResolutionSink tcSink (range, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)
+        for modul in mvvs do
+             let item = Item.ModuleOrNamespaces [modul]
+             CallNameResolutionSink tcSink (range, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Use, env.DisplayEnv, env.eAccessRights)
     env
 
 let AddRootModuleOrNamespaceRefs g amap m env modrefs =

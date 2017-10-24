@@ -664,3 +664,24 @@ let _ = x
 let _ = y
 """
     => []
+
+[<Test>]
+let ``single relative open declaration opens two independent modules in different parent modules``() =
+    """
+module M =
+    module Xxx =
+        let x = 1
+module N =
+    module Xxx =
+        let y = 1
+open M
+open N
+open N.Xxx
+open Xxx
+
+let _ = y
+let _ = x
+"""
+    => []
+
+
