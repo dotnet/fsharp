@@ -1,4 +1,4 @@
-RESTRICTION: == net45
+RESTRICTION: || (== net45) (== net46)
 NUGET
   remote: https://www.nuget.org/api/v2
     FAKE (4.63.2)
@@ -8,3 +8,17 @@ NUGET
       FSharpVSPowerTools.Core (>= 2.3 < 2.4)
     FSharpVSPowerTools.Core (2.3)
       FSharp.Compiler.Service (>= 2.0.0.3)
+    Microsoft.Build (14.3)
+      Microsoft.Build.Framework (14.3)
+    Microsoft.Build.Engine (14.3)
+      Microsoft.Build.Framework (14.3)
+    Microsoft.Build.Framework (14.3)
+      System.Collections (>= 4.0.11) - restriction: || (&& (== net45) (>= netstandard1.3)) (== net46)
+      System.Runtime (>= 4.1) - restriction: || (&& (== net45) (>= netstandard1.3)) (== net46)
+      System.Runtime.InteropServices (>= 4.1) - restriction: || (&& (== net45) (>= netstandard1.3)) (== net46)
+    Microsoft.Build.Utilities.Core (14.3)
+      Microsoft.Build.Framework (14.3)
+    System.Collections (4.3) - restriction: || (&& (== net45) (>= netstandard1.3)) (== net46)
+    System.Runtime (4.3) - restriction: || (&& (== net45) (>= netstandard1.3)) (== net46)
+    System.Runtime.InteropServices (4.3) - restriction: || (&& (== net45) (>= netstandard1.3)) (== net46)
+    System.Threading.Tasks.Dataflow (4.5.24)
