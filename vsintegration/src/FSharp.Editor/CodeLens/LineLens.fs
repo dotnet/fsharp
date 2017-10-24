@@ -350,10 +350,29 @@ type internal FSharpCodeLensService
             let! taggedText, navigation = lens.TaggedText
             let textBox = new TextBlock(Width = 500., Background = Brushes.Transparent, Opacity = 0.0, TextTrimming = TextTrimming.None)
             DependencyObjectExtensions.SetDefaultTextProperties(textBox, formatMap.Value)
-            textBox.Inlines.Add (Documents.Run Settings.CodeLens.Prefix)
+
+            let prefix = Documents.Run Settings.CodeLens.Prefix
+            prefix.Foreground <- SolidColorBrush(Color.FromRgb(153uy, 153uy, 153uy))
+            textBox.Inlines.Add (prefix)
+
             for text in taggedText do
+
+                let properties = layoutTagToFormatting text.Tag
+                let properties =
+                    if Settings.CodeLens.UseColors
+                    then
+                        match properties.ForegroundBrush with
+                        | :? SolidColorBrush as b ->
+                            let c = b.Color
+                            // Change to correct gray color
+                            if c.R = c.G && c.R = c.B then properties.SetForeground(Color.FromRgb(153uy, 153uy, 153uy)) else properties
+                        | _ -> properties
+                    else
+                        properties.SetForeground(Color.FromRgb(153uy, 153uy, 153uy))
+
                 let run = Documents.Run text.Text
-                if Settings.CodeLens.UseColors then DependencyObjectExtensions.SetTextProperties (run, layoutTagToFormatting text.Tag)
+                DependencyObjectExtensions.SetTextProperties (run, properties)
+
                 let inl =
                     match text with
                     | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->
@@ -362,10 +381,11 @@ type internal FSharpCodeLensService
                             navigation.NavigateTo nav.Range)
                         h :> Documents.Inline
                     | _ -> run :> _
+                DependencyObjectExtensions.SetTextProperties (inl, properties)
                 textBox.Inlines.Add inl
             lens.Computed <- true
             lens.UiElement <- textBox
-        }  
+        }
 
     let executeCodeLenseAsync () =  
         asyncMaybe {
