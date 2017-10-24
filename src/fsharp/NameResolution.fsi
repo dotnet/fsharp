@@ -22,7 +22,7 @@ type NameResolver =
     member amap : ImportMap
     member g : TcGlobals
 
-/// Try to find a type with a record field of the given name
+/// Get the active pattern elements defined in a module, if any. Cache in the slot in the module type.
 val ActivePatternElemsOfModuleOrNamespace : ModuleOrNamespaceRef -> NameMap<ActivePatternElemRef>
 
 [<NoEquality; NoComparison; RequireQualifiedAccess>]
@@ -312,18 +312,24 @@ type internal TcSymbolUses =
 
 /// Represents open declaration statement.
 type internal OpenDeclaration =
-    { /// Idents.
-      Idents: Ident list
+    { /// Long identifier as it's presented in soruce code.
+      LongId: Ident list
       
+      /// Full range of the open declaration.
+      Range : range option
+
       /// Modules or namespaces which is opened with this declaration.
-      ModuleRefs: ModuleOrNamespaceRef list 
+      Modules: ModuleOrNamespaceRef list 
       
       /// Scope in which open declaration is visible.
-      AppliedScope: range }
+      AppliedScope: range 
+      
+      /// If it's `namespace Xxx.Yyy` declaration.
+      IsOwnNamespace: bool }
     
-    /// Range of the open declaration.
-    member Range : range option
-
+    /// Create a new instance of OpenDeclaration.
+    static member Create : longId: Ident list * modules: ModuleOrNamespaceRef list * appliedScope: range * isOwnNamespace: bool -> OpenDeclaration
+    
 /// An abstract type for reporting the results of name resolution and type checking
 type ITypecheckResultsSink =
 

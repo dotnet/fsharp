@@ -1085,7 +1085,10 @@ type internal FSharpOpenDeclaration =
       Modules: FSharpEntity list 
       
       /// Scope in which open declaration is visible.
-      AppliedScope: range }
+      AppliedScope: range 
+      
+      /// If it's `namespace Xxx.Yyy` declaration.
+      IsOwnNamespace: bool }
 
 /// Represents the use of an F# symbol from F# source code
 [<Sealed>]

@@ -48,6 +48,7 @@ module UnusedOpens =
 
     let getOpenStatements (openDeclarations: FSharpOpenDeclaration list) : OpenStatement list = 
         openDeclarations
+        |> List.filter (fun x -> not x.IsOwnNamespace)
         |> List.choose (fun openDecl ->
              match openDecl.LongId, openDecl.Range with
              | firstId :: _, Some range ->

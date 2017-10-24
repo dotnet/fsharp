@@ -699,7 +699,8 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath env =
         match ResolveLongIndentAsModuleOrNamespace ResultCollectionSettings.AllResults amap scopem OpenQualified env.eNameResEnv ad enclosingNamespacePathToOpen with 
         | Result modrefs -> 
             let modrefs = List.map p23 modrefs
-            OpenModulesOrNamespaces tcSink g amap scopem false env modrefs { Idents = enclosingNamespacePathToOpen; ModuleRefs = modrefs; AppliedScope = scopem }
+            let openDecl = OpenDeclaration.Create (enclosingNamespacePathToOpen, modrefs, scopem, true)
+            OpenModulesOrNamespaces tcSink g amap scopem false env modrefs openDecl
         | Exception _ ->  env
 
 
@@ -12079,7 +12080,8 @@ let TcOpenDecl tcSink (g:TcGlobals) amap m scopem env (longId : Ident list)  =
     let modrefs = List.map p23 modrefs
     modrefs |> List.iter (fun modref -> CheckEntityAttributes g modref m |> CommitOperationResult)        
 
-    let env = OpenModulesOrNamespaces tcSink g amap scopem false env modrefs { Idents = longId; ModuleRefs = modrefs; AppliedScope = scopem }
+    let openDecl = OpenDeclaration.Create (longId, modrefs, scopem, false)
+    let env = OpenModulesOrNamespaces tcSink g amap scopem false env modrefs openDecl
     env    
 
 
@@ -16844,7 +16846,9 @@ let ApplyAssemblyLevelAutoOpenAttributeToTcEnv g amap (ccu: CcuThunk) scopem env
     let modref = mkNonLocalTyconRef (mkNonLocalEntityRef ccu (Array.ofList h))  t
     match modref.TryDeref with 
     | VNone ->  warn()
-    | VSome _ -> OpenModulesOrNamespaces TcResultsSink.NoSink g amap scopem root env [modref] { Idents = []; ModuleRefs = [modref]; AppliedScope = scopem }
+    | VSome _ -> 
+        let openDecl = OpenDeclaration.Create ([], [modref], scopem, false)
+        OpenModulesOrNamespaces TcResultsSink.NoSink g amap scopem root env [modref] openDecl
 
 // Add the CCU and apply the "AutoOpen" attributes
 let AddCcuToTcEnv(g, amap, scopem, env, assemblyName, ccu, autoOpens, internalsVisible) = 
