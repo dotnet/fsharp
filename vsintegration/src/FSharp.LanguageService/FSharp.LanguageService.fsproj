@@ -62,7 +62,8 @@
       <InProject>false</InProject>
     </FilesToLocalize>
     <EmbeddedResource Include="VSPackage.resx" />
-    <EmbeddedResource Include="FSLangSvcStrings.resx" GenerateSource="true">
+    <EmbeddedResource Include="FSLangSvcStrings.resx">
+      <GenerateSource>true</GenerateSource>
       <GeneratedModuleName>Microsoft.VisualStudio.FSharp.LanguageService.Strings</GeneratedModuleName>
     </EmbeddedResource>
     <Compile Include="AssemblyInfo.fs" />
