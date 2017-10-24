@@ -353,7 +353,7 @@ type internal FSharpCodeLensService
             textBox.Inlines.Add (Documents.Run Settings.CodeLens.Prefix)
             for text in taggedText do
                 let run = Documents.Run text.Text
-                DependencyObjectExtensions.SetTextProperties (run, layoutTagToFormatting text.Tag)
+                if Settings.CodeLens.UseColors then DependencyObjectExtensions.SetTextProperties (run, layoutTagToFormatting text.Tag)
                 let inl =
                     match text with
                     | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->
