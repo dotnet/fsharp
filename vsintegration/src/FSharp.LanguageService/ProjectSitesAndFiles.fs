@@ -391,7 +391,7 @@ type internal ProjectSitesAndFiles() =
                | Some site -> site
                | None -> ProjectSitesAndFiles.ProjectSiteOfSingleFile(filename)
 
-            let parsingOptions,_ = checker.GetParsingOptionsFromCommandLineArgs( site.CompilationOptions |> Array.toList)
+            let parsingOptions,_ = checker.GetParsingOptionsFromCommandLineArgs(site.CompilationOptions |> Array.toList)
             CompilerEnvironment.GetCompilationDefinesForEditing(filename,parsingOptions)
 
     member art.TryFindOwningProject_DEPRECATED(rdt:IVsRunningDocumentTable, filename) = 
