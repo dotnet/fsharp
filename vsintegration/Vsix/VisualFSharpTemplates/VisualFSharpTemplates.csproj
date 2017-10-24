@@ -35,7 +35,7 @@
     <BootstrapperEnabled>true</BootstrapperEnabled>
     <IsProductComponent>true</IsProductComponent>
     <ExtensionInstallationRoot>CommonExtensions</ExtensionInstallationRoot>
-    <ExtensionInstallationFolder>Microsoft\FSharp</ExtensionInstallationFolder>
+    <ExtensionInstallationFolder>Microsoft\FSharpTemplates</ExtensionInstallationFolder>
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
