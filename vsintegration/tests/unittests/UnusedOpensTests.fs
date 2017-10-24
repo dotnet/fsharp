@@ -136,7 +136,6 @@ module M2 =
     => []
 
 [<Test>]
-//[<Ignore "Relative open statements are not supported yet">]
 let ``open a nested module inside another one is not unused, complex hierarchy``() =
     """
 module Top =
@@ -151,7 +150,6 @@ module Top =
     => []
 
 [<Test>]
-//[<Ignore "Relative open statements are not supported yet">]
 let ``open a nested module inside another one is not unused, even more complex hierarchy``() =
     """
 module Top =
@@ -275,7 +273,6 @@ let _ = DateTime.ExtensionMethod
     => []
     
 [<Test>]
-//[<Ignore "Relative open statements are not supported yet">]
 let ``static extension property applied to a type results that both namespaces /where the type is declared and where the extension is declared/ is not marked as unused``() =
     """
 module Extensions =
@@ -324,7 +321,6 @@ let _ = func()
     => []
 
 [<Test>]
-//[<Ignore "Relative open statements are not supported yet">]
 let ``open module all of which symbols are used by qualifier is marked as unused``() =
     """
 module M =
@@ -379,7 +375,6 @@ let _ = Func<int, int>(fun _ -> 1)
     => []
 
 [<Test>]
-//[<Ignore "Relative open statements are not supported yet">]
 let ``open declaration is not marked as unused if a unit of measure defined in it is used``() =
     """
 module M = 
@@ -421,7 +416,6 @@ File.ReadAllLines ""
     => []
 
 [<Test>]
-//[<Ignore "Relative open statements are not supported yet">]
 let ``redundant opening a module with ModuleSuffix attribute value is marks as unused``() =
     """
 [<CompilationRepresentation (CompilationRepresentationFlags.ModuleSuffix)>]
@@ -434,7 +428,6 @@ module M =
     => [ 6, (9, 33) ]
     
 [<Test>]
-//[<Ignore "Relative open statements are not supported yet">]
 let ``redundant opening a module is marks as unused``() =
     """
 module InternalModuleWithSuffix =
@@ -576,7 +569,6 @@ module Module =
     => []
 
 [<Test>]
-//[<Ignore "Relative open statements are not supported yet">]
 let ``record fields should be taken into account``() = 
     """
 module M1 =
