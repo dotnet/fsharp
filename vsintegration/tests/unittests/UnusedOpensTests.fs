@@ -166,7 +166,7 @@ module Top =
     => []
 
 [<Test>]
-let ``last of several equivalent open declarations is market as used, the rest of them are marked as unused``() =
+let ``opening auto open module after it's parent module was opened should be marked as unused``() =
     """
 module NormalModule =
     [<AutoOpen>]
@@ -178,11 +178,11 @@ module NormalModule =
                 module AutoOpenModule3 =
                     type Class() = class end
 
-open NormalModule.AutoOpenModule1.NestedNormalModule.AutoOpenModule2
 open NormalModule.AutoOpenModule1.NestedNormalModule
+open NormalModule.AutoOpenModule1.NestedNormalModule.AutoOpenModule2
 let _ = Class()
 """
-    => [ 13, (5, 52) ]
+    => [ 13, (5, 68) ]
     
 [<Test>]
 let ``open declaration is not marked as unused if there is a shortened attribute symbol from it``() =
@@ -647,5 +647,20 @@ let ``namespace declaration should never be marked as unused``() =
     """
 namespace Library2
 type T() = class end
+"""
+    => []
+
+[<Test>]
+let ``auto open module opened before enclosing one is handled correctly``() =
+    """
+module M =
+    let x = 1
+    [<AutoOpen>]
+    module N =
+        let y = 2
+open M.N
+open M
+let _ = x
+let _ = y
 """
     => []

@@ -9,10 +9,14 @@ open Microsoft.FSharp.Compiler.Range
 module UnusedOpens =
     open Microsoft.FSharp.Compiler.PrettyNaming
 
+    type Module =
+        { Entity: FSharpEntity
+          IsNestedAutoOpen: bool }
+
     /// Represents single open statement.
     type OpenStatement =
         { /// All modules which this open declaration effectively opens, including all auto open ones, recursively.
-          Modules: FSharpEntity list
+          Modules: Module list
           /// Range of open statement itself.
           Range: range
           /// Scope on which this open declaration is applied.
@@ -21,7 +25,7 @@ module UnusedOpens =
           IsGlobal: bool }
 
         member this.AllChildSymbols =
-            seq { for modul in this.Modules do
+            seq { for modul in this.Modules |> List.map (fun x -> x.Entity) do
                     for ent in modul.NestedEntities do
                         yield ent :> FSharpSymbol
                         
@@ -40,11 +44,11 @@ module UnusedOpens =
                         yield upcast apCase                    
             } |> Seq.cache
 
-    let rec getModuleAndItsAutoOpens (modul: FSharpEntity) =
-        [ yield modul
+    let rec getModuleAndItsAutoOpens (isNestedAutoOpen: bool) (modul: FSharpEntity) =
+        [ yield { Entity = modul; IsNestedAutoOpen = isNestedAutoOpen }
           for ent in modul.NestedEntities do
             if ent.IsFSharpModule && Symbol.hasAttribute<AutoOpenAttribute> ent.Attributes then
-              yield! getModuleAndItsAutoOpens ent ]
+              yield! getModuleAndItsAutoOpens true ent ]
 
     let getOpenStatements (openDeclarations: FSharpOpenDeclaration list) : OpenStatement list = 
         openDeclarations
@@ -52,7 +56,7 @@ module UnusedOpens =
         |> List.choose (fun openDecl ->
              match openDecl.LongId, openDecl.Range with
              | firstId :: _, Some range ->
-                 Some { Modules = openDecl.Modules |> List.collect getModuleAndItsAutoOpens
+                 Some { Modules = openDecl.Modules |> List.collect (getModuleAndItsAutoOpens false)
                         Range = range
                         AppliedScope = openDecl.AppliedScope
                         IsGlobal = firstId.idText = MangledGlobalName  }
@@ -97,7 +101,12 @@ module UnusedOpens =
                                     // if such open statement has already been marked as used in this or outer module, we skip it 
                                     // (that is, do not mark as used so far)
                                     rangeContainsRange seenNs.AppliedScope openStatement.AppliedScope && 
-                                    openStatement.Modules |> List.exists (fun x -> seenNs.Modules |> List.exists (fun s -> s.IsEffectivelySameAs x)))
+                                    openStatement.Modules 
+                                    |> List.exists (fun x ->
+                                        // do not check if any of auto open nested modules has already been seen,
+                                        // current open statement should be seen itself or as an auto open module of its outer module.
+                                        not x.IsNestedAutoOpen && 
+                                        seenNs.Modules |> List.exists (fun s -> s.Entity.IsEffectivelySameAs x.Entity)))
                             not alreadySeen
                 
                 match openStatements with
