@@ -39,7 +39,7 @@ def static getBuildJobName(def configuration, def os) {
             def buildFlavor= '';
 
             if (configuration == "Release_fcs") {
-                // Build and test FCS
+                // Build and test FCS NuGet package
                 buildPath = "./fcs/"
                 buildFlavor = ""
                 if (os == 'Windows_NT') {
@@ -101,9 +101,15 @@ ${buildPath}build.cmd ${buildFlavor} ${build_args}""")
             def affinity = configuration == 'Release_net40_no_vs' ? 'latest-or-auto' : (os == 'Windows_NT' ? 'latest-or-auto-dev15-0' : 'latest-or-auto')
             Utilities.setMachineAffinity(newJob, os, affinity)
             Utilities.standardJobSetup(newJob, project, isPullRequest, "*/${branch}")
-            Utilities.addArchival(newJob, "tests/TestResults/*.*", "", skipIfNoTestFiles, false)
-            Utilities.addArchival(newJob, "${buildFlavor}/**")
 
+            
+            Utilities.addArchival(newJob, "tests/TestResults/*.*", "", skipIfNoTestFiles, false)
+            if (configuration == "Release_fcs") {
+                Utilities.addArchival(newJob, "Release/fcs/**")
+            }
+            else {
+                Utilities.addArchival(newJob, "${buildFlavor}/**")
+            }
             if (isPullRequest) {
                 Utilities.addGithubPRTriggerForBranch(newJob, branch, "${os} ${configuration} Build")
             }
