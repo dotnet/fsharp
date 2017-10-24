@@ -634,7 +634,8 @@ let _ =
         let r = su.RangeAlternate 
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
     |> shouldEqual 
-        [|("ConsoleKey", (5, 10, 5, 20))
+        [|("System", (2, 5, 2, 11))
+          ("ConsoleKey", (5, 10, 5, 20))
           ("field Tab", (5, 10, 5, 24))
           ("ConsoleKey", (6, 6, 6, 16))
           ("field OemClear", (6, 6, 6, 25))
