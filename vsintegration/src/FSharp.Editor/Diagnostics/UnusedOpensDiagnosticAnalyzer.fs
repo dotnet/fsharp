@@ -43,10 +43,6 @@ type internal UnusedOpensDiagnosticAnalyzer() =
             do! Option.guard Settings.CodeFixes.UnusedOpens
             let! sourceText = document.GetTextAsync()
             let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true, userOpName = userOpName)
-            let openDeclarations = checkResults.OpenDeclarations
-
-            Logging.Logging.logInfof "*** OpenDeclarations: %+A" openDeclarations
-            
             return! UnusedOpens.getUnusedOpens(checkResults, fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()) |> liftAsync
         } 
 
