@@ -183,6 +183,25 @@ open NormalModule.AutoOpenModule1.NestedNormalModule.AutoOpenModule2
 let _ = Class()
 """
     => [ 13, (5, 68) ]
+
+[<Test>]
+let ``opening parent module after one of its auto open module was opened should be marked as unused``() =
+    """
+module NormalModule =
+    [<AutoOpen>]
+    module AutoOpenModule1 =
+        module NestedNormalModule =
+            [<AutoOpen>]
+            module AutoOpenModule2 =
+                [<AutoOpen>]
+                module AutoOpenModule3 =
+                    type Class() = class end
+
+open NormalModule.AutoOpenModule1.NestedNormalModule.AutoOpenModule2
+open NormalModule.AutoOpenModule1.NestedNormalModule
+let _ = Class()
+"""
+    => [ 13, (5, 52) ]
     
 [<Test>]
 let ``open declaration is not marked as unused if there is a shortened attribute symbol from it``() =

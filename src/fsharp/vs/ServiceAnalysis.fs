@@ -93,11 +93,20 @@ module UnusedOpens =
                 let getUsedModules (openStatement: OpenStatement) =
                     let notAlreadyUsedModuleGroups =
                         openStatement.Modules
-                        |> List.filter (fun x ->
-                             not (usedModules
-                                 |> List.exists (fun used ->
-                                      rangeContainsRange used.AppliedScope openStatement.AppliedScope &&
-                                      x.Modules |> List.exists (fun x -> not x.IsNestedAutoOpen && used.Module.IsEffectivelySameAs x.Entity))))
+                        |> List.choose (fun x ->
+                             let notUsedModules =
+                                x.Modules
+                                |> List.filter (fun x ->
+                                      not (usedModules
+                                           |> List.exists (fun used ->
+                                                rangeContainsRange used.AppliedScope openStatement.AppliedScope &&
+                                                used.Module.IsEffectivelySameAs x.Entity)))
+                             
+                             match notUsedModules with
+                             | [] -> None
+                             | _ when notUsedModules |> List.exists (fun x -> not x.IsNestedAutoOpen) -> 
+                                Some { Modules = notUsedModules }
+                             | _ -> None)
 
                     match notAlreadyUsedModuleGroups with
                     | [] -> []
