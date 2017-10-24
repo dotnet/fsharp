@@ -32,8 +32,11 @@
     </FilesToLocalize>
   </ItemGroup>
 
-   <ItemGroup>
-    <Compile Include="InternalsVisibleTo.fs" />
+  <ItemGroup>
+    <InternalsVisibleTo Include="VisualFSharp.Unittests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="..\..\assemblyinfo\assemblyinfo.fsc.exe.fs">
       <Link>Resources/assemblyinfo.fsc.exe.fs</Link>
     </Compile>
