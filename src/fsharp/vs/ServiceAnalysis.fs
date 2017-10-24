@@ -11,7 +11,8 @@ module UnusedOpens =
 
     /// Represents single open statement.
     type OpenStatement =
-        { Modules: FSharpEntity list
+        { /// All modules which this open declaration effectively opens, including all auto open ones, recursively.
+          Modules: FSharpEntity list
           /// Range of open statement itself.
           Range: range
           /// Scope on which this open declaration is applied.
@@ -28,7 +29,7 @@ module UnusedOpens =
                             for rf in ent.FSharpFields do
                                 yield upcast rf
                         
-                        if ent.IsFSharpUnion && not (hasAttribute<RequireQualifiedAccessAttribute> ent.Attributes) then
+                        if ent.IsFSharpUnion && not (Symbol.hasAttribute<RequireQualifiedAccessAttribute> ent.Attributes) then
                             for unionCase in ent.UnionCases do
                                 yield upcast unionCase
                     
@@ -42,7 +43,7 @@ module UnusedOpens =
     let rec getModuleAndItsAutoOpens (modul: FSharpEntity) =
         [ yield modul
           for ent in modul.NestedEntities do
-            if ent.IsFSharpModule && hasAttribute<AutoOpenAttribute> ent.Attributes then
+            if ent.IsFSharpModule && Symbol.hasAttribute<AutoOpenAttribute> ent.Attributes then
               yield! getModuleAndItsAutoOpens ent ]
 
     let getOpenStatements (openDeclarations: FSharpOpenDeclaration list) : OpenStatement list = 
@@ -72,7 +73,7 @@ module UnusedOpens =
 
     let getUnusedOpens (checkFileResults: FSharpCheckFileResults, getSourceLineStr: int -> string) : Async<range list> =
         
-        let filter (openStatements: OpenStatement list) (symbolUses: FSharpSymbolUse[]) : OpenStatement list =
+        let filterOpenStatements (openStatements: OpenStatement list) (symbolUses: FSharpSymbolUse[]) : OpenStatement list =
             let rec filterInner acc (openStatements: OpenStatement list) (seenOpenStatements: OpenStatement list) = 
                 
                 let isUsed (openStatement: OpenStatement) =
@@ -84,9 +85,8 @@ module UnusedOpens =
                                 let inScope = rangeContainsRange openStatement.AppliedScope symbolUse.RangeAlternate
                                 if not inScope then false
                                 else
-                                    let moduleSymbols = openStatement.AllChildSymbols |> Seq.toList
-                                    moduleSymbols
-                                    |> List.exists (fun x -> x.IsEffectivelySameAs symbolUse.Symbol))
+                                    openStatement.AllChildSymbols
+                                    |> Seq.exists (fun x -> x.IsEffectivelySameAs symbolUse.Symbol))
 
                         if not usedSomewhere then false
                         else
@@ -112,5 +112,5 @@ module UnusedOpens =
             let! symbolUses = checkFileResults.GetAllUsesOfAllSymbolsInFile()
             let symbolUses = filterSymbolUses getSourceLineStr symbolUses
             let openStatements = getOpenStatements checkFileResults.OpenDeclarations
-            return filter openStatements symbolUses |> List.map (fun os -> os.Range)
+            return filterOpenStatements openStatements symbolUses |> List.map (fun os -> os.Range)
         }
