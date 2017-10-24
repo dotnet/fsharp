@@ -1,6 +1,6 @@
 # The F# Language, Library, and  Visual F# Tools Repository
 
-You are invited to help producing future releases of the F# language compiler, library, and tools. This repository enables development on Linux, macOS and Windows, along with some automated CI testing for these.
+You are invited to help produce future releases of the F# language compiler, library, and tools. This repository enables development on Linux, macOS and Windows, along with some automated CI testing for these.
 
 * [About F#](http://fsharp.org)
 * [Testimonials](http://fsharp.org/testimonials)

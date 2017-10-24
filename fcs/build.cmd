@@ -1,8 +1,10 @@
 @echo off
+
+dotnet --version
 .nuget\NuGet.exe restore -PackagesDirectory packages
 setlocal
 cd fcs
-.paket\paket.bootstrapper.exe
+
 dotnet restore tools.fsproj
 if errorlevel 1 (
   endlocal

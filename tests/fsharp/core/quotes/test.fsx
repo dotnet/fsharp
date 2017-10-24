@@ -439,6 +439,28 @@ module TypedTest = begin
         test "check Mutate 1"   (<@ let mutable x = 0 in x <- 1 @> |> (function Let(v,Int32 0, VarSet(v2,Int32 1)) when v = v2 -> true | _ -> false))
 
         let q = <@ let mutable x = 0 in x <- 1 @>
+        
+        let rec getMethod (e : Expr) =
+            match e with
+            | Call(None, mi, _) -> mi
+            | Let(_,_,m) -> getMethod m
+            | Lambdas(_, e) -> getMethod e
+            | _ -> failwithf "not a lambda: %A" e
+
+        let increment (r : byref<int>) = r <- r + 1
+        let incrementMeth = getMethod <@ let mutable a = 10 in increment(&a) @>
+
+        let rec rebuild (e : Expr) =
+            match e with
+            | ExprShape.ShapeLambda(v,b) -> Expr.Lambda(v, rebuild b)
+            | ExprShape.ShapeVar(v) -> Expr.Var v
+            | ExprShape.ShapeCombination(o, args) -> ExprShape.RebuildShapeCombination(o, args |> List.map rebuild)
+
+        test "check AddressOf in call"      (try let v = Var("a", typeof<int>, true) in Expr.Let(v, Expr.Value 10, Expr.Call(incrementMeth, [Expr.AddressOf(Expr.Var v)])) |> ignore; true with _ -> false)
+        test "check AddressOf rebuild"      (try rebuild <@ let mutable a = 10 in increment(&a) @> |> ignore; true with _ -> false)
+        test "check AddressOf argument"     (<@ let mutable a = 10 in increment(&a) @> |> function Let(_, _, Call(None, _, [AddressOf(_)])) -> true | _ -> false)
+        test "check AddressOf type"         (<@ let mutable a = 10 in increment(&a) @> |> function Let(_, _, Call(None, _, [AddressOf(_) as e])) -> (try e.Type = typeof<int>.MakeByRefType() with _ -> false) | _ -> false)
+
 
     // Test basic expression splicing
     let f8383 (x:int) (y:string) = 0

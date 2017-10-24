@@ -3,9 +3,8 @@
 namespace Tests.LanguageService
 
 open System
-open System.IO
 open NUnit.Framework
-open Microsoft.VisualStudio.FSharp.LanguageService
+open Microsoft.FSharp.Compiler
 
 [<TestFixture>]
 [<Category "LanguageService">] 
@@ -22,37 +21,37 @@ type QuickParse() =
         
     [<Test>]
     member public qp.CheckGetPartialLongName() = 
-        let CheckAt(line,index,expected) = 
-            let actual = QuickParse.GetPartialLongNameEx(line,index)
-            if actual <> expected then
+        let CheckAt(line, index, expected) = 
+            let actual = QuickParse.GetPartialLongNameEx(line, index)
+            if (actual.QualifyingIdents, actual.PartialIdent, actual.LastDotPos) <> expected then
                 failwithf "Expected %A but got %A" expected actual
             
         let Check(line,expected) = 
             CheckAt(line, line.Length-1, expected)
     
         do Microsoft.FSharp.Compiler.AbstractIL.Diagnostics.setDiagnosticsChannel(Some(Console.Out));
-        Check("let y = List.",(["List"], ""))
-        Check("let y = List.conc",(["List"], "conc"))
-        Check("let y = S", ([], "S"))
-        Check("S", ([], "S"))
-        Check("let y=", ([], ""))
-        Check("Console.Wr", (["Console"], "Wr"))
-        Check(" .", ([""], ""))
-        Check(".", ([""], ""))
-        Check("System.Console.Wr", (["System";"Console"],"Wr"))
-        Check("let y=f'", ([], "f'"))
-        Check("let y=SomeModule.f'", (["SomeModule"], "f'"))
-        Check("let y=Some.OtherModule.f'", (["Some";"OtherModule"], "f'"))
-        Check("let y=f'g", ([], "f'g"))
-        Check("let y=SomeModule.f'g", (["SomeModule"], "f'g"))
-        Check("let y=Some.OtherModule.f'g", (["Some";"OtherModule"], "f'g"))
-        Check("let y=FSharp.Data.File.``msft-prices.csv``", ([], ""))
-        Check("let y=FSharp.Data.File.``msft-prices.csv", (["FSharp";"Data";"File"], "msft-prices.csv"))
-        Check("let y=SomeModule.  f", (["SomeModule"], "f"))
-        Check("let y=SomeModule  .f", (["SomeModule"], "f"))
-        Check("let y=SomeModule  .  f", (["SomeModule"], "f"))
-        Check("let y=SomeModule  .", (["SomeModule"], ""))
-        Check("let y=SomeModule  .  ", (["SomeModule"], ""))
+        Check("let y = List.",(["List"], "", Some 12))
+        Check("let y = List.conc",(["List"], "conc", Some 12))
+        Check("let y = S", ([], "S", None))
+        Check("S", ([], "S", None))
+        Check("let y=", ([], "", None))
+        Check("Console.Wr", (["Console"], "Wr", Some 7))
+        Check(" .", ([""], "", Some 1))
+        Check(".", ([""], "", Some 0))
+        Check("System.Console.Wr", (["System";"Console"],"Wr", Some 14))
+        Check("let y=f'", ([], "f'", None))
+        Check("let y=SomeModule.f'", (["SomeModule"], "f'", Some 16))
+        Check("let y=Some.OtherModule.f'", (["Some";"OtherModule"], "f'", Some 22))
+        Check("let y=f'g", ([], "f'g", None))
+        Check("let y=SomeModule.f'g", (["SomeModule"], "f'g", Some 16))
+        Check("let y=Some.OtherModule.f'g", (["Some";"OtherModule"], "f'g", Some 22))
+        Check("let y=FSharp.Data.File.``msft-prices.csv``", ([], "", None))
+        Check("let y=FSharp.Data.File.``msft-prices.csv", (["FSharp";"Data";"File"], "msft-prices.csv", Some 22))
+        Check("let y=SomeModule.  f", (["SomeModule"], "f", Some 16))
+        Check("let y=SomeModule  .f", (["SomeModule"], "f", Some 18))
+        Check("let y=SomeModule  .  f", (["SomeModule"], "f", Some 18))
+        Check("let y=SomeModule  .", (["SomeModule"], "", Some 18))
+        Check("let y=SomeModule  .  ", (["SomeModule"], "", Some 18))
         
         
     [<Test>] 

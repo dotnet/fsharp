@@ -7774,6 +7774,15 @@ let rec f l =
                 let bar = 1""",
             marker = "(*Marker*)")
 
+    [<Test;Category("Repro")>]
+    member public this.``ExpressionDotting.Regression.Bug3709``() = 
+        this.VerifyCtrlSpaceListContainAllAtStartOfMarker(
+            fileContents = """
+                let foo = ""
+                let foo = foo.E(*marker*)n "a" """,
+            marker = "(*marker*)",
+            list = ["EndsWith"])  
+
 // Context project system
 [<TestFixture>] 
 type UsingProjectSystem() = 

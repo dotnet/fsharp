@@ -363,6 +363,9 @@
   <UsingTask TaskName="FSharpEmbedResXSource"
              AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build-proto.dll"
              Condition="'$(Configuration)' != 'Proto'" />
+  <UsingTask TaskName="WriteCodeFragment"
+             AssemblyFile="$(FSharpSourcesRoot)\..\Proto\net40\bin\FSharp.Build-proto.dll"
+             Condition="'$(Configuration)' != 'Proto'" />
 
   <Target Name="GenerateFSharpTextResources"
           BeforeTargets="CoreResGen;PrepareForBuild"
@@ -393,6 +396,43 @@
       <FileWrites Include="@(_FsGeneratedResx)" />
     </ItemGroup>
 
+  </Target>
+
+  <PropertyGroup Condition="'$(Configuration)' != 'Proto'">
+    <GeneratedFSharpInternalsVisibleToFile>$(IntermediateOutputPath)$(MSBuildProjectName).InternalsVisibleTo$(DefaultLanguageSourceExtension)</GeneratedFSharpInternalsVisibleToFile>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <InternalsVisibleTo>
+      <Visible>false</Visible>
+    </InternalsVisibleTo>
+  </ItemDefinitionGroup>
+
+  <Target Name="PrepareFSharpGenerateInternalsVisibleToFile"
+          Condition="'$(Configuration)' != 'Proto' and '@(InternalsVisibleTo)' != ''">
+    <PropertyGroup>
+      <_PublicKey>002400000480000094000000060200000024000052534131000400000100010007D1FA57C4AED9F0A32E84AA0FAEFD0DE9E8FD6AEC8F87FB03766C834C99921EB23BE79AD9D5DCC1DD9AD236132102900B723CF980957FC4E177108FC607774F29E8320E92EA05ECE4E821C0A5EFE8F1645C4C0C93C1AB99285D622CAA652C1DFAD63D745D6F2DE5F17E5EAF0FC4963D261C8A12436518206DC093344D5AD293</_PublicKey>
+    </PropertyGroup>
+    <ItemGroup>
+      <_InternalsVisibleToAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+        <_Parameter1 Condition="'%(InternalsVisibleTo.Key)' != ''">%(InternalsVisibleTo.Identity), PublicKey=%(InternalsVisibleTo.Key)</_Parameter1>
+        <_Parameter1 Condition="'%(InternalsVisibleTo.Key)' == ''">%(InternalsVisibleTo.Identity), PublicKey=$(_PublicKey)</_Parameter1>
+      </_InternalsVisibleToAttribute>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="GenerateFSharpInternalsVisibleToFile"
+          Inputs="$(MSBuildProjectFile)"
+          Outputs="$(GeneratedFSharpInternalsVisibleToFile)"
+          DependsOnTargets="PrepareFSharpGenerateInternalsVisibleToFile;PrepareForBuild"
+          Condition="'$(Configuration)' != 'Proto' and '@(InternalsVisibleTo)' != ''"
+          BeforeTargets="CoreCompile">
+    <WriteCodeFragment AssemblyAttributes="@(_InternalsVisibleToAttribute)"
+                       Language="$(Language)"
+                       OutputFile="$(GeneratedFSharpInternalsVisibleToFile)">
+      <Output TaskParameter="OutputFile" ItemName="CompileBefore" />
+      <Output TaskParameter="OutputFile" ItemName="FileWrites" />
+    </WriteCodeFragment>
   </Target>
 
   <UsingTask TaskName="ReplaceFileText" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">

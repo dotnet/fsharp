@@ -8,7 +8,6 @@
     <AssemblyName>FSharp.Build</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <DefineConstants>$(DefineConstants);BUILD_FROM_SOURCE</DefineConstants>
     <OtherFlags>$(OtherFlags) --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
   </PropertyGroup>
 
@@ -23,6 +22,7 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Fsc.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharpEmbedResourceText.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\FSharpEmbedResXSource.fs" />
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\WriteCodeFragment.fs" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\CreateFSharpManifestResourceName.fsi" />
     <Compile Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\CreateFSharpManifestResourceName.fs" />
     <CopyAndSubstituteText Include="$(FSharpSourcesRoot)\fsharp\FSharp.Build\Microsoft.FSharp.Targets">
