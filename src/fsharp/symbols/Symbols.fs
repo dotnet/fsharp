@@ -2272,7 +2272,8 @@ type FSharpOpenDeclaration =
     { LongId: Ident list 
       Range: range option
       Modules: FSharpEntity list 
-      AppliedScope: range }
+      AppliedScope: range 
+      IsOwnNamespace: bool }
 
 [<Sealed>]
 type FSharpSymbolUse(g:TcGlobals, denv: DisplayEnv, symbol:FSharpSymbol, itemOcc, range: range) = 

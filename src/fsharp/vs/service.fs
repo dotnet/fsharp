@@ -2037,10 +2037,12 @@ type FSharpCheckFileResults(filename: string, errors: FSharpErrorInfo[], scopeOp
         |> Option.map (fun scope -> 
             let cenv = Impl.cenv(scope.TcGlobals, scope.ThisCcu, scope.TcImports)
             scope.OpenDeclarations |> List.map (fun x ->
-                { LongId = x.Idents
+                { LongId = x.LongId
                   Range = x.Range
-                  Modules = x.ModuleRefs |> List.map (fun x -> FSharpEntity(cenv, x))
-                  AppliedScope = x.AppliedScope }))
+                  Modules = x.Modules |> List.map (fun x -> FSharpEntity(cenv, x))
+                  AppliedScope = x.AppliedScope 
+                  IsOwnNamespace = x.IsOwnNamespace } 
+                : FSharpOpenDeclaration ))
         |> Option.defaultValue []
 
     override info.ToString() = "FSharpCheckFileResults(" + filename + ")"

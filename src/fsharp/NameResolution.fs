@@ -1223,15 +1223,23 @@ type ItemOccurence =
     | RelatedText
   
 type OpenDeclaration =
-    { Idents: Ident list
-      ModuleRefs: ModuleOrNamespaceRef list 
-      AppliedScope: range }
-    member this.Range =
-        match this.Idents with
-        | [] -> None
-        | first :: rest ->
-            let last = rest |> List.tryLast |> Option.defaultValue first
-            Some (mkRange this.AppliedScope.FileName first.idRange.Start last.idRange.End)
+    { LongId: Ident list
+      Range: range option
+      Modules: ModuleOrNamespaceRef list 
+      AppliedScope: range 
+      IsOwnNamespace: bool }
+    
+    static member Create(longId: Ident list, modules: ModuleOrNamespaceRef list, appliedScope: range, isOwnNamespace: bool) =
+        { LongId = longId
+          Range =
+            match longId with
+            | [] -> None
+            | first :: rest ->
+                let last = rest |> List.tryLast |> Option.defaultValue first
+                Some (mkRange appliedScope.FileName first.idRange.Start last.idRange.End)
+          Modules = modules
+          AppliedScope = appliedScope
+          IsOwnNamespace = isOwnNamespace }
 
 /// An abstract type for reporting the results of name resolution and type checking.
 type ITypecheckResultsSink =

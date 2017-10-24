@@ -649,3 +649,11 @@ open System
 let f (x: 'a when 'a :> IDisposable) = ()
 """
     => []
+
+[<Test>]
+let ``namespace declaration should never be marked as unused``() =
+    """
+namespace Library2
+type T() = class end
+"""
+    => []
