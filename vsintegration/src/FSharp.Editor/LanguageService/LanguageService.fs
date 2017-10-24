@@ -210,7 +210,7 @@ type internal FSharpProjectOptionsManager
         | h when (h.IsCapabilityMatch("CPS")) ->
             let project = workspace.CurrentSolution.GetProject(projectId)
             if not (isNull project) then
-                let siteProvider = provideProjectSiteProvider(workspace, project, serviceProvider, Some projectOptionsTable)
+                let siteProvider = this.ProvideProjectSiteProvider(project)
                 let projectSite = siteProvider.GetProjectSite()
                 if projectSite.CompilationSourceFiles.Length <> 0 then
                     this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, projectSite, userOpName)
@@ -218,18 +218,8 @@ type internal FSharpProjectOptionsManager
 
     /// Tell the checker to update the project info for the specified project id
     member this.UpdateDocumenttInfoWithProjectId(projectId:ProjectId, documentId:DocumentId, userOpName) =
-        let hier = workspace.GetHierarchy(projectId)
-        match hier with
-        | null -> ()
-        | h when (h.IsCapabilityMatch("CPS")) ->
-            if workspace.IsDocumentOpen(documentId) then
-                if not (isNull workspace.CurrentSolution) then
-                    let project = workspace.CurrentSolution.GetProject(projectId)
-                    if not (isNull project) then
-                            let siteProvider = provideProjectSiteProvider(workspace, project, serviceProvider, Some projectOptionsTable)
-                            this.UpdateProjectInfo(tryGetOrCreateProjectId, projectId, siteProvider.GetProjectSite(), userOpName)
-        | _ -> ()
- 
+        if workspace.IsDocumentOpen(documentId) then
+            this.UpdateProjectInfoWithProjectId(projectId, userOpName)
 
     [<Export>]
     /// This handles commandline change notifications from the Dotnet Project-system
