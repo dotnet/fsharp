@@ -29,6 +29,9 @@ and internal IProjectSite =
     /// The '-o:' output bin path, without the '-o:'
     abstract CompilationBinOutputPath : string option
 
+    /// The name of the project file.
+    abstract ProjectFileName : string
+
     /// Register for notifications for when the above change
     abstract AdviseProjectSiteChanges : callbackOwnerKey: string * AdviseProjectSiteChanges -> unit
 
@@ -40,9 +43,6 @@ and internal IProjectSite =
  
     /// A user-friendly description of the project. Used only for developer/DEBUG tooltips and such.
     abstract Description : string
-
-    /// The name of the project file.
-    abstract ProjectFileName : string
 
     /// The error list task reporter
     abstract BuildErrorReporter : Microsoft.VisualStudio.Shell.Interop.IVsLanguageServiceBuildErrorReporter2 option with get, set
