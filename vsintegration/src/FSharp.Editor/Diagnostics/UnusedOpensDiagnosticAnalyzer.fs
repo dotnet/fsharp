@@ -43,9 +43,13 @@ type internal UnusedOpensDiagnosticAnalyzer() =
             do! Option.guard Settings.CodeFixes.UnusedOpens
             let! sourceText = document.GetTextAsync()
             let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true, userOpName = userOpName)
+#if DEBUG
             let sw = Stopwatch.StartNew()
+#endif
             let! unusedOpens = UnusedOpens.getUnusedOpens(checkResults, fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()) |> liftAsync
+#if DEBUG
             Logging.Logging.logInfof "*** Got %d unused opens in %O" unusedOpens.Length sw.Elapsed
+#endif
             return unusedOpens
         } 
 
