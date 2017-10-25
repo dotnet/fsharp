@@ -21,6 +21,8 @@
                     <StackPanel>
                         <CheckBox x:Name="enableCodeLens" IsChecked="{Binding Enabled}"
                       Content="{x:Static local:Strings.CodeLens_Switch}"/>
+                        <CheckBox x:Name="useColors" IsChecked="{Binding UseColors}"
+                      Content="{x:Static local:Strings.CodeLens_UseColors}"/>
                         <CheckBox x:Name="replaceWithLineLens" IsChecked="{Binding ReplaceWithLineLens}"
                       Content="{x:Static local:Strings.CodeLens_Replace_LineLens}"/>
                         <Grid>

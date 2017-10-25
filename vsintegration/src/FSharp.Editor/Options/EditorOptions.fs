@@ -45,6 +45,7 @@ type LanguageServicePerformanceOptions =
 type CodeLensOptions =
   { Enabled : bool
     ReplaceWithLineLens: bool 
+    UseColors: bool
     Prefix : string }
 
 [<Export(typeof<ISettings>)>]
@@ -73,6 +74,7 @@ type internal Settings [<ImportingConstructor>](store: SettingsStore) =
 
         store.RegisterDefault
             { Enabled = true
+              UseColors = false
               ReplaceWithLineLens = true 
               Prefix = "// " }
 

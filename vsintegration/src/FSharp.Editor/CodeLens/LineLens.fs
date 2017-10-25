@@ -350,10 +350,32 @@ type internal FSharpCodeLensService
             let! taggedText, navigation = lens.TaggedText
             let textBox = new TextBlock(Width = 500., Background = Brushes.Transparent, Opacity = 0.0, TextTrimming = TextTrimming.None)
             DependencyObjectExtensions.SetDefaultTextProperties(textBox, formatMap.Value)
-            textBox.Inlines.Add (Documents.Run Settings.CodeLens.Prefix)
+
+            let prefix = Documents.Run Settings.CodeLens.Prefix
+            prefix.Foreground <- SolidColorBrush(Color.FromRgb(153uy, 153uy, 153uy))
+            textBox.Inlines.Add (prefix)
+
             for text in taggedText do
+
+                let coloredProperties = layoutTagToFormatting text.Tag
+                let actualProperties =
+                    if Settings.CodeLens.UseColors
+                    then
+                        // If color is gray (R=G=B), change to correct gray color.
+                        // Otherwise, use the provided color.
+                        match coloredProperties.ForegroundBrush with
+                        | :? SolidColorBrush as b ->
+                            let c = b.Color
+                            if c.R = c.G && c.R = c.B
+                            then coloredProperties.SetForeground(Color.FromRgb(153uy, 153uy, 153uy))
+                            else coloredProperties
+                        | _ -> coloredProperties
+                    else
+                        coloredProperties.SetForeground(Color.FromRgb(153uy, 153uy, 153uy))
+
                 let run = Documents.Run text.Text
-                DependencyObjectExtensions.SetTextProperties (run, layoutTagToFormatting text.Tag)
+                DependencyObjectExtensions.SetTextProperties (run, actualProperties)
+
                 let inl =
                     match text with
                     | :? Layout.NavigableTaggedText as nav when navigation.IsTargetValid nav.Range ->
@@ -362,6 +384,7 @@ type internal FSharpCodeLensService
                             navigation.NavigateTo nav.Range)
                         h :> Documents.Inline
                     | _ -> run :> _
+                DependencyObjectExtensions.SetTextProperties (inl, actualProperties)
                 textBox.Inlines.Add inl
             lens.Computed <- true
             lens.UiElement <- textBox

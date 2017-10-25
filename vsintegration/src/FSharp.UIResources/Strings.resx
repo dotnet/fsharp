@@ -177,4 +177,7 @@
   <data name="CodeLens_Prefix" xml:space="preserve">
     <value>Annotation prefix</value>
   </data>
+  <data name="CodeLens_UseColors" xml:space="preserve">
+    <value>Use colors in annotations</value>
+  </data>
 </root>
