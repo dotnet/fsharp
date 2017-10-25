@@ -412,6 +412,14 @@ _nugetconfig=".nuget/NuGet.Config"
 
 # Restore packages (default to restoring packages if otherwise unspecified).
 if [ "${RestorePackages:-true}" = 'true' ]; then
+    cd fcs
+    mono .paket/paket.exe restore
+    cd ..
+    exit_code=$?
+    if [ $exit_code -ne 0 ]; then
+        exit $exit_code
+    fi
+    
     eval "$_nugetexe restore packages.config -PackagesDirectory packages -ConfigFile $_nugetconfig"
     if [ $? -ne 0 ]; then
         failwith "Nuget restore failed"
