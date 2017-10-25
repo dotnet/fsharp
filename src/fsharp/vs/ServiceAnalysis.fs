@@ -33,12 +33,12 @@ module UnusedOpens =
                               // (note: fv.IsExtensionMember has proper value for symbols returning by GetAllUsesOfAllSymbolsInFile though)
                               if Symbol.hasAttribute<ExtensionAttribute> fv.Attributes then
                                   yield upcast fv
-                  
-                  for fv in this.Entity.MembersFunctionsAndValues do 
-                      yield upcast fv
                       
                   for apCase in this.Entity.ActivePatternCases do
                       yield upcast apCase                    
+
+                  for fv in this.Entity.MembersFunctionsAndValues do 
+                      yield upcast fv
             } |> Seq.cache
 
     type ModuleGroup = 
@@ -127,16 +127,17 @@ module UnusedOpens =
                              |> List.exists (fun modul ->
                                   symbolUsesInScope
                                   |> Array.exists (fun symbolUse ->
-                                       //match symbolUse.Symbol with
-                                       //| :? FSharpMemberOrFunctionOrValue as f ->
-                                       //     match f.EnclosingEntity with
-                                       //     | Some enclosingEntity -> Some (enclosingEntity.IsEffectivelySameAs modul.Entity)
-                                       //     | _ -> None
-                                       //| _ -> None
-                                       //|> Option.defaultWith (fun () ->
+                                       match symbolUse.Symbol with
+                                       | :? FSharpMemberOrFunctionOrValue as f ->
+                                            match f.EnclosingEntity with
+                                            | Some ent when ent.IsNamespace || ent.IsFSharpModule ->
+                                                Some (ent.IsEffectivelySameAs modul.Entity)
+                                            | _ -> None
+                                       | _ -> None
+                                       |> Option.defaultWith (fun () ->
                                             modul.ChildSymbols
                                             |> Seq.exists (fun x -> x.IsEffectivelySameAs symbolUse.Symbol)
-                                     )))
+                                     ))))
                         |> List.collect (fun mg -> 
                             mg.Modules |> List.map (fun x -> { Module = x.Entity; AppliedScope = openStatement.AppliedScope }))
                                           
