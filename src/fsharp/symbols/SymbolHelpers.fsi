@@ -235,10 +235,10 @@ type internal CompilationErrorLogger =
     inherit ErrorLogger
 
     /// Create the error logger
-    new : debugName:string * tcConfig:TcConfig ->  CompilationErrorLogger
+    new: debugName:string * options: FSharpErrorSeverityOptions -> CompilationErrorLogger
             
     /// Get the captured errors
-    member GetErrors : unit -> (PhasedDiagnostic * FSharpErrorSeverity) list
+    member GetErrors: unit -> (PhasedDiagnostic * FSharpErrorSeverity) list
 
 /// This represents the global state established as each task function runs as part of the build.
 ///
@@ -248,5 +248,5 @@ type internal CompilationGlobalsScope =
     interface IDisposable
 
 module internal ErrorHelpers = 
-    val ReportError: TcConfig * allErrors: bool * mainInputFileName: string * fileInfo: (int * int) * (PhasedDiagnostic * FSharpErrorSeverity) -> FSharpErrorInfo list
-    val CreateErrorInfos: TcConfig * allErrors: bool * mainInputFileName: string * seq<(PhasedDiagnostic * FSharpErrorSeverity)> -> FSharpErrorInfo[]
+    val ReportError: FSharpErrorSeverityOptions * allErrors: bool * mainInputFileName: string * fileInfo: (int * int) * (PhasedDiagnostic * FSharpErrorSeverity) -> FSharpErrorInfo list
+    val CreateErrorInfos: FSharpErrorSeverityOptions * allErrors: bool * mainInputFileName: string * seq<(PhasedDiagnostic * FSharpErrorSeverity)> -> FSharpErrorInfo[]

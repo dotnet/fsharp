@@ -19,7 +19,7 @@
 //    Use F# Interactive.  This only works for FSHarp.Compiler.Service.dll which has a public API
 
 #if INTERACTIVE
-#r "../../Debug/net40/bin/FSharp.Compiler.Service.dll" // note, run 'build fcs' to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../Debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
 #r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "FsUnit.fs"
 #load "Common.fs"
@@ -86,7 +86,8 @@ let ``Intro test`` () =
     let tip = typeCheckResults.GetToolTipText(4, 7, inputLines.[1], ["foo"], identToken) |> Async.RunSynchronously
     // (sprintf "%A" tip).Replace("\n","") |> shouldEqual """FSharpToolTipText [Single ("val foo : unit -> unitFull name: Test.foo",None)]"""
     // Get declarations (autocomplete) for a location
-    let decls =  typeCheckResults.GetDeclarationListInfo(Some parseResult, 7, 23, inputLines.[6], [], "msg", (fun _ -> []), fun _ -> false)|> Async.RunSynchronously
+    let partialName = { QualifyingIdents = []; PartialIdent = "msg"; EndColumn = 22; LastDotPos = None }
+    let decls =  typeCheckResults.GetDeclarationListInfo(Some parseResult, 7, inputLines.[6], partialName, (fun _ -> []), fun _ -> false)|> Async.RunSynchronously
     CollectionAssert.AreEquivalent(stringMethods,[ for item in decls.Items -> item.Name ])
     // Get overloads of the String.Concat method
     let methods = typeCheckResults.GetMethods(5, 27, inputLines.[4], Some ["String"; "Concat"]) |> Async.RunSynchronously
@@ -285,7 +286,7 @@ let ``Expression typing test`` () =
     // gives the results for the string type. 
     // 
     for col in 42..43 do 
-        let decls =  typeCheckResults.GetDeclarationListInfo(Some parseResult, 2, col, inputLines.[1], [], "", (fun _ -> []), fun _ -> false)|> Async.RunSynchronously
+        let decls =  typeCheckResults.GetDeclarationListInfo(Some parseResult, 2, inputLines.[1], PartialLongName.Empty(col), (fun _ -> []), fun _ -> false)|> Async.RunSynchronously
         let autoCompleteSet = set [ for item in decls.Items -> item.Name ]
         autoCompleteSet |> shouldEqual (set stringMethods)
 
@@ -306,7 +307,7 @@ type Test() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
 
-    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, 21, inputLines.[3], [], "", (fun _ -> []), fun _ -> false)|> Async.RunSynchronously
+    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(20), (fun _ -> []), fun _ -> false)|> Async.RunSynchronously
     let item = decls.Items |> Array.tryFind (fun d -> d.Name = "abc")
     decls.Items |> Seq.exists (fun d -> d.Name = "abc") |> shouldEqual true
 
@@ -323,7 +324,7 @@ type Test() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
 
-    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, 22, inputLines.[3], [], "", (fun _ -> []), fun _ -> false)|> Async.RunSynchronously
+    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(21), (fun _ -> []), fun _ -> false)|> Async.RunSynchronously
     let item = decls.Items |> Array.tryFind (fun d -> d.Name = "abc")
     decls.Items |> Seq.exists (fun d -> d.Name = "abc") |> shouldEqual true
  
@@ -340,7 +341,7 @@ type Test() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
 
-    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, 15, inputLines.[3], [], "", (fun _ -> []), fun _ -> false)|> Async.RunSynchronously
+    let decls = typeCheckResults.GetDeclarationListInfo(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(14), (fun _ -> []), fun _ -> false)|> Async.RunSynchronously
     decls.Items |> Seq.exists (fun d -> d.Name = "abc") |> shouldEqual true
 
 [<Test; Ignore("Currently failing, see #139")>]
@@ -356,7 +357,7 @@ type Test() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
 
-    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, 21, inputLines.[3], [], "", fun _ -> false)|> Async.RunSynchronously
+    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(20), fun _ -> false)|> Async.RunSynchronously
     //decls |> List.map (fun d -> d.Head.Symbol.DisplayName) |> printfn "---> decls = %A"
     decls |> Seq.exists (fun d -> d.Head.Symbol.DisplayName = "abc") |> shouldEqual true
 
@@ -373,7 +374,7 @@ type Test() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
 
-    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, 22, inputLines.[3], [], "", fun _ -> false)|> Async.RunSynchronously
+    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(21), fun _ -> false)|> Async.RunSynchronously
     //decls |> List.map (fun d -> d.Head.Symbol.DisplayName) |> printfn "---> decls = %A"
     decls |> Seq.exists (fun d -> d.Head.Symbol.DisplayName = "abc") |> shouldEqual true
 
@@ -390,7 +391,7 @@ type Test() =
     let file = "/home/user/Test.fsx"
     let parseResult, typeCheckResults =  parseAndCheckScript(file, input) 
 
-    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, 15, inputLines.[3], [], "", fun _ -> false)|> Async.RunSynchronously
+    let decls = typeCheckResults.GetDeclarationListSymbols(Some parseResult, 4, inputLines.[3], PartialLongName.Empty(14), fun _ -> false)|> Async.RunSynchronously
     //decls |> List.map (fun d -> d.Head.Symbol.DisplayName) |> printfn "---> decls = %A"
     decls |> Seq.exists (fun d -> d.Head.Symbol.DisplayName = "abc") |> shouldEqual true
 
@@ -613,7 +614,103 @@ let test3 = System.Text.RegularExpressions.RegexOptions.Compiled
                            ]
         |]
 
+[<Test>]
+let ``IL enum fields should be reported`` () = 
+    let input = 
+      """
+open System
 
+let _ =
+    match ConsoleKey.Tab with
+    | ConsoleKey.OemClear -> ConsoleKey.A
+    | _ -> ConsoleKey.B
+"""
+
+    let file = "/home/user/Test.fsx"
+    let _, typeCheckResults = parseAndCheckScript(file, input) 
+    typeCheckResults.GetAllUsesOfAllSymbolsInFile()
+    |> Async.RunSynchronously
+    |> Array.map (fun su -> 
+        let r = su.RangeAlternate 
+        su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
+    |> shouldEqual 
+        [|("ConsoleKey", (5, 10, 5, 20))
+          ("field Tab", (5, 10, 5, 24))
+          ("ConsoleKey", (6, 6, 6, 16))
+          ("field OemClear", (6, 6, 6, 25))
+          ("ConsoleKey", (6, 29, 6, 39))
+          ("field A", (6, 29, 6, 41))
+          ("ConsoleKey", (7, 11, 7, 21))
+          ("field B", (7, 11, 7, 23))
+          ("Test", (1, 0, 1, 0))|]
+
+[<Test>]
+let ``Literal values should be reported`` () = 
+    let input = 
+      """
+module Module1 =
+    let [<Literal>] ModuleValue = 1
+
+    let _ =
+        match ModuleValue + 1 with
+        | ModuleValue -> ModuleValue + 2
+        | _ -> 0
+
+type Class1() =
+    let [<Literal>] ClassValue = 1
+    static let [<Literal>] StaticClassValue = 2
+    
+    let _ = ClassValue
+    let _ = StaticClassValue
+
+    let _ =
+        match ClassValue + StaticClassValue with
+        | ClassValue -> ClassValue + 1
+        | StaticClassValue -> StaticClassValue + 2
+        | _ -> 3
+"""
+
+    let file = "/home/user/Test.fsx"
+    let _, typeCheckResults = parseAndCheckScript(file, input) 
+    typeCheckResults.GetAllUsesOfAllSymbolsInFile()
+    |> Async.RunSynchronously
+    |> Array.map (fun su -> 
+        let r = su.RangeAlternate 
+        su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
+    |> shouldEqual 
+        [|("LiteralAttribute", (3, 10, 3, 17))
+          ("LiteralAttribute", (3, 10, 3, 17))
+          ("member .ctor", (3, 10, 3, 17))
+          ("val ModuleValue", (3, 20, 3, 31))
+          ("val op_Addition", (6, 26, 6, 27))
+          ("val ModuleValue", (6, 14, 6, 25))
+          ("val ModuleValue", (7, 10, 7, 21))
+          ("val op_Addition", (7, 37, 7, 38))
+          ("val ModuleValue", (7, 25, 7, 36))
+          ("Module1", (2, 7, 2, 14))
+          ("Class1", (10, 5, 10, 11))
+          ("member .ctor", (10, 5, 10, 11))
+          ("LiteralAttribute", (11, 10, 11, 17))
+          ("LiteralAttribute", (11, 10, 11, 17))
+          ("member .ctor", (11, 10, 11, 17))
+          ("val ClassValue", (11, 20, 11, 30))
+          ("LiteralAttribute", (12, 17, 12, 24))
+          ("LiteralAttribute", (12, 17, 12, 24))
+          ("member .ctor", (12, 17, 12, 24))
+          ("val StaticClassValue", (12, 27, 12, 43))
+          ("val ClassValue", (14, 12, 14, 22))
+          ("val StaticClassValue", (15, 12, 15, 28))
+          ("val op_Addition", (18, 25, 18, 26))
+          ("val ClassValue", (18, 14, 18, 24))
+          ("val StaticClassValue", (18, 27, 18, 43))
+          ("val ClassValue", (19, 10, 19, 20))
+          ("val op_Addition", (19, 35, 19, 36))
+          ("val ClassValue", (19, 24, 19, 34))
+          ("val StaticClassValue", (20, 10, 20, 26))
+          ("val op_Addition", (20, 47, 20, 48))
+          ("val StaticClassValue", (20, 30, 20, 46))
+          ("member .cctor", (10, 5, 10, 11))
+          ("Test", (1, 0, 1, 0))|]
 
 //-------------------------------------------------------------------------------
 

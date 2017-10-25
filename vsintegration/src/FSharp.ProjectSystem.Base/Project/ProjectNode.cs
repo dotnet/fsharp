@@ -1643,7 +1643,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                     result |= QueryStatusResult.SUPPORTED;
                     if (options == null)
                     {
-                        var currentConfigName = FetchCurrentConfigurationName();
+                        var currentConfigName = GetCurrentConfigurationName();
                         if (currentConfigName != null)
                         {
                             GetProjectOptions(currentConfigName.Value);
@@ -1705,7 +1705,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
                 {
                     if (options == null)
                     {
-                        var currentConfigName = FetchCurrentConfigurationName();
+                        var currentConfigName = GetCurrentConfigurationName();
                         if (currentConfigName != null)
                         {
                             GetProjectOptions(currentConfigName.Value);
@@ -4070,7 +4070,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
         private void TellMSBuildCurrentSolutionConfiguration()
         {
-            var canonicalCfgNameOpt = FetchCurrentConfigurationName();
+            var canonicalCfgNameOpt = GetCurrentConfigurationName();
             if (canonicalCfgNameOpt == null)
                 return;
             var canonicalCfgName = canonicalCfgNameOpt.Value;
@@ -4087,7 +4087,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             this.UpdateMSBuildState();
         }
 
-        private ConfigCanonicalName? FetchCurrentConfigurationName()
+        private ConfigCanonicalName? GetCurrentConfigurationName()
         {
             if (Site == null)
                 return null;
@@ -4102,6 +4102,18 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             cfgs[0].get_CanonicalName(out cfgName);
             // cfgName conventionally has form "Configuration|Platform"
             return new ConfigCanonicalName(cfgName);            
+        }
+
+        internal string GetCurrentOutputAssembly()
+        {
+            var currentConfigName = GetCurrentConfigurationName();
+            if (currentConfigName != null)
+            {
+                GetProjectOptions(currentConfigName.Value);
+                if (options != null)
+                    return options.OutputAssembly;
+            }
+            return null;
         }
 
         /// <summary>

@@ -56,6 +56,7 @@
     <DefineConstants>$(DefineConstants);FX_RESHAPED_MSBUILD</DefineConstants>
     <DefineConstants>$(DefineConstants);FSI_TODO_NETCORE</DefineConstants>
     <OtherFlags>$(OtherFlags) --simpleresolution</OtherFlags>
+    <TargetFramework Condition="'$(TargetFramework)' == ''">netstandard1.6</TargetFramework>
   </PropertyGroup>
 
 </Project>

@@ -5339,6 +5339,8 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                 checkNoArgsForLiteral()
                 UnifyTypes cenv env m ty (finfo.FieldType(cenv.amap, m))
                 let c' = TcFieldInit m lit
+                let item = Item.ILField(finfo)
+                CallNameResolutionSink cenv.tcSink (m, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Pattern, env.DisplayEnv, env.AccessRights)
                 (fun _ -> TPat_const (c', m)), (tpenv, names, takenNames)             
             
         | Item.RecdField rfinfo ->
@@ -5366,6 +5368,8 @@ and TcPat warnOnUpper cenv env topValInfo vFlags (tpenv, names, takenNames) ty p
                 CheckFSharpAttributes cenv.g vref.Attribs m |> CommitOperationResult
                 checkNoArgsForLiteral()
                 UnifyTypes cenv env m ty vexpty
+                let item = Item.Value(vref)
+                CallNameResolutionSink cenv.tcSink (m, env.NameEnv, item, item, emptyTyparInst, ItemOccurence.Pattern, env.DisplayEnv, env.AccessRights)
                 (fun _ -> TPat_const (lit, m)), (tpenv, names, takenNames)             
 
         |  _ -> error (Error(FSComp.SR.tcRequireVarConstRecogOrLiteral(), m))

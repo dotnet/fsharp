@@ -30,10 +30,10 @@ module internal SymbolHelpers =
             let textLine = sourceText.Lines.GetLineFromPosition(position)
             let textLinePos = sourceText.Lines.GetLinePosition(position)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
-            let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document) 
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
+            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document) 
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, parsingOptions)
             let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, false)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document.FilePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true, userOpName = userOpName) 
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document.FilePath, textVersionHash, sourceText.ToString(), projectOptions, allowStaleResults = true, userOpName = userOpName) 
             let! symbolUse = checkFileResults.GetSymbolUseAtLocation(fcsTextLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, userOpName=userOpName)
             let! symbolUses = checkFileResults.GetUsesOfSymbolInFile(symbolUse.Symbol) |> liftAsync
             return symbolUses
@@ -59,8 +59,8 @@ module internal SymbolHelpers =
                     |> Seq.map (fun project ->
                         async {
                             match projectInfoManager.TryGetOptionsForProject(project.Id) with
-                            | Some options ->
-                                let! projectCheckResults = checker.ParseAndCheckProject(options, userOpName = userOpName)
+                            | Some (_parsingOptions, _site, projectOptions) ->
+                                let! projectCheckResults = checker.ParseAndCheckProject(projectOptions, userOpName = userOpName)
                                 return! projectCheckResults.GetUsesOfSymbol(symbol)
                             | None -> return [||]
                         })
@@ -103,10 +103,10 @@ module internal SymbolHelpers =
             let! sourceText = document.GetTextAsync(cancellationToken)
             let originalText = sourceText.ToString(symbolSpan)
             do! Option.guard (originalText.Length > 0)
-            let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, options.OtherOptions |> Seq.toList)
+            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.Name, parsingOptions)
             let! symbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, symbolSpan.Start, document.FilePath, defines, SymbolLookupKind.Greedy, false)
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, options, allowStaleResults = true, userOpName = userOpName)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, allowStaleResults = true, userOpName = userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition(symbolSpan.Start)
             let textLinePos = sourceText.Lines.GetLinePosition(symbolSpan.Start)
             let fcsTextLineNumber = Line.fromZ textLinePos.Line

@@ -12,7 +12,6 @@
     <AssemblyName>EditorService</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <Name>EditorService</Name>
-    <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
     <TargetFrameworkProfile />
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
@@ -61,6 +60,5 @@
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>
-  <Import Project="$(SolutionDir)\..\packages\FSharp.Compiler.Tools.4.1.23\tools\Microsoft.FSharp.Targets" />
-  <Import Project="$(SolutionDir).paket\paket.targets" />
+  <Import Project="$(SolutionDir)\..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets" />
 </Project>

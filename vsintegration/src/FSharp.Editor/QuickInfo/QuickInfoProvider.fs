@@ -55,8 +55,8 @@ module private FSharpQuickInfo =
             let extLineText = (extSourceText.Lines.GetLineFromPosition extSpan.Start).ToString()
             
             // project options need to be retrieved because the signature file could be in another project 
-            let! extProjectOptions = projectInfoManager.TryGetOptionsForProject extDocId.ProjectId
-            let extDefines = CompilerEnvironment.GetCompilationDefinesForEditing (extDocument.FilePath, List.ofSeq extProjectOptions.OtherOptions)
+            let! extParsingOptions, _extSite, extProjectOptions = projectInfoManager.TryGetOptionsForProject extDocId.ProjectId
+            let extDefines = CompilerEnvironment.GetCompilationDefinesForEditing (extDocument.FilePath, extParsingOptions)
             let! extLexerSymbol = Tokenizer.getSymbolAtPosition(extDocId, extSourceText, extSpan.Start, declRange.FileName, extDefines, SymbolLookupKind.Greedy, true)
             let! _, _, extCheckFileResults = checker.ParseAndCheckDocument(extDocument, extProjectOptions, allowStaleResults=true, sourceText=extSourceText, userOpName = userOpName)
             
@@ -91,8 +91,8 @@ module private FSharpQuickInfo =
 
         asyncMaybe {
             let! sourceText = document.GetTextAsync cancellationToken
-            let! projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.FilePath, projectOptions.OtherOptions |> Seq.toList)
+            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject document
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing(document.FilePath, parsingOptions)
             let! lexerSymbol = Tokenizer.getSymbolAtPosition(document.Id, sourceText, position, document.FilePath, defines, SymbolLookupKind.Greedy, true)
             let idRange = lexerSymbol.Ident.idRange  
             let! _, _, checkFileResults = checker.ParseAndCheckDocument(document, projectOptions, allowStaleResults = true, sourceText=sourceText, userOpName = userOpName)
@@ -170,12 +170,12 @@ type internal FSharpQuickInfoProvider
     let xmlMemberIndexService = serviceProvider.GetService(typeof<SVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
 
-    static member ProvideQuickInfo(checker: FSharpChecker, documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, options: FSharpProjectOptions, textVersionHash: int) =
+    static member ProvideQuickInfo(checker: FSharpChecker, documentId: DocumentId, sourceText: SourceText, filePath: string, position: int, parsingOptions: FSharpParsingOptions, options: FSharpProjectOptions, textVersionHash: int) =
         asyncMaybe {
             let! _, _, checkFileResults = checker.ParseAndCheckDocument (filePath, textVersionHash, sourceText.ToString(), options, allowStaleResults = true, userOpName = FSharpQuickInfo.userOpName)
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLineNumber = textLine.LineNumber + 1 // Roslyn line numbers are zero-based
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing (filePath, options.OtherOptions |> Seq.toList)
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing (filePath, parsingOptions)
             let! symbol = Tokenizer.getSymbolAtPosition (documentId, sourceText, position, filePath, defines, SymbolLookupKind.Precise, true)
             let! res = checkFileResults.GetStructuredToolTipText (textLineNumber, symbol.Ident.idRange.EndColumn, textLine.ToString(), symbol.FullIsland, FSharpTokenTag.IDENT, userOpName=FSharpQuickInfo.userOpName) |> liftAsync
             match res with

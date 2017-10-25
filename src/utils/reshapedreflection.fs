@@ -327,7 +327,15 @@ module internal ReflectionAdapters =
         override this.Load (assemblyName:AssemblyName):Assembly =
             this.LoadFromAssemblyName(assemblyName)
 
-    let globalLoadContext = new CustomAssemblyResolver()
+    let globalLoadContext =
+        // This is an unfortunate temporary fix!!!!
+        // ========================================
+        // We need to run fsi tests on a very old version of the corclr because of an unfortunate test framework
+        // This hack detects that, and uses the old code.
+        // On slightly newer code  AssemblyLoadContext.Default is the way to go.
+        match Seq.tryHead (typeof<RuntimeTypeHandle>.GetTypeInfo().Assembly.GetCustomAttributes<AssemblyFileVersionAttribute>()) with
+        | Some a when a.Version = "4.6.24410.01" -> new CustomAssemblyResolver() :> AssemblyLoadContext
+        | _ -> AssemblyLoadContext.Default
 
 #endif
     type System.Reflection.Assembly with

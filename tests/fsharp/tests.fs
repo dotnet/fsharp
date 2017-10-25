@@ -376,7 +376,7 @@ module CoreTests =
 
 
         // Same without the reference to lib.dll - testing an incomplete reference set, but only compiling a subset of the code
-        fsc cfg "%s --noframework --define:NO_LIB_REFERENCE -r:lib3.dll -r:lib2.dll -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
+        fsc cfg "%s -r:System.Runtime.dll --noframework --define:NO_LIB_REFERENCE -r:lib3.dll -r:lib2.dll -o:test.exe -g" cfg.fsc_flags ["test.fsx"]
 
         peverify cfg "test.exe"
 
@@ -2153,6 +2153,9 @@ module TypecheckTests =
         let cfg = testConfig "typecheck/sigs"
         let cfg = { cfg with fsc_flags = cfg.fsc_flags + " --warnon:3218" }
         singleNegTest cfg "neg100"
+
+    [<Test>] 
+    let ``type check neg101`` () = singleNegTest (testConfig "typecheck/sigs") "neg101"
 
     [<Test>] 
     let ``type check neg_byref_1`` () = singleNegTest (testConfig "typecheck/sigs") "neg_byref_1"
