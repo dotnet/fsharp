@@ -3688,32 +3688,33 @@ let ``Test Project25 symbol uses of type-provided members`` () =
 
     allUses |> shouldEqual 
 
-          [|("FSharp.Data", "file1", ((3, 5), (3, 16)), ["namespace"; "provided"]);
-            ("FSharp.Data.XmlProvider", "file1", ((4, 15), (4, 26)),
-             ["class"; "provided"; "erased"]);
-            ("FSharp.Data.XmlProvider", "file1", ((4, 15), (4, 26)),
-             ["class"; "provided"; "erased"]);
-            ("FSharp.Data.XmlProvider", "file1", ((4, 15), (4, 26)),
-             ["class"; "provided"; "erased"]);
-            ("FSharp.Data.XmlProvider", "file1", ((4, 15), (4, 26)),
-             ["class"; "provided"; "erased"]);
-            ("TypeProviderTests.Project", "file1", ((4, 5), (4, 12)), ["abbrev"]);
-            ("TypeProviderTests.Project", "file1", ((5, 8), (5, 15)), ["abbrev"]);
-            ("FSharp.Data.XmlProvider<...>.GetSample", "file1", ((5, 8), (5, 25)),
-             ["member"]);
-            ("Microsoft.FSharp.Core.int", "file1", ((7, 23), (7, 26)), ["abbrev"]);
-            ("Microsoft.FSharp.Core.int", "file1", ((7, 23), (7, 26)), ["abbrev"]);
-            ("TypeProviderTests.Record.Field", "file1", ((7, 16), (7, 21)), ["field"]);
-            ("TypeProviderTests.Record", "file1", ((7, 5), (7, 11)), ["record"]);
-            ("TypeProviderTests.Record", "file1", ((8, 10), (8, 16)), ["record"]);
-            ("TypeProviderTests.Record.Field", "file1", ((8, 17), (8, 22)), ["field"]);
-            ("TypeProviderTests.r", "file1", ((8, 4), (8, 5)), ["val"]);
-            ("FSharp.Data.XmlProvider", "file1", ((10, 8), (10, 19)),
-             ["class"; "provided"; "erased"]);
-            ("FSharp.Data.XmlProvider<...>", "file1", ((10, 8), (10, 68)),
-             ["class"; "provided"; "staticinst"; "erased"]);
-            ("FSharp.Data.XmlProvider<...>.GetSample", "file1", ((10, 8), (10, 78)),
-             ["member"]); ("TypeProviderTests", "file1", ((2, 7), (2, 24)), ["module"])|]
+         [|("FSharp.Data", "file1", ((3, 5), (3, 16)), ["namespace"; "provided"]);
+           ("Microsoft.FSharp.Data", "file1", ((3, 5), (3, 16)), ["namespace"]);
+           ("FSharp.Data.XmlProvider", "file1", ((4, 15), (4, 26)),
+            ["class"; "provided"; "erased"]);
+           ("FSharp.Data.XmlProvider", "file1", ((4, 15), (4, 26)),
+            ["class"; "provided"; "erased"]);
+           ("FSharp.Data.XmlProvider", "file1", ((4, 15), (4, 26)),
+            ["class"; "provided"; "erased"]);
+           ("FSharp.Data.XmlProvider", "file1", ((4, 15), (4, 26)),
+            ["class"; "provided"; "erased"]);
+           ("TypeProviderTests.Project", "file1", ((4, 5), (4, 12)), ["abbrev"]);
+           ("TypeProviderTests.Project", "file1", ((5, 8), (5, 15)), ["abbrev"]);
+           ("FSharp.Data.XmlProvider<...>.GetSample", "file1", ((5, 8), (5, 25)),
+            ["member"]);
+           ("Microsoft.FSharp.Core.int", "file1", ((7, 23), (7, 26)), ["abbrev"]);
+           ("Microsoft.FSharp.Core.int", "file1", ((7, 23), (7, 26)), ["abbrev"]);
+           ("TypeProviderTests.Record.Field", "file1", ((7, 16), (7, 21)), ["field"]);
+           ("TypeProviderTests.Record", "file1", ((7, 5), (7, 11)), ["record"]);
+           ("TypeProviderTests.Record", "file1", ((8, 10), (8, 16)), ["record"]);
+           ("TypeProviderTests.Record.Field", "file1", ((8, 17), (8, 22)), ["field"]);
+           ("TypeProviderTests.r", "file1", ((8, 4), (8, 5)), ["val"]);
+           ("FSharp.Data.XmlProvider", "file1", ((10, 8), (10, 19)),
+            ["class"; "provided"; "erased"]);
+           ("FSharp.Data.XmlProvider<...>", "file1", ((10, 8), (10, 68)),
+            ["class"; "provided"; "staticinst"; "erased"]);
+           ("FSharp.Data.XmlProvider<...>.GetSample", "file1", ((10, 8), (10, 78)),
+            ["member"]); ("TypeProviderTests", "file1", ((2, 7), (2, 24)), ["module"])|]
     let getSampleSymbolUseOpt = 
         backgroundTypedParse1.GetSymbolUseAtLocation(5,25,"",["GetSample"]) 
         |> Async.RunSynchronously
