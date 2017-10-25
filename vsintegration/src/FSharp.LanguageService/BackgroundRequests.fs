@@ -7,14 +7,10 @@
 namespace Microsoft.VisualStudio.FSharp.LanguageService
 
 open System
-open System.Runtime.InteropServices
-open Microsoft.VisualStudio
 open Microsoft.VisualStudio.TextManager.Interop 
 open Microsoft.VisualStudio.Text
-open Microsoft.VisualStudio.OLE.Interop
-open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
+open Microsoft.VisualStudio.FSharp.LanguageService.SiteProvider
 
 
 #nowarn "44" // use of obsolete CheckFileInProjectAllowingStaleCachedResults
@@ -113,7 +109,7 @@ type internal FSharpLanguageServiceBackgroundRequests_DEPRECATED
                     let rdt = getServiceProvider().RunningDocumentTable
                     let projectSite = getProjectSitesAndFiles().FindOwningProject_DEPRECATED(rdt,fileName)
                     let enableInMemoryCrossProjectReferences = true
-                    let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, fileName, None, getServiceProvider(), false)                            
+                    let _, checkOptions = ProjectSitesAndFiles.GetProjectOptionsForProjectSite(enableInMemoryCrossProjectReferences, (fun _ -> None), projectSite, getServiceProvider(), None(*projectId*), fileName, None(*extraProjectInfo*), None(*FSharpProjectOptionsTable*), false)
                     let projectFileName = projectSite.ProjectFileName
                     let data = 
                         {   ProjectSite = projectSite
