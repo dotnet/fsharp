@@ -357,21 +357,24 @@ type internal FSharpCodeLensService
 
             for text in taggedText do
 
-                let properties = layoutTagToFormatting text.Tag
-                let properties =
+                let coloredProperties = layoutTagToFormatting text.Tag
+                let actualProperties =
                     if Settings.CodeLens.UseColors
                     then
-                        match properties.ForegroundBrush with
+                        // If color is gray (R=G=B), change to correct gray color.
+                        // Otherwise, use the provided color.
+                        match coloredProperties.ForegroundBrush with
                         | :? SolidColorBrush as b ->
                             let c = b.Color
-                            // Change to correct gray color
-                            if c.R = c.G && c.R = c.B then properties.SetForeground(Color.FromRgb(153uy, 153uy, 153uy)) else properties
-                        | _ -> properties
+                            if c.R = c.G && c.R = c.B
+                            then coloredProperties.SetForeground(Color.FromRgb(153uy, 153uy, 153uy))
+                            else coloredProperties
+                        | _ -> coloredProperties
                     else
-                        properties.SetForeground(Color.FromRgb(153uy, 153uy, 153uy))
+                        coloredProperties.SetForeground(Color.FromRgb(153uy, 153uy, 153uy))
 
                 let run = Documents.Run text.Text
-                DependencyObjectExtensions.SetTextProperties (run, properties)
+                DependencyObjectExtensions.SetTextProperties (run, actualProperties)
 
                 let inl =
                     match text with
@@ -381,7 +384,7 @@ type internal FSharpCodeLensService
                             navigation.NavigateTo nav.Range)
                         h :> Documents.Inline
                     | _ -> run :> _
-                DependencyObjectExtensions.SetTextProperties (inl, properties)
+                DependencyObjectExtensions.SetTextProperties (inl, actualProperties)
                 textBox.Inlines.Add inl
             lens.Computed <- true
             lens.UiElement <- textBox
