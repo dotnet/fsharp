@@ -8,6 +8,7 @@ open Microsoft.FSharp.Compiler.Range
 
 module UnusedOpens =
     open Microsoft.FSharp.Compiler.PrettyNaming
+    open System.Runtime.CompilerServices
 
     type Module =
         { Entity: FSharpEntity
@@ -24,6 +25,14 @@ module UnusedOpens =
                       if ent.IsFSharpUnion && not (Symbol.hasAttribute<RequireQualifiedAccessAttribute> ent.Attributes) then
                           for unionCase in ent.UnionCases do
                               yield upcast unionCase
+
+                      if Symbol.hasAttribute<ExtensionAttribute> ent.Attributes then
+                          for fv in ent.MembersFunctionsAndValues do
+                              // fv.IsExtensionMember is always false for C# extension methods returning by `MembersFunctionsAndValues`,
+                              // so we have to check Extension attribute instead. 
+                              // (note: fv.IsExtensionMember has proper value for symbols returning by GetAllUsesOfAllSymbolsInFile though)
+                              if Symbol.hasAttribute<ExtensionAttribute> fv.Attributes then
+                                  yield upcast fv
                   
                   for fv in this.Entity.MembersFunctionsAndValues do 
                       yield upcast fv
