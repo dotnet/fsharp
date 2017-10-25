@@ -124,9 +124,4 @@ module internal OptionsUI =
     type internal CodeLensOptionPage() =
         inherit AbstractOptionPage<CodeLensOptions>()
         override this.CreateView() =
-            let view = CodeLensOptionControl()
-            bindCheckBox view.replaceWithLineLens "ReplaceWithLineLens"
-            bindCheckBox view.enableCodeLens "Enabled"
-            bindCheckBox view.useColors "UseColors"
-            bindTextBox view.prefix "Prefix"
-            upcast view
+            upcast CodeLensOptionControl()
