@@ -703,4 +703,23 @@ let _ = x
 """
     => []
 
+[<Test>]
+let ``C# extension methods are taken into account``() =
+    """
+open System.Linq
 
+module Test =
+    let xs = []
+    let _ = xs.ToList()
+""" 
+    => []      
+
+[<Test>]
+let ``namespace which contains types with C# extension methods is marked as unused if no extension is used``() =
+    """
+open System.Linq
+
+module Test =
+    let xs = []
+""" 
+    => [ 2, (5, 16) ]      
