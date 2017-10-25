@@ -43,7 +43,10 @@ type internal UnusedOpensDiagnosticAnalyzer() =
             do! Option.guard Settings.CodeFixes.UnusedOpens
             let! sourceText = document.GetTextAsync()
             let! _, _, checkResults = checker.ParseAndCheckDocument(document, options, sourceText = sourceText, allowStaleResults = true, userOpName = userOpName)
-            return! UnusedOpens.getUnusedOpens(checkResults, fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()) |> liftAsync
+            let sw = Stopwatch.StartNew()
+            let! unusedOpens = UnusedOpens.getUnusedOpens(checkResults, fun lineNumber -> sourceText.Lines.[Line.toZ lineNumber].ToString()) |> liftAsync
+            Logging.Logging.logInfof "*** Got %d unused opens in %O" unusedOpens.Length sw.Elapsed
+            return unusedOpens
         } 
 
     override this.AnalyzeSemanticsAsync(document: Document, cancellationToken: CancellationToken) =
