@@ -385,7 +385,7 @@ type internal FSharpCodeLensService
                 textBox.Inlines.Add inl
             lens.Computed <- true
             lens.UiElement <- textBox
-        }
+        }  
 
     let executeCodeLenseAsync () =  
         asyncMaybe {
