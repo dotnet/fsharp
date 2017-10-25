@@ -65,9 +65,6 @@ module internal OptionsUIHelpers =
     let bindCheckBox (checkBox: CheckBox) (path: string) =
         checkBox.SetBinding(CheckBox.IsCheckedProperty, path) |> ignore
 
-    let bindTextBox (textBox: TextBox) (path: string) =
-        textBox.SetBinding(TextBox.TextProperty, path) |> ignore
-        
     // some helpers to create option views in code instead of XAML
     let ( *** ) (control : #IAddChild) (children: UIElement list) =
         children |> List.iter control.AddChild

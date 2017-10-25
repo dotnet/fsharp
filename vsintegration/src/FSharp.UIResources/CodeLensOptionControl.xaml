@@ -19,7 +19,7 @@
             <StackPanel>
                 <GroupBox Header="{x:Static local:Strings.CodeLens}">
                     <StackPanel>
-                        <CheckBox x:Name="enableCodeLens" IsChecked="{Binding CodeLensSwitch}"
+                        <CheckBox x:Name="enableCodeLens" IsChecked="{Binding Enabled}"
                       Content="{x:Static local:Strings.CodeLens_Switch}"/>
                         <CheckBox x:Name="useColors" IsChecked="{Binding UseColors}"
                       Content="{x:Static local:Strings.CodeLens_UseColors}"/>
@@ -32,12 +32,9 @@
                             </Grid.ColumnDefinitions>
                             <Label Grid.Column="0" Content="{x:Static local:Strings.CodeLens_Prefix}"/>
                             <TextBox x:Name="prefix" Grid.Column="1" 
+                                Text="{Binding Prefix, UpdateSourceTrigger=PropertyChanged}"
                                 HorizontalContentAlignment="Right" 
                                 VerticalContentAlignment="Center" Margin="7,0,-116,0">
-                                <TextBox.Text>
-                                    <Binding UpdateSourceTrigger="PropertyChanged" Path="Prefix">
-                                    </Binding>
-                                </TextBox.Text>
                             </TextBox>
                         </Grid>
                     </StackPanel>
