@@ -127,19 +127,15 @@ module UnusedOpens =
                              |> List.exists (fun modul ->
                                   symbolUsesInScope
                                   |> Array.exists (fun symbolUse ->
-                                       match symbolUse.Symbol with
-                                       | :? FSharpMemberOrFunctionOrValue as f ->
-                                            match f.EnclosingEntity with
-                                            | Some enclosingEntity -> enclosingEntity.IsEffectivelySameAs modul.Entity
-                                            | _ -> false
-                                       | _ -> false
-                                       //| :? FSharpEntity as ent ->
-                                       //     match ent. EnclosingEntity with
-                                       //     | Some enclosingEntity -> enclosingEntity.IsEffectivelySameAs modul.Entity
-                                       //     | _ -> false
-
-                                       //modul.ChildSymbols
-                                       //|> Seq.exists (fun x -> x.IsEffectivelySameAs symbolUse.Symbol))))
+                                       //match symbolUse.Symbol with
+                                       //| :? FSharpMemberOrFunctionOrValue as f ->
+                                       //     match f.EnclosingEntity with
+                                       //     | Some enclosingEntity -> Some (enclosingEntity.IsEffectivelySameAs modul.Entity)
+                                       //     | _ -> None
+                                       //| _ -> None
+                                       //|> Option.defaultWith (fun () ->
+                                            modul.ChildSymbols
+                                            |> Seq.exists (fun x -> x.IsEffectivelySameAs symbolUse.Symbol)
                                      )))
                         |> List.collect (fun mg -> 
                             mg.Modules |> List.map (fun x -> { Module = x.Entity; AppliedScope = openStatement.AppliedScope }))
