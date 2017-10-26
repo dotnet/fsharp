@@ -1,11 +1,8 @@
 @echo off
 
-dotnet --version
-.nuget\NuGet.exe restore -PackagesDirectory packages
 setlocal
 cd fcs
 
-dotnet restore tools.fsproj
 if errorlevel 1 (
   endlocal
   exit /b %errorlevel%
