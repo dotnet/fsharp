@@ -127,17 +127,18 @@ module UnusedOpens =
                              |> List.exists (fun modul ->
                                   symbolUsesInScope
                                   |> Array.exists (fun symbolUse ->
-                                       match symbolUse.Symbol with
-                                       | :? FSharpMemberOrFunctionOrValue as f ->
-                                            match f.EnclosingEntity with
-                                            | Some ent when ent.IsNamespace || ent.IsFSharpModule ->
-                                                Some (ent.IsEffectivelySameAs modul.Entity)
-                                            | _ -> None
-                                       | _ -> None
-                                       |> Option.defaultWith (fun () ->
-                                            modul.ChildSymbols
-                                            |> Seq.exists (fun x -> x.IsEffectivelySameAs symbolUse.Symbol)
-                                     ))))
+                                       let usedByEnclosingEntity =
+                                           match symbolUse.Symbol with
+                                           | :? FSharpMemberOrFunctionOrValue as f ->
+                                                match f.EnclosingEntity with
+                                                | Some ent when ent.IsNamespace || ent.IsFSharpModule ->
+                                                    Some (ent.IsEffectivelySameAs modul.Entity)
+                                                | _ -> None
+                                           | _ -> None
+                                       match usedByEnclosingEntity with
+                                       | Some x -> x
+                                       | None -> modul.ChildSymbols |> Seq.exists (fun x -> x.IsEffectivelySameAs symbolUse.Symbol)
+                                     )))
                         |> List.collect (fun mg -> 
                             mg.Modules |> List.map (fun x -> { Module = x.Entity; AppliedScope = openStatement.AppliedScope }))
                                           
