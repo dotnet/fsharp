@@ -368,7 +368,7 @@
              Condition="'$(Configuration)' != 'Proto'" />
 
   <Target Name="GenerateFSharpTextResources"
-          BeforeTargets="CoreResGen;PrepareForBuild"
+          BeforeTargets="GetXlfSources;CoreResGen;PrepareForBuild"
           Condition="'$(Configuration)' != 'Proto'">
 
     <MakeDir Directories="$(IntermediateOutputPath)" />

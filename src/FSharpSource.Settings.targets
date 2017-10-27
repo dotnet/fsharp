@@ -49,6 +49,10 @@
     <FSharpCore41FrozenPortableVersion>4.1.20</FSharpCore41FrozenPortableVersion>
     <FSharpCore41FrozenPortableTargetVersion>4.1.21</FSharpCore41FrozenPortableTargetVersion>
     <FSharpCore42TargetVersion>4.2.4</FSharpCore42TargetVersion>
+
+    <!-- Localization -->
+    <UpdateXlfOnBuild Condition="'$(CI)' != '1'">true</UpdateXlfOnBuild>
+    <XliffTasksVersion>0.2.0-beta-000070</XliffTasksVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(MonoPackaging)' != 'true' AND '$(OS)' != 'Unix'">
@@ -144,6 +148,8 @@
     <FsiToolPath>$(FSharpSourcesRoot)\..\packages\FSharp.Compiler.Tools.4.1.27\tools</FsiToolPath>
   </PropertyGroup>
 
+  <Import Project="$(MSBuildThisFileDirectory)..\packages\XliffTasks.$(XliffTasksVersion)\build\XliffTasks.props" Condition="'$(DisableLocalization)' != 'true'" />
+  <Import Project="$(RestorePackagesPath)\XliffTasks.$(XliffTasksVersion)\build\XliffTasks.targets" Condition="'$(DisableLocalization)' != 'true'" />
   <Import Project="../Tools/Build.Common.props" Condition="'$(TargetDotnetProfile)'=='coreclr'"/>
   <Import Project="$(BuildVersionFilePath)"     Condition="Exists('$(BuildVersionFilePath)')" />
 
