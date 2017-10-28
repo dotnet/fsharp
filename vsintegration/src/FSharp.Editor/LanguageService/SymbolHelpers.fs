@@ -59,7 +59,7 @@ module internal SymbolHelpers =
                     |> Seq.map (fun project ->
                         async {
                             match projectInfoManager.TryGetOptionsForProject(project.Id) with
-                            | Some (_parsingOptions, projectOptions) ->
+                            | Some (_parsingOptions, _site, projectOptions) ->
                                 let! projectCheckResults = checker.ParseAndCheckProject(projectOptions, userOpName = userOpName)
                                 return! projectCheckResults.GetUsesOfSymbol(symbol)
                             | None -> return [||]

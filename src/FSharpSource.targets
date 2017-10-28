@@ -402,6 +402,12 @@
     <GeneratedFSharpInternalsVisibleToFile>$(IntermediateOutputPath)$(MSBuildProjectName).InternalsVisibleTo$(DefaultLanguageSourceExtension)</GeneratedFSharpInternalsVisibleToFile>
   </PropertyGroup>
 
+  <ItemDefinitionGroup>
+    <InternalsVisibleTo>
+      <Visible>false</Visible>
+    </InternalsVisibleTo>
+  </ItemDefinitionGroup>
+
   <Target Name="PrepareFSharpGenerateInternalsVisibleToFile"
           Condition="'$(Configuration)' != 'Proto' and '@(InternalsVisibleTo)' != ''">
     <PropertyGroup>

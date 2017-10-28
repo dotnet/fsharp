@@ -27,3 +27,5 @@ config.make.in text eol=lf
 targets.make text eol=lf
 configure.ac text eol=lf
 Makefile.in text eol=lf
+
+*.bsl linguist-vendored=true
