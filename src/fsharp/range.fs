@@ -170,7 +170,14 @@ type range(code:int64) =
     override r.Equals(obj) = match obj with :? range as r2 -> code = r2.Code | _ -> false
     override r.GetHashCode() = hash code
 
-let mkRange f b e = range (fileIndexOfFile f, b, e)
+let mkRange f b e =
+    let normalizedFilePath =
+        if isNull f then null
+        // remove relative parts from full path
+        elif Path.IsPathRooted f then try Path.GetFullPath f with _ -> f
+        else f
+    range (fileIndexOfFile normalizedFilePath, b, e)
+
 let mkFileIndexRange fi b e = range (fi, b, e)
 
 (* end representation, start derived ops *)
