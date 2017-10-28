@@ -89,10 +89,16 @@ module Symbol =
         if e.IsEnum || e.IsValueType || hasAttribute<MeasureAnnotatedAbbreviationAttribute> e.Attributes then Some()
         else None
 
+#if EXTENSIONTYPING
     let (|Class|_|) (original: FSharpEntity, abbreviated: FSharpEntity, _) = 
         if abbreviated.IsClass 
            && (not abbreviated.IsStaticInstantiation || original.IsFSharpAbbreviation) then Some()
+        else None
+#else
+    let (|Class|_|) (original: FSharpEntity, abbreviated: FSharpEntity, _) = 
+        if abbreviated.IsClass && original.IsFSharpAbbreviation then Some()
         else None 
+#endif        
 
     let (|Record|_|) (e: FSharpEntity) = if e.IsFSharpRecord then Some() else None
     let (|UnionType|_|) (e: FSharpEntity) = if e.IsFSharpUnion then Some() else None
@@ -108,17 +114,21 @@ module Symbol =
             || (e.IsFSharp && e.IsOpaque && not e.IsFSharpModule && not e.IsNamespace) then Some() 
         else None
 
+#if EXTENSIONTYPING
     let (|ProvidedType|_|) (e: FSharpEntity) =
         if (e.IsProvided || e.IsProvidedAndErased || e.IsProvidedAndGenerated) && e.CompiledName = e.DisplayName then
             Some()
         else None
+#endif        
 
     let (|ByRef|_|) (e: FSharpEntity) = if e.IsByRef then Some() else None
     let (|Array|_|) (e: FSharpEntity) = if e.IsArrayType then Some() else None
     let (|FSharpModule|_|) (entity: FSharpEntity) = if entity.IsFSharpModule then Some() else None
 
     let (|Namespace|_|) (entity: FSharpEntity) = if entity.IsNamespace then Some() else None
+#if EXTENSIONTYPING    
     let (|ProvidedAndErasedType|_|) (entity: FSharpEntity) = if entity.IsProvidedAndErased then Some() else None
+#endif
     let (|Enum|_|) (entity: FSharpEntity) = if entity.IsEnum then Some() else None
 
     let (|Tuple|_|) (ty: FSharpType option) = 
