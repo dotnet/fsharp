@@ -8,7 +8,7 @@
     <AssemblyName>FSharp.Compiler.Private</AssemblyName>
     <NoWarn>$(NoWarn);45;55;62;75;1204</NoWarn>
     <AllowCrossTargeting>true</AllowCrossTargeting>
-    <DefineConstants>$(DefineConstants);EXTENSIONTYPING;COMPILER;BUILD_FROM_SOURCE</DefineConstants>
+    <DefineConstants>$(DefineConstants);EXTENSIONTYPING;COMPILER</DefineConstants>
     <OtherFlags>$(OtherFlags) --warnon:1182 --maxerrors:20 --extraoptimizationloops:1</OtherFlags>
   </PropertyGroup>
 
@@ -23,6 +23,7 @@
     <Compile Include="..\..\assemblyinfo\assemblyinfo.FSharp.Compiler.Private.dll.fs">
       <Link>assemblyinfo.FSharp.Compiler.Private.dll.fs</Link>
     </Compile>
+    <Compile Include="InternalsVisibleTo.fs" />
     <FsSrGen Include="$(FSharpSourcesRoot)\fsharp\FSComp.txt">
       <Link>FSComp.txt</Link>
     </FsSrGen>

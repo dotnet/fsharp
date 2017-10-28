@@ -538,10 +538,16 @@ set _ngenexe="%SystemRoot%\Microsoft.NET\Framework\v4.0.30319\ngen.exe"
 if not exist %_ngenexe% echo Error: Could not find ngen.exe. && goto :failure
 
 echo ---------------- Done with prepare, starting package restore ----------------
+
 set _nugetexe="%~dp0.nuget\NuGet.exe"
 set _nugetconfig="%~dp0.nuget\NuGet.Config"
 
 if "%RestorePackages%" == "true" (
+    cd fcs
+    .paket\paket.exe restore
+    cd..
+    @if ERRORLEVEL 1 echo Error: Paket restore failed  && goto :failure
+
     %_ngenexe% install %_nugetexe%  /nologo 
 
     %_nugetexe% restore packages.config -PackagesDirectory packages -ConfigFile %_nugetconfig%
@@ -828,6 +834,9 @@ if "%TEST_NET40_COREUNIT_SUITE%" == "1" (
         set OUTPUTARG=--output:"!OUTPUTFILE!" 
     )
 
+    echo "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Build.Unittests.dll" !WHERE_ARG_NUNIT!
+         "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Build.Unittests.dll" !WHERE_ARG_NUNIT!
+
     echo "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
          "!NUNIT3_CONSOLE!" --verbose --framework:V4.0 --result:"!XMLFILE!;format=nunit3" !OUTPUTARG! !ERRORARG! --work:"!FSCBINPATH!" "!FSCBINPATH!\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
 
@@ -850,6 +859,9 @@ if "%TEST_CORECLR_COREUNIT_SUITE%" == "1" (
     set XMLFILE=!RESULTSDIR!\test-coreclr-coreunit-results.xml
     set OUTPUTFILE=!RESULTSDIR!\test-coreclr-coreunit-output.log
     set ERRORFILE=!RESULTSDIR!\test-coreclr-coreunit-errors.log
+
+    echo "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Build.Unittests\FSharp.Build.Unittests.dll" !WHERE_ARG_NUNIT!
+         "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Build.Unittests\FSharp.Build.Unittests.dll" !WHERE_ARG_NUNIT!
 
     echo "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!
          "%_dotnetcliexe%" "%~dp0tests\testbin\!BUILD_CONFIG!\coreclr\FSharp.Core.Unittests\FSharp.Core.Unittests.dll" !WHERE_ARG_NUNIT!

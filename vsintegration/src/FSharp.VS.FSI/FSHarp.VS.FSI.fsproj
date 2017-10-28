@@ -39,6 +39,14 @@
       </FilesToSign>
     </ItemGroup>
   </Target>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="FSharp.Editor" />
+    <InternalsVisibleTo Include="FSharp.LanguageService" />
+    <InternalsVisibleTo Include="FSharp.LanguageService.Base" />
+    <InternalsVisibleTo Include="FSharp.ProjectSystem.FSharp" />
+  </ItemGroup>
+
   <ItemGroup>
     <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
       <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
@@ -60,7 +68,8 @@
     <Compile Include="fsiSessionToolWindow.fs" />
     <Compile Include="fsiPackageHooks.fs" />
     <Compile Include="fsiPackage.fs" />
-    <EmbeddedResource Include="Properties.resx" GenerateSource="true">
+    <EmbeddedResource Include="Properties.resx">
+      <GenerateSource>true</GenerateSource>
       <GeneratedModuleName>Microsoft.VisualStudio.FSharp.Interactive.SRProperties</GeneratedModuleName>
       <GenerateLegacyCode>true</GenerateLegacyCode>
       <ManifestResourceName>Properties</ManifestResourceName>

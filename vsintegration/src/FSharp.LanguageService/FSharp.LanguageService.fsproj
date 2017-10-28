@@ -43,6 +43,18 @@
     </ItemGroup>
   </Target>
   <ItemGroup>
+    <InternalsVisibleTo Include="Fsc" />
+    <InternalsVisibleTo Include="Fsi" />
+    <InternalsVisibleTo Include="FSharp.ProjectSystem.Base" />
+    <InternalsVisibleTo Include="FSharp.ProjectSystem.FSharp" />
+    <InternalsVisibleTo Include="FSharp.ProjectSystem.PropertyPages" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Interactive.Settings" />
+    <InternalsVisibleTo Include="FSharp.Compiler.Server.Shared" />
+    <InternalsVisibleTo Include="VisualFSharp.Salsa" />
+    <InternalsVisibleTo Include="VisualFSharp.Unittests" />
+    <InternalsVisibleTo Include="FSharp.Editor" />
+  </ItemGroup>
+  <ItemGroup>
     <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
       <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
       <LciCommentFile>$(FSharpSourcesRoot)\..\loc\lci\$(AssemblyName).dll.lci</LciCommentFile>
@@ -50,7 +62,8 @@
       <InProject>false</InProject>
     </FilesToLocalize>
     <EmbeddedResource Include="VSPackage.resx" />
-    <EmbeddedResource Include="FSLangSvcStrings.resx" GenerateSource="true">
+    <EmbeddedResource Include="FSLangSvcStrings.resx">
+      <GenerateSource>true</GenerateSource>
       <GeneratedModuleName>Microsoft.VisualStudio.FSharp.LanguageService.Strings</GeneratedModuleName>
     </EmbeddedResource>
     <Compile Include="AssemblyInfo.fs" />

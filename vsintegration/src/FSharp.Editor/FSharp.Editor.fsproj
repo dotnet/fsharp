@@ -29,7 +29,13 @@
     <IncludePkgdefInVSIXContainer>true</IncludePkgdefInVSIXContainer>
   </PropertyGroup>
   <ItemGroup>
-    <EmbeddedResource Include="FSharp.Editor.resx" GenerateSource="true">
+    <InternalsVisibleTo Include="FSharp.ProjectSystem.FSharp" />
+    <InternalsVisibleTo Include="VisualFSharp.Unittests" />
+    <InternalsVisibleTo Include="VisualFSharp.Salsa" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="FSharp.Editor.resx">
+      <GenerateSource>true</GenerateSource>
       <GeneratedModuleName>Microsoft.VisualStudio.FSharp.Editor.SR</GeneratedModuleName>
     </EmbeddedResource>
     <Compile Include="Common\AssemblyInfo.fs" />
