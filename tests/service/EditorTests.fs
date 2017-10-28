@@ -635,18 +635,17 @@ let _ =
         su.Symbol.ToString(), (r.StartLine, r.StartColumn, r.EndLine, r.EndColumn))
     |> shouldEqual 
         // note: these "System" sysbol uses are not duplications because each of them corresponts to different namespaces
-        [|("System", (2, 5, 2, 11)); ("System", (2, 5, 2, 11)); 
+        [|("System", (2, 5, 2, 11)); ("System", (2, 5, 2, 11));
           ("System", (2, 5, 2, 11)); ("System", (2, 5, 2, 11));
           ("System", (2, 5, 2, 11)); ("System", (2, 5, 2, 11));
           ("System", (2, 5, 2, 11)); ("System", (2, 5, 2, 11));
           ("System", (2, 5, 2, 11)); ("System", (2, 5, 2, 11));
           ("System", (2, 5, 2, 11)); ("System", (2, 5, 2, 11));
-          ("System", (2, 5, 2, 11)); ("System", (2, 5, 2, 11));
-          ("ConsoleKey", (5, 10, 5, 20)); ("field Tab", (5, 10, 5, 24));
-          ("ConsoleKey", (6, 6, 6, 16)); ("field OemClear", (6, 6, 6, 25));
-          ("ConsoleKey", (6, 29, 6, 39)); ("field A", (6, 29, 6, 41));
-          ("ConsoleKey", (7, 11, 7, 21)); ("field B", (7, 11, 7, 23));
-          ("Test", (1, 0, 1, 0))|]
+          ("System", (2, 5, 2, 11)); ("ConsoleKey", (5, 10, 5, 20));
+          ("field Tab", (5, 10, 5, 24)); ("ConsoleKey", (6, 6, 6, 16));
+          ("field OemClear", (6, 6, 6, 25)); ("ConsoleKey", (6, 29, 6, 39));
+          ("field A", (6, 29, 6, 41)); ("ConsoleKey", (7, 11, 7, 21));
+          ("field B", (7, 11, 7, 23)); ("Test", (1, 0, 1, 0))|]
 
 [<Test>]
 let ``Literal values should be reported`` () = 
