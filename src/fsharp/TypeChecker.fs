@@ -699,6 +699,36 @@ let ImplicitlyOpenOwnNamespace tcSink g amap scopem enclosingNamespacePath env =
 // Helpers for unification
 //------------------------------------------------------------------------- 
 
+/// When the context is matching the oldRange then this function shrinks it to newRange.
+/// This can be used to change context over no-op expressions like parens.
+let ShrinkContext env oldRange newRange =
+    match env.eContextInfo with
+    | ContextInfo.NoContext
+    | ContextInfo.RecordFields
+    | ContextInfo.TupleInRecordFields
+    | ContextInfo.ReturnInComputationExpression
+    | ContextInfo.YieldInComputationExpression
+    | ContextInfo.RuntimeTypeTest _
+    | ContextInfo.DowncastUsedInsteadOfUpcast _ ->
+        env
+    | ContextInfo.CollectionElement (b,m) ->
+        if m <> oldRange then env else
+        { env with eContextInfo = ContextInfo.CollectionElement(b,newRange) }
+    | ContextInfo.FollowingPatternMatchClause m -> 
+        if m <> oldRange then env else
+        { env with eContextInfo = ContextInfo.FollowingPatternMatchClause newRange }
+    | ContextInfo.PatternMatchGuard m -> 
+        if m <> oldRange then env else
+        { env with eContextInfo = ContextInfo.PatternMatchGuard newRange }
+    | ContextInfo.IfExpression m -> 
+        if m <> oldRange then env else
+        { env with eContextInfo = ContextInfo.IfExpression newRange }
+    | ContextInfo.OmittedElseBranch m -> 
+        if m <> oldRange then env else
+        { env with eContextInfo = ContextInfo.OmittedElseBranch newRange }
+    | ContextInfo.ElseBranchResult m -> 
+        if m <> oldRange then env else
+        { env with eContextInfo = ContextInfo.ElseBranchResult newRange }
 
 /// Optimized unification routine that avoids creating new inference 
 /// variables unnecessarily
@@ -5610,6 +5640,7 @@ and TcExprUndelayed cenv overallTy env tpenv (expr: SynExpr) =
         // We invoke CallExprHasTypeSink for every construct which is atomic in the syntax, i.e. where a '.' immediately following the 
         // construct is a dot-lookup for the result of the construct. 
         CallExprHasTypeSink cenv.tcSink (mWholeExprIncludingParentheses, env.NameEnv, overallTy, env.DisplayEnv, env.eAccessRights)
+        let env = ShrinkContext env mWholeExprIncludingParentheses expr2.Range
         TcExpr cenv overallTy env tpenv expr2
 
     | SynExpr.DotIndexedGet _ | SynExpr.DotIndexedSet _
@@ -10077,11 +10108,11 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
     | SynExpr.Sequential (sp, true, e1, e2, m) when not isCompExpr ->
         let e1', _ = TcStmtThatCantBeCtorBody cenv env tpenv e1
         // tailcall
+        let env = ShrinkContext env m e2.Range
         TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr e2 (fun (e2', tpenv) -> 
             cont (Expr.Sequential(e1', e2', NormalSeq, sp, m), tpenv))
 
     | SynExpr.LetOrUse (isRec, isUse, binds, body, m) when not (isUse && isCompExpr) ->
-                
         if isRec then 
             // TcLinearExprs processes at most one recursive binding, this is not tailcalling
             CheckRecursiveBindingIds binds
@@ -10094,6 +10125,7 @@ and TcLinearExprs bodyChecker cenv env overallTy tpenv isCompExpr expr cont =
         else 
             // TcLinearExprs processes multiple 'let' bindings in a tail recursive way
             let mkf, envinner, tpenv = TcLetBinding cenv isUse env ExprContainerInfo ExpressionBinding tpenv (binds, m, body.Range)
+            let envinner = ShrinkContext envinner m body.Range
             TcLinearExprs bodyChecker cenv envinner overallTy tpenv isCompExpr body (fun (x, tpenv) -> 
                 cont (fst (mkf (x, overallTy)), tpenv))
     | _ -> 
