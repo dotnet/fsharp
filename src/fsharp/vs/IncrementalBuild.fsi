@@ -54,6 +54,9 @@ type internal PartialCheckResults =
       /// Represents the collected uses of symbols from type checking
       TcSymbolUses: TcSymbolUses list 
 
+      /// Represents open declarations
+      TcOpenDeclarations: OpenDeclaration list
+
       TcDependencyFiles: string list
 
       /// Represents the collected attributes to apply to the module of assuembly generates
