@@ -310,7 +310,7 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
         #else
         elif entity.IsTypeAbbrev then None
 #endif
-        elif entity.IsNamespace  then Some entity.DemangledModuleOrNamespaceName 
+        elif entity.IsNamespace  then Some entity.DemangledModuleOrNamespaceName
         else
             match entity.CompiledRepresentation with 
             | CompiledTypeRepr.ILAsmNamed(tref, _, _) -> Some tref.FullName
@@ -618,6 +618,14 @@ and FSharpEntity(cenv:cenv, entity:EntityRef) =
             [ for parts in partsList do
                 yield! walkParts parts ]
         res
+
+    member x.ActivePatternCases =
+        protect <| fun () -> 
+            ActivePatternElemsOfModuleOrNamespace x.Entity
+            |> Map.toList
+            |> List.map (fun (_, apref) ->
+                let item = Item.ActivePatternCase apref
+                FSharpActivePatternCase(cenv, apref.ActivePatternInfo, apref.ActivePatternVal.Type, apref.CaseIndex, Some apref.ActivePatternVal, item))
 
     override x.Equals(other: obj) =
         box x === other ||
@@ -2258,6 +2266,14 @@ type FSharpSymbol with
         | :? FSharpUnionCase as x -> Some x.Accessibility
         | :? FSharpMemberFunctionOrValue as x -> Some x.Accessibility
         | _ -> None
+
+/// Represents open declaration in F# code.
+type FSharpOpenDeclaration =
+    { LongId: Ident list 
+      Range: range option
+      Modules: FSharpEntity list 
+      AppliedScope: range 
+      IsOwnNamespace: bool }
 
 [<Sealed>]
 type FSharpSymbolUse(g:TcGlobals, denv: DisplayEnv, symbol:FSharpSymbol, itemOcc, range: range) = 
