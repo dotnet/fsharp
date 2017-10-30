@@ -389,6 +389,17 @@ REM ------------------ Report config -----------------------
 
 REM after this point, ARG variable should not be used, use only BUILD_* or TEST_*
 
+REM if the `PB_SKIPTESTS` variable is set to 'true' then no tests should be built or run, even if explicitly specified
+if /i "%PB_SKIPTESTS%" == "true" (
+    set TEST_NET40_COMPILERUNIT_SUITE=0
+    set TEST_NET40_COREUNIT_SUITE=0
+    set TEST_NET40_FSHARP_SUITE=0
+    set TEST_NET40_FSHARPQA_SUITE=0
+    set TEST_CORECLR_COREUNIT_SUITE=0
+    set TEST_CORECLR_FSHARP_SUITE=0
+    set TEST_VS_IDEUNIT_SUITE=0
+)
+
 echo Build/Tests configuration:
 echo.
 echo BUILD_PROTO=%BUILD_PROTO%
@@ -404,6 +415,7 @@ echo BUILD_NUGET=%BUILD_NUGET%
 echo BUILD_CONFIG=%BUILD_CONFIG%
 echo BUILD_PUBLICSIGN=%BUILD_PUBLICSIGN%
 echo.
+echo PB_SKIPTESTS=%PB_SKIPTESTS%
 echo TEST_NET40_COMPILERUNIT_SUITE=%TEST_NET40_COMPILERUNIT_SUITE%
 echo TEST_NET40_COREUNIT_SUITE=%TEST_NET40_COREUNIT_SUITE%
 echo TEST_NET40_FSHARP_SUITE=%TEST_NET40_FSHARP_SUITE%
