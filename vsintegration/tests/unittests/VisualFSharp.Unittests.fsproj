@@ -92,6 +92,9 @@
     <Compile Include="..\..\..\tests\service\ProjectOptionsTests.fs">
       <Link>ProjectOptionsTests.fs</Link>
     </Compile>
+    <Compile Include="UnusedOpensTests.fs">
+      <Link>ServiceAnalysis\UnusedOpensTests.fs</Link>
+    </Compile>
     <Compile Include="ColorizationServiceTests.fs">
       <Link>Roslyn\ColorizationServiceTests.fs</Link>
     </Compile>
