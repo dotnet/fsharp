@@ -34,7 +34,6 @@ type internal FSharpCompletionProvider
     inherit CompletionProvider()
 
     static let userOpName = "CompletionProvider"
-    static let completionTriggers = [| '.' |]
     static let declarationItemsCache = ConditionalWeakTable<string, FSharpDeclarationListItem>()
     static let [<Literal>] NameInCodePropName = "NameInCode"
     static let [<Literal>] FullNamePropName = "FullName"
@@ -87,12 +86,12 @@ type internal FSharpCompletionProvider
             let triggerPosition = caretPosition - 1
             let c = sourceText.[triggerPosition]
             
-            if completionTriggers |> Array.contains c then
-                true
-            
             // do not trigger completion if it's not single dot, i.e. range expression
-            elif triggerPosition > 0 && sourceText.[triggerPosition - 1] = '.' then
+            if not Settings.IntelliSense.ShowAfterCharIsTyped && sourceText.[triggerPosition - 1] = '.' then
                 false
+            
+            elif c = '.' then
+                true
             
             // Trigger completion if we are on a valid classification type
             else
