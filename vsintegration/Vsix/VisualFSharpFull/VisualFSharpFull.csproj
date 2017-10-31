@@ -207,6 +207,62 @@
       <IncludeOutputGroupsInVSIXLocalOnly>DebugSymbolsProjectOutputGroup%3b</IncludeOutputGroupsInVSIXLocalOnly>
       <Private>True</Private>
     </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ItemTemplates\AppConfig\AppConfig.csproj">
+      <Project>{6ba13aa4-c25f-480f-856b-8e8000299a72}</Project>
+      <Name>AppConfig</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ItemTemplates\CodeFile\CodeFile.csproj">
+      <Project>{12ac2813-e895-4aaa-ae6c-94e21da09f64}</Project>
+      <Name>CodeFile</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ItemTemplates\ResourceFile\ResourceFile.csproj">
+      <Project>{0385564F-07B4-4264-AB8A-17C393E9140C}</Project>
+      <Name>ResourceFile</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ItemTemplates\ScriptFile\ScriptFile.csproj">
+      <Project>{a333b85a-dc23-49b6-9797-b89a7951e92d}</Project>
+      <Name>ScriptFile</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ItemTemplates\SignatureFile\SignatureFile.csproj">
+      <Project>{e3fdd4ac-46b6-4b9f-b672-317d1202cc50}</Project>
+      <Name>SignatureFile</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ItemTemplates\TextFile\TextFile.csproj">
+      <Project>{d11fc318-8f5d-4c8c-9287-ab40a016d13c}</Project>
+      <Name>TextFile</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="$(FSharpSourcesRoot)\..\vsintegration\ItemTemplates\XMLFile\XMLFile.csproj">
+      <Project>{1fb1dd07-06aa-45b4-b5ac-20ff5bee98b6}</Project>
+      <Name>XMLFile</Name>
+      <VSIXSubPath>ItemTemplates</VSIXSubPath>
+      <IncludeOutputGroupsInVSIX>TemplateProjectOutputGroup%3b</IncludeOutputGroupsInVSIX>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>True</Private>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
