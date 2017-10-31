@@ -9,7 +9,7 @@
     <PackageId>Microsoft.FSharp.VSIX.Templates</PackageId>
     <MoreInfo>https://docs.microsoft.com/en-us/dotnet/articles/fsharp/</MoreInfo>
   </Metadata>
-  <Installation>
+  <Installation Experimental="true">
     <InstallationTarget Id="Microsoft.VisualStudio.Pro" Version="[15.0]" />
   </Installation>
   <Dependencies>
