@@ -492,6 +492,12 @@
     <Compile Include="$(FSharpSourcesRoot)\fsharp\symbols\Exprs.fs">
       <Link>Symbols/Exprs.fs</Link>
     </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\symbols\SymbolPatterns.fsi">
+      <Link>Symbols/SymbolPatterns.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\symbols\SymbolPatterns.fs">
+      <Link>Symbols/SymbolPatterns.fs</Link>
+    </Compile>
 
     <!-- the incremental builder and service . -->
     <Compile Include="$(FSharpSourcesRoot)\fsharp\vs\IncrementalBuild.fsi">
@@ -589,6 +595,12 @@
     </Compile>
     <Compile Include="$(FSharpSourcesRoot)\fsharp\vs\ServiceStructure.fs">
       <Link>Service/ServiceStructure.fs</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\vs\ServiceAnalysis.fsi">
+      <Link>Service/ServiceAnalysis.fsi</Link>
+    </Compile>
+    <Compile Include="$(FSharpSourcesRoot)\fsharp\vs\ServiceAnalysis.fs">
+      <Link>Service/ServiceAnalysis.fs</Link>
     </Compile>
 
     <!-- the core of the F# Interactive fsi.exe implementation -->
