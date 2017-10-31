@@ -22,22 +22,14 @@ type internal FSharpBraceMatchingService
             let isPositionInRange range =
                 match RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, range) with
                 | None -> false
-                | Some range ->
-                    // We need to see if the caret is contained within or on the outside of the span
-                    // that we get back from the language service.
-                    //
-                    // Ex: let x = ((12))^
-                    //
-                    // The caret can be on the outside of the last paren, but this is actually 1 position
-                    // further to the right than the end of the span that we get back.
-                    range.Contains(caretPosition) || range.End = caretPosition + 1
+                | Some span -> span.Contains(caretPosition)
             return matchedBraces |> Array.tryFind(fun (left, right) -> isPositionInRange left || isPositionInRange right)
         }
         
     interface IBraceMatcher with
         member __.FindBracesAsync(document, caretPosition, cancellationToken) = 
             asyncMaybe {
-                let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                let! parsingOptions, _ = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! (left, right) = FSharpBraceMatchingService.GetBraceMatchingResult(checkerProvider.Checker, sourceText, document.Name, parsingOptions, caretPosition, defaultUserOpName)
                 let! leftSpan = RoslynHelpers.TryFSharpRangeToTextSpan(sourceText, left)
