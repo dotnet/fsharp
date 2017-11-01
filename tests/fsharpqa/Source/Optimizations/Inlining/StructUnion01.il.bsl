@@ -25,20 +25,20 @@
 }
 .mresource public FSharpSignatureData.StructUnion01
 {
-  // Offset: 0x00000000 Length: 0x00000884
+  // Offset: 0x00000000 Length: 0x0000088A
 }
 .mresource public FSharpOptimizationData.StructUnion01
 {
-  // Offset: 0x00000888 Length: 0x00000421
+  // Offset: 0x00000890 Length: 0x00000421
 }
 .module StructUnion01.dll
-// MVID: {58EED771-D3E9-6B24-A745-038371D7EE58}
+// MVID: {59B18AF8-D3E9-6B24-A745-0383F88AB159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x030C0000
+// Image base: 0x01000000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -55,6 +55,8 @@
                     [mscorlib]System.IComparable,
                     [mscorlib]System.Collections.IStructuralComparable
   {
+    .pack 0
+    .size 1
     .custom instance void [FSharp.Core]Microsoft.FSharp.Core.StructAttribute::.ctor() = ( 01 00 00 00 ) 
     .custom instance void [mscorlib]System.Diagnostics.DebuggerDisplayAttribute::.ctor(string) = ( 01 00 15 7B 5F 5F 44 65 62 75 67 44 69 73 70 6C   // ...{__DebugDispl
                                                                                                    61 79 28 29 2C 6E 71 7D 00 00 )                   // ay(),nq}..
@@ -171,66 +173,69 @@
             instance int32  CompareTo(valuetype StructUnion01/U obj) cil managed
     {
       .custom instance void [mscorlib]System.Runtime.CompilerServices.CompilerGeneratedAttribute::.ctor() = ( 01 00 00 00 ) 
-      // Code size       77 (0x4d)
+      // Code size       86 (0x56)
       .maxstack  4
-      .locals init (int32 V_0,
-               class [mscorlib]System.Collections.IComparer V_1,
-               int32 V_2,
-               int32 V_3)
-      IL_0000:  ldarg.0
-      IL_0001:  pop
-      IL_0002:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-      IL_0007:  stloc.1
-      IL_0008:  ldarg.0
-      IL_0009:  ldfld      int32 StructUnion01/U::item1
-      IL_000e:  stloc.2
-      IL_000f:  ldarg.1
-      IL_0010:  ldfld      int32 StructUnion01/U::item1
-      IL_0015:  stloc.3
-      IL_0016:  ldloc.2
-      IL_0017:  ldloc.3
-      IL_0018:  bge.s      IL_001d
+      .locals init (valuetype StructUnion01/U& V_0,
+               int32 V_1,
+               class [mscorlib]System.Collections.IComparer V_2,
+               int32 V_3,
+               int32 V_4)
+      IL_0000:  ldarga.s   obj
+      IL_0002:  stloc.0
+      IL_0003:  ldarg.0
+      IL_0004:  pop
+      IL_0005:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
+      IL_000a:  stloc.2
+      IL_000b:  ldarg.0
+      IL_000c:  ldfld      int32 StructUnion01/U::item1
+      IL_0011:  stloc.3
+      IL_0012:  ldloc.0
+      IL_0013:  ldfld      int32 StructUnion01/U::item1
+      IL_0018:  stloc.s    V_4
+      IL_001a:  ldloc.3
+      IL_001b:  ldloc.s    V_4
+      IL_001d:  bge.s      IL_0022
 
-      IL_001a:  ldc.i4.m1
-      IL_001b:  br.s       IL_0021
+      IL_001f:  ldc.i4.m1
+      IL_0020:  br.s       IL_0027
 
-      IL_001d:  ldloc.2
-      IL_001e:  ldloc.3
-      IL_001f:  cgt
-      IL_0021:  stloc.0
-      IL_0022:  ldloc.0
-      IL_0023:  ldc.i4.0
-      IL_0024:  bge.s      IL_0028
-
-      IL_0026:  ldloc.0
-      IL_0027:  ret
-
-      IL_0028:  ldloc.0
+      IL_0022:  ldloc.3
+      IL_0023:  ldloc.s    V_4
+      IL_0025:  cgt
+      IL_0027:  stloc.1
+      IL_0028:  ldloc.1
       IL_0029:  ldc.i4.0
-      IL_002a:  ble.s      IL_002e
+      IL_002a:  bge.s      IL_002e
 
-      IL_002c:  ldloc.0
+      IL_002c:  ldloc.1
       IL_002d:  ret
 
-      IL_002e:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
-      IL_0033:  stloc.1
-      IL_0034:  ldarg.0
-      IL_0035:  ldfld      int32 StructUnion01/U::item2
-      IL_003a:  stloc.2
-      IL_003b:  ldarg.1
-      IL_003c:  ldfld      int32 StructUnion01/U::item2
-      IL_0041:  stloc.3
-      IL_0042:  ldloc.2
-      IL_0043:  ldloc.3
-      IL_0044:  bge.s      IL_0048
+      IL_002e:  ldloc.1
+      IL_002f:  ldc.i4.0
+      IL_0030:  ble.s      IL_0034
 
-      IL_0046:  ldc.i4.m1
-      IL_0047:  ret
+      IL_0032:  ldloc.1
+      IL_0033:  ret
 
-      IL_0048:  ldloc.2
+      IL_0034:  call       class [mscorlib]System.Collections.IComparer [FSharp.Core]Microsoft.FSharp.Core.LanguagePrimitives::get_GenericComparer()
+      IL_0039:  stloc.2
+      IL_003a:  ldarg.0
+      IL_003b:  ldfld      int32 StructUnion01/U::item2
+      IL_0040:  stloc.3
+      IL_0041:  ldloc.0
+      IL_0042:  ldfld      int32 StructUnion01/U::item2
+      IL_0047:  stloc.s    V_4
       IL_0049:  ldloc.3
-      IL_004a:  cgt
-      IL_004c:  ret
+      IL_004a:  ldloc.s    V_4
+      IL_004c:  bge.s      IL_0050
+
+      IL_004e:  ldc.i4.m1
+      IL_004f:  ret
+
+      IL_0050:  ldloc.3
+      IL_0051:  ldloc.s    V_4
+      IL_0053:  cgt
+      IL_0055:  ret
     } // end of method U::CompareTo
 
     .method public hidebysig virtual final 

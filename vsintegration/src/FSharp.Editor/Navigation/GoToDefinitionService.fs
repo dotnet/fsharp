@@ -1,10 +1,9 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
-open System.IO
 open System.Composition
-open System.Collections.Generic
+open System.IO
 open System.Collections.Immutable
 open System.Linq
 open System.Threading
@@ -12,17 +11,17 @@ open System.Threading.Tasks
 
 open Microsoft.CodeAnalysis
 open Microsoft.CodeAnalysis.Editor
-open Microsoft.CodeAnalysis.Editor.Host
 open Microsoft.CodeAnalysis.Navigation
 open Microsoft.CodeAnalysis.Host.Mef
 open Microsoft.CodeAnalysis.Text
+open Microsoft.CodeAnalysis.FindSymbols
 
 open Microsoft.FSharp.Compiler.Range
 open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open System
-open System.Windows.Forms
+open System.Diagnostics
 
 type internal FSharpNavigableItem(document: Document, textSpan: TextSpan) =
     interface INavigableItem with
@@ -58,8 +57,8 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
     /// Helper function that is used to determine the navigation strategy to apply, can be tuned towards signatures or implementation files.
     let findSymbolHelper (originDocument: Document, originRange: range, sourceText: SourceText, preferSignature: bool) : Async<FSharpNavigableItem option> =
         asyncMaybe {
-            let! projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject originDocument
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing (originDocument.FilePath, projectOptions.OtherOptions |> Seq.toList)
+            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject originDocument
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing (originDocument.FilePath, parsingOptions)
             let! originTextSpan = RoslynHelpers.TryFSharpRangeToTextSpan (sourceText, originRange)
             let position = originTextSpan.Start
             let! lexerSymbol = Tokenizer.getSymbolAtPosition (originDocument.Id, sourceText, position, originDocument.FilePath, defines, SymbolLookupKind.Greedy, false)
@@ -68,7 +67,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
             let lineText = (sourceText.Lines.GetLineFromPosition position).ToString()  
             
-            let! _, _, checkFileResults = checker.ParseAndCheckDocument (originDocument,projectOptions,allowStaleResults=true,sourceText=sourceText, userOpName = userOpName)
+            let! _, _, checkFileResults = checker.ParseAndCheckDocument (originDocument, projectOptions, allowStaleResults=true,sourceText=sourceText, userOpName = userOpName)
             let idRange = lexerSymbol.Ident.idRange
             let! fsSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland, userOpName=userOpName)
             let symbol = fsSymbolUse.Symbol
@@ -80,7 +79,7 @@ type internal GoToDefinition(checker: FSharpChecker, projectInfoManager: FSharpP
                 if not (File.Exists fsfilePath) then return! None else
                 let! implDoc = originDocument.Project.Solution.TryGetDocumentFromPath fsfilePath
                 let! implSourceText = implDoc.GetTextAsync ()
-                let! projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject implDoc
+                let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject implDoc
                 let! _, _, checkFileResults = checker.ParseAndCheckDocument (implDoc, projectOptions, allowStaleResults=true, sourceText=implSourceText, userOpName = userOpName)
                 let! symbolUses = checkFileResults.GetUsesOfSymbolInFile symbol |> liftAsync
                 let! implSymbol  = symbolUses |> Array.tryHead 
@@ -145,27 +144,115 @@ type private StatusBar(statusBar: IVsStatusbar) =
         { new IDisposable with
             member __.Dispose() = statusBar.Animation(0, &searchIcon) |> ignore }
 
+module internal Symbol =
+
+    let fullName (root: ISymbol) : string =
+        
+        let rec inner parts (sym: ISymbol) =
+            match sym with
+            | null ->
+                parts
+            // TODO: do we have any other terminating cases?
+            | sym when sym.Kind = SymbolKind.NetModule || sym.Kind = SymbolKind.Assembly ->
+                parts
+            | sym when sym.MetadataName <> "" ->
+                inner (sym.MetadataName :: parts) sym.ContainingSymbol
+            | sym ->
+                inner parts sym.ContainingSymbol
+
+        inner [] root |> String.concat "."
+
+module internal ExternalType =
+
+    let rec tryOfRoslynType (typesym: ITypeSymbol): ExternalType option =
+        match typesym with
+        | :? IPointerTypeSymbol as ptrparam ->
+            tryOfRoslynType ptrparam.PointedAtType |> Option.map ExternalType.Pointer
+        | :? IArrayTypeSymbol as arrparam ->
+            tryOfRoslynType arrparam.ElementType |> Option.map ExternalType.Array
+        | :? ITypeParameterSymbol as typaram ->
+            Some (ExternalType.TypeVar typaram.Name)
+        | :? INamedTypeSymbol as namedTypeSym ->
+            namedTypeSym.TypeArguments
+            |> Seq.map tryOfRoslynType
+            |> List.ofSeq
+            |> Option.ofOptionList
+            |> Option.map (fun genericArgs ->
+                ExternalType.Type (Symbol.fullName typesym, genericArgs)
+                )
+        | _ ->
+            Debug.Assert(false, sprintf "GoToDefinitionService: Unexpected Roslyn type symbol subclass: %O" (typesym.GetType()))
+            None
+
+module internal ParamTypeSymbol =
+
+    let tryOfRoslynParameter (param: IParameterSymbol): ParamTypeSymbol option =
+        ExternalType.tryOfRoslynType param.Type
+        |> Option.map (
+            if param.RefKind = RefKind.None then ParamTypeSymbol.Param
+            else ParamTypeSymbol.Byref
+            )
+
+    let tryOfRoslynParameters (paramSyms: ImmutableArray<IParameterSymbol>): ParamTypeSymbol list option =
+        paramSyms |> Seq.map tryOfRoslynParameter |> Seq.toList |> Option.ofOptionList
+
+module internal ExternalSymbol =
+    
+    let rec ofRoslynSymbol (symbol: ISymbol) : (ISymbol * ExternalSymbol) list =
+        let container = Symbol.fullName symbol.ContainingSymbol
+
+        match symbol with
+        | :? INamedTypeSymbol as typesym ->
+            let fullTypeName = Symbol.fullName typesym
+
+            let constructors =
+                typesym.InstanceConstructors
+                |> Seq.choose<_,ISymbol * ExternalSymbol> (fun methsym ->
+                    ParamTypeSymbol.tryOfRoslynParameters methsym.Parameters
+                    |> Option.map (fun args -> upcast methsym, ExternalSymbol.Constructor(fullTypeName, args))
+                    )
+                |> List.ofSeq
+                
+            (symbol, ExternalSymbol.Type fullTypeName) :: constructors
+
+        | :? IMethodSymbol as methsym ->
+            ParamTypeSymbol.tryOfRoslynParameters methsym.Parameters
+            |> Option.map (fun args ->
+                symbol, ExternalSymbol.Method(container, methsym.MetadataName, args, methsym.TypeParameters.Length))
+            |> Option.toList
+
+        | :? IPropertySymbol as propsym ->
+            [upcast propsym, ExternalSymbol.Property(container, propsym.MetadataName)]
+
+        | :? IFieldSymbol as fieldsym ->
+            [upcast fieldsym, ExternalSymbol.Field(container, fieldsym.MetadataName)]
+
+        | :? IEventSymbol as eventsym ->
+            [upcast eventsym, ExternalSymbol.Event(container, eventsym.MetadataName)]
+
+        | _ -> []
+                
+
 [<ExportLanguageService(typeof<IGoToDefinitionService>, FSharpConstants.FSharpLanguageName)>]
 [<Export(typeof<FSharpGoToDefinitionService>)>]
 type internal FSharpGoToDefinitionService 
     [<ImportingConstructor>]
     (
         checkerProvider: FSharpCheckerProvider,
-        projectInfoManager: FSharpProjectOptionsManager,
-        [<ImportMany>] _presenters: IEnumerable<INavigableItemsPresenter>
+        projectInfoManager: FSharpProjectOptionsManager
     ) =
 
     static let userOpName = "GoToDefinition"
     let gotoDefinition = GoToDefinition(checkerProvider.Checker, projectInfoManager)
     let serviceProvider =  ServiceProvider.GlobalProvider
     let statusBar = StatusBar(serviceProvider.GetService<SVsStatusbar,IVsStatusbar>())
-
+    
     let tryNavigateToItem (navigableItem: #INavigableItem option) =
         use __ = statusBar.Animate()
 
         match navigableItem with
         | Some navigableItem ->
-            statusBar.Message SR.NavigatingTo.Value
+            statusBar.Message (SR.NavigatingTo())
 
             let workspace = navigableItem.Document.Project.Solution.Workspace
             let navigationService = workspace.Services.GetService<IDocumentNavigationService>()
@@ -176,11 +263,11 @@ type internal FSharpGoToDefinitionService
             if result then 
                 statusBar.Clear()
             else 
-                statusBar.TempMessage SR.CannotNavigateUnknown.Value
+                statusBar.TempMessage (SR.CannotNavigateUnknown())
             
             result
         | None ->
-            statusBar.TempMessage SR.CannotDetermineSymbol.Value
+            statusBar.TempMessage (SR.CannotDetermineSymbol())
             true
 
     /// Navigate to the positon of the textSpan in the provided document
@@ -193,7 +280,7 @@ type internal FSharpGoToDefinitionService
         if navigationService.TryNavigateToSpan (workspace, navigableItem.Document.Id, navigableItem.SourceSpan, options) then 
             true 
         else
-            statusBar.TempMessage SR.CannotNavigateUnknown.Value
+            statusBar.TempMessage (SR.CannotNavigateUnknown())
             false
 
     /// find the declaration location (signature file/.fsi) of the target symbol if possible, fall back to definition 
@@ -208,9 +295,9 @@ type internal FSharpGoToDefinitionService
     /// at the provided position in the document.
     member __.FindDefinitionsTask(originDocument: Document, position: int, cancellationToken: CancellationToken) =
         asyncMaybe {
-            let! projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject originDocument
+            let! parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject originDocument
             let! sourceText = originDocument.GetTextAsync () |> liftTaskAsync
-            let defines = CompilerEnvironment.GetCompilationDefinesForEditing (originDocument.FilePath, projectOptions.OtherOptions |> Seq.toList)
+            let defines = CompilerEnvironment.GetCompilationDefinesForEditing (originDocument.FilePath, parsingOptions)
             let textLine = sourceText.Lines.GetLineFromPosition position
             let textLinePos = sourceText.Lines.GetLinePosition position
             let fcsTextLineNumber = Line.fromZ textLinePos.Line
@@ -227,6 +314,25 @@ type internal FSharpGoToDefinitionService
             let! targetSymbolUse = checkFileResults.GetSymbolUseAtLocation (fcsTextLineNumber, idRange.EndColumn, lineText, lexerSymbol.FullIsland, userOpName=userOpName)
 
             match declarations with
+            | FSharpFindDeclResult.ExternalDecl (assy, targetExternalSym) ->
+                let! project = originDocument.Project.Solution.Projects |> Seq.tryFind (fun p -> p.AssemblyName.Equals(assy, StringComparison.OrdinalIgnoreCase))
+                let! symbols = SymbolFinder.FindSourceDeclarationsAsync(project, fun _ -> true)
+
+                let roslynSymbols =
+                    symbols
+                    |> Seq.collect ExternalSymbol.ofRoslynSymbol
+                    |> Array.ofSeq
+
+                let! symbol =
+                    roslynSymbols
+                    |> Seq.tryPick (fun (sym, externalSym) ->
+                        if externalSym = targetExternalSym then Some sym
+                        else None
+                        )
+ 
+                let! location = symbol.Locations |> Seq.tryHead
+                return FSharpNavigableItem(project.GetDocument(location.SourceTree), location.SourceSpan)
+
             | FSharpFindDeclResult.DeclFound targetRange -> 
                 // if goto definition is called at we are alread at the declaration location of a symbol in
                 // either a signature or an implementation file then we jump to it's respective postion in thethe
@@ -276,7 +382,7 @@ type internal FSharpGoToDefinitionService
                         let! implDocument = originDocument.Project.Solution.TryGetDocumentFromPath implFilePath
                         let! implVersion = implDocument.GetTextVersionAsync () |> liftTaskAsync
                         let! implSourceText = implDocument.GetTextAsync () |> liftTaskAsync
-                        let! projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject implDocument
+                        let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject implDocument
                         
                         let! targetRange = 
                             gotoDefinition.FindSymbolDeclarationInFile(targetSymbolUse, implFilePath, implSourceText.ToString(), projectOptions, implVersion.GetHashCode())                               
@@ -299,7 +405,7 @@ type internal FSharpGoToDefinitionService
         member this.TryGoToDefinition(document: Document, position: int, cancellationToken: CancellationToken) =
             let definitionTask = this.FindDefinitionsTask (document, position, cancellationToken)
             
-            statusBar.Message SR.LocatingSymbol.Value
+            statusBar.Message (SR.LocatingSymbol())
             use __ = statusBar.Animate()
 
             // Wrap this in a try/with as if the user clicks "Cancel" on the thread dialog, we'll be cancelled
@@ -313,7 +419,7 @@ type internal FSharpGoToDefinitionService
             
             match completionError with
             | Some message ->
-                statusBar.TempMessage <| String.Format(SR.NavigateToFailed.Value, message)
+                statusBar.TempMessage <| String.Format(SR.NavigateToFailed(), message)
 
                 // Don't show the dialog box as it's most likely that the user cancelled.
                 // Don't make them click twice.
@@ -333,5 +439,5 @@ type internal FSharpGoToDefinitionService
                     //    presenter.DisplayResult(navigableItem.DisplayString, definitionTask.Result)
                     //true
                 else 
-                    statusBar.TempMessage SR.CannotDetermineSymbol.Value
+                    statusBar.TempMessage (SR.CannotDetermineSymbol())
                     false

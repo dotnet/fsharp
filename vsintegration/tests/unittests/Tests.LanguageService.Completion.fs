@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Tests.LanguageService.AutoCompletion
 
@@ -4337,7 +4337,8 @@ let x = query { for bbbb in abbbbc(*D0*) do
         let completions = AutoCompleteAtCursor(file)
         Assert.AreNotEqual(0, completions.Length, "Expected some items in the list after updating platform.") 
 
-    /// FEATURE: The filename on disk and the filename in the project can differ in case.
+(*
+/// FEATURE: The filename on disk and the filename in the project can differ in case.
     [<Test>]
     member this.``Filenames.MayBeDifferentlyCased``() =
         use _guard = this.UsingNewVS() 
@@ -4357,7 +4358,8 @@ let x = query { for bbbb in abbbbc(*D0*) do
         this.AddAssemblyReference(project,"System.Deployment")
         let completions = AutoCompleteAtCursor(file)
         Assert.AreNotEqual(0, completions.Length, "Expected some items in the list after adding a reference.") 
-        
+*)
+
     /// In this bug, a bogus flag caused the rest of flag parsing to be ignored.
     [<Test>]
     member public this.``FlagsAndSettings.Bug1969``() = 
@@ -7771,6 +7773,15 @@ let rec f l =
                 let foo x = x
                 let bar = 1""",
             marker = "(*Marker*)")
+
+    [<Test;Category("Repro")>]
+    member public this.``ExpressionDotting.Regression.Bug3709``() = 
+        this.VerifyCtrlSpaceListContainAllAtStartOfMarker(
+            fileContents = """
+                let foo = ""
+                let foo = foo.E(*marker*)n "a" """,
+            marker = "(*marker*)",
+            list = ["EndsWith"])  
 
 // Context project system
 [<TestFixture>] 

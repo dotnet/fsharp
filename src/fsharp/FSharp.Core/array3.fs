@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Collections
 
@@ -28,39 +28,39 @@ namespace Microsoft.FSharp.Collections
         let length3 (array: 'T[,,]) =  (# "ldlen.multi 3 2" array : int #)  
  
         [<CompiledName("Get")>]
-        let get (array: 'T[,,]) n1 n2 n3 = array.[n1,n2,n3]
+        let get (array: 'T[,,]) index1 index2 index3 = array.[index1,index2,index3]
  
         [<CompiledName("Set")>]
-        let set (array: 'T[,,]) n1 n2 n3 x = array.[n1,n2,n3] <- x
+        let set (array: 'T[,,]) index1 index2 index3 value = array.[index1,index2,index3] <- value
 
         [<CompiledName("ZeroCreate")>]
-        let zeroCreate (n1:int) (n2:int) (n3:int) = 
-            if n1 < 0 then invalidArgInputMustBeNonNegative "n1" n1
-            if n2 < 0 then invalidArgInputMustBeNonNegative "n2" n2
-            if n3 < 0 then invalidArgInputMustBeNonNegative "n3" n3
-            (# "newarr.multi 3 !0" type ('T) n1 n2 n3 : 'T[,,] #)
+        let zeroCreate length1 length2 length3 = 
+            if length1 < 0 then invalidArgInputMustBeNonNegative "n1" length1
+            if length2 < 0 then invalidArgInputMustBeNonNegative "n2" length2
+            if length3 < 0 then invalidArgInputMustBeNonNegative "n3" length3
+            (# "newarr.multi 3 !0" type ('T) length1 length2 length3 : 'T[,,] #)
  
         [<CompiledName("Create")>]
-        let create (n1:int) (n2:int) (n3:int) (x:'T) =
-            let arr = (zeroCreate n1 n2 n3 : 'T[,,])
-            for i = 0 to n1 - 1 do 
-              for j = 0 to n2 - 1 do 
-                for k = 0 to n3 - 1 do 
-                  arr.[i,j,k] <- x
+        let create length1 length2 length3 (initial:'T) =
+            let arr = (zeroCreate length1 length2 length3 : 'T[,,])
+            for i = 0 to length1 - 1 do 
+              for j = 0 to length2 - 1 do 
+                for k = 0 to length3 - 1 do 
+                  arr.[i,j,k] <- initial
             arr
 
         [<CompiledName("Initialize")>]
-        let init n1 n2 n3 f = 
-            let arr = (zeroCreate n1 n2 n3 : 'T[,,])
-            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(f)
-            for i = 0 to n1 - 1 do 
-              for j = 0 to n2 - 1 do 
-                for k = 0 to n3 - 1 do 
+        let init length1 length2 length3 initializer = 
+            let arr = (zeroCreate length1 length2 length3 : 'T[,,])
+            let f = OptimizedClosures.FSharpFunc<_,_,_,_>.Adapt(initializer)
+            for i = 0 to length1 - 1 do 
+              for j = 0 to length2 - 1 do 
+                for k = 0 to length3 - 1 do 
                   arr.[i,j,k] <- f.Invoke(i, j, k)
             arr
 
         [<CompiledName("Iterate")>]
-        let iter f array =
+        let iter action array =
             checkNonNull "array" array
             let len1 = length1 array
             let len2 = length2 array
@@ -68,10 +68,10 @@ namespace Microsoft.FSharp.Collections
             for i = 0 to len1 - 1 do 
               for j = 0 to len2 - 1 do 
                 for k = 0 to len3 - 1 do 
-                  f array.[i,j,k]
+                  action array.[i,j,k]
 
         [<CompiledName("Map")>]
-        let map f array =
+        let map mapping array =
             checkNonNull "array" array
             let len1 = length1 array
             let len2 = length2 array
@@ -80,29 +80,29 @@ namespace Microsoft.FSharp.Collections
             for i = 0 to len1 - 1 do 
               for j = 0 to len2 - 1 do 
                 for k = 0 to len3 - 1 do 
-                  res.[i,j,k] <-  f array.[i,j,k]
+                  res.[i,j,k] <-  mapping array.[i,j,k]
             res
 
         [<CompiledName("IterateIndexed")>]
-        let iteri f array =
+        let iteri action array =
             checkNonNull "array" array
             let len1 = length1 array
             let len2 = length2 array
             let len3 = length3 array
-            let f = OptimizedClosures.FSharpFunc<_,_,_,_,_>.Adapt(f)
+            let f = OptimizedClosures.FSharpFunc<_,_,_,_,_>.Adapt(action)
             for i = 0 to len1 - 1 do 
               for j = 0 to len2 - 1 do 
                 for k = 0 to len3 - 1 do 
                   f.Invoke(i, j, k, array.[i,j,k]) 
 
         [<CompiledName("MapIndexed")>]
-        let mapi f array =
+        let mapi mapping array =
             checkNonNull "array" array
             let len1 = length1 array
             let len2 = length2 array
             let len3 = length3 array
             let res = (zeroCreate len1 len2 len3 : 'b[,,])
-            let f = OptimizedClosures.FSharpFunc<_,_,_,_,_>.Adapt(f)
+            let f = OptimizedClosures.FSharpFunc<_,_,_,_,_>.Adapt(mapping)
             for i = 0 to len1 - 1 do 
               for j = 0 to len2 - 1 do 
                 for k = 0 to len3 - 1 do 
@@ -126,37 +126,37 @@ namespace Microsoft.FSharp.Collections
         let length4 (array: 'T[,,,]) =  (# "ldlen.multi 4 3" array : int #)  
  
         [<CompiledName("ZeroCreate")>]
-        let zeroCreate (n1:int) (n2:int) (n3:int) (n4:int) = 
-            if n1 < 0 then invalidArgInputMustBeNonNegative "n1" n1
-            if n2 < 0 then invalidArgInputMustBeNonNegative "n2" n2
-            if n3 < 0 then invalidArgInputMustBeNonNegative "n3" n3
-            if n4 < 0 then invalidArgInputMustBeNonNegative "n4" n4
-            (# "newarr.multi 4 !0" type ('T) n1 n2 n3 n4 : 'T[,,,] #)
+        let zeroCreate length1 length2 length3 length4 = 
+            if length1 < 0 then invalidArgInputMustBeNonNegative "n1" length1
+            if length2 < 0 then invalidArgInputMustBeNonNegative "n2" length2
+            if length3 < 0 then invalidArgInputMustBeNonNegative "n3" length3
+            if length4 < 0 then invalidArgInputMustBeNonNegative "n4" length4
+            (# "newarr.multi 4 !0" type ('T) length1 length2 length3 length4 : 'T[,,,] #)
  
         [<CompiledName("Create")>]
-        let create n1 n2 n3 n4 (x:'T) =
-            let arr = (zeroCreate n1 n2 n3 n4 : 'T[,,,])
-            for i = 0 to n1 - 1 do 
-              for j = 0 to n2 - 1 do 
-                for k = 0 to n3 - 1 do 
-                  for m = 0 to n4 - 1 do 
-                    arr.[i,j,k,m] <- x
+        let create length1 length2 length3 length4 (initial:'T) =
+            let arr = (zeroCreate length1 length2 length3 length4 : 'T[,,,])
+            for i = 0 to length1 - 1 do 
+              for j = 0 to length2 - 1 do 
+                for k = 0 to length3 - 1 do 
+                  for m = 0 to length4 - 1 do 
+                    arr.[i,j,k,m] <- initial
             arr
 
         [<CompiledName("Initialize")>]
-        let init n1 n2 n3 n4 f = 
-            let arr = (zeroCreate n1 n2 n3 n4 : 'T[,,,]) 
-            let f = OptimizedClosures.FSharpFunc<_,_,_,_,_>.Adapt(f)
-            for i = 0 to n1 - 1 do 
-              for j = 0 to n2 - 1 do 
-                for k = 0 to n3 - 1 do 
-                  for m = 0 to n4 - 1 do 
+        let init length1 length2 length3 length4 initializer = 
+            let arr = (zeroCreate length1 length2 length3 length4 : 'T[,,,]) 
+            let f = OptimizedClosures.FSharpFunc<_,_,_,_,_>.Adapt(initializer)
+            for i = 0 to length1 - 1 do 
+              for j = 0 to length2 - 1 do 
+                for k = 0 to length3 - 1 do 
+                  for m = 0 to length4 - 1 do 
                     arr.[i,j,k,m] <- f.Invoke(i, j, k, m)
             arr
 
 
         [<CompiledName("Get")>]
-        let get (array: 'T[,,,]) n1 n2 n3 n4 = array.[n1,n2,n3,n4]
+        let get (array: 'T[,,,]) index1 index2 index3 index4 = array.[index1,index2,index3,index4]
  
         [<CompiledName("Set")>]
-        let set (array: 'T[,,,]) n1 n2 n3 n4 x = array.[n1,n2,n3,n4] <- x
+        let set (array: 'T[,,,]) index1 index2 index3 index4 value = array.[index1,index2,index3,index4] <- value

@@ -1,6 +1,6 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
-namespace rec Microsoft.VisualStudio.FSharp.Editor
+namespace Microsoft.VisualStudio.FSharp.Editor
 
 open System
 open System.Composition
@@ -71,7 +71,7 @@ type internal MissingReferenceCodeFixProvider() =
                     | Some refProject ->
                         let codefix = 
                             createCodeFix(
-                                String.Format(SR.AddProjectReference.Value, refProject.Name),
+                                String.Format(SR.AddProjectReference(), refProject.Name),
                                 context,
                                 AddProjectRef (ProjectReference refProject.Id)
                                 )
@@ -90,7 +90,7 @@ type internal MissingReferenceCodeFixProvider() =
                         | Some metadataRef ->
                             let codefix = 
                                 createCodeFix(
-                                    String.Format(SR.AddAssemblyReference.Value, assemblyName),
+                                    String.Format(SR.AddAssemblyReference(), assemblyName),
                                     context,
                                     AddMetadataRef metadataRef
                                     )

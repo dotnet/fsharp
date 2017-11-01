@@ -646,7 +646,7 @@ sub GetExpectedResults(){
       push @dontmatch, $2 if $2;
     }
     # test full xml form
-    elsif (m@//\s*<Expect\w*\s*Status\s*=\s*(notin)\s*>\s*(.*?)\s*<(/Expect|/)\w*>@i) {
+    elsif (m@//\s*<Expect\w*\s*Status\s*=\s*\"?(notin)\"?\s*>\s*(.*?)\s*<(/Expect|/)\w*>@i) {
       push @dontmatch, $2 if $2;
     } else {
       next;

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 using System;
 using System.Collections.Generic;
@@ -122,6 +122,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
         public const string DebugType = "DebugType";
         public const string Optimize = "Optimize";
         public const string Tailcalls = "Tailcalls";
+        public const string UseStandardResourceNames = "UseStandardResourceNames";
         public const string Prefer32Bit = "Prefer32Bit";
         public const string OutputPath = "OutputPath";
         public const string DefineConstants = "DefineConstants";

@@ -1,6 +1,6 @@
 ﻿
 #if INTERACTIVE
-#r "../../Debug/net40/bin/FSharp.Compiler.Service.dll" // note, run 'build fcs' to generate this, this DLL has a public API so can be used from F# Interactive
+#r "../../Debug/fcs/net45/FSharp.Compiler.Service.dll" // note, run 'build fcs debug' to generate this, this DLL has a public API so can be used from F# Interactive
 #r "../../Debug/net40/bin/FSharp.Compiler.Service.ProjectCracker.dll"
 #r "../../packages/NUnit.3.5.0/lib/net45/nunit.framework.dll"
 #load "FsUnit.fs"
@@ -866,6 +866,8 @@ let ``Test expressions of declarations stress big expressions`` () =
     // This should not stack overflow
     printDeclarations None (List.ofSeq file1.Declarations) |> Seq.toList |> ignore
 
+#if NOT_YET_ENABLED
+
 #if !NO_PROJECTCRACKER && !DOTNETCORE
 
 [<Test>]
@@ -1086,6 +1088,8 @@ let ``Check use of type provider that provides calls to F# code`` () =
       ]
 
 #endif
+#endif
+
 
 #if SELF_HOST_STRESS
    

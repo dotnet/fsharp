@@ -35,7 +35,11 @@
   <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="FSharp.Core">
-      <HintPath>..\..\..\..\$(Configuration)\net40\bin\FSharp.Core.dll</HintPath>
+      <HintPath>..\..\..\..\packages\Microsoft.Portable.FSharp.Core.4.1.20\lib\profiles\net40\FSharp.Core.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="TestTP">
+      <HintPath>..\TestTP\TestTP.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -51,13 +55,8 @@
       <Project>{887630a3-4b1d-40ea-b8b3-2d842e9c40db}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\TestTP\TestTP.fsproj">
-      <Name>TestTP</Name>
-      <Project>{ff76bd3c-5e0a-4752-b6c3-044f6e15719b}</Project>
-      <Private>True</Private>
-    </ProjectReference>
   </ItemGroup>
-  <Import Project="..\..\..\..\$(Configuration)\net40\bin\Microsoft.FSharp.Targets" />
+  <Import Project="..\..\..\..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets" />
   <Choose>
     <When Condition="($(TargetFrameworkIdentifier) == '.NETStandard' And $(TargetFrameworkVersion) == 'v1.6') Or ($(TargetFrameworkIdentifier) == '.NETCoreApp' And $(TargetFrameworkVersion) == 'v1.0') Or ($(TargetFrameworkIdentifier) == '.NETFramework' And $(TargetFrameworkVersion) == 'v4.5')">
       <ItemGroup>

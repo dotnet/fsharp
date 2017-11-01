@@ -1,0 +1,4 @@
+Microsoft.Build.Utilities.Core
+Microsoft.Build.Engine
+Microsoft.Build
+System.Threading.Tasks.Dataflow

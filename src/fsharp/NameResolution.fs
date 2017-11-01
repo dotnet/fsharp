@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 
 /// Name environment and name resolution 
@@ -1222,12 +1222,32 @@ type ItemOccurence =
     /// Result gets suppressed over this text range
     | RelatedText
   
+type OpenDeclaration =
+    { LongId: Ident list
+      Range: range option
+      Modules: ModuleOrNamespaceRef list 
+      AppliedScope: range 
+      IsOwnNamespace: bool }
+    
+    static member Create(longId: Ident list, modules: ModuleOrNamespaceRef list, appliedScope: range, isOwnNamespace: bool) =
+        { LongId = longId
+          Range =
+            match longId with
+            | [] -> None
+            | first :: rest ->
+                let last = rest |> List.tryLast |> Option.defaultValue first
+                Some (mkRange appliedScope.FileName first.idRange.Start last.idRange.End)
+          Modules = modules
+          AppliedScope = appliedScope
+          IsOwnNamespace = isOwnNamespace }
+
 /// An abstract type for reporting the results of name resolution and type checking.
 type ITypecheckResultsSink =
     abstract NotifyEnvWithScope : range * NameResolutionEnv * AccessorDomain -> unit
     abstract NotifyExprHasType : pos * TType * Tastops.DisplayEnv * NameResolutionEnv * AccessorDomain * range -> unit
     abstract NotifyNameResolution : pos * Item * Item * TyparInst * ItemOccurence * Tastops.DisplayEnv * NameResolutionEnv * AccessorDomain * range * bool -> unit
     abstract NotifyFormatSpecifierLocation : range * int -> unit
+    abstract NotifyOpenDeclaration : OpenDeclaration -> unit
     abstract CurrentSource : string option
 
 let (|ValRefOfProp|_|) (pi : PropInfo) = pi.ArbitraryValRef
@@ -1460,6 +1480,7 @@ type TcResultsSinkImpl(g, ?source: string) =
                     member __.GetHashCode((p:pos,i)) = p.Line + 101 * p.Column + hash i
                     member __.Equals((p1,i1),(p2,i2)) = posEq p1 p2 && i1 =  i2 } )
     let capturedMethodGroupResolutions = ResizeArray<_>()
+    let capturedOpenDeclarations = ResizeArray<_>()
     let allowedRange (m:range) = not m.IsSynthetic       
 
     member this.GetResolutions() = 
@@ -1467,6 +1488,8 @@ type TcResultsSinkImpl(g, ?source: string) =
 
     member this.GetSymbolUses() = 
         TcSymbolUses(g, capturedNameResolutions, capturedFormatSpecifierLocations.ToArray())
+
+    member this.OpenDeclarations = Seq.toList capturedOpenDeclarations
 
     interface ITypecheckResultsSink with
         member sink.NotifyEnvWithScope(m,nenv,ad) = 
@@ -1503,6 +1526,9 @@ type TcResultsSinkImpl(g, ?source: string) =
 
         member sink.NotifyFormatSpecifierLocation(m, numArgs) = 
             capturedFormatSpecifierLocations.Add((m, numArgs))
+
+        member sink.NotifyOpenDeclaration(openDeclaration) =
+            capturedOpenDeclarations.Add(openDeclaration)
 
         member sink.CurrentSource = source
 
@@ -1549,6 +1575,11 @@ let CallExprHasTypeSink (sink:TcResultsSink) (m:range,nenv,typ,denv,ad) =
     match sink.CurrentSink with 
     | None -> () 
     | Some sink -> sink.NotifyExprHasType(m.End,typ,denv,nenv,ad,m)
+
+let CallOpenDeclarationSink (sink:TcResultsSink) (openDeclaration: OpenDeclaration) =
+    match sink.CurrentSink with
+    | None -> ()
+    | Some sink -> sink.NotifyOpenDeclaration(openDeclaration)
 
 //-------------------------------------------------------------------------
 // Check inferability of type parameters in resolved items.
@@ -3123,21 +3154,25 @@ let private ResolveExprDotLongIdent (ncenv:NameResolver) m ad nenv typ lid findF
     let typeNameResInfo = TypeNameResolutionInfo.Default
     let adhoctDotSearchAccessible = AtMostOneResult m (ResolveLongIdentInTypePrim ncenv nenv LookupKind.Expr ResolutionInfo.Empty 1 m ad lid findFlag typeNameResInfo typ)
     match adhoctDotSearchAccessible with 
-    | Exception _ ->
+    | Exception _ -> 
         // If the dot is not resolved by adhoc overloading then look for a record field 
         // that can resolve the name. 
-        let dotFieldIdSearch = 
-            match lid with 
-            // A unique record label access, e.g  expr.field  
-            | id::rest when nenv.eFieldLabels.ContainsKey(id.idText) -> 
-                match nenv.eFieldLabels.[id.idText] with
-                | [] -> NoResultsOrUsefulErrors
-                | rfref :: _ ->
-                    // NOTE (instantiationGenerator cleanup): we need to freshen here because we don't know the type. 
-                    // But perhaps the caller should freshen?? 
-                    let item = FreshenRecdFieldRef ncenv m rfref
-                    OneSuccess (ResolutionInfo.Empty,item,rest)
-            | _ -> NoResultsOrUsefulErrors 
+        let dotFieldIdSearch =
+            // If the type is already known, we should not try to lookup a record field
+            if isAppTy ncenv.g typ then 
+                NoResultsOrUsefulErrors
+            else 
+                match lid with 
+                // A unique record label access, e.g  expr.field  
+                | id::rest when nenv.eFieldLabels.ContainsKey(id.idText) -> 
+                    match nenv.eFieldLabels.[id.idText] with
+                    | [] -> NoResultsOrUsefulErrors
+                    | rfref :: _ ->
+                        // NOTE (instantiationGenerator cleanup): we need to freshen here because we don't know the type. 
+                        // But perhaps the caller should freshen?? 
+                        let item = FreshenRecdFieldRef ncenv m rfref
+                        OneSuccess (ResolutionInfo.Empty,item,rest)
+                | _ -> NoResultsOrUsefulErrors 
         
         let search = dotFieldIdSearch 
         match AtMostOneResult m search with 
@@ -3145,8 +3180,7 @@ let private ResolveExprDotLongIdent (ncenv:NameResolver) m ad nenv typ lid findF
         | _ -> 
             let adhocDotSearchAll = ResolveLongIdentInTypePrim ncenv nenv LookupKind.Expr ResolutionInfo.Empty 1 m AccessibleFromSomeFSharpCode lid findFlag typeNameResInfo typ 
             ForceRaise (AtMostOneResult m (search +++ adhocDotSearchAll))
-
-    | Result _ -> 
+    | _ -> 
         ForceRaise adhoctDotSearchAccessible
 
 let ComputeItemRange wholem (lid: Ident list) rest =

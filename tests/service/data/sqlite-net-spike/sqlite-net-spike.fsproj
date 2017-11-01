@@ -37,7 +37,8 @@
   <ItemGroup>
     <Reference Include="mscorlib" />
     <Reference Include="FSharp.Core">
-      <HintPath>..\..\..\..\$(Configuration)\net40\bin\FSharp.Core.dll</HintPath>
+      <HintPath>..\..\..\..\packages\Microsoft.Portable.FSharp.Core.4.1.20\lib\profiles\net40\FSharp.Core.dll</HintPath>
+      <Private>false</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -46,7 +47,7 @@
   <ItemGroup>
     <Compile Include="Program.fs" />
   </ItemGroup>
-  <Import Project="..\..\..\..\$(Configuration)\net40\bin\Microsoft.FSharp.Targets" />
+  <Import Project="..\..\..\..\packages\FSharp.Compiler.Tools.4.1.27\tools\Microsoft.FSharp.Targets" />
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>

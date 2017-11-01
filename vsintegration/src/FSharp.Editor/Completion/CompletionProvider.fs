@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -34,7 +34,6 @@ type internal FSharpCompletionProvider
     inherit CompletionProvider()
 
     static let userOpName = "CompletionProvider"
-    static let completionTriggers = [| '.' |]
     static let declarationItemsCache = ConditionalWeakTable<string, FSharpDeclarationListItem>()
     static let [<Literal>] NameInCodePropName = "NameInCode"
     static let [<Literal>] FullNamePropName = "FullName"
@@ -55,9 +54,23 @@ type internal FSharpCompletionProvider
 
     let xmlMemberIndexService = serviceProvider.GetService(typeof<IVsXMLMemberIndexService>) :?> IVsXMLMemberIndexService
     let documentationBuilder = XmlDocumentation.CreateDocumentationBuilder(xmlMemberIndexService, serviceProvider.DTE)
-    
+        
     static let noCommitOnSpaceRules = 
-        CompletionItemRules.Default.WithCommitCharacterRule(CharacterSetModificationRule.Create(CharacterSetModificationKind.Remove, ' ', '=', ',', '.', '<', '>', '(', ')', '!', ':'))
+        // These are important.  They make sure we don't _commit_ autocompletion when people don't expect them to.  Some examples:
+        //
+        // * type Foo() =
+        //       member val a = 12 with get, <<---- Don't commit autocomplete!
+        //
+        // * type MyRecord = { name: <<---- Don't commit autocomplete!
+        //
+        // * type My< <<---- Don't commit autocomplete!
+        //
+        // * let myClassInstance = MyClass(Date= <<---- Don't commit autocomplete!
+        //
+        // * let xs = [1..10] <<---- Don't commit autocomplete! (same for arrays)
+        let noCommitChars = [|' '; '='; ','; '.'; '<'; '>'; '('; ')'; '!'; ':'; '['; ']'; '|'|].ToImmutableArray()
+
+        CompletionItemRules.Default.WithCommitCharacterRule(CharacterSetModificationRule.Create(CharacterSetModificationKind.Remove, noCommitChars))
     
     static let getRules() = if Settings.IntelliSense.ShowAfterCharIsTyped then noCommitOnSpaceRules else CompletionItemRules.Default
 
@@ -73,18 +86,15 @@ type internal FSharpCompletionProvider
             let triggerPosition = caretPosition - 1
             let c = sourceText.[triggerPosition]
             
-            if completionTriggers |> Array.contains c then
-                true
-            
             // do not trigger completion if it's not single dot, i.e. range expression
-            elif triggerPosition > 0 && sourceText.[triggerPosition - 1] = '.' then
+            if not Settings.IntelliSense.ShowAfterCharIsTyped && sourceText.[triggerPosition - 1] = '.' then
                 false
             
             // Trigger completion if we are on a valid classification type
             else
                 let documentId, filePath, defines = getInfo()
                 CompletionUtils.shouldProvideCompletion(documentId, filePath, defines, sourceText, triggerPosition) &&
-                (Settings.IntelliSense.ShowAfterCharIsTyped && CompletionUtils.isStartingNewWord(sourceText, triggerPosition))
+                (c = '.' || (Settings.IntelliSense.ShowAfterCharIsTyped && CompletionUtils.isStartingNewWord(sourceText, triggerPosition)))
 
     static member ProvideCompletionsAsyncAux(checker: FSharpChecker, sourceText: SourceText, caretPosition: int, options: FSharpProjectOptions, filePath: string, 
                                              textVersionHash: int, getAllSymbols: unit -> AssemblySymbol list) = 
@@ -100,14 +110,14 @@ type internal FSharpCompletionProvider
             let caretLine = textLines.GetLineFromPosition(caretPosition)
             let fcsCaretLineNumber = Line.fromZ caretLinePos.Line  // Roslyn line numbers are zero-based, FSharp.Compiler.Service line numbers are 1-based
             let caretLineColumn = caretLinePos.Character
-            let qualifyingNames, partialName = QuickParse.GetPartialLongNameEx(caretLine.ToString(), caretLineColumn - 1) 
+            let partialName = QuickParse.GetPartialLongNameEx(caretLine.ToString(), caretLineColumn - 1) 
             
             let getAllSymbols() = 
-                getAllSymbols() |> List.filter (fun entity -> entity.FullName.Contains "." && not (PrettyNaming.IsOperatorName entity.Symbol.DisplayName))
+                getAllSymbols() 
+                |> List.filter (fun entity -> entity.FullName.Contains "." && not (PrettyNaming.IsOperatorName entity.Symbol.DisplayName))
 
-            let! declarations =
-                checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLineColumn, caretLine.ToString(), qualifyingNames, partialName, getAllSymbols, userOpName=userOpName) |> liftAsync
-            
+            let! declarations = checkFileResults.GetDeclarationListInfo(Some(parseResults), fcsCaretLineNumber, caretLine.ToString(), 
+                                                                        partialName, getAllSymbols, userOpName=userOpName) |> liftAsync
             let results = List<Completion.CompletionItem>()
             
             let getKindPriority = function
@@ -186,7 +196,7 @@ type internal FSharpCompletionProvider
                 declarationItemsCache.Add(completionItem.DisplayText, declItem)
                 results.Add(completionItem))
 
-            if results.Count > 0 && not declarations.IsForType && not declarations.IsError && List.isEmpty qualifyingNames then
+            if results.Count > 0 && not declarations.IsForType && not declarations.IsError && List.isEmpty partialName.QualifyingIdents then
                 let lineStr = textLines.[caretLinePos.Line].ToString()
                 match UntypedParseImpl.TryGetCompletionContext(Pos.fromZ caretLinePos.Line caretLinePos.Character, Some parseResults, lineStr) with
                 | None -> results.AddRange(keywordCompletionItems)
@@ -210,15 +220,15 @@ type internal FSharpCompletionProvider
             let! sourceText = context.Document.GetTextAsync(context.CancellationToken)
             let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)
             do! Option.guard (CompletionUtils.shouldProvideCompletion(document.Id, document.FilePath, defines, sourceText, context.Position))
-            let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+            let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
             let! textVersion = context.Document.GetTextVersionAsync(context.CancellationToken)
-            let! _, _, fileCheckResults = checker.ParseAndCheckDocument(document, options, true, userOpName=userOpName)
+            let! _, _, fileCheckResults = checker.ParseAndCheckDocument(document, projectOptions, true, userOpName=userOpName)
             let getAllSymbols() =
                 if Settings.IntelliSense.ShowAllSymbols
                 then assemblyContentProvider.GetAllEntitiesInProjectAndReferencedAssemblies(fileCheckResults)
                 else []
             let! results = 
-                FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, sourceText, context.Position, options, 
+                FSharpCompletionProvider.ProvideCompletionsAsyncAux(checker, sourceText, context.Position, projectOptions, 
                                                                     document.FilePath, textVersion.GetHashCode(), getAllSymbols)
             context.AddItems(results)
         } |> Async.Ignore |> RoslynHelpers.StartAsyncUnitAsTask context.CancellationToken
@@ -268,8 +278,8 @@ type internal FSharpCompletionProvider
                     let! sourceText = document.GetTextAsync(cancellationToken)
                     let textWithItemCommitted = sourceText.WithChanges(TextChange(item.Span, nameInCode))
                     let line = sourceText.Lines.GetLineFromPosition(item.Span.Start)
-                    let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
-                    let! parsedInput = checker.ParseDocument(document, options, sourceText, userOpName)
+                    let! parsingOptions, _options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                    let! parsedInput = checker.ParseDocument(document, parsingOptions, sourceText, userOpName)
                     let fullNameIdents = fullName |> Option.map (fun x -> x.Split '.') |> Option.defaultValue [||]
                     
                     let insertionPoint = 

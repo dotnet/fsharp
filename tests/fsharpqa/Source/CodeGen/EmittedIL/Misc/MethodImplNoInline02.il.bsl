@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.18020
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:3:0:0
+  .ver 4:4:1:0
 }
 .assembly MethodImplNoInline02
 {
@@ -25,20 +25,20 @@
 }
 .mresource public FSharpSignatureData.MethodImplNoInline02
 {
-  // Offset: 0x00000000 Length: 0x0000030B
+  // Offset: 0x00000000 Length: 0x00000305
 }
 .mresource public FSharpOptimizationData.MethodImplNoInline02
 {
   // Offset: 0x00000310 Length: 0x000000F9
 }
 .module MethodImplNoInline02.exe
-// MVID: {51142952-084F-1A8E-A745-038352291451}
+// MVID: {59B19213-084F-1A8E-A745-03831392B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x00E00000
+// Image base: 0x012C0000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================

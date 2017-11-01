@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -198,7 +198,7 @@ module internal XmlDocumentation =
                     if not started then
                         started <- true
                         AppendHardLine collector
-                        AppendOnNewLine collector SR.ExceptionsLabel.Value
+                        AppendOnNewLine collector (SR.ExceptionsHeader())
                     EnsureHardLine collector
                     collector.Add(tagSpace "    ")
                     WriteTypeName collector exnType.Value
@@ -349,7 +349,7 @@ module internal XmlDocumentation =
         let ProcessGenericParameters (tps: Layout list) =
             if not tps.IsEmpty then
                 AppendHardLine typeParameterMapCollector
-                AppendOnNewLine typeParameterMapCollector SR.GenericParametersLabel.Value
+                AppendOnNewLine typeParameterMapCollector (SR.GenericParametersHeader())
                 for tp in tps do 
                     AppendHardLine typeParameterMapCollector
                     typeParameterMapCollector.Add(tagSpace "    ")

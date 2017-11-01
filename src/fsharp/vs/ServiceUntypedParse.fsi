@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 //----------------------------------------------------------------------------
 // API to the compiler as an incremental service for parsing,
@@ -37,7 +37,7 @@ type internal FSharpParseFileResults =
     member ValidateBreakpointLocation : pos:pos -> range option
 
     /// When these files change then the build is invalid
-    member DependencyFiles : string list
+    member DependencyFiles : string[]
 
     /// Get the errors and warnings for the parse
     member Errors : FSharpErrorInfo[]
@@ -45,7 +45,7 @@ type internal FSharpParseFileResults =
     /// Indicates if any errors occurred during the parse
     member ParseHadErrors : bool
 
-    internal new : errors : FSharpErrorInfo[] * input : Ast.ParsedInput option * parseHadErrors : bool * dependencyFiles : string list -> FSharpParseFileResults
+    internal new: errors: FSharpErrorInfo[] * input: Ast.ParsedInput option * parseHadErrors: bool * dependencyFiles: string[] -> FSharpParseFileResults
 
 /// Information about F# source file names
 #if COMPILER_PUBLIC_API

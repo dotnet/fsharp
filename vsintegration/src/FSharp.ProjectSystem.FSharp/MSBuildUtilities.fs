@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 
@@ -125,7 +125,7 @@ type internal MSBuildUtilities() =
                 Inc(curPathParts)
                 curPathParts.Add(pathParts.[curPathParts.Count]) // e.g. transition from A\ to A\D\E\bar.fs
                 if not(alreadyRenderedFolders.Add(new List<string>(curPathParts))) && throwIfCannotRender then
-                    raise <| new InvalidOperationException(String.Format(FSharpSR.GetString(FSharpSR.ProjectRenderFolderMultiple), projectNode.ProjectFile, bi.Include))
+                    raise <| new InvalidOperationException(String.Format(FSharpSR.ProjectRenderFolderMultiple(), projectNode.ProjectFile, bi.Include))
             Inc(curPathParts)
             if bi.ItemType = ProjectFileConstants.Folder then
                 explicitFolders.Add(new List<_>(pathParts), (bi,0))

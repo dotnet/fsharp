@@ -1,13 +1,15 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.Lexhelp
 
 open System
 open System.Text
+
 open Internal.Utilities
 open Internal.Utilities.Collections
 open Internal.Utilities.Text
 open Internal.Utilities.Text.Lexing
+
 open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.AbstractIL
 open Microsoft.FSharp.Compiler.AbstractIL.Internal
@@ -41,10 +43,10 @@ type LightSyntaxStatus(initial:bool,warn:bool) =
 /// Manage lexer resources (string interning)
 [<Sealed>]
 type LexResourceManager() =
-    let strings = new System.Collections.Generic.Dictionary<string,Parser.token>(100)
+    let strings = new System.Collections.Generic.Dictionary<string, Parser.token>(100)
     member x.InternIdentifierToken(s) = 
         let mutable res = Unchecked.defaultof<_> 
-        let ok = strings.TryGetValue(s,&res)  
+        let ok = strings.TryGetValue(s, &res)  
         if ok then res  else 
         let res = IDENT s
         (strings.[s] <- res; res)
@@ -55,7 +57,8 @@ type lexargs =
       ifdefStack: LexerIfdefStack
       resourceManager: LexResourceManager
       lightSyntaxStatus : LightSyntaxStatus
-      errorLogger: ErrorLogger }
+      errorLogger: ErrorLogger
+      applyLineDirectives: bool }
 
 /// possible results of lexing a long unicode escape sequence in a string literal, e.g. "\UDEADBEEF"
 type LongUnicodeLexResult =
@@ -63,12 +66,13 @@ type LongUnicodeLexResult =
     | SingleChar of uint16
     | Invalid
 
-let mkLexargs (_filename,defines,lightSyntaxStatus,resourceManager,ifdefStack,errorLogger) =
+let mkLexargs (_filename, defines, lightSyntaxStatus, resourceManager, ifdefStack, errorLogger) =
     { defines = defines
       ifdefStack= ifdefStack
       lightSyntaxStatus=lightSyntaxStatus
       resourceManager=resourceManager
-      errorLogger=errorLogger }
+      errorLogger=errorLogger
+      applyLineDirectives=true }
 
 /// Register the lexbuf and call the given function
 let reusingLexbufForParsing lexbuf f = 
@@ -77,13 +81,13 @@ let reusingLexbufForParsing lexbuf f =
     try
       f () 
     with e ->
-      raise (WrappedError(e,(try lexbuf.LexemeRange with _ -> range0)))
+      raise (WrappedError(e, (try lexbuf.LexemeRange with _ -> range0)))
 
 let resetLexbufPos filename (lexbuf: UnicodeLexing.Lexbuf) = 
     lexbuf.EndPos <- Position.FirstLine (fileIndexOfFile filename)
 
 /// Reset the lexbuf, configure the initial position with the given filename and call the given function
-let usingLexbufForParsing (lexbuf:UnicodeLexing.Lexbuf,filename) f =
+let usingLexbufForParsing (lexbuf:UnicodeLexing.Lexbuf, filename) f =
     resetLexbufPos filename lexbuf
     reusingLexbufForParsing lexbuf (fun () -> f lexbuf)
 
@@ -91,7 +95,7 @@ let usingLexbufForParsing (lexbuf:UnicodeLexing.Lexbuf,filename) f =
 // Functions to manipulate lexer transient state
 //-----------------------------------------------------------------------
 
-let defaultStringFinisher = (fun _endm _b s -> STRING (Encoding.Unicode.GetString(s,0,s.Length))) 
+let defaultStringFinisher = (fun _endm _b s -> STRING (Encoding.Unicode.GetString(s, 0, s.Length))) 
 
 let callStringFinisher fin (buf: ByteBuffer) endm b = fin endm b (buf.Close())
 
@@ -289,7 +293,7 @@ module Keywords =
           "sealed"; "trait";  "tailcall"; "virtual"; ]
 
     let private unreserveWords = 
-        keywordList |> List.choose (function (mode,keyword,_) -> if mode = FSHARP then Some keyword else None) 
+        keywordList |> List.choose (function (mode, keyword, _) -> if mode = FSHARP then Some keyword else None) 
 
     //------------------------------------------------------------------------
     // Keywords
@@ -299,9 +303,9 @@ module Keywords =
         keywordList |> List.map (fun (_, w, _) -> w) 
 
     let keywordTable = 
-        let tab = System.Collections.Generic.Dictionary<string,token>(100)
-        for _,keyword,token in keywordList do 
-            tab.Add(keyword,token)
+        let tab = System.Collections.Generic.Dictionary<string, token>(100)
+        for _, keyword, token in keywordList do 
+            tab.Add(keyword, token)
         tab
         
     let KeywordToken s = keywordTable.[s]
@@ -313,7 +317,7 @@ module Keywords =
 
     let KeywordOrIdentifierToken args (lexbuf:UnicodeLexing.Lexbuf) s =
         match keywordTable.TryGetValue s with
-        | true,v ->
+        | true, v ->
             match v with 
             | RESERVED ->
                 warning(ReservedKeyword(FSComp.SR.lexhlpIdentifierReserved(s), lexbuf.LexemeRange))

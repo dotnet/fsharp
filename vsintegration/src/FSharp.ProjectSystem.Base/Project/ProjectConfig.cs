@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.OLE.Interop;
@@ -423,6 +423,18 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             set
             {
                 setBool(ProjectFileConstants.Tailcalls, value);
+            }
+        }
+
+        public bool UseStandardResourceNames
+        {
+            get
+            {
+                return getNullableBool(ProjectFileConstants.UseStandardResourceNames) ?? true;
+            }
+            set
+            {
+                setBool(ProjectFileConstants.UseStandardResourceNames, value);
             }
         }
 

@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.16774
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:1:0
 }
 .assembly Mutation02
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.Mutation02
 {
-  // Offset: 0x00000000 Length: 0x000001BE
+  // Offset: 0x00000000 Length: 0x0000019A
 }
 .mresource public FSharpOptimizationData.Mutation02
 {
-  // Offset: 0x000001C8 Length: 0x0000006C
+  // Offset: 0x000001A0 Length: 0x0000006C
 }
 .module Mutation02.exe
-// MVID: {4DAC1436-8C6A-2F0D-A745-03833614AC4D}
+// MVID: {59B19213-8C6A-2F0D-A745-03831392B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000000000360000
+// Image base: 0x01720000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -56,7 +56,7 @@
   {
     // Code size       6 (0x6)
     .maxstack  8
-    IL_0000:  ldsfld     valuetype [mscorlib]System.TimeSpan '<StartupCode$Mutation02>'.$Mutation02::x@4
+    IL_0000:  ldsfld     valuetype [mscorlib]System.TimeSpan '<StartupCode$Mutation02>'.$Mutation02::'x@4-13'
     IL_0005:  ret
   } // end of method Mutation02::get_x
 
@@ -71,7 +71,7 @@
 .class private abstract auto ansi sealed '<StartupCode$Mutation02>'.$Mutation02
        extends [mscorlib]System.Object
 {
-  .field static assembly valuetype [mscorlib]System.TimeSpan x@4
+  .field static assembly valuetype [mscorlib]System.TimeSpan 'x@4-13'
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
   .field static assembly int32 init@
   .custom instance void [mscorlib]System.Diagnostics.DebuggerBrowsableAttribute::.ctor(valuetype [mscorlib]System.Diagnostics.DebuggerBrowsableState) = ( 01 00 00 00 00 00 00 00 ) 
@@ -80,25 +80,24 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       34 (0x22)
+    // Code size       33 (0x21)
     .maxstack  4
     .locals init ([0] valuetype [mscorlib]System.TimeSpan x,
              [1] valuetype [mscorlib]System.TimeSpan V_1)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 4,4 : 1,33 
-    IL_0000:  nop
-    IL_0001:  ldsfld     valuetype [mscorlib]System.TimeSpan [mscorlib]System.TimeSpan::MinValue
-    IL_0006:  dup
-    IL_0007:  stsfld     valuetype [mscorlib]System.TimeSpan '<StartupCode$Mutation02>'.$Mutation02::x@4
-    IL_000c:  stloc.0
-    .line 5,5 : 1,13 
-    IL_000d:  call       valuetype [mscorlib]System.TimeSpan Mutation02::get_x()
-    IL_0012:  stloc.1
-    IL_0013:  ldloca.s   V_1
-    IL_0015:  constrained. [mscorlib]System.TimeSpan
-    IL_001b:  callvirt   instance string [mscorlib]System.Object::ToString()
-    IL_0020:  pop
-    IL_0021:  ret
+    .line 4,4 : 1,33 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\Mutation\\Mutation02.fs'
+    IL_0000:  ldsfld     valuetype [mscorlib]System.TimeSpan [mscorlib]System.TimeSpan::MinValue
+    IL_0005:  dup
+    IL_0006:  stsfld     valuetype [mscorlib]System.TimeSpan '<StartupCode$Mutation02>'.$Mutation02::'x@4-13'
+    IL_000b:  stloc.0
+    .line 5,5 : 1,13 ''
+    IL_000c:  call       valuetype [mscorlib]System.TimeSpan Mutation02::get_x()
+    IL_0011:  stloc.1
+    IL_0012:  ldloca.s   V_1
+    IL_0014:  constrained. [mscorlib]System.TimeSpan
+    IL_001a:  callvirt   instance string [mscorlib]System.Object::ToString()
+    IL_001f:  pop
+    IL_0020:  ret
   } // end of method $Mutation02::main@
 
 } // end of class '<StartupCode$Mutation02>'.$Mutation02

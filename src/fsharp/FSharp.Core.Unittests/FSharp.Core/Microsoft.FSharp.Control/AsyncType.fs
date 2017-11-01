@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Various tests for the:
 // Microsoft.FSharp.Control.Async type
@@ -132,7 +132,7 @@ type AsyncType() =
 
     member private this.WaitASec (t:Task) =
         let result = t.Wait(TimeSpan(hours=0,minutes=0,seconds=1))
-        Assert.IsTrue(result)        
+        Assert.IsTrue(result, "Task did not finish after waiting for a second.")
       
     
     [<Test>]
@@ -147,8 +147,38 @@ type AsyncType() =
             Async.StartAsTask a
         this.WaitASec t
         Assert.IsTrue (t.IsCompleted)
-        Assert.AreEqual(s, t.Result)    
+        Assert.AreEqual(s, t.Result)
+
+    [<Test>]
+    member this.StartAsTaskCancellation () =
+        let cts = new CancellationTokenSource()
+        let tcs = TaskCompletionSource<unit>()
+        let a = async {
+            cts.CancelAfter (100)
+            do! tcs.Task |> Async.AwaitTask }
+#if FSCORE_PORTABLE_NEW || coreclr
+        let t : Task<unit> =
+#else
+        use t : Task<unit> =
+#endif
+            Async.StartAsTask(a, cancellationToken = cts.Token)
+
+        // Should not finish
+        try
+            let result = t.Wait(300)
+            Assert.IsFalse (result)
+        with :? AggregateException -> Assert.Fail "Task should not finish, jet"
+
+        tcs.SetCanceled()
         
+        try
+            this.WaitASec t
+        with :? AggregateException as a ->
+            match a.InnerException with
+            | :? TaskCanceledException as t -> ()
+            | _ -> reraise()
+        Assert.IsTrue (t.IsCompleted, "Task is not completed")
+
     [<Test>]
     member this.StartTask () =
         let s = "Hello tasks!"

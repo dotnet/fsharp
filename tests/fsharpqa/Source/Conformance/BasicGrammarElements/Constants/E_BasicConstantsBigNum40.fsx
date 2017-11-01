@@ -1,4 +1,4 @@
-// #Regression #Conformance #BasicGrammarElements #Constants #NoMono #ReqNOMT #NETFX40Only 
+// #Regression #Conformance #BasicGrammarElements #Constants #NoMono #ReqNOMT  
 
 // Verify the ability to specify basic constants - continued
 

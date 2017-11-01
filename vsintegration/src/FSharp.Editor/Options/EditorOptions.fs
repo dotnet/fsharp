@@ -13,7 +13,7 @@ module DefaultTuning =
     let UnusedDeclarationsAnalyzerInitialDelay = 0 (* 1000 *) (* milliseconds *)
     let UnusedOpensAnalyzerInitialDelay = 0 (* 2000 *) (* milliseconds *)
     let SimplifyNameInitialDelay = 2000 (* milliseconds *)
-    let SimplifyNameEachItemDelay = 5 (* milliseconds *)
+    let SimplifyNameEachItemDelay = 0 (* milliseconds *)
 
 // CLIMutable to make the record work also as a view model
 [<CLIMutable>]

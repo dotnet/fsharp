@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Internal.Utilities.Collections.Tagged
 
@@ -570,10 +570,7 @@ namespace Internal.Utilities.Collections.Tagged
         let ofArray comparer l = Array.fold (fun acc k -> add comparer k acc) empty l    
 
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
     [<System.Diagnostics.DebuggerDisplay ("Count = {Count}")>]
-#endif
     [<Sealed>]
     type internal Set<'T,'ComparerTag> when 'ComparerTag :> IComparer<'T>(comparer: IComparer<'T>, tree: SetTree<'T>) =
 
@@ -727,12 +724,12 @@ namespace Internal.Utilities.Collections.Tagged
 #endif
           | MapNode(_,_,_,_,h) -> h
 
-        let isEmpty m = 
+        let inline isEmpty m = 
             match m with 
             | MapEmpty -> true
             | _ -> false
 
-        let mk l k v r = 
+        let inline mk l k v r = 
 #if ONE 
             match l,r with 
             | MapEmpty,MapEmpty -> MapOne(k,v)
@@ -744,8 +741,9 @@ namespace Internal.Utilities.Collections.Tagged
                 MapNode(k,v,l,r,m+1)
 
         let rebalance t1 k v t2 =
-            let t1h = height t1 
-            if  height t2 > t1h + 2 then // right is heavier than left 
+            let t1h = height t1
+            let t2h = height t2
+            if t2h > t1h + 2 then // right is heavier than left 
                 match t2 with 
                 | MapNode(t2k,t2v,t2l,t2r,_) -> 
                    // one of the nodes must have height > height t1 + 1 
@@ -758,8 +756,7 @@ namespace Internal.Utilities.Collections.Tagged
                      mk (mk t1 k v t2l) t2k t2v t2r
                 | _ -> failwith "rebalance"
             else
-                let t2h = height t2 
-                if  t1h > t2h + 2 then // left is heavier than right 
+                if t1h > t2h + 2 then // left is heavier than right 
                   match t1 with 
                   | MapNode(t1k,t1v,t1l,t1r,_) -> 
                     // one of the nodes must have height > height t2 + 1 
@@ -1096,14 +1093,12 @@ namespace Internal.Utilities.Collections.Tagged
                   member self.Dispose() = ()}
 
 
-#if FX_NO_DEBUG_DISPLAYS
-#else
     [<System.Diagnostics.DebuggerDisplay ("Count = {Count}")>]
-#endif
     [<Sealed>]
     type internal Map<'Key,'T,'ComparerTag> when 'ComparerTag :> IComparer<'Key>( comparer: IComparer<'Key>, tree: MapTree<'Key,'T>) =
 
-        static let refresh (m:Map<_,_,'ComparerTag>) t =    Map<_,_,'ComparerTag>(comparer=m.Comparer, tree=t)
+        static let refresh (m:Map<_,_,'ComparerTag>) t = 
+            Map<_,_,'ComparerTag>(comparer=m.Comparer, tree=t)
 
         member s.Tree = tree
         member s.Comparer : IComparer<'Key> = comparer

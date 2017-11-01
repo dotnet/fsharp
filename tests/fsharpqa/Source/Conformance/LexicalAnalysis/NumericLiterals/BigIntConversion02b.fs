@@ -1,4 +1,4 @@
-// #Regression #Conformance #LexicalAnalysis #Constants #NoMono #NETFX40Only #ReqNOMT 
+// #Regression #Conformance #LexicalAnalysis #Constants #NoMono  #ReqNOMT 
 // Verify BigInt uses op_Implicit conversions
 // Regression test for FSHARP1.0:4498
 // Supported conversions - on Dev10/NetFx4.0

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Tests.ProjectSystem
 
@@ -501,7 +501,7 @@ type Miscellaneous() =
             let ipps = project :> Microsoft.VisualStudio.FSharp.LanguageService.IProvideProjectSite
             let ips = ipps.GetProjectSite()
             let expected = [| |] // Ideal behavior is [|"foo.fs";"bar.fs"|], and we could choose to improve this in the future.  For now we are just happy to now throw/crash.
-            let actual = ips.SourceFilesOnDisk()
+            let actual = ips.CompilationSourceFiles
             Assert.AreEqual(expected, actual, "project site did not report expected set of source files")
         )
 
@@ -619,7 +619,7 @@ type Miscellaneous() =
             let project = TheTests.CreateProject(file, "false", cnn, sp) 
             try
                 project.ComputeSourcesAndFlags()
-                let items = project.GetCompileItems() |> Array.toList
+                let items = project.CompilationSourceFiles |> Array.toList
                 match items with
                 | [ _; fn ] -> // first file is AssemblyAttributes.fs
                     AssertEqual fileName fn

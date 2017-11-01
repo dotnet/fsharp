@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 // Various tests for the:
 // Microsoft.FSharp.Control.Async module
@@ -325,11 +325,7 @@ type AsyncModule() =
         try
             Async.RunSynchronously (go, cancellationToken = cts.Token)
         with
-#if FX_NO_OPERATION_CANCELLED
-            _ -> ()
-#else
             :? System.OperationCanceledException -> ()
-#endif
         Assert.AreEqual(1, !flag)
 
     [<Test>]
@@ -548,11 +544,7 @@ type AsyncModule() =
                   |> fun c -> Async.RunSynchronously(c, cancellationToken = cts.Token)
                   |> ignore
             with
-#if FX_NO_OPERATION_CANCELLED
-                _ -> ()
-#else
                 :? System.OperationCanceledException -> () // OK
-#endif
         for _ in 1..1000 do test()
 
     [<Test>]

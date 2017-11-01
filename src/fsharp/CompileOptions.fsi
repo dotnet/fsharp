@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 module internal Microsoft.FSharp.Compiler.CompileOptions
 
@@ -68,6 +68,9 @@ val DisplayBannerText : TcConfigBuilder -> unit
 val GetCoreFscCompilerOptions     : TcConfigBuilder -> CompilerOptionBlock list
 val GetCoreFsiCompilerOptions     : TcConfigBuilder -> CompilerOptionBlock list
 val GetCoreServiceCompilerOptions : TcConfigBuilder -> CompilerOptionBlock list
+
+/// Apply args to TcConfigBuilder and return new list of source files
+val ApplyCommandLineArgs: tcConfigB: TcConfigBuilder * sourceFiles: string list * argv: string list -> string list
 
 // Expose the "setters" for some user switches, to enable setting of defaults
 val SetOptimizeSwitch : TcConfigBuilder -> OptionSwitch -> unit

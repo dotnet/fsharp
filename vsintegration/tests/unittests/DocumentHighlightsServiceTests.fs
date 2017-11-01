@@ -18,7 +18,7 @@
 // 
 //    Use F# Interactive.  This only works for FSharp.Compiler.Private.dll which has a public API
 
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 [<NUnit.Framework.Category "Roslyn Services">]
 module Microsoft.VisualStudio.FSharp.Editor.Tests.Roslyn.DocumentHighlightsServiceTests
 
@@ -37,7 +37,7 @@ open UnitTests.TestLib.LanguageService
 
 let filePath = "C:\\test.fs"
 
-let internal options = { 
+let internal projectOptions = { 
     ProjectFileName = "C:\\test.fsproj"
     SourceFiles =  [| filePath |]
     ReferencedProjects = [| |]
@@ -53,7 +53,7 @@ let internal options = {
 
 let private getSpans (sourceText: SourceText) (caretPosition: int) =
     let documentId = DocumentId.CreateNewId(ProjectId.CreateNewId())
-    FSharpDocumentHighlightsService.GetDocumentHighlights(checker, documentId, sourceText, filePath, caretPosition, [], options, 0)
+    FSharpDocumentHighlightsService.GetDocumentHighlights(checker, documentId, sourceText, filePath, caretPosition, [], projectOptions, 0)
     |> Async.RunSynchronously
     |> Option.defaultValue [||]
 

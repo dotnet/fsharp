@@ -1,4 +1,4 @@
-// #NoMono #NoMT #CodeGen #EmittedIL #NETFX20Only #NETFX40Only 
+// #NoMono #NoMT #CodeGen #EmittedIL   
 #light
 
 let TestFunction10(p) =

@@ -1,10 +1,8 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Compiler.AbstractIL.Internal
 
-open Internal.Utilities
 open Internal.Utilities.Collections.Tagged
-open Microsoft.FSharp.Compiler.AbstractIL.Internal.Library 
 open System.Collections.Generic
 
 /// Maps with a specific comparison function
@@ -37,13 +35,13 @@ module internal Zmap =
       z,m
 
     let choose f  (m:Zmap<_,_>) = m.First(f)
-      
+
     let chooseL f  (m:Zmap<_,_>) =
       m.Fold (fun k v s -> match f k v with None -> s | Some x -> x::s) []
-        
-    let ofList m xs = List.fold (fun m (k,v) -> add k v m) (empty m) xs
 
-    let keys   m = chooseL (fun k _ -> Some k) m 
-    let values m = chooseL (fun _ v -> Some v) m
+    let ofList ord xs = Internal.Utilities.Collections.Tagged.Map<_,_>.FromList(ord,xs)
+
+    let keys   (m:Zmap<_,_>) = m.Fold (fun k _ s -> k::s) []
+    let values (m:Zmap<_,_>) = m.Fold (fun _ v s -> v::s) []
 
     let memberOf m k = mem k m

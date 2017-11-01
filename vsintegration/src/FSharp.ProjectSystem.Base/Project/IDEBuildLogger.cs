@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 using System;
 using System.Threading;
 using System.Diagnostics;
@@ -358,7 +358,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             try
             {
                 this.haveCachedRegistry = false;
-                if (LogAtImportance(MessageImportance.Low))
+                if (LogAtImportance(MessageImportance.Normal))
                 {
                     LogEvent(sender, buildEvent);
                 }
@@ -385,7 +385,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 		{
             try
             {
-                if (LogAtImportance(buildEvent.Succeeded ? MessageImportance.Low :
+                if (LogAtImportance(buildEvent.Succeeded ? MessageImportance.Normal :
                                                            MessageImportance.High))
                 {
                     if (this.outputWindowPane != null)
@@ -408,7 +408,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 		{
             try
             {
-                if (LogAtImportance(MessageImportance.Low))
+                if (LogAtImportance(MessageImportance.Normal))
                 {
                     LogEvent(sender, buildEvent);
                 }
@@ -427,7 +427,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 		{
             try
             {
-                if (LogAtImportance(buildEvent.Succeeded ? MessageImportance.Low
+                if (LogAtImportance(buildEvent.Succeeded ? MessageImportance.Normal
                                                          : MessageImportance.High))
                 {
                     LogEvent(sender, buildEvent);
@@ -473,7 +473,7 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
             {
                 --this.currentIndent;
                 if ((isLogTaskDone) &&
-                    LogAtImportance(buildEvent.Succeeded ? MessageImportance.Low
+                    LogAtImportance(buildEvent.Succeeded ? MessageImportance.Normal
                                                          : MessageImportance.High))
                 {
                     LogEvent(sender, buildEvent);
@@ -556,36 +556,37 @@ namespace Microsoft.VisualStudio.FSharp.ProjectSystem
 		/// This method takes a MessageImportance and returns true if messages
 		/// at importance i should be loggeed.  Otherwise return false.
 		/// </summary>
-		private bool LogAtImportance(MessageImportance importance)
-		{
-			// If importance is too low for current settings, ignore the event
-			bool logIt = false;
+        private bool LogAtImportance(MessageImportance importance)
+        {
+            // If importance is too low for current settings, ignore the event
+            bool logIt = false;
 
-			this.SetVerbosity();
+            this.SetVerbosity();
 
-			switch (this.Verbosity)
-			{
-				case LoggerVerbosity.Quiet:
-					logIt = false;
-					break;
-				case LoggerVerbosity.Minimal:
-					logIt = (importance == MessageImportance.High);
-					break;
-				case LoggerVerbosity.Normal:
-				// Falling through...
-				case LoggerVerbosity.Detailed:
-					logIt = (importance != MessageImportance.Low);
-					break;
-				case LoggerVerbosity.Diagnostic:
-					logIt = true;
-					break;
-				default:
-					Debug.Fail("Unknown Verbosity level. Ignoring will cause everything to be logged");
-					break;
-			}
+            switch (this.Verbosity)
+            {
+                case LoggerVerbosity.Quiet:
+                    logIt = false;
+                    break;
+                case LoggerVerbosity.Minimal:
+                    logIt = (importance == MessageImportance.High);
+                    break;
+                case LoggerVerbosity.Normal:
+                    logIt = (importance == MessageImportance.Normal) || (importance == MessageImportance.High);
+                    break;
+                case LoggerVerbosity.Detailed:
+                    logIt = (importance == MessageImportance.Low) || (importance == MessageImportance.Normal) || (importance == MessageImportance.High);
+                    break;
+                case LoggerVerbosity.Diagnostic:
+                    logIt = true;
+                    break;
+                default:
+                    Debug.Fail("Unknown Verbosity level. Ignoring will cause everything to be logged");
+                    break;
+            }
 
-			return logIt;
-		}
+            return logIt;
+        }
 
 		/// <summary>
 		/// This is the method that does the main work of logging an event

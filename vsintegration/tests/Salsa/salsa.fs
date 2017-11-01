@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 (*
     Simplified abstraction over visual studio.
@@ -25,7 +25,7 @@ open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.TextManager.Interop
 open UnitTests.TestLib.Utils.FilesystemHelpers
 open Microsoft.Build.Framework
-open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.SourceCodeServices
 
 open Microsoft.Build.Evaluation
@@ -43,19 +43,11 @@ module internal Salsa =
             { new System.IDisposable with
                     member this.Dispose() = actuallyBuild <- true }
         member th.Results = capturedFlags, capturedSources
-#if FX_NO_CONVERTER
-        member th.Compile(compile:Func<int>, flags:string[], sources:string[]) = 
-#else
         member th.Compile(compile:System.Converter<int,int>, flags:string[], sources:string[]) = 
-#endif
             capturedFlags <- flags 
             capturedSources <- sources
             if actuallyBuild then
-#if FX_NO_CONVERTER
-                compile.Invoke()
-#else
                 compile.Invoke(0)
-#endif
             else
                 0         
         interface ITaskHost
@@ -272,23 +264,17 @@ module internal Salsa =
 
         interface IProjectSite with
 
-          member this.SourceFilesOnDisk() = 
-              let flags = GetFlags()
-              flags.sources 
-              |> List.map(fun s->Path.Combine(projectPath, s)) |> List.toArray 
+          member this.CompilationSourceFiles = 
+              GetFlags().sources |> List.map(fun s->Path.Combine(projectPath, s)) |> List.toArray 
 
-          member this.DescriptionOfProject() = 
+          member this.Description = 
               let flags = GetFlags()
-              try sprintf "MSBuild Flags:%A\n%A" ((this :> IProjectSite).CompilerFlags()) flags
+              try sprintf "MSBuild Flags:%A" flags
               with e -> sprintf "%A" e                    
 
-          member this.CompilerFlags() = 
-              let flags = GetFlags()
-              let result = flags.flags
-              result |> List.toArray 
+          member this.CompilationOptions = GetFlags().flags |> List.toArray 
 
-          member this.ProjectFileName() = 
-              projectfile
+          member this.ProjectFileName = projectfile
 
           member this.BuildErrorReporter with get() = None and set _v = ()
           member this.AdviseProjectSiteChanges(callbackOwnerKey,callback) = changeHandlers.[callbackOwnerKey] <- callback
@@ -303,7 +289,8 @@ module internal Salsa =
                 projectObj.GetProperty(ProjectFileConstants.ProjectGuid).EvaluatedValue
 
           member this.ProjectProvider = None
-          member this.AssemblyReferences() = [||]
+          member this.CompilationReferences = [||]
+          member this.CompilationBinOutputPath = GetFlags().flags |> List.tryPick (fun s -> if s.StartsWith("-o:") then Some s.[3..] else None)
 
     // Attempt to treat as MSBuild project.
     let internal NewMSBuildProjectSite(configurationFunc, platformFunc, msBuildProjectName) = 

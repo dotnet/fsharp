@@ -502,7 +502,219 @@ module Repro2 =
     do configure ()
     /// The check is that the above code compiles OK
 
+module InfiniteSequenceExpressionsExecuteWithFiniteResources = 
+    let rec seqOneNonRecUnusedNonCapturing r = seq {
+        if r > 0 then
+            let recfun() = 1
+            yield r
+            yield! seqOneNonRecUnusedNonCapturing r
+    }
+
+    let rec seqOneNonRecNonCapturing r = seq {
+        if r > 0 then
+            let recfun x = if x > 0 then x else 2
+            yield (recfun 3)
+            yield! seqOneNonRecNonCapturing r
+    }
+
+    let rec seqOneNonRecCapturingOne r = seq {
+        if r > 0 then
+            let recfun x = if x > 0 then r else (x-1)
+            yield (recfun 3)
+            yield! seqOneNonRecCapturingOne r
+    }
+    let rec seqOneNonRecCapturingTwo r q = seq {
+        if r > 0 && q > 0 then
+            let recfun x = if x > 0 then (r,q) else (x-1, x-2)
+            yield (recfun 3)
+            yield! seqOneNonRecCapturingTwo r q
+    }
+
+    let rec seqOneRecUnusedNonCapturing r = seq {
+        if r > 0 then
+            let rec recfun() = recfun()
+            yield r
+            yield! seqOneRecUnusedNonCapturing r
+    }
+
+    let rec seqOneRecNonCapturing r = seq {
+        if r > 0 then
+            let rec recfun x = if x > 0 then x else recfun (x-1)
+            yield (recfun 3)
+            yield! seqOneRecNonCapturing r
+    }
+
+    let rec seqOneRecCapturingOne r = seq {
+        if r > 0 then
+            let rec recfun x = if x > 0 then r else recfun (x-1)
+            yield (recfun 3)
+            yield! seqOneRecCapturingOne r
+    }
+    let rec seqOneRecCapturingTwo r q = seq {
+        if r > 0 && q > 0 then
+            let rec recfun x = if x > 0 then (r,q) else recfun (x-1)
+            yield (recfun 3)
+            yield! seqOneRecCapturingTwo r q
+    }
+    let rec seqTwoRecCapturingOne r = seq {
+        if r > 0 then
+            let rec recfun x = if x > 0 then r else recfun2 (x-1)
+            and recfun2 x = if x > 0 then r else recfun (x-1)
+            yield (recfun 3)
+            yield! seqTwoRecCapturingOne r
+    }
+    let rec seqThreeRecCapturingOne r = seq {
+        if r > 0 then
+            let rec recfun x = if x > 0 then r else recfun2 (x-1)
+            and recfun2 x = if x > 0 then r else recfun3 (x-1)
+            and recfun3 x = if x > 0 then r else recfun (x-1)
+            yield (recfun 3)
+            yield! seqThreeRecCapturingOne r
+    }
+
+    //
+    // These tests will stackoverflow or out-of-memory if the above functions are not compiled to "sequence epression tailcalls",
+    // i.e. by compiling them to a state machine
+    let tests() = 
+        printfn "starting seqOneUnusedNonCapturing"
+        check "celkecwecmkl" (Seq.item 10000000 (seqOneNonRecUnusedNonCapturing 1)) 1
+
+        printfn "starting seqOneRecNonCapturing"
+        check "celkecwecmkl2" (Seq.item 10000000 (seqOneNonRecNonCapturing 2)) 3
+
+        printfn "starting seqOneRecCapturingOne"
+        check "celkecwecmkl3" (Seq.item 10000000 (seqOneNonRecCapturingOne 2)) 2
+
+        printfn "starting seqOneRecCapturingTwo"
+        check "celkecwecmkl4" (Seq.item 10000000 (seqOneNonRecCapturingTwo 2 2)) (2,2)
+
+
+        printfn "starting seqOneUnusedNonCapturing"
+        check "celkecwecmkl" (Seq.item 10000000 (seqOneRecUnusedNonCapturing 1)) 1
+
+        printfn "starting seqOneRecNonCapturing"
+        check "celkecwecmkl2" (Seq.item 10000000 (seqOneRecNonCapturing 2)) 3
+
+        printfn "starting seqOneRecCapturingOne"
+        check "celkecwecmkl3" (Seq.item 10000000 (seqOneRecCapturingOne 2)) 2
+
+        printfn "starting seqOneRecCapturingTwo"
+        check "celkecwecmkl4" (Seq.item 10000000 (seqOneRecCapturingTwo 2 2)) (2,2)
+
+        printfn "starting seqTwoRecCapturingOne"
+        check "celkecwecmkl5" (Seq.item 10000000 (seqTwoRecCapturingOne 2)) 2
+
+        printfn "starting seqThreeRecCapturingOne"
+        check "celkecwecmkl6" (Seq.item 10000000 (seqThreeRecCapturingOne 2)) 2
+
+
+    // Note, recursively referential memoization is not compiled to use finite resources.  If someone is using a recursive memoization table in this position
+    // of an infinite sequence expression then they are going to hit massive resource problems in any case...
+    (*
+    let memoize f = 
+          let dict = System.Collections.Generic.Dictionary()
+          fun x -> if dict.ContainsKey x then dict.[x] else let res = f x in dict.[x] <- res; res
+
+    // Capture 1 recursive memoizations
+    let rec seqOneRecCapturingOneWithOneMemoized r = seq {
+        if r > 0 then
+            let rec recfun = memoize (fun x -> if x > 0 then r else recfun (x-1))
+            yield (recfun 3)
+            yield! seqOneRecCapturingOneWithOneMemoized r
+    }
+
+    // Capture 1 recursive memoizations
+    let rec seqTwoRecCapturingOneWithOneMemoized r = seq {
+        if r > 0 then
+            let rec recfun = memoize (fun x -> if x > 0 then r else recfun2 (x-1))
+            and recfun2 x = if x > 0 then r else recfun (x-1)
+            yield (recfun 3)
+            yield! seqTwoRecCapturingOneWithOneMemoized r
+    }
+
+
+    // Capture 1 recursive memoizations
+    let rec seqThreeRecCapturingOneWithOneMemoized r = seq {
+        if r > 0 then
+            let rec recfun = memoize (fun x -> if x > 0 then r else recfun2 (x-1))
+            and recfun2 x = if x > 0 then r else recfun3 (x-1)
+            and recfun3 x = if x > 0 then r else recfun (x-1)
+            yield (recfun 3)
+            yield! seqThreeRecCapturingOneWithOneMemoized r
+    }
+
+    // Capture 2 recursive memoizations
+    let rec seqThreeRecCapturingOneWithTwoMemoized r = seq {
+        if r > 0 then
+            let rec recfun = memoize (fun x -> if x > 0 then r else recfun2 (x-1))
+            and recfun2 x = if x > 0 then r else recfun3 (x-1)
+            and recfun3 = memoize (fun x -> if x > 0 then r else recfun (x-1))
+            yield (recfun 3)
+            yield! seqThreeRecCapturingOneWithTwoMemoized r
+    }
+
+    // Capture 3 recursive memoizations
+    let syncLoopThreeRecCapturingWithThreeMemoized n r = 
+        let rec recfun = memoize (fun x -> if x > 0 then r else recfun2 (x-1))
+        and recfun2 = memoize (fun x -> if x > 0 then r else recfun3 (x-1))
+        and recfun3 = memoize (fun x -> if x > 0 then r else recfun (x-1))
+        let rec loop n = 
+            if n > 0 then
+                recfun 3 |> ignore
+                loop (n-1) 
+            else 
+                recfun r
+        loop n
     
+
+
+    let rec seqThreeRecCapturingOneWithThreeMemoized r = seq {
+        if r > 0 then
+            let rec recfun = memoize (fun x -> if x > 0 then r else recfun2 (x-1))
+            and recfun2 = memoize (fun x -> if x > 0 then r else recfun3 (x-1))
+            and recfun3 = memoize (fun x -> if x > 0 then r else recfun (x-1))
+            yield (recfun 3)
+            yield! seqThreeRecCapturingOneWithThreeMemoized r
+    }
+
+    printfn "starting seqOneRecCapturingOneWithOneMemoized"
+    printfn "%i" (Seq.item 10000000 (seqOneRecCapturingOneWithOneMemoized 2))
+
+    printfn "starting seqTwoRecCapturingOneWithOneMemoized"
+    printfn "%i" (Seq.item 10000000 (seqTwoRecCapturingOneWithOneMemoized 2))
+
+    printfn "starting seqThreeRecCapturingOneWithOneMemoized"
+    printfn "%i" (Seq.item 10000000 (seqThreeRecCapturingOneWithOneMemoized 2))
+
+
+    printfn "starting seqThreeRecCapturingOneWithTwoMemoized"
+    printfn "%i" (Seq.item 10000000 (seqThreeRecCapturingOneWithTwoMemoized 2))
+
+    printfn "starting syncLoopThreeRecCapturingWithThreeMemoized"
+    printfn "%i" (syncLoopThreeRecCapturingWithThreeMemoized 10000000 2)
+
+    printfn "starting seqThreeRecCapturingOneWithThreeMemoized"
+    printfn "%i" (Seq.item 10000000 (seqThreeRecCapturingOneWithThreeMemoized 2))
+
+    *)
+
+// Tests disabled due to bug https://github.com/Microsoft/visualfsharp/issues/3743
+//InfiniteSequenceExpressionsExecuteWithFiniteResources.tests()
+
+    // This is the additional test case related to bug https://github.com/Microsoft/visualfsharp/issues/3743
+    let TestRecFuncInSeq() = 
+        let factorials =
+            [ for x in 0..10 do
+                let rec factorial x =
+                    match x with
+                    | 0 -> 1
+                    | x -> x * factorial(x - 1)
+                yield factorial x
+            ]
+
+        for f in factorials do printf "%i" f
+    TestRecFuncInSeq()
+
 (*---------------------------------------------------------------------------
 !* wrap up
  *--------------------------------------------------------------------------- *)

@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Core
 
@@ -77,7 +77,7 @@ module internal SR =
     let notARecordType = "notARecordType"
     let nullsNotAllowedInArray = "nullsNotAllowedInArray"
     let objIsNotARecord = "objIsNotARecord"
-    let keyNotFoundAlt = "keyNotFoundAltMessage"
+    let keyNotFoundAlt = "keyNotFoundAlt"
     let firstClassUsesOfSplice = "firstClassUsesOfSplice"
     let printfNotAFunType = "printfNotAFunType"
     let printfMissingFormatSpecifier = "printfMissingFormatSpecifier"
@@ -161,10 +161,3 @@ module internal SR =
     
     let GetString(name:System.String) : System.String = 
         resources.GetString(name, System.Globalization.CultureInfo.CurrentUICulture)
-    let GetString1(name:System.String, arg1:System.String) : System.String = 
-        System.String.Format(resources.GetString(name, System.Globalization.CultureInfo.CurrentUICulture), arg1)
-    let GetString2(name:System.String, arg1:System.String, arg2:System.String) : System.String = 
-        System.String.Format(resources.GetString(name, System.Globalization.CultureInfo.CurrentUICulture), arg1, arg2)
-    let GetString3(name:System.String, arg1:System.String, arg2:System.String, arg3:System.String) : System.String = 
-        System.String.Format(resources.GetString(name, System.Globalization.CultureInfo.CurrentUICulture), arg1, arg2, arg3)
-

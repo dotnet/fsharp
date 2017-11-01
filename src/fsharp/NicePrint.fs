@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 //--------------------------------------------------------------------------
 // Print Signatures/Types, for signatures, intellisense, quick info, FSI responses
@@ -1299,7 +1299,7 @@ module InfoMemberPrinting =
     //          Container(argName1:argType1, ..., argNameN:argTypeN) : retType
     //          Container.Method(argName1:argType1, ..., argNameN:argTypeN) : retType
     let private layoutMethInfoCSharpStyle amap m denv (minfo:MethInfo) minst =
-        let retTy = minfo.GetFSharpReturnTy(amap, m, minst)
+        let retTy = if minfo.IsConstructor then minfo.EnclosingType else minfo.GetFSharpReturnTy(amap, m, minst) 
         let layout = 
             if minfo.IsExtensionMember then
                 LeftL.leftParen ^^ wordL (tagKeyword (FSComp.SR.typeInfoExtension())) ^^ RightL.rightParen

@@ -1,5 +1,5 @@
 
-//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.0.30319.16774
+//  Microsoft (R) .NET Framework IL Disassembler.  Version 4.6.1055.0
 //  Copyright (c) Microsoft Corporation.  All rights reserved.
 
 
@@ -13,7 +13,7 @@
 .assembly extern FSharp.Core
 {
   .publickeytoken = (B0 3F 5F 7F 11 D5 0A 3A )                         // .?_....:
-  .ver 4:0:0:0
+  .ver 4:4:1:0
 }
 .assembly TestFunction7
 {
@@ -29,20 +29,20 @@
 }
 .mresource public FSharpSignatureData.TestFunction7
 {
-  // Offset: 0x00000000 Length: 0x000001E3
+  // Offset: 0x00000000 Length: 0x000001BF
 }
 .mresource public FSharpOptimizationData.TestFunction7
 {
-  // Offset: 0x000001E8 Length: 0x00000070
+  // Offset: 0x000001C8 Length: 0x00000070
 }
 .module TestFunction7.exe
-// MVID: {4DAC30D4-65AE-8929-A745-0383D430AC4D}
+// MVID: {59B19208-65AE-8929-A745-03830892B159}
 .imagebase 0x00400000
 .file alignment 0x00000200
 .stackreserve 0x00100000
 .subsystem 0x0003       // WINDOWS_CUI
 .corflags 0x00000001    //  ILONLY
-// Image base: 0x0000000000470000
+// Image base: 0x00E30000
 
 
 // =============== CLASS MEMBERS DECLARATION ===================
@@ -53,29 +53,28 @@
   .custom instance void [FSharp.Core]Microsoft.FSharp.Core.CompilationMappingAttribute::.ctor(valuetype [FSharp.Core]Microsoft.FSharp.Core.SourceConstructFlags) = ( 01 00 07 00 00 00 00 00 ) 
   .method public static void  TestFunction7() cil managed
   {
-    // Code size       15 (0xf)
+    // Code size       14 (0xe)
     .maxstack  4
     .locals init ([0] int32 r)
     .language '{AB4F38C9-B6E6-43BA-BE3B-58080B2CCCE3}', '{994B45C4-E6E9-11D2-903F-00C04FA302A1}', '{5A869D0B-6611-11D3-BD2A-0000F80849BD}'
-    .line 5,5 : 5,22 
-    IL_0000:  nop
-    IL_0001:  ldc.i4.0
-    IL_0002:  stloc.0
-    .line 6,6 : 5,16 
-    IL_0003:  ldloc.0
-    IL_0004:  ldc.i4.3
-    IL_0005:  bge.s      IL_000e
+    .line 5,5 : 5,22 'C:\\GitHub\\dsyme\\visualfsharp\\tests\\fsharpqa\\Source\\CodeGen\\EmittedIL\\TestFunctions\\TestFunction7.fs'
+    IL_0000:  ldc.i4.0
+    IL_0001:  stloc.0
+    .line 6,6 : 5,16 ''
+    IL_0002:  ldloc.0
+    IL_0003:  ldc.i4.3
+    IL_0004:  bge.s      IL_000d
 
-    .line 7,7 : 8,18 
-    IL_0007:  ldloc.0
-    IL_0008:  ldc.i4.1
-    IL_0009:  add
-    IL_000a:  stloc.0
-    .line 100001,100001 : 0,0 
-    IL_000b:  nop
-    IL_000c:  br.s       IL_0003
+    .line 7,7 : 8,18 ''
+    IL_0006:  ldloc.0
+    IL_0007:  ldc.i4.1
+    IL_0008:  add
+    IL_0009:  stloc.0
+    .line 100001,100001 : 0,0 ''
+    IL_000a:  nop
+    IL_000b:  br.s       IL_0002
 
-    IL_000e:  ret
+    IL_000d:  ret
   } // end of method TestFunction7::TestFunction7
 
 } // end of class TestFunction7
@@ -86,10 +85,9 @@
   .method public static void  main@() cil managed
   {
     .entrypoint
-    // Code size       2 (0x2)
+    // Code size       1 (0x1)
     .maxstack  8
-    IL_0000:  nop
-    IL_0001:  ret
+    IL_0000:  ret
   } // end of method $TestFunction7::main@
 
 } // end of class '<StartupCode$TestFunction7>'.$TestFunction7

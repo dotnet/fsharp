@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+﻿// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.VisualStudio.FSharp.Editor
 
@@ -8,10 +8,11 @@ open System.Composition
 open Microsoft.CodeAnalysis.Text
 open Microsoft.CodeAnalysis.Classification
 open Microsoft.VisualStudio.FSharp.LanguageService
-open Microsoft.FSharp.Compiler.SourceCodeServices
 open Microsoft.VisualStudio.LanguageServices.Implementation.F1Help
 open Microsoft.CodeAnalysis.Host.Mef
+open Microsoft.FSharp.Compiler
 open Microsoft.FSharp.Compiler.Range
+open Microsoft.FSharp.Compiler.SourceCodeServices
 
 [<Shared>]
 [<ExportLanguageService(typeof<IHelpContextService>, FSharpConstants.FSharpLanguageName)>]
@@ -99,13 +100,13 @@ type internal FSharpHelpContextService
 
         member this.GetHelpTermAsync(document, textSpan, cancellationToken) = 
             asyncMaybe {
-                let! options = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
+                let! _parsingOptions, projectOptions = projectInfoManager.TryGetOptionsForEditingDocumentOrProject(document)
                 let! sourceText = document.GetTextAsync(cancellationToken)
                 let! textVersion = document.GetTextVersionAsync(cancellationToken)
                 let defines = projectInfoManager.GetCompilationDefinesForEditingDocument(document)  
                 let textLine = sourceText.Lines.GetLineFromPosition(textSpan.Start)
                 let tokens = Tokenizer.getColorizationData(document.Id, sourceText, textLine.Span, Some document.Name, defines, cancellationToken)
-                return! FSharpHelpContextService.GetHelpTerm(checkerProvider.Checker, sourceText, document.FilePath, options, textSpan, tokens, textVersion.GetHashCode())
+                return! FSharpHelpContextService.GetHelpTerm(checkerProvider.Checker, sourceText, document.FilePath, projectOptions, textSpan, tokens, textVersion.GetHashCode())
             } 
             |> Async.map (Option.defaultValue "")
             |> RoslynHelpers.StartAsyncAsTask cancellationToken

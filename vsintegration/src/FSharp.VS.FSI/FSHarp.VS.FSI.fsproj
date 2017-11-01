@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <FSharpSourcesRoot>$(MSBuildProjectDirectory)\..\..\..\src</FSharpSourcesRoot>
@@ -39,6 +39,14 @@
       </FilesToSign>
     </ItemGroup>
   </Target>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="FSharp.Editor" />
+    <InternalsVisibleTo Include="FSharp.LanguageService" />
+    <InternalsVisibleTo Include="FSharp.LanguageService.Base" />
+    <InternalsVisibleTo Include="FSharp.ProjectSystem.FSharp" />
+  </ItemGroup>
+
   <ItemGroup>
     <FilesToLocalize Include="$(OutDir)$(AssemblyName).dll">
       <TranslationFile>$(FSharpSourcesRoot)\..\loc\lcl\{Lang}\$(AssemblyName).dll.lcl</TranslationFile>
@@ -46,9 +54,9 @@
       <HasLceComments>false</HasLceComments>
       <InProject>false</InProject>
     </FilesToLocalize>
-    <FsSrGen Include="VFSIstrings.txt" />
+    <EmbeddedText Include="VFSIstrings.txt" />
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="srProperties.fs" />
+    <Compile Include="FSharp.VS.FSI.Attributes.fs" />
     <Compile Include="$(FSharpSourcesRoot)\utils\CompilerLocationUtils.fs">
       <Link>CompilerLocationUtils.fs</Link>
     </Compile>
@@ -61,6 +69,9 @@
     <Compile Include="fsiPackageHooks.fs" />
     <Compile Include="fsiPackage.fs" />
     <EmbeddedResource Include="Properties.resx">
+      <GenerateSource>true</GenerateSource>
+      <GeneratedModuleName>Microsoft.VisualStudio.FSharp.Interactive.SRProperties</GeneratedModuleName>
+      <GenerateLegacyCode>true</GenerateLegacyCode>
       <ManifestResourceName>Properties</ManifestResourceName>
       <Link>Properties.resx</Link>
     </EmbeddedResource>

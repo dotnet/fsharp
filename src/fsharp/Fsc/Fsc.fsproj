@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information. -->
+<!-- Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information. -->
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
@@ -32,18 +32,18 @@
     </FilesToLocalize>
   </ItemGroup>
 
-   <ItemGroup>
-    <Compile Include="InternalsVisibleTo.fs" />
+  <ItemGroup>
+    <InternalsVisibleTo Include="VisualFSharp.Unittests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="..\..\assemblyinfo\assemblyinfo.fsc.exe.fs">
       <Link>Resources/assemblyinfo.fsc.exe.fs</Link>
     </Compile>
     <Compile Include="..\fscmain.fs">
       <Link>fscmain.fs</Link>
     </Compile>
-    <None Include="fsc.exe.config">
-      <Link>fsc.exe.config</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <None Include="app.config" />
     <None Include="..\..\windows\default.win32manifest">
       <Link>default.win32manifest</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

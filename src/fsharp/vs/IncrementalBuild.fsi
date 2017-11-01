@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Compiler
 
@@ -54,12 +54,18 @@ type internal PartialCheckResults =
       /// Represents the collected uses of symbols from type checking
       TcSymbolUses: TcSymbolUses list 
 
+      /// Represents open declarations
+      TcOpenDeclarations: OpenDeclaration list
+
       TcDependencyFiles: string list
 
       /// Represents the collected attributes to apply to the module of assuembly generates
       TopAttribs: TypeChecker.TopAttribs option
 
-      TimeStamp: DateTime }
+      TimeStamp: DateTime 
+      
+      /// Represents complete typechecked implementation files, including thier typechecked signatures if any.
+      ImplementationFiles: TypedImplFile list }
 
 /// Manages an incremental build graph for the build of an F# project
 [<Class>]
@@ -93,7 +99,7 @@ type internal IncrementalBuilder =
       member ImportedCcusInvalidated : IEvent<string>
 
       /// The list of files the build depends on
-      member AllDependenciesDeprecated : string list
+      member AllDependenciesDeprecated : string[]
 #if EXTENSIONTYPING
       /// Whether there are any 'live' type providers that may need a refresh when a project is Cleaned
       member ThereAreLiveTypeProviders : bool
@@ -138,6 +144,8 @@ type internal IncrementalBuilder =
       ///
       // TODO: make this an Eventually (which can be scheduled) or an Async (which can be cancelled)
       member GetCheckResultsAndImplementationsForProject : CompilationThreadToken -> Cancellable<PartialCheckResults * IL.ILAssemblyRef * IRawFSharpAssemblyData option * TypedImplFile list option>
+
+      member DeduplicateParsedInputModuleNameInProject: Ast.ParsedInput -> Ast.ParsedInput
 
       /// Get the logical time stamp that is associated with the output of the project if it were gully built immediately
       member GetLogicalTimeStampForProject: TimeStampCache * CompilationThreadToken -> DateTime

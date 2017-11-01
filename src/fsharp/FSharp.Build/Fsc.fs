@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
+// Copyright (c) Microsoft Corporation.  All Rights Reserved.  See License.txt in the project root for license information.
 
 namespace Microsoft.FSharp.Build
 
@@ -158,7 +158,7 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     let mutable subsystemVersion : string = null
     let mutable tailcalls : bool = true
     let mutable targetProfile : string = null
-    let mutable targetType : string = null 
+    let mutable targetType : string = null
     let mutable toolExe : string = "fsc.exe"
     let mutable toolPath : string = 
         let locationOfThisDll = 
@@ -277,7 +277,7 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
                 | "WINEXE" -> "winexe" 
                 | "MODULE" -> "module"
                 | _ -> null)
-        
+
         // NoWarn
         match disabledWarnings with
         | null -> ()
@@ -418,7 +418,7 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     // --noframework
     member fsc.NoFramework
         with get() = noFramework 
-        and set(b) = noFramework <- b        
+        and set(b) = noFramework <- b
 
     // --optimize
     member fsc.Optimize
@@ -543,7 +543,7 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     member fsc.Win32ManifestFile
         with get() = win32manifest
         and set(m) = win32manifest <- m
-        
+
     // For specifying the warning level (0-4)    
     member fsc.WarningLevel
         with get() = warningLevel
@@ -552,7 +552,7 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     member fsc.WarningsAsErrors 
         with get() = warningsAsErrors
         and set(s) = warningsAsErrors <- s
-    
+
     member fsc.VisualStudioStyleErrors
         with get() = vserrors
         and set(p) = vserrors <- p
@@ -581,6 +581,9 @@ type [<Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:Iden
     override fsc.GenerateFullPathToTool() = 
         if toolPath = "" then raise (new System.InvalidOperationException(FSBuild.SR.toolpathUnknown()))
         System.IO.Path.Combine(toolPath, fsc.ToolExe)
+    override fsc.LogToolCommand (message:string) =
+        fsc.Log.LogMessageFromText(message, MessageImportance.Normal) |>ignore
+
     member internal fsc.InternalGenerateFullPathToTool() = fsc.GenerateFullPathToTool()             // expose for unit testing
     member internal fsc.BaseExecuteTool(pathToTool, responseFileCommands, commandLineCommands) =    // F# does not allow protected members to be captured by lambdas, this is the standard workaround
         base.ExecuteTool(pathToTool, responseFileCommands, commandLineCommands)
