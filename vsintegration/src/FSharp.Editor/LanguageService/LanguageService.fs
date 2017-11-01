@@ -35,7 +35,7 @@ open Microsoft.VisualStudio.Shell
 open Microsoft.VisualStudio.Shell.Interop
 open Microsoft.VisualStudio.ComponentModelHost
 
-// Exposes FSharpChecker as MEF export
+/// Exposes FSharpChecker as MEF export
 [<Export(typeof<FSharpCheckerProvider>); Composition.Shared>]
 type internal FSharpCheckerProvider 
     [<ImportingConstructor>]
@@ -82,10 +82,10 @@ type internal FSharpCheckerProvider
 
 
 /// Exposes FCS FSharpProjectOptions information management as MEF component.
-//
-// This service allows analyzers to get an appropriate FSharpProjectOptions value for a project or single file.
-// It also allows a 'cheaper' route to get the project options relevant to parsing (e.g. the #define values).
-// The main entrypoints are TryGetOptionsForDocumentOrProject and TryGetOptionsForEditingDocumentOrProject.
+///
+/// This service allows analyzers to get an appropriate FSharpProjectOptions value for a project or single file.
+/// It also allows a 'cheaper' route to get the project options relevant to parsing (e.g. the #define values).
+/// The main entrypoints are TryGetOptionsForDocumentOrProject and TryGetOptionsForEditingDocumentOrProject.
 [<Export(typeof<FSharpProjectOptionsManager>); Composition.Shared>]
 type internal FSharpProjectOptionsManager
     [<ImportingConstructor>]
