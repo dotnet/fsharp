@@ -34,23 +34,20 @@ module internal rec Microsoft.VisualStudio.FSharp.LanguageService.SiteProvider
 
 open System
 open System.Collections.Concurrent
-open System.ComponentModel.Composition
-open System.IO
 open System.Diagnostics
-open Microsoft.VisualStudio
-open Microsoft.VisualStudio.TextManager.Interop
-open Microsoft.VisualStudio.Shell.Interop
-open Microsoft.FSharp.Compiler.SourceCodeServices
+open System.IO
 
 open Microsoft.CodeAnalysis
-open Microsoft.VisualStudio.LanguageServices
+open Microsoft.FSharp.Compiler.SourceCodeServices
+
+open Microsoft.VisualStudio
+open Microsoft.VisualStudio.FSharp.LanguageService
 open Microsoft.VisualStudio.LanguageServices.Implementation.ProjectSystem
 open Microsoft.VisualStudio.LanguageServices.Implementation.TaskList
-open VSLangProj
-open System.ComponentModel.Composition.Primitives
-open Microsoft.VisualStudio.Shell
-open System.Collections.Immutable
+open Microsoft.VisualStudio.Shell.Interop
+open Microsoft.VisualStudio.TextManager.Interop
 
+open VSLangProj
 
 /// An additional interface that an IProjectSite object can implement to indicate it has an FSharpProjectOptions 
 /// already available, so we don't have to recreate it
@@ -274,7 +271,7 @@ type internal ProjectSitesAndFiles() =
                         if not (isNull project) then
                             for reference in project.ProjectReferences do
                                 let project = workspace.CurrentSolution.GetProject(reference.ProjectId)
-                                if not (isNull project) then
+                                if not (isNull project) && project.Language = LanguageServiceConstants.FSharpLanguageName then
                                     let siteProvider = provideProjectSiteProvider (workspace, project, serviceProvider, projectOptionsTable)
                                     let referenceProject = workspace.ProjectTracker.GetProject(reference.ProjectId)
                                     let outputPath = referenceProject.BinOutputPath
